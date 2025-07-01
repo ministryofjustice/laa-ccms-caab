@@ -6,8 +6,8 @@ import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityTypeFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
 /**
- * Validator component responsible for validating
- * {@link uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityTypeFormData} objects.
+ * Validator component responsible for validating {@link
+ * uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityTypeFormData} objects.
  */
 @Component
 public class PriorAuthorityTypeDetailsValidator extends AbstractValidator {
@@ -16,9 +16,9 @@ public class PriorAuthorityTypeDetailsValidator extends AbstractValidator {
    * Determines if the Validator supports the provided class.
    *
    * @param clazz The class to check for support.
-   * @return {@code true} if the class is assignable from
-   *         {@link uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityTypeFormData},
-   *         {@code false} otherwise.
+   * @return {@code true} if the class is assignable from {@link
+   *     uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityTypeFormData}, {@code false}
+   *     otherwise.
    */
   @Override
   public boolean supports(final Class<?> clazz) {
@@ -26,8 +26,8 @@ public class PriorAuthorityTypeDetailsValidator extends AbstractValidator {
   }
 
   /**
-   * Validates the prior authority type details in the
-   * {@link uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityTypeFormData}.
+   * Validates the prior authority type details in the {@link
+   * uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityTypeFormData}.
    *
    * @param target The object to be validated.
    * @param errors The Errors object to store validation errors.
@@ -37,9 +37,10 @@ public class PriorAuthorityTypeDetailsValidator extends AbstractValidator {
     final PriorAuthorityTypeFormData priorAuthorityTypeDetails =
         (PriorAuthorityTypeFormData) target;
 
-    validateRequiredField("priorAuthorityType", priorAuthorityTypeDetails.getPriorAuthorityType(),
-        "Prior authority type", errors);
-
+    validateRequiredField(
+        "priorAuthorityType",
+        priorAuthorityTypeDetails.getPriorAuthorityType(),
+        "Prior authority type",
+        errors);
   }
-
 }

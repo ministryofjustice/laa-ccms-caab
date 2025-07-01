@@ -5,9 +5,7 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
-/**
- * Validates the office details provided by the user.
- */
+/** Validates the office details provided by the user. */
 @Component
 public class ProviderDetailsValidator extends AbstractValidator {
 
@@ -36,11 +34,15 @@ public class ProviderDetailsValidator extends AbstractValidator {
     final ApplicationFormData applicationFormData = (ApplicationFormData) target;
 
     if (applicationFormData.getProviderCaseReference() != null) {
-      validateFieldFormat("providerCaseReference", applicationFormData.getProviderCaseReference(),
-          PROVIDER_CASE_REF_CHAR_SET, "Provider case reference", errors);
+      validateFieldFormat(
+          "providerCaseReference",
+          applicationFormData.getProviderCaseReference(),
+          PROVIDER_CASE_REF_CHAR_SET,
+          "Provider case reference",
+          errors);
     }
 
-    validateRequiredField("contactNameId", applicationFormData.getContactNameId(),
-        "Contact name", errors);
+    validateRequiredField(
+        "contactNameId", applicationFormData.getContactNameId(), "Contact name", errors);
   }
 }

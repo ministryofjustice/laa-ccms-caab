@@ -69,7 +69,9 @@ class ContextTokenTest {
 
   @Test
   void testParseJsonContextToken_InvalidJson() {
-    assertThrows(ConnectorSecurityContextException.class, () -> new ContextToken().parseJsonContextToken("{}"));
+    assertThrows(
+        ConnectorSecurityContextException.class,
+        () -> new ContextToken().parseJsonContextToken("{}"));
   }
 
   @Test
@@ -108,10 +110,12 @@ class ContextTokenTest {
   @Test
   void testHashCode() {
     final int hashCode = contextToken.hashCode();
-    assertEquals(hashCode, contextToken.getTtl().intValue()
-        * contextToken.getCaseId().hashCode()
-        * contextToken.getProviderId().hashCode()
-        * contextToken.getRulebaseId().intValue());
+    assertEquals(
+        hashCode,
+        contextToken.getTtl().intValue()
+            * contextToken.getCaseId().hashCode()
+            * contextToken.getProviderId().hashCode()
+            * contextToken.getRulebaseId().intValue());
   }
 
   @Test

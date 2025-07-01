@@ -5,9 +5,7 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
-/**
- * Represents the Section display values for the application sections screen.
- */
+/** Represents the Section display values for the application sections screen. */
 @Data
 @Builder
 public class ApplicationSectionDisplay {
@@ -15,46 +13,33 @@ public class ApplicationSectionDisplay {
   private String caseReferenceNumber;
 
   @Builder.Default
-  private ApplicationTypeSectionDisplay applicationType =
-      new ApplicationTypeSectionDisplay();
+  private ApplicationTypeSectionDisplay applicationType = new ApplicationTypeSectionDisplay();
+
+  @Builder.Default private ProviderSectionDisplay provider = new ProviderSectionDisplay();
 
   @Builder.Default
-  private ProviderSectionDisplay provider =
-      new ProviderSectionDisplay();
+  private GeneralDetailsSectionDisplay generalDetails = new GeneralDetailsSectionDisplay();
 
-  @Builder.Default
-  private GeneralDetailsSectionDisplay generalDetails =
-      new GeneralDetailsSectionDisplay();
-
-  @Builder.Default
-  private ClientSectionDisplay client =
-      new ClientSectionDisplay();
+  @Builder.Default private ClientSectionDisplay client = new ClientSectionDisplay();
 
   @Builder.Default
   private ProceedingsAndCostsSectionDisplay proceedingsAndCosts =
       new ProceedingsAndCostsSectionDisplay();
 
-  @Builder.Default
-  private List<PriorAuthoritySectionDisplay> priorAuthorities =
-      new ArrayList<>();
+  @Builder.Default private List<PriorAuthoritySectionDisplay> priorAuthorities = new ArrayList<>();
 
   @Builder.Default
-  private OpponentsSectionDisplay opponentsAndOtherParties =
-      new OpponentsSectionDisplay();
+  private OpponentsSectionDisplay opponentsAndOtherParties = new OpponentsSectionDisplay();
 
   @Builder.Default
-  private ApplicationSectionStatusDisplay meansAssessment =
-      new ApplicationSectionStatusDisplay();
+  private ApplicationSectionStatusDisplay meansAssessment = new ApplicationSectionStatusDisplay();
 
   @Builder.Default
-  private ApplicationSectionStatusDisplay meritsAssessment =
-      new ApplicationSectionStatusDisplay();
+  private ApplicationSectionStatusDisplay meritsAssessment = new ApplicationSectionStatusDisplay();
 
   @Builder.Default
-  private ApplicationSectionStatusDisplay documentUpload =
-      new ApplicationSectionStatusDisplay();
+  private ApplicationSectionStatusDisplay documentUpload = new ApplicationSectionStatusDisplay();
 
   @Builder.Default
   private LinkedCasesDisplaySection linkedCasesDisplaySection = new LinkedCasesDisplaySection();
-
 }

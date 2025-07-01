@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.bean;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -9,13 +11,10 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 @ExtendWith(SpringExtension.class)
 public class CaseSearchCriteriaValidatorTest {
 
-  @InjectMocks
-  private CaseSearchCriteriaValidator validator;
+  @InjectMocks private CaseSearchCriteriaValidator validator;
 
   private CaseSearchCriteria searchCriteria;
 
@@ -27,7 +26,7 @@ public class CaseSearchCriteriaValidatorTest {
         new CaseSearchCriteria(); // Assuming that the default constructor sets all fields to null.
     errors = new BeanPropertyBindingResult(searchCriteria, "applicationSearchCriteria");
   }
-  
+
   @Test
   public void supports_ReturnsTrueForSupportedClass() {
     assertTrue(validator.supports(CaseSearchCriteria.class));
@@ -43,7 +42,8 @@ public class CaseSearchCriteriaValidatorTest {
     validator.validate(searchCriteria, errors);
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getGlobalErrorCount());
-    assertEquals("required.atLeastOneSearchCriteria", errors.getGlobalErrors().getFirst().getCode());
+    assertEquals(
+        "required.atLeastOneSearchCriteria", errors.getGlobalErrors().getFirst().getCode());
   }
 
   @Test

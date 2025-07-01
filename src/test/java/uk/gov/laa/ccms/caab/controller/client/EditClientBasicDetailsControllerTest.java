@@ -42,12 +42,9 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @ExtendWith(MockitoExtension.class)
 class EditClientBasicDetailsControllerTest {
 
-  @Mock
-  private LookupService lookupService;
-  @Mock
-  private ClientBasicDetailsValidator clientBasicDetailsValidator;
-  @InjectMocks
-  private EditClientBasicDetailsController editClientBasicDetailsController;
+  @Mock private LookupService lookupService;
+  @Mock private ClientBasicDetailsValidator clientBasicDetailsValidator;
+  @InjectMocks private EditClientBasicDetailsController editClientBasicDetailsController;
   private MockMvc mockMvc;
   private CommonLookupDetail titleLookupDetail;
   private CommonLookupDetail countryLookupDetail;
@@ -58,8 +55,10 @@ class EditClientBasicDetailsControllerTest {
 
   @BeforeEach
   void setup() {
-    mockMvc = standaloneSetup(editClientBasicDetailsController)
-        .setConversionService(getConversionService()).build();
+    mockMvc =
+        standaloneSetup(editClientBasicDetailsController)
+            .setConversionService(getConversionService())
+            .build();
 
     basicDetails = new ClientFormDataBasicDetails();
 
@@ -82,37 +81,39 @@ class EditClientBasicDetailsControllerTest {
 
     @Test
     void testClientDetailsBasic() throws Exception {
-      when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(
-          Mono.just(titleLookupDetail));
-      when(lookupService.getCountries()).thenReturn(
-          Mono.just(countryLookupDetail));
-      when(lookupService.getCommonValues(COMMON_VALUE_GENDER)).thenReturn(
-          Mono.just(genderLookupDetail));
-      when(lookupService.getCommonValues(COMMON_VALUE_MARITAL_STATUS)).thenReturn(
-          Mono.just(maritalStatusLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+          .thenReturn(Mono.just(titleLookupDetail));
+      when(lookupService.getCountries()).thenReturn(Mono.just(countryLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_GENDER))
+          .thenReturn(Mono.just(genderLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_MARITAL_STATUS))
+          .thenReturn(Mono.just(maritalStatusLookupDetail));
 
-      mockMvc.perform(get("/application/sections/client/details/basic")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("genders", Collections.emptyList())
-              .flashAttr("maritalStatusList", Collections.emptyList()))
+      mockMvc
+          .perform(
+              get("/application/sections/client/details/basic")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("genders", Collections.emptyList())
+                  .flashAttr("maritalStatusList", Collections.emptyList()))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/client-basic-details"))
           .andExpect(
               model().attributeExists("titles", "countries", "genders", "maritalStatusList"));
-
     }
 
     @Test
     void testClientDetailsBasicPost() throws Exception {
       ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
 
-      mockMvc.perform(post("/application/sections/client/details/basic")
-              .sessionAttr(CLIENT_SEARCH_CRITERIA, clientSearchCriteria)
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("basicDetails", basicDetails)
-              .flashAttr("genders", Collections.emptyList())
-              .flashAttr("maritalStatusList", Collections.emptyList()))
+      mockMvc
+          .perform(
+              post("/application/sections/client/details/basic")
+                  .sessionAttr(CLIENT_SEARCH_CRITERIA, clientSearchCriteria)
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("basicDetails", basicDetails)
+                  .flashAttr("genders", Collections.emptyList())
+                  .flashAttr("maritalStatusList", Collections.emptyList()))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/sections/client/details/summary"));
     }
@@ -121,35 +122,39 @@ class EditClientBasicDetailsControllerTest {
     void testClientDetailsBasicPostValidationError() throws Exception {
       ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
 
-      doAnswer(invocation -> {
-        Errors errors = (Errors) invocation.getArguments()[1];
-        errors.rejectValue("title", "required.title", "Please complete 'Title'.");
-        return null;
-      }).when(clientBasicDetailsValidator).validate(any(), any());
+      doAnswer(
+              invocation -> {
+                Errors errors = (Errors) invocation.getArguments()[1];
+                errors.rejectValue("title", "required.title", "Please complete 'Title'.");
+                return null;
+              })
+          .when(clientBasicDetailsValidator)
+          .validate(any(), any());
 
-      when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(
-          Mono.just(titleLookupDetail));
-      when(lookupService.getCountries()).thenReturn(
-          Mono.just(countryLookupDetail));
-      when(lookupService.getCommonValues(COMMON_VALUE_GENDER)).thenReturn(
-          Mono.just(genderLookupDetail));
-      when(lookupService.getCommonValues(COMMON_VALUE_MARITAL_STATUS)).thenReturn(
-          Mono.just(maritalStatusLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+          .thenReturn(Mono.just(titleLookupDetail));
+      when(lookupService.getCountries()).thenReturn(Mono.just(countryLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_GENDER))
+          .thenReturn(Mono.just(genderLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_MARITAL_STATUS))
+          .thenReturn(Mono.just(maritalStatusLookupDetail));
 
-      mockMvc.perform(post("/application/sections/client/details/basic")
-              .sessionAttr(CLIENT_SEARCH_CRITERIA, clientSearchCriteria)
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("basicDetails", basicDetails)
-              .flashAttr("genders", Collections.emptyList())
-              .flashAttr("maritalStatusList", Collections.emptyList()))
+      mockMvc
+          .perform(
+              post("/application/sections/client/details/basic")
+                  .sessionAttr(CLIENT_SEARCH_CRITERIA, clientSearchCriteria)
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("basicDetails", basicDetails)
+                  .flashAttr("genders", Collections.emptyList())
+                  .flashAttr("maritalStatusList", Collections.emptyList()))
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/client-basic-details"))
-          .andExpect(model().attributeExists("titles", "countries", "genders", "maritalStatusList",
-              "basicDetails"));
+          .andExpect(
+              model()
+                  .attributeExists(
+                      "titles", "countries", "genders", "maritalStatusList", "basicDetails"));
     }
-
   }
-
 
   @Nested
   @DisplayName("Amendments tests")
@@ -157,37 +162,39 @@ class EditClientBasicDetailsControllerTest {
 
     @Test
     void testClientDetailsBasic() throws Exception {
-      when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(
-          Mono.just(titleLookupDetail));
-      when(lookupService.getCountries()).thenReturn(
-          Mono.just(countryLookupDetail));
-      when(lookupService.getCommonValues(COMMON_VALUE_GENDER)).thenReturn(
-          Mono.just(genderLookupDetail));
-      when(lookupService.getCommonValues(COMMON_VALUE_MARITAL_STATUS)).thenReturn(
-          Mono.just(maritalStatusLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+          .thenReturn(Mono.just(titleLookupDetail));
+      when(lookupService.getCountries()).thenReturn(Mono.just(countryLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_GENDER))
+          .thenReturn(Mono.just(genderLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_MARITAL_STATUS))
+          .thenReturn(Mono.just(maritalStatusLookupDetail));
 
-      mockMvc.perform(get("/amendments/sections/client/details/basic")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("genders", Collections.emptyList())
-              .flashAttr("maritalStatusList", Collections.emptyList()))
+      mockMvc
+          .perform(
+              get("/amendments/sections/client/details/basic")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("genders", Collections.emptyList())
+                  .flashAttr("maritalStatusList", Collections.emptyList()))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/client-basic-details"))
           .andExpect(
               model().attributeExists("titles", "countries", "genders", "maritalStatusList"));
-
     }
 
     @Test
     void testClientDetailsBasicPost() throws Exception {
       ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
 
-      mockMvc.perform(post("/amendments/sections/client/details/basic")
-              .sessionAttr(CLIENT_SEARCH_CRITERIA, clientSearchCriteria)
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("basicDetails", basicDetails)
-              .flashAttr("genders", Collections.emptyList())
-              .flashAttr("maritalStatusList", Collections.emptyList()))
+      mockMvc
+          .perform(
+              post("/amendments/sections/client/details/basic")
+                  .sessionAttr(CLIENT_SEARCH_CRITERIA, clientSearchCriteria)
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("basicDetails", basicDetails)
+                  .flashAttr("genders", Collections.emptyList())
+                  .flashAttr("maritalStatusList", Collections.emptyList()))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/amendments/sections/client/details/summary"));
     }
@@ -196,33 +203,37 @@ class EditClientBasicDetailsControllerTest {
     void testClientDetailsBasicPostValidationError() throws Exception {
       ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
 
-      doAnswer(invocation -> {
-        Errors errors = (Errors) invocation.getArguments()[1];
-        errors.rejectValue("title", "required.title", "Please complete 'Title'.");
-        return null;
-      }).when(clientBasicDetailsValidator).validate(any(), any());
+      doAnswer(
+              invocation -> {
+                Errors errors = (Errors) invocation.getArguments()[1];
+                errors.rejectValue("title", "required.title", "Please complete 'Title'.");
+                return null;
+              })
+          .when(clientBasicDetailsValidator)
+          .validate(any(), any());
 
-      when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(
-          Mono.just(titleLookupDetail));
-      when(lookupService.getCountries()).thenReturn(
-          Mono.just(countryLookupDetail));
-      when(lookupService.getCommonValues(COMMON_VALUE_GENDER)).thenReturn(
-          Mono.just(genderLookupDetail));
-      when(lookupService.getCommonValues(COMMON_VALUE_MARITAL_STATUS)).thenReturn(
-          Mono.just(maritalStatusLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+          .thenReturn(Mono.just(titleLookupDetail));
+      when(lookupService.getCountries()).thenReturn(Mono.just(countryLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_GENDER))
+          .thenReturn(Mono.just(genderLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_MARITAL_STATUS))
+          .thenReturn(Mono.just(maritalStatusLookupDetail));
 
-      mockMvc.perform(post("/amendments/sections/client/details/basic")
-              .sessionAttr(CLIENT_SEARCH_CRITERIA, clientSearchCriteria)
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("basicDetails", basicDetails)
-              .flashAttr("genders", Collections.emptyList())
-              .flashAttr("maritalStatusList", Collections.emptyList()))
+      mockMvc
+          .perform(
+              post("/amendments/sections/client/details/basic")
+                  .sessionAttr(CLIENT_SEARCH_CRITERIA, clientSearchCriteria)
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("basicDetails", basicDetails)
+                  .flashAttr("genders", Collections.emptyList())
+                  .flashAttr("maritalStatusList", Collections.emptyList()))
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/client-basic-details"))
-          .andExpect(model().attributeExists("titles", "countries", "genders", "maritalStatusList",
-              "basicDetails"));
+          .andExpect(
+              model()
+                  .attributeExists(
+                      "titles", "countries", "genders", "maritalStatusList", "basicDetails"));
     }
-
   }
-
 }

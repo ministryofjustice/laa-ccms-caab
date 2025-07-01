@@ -10,32 +10,22 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import uk.gov.laa.ccms.caab.exception.AvScanException;
 
-/**
- * Client to handle interactions with the ClamAV antivirus service.
- */
+/** Client to handle interactions with the ClamAV antivirus service. */
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class AvApiClient {
 
-  /**
-   * Indicator for a virus being found.
-   */
+  /** Indicator for a virus being found. */
   protected static final String VIRUS_FOUND_INDICATOR = "FOUND";
 
-  /**
-   * Indicator for the start of a response stream from the external antivirus service.
-   */
+  /** Indicator for the start of a response stream from the external antivirus service. */
   protected static final String STREAM_INDICATOR = "stream: ";
 
-  /**
-   * A client which handles calls to the antivirus service.
-   */
+  /** A client which handles calls to the antivirus service. */
   private final ClamAVClient clamAvClient;
 
-  /**
-   * Error handler for calls to the ClamAv service.
-   */
+  /** Error handler for calls to the ClamAv service. */
   private final AvApiClientErrorHandler avApiClientErrorHandler;
 
   /**
@@ -47,7 +37,7 @@ public class AvApiClient {
   public void scan(final InputStream inputStream) {
     try {
       byte[] reply = clamAvClient.scan(inputStream);
-      final String stringResult =  new String(reply).replace(STREAM_INDICATOR, "");
+      final String stringResult = new String(reply).replace(STREAM_INDICATOR, "");
 
       log.info("********** VIRUS SCAN RESULT ********** {}", stringResult);
 

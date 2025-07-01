@@ -23,9 +23,7 @@ import uk.gov.laa.ccms.data.model.ProviderRequestTypeLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ProviderRequestAttribute;
 import uk.gov.laa.ccms.soa.gateway.model.ProviderRequestDetail;
 
-/**
- * Maps and populates provider request details form data between related objects.
- */
+/** Maps and populates provider request details form data between related objects. */
 @Mapper(componentModel = "spring", uses = CommonMapper.class)
 public interface ProviderRequestsMapper {
 
@@ -63,12 +61,11 @@ public interface ProviderRequestsMapper {
   @Mapping(target = "fieldType", source = "type")
   @Mapping(target = "fieldValue", ignore = true)
   @Mapping(target = "fieldValueDisplayValue", ignore = true)
-  DynamicOptionFormData toDynamicOption(
-      ProviderRequestDataLookupValueDetail formOption);
+  DynamicOptionFormData toDynamicOption(ProviderRequestDataLookupValueDetail formOption);
 
   /**
-   * Maps provider request flow form data to provider request details form data,
-   * ignoring pre-populated fields.
+   * Maps provider request flow form data to provider request details form data, ignoring
+   * pre-populated fields.
    *
    * @param providerRequestDetails the target form data to map to.
    * @param providerRequestFlowFormData the source flow form data.
@@ -81,17 +78,23 @@ public interface ProviderRequestsMapper {
   @Mapping(target = "documentTypeDisplayValue", ignore = true)
   @Mapping(target = "documentDescription", ignore = true)
   @Mapping(target = "documentIdToDelete", ignore = true)
-  @Mapping(target = "claimUploadLabel",
+  @Mapping(
+      target = "claimUploadLabel",
       source = "providerRequestFlowFormData.requestDetailsFormData.claimUploadLabel")
-  @Mapping(target = "additionalInformationLabel",
+  @Mapping(
+      target = "additionalInformationLabel",
       source = "providerRequestFlowFormData.requestDetailsFormData.additionalInformationLabel")
-  @Mapping(target = "claimUploadEnabled",
+  @Mapping(
+      target = "claimUploadEnabled",
       source = "providerRequestFlowFormData.requestDetailsFormData.claimUploadEnabled")
-  @Mapping(target = "documentSessionId",
+  @Mapping(
+      target = "documentSessionId",
       source = "providerRequestFlowFormData.requestDetailsFormData.documentSessionId")
-  @Mapping(target = "isAdditionalInformationPromptRequired",
-      source = "providerRequestFlowFormData.requestDetailsFormData."
-          + "isAdditionalInformationPromptRequired")
+  @Mapping(
+      target = "isAdditionalInformationPromptRequired",
+      source =
+          "providerRequestFlowFormData.requestDetailsFormData."
+              + "isAdditionalInformationPromptRequired")
   void toProviderRequestDetailsFormData(
       @MappingTarget ProviderRequestDetailsFormData providerRequestDetails,
       ProviderRequestFlowFormData providerRequestFlowFormData);
@@ -108,17 +111,26 @@ public interface ProviderRequestsMapper {
       final ProviderRequestFlowFormData providerRequestFlowFormData) {
 
     if (providerRequestFlowFormData.getRequestDetailsFormData().getDynamicOptions() != null) {
-      providerRequestFlowFormData.getRequestDetailsFormData()
-          .getDynamicOptions().forEach((key, value) -> {
-            if (providerRequestDetails.getDynamicOptions().containsKey(key)) {
-              providerRequestDetails.getDynamicOptions().get(key)
-                  .setMandatory(value.isMandatory());
-              providerRequestDetails.getDynamicOptions().get(key)
-                  .setFieldDescription(value.getFieldDescription());
-              providerRequestDetails.getDynamicOptions().get(key)
-                  .setFieldType(value.getFieldType());
-            }
-          });
+      providerRequestFlowFormData
+          .getRequestDetailsFormData()
+          .getDynamicOptions()
+          .forEach(
+              (key, value) -> {
+                if (providerRequestDetails.getDynamicOptions().containsKey(key)) {
+                  providerRequestDetails
+                      .getDynamicOptions()
+                      .get(key)
+                      .setMandatory(value.isMandatory());
+                  providerRequestDetails
+                      .getDynamicOptions()
+                      .get(key)
+                      .setFieldDescription(value.getFieldDescription());
+                  providerRequestDetails
+                      .getDynamicOptions()
+                      .get(key)
+                      .setFieldType(value.getFieldType());
+                }
+              });
     }
   }
 
@@ -138,18 +150,15 @@ public interface ProviderRequestsMapper {
   @Mapping(target = "ccmsModule", source = "ccmsModule.code")
   EvidenceDocumentDetail toProviderRequestDocumentDetail(final EvidenceUploadFormData formData);
 
-
-
-  //todo amend mapping for case related requests (future story)
+  // todo amend mapping for case related requests (future story)
   @Mapping(target = "caseReferenceNumber", ignore = true)
   @Mapping(target = "username", source = "user.username")
-  @Mapping(target = "requestType",
-      source = "typeData.providerRequestType")
-  @Mapping(target = "attributes",
+  @Mapping(target = "requestType", source = "typeData.providerRequestType")
+  @Mapping(
+      target = "attributes",
       source = "detailsData",
       qualifiedByName = "toProviderRequestDetailAttributes")
-  ProviderRequestDetail toProviderRequestDetail(
-      final ProviderRequestMappingContext mappingContext);
+  ProviderRequestDetail toProviderRequestDetail(final ProviderRequestMappingContext mappingContext);
 
   @Mapping(target = "label", source = "fieldDescription")
   @Mapping(target = "text", expression = "java(formatDynamicOption(dynamicOption))")
@@ -161,8 +170,8 @@ public interface ProviderRequestsMapper {
    * Formats the date field value from the provided dynamic option.
    *
    * @param dynamicOption the dynamic option containing the date field
-   * @return the formatted date as a string in 'yyyy-MM-dd' format,
-   *         or the original value if parsing fails
+   * @return the formatted date as a string in 'yyyy-MM-dd' format, or the original value if parsing
+   *     fails
    */
   default String formatDynamicOption(final DynamicOptionFormData dynamicOption) {
     if (DATE_DYNAMIC_OPTION.equals(dynamicOption.getFieldType())
@@ -188,9 +197,11 @@ public interface ProviderRequestsMapper {
 
   @Mapping(target = "label", source = "claimUploadLabel")
   @Mapping(target = "text", source = "file.originalFilename")
-  @Mapping(target = "document",
-      expression = "java(COMMON_MAPPER.toBase64EncodedStringFromByteArray("
-          + "COMMON_MAPPER.toFileBytes(formData.getFile())))")
+  @Mapping(
+      target = "document",
+      expression =
+          "java(COMMON_MAPPER.toBase64EncodedStringFromByteArray("
+              + "COMMON_MAPPER.toFileBytes(formData.getFile())))")
   ProviderRequestAttribute fileToProviderRequestAttribute(ProviderRequestDetailsFormData formData)
       throws CaabApplicationException;
 
@@ -210,8 +221,12 @@ public interface ProviderRequestsMapper {
     final List<ProviderRequestAttribute> attributes = new ArrayList<>();
 
     if (formData.getDynamicOptions() != null) {
-      formData.getDynamicOptions().values().forEach(dynamicOption ->
-          attributes.add(dynamicOptionToProviderRequestAttribute(dynamicOption)));
+      formData
+          .getDynamicOptions()
+          .values()
+          .forEach(
+              dynamicOption ->
+                  attributes.add(dynamicOptionToProviderRequestAttribute(dynamicOption)));
     }
 
     if (formData.getAdditionalInformationLabel() != null) {
@@ -228,5 +243,4 @@ public interface ProviderRequestsMapper {
 
     return attributes;
   }
-
 }

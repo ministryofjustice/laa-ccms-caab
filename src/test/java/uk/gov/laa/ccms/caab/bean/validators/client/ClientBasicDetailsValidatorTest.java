@@ -20,8 +20,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 @ExtendWith(SpringExtension.class)
 class ClientBasicDetailsValidatorTest {
 
-  @InjectMocks
-  private ClientBasicDetailsValidator clientBasicDetailsValidator;
+  @InjectMocks private ClientBasicDetailsValidator clientBasicDetailsValidator;
 
   private ClientFormDataBasicDetails basicDetails;
 
@@ -111,9 +110,7 @@ class ClientBasicDetailsValidatorTest {
   }
 
   @ParameterizedTest
-  @CsvSource({"a  b",
-      "1A",
-      "A1"})
+  @CsvSource({"a  b", "1A", "A1"})
   void validateInvalidMiddleNames(String middleNames) {
     basicDetails = buildBasicDetails();
     basicDetails.setMiddleNames(middleNames);
@@ -123,9 +120,7 @@ class ClientBasicDetailsValidatorTest {
   }
 
   @ParameterizedTest
-  @CsvSource({"a  b",
-      "1A",
-      "A1"})
+  @CsvSource({"a  b", "1A", "A1"})
   void validateInvalidSurname(String surname) {
     basicDetails = buildBasicDetails();
     basicDetails.setSurname(surname);
@@ -179,5 +174,4 @@ class ClientBasicDetailsValidatorTest {
     basicDetails.setMaritalStatus("SINGLE");
     return basicDetails;
   }
-
 }

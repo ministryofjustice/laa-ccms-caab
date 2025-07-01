@@ -27,5 +27,4 @@ class AssessmentApiClientExceptionTest {
     assertEquals(expectedMessage, exception.getMessage());
     assertEquals(cause, exception.getCause());
   }
-
 }

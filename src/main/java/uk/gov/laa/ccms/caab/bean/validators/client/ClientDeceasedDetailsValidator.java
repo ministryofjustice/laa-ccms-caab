@@ -11,8 +11,8 @@ import uk.gov.laa.ccms.caab.bean.ClientFormDataDeceasedDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
 /**
- * Validator component responsible for validating
- * {@link uk.gov.laa.ccms.caab.bean.ClientFormDataDeceasedDetails} objects.
+ * Validator component responsible for validating {@link
+ * uk.gov.laa.ccms.caab.bean.ClientFormDataDeceasedDetails} objects.
  */
 @Component
 @Slf4j
@@ -22,9 +22,8 @@ public class ClientDeceasedDetailsValidator extends AbstractValidator {
    * Determines if the Validator supports the provided class.
    *
    * @param clazz The class to check for support.
-   * @return {@code true} if the class is assignable from
-   *     {@link uk.gov.laa.ccms.caab.bean.ClientFormDataDeceasedDetails},
-   *     {@code false} otherwise.
+   * @return {@code true} if the class is assignable from {@link
+   *     uk.gov.laa.ccms.caab.bean.ClientFormDataDeceasedDetails}, {@code false} otherwise.
    */
   @Override
   public boolean supports(Class<?> clazz) {
@@ -32,8 +31,8 @@ public class ClientDeceasedDetailsValidator extends AbstractValidator {
   }
 
   /**
-   * Validates the client address search details in the
-   * {@link uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria}.
+   * Validates the client address search details in the {@link
+   * uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria}.
    *
    * @param target The object to be validated.
    * @param errors The Errors object to store validation errors.
@@ -48,13 +47,17 @@ public class ClientDeceasedDetailsValidator extends AbstractValidator {
       ClientFormDataDeceasedDetails deceasedDetails, Errors errors) {
 
     String fieldName = "dateOfDeath";
-    ValidationUtils.rejectIfEmpty(errors, fieldName,
-        "required.dod", "Please complete 'date of death'");
+    ValidationUtils.rejectIfEmpty(
+        errors, fieldName, "required.dod", "Please complete 'date of death'");
 
     if (!deceasedDetails.getDateOfDeath().isBlank()) {
       Date date =
-          validateValidDateField(deceasedDetails.getDateOfDeath(), fieldName, "date of death",
-              COMPONENT_DATE_PATTERN, errors);
+          validateValidDateField(
+              deceasedDetails.getDateOfDeath(),
+              fieldName,
+              "date of death",
+              COMPONENT_DATE_PATTERN,
+              errors);
       if (!errors.hasErrors()) {
         validateDateInPast(date, fieldName, "date of death", errors);
       }

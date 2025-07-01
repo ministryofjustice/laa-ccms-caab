@@ -1,27 +1,26 @@
 package uk.gov.laa.ccms.caab.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.APPLICATION_CASE_REF;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.GLOBAL;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS_PREPOP;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MERITS;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MERITS_PREPOP;
+
 import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS;
-import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS_PREPOP;
-import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MERITS;
-import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MERITS_PREPOP;
-import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.APPLICATION_CASE_REF;
-import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.GLOBAL;
-
-import java.util.List;
-import org.junit.jupiter.api.Test;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentRelationshipDetail;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRelationship;
 
@@ -29,10 +28,10 @@ public class AssessmentUtilTest {
 
   @ParameterizedTest
   @CsvSource({
-      "CASE123, CASE123, CASE123, true",        // valid case reference
-      "CASE123, DIFFERENT_CASE, DIFFERENT_CASE, false", // invalid case reference
-      "CASE123, CASE123, DIFFERENT_CASE, false", // mismatched attributes
-      "CASE123, , , false" // no attributes
+    "CASE123, CASE123, CASE123, true", // valid case reference
+    "CASE123, DIFFERENT_CASE, DIFFERENT_CASE, false", // invalid case reference
+    "CASE123, CASE123, DIFFERENT_CASE, false", // mismatched attributes
+    "CASE123, , , false" // no attributes
   })
   void testIsAssessmentReferenceConsistent(
       final String caseReferenceNumber,
@@ -66,10 +65,10 @@ public class AssessmentUtilTest {
 
   @ParameterizedTest
   @CsvSource({
-      "UNCERTAIN_VALUE_STRING, TEXT, ",
-      "invalidDate, DATE, invalidDate",
-      "invalidCurrency, CURRENCY, invalidCurrency",
-      "invalidNumber, NUMBER, invalidNumber",
+    "UNCERTAIN_VALUE_STRING, TEXT, ",
+    "invalidDate, DATE, invalidDate",
+    "invalidCurrency, CURRENCY, invalidCurrency",
+    "invalidNumber, NUMBER, invalidNumber",
   })
   void testGetFormattedAttributeValue_CatchBlocks(
       final String value, final String type, final String expected) {
@@ -80,14 +79,11 @@ public class AssessmentUtilTest {
     final String result = AssessmentUtil.getFormattedAttributeValue(attribute);
     assertEquals(expected, result);
   }
-  
+
   @Test
   void testGetNonFinancialAssessmentNamesIncludingPrepop_returnsCorrectNames() {
-    final List<String> expectedAssessmentNames = List.of(
-        MEANS.getName(),
-        MEANS_PREPOP.getName(),
-        MERITS.getName(),
-        MERITS_PREPOP.getName());
+    final List<String> expectedAssessmentNames =
+        List.of(MEANS.getName(), MEANS_PREPOP.getName(), MERITS.getName(), MERITS_PREPOP.getName());
 
     final List<String> result = AssessmentUtil.getNonFinancialAssessmentNamesIncludingPrepop();
 
@@ -96,7 +92,8 @@ public class AssessmentUtilTest {
   }
 
   @Test
-  @DisplayName("getEntityRelationship returns correct relationship detail when relationship matches")
+  @DisplayName(
+      "getEntityRelationship returns correct relationship detail when relationship matches")
   void testGetEntityRelationship_ReturnsCorrectDetailWhenRelationshipMatches() {
     final AssessmentRelationshipDetail relationshipDetail = new AssessmentRelationshipDetail();
     relationshipDetail.setName("opponentotherparties");
@@ -105,7 +102,8 @@ public class AssessmentUtilTest {
     entity.setRelations(Collections.singletonList(relationshipDetail));
 
     final AssessmentRelationship relationship = AssessmentRelationship.OPPONENT;
-    final AssessmentRelationshipDetail result = AssessmentUtil.getEntityRelationship(entity, relationship);
+    final AssessmentRelationshipDetail result =
+        AssessmentUtil.getEntityRelationship(entity, relationship);
 
     assertEquals(relationshipDetail, result);
   }
@@ -120,7 +118,8 @@ public class AssessmentUtilTest {
     entity.setRelations(Collections.singletonList(relationshipDetail));
 
     final AssessmentRelationship relationship = AssessmentRelationship.PROCEEDING;
-    final AssessmentRelationshipDetail result = AssessmentUtil.getEntityRelationship(entity, relationship);
+    final AssessmentRelationshipDetail result =
+        AssessmentUtil.getEntityRelationship(entity, relationship);
 
     assertNull(result);
   }
@@ -130,7 +129,8 @@ public class AssessmentUtilTest {
   void testGetEntityRelationship_ReturnsNullWhenEntityIsNull() {
     final AssessmentRelationship relationship = AssessmentRelationship.OPPONENT;
 
-    final AssessmentRelationshipDetail result = AssessmentUtil.getEntityRelationship(null, relationship);
+    final AssessmentRelationshipDetail result =
+        AssessmentUtil.getEntityRelationship(null, relationship);
     assertNull(result);
   }
 
@@ -159,7 +159,8 @@ public class AssessmentUtilTest {
     final AssessmentRelationshipDetail relationshipDetail = new AssessmentRelationshipDetail();
     relationshipDetail.setName("PROCEEDING");
 
-    final List<AssessmentEntityDetail> result = AssessmentUtil.getRelatedEntities(relationshipDetail, assessment);
+    final List<AssessmentEntityDetail> result =
+        AssessmentUtil.getRelatedEntities(relationshipDetail, assessment);
 
     assertEquals(1, result.size());
     assertEquals(entityDetail, result.getFirst());
@@ -181,7 +182,8 @@ public class AssessmentUtilTest {
     final AssessmentRelationshipDetail relationshipDetail = new AssessmentRelationshipDetail();
     relationshipDetail.setName("PROCEEDING");
 
-    final List<AssessmentEntityDetail> result = AssessmentUtil.getRelatedEntities(relationshipDetail, assessment);
+    final List<AssessmentEntityDetail> result =
+        AssessmentUtil.getRelatedEntities(relationshipDetail, assessment);
 
     assertTrue(result.isEmpty());
   }
@@ -195,9 +197,9 @@ public class AssessmentUtilTest {
     final AssessmentRelationshipDetail relationshipDetail = new AssessmentRelationshipDetail();
     relationshipDetail.setName("PROCEEDING");
 
-    final List<AssessmentEntityDetail> result = AssessmentUtil.getRelatedEntities(relationshipDetail, assessment);
+    final List<AssessmentEntityDetail> result =
+        AssessmentUtil.getRelatedEntities(relationshipDetail, assessment);
 
     assertTrue(result.isEmpty());
   }
-
 }

@@ -67,956 +67,1121 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @WebAppConfiguration
 class OpponentsSectionControllerTest {
 
-    @Mock
-    private ApplicationService applicationService;
+  @Mock private ApplicationService applicationService;
 
-    @Mock
-    private OpponentService opponentService;
+  @Mock private OpponentService opponentService;
 
-    @Mock
-    private LookupService lookupService;
+  @Mock private LookupService lookupService;
 
-    @Mock
-    private OrganisationSearchCriteriaValidator organisationSearchCriteriaValidator;
+  @Mock private OrganisationSearchCriteriaValidator organisationSearchCriteriaValidator;
 
-    @Mock
-    private OrganisationOpponentValidator organisationOpponentValidator;
+  @Mock private OrganisationOpponentValidator organisationOpponentValidator;
 
-    @Mock
-    private IndividualOpponentValidator individualOpponentValidator;
+  @Mock private IndividualOpponentValidator individualOpponentValidator;
 
-    @InjectMocks
-    private OpponentsSectionController controller;
+  @InjectMocks private OpponentsSectionController controller;
 
-    private MockMvc mockMvc;
+  private MockMvc mockMvc;
 
-    @Autowired
-    private WebApplicationContext webApplicationContext;
+  @Autowired private WebApplicationContext webApplicationContext;
 
-    @BeforeEach
-    void setUp() {
-        mockMvc = MockMvcBuilders
-            .standaloneSetup(controller)
+  @BeforeEach
+  void setUp() {
+    mockMvc =
+        MockMvcBuilders.standaloneSetup(controller)
             .setControllerAdvice(new GlobalExceptionHandler())
             .build();
-    }
+  }
 
-    private static final UserDetail user = new UserDetail()
-        .userId(1)
-        .userType("testUserType")
-        .loginId("testLoginId");
+  private static final UserDetail user =
+      new UserDetail().userId(1).userType("testUserType").loginId("testLoginId");
 
-    @Test
-    void opponents() throws Exception {
-        when(applicationService.getOpponents(any())).thenReturn(new ArrayList<>());
+  @Test
+  void opponents() throws Exception {
+    when(applicationService.getOpponents(any())).thenReturn(new ArrayList<>());
 
-        mockMvc.perform(get("/application/sections/opponents")
-                .sessionAttr("applicationId", "123"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("application/sections/opponents-section"));
-    }
+    mockMvc
+        .perform(get("/application/sections/opponents").sessionAttr("applicationId", "123"))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/sections/opponents-section"));
+  }
 
-    @Test
-    void organisationSearch() throws Exception {
-        CommonLookupDetail orgTypes = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES)).thenReturn(Mono.just(orgTypes));
+  @Test
+  void organisationSearch() throws Exception {
+    CommonLookupDetail orgTypes =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES))
+        .thenReturn(Mono.just(orgTypes));
 
-        mockMvc.perform(get("/application/opponents/organisation/search"))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(model().attribute("organisationTypes", orgTypes.getContent()))
-            .andExpect(view().name("application/opponents/opponents-organisation-search"));
+    mockMvc
+        .perform(get("/application/opponents/organisation/search"))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("organisationTypes", orgTypes.getContent()))
+        .andExpect(view().name("application/opponents/opponents-organisation-search"));
+  }
 
-    }
+  @Test
+  void organisationSearchPost_noValidationErrors_redirectsToResults() throws Exception {
 
-    @Test
-    void organisationSearchPost_noValidationErrors_redirectsToResults() throws Exception {
-
-        mockMvc.perform(post("/application/opponents/organisation/search")
+    mockMvc
+        .perform(
+            post("/application/opponents/organisation/search")
                 .flashAttr(ORGANISATION_SEARCH_CRITERIA, new OrganisationSearchCriteria()))
-            .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/opponents/organisation/search/results"));
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/opponents/organisation/search/results"));
+  }
 
-    }
+  @Test
+  void organisationSearchPost_validationErrors_returnsToSearch() throws Exception {
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue("name", "required.name", "Please complete 'Name'.");
+              return null;
+            })
+        .when(organisationSearchCriteriaValidator)
+        .validate(any(), any());
 
-    @Test
-    void organisationSearchPost_validationErrors_returnsToSearch() throws Exception {
-        doAnswer(invocation -> {
-            Errors errors = (Errors) invocation.getArguments()[1];
-            errors.rejectValue("name", "required.name", "Please complete 'Name'.");
-            return null;
-        }).when(organisationSearchCriteriaValidator).validate(any(), any());
+    CommonLookupDetail orgTypes =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES))
+        .thenReturn(Mono.just(orgTypes));
 
-        CommonLookupDetail orgTypes = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES)).thenReturn(Mono.just(orgTypes));
-
-        mockMvc.perform(post("/application/opponents/organisation/search")
+    mockMvc
+        .perform(
+            post("/application/opponents/organisation/search")
                 .flashAttr(ORGANISATION_SEARCH_CRITERIA, new OrganisationSearchCriteria()))
-            .andDo(print())
-            .andExpect(model().attribute("organisationTypes", orgTypes.getContent()))
-            .andExpect(status().isOk())
-            .andExpect(view().name("application/opponents/opponents-organisation-search"));
+        .andDo(print())
+        .andExpect(model().attribute("organisationTypes", orgTypes.getContent()))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/opponents/opponents-organisation-search"));
+  }
 
-    }
+  @Test
+  void organisationSearchPost_noValidationErrors_maxLengthsNotExceeded_displaysResults()
+      throws Exception {
+    OrganisationSearchCriteria testOrganisationSearchCriteria = new OrganisationSearchCriteria();
+    testOrganisationSearchCriteria.setName("This Company Organisation Name less than 360 chars");
+    testOrganisationSearchCriteria.setCity("Short City Name");
+    testOrganisationSearchCriteria.setPostcode("SA5 7DF");
 
-    @Test
-    void organisationSearchPost_noValidationErrors_maxLengthsNotExceeded_displaysResults() throws Exception {
-        OrganisationSearchCriteria testOrganisationSearchCriteria = new OrganisationSearchCriteria();
-        testOrganisationSearchCriteria.setName("This Company Organisation Name less than 360 chars");
-        testOrganisationSearchCriteria.setCity("Short City Name");
-        testOrganisationSearchCriteria.setPostcode("SA5 7DF");
-
-        mockMvc.perform(post("/application/opponents/organisation/search")
+    mockMvc
+        .perform(
+            post("/application/opponents/organisation/search")
                 .flashAttr(ORGANISATION_SEARCH_CRITERIA, testOrganisationSearchCriteria))
-            .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/opponents/organisation/search/results"));
-    }
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/opponents/organisation/search/results"));
+  }
 
-    @Test
-    void organisationSearchPost_validationErrors_maxLengthsExceeded_returnsToSearch() throws Exception {
-        OrganisationSearchCriteria testOrganisationSearchCriteria = new OrganisationSearchCriteria();
+  @Test
+  void organisationSearchPost_validationErrors_maxLengthsExceeded_returnsToSearch()
+      throws Exception {
+    OrganisationSearchCriteria testOrganisationSearchCriteria = new OrganisationSearchCriteria();
 
-        testOrganisationSearchCriteria.setName(RandomStringUtils.insecure().nextAlphabetic(370));
-        testOrganisationSearchCriteria.setCity(RandomStringUtils.insecure().nextAlphabetic(36));
-        testOrganisationSearchCriteria.setPostcode(RandomStringUtils.insecure().nextAlphabetic(16));
+    testOrganisationSearchCriteria.setName(RandomStringUtils.insecure().nextAlphabetic(370));
+    testOrganisationSearchCriteria.setCity(RandomStringUtils.insecure().nextAlphabetic(36));
+    testOrganisationSearchCriteria.setPostcode(RandomStringUtils.insecure().nextAlphabetic(16));
 
-        CommonLookupDetail orgTypes = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES)).thenReturn(Mono.just(orgTypes));
+    CommonLookupDetail orgTypes =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES))
+        .thenReturn(Mono.just(orgTypes));
 
-        mockMvc.perform(post("/application/opponents/organisation/search")
+    mockMvc
+        .perform(
+            post("/application/opponents/organisation/search")
                 .flashAttr(ORGANISATION_SEARCH_CRITERIA, testOrganisationSearchCriteria))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(model().attributeHasFieldErrors(ORGANISATION_SEARCH_CRITERIA, "name"))
-            .andExpect(model().attributeHasFieldErrors(ORGANISATION_SEARCH_CRITERIA, "city"))
-            .andExpect(model().attributeHasFieldErrors(ORGANISATION_SEARCH_CRITERIA, "postcode"))
-            .andExpect(view().name("application/opponents/opponents-organisation-search"));
-    }
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(model().attributeHasFieldErrors(ORGANISATION_SEARCH_CRITERIA, "name"))
+        .andExpect(model().attributeHasFieldErrors(ORGANISATION_SEARCH_CRITERIA, "city"))
+        .andExpect(model().attributeHasFieldErrors(ORGANISATION_SEARCH_CRITERIA, "postcode"))
+        .andExpect(view().name("application/opponents/opponents-organisation-search"));
+  }
 
-    @Test
-    void organisationSearchResultsGet_noResults_displaysNoResultsView() throws Exception {
-        int page = 0;
-        int size = 20;
-        OrganisationSearchCriteria searchCriteria = new OrganisationSearchCriteria();
+  @Test
+  void organisationSearchResultsGet_noResults_displaysNoResultsView() throws Exception {
+    int page = 0;
+    int size = 20;
+    OrganisationSearchCriteria searchCriteria = new OrganisationSearchCriteria();
 
-        ResultsDisplay<OrganisationResultRowDisplay> resultsDisplay = new ResultsDisplay<>();
-        resultsDisplay.setContent(new ArrayList<>());
+    ResultsDisplay<OrganisationResultRowDisplay> resultsDisplay = new ResultsDisplay<>();
+    resultsDisplay.setContent(new ArrayList<>());
 
-        when(opponentService.getOrganisations(
-            searchCriteria,
-            user.getLoginId(),
-            user.getUserType(),
-            page,
-            size)).thenReturn(resultsDisplay);
+    when(opponentService.getOrganisations(
+            searchCriteria, user.getLoginId(), user.getUserType(), page, size))
+        .thenReturn(resultsDisplay);
 
-        mockMvc.perform(get("/application/opponents/organisation/search/results")
+    mockMvc
+        .perform(
+            get("/application/opponents/organisation/search/results")
                 .flashAttr(ORGANISATION_SEARCH_CRITERIA, searchCriteria)
                 .sessionAttr(USER_DETAILS, user)
                 .param("page", String.valueOf(page))
                 .param("size", String.valueOf(size)))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(view().name("application/opponents/opponents-organisation-search-no-results"));
-    }
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/opponents/opponents-organisation-search-no-results"));
+  }
 
-    @Test
-    void organisationSearchResultsGet_tooMany_displaysNoResultsView() throws Exception {
-        int page = 0;
-        int size = 20;
-        OrganisationSearchCriteria searchCriteria = new OrganisationSearchCriteria();
+  @Test
+  void organisationSearchResultsGet_tooMany_displaysNoResultsView() throws Exception {
+    int page = 0;
+    int size = 20;
+    OrganisationSearchCriteria searchCriteria = new OrganisationSearchCriteria();
 
-        when(opponentService.getOrganisations(
-            searchCriteria,
-            user.getLoginId(),
-            user.getUserType(),
-            page,
-            size)).thenThrow(new TooManyResultsException("too many"));
+    when(opponentService.getOrganisations(
+            searchCriteria, user.getLoginId(), user.getUserType(), page, size))
+        .thenThrow(new TooManyResultsException("too many"));
 
-        mockMvc.perform(get("/application/opponents/organisation/search/results")
+    mockMvc
+        .perform(
+            get("/application/opponents/organisation/search/results")
                 .flashAttr(ORGANISATION_SEARCH_CRITERIA, searchCriteria)
                 .sessionAttr(USER_DETAILS, user)
                 .param("page", String.valueOf(page))
                 .param("size", String.valueOf(size)))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(view().name("application/opponents/opponents-organisation-search-too-many-results"));
-    }
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(
+            view().name("application/opponents/opponents-organisation-search-too-many-results"));
+  }
 
-    @Test
-    void organisationSearchResultsGet_displaysResultsView() throws Exception {
-        int page = 0;
-        int size = 20;
-        OrganisationSearchCriteria searchCriteria = new OrganisationSearchCriteria();
+  @Test
+  void organisationSearchResultsGet_displaysResultsView() throws Exception {
+    int page = 0;
+    int size = 20;
+    OrganisationSearchCriteria searchCriteria = new OrganisationSearchCriteria();
 
-        ResultsDisplay<OrganisationResultRowDisplay> resultsDisplay = new ResultsDisplay<>();
-        resultsDisplay.setContent(List.of(new OrganisationResultRowDisplay()));
+    ResultsDisplay<OrganisationResultRowDisplay> resultsDisplay = new ResultsDisplay<>();
+    resultsDisplay.setContent(List.of(new OrganisationResultRowDisplay()));
 
-        when(opponentService.getOrganisations(
-            searchCriteria,
-            user.getLoginId(),
-            user.getUserType(),
-            page,
-            size)).thenReturn(resultsDisplay);
+    when(opponentService.getOrganisations(
+            searchCriteria, user.getLoginId(), user.getUserType(), page, size))
+        .thenReturn(resultsDisplay);
 
-        mockMvc.perform(get("/application/opponents/organisation/search/results")
+    mockMvc
+        .perform(
+            get("/application/opponents/organisation/search/results")
                 .flashAttr(ORGANISATION_SEARCH_CRITERIA, searchCriteria)
                 .sessionAttr(USER_DETAILS, user)
                 .param("page", String.valueOf(page))
                 .param("size", String.valueOf(size)))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(model().attribute(ORGANISATION_SEARCH_RESULTS, resultsDisplay))
-            .andExpect(view().name("application/opponents/opponents-organisation-search-results"));
-    }
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(model().attribute(ORGANISATION_SEARCH_RESULTS, resultsDisplay))
+        .andExpect(view().name("application/opponents/opponents-organisation-search-results"));
+  }
 
-    @Test
-    void selectSharedOrganisationGet_displaysConfirmationScreen() throws Exception {
-        String selectedOrgId = "123";
+  @Test
+  void selectSharedOrganisationGet_displaysConfirmationScreen() throws Exception {
+    String selectedOrgId = "123";
 
-        ResultsDisplay<OrganisationResultRowDisplay> resultsDisplay = new ResultsDisplay<>();
-        OrganisationResultRowDisplay organisationResultRowDisplay = new OrganisationResultRowDisplay();
-        organisationResultRowDisplay.setPartyId(selectedOrgId);
-        resultsDisplay.setContent(List.of(organisationResultRowDisplay));
+    ResultsDisplay<OrganisationResultRowDisplay> resultsDisplay = new ResultsDisplay<>();
+    OrganisationResultRowDisplay organisationResultRowDisplay = new OrganisationResultRowDisplay();
+    organisationResultRowDisplay.setPartyId(selectedOrgId);
+    resultsDisplay.setContent(List.of(organisationResultRowDisplay));
 
-        OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
+    OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
 
-        when(opponentService.getOrganisationOpponent(
-            selectedOrgId,
-            user.getLoginId(),
-            user.getUserType())).thenReturn(opponentFormData);
+    when(opponentService.getOrganisationOpponent(
+            selectedOrgId, user.getLoginId(), user.getUserType()))
+        .thenReturn(opponentFormData);
 
-        RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
-            new RelationshipToCaseLookupDetail().addContentItem(new RelationshipToCaseLookupValueDetail());
-        when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.just(relationshipToCaseLookupDetail));
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(new RelationshipToCaseLookupValueDetail());
+    when(lookupService.getOrganisationToCaseRelationships())
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
 
-        CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(relationshipToClientLookupDetail));
+    CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
 
-        mockMvc.perform(get("/application/opponents/organisation/{id}/select", selectedOrgId)
+    mockMvc
+        .perform(
+            get("/application/opponents/organisation/{id}/select", selectedOrgId)
                 .sessionAttr(ORGANISATION_SEARCH_RESULTS, resultsDisplay)
                 .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(model().attribute(CURRENT_OPPONENT, opponentFormData))
-            .andExpect(model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
-            .andExpect(model().attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
-            .andExpect(view().name("application/opponents/opponents-organisation-shared-create"));
-    }
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(model().attribute(CURRENT_OPPONENT, opponentFormData))
+        .andExpect(
+            model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
+        .andExpect(
+            model()
+                .attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
+        .andExpect(view().name("application/opponents/opponents-organisation-shared-create"));
+  }
 
-    @Test
-    void selectSharedOrganisationGet_rejectsInvalidOrgId() throws Exception {
-        String selectedOrgId = "123";
+  @Test
+  void selectSharedOrganisationGet_rejectsInvalidOrgId() throws Exception {
+    String selectedOrgId = "123";
 
-        ResultsDisplay<OrganisationResultRowDisplay> resultsDisplay = new ResultsDisplay<>();
-        OrganisationResultRowDisplay organisationResultRowDisplay = new OrganisationResultRowDisplay();
-        organisationResultRowDisplay.setPartyId("different");
-        resultsDisplay.setContent(List.of(organisationResultRowDisplay));
+    ResultsDisplay<OrganisationResultRowDisplay> resultsDisplay = new ResultsDisplay<>();
+    OrganisationResultRowDisplay organisationResultRowDisplay = new OrganisationResultRowDisplay();
+    organisationResultRowDisplay.setPartyId("different");
+    resultsDisplay.setContent(List.of(organisationResultRowDisplay));
 
-        mockMvc.perform(get("/application/opponents/organisation/{id}/select", selectedOrgId)
+    mockMvc
+        .perform(
+            get("/application/opponents/organisation/{id}/select", selectedOrgId)
                 .sessionAttr(ORGANISATION_SEARCH_RESULTS, resultsDisplay)
                 .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(result -> assertInstanceOf(CaabApplicationException.class,
-                result.getResolvedException()));
-    }
+        .andDo(print())
+        .andExpect(
+            result ->
+                assertInstanceOf(CaabApplicationException.class, result.getResolvedException()));
+  }
 
-    @Test
-    void selectSharedOrganisationPost_noValidationErrors_addsOpponent() throws Exception {
-        String applicationId = "123";
-        OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
+  @Test
+  void selectSharedOrganisationPost_noValidationErrors_addsOpponent() throws Exception {
+    String applicationId = "123";
+    OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
 
-        mockMvc.perform(post("/application/opponents/organisation/shared/create")
+    mockMvc
+        .perform(
+            post("/application/opponents/organisation/shared/create")
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(APPLICATION_ID, applicationId)
                 .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/sections/opponents"));
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/sections/opponents"));
 
-        verify(applicationService).addOpponent(applicationId, opponentFormData, user);
-    }
+    verify(applicationService).addOpponent(applicationId, opponentFormData, user);
+  }
 
-    @Test
-    void selectSharedOrganisationPost_validationErrors_returnsToConfirmScreen() throws Exception {
-        String applicationId = "123";
-        OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
+  @Test
+  void selectSharedOrganisationPost_validationErrors_returnsToConfirmScreen() throws Exception {
+    String applicationId = "123";
+    OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
 
-        RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
-            new RelationshipToCaseLookupDetail().addContentItem(new RelationshipToCaseLookupValueDetail());
-        when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.just(relationshipToCaseLookupDetail));
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(new RelationshipToCaseLookupValueDetail());
+    when(lookupService.getOrganisationToCaseRelationships())
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
 
-        CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(relationshipToClientLookupDetail));
+    CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
 
-        doAnswer(invocation -> {
-            Errors errors = (Errors) invocation.getArguments()[1];
-            errors.rejectValue("relationshipToCase", "required.relationshipToCase", "Please complete 'Relationship to case'.");
-            return null;
-        }).when(organisationOpponentValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue(
+                  "relationshipToCase",
+                  "required.relationshipToCase",
+                  "Please complete 'Relationship to case'.");
+              return null;
+            })
+        .when(organisationOpponentValidator)
+        .validate(any(), any());
 
-        mockMvc.perform(post("/application/opponents/organisation/shared/create")
+    mockMvc
+        .perform(
+            post("/application/opponents/organisation/shared/create")
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(APPLICATION_ID, applicationId)
                 .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
-            .andExpect(model().attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
-            .andExpect(view().name("application/opponents/opponents-organisation-shared-create"));
+        .andDo(print())
+        .andExpect(
+            model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
+        .andExpect(
+            model()
+                .attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
+        .andExpect(view().name("application/opponents/opponents-organisation-shared-create"));
 
-        verifyNoInteractions(applicationService);
-    }
+    verifyNoInteractions(applicationService);
+  }
 
-    @Test
-    void organisationCreateGet_displaysCorrectView() throws Exception {
-        CommonLookupDetail orgTypes = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES)).thenReturn(Mono.just(orgTypes));
+  @Test
+  void organisationCreateGet_displaysCorrectView() throws Exception {
+    CommonLookupDetail orgTypes =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES))
+        .thenReturn(Mono.just(orgTypes));
 
-        RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
-            new RelationshipToCaseLookupDetail().addContentItem(new RelationshipToCaseLookupValueDetail());
-        when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.just(relationshipToCaseLookupDetail));
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(new RelationshipToCaseLookupValueDetail());
+    when(lookupService.getOrganisationToCaseRelationships())
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
 
-        CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(relationshipToClientLookupDetail));
+    CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
 
-        CommonLookupDetail countriesLookupDetail = new CommonLookupDetail();
-        when(lookupService.getCountries()).thenReturn(Mono.just(countriesLookupDetail));
+    CommonLookupDetail countriesLookupDetail = new CommonLookupDetail();
+    when(lookupService.getCountries()).thenReturn(Mono.just(countriesLookupDetail));
 
-        mockMvc.perform(get("/application/opponents/organisation/create"))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(model().attribute("organisationTypes", orgTypes.getContent()))
-            .andExpect(model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
-            .andExpect(model().attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
-            .andExpect(model().attribute("countries", countriesLookupDetail.getContent()))
-            .andExpect(view().name("application/opponents/opponents-organisation-create"));
+    mockMvc
+        .perform(get("/application/opponents/organisation/create"))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("organisationTypes", orgTypes.getContent()))
+        .andExpect(
+            model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
+        .andExpect(
+            model()
+                .attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
+        .andExpect(model().attribute("countries", countriesLookupDetail.getContent()))
+        .andExpect(view().name("application/opponents/opponents-organisation-create"));
+  }
 
-    }
+  @Test
+  void organisationCreatePost_noValidationErrors_createsOpponent() throws Exception {
+    final String applicationId = "123";
+    final OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
 
-    @Test
-    void organisationCreatePost_noValidationErrors_createsOpponent() throws Exception {
-        final String applicationId = "123";
-        final OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
-
-        mockMvc.perform(post("/application/opponents/organisation/create")
+    mockMvc
+        .perform(
+            post("/application/opponents/organisation/create")
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(APPLICATION_ID, applicationId)
                 .sessionAttr(USER_DETAILS, user))
-            .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/sections/opponents"));
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/sections/opponents"));
 
-        verify(applicationService).addOpponent(applicationId, opponentFormData, user);
-    }
+    verify(applicationService).addOpponent(applicationId, opponentFormData, user);
+  }
 
-    @Test
-    void organisationCreatePost_validationErrors_returnsToCreateScreen() throws Exception {
-        final String applicationId = "123";
-        final OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
+  @Test
+  void organisationCreatePost_validationErrors_returnsToCreateScreen() throws Exception {
+    final String applicationId = "123";
+    final OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
 
-        doAnswer(invocation -> {
-            Errors errors = (Errors) invocation.getArguments()[1];
-            errors.rejectValue("relationshipToCase", "required.relationshipToCase", "Please complete 'Relationship to case'.");
-            return null;
-        }).when(organisationOpponentValidator).validate(eq(opponentFormData), any());
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue(
+                  "relationshipToCase",
+                  "required.relationshipToCase",
+                  "Please complete 'Relationship to case'.");
+              return null;
+            })
+        .when(organisationOpponentValidator)
+        .validate(eq(opponentFormData), any());
 
-        CommonLookupDetail orgTypes = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES)).thenReturn(Mono.just(orgTypes));
+    CommonLookupDetail orgTypes =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES))
+        .thenReturn(Mono.just(orgTypes));
 
-        RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
-            new RelationshipToCaseLookupDetail().addContentItem(new RelationshipToCaseLookupValueDetail());
-        when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.just(relationshipToCaseLookupDetail));
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(new RelationshipToCaseLookupValueDetail());
+    when(lookupService.getOrganisationToCaseRelationships())
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
 
-        CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(relationshipToClientLookupDetail));
+    CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
 
-        CommonLookupDetail countriesLookupDetail = new CommonLookupDetail();
-        when(lookupService.getCountries()).thenReturn(Mono.just(countriesLookupDetail));
+    CommonLookupDetail countriesLookupDetail = new CommonLookupDetail();
+    when(lookupService.getCountries()).thenReturn(Mono.just(countriesLookupDetail));
 
-        mockMvc.perform(post("/application/opponents/organisation/create")
+    mockMvc
+        .perform(
+            post("/application/opponents/organisation/create")
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(APPLICATION_ID, applicationId)
                 .sessionAttr(USER_DETAILS, user))
-            .andExpect(model().attribute("organisationTypes", orgTypes.getContent()))
-            .andExpect(model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
-            .andExpect(model().attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
-            .andExpect(model().attribute("countries", countriesLookupDetail.getContent()))
-            .andExpect(status().isOk())
-            .andExpect(view().name("application/opponents/opponents-organisation-create"));
+        .andExpect(model().attribute("organisationTypes", orgTypes.getContent()))
+        .andExpect(
+            model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
+        .andExpect(
+            model()
+                .attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
+        .andExpect(model().attribute("countries", countriesLookupDetail.getContent()))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/opponents/opponents-organisation-create"));
 
-        verifyNoInteractions(applicationService);
-    }
+    verifyNoInteractions(applicationService);
+  }
 
-    @Test
-    void individualCreateGet_displaysCorrectView() throws Exception {
-        CommonLookupDetail contactTitles = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(Mono.just(contactTitles));
+  @Test
+  void individualCreateGet_displaysCorrectView() throws Exception {
+    CommonLookupDetail contactTitles =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+        .thenReturn(Mono.just(contactTitles));
 
-        RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
-            new RelationshipToCaseLookupDetail().addContentItem(new RelationshipToCaseLookupValueDetail());
-        when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.just(relationshipToCaseLookupDetail));
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(new RelationshipToCaseLookupValueDetail());
+    when(lookupService.getPersonToCaseRelationships())
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
 
-        CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(relationshipToClientLookupDetail));
+    CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
 
-        CommonLookupDetail countries = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCountries()).thenReturn(Mono.just(countries));
+    CommonLookupDetail countries =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCountries()).thenReturn(Mono.just(countries));
 
+    mockMvc
+        .perform(get("/application/opponents/individual/create"))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("contactTitles", contactTitles.getContent()))
+        .andExpect(
+            model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
+        .andExpect(
+            model()
+                .attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
+        .andExpect(model().attribute("countries", countries.getContent()))
+        .andExpect(model().attributeExists("legalAidedOptions"))
+        .andExpect(view().name("application/opponents/opponents-individual-create"));
+  }
 
-        mockMvc.perform(get("/application/opponents/individual/create"))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(model().attribute("contactTitles", contactTitles.getContent()))
-            .andExpect(model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
-            .andExpect(model().attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
-            .andExpect(model().attribute("countries", countries.getContent()))
-            .andExpect(model().attributeExists("legalAidedOptions"))
-            .andExpect(view().name("application/opponents/opponents-individual-create"));
-    }
+  @Test
+  void individualCreatePost_validationErrors_returnsToView() throws Exception {
+    CommonLookupDetail contactTitles =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+        .thenReturn(Mono.just(contactTitles));
 
-    @Test
-    void individualCreatePost_validationErrors_returnsToView() throws Exception {
-        CommonLookupDetail contactTitles = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(Mono.just(contactTitles));
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(new RelationshipToCaseLookupValueDetail());
+    when(lookupService.getPersonToCaseRelationships())
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
 
-        RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
-            new RelationshipToCaseLookupDetail().addContentItem(new RelationshipToCaseLookupValueDetail());
-        when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.just(relationshipToCaseLookupDetail));
+    CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
 
-        CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(relationshipToClientLookupDetail));
+    CommonLookupDetail countries =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCountries()).thenReturn(Mono.just(countries));
 
-        CommonLookupDetail countries = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCountries()).thenReturn(Mono.just(countries));
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue(
+                  "firstName", "required.firstName", "Please complete 'First Name'.");
+              return null;
+            })
+        .when(individualOpponentValidator)
+        .validate(any(), any());
 
-        doAnswer(invocation -> {
-            Errors errors = (Errors) invocation.getArguments()[1];
-            errors.rejectValue("firstName", "required.firstName", "Please complete 'First Name'.");
-            return null;
-        }).when(individualOpponentValidator).validate(any(), any());
+    mockMvc
+        .perform(
+            post("/application/opponents/individual/create")
+                .sessionAttr(CURRENT_OPPONENT, new IndividualOpponentFormData())
+                .sessionAttr(APPLICATION_ID, "123")
+                .sessionAttr(USER_DETAILS, user))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("contactTitles", contactTitles.getContent()))
+        .andExpect(
+            model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
+        .andExpect(
+            model()
+                .attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
+        .andExpect(model().attribute("countries", countries.getContent()))
+        .andExpect(model().attributeExists("legalAidedOptions"))
+        .andExpect(view().name("application/opponents/opponents-individual-create"));
+  }
 
-        mockMvc.perform(post("/application/opponents/individual/create")
-            .sessionAttr(CURRENT_OPPONENT, new IndividualOpponentFormData())
-            .sessionAttr(APPLICATION_ID, "123")
-            .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(model().attribute("contactTitles", contactTitles.getContent()))
-            .andExpect(model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
-            .andExpect(model().attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
-            .andExpect(model().attribute("countries", countries.getContent()))
-            .andExpect(model().attributeExists("legalAidedOptions"))
-            .andExpect(view().name("application/opponents/opponents-individual-create"));
+  @Test
+  void individualCreatePost_noValidationErrors_maxLengthsNotExceeded_displaysResults()
+      throws Exception {
+    final String applicationId = "123";
+    IndividualOpponentFormData opponentFormData = new IndividualOpponentFormData();
+    opponentFormData.setFirstName("Ken");
+    opponentFormData.setSurname("Yates");
+    opponentFormData.setMiddleNames("Jake");
+    opponentFormData.setNationalInsuranceNumber("AB000000A");
+    opponentFormData.setCertificateNumber("121221AA");
 
-    }
-
-    @Test
-    void individualCreatePost_noValidationErrors_maxLengthsNotExceeded_displaysResults() throws Exception {
-        final String applicationId = "123";
-        IndividualOpponentFormData opponentFormData = new IndividualOpponentFormData();
-        opponentFormData.setFirstName("Ken");
-        opponentFormData.setSurname("Yates");
-        opponentFormData.setMiddleNames("Jake");
-        opponentFormData.setNationalInsuranceNumber("AB000000A");
-        opponentFormData.setCertificateNumber("121221AA");
-
-        mockMvc.perform(post("/application/opponents/individual/create")
+    mockMvc
+        .perform(
+            post("/application/opponents/individual/create")
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(APPLICATION_ID, applicationId)
                 .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/sections/opponents"));
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/sections/opponents"));
 
-        verify(applicationService).addOpponent(applicationId, opponentFormData, user);
-    }
+    verify(applicationService).addOpponent(applicationId, opponentFormData, user);
+  }
 
-    @Test
-    void individualCreatePost_validationErrors_maxLengthsExceeded__returnsToView() throws Exception {
-        IndividualOpponentFormData testIndividualOpponentFormData = new IndividualOpponentFormData();
+  @Test
+  void individualCreatePost_validationErrors_maxLengthsExceeded__returnsToView() throws Exception {
+    IndividualOpponentFormData testIndividualOpponentFormData = new IndividualOpponentFormData();
 
-        CommonLookupDetail contactTitles = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(Mono.just(contactTitles));
+    CommonLookupDetail contactTitles =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+        .thenReturn(Mono.just(contactTitles));
 
-        RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
-            new RelationshipToCaseLookupDetail().addContentItem(new RelationshipToCaseLookupValueDetail());
-        when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.just(relationshipToCaseLookupDetail));
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(new RelationshipToCaseLookupValueDetail());
+    when(lookupService.getPersonToCaseRelationships())
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
 
-        CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(relationshipToClientLookupDetail));
+    CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
 
-        CommonLookupDetail countries = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCountries()).thenReturn(Mono.just(countries));
+    CommonLookupDetail countries =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCountries()).thenReturn(Mono.just(countries));
 
-        testIndividualOpponentFormData.setFirstName(RandomStringUtils.insecure().nextAlphabetic(36));
-        testIndividualOpponentFormData.setSurname(RandomStringUtils.insecure().nextAlphabetic(36));
-        testIndividualOpponentFormData.setMiddleNames(RandomStringUtils.insecure().nextAlphabetic(36));
-        testIndividualOpponentFormData.setNationalInsuranceNumber(RandomStringUtils.insecure().nextAlphabetic(10));
-        testIndividualOpponentFormData.setCertificateNumber(RandomStringUtils.insecure().nextAlphabetic(36));
+    testIndividualOpponentFormData.setFirstName(RandomStringUtils.insecure().nextAlphabetic(36));
+    testIndividualOpponentFormData.setSurname(RandomStringUtils.insecure().nextAlphabetic(36));
+    testIndividualOpponentFormData.setMiddleNames(RandomStringUtils.insecure().nextAlphabetic(36));
+    testIndividualOpponentFormData.setNationalInsuranceNumber(
+        RandomStringUtils.insecure().nextAlphabetic(10));
+    testIndividualOpponentFormData.setCertificateNumber(
+        RandomStringUtils.insecure().nextAlphabetic(36));
 
-        mockMvc.perform(post("/application/opponents/individual/create")
+    mockMvc
+        .perform(
+            post("/application/opponents/individual/create")
                 .sessionAttr(CURRENT_OPPONENT, testIndividualOpponentFormData)
                 .sessionAttr(APPLICATION_ID, "123")
                 .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "firstName"))
-            .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "surname"))
-            .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "middleNames"))
-            .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "certificateNumber"))
-            .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "nationalInsuranceNumber"))
-            .andExpect(model().attribute("contactTitles", contactTitles.getContent()))
-            .andExpect(model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
-            .andExpect(model().attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
-            .andExpect(model().attribute("countries", countries.getContent()))
-            .andExpect(model().attributeExists("legalAidedOptions"))
-            .andExpect(view().name("application/opponents/opponents-individual-create"));
-    }
+        .andDo(print())
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "firstName"))
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "surname"))
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "middleNames"))
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "certificateNumber"))
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "nationalInsuranceNumber"))
+        .andExpect(model().attribute("contactTitles", contactTitles.getContent()))
+        .andExpect(
+            model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
+        .andExpect(
+            model()
+                .attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
+        .andExpect(model().attribute("countries", countries.getContent()))
+        .andExpect(model().attributeExists("legalAidedOptions"))
+        .andExpect(view().name("application/opponents/opponents-individual-create"));
+  }
 
-    @Test
-    void individualCreatePost_noValidationErrors_createsOpponent() throws Exception {
-        final String applicationId = "123";
-        final IndividualOpponentFormData opponentFormData = new IndividualOpponentFormData();
+  @Test
+  void individualCreatePost_noValidationErrors_createsOpponent() throws Exception {
+    final String applicationId = "123";
+    final IndividualOpponentFormData opponentFormData = new IndividualOpponentFormData();
 
-        mockMvc.perform(post("/application/opponents/individual/create")
+    mockMvc
+        .perform(
+            post("/application/opponents/individual/create")
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(APPLICATION_ID, applicationId)
                 .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/sections/opponents"));
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/sections/opponents"));
 
-        verify(applicationService).addOpponent(applicationId, opponentFormData, user);
+    verify(applicationService).addOpponent(applicationId, opponentFormData, user);
+  }
 
-    }
+  @Test
+  void editSharedOrganisationOpponentGet_displaysCorrectView() throws Exception {
+    IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
+    individualOpponent.setId(1);
 
-    @Test
-    void editSharedOrganisationOpponentGet_displaysCorrectView() throws Exception {
-        IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
-        individualOpponent.setId(1);
+    OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
+    organisationOpponent.setId(2);
+    organisationOpponent.setShared(true);
 
-        OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
-        organisationOpponent.setId(2);
-        organisationOpponent.setShared(true);
+    List<AbstractOpponentFormData> applicationOpponents =
+        List.of(individualOpponent, organisationOpponent);
 
-        List<AbstractOpponentFormData> applicationOpponents = List.of(
-            individualOpponent,
-            organisationOpponent);
+    String selectedOpponentId = "2";
 
-        String selectedOpponentId = "2";
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(new RelationshipToCaseLookupValueDetail());
+    when(lookupService.getOrganisationToCaseRelationships())
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
 
-        RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
-            new RelationshipToCaseLookupDetail().addContentItem(new RelationshipToCaseLookupValueDetail());
-        when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.just(relationshipToCaseLookupDetail));
+    CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
 
-        CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(relationshipToClientLookupDetail));
-
-        mockMvc.perform(get("/application/opponents/{id}/edit", selectedOpponentId)
+    mockMvc
+        .perform(
+            get("/application/opponents/{id}/edit", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents)
                 .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(model().attribute(CURRENT_OPPONENT, organisationOpponent))
-            .andExpect(model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
-            .andExpect(model().attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
-            .andExpect(view().name("application/opponents/opponents-organisation-shared-edit"));
-    }
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(model().attribute(CURRENT_OPPONENT, organisationOpponent))
+        .andExpect(
+            model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
+        .andExpect(
+            model()
+                .attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
+        .andExpect(view().name("application/opponents/opponents-organisation-shared-edit"));
+  }
 
-    @Test
-    void editOpponentGet_rejectsInvalidOpponentId() throws Exception {
-        IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
-        individualOpponent.setId(1);
+  @Test
+  void editOpponentGet_rejectsInvalidOpponentId() throws Exception {
+    IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
+    individualOpponent.setId(1);
 
-        OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
-        organisationOpponent.setId(2);
-        organisationOpponent.setShared(true);
+    OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
+    organisationOpponent.setId(2);
+    organisationOpponent.setShared(true);
 
-        List<AbstractOpponentFormData> applicationOpponents = List.of(
-            individualOpponent,
-            organisationOpponent);
+    List<AbstractOpponentFormData> applicationOpponents =
+        List.of(individualOpponent, organisationOpponent);
 
-        String selectedOpponentId = "3";
+    String selectedOpponentId = "3";
 
-        mockMvc.perform(get("/application/opponents/{id}/edit", selectedOpponentId)
+    mockMvc
+        .perform(
+            get("/application/opponents/{id}/edit", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents)
                 .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(result -> assertInstanceOf(CaabApplicationException.class,
-                result.getResolvedException()));
-    }
+        .andDo(print())
+        .andExpect(
+            result ->
+                assertInstanceOf(CaabApplicationException.class, result.getResolvedException()));
+  }
 
-    @Test
-    void editNonSharedOrganisationOpponentGet_displaysCorrectView() throws Exception {
-        IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
-        individualOpponent.setId(1);
+  @Test
+  void editNonSharedOrganisationOpponentGet_displaysCorrectView() throws Exception {
+    IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
+    individualOpponent.setId(1);
 
-        OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
-        organisationOpponent.setId(2);
-        organisationOpponent.setShared(false);
+    OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
+    organisationOpponent.setId(2);
+    organisationOpponent.setShared(false);
 
-        List<AbstractOpponentFormData> applicationOpponents = List.of(
-            individualOpponent,
-            organisationOpponent);
+    List<AbstractOpponentFormData> applicationOpponents =
+        List.of(individualOpponent, organisationOpponent);
 
-        String selectedOpponentId = "2";
+    String selectedOpponentId = "2";
 
-        CommonLookupDetail orgTypes = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES)).thenReturn(Mono.just(orgTypes));
+    CommonLookupDetail orgTypes =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES))
+        .thenReturn(Mono.just(orgTypes));
 
-        RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
-            new RelationshipToCaseLookupDetail().addContentItem(new RelationshipToCaseLookupValueDetail());
-        when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.just(relationshipToCaseLookupDetail));
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(new RelationshipToCaseLookupValueDetail());
+    when(lookupService.getOrganisationToCaseRelationships())
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
 
-        CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(relationshipToClientLookupDetail));
+    CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
 
-        CommonLookupDetail countriesLookupDetail = new CommonLookupDetail();
-        when(lookupService.getCountries()).thenReturn(Mono.just(countriesLookupDetail));
+    CommonLookupDetail countriesLookupDetail = new CommonLookupDetail();
+    when(lookupService.getCountries()).thenReturn(Mono.just(countriesLookupDetail));
 
-        mockMvc.perform(get("/application/opponents/{id}/edit", selectedOpponentId)
+    mockMvc
+        .perform(
+            get("/application/opponents/{id}/edit", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(model().attribute(CURRENT_OPPONENT, organisationOpponent))
-            .andExpect(model().attribute("organisationTypes", orgTypes.getContent()))
-            .andExpect(model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
-            .andExpect(model().attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
-            .andExpect(model().attribute("countries", countriesLookupDetail.getContent()))
-            .andExpect(view().name("application/opponents/opponents-organisation-edit"));
-    }
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(model().attribute(CURRENT_OPPONENT, organisationOpponent))
+        .andExpect(model().attribute("organisationTypes", orgTypes.getContent()))
+        .andExpect(
+            model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
+        .andExpect(
+            model()
+                .attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
+        .andExpect(model().attribute("countries", countriesLookupDetail.getContent()))
+        .andExpect(view().name("application/opponents/opponents-organisation-edit"));
+  }
 
-    @Test
-    void editIndividualOpponentGet_displaysCorrectView() throws Exception {
-        IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
-        individualOpponent.setId(1);
+  @Test
+  void editIndividualOpponentGet_displaysCorrectView() throws Exception {
+    IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
+    individualOpponent.setId(1);
 
-        OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
-        organisationOpponent.setId(2);
-        organisationOpponent.setShared(false);
+    OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
+    organisationOpponent.setId(2);
+    organisationOpponent.setShared(false);
 
-        List<AbstractOpponentFormData> applicationOpponents = List.of(
-            individualOpponent,
-            organisationOpponent);
+    List<AbstractOpponentFormData> applicationOpponents =
+        List.of(individualOpponent, organisationOpponent);
 
-        String selectedOpponentId = "1";
+    String selectedOpponentId = "1";
 
-        CommonLookupDetail contactTitles = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(Mono.just(contactTitles));
+    CommonLookupDetail contactTitles =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+        .thenReturn(Mono.just(contactTitles));
 
-        RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
-            new RelationshipToCaseLookupDetail().addContentItem(new RelationshipToCaseLookupValueDetail());
-        when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.just(relationshipToCaseLookupDetail));
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(new RelationshipToCaseLookupValueDetail());
+    when(lookupService.getPersonToCaseRelationships())
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
 
-        CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(relationshipToClientLookupDetail));
+    CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
 
-        CommonLookupDetail countries = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCountries()).thenReturn(Mono.just(countries));
+    CommonLookupDetail countries =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCountries()).thenReturn(Mono.just(countries));
 
-        mockMvc.perform(get("/application/opponents/{id}/edit", selectedOpponentId)
+    mockMvc
+        .perform(
+            get("/application/opponents/{id}/edit", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(model().attribute(CURRENT_OPPONENT, individualOpponent))
-            .andExpect(model().attribute("contactTitles", contactTitles.getContent()))
-            .andExpect(model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
-            .andExpect(model().attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
-            .andExpect(model().attribute("countries", countries.getContent()))
-            .andExpect(model().attributeExists("legalAidedOptions"))
-            .andExpect(view().name("application/opponents/opponents-individual-edit"));
-    }
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(model().attribute(CURRENT_OPPONENT, individualOpponent))
+        .andExpect(model().attribute("contactTitles", contactTitles.getContent()))
+        .andExpect(
+            model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
+        .andExpect(
+            model()
+                .attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
+        .andExpect(model().attribute("countries", countries.getContent()))
+        .andExpect(model().attributeExists("legalAidedOptions"))
+        .andExpect(view().name("application/opponents/opponents-individual-edit"));
+  }
 
-    @Test
-    void editOpponentPost_noValidationErrors_editsOpponent() throws Exception {
-        String selectedOpponentId = "123";
-        OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
+  @Test
+  void editOpponentPost_noValidationErrors_editsOpponent() throws Exception {
+    String selectedOpponentId = "123";
+    OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
 
-        mockMvc.perform(post("/application/opponents/{id}/edit", selectedOpponentId)
+    mockMvc
+        .perform(
+            post("/application/opponents/{id}/edit", selectedOpponentId)
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/sections/opponents"));
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/sections/opponents"));
 
-        verify(opponentService).updateOpponent(Integer.valueOf(selectedOpponentId),
-            opponentFormData, user);
-    }
+    verify(opponentService)
+        .updateOpponent(Integer.valueOf(selectedOpponentId), opponentFormData, user);
+  }
 
-    @Test
-    void editSharedOrganisationPost_validationErrors_returnsToSharedEditScreen() throws Exception {
-        String selectedOpponentId = "123";
-        OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
-        opponentFormData.setShared(true);
+  @Test
+  void editSharedOrganisationPost_validationErrors_returnsToSharedEditScreen() throws Exception {
+    String selectedOpponentId = "123";
+    OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
+    opponentFormData.setShared(true);
 
-        RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
-            new RelationshipToCaseLookupDetail().addContentItem(new RelationshipToCaseLookupValueDetail());
-        when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.just(relationshipToCaseLookupDetail));
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(new RelationshipToCaseLookupValueDetail());
+    when(lookupService.getOrganisationToCaseRelationships())
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
 
-        CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(relationshipToClientLookupDetail));
+    CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
 
-        doAnswer(invocation -> {
-            Errors errors = (Errors) invocation.getArguments()[1];
-            errors.rejectValue("relationshipToCase", "required.relationshipToCase", "Please complete 'Relationship to case'.");
-            return null;
-        }).when(organisationOpponentValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue(
+                  "relationshipToCase",
+                  "required.relationshipToCase",
+                  "Please complete 'Relationship to case'.");
+              return null;
+            })
+        .when(organisationOpponentValidator)
+        .validate(any(), any());
 
-        mockMvc.perform(post("/application/opponents/{id}/edit", selectedOpponentId)
+    mockMvc
+        .perform(
+            post("/application/opponents/{id}/edit", selectedOpponentId)
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
-            .andExpect(model().attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
-            .andExpect(view().name("application/opponents/opponents-organisation-shared-edit"));
+        .andDo(print())
+        .andExpect(
+            model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
+        .andExpect(
+            model()
+                .attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
+        .andExpect(view().name("application/opponents/opponents-organisation-shared-edit"));
 
-        verifyNoInteractions(opponentService);
-    }
+    verifyNoInteractions(opponentService);
+  }
 
-    @Test
-    void editNonSharedOrganisationPost_validationErrors_returnsToNonSharedEditScreen() throws Exception {
-        String selectedOpponentId = "123";
-        OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
-        opponentFormData.setShared(false);
+  @Test
+  void editNonSharedOrganisationPost_validationErrors_returnsToNonSharedEditScreen()
+      throws Exception {
+    String selectedOpponentId = "123";
+    OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
+    opponentFormData.setShared(false);
 
-        doAnswer(invocation -> {
-            Errors errors = (Errors) invocation.getArguments()[1];
-            errors.rejectValue("relationshipToCase", "required.relationshipToCase", "Please complete 'Relationship to case'.");
-            return null;
-        }).when(organisationOpponentValidator).validate(eq(opponentFormData), any());
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue(
+                  "relationshipToCase",
+                  "required.relationshipToCase",
+                  "Please complete 'Relationship to case'.");
+              return null;
+            })
+        .when(organisationOpponentValidator)
+        .validate(eq(opponentFormData), any());
 
-        CommonLookupDetail orgTypes = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES)).thenReturn(Mono.just(orgTypes));
+    CommonLookupDetail orgTypes =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES))
+        .thenReturn(Mono.just(orgTypes));
 
-        RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
-            new RelationshipToCaseLookupDetail().addContentItem(new RelationshipToCaseLookupValueDetail());
-        when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.just(relationshipToCaseLookupDetail));
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(new RelationshipToCaseLookupValueDetail());
+    when(lookupService.getOrganisationToCaseRelationships())
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
 
-        CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(relationshipToClientLookupDetail));
+    CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
 
-        CommonLookupDetail countriesLookupDetail = new CommonLookupDetail();
-        when(lookupService.getCountries()).thenReturn(Mono.just(countriesLookupDetail));
+    CommonLookupDetail countriesLookupDetail = new CommonLookupDetail();
+    when(lookupService.getCountries()).thenReturn(Mono.just(countriesLookupDetail));
 
-        mockMvc.perform(post("/application/opponents/{id}/edit", selectedOpponentId)
+    mockMvc
+        .perform(
+            post("/application/opponents/{id}/edit", selectedOpponentId)
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(model().attribute("organisationTypes", orgTypes.getContent()))
-            .andExpect(model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
-            .andExpect(model().attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
-            .andExpect(model().attribute("countries", countriesLookupDetail.getContent()))
-            .andExpect(view().name("application/opponents/opponents-organisation-edit"));
+        .andDo(print())
+        .andExpect(model().attribute("organisationTypes", orgTypes.getContent()))
+        .andExpect(
+            model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
+        .andExpect(
+            model()
+                .attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
+        .andExpect(model().attribute("countries", countriesLookupDetail.getContent()))
+        .andExpect(view().name("application/opponents/opponents-organisation-edit"));
 
-        verifyNoInteractions(opponentService);
-    }
+    verifyNoInteractions(opponentService);
+  }
 
-    @Test
-    void editIndividualPost_validationErrors_returnsToIndividualEditScreen() throws Exception {
-        String selectedOpponentId = "123";
-        IndividualOpponentFormData opponentFormData = new IndividualOpponentFormData();
+  @Test
+  void editIndividualPost_validationErrors_returnsToIndividualEditScreen() throws Exception {
+    String selectedOpponentId = "123";
+    IndividualOpponentFormData opponentFormData = new IndividualOpponentFormData();
 
-        CommonLookupDetail contactTitles = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(Mono.just(contactTitles));
+    CommonLookupDetail contactTitles =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+        .thenReturn(Mono.just(contactTitles));
 
-        RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
-            new RelationshipToCaseLookupDetail().addContentItem(new RelationshipToCaseLookupValueDetail());
-        when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.just(relationshipToCaseLookupDetail));
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(new RelationshipToCaseLookupValueDetail());
+    when(lookupService.getPersonToCaseRelationships())
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
 
-        CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(relationshipToClientLookupDetail));
+    CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
 
-        CommonLookupDetail countries = new CommonLookupDetail()
-            .addContentItem(new CommonLookupValueDetail());
-        when(lookupService.getCountries()).thenReturn(Mono.just(countries));
+    CommonLookupDetail countries =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCountries()).thenReturn(Mono.just(countries));
 
-        doAnswer(invocation -> {
-            Errors errors = (Errors) invocation.getArguments()[1];
-            errors.rejectValue("firstName", "required.firstName", "Please complete 'First Name'.");
-            return null;
-        }).when(individualOpponentValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue(
+                  "firstName", "required.firstName", "Please complete 'First Name'.");
+              return null;
+            })
+        .when(individualOpponentValidator)
+        .validate(any(), any());
 
-        mockMvc.perform(post("/application/opponents/{id}/edit", selectedOpponentId)
+    mockMvc
+        .perform(
+            post("/application/opponents/{id}/edit", selectedOpponentId)
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(model().attribute("contactTitles", contactTitles.getContent()))
-            .andExpect(model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
-            .andExpect(model().attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
-            .andExpect(model().attribute("countries", countries.getContent()))
-            .andExpect(model().attributeExists("legalAidedOptions"))
-            .andExpect(view().name("application/opponents/opponents-individual-edit"));
+        .andDo(print())
+        .andExpect(model().attribute("contactTitles", contactTitles.getContent()))
+        .andExpect(
+            model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
+        .andExpect(
+            model()
+                .attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
+        .andExpect(model().attribute("countries", countries.getContent()))
+        .andExpect(model().attributeExists("legalAidedOptions"))
+        .andExpect(view().name("application/opponents/opponents-individual-edit"));
 
-        verifyNoInteractions(opponentService);
-    }
+    verifyNoInteractions(opponentService);
+  }
 
-    @Test
-    void removeOpponentGet_displaysCorrectView() throws Exception {
-        IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
-        individualOpponent.setId(1);
+  @Test
+  void removeOpponentGet_displaysCorrectView() throws Exception {
+    IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
+    individualOpponent.setId(1);
 
-        OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
-        organisationOpponent.setId(2);
-        organisationOpponent.setDeletable(true);
+    OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
+    organisationOpponent.setId(2);
+    organisationOpponent.setDeletable(true);
 
-        List<AbstractOpponentFormData> applicationOpponents = List.of(
-            individualOpponent,
-            organisationOpponent);
+    List<AbstractOpponentFormData> applicationOpponents =
+        List.of(individualOpponent, organisationOpponent);
 
-        Integer selectedOpponentId = 2;
+    Integer selectedOpponentId = 2;
 
-        mockMvc.perform(get("/application/opponents/{id}/remove", selectedOpponentId)
+    mockMvc
+        .perform(
+            get("/application/opponents/{id}/remove", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents)
                 .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(model().attribute(CURRENT_OPPONENT, organisationOpponent))
-            .andExpect(view().name("application/opponents/opponents-remove"));
-    }
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(model().attribute(CURRENT_OPPONENT, organisationOpponent))
+        .andExpect(view().name("application/opponents/opponents-remove"));
+  }
 
-    @Test
-    void removeOpponentGet_rejectsInvalidOpponentId() throws Exception {
-        IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
-        individualOpponent.setId(1);
+  @Test
+  void removeOpponentGet_rejectsInvalidOpponentId() throws Exception {
+    IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
+    individualOpponent.setId(1);
 
-        OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
-        organisationOpponent.setId(2);
-        organisationOpponent.setDeletable(true);
+    OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
+    organisationOpponent.setId(2);
+    organisationOpponent.setDeletable(true);
 
-        List<AbstractOpponentFormData> applicationOpponents = List.of(
-            individualOpponent,
-            organisationOpponent);
+    List<AbstractOpponentFormData> applicationOpponents =
+        List.of(individualOpponent, organisationOpponent);
 
-        String selectedOpponentId = "3";
+    String selectedOpponentId = "3";
 
-        mockMvc.perform(get("/application/opponents/{id}/remove", selectedOpponentId)
+    mockMvc
+        .perform(
+            get("/application/opponents/{id}/remove", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents)
                 .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(result -> assertInstanceOf(CaabApplicationException.class,
-                result.getResolvedException()));
-    }
+        .andDo(print())
+        .andExpect(
+            result ->
+                assertInstanceOf(CaabApplicationException.class, result.getResolvedException()));
+  }
 
-    @Test
-    void removeOpponentGet_rejectsNonDeletableOpponentId() throws Exception {
-        IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
-        individualOpponent.setId(1);
+  @Test
+  void removeOpponentGet_rejectsNonDeletableOpponentId() throws Exception {
+    IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
+    individualOpponent.setId(1);
 
-        OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
-        organisationOpponent.setId(2);
-        organisationOpponent.setDeletable(false);
+    OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
+    organisationOpponent.setId(2);
+    organisationOpponent.setDeletable(false);
 
-        List<AbstractOpponentFormData> applicationOpponents = List.of(
-            individualOpponent,
-            organisationOpponent);
+    List<AbstractOpponentFormData> applicationOpponents =
+        List.of(individualOpponent, organisationOpponent);
 
-        String selectedOpponentId = "2";
+    String selectedOpponentId = "2";
 
-        mockMvc.perform(get("/application/opponents/{id}/remove", selectedOpponentId)
+    mockMvc
+        .perform(
+            get("/application/opponents/{id}/remove", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents)
                 .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(result -> assertInstanceOf(CaabApplicationException.class,
-                result.getResolvedException()));
-    }
+        .andDo(print())
+        .andExpect(
+            result ->
+                assertInstanceOf(CaabApplicationException.class, result.getResolvedException()));
+  }
 
-    @Test
-    void removeOpponentPost_removesOpponent() throws Exception {
-        IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
-        individualOpponent.setId(1);
+  @Test
+  void removeOpponentPost_removesOpponent() throws Exception {
+    IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
+    individualOpponent.setId(1);
 
-        OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
-        organisationOpponent.setId(2);
-        organisationOpponent.setDeletable(true);
+    OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
+    organisationOpponent.setId(2);
+    organisationOpponent.setDeletable(true);
 
-        List<AbstractOpponentFormData> applicationOpponents = List.of(
-            individualOpponent,
-            organisationOpponent);
+    List<AbstractOpponentFormData> applicationOpponents =
+        List.of(individualOpponent, organisationOpponent);
 
-        Integer selectedOpponentId = 2;
+    Integer selectedOpponentId = 2;
 
-        mockMvc.perform(post("/application/opponents/{id}/remove", selectedOpponentId)
+    mockMvc
+        .perform(
+            post("/application/opponents/{id}/remove", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents)
                 .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/application/sections/opponents"));
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/sections/opponents"));
 
-        verify(opponentService).deleteOpponent(selectedOpponentId, user);
-    }
+    verify(opponentService).deleteOpponent(selectedOpponentId, user);
+  }
 
-    @Test
-    void removeOpponentPost_rejectsInvalidOpponentId() throws Exception {
-        IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
-        individualOpponent.setId(1);
+  @Test
+  void removeOpponentPost_rejectsInvalidOpponentId() throws Exception {
+    IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
+    individualOpponent.setId(1);
 
-        OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
-        organisationOpponent.setId(2);
-        organisationOpponent.setDeletable(true);
+    OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
+    organisationOpponent.setId(2);
+    organisationOpponent.setDeletable(true);
 
-        List<AbstractOpponentFormData> applicationOpponents = List.of(
-            individualOpponent,
-            organisationOpponent);
+    List<AbstractOpponentFormData> applicationOpponents =
+        List.of(individualOpponent, organisationOpponent);
 
-        String selectedOpponentId = "3";
+    String selectedOpponentId = "3";
 
-        mockMvc.perform(get("/application/opponents/{id}/remove", selectedOpponentId)
+    mockMvc
+        .perform(
+            get("/application/opponents/{id}/remove", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents)
                 .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(result -> assertInstanceOf(CaabApplicationException.class,
-                result.getResolvedException()));
-        verifyNoInteractions(opponentService);
-    }
+        .andDo(print())
+        .andExpect(
+            result ->
+                assertInstanceOf(CaabApplicationException.class, result.getResolvedException()));
+    verifyNoInteractions(opponentService);
+  }
 
-    @Test
-    void removeOpponentPost_rejectsNonDeletableOpponentId() throws Exception {
-        IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
-        individualOpponent.setId(1);
+  @Test
+  void removeOpponentPost_rejectsNonDeletableOpponentId() throws Exception {
+    IndividualOpponentFormData individualOpponent = new IndividualOpponentFormData();
+    individualOpponent.setId(1);
 
-        OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
-        organisationOpponent.setId(2);
-        organisationOpponent.setDeletable(false);
+    OrganisationOpponentFormData organisationOpponent = new OrganisationOpponentFormData();
+    organisationOpponent.setId(2);
+    organisationOpponent.setDeletable(false);
 
-        List<AbstractOpponentFormData> applicationOpponents = List.of(
-            individualOpponent,
-            organisationOpponent);
+    List<AbstractOpponentFormData> applicationOpponents =
+        List.of(individualOpponent, organisationOpponent);
 
-        String selectedOpponentId = "2";
+    String selectedOpponentId = "2";
 
-        mockMvc.perform(get("/application/opponents/{id}/remove", selectedOpponentId)
+    mockMvc
+        .perform(
+            get("/application/opponents/{id}/remove", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents)
                 .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(result -> assertInstanceOf(CaabApplicationException.class,
-                result.getResolvedException()));
-        verifyNoInteractions(opponentService);
-    }
-
+        .andDo(print())
+        .andExpect(
+            result ->
+                assertInstanceOf(CaabApplicationException.class, result.getResolvedException()));
+    verifyNoInteractions(opponentService);
+  }
 }

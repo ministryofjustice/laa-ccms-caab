@@ -40,19 +40,15 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 @WebAppConfiguration
 public class ProviderControllerTest {
 
-  @Mock
-  ProviderFirmValidator validator;
+  @Mock ProviderFirmValidator validator;
 
-  @Mock
-  UserService userService;
+  @Mock UserService userService;
 
-  @InjectMocks
-  ProviderController providerController;
+  @InjectMocks ProviderController providerController;
 
   private MockMvc mockMvc;
 
-  @Autowired
-  private WebApplicationContext webApplicationContext;
+  @Autowired private WebApplicationContext webApplicationContext;
 
   @BeforeEach
   public void setup() {
@@ -62,25 +58,23 @@ public class ProviderControllerTest {
   @Test
   public void testGetProviderSwitchScreen() throws Exception {
 
-    BaseProvider providerFirm = new BaseProvider()
-        .id(12345)
-        .name("providerFirm");
+    BaseProvider providerFirm = new BaseProvider().id(12345).name("providerFirm");
 
-    UserDetail userDetails = new UserDetail()
-        .userId(1)
-        .userType("testUserType")
-        .loginId("testLoginId")
-        .firms(List.of(providerFirm))
-        .provider(providerFirm);
+    UserDetail userDetails =
+        new UserDetail()
+            .userId(1)
+            .userType("testUserType")
+            .loginId("testLoginId")
+            .firms(List.of(providerFirm))
+            .provider(providerFirm);
 
-    this.mockMvc.perform(get("/provider-switch")
-            .flashAttr("user", userDetails)
-            .sessionAttr("user", userDetails))
+    this.mockMvc
+        .perform(
+            get("/provider-switch").flashAttr("user", userDetails).sessionAttr("user", userDetails))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("provider/provider-switch"))
         .andExpect(model().attribute("providerFirms", List.of(providerFirm)));
-
   }
 
   @Test
@@ -89,19 +83,16 @@ public class ProviderControllerTest {
     String loginId = "testLoginId";
     String userType = "testUserType";
 
-    BaseProvider providerFirm1 = new BaseProvider()
-        .id(12345)
-        .name("providerFirm1");
-    BaseProvider providerFirm2 = new BaseProvider()
-        .id(67890)
-        .name("providerFirm2");
+    BaseProvider providerFirm1 = new BaseProvider().id(12345).name("providerFirm1");
+    BaseProvider providerFirm2 = new BaseProvider().id(67890).name("providerFirm2");
 
-    UserDetail userDetails = new UserDetail()
-        .userId(1)
-        .userType(userType)
-        .loginId(loginId)
-        .firms(List.of(providerFirm1, providerFirm2))
-        .provider(providerFirm1);
+    UserDetail userDetails =
+        new UserDetail()
+            .userId(1)
+            .userType(userType)
+            .loginId(loginId)
+            .firms(List.of(providerFirm1, providerFirm2))
+            .provider(providerFirm1);
 
     ProviderFirmFormData providerFirmFormData = new ProviderFirmFormData();
     providerFirmFormData.setProviderFirmId(67890);
@@ -109,54 +100,58 @@ public class ProviderControllerTest {
     when(userService.updateUserOptions(67890, loginId, userType))
         .thenReturn(Mono.just(new ClientTransactionResponse()));
 
-    HttpSession session = this.mockMvc.perform(post("/provider-switch")
-            .sessionAttr("user", userDetails)
-            .flashAttr("providerFirmFormData", providerFirmFormData))
-        .andDo(print())
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/home"))
-        .andReturn()
-        .getRequest()
-        .getSession();
+    HttpSession session =
+        this.mockMvc
+            .perform(
+                post("/provider-switch")
+                    .sessionAttr("user", userDetails)
+                    .flashAttr("providerFirmFormData", providerFirmFormData))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/home"))
+            .andReturn()
+            .getRequest()
+            .getSession();
 
     // Check session has been updated with new provider
     assertEquals(providerFirm2, ((UserDetail) session.getAttribute("user")).getProvider());
-
   }
 
   @Test
-  public void testUpdateProviderOptions_returnsToSwitchProviderScreen_whenValidationFails() throws Exception {
+  public void testUpdateProviderOptions_returnsToSwitchProviderScreen_whenValidationFails()
+      throws Exception {
 
     String loginId = "testLoginId";
     String userType = "testUserType";
 
-    BaseProvider providerFirm = new BaseProvider()
-        .id(12345)
-        .name("providerFirm");
+    BaseProvider providerFirm = new BaseProvider().id(12345).name("providerFirm");
 
-    UserDetail userDetails = new UserDetail()
-        .userId(1)
-        .userType(userType)
-        .loginId(loginId)
-        .firms(List.of(providerFirm))
-        .provider(providerFirm);
+    UserDetail userDetails =
+        new UserDetail()
+            .userId(1)
+            .userType(userType)
+            .loginId(loginId)
+            .firms(List.of(providerFirm))
+            .provider(providerFirm);
 
-    doAnswer(invocation -> {
-      Errors errors = (Errors) invocation.getArguments()[1];
-      errors.rejectValue("providerFirmId", "required.providerFirmId",
-          "Please complete 'Provider firm'.");
-      return null;
-    }).when(validator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue(
+                  "providerFirmId", "required.providerFirmId", "Please complete 'Provider firm'.");
+              return null;
+            })
+        .when(validator)
+        .validate(any(), any());
 
-    this.mockMvc.perform(post("/provider-switch")
-            .sessionAttr("user", userDetails)
-            .flashAttr("providerFirmFormData", new ProviderFirmFormData()))
+    this.mockMvc
+        .perform(
+            post("/provider-switch")
+                .sessionAttr("user", userDetails)
+                .flashAttr("providerFirmFormData", new ProviderFirmFormData()))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("provider/provider-switch"))
         .andExpect(model().attribute("providerFirms", List.of(providerFirm)));
-
   }
-
-
 }

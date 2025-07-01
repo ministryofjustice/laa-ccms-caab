@@ -36,14 +36,11 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @ExtendWith(MockitoExtension.class)
 public class ClientContactDetailsControllerTest {
 
-  @Mock
-  private LookupService lookupService;
+  @Mock private LookupService lookupService;
 
-  @Mock
-  private ClientContactDetailsValidator clientContactDetailsValidator;
+  @Mock private ClientContactDetailsValidator clientContactDetailsValidator;
 
-  @InjectMocks
-  private ClientContactDetailsController clientContactDetailsController;
+  @InjectMocks private ClientContactDetailsController clientContactDetailsController;
 
   private MockMvc mockMvc;
 
@@ -76,30 +73,33 @@ public class ClientContactDetailsControllerTest {
   @Test
   void testClientDetailsContact() throws Exception {
 
-    when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD)).thenReturn(
-        Mono.just(correspondenceMethodLookupDetail));
-    when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE)).thenReturn(
-        Mono.just(correspondenceLanguageLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD))
+        .thenReturn(Mono.just(correspondenceMethodLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE))
+        .thenReturn(Mono.just(correspondenceLanguageLookupDetail));
 
-    this.mockMvc.perform(get("/application/client/details/contact")
-            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-            .flashAttr("contactDetails", contactDetails))
+    this.mockMvc
+        .perform(
+            get("/application/client/details/contact")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                .flashAttr("contactDetails", contactDetails))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/contact-client-details"))
         .andExpect(model().attributeExists("correspondenceMethods", "correspondenceLanguages"));
-
   }
+
   @Test
   void testClientDetailsContactPost() throws Exception {
 
-    mockMvc.perform(post("/application/client/details/contact")
-            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-            .flashAttr("contactDetails", contactDetails))
+    mockMvc
+        .perform(
+            post("/application/client/details/contact")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                .flashAttr("contactDetails", contactDetails))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/client/details/address"));
   }
-
 
   @Test
   void testClientDetailsContactPostValidationError() throws Exception {
@@ -107,20 +107,25 @@ public class ClientContactDetailsControllerTest {
     contactDetails.setPasswordReminder("test");
     contactDetails.setCorrespondenceMethod("test");
 
-    doAnswer(invocation -> {
-      Errors errors = (Errors) invocation.getArguments()[1];
-      errors.rejectValue("password", "required.password", "Please complete 'Password'.");
-      return null;
-    }).when(clientContactDetailsValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue("password", "required.password", "Please complete 'Password'.");
+              return null;
+            })
+        .when(clientContactDetailsValidator)
+        .validate(any(), any());
 
-    when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD)).thenReturn(
-        Mono.just(correspondenceMethodLookupDetail));
-    when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE)).thenReturn(
-        Mono.just(correspondenceLanguageLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD))
+        .thenReturn(Mono.just(correspondenceMethodLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE))
+        .thenReturn(Mono.just(correspondenceLanguageLookupDetail));
 
-    this.mockMvc.perform(post("/application/client/details/contact")
-            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-            .flashAttr("contactDetails", contactDetails))
+    this.mockMvc
+        .perform(
+            post("/application/client/details/contact")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                .flashAttr("contactDetails", contactDetails))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/contact-client-details"))

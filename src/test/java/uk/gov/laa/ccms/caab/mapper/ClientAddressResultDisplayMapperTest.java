@@ -107,12 +107,12 @@ public class ClientAddressResultDisplayMapperTest {
 
   @Test
   public void testUpdateClientDetails() {
-    ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();  // Assuming this is an empty object you want to populate
-    AddressResultRowDisplay addressRowDisplay =
-        buildAddressRowDisplay();
+    ClientFormDataAddressDetails addressDetails =
+        new ClientFormDataAddressDetails(); // Assuming this is an empty object you want to populate
+    AddressResultRowDisplay addressRowDisplay = buildAddressRowDisplay();
 
     mapper.updateClientFormDataAddressDetails(addressDetails, addressRowDisplay);
-    
+
     assertEquals("Example Street", addressDetails.getAddressLine1());
     assertEquals("ExArea", addressDetails.getAddressLine2());
     assertEquals("123", addressDetails.getHouseNameNumber());
@@ -136,6 +136,4 @@ public class ClientAddressResultDisplayMapperTest {
     addressRowDisplay.setCountry("GBR");
     return addressRowDisplay;
   }
-
-
 }

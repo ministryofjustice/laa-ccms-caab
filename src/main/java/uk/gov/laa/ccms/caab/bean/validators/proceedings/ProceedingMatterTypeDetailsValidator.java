@@ -5,9 +5,7 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
-/**
- * Validator the matter type details provided by proceeding flow forms.
- */
+/** Validator the matter type details provided by proceeding flow forms. */
 @Component
 public class ProceedingMatterTypeDetailsValidator extends AbstractValidator {
 
@@ -15,9 +13,9 @@ public class ProceedingMatterTypeDetailsValidator extends AbstractValidator {
    * Determines if the Validator supports the provided class.
    *
    * @param clazz The class to check for support.
-   * @return {@code true} if the class is assignable from
-   *         {@link uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails},
-   *         {@code false} otherwise.
+   * @return {@code true} if the class is assignable from {@link
+   *     uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails}, {@code false}
+   *     otherwise.
    */
   @Override
   public boolean supports(final Class<?> clazz) {
@@ -25,8 +23,8 @@ public class ProceedingMatterTypeDetailsValidator extends AbstractValidator {
   }
 
   /**
-   * Validates the matter type details in the
-   * {@link uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails}.
+   * Validates the matter type details in the {@link
+   * uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails}.
    *
    * @param target The object to be validated.
    * @param errors The Errors object to store validation errors.
@@ -36,8 +34,6 @@ public class ProceedingMatterTypeDetailsValidator extends AbstractValidator {
     final ProceedingFormDataMatterTypeDetails matterTypeDetails =
         (ProceedingFormDataMatterTypeDetails) target;
 
-    validateRequiredField("matterType", matterTypeDetails.getMatterType(),
-        "Matter type", errors);
+    validateRequiredField("matterType", matterTypeDetails.getMatterType(), "Matter type", errors);
   }
-
 }

@@ -35,8 +35,7 @@ class ResultDisplayMapperTest {
   @Mock(answer = Answers.CALLS_REAL_METHODS)
   CommonMapper commonMapper;
 
-  @InjectMocks
-  ResultDisplayMapper mapper = new ResultDisplayMapperImpl();
+  @InjectMocks ResultDisplayMapper mapper = new ResultDisplayMapperImpl();
 
   private uk.gov.laa.ccms.soa.gateway.model.ClientDetail clientDetail;
   private ClientSummary clientSummary;
@@ -46,23 +45,32 @@ class ResultDisplayMapperTest {
 
   @BeforeEach
   void setUp() {
-    final NameDetail name = new NameDetail().firstName("John").surname("Doe").surnameAtBirth("Smith");
+    final NameDetail name =
+        new NameDetail().firstName("John").surname("Doe").surnameAtBirth("Smith");
     final AddressDetail address = new AddressDetail().postalCode("12345");
 
     final ClientDetailDetails details = new ClientDetailDetails().name(name).address(address);
     clientDetail = new uk.gov.laa.ccms.soa.gateway.model.ClientDetail().details(details);
 
-    clientSummary = new ClientSummary()
-        .clientReferenceNumber("client123")
-        .firstName("Jane")
-        .surname("Smith")
-        .surnameAtBirth("Doe")
-        .postalCode("54321");
+    clientSummary =
+        new ClientSummary()
+            .clientReferenceNumber("client123")
+            .firstName("Jane")
+            .surname("Smith")
+            .surnameAtBirth("Doe")
+            .postalCode("54321");
 
     final ClientDetail client = new ClientDetail().firstName("Alice").surname("Brown");
-    linkedCase = new LinkedCaseDetail().client(client).id(1).lscCaseReference("LSC123")
-        .relationToCase("LEGAL").providerCaseReference("PC123")
-        .categoryOfLaw("Family Law").feeEarner("John Doe").status("Active");
+    linkedCase =
+        new LinkedCaseDetail()
+            .client(client)
+            .id(1)
+            .lscCaseReference("LSC123")
+            .relationToCase("LEGAL")
+            .providerCaseReference("PC123")
+            .categoryOfLaw("Family Law")
+            .feeEarner("John Doe")
+            .status("Active");
 
     linkedCaseResultRowDisplay = new LinkedCaseResultRowDisplay();
     linkedCaseResultRowDisplay.setClientFirstName(client.getFirstName());
@@ -77,13 +85,13 @@ class ResultDisplayMapperTest {
     linkedCaseResultRowDisplay.setFeeEarner(linkedCase.getFeeEarner());
     linkedCaseResultRowDisplay.setStatus(linkedCase.getStatus());
 
-
-    clientDetails = new ClientDetails()
-        .content(Collections.singletonList(clientSummary))
-        .totalPages(1)
-        .totalElements(1)
-        .number(0)
-        .size(10);
+    clientDetails =
+        new ClientDetails()
+            .content(Collections.singletonList(clientSummary))
+            .totalPages(1)
+            .totalElements(1)
+            .number(0)
+            .size(10);
   }
 
   @Test
@@ -137,20 +145,22 @@ class ResultDisplayMapperTest {
 
   @Test
   void testToOrganisationResultRowDisplay() {
-    OrganisationSummary organisationSummary = new OrganisationSummary()
-        .city("thecity")
-        .name("thename")
-        .partyId("123")
-        .postcode("postcode")
-        .type("thetype");
+    OrganisationSummary organisationSummary =
+        new OrganisationSummary()
+            .city("thecity")
+            .name("thename")
+            .partyId("123")
+            .postcode("postcode")
+            .type("thetype");
 
-    List<CommonLookupValueDetail> orgTypesLookup = List.of(
-        new CommonLookupValueDetail()
-            .code(organisationSummary.getType())
-            .description("the description"));
+    List<CommonLookupValueDetail> orgTypesLookup =
+        List.of(
+            new CommonLookupValueDetail()
+                .code(organisationSummary.getType())
+                .description("the description"));
 
-    final OrganisationResultRowDisplay result = mapper.toOrganisationResultRowDisplay(
-        organisationSummary, orgTypesLookup);
+    final OrganisationResultRowDisplay result =
+        mapper.toOrganisationResultRowDisplay(organisationSummary, orgTypesLookup);
 
     assertEquals(organisationSummary.getName(), result.getName());
     assertEquals(organisationSummary.getType(), result.getType());
@@ -162,20 +172,19 @@ class ResultDisplayMapperTest {
 
   @Test
   void testToOrganisationResultRowDisplay_noTypeMatchReturnsCode() {
-    OrganisationSummary organisationSummary = new OrganisationSummary()
-        .city("thecity")
-        .name("thename")
-        .partyId("123")
-        .postcode("postcode")
-        .type("thetype");
+    OrganisationSummary organisationSummary =
+        new OrganisationSummary()
+            .city("thecity")
+            .name("thename")
+            .partyId("123")
+            .postcode("postcode")
+            .type("thetype");
 
-    List<CommonLookupValueDetail> orgTypesLookup = List.of(
-        new CommonLookupValueDetail()
-            .code("wrong type")
-            .description("the description"));
+    List<CommonLookupValueDetail> orgTypesLookup =
+        List.of(new CommonLookupValueDetail().code("wrong type").description("the description"));
 
-    final OrganisationResultRowDisplay result = mapper.toOrganisationResultRowDisplay(
-        organisationSummary, orgTypesLookup);
+    final OrganisationResultRowDisplay result =
+        mapper.toOrganisationResultRowDisplay(organisationSummary, orgTypesLookup);
 
     assertEquals(organisationSummary.getName(), result.getName());
     assertEquals(organisationSummary.getType(), result.getType());
@@ -187,20 +196,19 @@ class ResultDisplayMapperTest {
 
   @Test
   void testToOrganisationResultDisplay() {
-    OrganisationDetails organisationDetails = new OrganisationDetails()
-        .addContentItem(new OrganisationSummary())
-        .totalElements(1)
-        .size(1)
-        .totalPages(1)
-        .number(1);
+    OrganisationDetails organisationDetails =
+        new OrganisationDetails()
+            .addContentItem(new OrganisationSummary())
+            .totalElements(1)
+            .size(1)
+            .totalPages(1)
+            .number(1);
 
-    List<CommonLookupValueDetail> orgTypesLookup = List.of(
-        new CommonLookupValueDetail()
-            .code("thecode")
-            .description("thedescr"));
+    List<CommonLookupValueDetail> orgTypesLookup =
+        List.of(new CommonLookupValueDetail().code("thecode").description("thedescr"));
 
-    final ResultsDisplay<OrganisationResultRowDisplay> result = mapper.toOrganisationResultsDisplay(
-        organisationDetails, orgTypesLookup);
+    final ResultsDisplay<OrganisationResultRowDisplay> result =
+        mapper.toOrganisationResultsDisplay(organisationDetails, orgTypesLookup);
 
     assertNotNull(result);
     assertEquals(1, result.getContent().size());

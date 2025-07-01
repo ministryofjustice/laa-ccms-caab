@@ -24,39 +24,37 @@ import uk.gov.laa.ccms.caab.model.summary.ScopeLimitationSubmissionSummaryDispla
 import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.DeclarationLookupValueDetail;
 
-/**
- * Mapper interface for converting submission summary details to display values.
- */
+/** Mapper interface for converting submission summary details to display values. */
 @Mapper(componentModel = "spring")
 public interface SubmissionSummaryDisplayMapper {
   CommonMapper COMMON_MAPPER = Mappers.getMapper(CommonMapper.class);
 
-  @Mapping(target = "office", source =
-      "application.providerDetails.office.displayValue")
-  @Mapping(target = "feeEarner", source =
-      "application.providerDetails.feeEarner.displayValue")
-  @Mapping(target = "supervisor", source =
-      "application.providerDetails.supervisor.displayValue")
-  @Mapping(target = "providerCaseReference", source =
-      "application.providerDetails.providerCaseReference")
-  @Mapping(target = "contactName", source =
-      "application.providerDetails.providerContact.displayValue")
-  ProviderSubmissionSummaryDisplay toProviderSummaryDisplay(
-      ApplicationDetail application);
+  @Mapping(target = "office", source = "application.providerDetails.office.displayValue")
+  @Mapping(target = "feeEarner", source = "application.providerDetails.feeEarner.displayValue")
+  @Mapping(target = "supervisor", source = "application.providerDetails.supervisor.displayValue")
+  @Mapping(
+      target = "providerCaseReference",
+      source = "application.providerDetails.providerCaseReference")
+  @Mapping(
+      target = "contactName",
+      source = "application.providerDetails.providerContact.displayValue")
+  ProviderSubmissionSummaryDisplay toProviderSummaryDisplay(ApplicationDetail application);
 
-  @Mapping(target = "categoryOfLaw",
-      source = "application.categoryOfLaw.displayValue")
-  @Mapping(target = "applicationType",
-      source = "application.applicationType.displayValue")
-  @Mapping(target = "delegatedFunctionsDate",
+  @Mapping(target = "categoryOfLaw", source = "application.categoryOfLaw.displayValue")
+  @Mapping(target = "applicationType", source = "application.applicationType.displayValue")
+  @Mapping(
+      target = "delegatedFunctionsDate",
       source = "application.applicationType.devolvedPowers.dateUsed")
-  @Mapping(target = "preferredAddress",
+  @Mapping(
+      target = "preferredAddress",
       source = "application.correspondenceAddress.preferredAddress",
       qualifiedByName = "toPreferredAddress")
-  @Mapping(target = "country",
+  @Mapping(
+      target = "country",
       source = "application.correspondenceAddress.country",
       qualifiedByName = "toCountryGeneral")
-  @Mapping(target = "houseNameOrNumber",
+  @Mapping(
+      target = "houseNameOrNumber",
       source = "application.correspondenceAddress.houseNameOrNumber")
   @Mapping(target = "addressLine1", source = "application.correspondenceAddress.addressLine1")
   @Mapping(target = "addressLine2", source = "application.correspondenceAddress.addressLine2")
@@ -70,26 +68,23 @@ public interface SubmissionSummaryDisplayMapper {
 
   @Named("toPreferredAddress")
   default String toPreferredAddress(
-      final String code,
-      @Context final GeneralDetailsSubmissionSummaryMappingContext context) {
+      final String code, @Context final GeneralDetailsSubmissionSummaryMappingContext context) {
     return COMMON_MAPPER.toDisplayValue(code, context.getPreferredAddress());
   }
 
   @Named("toCountryGeneral")
   default String toCountry(
-      final String code,
-      @Context final GeneralDetailsSubmissionSummaryMappingContext context) {
+      final String code, @Context final GeneralDetailsSubmissionSummaryMappingContext context) {
     return COMMON_MAPPER.toDisplayValue(code, context.getCountry());
   }
 
-  @Mapping(target = "proceedings",
+  @Mapping(
+      target = "proceedings",
       source = "application.proceedings",
       qualifiedByName = "toProceedingSummaryDisplayList")
-  @Mapping(target = "caseCostLimitation",
-      source = "application.costs.requestedCostLimitation")
+  @Mapping(target = "caseCostLimitation", source = "application.costs.requestedCostLimitation")
   ProceedingAndCostSubmissionSummaryDisplay toProceedingAndCostSummaryDisplay(
-      ApplicationDetail application,
-      @Context ProceedingSubmissionSummaryMappingContext context);
+      ApplicationDetail application, @Context ProceedingSubmissionSummaryMappingContext context);
 
   @Named("toProceedingSummaryDisplayList")
   List<ProceedingSubmissionSummaryDisplay> toProceedingSummaryDisplayList(
@@ -101,7 +96,8 @@ public interface SubmissionSummaryDisplayMapper {
   @Mapping(target = "clientInvolvementType", source = "clientInvolvement.displayValue")
   @Mapping(target = "formOfCivilLegalService", source = "levelOfService.displayValue")
   @Mapping(target = "typeOfOrder", source = "typeOfOrder.id", qualifiedByName = "toTypeOfOrder")
-  @Mapping(target = "scopeLimitations",
+  @Mapping(
+      target = "scopeLimitations",
       source = "scopeLimitations",
       qualifiedByName = "toScopeLimitationSummaryDisplayList")
   ProceedingSubmissionSummaryDisplay toProceedingSummaryDisplay(
@@ -110,8 +106,7 @@ public interface SubmissionSummaryDisplayMapper {
 
   @Named("toTypeOfOrder")
   default String toTypeOfOrder(
-      final String code,
-      @Context final ProceedingSubmissionSummaryMappingContext context) {
+      final String code, @Context final ProceedingSubmissionSummaryMappingContext context) {
     return COMMON_MAPPER.toDisplayValue(code, context.getTypeOfOrder());
   }
 
@@ -124,31 +119,32 @@ public interface SubmissionSummaryDisplayMapper {
   ScopeLimitationSubmissionSummaryDisplay toScopeLimitationSummaryDisplay(
       ScopeLimitationDetail scopeLimitation);
 
-  @Mapping(target = "opponents",
+  @Mapping(
+      target = "opponents",
       source = "application.opponents",
       qualifiedByName = "toOpponentSummaryDisplayList")
   OpponentsAndOtherPartiesSubmissionSummaryDisplay toOpponentsAndOtherPartiesSummaryDisplay(
-      ApplicationDetail application,
-      @Context OpponentSubmissionSummaryMappingContext context);
+      ApplicationDetail application, @Context OpponentSubmissionSummaryMappingContext context);
 
   @Named("toOpponentSummaryDisplayList")
   List<OpponentSubmissionSummaryDisplay> toOpponentSummaryDisplayList(
-      List<OpponentDetail> opponents,
-      @Context OpponentSubmissionSummaryMappingContext context);
+      List<OpponentDetail> opponents, @Context OpponentSubmissionSummaryMappingContext context);
 
-  @Mapping(target = "title", source = "title",
-      qualifiedByName = "toTitle")
-  @Mapping(target = "relationshipToCase", source = "opponent",
+  @Mapping(target = "title", source = "title", qualifiedByName = "toTitle")
+  @Mapping(
+      target = "relationshipToCase",
+      source = "opponent",
       qualifiedByName = "toRelationshipToCase")
-  @Mapping(target = "relationshipToClient", source = "relationshipToClient",
+  @Mapping(
+      target = "relationshipToClient",
+      source = "relationshipToClient",
       qualifiedByName = "toRelationshipToClient")
   @Mapping(target = "houseNameOrNumber", source = "address.houseNameOrNumber")
   @Mapping(target = "addressLine1", source = "address.addressLine1")
   @Mapping(target = "addressLine2", source = "address.addressLine2")
   @Mapping(target = "city", source = "address.city")
   @Mapping(target = "county", source = "address.county")
-  @Mapping(target = "country", source = "address.country",
-      qualifiedByName = "toCountryOpponent")
+  @Mapping(target = "country", source = "address.country", qualifiedByName = "toCountryOpponent")
   @Mapping(target = "postcode", source = "address.postcode")
   OpponentSubmissionSummaryDisplay toOpponentSummaryDisplay(
       final OpponentDetail opponent,
@@ -163,8 +159,7 @@ public interface SubmissionSummaryDisplayMapper {
    */
   @Named("toTitle")
   default String toTitle(
-      final String code,
-      @Context final OpponentSubmissionSummaryMappingContext context) {
+      final String code, @Context final OpponentSubmissionSummaryMappingContext context) {
     return COMMON_MAPPER.toDisplayValue(code, context.getContactTitle());
   }
 
@@ -198,8 +193,7 @@ public interface SubmissionSummaryDisplayMapper {
    */
   @Named("toRelationshipToClient")
   default String toRelationshipToClient(
-      final String code,
-      @Context final OpponentSubmissionSummaryMappingContext context) {
+      final String code, @Context final OpponentSubmissionSummaryMappingContext context) {
     return COMMON_MAPPER.toDisplayValue(code, context.getRelationshipToClient());
   }
 
@@ -212,18 +206,17 @@ public interface SubmissionSummaryDisplayMapper {
    */
   @Named("toCountryOpponent")
   default String toCountryOpponent(
-      final String code,
-      @Context final OpponentSubmissionSummaryMappingContext context) {
+      final String code, @Context final OpponentSubmissionSummaryMappingContext context) {
     return COMMON_MAPPER.toDisplayValue(code, context.getCountry());
   }
 
   /**
-   * Converts a {@link DeclarationLookupDetail} to a list of
-   * {@link uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox}.
+   * Converts a {@link DeclarationLookupDetail} to a list of {@link
+   * uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox}.
    *
    * @param declarationLookupDetail the detail object containing declaration data
-   * @return a list of {@link uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox},
-   *         or null if the input is null
+   * @return a list of {@link uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox}, or null if the
+   *     input is null
    */
   @Named("toDeclarationFormDataDynamicOptionList")
   default List<DynamicCheckbox> toDeclarationFormDataDynamicOptionList(
@@ -238,8 +231,8 @@ public interface SubmissionSummaryDisplayMapper {
   }
 
   /**
-   * Maps a {@link DeclarationLookupValueDetail} to a
-   * {@link uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox}.
+   * Maps a {@link DeclarationLookupValueDetail} to a {@link
+   * uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox}.
    *
    * @param declarationLookupValueDetail the value detail to map
    * @return the mapped {@link uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox}
@@ -248,6 +241,4 @@ public interface SubmissionSummaryDisplayMapper {
   @Mapping(target = "checked", ignore = true)
   DynamicCheckbox toDeclarationFormDataDynamicOption(
       DeclarationLookupValueDetail declarationLookupValueDetail);
-
-
 }

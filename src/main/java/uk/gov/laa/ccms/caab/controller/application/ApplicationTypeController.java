@@ -26,9 +26,7 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
-/**
- * Controller for handling application type selection during the application process.
- */
+/** Controller for handling application type selection during the application process. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -42,7 +40,7 @@ public class ApplicationTypeController {
    * Handles the GET request for application type selection page.
    *
    * @param applicationFormData The application details from session.
-   * @param model               The model for the view.
+   * @param model The model for the view.
    * @return The view name for the application type selection page or a redirect if exceptional
    *     funding.
    */
@@ -53,8 +51,9 @@ public class ApplicationTypeController {
       Model model) {
 
     if (applicationFormData.isExceptionalFunding()) {
-      log.warn("ApplicationTypeController hit despite exceptionalFunding being true. "
-          + "Redirecting to client-search");
+      log.warn(
+          "ApplicationTypeController hit despite exceptionalFunding being true. "
+              + "Redirecting to client-search");
       return "redirect:/application/client/search";
     }
 
@@ -67,8 +66,8 @@ public class ApplicationTypeController {
    * Handles the POST request for application type selection form submission.
    *
    * @param applicationFormData The application details from session.
-   * @param bindingResult       The result of data binding/validation.
-   * @param model               The model for the view.
+   * @param bindingResult The result of data binding/validation.
+   * @param model The model for the view.
    * @return A redirect string or view name based on validation result.
    */
   @PostMapping("/{caseContext}/application-type")
@@ -95,15 +94,15 @@ public class ApplicationTypeController {
   }
 
   private List<CommonLookupValueDetail> getFilteredApplicationTypes() {
-    return Optional.ofNullable(lookupService.getCommonValues(
-            COMMON_VALUE_APPLICATION_TYPE).block())
+    return Optional.ofNullable(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_TYPE).block())
         .orElse(new CommonLookupDetail())
         .getContent()
         .stream()
-        .filter(applicationType -> {
-          String code = applicationType.getCode().toUpperCase();
-          return !EXCLUDED_APPLICATION_TYPE_CODES.contains(code);
-        })
+        .filter(
+            applicationType -> {
+              String code = applicationType.getCode().toUpperCase();
+              return !EXCLUDED_APPLICATION_TYPE_CODES.contains(code);
+            })
         .collect(Collectors.toList());
   }
 }

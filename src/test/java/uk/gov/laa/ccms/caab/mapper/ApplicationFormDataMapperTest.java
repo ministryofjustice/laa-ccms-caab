@@ -30,10 +30,8 @@ class ApplicationFormDataMapperTest {
     devolvedPowers.setDateUsed(dateUsed);
     devolvedPowers.setContractFlag("ContractFlag");
 
-    ApplicationType applicationType = new ApplicationType()
-        .id("SampleId")
-        .devolvedPowers(devolvedPowers);
-
+    ApplicationType applicationType =
+        new ApplicationType().id("SampleId").devolvedPowers(devolvedPowers);
 
     // Call the method to be tested
     ApplicationFormData result = mapper.toApplicationTypeFormData(applicationType);
@@ -50,8 +48,10 @@ class ApplicationFormDataMapperTest {
     final ApplicationProviderDetails providerDetails = new ApplicationProviderDetails();
     providerDetails.setOffice(new IntDisplayValue().id(1).displayValue("OfficeName"));
     providerDetails.setFeeEarner(new StringDisplayValue().id("10").displayValue("Fee Earner Name"));
-    providerDetails.setSupervisor(new StringDisplayValue().id("20").displayValue("Supervisor Name"));
-    providerDetails.setProviderContact(new StringDisplayValue().id("30").displayValue("Contact Name"));
+    providerDetails.setSupervisor(
+        new StringDisplayValue().id("20").displayValue("Supervisor Name"));
+    providerDetails.setProviderContact(
+        new StringDisplayValue().id("30").displayValue("Contact Name"));
     providerDetails.setProviderCaseReference("CaseRef123");
 
     final ApplicationFormData result = mapper.toApplicationProviderDetailsFormData(providerDetails);
@@ -70,7 +70,6 @@ class ApplicationFormDataMapperTest {
     final ApplicationFormData result = mapper.toApplicationProviderDetailsFormData(null);
     assertNull(result);
   }
-
 
   // Helper method to create a Date object with a specific year, month, and day
   private Date createDate(int year, int month, int day) {

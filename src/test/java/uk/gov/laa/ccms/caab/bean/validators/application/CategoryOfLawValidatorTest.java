@@ -18,8 +18,7 @@ import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 @ExtendWith(SpringExtension.class)
 class CategoryOfLawValidatorTest {
 
-  @InjectMocks
-  private CategoryOfLawValidator categoryOfLawValidator;
+  @InjectMocks private CategoryOfLawValidator categoryOfLawValidator;
 
   private ApplicationFormData applicationFormData;
 
@@ -49,5 +48,4 @@ class CategoryOfLawValidatorTest {
     assertNotNull(errors.getFieldError("categoryOfLawId"));
     assertEquals("required.categoryOfLawId", errors.getFieldError("categoryOfLawId").getCode());
   }
-
 }

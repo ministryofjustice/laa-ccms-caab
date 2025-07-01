@@ -64,25 +64,22 @@ import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 
 @ExtendWith(MockitoExtension.class)
 public class LookupServiceTest {
-  @Mock
-  private EbsApiClient ebsApiClient;
+  @Mock private EbsApiClient ebsApiClient;
 
-  @InjectMocks
-  private LookupService lookupService;
+  @InjectMocks private LookupService lookupService;
 
   @Test
   @DisplayName("getMatterTypes returns data successfully")
   void getMatterTypes_success() {
     final String categoryOfLaw = "LAW1";
-    final MatterTypeLookupDetail mockMatterTypeDetail = new MatterTypeLookupDetail(); // Populate as needed
+    final MatterTypeLookupDetail mockMatterTypeDetail =
+        new MatterTypeLookupDetail(); // Populate as needed
 
     when(ebsApiClient.getMatterTypes(categoryOfLaw)).thenReturn(Mono.just(mockMatterTypeDetail));
 
     final Mono<MatterTypeLookupDetail> result = lookupService.getMatterTypes(categoryOfLaw);
 
-    StepVerifier.create(result)
-        .expectNext(mockMatterTypeDetail)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockMatterTypeDetail).verifyComplete();
 
     verify(ebsApiClient).getMatterTypes(categoryOfLaw);
   }
@@ -99,11 +96,10 @@ public class LookupServiceTest {
     when(ebsApiClient.getProceedings(searchCriteria, larScopeFlag, applicationType, isLead))
         .thenReturn(Mono.just(mockProceedingDetails));
 
-    final Mono<ProceedingDetails> result = lookupService.getProceedings(searchCriteria, larScopeFlag, applicationType, isLead);
+    final Mono<ProceedingDetails> result =
+        lookupService.getProceedings(searchCriteria, larScopeFlag, applicationType, isLead);
 
-    StepVerifier.create(result)
-        .expectNext(mockProceedingDetails)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockProceedingDetails).verifyComplete();
 
     verify(ebsApiClient).getProceedings(searchCriteria, larScopeFlag, applicationType, isLead);
   }
@@ -112,16 +108,16 @@ public class LookupServiceTest {
   @DisplayName("getProceedingClientInvolvementTypes returns data successfully")
   void getProceedingClientInvolvementTypes_success() {
     final String proceedingCode = "PROC_CODE";
-    final ClientInvolvementTypeLookupDetail mockClientInvolvementDetail = new ClientInvolvementTypeLookupDetail(); // Populate as needed
+    final ClientInvolvementTypeLookupDetail mockClientInvolvementDetail =
+        new ClientInvolvementTypeLookupDetail(); // Populate as needed
 
     when(ebsApiClient.getClientInvolvementTypes(proceedingCode))
         .thenReturn(Mono.just(mockClientInvolvementDetail));
 
-    final Mono<ClientInvolvementTypeLookupDetail> result = lookupService.getProceedingClientInvolvementTypes(proceedingCode);
+    final Mono<ClientInvolvementTypeLookupDetail> result =
+        lookupService.getProceedingClientInvolvementTypes(proceedingCode);
 
-    StepVerifier.create(result)
-        .expectNext(mockClientInvolvementDetail)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockClientInvolvementDetail).verifyComplete();
 
     verify(ebsApiClient).getClientInvolvementTypes(proceedingCode);
   }
@@ -132,16 +128,16 @@ public class LookupServiceTest {
     final String categoryOfLaw = "LAW1";
     final String proceedingCode = "PROC_CODE";
     final String matterType = "MATTER_TYPE";
-    final LevelOfServiceLookupDetail mockLevelOfServiceDetail = new LevelOfServiceLookupDetail(); // Populate as needed
+    final LevelOfServiceLookupDetail mockLevelOfServiceDetail =
+        new LevelOfServiceLookupDetail(); // Populate as needed
 
     when(ebsApiClient.getLevelOfServiceTypes(proceedingCode, categoryOfLaw, matterType))
         .thenReturn(Mono.just(mockLevelOfServiceDetail));
 
-    final Mono<LevelOfServiceLookupDetail> result = lookupService.getProceedingLevelOfServiceTypes(categoryOfLaw, proceedingCode, matterType);
+    final Mono<LevelOfServiceLookupDetail> result =
+        lookupService.getProceedingLevelOfServiceTypes(categoryOfLaw, proceedingCode, matterType);
 
-    StepVerifier.create(result)
-        .expectNext(mockLevelOfServiceDetail)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockLevelOfServiceDetail).verifyComplete();
 
     verify(ebsApiClient).getLevelOfServiceTypes(proceedingCode, categoryOfLaw, matterType);
   }
@@ -150,15 +146,15 @@ public class LookupServiceTest {
   @DisplayName("getScopeLimitationDetails returns data successfully")
   void getScopeLimitationDetails_success() {
     final ScopeLimitationDetail searchCriteria = new ScopeLimitationDetail(); // Populate as needed
-    final ScopeLimitationDetails mockScopeDetails = new ScopeLimitationDetails(); // Populate as needed
+    final ScopeLimitationDetails mockScopeDetails =
+        new ScopeLimitationDetails(); // Populate as needed
 
     when(ebsApiClient.getScopeLimitations(searchCriteria)).thenReturn(Mono.just(mockScopeDetails));
 
-    final Mono<ScopeLimitationDetails> result = lookupService.getScopeLimitationDetails(searchCriteria);
+    final Mono<ScopeLimitationDetails> result =
+        lookupService.getScopeLimitationDetails(searchCriteria);
 
-    StepVerifier.create(result)
-        .expectNext(mockScopeDetails)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockScopeDetails).verifyComplete();
 
     verify(ebsApiClient).getScopeLimitations(searchCriteria);
   }
@@ -170,16 +166,17 @@ public class LookupServiceTest {
     final String description = "High Court";
     final CommonLookupDetail mockCourtDetails = new CommonLookupDetail(); // Populate as needed
 
-    when(ebsApiClient.getCommonValues(COMMON_VALUE_COURTS, "*" + courtCode + "*", "*" + description.toUpperCase() + "*"))
+    when(ebsApiClient.getCommonValues(
+            COMMON_VALUE_COURTS, "*" + courtCode + "*", "*" + description.toUpperCase() + "*"))
         .thenReturn(Mono.just(mockCourtDetails));
 
     final Mono<CommonLookupDetail> result = lookupService.getCourts(courtCode, description);
 
-    StepVerifier.create(result)
-        .expectNext(mockCourtDetails)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockCourtDetails).verifyComplete();
 
-    verify(ebsApiClient).getCommonValues(COMMON_VALUE_COURTS, "*" + courtCode + "*", "*" + description.toUpperCase() + "*");
+    verify(ebsApiClient)
+        .getCommonValues(
+            COMMON_VALUE_COURTS, "*" + courtCode + "*", "*" + description.toUpperCase() + "*");
   }
 
   @Test
@@ -193,9 +190,7 @@ public class LookupServiceTest {
 
     final Mono<CommonLookupDetail> result = lookupService.getCourts(courtCode);
 
-    StepVerifier.create(result)
-        .expectNext(mockCourtDetails)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockCourtDetails).verifyComplete();
 
     verify(ebsApiClient).getCommonValues(COMMON_VALUE_COURTS, "*" + courtCode + "*", null);
   }
@@ -205,15 +200,16 @@ public class LookupServiceTest {
   void getOutcomeResults_success() {
     final String proceedingCode = "PRO123";
     final String outcomeResult = "OUTCOME";
-    final OutcomeResultLookupDetail mockOutcomeResultDetail = new OutcomeResultLookupDetail(); // Populate as needed
+    final OutcomeResultLookupDetail mockOutcomeResultDetail =
+        new OutcomeResultLookupDetail(); // Populate as needed
 
-    when(ebsApiClient.getOutcomeResults(proceedingCode, outcomeResult)).thenReturn(Mono.just(mockOutcomeResultDetail));
+    when(ebsApiClient.getOutcomeResults(proceedingCode, outcomeResult))
+        .thenReturn(Mono.just(mockOutcomeResultDetail));
 
-    final Mono<OutcomeResultLookupDetail> result = lookupService.getOutcomeResults(proceedingCode, outcomeResult);
+    final Mono<OutcomeResultLookupDetail> result =
+        lookupService.getOutcomeResults(proceedingCode, outcomeResult);
 
-    StepVerifier.create(result)
-        .expectNext(mockOutcomeResultDetail)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockOutcomeResultDetail).verifyComplete();
 
     verify(ebsApiClient).getOutcomeResults(proceedingCode, outcomeResult);
   }
@@ -223,15 +219,15 @@ public class LookupServiceTest {
   void getStageEnds_success() {
     final String proceedingCode = "PRO123";
     final String stageEnd = "STAGE_END";
-    final StageEndLookupDetail mockStageEndDetail = new StageEndLookupDetail(); // Populate as needed
+    final StageEndLookupDetail mockStageEndDetail =
+        new StageEndLookupDetail(); // Populate as needed
 
-    when(ebsApiClient.getStageEnds(proceedingCode, stageEnd)).thenReturn(Mono.just(mockStageEndDetail));
+    when(ebsApiClient.getStageEnds(proceedingCode, stageEnd))
+        .thenReturn(Mono.just(mockStageEndDetail));
 
     final Mono<StageEndLookupDetail> result = lookupService.getStageEnds(proceedingCode, stageEnd);
 
-    StepVerifier.create(result)
-        .expectNext(mockStageEndDetail)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockStageEndDetail).verifyComplete();
 
     verify(ebsApiClient).getStageEnds(proceedingCode, stageEnd);
   }
@@ -239,15 +235,15 @@ public class LookupServiceTest {
   @Test
   @DisplayName("getPriorAuthorityTypes with no parameters returns data successfully")
   void getPriorAuthorityTypes_noParameters_success() {
-    final PriorAuthorityTypeDetails mockPriorAuthorityDetails = new PriorAuthorityTypeDetails(); // Populate as needed
+    final PriorAuthorityTypeDetails mockPriorAuthorityDetails =
+        new PriorAuthorityTypeDetails(); // Populate as needed
 
-    when(ebsApiClient.getPriorAuthorityTypes(null, null)).thenReturn(Mono.just(mockPriorAuthorityDetails));
+    when(ebsApiClient.getPriorAuthorityTypes(null, null))
+        .thenReturn(Mono.just(mockPriorAuthorityDetails));
 
     final Mono<PriorAuthorityTypeDetails> result = lookupService.getPriorAuthorityTypes();
 
-    StepVerifier.create(result)
-        .expectNext(mockPriorAuthorityDetails)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockPriorAuthorityDetails).verifyComplete();
 
     verify(ebsApiClient).getPriorAuthorityTypes(null, null);
   }
@@ -257,15 +253,16 @@ public class LookupServiceTest {
   void getPriorAuthorityTypes_withParameters_success() {
     final String code = "AUTH123";
     final Boolean valueRequired = true;
-    final PriorAuthorityTypeDetails mockPriorAuthorityDetails = new PriorAuthorityTypeDetails(); // Populate as needed
+    final PriorAuthorityTypeDetails mockPriorAuthorityDetails =
+        new PriorAuthorityTypeDetails(); // Populate as needed
 
-    when(ebsApiClient.getPriorAuthorityTypes(code, valueRequired)).thenReturn(Mono.just(mockPriorAuthorityDetails));
+    when(ebsApiClient.getPriorAuthorityTypes(code, valueRequired))
+        .thenReturn(Mono.just(mockPriorAuthorityDetails));
 
-    final Mono<PriorAuthorityTypeDetails> result = lookupService.getPriorAuthorityTypes(code, valueRequired);
+    final Mono<PriorAuthorityTypeDetails> result =
+        lookupService.getPriorAuthorityTypes(code, valueRequired);
 
-    StepVerifier.create(result)
-        .expectNext(mockPriorAuthorityDetails)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockPriorAuthorityDetails).verifyComplete();
 
     verify(ebsApiClient).getPriorAuthorityTypes(code, valueRequired);
   }
@@ -274,16 +271,18 @@ public class LookupServiceTest {
   @DisplayName("getPriorAuthorityType returns the correct data successfully")
   void getPriorAuthorityType_success() {
     final String code = "AUTH123";
-    final PriorAuthorityTypeDetail mockPriorAuthorityDetail = new PriorAuthorityTypeDetail(); // Populate as needed
-    final PriorAuthorityTypeDetails mockPriorAuthorityDetails = new PriorAuthorityTypeDetails().addContentItem(mockPriorAuthorityDetail);
+    final PriorAuthorityTypeDetail mockPriorAuthorityDetail =
+        new PriorAuthorityTypeDetail(); // Populate as needed
+    final PriorAuthorityTypeDetails mockPriorAuthorityDetails =
+        new PriorAuthorityTypeDetails().addContentItem(mockPriorAuthorityDetail);
 
-    when(ebsApiClient.getPriorAuthorityTypes(code, null)).thenReturn(Mono.just(mockPriorAuthorityDetails));
+    when(ebsApiClient.getPriorAuthorityTypes(code, null))
+        .thenReturn(Mono.just(mockPriorAuthorityDetails));
 
-    final Mono<Optional<PriorAuthorityTypeDetail>> result = lookupService.getPriorAuthorityType(code);
+    final Mono<Optional<PriorAuthorityTypeDetail>> result =
+        lookupService.getPriorAuthorityType(code);
 
-    StepVerifier.create(result)
-        .expectNext(Optional.of(mockPriorAuthorityDetail))
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(Optional.of(mockPriorAuthorityDetail)).verifyComplete();
 
     verify(ebsApiClient).getPriorAuthorityTypes(code, null);
   }
@@ -292,15 +291,16 @@ public class LookupServiceTest {
   @DisplayName("getPriorAuthorityType returns empty when no match is found")
   void getPriorAuthorityType_noMatch_returnsEmpty() {
     final String code = "AUTH123";
-    final PriorAuthorityTypeDetails mockPriorAuthorityDetails = new PriorAuthorityTypeDetails(); // No content
+    final PriorAuthorityTypeDetails mockPriorAuthorityDetails =
+        new PriorAuthorityTypeDetails(); // No content
 
-    when(ebsApiClient.getPriorAuthorityTypes(code, null)).thenReturn(Mono.just(mockPriorAuthorityDetails));
+    when(ebsApiClient.getPriorAuthorityTypes(code, null))
+        .thenReturn(Mono.just(mockPriorAuthorityDetails));
 
-    final Mono<Optional<PriorAuthorityTypeDetail>> result = lookupService.getPriorAuthorityType(code);
+    final Mono<Optional<PriorAuthorityTypeDetail>> result =
+        lookupService.getPriorAuthorityType(code);
 
-    StepVerifier.create(result)
-        .expectNext(Optional.empty())
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(Optional.empty()).verifyComplete();
 
     verify(ebsApiClient).getPriorAuthorityTypes(code, null);
   }
@@ -313,9 +313,7 @@ public class LookupServiceTest {
     when(ebsApiClient.getCountries()).thenReturn(Mono.just(commonValues));
 
     final Mono<CommonLookupDetail> commonLookupDetailMono = lookupService.getCountries();
-    StepVerifier.create(commonLookupDetailMono)
-        .expectNext(commonValues)
-        .verifyComplete();
+    StepVerifier.create(commonLookupDetailMono).expectNext(commonValues).verifyComplete();
   }
 
   @Test
@@ -339,8 +337,7 @@ public class LookupServiceTest {
     final CategoryOfLawLookupDetail commonValues =
         new CategoryOfLawLookupDetail().addContentItem(commonValue);
 
-    when(ebsApiClient.getCategoriesOfLaw(null, null, null))
-        .thenReturn(Mono.just(commonValues));
+    when(ebsApiClient.getCategoriesOfLaw(null, null, null)).thenReturn(Mono.just(commonValues));
 
     final Mono<CategoryOfLawLookupDetail> commonLookupDetailMono =
         lookupService.getCategoriesOfLaw();
@@ -351,16 +348,15 @@ public class LookupServiceTest {
 
   @Test
   public void getCategoryOfLaw_returnsData() {
-    final CategoryOfLawLookupValueDetail commonValue = new CategoryOfLawLookupValueDetail()
-        .code("CAT1")
-        .matterTypeDescription("DESC")
-        .copyCostLimit(Boolean.TRUE);
+    final CategoryOfLawLookupValueDetail commonValue =
+        new CategoryOfLawLookupValueDetail()
+            .code("CAT1")
+            .matterTypeDescription("DESC")
+            .copyCostLimit(Boolean.TRUE);
     final CategoryOfLawLookupDetail commonValues =
         new CategoryOfLawLookupDetail().addContentItem(commonValue);
 
-    when(ebsApiClient.getCategoriesOfLaw(commonValue.getCode(),
-        null,
-        null))
+    when(ebsApiClient.getCategoriesOfLaw(commonValue.getCode(), null, null))
         .thenReturn(Mono.just(commonValues));
 
     final Mono<Optional<CategoryOfLawLookupValueDetail>> commonLookupDetailMono =
@@ -373,15 +369,14 @@ public class LookupServiceTest {
   @Test
   @DisplayName("getAwardTypes with no parameters returns data successfully")
   void getAwardTypes_noParameters_success() {
-    final AwardTypeLookupDetail mockAwardTypeDetails = new AwardTypeLookupDetail(); // Populate as needed
+    final AwardTypeLookupDetail mockAwardTypeDetails =
+        new AwardTypeLookupDetail(); // Populate as needed
 
     when(ebsApiClient.getAwardTypes(null, null)).thenReturn(Mono.just(mockAwardTypeDetails));
 
     final Mono<AwardTypeLookupDetail> result = lookupService.getAwardTypes();
 
-    StepVerifier.create(result)
-        .expectNext(mockAwardTypeDetails)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockAwardTypeDetails).verifyComplete();
 
     verify(ebsApiClient).getAwardTypes(null, null);
   }
@@ -391,15 +386,14 @@ public class LookupServiceTest {
   void getAwardTypes_withParameters_success() {
     final String code = "AWARD123";
     final String awardType = "TYPE1";
-    final AwardTypeLookupDetail mockAwardTypeDetails = new AwardTypeLookupDetail(); // Populate as needed
+    final AwardTypeLookupDetail mockAwardTypeDetails =
+        new AwardTypeLookupDetail(); // Populate as needed
 
     when(ebsApiClient.getAwardTypes(code, awardType)).thenReturn(Mono.just(mockAwardTypeDetails));
 
     final Mono<AwardTypeLookupDetail> result = lookupService.getAwardTypes(code, awardType);
 
-    StepVerifier.create(result)
-        .expectNext(mockAwardTypeDetails)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockAwardTypeDetails).verifyComplete();
 
     verify(ebsApiClient).getAwardTypes(code, awardType);
   }
@@ -407,15 +401,16 @@ public class LookupServiceTest {
   @Test
   @DisplayName("getPersonToCaseRelationships returns data successfully")
   void getPersonToCaseRelationships_success() {
-    final RelationshipToCaseLookupDetail mockRelationshipDetail = new RelationshipToCaseLookupDetail(); // Populate as needed
+    final RelationshipToCaseLookupDetail mockRelationshipDetail =
+        new RelationshipToCaseLookupDetail(); // Populate as needed
 
-    when(ebsApiClient.getPersonToCaseRelationships(null, null)).thenReturn(Mono.just(mockRelationshipDetail));
+    when(ebsApiClient.getPersonToCaseRelationships(null, null))
+        .thenReturn(Mono.just(mockRelationshipDetail));
 
-    final Mono<RelationshipToCaseLookupDetail> result = lookupService.getPersonToCaseRelationships();
+    final Mono<RelationshipToCaseLookupDetail> result =
+        lookupService.getPersonToCaseRelationships();
 
-    StepVerifier.create(result)
-        .expectNext(mockRelationshipDetail)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockRelationshipDetail).verifyComplete();
 
     verify(ebsApiClient).getPersonToCaseRelationships(null, null);
   }
@@ -424,12 +419,16 @@ public class LookupServiceTest {
   @DisplayName("getPersonToCaseRelationship returns the correct data successfully")
   void getPersonToCaseRelationship_success() {
     final String code = "REL123";
-    final RelationshipToCaseLookupValueDetail mockRelationshipValueDetail = new RelationshipToCaseLookupValueDetail(); // Populate as needed
-    final RelationshipToCaseLookupDetail mockRelationshipDetail = new RelationshipToCaseLookupDetail().addContentItem(mockRelationshipValueDetail);
+    final RelationshipToCaseLookupValueDetail mockRelationshipValueDetail =
+        new RelationshipToCaseLookupValueDetail(); // Populate as needed
+    final RelationshipToCaseLookupDetail mockRelationshipDetail =
+        new RelationshipToCaseLookupDetail().addContentItem(mockRelationshipValueDetail);
 
-    when(ebsApiClient.getPersonToCaseRelationships(code, null)).thenReturn(Mono.just(mockRelationshipDetail));
+    when(ebsApiClient.getPersonToCaseRelationships(code, null))
+        .thenReturn(Mono.just(mockRelationshipDetail));
 
-    final Mono<Optional<RelationshipToCaseLookupValueDetail>> result = lookupService.getPersonToCaseRelationship(code);
+    final Mono<Optional<RelationshipToCaseLookupValueDetail>> result =
+        lookupService.getPersonToCaseRelationship(code);
 
     StepVerifier.create(result)
         .expectNext(Optional.of(mockRelationshipValueDetail))
@@ -442,15 +441,16 @@ public class LookupServiceTest {
   @DisplayName("getPersonToCaseRelationship returns empty when no match is found")
   void getPersonToCaseRelationship_noMatch_returnsEmpty() {
     final String code = "REL123";
-    final RelationshipToCaseLookupDetail mockRelationshipDetail = new RelationshipToCaseLookupDetail(); // No content
+    final RelationshipToCaseLookupDetail mockRelationshipDetail =
+        new RelationshipToCaseLookupDetail(); // No content
 
-    when(ebsApiClient.getPersonToCaseRelationships(code, null)).thenReturn(Mono.just(mockRelationshipDetail));
+    when(ebsApiClient.getPersonToCaseRelationships(code, null))
+        .thenReturn(Mono.just(mockRelationshipDetail));
 
-    final Mono<Optional<RelationshipToCaseLookupValueDetail>> result = lookupService.getPersonToCaseRelationship(code);
+    final Mono<Optional<RelationshipToCaseLookupValueDetail>> result =
+        lookupService.getPersonToCaseRelationship(code);
 
-    StepVerifier.create(result)
-        .expectNext(Optional.empty())
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(Optional.empty()).verifyComplete();
 
     verify(ebsApiClient).getPersonToCaseRelationships(code, null);
   }
@@ -458,15 +458,16 @@ public class LookupServiceTest {
   @Test
   @DisplayName("getOrganisationToCaseRelationships returns data successfully")
   void getOrganisationToCaseRelationships_success() {
-    final RelationshipToCaseLookupDetail mockRelationshipDetail = new RelationshipToCaseLookupDetail(); // Populate as needed
+    final RelationshipToCaseLookupDetail mockRelationshipDetail =
+        new RelationshipToCaseLookupDetail(); // Populate as needed
 
-    when(ebsApiClient.getOrganisationToCaseRelationshipValues(null, null)).thenReturn(Mono.just(mockRelationshipDetail));
+    when(ebsApiClient.getOrganisationToCaseRelationshipValues(null, null))
+        .thenReturn(Mono.just(mockRelationshipDetail));
 
-    final Mono<RelationshipToCaseLookupDetail> result = lookupService.getOrganisationToCaseRelationships();
+    final Mono<RelationshipToCaseLookupDetail> result =
+        lookupService.getOrganisationToCaseRelationships();
 
-    StepVerifier.create(result)
-        .expectNext(mockRelationshipDetail)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockRelationshipDetail).verifyComplete();
 
     verify(ebsApiClient).getOrganisationToCaseRelationshipValues(null, null);
   }
@@ -475,12 +476,16 @@ public class LookupServiceTest {
   @DisplayName("getOrganisationToCaseRelationship returns the correct data successfully")
   void getOrganisationToCaseRelationship_success() {
     final String code = "ORG123";
-    final RelationshipToCaseLookupValueDetail mockRelationshipValueDetail = new RelationshipToCaseLookupValueDetail(); // Populate as needed
-    final RelationshipToCaseLookupDetail mockRelationshipDetail = new RelationshipToCaseLookupDetail().addContentItem(mockRelationshipValueDetail);
+    final RelationshipToCaseLookupValueDetail mockRelationshipValueDetail =
+        new RelationshipToCaseLookupValueDetail(); // Populate as needed
+    final RelationshipToCaseLookupDetail mockRelationshipDetail =
+        new RelationshipToCaseLookupDetail().addContentItem(mockRelationshipValueDetail);
 
-    when(ebsApiClient.getOrganisationToCaseRelationshipValues(code, null)).thenReturn(Mono.just(mockRelationshipDetail));
+    when(ebsApiClient.getOrganisationToCaseRelationshipValues(code, null))
+        .thenReturn(Mono.just(mockRelationshipDetail));
 
-    final Mono<Optional<RelationshipToCaseLookupValueDetail>> result = lookupService.getOrganisationToCaseRelationship(code);
+    final Mono<Optional<RelationshipToCaseLookupValueDetail>> result =
+        lookupService.getOrganisationToCaseRelationship(code);
 
     StepVerifier.create(result)
         .expectNext(Optional.of(mockRelationshipValueDetail))
@@ -493,15 +498,16 @@ public class LookupServiceTest {
   @DisplayName("getOrganisationToCaseRelationship returns empty when no match is found")
   void getOrganisationToCaseRelationship_noMatch_returnsEmpty() {
     final String code = "ORG123";
-    final RelationshipToCaseLookupDetail mockRelationshipDetail = new RelationshipToCaseLookupDetail(); // No content
+    final RelationshipToCaseLookupDetail mockRelationshipDetail =
+        new RelationshipToCaseLookupDetail(); // No content
 
-    when(ebsApiClient.getOrganisationToCaseRelationshipValues(code, null)).thenReturn(Mono.just(mockRelationshipDetail));
+    when(ebsApiClient.getOrganisationToCaseRelationshipValues(code, null))
+        .thenReturn(Mono.just(mockRelationshipDetail));
 
-    final Mono<Optional<RelationshipToCaseLookupValueDetail>> result = lookupService.getOrganisationToCaseRelationship(code);
+    final Mono<Optional<RelationshipToCaseLookupValueDetail>> result =
+        lookupService.getOrganisationToCaseRelationship(code);
 
-    StepVerifier.create(result)
-        .expectNext(Optional.empty())
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(Optional.empty()).verifyComplete();
 
     verify(ebsApiClient).getOrganisationToCaseRelationshipValues(code, null);
   }
@@ -509,15 +515,14 @@ public class LookupServiceTest {
   @Test
   @DisplayName("getCaseStatusValues with no parameters returns data successfully")
   void getCaseStatusValues_noParameters_success() {
-    final CaseStatusLookupDetail mockCaseStatusDetail = new CaseStatusLookupDetail(); // Populate as needed
+    final CaseStatusLookupDetail mockCaseStatusDetail =
+        new CaseStatusLookupDetail(); // Populate as needed
 
     when(ebsApiClient.getCaseStatusValues(null)).thenReturn(Mono.just(mockCaseStatusDetail));
 
     final Mono<CaseStatusLookupDetail> result = lookupService.getCaseStatusValues();
 
-    StepVerifier.create(result)
-        .expectNext(mockCaseStatusDetail)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockCaseStatusDetail).verifyComplete();
 
     verify(ebsApiClient).getCaseStatusValues(null);
   }
@@ -532,9 +537,7 @@ public class LookupServiceTest {
 
     final Mono<CaseStatusLookupDetail> result = lookupService.getCaseStatusValues(copyAllowed);
 
-    StepVerifier.create(result)
-        .expectNext(mockCaseStatusDetail)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockCaseStatusDetail).verifyComplete();
 
     verify(ebsApiClient).getCaseStatusValues(copyAllowed);
   }
@@ -543,15 +546,16 @@ public class LookupServiceTest {
   @DisplayName("getAssessmentSummaryAttributes returns data successfully")
   void getAssessmentSummaryAttributes_success() {
     final String summaryType = "SUMMARY_TYPE";
-    final AssessmentSummaryEntityLookupDetail mockAssessmentSummaryDetail = new AssessmentSummaryEntityLookupDetail();
+    final AssessmentSummaryEntityLookupDetail mockAssessmentSummaryDetail =
+        new AssessmentSummaryEntityLookupDetail();
 
-    when(ebsApiClient.getAssessmentSummaryAttributes(summaryType)).thenReturn(Mono.just(mockAssessmentSummaryDetail));
+    when(ebsApiClient.getAssessmentSummaryAttributes(summaryType))
+        .thenReturn(Mono.just(mockAssessmentSummaryDetail));
 
-    final Mono<AssessmentSummaryEntityLookupDetail> result = lookupService.getAssessmentSummaryAttributes(summaryType);
+    final Mono<AssessmentSummaryEntityLookupDetail> result =
+        lookupService.getAssessmentSummaryAttributes(summaryType);
 
-    StepVerifier.create(result)
-        .expectNext(mockAssessmentSummaryDetail)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockAssessmentSummaryDetail).verifyComplete();
 
     verify(ebsApiClient).getAssessmentSummaryAttributes(summaryType);
   }
@@ -595,32 +599,41 @@ public class LookupServiceTest {
     final CommonLookupValueDetail countryLookupValueDetail = new CommonLookupValueDetail();
     final CommonLookupValueDetail maritalStatusLookupValueDetail = new CommonLookupValueDetail();
     final CommonLookupValueDetail genderLookupValueDetail = new CommonLookupValueDetail();
-    final CommonLookupValueDetail correspondenceMethodLookupValueDetail = new CommonLookupValueDetail();
+    final CommonLookupValueDetail correspondenceMethodLookupValueDetail =
+        new CommonLookupValueDetail();
     final CommonLookupValueDetail ethnicityLookupValueDetail = new CommonLookupValueDetail();
     final CommonLookupValueDetail disabilityLookupValueDetail = new CommonLookupValueDetail();
-    final CommonLookupValueDetail correspondenceLanguageLookupValueDetail = new CommonLookupValueDetail();
+    final CommonLookupValueDetail correspondenceLanguageLookupValueDetail =
+        new CommonLookupValueDetail();
 
     final CommonLookupDetail commonLookupDetailWithCountry = new CommonLookupDetail();
     commonLookupDetailWithCountry.setContent(List.of(countryLookupValueDetail));
 
     final CommonLookupDetail commonLookupDetailWithValues = new CommonLookupDetail();
-    commonLookupDetailWithValues.setContent(List.of(
-        titleLookupValueDetail,
-        maritalStatusLookupValueDetail,
-        genderLookupValueDetail,
-        correspondenceMethodLookupValueDetail,
-        ethnicityLookupValueDetail,
-        disabilityLookupValueDetail,
-        correspondenceLanguageLookupValueDetail
-    ));
+    commonLookupDetailWithValues.setContent(
+        List.of(
+            titleLookupValueDetail,
+            maritalStatusLookupValueDetail,
+            genderLookupValueDetail,
+            correspondenceMethodLookupValueDetail,
+            ethnicityLookupValueDetail,
+            disabilityLookupValueDetail,
+            correspondenceLanguageLookupValueDetail));
 
-    when(ebsApiClient.getCommonValues(COMMON_VALUE_CONTACT_TITLE, title)).thenReturn(Mono.just(commonLookupDetailWithCountry));
-    when(ebsApiClient.getCommonValues(COMMON_VALUE_MARITAL_STATUS, maritalStatus)).thenReturn(Mono.just(commonLookupDetailWithCountry));
-    when(ebsApiClient.getCommonValues(COMMON_VALUE_GENDER, gender)).thenReturn(Mono.just(commonLookupDetailWithCountry));
-    when(ebsApiClient.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD, correspondenceMethod)).thenReturn(Mono.just(commonLookupDetailWithCountry));
-    when(ebsApiClient.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN, ethnicOrigin)).thenReturn(Mono.just(commonLookupDetailWithCountry));
-    when(ebsApiClient.getCommonValues(COMMON_VALUE_DISABILITY, disability)).thenReturn(Mono.just(commonLookupDetailWithCountry));
-    when(ebsApiClient.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE, correspondenceLanguage)).thenReturn(Mono.just(commonLookupDetailWithCountry));
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_CONTACT_TITLE, title))
+        .thenReturn(Mono.just(commonLookupDetailWithCountry));
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_MARITAL_STATUS, maritalStatus))
+        .thenReturn(Mono.just(commonLookupDetailWithCountry));
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_GENDER, gender))
+        .thenReturn(Mono.just(commonLookupDetailWithCountry));
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD, correspondenceMethod))
+        .thenReturn(Mono.just(commonLookupDetailWithCountry));
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN, ethnicOrigin))
+        .thenReturn(Mono.just(commonLookupDetailWithCountry));
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_DISABILITY, disability))
+        .thenReturn(Mono.just(commonLookupDetailWithCountry));
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE, correspondenceLanguage))
+        .thenReturn(Mono.just(commonLookupDetailWithCountry));
 
     when(ebsApiClient.getCountries()).thenReturn(Mono.just(commonLookupDetailWithCountry));
 
@@ -656,22 +669,22 @@ public class LookupServiceTest {
   }
 
   @Test
-  @DisplayName("addCommonLookupsToModel adds lookups to model and returns list of CommonLookupValueDetail")
+  @DisplayName(
+      "addCommonLookupsToModel adds lookups to model and returns list of CommonLookupValueDetail")
   void addCommonLookupsToModel_success() {
 
     final Model model = mock(Model.class);
 
     final CommonLookupValueDetail detail1 = new CommonLookupValueDetail().code("CODE1");
     final CommonLookupValueDetail detail2 = new CommonLookupValueDetail().code("CODE2");
-    final List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups = List.of(
-        Pair.of("lookup1", Mono.just(Optional.of(detail1))),
-        Pair.of("lookup2", Mono.just(Optional.of(detail2)))
-    );
+    final List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups =
+        List.of(
+            Pair.of("lookup1", Mono.just(Optional.of(detail1))),
+            Pair.of("lookup2", Mono.just(Optional.of(detail2))));
 
     final Mono<Void> result = lookupService.addCommonLookupsToModel(lookups, model);
 
-    StepVerifier.create(result)
-        .verifyComplete();
+    StepVerifier.create(result).verifyComplete();
 
     verify(model).addAttribute("lookup1", detail1);
     verify(model).addAttribute("lookup2", detail2);
@@ -682,58 +695,74 @@ public class LookupServiceTest {
   void getCommonLookupsMap_success() {
     final CommonLookupValueDetail detail1 = new CommonLookupValueDetail().code("CODE1");
     final CommonLookupValueDetail detail2 = new CommonLookupValueDetail().code("CODE2");
-    final List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups = List.of(
-        Pair.of("lookup1", Mono.just(Optional.of(detail1))),
-        Pair.of("lookup2", Mono.just(Optional.of(detail2)))
-    );
+    final List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups =
+        List.of(
+            Pair.of("lookup1", Mono.just(Optional.of(detail1))),
+            Pair.of("lookup2", Mono.just(Optional.of(detail2))));
 
-    final Mono<HashMap<String, CommonLookupValueDetail>> result = lookupService.getCommonLookupsMap(lookups);
+    final Mono<HashMap<String, CommonLookupValueDetail>> result =
+        lookupService.getCommonLookupsMap(lookups);
 
     StepVerifier.create(result)
-        .expectNextMatches(map ->
-            map.size() == 2
-                && map.get("lookup1").equals(detail1)
-                && map.get("lookup2").equals(detail2))
+        .expectNextMatches(
+            map ->
+                map.size() == 2
+                    && map.get("lookup1").equals(detail1)
+                    && map.get("lookup2").equals(detail2))
         .verifyComplete();
   }
 
-
   @Test
-  @DisplayName("getProceedingSubmissionMappingContext returns correct ProceedingSubmissionSummaryMappingContext")
+  @DisplayName(
+      "getProceedingSubmissionMappingContext returns correct ProceedingSubmissionSummaryMappingContext")
   void getProceedingSubmissionMappingContext_success() {
     final CommonLookupDetail mockTypeOfOrder = new CommonLookupDetail(); // Populate this as needed
-    when(lookupService.getCommonValues(COMMON_VALUE_PROCEEDING_ORDER_TYPE)).thenReturn(Mono.just(mockTypeOfOrder));
+    when(lookupService.getCommonValues(COMMON_VALUE_PROCEEDING_ORDER_TYPE))
+        .thenReturn(Mono.just(mockTypeOfOrder));
 
-    final Mono<ProceedingSubmissionSummaryMappingContext> result = lookupService.getProceedingSubmissionMappingContext();
+    final Mono<ProceedingSubmissionSummaryMappingContext> result =
+        lookupService.getProceedingSubmissionMappingContext();
 
     StepVerifier.create(result)
         .expectNextMatches(context -> context.getTypeOfOrder().equals(mockTypeOfOrder))
         .verifyComplete();
   }
 
-
   @Test
-  @DisplayName("getOpponentSubmissionMappingContext returns correct OpponentSubmissionSummaryMappingContext")
+  @DisplayName(
+      "getOpponentSubmissionMappingContext returns correct OpponentSubmissionSummaryMappingContext")
   void getOpponentSubmissionMappingContext_success() {
     final CommonLookupDetail mockContactTitle = new CommonLookupDetail(); // Populate as needed
-    final RelationshipToCaseLookupDetail mockOrganisationRelationshipsToCase = new RelationshipToCaseLookupDetail(); // Populate as needed
-    final RelationshipToCaseLookupDetail mockIndividualRelationshipsToCase = new RelationshipToCaseLookupDetail(); // Populate as needed
-    final CommonLookupDetail mockRelationshipToClient = new CommonLookupDetail(); // Populate as needed
+    final RelationshipToCaseLookupDetail mockOrganisationRelationshipsToCase =
+        new RelationshipToCaseLookupDetail(); // Populate as needed
+    final RelationshipToCaseLookupDetail mockIndividualRelationshipsToCase =
+        new RelationshipToCaseLookupDetail(); // Populate as needed
+    final CommonLookupDetail mockRelationshipToClient =
+        new CommonLookupDetail(); // Populate as needed
 
-    when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(Mono.just(mockContactTitle));
-    when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.just(mockOrganisationRelationshipsToCase));
-    when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.just(mockIndividualRelationshipsToCase));
-    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.just(mockRelationshipToClient));
+    when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+        .thenReturn(Mono.just(mockContactTitle));
+    when(lookupService.getOrganisationToCaseRelationships())
+        .thenReturn(Mono.just(mockOrganisationRelationshipsToCase));
+    when(lookupService.getPersonToCaseRelationships())
+        .thenReturn(Mono.just(mockIndividualRelationshipsToCase));
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(mockRelationshipToClient));
 
-    final Mono<OpponentSubmissionSummaryMappingContext> result = lookupService.getOpponentSubmissionMappingContext();
+    final Mono<OpponentSubmissionSummaryMappingContext> result =
+        lookupService.getOpponentSubmissionMappingContext();
 
     StepVerifier.create(result)
-        .expectNextMatches(context ->
-            context.getContactTitle().equals(mockContactTitle)
-                && context.getOrganisationRelationshipsToCase().equals(mockOrganisationRelationshipsToCase)
-                && context.getIndividualRelationshipsToCase().equals(mockIndividualRelationshipsToCase)
-                && context.getRelationshipToClient().equals(mockRelationshipToClient)
-        )
+        .expectNextMatches(
+            context ->
+                context.getContactTitle().equals(mockContactTitle)
+                    && context
+                        .getOrganisationRelationshipsToCase()
+                        .equals(mockOrganisationRelationshipsToCase)
+                    && context
+                        .getIndividualRelationshipsToCase()
+                        .equals(mockIndividualRelationshipsToCase)
+                    && context.getRelationshipToClient().equals(mockRelationshipToClient))
         .verifyComplete();
   }
 
@@ -743,13 +772,12 @@ public class LookupServiceTest {
     final String submissionType = "SUB_TYPE";
     final DeclarationLookupDetail mockDeclarationDetail = new DeclarationLookupDetail();
 
-    when(ebsApiClient.getDeclarations(submissionType, null)).thenReturn(Mono.just(mockDeclarationDetail));
+    when(ebsApiClient.getDeclarations(submissionType, null))
+        .thenReturn(Mono.just(mockDeclarationDetail));
 
     final Mono<DeclarationLookupDetail> result = lookupService.getDeclarations(submissionType);
 
-    StepVerifier.create(result)
-        .expectNext(mockDeclarationDetail)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockDeclarationDetail).verifyComplete();
 
     verify(ebsApiClient).getDeclarations(submissionType, null);
   }
@@ -757,28 +785,25 @@ public class LookupServiceTest {
   @ParameterizedTest
   @DisplayName("getProviderRequestTypes with different parameters returns data successfully")
   @CsvSource({
-      "true, TYPE1",
-      "false, TYPE2",
-      ", TYPE3",  // Case related is null
-      "true, ",   // Type is null
-      ", "        // Both are null
+    "true, TYPE1",
+    "false, TYPE2",
+    ", TYPE3", // Case related is null
+    "true, ", // Type is null
+    ", " // Both are null
   })
-  void getProviderRequestTypes_withParameters_success(final Boolean isCaseRelated, final String type) {
-    final ProviderRequestTypeLookupDetail mockProviderRequestTypeDetail = new ProviderRequestTypeLookupDetail(); // Populate as needed
+  void getProviderRequestTypes_withParameters_success(
+      final Boolean isCaseRelated, final String type) {
+    final ProviderRequestTypeLookupDetail mockProviderRequestTypeDetail =
+        new ProviderRequestTypeLookupDetail(); // Populate as needed
 
     when(ebsApiClient.getProviderRequestTypes(isCaseRelated, type))
         .thenReturn(Mono.just(mockProviderRequestTypeDetail));
 
-    final Mono<ProviderRequestTypeLookupDetail> result = lookupService.getProviderRequestTypes(isCaseRelated, type);
+    final Mono<ProviderRequestTypeLookupDetail> result =
+        lookupService.getProviderRequestTypes(isCaseRelated, type);
 
-    StepVerifier.create(result)
-        .expectNext(mockProviderRequestTypeDetail)
-        .verifyComplete();
+    StepVerifier.create(result).expectNext(mockProviderRequestTypeDetail).verifyComplete();
 
     verify(ebsApiClient).getProviderRequestTypes(isCaseRelated, type);
   }
-
-
-
-
 }

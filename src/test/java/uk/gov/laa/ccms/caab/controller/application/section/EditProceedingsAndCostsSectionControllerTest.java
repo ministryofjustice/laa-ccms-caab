@@ -118,53 +118,39 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @WebAppConfiguration
 class EditProceedingsAndCostsSectionControllerTest {
 
-  @Mock
-  private ApplicationService applicationService;
-  @Mock
-  private LookupService lookupService;
-  @Mock
-  private ProceedingMatterTypeDetailsValidator matterTypeValidator;
-  @Mock
-  private ProceedingDetailsValidator proceedingTypeValidator;
-  @Mock
-  private ProceedingFurtherDetailsValidator furtherDetailsValidator;
+  @Mock private ApplicationService applicationService;
+  @Mock private LookupService lookupService;
+  @Mock private ProceedingMatterTypeDetailsValidator matterTypeValidator;
+  @Mock private ProceedingDetailsValidator proceedingTypeValidator;
+  @Mock private ProceedingFurtherDetailsValidator furtherDetailsValidator;
 
-  @Mock
-  private ScopeLimitationDetailsValidator scopeLimitationDetailsValidator;
-  @Mock
-  private CostDetailsValidator costDetailsValidator;
+  @Mock private ScopeLimitationDetailsValidator scopeLimitationDetailsValidator;
+  @Mock private CostDetailsValidator costDetailsValidator;
 
-  @Mock
-  private PriorAuthorityTypeDetailsValidator priorAuthorityTypeDetailsValidator;
+  @Mock private PriorAuthorityTypeDetailsValidator priorAuthorityTypeDetailsValidator;
 
-  @Mock
-  private PriorAuthorityDetailsValidator priorAuthorityDetailsValidator;
+  @Mock private PriorAuthorityDetailsValidator priorAuthorityDetailsValidator;
 
-  @Mock
-  private ProceedingAndCostsMapper proceedingAndCostsMapper;
+  @Mock private ProceedingAndCostsMapper proceedingAndCostsMapper;
 
-  @Mock
-  private Model model;
+  @Mock private Model model;
 
-  @InjectMocks
-  private EditProceedingsAndCostsSectionController controller;
+  @InjectMocks private EditProceedingsAndCostsSectionController controller;
 
   private MockMvc mockMvc;
 
-  @Autowired
-  private WebApplicationContext webApplicationContext;
+  @Autowired private WebApplicationContext webApplicationContext;
 
   @BeforeEach
   void setUp() {
-    mockMvc = MockMvcBuilders.standaloneSetup(controller)
-        .setConversionService(getConversionService())
-        .build();
+    mockMvc =
+        MockMvcBuilders.standaloneSetup(controller)
+            .setConversionService(getConversionService())
+            .build();
   }
 
-  private static final UserDetail user = new UserDetail()
-      .userId(1)
-      .userType("testUserType")
-      .loginId("testLoginId");
+  private static final UserDetail user =
+      new UserDetail().userId(1).userType("testUserType").loginId("testLoginId");
 
   @Nested
   @DisplayName("GET: /application/proceedings-and-costs")
@@ -178,16 +164,18 @@ class EditProceedingsAndCostsSectionControllerTest {
       // Mock the applicationService to return a Mono of ApplicationDetail
       when(applicationService.getApplication(applicationId)).thenReturn(Mono.just(application));
 
-      mockMvc.perform(get("/application/proceedings-and-costs")
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(USER_DETAILS, user))
+      mockMvc
+          .perform(
+              get("/application/proceedings-and-costs")
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(USER_DETAILS, user))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-and-costs-section"))
           .andExpect(model().attribute(APPLICATION, application));
 
       verify(applicationService, times(1)).getApplication(applicationId);
-      verify(applicationService, times(1)).prepareProceedingSummary(applicationId, application,
-          user);
+      verify(applicationService, times(1))
+          .prepareProceedingSummary(applicationId, application, user);
     }
   }
 
@@ -200,13 +188,15 @@ class EditProceedingsAndCostsSectionControllerTest {
     void shouldReturnExpectedResult() throws Exception {
       final String applicationId = "testApplicationId";
       final Integer proceedingId = 1;
-      final List<ProceedingDetail> proceedings = Collections.singletonList(
-          new ProceedingDetail().id(proceedingId));
+      final List<ProceedingDetail> proceedings =
+          Collections.singletonList(new ProceedingDetail().id(proceedingId));
 
-      mockMvc.perform(get("/application/proceedings/{proceeding-id}/make-lead", proceedingId)
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(APPLICATION_PROCEEDINGS, proceedings)
-              .sessionAttr(USER_DETAILS, user))
+      mockMvc
+          .perform(
+              get("/application/proceedings/{proceeding-id}/make-lead", proceedingId)
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(APPLICATION_PROCEEDINGS, proceedings)
+                  .sessionAttr(USER_DETAILS, user))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/proceedings-and-costs"));
 
@@ -223,7 +213,8 @@ class EditProceedingsAndCostsSectionControllerTest {
     void shouldReturnExpectedResult() throws Exception {
       final Integer proceedingId = 1;
 
-      mockMvc.perform(get("/application/proceedings/{proceeding-id}/remove", proceedingId))
+      mockMvc
+          .perform(get("/application/proceedings/{proceeding-id}/remove", proceedingId))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-remove"))
           .andExpect(model().attribute("proceedingId", proceedingId));
@@ -239,23 +230,26 @@ class EditProceedingsAndCostsSectionControllerTest {
     void shouldReturnExpectedResult() throws Exception {
       final String applicationId = "testApplicationId";
       final Integer proceedingId = 1;
-      final List<ProceedingDetail> proceedings = Collections.singletonList(
-          new ProceedingDetail().id(proceedingId));
-      final UserDetail userDetail = new UserDetail().userId(1).userType("testUserType")
-          .loginId("testLoginId");
+      final List<ProceedingDetail> proceedings =
+          Collections.singletonList(new ProceedingDetail().id(proceedingId));
+      final UserDetail userDetail =
+          new UserDetail().userId(1).userType("testUserType").loginId("testLoginId");
 
-      doNothing().when(applicationService)
+      doNothing()
+          .when(applicationService)
           .deleteProceeding(eq(applicationId), anyInt(), any(UserDetail.class));
 
-      mockMvc.perform(post("/application/proceedings/{proceeding-id}/remove", proceedingId)
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(APPLICATION_PROCEEDINGS, proceedings)
-              .sessionAttr(USER_DETAILS, userDetail))
+      mockMvc
+          .perform(
+              post("/application/proceedings/{proceeding-id}/remove", proceedingId)
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(APPLICATION_PROCEEDINGS, proceedings)
+                  .sessionAttr(USER_DETAILS, userDetail))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/proceedings-and-costs"));
 
-      verify(applicationService, times(1)).deleteProceeding(eq(applicationId), eq(proceedingId),
-          eq(userDetail));
+      verify(applicationService, times(1))
+          .deleteProceeding(eq(applicationId), eq(proceedingId), eq(userDetail));
     }
   }
 
@@ -272,25 +266,29 @@ class EditProceedingsAndCostsSectionControllerTest {
       ApplicationType applicationType = new ApplicationType();
       applicationType.setId("SUBDP");
       application.setApplicationType(applicationType);
-      final List<ProceedingDetail> proceedings = Collections.singletonList(new ProceedingDetail()
-          .id(proceedingId)
-          .typeOfOrder(new StringDisplayValue().id("orderType")));
+      final List<ProceedingDetail> proceedings =
+          Collections.singletonList(
+              new ProceedingDetail()
+                  .id(proceedingId)
+                  .typeOfOrder(new StringDisplayValue().id("orderType")));
 
-      when(lookupService.getOrderTypeDescription(any())).thenReturn(
-          Mono.just("orderTypeDisplayValue"));
+      when(lookupService.getOrderTypeDescription(any()))
+          .thenReturn(Mono.just("orderTypeDisplayValue"));
 
-      mockMvc.perform(get("/application/proceedings/{proceeding-id}/summary", proceedingId)
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(APPLICATION, application)
-              .sessionAttr(APPLICATION_PROCEEDINGS, proceedings)
-              .sessionAttr(USER_DETAILS, user))
+      mockMvc
+          .perform(
+              get("/application/proceedings/{proceeding-id}/summary", proceedingId)
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(APPLICATION, application)
+                  .sessionAttr(APPLICATION_PROCEEDINGS, proceedings)
+                  .sessionAttr(USER_DETAILS, user))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-summary"))
           .andExpect(model().attributeExists("orderTypeDisplayValue"))
           .andExpect(model().attributeExists(CURRENT_PROCEEDING));
 
-      verify(applicationService, times(1)).prepareProceedingSummary(applicationId, application,
-          user);
+      verify(applicationService, times(1))
+          .prepareProceedingSummary(applicationId, application, user);
       verify(lookupService, times(1)).getOrderTypeDescription(any());
     }
   }
@@ -308,11 +306,12 @@ class EditProceedingsAndCostsSectionControllerTest {
           List.of(new MatterTypeLookupValueDetail());
 
       // Mock the lookupService to return matter types
-      when(lookupService.getMatterTypes(anyString())).thenReturn(
-          Mono.just(new MatterTypeLookupDetail().content(matterTypes)));
+      when(lookupService.getMatterTypes(anyString()))
+          .thenReturn(Mono.just(new MatterTypeLookupDetail().content(matterTypes)));
 
-      mockMvc.perform(get("/application/proceedings/add/matter-type")
-              .sessionAttr(APPLICATION, application))
+      mockMvc
+          .perform(
+              get("/application/proceedings/add/matter-type").sessionAttr(APPLICATION, application))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-matter-type"))
           .andExpect(model().attributeExists("matterTypes"))
@@ -321,27 +320,28 @@ class EditProceedingsAndCostsSectionControllerTest {
       verify(lookupService, times(1)).getMatterTypes(application.getCategoryOfLaw().getId());
     }
 
-
     @Test
     @DisplayName("Should return expected result - edit")
     void shouldReturnExpectedResult_Edit() throws Exception {
       final ApplicationDetail application = new ApplicationDetail();
       application.setCategoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
-      final ProceedingDetail proceeding = new ProceedingDetail().typeOfOrder(
-          new StringDisplayValue().id("typeOfOrderId"));
+      final ProceedingDetail proceeding =
+          new ProceedingDetail().typeOfOrder(new StringDisplayValue().id("typeOfOrderId"));
       proceeding.setScopeLimitations(List.of(new ScopeLimitationDetail()));
       final List<MatterTypeLookupValueDetail> matterTypes =
           List.of(new MatterTypeLookupValueDetail());
 
       // Mock the lookupService to return matter types
-      when(lookupService.getMatterTypes(anyString())).thenReturn(
-          Mono.just(new MatterTypeLookupDetail().content(matterTypes)));
-      when(proceedingAndCostsMapper.toProceedingFlow(any(), any())).thenReturn(
-          new ProceedingFlowFormData("edit"));
+      when(lookupService.getMatterTypes(anyString()))
+          .thenReturn(Mono.just(new MatterTypeLookupDetail().content(matterTypes)));
+      when(proceedingAndCostsMapper.toProceedingFlow(any(), any()))
+          .thenReturn(new ProceedingFlowFormData("edit"));
 
-      mockMvc.perform(get("/application/proceedings/edit/matter-type")
-              .sessionAttr(APPLICATION, application)
-              .sessionAttr(CURRENT_PROCEEDING, proceeding))
+      mockMvc
+          .perform(
+              get("/application/proceedings/edit/matter-type")
+                  .sessionAttr(APPLICATION, application)
+                  .sessionAttr(CURRENT_PROCEEDING, proceeding))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-matter-type"))
           .andExpect(model().attributeExists("matterTypes"))
@@ -360,30 +360,32 @@ class EditProceedingsAndCostsSectionControllerTest {
     @DisplayName("Should return expected result - add")
     void shouldReturnExpectedResult_Add() throws Exception {
       final String action = "add";
-      final ApplicationDetail application = new ApplicationDetail().categoryOfLaw(
-          new StringDisplayValue().id("categoryOfLawId"));
+      final ApplicationDetail application =
+          new ApplicationDetail().categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
       final ProceedingFormDataMatterTypeDetails matterTypeDetails =
           new ProceedingFormDataMatterTypeDetails();
       matterTypeDetails.setMatterType("newMatterType");
 
-      mockMvc.perform(post("/application/proceedings/{action}/matter-type", action)
-              .sessionAttr(APPLICATION, application)
-              .sessionAttr(PROCEEDING_FLOW_FORM_DATA, new ProceedingFlowFormData(action))
-              .flashAttr("matterTypeDetails", matterTypeDetails))
+      mockMvc
+          .perform(
+              post("/application/proceedings/{action}/matter-type", action)
+                  .sessionAttr(APPLICATION, application)
+                  .sessionAttr(PROCEEDING_FLOW_FORM_DATA, new ProceedingFlowFormData(action))
+                  .flashAttr("matterTypeDetails", matterTypeDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(
               redirectedUrl("/application/proceedings/%s/proceeding-type".formatted(action)));
 
-      verify(matterTypeValidator, times(1)).validate(eq(matterTypeDetails),
-          any(BindingResult.class));
+      verify(matterTypeValidator, times(1))
+          .validate(eq(matterTypeDetails), any(BindingResult.class));
     }
 
     @Test
     @DisplayName("Should return expected result - edit")
     void testProceedingsActionMatterTypePost_Edit_AmendmentCheck() throws Exception {
       final String action = "edit";
-      final ApplicationDetail application = new ApplicationDetail().categoryOfLaw(
-          new StringDisplayValue().id("categoryOfLawId"));
+      final ApplicationDetail application =
+          new ApplicationDetail().categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
       final ProceedingFormDataMatterTypeDetails matterTypeDetails =
           new ProceedingFormDataMatterTypeDetails();
       matterTypeDetails.setMatterType("editedMatterType");
@@ -393,11 +395,13 @@ class EditProceedingsAndCostsSectionControllerTest {
       oldProceedingFlow.setMatterTypeDetails(new ProceedingFormDataMatterTypeDetails());
       oldProceedingFlow.getMatterTypeDetails().setMatterType("originalMatterType");
 
-      mockMvc.perform(post("/application/proceedings/{action}/matter-type", action)
-              .sessionAttr(APPLICATION, application)
-              .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
-              .sessionAttr(PROCEEDING_FLOW_FORM_DATA_OLD, oldProceedingFlow)
-              .flashAttr("matterTypeDetails", matterTypeDetails))
+      mockMvc
+          .perform(
+              post("/application/proceedings/{action}/matter-type", action)
+                  .sessionAttr(APPLICATION, application)
+                  .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
+                  .sessionAttr(PROCEEDING_FLOW_FORM_DATA_OLD, oldProceedingFlow)
+                  .flashAttr("matterTypeDetails", matterTypeDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(
               redirectedUrl("/application/proceedings/%s/proceeding-type".formatted(action)));
@@ -409,35 +413,39 @@ class EditProceedingsAndCostsSectionControllerTest {
     @DisplayName("Should have validation errors")
     void shouldHaveValidationErrors() throws Exception {
       final String action = "add";
-      final ApplicationDetail application = new ApplicationDetail().categoryOfLaw(
-          new StringDisplayValue().id("categoryOfLawId"));
+      final ApplicationDetail application =
+          new ApplicationDetail().categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
       final ProceedingFormDataMatterTypeDetails matterTypeDetails =
           new ProceedingFormDataMatterTypeDetails();
       final List<MatterTypeLookupValueDetail> matterTypes =
           List.of(new MatterTypeLookupValueDetail());
 
       // Simulate validation error
-      doAnswer(invocation -> {
-        BindingResult errors = invocation.getArgument(1);
-        errors.rejectValue("matterType", "error.matterType", "Matter Type is required");
-        return null;
-      }).when(matterTypeValidator).validate(any(), any(BindingResult.class));
+      doAnswer(
+              invocation -> {
+                BindingResult errors = invocation.getArgument(1);
+                errors.rejectValue("matterType", "error.matterType", "Matter Type is required");
+                return null;
+              })
+          .when(matterTypeValidator)
+          .validate(any(), any(BindingResult.class));
 
-      when(lookupService.getMatterTypes(anyString())).thenReturn(
-          Mono.just(new MatterTypeLookupDetail().content(matterTypes)));
+      when(lookupService.getMatterTypes(anyString()))
+          .thenReturn(Mono.just(new MatterTypeLookupDetail().content(matterTypes)));
 
-      mockMvc.perform(post("/application/proceedings/{action}/matter-type", action)
-              .sessionAttr(APPLICATION, application)
-              .sessionAttr(PROCEEDING_FLOW_FORM_DATA, new ProceedingFlowFormData(action))
-              .flashAttr("matterTypeDetails", matterTypeDetails))
+      mockMvc
+          .perform(
+              post("/application/proceedings/{action}/matter-type", action)
+                  .sessionAttr(APPLICATION, application)
+                  .sessionAttr(PROCEEDING_FLOW_FORM_DATA, new ProceedingFlowFormData(action))
+                  .flashAttr("matterTypeDetails", matterTypeDetails))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-matter-type"))
           .andExpect(model().attributeHasFieldErrors("matterTypeDetails", "matterType"));
 
-      verify(matterTypeValidator, times(1)).validate(eq(matterTypeDetails),
-          any(BindingResult.class));
+      verify(matterTypeValidator, times(1))
+          .validate(eq(matterTypeDetails), any(BindingResult.class));
     }
-
   }
 
   @Nested
@@ -448,9 +456,10 @@ class EditProceedingsAndCostsSectionControllerTest {
     @DisplayName("Should return expected result")
     void shouldReturnExpectedResult() throws Exception {
       final String action = "add";
-      final ApplicationDetail application = new ApplicationDetail()
-          .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
-          .applicationType(new ApplicationType().id("applicationTypeId"));
+      final ApplicationDetail application =
+          new ApplicationDetail()
+              .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+              .applicationType(new ApplicationType().id("applicationTypeId"));
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
       proceedingFlow.setMatterTypeDetails(new ProceedingFormDataMatterTypeDetails());
       proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
@@ -459,17 +468,22 @@ class EditProceedingsAndCostsSectionControllerTest {
           new ProceedingFormDataProceedingDetails();
       proceedingFlow.setProceedingDetails(proceedingTypeDetails);
 
-      final List<uk.gov.laa.ccms.data.model.ProceedingDetail> proceedingDetails = Arrays.asList(
-          new uk.gov.laa.ccms.data.model.ProceedingDetail().code("1").description("Type 1"),
-          new uk.gov.laa.ccms.data.model.ProceedingDetail().code("2").description("Type 2")
-      );
-      when(lookupService.getProceedings(any(uk.gov.laa.ccms.data.model.ProceedingDetail.class),
-          eq(null), eq("applicationTypeId"), eq(true)))
+      final List<uk.gov.laa.ccms.data.model.ProceedingDetail> proceedingDetails =
+          Arrays.asList(
+              new uk.gov.laa.ccms.data.model.ProceedingDetail().code("1").description("Type 1"),
+              new uk.gov.laa.ccms.data.model.ProceedingDetail().code("2").description("Type 2"));
+      when(lookupService.getProceedings(
+              any(uk.gov.laa.ccms.data.model.ProceedingDetail.class),
+              eq(null),
+              eq("applicationTypeId"),
+              eq(true)))
           .thenReturn(Mono.just(new ProceedingDetails().content(proceedingDetails)));
 
-      mockMvc.perform(get("/application/proceedings/{action}/proceeding-type", action)
-              .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
-              .sessionAttr(APPLICATION, application))
+      mockMvc
+          .perform(
+              get("/application/proceedings/{action}/proceeding-type", action)
+                  .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
+                  .sessionAttr(APPLICATION, application))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-proceeding-type"))
           .andExpect(model().attribute("proceedingTypes", proceedingDetails))
@@ -494,10 +508,12 @@ class EditProceedingsAndCostsSectionControllerTest {
           new ProceedingFormDataProceedingDetails();
       proceedingTypeDetails.setProceedingType("newProceedingType");
 
-      mockMvc.perform(post("/application/proceedings/{action}/proceeding-type", action)
-              .sessionAttr(APPLICATION, application)
-              .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
-              .flashAttr("proceedingTypeDetails", proceedingTypeDetails))
+      mockMvc
+          .perform(
+              post("/application/proceedings/{action}/proceeding-type", action)
+                  .sessionAttr(APPLICATION, application)
+                  .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
+                  .flashAttr("proceedingTypeDetails", proceedingTypeDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(
               redirectedUrl("/application/proceedings/%s/further-details".formatted(action)));
@@ -524,16 +540,19 @@ class EditProceedingsAndCostsSectionControllerTest {
       oldProceedingTypeDetails.setProceedingType("originalProceedingType");
       oldProceedingFlow.setProceedingDetails(oldProceedingTypeDetails);
 
-      mockMvc.perform(post("/application/proceedings/{action}/proceeding-type", action)
-              .sessionAttr(APPLICATION, application)
-              .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
-              .sessionAttr(PROCEEDING_FLOW_FORM_DATA_OLD, oldProceedingFlow)
-              .flashAttr("proceedingTypeDetails", proceedingTypeDetails))
+      mockMvc
+          .perform(
+              post("/application/proceedings/{action}/proceeding-type", action)
+                  .sessionAttr(APPLICATION, application)
+                  .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
+                  .sessionAttr(PROCEEDING_FLOW_FORM_DATA_OLD, oldProceedingFlow)
+                  .flashAttr("proceedingTypeDetails", proceedingTypeDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(
               redirectedUrl("/application/proceedings/%s/further-details".formatted(action)));
 
-      assertTrue(proceedingFlow.isAmended(),
+      assertTrue(
+          proceedingFlow.isAmended(),
           "ProceedingDetail flow should be marked as amended when proceeding type is changed.");
     }
 
@@ -541,42 +560,50 @@ class EditProceedingsAndCostsSectionControllerTest {
     @DisplayName("Should have validation errors")
     void shouldHaveValidationErrors() throws Exception {
       final String action = "add";
-      final ApplicationDetail application = new ApplicationDetail()
-          .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
-          .applicationType(new ApplicationType().id("applicationTypeId"));
+      final ApplicationDetail application =
+          new ApplicationDetail()
+              .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+              .applicationType(new ApplicationType().id("applicationTypeId"));
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
       proceedingFlow.setMatterTypeDetails(new ProceedingFormDataMatterTypeDetails());
       proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
       final ProceedingFormDataProceedingDetails proceedingTypeDetails =
           new ProceedingFormDataProceedingDetails();
-      final List<uk.gov.laa.ccms.data.model.ProceedingDetail> proceedingDetails = Arrays.asList(
-          new uk.gov.laa.ccms.data.model.ProceedingDetail().code("1").description("Type 1"),
-          new uk.gov.laa.ccms.data.model.ProceedingDetail().code("2").description("Type 2")
-      );
+      final List<uk.gov.laa.ccms.data.model.ProceedingDetail> proceedingDetails =
+          Arrays.asList(
+              new uk.gov.laa.ccms.data.model.ProceedingDetail().code("1").description("Type 1"),
+              new uk.gov.laa.ccms.data.model.ProceedingDetail().code("2").description("Type 2"));
 
-      when(lookupService.getProceedings(any(uk.gov.laa.ccms.data.model.ProceedingDetail.class),
-          eq(null), eq("applicationTypeId"), eq(false)))
+      when(lookupService.getProceedings(
+              any(uk.gov.laa.ccms.data.model.ProceedingDetail.class),
+              eq(null),
+              eq("applicationTypeId"),
+              eq(false)))
           .thenReturn(Mono.just(new ProceedingDetails().content(proceedingDetails)));
 
-      doAnswer(invocation -> {
-        final BindingResult errors = invocation.getArgument(1);
-        errors.rejectValue("proceedingType", "error.proceedingType",
-            "ProceedingDetail Type is required");
-        return null;
-      }).when(proceedingTypeValidator).validate(any(), any(BindingResult.class));
+      doAnswer(
+              invocation -> {
+                final BindingResult errors = invocation.getArgument(1);
+                errors.rejectValue(
+                    "proceedingType", "error.proceedingType", "ProceedingDetail Type is required");
+                return null;
+              })
+          .when(proceedingTypeValidator)
+          .validate(any(), any(BindingResult.class));
 
-      mockMvc.perform(post("/application/proceedings/{action}/proceeding-type", action)
-              .sessionAttr(APPLICATION, application)
-              .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
-              .flashAttr("proceedingTypeDetails", proceedingTypeDetails))
+      mockMvc
+          .perform(
+              post("/application/proceedings/{action}/proceeding-type", action)
+                  .sessionAttr(APPLICATION, application)
+                  .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
+                  .flashAttr("proceedingTypeDetails", proceedingTypeDetails))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-proceeding-type"))
           .andExpect(model().attributeHasFieldErrors("proceedingTypeDetails", "proceedingType"));
 
-      verify(proceedingTypeValidator, times(1)).validate(eq(proceedingTypeDetails),
-          any(BindingResult.class));
+      verify(proceedingTypeValidator, times(1))
+          .validate(eq(proceedingTypeDetails), any(BindingResult.class));
     }
-
   }
 
   @Nested
@@ -586,11 +613,10 @@ class EditProceedingsAndCostsSectionControllerTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult(final boolean orderTypeRequired)
-        throws Exception {
+    void shouldReturnExpectedResult(final boolean orderTypeRequired) throws Exception {
       final String action = "add";
-      final ApplicationDetail application = new ApplicationDetail().categoryOfLaw(
-          new StringDisplayValue().id("categoryOfLawId"));
+      final ApplicationDetail application =
+          new ApplicationDetail().categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
       proceedingFlow.setProceedingDetails(new ProceedingFormDataProceedingDetails());
       proceedingFlow.getProceedingDetails().setProceedingType("proceedingType");
@@ -599,17 +625,22 @@ class EditProceedingsAndCostsSectionControllerTest {
       proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
       proceedingFlow.setFurtherDetails(new ProceedingFormDataFurtherDetails());
 
-      final List<ClientInvolvementTypeLookupValueDetail> clientInvolvementTypes = Arrays.asList(
-          new ClientInvolvementTypeLookupValueDetail().clientInvolvementType("1")
-              .clientInvolvementTypeName("Type 1"),
-          new ClientInvolvementTypeLookupValueDetail().clientInvolvementType("2")
-              .clientInvolvementTypeName("Type 2"));
-      final List<LevelOfServiceLookupValueDetail> levelOfServiceTypes = Arrays.asList(
-          new LevelOfServiceLookupValueDetail().levelOfServiceCode("A").description("Level A"),
-          new LevelOfServiceLookupValueDetail().levelOfServiceCode("B").description("Level B"));
-      final List<CommonLookupValueDetail> orderTypes = Arrays.asList(
-          new CommonLookupValueDetail().code("OT1").description("Order Type 1"),
-          new CommonLookupValueDetail().code("OT2").description("Order Type 2"));
+      final List<ClientInvolvementTypeLookupValueDetail> clientInvolvementTypes =
+          Arrays.asList(
+              new ClientInvolvementTypeLookupValueDetail()
+                  .clientInvolvementType("1")
+                  .clientInvolvementTypeName("Type 1"),
+              new ClientInvolvementTypeLookupValueDetail()
+                  .clientInvolvementType("2")
+                  .clientInvolvementTypeName("Type 2"));
+      final List<LevelOfServiceLookupValueDetail> levelOfServiceTypes =
+          Arrays.asList(
+              new LevelOfServiceLookupValueDetail().levelOfServiceCode("A").description("Level A"),
+              new LevelOfServiceLookupValueDetail().levelOfServiceCode("B").description("Level B"));
+      final List<CommonLookupValueDetail> orderTypes =
+          Arrays.asList(
+              new CommonLookupValueDetail().code("OT1").description("Order Type 1"),
+              new CommonLookupValueDetail().code("OT2").description("Order Type 2"));
 
       when(lookupService.getProceedingClientInvolvementTypes(anyString()))
           .thenReturn(
@@ -622,20 +653,23 @@ class EditProceedingsAndCostsSectionControllerTest {
             .thenReturn(Mono.just(new CommonLookupDetail().content(orderTypes)));
       }
 
-      final ResultActions resultActions = mockMvc.perform(
-              get("/application/proceedings/{action}/further-details", action)
-                  .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
-                  .sessionAttr(APPLICATION, application))
-          .andExpect(status().isOk())
-          .andExpect(view().name("application/proceedings-further-details"))
-          .andExpect(model().attributeExists("clientInvolvementTypes", "levelOfServiceTypes"))
-          .andExpect(model().attribute("clientInvolvementTypes", clientInvolvementTypes))
-          .andExpect(model().attribute("levelOfServiceTypes", levelOfServiceTypes))
-          .andExpect(model().attribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow))
-          .andExpect(model().attribute("furtherDetails", proceedingFlow.getFurtherDetails()));
+      final ResultActions resultActions =
+          mockMvc
+              .perform(
+                  get("/application/proceedings/{action}/further-details", action)
+                      .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
+                      .sessionAttr(APPLICATION, application))
+              .andExpect(status().isOk())
+              .andExpect(view().name("application/proceedings-further-details"))
+              .andExpect(model().attributeExists("clientInvolvementTypes", "levelOfServiceTypes"))
+              .andExpect(model().attribute("clientInvolvementTypes", clientInvolvementTypes))
+              .andExpect(model().attribute("levelOfServiceTypes", levelOfServiceTypes))
+              .andExpect(model().attribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow))
+              .andExpect(model().attribute("furtherDetails", proceedingFlow.getFurtherDetails()));
 
       if (orderTypeRequired) {
-        resultActions.andExpect(model().attributeExists("orderTypes"))
+        resultActions
+            .andExpect(model().attributeExists("orderTypes"))
             .andExpect(model().attribute("orderTypes", orderTypes));
         verify(lookupService, times(1)).getCommonValues(COMMON_VALUE_PROCEEDING_ORDER_TYPE);
       } else {
@@ -643,9 +677,8 @@ class EditProceedingsAndCostsSectionControllerTest {
       }
 
       verify(lookupService, times(1)).getProceedingClientInvolvementTypes("proceedingType");
-      verify(lookupService, times(1)).getProceedingLevelOfServiceTypes("categoryOfLawId",
-          "proceedingType", "matterType");
-
+      verify(lookupService, times(1))
+          .getProceedingLevelOfServiceTypes("categoryOfLawId", "proceedingType", "matterType");
     }
   }
 
@@ -666,13 +699,16 @@ class EditProceedingsAndCostsSectionControllerTest {
       furtherDetails.setLevelOfService("originalLevelOfService");
       furtherDetails.setTypeOfOrder("originalTypeOfOrder");
 
-      doNothing().when(furtherDetailsValidator)
+      doNothing()
+          .when(furtherDetailsValidator)
           .validate(any(ProceedingFlowFormData.class), any(BindingResult.class));
 
-      mockMvc.perform(post("/application/proceedings/{action}/further-details", action)
-              .sessionAttr(APPLICATION, application)
-              .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
-              .flashAttr("furtherDetails", furtherDetails))
+      mockMvc
+          .perform(
+              post("/application/proceedings/{action}/further-details", action)
+                  .sessionAttr(APPLICATION, application)
+                  .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
+                  .flashAttr("furtherDetails", furtherDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/proceedings/%s/confirm".formatted(action)));
 
@@ -683,13 +719,15 @@ class EditProceedingsAndCostsSectionControllerTest {
     private static Stream<Arguments> provideFurtherDetailsForEdit() {
       return Stream.of(
           Arguments.of("newClientInvolvementType", "newLevelOfService", "newTypeOfOrder", true),
-          Arguments.of("originalClientInvolvementType", "newLevelOfService", "newTypeOfOrder",
-              true),
-          Arguments.of("originalClientInvolvementType", "originalLevelOfService", "newTypeOfOrder",
-              true),
-          Arguments.of("originalClientInvolvementType", "originalLevelOfService",
-              "originalTypeOfOrder", false)
-      );
+          Arguments.of(
+              "originalClientInvolvementType", "newLevelOfService", "newTypeOfOrder", true),
+          Arguments.of(
+              "originalClientInvolvementType", "originalLevelOfService", "newTypeOfOrder", true),
+          Arguments.of(
+              "originalClientInvolvementType",
+              "originalLevelOfService",
+              "originalTypeOfOrder",
+              false));
     }
 
     @ParameterizedTest
@@ -699,7 +737,8 @@ class EditProceedingsAndCostsSectionControllerTest {
         final String clientInvolvementType,
         final String levelOfService,
         final String typeOfOrder,
-        final boolean expectedAmendment) throws Exception {
+        final boolean expectedAmendment)
+        throws Exception {
 
       final String action = "edit";
       final ApplicationDetail application = new ApplicationDetail();
@@ -712,7 +751,8 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       final ProceedingFlowFormData oldProceedingFlow = new ProceedingFlowFormData(action);
       oldProceedingFlow.setFurtherDetails(new ProceedingFormDataFurtherDetails());
-      oldProceedingFlow.getFurtherDetails()
+      oldProceedingFlow
+          .getFurtherDetails()
           .setClientInvolvementType("originalClientInvolvementType");
       oldProceedingFlow.getFurtherDetails().setLevelOfService("originalLevelOfService");
       oldProceedingFlow.getFurtherDetails().setTypeOfOrder("originalTypeOfOrder");
@@ -720,15 +760,19 @@ class EditProceedingsAndCostsSectionControllerTest {
       final MockHttpSession session = new MockHttpSession();
       session.setAttribute(PROCEEDING_FLOW_FORM_DATA_OLD, oldProceedingFlow);
 
-      mockMvc.perform(post("/application/proceedings/{action}/further-details", action)
-              .sessionAttr(APPLICATION, application)
-              .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
-              .session(session)
-              .flashAttr("furtherDetails", furtherDetails))
+      mockMvc
+          .perform(
+              post("/application/proceedings/{action}/further-details", action)
+                  .sessionAttr(APPLICATION, application)
+                  .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
+                  .session(session)
+                  .flashAttr("furtherDetails", furtherDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/proceedings/%s/confirm".formatted(action)));
 
-      assertEquals(expectedAmendment, proceedingFlow.isAmended(),
+      assertEquals(
+          expectedAmendment,
+          proceedingFlow.isAmended(),
           "ProceedingDetail flow amendment status does not match expected.");
     }
 
@@ -736,8 +780,8 @@ class EditProceedingsAndCostsSectionControllerTest {
     @DisplayName("Should have validation errors")
     void shouldHaveValidationErrors() throws Exception {
       final String action = "add";
-      final ApplicationDetail application = new ApplicationDetail()
-          .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
+      final ApplicationDetail application =
+          new ApplicationDetail().categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
       proceedingFlow.setProceedingDetails(new ProceedingFormDataProceedingDetails());
       proceedingFlow.getProceedingDetails().setProceedingType("proceedingType");
@@ -747,14 +791,18 @@ class EditProceedingsAndCostsSectionControllerTest {
       proceedingFlow.setFurtherDetails(new ProceedingFormDataFurtherDetails());
       final ProceedingFormDataFurtherDetails furtherDetails =
           new ProceedingFormDataFurtherDetails();
-      final List<ClientInvolvementTypeLookupValueDetail> clientInvolvementTypes = Arrays.asList(
-          new ClientInvolvementTypeLookupValueDetail().clientInvolvementType("1")
-              .clientInvolvementTypeName("Type 1"),
-          new ClientInvolvementTypeLookupValueDetail().clientInvolvementType("2")
-              .clientInvolvementTypeName("Type 2"));
-      final List<LevelOfServiceLookupValueDetail> levelOfServiceTypes = Arrays.asList(
-          new LevelOfServiceLookupValueDetail().levelOfServiceCode("A").description("Level A"),
-          new LevelOfServiceLookupValueDetail().levelOfServiceCode("B").description("Level B"));
+      final List<ClientInvolvementTypeLookupValueDetail> clientInvolvementTypes =
+          Arrays.asList(
+              new ClientInvolvementTypeLookupValueDetail()
+                  .clientInvolvementType("1")
+                  .clientInvolvementTypeName("Type 1"),
+              new ClientInvolvementTypeLookupValueDetail()
+                  .clientInvolvementType("2")
+                  .clientInvolvementTypeName("Type 2"));
+      final List<LevelOfServiceLookupValueDetail> levelOfServiceTypes =
+          Arrays.asList(
+              new LevelOfServiceLookupValueDetail().levelOfServiceCode("A").description("Level A"),
+              new LevelOfServiceLookupValueDetail().levelOfServiceCode("B").description("Level B"));
 
       when(lookupService.getProceedingClientInvolvementTypes(anyString()))
           .thenReturn(
@@ -763,16 +811,21 @@ class EditProceedingsAndCostsSectionControllerTest {
           .thenReturn(Mono.just(new LevelOfServiceLookupDetail().content(levelOfServiceTypes)));
 
       // Simulate validation error
-      doAnswer(invocation -> {
-        final BindingResult errors = invocation.getArgument(1);
-        errors.reject("errorKey", "Default message");
-        return null;
-      }).when(furtherDetailsValidator).validate(eq(proceedingFlow), any(BindingResult.class));
+      doAnswer(
+              invocation -> {
+                final BindingResult errors = invocation.getArgument(1);
+                errors.reject("errorKey", "Default message");
+                return null;
+              })
+          .when(furtherDetailsValidator)
+          .validate(eq(proceedingFlow), any(BindingResult.class));
 
-      mockMvc.perform(post("/application/proceedings/{action}/further-details", action)
-              .sessionAttr(APPLICATION, application)
-              .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
-              .flashAttr("furtherDetails", furtherDetails))
+      mockMvc
+          .perform(
+              post("/application/proceedings/{action}/further-details", action)
+                  .sessionAttr(APPLICATION, application)
+                  .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
+                  .flashAttr("furtherDetails", furtherDetails))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-further-details"))
           .andExpect(model().attributeExists(PROCEEDING_FLOW_FORM_DATA))
@@ -790,9 +843,10 @@ class EditProceedingsAndCostsSectionControllerTest {
     @DisplayName("Should return expected results - add")
     void shouldReturnExpectedResultAdd() throws Exception {
       final String action = "add";
-      final ApplicationDetail application = new ApplicationDetail()
-          .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
-          .applicationType(new ApplicationType().id("applicationTypeId"));
+      final ApplicationDetail application =
+          new ApplicationDetail()
+              .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+              .applicationType(new ApplicationType().id("applicationTypeId"));
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
       proceedingFlow.setProceedingDetails(new ProceedingFormDataProceedingDetails());
       proceedingFlow.getProceedingDetails().setProceedingType("proceedingType");
@@ -805,34 +859,36 @@ class EditProceedingsAndCostsSectionControllerTest {
       proceedingFlow.getFurtherDetails().setTypeOfOrder("typeOfOrder");
       proceedingFlow.setAmended(true);
 
-      final ProceedingDetail proceeding = new ProceedingDetail()
-          .id(1)
-          .typeOfOrder(
-              new StringDisplayValue().id("orderType").displayValue("Order Type Description"))
-          .scopeLimitations(new ArrayList<>(
-              Collections.singletonList(new ScopeLimitationDetail().id(1))));
+      final ProceedingDetail proceeding =
+          new ProceedingDetail()
+              .id(1)
+              .typeOfOrder(
+                  new StringDisplayValue().id("orderType").displayValue("Order Type Description"))
+              .scopeLimitations(
+                  new ArrayList<>(Collections.singletonList(new ScopeLimitationDetail().id(1))));
 
       final MockHttpSession session = new MockHttpSession();
       session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
       session.setAttribute(CURRENT_PROCEEDING, proceeding);
 
       when(applicationService.getDefaultScopeLimitation(
-          application.getCategoryOfLaw().getId(),
-          proceedingFlow.getMatterTypeDetails().getMatterType(),
-          proceedingFlow.getProceedingDetails().getProceedingType(),
-          proceedingFlow.getFurtherDetails().getLevelOfService(),
-          application.getApplicationType().getId()))
+              application.getCategoryOfLaw().getId(),
+              proceedingFlow.getMatterTypeDetails().getMatterType(),
+              proceedingFlow.getProceedingDetails().getProceedingType(),
+              proceedingFlow.getFurtherDetails().getLevelOfService(),
+              application.getApplicationType().getId()))
           .thenReturn(Mono.just(new ScopeLimitationDetails()));
 
-      mockMvc.perform(get("/application/proceedings/{action}/confirm", action)
-              .sessionAttr(APPLICATION, application)
-              .session(session))
+      mockMvc
+          .perform(
+              get("/application/proceedings/{action}/confirm", action)
+                  .sessionAttr(APPLICATION, application)
+                  .session(session))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-confirm"))
           .andExpect(model().attributeExists(PROCEEDING_FLOW_FORM_DATA))
           .andExpect(
               model().attribute(PROCEEDING_FLOW_FORM_DATA, hasProperty("amended", is(false))));
-
     }
 
     @Test
@@ -843,18 +899,19 @@ class EditProceedingsAndCostsSectionControllerTest {
       ApplicationType applicationType = new ApplicationType();
       applicationType.setId("SUBDP");
       application.setApplicationType(applicationType);
-      final ProceedingDetail proceeding = new ProceedingDetail()
-          .id(1)
-          .typeOfOrder(
-              new StringDisplayValue().id("orderType").displayValue("Order Type Description"));
+      final ProceedingDetail proceeding =
+          new ProceedingDetail()
+              .id(1)
+              .typeOfOrder(
+                  new StringDisplayValue().id("orderType").displayValue("Order Type Description"));
       final String orderTypeDisplayValue = "Order Type Description";
 
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
       proceedingFlow.setEditingScopeLimitations(true);
       proceedingFlow.setAmended(false);
 
-      when(lookupService.getOrderTypeDescription(anyString())).thenReturn(
-          Mono.just(orderTypeDisplayValue));
+      when(lookupService.getOrderTypeDescription(anyString()))
+          .thenReturn(Mono.just(orderTypeDisplayValue));
       when(proceedingAndCostsMapper.toProceedingFlow(any(ProceedingDetail.class), anyString()))
           .thenReturn(proceedingFlow);
 
@@ -862,19 +919,20 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(CURRENT_PROCEEDING, proceeding);
       session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
 
-      mockMvc.perform(get("/application/proceedings/{action}/confirm", action)
-              .sessionAttr(APPLICATION, application)
-              .session(session))
+      mockMvc
+          .perform(
+              get("/application/proceedings/{action}/confirm", action)
+                  .sessionAttr(APPLICATION, application)
+                  .session(session))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-confirm"))
           .andExpect(model().attributeExists(PROCEEDING_FLOW_FORM_DATA))
           .andExpect(model().attributeExists(CURRENT_PROCEEDING));
 
       verify(lookupService, times(1)).getOrderTypeDescription(anyString());
-      verify(proceedingAndCostsMapper, times(1)).toProceedingFlow(any(ProceedingDetail.class),
-          anyString());
+      verify(proceedingAndCostsMapper, times(1))
+          .toProceedingFlow(any(ProceedingDetail.class), anyString());
     }
-
   }
 
   @Nested
@@ -885,10 +943,11 @@ class EditProceedingsAndCostsSectionControllerTest {
     @DisplayName("Should return expected result")
     public void shouldReturnExpectedResult() throws Exception {
       final String action = "add";
-      final ApplicationDetail application = new ApplicationDetail()
-          .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
-          .applicationType(new ApplicationType().id("applicationTypeId"))
-          .amendment(false);
+      final ApplicationDetail application =
+          new ApplicationDetail()
+              .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+              .applicationType(new ApplicationType().id("applicationTypeId"))
+              .amendment(false);
 
       final String applicationId = "testApplicationId";
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
@@ -906,29 +965,30 @@ class EditProceedingsAndCostsSectionControllerTest {
       final List<ScopeLimitationDetail> scopeLimitations = Collections.emptyList();
       final List<ProceedingDetail> proceedings = Collections.emptyList();
 
-      when(applicationService.getProceedingCostLimitation(anyString(), anyString(), anyString(),
-          anyString(), anyString(), any(List.class)))
+      when(applicationService.getProceedingCostLimitation(
+              anyString(), anyString(), anyString(), anyString(), anyString(), any(List.class)))
           .thenReturn(new BigDecimal("1000"));
-      when(applicationService.getProceedingStage(anyString(), anyString(), anyString(), anyString(),
-          any(List.class), anyBoolean()))
+      when(applicationService.getProceedingStage(
+              anyString(), anyString(), anyString(), anyString(), any(List.class), anyBoolean()))
           .thenReturn(1);
 
       when(proceedingAndCostsMapper.toProceeding(any(), any(), any()))
           .thenReturn(new ProceedingDetail());
 
-      mockMvc.perform(post("/application/proceedings/{action}/confirm", action)
-              .sessionAttr(APPLICATION, application)
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
-              .sessionAttr(PROCEEDING_SCOPE_LIMITATIONS, scopeLimitations)
-              .sessionAttr(APPLICATION_PROCEEDINGS, proceedings)
-              .sessionAttr(USER_DETAILS, user))
+      mockMvc
+          .perform(
+              post("/application/proceedings/{action}/confirm", action)
+                  .sessionAttr(APPLICATION, application)
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
+                  .sessionAttr(PROCEEDING_SCOPE_LIMITATIONS, scopeLimitations)
+                  .sessionAttr(APPLICATION_PROCEEDINGS, proceedings)
+                  .sessionAttr(USER_DETAILS, user))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/proceedings-and-costs"));
 
-      verify(applicationService, times(1)).addProceeding(eq(applicationId),
-          any(ProceedingDetail.class), eq(user));
-
+      verify(applicationService, times(1))
+          .addProceeding(eq(applicationId), any(ProceedingDetail.class), eq(user));
     }
   }
 
@@ -942,26 +1002,29 @@ class EditProceedingsAndCostsSectionControllerTest {
       final Integer scopeLimitationId = 0;
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData("add");
       proceedingFlow.setAction("add");
-      final List<ScopeLimitationDetail> scopeLimitations = Collections.singletonList(
-          new ScopeLimitationDetail().id(scopeLimitationId));
-      final ScopeLimitationFlowFormData scopeLimitationFlow = new ScopeLimitationFlowFormData(
-          "add");
+      final List<ScopeLimitationDetail> scopeLimitations =
+          Collections.singletonList(new ScopeLimitationDetail().id(scopeLimitationId));
+      final ScopeLimitationFlowFormData scopeLimitationFlow =
+          new ScopeLimitationFlowFormData("add");
 
-      when(proceedingAndCostsMapper.toScopeLimitationFlow(
-          any(ScopeLimitationDetail.class))).thenReturn(scopeLimitationFlow);
+      when(proceedingAndCostsMapper.toScopeLimitationFlow(any(ScopeLimitationDetail.class)))
+          .thenReturn(scopeLimitationFlow);
 
       final MockHttpSession session = new MockHttpSession();
       session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
       session.setAttribute(PROCEEDING_SCOPE_LIMITATIONS, scopeLimitations);
 
-      mockMvc.perform(get("/application/proceedings/scope-limitations/{scope-limitation-id}/edit",
-              scopeLimitationId)
-              .session(session))
+      mockMvc
+          .perform(
+              get(
+                      "/application/proceedings/scope-limitations/{scope-limitation-id}/edit",
+                      scopeLimitationId)
+                  .session(session))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/proceedings/scope-limitations/edit/details"));
 
-      verify(proceedingAndCostsMapper, times(1)).toScopeLimitationFlow(
-          any(ScopeLimitationDetail.class));
+      verify(proceedingAndCostsMapper, times(1))
+          .toScopeLimitationFlow(any(ScopeLimitationDetail.class));
     }
 
     @Test
@@ -970,28 +1033,31 @@ class EditProceedingsAndCostsSectionControllerTest {
       final Integer scopeLimitationId = 1;
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData("edit");
       proceedingFlow.setAction("edit");
-      final ScopeLimitationDetail scopeLimitation = new ScopeLimitationDetail().id(
-          scopeLimitationId);
+      final ScopeLimitationDetail scopeLimitation =
+          new ScopeLimitationDetail().id(scopeLimitationId);
       final ProceedingDetail proceeding = new ProceedingDetail();
       proceeding.setScopeLimitations(Collections.singletonList(scopeLimitation));
-      final ScopeLimitationFlowFormData scopeLimitationFlow = new ScopeLimitationFlowFormData(
-          "edit");
+      final ScopeLimitationFlowFormData scopeLimitationFlow =
+          new ScopeLimitationFlowFormData("edit");
 
-      when(proceedingAndCostsMapper.toScopeLimitationFlow(
-          any(ScopeLimitationDetail.class))).thenReturn(scopeLimitationFlow);
+      when(proceedingAndCostsMapper.toScopeLimitationFlow(any(ScopeLimitationDetail.class)))
+          .thenReturn(scopeLimitationFlow);
 
       final MockHttpSession session = new MockHttpSession();
       session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
       session.setAttribute(CURRENT_PROCEEDING, proceeding);
 
-      mockMvc.perform(get("/application/proceedings/scope-limitations/{scope-limitation-id}/edit",
-              scopeLimitationId)
-              .session(session))
+      mockMvc
+          .perform(
+              get(
+                      "/application/proceedings/scope-limitations/{scope-limitation-id}/edit",
+                      scopeLimitationId)
+                  .session(session))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/proceedings/scope-limitations/edit/details"));
 
-      verify(proceedingAndCostsMapper, times(1)).toScopeLimitationFlow(
-          any(ScopeLimitationDetail.class));
+      verify(proceedingAndCostsMapper, times(1))
+          .toScopeLimitationFlow(any(ScopeLimitationDetail.class));
     }
   }
 
@@ -1003,61 +1069,71 @@ class EditProceedingsAndCostsSectionControllerTest {
     @DisplayName("Should return expected result - add")
     void shouldReturnExpectedResultAdd() throws Exception {
       final String action = "add";
-      final ApplicationDetail application = new ApplicationDetail()
-          .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
-          .applicationType(new ApplicationType().id("applicationTypeId"));
+      final ApplicationDetail application =
+          new ApplicationDetail()
+              .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+              .applicationType(new ApplicationType().id("applicationTypeId"));
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
       proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
       proceedingFlow.getProceedingDetails().setProceedingType("proceedingType");
       proceedingFlow.getFurtherDetails().setLevelOfService("levelOfService");
 
-      final ScopeLimitationDetails mockedScopeLimitationDetails = new ScopeLimitationDetails()
-          .addContentItem(
-              new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().description("Mock Detail 1"))
-          .addContentItem(
-              new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().description("Mock Detail 2"));
+      final ScopeLimitationDetails mockedScopeLimitationDetails =
+          new ScopeLimitationDetails()
+              .addContentItem(
+                  new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+                      .description("Mock Detail 1"))
+              .addContentItem(
+                  new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+                      .description("Mock Detail 2"));
 
-      when(lookupService.getScopeLimitationDetails(any(
-          uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
+      when(lookupService.getScopeLimitationDetails(
+              any(uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
           .thenReturn(Mono.just(mockedScopeLimitationDetails));
 
       final MockHttpSession session = new MockHttpSession();
       session.setAttribute(APPLICATION, application);
       session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
 
-      mockMvc.perform(get("/application/proceedings/scope-limitations/{action}/details", action)
-              .session(session))
+      mockMvc
+          .perform(
+              get("/application/proceedings/scope-limitations/{action}/details", action)
+                  .session(session))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-scope-limitations-details"))
           .andExpect(model().attributeExists(SCOPE_LIMITATION_FLOW_FORM_DATA))
           .andExpect(
-              model().attribute(SCOPE_LIMITATION_FLOW_FORM_DATA,
-                  hasProperty("action", is(action))));
+              model()
+                  .attribute(SCOPE_LIMITATION_FLOW_FORM_DATA, hasProperty("action", is(action))));
     }
 
     @Test
     @DisplayName("Should return expected result - edit")
     void shouldReturnExpectedResultEdit() throws Exception {
       final String action = "edit";
-      final ApplicationDetail application = new ApplicationDetail()
-          .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
-          .applicationType(new ApplicationType().id("applicationTypeId"));
+      final ApplicationDetail application =
+          new ApplicationDetail()
+              .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+              .applicationType(new ApplicationType().id("applicationTypeId"));
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
       proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
       proceedingFlow.getProceedingDetails().setProceedingType("proceedingType");
       proceedingFlow.getFurtherDetails().setLevelOfService("levelOfService");
 
-      final ScopeLimitationFlowFormData scopeLimitationFlow = new ScopeLimitationFlowFormData(
-          action);
+      final ScopeLimitationFlowFormData scopeLimitationFlow =
+          new ScopeLimitationFlowFormData(action);
 
-      final ScopeLimitationDetails mockedScopeLimitationDetails = new ScopeLimitationDetails()
-          .addContentItem(
-              new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().description("Mock Detail 1"))
-          .addContentItem(
-              new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().description("Mock Detail 2"));
+      final ScopeLimitationDetails mockedScopeLimitationDetails =
+          new ScopeLimitationDetails()
+              .addContentItem(
+                  new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+                      .description("Mock Detail 1"))
+              .addContentItem(
+                  new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+                      .description("Mock Detail 2"));
 
-      when(lookupService.getScopeLimitationDetails(any(
-          uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
+      when(lookupService.getScopeLimitationDetails(
+              any(uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
           .thenReturn(Mono.just(mockedScopeLimitationDetails));
 
       final MockHttpSession session = new MockHttpSession();
@@ -1065,8 +1141,10 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
       session.setAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
 
-      mockMvc.perform(get("/application/proceedings/scope-limitations/{action}/details", action)
-              .session(session))
+      mockMvc
+          .perform(
+              get("/application/proceedings/scope-limitations/{action}/details", action)
+                  .session(session))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-scope-limitations-details"))
           .andExpect(model().attributeExists(SCOPE_LIMITATION_FLOW_FORM_DATA))
@@ -1082,33 +1160,37 @@ class EditProceedingsAndCostsSectionControllerTest {
     @DisplayName("Should return expected result")
     void shouldReturnExpectedResult() throws Exception {
       final String action = "edit";
-      final ApplicationDetail application = new ApplicationDetail()
-          .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
-          .applicationType(new ApplicationType().id("applicationTypeId"));
+      final ApplicationDetail application =
+          new ApplicationDetail()
+              .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+              .applicationType(new ApplicationType().id("applicationTypeId"));
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
       proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
       proceedingFlow.getProceedingDetails().setProceedingType("proceedingType");
       proceedingFlow.getFurtherDetails().setLevelOfService("levelOfService");
 
-      final ScopeLimitationFlowFormData scopeLimitationFlow = new ScopeLimitationFlowFormData(
-          action);
+      final ScopeLimitationFlowFormData scopeLimitationFlow =
+          new ScopeLimitationFlowFormData(action);
       scopeLimitationFlow.setScopeLimitationId(1);
       final ScopeLimitationFormDataDetails scopeLimitationDetails =
           new ScopeLimitationFormDataDetails();
       scopeLimitationDetails.setScopeLimitation("newScopeLimitation");
 
-      final ScopeLimitationDetails mockedScopeLimitationDetails = new ScopeLimitationDetails()
-          .addContentItem(
-              new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().description("Mock Detail 1"))
-          .addContentItem(
-              new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().description("Mock Detail 2"));
+      final ScopeLimitationDetails mockedScopeLimitationDetails =
+          new ScopeLimitationDetails()
+              .addContentItem(
+                  new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+                      .description("Mock Detail 1"))
+              .addContentItem(
+                  new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+                      .description("Mock Detail 2"));
 
-      when(lookupService.getScopeLimitationDetails(any(
-          uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
+      when(lookupService.getScopeLimitationDetails(
+              any(uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
           .thenReturn(Mono.just(mockedScopeLimitationDetails));
 
-      when(proceedingAndCostsMapper.toScopeLimitation(any(
-          uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
+      when(proceedingAndCostsMapper.toScopeLimitation(
+              any(uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
           .thenReturn(new ScopeLimitationDetail());
 
       final MockHttpSession session = new MockHttpSession();
@@ -1116,9 +1198,11 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
       session.setAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
 
-      mockMvc.perform(post("/application/proceedings/scope-limitations/{action}/details", action)
-              .session(session)
-              .flashAttr("scopeLimitationDetails", scopeLimitationDetails))
+      mockMvc
+          .perform(
+              post("/application/proceedings/scope-limitations/{action}/details", action)
+                  .session(session)
+                  .flashAttr("scopeLimitationDetails", scopeLimitationDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/proceedings/scope-limitations/confirm"));
     }
@@ -1127,35 +1211,41 @@ class EditProceedingsAndCostsSectionControllerTest {
     @DisplayName("Should have validation errors")
     void shouldHaveValidationErrors() throws Exception {
       final String action = "edit";
-      final ApplicationDetail application = new ApplicationDetail()
-          .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
-          .applicationType(new ApplicationType().id("applicationTypeId"));
+      final ApplicationDetail application =
+          new ApplicationDetail()
+              .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+              .applicationType(new ApplicationType().id("applicationTypeId"));
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
       proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
       proceedingFlow.getProceedingDetails().setProceedingType("proceedingType");
       proceedingFlow.getFurtherDetails().setLevelOfService("levelOfService");
 
-      final ScopeLimitationFlowFormData scopeLimitationFlow = new ScopeLimitationFlowFormData(
-          action);
+      final ScopeLimitationFlowFormData scopeLimitationFlow =
+          new ScopeLimitationFlowFormData(action);
       final ScopeLimitationFormDataDetails scopeLimitationDetails =
           new ScopeLimitationFormDataDetails();
 
-      final ScopeLimitationDetails mockedScopeLimitationDetails = new ScopeLimitationDetails()
-          .addContentItem(
-              new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().description("Mock Detail 1"))
-          .addContentItem(
-              new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().description("Mock Detail 2"));
+      final ScopeLimitationDetails mockedScopeLimitationDetails =
+          new ScopeLimitationDetails()
+              .addContentItem(
+                  new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+                      .description("Mock Detail 1"))
+              .addContentItem(
+                  new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+                      .description("Mock Detail 2"));
 
-      when(lookupService.getScopeLimitationDetails(any(
-          uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
+      when(lookupService.getScopeLimitationDetails(
+              any(uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
           .thenReturn(Mono.just(mockedScopeLimitationDetails));
 
       // Simulate validation error
-      doAnswer(invocation -> {
-        final BindingResult errors = invocation.getArgument(1);
-        errors.reject("errorKey", "Default message");
-        return null;
-      }).when(scopeLimitationDetailsValidator)
+      doAnswer(
+              invocation -> {
+                final BindingResult errors = invocation.getArgument(1);
+                errors.reject("errorKey", "Default message");
+                return null;
+              })
+          .when(scopeLimitationDetailsValidator)
           .validate(eq(scopeLimitationDetails), any(BindingResult.class));
 
       final MockHttpSession session = new MockHttpSession();
@@ -1163,15 +1253,16 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
       session.setAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
 
-      mockMvc.perform(post("/application/proceedings/scope-limitations/{action}/details", action)
-              .session(session)
-              .flashAttr("scopeLimitationDetails", scopeLimitationDetails))
+      mockMvc
+          .perform(
+              post("/application/proceedings/scope-limitations/{action}/details", action)
+                  .session(session)
+                  .flashAttr("scopeLimitationDetails", scopeLimitationDetails))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-scope-limitations-details"))
           .andExpect(model().attributeHasErrors("scopeLimitationDetails"));
     }
   }
-
 
   @Nested
   @DisplayName("GET: /application/proceedings/scope-limitations/confirm")
@@ -1182,15 +1273,15 @@ class EditProceedingsAndCostsSectionControllerTest {
     void shouldReturnExpectedResult() throws Exception {
       final String action = "edit";
       final ScopeLimitationDetail scopeLimitation = new ScopeLimitationDetail();
-      final ScopeLimitationFlowFormData scopeLimitationFlow = new ScopeLimitationFlowFormData(
-          action);
+      final ScopeLimitationFlowFormData scopeLimitationFlow =
+          new ScopeLimitationFlowFormData(action);
 
       final MockHttpSession session = new MockHttpSession();
       session.setAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
       session.setAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
 
-      mockMvc.perform(get("/application/proceedings/scope-limitations/confirm")
-              .session(session))
+      mockMvc
+          .perform(get("/application/proceedings/scope-limitations/confirm").session(session))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-scope-limitations-confirm"))
           .andExpect(model().attributeExists(CURRENT_SCOPE_LIMITATION))
@@ -1198,9 +1289,7 @@ class EditProceedingsAndCostsSectionControllerTest {
           .andExpect(model().attribute(CURRENT_SCOPE_LIMITATION, scopeLimitation))
           .andExpect(model().attribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow));
     }
-
   }
-
 
   @Nested
   @DisplayName("POST: /application/proceedings/scope-limitations/confirm")
@@ -1216,8 +1305,8 @@ class EditProceedingsAndCostsSectionControllerTest {
       proceedingFlow.getFurtherDetails().setLevelOfService("levelOfService");
 
       final ScopeLimitationDetail scopeLimitation = new ScopeLimitationDetail();
-      final ScopeLimitationFlowFormData scopeLimitationFlow = new ScopeLimitationFlowFormData(
-          action);
+      final ScopeLimitationFlowFormData scopeLimitationFlow =
+          new ScopeLimitationFlowFormData(action);
       final List<ScopeLimitationDetail> scopeLimitations = new ArrayList<>();
 
       final MockHttpSession session = new MockHttpSession();
@@ -1227,8 +1316,8 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(PROCEEDING_SCOPE_LIMITATIONS, scopeLimitations);
       session.setAttribute(USER_DETAILS, new UserDetail()); // Mocked user detail
 
-      mockMvc.perform(post("/application/proceedings/scope-limitations/confirm")
-              .session(session))
+      mockMvc
+          .perform(post("/application/proceedings/scope-limitations/confirm").session(session))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/proceedings/%s/confirm".formatted(action)));
     }
@@ -1237,9 +1326,10 @@ class EditProceedingsAndCostsSectionControllerTest {
     @DisplayName("Should return expected result - edit")
     void shouldReturnExpectedResultEdit() throws Exception {
       final String action = "edit";
-      final ApplicationDetail application = new ApplicationDetail()
-          .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
-          .applicationType(new ApplicationType().id("applicationTypeId"));
+      final ApplicationDetail application =
+          new ApplicationDetail()
+              .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+              .applicationType(new ApplicationType().id("applicationTypeId"));
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
       proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
       proceedingFlow.getProceedingDetails().setProceedingType("proceedingType");
@@ -1247,8 +1337,8 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       final ScopeLimitationDetail scopeLimitation = new ScopeLimitationDetail();
 
-      final ScopeLimitationFlowFormData scopeLimitationFlow = new ScopeLimitationFlowFormData(
-          action);
+      final ScopeLimitationFlowFormData scopeLimitationFlow =
+          new ScopeLimitationFlowFormData(action);
       scopeLimitationFlow.setScopeLimitationIndex(0);
 
       final ProceedingDetail proceeding = new ProceedingDetail();
@@ -1267,13 +1357,12 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(CURRENT_PROCEEDING, proceeding);
       session.setAttribute(USER_DETAILS, user);
 
-      mockMvc.perform(post("/application/proceedings/scope-limitations/confirm")
-              .session(session))
+      mockMvc
+          .perform(post("/application/proceedings/scope-limitations/confirm").session(session))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/proceedings/%s/confirm".formatted(action)));
     }
   }
-
 
   @Nested
   @DisplayName("GET: /application/proceedings/scope-limitations/{scope-limitation-id}/remove")
@@ -1293,15 +1382,17 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(PROCEEDING_SCOPE_LIMITATIONS, scopeLimitations);
       session.setAttribute(USER_DETAILS, user);
 
-      mockMvc.perform(
-              post("/application/proceedings/scope-limitations/{scope-limitation-id}/remove",
-                  scopeLimitationIndex)
+      mockMvc
+          .perform(
+              post(
+                      "/application/proceedings/scope-limitations/{scope-limitation-id}/remove",
+                      scopeLimitationIndex)
                   .session(session))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/proceedings/%s/confirm".formatted(action)));
 
-      assertTrue(scopeLimitations.isEmpty(),
-          "Scope limitations list should be empty after removal");
+      assertTrue(
+          scopeLimitations.isEmpty(), "Scope limitations list should be empty after removal");
     }
 
     @Test
@@ -1314,9 +1405,12 @@ class EditProceedingsAndCostsSectionControllerTest {
       final MockHttpSession session = new MockHttpSession();
       session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
 
-      mockMvc.perform(get("/application/proceedings/scope-limitations/{scope-limitation-id}/remove",
-              scopeLimitationId)
-              .session(session))
+      mockMvc
+          .perform(
+              get(
+                      "/application/proceedings/scope-limitations/{scope-limitation-id}/remove",
+                      scopeLimitationId)
+                  .session(session))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-scope-limitations-remove"))
           .andExpect(model().attributeExists("scopeLimitationId"))
@@ -1324,7 +1418,6 @@ class EditProceedingsAndCostsSectionControllerTest {
           .andExpect(model().attributeExists(PROCEEDING_FLOW_FORM_DATA))
           .andExpect(model().attribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow));
     }
-
   }
 
   @Nested
@@ -1347,14 +1440,17 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(USER_DETAILS, user);
       session.setAttribute(CURRENT_PROCEEDING, proceeding);
 
-      mockMvc.perform(
-              post("/application/proceedings/scope-limitations/{scope-limitation-id}/remove",
-                  scopeLimitationId)
+      mockMvc
+          .perform(
+              post(
+                      "/application/proceedings/scope-limitations/{scope-limitation-id}/remove",
+                      scopeLimitationId)
                   .session(session))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/proceedings/%s/confirm".formatted(action)));
 
-      assertTrue(proceeding.getScopeLimitations().isEmpty(),
+      assertTrue(
+          proceeding.getScopeLimitations().isEmpty(),
           "ProceedingDetail's scope limitations should be empty after removal");
     }
   }
@@ -1381,8 +1477,8 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(APPLICATION, application);
       session.setAttribute(APPLICATION_COSTS, costs);
 
-      mockMvc.perform(get("/%s/case-costs".formatted(caseContext))
-              .session(session))
+      mockMvc
+          .perform(get("/%s/case-costs".formatted(caseContext)).session(session))
           .andExpect(status().isOk())
           .andExpect(view().name("application/case-costs"))
           .andExpect(model().attributeExists("costDetails"))
@@ -1392,8 +1488,7 @@ class EditProceedingsAndCostsSectionControllerTest {
           .andExpect(model().attributeExists(APPLICATION))
           .andExpect(model().attribute(APPLICATION, application));
 
-      verify(proceedingAndCostsMapper, times(1))
-          .toCostsFormData(costs);
+      verify(proceedingAndCostsMapper, times(1)).toCostsFormData(costs);
     }
   }
 
@@ -1416,9 +1511,11 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(APPLICATION_COSTS, costs);
       session.setAttribute(USER_DETAILS, user);
 
-      mockMvc.perform(post("/application/case-costs")
-              .session(session)
-              .flashAttr("costDetails", costsFormData))
+      mockMvc
+          .perform(
+              post("/application/case-costs")
+                  .session(session)
+                  .flashAttr("costDetails", costsFormData))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/proceedings-and-costs#case-costs"));
     }
@@ -1438,9 +1535,11 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(APPLICATION_COSTS, costs);
       session.setAttribute(USER_DETAILS, user);
 
-      mockMvc.perform(post("/amendments/case-costs")
-              .session(session)
-              .flashAttr("costDetails", costsFormData))
+      mockMvc
+          .perform(
+              post("/amendments/case-costs")
+                  .session(session)
+                  .flashAttr("costDetails", costsFormData))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/amendments/summary"));
     }
@@ -1455,11 +1554,14 @@ class EditProceedingsAndCostsSectionControllerTest {
       final UserDetail user = new UserDetail();
       final CostsFormData costsFormData = new CostsFormData(new BigDecimal("20000.00"));
 
-      doAnswer(invocation -> {
-        final BindingResult errors = invocation.getArgument(1);
-        errors.reject("errorKey", "Default message");
-        return null;
-      }).when(costDetailsValidator).validate(eq(costsFormData), any(BindingResult.class));
+      doAnswer(
+              invocation -> {
+                final BindingResult errors = invocation.getArgument(1);
+                errors.reject("errorKey", "Default message");
+                return null;
+              })
+          .when(costDetailsValidator)
+          .validate(eq(costsFormData), any(BindingResult.class));
 
       final MockHttpSession session = new MockHttpSession();
       session.setAttribute(APPLICATION_ID, applicationId);
@@ -1467,9 +1569,11 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(APPLICATION_COSTS, costs);
       session.setAttribute(USER_DETAILS, user);
 
-      mockMvc.perform(post("/%s/case-costs".formatted(caseContext))
-              .session(session)
-              .flashAttr("costDetails", costsFormData))
+      mockMvc
+          .perform(
+              post("/%s/case-costs".formatted(caseContext))
+                  .session(session)
+                  .flashAttr("costDetails", costsFormData))
           .andExpect(status().isOk())
           .andExpect(view().name("application/case-costs"))
           .andExpect(model().attributeHasErrors("costDetails"))
@@ -1479,7 +1583,6 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       verify(costDetailsValidator, times(1)).validate(eq(costsFormData), any(BindingResult.class));
     }
-
   }
 
   @Nested
@@ -1489,25 +1592,28 @@ class EditProceedingsAndCostsSectionControllerTest {
     @Test
     @DisplayName("Should return expected result")
     void shouldReturnExpectedResult() throws Exception {
-      final List<PriorAuthorityTypeDetail> priorAuthorityTypes = List.of(
-          new PriorAuthorityTypeDetail().code("1").description("Type 1"),
-          new PriorAuthorityTypeDetail().code("2").description("Type 2")
-      );
+      final List<PriorAuthorityTypeDetail> priorAuthorityTypes =
+          List.of(
+              new PriorAuthorityTypeDetail().code("1").description("Type 1"),
+              new PriorAuthorityTypeDetail().code("2").description("Type 2"));
 
       final PriorAuthorityTypeDetails priorAuthorityTypeDetails =
-          new PriorAuthorityTypeDetails().content(
-              priorAuthorityTypes);
+          new PriorAuthorityTypeDetails().content(priorAuthorityTypes);
       when(lookupService.getPriorAuthorityTypes()).thenReturn(Mono.just(priorAuthorityTypeDetails));
 
       final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData("add");
 
-      mockMvc.perform(get("/application/prior-authorities/add/type"))
+      mockMvc
+          .perform(get("/application/prior-authorities/add/type"))
           .andExpect(status().isOk())
           .andExpect(view().name("application/prior-authority-type"))
           .andExpect(model().attribute("priorAuthorityTypes", priorAuthorityTypes))
           .andExpect(model().attribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow))
-          .andExpect(model().attribute("priorAuthorityTypeDetails",
-              priorAuthorityFlow.getPriorAuthorityTypeFormData()));
+          .andExpect(
+              model()
+                  .attribute(
+                      "priorAuthorityTypeDetails",
+                      priorAuthorityFlow.getPriorAuthorityTypeFormData()));
 
       verify(lookupService, times(1)).getPriorAuthorityTypes();
     }
@@ -1520,74 +1626,80 @@ class EditProceedingsAndCostsSectionControllerTest {
     @Test
     @DisplayName("Should return expected result")
     void shouldReturnExpectedResult() throws Exception {
-      final PriorAuthorityTypeFormData
-          priorAuthorityTypeDetails = new PriorAuthorityTypeFormData();
+      final PriorAuthorityTypeFormData priorAuthorityTypeDetails = new PriorAuthorityTypeFormData();
       priorAuthorityTypeDetails.setPriorAuthorityType("1");
 
       final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData("add");
 
-      mockMvc.perform(post("/application/prior-authorities/add/type")
-              .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
-              .flashAttr("priorAuthorityTypeDetails", priorAuthorityTypeDetails))
+      mockMvc
+          .perform(
+              post("/application/prior-authorities/add/type")
+                  .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
+                  .flashAttr("priorAuthorityTypeDetails", priorAuthorityTypeDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/prior-authorities/add/details"));
 
-      verify(priorAuthorityTypeDetailsValidator, times(1)).validate(any(
-          PriorAuthorityTypeFormData.class), any(BindingResult.class));
+      verify(priorAuthorityTypeDetailsValidator, times(1))
+          .validate(any(PriorAuthorityTypeFormData.class), any(BindingResult.class));
     }
 
     @Test
     @DisplayName("ShReould have validation errors")
     void shouldHaveValidationErrors() throws Exception {
-      final PriorAuthorityTypeFormData
-          priorAuthorityTypeFormData = new PriorAuthorityTypeFormData();
+      final PriorAuthorityTypeFormData priorAuthorityTypeFormData =
+          new PriorAuthorityTypeFormData();
       priorAuthorityTypeFormData.setPriorAuthorityType("1");
 
-      final List<PriorAuthorityTypeDetail> priorAuthorityTypes = List.of(
-          new PriorAuthorityTypeDetail().code("1").description("Type 1"),
-          new PriorAuthorityTypeDetail().code("2").description("Type 2")
-      );
+      final List<PriorAuthorityTypeDetail> priorAuthorityTypes =
+          List.of(
+              new PriorAuthorityTypeDetail().code("1").description("Type 1"),
+              new PriorAuthorityTypeDetail().code("2").description("Type 2"));
 
       final PriorAuthorityTypeDetails priorAuthorityTypeDetails =
-          new PriorAuthorityTypeDetails().content(
-              priorAuthorityTypes);
+          new PriorAuthorityTypeDetails().content(priorAuthorityTypes);
       when(lookupService.getPriorAuthorityTypes()).thenReturn(Mono.just(priorAuthorityTypeDetails));
 
       final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData("add");
 
-      doAnswer(invocation -> {
-        final BindingResult errors = invocation.getArgument(1);
-        errors.rejectValue("priorAuthorityType", "required.priorAuthorityType",
-            "Please complete 'Prior authority type'.");
-        return null;
-      }).when(priorAuthorityTypeDetailsValidator)
+      doAnswer(
+              invocation -> {
+                final BindingResult errors = invocation.getArgument(1);
+                errors.rejectValue(
+                    "priorAuthorityType",
+                    "required.priorAuthorityType",
+                    "Please complete 'Prior authority type'.");
+                return null;
+              })
+          .when(priorAuthorityTypeDetailsValidator)
           .validate(any(PriorAuthorityTypeFormData.class), any(BindingResult.class));
 
-      mockMvc.perform(post("/application/prior-authorities/add/type")
-              .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
-              .flashAttr("priorAuthorityTypeDetails", priorAuthorityTypeFormData))
+      mockMvc
+          .perform(
+              post("/application/prior-authorities/add/type")
+                  .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
+                  .flashAttr("priorAuthorityTypeDetails", priorAuthorityTypeFormData))
           .andExpect(status().isOk())
           .andExpect(view().name("application/prior-authority-type"))
           .andExpect(
               model().attributeHasFieldErrors("priorAuthorityTypeDetails", "priorAuthorityType"))
-          .andExpect(model().attribute("priorAuthorityTypeDetails",
-              priorAuthorityTypeFormData))
+          .andExpect(model().attribute("priorAuthorityTypeDetails", priorAuthorityTypeFormData))
           .andExpect(model().attribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow));
 
-      verify(priorAuthorityTypeDetailsValidator, times(1)).validate(any(
-          PriorAuthorityTypeFormData.class), any(BindingResult.class));
+      verify(priorAuthorityTypeDetailsValidator, times(1))
+          .validate(any(PriorAuthorityTypeFormData.class), any(BindingResult.class));
     }
-
   }
 
   private PriorAuthorityTypeDetail createPriorAuthorityTypeDetail() {
     return new PriorAuthorityTypeDetail()
         .code("1")
         .valueRequired(true)
-        .priorAuthorities(List.of(new uk.gov.laa.ccms.data.model.PriorAuthorityDetail()
-            .code("testCode")
-            .dataType("LOV")
-            .lovCode("testLovCode")));
+        .priorAuthorities(
+            List.of(
+                new uk.gov.laa.ccms.data.model.PriorAuthorityDetail()
+                    .code("testCode")
+                    .dataType("LOV")
+                    .lovCode("testLovCode")));
   }
 
   @Nested
@@ -1601,8 +1713,8 @@ class EditProceedingsAndCostsSectionControllerTest {
       final PriorAuthorityTypeFormData typeDetails = new PriorAuthorityTypeFormData();
       typeDetails.setPriorAuthorityType("1");
 
-      final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(
-          priorAuthorityAction);
+      final PriorAuthorityFlowFormData priorAuthorityFlow =
+          new PriorAuthorityFlowFormData(priorAuthorityAction);
       priorAuthorityFlow.setPriorAuthorityTypeFormData(typeDetails);
 
       final PriorAuthorityTypeDetail priorAuthorityDynamicForm = createPriorAuthorityTypeDetail();
@@ -1611,13 +1723,15 @@ class EditProceedingsAndCostsSectionControllerTest {
           .thenReturn(priorAuthorityDynamicForm);
 
       final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
-      final List<CommonLookupValueDetail> commonLookupValues = List.of(
-          new CommonLookupValueDetail().code("1").description("Value 1"));
+      final List<CommonLookupValueDetail> commonLookupValues =
+          List.of(new CommonLookupValueDetail().code("1").description("Value 1"));
       commonLookupDetail.setContent(commonLookupValues);
       when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupDetail));
 
-      mockMvc.perform(get("/application/prior-authorities/{action}/details", priorAuthorityAction)
-              .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow))
+      mockMvc
+          .perform(
+              get("/application/prior-authorities/{action}/details", priorAuthorityAction)
+                  .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow))
           .andExpect(status().isOk())
           .andExpect(view().name("application/prior-authority-details"))
           .andExpect(model().attributeExists("testCode"))
@@ -1626,8 +1740,8 @@ class EditProceedingsAndCostsSectionControllerTest {
           .andExpect(model().attributeExists("priorAuthorityDetails"))
           .andExpect(model().attribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow));
 
-      verify(applicationService, times(1)).getPriorAuthorityTypeDetail(
-          typeDetails.getPriorAuthorityType());
+      verify(applicationService, times(1))
+          .getPriorAuthorityTypeDetail(typeDetails.getPriorAuthorityType());
       verify(lookupService, times(1)).getCommonValues("testLovCode");
     }
 
@@ -1638,8 +1752,8 @@ class EditProceedingsAndCostsSectionControllerTest {
       final PriorAuthorityTypeFormData typeDetails = new PriorAuthorityTypeFormData();
       typeDetails.setPriorAuthorityType("1");
 
-      final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(
-          priorAuthorityAction);
+      final PriorAuthorityFlowFormData priorAuthorityFlow =
+          new PriorAuthorityFlowFormData(priorAuthorityAction);
       priorAuthorityFlow.setPriorAuthorityTypeFormData(typeDetails);
 
       final PriorAuthorityTypeDetail priorAuthorityDynamicForm = createPriorAuthorityTypeDetail();
@@ -1648,13 +1762,15 @@ class EditProceedingsAndCostsSectionControllerTest {
           .thenReturn(priorAuthorityDynamicForm);
 
       final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
-      final List<CommonLookupValueDetail> commonLookupValues = List.of(
-          new CommonLookupValueDetail().code("1").description("Value 1"));
+      final List<CommonLookupValueDetail> commonLookupValues =
+          List.of(new CommonLookupValueDetail().code("1").description("Value 1"));
       commonLookupDetail.setContent(commonLookupValues);
       when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupDetail));
 
-      mockMvc.perform(get("/application/prior-authorities/{action}/details", priorAuthorityAction)
-              .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow))
+      mockMvc
+          .perform(
+              get("/application/prior-authorities/{action}/details", priorAuthorityAction)
+                  .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow))
           .andExpect(status().isOk())
           .andExpect(view().name("application/prior-authority-details"))
           .andExpect(model().attributeExists("testCode"))
@@ -1663,11 +1779,10 @@ class EditProceedingsAndCostsSectionControllerTest {
           .andExpect(model().attributeExists("priorAuthorityDetails"))
           .andExpect(model().attribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow));
 
-      verify(applicationService, times(1)).getPriorAuthorityTypeDetail(
-          typeDetails.getPriorAuthorityType());
+      verify(applicationService, times(1))
+          .getPriorAuthorityTypeDetail(typeDetails.getPriorAuthorityType());
       verify(lookupService, times(1)).getCommonValues("testLovCode");
     }
-
   }
 
   @Nested
@@ -1684,17 +1799,19 @@ class EditProceedingsAndCostsSectionControllerTest {
       final PriorAuthorityTypeFormData typeDetails = new PriorAuthorityTypeFormData();
       typeDetails.setPriorAuthorityType("1");
 
-      final PriorAuthorityDetailsFormData
-          priorAuthorityDetails = new PriorAuthorityDetailsFormData();
+      final PriorAuthorityDetailsFormData priorAuthorityDetails =
+          new PriorAuthorityDetailsFormData();
       final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(action);
       priorAuthorityFlow.setPriorAuthorityTypeFormData(typeDetails);
       priorAuthorityFlow.setPriorAuthorityDetailsFormData(priorAuthorityDetails);
 
-      mockMvc.perform(post("/application/prior-authorities/{action}/details", action)
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
-              .sessionAttr(USER_DETAILS, user)
-              .flashAttr("priorAuthorityDetails", priorAuthorityDetails))
+      mockMvc
+          .perform(
+              post("/application/prior-authorities/{action}/details", action)
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
+                  .sessionAttr(USER_DETAILS, user)
+                  .flashAttr("priorAuthorityDetails", priorAuthorityDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/proceedings-and-costs#prior-authority"));
 
@@ -1721,53 +1838,56 @@ class EditProceedingsAndCostsSectionControllerTest {
           .thenReturn(priorAuthorityDynamicForm);
 
       final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
-      final List<CommonLookupValueDetail> commonLookupValues = List.of(
-          new CommonLookupValueDetail().code("1").description("Value 1"));
+      final List<CommonLookupValueDetail> commonLookupValues =
+          List.of(new CommonLookupValueDetail().code("1").description("Value 1"));
       commonLookupDetail.setContent(commonLookupValues);
       when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupDetail));
 
-      final PriorAuthorityDetailsFormData
-          priorAuthorityDetails = new PriorAuthorityDetailsFormData();
+      final PriorAuthorityDetailsFormData priorAuthorityDetails =
+          new PriorAuthorityDetailsFormData();
       final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(action);
       priorAuthorityFlow.setPriorAuthorityTypeFormData(typeDetails);
       priorAuthorityFlow.setPriorAuthorityDetailsFormData(priorAuthorityDetails);
 
-      doAnswer(invocation -> {
-        final BindingResult errors = invocation.getArgument(1);
-        errors.rejectValue("summary", "required.summary", "Error Message");
-        return null;
-      }).when(priorAuthorityDetailsValidator)
+      doAnswer(
+              invocation -> {
+                final BindingResult errors = invocation.getArgument(1);
+                errors.rejectValue("summary", "required.summary", "Error Message");
+                return null;
+              })
+          .when(priorAuthorityDetailsValidator)
           .validate(eq(priorAuthorityDetails), any(BindingResult.class));
 
-      mockMvc.perform(post("/application/prior-authorities/{action}/details", action)
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
-              .sessionAttr(USER_DETAILS, user)
-              .flashAttr("priorAuthorityDetails", priorAuthorityDetails))
+      mockMvc
+          .perform(
+              post("/application/prior-authorities/{action}/details", action)
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
+                  .sessionAttr(USER_DETAILS, user)
+                  .flashAttr("priorAuthorityDetails", priorAuthorityDetails))
           .andExpect(status().isOk())
           .andExpect(view().name("application/prior-authority-details"))
           .andExpect(model().attributeHasFieldErrors("priorAuthorityDetails", "summary"));
 
-      verify(priorAuthorityDetailsValidator, times(1)).validate(eq(priorAuthorityDetails),
-          any(BindingResult.class));
-      verify(applicationService, times(1)).getPriorAuthorityTypeDetail(
-          typeDetails.getPriorAuthorityType());
+      verify(priorAuthorityDetailsValidator, times(1))
+          .validate(eq(priorAuthorityDetails), any(BindingResult.class));
+      verify(applicationService, times(1))
+          .getPriorAuthorityTypeDetail(typeDetails.getPriorAuthorityType());
       verify(lookupService, times(1)).getCommonValues("testLovCode");
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"add", "edit"})
     @DisplayName("Should return expected result max lengths not exceeded")
-    void shouldReturnExpectedResultMaxLengthsNotExceeded(final String action)
-        throws Exception {
+    void shouldReturnExpectedResultMaxLengthsNotExceeded(final String action) throws Exception {
       final String applicationId = "app123";
       final UserDetail user = new UserDetail();
 
       final PriorAuthorityTypeFormData typeDetails = new PriorAuthorityTypeFormData();
       typeDetails.setPriorAuthorityType("1");
 
-      final PriorAuthorityDetailsFormData
-          priorAuthorityDetails = new PriorAuthorityDetailsFormData();
+      final PriorAuthorityDetailsFormData priorAuthorityDetails =
+          new PriorAuthorityDetailsFormData();
       final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(action);
       priorAuthorityFlow.setPriorAuthorityTypeFormData(typeDetails);
       priorAuthorityFlow.setPriorAuthorityDetailsFormData(priorAuthorityDetails);
@@ -1775,11 +1895,13 @@ class EditProceedingsAndCostsSectionControllerTest {
       priorAuthorityDetails.setJustification(RandomStringUtils.insecure().nextAlphabetic(8000));
       priorAuthorityDetails.setSummary(RandomStringUtils.insecure().nextAlphabetic(35));
 
-      mockMvc.perform(post("/application/prior-authorities/{action}/details", action)
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
-              .sessionAttr(USER_DETAILS, user)
-              .flashAttr("priorAuthorityDetails", priorAuthorityDetails))
+      mockMvc
+          .perform(
+              post("/application/prior-authorities/{action}/details", action)
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
+                  .sessionAttr(USER_DETAILS, user)
+                  .flashAttr("priorAuthorityDetails", priorAuthorityDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/proceedings-and-costs#prior-authority"));
 
@@ -1790,12 +1912,10 @@ class EditProceedingsAndCostsSectionControllerTest {
       }
     }
 
-
     @ParameterizedTest
     @ValueSource(strings = {"add", "edit"})
     @DisplayName("Should have validation errors max lengths exceeded")
-    void shouldHaveValidationErrorsMaxLengthsExceeded(final String action)
-        throws Exception {
+    void shouldHaveValidationErrorsMaxLengthsExceeded(final String action) throws Exception {
       final String applicationId = "app123";
       final UserDetail user = new UserDetail();
 
@@ -1808,13 +1928,13 @@ class EditProceedingsAndCostsSectionControllerTest {
           .thenReturn(priorAuthorityDynamicForm);
 
       final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
-      final List<CommonLookupValueDetail> commonLookupValues = List.of(
-          new CommonLookupValueDetail().code("1").description("Value 1"));
+      final List<CommonLookupValueDetail> commonLookupValues =
+          List.of(new CommonLookupValueDetail().code("1").description("Value 1"));
       commonLookupDetail.setContent(commonLookupValues);
       when(lookupService.getCommonValues("testLovCode")).thenReturn(Mono.just(commonLookupDetail));
 
-      final PriorAuthorityDetailsFormData
-          priorAuthorityDetails = new PriorAuthorityDetailsFormData();
+      final PriorAuthorityDetailsFormData priorAuthorityDetails =
+          new PriorAuthorityDetailsFormData();
       final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData(action);
       priorAuthorityFlow.setPriorAuthorityTypeFormData(typeDetails);
       priorAuthorityFlow.setPriorAuthorityDetailsFormData(priorAuthorityDetails);
@@ -1822,23 +1942,24 @@ class EditProceedingsAndCostsSectionControllerTest {
       priorAuthorityDetails.setJustification(RandomStringUtils.insecure().nextAlphabetic(8001));
       priorAuthorityDetails.setSummary(RandomStringUtils.insecure().nextAlphabetic(36));
 
-      mockMvc.perform(post("/application/prior-authorities/{action}/details", action)
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
-              .sessionAttr(USER_DETAILS, user)
-              .flashAttr("priorAuthorityDetails", priorAuthorityDetails))
+      mockMvc
+          .perform(
+              post("/application/prior-authorities/{action}/details", action)
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
+                  .sessionAttr(USER_DETAILS, user)
+                  .flashAttr("priorAuthorityDetails", priorAuthorityDetails))
           .andExpect(status().isOk())
           .andExpect(view().name("application/prior-authority-details"))
           .andExpect(model().attributeHasFieldErrors("priorAuthorityDetails", "summary"))
           .andExpect(model().attributeHasFieldErrors("priorAuthorityDetails", "justification"));
 
-      verify(priorAuthorityDetailsValidator, times(1)).validate(eq(priorAuthorityDetails),
-          any(BindingResult.class));
-      verify(applicationService, times(1)).getPriorAuthorityTypeDetail(
-          typeDetails.getPriorAuthorityType());
+      verify(priorAuthorityDetailsValidator, times(1))
+          .validate(eq(priorAuthorityDetails), any(BindingResult.class));
+      verify(applicationService, times(1))
+          .getPriorAuthorityTypeDetail(typeDetails.getPriorAuthorityType());
       verify(lookupService, times(1)).getCommonValues("testLovCode");
     }
-
   }
 
   @Nested
@@ -1857,7 +1978,8 @@ class EditProceedingsAndCostsSectionControllerTest {
       when(proceedingAndCostsMapper.toPriorAuthorityFlowFormData(any(PriorAuthorityDetail.class)))
           .thenReturn(new PriorAuthorityFlowFormData("edit"));
 
-      mockMvc.perform(
+      mockMvc
+          .perform(
               get("/application/prior-authorities/{prior-authority-id}/confirm", priorAuthorityId)
                   .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities))
           .andExpect(status().is3xxRedirection())
@@ -1872,17 +1994,21 @@ class EditProceedingsAndCostsSectionControllerTest {
       final int priorAuthorityId = 1;
       final List<PriorAuthorityDetail> priorAuthorities = Collections.emptyList();
 
-      final Exception exception = assertThrows(ServletException.class, () ->
-          mockMvc.perform(
-              get("/application/prior-authorities/{prior-authority-id}/confirm", priorAuthorityId)
-                  .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities))
-      );
+      final Exception exception =
+          assertThrows(
+              ServletException.class,
+              () ->
+                  mockMvc.perform(
+                      get(
+                              "/application/prior-authorities/{prior-authority-id}/confirm",
+                              priorAuthorityId)
+                          .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities)));
 
       assertInstanceOf(CaabApplicationException.class, exception.getCause());
-      assertEquals("No prior authority found with id: " + priorAuthorityId,
+      assertEquals(
+          "No prior authority found with id: " + priorAuthorityId,
           exception.getCause().getMessage());
     }
-
   }
 
   @Nested
@@ -1898,7 +2024,8 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       final List<PriorAuthorityDetail> priorAuthorities = Collections.singletonList(priorAuthority);
 
-      mockMvc.perform(
+      mockMvc
+          .perform(
               get("/application/prior-authorities/{prior-authority-id}/remove", priorAuthorityId)
                   .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities))
           .andExpect(status().isOk())
@@ -1912,14 +2039,19 @@ class EditProceedingsAndCostsSectionControllerTest {
       final int priorAuthorityId = 1;
       final List<PriorAuthorityDetail> priorAuthorities = Collections.emptyList();
 
-      final Exception exception = assertThrows(ServletException.class, () ->
-          mockMvc.perform(
-              get("/application/prior-authorities/{prior-authority-id}/remove", priorAuthorityId)
-                  .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities))
-      );
+      final Exception exception =
+          assertThrows(
+              ServletException.class,
+              () ->
+                  mockMvc.perform(
+                      get(
+                              "/application/prior-authorities/{prior-authority-id}/remove",
+                              priorAuthorityId)
+                          .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities)));
 
       assertInstanceOf(CaabApplicationException.class, exception.getCause());
-      assertEquals("No prior authority found with id: " + priorAuthorityId,
+      assertEquals(
+          "No prior authority found with id: " + priorAuthorityId,
           exception.getCause().getMessage());
     }
   }
@@ -1939,7 +2071,8 @@ class EditProceedingsAndCostsSectionControllerTest {
       final List<PriorAuthorityDetail> priorAuthorities = new ArrayList<>();
       priorAuthorities.add(priorAuthority);
 
-      mockMvc.perform(
+      mockMvc
+          .perform(
               post("/application/prior-authorities/{prior-authority-id}/remove", priorAuthorityId)
                   .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities)
                   .sessionAttr(USER_DETAILS, user))
@@ -1956,18 +2089,21 @@ class EditProceedingsAndCostsSectionControllerTest {
       final UserDetail user = new UserDetail();
       final List<PriorAuthorityDetail> priorAuthorities = new ArrayList<>();
 
-      final Exception exception = assertThrows(ServletException.class, () ->
-          mockMvc.perform(
-              post("/application/prior-authorities/{prior-authority-id}/remove", priorAuthorityId)
-                  .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities)
-                  .sessionAttr(USER_DETAILS, user))
-      );
+      final Exception exception =
+          assertThrows(
+              ServletException.class,
+              () ->
+                  mockMvc.perform(
+                      post(
+                              "/application/prior-authorities/{prior-authority-id}/remove",
+                              priorAuthorityId)
+                          .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities)
+                          .sessionAttr(USER_DETAILS, user)));
 
       assertInstanceOf(CaabApplicationException.class, exception.getCause());
-      assertEquals("No prior authority found with id: " + priorAuthorityId,
+      assertEquals(
+          "No prior authority found with id: " + priorAuthorityId,
           exception.getCause().getMessage());
     }
   }
-
-
 }

@@ -3,212 +3,133 @@ package uk.gov.laa.ccms.caab.constants;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Constants for application-related values used in the application.
- */
+/** Constants for application-related values used in the application. */
 public class ApplicationConstants {
 
-  /**
-   * The Application Type Code for Exceptional Case Funding.
-   */
+  /** The Application Type Code for Exceptional Case Funding. */
   public static final String APP_TYPE_EXCEPTIONAL_CASE_FUNDING = "ECF";
 
-  /**
-   * The Application Type Display Value for Exceptional Case Funding.
-   */
+  /** The Application Type Display Value for Exceptional Case Funding. */
   public static final String APP_TYPE_EXCEPTIONAL_CASE_FUNDING_DISPLAY = "Exceptional Case Funding";
 
-  /**
-   * The Application Type Code for Substantive.
-   */
+  /** The Application Type Code for Substantive. */
   public static final String APP_TYPE_SUBSTANTIVE = "SUB";
 
-  /**
-   * The Application Type Display Value for Substantive.
-   */
+  /** The Application Type Display Value for Substantive. */
   public static final String APP_TYPE_SUBSTANTIVE_DISPLAY = "Substantive";
 
-  /**
-   * The Application Type Code for Emergency.
-   */
+  /** The Application Type Code for Emergency. */
   public static final String APP_TYPE_EMERGENCY = "EMER";
 
-  /**
-   * The Application Type Display Value for Emergency.
-   */
+  /** The Application Type Display Value for Emergency. */
   public static final String APP_TYPE_EMERGENCY_DISPLAY = "Emergency";
 
-  /**
-   * The Application Type Code for Emergency Delegated Functions.
-   */
+  /** The Application Type Code for Emergency Delegated Functions. */
   public static final String APP_TYPE_EMERGENCY_DEVOLVED_POWERS = "DP";
 
-  /**
-   * The Application Type Display Value for Emergency Delegated Functions.
-   */
+  /** The Application Type Display Value for Emergency Delegated Functions. */
   public static final String APP_TYPE_EMERGENCY_DEVOLVED_POWERS_DISPLAY =
-          "Emergency Delegated Functions";
+      "Emergency Delegated Functions";
 
-
-  /**
-   * The Application Type Code for Substantive with Delegated Function.
-   */
+  /** The Application Type Code for Substantive with Delegated Function. */
   public static final String APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS = "SUBDP";
 
-  /**
-   * The Application Type Display Value for Substantive with Delegated Function.
-   */
+  /** The Application Type Display Value for Substantive with Delegated Function. */
   public static final String APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS_DISPLAY =
-          "Substantive Delegated Functions";
-
+      "Substantive Delegated Functions";
 
   /**
    * The Application Type Code list for codes to be excluded from application type screen's
    * dropdown.
    */
   public static final List<String> EXCLUDED_APPLICATION_TYPE_CODES =
-          Arrays.asList(
-                  APP_TYPE_EMERGENCY_DEVOLVED_POWERS,
-                  APP_TYPE_EXCEPTIONAL_CASE_FUNDING,
-                  APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS);
+      Arrays.asList(
+          APP_TYPE_EMERGENCY_DEVOLVED_POWERS,
+          APP_TYPE_EXCEPTIONAL_CASE_FUNDING,
+          APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS);
 
   /**
    * The Application Type Code list for codes to be excluded from application type screen's
    * dropdown.
    */
   public static final List<String> EMERGENCY_APPLICATION_TYPE_CODES =
-      Arrays.asList(
-          APP_TYPE_EMERGENCY_DEVOLVED_POWERS,
-          APP_TYPE_EMERGENCY);
+      Arrays.asList(APP_TYPE_EMERGENCY_DEVOLVED_POWERS, APP_TYPE_EMERGENCY);
 
-  /**
-   * The actual value for the status of an live application.
-   */
+  /** The actual value for the status of an live application. */
   public static final String STATUS_LIVE_ACTUAL_VALUE = "LIVE";
 
-  /**
-   * The actual value for the status of an unsubmitted application.
-   */
+  /** The actual value for the status of an unsubmitted application. */
   public static final String STATUS_UNSUBMITTED_ACTUAL_VALUE = "UNSUBMITTED";
 
-  /**
-   * The display value for the status of an unsubmitted application.
-   */
+  /** The display value for the status of an unsubmitted application. */
   public static final String STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY = "Unsubmitted";
 
-  /**
-   * The status of a draft domain object (used for, for example, proceedings and bills).
-   */
+  /** The status of a draft domain object (used for, for example, proceedings and bills). */
   public static final String STATUS_DRAFT = "Draft";
 
-  /**
-   * Display value for a Proceeding at status 'outcome'.
-   */
+  /** Display value for a Proceeding at status 'outcome'. */
   public static final String PROCEEDING_STATUS_OUTCOME_DISPLAY = "Outcome";
 
-  /**
-   * Display value for a Proceeding at status 'submitted'.
-   */
+  /** Display value for a Proceeding at status 'submitted'. */
   public static final String PROCEEDING_STATUS_SUBMITTED_DISPLAY = "Submitted";
 
-  /**
-   * Display value for a Proceeding at status 'added'.
-   */
+  /** Display value for a Proceeding at status 'added'. */
   public static final String PROCEEDING_STATUS_ADDED_DISPLAY = "Added";
 
-  /**
-   * Display value for a Proceeding at status 'unchanged'.
-   */
+  /** Display value for a Proceeding at status 'unchanged'. */
   public static final String PROCEEDING_STATUS_UNCHANGED_DISPLAY = "Unchanged";
 
-  /**
-   * Display value for a Proceeding at status 'updated'.
-   */
+  /** Display value for a Proceeding at status 'updated'. */
   public static final String PROCEEDING_STATUS_UPDATED_DISPLAY = "Updated";
 
-  /**
-   * Type value for an LOV Reference Data Item.
-   */
+  /** Type value for an LOV Reference Data Item. */
   public static final String REFERENCE_DATA_ITEM_TYPE_LOV = "LOV";
 
-  /**
-   * Type value for an AMOUNT Reference Data Item.
-   */
+  /** Type value for an AMOUNT Reference Data Item. */
   public static final String REFERENCE_DATA_ITEM_TYPE_AMOUNT = "AMT";
 
-  /**
-   * Cost Award Type.
-   */
+  /** Cost Award Type. */
   public static final String AWARD_TYPE_COST = "COST";
 
-  /**
-   * Description for Cost Award Type.
-   */
+  /** Description for Cost Award Type. */
   public static final String AWARD_TYPE_COST_DESCRIPTION = "Cost";
 
-  /**
-   * Financial Award Type.
-   */
+  /** Financial Award Type. */
   public static final String AWARD_TYPE_FINANCIAL = "DAMAGE";
 
-  /**
-   * Description for Cost Award Type.
-   */
+  /** Description for Cost Award Type. */
   public static final String AWARD_TYPE_FINANCIAL_DESCRIPTION = "Damage";
 
-  /**
-   * Land Award Type.
-   */
+  /** Land Award Type. */
   public static final String AWARD_TYPE_LAND = "LAND";
 
-  /**
-   * Other Asset Award Type.
-   */
+  /** Other Asset Award Type. */
   public static final String AWARD_TYPE_OTHER_ASSET = "ASSET";
 
-  /**
-   * The individual opponent type.
-   */
+  /** The individual opponent type. */
   public static final String OPPONENT_TYPE_INDIVIDUAL = "Individual";
 
-  /**
-   * The organisation opponent type.
-   */
+  /** The organisation opponent type. */
   public static final String OPPONENT_TYPE_ORGANISATION = "Organisation";
 
-  /**
-   * The organisation opponent type.
-   */
+  /** The organisation opponent type. */
   public static final String LINKED_CASES = "linkedCases";
 
-  /**
-   * Constant representing the declaration type for an application.
-   */
+  /** Constant representing the declaration type for an application. */
   public static final String DECLARATION_APPLICATION = "APPLICATION";
 
-  /**
-   * Constant representing the declaration type for a bill.
-   */
+  /** Constant representing the declaration type for a bill. */
   public static final String DECLARATION_BILL = "BILL";
 
-  /**
-   * Status indicating the application section task is complete.
-   */
+  /** Status indicating the application section task is complete. */
   public static final String SECTION_STATUS_COMPLETE = "Complete";
 
-  /**
-   * Status indicating the application section task has not started.
-   */
+  /** Status indicating the application section task has not started. */
   public static final String SECTION_STATUS_NOT_STARTED = "Not started";
 
-  /**
-   * Status indicating the application section task is in progress.
-   */
+  /** Status indicating the application section task is in progress. */
   public static final String SECTION_STATUS_STARTED = "Started";
 
-  /**
-   * Status indicating the application section task is not available.
-   */
+  /** Status indicating the application section task is not available. */
   public static final String SECTION_STATUS_NOT_AVAILABLE = "Not available";
-
 }

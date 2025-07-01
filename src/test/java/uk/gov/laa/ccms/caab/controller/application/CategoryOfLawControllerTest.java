@@ -50,22 +50,17 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @ContextConfiguration
 @WebAppConfiguration
 public class CategoryOfLawControllerTest {
-  @Mock
-  private ProviderService providerService;
+  @Mock private ProviderService providerService;
 
-  @Mock
-  private LookupService lookupService;
+  @Mock private LookupService lookupService;
 
-  @Mock
-  private CategoryOfLawValidator categoryOfLawValidator;
+  @Mock private CategoryOfLawValidator categoryOfLawValidator;
 
-  @InjectMocks
-  private CategoryOfLawController categoryOfLawController;
+  @InjectMocks private CategoryOfLawController categoryOfLawController;
 
   private MockMvc mockMvc;
 
-  @Autowired
-  private WebApplicationContext webApplicationContext;
+  @Autowired private WebApplicationContext webApplicationContext;
 
   private UserDetail user;
 
@@ -82,43 +77,51 @@ public class CategoryOfLawControllerTest {
     applicationFormData = new ApplicationFormData();
     applicationFormData.setOfficeId(345);
 
-    categoriesOfLaw = new CategoryOfLawLookupDetail()
-        .addContentItem(new CategoryOfLawLookupValueDetail()
-            .code("CAT1").matterTypeDescription("Category 1"))
-        .addContentItem(new CategoryOfLawLookupValueDetail()
-            .code("CAT2")
-            .matterTypeDescription("Category 2"));
+    categoriesOfLaw =
+        new CategoryOfLawLookupDetail()
+            .addContentItem(
+                new CategoryOfLawLookupValueDetail()
+                    .code("CAT1")
+                    .matterTypeDescription("Category 1"))
+            .addContentItem(
+                new CategoryOfLawLookupValueDetail()
+                    .code("CAT2")
+                    .matterTypeDescription("Category 2"));
   }
 
   @Test
   public void testGetCategoryOfLawAddsCategoriesOfLawToModel() throws Exception {
     final List<String> categoryOfLawCodes = new ArrayList<>();
     categoryOfLawCodes.add("CAT1");
-//    categoryOfLawCodes.add("CAT2");
+    //    categoryOfLawCodes.add("CAT2");
 
     when(providerService.getCategoryOfLawCodes(
-        user.getProvider().getId(),
-        applicationFormData.getOfficeId(),
-        user.getLoginId(),
-        user.getUserType(),
-        Boolean.TRUE)).thenReturn(categoryOfLawCodes);
+            user.getProvider().getId(),
+            applicationFormData.getOfficeId(),
+            user.getLoginId(),
+            user.getUserType(),
+            Boolean.TRUE))
+        .thenReturn(categoryOfLawCodes);
 
-    when(lookupService.getCategoriesOfLaw()).thenReturn(
-        Mono.just(categoriesOfLaw));
+    when(lookupService.getCategoriesOfLaw()).thenReturn(Mono.just(categoriesOfLaw));
 
-    this.mockMvc.perform(get("/application/category-of-law")
-            .flashAttr("applicationFormData", applicationFormData)
-            .sessionAttr("user", user))
+    this.mockMvc
+        .perform(
+            get("/application/category-of-law")
+                .flashAttr("applicationFormData", applicationFormData)
+                .sessionAttr("user", user))
         .andExpect(status().isOk())
         .andExpect(model().attribute("categoriesOfLaw", Matchers.hasSize(1)))
         .andExpect(model().attributeExists(APPLICATION_FORM_DATA))
         .andReturn();
 
-    verify(providerService).getCategoryOfLawCodes(user.getProvider().getId(),
-        applicationFormData.getOfficeId(),
-        user.getLoginId(),
-        user.getUserType(),
-        Boolean.TRUE);
+    verify(providerService)
+        .getCategoryOfLawCodes(
+            user.getProvider().getId(),
+            applicationFormData.getOfficeId(),
+            user.getLoginId(),
+            user.getUserType(),
+            Boolean.TRUE);
 
     verify(lookupService).getCategoriesOfLaw();
   }
@@ -128,46 +131,55 @@ public class CategoryOfLawControllerTest {
     final List<String> categoryOfLawCodes = new ArrayList<>();
 
     when(providerService.getCategoryOfLawCodes(
-        user.getProvider().getId(),
-        applicationFormData.getOfficeId(),
-        user.getLoginId(),
-        user.getUserType(),
-        Boolean.TRUE)).thenReturn(categoryOfLawCodes);
+            user.getProvider().getId(),
+            applicationFormData.getOfficeId(),
+            user.getLoginId(),
+            user.getUserType(),
+            Boolean.TRUE))
+        .thenReturn(categoryOfLawCodes);
 
-    when(lookupService.getCategoriesOfLaw()).thenReturn(
-        Mono.just(categoriesOfLaw));
+    when(lookupService.getCategoriesOfLaw()).thenReturn(Mono.just(categoriesOfLaw));
 
-    MvcResult result = mockMvc.perform(get("/application/category-of-law")
-            .flashAttr("applicationFormData", applicationFormData)
-            .sessionAttr("user", user))
-        .andExpect(status().isOk())
-        .andExpect(model().attribute("categoriesOfLaw", Collections.emptyList()))
-        .andExpect(model().attributeExists(APPLICATION_FORM_DATA))
-        .andReturn();
+    MvcResult result =
+        mockMvc
+            .perform(
+                get("/application/category-of-law")
+                    .flashAttr("applicationFormData", applicationFormData)
+                    .sessionAttr("user", user))
+            .andExpect(status().isOk())
+            .andExpect(model().attribute("categoriesOfLaw", Collections.emptyList()))
+            .andExpect(model().attributeExists(APPLICATION_FORM_DATA))
+            .andReturn();
 
-    verify(providerService).getCategoryOfLawCodes(user.getProvider().getId(),
-        applicationFormData.getOfficeId(),
-        user.getLoginId(),
-        user.getUserType(),
-        Boolean.TRUE);
+    verify(providerService)
+        .getCategoryOfLawCodes(
+            user.getProvider().getId(),
+            applicationFormData.getOfficeId(),
+            user.getLoginId(),
+            user.getUserType(),
+            Boolean.TRUE);
 
     verify(lookupService).getCategoriesOfLaw();
 
-    BindingResult bindingResult = (BindingResult) result.getModelAndView().getModel()
-        .get("org.springframework.validation.BindingResult.applicationFormData");
+    BindingResult bindingResult =
+        (BindingResult)
+            result
+                .getModelAndView()
+                .getModel()
+                .get("org.springframework.validation.BindingResult.applicationFormData");
     assertEquals(1, bindingResult.getFieldErrors("categoryOfLawId").size());
-    assertEquals("no.categoriesOfLaw", bindingResult.getFieldError("categoryOfLawId")
-        .getCode());
+    assertEquals("no.categoriesOfLaw", bindingResult.getFieldError("categoryOfLawId").getCode());
   }
 
   @Test
   public void testGetCategoryOfLaw_ExceptionFundingReturnsAllCodes() throws Exception {
-    when(lookupService.getCategoriesOfLaw()).thenReturn(
-        Mono.just(categoriesOfLaw));
+    when(lookupService.getCategoriesOfLaw()).thenReturn(Mono.just(categoriesOfLaw));
 
-    this.mockMvc.perform(get("/application/category-of-law?exceptional_funding=true")
-            .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
-            .sessionAttr("user", user))
+    this.mockMvc
+        .perform(
+            get("/application/category-of-law?exceptional_funding=true")
+                .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
+                .sessionAttr("user", user))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/select-category-of-law"))
@@ -183,28 +195,35 @@ public class CategoryOfLawControllerTest {
   public void testPostCategoryOfLawHandlesValidationError() throws Exception {
     final List<String> categoryOfLawCodes = new ArrayList<>();
     categoryOfLawCodes.add("CAT1");
-//    categoryOfLawCodes.add("CAT2");
+    //    categoryOfLawCodes.add("CAT2");
 
     when(providerService.getCategoryOfLawCodes(
-        user.getProvider().getId(),
-        applicationFormData.getOfficeId(),
-        user.getLoginId(),
-        user.getUserType(),
-        Boolean.TRUE)).thenReturn(categoryOfLawCodes);
+            user.getProvider().getId(),
+            applicationFormData.getOfficeId(),
+            user.getLoginId(),
+            user.getUserType(),
+            Boolean.TRUE))
+        .thenReturn(categoryOfLawCodes);
 
-    when(lookupService.getCategoriesOfLaw()).thenReturn(
-        Mono.just(categoriesOfLaw));
+    when(lookupService.getCategoriesOfLaw()).thenReturn(Mono.just(categoriesOfLaw));
 
-    doAnswer(invocation -> {
-      Errors errors = (Errors) invocation.getArguments()[1];
-      errors.rejectValue("categoryOfLawId", "required.categoryOfLawId",
-          "Please select a category of law.");
-      return null;
-    }).when(categoryOfLawValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue(
+                  "categoryOfLawId",
+                  "required.categoryOfLawId",
+                  "Please select a category of law.");
+              return null;
+            })
+        .when(categoryOfLawValidator)
+        .validate(any(), any());
 
-    this.mockMvc.perform(post("/application/category-of-law")
-            .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
-            .sessionAttr("user", user))
+    this.mockMvc
+        .perform(
+            post("/application/category-of-law")
+                .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
+                .sessionAttr("user", user))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/select-category-of-law"))
@@ -215,9 +234,11 @@ public class CategoryOfLawControllerTest {
   public void testPostCategoryOfLawIsSuccessful() throws Exception {
     applicationFormData.setCategoryOfLawId("CAT1");
 
-    this.mockMvc.perform(post("/application/category-of-law")
-            .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
-            .sessionAttr("user", user))
+    this.mockMvc
+        .perform(
+            post("/application/category-of-law")
+                .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
+                .sessionAttr("user", user))
         .andDo(print())
         .andExpect(redirectedUrl("/application/application-type"));
 
@@ -230,17 +251,17 @@ public class CategoryOfLawControllerTest {
     applicationFormData.setCategoryOfLawId("CAT1");
     applicationFormData.setExceptionalFunding(true);
 
-    this.mockMvc.perform(post("/application/category-of-law")
-            .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
-            .sessionAttr("user", user))
+    this.mockMvc
+        .perform(
+            post("/application/category-of-law")
+                .flashAttr(APPLICATION_FORM_DATA, applicationFormData)
+                .sessionAttr("user", user))
         .andDo(print())
         .andExpect(redirectedUrl("/application/client/search"));
 
     verifyNoInteractions(providerService);
     verifyNoInteractions(lookupService);
   }
-
-
 
   private UserDetail buildUser() {
     return new UserDetail()
@@ -251,11 +272,6 @@ public class CategoryOfLawControllerTest {
   }
 
   private BaseProvider buildBaseProvider() {
-    return new BaseProvider()
-        .id(123)
-        .addOfficesItem(
-            new BaseOffice()
-                .id(1)
-                .name("Office 1"));
+    return new BaseProvider().id(123).addOfficesItem(new BaseOffice().id(1).name("Office 1"));
   }
 }

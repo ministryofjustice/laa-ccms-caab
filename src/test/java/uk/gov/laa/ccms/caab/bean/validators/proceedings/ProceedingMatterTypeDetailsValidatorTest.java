@@ -17,8 +17,7 @@ import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
 @ExtendWith(SpringExtension.class)
 class ProceedingMatterTypeDetailsValidatorTest {
 
-  @InjectMocks
-  private ProceedingMatterTypeDetailsValidator proceedingMatterTypeDetailsValidator;
+  @InjectMocks private ProceedingMatterTypeDetailsValidator proceedingMatterTypeDetailsValidator;
 
   private ProceedingFormDataMatterTypeDetails matterTypeDetails;
 
@@ -26,13 +25,16 @@ class ProceedingMatterTypeDetailsValidatorTest {
 
   @BeforeEach
   public void setUp() {
-    matterTypeDetails = new ProceedingFormDataMatterTypeDetails(); // Assuming that the default constructor sets all fields to null.
+    matterTypeDetails =
+        new ProceedingFormDataMatterTypeDetails(); // Assuming that the default constructor sets all
+    // fields to null.
     errors = new BeanPropertyBindingResult(matterTypeDetails, "matterTypeDetails");
   }
 
   @Test
   public void supports_ReturnsTrueForProceedingFormDataMatterTypeDetailsClass() {
-    assertTrue(proceedingMatterTypeDetailsValidator.supports(ProceedingFormDataMatterTypeDetails.class));
+    assertTrue(
+        proceedingMatterTypeDetailsValidator.supports(ProceedingFormDataMatterTypeDetails.class));
   }
 
   @Test
@@ -55,5 +57,4 @@ class ProceedingMatterTypeDetailsValidatorTest {
     proceedingMatterTypeDetailsValidator.validate(matterTypeDetails, errors);
     assertFalse(errors.hasErrors());
   }
-
 }

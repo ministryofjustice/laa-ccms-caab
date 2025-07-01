@@ -6,9 +6,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-/**
- * Represents the Section display values for the application summary screen.
- */
+/** Represents the Section display values for the application summary screen. */
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
@@ -16,14 +14,9 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class ClientSectionDisplay extends ApplicationSectionStatusDisplay {
 
-  /**
-   * The full display name of the client.
-   */
+  /** The full display name of the client. */
   private String clientFullName;
 
-  /**
-   * The client reference number.
-   */
+  /** The client reference number. */
   private String clientReferenceNumber;
-
 }

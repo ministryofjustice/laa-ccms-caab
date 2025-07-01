@@ -16,9 +16,7 @@ import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.OfficeValidator;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-/**
- * Controller to manage office-related functionalities in the application process.
- */
+/** Controller to manage office-related functionalities in the application process. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -35,9 +33,7 @@ public class OfficeController {
    * @return Path to the view.
    */
   @GetMapping("/application/office")
-  public String selectOffice(
-          @ModelAttribute(USER_DETAILS) UserDetail user,
-          Model model) {
+  public String selectOffice(@ModelAttribute(USER_DETAILS) UserDetail user, Model model) {
     model.addAttribute("offices", user.getProvider().getOffices());
     return "application/select-office";
   }
@@ -53,10 +49,10 @@ public class OfficeController {
    */
   @PostMapping("/application/office")
   public String selectOffice(
-          @ModelAttribute(USER_DETAILS) UserDetail user,
-          @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
-          BindingResult bindingResult,
-          Model model) {
+      @ModelAttribute(USER_DETAILS) UserDetail user,
+      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
+      BindingResult bindingResult,
+      Model model) {
     officeValidator.validate(applicationFormData, bindingResult);
 
     if (bindingResult.hasErrors()) {

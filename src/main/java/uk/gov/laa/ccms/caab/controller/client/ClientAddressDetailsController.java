@@ -26,9 +26,7 @@ import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 
-/**
- * Controller for handling address client details selection during the new application process.
- */
+/** Controller for handling address client details selection during the new application process. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -61,13 +59,12 @@ public class ClientAddressDetailsController {
    */
   @GetMapping("/application/client/details/address")
   public String clientDetailsAddress(
-          @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
-          @ModelAttribute("addressDetails") ClientFormDataAddressDetails addressDetails,
-          Model model) {
+      @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
+      @ModelAttribute("addressDetails") ClientFormDataAddressDetails addressDetails,
+      Model model) {
 
     populateDropdowns(model);
-    addressDetails.setVulnerableClient(
-        clientFlowFormData.getBasicDetails().getVulnerableClient());
+    addressDetails.setVulnerableClient(clientFlowFormData.getBasicDetails().getVulnerableClient());
     addressDetails.setClientFlowFormAction(clientFlowFormData.getAction());
 
     if (clientFlowFormData.getAddressDetails() != null) {
@@ -112,18 +109,18 @@ public class ClientAddressDetailsController {
     model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
 
     if (ACTION_FIND_ADDRESS.equals(action)) {
-      //Search for addresses
+      // Search for addresses
       ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults =
           addressService.getAddresses(clientFlowFormData.getAddressDetails().getPostcode());
 
       if (clientAddressSearchResults.getContent() == null) {
         bindingResult.reject(
-            "address.none",
-            "Your input for address details has not returned any results");
+            "address.none", "Your input for address details has not returned any results");
       } else {
-        clientAddressSearchResults = addressService.filterByHouseNumber(
-            clientFlowFormData.getAddressDetails().getHouseNameNumber(),
-            clientAddressSearchResults);
+        clientAddressSearchResults =
+            addressService.filterByHouseNumber(
+                clientFlowFormData.getAddressDetails().getHouseNameNumber(),
+                clientAddressSearchResults);
         session.setAttribute(ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
       }
 
@@ -139,9 +136,6 @@ public class ClientAddressDetailsController {
   }
 
   private void populateDropdowns(Model model) {
-    new DropdownBuilder(model)
-        .addDropdown("countries",
-            lookupService.getCountries())
-        .build();
+    new DropdownBuilder(model).addDropdown("countries", lookupService.getCountries()).build();
   }
 }

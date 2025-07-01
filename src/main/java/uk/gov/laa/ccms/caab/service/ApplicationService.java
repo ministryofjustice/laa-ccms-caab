@@ -99,15 +99,12 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.data.model.UserDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 
-/**
- * Service class to handle Applications.
- */
+/** Service class to handle Applications. */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -151,23 +148,21 @@ public class ApplicationService {
 
   private final EbsApplicationMappingContextBuilder ebsApplicationMappingContextBuilder;
 
-
   private static final String UPDATE_APPLICATION_APPLICATION_TYPE = "application-type";
   private static final String UPDATE_APPLICATION_CORRESPONDENCE_ADDRESS = "correspondence-address";
   private static final String UPDATE_APPLICATION_PROVIDER_DETAILS = "provider-details";
-
 
   /**
    * Performs a combined search of SOA cases and TDS applications based on provided search criteria.
    * Each result is mapped to a BaseApplicationDetail to summarise the details.
    *
    * @param caseSearchCriteria The search criteria to use when fetching cases.
-   * @param user               The currently logged-in user.
+   * @param user The currently logged-in user.
    * @return A List of BaseApplicationDetail.
    */
   public List<BaseApplicationDetail> getCases(
-      final CaseSearchCriteria caseSearchCriteria,
-      final UserDetail user) throws TooManyResultsException {
+      final CaseSearchCriteria caseSearchCriteria, final UserDetail user)
+      throws TooManyResultsException {
 
     ReflectionUtils.nullifyStrings(caseSearchCriteria);
 
@@ -177,21 +172,24 @@ public class ApplicationService {
     if (!STATUS_UNSUBMITTED_ACTUAL_VALUE.equals(caseSearchCriteria.getStatus())) {
       // Set page and size to min and max respectively. Because we are combining 2 searches
       // we will have to return all records for pagination by the caller.
-      final CaseDetails caseDetails = Optional.ofNullable(
-              ebsApiClient.getCases(
-                  caseSearchCriteria, user.getProvider().getId(),
-                  0,
-                  searchConstants.getMaxSearchResultsCases()).block())
-          .orElseThrow(() -> new CaabApplicationException("Failed to retrieve EBS Cases"));
+      final CaseDetails caseDetails =
+          Optional.ofNullable(
+                  ebsApiClient
+                      .getCases(
+                          caseSearchCriteria,
+                          user.getProvider().getId(),
+                          0,
+                          searchConstants.getMaxSearchResultsCases())
+                      .block())
+              .orElseThrow(() -> new CaabApplicationException("Failed to retrieve EBS Cases"));
 
       if (caseDetails.getTotalElements() > searchConstants.getMaxSearchResultsCases()) {
         throw new TooManyResultsException(
             "Case Search returned %s results".formatted(caseDetails.getTotalElements()));
       }
 
-      searchResults.addAll(caseDetails.getContent().stream()
-          .map(soaApplicationMapper::toBaseApplication)
-          .toList());
+      searchResults.addAll(
+          caseDetails.getContent().stream().map(soaApplicationMapper::toBaseApplication).toList());
     }
 
     // We need to fetch all TDS applications regardless of status to check for amendments.
@@ -200,11 +198,10 @@ public class ApplicationService {
     caseSearchCriteria.setStatus(null);
 
     // Now retrieve applications from the Transient Data Store
-    final List<BaseApplicationDetail> tdsApplications = this.getTdsApplications(
-        caseSearchCriteria,
-        user,
-        0,
-        searchConstants.getMaxSearchResultsCases()).getContent();
+    final List<BaseApplicationDetail> tdsApplications =
+        this.getTdsApplications(
+                caseSearchCriteria, user, 0, searchConstants.getMaxSearchResultsCases())
+            .getContent();
 
     // Re-add the original case status to the search criteria to retain for pre-poulation
     // of the search form.
@@ -219,15 +216,20 @@ public class ApplicationService {
     // Handle amendments: where there is a duplicate case from EBS + TDS, set the EBS amendment
     // flag to true, and remove the TDS application from the results.
     searchResults.stream()
-        .filter(ebsCase -> tdsApplications.stream().anyMatch(
-            amendment
-                -> amendment.getCaseReferenceNumber().equals(ebsCase.getCaseReferenceNumber()))
-        )
-        .forEach(ebsCase -> {
-          ebsCase.setAmendment(true);
-          tdsApplications.removeIf(app ->
-              app.getCaseReferenceNumber().equals(ebsCase.getCaseReferenceNumber()));
-        });
+        .filter(
+            ebsCase ->
+                tdsApplications.stream()
+                    .anyMatch(
+                        amendment ->
+                            amendment
+                                .getCaseReferenceNumber()
+                                .equals(ebsCase.getCaseReferenceNumber())))
+        .forEach(
+            ebsCase -> {
+              ebsCase.setAmendment(true);
+              tdsApplications.removeIf(
+                  app -> app.getCaseReferenceNumber().equals(ebsCase.getCaseReferenceNumber()));
+            });
 
     // Clear TDS results unless case status search criteria was 'UNSUBMITTED', 'Draft' or unset
     if (caseSearchCriteria.getStatus() != null
@@ -251,19 +253,16 @@ public class ApplicationService {
     return searchResults;
   }
 
-
   /**
    * Applies a patch to an existing application.
    *
-   * @param id    The unique identifier of the application to be patched.
+   * @param id The unique identifier of the application to be patched.
    * @param patch The details of the application patch.
-   * @param user  The user details, including the login ID.
+   * @param user The user details, including the login ID.
    * @return A Mono indicating the completion of the patch operation.
    */
   public Mono<Void> patchApplication(
-      final String id,
-      final ApplicationDetail patch,
-      final UserDetail user) {
+      final String id, final ApplicationDetail patch, final UserDetail user) {
     return caabApiClient.patchApplication(id, patch, user.getLoginId());
   }
 
@@ -271,9 +270,9 @@ public class ApplicationService {
    * Query for Applications in the TDS based on the supplied search criteria.
    *
    * @param caseSearchCriteria - the search criteria
-   * @param user               - the currently logged in user
-   * @param page               - the page number
-   * @param size               - the page size
+   * @param user - the currently logged in user
+   * @param page - the page number
+   * @param size - the page size
    * @return ApplicationDetails containing a List of BaseApplicationDetail.
    */
   public ApplicationDetails getTdsApplications(
@@ -283,11 +282,9 @@ public class ApplicationService {
       final Integer size) {
 
     return Optional.ofNullable(
-            caabApiClient.getApplications(
-                caseSearchCriteria,
-                user.getProvider().getId(),
-                page,
-                size).block())
+            caabApiClient
+                .getApplications(caseSearchCriteria, user.getProvider().getId(), page, size)
+                .block())
         .orElseThrow(() -> new CaabApplicationException("Failed to query for applications"));
   }
 
@@ -295,22 +292,18 @@ public class ApplicationService {
    * Retrieve the full details of a Case.
    *
    * @param caseReferenceNumber The reference of the case to be retrieved.
-   * @param providerId          The identifier for the provider.
-   * @param userName            The username of the logged-in user.
+   * @param providerId The identifier for the provider.
+   * @param userName The username of the logged-in user.
    * @return A Mono wrapping the CaseDetails.
    */
   public ApplicationDetail getCase(
-      final String caseReferenceNumber,
-      final long providerId,
-      final String userName) {
+      final String caseReferenceNumber, final long providerId, final String userName) {
     uk.gov.laa.ccms.data.model.CaseDetail ebsCase =
         ebsApiClient.getCase(caseReferenceNumber, providerId, userName).block();
 
-    return ebsApplicationMapper.toApplicationDetail(ebsApplicationMappingContextBuilder
-        .buildApplicationMappingContext(ebsCase));
+    return ebsApplicationMapper.toApplicationDetail(
+        ebsApplicationMappingContextBuilder.buildApplicationMappingContext(ebsCase));
   }
-
-
 
   /**
    * Fetches a unique case reference.
@@ -325,8 +318,8 @@ public class ApplicationService {
    * Create a draft Application in the CAAB's Transient Data Store.
    *
    * @param applicationFormData - The details of the Application to create
-   * @param clientDetail        - The client details
-   * @param user                - The related User.
+   * @param clientDetail - The client details
+   * @param user - The related User.
    * @return a String containing the id of the application
    */
   public Mono<String> createApplication(
@@ -338,17 +331,19 @@ public class ApplicationService {
     boolean isCopyCase = StringUtils.hasText(applicationFormData.getCopyCaseReferenceNumber());
     if (isCopyCase) {
       ApplicationDetail ebsApplicationToCopy =
-          this.getCase(applicationFormData.getCopyCaseReferenceNumber(),
-              user.getProvider().getId(), user.getUsername());
+          this.getCase(
+              applicationFormData.getCopyCaseReferenceNumber(),
+              user.getProvider().getId(),
+              user.getUsername());
       applicationMono = copyApplication(ebsApplicationToCopy, clientDetail, user);
     } else {
       applicationMono = buildNewApplication(applicationFormData, clientDetail, user);
     }
 
-    return applicationMono
-        .flatMap(applicationDetail -> {
-          Mono<String> application = caabApiClient.createApplication(user.getLoginId(),
-              applicationDetail);
+    return applicationMono.flatMap(
+        applicationDetail -> {
+          Mono<String> application =
+              caabApiClient.createApplication(user.getLoginId(), applicationDetail);
           puiMetricService.incrementCreatedApplicationsCount(
               applicationDetail.getCaseReferenceNumber());
           if (isCopyCase) {
@@ -358,68 +353,70 @@ public class ApplicationService {
           }
           return application;
         });
-
   }
 
   protected Mono<ApplicationDetail> buildNewApplication(
       final ApplicationFormData applicationFormData,
       final ClientDetail clientDetail,
       final UserDetail user) {
-    ApplicationType applicationType = new ApplicationTypeBuilder()
-        .applicationType(
-            applicationFormData.getApplicationTypeCategory(),
-            applicationFormData.isDelegatedFunctions())
-        .devolvedPowers(
-            applicationFormData.isDelegatedFunctions(),
-            applicationFormData.getDelegatedFunctionUsedDate())
-        .build();
+    ApplicationType applicationType =
+        new ApplicationTypeBuilder()
+            .applicationType(
+                applicationFormData.getApplicationTypeCategory(),
+                applicationFormData.isDelegatedFunctions())
+            .devolvedPowers(
+                applicationFormData.isDelegatedFunctions(),
+                applicationFormData.getDelegatedFunctionUsedDate())
+            .build();
 
     // get case reference Number, category of law value, contractual devolved powers,
     // amendment types
-    Mono<Tuple4<CaseReferenceSummary,
-        Optional<CategoryOfLawLookupValueDetail>,
-        ContractDetails,
-        AmendmentTypeLookupDetail>> combinedResult =
-        Mono.zip(
-            this.getCaseReference(),
-            lookupService.getCategoryOfLaw(applicationFormData.getCategoryOfLawId()),
-            soaApiClient.getContractDetails(
-                user.getProvider().getId(),
-                applicationFormData.getOfficeId(),
-                user.getLoginId(),
-                user.getUserType()
-            ),
-            ebsApiClient.getAmendmentTypes(applicationType.getId())
-        );
+    Mono<
+            Tuple4<
+                CaseReferenceSummary,
+                Optional<CategoryOfLawLookupValueDetail>,
+                ContractDetails,
+                AmendmentTypeLookupDetail>>
+        combinedResult =
+            Mono.zip(
+                this.getCaseReference(),
+                lookupService.getCategoryOfLaw(applicationFormData.getCategoryOfLawId()),
+                soaApiClient.getContractDetails(
+                    user.getProvider().getId(),
+                    applicationFormData.getOfficeId(),
+                    user.getLoginId(),
+                    user.getUserType()),
+                ebsApiClient.getAmendmentTypes(applicationType.getId()));
 
-    return combinedResult.map(tuple -> {
-      CaseReferenceSummary caseReferenceSummary = tuple.getT1();
-      CategoryOfLawLookupValueDetail categoryOfLawLookup = tuple.getT2()
-          .orElse(new CategoryOfLawLookupValueDetail()
-              .code(applicationFormData.getCategoryOfLawId())
-              .matterTypeDescription(applicationFormData.getCategoryOfLawId()));
+    return combinedResult.map(
+        tuple -> {
+          CaseReferenceSummary caseReferenceSummary = tuple.getT1();
+          CategoryOfLawLookupValueDetail categoryOfLawLookup =
+              tuple
+                  .getT2()
+                  .orElse(
+                      new CategoryOfLawLookupValueDetail()
+                          .code(applicationFormData.getCategoryOfLawId())
+                          .matterTypeDescription(applicationFormData.getCategoryOfLawId()));
 
-      ContractDetails contractDetails = tuple.getT3();
-      AmendmentTypeLookupDetail amendmentTypes = tuple.getT4();
+          ContractDetails contractDetails = tuple.getT3();
+          AmendmentTypeLookupDetail amendmentTypes = tuple.getT4();
 
-      return new InitialApplicationBuilder()
-          .applicationType(applicationType)
-          .caseReference(caseReferenceSummary)
-          .provider(user)
-          .client(clientDetail)
-          .categoryOfLaw(applicationFormData.getCategoryOfLawId(), categoryOfLawLookup)
-          .office(
-              applicationFormData.getOfficeId(),
-              user.getProvider().getOffices())
-          .contractualDevolvedPower(
-              contractDetails.getContracts(),
-              applicationFormData.getCategoryOfLawId())
-          .larScopeFlag(amendmentTypes)
-          .status()
-          .costStructure()
-          .correspondenceAddress()
-          .build();
-    });
+          return new InitialApplicationBuilder()
+              .applicationType(applicationType)
+              .caseReference(caseReferenceSummary)
+              .provider(user)
+              .client(clientDetail)
+              .categoryOfLaw(applicationFormData.getCategoryOfLawId(), categoryOfLawLookup)
+              .office(applicationFormData.getOfficeId(), user.getProvider().getOffices())
+              .contractualDevolvedPower(
+                  contractDetails.getContracts(), applicationFormData.getCategoryOfLawId())
+              .larScopeFlag(amendmentTypes)
+              .status()
+              .costStructure()
+              .correspondenceAddress()
+              .build();
+        });
   }
 
   protected Mono<ApplicationDetail> copyApplication(
@@ -429,87 +426,98 @@ public class ApplicationService {
 
     // get case reference Number, category of law value, contractual devolved powers,
     // amendment types
-    Mono<Tuple4<CaseReferenceSummary,
-        Optional<CategoryOfLawLookupValueDetail>,
-        ContractDetails,
-        RelationshipToCaseLookupDetail>> combinedResult =
-        Mono.zip(
-            this.getCaseReference(),
-            lookupService.getCategoryOfLaw(applicationToCopy.getCategoryOfLaw().getId()),
-            soaApiClient.getContractDetails(
-                user.getProvider().getId(),
-                applicationToCopy.getProviderDetails().getOffice().getId(),
-                user.getLoginId(),
-                user.getUserType()
-            ),
-            lookupService.getPersonToCaseRelationships());
+    Mono<
+            Tuple4<
+                CaseReferenceSummary,
+                Optional<CategoryOfLawLookupValueDetail>,
+                ContractDetails,
+                RelationshipToCaseLookupDetail>>
+        combinedResult =
+            Mono.zip(
+                this.getCaseReference(),
+                lookupService.getCategoryOfLaw(applicationToCopy.getCategoryOfLaw().getId()),
+                soaApiClient.getContractDetails(
+                    user.getProvider().getId(),
+                    applicationToCopy.getProviderDetails().getOffice().getId(),
+                    user.getLoginId(),
+                    user.getUserType()),
+                lookupService.getPersonToCaseRelationships());
 
-    return combinedResult.map(tuple -> {
-      final CaseReferenceSummary caseReferenceSummary = tuple.getT1();
+    return combinedResult.map(
+        tuple -> {
+          final CaseReferenceSummary caseReferenceSummary = tuple.getT1();
 
-      final CategoryOfLawLookupValueDetail categoryOfLawLookupValueDetail = tuple.getT2()
-          .orElse(new CategoryOfLawLookupValueDetail()
-              .code(applicationToCopy.getCategoryOfLaw().getId())
-              .matterTypeDescription(applicationToCopy.getCategoryOfLaw().getId()));
+          final CategoryOfLawLookupValueDetail categoryOfLawLookupValueDetail =
+              tuple
+                  .getT2()
+                  .orElse(
+                      new CategoryOfLawLookupValueDetail()
+                          .code(applicationToCopy.getCategoryOfLaw().getId())
+                          .matterTypeDescription(applicationToCopy.getCategoryOfLaw().getId()));
 
-      final ContractDetails contractDetails = tuple.getT3();
-      final RelationshipToCaseLookupDetail relationshipToCaseLookupDetail = tuple.getT4();
+          final ContractDetails contractDetails = tuple.getT3();
+          final RelationshipToCaseLookupDetail relationshipToCaseLookupDetail = tuple.getT4();
 
-      // Get a Map of RelationshipToCase by code, filtered for those with the 'copyParty'
-      // flag set.
-      Map<String, RelationshipToCaseLookupValueDetail> copyPartyRelationships =
-          relationshipToCaseLookupDetail.getContent() != null
-              ? relationshipToCaseLookupDetail.getContent().stream()
-              .filter(RelationshipToCaseLookupValueDetail::getCopyParty)
-              .collect(Collectors.toMap(
-                  RelationshipToCaseLookupValueDetail::getCode, Function.identity()))
-              : Collections.emptyMap();
+          // Get a Map of RelationshipToCase by code, filtered for those with the 'copyParty'
+          // flag set.
+          Map<String, RelationshipToCaseLookupValueDetail> copyPartyRelationships =
+              relationshipToCaseLookupDetail.getContent() != null
+                  ? relationshipToCaseLookupDetail.getContent().stream()
+                      .filter(RelationshipToCaseLookupValueDetail::getCopyParty)
+                      .collect(
+                          Collectors.toMap(
+                              RelationshipToCaseLookupValueDetail::getCode, Function.identity()))
+                  : Collections.emptyMap();
 
-      // Find the max cost limitation across the Proceedings, and set this as the
-      // default cost limitation for the application.
-      BigDecimal defaultCostLimitation = BigDecimal.ZERO;
-      if (applicationToCopy.getProceedings() != null) {
-        defaultCostLimitation = applicationToCopy.getProceedings().stream()
-            .map(ProceedingDetail::getCostLimitation)
-            .max(Comparator.comparingDouble(BigDecimal::doubleValue))
-            .orElse(BigDecimal.ZERO);
-      }
+          // Find the max cost limitation across the Proceedings, and set this as the
+          // default cost limitation for the application.
+          BigDecimal defaultCostLimitation = BigDecimal.ZERO;
+          if (applicationToCopy.getProceedings() != null) {
+            defaultCostLimitation =
+                applicationToCopy.getProceedings().stream()
+                    .map(ProceedingDetail::getCostLimitation)
+                    .max(Comparator.comparingDouble(BigDecimal::doubleValue))
+                    .orElse(BigDecimal.ZERO);
+          }
 
-      // Check whether the cost limit should be copied for the case's category of law
-      BigDecimal requestedCostLimitation =
-          Boolean.TRUE.equals(categoryOfLawLookupValueDetail.getCopyCostLimit())
-              ? applicationToCopy.getCosts().getRequestedCostLimitation() : BigDecimal.ZERO;
+          // Check whether the cost limit should be copied for the case's category of law
+          BigDecimal requestedCostLimitation =
+              Boolean.TRUE.equals(categoryOfLawLookupValueDetail.getCopyCostLimit())
+                  ? applicationToCopy.getCosts().getRequestedCostLimitation()
+                  : BigDecimal.ZERO;
 
-      // Use the builder to intialise the application.
-      ApplicationDetail newApplication = new InitialApplicationBuilder()
-          .caseReference(caseReferenceSummary)
-          .provider(user)
-          .client(clientDetail)
-          .contractualDevolvedPower(
-              contractDetails.getContracts(),
-              applicationToCopy.getCategoryOfLaw().getId())
-          .costStructure(
-              new CostStructureDetail()
-                  .requestedCostLimitation(requestedCostLimitation)
-                  .defaultCostLimitation(defaultCostLimitation))
-          .status()
-          .build();
+          // Use the builder to intialise the application.
+          ApplicationDetail newApplication =
+              new InitialApplicationBuilder()
+                  .caseReference(caseReferenceSummary)
+                  .provider(user)
+                  .client(clientDetail)
+                  .contractualDevolvedPower(
+                      contractDetails.getContracts(), applicationToCopy.getCategoryOfLaw().getId())
+                  .costStructure(
+                      new CostStructureDetail()
+                          .requestedCostLimitation(requestedCostLimitation)
+                          .defaultCostLimitation(defaultCostLimitation))
+                  .status()
+                  .build();
 
-      // Use a mapper to copy the relevant attributes into the new application
-      newApplication = copyApplicationMapper.copyApplication(newApplication, applicationToCopy);
+          // Use a mapper to copy the relevant attributes into the new application
+          newApplication = copyApplicationMapper.copyApplication(newApplication, applicationToCopy);
 
-      // Clear the ebsId for an opponent if it is of type INDIVIDUAL AND it is NOT shared AND
-      // the relationship to case for the opponent is of type Copy Party.
-      if (newApplication.getOpponents() != null) {
-        newApplication.getOpponents().stream()
-            .filter(opponent -> OPPONENT_TYPE_INDIVIDUAL.equalsIgnoreCase(opponent.getType())
-                && copyPartyRelationships.containsKey(opponent.getRelationshipToCase())
-                && !opponent.getSharedInd())
-            .forEach(opponent -> opponent.setEbsId(null));
-      }
+          // Clear the ebsId for an opponent if it is of type INDIVIDUAL AND it is NOT shared AND
+          // the relationship to case for the opponent is of type Copy Party.
+          if (newApplication.getOpponents() != null) {
+            newApplication.getOpponents().stream()
+                .filter(
+                    opponent ->
+                        OPPONENT_TYPE_INDIVIDUAL.equalsIgnoreCase(opponent.getType())
+                            && copyPartyRelationships.containsKey(opponent.getRelationshipToCase())
+                            && !opponent.getSharedInd())
+                .forEach(opponent -> opponent.setEbsId(null));
+          }
 
-      return newApplication;
-    });
+          return newApplication;
+        });
   }
 
   /**
@@ -524,7 +532,9 @@ public class ApplicationService {
     return Optional.ofNullable(caseStatusLookupDetail)
         .map(CaseStatusLookupDetail::getContent)
         .orElse(Collections.emptyList())
-        .stream().findFirst().orElse(null);
+        .stream()
+        .findFirst()
+        .orElse(null);
   }
 
   public Mono<ApplicationDetail> getApplication(final String id) {
@@ -535,7 +545,7 @@ public class ApplicationService {
    * Abandon an application by removing all related data from the TDS.
    *
    * @param application - the application to abandon.
-   * @param user        - the user performing the application abandon.
+   * @param user - the user performing the application abandon.
    */
   public void abandonApplication(final ApplicationDetail application, final UserDetail user) {
 
@@ -546,17 +556,18 @@ public class ApplicationService {
     /*
      * Delete the application itself.
      */
-    final Mono<Void> deleteAppMono = caabApiClient.deleteApplication(
-        String.valueOf(application.getId()), user.getLoginId());
+    final Mono<Void> deleteAppMono =
+        caabApiClient.deleteApplication(String.valueOf(application.getId()), user.getLoginId());
 
     /*
      * Delete any non-financial assessments associated with the application.
      */
-    final Mono<Void> deleteAssessmentsMono = assessmentService.deleteAssessments(
-        user,
-        getNonFinancialAssessmentNamesIncludingPrepop(),
-        application.getCaseReferenceNumber(),
-        null);
+    final Mono<Void> deleteAssessmentsMono =
+        assessmentService.deleteAssessments(
+            user,
+            getNonFinancialAssessmentNamesIncludingPrepop(),
+            application.getCaseReferenceNumber(),
+            null);
     /*
      * Increment relevant metrics
      */
@@ -564,7 +575,6 @@ public class ApplicationService {
 
     Mono.when(removeDocsMono, deleteAppMono, deleteAssessmentsMono).block();
   }
-
 
   /**
    * Retrieves the application section display values.
@@ -574,8 +584,7 @@ public class ApplicationService {
    *     values.
    */
   public ApplicationSectionDisplay getApplicationSections(
-      final ApplicationDetail application,
-      final UserDetail user) {
+      final ApplicationDetail application, final UserDetail user) {
 
     String correspondenceMethod = getCorrespondenceMethod(application);
 
@@ -603,32 +612,37 @@ public class ApplicationService {
             user.getProvider().getId().toString(),
             application.getCaseReferenceNumber());
 
-    final Tuple6<RelationshipToCaseLookupDetail,
-        RelationshipToCaseLookupDetail,
-        CommonLookupDetail,
-        CommonLookupDetail,
-        AssessmentDetails,
-        AssessmentDetails> applicationSummaryMonos = Mono.zip(
-            orgRelationshipsToCaseMono,
-            personRelationshipsToCaseMono,
-            relationshipsToClientMono,
-            contactTitlesMono,
-            meansAssessmentsMono,
-            meritsAssessmentsMono)
-        .blockOptional().orElseThrow(() ->
-            new CaabApplicationException("Failed to retrieve lookup details for application "
-                + "summary"));
+    final Tuple6<
+            RelationshipToCaseLookupDetail,
+            RelationshipToCaseLookupDetail,
+            CommonLookupDetail,
+            CommonLookupDetail,
+            AssessmentDetails,
+            AssessmentDetails>
+        applicationSummaryMonos =
+            Mono.zip(
+                    orgRelationshipsToCaseMono,
+                    personRelationshipsToCaseMono,
+                    relationshipsToClientMono,
+                    contactTitlesMono,
+                    meansAssessmentsMono,
+                    meritsAssessmentsMono)
+                .blockOptional()
+                .orElseThrow(
+                    () ->
+                        new CaabApplicationException(
+                            "Failed to retrieve lookup details for application " + "summary"));
 
-    final List<RelationshipToCaseLookupValueDetail> organisationRelationships
-        = applicationSummaryMonos.getT1().getContent();
-    final List<RelationshipToCaseLookupValueDetail> personsRelationships
-        = applicationSummaryMonos.getT2().getContent();
+    final List<RelationshipToCaseLookupValueDetail> organisationRelationships =
+        applicationSummaryMonos.getT1().getContent();
+    final List<RelationshipToCaseLookupValueDetail> personsRelationships =
+        applicationSummaryMonos.getT2().getContent();
 
-    final List<CommonLookupValueDetail> relationshipsToClient
-        = applicationSummaryMonos.getT3().getContent();
+    final List<CommonLookupValueDetail> relationshipsToClient =
+        applicationSummaryMonos.getT3().getContent();
 
-    final List<CommonLookupValueDetail> contactTitles
-        = applicationSummaryMonos.getT4().getContent();
+    final List<CommonLookupValueDetail> contactTitles =
+        applicationSummaryMonos.getT4().getContent();
 
     final AssessmentDetail meansAssessment =
         getMostRecentAssessmentDetail(applicationSummaryMonos.getT5().getContent());
@@ -636,39 +650,32 @@ public class ApplicationService {
     final AssessmentDetail meritsAssessment =
         getMostRecentAssessmentDetail(applicationSummaryMonos.getT6().getContent());
 
-    //this not only gets the status but also updates them.
+    // this not only gets the status but also updates them.
     assessmentService.calculateAssessmentStatuses(
-        application,
-        meansAssessment,
-        meritsAssessment,
-        user);
+        application, meansAssessment, meritsAssessment, user);
 
-    final boolean evidenceRequired = evidenceService.isEvidenceRequired(
-        meansAssessment,
-        meritsAssessment,
-        application.getApplicationType(),
-        application.getPriorAuthorities());
+    final boolean evidenceRequired =
+        evidenceService.isEvidenceRequired(
+            meansAssessment,
+            meritsAssessment,
+            application.getApplicationType(),
+            application.getPriorAuthorities());
 
-    final boolean allEvidenceProvided = evidenceService.isAllEvidenceProvided(
-        String.valueOf(application.getId()),
-        application.getCaseReferenceNumber(),
-        application.getProviderDetails().getProvider().getId());
+    final boolean allEvidenceProvided =
+        evidenceService.isAllEvidenceProvided(
+            String.valueOf(application.getId()),
+            application.getCaseReferenceNumber(),
+            application.getProviderDetails().getProvider().getId());
 
     return new ApplicationSectionsBuilder(application.getAuditTrail())
-        .caseReferenceNumber(
-            application.getCaseReferenceNumber())
-        .applicationType(
-            application.getApplicationType())
+        .caseReferenceNumber(application.getCaseReferenceNumber())
+        .applicationType(application.getApplicationType())
         .client(application.getClient())
         .provider(application.getProviderDetails())
         .generalDetails(
-            application.getStatus(),
-            application.getCategoryOfLaw(),
-            correspondenceMethod)
+            application.getStatus(), application.getCategoryOfLaw(), correspondenceMethod)
         .proceedingsPriorAuthsAndCosts(
-            application.getProceedings(),
-            application.getPriorAuthorities(),
-            application.getCosts())
+            application.getProceedings(), application.getPriorAuthorities(), application.getCosts())
         .opponentsAndOtherParties(
             application.getOpponents(),
             contactTitles,
@@ -681,12 +688,9 @@ public class ApplicationService {
             meritsAssessment,
             organisationRelationships,
             personsRelationships)
-        .documentUpload(
-            evidenceRequired,
-            allEvidenceProvided)
+        .documentUpload(evidenceRequired, allEvidenceProvided)
         .build();
   }
-
 
   /**
    * Retrieves the case details display values.
@@ -695,8 +699,7 @@ public class ApplicationService {
    * @return A Mono of ApplicationSectionDisplay representing the application section display
    *     values.
    */
-  public ApplicationSectionDisplay getCaseDetailsDisplay(
-      final ApplicationDetail application) {
+  public ApplicationSectionDisplay getCaseDetailsDisplay(final ApplicationDetail application) {
 
     final String correspondenceMethod = getCorrespondenceMethod(application);
 
@@ -718,49 +721,46 @@ public class ApplicationService {
             .flatMapIterable(CommonLookupDetail::getContent)
             .collectMap(CommonLookupValueDetail::getCode, CommonLookupValueDetail::getDescription);
 
-    final Tuple5<RelationshipToCaseLookupDetail,
-        RelationshipToCaseLookupDetail,
-        CommonLookupDetail,
-        CommonLookupDetail, Map<String, String>> applicationSummaryMonos =
-        Mono.zip(
-                orgRelationshipsToCaseMono,
-                personRelationshipsToCaseMono,
-                relationshipsToClientMono,
-                contactTitlesMono,
-                linkedCaseLookupMono)
-            .blockOptional().orElseThrow(() ->
-                new CaabApplicationException("Failed to retrieve application summary"));
+    final Tuple5<
+            RelationshipToCaseLookupDetail,
+            RelationshipToCaseLookupDetail,
+            CommonLookupDetail,
+            CommonLookupDetail,
+            Map<String, String>>
+        applicationSummaryMonos =
+            Mono.zip(
+                    orgRelationshipsToCaseMono,
+                    personRelationshipsToCaseMono,
+                    relationshipsToClientMono,
+                    contactTitlesMono,
+                    linkedCaseLookupMono)
+                .blockOptional()
+                .orElseThrow(
+                    () -> new CaabApplicationException("Failed to retrieve application summary"));
 
-    final List<RelationshipToCaseLookupValueDetail> organisationRelationships
-        = applicationSummaryMonos.getT1().getContent();
+    final List<RelationshipToCaseLookupValueDetail> organisationRelationships =
+        applicationSummaryMonos.getT1().getContent();
 
-    final List<RelationshipToCaseLookupValueDetail> personsRelationships
-        = applicationSummaryMonos.getT2().getContent();
+    final List<RelationshipToCaseLookupValueDetail> personsRelationships =
+        applicationSummaryMonos.getT2().getContent();
 
-    final List<CommonLookupValueDetail> relationshipsToClient
-        = applicationSummaryMonos.getT3().getContent();
+    final List<CommonLookupValueDetail> relationshipsToClient =
+        applicationSummaryMonos.getT3().getContent();
 
-    final List<CommonLookupValueDetail> contactTitles
-        = applicationSummaryMonos.getT4().getContent();
+    final List<CommonLookupValueDetail> contactTitles =
+        applicationSummaryMonos.getT4().getContent();
 
-    final Map<String, String> linkedCaseLookup
-        = applicationSummaryMonos.getT5();
+    final Map<String, String> linkedCaseLookup = applicationSummaryMonos.getT5();
 
     return new ApplicationSectionsBuilder()
-        .caseReferenceNumber(
-            application.getCaseReferenceNumber())
-        .applicationType(
-            application.getApplicationType())
+        .caseReferenceNumber(application.getCaseReferenceNumber())
+        .applicationType(application.getApplicationType())
         .client(application.getClient())
         .provider(application.getProviderDetails())
         .generalDetails(
-            application.getStatus(),
-            application.getCategoryOfLaw(),
-            correspondenceMethod)
+            application.getStatus(), application.getCategoryOfLaw(), correspondenceMethod)
         .proceedingsPriorAuthsAndCosts(
-            application.getProceedings(),
-            application.getPriorAuthorities(),
-            application.getCosts())
+            application.getProceedings(), application.getPriorAuthorities(), application.getCosts())
         .opponentsAndOtherParties(
             application.getOpponents(),
             contactTitles,
@@ -785,40 +785,82 @@ public class ApplicationService {
   private String getCorrespondenceMethod(ApplicationDetail application) {
     return Optional.ofNullable(application.getCorrespondenceAddress())
         .map(AddressDetail::getPreferredAddress)
-        .map(correspondenceCode ->
-            lookupService.getCommonValue(COMMON_VALUE_CASE_ADDRESS_OPTION, correspondenceCode)
-                .blockOptional()
-                .orElseThrow(
-                    () -> new CaabApplicationException("Failed to retrieve correspondence lookup"))
-                .orElseGet(() -> new CommonLookupValueDetail().description(correspondenceCode))
-                .getDescription())
+        .map(
+            correspondenceCode ->
+                lookupService
+                    .getCommonValue(COMMON_VALUE_CASE_ADDRESS_OPTION, correspondenceCode)
+                    .blockOptional()
+                    .orElseThrow(
+                        () ->
+                            new CaabApplicationException(
+                                "Failed to retrieve correspondence lookup"))
+                    .orElseGet(() -> new CommonLookupValueDetail().description(correspondenceCode))
+                    .getDescription())
         .orElse("");
-
   }
 
+  /**
+   * Retrieves the application type form data for a given application type ID.
+   *
+   * @param id The ID of the application type.
+   * @return An ApplicationFormData object containing the application type form data.
+   */
   public ApplicationFormData getApplicationTypeFormData(final String id) {
-    return caabApiClient.getApplicationType(id)
-        .map(applicationFormDataMapper::toApplicationTypeFormData).block();
+    return caabApiClient
+        .getApplicationType(id)
+        .map(applicationFormDataMapper::toApplicationTypeFormData)
+        .block();
   }
 
-  public void putApplicationTypeFormData(final Integer id, final ApplicationType applicationType,
-                                         final UserDetail user) {
+  /**
+   * Updates the application type form data for a given application type ID.
+   *
+   * @param id The ID of the application type.
+   * @param applicationType The ApplicationType object containing the updated data.
+   * @param user The user details, including the login ID.
+   */
+  public void putApplicationTypeFormData(
+      final Integer id, final ApplicationType applicationType, final UserDetail user) {
     caabApiClient.putApplicationType(id, user.getLoginId(), applicationType).block();
   }
 
+  /**
+   * Retrieves the provider details form data for a given provider ID.
+   *
+   * @param id The ID of the provider.
+   * @return An ApplicationFormData object containing the provider details form data.
+   */
   public ApplicationFormData getProviderDetailsFormData(final String id) {
-    return caabApiClient.getProviderDetails(id)
-        .map(applicationFormDataMapper::toApplicationProviderDetailsFormData).block();
+    return caabApiClient
+        .getProviderDetails(id)
+        .map(applicationFormDataMapper::toApplicationProviderDetailsFormData)
+        .block();
   }
 
+  /**
+   * Retrieves the provider details form data for a given provider ID as a Mono.
+   *
+   * @param id The ID of the provider.
+   * @return A Mono wrapping an ApplicationFormData object containing the provider details form
+   *     data.
+   */
   public Mono<ApplicationFormData> getMonoProviderDetailsFormData(final String id) {
-    return caabApiClient.getProviderDetails(id)
+    return caabApiClient
+        .getProviderDetails(id)
         .map(applicationFormDataMapper::toApplicationProviderDetailsFormData);
   }
 
+  /**
+   * Retrieves the correspondence address form data for a given ID.
+   *
+   * @param id The ID of the correspondence address.
+   * @return An AddressFormData object containing the correspondence address form data.
+   */
   public AddressFormData getCorrespondenceAddressFormData(final String id) {
-    return caabApiClient.getCorrespondenceAddress(id)
-        .map(addressFormDataMapper::toAddressFormData).block();
+    return caabApiClient
+        .getCorrespondenceAddress(id)
+        .map(addressFormDataMapper::toAddressFormData)
+        .block();
   }
 
   public AddressFormData getCorrespondenceAddressFormData(final AddressDetail address) {
@@ -826,8 +868,7 @@ public class ApplicationService {
   }
 
   public Mono<AddressFormData> getMonoCorrespondenceAddressFormData(final String id) {
-    return caabApiClient.getCorrespondenceAddress(id)
-        .map(addressFormDataMapper::toAddressFormData);
+    return caabApiClient.getCorrespondenceAddress(id).map(addressFormDataMapper::toAddressFormData);
   }
 
   /**
@@ -839,16 +880,18 @@ public class ApplicationService {
    * @return A {@code ResultsDisplay<LinkedCaseResultRowDisplay>} containing the linked cases.
    */
   public ResultsDisplay<LinkedCaseResultRowDisplay> getLinkedCases(final String applicationId) {
-    return lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)
+    return lookupService
+        .getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)
         .flatMapIterable(CommonLookupDetail::getContent)
         .collectMap(CommonLookupValueDetail::getCode, CommonLookupValueDetail::getDescription)
-        .flatMap(lookup ->
-            caabApiClient.getLinkedCases(applicationId)
-                .flatMapIterable(Function.identity())
-                .map(detail ->
-                    resultDisplayMapper.toLinkedCaseResultRowDisplay(detail, lookup))
-                .collectList()
-                .map(ResultsDisplay::new))
+        .flatMap(
+            lookup ->
+                caabApiClient
+                    .getLinkedCases(applicationId)
+                    .flatMapIterable(Function.identity())
+                    .map(detail -> resultDisplayMapper.toLinkedCaseResultRowDisplay(detail, lookup))
+                    .collectList()
+                    .map(ResultsDisplay::new))
         .block();
   }
 
@@ -859,10 +902,10 @@ public class ApplicationService {
    * powers, the method sets the emergency and emergency scope default flags to true. Otherwise, it
    * sets the scope default flag to true.
    *
-   * @param categoryOfLaw   The category of law.
-   * @param matterType      The type of the matter.
-   * @param proceedingCode  The code of the proceeding.
-   * @param levelOfService  The level of service.
+   * @param categoryOfLaw The category of law.
+   * @param matterType The type of the matter.
+   * @param proceedingCode The code of the proceeding.
+   * @param levelOfService The level of service.
    * @param applicationType The type of the application.
    * @return A Mono of ScopeLimitationDetails containing the default scope limitation details.
    */
@@ -897,11 +940,11 @@ public class ApplicationService {
   /**
    * Calculates the maximum cost limitation for a proceeding.
    *
-   * @param categoryOfLaw    The category of law.
-   * @param matterType       The type of the matter.
-   * @param proceedingCode   The code of the proceeding.
-   * @param levelOfService   The level of service.
-   * @param applicationType  The type of the application.
+   * @param categoryOfLaw The category of law.
+   * @param matterType The type of the matter.
+   * @param proceedingCode The code of the proceeding.
+   * @param levelOfService The level of service.
+   * @param applicationType The type of the application.
    * @param scopeLimitations The list of scope limitations.
    * @return The maximum cost limitation for the proceeding.
    */
@@ -930,22 +973,17 @@ public class ApplicationService {
       }
 
       Optional.ofNullable(lookupService.getScopeLimitationDetails(criteria).block())
-          .orElseThrow(() -> new CaabApplicationException(
-              "Failed to retrieve scope limitiation details"))
+          .orElseThrow(
+              () -> new CaabApplicationException("Failed to retrieve scope limitiation details"))
           .getContent()
           .stream()
           .findFirst()
           .map(uk.gov.laa.ccms.data.model.ScopeLimitationDetail::getCostLimitation)
           .ifPresent(costLimitation -> costLimitations.add(costLimitation.floatValue()));
-
     }
 
     if (!costLimitations.isEmpty()) {
-      maxValue = BigDecimal.valueOf(
-          costLimitations
-              .stream()
-              .max(Float::compareTo)
-              .orElse(null));
+      maxValue = BigDecimal.valueOf(costLimitations.stream().max(Float::compareTo).orElse(null));
     }
 
     return maxValue;
@@ -954,12 +992,12 @@ public class ApplicationService {
   /**
    * Determines the proceeding stage based on various parameters.
    *
-   * @param categoryOfLaw    The category of law.
-   * @param matterType       The type of the matter.
-   * @param proceedingCode   The code of the proceeding.
-   * @param levelOfService   The level of service.
+   * @param categoryOfLaw The category of law.
+   * @param matterType The type of the matter.
+   * @param proceedingCode The code of the proceeding.
+   * @param levelOfService The level of service.
    * @param scopeLimitations The list of scope limitations.
-   * @param isAmendment      Flag indicating if it's an amendment.
+   * @param isAmendment Flag indicating if it's an amendment.
    * @return The proceeding stage as an Integer.
    */
   public Integer getProceedingStage(
@@ -971,7 +1009,7 @@ public class ApplicationService {
       final boolean isAmendment) {
 
     // String existingStage = null;
-    //todo - see GetDefaultScopeLimitation in pui
+    // todo - see GetDefaultScopeLimitation in pui
     //    if (isAmendment) {
     //
     //      // for (ProceedingDetail caseProceeding : myCase.getProceedings()) {
@@ -995,8 +1033,8 @@ public class ApplicationService {
 
       final List<Integer> stageList =
           Optional.ofNullable(lookupService.getScopeLimitationDetails(criteria).block())
-              .orElseThrow(() -> new CaabApplicationException(
-                  "Failed to retrieve scope limitation details"))
+              .orElseThrow(
+                  () -> new CaabApplicationException("Failed to retrieve scope limitation details"))
               .getContent()
               .stream()
               .map(uk.gov.laa.ccms.data.model.ScopeLimitationDetail::getStage)
@@ -1005,7 +1043,7 @@ public class ApplicationService {
       allStages.add(stageList);
       minStageList.add(getMinValue(stageList));
 
-      //common Stages stuff
+      // common Stages stuff
       final List<Integer> commonStages = getCommonStages(allStages);
       if (!commonStages.isEmpty()) {
         return getMinValue(commonStages);
@@ -1019,13 +1057,13 @@ public class ApplicationService {
    * Finds the common stages across all scope limitations.
    *
    * @param allStages A list of lists, where each inner list represents the stages of a scope
-   *                  limitation.
+   *     limitation.
    * @return A list of common stages across all scope limitations.
    */
   private List<Integer> getCommonStages(final List<List<Integer>> allStages) {
     return allStages.getFirst().stream()
-        .filter(stage -> allStages.stream().allMatch(scopeLimStages ->
-            scopeLimStages.contains(stage)))
+        .filter(
+            stage -> allStages.stream().allMatch(scopeLimStages -> scopeLimStages.contains(stage)))
         .collect(Collectors.toList());
   }
 
@@ -1036,25 +1074,19 @@ public class ApplicationService {
    * @return The minimum integer value in the collection. Returns null if the collection is empty.
    */
   private Integer getMinValue(final Collection<Integer> values) {
-    return values.stream()
-        .min(Integer::compareTo)
-        .orElse(null);
+    return values.stream().min(Integer::compareTo).orElse(null);
   }
 
   /**
    * Updates the lead proceeding for a specific application. This method communicates with the CAAB
    * API client to update the lead proceeding.
    *
-   * @param applicationId       The id of the application for which the lead proceeding should be
-   *                            updated.
+   * @param applicationId The id of the application for which the lead proceeding should be updated.
    * @param newLeadProceedingId The id of the new lead proceeding.
-   * @param user                The user performing the operation, identified by
-   *                            {@code UserDetail}.
+   * @param user The user performing the operation, identified by {@code UserDetail}.
    */
   public void makeLeadProceeding(
-      final String applicationId,
-      final Integer newLeadProceedingId,
-      final UserDetail user) {
+      final String applicationId, final Integer newLeadProceedingId, final UserDetail user) {
 
     final List<ProceedingDetail> proceedings = caabApiClient.getProceedings(applicationId).block();
 
@@ -1067,32 +1099,31 @@ public class ApplicationService {
     proceedings.stream()
         .filter(ProceedingDetail::getLeadProceedingInd)
         .findFirst()
-        .ifPresent(proceeding -> {
-          proceeding.setLeadProceedingInd(false);
-          caabApiClient.updateProceeding(
-              proceeding.getId(),
-              proceeding,
-              user.getLoginId()).block();
-        });
+        .ifPresent(
+            proceeding -> {
+              proceeding.setLeadProceedingInd(false);
+              caabApiClient
+                  .updateProceeding(proceeding.getId(), proceeding, user.getLoginId())
+                  .block();
+            });
 
     // Set the new lead proceeding
-    final ProceedingDetail newLeadProceeding = proceedings.stream()
-        .filter(proceeding -> proceeding.getId().equals(newLeadProceedingId))
-        .findFirst()
-        .orElseThrow(() ->
-            new CaabApplicationException("Error: New lead proceeding not found with id: "
-                + newLeadProceedingId));
+    final ProceedingDetail newLeadProceeding =
+        proceedings.stream()
+            .filter(proceeding -> proceeding.getId().equals(newLeadProceedingId))
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new CaabApplicationException(
+                        "Error: New lead proceeding not found with id: " + newLeadProceedingId));
 
     newLeadProceeding.setLeadProceedingInd(true);
-    final Mono<Void> updateProceedingMono = caabApiClient.updateProceeding(
-        newLeadProceedingId,
-        newLeadProceeding,
-        user.getLoginId());
+    final Mono<Void> updateProceedingMono =
+        caabApiClient.updateProceeding(newLeadProceedingId, newLeadProceeding, user.getLoginId());
 
-    //patch lead proceeding changed
-    final ApplicationDetail patch = new ApplicationDetail()
-        .leadProceedingChanged(true)
-        .meritsReassessmentRequired(true);
+    // patch lead proceeding changed
+    final ApplicationDetail patch =
+        new ApplicationDetail().leadProceedingChanged(true).meritsReassessmentRequired(true);
 
     final Mono<Void> patchApplicationMono = patchApplication(applicationId, patch, user);
     Mono.zip(updateProceedingMono, patchApplicationMono).block();
@@ -1100,15 +1131,12 @@ public class ApplicationService {
 
   /**
    * Removes a linked case from a primary case. This method communicates with the CAAB API client to
-   * un-link a case identified by {@code linkedCaseId} from a primary case identified by
-   * {@code id}.
+   * un-link a case identified by {@code linkedCaseId} from a primary case identified by {@code id}.
    *
    * @param linkedCaseId The ID of the linked case to be removed.
-   * @param user         The user performing the operation, identified by {@code UserDetail}.
+   * @param user The user performing the operation, identified by {@code UserDetail}.
    */
-  public void removeLinkedCase(
-      final String linkedCaseId,
-      final UserDetail user) {
+  public void removeLinkedCase(final String linkedCaseId, final UserDetail user) {
     caabApiClient.removeLinkedCase(linkedCaseId, user.getLoginId()).block();
   }
 
@@ -1118,154 +1146,152 @@ public class ApplicationService {
    * in relation to the primary case identified by {@code id}.
    *
    * @param linkedCaseId The ID of the linked case to be updated.
-   * @param data         The new data for the linked case, encapsulated in
-   *                     {@code LinkedCaseResultRowDisplay}.
-   * @param user         The user performing the update, identified by {@code UserDetail}.
+   * @param data The new data for the linked case, encapsulated in {@code
+   *     LinkedCaseResultRowDisplay}.
+   * @param user The user performing the update, identified by {@code UserDetail}.
    */
   public void updateLinkedCase(
-      final String linkedCaseId,
-      final LinkedCaseResultRowDisplay data,
-      final UserDetail user) {
+      final String linkedCaseId, final LinkedCaseResultRowDisplay data, final UserDetail user) {
 
     final LinkedCaseDetail linkedCase = resultDisplayMapper.toLinkedCase(data);
-    caabApiClient.updateLinkedCase(
-        linkedCaseId,
-        linkedCase,
-        user.getLoginId()).block();
+    caabApiClient.updateLinkedCase(linkedCaseId, linkedCase, user.getLoginId()).block();
   }
 
   /**
    * Adds a linked case to an application.
    *
    * @param applicationId The ID of the application to link the case to.
-   * @param data          The display data of the linked case.
-   * @param user          The user performing the operation.
+   * @param data The display data of the linked case.
+   * @param user The user performing the operation.
    */
   public void addLinkedCase(
-      final String applicationId,
-      final LinkedCaseResultRowDisplay data,
-      final UserDetail user) {
+      final String applicationId, final LinkedCaseResultRowDisplay data, final UserDetail user) {
 
     final LinkedCaseDetail linkedCase = resultDisplayMapper.toLinkedCase(data);
-    caabApiClient.addLinkedCase(
-        applicationId,
-        linkedCase,
-        user.getLoginId()).block();
+    caabApiClient.addLinkedCase(applicationId, linkedCase, user.getLoginId()).block();
   }
 
   /**
    * Patches an application's correspondence address in the CAAB's Transient Data Store.
    *
-   * @param id              the ID associated with the application
+   * @param id the ID associated with the application
    * @param addressFormData the details of the Application to amend
-   * @param user            the related User.
+   * @param user the related User.
    */
   public void updateCorrespondenceAddress(
-      final String id,
-      final AddressFormData addressFormData,
-      final UserDetail user) {
+      final String id, final AddressFormData addressFormData, final UserDetail user) {
 
     final AddressDetail correspondenceAddress = addressFormDataMapper.toAddress(addressFormData);
 
-    caabApiClient.putApplication(
-        id,
-        user.getLoginId(),
-        correspondenceAddress,
-        UPDATE_APPLICATION_CORRESPONDENCE_ADDRESS).block();
+    caabApiClient
+        .putApplication(
+            id, user.getLoginId(), correspondenceAddress, UPDATE_APPLICATION_CORRESPONDENCE_ADDRESS)
+        .block();
   }
 
   /**
    * Patches an application's application type in the CAAB's Transient Data Store.
    *
-   * @param id                  the ID associated with the application
+   * @param id the ID associated with the application
    * @param applicationFormData the details of the Application to amend
-   * @param user                the related User.
+   * @param user the related User.
    */
   public void updateApplicationType(
-      final String id,
-      final ApplicationFormData applicationFormData,
-      final UserDetail user)
+      final String id, final ApplicationFormData applicationFormData, final UserDetail user)
       throws ParseException {
 
-    final ApplicationType applicationType = new ApplicationTypeBuilder()
-        .applicationType(
-            applicationFormData.getApplicationTypeCategory(),
-            applicationFormData.isDelegatedFunctions())
-        .devolvedPowers(
-            applicationFormData.isDelegatedFunctions(),
-            applicationFormData.getDelegatedFunctionUsedDate())
-        .devolvedPowersContractFlag(
-            applicationFormData.getDevolvedPowersContractFlag())
-        .build();
+    final ApplicationType applicationType =
+        new ApplicationTypeBuilder()
+            .applicationType(
+                applicationFormData.getApplicationTypeCategory(),
+                applicationFormData.isDelegatedFunctions())
+            .devolvedPowers(
+                applicationFormData.isDelegatedFunctions(),
+                applicationFormData.getDelegatedFunctionUsedDate())
+            .devolvedPowersContractFlag(applicationFormData.getDevolvedPowersContractFlag())
+            .build();
 
-    caabApiClient.putApplication(
-        id, user.getLoginId(), applicationType, UPDATE_APPLICATION_APPLICATION_TYPE).block();
+    caabApiClient
+        .putApplication(id, user.getLoginId(), applicationType, UPDATE_APPLICATION_APPLICATION_TYPE)
+        .block();
   }
 
   /**
    * Patches an application's provider details in the CAAB's Transient Data Store.
    *
-   * @param id                  the ID associated with the application
+   * @param id the ID associated with the application
    * @param applicationFormData the details of the Application to amend
-   * @param user                the related User.
+   * @param user the related User.
    */
   public void updateProviderDetails(
-      final String id,
-      final ApplicationFormData applicationFormData,
-      final UserDetail user) {
+      final String id, final ApplicationFormData applicationFormData, final UserDetail user) {
 
-    final ProviderDetail provider = Optional.ofNullable(user.getProvider())
-        .map(providerData -> providerService.getProvider(providerData.getId()).block())
-        .orElseThrow(() -> new CaabApplicationException("Error retrieving provider"));
+    final ProviderDetail provider =
+        Optional.ofNullable(user.getProvider())
+            .map(providerData -> providerService.getProvider(providerData.getId()).block())
+            .orElseThrow(() -> new CaabApplicationException("Error retrieving provider"));
 
-    final ContactDetail feeEarner = providerService.getFeeEarnerByOfficeAndId(
-        provider, applicationFormData.getOfficeId(), applicationFormData.getFeeEarnerId());
+    final ContactDetail feeEarner =
+        providerService.getFeeEarnerByOfficeAndId(
+            provider, applicationFormData.getOfficeId(), applicationFormData.getFeeEarnerId());
 
-    final ContactDetail supervisor = providerService.getFeeEarnerByOfficeAndId(
-        provider, applicationFormData.getOfficeId(), applicationFormData.getSupervisorId());
+    final ContactDetail supervisor =
+        providerService.getFeeEarnerByOfficeAndId(
+            provider, applicationFormData.getOfficeId(), applicationFormData.getSupervisorId());
 
-    final ContactDetail contactName = provider.getContactNames().stream()
-        .filter(contactDetail -> contactDetail.getId().toString()
-            .equals(applicationFormData.getContactNameId()))
-        .findFirst()
-        .orElseThrow(() -> new CaabApplicationException("Error retrieving contact name"));
+    final ContactDetail contactName =
+        provider.getContactNames().stream()
+            .filter(
+                contactDetail ->
+                    contactDetail.getId().toString().equals(applicationFormData.getContactNameId()))
+            .findFirst()
+            .orElseThrow(() -> new CaabApplicationException("Error retrieving contact name"));
 
-    final ApplicationProviderDetails providerDetails = new ApplicationProviderDetails()
-        .provider(new IntDisplayValue()
-            .id(provider.getId())
-            .displayValue(provider.getName()))
-        .office(new IntDisplayValue()
-            .id(applicationFormData.getOfficeId())
-            .displayValue(applicationFormData.getOfficeName()))
-        .feeEarner(feeEarner != null ? new StringDisplayValue()
-            .id(feeEarner.getId().toString())
-            .displayValue(feeEarner.getName()) : null)
-        .supervisor(supervisor != null ? new StringDisplayValue()
-            .id(supervisor.getId().toString())
-            .displayValue(supervisor.getName()) : null)
-        .providerContact(new StringDisplayValue()
-            .id(contactName.getId().toString())
-            .displayValue(contactName.getName()))
-        .providerCaseReference(applicationFormData.getProviderCaseReference());
+    final ApplicationProviderDetails providerDetails =
+        new ApplicationProviderDetails()
+            .provider(new IntDisplayValue().id(provider.getId()).displayValue(provider.getName()))
+            .office(
+                new IntDisplayValue()
+                    .id(applicationFormData.getOfficeId())
+                    .displayValue(applicationFormData.getOfficeName()))
+            .feeEarner(
+                feeEarner != null
+                    ? new StringDisplayValue()
+                        .id(feeEarner.getId().toString())
+                        .displayValue(feeEarner.getName())
+                    : null)
+            .supervisor(
+                supervisor != null
+                    ? new StringDisplayValue()
+                        .id(supervisor.getId().toString())
+                        .displayValue(supervisor.getName())
+                    : null)
+            .providerContact(
+                new StringDisplayValue()
+                    .id(contactName.getId().toString())
+                    .displayValue(contactName.getName()))
+            .providerCaseReference(applicationFormData.getProviderCaseReference());
 
-    caabApiClient.putApplication(
-        id, user.getLoginId(), providerDetails, UPDATE_APPLICATION_PROVIDER_DETAILS).block();
-
+    caabApiClient
+        .putApplication(id, user.getLoginId(), providerDetails, UPDATE_APPLICATION_PROVIDER_DETAILS)
+        .block();
   }
 
   /**
    * Fetches the opponents associated with a specific application id. This method communicates with
-   * the CAAB API client to fetch the proceedings and transforms them into a
-   * {@code AbstractOpponentFormData} format.
+   * the CAAB API client to fetch the proceedings and transforms them into a {@code
+   * AbstractOpponentFormData} format.
    *
    * @param applicationId The id of the application for which opponents should be retrieved.
    * @return List of AbstractOpponentFormData.
    */
   public List<AbstractOpponentFormData> getOpponents(final String applicationId) {
     // Get the list of opponents for the application.
-    final List<OpponentDetail> opponentList = caabApiClient.getOpponents(applicationId)
-        .blockOptional()
-        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve opponents"));
+    final List<OpponentDetail> opponentList =
+        caabApiClient
+            .getOpponents(applicationId)
+            .blockOptional()
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve opponents"));
 
     // Transform the opponents to the form data model.
     return opponentList.stream().map(this::buildOpponentFormData).toList();
@@ -1274,9 +1300,9 @@ public class ApplicationService {
   /**
    * Add a new OpponentDetail to an application based on the supplied form data.
    *
-   * @param applicationId    - the id of the application.
+   * @param applicationId - the id of the application.
    * @param opponentFormData - the opponent form data.
-   * @param userDetail       - the user related user.
+   * @param userDetail - the user related user.
    */
   public void addOpponent(
       final String applicationId,
@@ -1293,10 +1319,7 @@ public class ApplicationService {
     opponent.setAppMode(application.getAppMode());
     opponent.setAmendment(application.getAmendment());
 
-    caabApiClient.addOpponent(
-        applicationId,
-        opponent,
-        userDetail.getLoginId()).block();
+    caabApiClient.addOpponent(applicationId, opponent, userDetail.getLoginId()).block();
   }
 
   /**
@@ -1309,60 +1332,70 @@ public class ApplicationService {
   protected AbstractOpponentFormData buildOpponentFormData(final OpponentDetail opponent) {
 
     final boolean isOrganisation = OpponentUtil.isOrganisation(opponent);
-    final boolean isEditable = isOrganisation
-        || OPPONENT_TYPE_INDIVIDUAL.equals(opponent.getType());
+    final boolean isEditable =
+        isOrganisation || OPPONENT_TYPE_INDIVIDUAL.equals(opponent.getType());
 
     // Look up the organisation type display value, if this is an organisation
     final Mono<Optional<CommonLookupValueDetail>> organisationTypeLookupMono =
         isOrganisation
-            ? lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES,
-            opponent.getOrganisationType()) : Mono.just(Optional.empty());
+            ? lookupService.getCommonValue(
+                COMMON_VALUE_ORGANISATION_TYPES, opponent.getOrganisationType())
+            : Mono.just(Optional.empty());
 
     // Look up the relationship to case display value depending on opponent type.
     final Mono<Optional<RelationshipToCaseLookupValueDetail>> relationshipToCaseMono =
         isOrganisation
-            ? lookupService.getOrganisationToCaseRelationship(opponent.getRelationshipToCase()) :
-            lookupService.getPersonToCaseRelationship(opponent.getRelationshipToCase());
+            ? lookupService.getOrganisationToCaseRelationship(opponent.getRelationshipToCase())
+            : lookupService.getPersonToCaseRelationship(opponent.getRelationshipToCase());
 
     // Lookup the relationship to client title display values.
     final Mono<Optional<CommonLookupValueDetail>> relationshipToCommonLookupMono =
-        lookupService.getCommonValue(COMMON_VALUE_RELATIONSHIP_TO_CLIENT,
-            opponent.getRelationshipToClient());
+        lookupService.getCommonValue(
+            COMMON_VALUE_RELATIONSHIP_TO_CLIENT, opponent.getRelationshipToClient());
 
     // Lookup the opponents title display values.
     final Mono<Optional<CommonLookupValueDetail>> titleCommonLookupMono =
         lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle());
 
-    final Tuple4<Optional<CommonLookupValueDetail>,
-        Optional<RelationshipToCaseLookupValueDetail>,
-        Optional<CommonLookupValueDetail>,
-        Optional<CommonLookupValueDetail>> combinedResult = Mono.zip(
-            organisationTypeLookupMono,
-            relationshipToCaseMono,
-            relationshipToCommonLookupMono,
-            titleCommonLookupMono)
-        .blockOptional()
-        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
+    final Tuple4<
+            Optional<CommonLookupValueDetail>,
+            Optional<RelationshipToCaseLookupValueDetail>,
+            Optional<CommonLookupValueDetail>,
+            Optional<CommonLookupValueDetail>>
+        combinedResult =
+            Mono.zip(
+                    organisationTypeLookupMono,
+                    relationshipToCaseMono,
+                    relationshipToCommonLookupMono,
+                    titleCommonLookupMono)
+                .blockOptional()
+                .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
 
     final String organisationTypeDisplayValue =
-        combinedResult.getT1()
+        combinedResult
+            .getT1()
             .map(CommonLookupValueDetail::getDescription)
             .orElse(isOrganisation ? opponent.getOrganisationType() : null);
 
     final String relationshipToCaseDisplayValue =
-        combinedResult.getT2()
+        combinedResult
+            .getT2()
             .map(RelationshipToCaseLookupValueDetail::getDescription)
             .orElse(opponent.getRelationshipToCase());
 
     final String relationshipToClientDisplayValue =
-        combinedResult.getT3()
+        combinedResult
+            .getT3()
             .map(CommonLookupValueDetail::getDescription)
             .orElse(opponent.getRelationshipToClient());
 
-    final CommonLookupValueDetail titleDisplayValue = combinedResult.getT4()
-        .orElse(new CommonLookupValueDetail()
-            .code(opponent.getTitle())
-            .description(opponent.getTitle()));
+    final CommonLookupValueDetail titleDisplayValue =
+        combinedResult
+            .getT4()
+            .orElse(
+                new CommonLookupValueDetail()
+                    .code(opponent.getTitle())
+                    .description(opponent.getTitle()));
 
     // Build a name for the opponent depending on the opponent type.
     final String partyName = getPartyName(opponent, titleDisplayValue);
@@ -1379,20 +1412,19 @@ public class ApplicationService {
   /**
    * Prepares the proceeding summary for a specific application.
    *
-   * @param id          The ID of the application.
+   * @param id The ID of the application.
    * @param application The application details.
-   * @param user        The user performing the operation.
+   * @param user The user performing the operation.
    */
   public void prepareProceedingSummary(
-      final String id,
-      final ApplicationDetail application,
-      final UserDetail user) {
+      final String id, final ApplicationDetail application, final UserDetail user) {
 
     setCostLimitations(application);
 
     if (Boolean.FALSE.equals(application.getAmendment())
         && application.getCosts().getRequestedCostLimitation() == null) {
-      application.getCosts()
+      application
+          .getCosts()
           .setRequestedCostLimitation(application.getCosts().getDefaultCostLimitation());
     }
 
@@ -1405,8 +1437,10 @@ public class ApplicationService {
     final BigDecimal currentDefault = application.getCosts().getDefaultCostLimitation();
     final BigDecimal currentRequested = application.getCosts().getRequestedCostLimitation();
 
-    final boolean costManuallyChanged = currentDefault != null && currentRequested != null
-        && currentDefault.compareTo(currentRequested) != 0;
+    final boolean costManuallyChanged =
+        currentDefault != null
+            && currentRequested != null
+            && currentDefault.compareTo(currentRequested) != 0;
     for (final ProceedingDetail proceeding : application.getProceedings()) {
       if (proceeding.getCostLimitation() != null
           && defaultCostLimitation.compareTo(proceeding.getCostLimitation()) < 0) {
@@ -1420,7 +1454,8 @@ public class ApplicationService {
 
     application.getCosts().setDefaultCostLimitation(defaultCostLimitation);
 
-    if (application.getCosts().getRequestedCostLimitation() != null && !application.getAmendment()
+    if (application.getCosts().getRequestedCostLimitation() != null
+        && !application.getAmendment()
         && !costManuallyChanged) {
       application.getCosts().setRequestedCostLimitation(defaultCostLimitation);
     } else if (application.getCosts().getRequestedCostLimitation() == null) {
@@ -1435,7 +1470,8 @@ public class ApplicationService {
    * @return the detail of the specified prior authority type or null if not found.
    */
   public PriorAuthorityTypeDetail getPriorAuthorityTypeDetail(final String priorAuthorityType) {
-    return lookupService.getPriorAuthorityTypes(priorAuthorityType, null)
+    return lookupService
+        .getPriorAuthorityTypes(priorAuthorityType, null)
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException("Failed to retrieve PriorAuthority"))
         .getContent()
@@ -1448,16 +1484,14 @@ public class ApplicationService {
    * Adds a proceeding associated to a specific application.
    *
    * @param applicationId the ID of the application to which the proceeding is added
-   * @param proceeding    the proceeding to add
-   * @param user          the user details initiating the action
+   * @param proceeding the proceeding to add
+   * @param user the user details initiating the action
    */
   public void addProceeding(
-      final String applicationId,
-      final ProceedingDetail proceeding,
-      final UserDetail user) {
+      final String applicationId, final ProceedingDetail proceeding, final UserDetail user) {
     caabApiClient.addProceeding(applicationId, proceeding, user.getLoginId()).block();
 
-    //amend application if the proceeding is a lead proceeding
+    // amend application if the proceeding is a lead proceeding
     if (Boolean.TRUE.equals(proceeding.getLeadProceedingInd())) {
       final ApplicationDetail patch = new ApplicationDetail().leadProceedingChanged(true);
       patchApplication(applicationId, patch, user).block();
@@ -1468,11 +1502,9 @@ public class ApplicationService {
    * Updates a specified proceeding.
    *
    * @param proceeding the proceeding to update
-   * @param user       the user details initiating the update
+   * @param user the user details initiating the update
    */
-  public void updateProceeding(
-      final ProceedingDetail proceeding,
-      final UserDetail user) {
+  public void updateProceeding(final ProceedingDetail proceeding, final UserDetail user) {
     caabApiClient.updateProceeding(proceeding.getId(), proceeding, user.getLoginId()).block();
   }
 
@@ -1480,19 +1512,16 @@ public class ApplicationService {
    * Deletes a specified proceeding.
    *
    * @param proceedingId the ID of the proceeding to delete
-   * @param user         the user details initiating the deletion
+   * @param user the user details initiating the deletion
    */
   public void deleteProceeding(
-      final String applicationId,
-      final Integer proceedingId,
-      final UserDetail user) {
+      final String applicationId, final Integer proceedingId, final UserDetail user) {
 
-    final Mono<Void> deleteProceedingMono = caabApiClient.deleteProceeding(
-        proceedingId, user.getLoginId());
+    final Mono<Void> deleteProceedingMono =
+        caabApiClient.deleteProceeding(proceedingId, user.getLoginId());
 
-    //when a proceeding is deleted, merits reassessment required flag should be set to true
-    final ApplicationDetail patch = new ApplicationDetail()
-        .meritsReassessmentRequired(true);
+    // when a proceeding is deleted, merits reassessment required flag should be set to true
+    final ApplicationDetail patch = new ApplicationDetail().meritsReassessmentRequired(true);
 
     final Mono<Void> patchApplicationMono = patchApplication(applicationId, patch, user);
     Mono.zip(deleteProceedingMono, patchApplicationMono).block();
@@ -1504,8 +1533,7 @@ public class ApplicationService {
    * @param proceedingId the ID of the proceeding
    * @return List of scope limitations associated with the proceeding
    */
-  public List<ScopeLimitationDetail> getScopeLimitations(
-      final Integer proceedingId) {
+  public List<ScopeLimitationDetail> getScopeLimitations(final Integer proceedingId) {
     return caabApiClient.getScopeLimitations(proceedingId).block();
   }
 
@@ -1514,24 +1542,19 @@ public class ApplicationService {
    *
    * @param applicationId the ID of the application to update
    * @param costStructure the new cost structure details
-   * @param user          the user details initiating the update
+   * @param user the user details initiating the update
    */
   public void updateCostStructure(
-      final String applicationId,
-      final CostStructureDetail costStructure,
-      final UserDetail user) {
-    caabApiClient.updateCostStructure(
-        applicationId,
-        costStructure,
-        user.getLoginId()).block();
+      final String applicationId, final CostStructureDetail costStructure, final UserDetail user) {
+    caabApiClient.updateCostStructure(applicationId, costStructure, user.getLoginId()).block();
   }
 
   /**
    * Adds a priorAuthority associated to a specific application.
    *
-   * @param applicationId  the ID of the application to which the priorAuthority is added
+   * @param applicationId the ID of the application to which the priorAuthority is added
    * @param priorAuthority the priorAuthority to add
-   * @param user           the user details initiating the action
+   * @param user the user details initiating the action
    */
   public void addPriorAuthority(
       final String applicationId,
@@ -1544,35 +1567,33 @@ public class ApplicationService {
    * Updates a specified priorAuthority.
    *
    * @param priorAuthority the priorAuthority to update
-   * @param user           the user details initiating the update
+   * @param user the user details initiating the update
    */
   public void updatePriorAuthority(
-      final PriorAuthorityDetail priorAuthority,
-      final UserDetail user) {
-    caabApiClient.updatePriorAuthority(priorAuthority.getId(), priorAuthority,
-        user.getLoginId()).block();
+      final PriorAuthorityDetail priorAuthority, final UserDetail user) {
+    caabApiClient
+        .updatePriorAuthority(priorAuthority.getId(), priorAuthority, user.getLoginId())
+        .block();
   }
 
   /**
    * Deletes a specified priorAuthority.
    *
    * @param priorAuthorityId the ID of the priorAuthority to delete
-   * @param user             the user details initiating the deletion
+   * @param user the user details initiating the deletion
    */
-  public void deletePriorAuthority(
-      final Integer priorAuthorityId,
-      final UserDetail user) {
+  public void deletePriorAuthority(final Integer priorAuthorityId, final UserDetail user) {
     caabApiClient.deletePriorAuthority(priorAuthorityId, user.getLoginId()).block();
   }
 
   /**
    * Creates a new case using the provided user, application, assessments, and evidence documents.
    *
-   * @param user             the user creating the case
-   * @param application      the application details for the case
-   * @param meansAssessment  the means assessment details for the case
+   * @param user the user creating the case
+   * @param application the application details for the case
+   * @param meansAssessment the means assessment details for the case
    * @param meritsAssessment the merits assessment details for the case
-   * @param caseDocs         the list of evidence documents for the case
+   * @param caseDocs the list of evidence documents for the case
    * @return the {@link CaseTransactionResponse} for the created case
    */
   public CaseTransactionResponse createCase(
@@ -1582,25 +1603,23 @@ public class ApplicationService {
       final AssessmentDetail meritsAssessment,
       final List<BaseEvidenceDocumentDetail> caseDocs) {
 
-    final CaseMappingContext caseMappingContext = CaseMappingContext.builder()
-        .tdsApplication(application)
-        .meansAssessment(meansAssessment)
-        .meritsAssessment(meritsAssessment)
-        .caseDocs(caseDocs)
-        .user(user)
-        .build();
+    final CaseMappingContext caseMappingContext =
+        CaseMappingContext.builder()
+            .tdsApplication(application)
+            .meansAssessment(meansAssessment)
+            .meritsAssessment(meritsAssessment)
+            .caseDocs(caseDocs)
+            .user(user)
+            .build();
 
     final CaseDetail caseToSubmit = soaApplicationMapper.toCaseDetail(caseMappingContext);
 
     puiMetricService.incrementSubmitApplicationsCount(caseToSubmit.getCaseReferenceNumber());
 
-    return soaApiClient.createCase(user.getLoginId(), user.getUserType(),
-        caseToSubmit).block();
-
+    return soaApiClient.createCase(user.getLoginId(), user.getUserType(), caseToSubmit).block();
   }
 
-  public Mono<TransactionStatus> getCaseStatus(
-      final String transactionId) {
+  public Mono<TransactionStatus> getCaseStatus(final String transactionId) {
     log.debug("SOA Case Status to get using transaction Id: {}", transactionId);
     return ebsApiClient.getCaseStatus(transactionId);
   }

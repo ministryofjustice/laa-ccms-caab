@@ -34,18 +34,14 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
-
 @ExtendWith(MockitoExtension.class)
 public class ClientEqualOpportunitiesMonitoringDetailsControllerTest {
 
-  @Mock
-  private LookupService lookupService;
+  @Mock private LookupService lookupService;
 
-  @Mock
-  private ClientEqualOpportunitiesMonitoringDetailsValidator validator;
+  @Mock private ClientEqualOpportunitiesMonitoringDetailsValidator validator;
 
-  @InjectMocks
-  private ClientEqualOpportunitiesMonitoringDetailsController controller;
+  @InjectMocks private ClientEqualOpportunitiesMonitoringDetailsController controller;
 
   private MockMvc mockMvc;
 
@@ -72,15 +68,17 @@ public class ClientEqualOpportunitiesMonitoringDetailsControllerTest {
 
   @Test
   public void testClientEqualOpportunitiesMonitoringGet() throws Exception {
-    when(lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN)).thenReturn(
-        Mono.just(ethnicityLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN))
+        .thenReturn(Mono.just(ethnicityLookupDetail));
 
-    when(lookupService.getCommonValues(COMMON_VALUE_DISABILITY)).thenReturn(
-        Mono.just(disabilityLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_DISABILITY))
+        .thenReturn(Mono.just(disabilityLookupDetail));
 
-    mockMvc.perform(get("/application/client/details/equal-opportunities-monitoring")
-            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-            .flashAttr("monitoringDetails", monitoringDetails))
+    mockMvc
+        .perform(
+            get("/application/client/details/equal-opportunities-monitoring")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                .flashAttr("monitoringDetails", monitoringDetails))
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/equal-opportunities-monitoring-client-details"))
         .andExpect(model().attributeExists("ethnicOrigins", "disabilities"));
@@ -89,21 +87,27 @@ public class ClientEqualOpportunitiesMonitoringDetailsControllerTest {
   @Test
   public void testClientEqualOpportunitiesMonitoringPostValidationError() throws Exception {
 
-    doAnswer(invocation -> {
-      Errors errors = (Errors) invocation.getArguments()[1];
-      errors.rejectValue("ethnicOrigin", "required.ethnicOrigin", "Please complete 'Ethnic monitoring'.");
-      return null;
-    }).when(validator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue(
+                  "ethnicOrigin", "required.ethnicOrigin", "Please complete 'Ethnic monitoring'.");
+              return null;
+            })
+        .when(validator)
+        .validate(any(), any());
 
-    when(lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN)).thenReturn(
-        Mono.just(ethnicityLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN))
+        .thenReturn(Mono.just(ethnicityLookupDetail));
 
-    when(lookupService.getCommonValues(COMMON_VALUE_DISABILITY)).thenReturn(
-        Mono.just(disabilityLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_DISABILITY))
+        .thenReturn(Mono.just(disabilityLookupDetail));
 
-    mockMvc.perform(post("/application/client/details/equal-opportunities-monitoring")
-            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-            .flashAttr("monitoringDetails", monitoringDetails))
+    mockMvc
+        .perform(
+            post("/application/client/details/equal-opportunities-monitoring")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                .flashAttr("monitoringDetails", monitoringDetails))
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/equal-opportunities-monitoring-client-details"))
         .andExpect(model().attributeExists("ethnicOrigins", "disabilities"));
@@ -114,40 +118,49 @@ public class ClientEqualOpportunitiesMonitoringDetailsControllerTest {
     monitoringDetails.setDisability("TEST");
     monitoringDetails.setEthnicOrigin("TEST");
 
-    mockMvc.perform(post("/application/client/details/equal-opportunities-monitoring")
-            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-            .flashAttr("monitoringDetails", monitoringDetails))
+    mockMvc
+        .perform(
+            post("/application/client/details/equal-opportunities-monitoring")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                .flashAttr("monitoringDetails", monitoringDetails))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/client/details/summary"));
   }
 
   @Test
-  @DisplayName("Client Equal Opportunities Monitoring NoValidationErrors MaxLengthsNotExceeded if characters <= 2000")
+  @DisplayName(
+      "Client Equal Opportunities Monitoring NoValidationErrors MaxLengthsNotExceeded if characters <= 2000")
   void clientEqualOpportunitiesMonitoringPostNoValidationErrorsMaxLengthsNotExceeded()
       throws Exception {
     monitoringDetails.setSpecialConsiderations(RandomStringUtils.insecure().nextAlphabetic(2000));
 
-    mockMvc.perform(post("/application/client/details/equal-opportunities-monitoring")
-            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-            .flashAttr("monitoringDetails", monitoringDetails))
+    mockMvc
+        .perform(
+            post("/application/client/details/equal-opportunities-monitoring")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                .flashAttr("monitoringDetails", monitoringDetails))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/client/details/summary"));
   }
 
   @Test
-  @DisplayName("Client Equal Opportunities Monitoring Validation Errors MaxLengthsExceeded if characters > 2000")
-  public void clientEqualOpportunitiesMonitoringPostValidationErrorsMaxLengthsExceeded() throws Exception {
+  @DisplayName(
+      "Client Equal Opportunities Monitoring Validation Errors MaxLengthsExceeded if characters > 2000")
+  public void clientEqualOpportunitiesMonitoringPostValidationErrorsMaxLengthsExceeded()
+      throws Exception {
     monitoringDetails.setSpecialConsiderations(RandomStringUtils.insecure().nextAlphabetic(2001));
 
-    when(lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN)).thenReturn(
-        Mono.just(ethnicityLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN))
+        .thenReturn(Mono.just(ethnicityLookupDetail));
 
-    when(lookupService.getCommonValues(COMMON_VALUE_DISABILITY)).thenReturn(
-        Mono.just(disabilityLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_DISABILITY))
+        .thenReturn(Mono.just(disabilityLookupDetail));
 
-    mockMvc.perform(post("/application/client/details/equal-opportunities-monitoring")
-            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-            .flashAttr("monitoringDetails", monitoringDetails))
+    mockMvc
+        .perform(
+            post("/application/client/details/equal-opportunities-monitoring")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                .flashAttr("monitoringDetails", monitoringDetails))
         .andDo(print())
         .andExpect(model().attributeHasFieldErrors("monitoringDetails", "specialConsiderations"))
         .andExpect(view().name("application/client/equal-opportunities-monitoring-client-details"))

@@ -15,20 +15,19 @@ import uk.gov.laa.ccms.caab.constants.SessionConstants;
 @Slf4j
 public class GlobalExceptionHandler {
 
-
   /**
    * Handles all exceptions globally and renders the default error page.
    *
-   * @param model     the Model object used to pass attributes to the view
-   * @param session   the HttpSession object from which session attributes are retrieved
+   * @param model the Model object used to pass attributes to the view
+   * @param session the HttpSession object from which session attributes are retrieved
    * @param exception the exception that was caught
    * @return the name of the error view to be rendered
    */
   @ExceptionHandler(Exception.class)
   public String handleException(Model model, HttpSession session, Exception exception) {
     log.error("Exception caught by GlobalExceptionHandler: {}", exception.getMessage(), exception);
-    model.addAttribute(SessionConstants.USER_DETAILS,
-        session.getAttribute(SessionConstants.USER_DETAILS));
+    model.addAttribute(
+        SessionConstants.USER_DETAILS, session.getAttribute(SessionConstants.USER_DETAILS));
     model.addAttribute("error", exception.getLocalizedMessage());
     model.addAttribute("errorTime", System.currentTimeMillis());
     return "error";

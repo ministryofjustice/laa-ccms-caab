@@ -9,9 +9,7 @@ import org.springframework.validation.ValidationUtils;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
-/**
- * Validates the application details provided by the user.
- */
+/** Validates the application details provided by the user. */
 @Component
 public class DelegatedFunctionsValidator extends AbstractValidator {
 
@@ -36,13 +34,17 @@ public class DelegatedFunctionsValidator extends AbstractValidator {
   public void validate(Object target, Errors errors) {
     ApplicationFormData applicationFormData = (ApplicationFormData) target;
     if (applicationFormData.isDelegatedFunctions()) {
-      ValidationUtils.rejectIfEmpty(errors, "delegatedFunctionUsedDate",
+      ValidationUtils.rejectIfEmpty(
+          errors,
+          "delegatedFunctionUsedDate",
           "required.delegatedFunctionUsedDate",
           "Please complete when the delegated function was used?");
 
       if (hasText(applicationFormData.getDelegatedFunctionUsedDate())) {
-        validateValidDateField(applicationFormData.getDelegatedFunctionUsedDate(),
-            "delegatedFunctionUsedDate", "when the delegated function was used?",
+        validateValidDateField(
+            applicationFormData.getDelegatedFunctionUsedDate(),
+            "delegatedFunctionUsedDate",
+            "when the delegated function was used?",
             COMPONENT_DATE_PATTERN,
             errors);
       }

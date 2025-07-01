@@ -23,8 +23,10 @@ class PaginationUtilTest {
     final List<Notification> notificationList = new ArrayList<>();
     notificationList.add(new Notification().caseReferenceNumber("12345"));
     notificationList.add(new Notification().caseReferenceNumber("11234"));
-    notificationList.sort((n1, n2) -> n2.getCaseReferenceNumber().compareTo(n1.getCaseReferenceNumber()));
-    final Page<Notification> notificationPage = PaginationUtil.paginateList(pageable, notificationList);
+    notificationList.sort(
+        (n1, n2) -> n2.getCaseReferenceNumber().compareTo(n1.getCaseReferenceNumber()));
+    final Page<Notification> notificationPage =
+        PaginationUtil.paginateList(pageable, notificationList);
     assertEquals(2, notificationPage.getTotalElements());
     assertEquals("12345", notificationPage.getContent().getFirst().getCaseReferenceNumber());
   }
@@ -36,7 +38,8 @@ class PaginationUtilTest {
     notificationList.add(new Notification().caseReferenceNumber("12345"));
     notificationList.add(new Notification().caseReferenceNumber("11234"));
     notificationList.sort(Comparator.comparing(Notification::getCaseReferenceNumber));
-    final Page<Notification> notificationPage = PaginationUtil.paginateList(pageable, notificationList);
+    final Page<Notification> notificationPage =
+        PaginationUtil.paginateList(pageable, notificationList);
     assertEquals(2, notificationPage.getTotalElements());
     assertEquals("11234", notificationPage.getContent().getFirst().getCaseReferenceNumber());
   }
@@ -45,7 +48,8 @@ class PaginationUtilTest {
   void testSortEmptyListInPaginationUtil() {
     final Pageable pageable = PageRequest.of(0, 10, Sort.by("caseReferenceNumber").ascending());
     final List<Notification> notificationList = new ArrayList<>();
-    final Page<Notification> notificationPage = PaginationUtil.paginateList(pageable, notificationList);
+    final Page<Notification> notificationPage =
+        PaginationUtil.paginateList(pageable, notificationList);
     assertEquals(0, notificationPage.getTotalElements());
   }
 
@@ -55,7 +59,8 @@ class PaginationUtilTest {
     final List<Notification> notificationList = new ArrayList<>();
     notificationList.add(new Notification().caseReferenceNumber("12345"));
     notificationList.add(new Notification().caseReferenceNumber("11234"));
-    assertThrows(CaabApplicationException.class,
+    assertThrows(
+        CaabApplicationException.class,
         () -> PaginationUtil.paginateList(pageable, notificationList));
   }
 

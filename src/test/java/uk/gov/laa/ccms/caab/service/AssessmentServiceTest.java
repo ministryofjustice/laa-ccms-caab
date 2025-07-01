@@ -69,18 +69,14 @@ import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-
 @ExtendWith(MockitoExtension.class)
 public class AssessmentServiceTest {
 
-  @Mock
-  private AssessmentApiClient assessmentApiClient;
+  @Mock private AssessmentApiClient assessmentApiClient;
 
-  @Mock
-  private LookupService lookupService;
+  @Mock private LookupService lookupService;
 
-  @InjectMocks
-  private AssessmentService assessmentService;
+  @InjectMocks private AssessmentService assessmentService;
 
   private static final String PROGRESS_STATUS_CODE = "TEST";
   private static final String PROGRESS_STATUS_DESC = "Test";
@@ -90,8 +86,8 @@ public class AssessmentServiceTest {
 
   @Test
   public void testSaveAssessment_createAssessment() {
-    when(assessmentApiClient.createAssessment(
-        any(AssessmentDetail.class), anyString())).thenReturn(Mono.empty());
+    when(assessmentApiClient.createAssessment(any(AssessmentDetail.class), anyString()))
+        .thenReturn(Mono.empty());
 
     final UserDetail user = new UserDetail();
     user.setLoginId("testUser");
@@ -99,14 +95,13 @@ public class AssessmentServiceTest {
     final AssessmentDetail assessmentWithoutId = new AssessmentDetail();
 
     assessmentService.saveAssessment(user, assessmentWithoutId).block();
-    Mockito.verify(assessmentApiClient).createAssessment(
-        assessmentWithoutId, user.getLoginId());
+    Mockito.verify(assessmentApiClient).createAssessment(assessmentWithoutId, user.getLoginId());
   }
 
   @Test
   public void testSaveAssessment_updateAssessment() {
-    when(assessmentApiClient.updateAssessment(
-        any(), any(AssessmentDetail.class), anyString())).thenReturn(Mono.empty());
+    when(assessmentApiClient.updateAssessment(any(), any(AssessmentDetail.class), anyString()))
+        .thenReturn(Mono.empty());
 
     final UserDetail user = new UserDetail();
     user.setLoginId("testUser");
@@ -115,8 +110,8 @@ public class AssessmentServiceTest {
     assessmentWithId.setId(123L);
 
     assessmentService.saveAssessment(user, assessmentWithId).block();
-    Mockito.verify(assessmentApiClient).updateAssessment(
-        assessmentWithId.getId(), assessmentWithId, user.getLoginId());
+    Mockito.verify(assessmentApiClient)
+        .updateAssessment(assessmentWithId.getId(), assessmentWithId, user.getLoginId());
   }
 
   @Test
@@ -128,12 +123,10 @@ public class AssessmentServiceTest {
     when(assessmentApiClient.getAssessments(any(), anyString(), anyString()))
         .thenReturn(just(new AssessmentDetails()));
 
-    final Mono<AssessmentDetails>
-        result = assessmentService.getAssessments(List.of(assessmentName), providerId, caseReferenceNumber);
+    final Mono<AssessmentDetails> result =
+        assessmentService.getAssessments(List.of(assessmentName), providerId, caseReferenceNumber);
 
-    StepVerifier.create(result)
-        .expectNextMatches(Objects::nonNull)
-        .verifyComplete();
+    StepVerifier.create(result).expectNextMatches(Objects::nonNull).verifyComplete();
   }
 
   @Test
@@ -145,37 +138,27 @@ public class AssessmentServiceTest {
     final UserDetail user = buildUserDetail();
 
     when(assessmentApiClient.deleteAssessments(
-        eq(List.of(assessmentName)),
-        eq(user.getProvider().getId().toString()),
-        eq(caseReferenceNumber),
-        eq(status),
-        eq(user.getLoginId())))
+            eq(List.of(assessmentName)),
+            eq(user.getProvider().getId().toString()),
+            eq(caseReferenceNumber),
+            eq(status),
+            eq(user.getLoginId())))
         .thenReturn(Mono.empty());
 
     final Mono<Void> result =
         assessmentService.deleteAssessments(
-            user,
-            List.of(assessmentName),
-            caseReferenceNumber,
-            status);
+            user, List.of(assessmentName), caseReferenceNumber, status);
 
-    StepVerifier.create(result)
-        .expectComplete()
-        .verify();
+    StepVerifier.create(result).expectComplete().verify();
   }
 
   @Test
   void testCalculateAssessmentStatuses_assessmentsNotStarted() {
-    final ApplicationDetail application = new ApplicationDetail()
-        .amendment(false);
+    final ApplicationDetail application = new ApplicationDetail().amendment(false);
 
     final UserDetail user = buildUserDetail();
 
-    assessmentService.calculateAssessmentStatuses(
-        application,
-        null,
-        null,
-        user);
+    assessmentService.calculateAssessmentStatuses(application, null, null, user);
 
     assertNull(application.getMeansAssessmentStatus());
     assertNull(application.getMeritsAssessmentStatus());
@@ -183,149 +166,98 @@ public class AssessmentServiceTest {
 
   @Test
   void testCalculateAssessmentStatuses_startedMeansAssessment() {
-    final ApplicationDetail application = new ApplicationDetail()
-        .amendment(false);
+    final ApplicationDetail application = new ApplicationDetail().amendment(false);
 
-    final AssessmentDetail meansAssessment = new AssessmentDetail()
-        .name(MEANS.getName())
-        .status("INCOMPLETE");
+    final AssessmentDetail meansAssessment =
+        new AssessmentDetail().name(MEANS.getName()).status("INCOMPLETE");
 
     final UserDetail user = buildUserDetail();
 
     final CommonLookupValueDetail progressStatusTypes =
-        new CommonLookupValueDetail()
-            .code(PROGRESS_STATUS_CODE)
-            .description(PROGRESS_STATUS_DESC);
+        new CommonLookupValueDetail().code(PROGRESS_STATUS_CODE).description(PROGRESS_STATUS_DESC);
 
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROGRESS_STATUS_TYPES), any())).thenReturn(
-        Mono.just(Optional.of(progressStatusTypes)));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROGRESS_STATUS_TYPES), any()))
+        .thenReturn(Mono.just(Optional.of(progressStatusTypes)));
 
-    assessmentService.calculateAssessmentStatuses(
-        application,
-        meansAssessment,
-        null,
-        user);
+    assessmentService.calculateAssessmentStatuses(application, meansAssessment, null, user);
 
     assertEquals(application.getMeansAssessmentStatus(), PROGRESS_STATUS_DESC);
     assertNull(application.getMeritsAssessmentStatus());
   }
 
   @ParameterizedTest
-  @CsvSource({
-      "COMPLETE",
-      "ERROR"
-  })
+  @CsvSource({"COMPLETE", "ERROR"})
   void testCalculateAssessmentStatuses_meansAssessment_reassessmentRequired(
       final String assessmentStatus) {
-    final ApplicationDetail application = new ApplicationDetail()
-        .amendment(false);
+    final ApplicationDetail application = new ApplicationDetail().amendment(false);
 
-    final AssessmentDetail meansAssessment = new AssessmentDetail()
-        .id(ASSESSMENT_ID)
-        .name(MEANS.getName())
-        .status(assessmentStatus);
+    final AssessmentDetail meansAssessment =
+        new AssessmentDetail().id(ASSESSMENT_ID).name(MEANS.getName()).status(assessmentStatus);
 
     final UserDetail user = buildUserDetail();
 
     final CommonLookupValueDetail progressStatusTypes =
-        new CommonLookupValueDetail()
-            .code(PROGRESS_STATUS_CODE)
-            .description(PROGRESS_STATUS_DESC);
+        new CommonLookupValueDetail().code(PROGRESS_STATUS_CODE).description(PROGRESS_STATUS_DESC);
 
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROGRESS_STATUS_TYPES), any())).thenReturn(
-        Mono.just(Optional.of(progressStatusTypes)));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROGRESS_STATUS_TYPES), any()))
+        .thenReturn(Mono.just(Optional.of(progressStatusTypes)));
 
-    when(assessmentApiClient.patchAssessment(
-        eq(ASSESSMENT_ID),
-        eq(user.getLoginId()),
-        any())).thenReturn(Mono.empty());
+    when(assessmentApiClient.patchAssessment(eq(ASSESSMENT_ID), eq(user.getLoginId()), any()))
+        .thenReturn(Mono.empty());
 
-    assessmentService.calculateAssessmentStatuses(
-        application,
-        meansAssessment,
-        null,
-        user);
+    assessmentService.calculateAssessmentStatuses(application, meansAssessment, null, user);
 
     assertEquals(application.getMeansAssessmentStatus(), PROGRESS_STATUS_DESC);
     assertNull(application.getMeritsAssessmentStatus());
 
-    verify(assessmentApiClient).patchAssessment(
-        eq(ASSESSMENT_ID),
-        eq(user.getLoginId()),
-        any());
+    verify(assessmentApiClient).patchAssessment(eq(ASSESSMENT_ID), eq(user.getLoginId()), any());
   }
 
   @ParameterizedTest
-  @CsvSource({
-      "COMPLETE",
-      "ERROR"
-  })
+  @CsvSource({"COMPLETE", "ERROR"})
   void testCalculateAssessmentStatuses_meritsAssessment_reassessmentRequired(
       final String assessmentStatus) {
-    final ApplicationDetail application = new ApplicationDetail()
-        .amendment(false);
+    final ApplicationDetail application = new ApplicationDetail().amendment(false);
 
-    final AssessmentDetail meritsAssessment = new AssessmentDetail()
-        .id(ASSESSMENT_ID)
-        .name(MERITS.getName())
-        .status(assessmentStatus);
+    final AssessmentDetail meritsAssessment =
+        new AssessmentDetail().id(ASSESSMENT_ID).name(MERITS.getName()).status(assessmentStatus);
 
     final UserDetail user = buildUserDetail();
 
     final CommonLookupValueDetail progressStatusTypes =
-        new CommonLookupValueDetail()
-            .code(PROGRESS_STATUS_CODE)
-            .description(PROGRESS_STATUS_DESC);
+        new CommonLookupValueDetail().code(PROGRESS_STATUS_CODE).description(PROGRESS_STATUS_DESC);
 
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROGRESS_STATUS_TYPES), any())).thenReturn(
-        Mono.just(Optional.of(progressStatusTypes)));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROGRESS_STATUS_TYPES), any()))
+        .thenReturn(Mono.just(Optional.of(progressStatusTypes)));
 
-    when(assessmentApiClient.patchAssessment(
-        eq(ASSESSMENT_ID),
-        eq(user.getLoginId()),
-        any())).thenReturn(Mono.empty());
+    when(assessmentApiClient.patchAssessment(eq(ASSESSMENT_ID), eq(user.getLoginId()), any()))
+        .thenReturn(Mono.empty());
 
-    assessmentService.calculateAssessmentStatuses(
-        application,
-        null,
-        meritsAssessment,
-        user);
+    assessmentService.calculateAssessmentStatuses(application, null, meritsAssessment, user);
 
     assertNull(application.getMeansAssessment());
     assertEquals(application.getMeritsAssessmentStatus(), PROGRESS_STATUS_DESC);
 
-    verify(assessmentApiClient).patchAssessment(
-        eq(ASSESSMENT_ID),
-        eq(user.getLoginId()),
-        any());
+    verify(assessmentApiClient).patchAssessment(eq(ASSESSMENT_ID), eq(user.getLoginId()), any());
   }
 
   @Test
   void testCalculateAssessmentStatuses_meansAssessment_amendment_assessmentAmended() {
-    final ApplicationDetail application = new ApplicationDetail()
-        .amendment(true)
-        .meansAssessmentAmended(true);
+    final ApplicationDetail application =
+        new ApplicationDetail().amendment(true).meansAssessmentAmended(true);
 
-    final AssessmentDetail meansAssessment = new AssessmentDetail()
-        .id(ASSESSMENT_ID)
-        .name(MEANS.getName())
-        .status("INCOMPLETE");
+    final AssessmentDetail meansAssessment =
+        new AssessmentDetail().id(ASSESSMENT_ID).name(MEANS.getName()).status("INCOMPLETE");
 
     final UserDetail user = buildUserDetail();
 
     final CommonLookupValueDetail progressStatusTypes =
-        new CommonLookupValueDetail()
-            .code(PROGRESS_STATUS_CODE)
-            .description(PROGRESS_STATUS_DESC);
+        new CommonLookupValueDetail().code(PROGRESS_STATUS_CODE).description(PROGRESS_STATUS_DESC);
 
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROGRESS_STATUS_TYPES), any())).thenReturn(
-        Mono.just(Optional.of(progressStatusTypes)));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROGRESS_STATUS_TYPES), any()))
+        .thenReturn(Mono.just(Optional.of(progressStatusTypes)));
 
-    assessmentService.calculateAssessmentStatuses(
-        application,
-        meansAssessment,
-        null,
-        user);
+    assessmentService.calculateAssessmentStatuses(application, meansAssessment, null, user);
 
     assertEquals(application.getMeansAssessmentStatus(), PROGRESS_STATUS_DESC);
     assertNull(application.getMeritsAssessmentStatus());
@@ -333,30 +265,21 @@ public class AssessmentServiceTest {
 
   @Test
   void testCalculateAssessmentStatuses_meritsAssessment_amendment_assessmentAmended() {
-    final ApplicationDetail application = new ApplicationDetail()
-        .amendment(true)
-        .meritsAssessmentAmended(true);
+    final ApplicationDetail application =
+        new ApplicationDetail().amendment(true).meritsAssessmentAmended(true);
 
-    final AssessmentDetail meritsAssessment = new AssessmentDetail()
-        .id(ASSESSMENT_ID)
-        .name(MERITS.getName())
-        .status("INCOMPLETE");
+    final AssessmentDetail meritsAssessment =
+        new AssessmentDetail().id(ASSESSMENT_ID).name(MERITS.getName()).status("INCOMPLETE");
 
     final UserDetail user = buildUserDetail();
 
     final CommonLookupValueDetail progressStatusTypes =
-        new CommonLookupValueDetail()
-            .code(PROGRESS_STATUS_CODE)
-            .description(PROGRESS_STATUS_DESC);
+        new CommonLookupValueDetail().code(PROGRESS_STATUS_CODE).description(PROGRESS_STATUS_DESC);
 
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROGRESS_STATUS_TYPES), any())).thenReturn(
-        Mono.just(Optional.of(progressStatusTypes)));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROGRESS_STATUS_TYPES), any()))
+        .thenReturn(Mono.just(Optional.of(progressStatusTypes)));
 
-    assessmentService.calculateAssessmentStatuses(
-        application,
-        null,
-        meritsAssessment,
-        user);
+    assessmentService.calculateAssessmentStatuses(application, null, meritsAssessment, user);
 
     assertNull(application.getMeansAssessment());
     assertEquals(application.getMeritsAssessmentStatus(), PROGRESS_STATUS_DESC);
@@ -366,8 +289,8 @@ public class AssessmentServiceTest {
   void testCheckAssessmentForProceedingKeyChange_entityTypeNull_assertsTrue() {
     final ApplicationDetail application = new ApplicationDetail();
 
-    final boolean result = assessmentService.checkAssessmentForProceedingKeyChange(
-        application, null);
+    final boolean result =
+        assessmentService.checkAssessmentForProceedingKeyChange(application, null);
 
     assertTrue(result);
   }
@@ -379,21 +302,24 @@ public class AssessmentServiceTest {
     final String clientInvolvement = "TEST";
     final String scopeLimitation = "TEST";
 
-    final ApplicationDetail application = new ApplicationDetail()
-        .addProceedingsItem(new ProceedingDetail()
-            .id(123)
-            .matterType(new StringDisplayValue().id(matterType))
-            .proceedingType(new StringDisplayValue().id(proceedingType))
-            .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-            .addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
-                new StringDisplayValue().id(scopeLimitation))));
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .id(123)
+                    .matterType(new StringDisplayValue().id(matterType))
+                    .proceedingType(new StringDisplayValue().id(proceedingType))
+                    .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
+                    .addScopeLimitationsItem(
+                        new ScopeLimitationDetail()
+                            .scopeLimitation(new StringDisplayValue().id(scopeLimitation))));
 
     final AssessmentEntityTypeDetail proceedingsEntityTypeDetail =
         buildProceedingsEntityTypeDetail();
 
-    final boolean result = assessmentService.checkAssessmentForProceedingKeyChange(
-        application,
-        proceedingsEntityTypeDetail);
+    final boolean result =
+        assessmentService.checkAssessmentForProceedingKeyChange(
+            application, proceedingsEntityTypeDetail);
 
     assertFalse(result);
   }
@@ -405,43 +331,47 @@ public class AssessmentServiceTest {
     final String clientInvolvement = "TEST";
     final String scopeLimitation = "TEST";
 
-    final ApplicationDetail application = new ApplicationDetail()
-        .addProceedingsItem(new ProceedingDetail()
-            .id(789)
-            .matterType(new StringDisplayValue().id(matterType))
-            .proceedingType(new StringDisplayValue().id(proceedingType))
-            .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-            .addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
-                new StringDisplayValue().id(scopeLimitation)))
-            .addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
-                new StringDisplayValue().id(scopeLimitation))));
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .id(789)
+                    .matterType(new StringDisplayValue().id(matterType))
+                    .proceedingType(new StringDisplayValue().id(proceedingType))
+                    .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
+                    .addScopeLimitationsItem(
+                        new ScopeLimitationDetail()
+                            .scopeLimitation(new StringDisplayValue().id(scopeLimitation)))
+                    .addScopeLimitationsItem(
+                        new ScopeLimitationDetail()
+                            .scopeLimitation(new StringDisplayValue().id(scopeLimitation))));
 
     final AssessmentEntityTypeDetail proceedingsEntityTypeDetail =
         buildProceedingsEntityTypeDetailWithMultipleScopes();
 
-    final boolean result = assessmentService.checkAssessmentForProceedingKeyChange(
-        application,
-        proceedingsEntityTypeDetail);
+    final boolean result =
+        assessmentService.checkAssessmentForProceedingKeyChange(
+            application, proceedingsEntityTypeDetail);
 
     assertFalse(result);
   }
 
   @ParameterizedTest
   @CsvSource({
-      //matter type difference
-      "123, OTHER, TEST, TEST, TEST",
+    // matter type difference
+    "123, OTHER, TEST, TEST, TEST",
 
-      //proceeding type difference
-      "123, TEST, OTHER, TEST, TEST",
+    // proceeding type difference
+    "123, TEST, OTHER, TEST, TEST",
 
-      //client involvement difference
-      "123, TEST, TEST, OTHER, TEST",
+    // client involvement difference
+    "123, TEST, TEST, OTHER, TEST",
 
-      //scope limitation difference
-      "123, TEST, TEST, TEST, OTHER",
+    // scope limitation difference
+    "123, TEST, TEST, TEST, OTHER",
 
-      //cant find proceeding with matching id
-      "789, TEST, TEST, TEST, TEST"
+    // cant find proceeding with matching id
+    "789, TEST, TEST, TEST, TEST"
   })
   void testCheckAssessmentForProceedingKeyChange_assertsTrue(
       final Integer proceedingId,
@@ -449,60 +379,53 @@ public class AssessmentServiceTest {
       final String proceedingType,
       final String clientInvolvement,
       final String scopeLimitation) {
-    final ApplicationDetail application = new ApplicationDetail()
-        .addProceedingsItem(new ProceedingDetail()
-            .id(proceedingId)
-            .matterType(new StringDisplayValue().id(matterType))
-            .proceedingType(new StringDisplayValue().id(proceedingType))
-            .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-            .addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
-                new StringDisplayValue().id(scopeLimitation))));
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .id(proceedingId)
+                    .matterType(new StringDisplayValue().id(matterType))
+                    .proceedingType(new StringDisplayValue().id(proceedingType))
+                    .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
+                    .addScopeLimitationsItem(
+                        new ScopeLimitationDetail()
+                            .scopeLimitation(new StringDisplayValue().id(scopeLimitation))));
 
     final AssessmentEntityTypeDetail proceedingsEntityTypeDetail =
         buildProceedingsEntityTypeDetail();
 
-    final boolean result = assessmentService.checkAssessmentForProceedingKeyChange(
-        application,
-        proceedingsEntityTypeDetail);
+    final boolean result =
+        assessmentService.checkAssessmentForProceedingKeyChange(
+            application, proceedingsEntityTypeDetail);
 
     assertTrue(result);
   }
 
-
   @Test
   void testCalculateAssessmentStatuses_startedMeritsAssessment() {
-    final ApplicationDetail application = new ApplicationDetail()
-        .amendment(false);
+    final ApplicationDetail application = new ApplicationDetail().amendment(false);
 
-    final AssessmentDetail meritsAssessment = new AssessmentDetail()
-        .name(MERITS.getName())
-        .status("INCOMPLETE");
+    final AssessmentDetail meritsAssessment =
+        new AssessmentDetail().name(MERITS.getName()).status("INCOMPLETE");
 
     final UserDetail user = buildUserDetail();
 
     final CommonLookupValueDetail progressStatusTypes =
-        new CommonLookupValueDetail()
-            .code(PROGRESS_STATUS_CODE)
-            .description(PROGRESS_STATUS_DESC);
+        new CommonLookupValueDetail().code(PROGRESS_STATUS_CODE).description(PROGRESS_STATUS_DESC);
 
-    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROGRESS_STATUS_TYPES), any())).thenReturn(
-        Mono.just(Optional.of(progressStatusTypes)));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROGRESS_STATUS_TYPES), any()))
+        .thenReturn(Mono.just(Optional.of(progressStatusTypes)));
 
-    assessmentService.calculateAssessmentStatuses(
-        application,
-        null,
-        meritsAssessment,
-        user);
+    assessmentService.calculateAssessmentStatuses(application, null, meritsAssessment, user);
 
     assertNull(application.getMeansAssessmentStatus());
     assertEquals(application.getMeritsAssessmentStatus(), PROGRESS_STATUS_DESC);
   }
 
-  //todo - test to be amended when amendment scenarios are added
+  // todo - test to be amended when amendment scenarios are added
   @Test
   void testIsReassessmentRequired_isAmendment() {
-    final ApplicationDetail application = new ApplicationDetail()
-        .amendment(true);
+    final ApplicationDetail application = new ApplicationDetail().amendment(true);
 
     final AssessmentDetail assessment = new AssessmentDetail();
     final boolean result = assessmentService.isReassessmentRequired(application, assessment);
@@ -510,11 +433,9 @@ public class AssessmentServiceTest {
     assertFalse(result);
   }
 
-
   @Test
   void testIsReassessmentRequired_assessmentNull_assertsFalse() {
-    final ApplicationDetail application = new ApplicationDetail()
-        .amendment(false);
+    final ApplicationDetail application = new ApplicationDetail().amendment(false);
 
     final boolean result = assessmentService.isReassessmentRequired(application, null);
 
@@ -528,17 +449,20 @@ public class AssessmentServiceTest {
     final String clientInvolvement = "TEST";
     final String scopeLimitation = "TEST";
 
-    final ApplicationDetail application = new ApplicationDetail()
-        .amendment(false)
-        .addProceedingsItem(new ProceedingDetail()
-            .id(123)
-            .matterType(new StringDisplayValue().id(matterType))
-            .proceedingType(new StringDisplayValue().id(proceedingType))
-            .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-            .addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
-                new StringDisplayValue().id(scopeLimitation))))
-        .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
-        .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(false)
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .id(123)
+                    .matterType(new StringDisplayValue().id(matterType))
+                    .proceedingType(new StringDisplayValue().id(proceedingType))
+                    .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
+                    .addScopeLimitationsItem(
+                        new ScopeLimitationDetail()
+                            .scopeLimitation(new StringDisplayValue().id(scopeLimitation))))
+            .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
+            .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
 
     final AssessmentDetail assessment = buildAssessmentDetailMultipleProceedings();
 
@@ -554,18 +478,21 @@ public class AssessmentServiceTest {
     final String clientInvolvement = "TEST";
     final String scopeLimitation = "TEST";
 
-    final ApplicationDetail application = new ApplicationDetail()
-        .meritsReassessmentRequired(true)
-        .amendment(false)
-        .addProceedingsItem(new ProceedingDetail()
-            .id(123)
-            .matterType(new StringDisplayValue().id(matterType))
-            .proceedingType(new StringDisplayValue().id(proceedingType))
-            .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-            .addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
-                new StringDisplayValue().id(scopeLimitation))))
-        .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
-        .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .meritsReassessmentRequired(true)
+            .amendment(false)
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .id(123)
+                    .matterType(new StringDisplayValue().id(matterType))
+                    .proceedingType(new StringDisplayValue().id(proceedingType))
+                    .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
+                    .addScopeLimitationsItem(
+                        new ScopeLimitationDetail()
+                            .scopeLimitation(new StringDisplayValue().id(scopeLimitation))))
+            .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
+            .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
 
     final AssessmentDetail assessment = buildAssessmentDetail(auditDate);
 
@@ -581,26 +508,31 @@ public class AssessmentServiceTest {
     final String clientInvolvement = "TEST";
     final String scopeLimitation = "TEST";
 
-    //lased saved date = now - 11 seconds
+    // lased saved date = now - 11 seconds
     final long currentTime = System.currentTimeMillis();
     final Date lastSaved = new Date(currentTime - 11000);
     final Date currentDate = new Date(currentTime);
 
-    final ApplicationDetail application = new ApplicationDetail()
-        .amendment(false)
-        .addProceedingsItem(new ProceedingDetail()
-            .id(123)
-            .matterType(new StringDisplayValue().id(matterType))
-            .proceedingType(new StringDisplayValue().id(proceedingType))
-            .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-            .addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
-                new StringDisplayValue().id(scopeLimitation))))
-        .addOpponentsItem(new OpponentDetail()
-            .id(234)
-            .type("Individual")
-            .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(currentDate)))
-        .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
-        .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(false)
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .id(123)
+                    .matterType(new StringDisplayValue().id(matterType))
+                    .proceedingType(new StringDisplayValue().id(proceedingType))
+                    .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
+                    .addScopeLimitationsItem(
+                        new ScopeLimitationDetail()
+                            .scopeLimitation(new StringDisplayValue().id(scopeLimitation))))
+            .addOpponentsItem(
+                new OpponentDetail()
+                    .id(234)
+                    .type("Individual")
+                    .auditTrail(
+                        new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(currentDate)))
+            .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
+            .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
 
     final AssessmentDetail assessment = buildAssessmentDetail(lastSaved);
 
@@ -616,22 +548,25 @@ public class AssessmentServiceTest {
     final String clientInvolvement = "TEST";
     final String scopeLimitation = "TEST";
 
-
-    final ApplicationDetail application = new ApplicationDetail()
-        .amendment(false)
-        .addProceedingsItem(new ProceedingDetail()
-            .id(123)
-            .matterType(new StringDisplayValue().id(matterType))
-            .proceedingType(new StringDisplayValue().id(proceedingType))
-            .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-            .addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
-                new StringDisplayValue().id(scopeLimitation))))
-        .addOpponentsItem(new OpponentDetail()
-            .id(234)
-            .type("Individual")
-            .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(auditDate)))
-        .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
-        .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(false)
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .id(123)
+                    .matterType(new StringDisplayValue().id(matterType))
+                    .proceedingType(new StringDisplayValue().id(proceedingType))
+                    .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
+                    .addScopeLimitationsItem(
+                        new ScopeLimitationDetail()
+                            .scopeLimitation(new StringDisplayValue().id(scopeLimitation))))
+            .addOpponentsItem(
+                new OpponentDetail()
+                    .id(234)
+                    .type("Individual")
+                    .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(auditDate)))
+            .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
+            .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
 
     final AssessmentDetail assessment = buildAssessmentDetailMultipleOpponents(auditDate);
 
@@ -641,34 +576,34 @@ public class AssessmentServiceTest {
   }
 
   @ParameterizedTest
-  @CsvSource({
-      "meritsAssessment, true",
-      "meansAssessment, false"
-  })
+  @CsvSource({"meritsAssessment, true", "meansAssessment, false"})
   void testIsReassessmentRequired_costLimitDifference(
-      final String assessmentName,
-      final boolean expectedResult) {
+      final String assessmentName, final boolean expectedResult) {
 
     final String matterType = "TEST";
     final String proceedingType = "TEST";
     final String clientInvolvement = "TEST";
     final String scopeLimitation = "TEST";
 
-    final ApplicationDetail application = new ApplicationDetail()
-        .amendment(false)
-        .addProceedingsItem(new ProceedingDetail()
-            .id(123)
-            .matterType(new StringDisplayValue().id(matterType))
-            .proceedingType(new StringDisplayValue().id(proceedingType))
-            .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-            .addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
-                new StringDisplayValue().id(scopeLimitation))))
-        .addOpponentsItem(new OpponentDetail()
-            .id(234)
-            .type("Individual")
-            .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(auditDate)))
-        .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(999.00)))
-        .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(false)
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .id(123)
+                    .matterType(new StringDisplayValue().id(matterType))
+                    .proceedingType(new StringDisplayValue().id(proceedingType))
+                    .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
+                    .addScopeLimitationsItem(
+                        new ScopeLimitationDetail()
+                            .scopeLimitation(new StringDisplayValue().id(scopeLimitation))))
+            .addOpponentsItem(
+                new OpponentDetail()
+                    .id(234)
+                    .type("Individual")
+                    .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(auditDate)))
+            .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(999.00)))
+            .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
 
     final AssessmentDetail assessment = buildAssessmentDetail(auditDate);
     assessment.setName(assessmentName);
@@ -679,11 +614,7 @@ public class AssessmentServiceTest {
   }
 
   @ParameterizedTest
-  @CsvSource({
-      "proceeding1,,opponent1,,0,0",
-      "P_123,,OPPONENT_234,,1,1",
-      ",123,,234,1,1"
-  })
+  @CsvSource({"proceeding1,,opponent1,,0,0", "P_123,,OPPONENT_234,,1,1", ",123,,234,1,1"})
   void testCleanupData(
       final String proceedingEbsId,
       final Integer proceedingId,
@@ -739,15 +670,18 @@ public class AssessmentServiceTest {
     application.addOpponentsItem(opponent1);
     application.addOpponentsItem(opponent2);
 
-    final CommonLookupValueDetail titleLookupMr = new CommonLookupValueDetail().code("MR").description("Mr");
-    final CommonLookupValueDetail titleLookupMs = new CommonLookupValueDetail().code("MS").description("Ms");
+    final CommonLookupValueDetail titleLookupMr =
+        new CommonLookupValueDetail().code("MR").description("Mr");
+    final CommonLookupValueDetail titleLookupMs =
+        new CommonLookupValueDetail().code("MS").description("Ms");
 
     when(lookupService.getCommonValue(eq(COMMON_VALUE_CONTACT_TITLE), eq("MR")))
         .thenReturn(Mono.just(Optional.of(titleLookupMr)));
     when(lookupService.getCommonValue(eq(COMMON_VALUE_CONTACT_TITLE), eq("MS")))
         .thenReturn(Mono.just(Optional.of(titleLookupMs)));
 
-    final List<AssessmentOpponentMappingContext> result = assessmentService.getAssessmentOpponentMappingContexts(application);
+    final List<AssessmentOpponentMappingContext> result =
+        assessmentService.getAssessmentOpponentMappingContexts(application);
 
     assertNotNull(result);
     assertEquals(2, result.size());
@@ -764,27 +698,27 @@ public class AssessmentServiceTest {
     verify(lookupService).getCommonValue(COMMON_VALUE_CONTACT_TITLE, "MS");
   }
 
-
   @Test
   void testFindOrCreate_existingAssessment() {
     final String providerId = "providerId";
     final String referenceId = "referenceId";
     final String assessmentName = "assessmentName";
 
-    final AssessmentDetail existingAssessment = new AssessmentDetail()
-        .caseReferenceNumber(referenceId)
-        .providerId(providerId)
-        .name(assessmentName)
-        .status(INCOMPLETE.getStatus());
+    final AssessmentDetail existingAssessment =
+        new AssessmentDetail()
+            .caseReferenceNumber(referenceId)
+            .providerId(providerId)
+            .name(assessmentName)
+            .status(INCOMPLETE.getStatus());
     final AssessmentDetails assessmentDetails = new AssessmentDetails();
     assessmentDetails.setContent(List.of(existingAssessment));
 
     when(assessmentService.getAssessments(
-        eq(List.of(assessmentName)),
-        eq(providerId),
-        eq(referenceId))).thenReturn(Mono.just(assessmentDetails));
+            eq(List.of(assessmentName)), eq(providerId), eq(referenceId)))
+        .thenReturn(Mono.just(assessmentDetails));
 
-    final AssessmentDetail result = assessmentService.findOrCreate(providerId, referenceId, assessmentName);
+    final AssessmentDetail result =
+        assessmentService.findOrCreate(providerId, referenceId, assessmentName);
 
     assertNotNull(result);
     assertEquals(existingAssessment, result);
@@ -797,11 +731,11 @@ public class AssessmentServiceTest {
     final String assessmentName = "assessmentName";
 
     when(assessmentService.getAssessments(
-        eq(List.of(assessmentName)),
-        eq(providerId),
-        eq(referenceId))).thenReturn(Mono.just(new AssessmentDetails()));
+            eq(List.of(assessmentName)), eq(providerId), eq(referenceId)))
+        .thenReturn(Mono.just(new AssessmentDetails()));
 
-    final AssessmentDetail result = assessmentService.findOrCreate(providerId, referenceId, assessmentName);
+    final AssessmentDetail result =
+        assessmentService.findOrCreate(providerId, referenceId, assessmentName);
 
     assertNotNull(result);
     assertEquals(referenceId, result.getCaseReferenceNumber());
@@ -810,7 +744,6 @@ public class AssessmentServiceTest {
     assertEquals(INCOMPLETE.getStatus(), result.getStatus());
   }
 
-
   @Test
   void testIsAssessmentCheckpointToBeDeleted_dateOfLastChangeAfterLastSaved() {
     final Date lastSaved = new Date(System.currentTimeMillis() - 10000); // 10 seconds ago
@@ -818,24 +751,24 @@ public class AssessmentServiceTest {
 
     final ApplicationDetail application = new ApplicationDetail();
     final ProceedingDetail proceeding = new ProceedingDetail();
-    proceeding.setAuditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail()
-        .lastSaved(dateOfLastChange));
+    proceeding.setAuditTrail(
+        new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(dateOfLastChange));
     application.addProceedingsItem(proceeding);
 
     final OpponentDetail opponent = new OpponentDetail();
-    opponent.setAuditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail()
-        .lastSaved(dateOfLastChange));
+    opponent.setAuditTrail(
+        new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(dateOfLastChange));
     application.addOpponentsItem(opponent);
 
     final AssessmentDetail assessment = new AssessmentDetail();
     assessment.setAuditDetail(new AuditDetail().lastSaved(lastSaved));
 
-    final boolean result = assessmentService.isAssessmentCheckpointToBeDeleted(application, assessment);
+    final boolean result =
+        assessmentService.isAssessmentCheckpointToBeDeleted(application, assessment);
 
     // assert true, since dateOfLastChange is after assessment's last saved date
     assertTrue(result);
   }
-
 
   @Test
   void testIsProceedingsCountMismatch_proceedingsCountMismatch() {
@@ -856,7 +789,7 @@ public class AssessmentServiceTest {
 
     final boolean result = assessmentService.isProceedingsCountMismatch(application, assessment);
 
-    //assert true, as the number of proceedings in the application and assessment do not match
+    // assert true, as the number of proceedings in the application and assessment do not match
     assertTrue(result);
   }
 
@@ -898,7 +831,8 @@ public class AssessmentServiceTest {
     entityTypeDetail.setEntities(List.of(entityDetail));
     assessment.setEntityTypes(List.of(entityTypeDetail));
 
-    final boolean result = assessmentService.isAssessmentProceedingsMatchingApplication(application, assessment);
+    final boolean result =
+        assessmentService.isAssessmentProceedingsMatchingApplication(application, assessment);
 
     // assert true as the proceeding does not exist in the application
     assertTrue(result);
@@ -908,8 +842,8 @@ public class AssessmentServiceTest {
   void testIsAppProceedingsExistInOpa_proceedingsExistWithNonMatchingScope() {
     final ApplicationDetail application = new ApplicationDetail();
     final ProceedingDetail proceeding = new ProceedingDetail().id(123);
-    proceeding.addScopeLimitationsItem(new ScopeLimitationDetail().scopeLimitation(
-        new StringDisplayValue().id("TEST_SCOPE")));
+    proceeding.addScopeLimitationsItem(
+        new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("TEST_SCOPE")));
     application.addProceedingsItem(proceeding);
 
     final AssessmentDetail assessment = buildAssessmentDetail(new Date());
@@ -918,12 +852,13 @@ public class AssessmentServiceTest {
     entityTypeDetail.setName("PROCEEDING");
     final AssessmentEntityDetail entityDetail = new AssessmentEntityDetail();
     entityDetail.setName("P_123");
-    entityDetail.addAttributesItem(new AssessmentAttributeDetail()
-        .name("REQUESTED_SCOPE").value("DIFFERENT_SCOPE"));
+    entityDetail.addAttributesItem(
+        new AssessmentAttributeDetail().name("REQUESTED_SCOPE").value("DIFFERENT_SCOPE"));
     entityTypeDetail.setEntities(List.of(entityDetail));
     assessment.setEntityTypes(List.of(entityTypeDetail));
 
-    final boolean result = assessmentService.isApplicationProceedingsMatchingAssessment(application, assessment);
+    final boolean result =
+        assessmentService.isApplicationProceedingsMatchingAssessment(application, assessment);
 
     // we expect true as the scope is different
     assertTrue(result);
@@ -941,24 +876,20 @@ public class AssessmentServiceTest {
     entityTypeDetail.setName("PROCEEDING");
     assessment.setEntityTypes(List.of(entityTypeDetail));
 
-    final boolean result = assessmentService.isApplicationProceedingsMatchingAssessment(application, assessment);
+    final boolean result =
+        assessmentService.isApplicationProceedingsMatchingAssessment(application, assessment);
 
-    //we expect true as the proceeding does not exist in OPA
+    // we expect true as the proceeding does not exist in OPA
     assertTrue(result);
   }
 
-
   @ParameterizedTest
-  @CsvSource(value = {
-      "2, true",
-      "10, true",
-      "0, true"
-  }, nullValues = {"null"})
-  void isOpaOpponentsMatchApplication(
-      final Integer applicationOpponents,
-      final boolean expected) {
+  @CsvSource(
+      value = {"2, true", "10, true", "0, true"},
+      nullValues = {"null"})
+  void isOpaOpponentsMatchApplication(final Integer applicationOpponents, final boolean expected) {
 
-    //An assessment contains 1 opponent, 1 proceeding
+    // An assessment contains 1 opponent, 1 proceeding
     final AssessmentDetail assessment = buildAssessmentDetail(new Date());
 
     final ApplicationDetail application = new ApplicationDetail();
@@ -976,20 +907,19 @@ public class AssessmentServiceTest {
     assertEquals(result, expected);
   }
 
-
   @ParameterizedTest
-  @CsvSource(value = {
-      "987, null, true",
-      "987, OPPONENT_987, true",
-      "234, null, false",
-      "234, OPPONENT_234, false"
-  }, nullValues = {"null"})
+  @CsvSource(
+      value = {
+        "987, null, true",
+        "987, OPPONENT_987, true",
+        "234, null, false",
+        "234, OPPONENT_234, false"
+      },
+      nullValues = {"null"})
   void isOpaOpponentsMatchApplication(
-      final Integer opponentId,
-      final String ebsId,
-      final boolean expected) {
+      final Integer opponentId, final String ebsId, final boolean expected) {
 
-    //An assessment contains 1 opponent, 1 proceeding
+    // An assessment contains 1 opponent, 1 proceeding
     final AssessmentDetail assessment = buildAssessmentDetail(new Date());
 
     final ApplicationDetail application = new ApplicationDetail();
@@ -1006,17 +936,17 @@ public class AssessmentServiceTest {
   }
 
   @ParameterizedTest
-  @CsvSource(value = {
-      "234, null, false",
-      "1, 'OPPONENT_234', false",
-      "1, null,  true",
-      "1, OPPONENT_1, true"
-  }, nullValues = {"null"})
+  @CsvSource(
+      value = {
+        "234, null, false",
+        "1, 'OPPONENT_234', false",
+        "1, null,  true",
+        "1, OPPONENT_1, true"
+      },
+      nullValues = {"null"})
   void testIsApplicationMatchOpaOpponents(
-      final Integer opponentId,
-      final String ebsId,
-      final boolean expected) {
-    //An assessment contains 1 opponent, 1 proceeding
+      final Integer opponentId, final String ebsId, final boolean expected) {
+    // An assessment contains 1 opponent, 1 proceeding
     final AssessmentDetail assessment = buildAssessmentDetail(new Date());
 
     final ApplicationDetail application = new ApplicationDetail();
@@ -1037,29 +967,36 @@ public class AssessmentServiceTest {
     final AssessmentDetail assessment = buildAssessmentDetail(new Date());
 
     // Setup mock data for parent summary lookups
-    final AssessmentSummaryEntityLookupValueDetail parentSummaryLookup = new AssessmentSummaryEntityLookupValueDetail();
+    final AssessmentSummaryEntityLookupValueDetail parentSummaryLookup =
+        new AssessmentSummaryEntityLookupValueDetail();
     parentSummaryLookup.setName("PROCEEDING");
     parentSummaryLookup.setDisplayName("Proceeding");
     parentSummaryLookup.setEntityLevel(1);
-    parentSummaryLookup.addAttributesItem(new AssessmentSummaryAttributeLookupValueDetail()
-        .name("PROCEEDING_NAME")
-        .displayName("Proceeding Name"));
+    parentSummaryLookup.addAttributesItem(
+        new AssessmentSummaryAttributeLookupValueDetail()
+            .name("PROCEEDING_NAME")
+            .displayName("Proceeding Name"));
 
-    final List<AssessmentSummaryEntityLookupValueDetail> parentSummaryLookups = List.of(parentSummaryLookup);
+    final List<AssessmentSummaryEntityLookupValueDetail> parentSummaryLookups =
+        List.of(parentSummaryLookup);
 
     // Setup mock data for child summary lookups
-    final AssessmentSummaryEntityLookupValueDetail childSummaryLookup = new AssessmentSummaryEntityLookupValueDetail();
+    final AssessmentSummaryEntityLookupValueDetail childSummaryLookup =
+        new AssessmentSummaryEntityLookupValueDetail();
     childSummaryLookup.setName("CHILD_ENTITY");
     childSummaryLookup.setDisplayName("Child Entity");
     childSummaryLookup.setEntityLevel(2);
-    childSummaryLookup.addAttributesItem(new AssessmentSummaryAttributeLookupValueDetail()
-        .name("CHILD_NAME")
-        .displayName("Child Name"));
+    childSummaryLookup.addAttributesItem(
+        new AssessmentSummaryAttributeLookupValueDetail()
+            .name("CHILD_NAME")
+            .displayName("Child Name"));
 
-    final List<AssessmentSummaryEntityLookupValueDetail> childSummaryLookups = List.of(childSummaryLookup);
+    final List<AssessmentSummaryEntityLookupValueDetail> childSummaryLookups =
+        List.of(childSummaryLookup);
 
     final List<AssessmentSummaryEntityDisplay> result =
-        assessmentService.getAssessmentSummaryToDisplay(assessment, parentSummaryLookups, childSummaryLookups);
+        assessmentService.getAssessmentSummaryToDisplay(
+            assessment, parentSummaryLookups, childSummaryLookups);
 
     assertNotNull(result);
     assertFalse(result.isEmpty());
@@ -1088,13 +1025,15 @@ public class AssessmentServiceTest {
     final List<AssessmentSummaryEntityLookupValueDetail> childSummaryLookups = new ArrayList<>();
 
     // Initialize summary entity lookup
-    final AssessmentSummaryEntityLookupValueDetail summaryEntityLookup = new AssessmentSummaryEntityLookupValueDetail();
+    final AssessmentSummaryEntityLookupValueDetail summaryEntityLookup =
+        new AssessmentSummaryEntityLookupValueDetail();
     summaryEntityLookup.setName("testEntity");
     summaryEntityLookup.setDisplayName("Test Entity");
     summaryEntityLookup.setEntityLevel(1);
 
     // Initialize summary attribute lookup
-    final AssessmentSummaryAttributeLookupValueDetail summaryAttributeLookup = new AssessmentSummaryAttributeLookupValueDetail();
+    final AssessmentSummaryAttributeLookupValueDetail summaryAttributeLookup =
+        new AssessmentSummaryAttributeLookupValueDetail();
     summaryAttributeLookup.setName("testAttribute");
     summaryAttributeLookup.setDisplayName("Test Attribute");
     summaryEntityLookup.addAttributesItem(summaryAttributeLookup);
@@ -1111,7 +1050,8 @@ public class AssessmentServiceTest {
     entity.addAttributesItem(assessmentAttribute);
 
     // Call the method under test
-    assessmentService.createSummaryEntity(assessment, summaryEntitiesToDisplay, childSummaryLookups, summaryEntityLookup, entity);
+    assessmentService.createSummaryEntity(
+        assessment, summaryEntitiesToDisplay, childSummaryLookups, summaryEntityLookup, entity);
 
     // Verify the result
     assertFalse(summaryEntitiesToDisplay.isEmpty());
@@ -1120,7 +1060,8 @@ public class AssessmentServiceTest {
     assertEquals("Test Entity", summaryEntitiesToDisplay.getFirst().getDisplayName());
     assertEquals(1, summaryEntitiesToDisplay.getFirst().getEntityLevel());
 
-    final List<AssessmentSummaryAttributeDisplay> attributes = summaryEntitiesToDisplay.getFirst().getAttributes();
+    final List<AssessmentSummaryAttributeDisplay> attributes =
+        summaryEntitiesToDisplay.getFirst().getAttributes();
     assertFalse(attributes.isEmpty());
     assertEquals(1, attributes.size());
     assertEquals("testAttribute", attributes.getFirst().getName());
@@ -1130,17 +1071,15 @@ public class AssessmentServiceTest {
 
   @ParameterizedTest
   @CsvSource({
-      "DATE,2023-07-15,15/07/2023",
-      "CURRENCY,1234.56,£1234.56",
-      "NUMBER,1234.5600,1234.56",
-      "BOOLEAN,true,Yes",
-      "BOOLEAN,false,No",
-      "TEXT,someText,someText"
+    "DATE,2023-07-15,15/07/2023",
+    "CURRENCY,1234.56,£1234.56",
+    "NUMBER,1234.5600,1234.56",
+    "BOOLEAN,true,Yes",
+    "BOOLEAN,false,No",
+    "TEXT,someText,someText"
   })
   void testCreateSummaryAttributeDisplay(
-      final String type,
-      final String value,
-      final String expectedFormattedValue) {
+      final String type, final String value, final String expectedFormattedValue) {
 
     final AssessmentAttributeDetail attribute = new AssessmentAttributeDetail();
     attribute.setName("testAttribute");
@@ -1148,18 +1087,20 @@ public class AssessmentServiceTest {
     attribute.setValue(value);
     attribute.setAsked(true);
 
-    final AssessmentSummaryAttributeLookupValueDetail summaryAttribute = new AssessmentSummaryAttributeLookupValueDetail();
+    final AssessmentSummaryAttributeLookupValueDetail summaryAttribute =
+        new AssessmentSummaryAttributeLookupValueDetail();
     summaryAttribute.setName("testAttribute");
     summaryAttribute.setDisplayName("displayName");
 
-    final AssessmentSummaryEntityLookupValueDetail summaryEntityLookup = new AssessmentSummaryEntityLookupValueDetail();
+    final AssessmentSummaryEntityLookupValueDetail summaryEntityLookup =
+        new AssessmentSummaryEntityLookupValueDetail();
     summaryEntityLookup.setName("testEntity");
     summaryEntityLookup.setDisplayName("entityDisplayName");
     summaryEntityLookup.setEntityLevel(1);
     summaryEntityLookup.addAttributesItem(summaryAttribute);
 
-    final AssessmentSummaryAttributeDisplay
-        result = assessmentService.createSummaryAttributeDisplay(attribute, summaryEntityLookup);
+    final AssessmentSummaryAttributeDisplay result =
+        assessmentService.createSummaryAttributeDisplay(attribute, summaryEntityLookup);
 
     assertNotNull(result);
     assertEquals("testAttribute", result.getName());
@@ -1170,24 +1111,24 @@ public class AssessmentServiceTest {
 
   @ParameterizedTest
   @CsvSource({
-      // Matching applicationType + matching delegated date → false
-      "SUBDP, SUBDP, 15-03-2020, 15-03-2020, false",
-      // Matching applicationType + mismatching delegated date → true
-      "SUBDP, SUBDP, 15-03-2020, 01-01-2000, true",
-      // Matching applicationType + null delegated date in assessment → true
-      "SUBDP, SUBDP, 15-03-2020, , true",
-      // Matching applicationType + null delegated date in app → true
-      "SUBDP, SUBDP, , 15-03-2020, true",
-      // Mismatched applicationType → true
-      "SUBDP, DP, 15-03-2020, 15-03-2020, true",
-      // Non-devolved type (SUB) with no dates → false
-      "SUB, SUB, , , false",
-      // Devolved type (DP) with missing date in application → true
-      "DP, DP, , 15-03-2020, true",
-      // Special case for ECF type with no dates → false
-      "ECF, SUB, , , false",
-      // Special case for ECF type not matching with no dates → dp
-      "ECF, DP, , , true",
+    // Matching applicationType + matching delegated date → false
+    "SUBDP, SUBDP, 15-03-2020, 15-03-2020, false",
+    // Matching applicationType + mismatching delegated date → true
+    "SUBDP, SUBDP, 15-03-2020, 01-01-2000, true",
+    // Matching applicationType + null delegated date in assessment → true
+    "SUBDP, SUBDP, 15-03-2020, , true",
+    // Matching applicationType + null delegated date in app → true
+    "SUBDP, SUBDP, , 15-03-2020, true",
+    // Mismatched applicationType → true
+    "SUBDP, DP, 15-03-2020, 15-03-2020, true",
+    // Non-devolved type (SUB) with no dates → false
+    "SUB, SUB, , , false",
+    // Devolved type (DP) with missing date in application → true
+    "DP, DP, , 15-03-2020, true",
+    // Special case for ECF type with no dates → false
+    "ECF, SUB, , , false",
+    // Special case for ECF type not matching with no dates → dp
+    "ECF, DP, , , true",
   })
   @DisplayName("applicationTypeMatches - combined type and delegated date validation")
   void testapplicationTypeMatches_combinedLogic(
@@ -1195,7 +1136,8 @@ public class AssessmentServiceTest {
       final String assessmentTypeCode,
       final String applicationDelegatedDate,
       final String assessmentDelegatedDate,
-      final boolean expected) throws Exception {
+      final boolean expected)
+      throws Exception {
 
     final ApplicationDetail application = new ApplicationDetail();
     final var applicationType = new ApplicationType();
@@ -1203,7 +1145,8 @@ public class AssessmentServiceTest {
 
     if (applicationDelegatedDate != null) {
       final var devolvedPowers = new DevolvedPowersDetail();
-      devolvedPowers.setDateUsed(new SimpleDateFormat("dd-MM-yyyy").parse(applicationDelegatedDate));
+      devolvedPowers.setDateUsed(
+          new SimpleDateFormat("dd-MM-yyyy").parse(applicationDelegatedDate));
       applicationType.setDevolvedPowers(devolvedPowers);
     }
 
@@ -1212,34 +1155,27 @@ public class AssessmentServiceTest {
     final List<AssessmentAttributeDetail> attributes = new ArrayList<>();
 
     // Add type attribute
-    attributes.add(new AssessmentAttributeDetail()
-        .name("APP_AMEND_TYPE")
-        .value(assessmentTypeCode));
+    attributes.add(
+        new AssessmentAttributeDetail().name("APP_AMEND_TYPE").value(assessmentTypeCode));
 
     // Add delegated date attribute if provided
     if (assessmentDelegatedDate != null) {
-      attributes.add(new AssessmentAttributeDetail()
-          .name("DELEGATED_FUNCTIONS_DATE")
-          .value(assessmentDelegatedDate));
+      attributes.add(
+          new AssessmentAttributeDetail()
+              .name("DELEGATED_FUNCTIONS_DATE")
+              .value(assessmentDelegatedDate));
     }
 
-    final AssessmentEntityDetail globalEntity = new AssessmentEntityDetail()
-        .name("GLOBAL")
-        .attributes(attributes);
+    final AssessmentEntityDetail globalEntity =
+        new AssessmentEntityDetail().name("GLOBAL").attributes(attributes);
 
-    final AssessmentEntityTypeDetail globalType = new AssessmentEntityTypeDetail()
-        .name("GLOBAL")
-        .entities(List.of(globalEntity));
+    final AssessmentEntityTypeDetail globalType =
+        new AssessmentEntityTypeDetail().name("GLOBAL").entities(List.of(globalEntity));
 
-    final AssessmentDetail assessment = new AssessmentDetail()
-        .entityTypes(List.of(globalType));
+    final AssessmentDetail assessment = new AssessmentDetail().entityTypes(List.of(globalType));
 
     final boolean result = assessmentService.applicationTypeMatches(application, assessment);
 
     assertEquals(expected, result);
   }
-
-
-
-
 }

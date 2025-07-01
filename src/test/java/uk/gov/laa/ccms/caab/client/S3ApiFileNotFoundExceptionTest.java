@@ -28,5 +28,4 @@ public class S3ApiFileNotFoundExceptionTest {
     assertEquals(expectedMessage, exception.getMessage());
     assertEquals(cause, exception.getCause());
   }
-
 }

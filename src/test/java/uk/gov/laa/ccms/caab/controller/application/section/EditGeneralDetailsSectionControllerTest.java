@@ -84,55 +84,42 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @WebAppConfiguration
 class EditGeneralDetailsSectionControllerTest {
 
-  @Mock
-  private ApplicationService applicationService;
+  @Mock private ApplicationService applicationService;
 
-  @Mock
-  private AddressService addressService;
+  @Mock private AddressService addressService;
 
-  @Mock
-  private ProviderService providerService;
-  @Mock
-  private LookupService lookupService;
+  @Mock private ProviderService providerService;
+  @Mock private LookupService lookupService;
 
-  @Mock
-  private CaseSearchCriteriaValidator searchCriteriaValidator;
+  @Mock private CaseSearchCriteriaValidator searchCriteriaValidator;
 
-  @Mock
-  private FindAddressValidator findAddressValidator;
+  @Mock private FindAddressValidator findAddressValidator;
 
-  @Mock
-  private AddressSearchValidator addressSearchValidator;
+  @Mock private AddressSearchValidator addressSearchValidator;
 
-  @Mock
-  private LinkedCaseValidator linkedCaseValidator;
+  @Mock private LinkedCaseValidator linkedCaseValidator;
 
-  @Mock
-  private CorrespondenceAddressValidator correspondenceAddressValidator;
+  @Mock private CorrespondenceAddressValidator correspondenceAddressValidator;
 
-  @Mock
-  private EbsApplicationMapper applicationMapper;
+  @Mock private EbsApplicationMapper applicationMapper;
 
-  @Mock
-  private ResultDisplayMapper resultDisplayMapper;
+  @Mock private ResultDisplayMapper resultDisplayMapper;
 
-  @InjectMocks
-  private EditGeneralDetailsSectionController editGeneralDetailsSectionController;
+  @InjectMocks private EditGeneralDetailsSectionController editGeneralDetailsSectionController;
 
   private MockMvc mockMvc;
 
-  @Autowired
-  private WebApplicationContext webApplicationContext;
+  @Autowired private WebApplicationContext webApplicationContext;
 
   private CommonLookupDetail mockCommonLookupDetail;
 
   @BeforeEach
   void setup() {
-    mockMvc = MockMvcBuilders
-        .standaloneSetup(editGeneralDetailsSectionController)
-        .setControllerAdvice(new GlobalExceptionHandler())
-        .setConversionService(getConversionService())
-        .build();
+    mockMvc =
+        MockMvcBuilders.standaloneSetup(editGeneralDetailsSectionController)
+            .setControllerAdvice(new GlobalExceptionHandler())
+            .setConversionService(getConversionService())
+            .build();
     mockCommonLookupDetail = new CommonLookupDetail();
     mockCommonLookupDetail.addContentItem(new CommonLookupValueDetail());
   }
@@ -147,16 +134,17 @@ class EditGeneralDetailsSectionControllerTest {
       final String applicationId = "123";
       final AddressFormData addressFormData = new AddressFormData();
 
-      when(lookupService.getCountries())
-          .thenReturn(Mono.just(mockCommonLookupDetail));
+      when(lookupService.getCountries()).thenReturn(Mono.just(mockCommonLookupDetail));
       when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
           .thenReturn(Mono.just(mockCommonLookupDetail));
 
-      when(applicationService.getCorrespondenceAddressFormData(applicationId)).thenReturn(
-          addressFormData);
+      when(applicationService.getCorrespondenceAddressFormData(applicationId))
+          .thenReturn(addressFormData);
 
-      mockMvc.perform(get("/application/sections/correspondence-address")
-              .sessionAttr(APPLICATION_ID, applicationId))
+      mockMvc
+          .perform(
+              get("/application/sections/correspondence-address")
+                  .sessionAttr(APPLICATION_ID, applicationId))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/correspondence-address-details"))
@@ -171,14 +159,15 @@ class EditGeneralDetailsSectionControllerTest {
       final String applicationId = "123";
       final AddressFormData addressFormData = new AddressFormData();
 
-      when(lookupService.getCountries())
-          .thenReturn(Mono.just(mockCommonLookupDetail));
+      when(lookupService.getCountries()).thenReturn(Mono.just(mockCommonLookupDetail));
       when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
           .thenReturn(Mono.just(mockCommonLookupDetail));
 
-      mockMvc.perform(get("/application/sections/correspondence-address")
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr("addressDetails", addressFormData))
+      mockMvc
+          .perform(
+              get("/application/sections/correspondence-address")
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr("addressDetails", addressFormData))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/correspondence-address-details"))
@@ -199,16 +188,18 @@ class EditGeneralDetailsSectionControllerTest {
       final UserDetail user = new UserDetail();
       final AddressFormData addressDetails = new AddressFormData();
 
-      mockMvc.perform(post("/application/sections/correspondence-address")
-              .param("action", "update")
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(USER_DETAILS, user)
-              .flashAttr("addressDetails", addressDetails))
+      mockMvc
+          .perform(
+              post("/application/sections/correspondence-address")
+                  .param("action", "update")
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(USER_DETAILS, user)
+                  .flashAttr("addressDetails", addressDetails))
           .andDo(print())
           .andExpect(redirectedUrl("/application/sections/linked-cases"));
 
-      verify(applicationService, times(1)).updateCorrespondenceAddress(
-          applicationId, addressDetails, user);
+      verify(applicationService, times(1))
+          .updateCorrespondenceAddress(applicationId, addressDetails, user);
       verify(addressService, never()).getAddresses(any());
     }
 
@@ -223,21 +214,24 @@ class EditGeneralDetailsSectionControllerTest {
 
       addressSearchResults.setContent(Collections.singletonList(new AddressResultRowDisplay()));
 
-      when(addressService.getAddresses(addressDetails.getPostcode())).thenReturn(
-          addressSearchResults);
+      when(addressService.getAddresses(addressDetails.getPostcode()))
+          .thenReturn(addressSearchResults);
 
-      mockMvc.perform(post("/%s/sections/correspondence-address".formatted(caseContext))
-              .param("action", "find_address")
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(USER_DETAILS, user)
-              .flashAttr("addressDetails", addressDetails))
+      mockMvc
+          .perform(
+              post("/%s/sections/correspondence-address".formatted(caseContext))
+                  .param("action", "find_address")
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(USER_DETAILS, user)
+                  .flashAttr("addressDetails", addressDetails))
           .andDo(print())
-          .andExpect(redirectedUrl("/%s/sections/correspondence-address/search".formatted(caseContext)));
+          .andExpect(
+              redirectedUrl("/%s/sections/correspondence-address/search".formatted(caseContext)));
 
       verify(addressService, times(1)).getAddresses(any());
       verify(addressService, times(1)).filterByHouseNumber(any(), any());
-      verify(applicationService, never()).updateCorrespondenceAddress(
-          applicationId, addressDetails, user);
+      verify(applicationService, never())
+          .updateCorrespondenceAddress(applicationId, addressDetails, user);
     }
 
     @ParameterizedTest
@@ -249,26 +243,27 @@ class EditGeneralDetailsSectionControllerTest {
       final AddressFormData addressDetails = new AddressFormData();
       final ResultsDisplay<AddressResultRowDisplay> addressSearchResults = new ResultsDisplay<>();
 
-      when(addressService.getAddresses(addressDetails.getPostcode())).thenReturn(
-          addressSearchResults);
+      when(addressService.getAddresses(addressDetails.getPostcode()))
+          .thenReturn(addressSearchResults);
 
-      when(lookupService.getCountries())
-          .thenReturn(Mono.just(mockCommonLookupDetail));
+      when(lookupService.getCountries()).thenReturn(Mono.just(mockCommonLookupDetail));
       when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
           .thenReturn(Mono.just(mockCommonLookupDetail));
 
-      mockMvc.perform(post("/%s/sections/correspondence-address".formatted(caseContext))
-              .param("action", "find_address")
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(USER_DETAILS, user)
-              .flashAttr("addressDetails", addressDetails))
+      mockMvc
+          .perform(
+              post("/%s/sections/correspondence-address".formatted(caseContext))
+                  .param("action", "find_address")
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(USER_DETAILS, user)
+                  .flashAttr("addressDetails", addressDetails))
           .andDo(print())
           .andExpect(view().name("application/sections/correspondence-address-details"));
 
       verify(addressService, times(1)).getAddresses(any());
       verify(addressService, never()).filterByHouseNumber(any(), any());
-      verify(applicationService, never()).updateCorrespondenceAddress(
-          applicationId, addressDetails, user);
+      verify(applicationService, never())
+          .updateCorrespondenceAddress(applicationId, addressDetails, user);
     }
 
     @ParameterizedTest
@@ -279,28 +274,34 @@ class EditGeneralDetailsSectionControllerTest {
       final UserDetail user = new UserDetail();
       final AddressFormData addressDetails = new AddressFormData();
 
-      when(lookupService.getCountries())
-          .thenReturn(Mono.just(mockCommonLookupDetail));
+      when(lookupService.getCountries()).thenReturn(Mono.just(mockCommonLookupDetail));
       when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
           .thenReturn(Mono.just(mockCommonLookupDetail));
 
-      doAnswer(invocation -> {
-        final Errors errors = (Errors) invocation.getArguments()[1];
-        errors.rejectValue(
-            "preferredAddress", "required.preferredAddress", "Please select an Preferred address.");
-        return null;
-      }).when(correspondenceAddressValidator).validate(any(), any());
+      doAnswer(
+              invocation -> {
+                final Errors errors = (Errors) invocation.getArguments()[1];
+                errors.rejectValue(
+                    "preferredAddress",
+                    "required.preferredAddress",
+                    "Please select an Preferred address.");
+                return null;
+              })
+          .when(correspondenceAddressValidator)
+          .validate(any(), any());
 
-      mockMvc.perform(post("/%s/sections/correspondence-address".formatted(caseContext))
-              .param("action", "update")
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(USER_DETAILS, user)
-              .flashAttr("addressDetails", addressDetails))
+      mockMvc
+          .perform(
+              post("/%s/sections/correspondence-address".formatted(caseContext))
+                  .param("action", "update")
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(USER_DETAILS, user)
+                  .flashAttr("addressDetails", addressDetails))
           .andDo(print())
           .andExpect(view().name("application/sections/correspondence-address-details"));
 
-      verify(applicationService, never()).updateCorrespondenceAddress(
-          applicationId, addressDetails, user);
+      verify(applicationService, never())
+          .updateCorrespondenceAddress(applicationId, addressDetails, user);
       verify(addressService, never()).getAddresses(any());
     }
 
@@ -318,24 +319,26 @@ class EditGeneralDetailsSectionControllerTest {
       addressDetails.setCityTown(RandomStringUtils.insecure().nextAlphabetic(35));
       addressDetails.setCounty(RandomStringUtils.insecure().nextAlphabetic(35));
 
-      mockMvc.perform(post("/application/sections/correspondence-address")
-              .param("action", "update")
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(USER_DETAILS, user)
-              .flashAttr("addressDetails", addressDetails))
+      mockMvc
+          .perform(
+              post("/application/sections/correspondence-address")
+                  .param("action", "update")
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(USER_DETAILS, user)
+                  .flashAttr("addressDetails", addressDetails))
           .andDo(print())
           .andExpect(redirectedUrl("/application/sections/linked-cases"));
 
-      verify(applicationService, times(1)).updateCorrespondenceAddress(
-          applicationId, addressDetails, user);
+      verify(applicationService, times(1))
+          .updateCorrespondenceAddress(applicationId, addressDetails, user);
       verify(addressService, never()).getAddresses(any());
-
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should contain validation errors max lengths exceeded")
-    void correspondenceAddressPostValidationErrorsMaxLengthsExceeded(String caseContext) throws Exception {
+    void correspondenceAddressPostValidationErrorsMaxLengthsExceeded(String caseContext)
+        throws Exception {
       final String applicationId = "123";
       final UserDetail user = new UserDetail();
       final AddressFormData addressDetails = new AddressFormData();
@@ -347,16 +350,17 @@ class EditGeneralDetailsSectionControllerTest {
       addressDetails.setCityTown(RandomStringUtils.insecure().nextAlphabetic(36));
       addressDetails.setCounty(RandomStringUtils.insecure().nextAlphabetic(36));
 
-      when(lookupService.getCountries())
-          .thenReturn(Mono.just(mockCommonLookupDetail));
+      when(lookupService.getCountries()).thenReturn(Mono.just(mockCommonLookupDetail));
       when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
           .thenReturn(Mono.just(mockCommonLookupDetail));
 
-      mockMvc.perform(post("/%s/sections/correspondence-address".formatted(caseContext))
-              .param("action", "update")
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(USER_DETAILS, user)
-              .flashAttr("addressDetails", addressDetails))
+      mockMvc
+          .perform(
+              post("/%s/sections/correspondence-address".formatted(caseContext))
+                  .param("action", "update")
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(USER_DETAILS, user)
+                  .flashAttr("addressDetails", addressDetails))
           .andDo(print())
           .andExpect(view().name("application/sections/correspondence-address-details"))
           .andExpect(model().attributeHasFieldErrors("addressDetails", "houseNameNumber"))
@@ -367,11 +371,10 @@ class EditGeneralDetailsSectionControllerTest {
           .andExpect(model().attributeHasFieldErrors("addressDetails", "county"))
           .andExpect(model().attributeHasFieldErrors("addressDetails", "cityTown"));
 
-      verify(applicationService, never()).updateCorrespondenceAddress(
-          applicationId, addressDetails, user);
+      verify(applicationService, never())
+          .updateCorrespondenceAddress(applicationId, addressDetails, user);
       verify(addressService, never()).getAddresses(any());
     }
-
   }
 
   @Nested
@@ -384,13 +387,18 @@ class EditGeneralDetailsSectionControllerTest {
     void shouldReturnExpectedResult(String caseContext) throws Exception {
       final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
 
-      mockMvc.perform(get("/%s/sections/correspondence-address/search".formatted(caseContext))
-              .sessionAttr(ADDRESS_SEARCH_RESULTS, results))
+      mockMvc
+          .perform(
+              get("/%s/sections/correspondence-address/search".formatted(caseContext))
+                  .sessionAttr(ADDRESS_SEARCH_RESULTS, results))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/address-search-results"))
           .andExpect(
-              model().attribute("formAction", "%s/sections/correspondence-address/search".formatted(caseContext)))
+              model()
+                  .attribute(
+                      "formAction",
+                      "%s/sections/correspondence-address/search".formatted(caseContext)))
           .andExpect(model().attribute("addressSearchResults", results));
     }
   }
@@ -405,15 +413,16 @@ class EditGeneralDetailsSectionControllerTest {
     void shouldReturnExpectedResult(String caseContext) throws Exception {
       final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
 
-      mockMvc.perform(post("/%s/sections/correspondence-address/search".formatted(caseContext))
-              .sessionAttr(ADDRESS_SEARCH_RESULTS, results)
-              .sessionAttr("addressDetails", new AddressFormData()))
+      mockMvc
+          .perform(
+              post("/%s/sections/correspondence-address/search".formatted(caseContext))
+                  .sessionAttr(ADDRESS_SEARCH_RESULTS, results)
+                  .sessionAttr("addressDetails", new AddressFormData()))
           .andDo(print())
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/%s/sections/correspondence-address".formatted(caseContext)));
 
       verify(addressService, times(1)).filterAndUpdateAddressFormData(any(), any(), any());
-
     }
 
     @ParameterizedTest
@@ -422,25 +431,31 @@ class EditGeneralDetailsSectionControllerTest {
     void shouldHaveValidationErrors(String caseContext) throws Exception {
       final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
 
-      doAnswer(invocation -> {
-        final Errors errors = (Errors) invocation.getArguments()[1];
-        errors.reject("required.uprn", "Please select an address");
-        return null;
-      }).when(addressSearchValidator).validate(any(), any());
+      doAnswer(
+              invocation -> {
+                final Errors errors = (Errors) invocation.getArguments()[1];
+                errors.reject("required.uprn", "Please select an address");
+                return null;
+              })
+          .when(addressSearchValidator)
+          .validate(any(), any());
 
-      mockMvc.perform(post("/%s/sections/correspondence-address/search".formatted(caseContext))
-              .sessionAttr(ADDRESS_SEARCH_RESULTS, results)
-              .sessionAttr("addressDetails", new AddressFormData()))
+      mockMvc
+          .perform(
+              post("/%s/sections/correspondence-address/search".formatted(caseContext))
+                  .sessionAttr(ADDRESS_SEARCH_RESULTS, results)
+                  .sessionAttr("addressDetails", new AddressFormData()))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/address-search-results"))
           .andExpect(
-              model().attribute(
-                  "formAction", "%s/sections/correspondence-address/search".formatted(caseContext)))
+              model()
+                  .attribute(
+                      "formAction",
+                      "%s/sections/correspondence-address/search".formatted(caseContext)))
           .andExpect(model().attribute("addressSearchResults", results));
 
       verify(addressService, never()).filterAndUpdateAddressFormData(any(), any(), any());
-
     }
   }
 
@@ -457,8 +472,10 @@ class EditGeneralDetailsSectionControllerTest {
 
       when(applicationService.getLinkedCases(applicationId)).thenReturn(linkedCases);
 
-      mockMvc.perform(get("/%s/sections/linked-cases".formatted(caseContext))
-              .sessionAttr(APPLICATION_ID, applicationId))
+      mockMvc
+          .perform(
+              get("/%s/sections/linked-cases".formatted(caseContext))
+                  .sessionAttr(APPLICATION_ID, applicationId))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/application-linked-case-summary"))
@@ -484,8 +501,11 @@ class EditGeneralDetailsSectionControllerTest {
       linkedCases.setContent(Collections.singletonList(linkedCase));
 
       mockMvc
-          .perform(get("/%s/sections/linked-cases/{linked-case-id}/remove".formatted(caseContext), linkedCaseId)
-              .sessionAttr("linkedCases", linkedCases))
+          .perform(
+              get(
+                      "/%s/sections/linked-cases/{linked-case-id}/remove".formatted(caseContext),
+                      linkedCaseId)
+                  .sessionAttr("linkedCases", linkedCases))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/application-linked-case-remove"))
@@ -506,9 +526,12 @@ class EditGeneralDetailsSectionControllerTest {
       final UserDetail user = new UserDetail();
 
       mockMvc
-          .perform(post("/%s/sections/linked-cases/{linked-case-id}/remove".formatted(caseContext), linkedCaseId)
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(USER_DETAILS, user))
+          .perform(
+              post(
+                      "/%s/sections/linked-cases/{linked-case-id}/remove".formatted(caseContext),
+                      linkedCaseId)
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(USER_DETAILS, user))
           .andDo(print())
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/%s/sections/linked-cases".formatted(caseContext)));
@@ -532,12 +555,15 @@ class EditGeneralDetailsSectionControllerTest {
       final ResultsDisplay<LinkedCaseResultRowDisplay> linkedCases = new ResultsDisplay<>();
       linkedCases.setContent(Collections.singletonList(linkedCase));
 
-      when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(
-          Mono.just(mockCommonLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE))
+          .thenReturn(Mono.just(mockCommonLookupDetail));
 
       mockMvc
-          .perform(get("/%s/sections/linked-cases/{linked-case-id}/confirm".formatted(caseContext), linkedCaseId)
-              .sessionAttr("linkedCases", linkedCases))
+          .perform(
+              get(
+                      "/%s/sections/linked-cases/{linked-case-id}/confirm".formatted(caseContext),
+                      linkedCaseId)
+                  .sessionAttr("linkedCases", linkedCases))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/application-linked-case-confirm"))
@@ -559,10 +585,13 @@ class EditGeneralDetailsSectionControllerTest {
       final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
 
       mockMvc
-          .perform(post("/%s/sections/linked-cases/{linked-case-id}/confirm".formatted(caseContext), linkedCaseId)
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(USER_DETAILS, user)
-              .flashAttr("linkedCase", linkedCase))
+          .perform(
+              post(
+                      "/%s/sections/linked-cases/{linked-case-id}/confirm".formatted(caseContext),
+                      linkedCaseId)
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(USER_DETAILS, user)
+                  .flashAttr("linkedCase", linkedCase))
           .andDo(print())
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/%s/sections/linked-cases".formatted(caseContext)));
@@ -579,20 +608,26 @@ class EditGeneralDetailsSectionControllerTest {
       final UserDetail user = new UserDetail();
       final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
 
-      when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(
-          Mono.just(mockCommonLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE))
+          .thenReturn(Mono.just(mockCommonLookupDetail));
 
-      doAnswer(invocation -> {
-        final Errors errors = (Errors) invocation.getArguments()[1];
-        errors.reject("error.code", "Error message");
-        return null;
-      }).when(linkedCaseValidator).validate(any(), any());
+      doAnswer(
+              invocation -> {
+                final Errors errors = (Errors) invocation.getArguments()[1];
+                errors.reject("error.code", "Error message");
+                return null;
+              })
+          .when(linkedCaseValidator)
+          .validate(any(), any());
 
       mockMvc
-          .perform(post("/%s/sections/linked-cases/{linked-case-id}/confirm".formatted(caseContext), linkedCaseId)
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(USER_DETAILS, user)
-              .flashAttr("linkedCase", linkedCase))
+          .perform(
+              post(
+                      "/%s/sections/linked-cases/{linked-case-id}/confirm".formatted(caseContext),
+                      linkedCaseId)
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(USER_DETAILS, user)
+                  .flashAttr("linkedCase", linkedCase))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/application-linked-case-confirm"));
@@ -612,13 +647,15 @@ class EditGeneralDetailsSectionControllerTest {
       final ProviderDetail mockProviderDetail = new ProviderDetail();
       final CaseStatusLookupDetail mockCaseStatusValues = new CaseStatusLookupDetail();
 
-      when(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_STATUS)).thenReturn(
-          Mono.just(mockCommonLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_STATUS))
+          .thenReturn(Mono.just(mockCommonLookupDetail));
       when(providerService.getProvider(any())).thenReturn(Mono.just(mockProviderDetail));
       when(lookupService.getCaseStatusValues()).thenReturn(Mono.just(mockCaseStatusValues));
 
-      mockMvc.perform(get("/%s/sections/linked-cases/search".formatted(caseContext))
-              .sessionAttr(USER_DETAILS, buildUserDetail()))
+      mockMvc
+          .perform(
+              get("/%s/sections/linked-cases/search".formatted(caseContext))
+                  .sessionAttr(USER_DETAILS, buildUserDetail()))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/application-linked-case-search"));
@@ -637,23 +674,28 @@ class EditGeneralDetailsSectionControllerTest {
       final ProviderDetail mockProviderDetail = new ProviderDetail();
       final CaseStatusLookupDetail mockCaseStatusValues = new CaseStatusLookupDetail();
 
-      when(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_STATUS)).thenReturn(
-          Mono.just(mockCommonLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_APPLICATION_STATUS))
+          .thenReturn(Mono.just(mockCommonLookupDetail));
       when(providerService.getProvider(any())).thenReturn(Mono.just(mockProviderDetail));
       when(lookupService.getCaseStatusValues()).thenReturn(Mono.just(mockCaseStatusValues));
 
       final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
-      doAnswer(invocation -> {
-        final Errors errors = (Errors) invocation.getArguments()[1];
-        errors.reject("error.code", "Error message");
-        return null;
-      }).when(searchCriteriaValidator).validate(any(), any());
+      doAnswer(
+              invocation -> {
+                final Errors errors = (Errors) invocation.getArguments()[1];
+                errors.reject("error.code", "Error message");
+                return null;
+              })
+          .when(searchCriteriaValidator)
+          .validate(any(), any());
 
-      mockMvc.perform(post("/%s/sections/linked-cases/search".formatted(caseContext))
-              .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
-              .sessionAttr(USER_DETAILS, buildUserDetail())
-              .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
-              .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
+      mockMvc
+          .perform(
+              post("/%s/sections/linked-cases/search".formatted(caseContext))
+                  .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
+                  .sessionAttr(USER_DETAILS, buildUserDetail())
+                  .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
+                  .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/application-linked-case-search"));
@@ -666,11 +708,13 @@ class EditGeneralDetailsSectionControllerTest {
       final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
       when(applicationService.getCases(any(), any())).thenReturn(Collections.emptyList());
 
-      mockMvc.perform(post("/%s/sections/linked-cases/search".formatted(caseContext))
-              .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
-              .sessionAttr(USER_DETAILS, buildUserDetail())
-              .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
-              .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
+      mockMvc
+          .perform(
+              post("/%s/sections/linked-cases/search".formatted(caseContext))
+                  .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
+                  .sessionAttr(USER_DETAILS, buildUserDetail())
+                  .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
+                  .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/application-linked-case-search-no-results"));
@@ -684,20 +728,23 @@ class EditGeneralDetailsSectionControllerTest {
       when(applicationService.getCases(any(), any()))
           .thenThrow(new TooManyResultsException("test"));
 
-      mockMvc.perform(post("/%s/sections/linked-cases/search".formatted(caseContext))
-              .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
-              .sessionAttr(USER_DETAILS, buildUserDetail())
-              .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
-              .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
+      mockMvc
+          .perform(
+              post("/%s/sections/linked-cases/search".formatted(caseContext))
+                  .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
+                  .sessionAttr(USER_DETAILS, buildUserDetail())
+                  .sessionAttr("linkedCases", new ResultsDisplay<LinkedCaseResultRowDisplay>())
+                  .flashAttr(CASE_SEARCH_CRITERIA, caseSearchCriteria))
           .andDo(print())
           .andExpect(status().isOk())
-          .andExpect(view().name("application/sections/application-linked-case-search-too-many-results"));
+          .andExpect(
+              view().name("application/sections/application-linked-case-search-too-many-results"));
     }
   }
 
   @Nested
   @DisplayName("GET: /{caseContext}/sections/linked-cases/search/results")
-  class GetLinkedCasesSearchResultsTests{
+  class GetLinkedCasesSearchResultsTests {
     @ParameterizedTest
     @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result")
@@ -710,10 +757,12 @@ class EditGeneralDetailsSectionControllerTest {
 
       when(applicationMapper.toApplicationDetails(any())).thenReturn(linkedCaseSearchResults);
 
-      mockMvc.perform(get("/%s/sections/linked-cases/search/results".formatted(caseContext))
-              .param("page", String.valueOf(page))
-              .param("size", String.valueOf(size))
-              .flashAttr(CASE_SEARCH_RESULTS, caseSearchResults))
+      mockMvc
+          .perform(
+              get("/%s/sections/linked-cases/search/results".formatted(caseContext))
+                  .param("page", String.valueOf(page))
+                  .param("size", String.valueOf(size))
+                  .flashAttr(CASE_SEARCH_RESULTS, caseSearchResults))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/application-linked-case-search-results"))
@@ -725,7 +774,7 @@ class EditGeneralDetailsSectionControllerTest {
 
   @Nested
   @DisplayName("GET: /{caseContext}/sections/linked-cases/{case-reference-id}/add")
-  class GetAddLinkedCaseTests{
+  class GetAddLinkedCaseTests {
     @ParameterizedTest
     @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result")
@@ -737,16 +786,20 @@ class EditGeneralDetailsSectionControllerTest {
       baseApplication.setCaseReferenceNumber(caseReferenceId);
       applications.add(baseApplication);
       linkedCaseSearchResults.setContent(applications);
-      final LinkedCaseResultRowDisplay linkedCaseResultRowDisplay = new LinkedCaseResultRowDisplay();
+      final LinkedCaseResultRowDisplay linkedCaseResultRowDisplay =
+          new LinkedCaseResultRowDisplay();
 
-      when(resultDisplayMapper.toLinkedCaseResultRowDisplay(baseApplication)).thenReturn(
-          linkedCaseResultRowDisplay);
-      when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(
-          Mono.just(mockCommonLookupDetail));
+      when(resultDisplayMapper.toLinkedCaseResultRowDisplay(baseApplication))
+          .thenReturn(linkedCaseResultRowDisplay);
+      when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE))
+          .thenReturn(Mono.just(mockCommonLookupDetail));
 
       mockMvc
-          .perform(get("/%s/sections/linked-cases/{case-reference-id}/add".formatted(caseContext), caseReferenceId)
-              .sessionAttr(CASE_RESULTS_PAGE, linkedCaseSearchResults))
+          .perform(
+              get(
+                      "/%s/sections/linked-cases/{case-reference-id}/add".formatted(caseContext),
+                      caseReferenceId)
+                  .sessionAttr(CASE_RESULTS_PAGE, linkedCaseSearchResults))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/application-linked-case-add"))
@@ -767,16 +820,19 @@ class EditGeneralDetailsSectionControllerTest {
       final UserDetail user = new UserDetail();
       final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
 
-      mockMvc.perform(post("/%s/sections/linked-cases/add".formatted(caseContext))
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(USER_DETAILS, user)
-              .flashAttr("currentLinkedCase", linkedCase))
+      mockMvc
+          .perform(
+              post("/%s/sections/linked-cases/add".formatted(caseContext))
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(USER_DETAILS, user)
+                  .flashAttr("currentLinkedCase", linkedCase))
           .andDo(print())
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/%s/sections/linked-cases".formatted(caseContext)));
 
       verify(linkedCaseValidator, times(1)).validate(eq(linkedCase), any(BindingResult.class));
-      verify(applicationService, times(1)).addLinkedCase(eq(applicationId), eq(linkedCase), eq(user));
+      verify(applicationService, times(1))
+          .addLinkedCase(eq(applicationId), eq(linkedCase), eq(user));
     }
 
     @ParameterizedTest
@@ -787,34 +843,34 @@ class EditGeneralDetailsSectionControllerTest {
       final UserDetail user = new UserDetail();
       final LinkedCaseResultRowDisplay linkedCase = new LinkedCaseResultRowDisplay();
 
-      doAnswer(invocation -> {
-        final BindingResult bindingResult = invocation.getArgument(1);
-        bindingResult.rejectValue(
-            "relationToCase", "required.relationToCase",
-            "Please complete 'How is this application / case related to your application?'.");
-        return null;
-      }).when(linkedCaseValidator).validate(eq(linkedCase), any(BindingResult.class));
+      doAnswer(
+              invocation -> {
+                final BindingResult bindingResult = invocation.getArgument(1);
+                bindingResult.rejectValue(
+                    "relationToCase",
+                    "required.relationToCase",
+                    "Please complete 'How is this application / case related to your application?'.");
+                return null;
+              })
+          .when(linkedCaseValidator)
+          .validate(eq(linkedCase), any(BindingResult.class));
 
-      when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(
-          Mono.just(mockCommonLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE))
+          .thenReturn(Mono.just(mockCommonLookupDetail));
 
-      mockMvc.perform(post("/%s/sections/linked-cases/add".formatted(caseContext))
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(USER_DETAILS, user)
-              .flashAttr("currentLinkedCase", linkedCase))
+      mockMvc
+          .perform(
+              post("/%s/sections/linked-cases/add".formatted(caseContext))
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(USER_DETAILS, user)
+                  .flashAttr("currentLinkedCase", linkedCase))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/application-linked-case-add"))
           .andExpect(model().attributeHasFieldErrors("currentLinkedCase", "relationToCase"));
 
-      verify(applicationService, never()).addLinkedCase(
-          anyString(), any(LinkedCaseResultRowDisplay.class), any(UserDetail.class));
+      verify(applicationService, never())
+          .addLinkedCase(anyString(), any(LinkedCaseResultRowDisplay.class), any(UserDetail.class));
     }
   }
-
-
-
-
-
-
 }

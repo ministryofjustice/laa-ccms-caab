@@ -37,14 +37,11 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @ExtendWith(MockitoExtension.class)
 class EditClientEqualOpportunitiesMonitoringDetailsControllerTest {
 
-  @Mock
-  private LookupService lookupService;
+  @Mock private LookupService lookupService;
 
-  @Mock
-  private ClientEqualOpportunitiesMonitoringDetailsValidator validator;
+  @Mock private ClientEqualOpportunitiesMonitoringDetailsValidator validator;
 
-  @InjectMocks
-  private EditClientEqualOpportunitiesMonitoringDetailsController controller;
+  @InjectMocks private EditClientEqualOpportunitiesMonitoringDetailsController controller;
 
   private MockMvc mockMvc;
 
@@ -57,8 +54,10 @@ class EditClientEqualOpportunitiesMonitoringDetailsControllerTest {
 
   @BeforeEach
   void setUp() {
-    mockMvc = MockMvcBuilders.standaloneSetup(controller)
-        .setConversionService(getConversionService()).build();
+    mockMvc =
+        MockMvcBuilders.standaloneSetup(controller)
+            .setConversionService(getConversionService())
+            .build();
 
     monitoringDetails = new ClientFormDataMonitoringDetails();
 
@@ -77,14 +76,16 @@ class EditClientEqualOpportunitiesMonitoringDetailsControllerTest {
 
     @Test
     void testEditClientEqualOpportunitiesMonitoringGet() throws Exception {
-      when(lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN)).thenReturn(
-          Mono.just(ethnicityLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN))
+          .thenReturn(Mono.just(ethnicityLookupDetail));
 
-      when(lookupService.getCommonValues(COMMON_VALUE_DISABILITY)).thenReturn(
-          Mono.just(disabilityLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_DISABILITY))
+          .thenReturn(Mono.just(disabilityLookupDetail));
 
-      mockMvc.perform(get("/application/sections/client/details/equal-opportunities-monitoring")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+      mockMvc
+          .perform(
+              get("/application/sections/client/details/equal-opportunities-monitoring")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/client-equal-opportunities-monitoring"))
           .andExpect(model().attributeExists("ethnicOrigins", "disabilities"));
@@ -93,22 +94,29 @@ class EditClientEqualOpportunitiesMonitoringDetailsControllerTest {
     @Test
     void testEditClientEqualOpportunitiesMonitoringPostValidationError() throws Exception {
 
-      doAnswer(invocation -> {
-        Errors errors = (Errors) invocation.getArguments()[1];
-        errors.rejectValue("ethnicOrigin", "required.ethnicOrigin",
-            "Please complete 'Ethnic monitoring'.");
-        return null;
-      }).when(validator).validate(any(), any());
+      doAnswer(
+              invocation -> {
+                Errors errors = (Errors) invocation.getArguments()[1];
+                errors.rejectValue(
+                    "ethnicOrigin",
+                    "required.ethnicOrigin",
+                    "Please complete 'Ethnic monitoring'.");
+                return null;
+              })
+          .when(validator)
+          .validate(any(), any());
 
-      when(lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN)).thenReturn(
-          Mono.just(ethnicityLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN))
+          .thenReturn(Mono.just(ethnicityLookupDetail));
 
-      when(lookupService.getCommonValues(COMMON_VALUE_DISABILITY)).thenReturn(
-          Mono.just(disabilityLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_DISABILITY))
+          .thenReturn(Mono.just(disabilityLookupDetail));
 
-      mockMvc.perform(post("/application/sections/client/details/equal-opportunities-monitoring")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("monitoringDetails", monitoringDetails))
+      mockMvc
+          .perform(
+              post("/application/sections/client/details/equal-opportunities-monitoring")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("monitoringDetails", monitoringDetails))
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/client-equal-opportunities-monitoring"))
           .andExpect(model().attributeExists("ethnicOrigins", "disabilities"));
@@ -119,9 +127,11 @@ class EditClientEqualOpportunitiesMonitoringDetailsControllerTest {
       monitoringDetails.setDisability("TEST");
       monitoringDetails.setEthnicOrigin("TEST");
 
-      mockMvc.perform(post("/application/sections/client/details/equal-opportunities-monitoring")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("monitoringDetails", monitoringDetails))
+      mockMvc
+          .perform(
+              post("/application/sections/client/details/equal-opportunities-monitoring")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("monitoringDetails", monitoringDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/sections/client/details/summary"));
     }
@@ -133,14 +143,16 @@ class EditClientEqualOpportunitiesMonitoringDetailsControllerTest {
 
     @Test
     void testEditClientEqualOpportunitiesMonitoringGet() throws Exception {
-      when(lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN)).thenReturn(
-          Mono.just(ethnicityLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN))
+          .thenReturn(Mono.just(ethnicityLookupDetail));
 
-      when(lookupService.getCommonValues(COMMON_VALUE_DISABILITY)).thenReturn(
-          Mono.just(disabilityLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_DISABILITY))
+          .thenReturn(Mono.just(disabilityLookupDetail));
 
-      mockMvc.perform(get("/amendments/sections/client/details/equal-opportunities-monitoring")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+      mockMvc
+          .perform(
+              get("/amendments/sections/client/details/equal-opportunities-monitoring")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/client-equal-opportunities-monitoring"))
           .andExpect(model().attributeExists("ethnicOrigins", "disabilities"));
@@ -149,22 +161,29 @@ class EditClientEqualOpportunitiesMonitoringDetailsControllerTest {
     @Test
     void testEditClientEqualOpportunitiesMonitoringPostValidationError() throws Exception {
 
-      doAnswer(invocation -> {
-        Errors errors = (Errors) invocation.getArguments()[1];
-        errors.rejectValue("ethnicOrigin", "required.ethnicOrigin",
-            "Please complete 'Ethnic monitoring'.");
-        return null;
-      }).when(validator).validate(any(), any());
+      doAnswer(
+              invocation -> {
+                Errors errors = (Errors) invocation.getArguments()[1];
+                errors.rejectValue(
+                    "ethnicOrigin",
+                    "required.ethnicOrigin",
+                    "Please complete 'Ethnic monitoring'.");
+                return null;
+              })
+          .when(validator)
+          .validate(any(), any());
 
-      when(lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN)).thenReturn(
-          Mono.just(ethnicityLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_ETHNIC_ORIGIN))
+          .thenReturn(Mono.just(ethnicityLookupDetail));
 
-      when(lookupService.getCommonValues(COMMON_VALUE_DISABILITY)).thenReturn(
-          Mono.just(disabilityLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_DISABILITY))
+          .thenReturn(Mono.just(disabilityLookupDetail));
 
-      mockMvc.perform(post("/amendments/sections/client/details/equal-opportunities-monitoring")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("monitoringDetails", monitoringDetails))
+      mockMvc
+          .perform(
+              post("/amendments/sections/client/details/equal-opportunities-monitoring")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("monitoringDetails", monitoringDetails))
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/client-equal-opportunities-monitoring"))
           .andExpect(model().attributeExists("ethnicOrigins", "disabilities"));
@@ -175,9 +194,11 @@ class EditClientEqualOpportunitiesMonitoringDetailsControllerTest {
       monitoringDetails.setDisability("TEST");
       monitoringDetails.setEthnicOrigin("TEST");
 
-      mockMvc.perform(post("/amendments/sections/client/details/equal-opportunities-monitoring")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("monitoringDetails", monitoringDetails))
+      mockMvc
+          .perform(
+              post("/amendments/sections/client/details/equal-opportunities-monitoring")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("monitoringDetails", monitoringDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/amendments/sections/client/details/summary"));
     }

@@ -25,29 +25,26 @@ import uk.gov.laa.ccms.data.model.NotificationInfo;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-/**
- * Controller for handling redirects for Notifications and Actions searches.
- */
+/** Controller for handling redirects for Notifications and Actions searches. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(value = {NOTIFICATION_SEARCH_CRITERIA, USER_DETAILS,
-    NOTIFICATIONS_SEARCH_RESULTS})
+@SessionAttributes(
+    value = {NOTIFICATION_SEARCH_CRITERIA, USER_DETAILS, NOTIFICATIONS_SEARCH_RESULTS})
 public class NotificationsSearchResultsController {
 
   private final NotificationService notificationService;
 
-
   /**
    * Displays the search results of notifications.
    *
-   * @param page     Page number for pagination.
-   * @param size     Size of results per page.
+   * @param page Page number for pagination.
+   * @param size Size of results per page.
    * @param pageSort Sort criteria for the search.
    * @param criteria Criteria used for the search.
-   * @param user     The logged-in user.
-   * @param request  The HTTP request.
-   * @param model    Model to store attributes for the view.
+   * @param user The logged-in user.
+   * @param request The HTTP request.
+   * @param model Model to store attributes for the view.
    * @return The appropriate view based on the search results.
    */
   @GetMapping("/notifications/search-results")
@@ -71,10 +68,10 @@ public class NotificationsSearchResultsController {
         notificationService
             .getNotifications(criteria, user.getProvider().getId(), page, size)
             .block();
-    List<NotificationInfo> notifications = Optional.ofNullable(
-            notificationsResponse)
-        .map(Notifications::getContent)
-        .orElseThrow(() -> new CaabApplicationException("Error retrieving notifications"));
+    List<NotificationInfo> notifications =
+        Optional.ofNullable(notificationsResponse)
+            .map(Notifications::getContent)
+            .orElseThrow(() -> new CaabApplicationException("Error retrieving notifications"));
     if (notifications.isEmpty()) {
       return "notifications/actions-and-notifications-no-results";
     }
@@ -87,5 +84,4 @@ public class NotificationsSearchResultsController {
     model.addAttribute(NOTIFICATIONS_SEARCH_RESULTS, notificationsResponse);
     return "notifications/actions-and-notifications";
   }
-
 }

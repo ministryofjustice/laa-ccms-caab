@@ -16,8 +16,7 @@ import uk.gov.laa.ccms.caab.bean.provider.ProviderFirmFormData;
 @ExtendWith(SpringExtension.class)
 public class ProviderFirmValidatorTest {
 
-  @InjectMocks
-  private ProviderFirmValidator validator;
+  @InjectMocks private ProviderFirmValidator validator;
 
   private ProviderFirmFormData providerFirmFormData;
 
@@ -25,7 +24,9 @@ public class ProviderFirmValidatorTest {
 
   @BeforeEach
   public void setUp() {
-    providerFirmFormData = new ProviderFirmFormData(); // Assuming that the default constructor sets all fields to null.
+    providerFirmFormData =
+        new ProviderFirmFormData(); // Assuming that the default constructor sets all fields to
+    // null.
     errors = new BeanPropertyBindingResult(providerFirmFormData, "providerFirmFormData");
   }
 
@@ -53,5 +54,4 @@ public class ProviderFirmValidatorTest {
     validator.validate(providerFirmFormData, errors);
     assertFalse(errors.hasErrors());
   }
-
 }

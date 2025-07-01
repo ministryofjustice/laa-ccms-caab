@@ -24,9 +24,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 
-/**
- * Service class to handle Opponents.
- */
+/** Service class to handle Opponents. */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -43,15 +41,14 @@ public class OpponentService {
 
   private final OpponentMapper opponentMapper;
 
-
   /**
    * Searches and retrieves organisation details based on provided search criteria.
    *
-   * @param searchCriteria        The search criteria to use when fetching organisations.
-   * @param loginId               The login identifier for the user.
-   * @param userType              Type of the user (e.g., admin, user).
-   * @param page                  The page number for pagination.
-   * @param size                  The size or number of records per page.
+   * @param searchCriteria The search criteria to use when fetching organisations.
+   * @param loginId The login identifier for the user.
+   * @param userType Type of the user (e.g., admin, user).
+   * @param page The page number for pagination.
+   * @param size The size or number of records per page.
    * @return A Mono wrapping the OrganisationDetails.
    */
   public ResultsDisplay<OrganisationResultRowDisplay> getOrganisations(
@@ -63,57 +60,52 @@ public class OpponentService {
     log.debug("SOA Organisations to get using criteria: {}", searchCriteria);
 
     OrganisationDetails organisationDetails =
-        Optional.ofNullable(soaApiClient.getOrganisations(
-                searchCriteria,
-                loginId,
-                userType,
-                page,
-                size).block())
+        Optional.ofNullable(
+                soaApiClient
+                    .getOrganisations(searchCriteria, loginId, userType, page, size)
+                    .block())
             .orElseThrow(() -> new CaabApplicationException("Failed to query for organisations"));
 
     if (organisationDetails.getTotalElements()
         > searchConstants.getMaxSearchResultsOrganisations()) {
       throw new TooManyResultsException(
-          "Organisation Search returned %s results".formatted(
-              organisationDetails.getTotalElements()));
+          "Organisation Search returned %s results"
+              .formatted(organisationDetails.getTotalElements()));
     }
 
-    CommonLookupDetail organisationTypes = Optional.ofNullable(
-            lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES).block())
-        .orElse(new CommonLookupDetail());
+    CommonLookupDetail organisationTypes =
+        Optional.ofNullable(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES).block())
+            .orElse(new CommonLookupDetail());
 
     return resultDisplayMapper.toOrganisationResultsDisplay(
-        organisationDetails,
-        organisationTypes.getContent());
+        organisationDetails, organisationTypes.getContent());
   }
 
   /**
    * Get a shared organisation opponent for the supplied id.
    *
-   * @param organisationId        The id of the organisation to retrieve and convert to an opponent.
-   * @param loginId               The login identifier for the user.
-   * @param userType              Type of the user (e.g., admin, user).
+   * @param organisationId The id of the organisation to retrieve and convert to an opponent.
+   * @param loginId The login identifier for the user.
+   * @param userType Type of the user (e.g., admin, user).
    * @return AbstractOpponentFormData based on the organisation data.
    */
   public OrganisationOpponentFormData getOrganisationOpponent(
-      final String organisationId,
-      final String loginId,
-      final String userType) {
+      final String organisationId, final String loginId, final String userType) {
 
     OrganisationDetail organisation =
-        Optional.ofNullable(soaApiClient.getOrganisation(
-                organisationId,
-                loginId,
-                userType).block())
+        Optional.ofNullable(soaApiClient.getOrganisation(organisationId, loginId, userType).block())
             .orElseThrow(() -> new CaabApplicationException("Failed to query for organisation"));
 
     // Lookup the display value for the organisation type.
     CommonLookupValueDetail orgType =
-        lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES, organisation.getType())
-            .map(commonLookupValueDetail -> commonLookupValueDetail
-                .orElse(new CommonLookupValueDetail()
-                    .code(organisation.getType())
-                    .description(organisation.getType())))
+        lookupService
+            .getCommonValue(COMMON_VALUE_ORGANISATION_TYPES, organisation.getType())
+            .map(
+                commonLookupValueDetail ->
+                    commonLookupValueDetail.orElse(
+                        new CommonLookupValueDetail()
+                            .code(organisation.getType())
+                            .description(organisation.getType())))
             .blockOptional()
             .orElseThrow(
                 () -> new CaabApplicationException("Failed to retrieve organisation type lookup"));
@@ -132,10 +124,10 @@ public class OpponentService {
       final AbstractOpponentFormData opponentFormData,
       final UserDetail userDetail) {
 
-    caabApiClient.updateOpponent(
-        opponentId,
-        opponentMapper.toOpponent(opponentFormData),
-        userDetail.getLoginId()).block();
+    caabApiClient
+        .updateOpponent(
+            opponentId, opponentMapper.toOpponent(opponentFormData), userDetail.getLoginId())
+        .block();
   }
 
   /**
@@ -144,10 +136,7 @@ public class OpponentService {
    * @param opponentId the ID of the opponent to delete
    * @param user the user details initiating the deletion
    */
-  public void deleteOpponent(
-      final Integer opponentId,
-      final UserDetail user) {
+  public void deleteOpponent(final Integer opponentId, final UserDetail user) {
     caabApiClient.deleteOpponent(opponentId, user.getLoginId()).block();
   }
-
 }

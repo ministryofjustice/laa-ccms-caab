@@ -2,9 +2,7 @@ package uk.gov.laa.ccms.caab.model;
 
 import lombok.Data;
 
-/**
- * Represents the display data for a linked case result row.
- */
+/** Represents the display data for a linked case result row. */
 @Data
 public class LinkedCaseResultRowDisplay {
 
@@ -37,5 +35,4 @@ public class LinkedCaseResultRowDisplay {
 
   /** Current status of the case. */
   private String status;
-
 }

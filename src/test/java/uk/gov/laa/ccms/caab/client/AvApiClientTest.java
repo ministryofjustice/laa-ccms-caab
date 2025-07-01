@@ -19,14 +19,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class AvApiClientTest {
 
-  @Mock
-  private ClamAVClient clamAvClient;
+  @Mock private ClamAVClient clamAvClient;
 
-  @Mock
-  private AvApiClientErrorHandler avApiClientErrorHandler;
+  @Mock private AvApiClientErrorHandler avApiClientErrorHandler;
 
-  @InjectMocks
-  private AvApiClient avApiClient;
+  @InjectMocks private AvApiClient avApiClient;
 
   @Test
   void scanInputStream_cleanInput_noExceptionThrown() throws Exception {
@@ -43,8 +40,8 @@ public class AvApiClientTest {
   void scanInputStream_nonCleanInput_exceptionThrown() throws Exception {
     InputStream inputStream = InputStream.nullInputStream();
     String expectedMsg = "hello";
-    byte[] expectedResponse = (STREAM_INDICATOR + VIRUS_FOUND_INDICATOR + expectedMsg)
-        .getBytes(StandardCharsets.UTF_8);
+    byte[] expectedResponse =
+        (STREAM_INDICATOR + VIRUS_FOUND_INDICATOR + expectedMsg).getBytes(StandardCharsets.UTF_8);
     when(clamAvClient.scan(inputStream)).thenReturn(expectedResponse);
 
     avApiClient.scan(inputStream);
@@ -75,5 +72,4 @@ public class AvApiClientTest {
 
     verify(avApiClientErrorHandler).handleVirusFoundError(expectedMsg);
   }
-
 }

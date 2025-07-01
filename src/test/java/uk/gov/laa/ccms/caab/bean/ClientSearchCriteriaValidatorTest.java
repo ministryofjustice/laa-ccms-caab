@@ -22,8 +22,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientSearchCriteriaValidator
 @ExtendWith(SpringExtension.class)
 class ClientSearchCriteriaValidatorTest {
 
-  @InjectMocks
-  private ClientSearchCriteriaValidator validator;
+  @InjectMocks private ClientSearchCriteriaValidator validator;
   private ClientSearchCriteria clientSearchCriteria;
   private Errors errors;
 
@@ -52,7 +51,6 @@ class ClientSearchCriteriaValidatorTest {
     assertNotNull(errors.getFieldError("forename"));
     assertEquals("required.forename", errors.getFieldError("forename").getCode());
   }
-
 
   @Test
   void validateInvalidForenameWithDoubleSpace() {
@@ -134,11 +132,7 @@ class ClientSearchCriteriaValidatorTest {
   }
 
   @ParameterizedTest
-  @CsvSource({
-      "abc/12/1990, dateOfBirth",
-      "1/ab/1990, dateOfBirth",
-      "1/12/abcd, dateOfBirth"
-  })
+  @CsvSource({"abc/12/1990, dateOfBirth", "1/ab/1990, dateOfBirth", "1/12/abcd, dateOfBirth"})
   void testValidateDateOfBirth_InvalidNumeric(String dobDay, String field) {
     clientSearchCriteria.setDateOfBirth(dobDay);
 
@@ -149,11 +143,9 @@ class ClientSearchCriteriaValidatorTest {
   }
 
   @ParameterizedTest
-  @CsvSource({"1, AB123456C",
-      "2, TEST",
-      "3, TEST"})
-  void testValidateUniqueIdentifierType_Valid(Integer uniqueIdentifierType,
-                                              String uniqueIdentifierValue) {
+  @CsvSource({"1, AB123456C", "2, TEST", "3, TEST"})
+  void testValidateUniqueIdentifierType_Valid(
+      Integer uniqueIdentifierType, String uniqueIdentifierValue) {
     clientSearchCriteria.setUniqueIdentifierType(uniqueIdentifierType);
     clientSearchCriteria.setUniqueIdentifierValue(uniqueIdentifierValue);
     validator.validateUniqueIdentifierType(clientSearchCriteria, errors);
@@ -167,35 +159,32 @@ class ClientSearchCriteriaValidatorTest {
     validator.validateUniqueIdentifierType(clientSearchCriteria, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("uniqueIdentifierValue"));
-    assertEquals("invalid.uniqueIdentifierValue",
-        errors.getFieldError("uniqueIdentifierValue").getCode());
+    assertEquals(
+        "invalid.uniqueIdentifierValue", errors.getFieldError("uniqueIdentifierValue").getCode());
   }
 
   @ParameterizedTest
   @CsvSource({"----"})
-  void testValidateUniqueIdentifierType_InvalidHomeOfficeReference(
-      String uniqueIdentifierValue) {
+  void testValidateUniqueIdentifierType_InvalidHomeOfficeReference(String uniqueIdentifierValue) {
     clientSearchCriteria.setUniqueIdentifierType(UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE);
     clientSearchCriteria.setUniqueIdentifierValue(uniqueIdentifierValue);
     validator.validateUniqueIdentifierType(clientSearchCriteria, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("uniqueIdentifierValue"));
-    assertEquals("invalid.uniqueIdentifierValue",
-        errors.getFieldError("uniqueIdentifierValue").getCode());
+    assertEquals(
+        "invalid.uniqueIdentifierValue", errors.getFieldError("uniqueIdentifierValue").getCode());
   }
 
   @ParameterizedTest
-  @CsvSource({"TEST  TEST",
-      "----"})
-  void testValidateUniqueIdentifierType_InvalidCaseReferenceNumber(
-      String uniqueIdentifierValue) {
+  @CsvSource({"TEST  TEST", "----"})
+  void testValidateUniqueIdentifierType_InvalidCaseReferenceNumber(String uniqueIdentifierValue) {
     clientSearchCriteria.setUniqueIdentifierType(UNIQUE_IDENTIFIER_CASE_REFERENCE_NUMBER);
     clientSearchCriteria.setUniqueIdentifierValue(uniqueIdentifierValue);
     validator.validateUniqueIdentifierType(clientSearchCriteria, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("uniqueIdentifierValue"));
-    assertEquals("invalid.uniqueIdentifierValue",
-        errors.getFieldError("uniqueIdentifierValue").getCode());
+    assertEquals(
+        "invalid.uniqueIdentifierValue", errors.getFieldError("uniqueIdentifierValue").getCode());
   }
 
   @Test
@@ -211,15 +200,15 @@ class ClientSearchCriteriaValidatorTest {
 
   @ParameterizedTest
   @CsvSource({
-      "'','','', 3",
-      "'',Doe,12/1990,2",
-      "John,'',12/1990,2",
-      "John,Doe,1990,1",
-      "John,Doe,1/1990,1",
-      "John,Doe,1/12/,1",
+    "'','','', 3",
+    "'',Doe,12/1990,2",
+    "John,'',12/1990,2",
+    "John,Doe,1990,1",
+    "John,Doe,1/1990,1",
+    "John,Doe,1/12/,1",
   })
-  void testValidate_Invalid(String forename, String surname, String dobDay,
-                            int expectedErrorCount) {
+  void testValidate_Invalid(
+      String forename, String surname, String dobDay, int expectedErrorCount) {
     clientSearchCriteria.setForename(forename);
     clientSearchCriteria.setSurname(surname);
     clientSearchCriteria.setDateOfBirth(dobDay);

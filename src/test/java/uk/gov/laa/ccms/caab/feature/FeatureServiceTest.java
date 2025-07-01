@@ -19,11 +19,9 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 public class FeatureServiceTest {
 
-  @Mock
-  FeatureProperties featureProperties;
+  @Mock FeatureProperties featureProperties;
 
-  @InjectMocks
-  FeatureService featureService;
+  @InjectMocks FeatureService featureService;
 
   @ParameterizedTest
   @CsvSource(

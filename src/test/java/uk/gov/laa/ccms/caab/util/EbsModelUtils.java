@@ -76,30 +76,27 @@ public final class EbsModelUtils {
     return buildProviderDetail("1", "2", "3");
   }
 
-  public static ProviderDetail buildProviderDetail(String providerOfficeId,
-      String feeEarnerContactId, String supervisorContactId) {
+  public static ProviderDetail buildProviderDetail(
+      String providerOfficeId, String feeEarnerContactId, String supervisorContactId) {
     return new ProviderDetail()
-        .addOfficesItem(new OfficeDetail()
-            .id(100)
-            .name("office 1"))
-        .addOfficesItem(new OfficeDetail()
-            .id(101)
-            .name("office 2")
-            .addFeeEarnersItem(
-              new ContactDetail()
-                .id(102)
-                .name("b fee earner")))
-        .addOfficesItem(new OfficeDetail()
-            .id(Integer.parseInt(providerOfficeId))
-            .name("office 3")
-            .addFeeEarnersItem(
-                new ContactDetail()
-                    .id(Integer.parseInt(feeEarnerContactId))
-                    .name("a fee earner"))
-            .addFeeEarnersItem(
-                new ContactDetail()
-                    .id(Integer.parseInt(supervisorContactId))
-                    .name("c supervisor")));
+        .addOfficesItem(new OfficeDetail().id(100).name("office 1"))
+        .addOfficesItem(
+            new OfficeDetail()
+                .id(101)
+                .name("office 2")
+                .addFeeEarnersItem(new ContactDetail().id(102).name("b fee earner")))
+        .addOfficesItem(
+            new OfficeDetail()
+                .id(Integer.parseInt(providerOfficeId))
+                .name("office 3")
+                .addFeeEarnersItem(
+                    new ContactDetail()
+                        .id(Integer.parseInt(feeEarnerContactId))
+                        .name("a fee earner"))
+                .addFeeEarnersItem(
+                    new ContactDetail()
+                        .id(Integer.parseInt(supervisorContactId))
+                        .name("c supervisor")));
   }
 
   public static PriorAuthorityTypeDetails buildPriorAuthorityTypeDetails(String itemDataType) {
@@ -142,12 +139,7 @@ public final class EbsModelUtils {
   }
 
   public static BaseProvider buildBaseProvider() {
-    return new BaseProvider()
-        .id(123)
-        .addOfficesItem(
-            new BaseOffice()
-                .id(1)
-                .name("Office 1"));
+    return new BaseProvider().id(123).addOfficesItem(new BaseOffice().id(1).name("Office 1"));
   }
 
   public static CategoryOfLawLookupValueDetail buildCategoryOfLawLookupValueDetail(
@@ -161,14 +153,11 @@ public final class EbsModelUtils {
   public static RelationshipToCaseLookupDetail buildRelationshipToCaseLookupDetail() {
     return new RelationshipToCaseLookupDetail()
         .addContentItem(
-            new RelationshipToCaseLookupValueDetail()
-                .code("relToCase")
-                .copyParty(Boolean.TRUE));
+            new RelationshipToCaseLookupValueDetail().code("relToCase").copyParty(Boolean.TRUE));
   }
 
   public static CaseReferenceSummary buildCaseReferenceSummary() {
-    return new CaseReferenceSummary()
-        .caseReferenceNumber(UUID.randomUUID().toString());
+    return new CaseReferenceSummary().caseReferenceNumber(UUID.randomUUID().toString());
   }
 
   public static CaseSummary buildCaseSummary() {
@@ -187,7 +176,7 @@ public final class EbsModelUtils {
         .firstName("firstname")
         .surname("surn");
   }
-  
+
   // Case Detail stuff below this line
   public static CaseDetail buildCaseDetail(String appType) {
     return new CaseDetail()
@@ -211,9 +200,9 @@ public final class EbsModelUtils {
                 .devolvedPowersDate(LocalDate.now())
                 .addExternalResourcesItem(
                     new ExternalResource()
-                        .costCeiling(Arrays.asList(
-                            buildCostLimitation("ext1"),
-                            buildCostLimitation("ext2"))))
+                        .costCeiling(
+                            Arrays.asList(
+                                buildCostLimitation("ext1"), buildCostLimitation("ext2"))))
                 .fixedHearingDateInd(Boolean.TRUE)
                 .highProfileCaseInd(Boolean.TRUE)
                 .larDetails(
@@ -232,7 +221,7 @@ public final class EbsModelUtils {
                         .contactDetails(buildContactDetail("prov"))
                         .providerOfficeId("11111")
                         .contactUserId(buildUserDetail("contact"))
-                        .providerFirmId("12345")// Defined as String, but data is numeric in db!
+                        .providerFirmId("12345") // Defined as String, but data is numeric in db!
                         .providerCaseReferenceNumber("provcaseref123")
                         .feeEarnerContactId("22222")
                         .supervisorContactId("33333"))
@@ -243,15 +232,13 @@ public final class EbsModelUtils {
         .addAwardsItem(buildFinancialAward())
         .addAwardsItem(buildLandAward())
         .addAwardsItem(buildOtherAssetAward())
-        .addCaseDocsItem(
-            new CaseDoc()
-                .ccmsDocumentId("docId")
-                .documentSubject("thesub"))
+        .addCaseDocsItem(new CaseDoc().ccmsDocumentId("docId").documentSubject("thesub"))
         .caseReferenceNumber("caseref")
-        .caseStatus(new CaseStatus()
-            .actualCaseStatus("actualstat")
-            .displayCaseStatus("displaystat")
-            .statusUpdateInd(Boolean.TRUE))
+        .caseStatus(
+            new CaseStatus()
+                .actualCaseStatus("actualstat")
+                .displayCaseStatus("displaystat")
+                .statusUpdateInd(Boolean.TRUE))
         .certificateDate(LocalDate.now())
         .certificateType("certtype")
         .dischargeStatus(
@@ -270,9 +257,7 @@ public final class EbsModelUtils {
                 .dateLastUpdated(LocalDateTime.now())
                 .lastUpdatedBy(buildUserDetail("lastUpd")))
         .undertakingAmount(BigDecimal.TEN);
-
   }
-
 
   public static Proceeding buildProceedingDetail(String status) {
     return new Proceeding()
@@ -379,8 +364,6 @@ public final class EbsModelUtils {
         .title("mr");
   }
 
-
-
   public static LinkedCase buildLinkedCase() {
     return new LinkedCase()
         .caseReferenceNumber("lcaseref")
@@ -415,21 +398,17 @@ public final class EbsModelUtils {
         .province(prefix + "prov")
         .state(prefix + "st");
   }
-  
+
   public static PriorAuthority buildPriorAuthority() {
     return new PriorAuthority()
         .assessedAmount(BigDecimal.TEN)
         .decisionStatus("dstat")
         .description("descr")
-        .addDetailsItem(
-            new PriorAuthorityAttribute()
-                .name("thecode")
-                .value("attval"))
+        .addDetailsItem(new PriorAuthorityAttribute().name("thecode").value("attval"))
         .priorAuthorityType("prauthtype")
         .reasonForRequest("requestreason")
         .requestAmount(BigDecimal.ONE);
   }
-
 
   public static CostLimitation buildCostLimitation(String prefix) {
     return new CostLimitation()
@@ -441,16 +420,12 @@ public final class EbsModelUtils {
         .billingProviderName(prefix + "billprovname");
   }
 
-  public static AssessmentResult buildAssessmentResult(
-      String prefix) {
+  public static AssessmentResult buildAssessmentResult(String prefix) {
     return new AssessmentResult()
         .defaultInd(Boolean.TRUE)
         .date(LocalDate.now())
         .assessmentId(prefix + "assessid")
-        .addResultsItem(
-            new OpaGoal()
-                .attributeValue(prefix + "val")
-                .attribute(prefix + "att"))
+        .addResultsItem(new OpaGoal().attributeValue(prefix + "val").attribute(prefix + "att"))
         .addAssessmentDetailsItem(
             new AssessmentScreen()
                 .caption(prefix + "cap")
@@ -464,8 +439,7 @@ public final class EbsModelUtils {
                             new OpaInstance()
                                 .caption(prefix + "capti")
                                 .instanceLabel(prefix + "label")
-                                .addAttributesItem(
-                                    buildOpaAttribute(prefix)))));
+                                .addAttributesItem(buildOpaAttribute(prefix)))));
   }
 
   public static OpaAttribute buildOpaAttribute(final String prefix) {
@@ -477,9 +451,6 @@ public final class EbsModelUtils {
         .responseValue(prefix + "resval")
         .caption(prefix + "caption");
   }
-
-
-
 
   public static Award buildCostAward() {
     return new Award()
@@ -554,10 +525,7 @@ public final class EbsModelUtils {
                         .addressLine2("add2")
                         .addressLine3("add3"))
                 .valuation(
-                    new Valuation()
-                        .amount(BigDecimal.TEN)
-                        .criteria("crit")
-                        .date(LocalDate.now()))
+                    new Valuation().amount(BigDecimal.TEN).criteria("crit").date(LocalDate.now()))
                 .disputedPercentage(BigDecimal.ZERO)
                 .awardedPercentage(BigDecimal.TEN)
                 .mortgageAmountDue(BigDecimal.ONE)
@@ -596,10 +564,7 @@ public final class EbsModelUtils {
                 .statChargeExemptReason("exempt")
                 .timeRelatedAward(buildTimeRelatedAward())
                 .valuation(
-                    new Valuation()
-                        .amount(BigDecimal.TEN)
-                        .criteria("crit")
-                        .date(LocalDate.now())));
+                    new Valuation().amount(BigDecimal.TEN).criteria("crit").date(LocalDate.now())));
   }
 
   public static TimeRelatedAward buildTimeRelatedAward() {
@@ -616,10 +581,7 @@ public final class EbsModelUtils {
     return new Recovery()
         .awardValue(BigDecimal.ONE)
         .leaveOfCourtReqdInd(Boolean.TRUE)
-        .offeredAmount(
-            new OfferedAmount()
-                .amount(BigDecimal.TEN)
-                .conditionsOfOffer("cond1"))
+        .offeredAmount(new OfferedAmount().amount(BigDecimal.TEN).conditionsOfOffer("cond1"))
         .recoveredAmount(
             new RecoveredAmount()
                 .client(
@@ -642,18 +604,22 @@ public final class EbsModelUtils {
 
   public static AwardTypeLookupDetail buildAwardTypeLookupDetail(CaseDetail soaCase) {
     return new AwardTypeLookupDetail()
-        .addContentItem(new AwardTypeLookupValueDetail()
-            .awardType(AWARD_TYPE_COST)
-            .code(soaCase.getAwards().getFirst().getAwardType()))
-        .addContentItem(new AwardTypeLookupValueDetail()
-            .awardType(AWARD_TYPE_FINANCIAL)
-            .code(soaCase.getAwards().get(1).getAwardType()))
-        .addContentItem(new AwardTypeLookupValueDetail()
-            .awardType(AWARD_TYPE_LAND)
-            .code(soaCase.getAwards().get(2).getAwardType()))
-        .addContentItem(new AwardTypeLookupValueDetail()
-            .awardType(AWARD_TYPE_OTHER_ASSET)
-            .code(soaCase.getAwards().get(3).getAwardType()));
+        .addContentItem(
+            new AwardTypeLookupValueDetail()
+                .awardType(AWARD_TYPE_COST)
+                .code(soaCase.getAwards().getFirst().getAwardType()))
+        .addContentItem(
+            new AwardTypeLookupValueDetail()
+                .awardType(AWARD_TYPE_FINANCIAL)
+                .code(soaCase.getAwards().get(1).getAwardType()))
+        .addContentItem(
+            new AwardTypeLookupValueDetail()
+                .awardType(AWARD_TYPE_LAND)
+                .code(soaCase.getAwards().get(2).getAwardType()))
+        .addContentItem(
+            new AwardTypeLookupValueDetail()
+                .awardType(AWARD_TYPE_OTHER_ASSET)
+                .code(soaCase.getAwards().get(3).getAwardType()));
   }
 
   public static ContactDetails buildContactDetail(String prefix) {
@@ -669,8 +635,5 @@ public final class EbsModelUtils {
         .telephoneWork(prefix + "telwork123");
   }
 
-  private EbsModelUtils() {
-  }
-
-
+  private EbsModelUtils() {}
 }

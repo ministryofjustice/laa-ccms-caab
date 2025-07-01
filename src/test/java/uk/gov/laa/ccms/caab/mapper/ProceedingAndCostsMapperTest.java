@@ -46,11 +46,13 @@ class ProceedingAndCostsMapperTest {
   @Test
   void testToProceeding_newProceeding() {
     // Create the form data objects with example values
-    final ProceedingFormDataMatterTypeDetails matterTypeDetails = new ProceedingFormDataMatterTypeDetails();
+    final ProceedingFormDataMatterTypeDetails matterTypeDetails =
+        new ProceedingFormDataMatterTypeDetails();
     matterTypeDetails.setMatterType("MT001");
     matterTypeDetails.setMatterTypeDisplayValue("Matter Type 1");
 
-    final ProceedingFormDataProceedingDetails proceedingDetails = new ProceedingFormDataProceedingDetails();
+    final ProceedingFormDataProceedingDetails proceedingDetails =
+        new ProceedingFormDataProceedingDetails();
     proceedingDetails.setProceedingType("PT001");
     proceedingDetails.setProceedingTypeDisplayValue("ProceedingDetail Type 1");
     proceedingDetails.setProceedingDescription("Description");
@@ -74,20 +76,31 @@ class ProceedingAndCostsMapperTest {
     final String stage = "Initial";
 
     // Call the mapper method
-    final ProceedingDetail proceeding = mapper.toProceeding(proceedingFlowFormData, costLimitation, stage);
+    final ProceedingDetail proceeding =
+        mapper.toProceeding(proceedingFlowFormData, costLimitation, stage);
 
     // Assert the mapped values
     assertEquals(matterTypeDetails.getMatterType(), proceeding.getMatterType().getId());
-    assertEquals(matterTypeDetails.getMatterTypeDisplayValue(), proceeding.getMatterType().getDisplayValue());
+    assertEquals(
+        matterTypeDetails.getMatterTypeDisplayValue(),
+        proceeding.getMatterType().getDisplayValue());
     assertEquals(proceedingDetails.getProceedingType(), proceeding.getProceedingType().getId());
-    assertEquals(proceedingDetails.getProceedingTypeDisplayValue(), proceeding.getProceedingType().getDisplayValue());
+    assertEquals(
+        proceedingDetails.getProceedingTypeDisplayValue(),
+        proceeding.getProceedingType().getDisplayValue());
     assertEquals(proceedingDetails.getProceedingDescription(), proceeding.getDescription());
     assertEquals(proceedingDetails.getLarScope(), proceeding.getLarScope());
-    assertEquals(furtherDetails.getClientInvolvementType(), proceeding.getClientInvolvement().getId());
-    assertEquals(furtherDetails.getClientInvolvementTypeDisplayValue(), proceeding.getClientInvolvement().getDisplayValue());
+    assertEquals(
+        furtherDetails.getClientInvolvementType(), proceeding.getClientInvolvement().getId());
+    assertEquals(
+        furtherDetails.getClientInvolvementTypeDisplayValue(),
+        proceeding.getClientInvolvement().getDisplayValue());
     assertEquals(furtherDetails.getLevelOfService(), proceeding.getLevelOfService().getId());
-    assertEquals(furtherDetails.getLevelOfServiceDisplayValue(), proceeding.getLevelOfService().getDisplayValue());
-    // Note: Type of order is set but not its display value in this case, so it's tested as null/ignored.
+    assertEquals(
+        furtherDetails.getLevelOfServiceDisplayValue(),
+        proceeding.getLevelOfService().getDisplayValue());
+    // Note: Type of order is set but not its display value in this case, so it's tested as
+    // null/ignored.
     assertEquals(12345, proceeding.getId());
     assertEquals(costLimitation, proceeding.getCostLimitation());
     assertEquals(stage, proceeding.getStage());
@@ -96,11 +109,13 @@ class ProceedingAndCostsMapperTest {
   @Test
   void testToProceeding_existingProceeding() {
     // Create and setup ProceedingFlowFormData with example values
-    final ProceedingFormDataMatterTypeDetails matterTypeDetails = new ProceedingFormDataMatterTypeDetails();
+    final ProceedingFormDataMatterTypeDetails matterTypeDetails =
+        new ProceedingFormDataMatterTypeDetails();
     matterTypeDetails.setMatterType("MT002");
     matterTypeDetails.setMatterTypeDisplayValue("Matter Type 2");
 
-    final ProceedingFormDataProceedingDetails proceedingDetails = new ProceedingFormDataProceedingDetails();
+    final ProceedingFormDataProceedingDetails proceedingDetails =
+        new ProceedingFormDataProceedingDetails();
     proceedingDetails.setProceedingType("PT002");
     proceedingDetails.setProceedingTypeDisplayValue("ProceedingDetail Type 2");
 
@@ -132,13 +147,22 @@ class ProceedingAndCostsMapperTest {
 
     // Validate the updated fields
     assertEquals(matterTypeDetails.getMatterType(), proceeding.getMatterType().getId());
-    assertEquals(matterTypeDetails.getMatterTypeDisplayValue(), proceeding.getMatterType().getDisplayValue());
+    assertEquals(
+        matterTypeDetails.getMatterTypeDisplayValue(),
+        proceeding.getMatterType().getDisplayValue());
     assertEquals(proceedingDetails.getProceedingType(), proceeding.getProceedingType().getId());
-    assertEquals(proceedingDetails.getProceedingTypeDisplayValue(), proceeding.getProceedingType().getDisplayValue());
-    assertEquals(furtherDetails.getClientInvolvementType(), proceeding.getClientInvolvement().getId());
-    assertEquals(furtherDetails.getClientInvolvementTypeDisplayValue(), proceeding.getClientInvolvement().getDisplayValue());
+    assertEquals(
+        proceedingDetails.getProceedingTypeDisplayValue(),
+        proceeding.getProceedingType().getDisplayValue());
+    assertEquals(
+        furtherDetails.getClientInvolvementType(), proceeding.getClientInvolvement().getId());
+    assertEquals(
+        furtherDetails.getClientInvolvementTypeDisplayValue(),
+        proceeding.getClientInvolvement().getDisplayValue());
     assertEquals(furtherDetails.getLevelOfService(), proceeding.getLevelOfService().getId());
-    assertEquals(furtherDetails.getLevelOfServiceDisplayValue(), proceeding.getLevelOfService().getDisplayValue());
+    assertEquals(
+        furtherDetails.getLevelOfServiceDisplayValue(),
+        proceeding.getLevelOfService().getDisplayValue());
     assertEquals(stage, proceeding.getStage());
     assertEquals(costLimitation, proceeding.getCostLimitation());
 
@@ -149,31 +173,52 @@ class ProceedingAndCostsMapperTest {
   void testToProceedingFlow() {
     final ProceedingDetail proceeding = new ProceedingDetail();
     proceeding.setMatterType(new StringDisplayValue().id("MT001").displayValue("Matter Type 1"));
-    proceeding.setProceedingType(new StringDisplayValue().id("PT001").displayValue("ProceedingDetail Type 1"));
+    proceeding.setProceedingType(
+        new StringDisplayValue().id("PT001").displayValue("ProceedingDetail Type 1"));
     proceeding.setDescription("Description");
     proceeding.setLarScope("Scope");
-    proceeding.setClientInvolvement(new StringDisplayValue().id("CI001").displayValue("Client Involvement 1"));
-    proceeding.setLevelOfService(new StringDisplayValue().id("LS001").displayValue("Level Of Service 1"));
+    proceeding.setClientInvolvement(
+        new StringDisplayValue().id("CI001").displayValue("Client Involvement 1"));
+    proceeding.setLevelOfService(
+        new StringDisplayValue().id("LS001").displayValue("Level Of Service 1"));
     proceeding.setTypeOfOrder(new StringDisplayValue().id("TO001"));
     proceeding.setId(12345);
     proceeding.setLeadProceedingInd(true);
 
     final String typeOfOrderDisplayValue = "Order Type Display Value";
 
-    final ProceedingFlowFormData formData = mapper.toProceedingFlow(proceeding, typeOfOrderDisplayValue);
+    final ProceedingFlowFormData formData =
+        mapper.toProceedingFlow(proceeding, typeOfOrderDisplayValue);
 
-    assertEquals(proceeding.getMatterType().getId(), formData.getMatterTypeDetails().getMatterType());
-    assertEquals(proceeding.getMatterType().getDisplayValue(), formData.getMatterTypeDetails().getMatterTypeDisplayValue());
-    assertEquals(proceeding.getProceedingType().getId(), formData.getProceedingDetails().getProceedingType());
-    assertEquals(proceeding.getProceedingType().getDisplayValue(), formData.getProceedingDetails().getProceedingTypeDisplayValue());
-    assertEquals(proceeding.getDescription(), formData.getProceedingDetails().getProceedingDescription());
+    assertEquals(
+        proceeding.getMatterType().getId(), formData.getMatterTypeDetails().getMatterType());
+    assertEquals(
+        proceeding.getMatterType().getDisplayValue(),
+        formData.getMatterTypeDetails().getMatterTypeDisplayValue());
+    assertEquals(
+        proceeding.getProceedingType().getId(),
+        formData.getProceedingDetails().getProceedingType());
+    assertEquals(
+        proceeding.getProceedingType().getDisplayValue(),
+        formData.getProceedingDetails().getProceedingTypeDisplayValue());
+    assertEquals(
+        proceeding.getDescription(), formData.getProceedingDetails().getProceedingDescription());
     assertEquals(proceeding.getLarScope(), formData.getProceedingDetails().getLarScope());
-    assertEquals(proceeding.getClientInvolvement().getId(), formData.getFurtherDetails().getClientInvolvementType());
-    assertEquals(proceeding.getClientInvolvement().getDisplayValue(), formData.getFurtherDetails().getClientInvolvementTypeDisplayValue());
-    assertEquals(proceeding.getLevelOfService().getId(), formData.getFurtherDetails().getLevelOfService());
-    assertEquals(proceeding.getLevelOfService().getDisplayValue(), formData.getFurtherDetails().getLevelOfServiceDisplayValue());
-    assertEquals(proceeding.getTypeOfOrder().getId(), formData.getFurtherDetails().getTypeOfOrder());
-    assertEquals(typeOfOrderDisplayValue, formData.getFurtherDetails().getTypeOfOrderDisplayValue());
+    assertEquals(
+        proceeding.getClientInvolvement().getId(),
+        formData.getFurtherDetails().getClientInvolvementType());
+    assertEquals(
+        proceeding.getClientInvolvement().getDisplayValue(),
+        formData.getFurtherDetails().getClientInvolvementTypeDisplayValue());
+    assertEquals(
+        proceeding.getLevelOfService().getId(), formData.getFurtherDetails().getLevelOfService());
+    assertEquals(
+        proceeding.getLevelOfService().getDisplayValue(),
+        formData.getFurtherDetails().getLevelOfServiceDisplayValue());
+    assertEquals(
+        proceeding.getTypeOfOrder().getId(), formData.getFurtherDetails().getTypeOfOrder());
+    assertEquals(
+        typeOfOrderDisplayValue, formData.getFurtherDetails().getTypeOfOrderDisplayValue());
     assertEquals("edit", formData.getAction());
     assertFalse(formData.isAmended());
     assertFalse(formData.isEditingScopeLimitations());
@@ -209,12 +254,16 @@ class ProceedingAndCostsMapperTest {
 
     assertNotNull(result);
     assertEquals(2, result.size());
-    assertEquals(ebsScopeLimitation1.getScopeLimitations(), result.getFirst().getScopeLimitation().getId());
-    assertEquals(ebsScopeLimitation1.getDescription(), result.getFirst().getScopeLimitation().getDisplayValue());
-    assertEquals(ebsScopeLimitation2.getScopeLimitations(), result.get(1).getScopeLimitation().getId());
-    assertEquals(ebsScopeLimitation2.getDescription(), result.get(1).getScopeLimitation().getDisplayValue());
+    assertEquals(
+        ebsScopeLimitation1.getScopeLimitations(), result.getFirst().getScopeLimitation().getId());
+    assertEquals(
+        ebsScopeLimitation1.getDescription(),
+        result.getFirst().getScopeLimitation().getDisplayValue());
+    assertEquals(
+        ebsScopeLimitation2.getScopeLimitations(), result.get(1).getScopeLimitation().getId());
+    assertEquals(
+        ebsScopeLimitation2.getDescription(), result.get(1).getScopeLimitation().getDisplayValue());
   }
-
 
   @Test
   void testToScopeLimitationList_withNull() {
@@ -226,7 +275,8 @@ class ProceedingAndCostsMapperTest {
   void testToScopeLimitationFlow() {
     final ScopeLimitationDetail scopeLimitation = new ScopeLimitationDetail();
     scopeLimitation.setId(123);
-    final StringDisplayValue displayValue = new StringDisplayValue().id("SL001").displayValue("Scope Limitation Description");
+    final StringDisplayValue displayValue =
+        new StringDisplayValue().id("SL001").displayValue("Scope Limitation Description");
     scopeLimitation.setScopeLimitation(displayValue);
 
     final ScopeLimitationFlowFormData result = mapper.toScopeLimitationFlow(scopeLimitation);
@@ -234,7 +284,9 @@ class ProceedingAndCostsMapperTest {
     assertNotNull(result);
     assertEquals("edit", result.getAction());
     assertEquals(scopeLimitation.getId(), result.getScopeLimitationId());
-    assertEquals(scopeLimitation.getScopeLimitation().getId(), result.getScopeLimitationDetails().getScopeLimitation());
+    assertEquals(
+        scopeLimitation.getScopeLimitation().getId(),
+        result.getScopeLimitationDetails().getScopeLimitation());
   }
 
   @Test
@@ -247,8 +299,10 @@ class ProceedingAndCostsMapperTest {
   void testToCostsFormData() {
     final BigDecimal grantedCostLimitation = new BigDecimal("3000.00");
     final BigDecimal costLimitation = new BigDecimal("5000.00");
-    final CostStructureDetail costStructureDetail = new CostStructureDetail()
-        .requestedCostLimitation(costLimitation).grantedCostLimitation(grantedCostLimitation);
+    final CostStructureDetail costStructureDetail =
+        new CostStructureDetail()
+            .requestedCostLimitation(costLimitation)
+            .grantedCostLimitation(grantedCostLimitation);
     final CostsFormData result = mapper.toCostsFormData(costStructureDetail);
 
     assertNotNull(result);
@@ -287,7 +341,8 @@ class ProceedingAndCostsMapperTest {
   void testToPriorAuthorityFlowFormData() {
     final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
     priorAuthority.setId(123);
-    priorAuthority.setType(new StringDisplayValue().id("PA001").displayValue("Prior Authority Type"));
+    priorAuthority.setType(
+        new StringDisplayValue().id("PA001").displayValue("Prior Authority Type"));
     final PriorAuthorityDetailsFormData formDataDetails = new PriorAuthorityDetailsFormData();
     formDataDetails.setSummary("Test Summary");
 
@@ -296,8 +351,12 @@ class ProceedingAndCostsMapperTest {
     assertNotNull(result);
     assertEquals("edit", result.getAction());
     assertEquals(priorAuthority.getId(), result.getPriorAuthorityId());
-    assertEquals(priorAuthority.getType().getId(), result.getPriorAuthorityTypeFormData().getPriorAuthorityType());
-    assertEquals(priorAuthority.getType().getDisplayValue(), result.getPriorAuthorityTypeFormData().getPriorAuthorityTypeDisplayValue());
+    assertEquals(
+        priorAuthority.getType().getId(),
+        result.getPriorAuthorityTypeFormData().getPriorAuthorityType());
+    assertEquals(
+        priorAuthority.getType().getDisplayValue(),
+        result.getPriorAuthorityTypeFormData().getPriorAuthorityTypeDisplayValue());
   }
 
   @Test
@@ -353,11 +412,11 @@ class ProceedingAndCostsMapperTest {
     assertNull(result);
   }
 
-
   @Test
   void testToPriorAuthorityFormDataDetails() {
     final PriorAuthorityDetailsFormData priorAuthorityDetails = new PriorAuthorityDetailsFormData();
-    final PriorAuthorityFlowFormData priorAuthorityFlowFormData = new PriorAuthorityFlowFormData("edit");
+    final PriorAuthorityFlowFormData priorAuthorityFlowFormData =
+        new PriorAuthorityFlowFormData("edit");
     final PriorAuthorityDetailsFormData formDataDetails = new PriorAuthorityDetailsFormData();
     formDataDetails.setValueRequired(true);
     priorAuthorityFlowFormData.setPriorAuthorityDetailsFormData(formDataDetails);
@@ -388,7 +447,8 @@ class ProceedingAndCostsMapperTest {
     optionDetails.setMandatory(true);
     priorAuthorityDetails.getDynamicOptions().put(key, optionDetails);
 
-    final PriorAuthorityFlowFormData priorAuthorityFlowFormData = new PriorAuthorityFlowFormData("edit");
+    final PriorAuthorityFlowFormData priorAuthorityFlowFormData =
+        new PriorAuthorityFlowFormData("edit");
     final PriorAuthorityDetailsFormData formDataDetails = new PriorAuthorityDetailsFormData();
     formDataDetails.setDynamicOptions(new HashMap<>());
     final DynamicOptionFormData newOptionDetails = new DynamicOptionFormData();
@@ -402,8 +462,11 @@ class ProceedingAndCostsMapperTest {
     mapper.mapDynamicOptions(priorAuthorityDetails, priorAuthorityFlowFormData);
 
     assertNotNull(priorAuthorityDetails.getDynamicOptions().get(key));
-    assertEquals("Updated Description 1", priorAuthorityDetails.getDynamicOptions().get(key).getFieldDescription());
-    assertEquals("Updated Type 1", priorAuthorityDetails.getDynamicOptions().get(key).getFieldType());
+    assertEquals(
+        "Updated Description 1",
+        priorAuthorityDetails.getDynamicOptions().get(key).getFieldDescription());
+    assertEquals(
+        "Updated Type 1", priorAuthorityDetails.getDynamicOptions().get(key).getFieldType());
     assertFalse(priorAuthorityDetails.getDynamicOptions().get(key).isMandatory());
   }
 
@@ -413,7 +476,8 @@ class ProceedingAndCostsMapperTest {
     priorAuthorityDetails.setDynamicOptions(new HashMap<>());
 
     final PriorAuthorityTypeDetail priorAuthorityTypeDetail = new PriorAuthorityTypeDetail();
-    List<uk.gov.laa.ccms.data.model.PriorAuthorityDetail> priorAuthorityDetailsList = new ArrayList<>();
+    List<uk.gov.laa.ccms.data.model.PriorAuthorityDetail> priorAuthorityDetailsList =
+        new ArrayList<>();
 
     uk.gov.laa.ccms.data.model.PriorAuthorityDetail ebsPriorAuth1 =
         new uk.gov.laa.ccms.data.model.PriorAuthorityDetail();
@@ -465,7 +529,6 @@ class ProceedingAndCostsMapperTest {
     assertTrue(priorAuthorityDetails.getDynamicOptions().isEmpty());
   }
 
-
   @Test
   void testToPriorAuthorityFormDataDynamicOption() {
     final uk.gov.laa.ccms.data.model.PriorAuthorityDetail formOption =
@@ -486,8 +549,7 @@ class ProceedingAndCostsMapperTest {
   void testToPriorAuthorityFormDataDynamicOption_withNull() {
     final uk.gov.laa.ccms.data.model.PriorAuthorityDetail formOption = null;
 
-    final DynamicOptionFormData result =
-        mapper.toPriorAuthorityFormDataDynamicOption(formOption);
+    final DynamicOptionFormData result = mapper.toPriorAuthorityFormDataDynamicOption(formOption);
 
     assertNull(result);
   }
@@ -512,7 +574,8 @@ class ProceedingAndCostsMapperTest {
 
     final PriorAuthorityTypeDetail priorAuthorityDynamicForm = new PriorAuthorityTypeDetail();
 
-    final PriorAuthorityDetail result = mapper.toPriorAuthority(priorAuthorityFlowFormData, priorAuthorityDynamicForm);
+    final PriorAuthorityDetail result =
+        mapper.toPriorAuthority(priorAuthorityFlowFormData, priorAuthorityDynamicForm);
 
     assertNotNull(result);
     assertEquals(Integer.valueOf(123), result.getId());
@@ -548,7 +611,8 @@ class ProceedingAndCostsMapperTest {
     detailsList.add(detail1);
     priorAuthorityDynamicForm.setPriorAuthorities(detailsList);
 
-    final List<ReferenceDataItemDetail> result = mapper.toReferenceDataItems(dynamicOptionsMap, priorAuthorityDynamicForm);
+    final List<ReferenceDataItemDetail> result =
+        mapper.toReferenceDataItems(dynamicOptionsMap, priorAuthorityDynamicForm);
 
     assertNotNull(result);
     assertEquals(1, result.size());
@@ -586,5 +650,4 @@ class ProceedingAndCostsMapperTest {
     final ReferenceDataItemDetail result = mapper.toReferenceDataItem(null, null);
     assertNull(result);
   }
-
 }

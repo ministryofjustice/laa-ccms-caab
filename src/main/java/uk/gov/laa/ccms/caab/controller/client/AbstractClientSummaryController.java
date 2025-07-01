@@ -12,9 +12,7 @@ import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
-/**
- * Abstract controller for handling Client Summary Information.
- */
+/** Abstract controller for handling Client Summary Information. */
 @RequiredArgsConstructor
 public abstract class AbstractClientSummaryController {
 
@@ -23,7 +21,6 @@ public abstract class AbstractClientSummaryController {
   protected final ClientService clientService;
 
   protected final ClientDetailMapper clientDetailsMapper;
-
 
   protected Mono<Void> populateSummaryListLookups(
       final ClientFlowFormData clientFlowFormData, final Model model) {

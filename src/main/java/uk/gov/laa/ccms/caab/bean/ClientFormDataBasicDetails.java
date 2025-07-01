@@ -5,9 +5,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import uk.gov.laa.ccms.caab.bean.common.Individual;
 
-/**
- * Represents the client basic details form.
- */
+/** Represents the client basic details form. */
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class ClientFormDataBasicDetails extends AbstractClientFormData implements Individual {
@@ -22,6 +20,7 @@ public class ClientFormDataBasicDetails extends AbstractClientFormData implement
 
   @Size(max = 35)
   private String middleNames;
+
   private String surnameAtBirth;
 
   private String dateOfBirth;
@@ -32,6 +31,7 @@ public class ClientFormDataBasicDetails extends AbstractClientFormData implement
 
   @Size(max = 35)
   private String homeOfficeNumber;
+
   private String gender;
   private String maritalStatus;
   private Boolean highProfileClient = false;

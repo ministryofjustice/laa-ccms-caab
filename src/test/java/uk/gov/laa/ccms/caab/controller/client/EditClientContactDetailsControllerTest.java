@@ -39,14 +39,11 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 @ExtendWith(MockitoExtension.class)
 class EditClientContactDetailsControllerTest {
 
-  @Mock
-  private LookupService lookupService;
+  @Mock private LookupService lookupService;
 
-  @Mock
-  private ClientContactDetailsValidator clientContactDetailsValidator;
+  @Mock private ClientContactDetailsValidator clientContactDetailsValidator;
 
-  @InjectMocks
-  private EditClientContactDetailsController editClientContactDetailsController;
+  @InjectMocks private EditClientContactDetailsController editClientContactDetailsController;
 
   private MockMvc mockMvc;
 
@@ -61,18 +58,20 @@ class EditClientContactDetailsControllerTest {
 
   @BeforeEach
   void setup() {
-    mockMvc = standaloneSetup(editClientContactDetailsController)
-        .setConversionService(getConversionService()).build();
+    mockMvc =
+        standaloneSetup(editClientContactDetailsController)
+            .setConversionService(getConversionService())
+            .build();
 
     basicDetails = new ClientFormDataBasicDetails();
     basicDetails.setVulnerableClient(false);
 
     contactDetails = new ClientFormDataContactDetails();
-    
+
     clientFlowFormData = new ClientFlowFormData(ACTION_EDIT);
     clientFlowFormData.setBasicDetails(basicDetails);
     clientFlowFormData.setContactDetails(contactDetails);
-    
+
     correspondenceMethodLookupDetail = new CommonLookupDetail();
     correspondenceMethodLookupDetail.addContentItem(new CommonLookupValueDetail());
     correspondenceLanguageLookupDetail = new CommonLookupDetail();
@@ -86,30 +85,32 @@ class EditClientContactDetailsControllerTest {
     @Test
     void testClientDetailsContact() throws Exception {
 
-      when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD)).thenReturn(
-          Mono.just(correspondenceMethodLookupDetail));
-      when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE)).thenReturn(
-          Mono.just(correspondenceLanguageLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD))
+          .thenReturn(Mono.just(correspondenceMethodLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE))
+          .thenReturn(Mono.just(correspondenceLanguageLookupDetail));
 
-      mockMvc.perform(get("/application/sections/client/details/contact")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("contactDetails", contactDetails))
+      mockMvc
+          .perform(
+              get("/application/sections/client/details/contact")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("contactDetails", contactDetails))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/client-contact-details"))
           .andExpect(model().attributeExists("correspondenceMethods", "correspondenceLanguages"));
-
     }
 
     @Test
     void testClientDetailsContactPost() throws Exception {
-      mockMvc.perform(post("/application/sections/client/details/contact")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("contactDetails", contactDetails))
+      mockMvc
+          .perform(
+              post("/application/sections/client/details/contact")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("contactDetails", contactDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/sections/client/details/summary"));
     }
-
 
     @Test
     void testClientDetailsContactPostValidationError() throws Exception {
@@ -117,26 +118,30 @@ class EditClientContactDetailsControllerTest {
       contactDetails.setPasswordReminder("test");
       contactDetails.setCorrespondenceMethod("test");
 
-      doAnswer(invocation -> {
-        Errors errors = (Errors) invocation.getArguments()[1];
-        errors.rejectValue("password", "required.password", "Please complete 'Password'.");
-        return null;
-      }).when(clientContactDetailsValidator).validate(any(), any());
+      doAnswer(
+              invocation -> {
+                Errors errors = (Errors) invocation.getArguments()[1];
+                errors.rejectValue("password", "required.password", "Please complete 'Password'.");
+                return null;
+              })
+          .when(clientContactDetailsValidator)
+          .validate(any(), any());
 
-      when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD)).thenReturn(
-          Mono.just(correspondenceMethodLookupDetail));
-      when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE)).thenReturn(
-          Mono.just(correspondenceLanguageLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD))
+          .thenReturn(Mono.just(correspondenceMethodLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE))
+          .thenReturn(Mono.just(correspondenceLanguageLookupDetail));
 
-      mockMvc.perform(post("/application/sections/client/details/contact")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("contactDetails", contactDetails))
+      mockMvc
+          .perform(
+              post("/application/sections/client/details/contact")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("contactDetails", contactDetails))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/client-contact-details"))
           .andExpect(model().attributeExists("correspondenceMethods", "correspondenceLanguages"));
     }
-
   }
 
   @Nested
@@ -146,30 +151,32 @@ class EditClientContactDetailsControllerTest {
     @Test
     void testClientDetailsContact() throws Exception {
 
-      when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD)).thenReturn(
-          Mono.just(correspondenceMethodLookupDetail));
-      when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE)).thenReturn(
-          Mono.just(correspondenceLanguageLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD))
+          .thenReturn(Mono.just(correspondenceMethodLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE))
+          .thenReturn(Mono.just(correspondenceLanguageLookupDetail));
 
-      mockMvc.perform(get("/amendments/sections/client/details/contact")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("contactDetails", contactDetails))
+      mockMvc
+          .perform(
+              get("/amendments/sections/client/details/contact")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("contactDetails", contactDetails))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/client-contact-details"))
           .andExpect(model().attributeExists("correspondenceMethods", "correspondenceLanguages"));
-
     }
 
     @Test
     void testClientDetailsContactPost() throws Exception {
-      mockMvc.perform(post("/amendments/sections/client/details/contact")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("contactDetails", contactDetails))
+      mockMvc
+          .perform(
+              post("/amendments/sections/client/details/contact")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("contactDetails", contactDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/amendments/sections/client/details/summary"));
     }
-
 
     @Test
     void testClientDetailsContactPostValidationError() throws Exception {
@@ -177,25 +184,29 @@ class EditClientContactDetailsControllerTest {
       contactDetails.setPasswordReminder("test");
       contactDetails.setCorrespondenceMethod("test");
 
-      doAnswer(invocation -> {
-        Errors errors = (Errors) invocation.getArguments()[1];
-        errors.rejectValue("password", "required.password", "Please complete 'Password'.");
-        return null;
-      }).when(clientContactDetailsValidator).validate(any(), any());
+      doAnswer(
+              invocation -> {
+                Errors errors = (Errors) invocation.getArguments()[1];
+                errors.rejectValue("password", "required.password", "Please complete 'Password'.");
+                return null;
+              })
+          .when(clientContactDetailsValidator)
+          .validate(any(), any());
 
-      when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD)).thenReturn(
-          Mono.just(correspondenceMethodLookupDetail));
-      when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE)).thenReturn(
-          Mono.just(correspondenceLanguageLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD))
+          .thenReturn(Mono.just(correspondenceMethodLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE))
+          .thenReturn(Mono.just(correspondenceLanguageLookupDetail));
 
-      mockMvc.perform(post("/amendments/sections/client/details/contact")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("contactDetails", contactDetails))
+      mockMvc
+          .perform(
+              post("/amendments/sections/client/details/contact")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("contactDetails", contactDetails))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/client-contact-details"))
           .andExpect(model().attributeExists("correspondenceMethods", "correspondenceLanguages"));
     }
-
   }
 }

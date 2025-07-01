@@ -66,6 +66,4 @@ public class ApplicationTypeBuilderTest {
     ApplicationType result = builder.devolvedPowersContractFlag("ContractFlag").build();
     assertEquals("ContractFlag", result.getDevolvedPowers().getContractFlag());
   }
-
-
 }

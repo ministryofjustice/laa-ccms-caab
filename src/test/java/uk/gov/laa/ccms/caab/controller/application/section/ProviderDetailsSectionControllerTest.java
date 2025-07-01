@@ -35,7 +35,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
@@ -53,27 +52,24 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @WebAppConfiguration
 public class ProviderDetailsSectionControllerTest {
 
-  @Mock
-  private ApplicationService applicationService;
+  @Mock private ApplicationService applicationService;
 
-  @Mock
-  private ProviderService providerService;
+  @Mock private ProviderService providerService;
 
-  @Mock
-  private ProviderDetailsValidator providerDetailsValidator;
+  @Mock private ProviderDetailsValidator providerDetailsValidator;
 
-  @InjectMocks
-  private ProviderDetailsSectionController providerDetailsController;
+  @InjectMocks private ProviderDetailsSectionController providerDetailsController;
 
   private MockMvc mockMvc;
 
-  @Autowired
-  private WebApplicationContext webApplicationContext;
+  @Autowired private WebApplicationContext webApplicationContext;
 
   @BeforeEach
   public void setup() {
-    mockMvc = standaloneSetup(providerDetailsController)
-            .setConversionService(getConversionService()).build();
+    mockMvc =
+        standaloneSetup(providerDetailsController)
+            .setConversionService(getConversionService())
+            .build();
   }
 
   @Test
@@ -83,12 +79,15 @@ public class ProviderDetailsSectionControllerTest {
     final UserDetail user = new UserDetail();
     final ApplicationFormData applicationFormData = new ApplicationFormData();
 
-    when(applicationService.getProviderDetailsFormData(applicationId)).thenReturn(applicationFormData);
+    when(applicationService.getProviderDetailsFormData(applicationId))
+        .thenReturn(applicationFormData);
 
-    this.mockMvc.perform(get("/application/sections/provider-details")
-            .sessionAttr(APPLICATION_ID, applicationId)
-            .sessionAttr(ACTIVE_CASE, activeCase)
-            .sessionAttr(USER_DETAILS, user))
+    this.mockMvc
+        .perform(
+            get("/application/sections/provider-details")
+                .sessionAttr(APPLICATION_ID, applicationId)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(USER_DETAILS, user))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/sections/provider-details-section"))
@@ -107,46 +106,54 @@ public class ProviderDetailsSectionControllerTest {
     final ApplicationFormData applicationFormData = new ApplicationFormData();
     ProviderDetail providerDetail = new ProviderDetail().id(987);
 
-    doAnswer(invocation -> {
-      Errors errors = (Errors) invocation.getArguments()[1];
-      errors.rejectValue("contactNameId", "required.contactNameId", "Please select a contact name.");
-      return null;
-    }).when(providerDetailsValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue(
+                  "contactNameId", "required.contactNameId", "Please select a contact name.");
+              return null;
+            })
+        .when(providerDetailsValidator)
+        .validate(any(), any());
 
-    when(providerService.getProvider(any()))
-        .thenReturn(Mono.just(providerDetail));
-    when(providerService.getFeeEarnersByOffice(any(), any()))
-        .thenReturn(Collections.emptyList());
+    when(providerService.getProvider(any())).thenReturn(Mono.just(providerDetail));
+    when(providerService.getFeeEarnersByOffice(any(), any())).thenReturn(Collections.emptyList());
 
-    this.mockMvc.perform(post("/application/sections/provider-details")
-            .sessionAttr(APPLICATION_ID, applicationId)
-            .sessionAttr(ACTIVE_CASE, activeCase)
-            .sessionAttr(USER_DETAILS, user)
-            .sessionAttr(APPLICATION_FORM_DATA, applicationFormData))
+    this.mockMvc
+        .perform(
+            post("/application/sections/provider-details")
+                .sessionAttr(APPLICATION_ID, applicationId)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(USER_DETAILS, user)
+                .sessionAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/sections/provider-details-section"));
 
     verify(providerDetailsValidator, times(1)).validate(any(), any());
     verify(providerService, times(1)).getProvider(providerDetail.getId());
-    verify(providerService, times(1)).getFeeEarnersByOffice(providerDetail, applicationFormData.getOfficeId());
+    verify(providerService, times(1))
+        .getFeeEarnersByOffice(providerDetail, applicationFormData.getOfficeId());
     verifyNoInteractions(applicationService);
   }
 
   @ParameterizedTest
-  @CsvSource(value = {
-      "123, 456, ref123, John Doe",
-      "123, 456, ref123, null",
-      "123, null, ref123, John Doe",
-      "123, 456, null, John Doe",
-      "null, 456, ref123, John Doe",
-      "null, null, null, null"
-  }, nullValues = "null")
+  @CsvSource(
+      value = {
+        "123, 456, ref123, John Doe",
+        "123, 456, ref123, null",
+        "123, null, ref123, John Doe",
+        "123, 456, null, John Doe",
+        "null, 456, ref123, John Doe",
+        "null, null, null, null"
+      },
+      nullValues = "null")
   public void testApplicationSummaryProviderDetailsPost_Successful(
       final Integer feeEarnerId,
       final Integer supervisorId,
       final String providerCaseReference,
-      final String contactNameId) throws Exception {
+      final String contactNameId)
+      throws Exception {
 
     final String applicationId = "123";
     final ActiveCase activeCase = ActiveCase.builder().build();
@@ -158,13 +165,16 @@ public class ProviderDetailsSectionControllerTest {
     applicationFormData.setProviderCaseReference(providerCaseReference);
     applicationFormData.setContactNameId(contactNameId);
 
-    when(applicationService.getProviderDetailsFormData(applicationId)).thenReturn(applicationFormData);
+    when(applicationService.getProviderDetailsFormData(applicationId))
+        .thenReturn(applicationFormData);
 
-    this.mockMvc.perform(post("/application/sections/provider-details")
-            .sessionAttr(APPLICATION_ID, applicationId)
-            .sessionAttr(ACTIVE_CASE, activeCase)
-            .sessionAttr(USER_DETAILS, user)
-            .sessionAttr(APPLICATION_FORM_DATA, applicationFormData))
+    this.mockMvc
+        .perform(
+            post("/application/sections/provider-details")
+                .sessionAttr(APPLICATION_ID, applicationId)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(USER_DETAILS, user)
+                .sessionAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
         .andExpect(redirectedUrl("/application/sections"));
 
@@ -183,13 +193,16 @@ public class ProviderDetailsSectionControllerTest {
 
     applicationFormData.setProviderCaseReference(RandomStringUtils.insecure().nextAlphabetic(35));
 
-    when(applicationService.getProviderDetailsFormData(applicationId)).thenReturn(applicationFormData);
+    when(applicationService.getProviderDetailsFormData(applicationId))
+        .thenReturn(applicationFormData);
 
-    this.mockMvc.perform(post("/application/sections/provider-details")
-            .sessionAttr(APPLICATION_ID, applicationId)
-            .sessionAttr(ACTIVE_CASE, activeCase)
-            .sessionAttr(USER_DETAILS, user)
-            .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
+    this.mockMvc
+        .perform(
+            post("/application/sections/provider-details")
+                .sessionAttr(APPLICATION_ID, applicationId)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(USER_DETAILS, user)
+                .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
         .andExpect(redirectedUrl("/application/sections"));
 
@@ -209,16 +222,16 @@ public class ProviderDetailsSectionControllerTest {
 
     applicationFormData.setProviderCaseReference(RandomStringUtils.insecure().nextAlphabetic(36));
 
-    when(providerService.getProvider(any()))
-        .thenReturn(Mono.just(providerDetail));
-    when(providerService.getFeeEarnersByOffice(any(), any()))
-        .thenReturn(Collections.emptyList());
+    when(providerService.getProvider(any())).thenReturn(Mono.just(providerDetail));
+    when(providerService.getFeeEarnersByOffice(any(), any())).thenReturn(Collections.emptyList());
 
-    this.mockMvc.perform(post("/application/sections/provider-details")
-            .sessionAttr(APPLICATION_ID, applicationId)
-            .sessionAttr(ACTIVE_CASE, activeCase)
-            .sessionAttr(USER_DETAILS, user)
-            .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
+    this.mockMvc
+        .perform(
+            post("/application/sections/provider-details")
+                .sessionAttr(APPLICATION_ID, applicationId)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(USER_DETAILS, user)
+                .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/sections/provider-details-section"))
@@ -226,7 +239,8 @@ public class ProviderDetailsSectionControllerTest {
 
     verify(providerDetailsValidator, times(1)).validate(any(), any());
     verify(providerService, times(1)).getProvider(providerDetail.getId());
-    verify(providerService, times(1)).getFeeEarnersByOffice(providerDetail, applicationFormData.getOfficeId());
+    verify(providerService, times(1))
+        .getFeeEarnersByOffice(providerDetail, applicationFormData.getOfficeId());
     verifyNoInteractions(applicationService);
   }
 }

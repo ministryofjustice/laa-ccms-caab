@@ -14,10 +14,9 @@ import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 
 /**
- * Controller responsible for handling the initiation of a new application process.
- * Manages interactions related to starting a new application, including determining
- * the appropriate routing based on whether it's a new application, or an amendment to
- * an existing case.
+ * Controller responsible for handling the initiation of a new application process. Manages
+ * interactions related to starting a new application, including determining the appropriate routing
+ * based on whether it's a new application, or an amendment to an existing case.
  *
  * @author Jamie Briggs
  */
@@ -38,17 +37,17 @@ public class StartApplicationController {
   }
 
   /**
-   * Initiates the process for starting a new application or amendment based on the context,
-   * whilst adding the application form data to the model for subsequent use.
+   * Initiates the process for starting a new application or amendment based on the context, whilst
+   * adding the application form data to the model for subsequent use.
    *
-   * @param model       The model used to store attributes for rendering views.
-   * @param caseContext The context indicating whether the process is for a new application
-   *                    or an amendment. It must match one of the predefined context values.
+   * @param model The model used to store attributes for rendering views.
+   * @param caseContext The context indicating whether the process is for a new application or an
+   *     amendment. It must match one of the predefined context values.
    * @return A redirection string to the appropriate route based on the provided context.
    */
   @GetMapping("/{caseContext}/new")
-  public String startNewApplication(Model model,
-      @PathVariable("caseContext") final CaseContext caseContext) {
+  public String startNewApplication(
+      Model model, @PathVariable("caseContext") final CaseContext caseContext) {
     log.info("Starting application");
 
     model.addAttribute(APPLICATION_FORM_DATA, getApplicationDetails());

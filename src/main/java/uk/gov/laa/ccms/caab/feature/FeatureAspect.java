@@ -13,9 +13,7 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-/**
- * Aspect responsible for handling the {@link RequiresFeature} annotation.
- */
+/** Aspect responsible for handling the {@link RequiresFeature} annotation. */
 @Aspect
 @Component
 @RequiredArgsConstructor

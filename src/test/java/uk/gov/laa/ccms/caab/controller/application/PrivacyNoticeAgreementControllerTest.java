@@ -33,85 +33,95 @@ import uk.gov.laa.ccms.caab.constants.SessionConstants;
 @WebAppConfiguration
 public class PrivacyNoticeAgreementControllerTest {
 
-    @Mock
-    private PrivacyNoticeAgreementValidator privacyNoticeAgreementValidator;
+  @Mock private PrivacyNoticeAgreementValidator privacyNoticeAgreementValidator;
 
-    @InjectMocks
-    private PrivacyNoticeAgreementController privacyNoticeAgreementController;
+  @InjectMocks private PrivacyNoticeAgreementController privacyNoticeAgreementController;
 
-    private MockMvc mockMvc;
+  private MockMvc mockMvc;
 
-    @Autowired
-    private WebApplicationContext webApplicationContext;
+  @Autowired private WebApplicationContext webApplicationContext;
 
-    @BeforeEach
-    public void setup() {
-        mockMvc = standaloneSetup(privacyNoticeAgreementController).build();
-    }
+  @BeforeEach
+  public void setup() {
+    mockMvc = standaloneSetup(privacyNoticeAgreementController).build();
+  }
 
-    @Test
-    public void testGetPrivacyNoticeAgreement() throws Exception {
-        ApplicationFormData applicationFormData = new ApplicationFormData();
-        this.mockMvc.perform(get("/application/agreement")
-                        .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData))
-                .andExpect(status().isOk())
-                .andExpect(view().name("application/privacy-notice-agreement"))
-                .andExpect(model().attribute(SessionConstants.APPLICATION_FORM_DATA,
-                    applicationFormData));
-    }
+  @Test
+  public void testGetPrivacyNoticeAgreement() throws Exception {
+    ApplicationFormData applicationFormData = new ApplicationFormData();
+    this.mockMvc
+        .perform(
+            get("/application/agreement")
+                .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/privacy-notice-agreement"))
+        .andExpect(model().attribute(SessionConstants.APPLICATION_FORM_DATA, applicationFormData));
+  }
 
-    @Test
-    public void testPostPrivacyNoticeAgreement_ValidationSuccess_NewClient() throws Exception {
-        ApplicationFormData applicationFormData = new ApplicationFormData();
-        applicationFormData.setApplicationCreated(false);
-        applicationFormData.setAgreementAccepted(true);
+  @Test
+  public void testPostPrivacyNoticeAgreement_ValidationSuccess_NewClient() throws Exception {
+    ApplicationFormData applicationFormData = new ApplicationFormData();
+    applicationFormData.setApplicationCreated(false);
+    applicationFormData.setAgreementAccepted(true);
 
-        this.mockMvc.perform(post("/application/agreement")
-                        .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/application/client/details/basic"));
+    this.mockMvc
+        .perform(
+            post("/application/agreement")
+                .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/details/basic"));
 
-        verify(privacyNoticeAgreementValidator, times(1)).validate(any(), any());
-    }
+    verify(privacyNoticeAgreementValidator, times(1)).validate(any(), any());
+  }
 
-    @Test
-    public void testPostPrivacyNoticeAgreement_ValidationSuccess_ExistingClient() throws Exception {
-        ApplicationFormData applicationFormData = new ApplicationFormData();
-        applicationFormData.setApplicationCreated(true);
-        applicationFormData.setAgreementAccepted(true);
+  @Test
+  public void testPostPrivacyNoticeAgreement_ValidationSuccess_ExistingClient() throws Exception {
+    ApplicationFormData applicationFormData = new ApplicationFormData();
+    applicationFormData.setApplicationCreated(true);
+    applicationFormData.setAgreementAccepted(true);
 
-        this.mockMvc.perform(post("/application/agreement")
-                        .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/application/sections"));
+    this.mockMvc
+        .perform(
+            post("/application/agreement")
+                .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/sections"));
 
-        verify(privacyNoticeAgreementValidator, times(1)).validate(any(), any());
-    }
+    verify(privacyNoticeAgreementValidator, times(1)).validate(any(), any());
+  }
 
-    @Test
-    public void testPostPrivacyNoticeAgreement_ValidationError() throws Exception {
-        ApplicationFormData applicationFormData = new ApplicationFormData();
-        applicationFormData.setAgreementAccepted(false);
+  @Test
+  public void testPostPrivacyNoticeAgreement_ValidationError() throws Exception {
+    ApplicationFormData applicationFormData = new ApplicationFormData();
+    applicationFormData.setAgreementAccepted(false);
 
-        doAnswer(invocation -> {
-            Errors errors = (Errors) invocation.getArguments()[1];
-            errors.rejectValue(null, "agreement.not.accepted",
-                    "Please complete 'I confirm my client (or their representative) has read and agreed to the Privacy Notice'.");
-            return null;
-        }).when(privacyNoticeAgreementValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue(
+                  null,
+                  "agreement.not.accepted",
+                  "Please complete 'I confirm my client (or their representative) has read and agreed to the Privacy Notice'.");
+              return null;
+            })
+        .when(privacyNoticeAgreementValidator)
+        .validate(any(), any());
 
-        this.mockMvc.perform(post("/application/agreement")
-                        .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData))
-                .andExpect(status().isOk())
-                .andExpect(view().name("application/privacy-notice-agreement"));
+    this.mockMvc
+        .perform(
+            post("/application/agreement")
+                .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/privacy-notice-agreement"));
 
-        verify(privacyNoticeAgreementValidator, times(1)).validate(any(), any());
-    }
+    verify(privacyNoticeAgreementValidator, times(1)).validate(any(), any());
+  }
 
-    @Test
-    public void testGetPrivacyNoticeAgreementPrintable() throws Exception {
-        this.mockMvc.perform(get("/application/agreement/print"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("application/privacy-notice-agreement-printable"));
-    }
+  @Test
+  public void testGetPrivacyNoticeAgreementPrintable() throws Exception {
+    this.mockMvc
+        .perform(get("/application/agreement/print"))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/privacy-notice-agreement-printable"));
+  }
 }

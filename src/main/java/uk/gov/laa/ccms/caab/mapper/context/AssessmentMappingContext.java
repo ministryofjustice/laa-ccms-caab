@@ -9,32 +9,22 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
-/**
- * Context class for mapping assessment details.
- */
+/** Context class for mapping assessment details. */
 @Builder
 @Getter
 @Setter
 public class AssessmentMappingContext {
 
-  /**
-   * The assessment details.
-   */
+  /** The assessment details. */
   private AssessmentDetail assessment;
 
-  /**
-   * The application details.
-   */
+  /** The application details. */
   private ApplicationDetail application;
 
-  /**
-   * The client details.
-   */
+  /** The client details. */
   private ClientDetail client;
 
-  /**
-   * The user details.
-   */
+  /** The user details. */
   private UserDetail user;
 
   /**
@@ -42,5 +32,4 @@ public class AssessmentMappingContext {
    * and the opponent object.
    */
   private List<AssessmentOpponentMappingContext> opponentContext;
-
 }

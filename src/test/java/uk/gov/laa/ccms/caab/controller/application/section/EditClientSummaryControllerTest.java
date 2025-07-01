@@ -61,29 +61,21 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 @ExtendWith(MockitoExtension.class)
 class EditClientSummaryControllerTest {
 
-  @Mock
-  private ClientService clientService;
+  @Mock private ClientService clientService;
 
-  @Mock
-  private LookupService lookupService;
+  @Mock private LookupService lookupService;
 
-  @Mock
-  private ClientBasicDetailsValidator basicValidator;
+  @Mock private ClientBasicDetailsValidator basicValidator;
 
-  @Mock
-  private ClientContactDetailsValidator contactValidator;
+  @Mock private ClientContactDetailsValidator contactValidator;
 
-  @Mock
-  private ClientAddressDetailsValidator addressValidator;
+  @Mock private ClientAddressDetailsValidator addressValidator;
 
-  @Mock
-  private ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator;
+  @Mock private ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator;
 
-  @Mock
-  private ClientDetailMapper clientDetailsMapper;
+  @Mock private ClientDetailMapper clientDetailsMapper;
 
-  @InjectMocks
-  private EditClientSummaryController editClientSummaryController;
+  @InjectMocks private EditClientSummaryController editClientSummaryController;
 
   private MockMvc mockMvc;
 
@@ -100,15 +92,15 @@ class EditClientSummaryControllerTest {
 
   private ActiveCase activeCase;
 
-  private static final UserDetail userDetails = new UserDetail()
-      .userId(1)
-      .userType("testUserType")
-      .loginId("testLoginId");
+  private static final UserDetail userDetails =
+      new UserDetail().userId(1).userType("testUserType").loginId("testLoginId");
 
   @BeforeEach
   void setup() {
-    mockMvc = MockMvcBuilders.standaloneSetup(editClientSummaryController)
-        .setConversionService(getConversionService()).build();
+    mockMvc =
+        MockMvcBuilders.standaloneSetup(editClientSummaryController)
+            .setConversionService(getConversionService())
+            .build();
 
     clientFlowFormData = new ClientFlowFormData("edit");
     clientFlowFormData.setBasicDetails(new ClientFormDataBasicDetails());
@@ -132,25 +124,31 @@ class EditClientSummaryControllerTest {
   @DisplayName("Test get client details summary with form data in session")
   void testGetClientDetailsSummary_withFormDataInSession() throws Exception {
 
-    when(lookupService.getClientLookups(any())).thenReturn(
-        List.of(
-            Pair.of(COMMON_VALUE_CONTACT_TITLE, Mono.just(Optional.of(titleLookupValueDetail))),
-            Pair.of(COMMON_VALUE_GENDER, Mono.just(Optional.of(genderLookupValueDetail))),
-            Pair.of(COMMON_VALUE_MARITAL_STATUS, Mono.just(Optional.of(maritalStatusLookupValueDetail))),
-            Pair.of(COMMON_VALUE_ETHNIC_ORIGIN, Mono.just(Optional.of(ethnicityLookupValueDetail))),
-            Pair.of(COMMON_VALUE_DISABILITY, Mono.just(Optional.of(disabilityLookupValueDetail))),
-            Pair.of(COMMON_VALUE_CORRESPONDENCE_METHOD, Mono.just(Optional.of(correspondenceMethodLookupValueDetail)))
-        )
-    );
+    when(lookupService.getClientLookups(any()))
+        .thenReturn(
+            List.of(
+                Pair.of(COMMON_VALUE_CONTACT_TITLE, Mono.just(Optional.of(titleLookupValueDetail))),
+                Pair.of(COMMON_VALUE_GENDER, Mono.just(Optional.of(genderLookupValueDetail))),
+                Pair.of(
+                    COMMON_VALUE_MARITAL_STATUS,
+                    Mono.just(Optional.of(maritalStatusLookupValueDetail))),
+                Pair.of(
+                    COMMON_VALUE_ETHNIC_ORIGIN, Mono.just(Optional.of(ethnicityLookupValueDetail))),
+                Pair.of(
+                    COMMON_VALUE_DISABILITY, Mono.just(Optional.of(disabilityLookupValueDetail))),
+                Pair.of(
+                    COMMON_VALUE_CORRESPONDENCE_METHOD,
+                    Mono.just(Optional.of(correspondenceMethodLookupValueDetail)))));
 
     when(lookupService.addCommonLookupsToModel(anyList(), any(Model.class)))
         .thenReturn(Mono.empty());
 
-
-    mockMvc.perform(get("/application/sections/client/details/summary")
-            .sessionAttr(USER_DETAILS, userDetails)
-            .sessionAttr(ACTIVE_CASE, activeCase)
-            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+    mockMvc
+        .perform(
+            get("/application/sections/client/details/summary")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().isOk())
         .andExpect(view().name("application/sections/client-summary-details"));
 
@@ -162,33 +160,38 @@ class EditClientSummaryControllerTest {
     verify(clientDetailsMapper, never()).toClientFlowFormData(any());
   }
 
-
   @Test
   @DisplayName("Test get client details summary without form data in session")
   void testGetClientDetailsSummary_withoutFormDataInSession() throws Exception {
 
-    when(lookupService.getClientLookups(any())).thenReturn(
-        List.of(
-            Pair.of(COMMON_VALUE_CONTACT_TITLE, Mono.just(Optional.of(titleLookupValueDetail))),
-            Pair.of(COMMON_VALUE_GENDER, Mono.just(Optional.of(genderLookupValueDetail))),
-            Pair.of(COMMON_VALUE_MARITAL_STATUS, Mono.just(Optional.of(maritalStatusLookupValueDetail))),
-            Pair.of(COMMON_VALUE_ETHNIC_ORIGIN, Mono.just(Optional.of(ethnicityLookupValueDetail))),
-            Pair.of(COMMON_VALUE_DISABILITY, Mono.just(Optional.of(disabilityLookupValueDetail))),
-            Pair.of(COMMON_VALUE_CORRESPONDENCE_METHOD, Mono.just(Optional.of(correspondenceMethodLookupValueDetail)))
-        )
-    );
+    when(lookupService.getClientLookups(any()))
+        .thenReturn(
+            List.of(
+                Pair.of(COMMON_VALUE_CONTACT_TITLE, Mono.just(Optional.of(titleLookupValueDetail))),
+                Pair.of(COMMON_VALUE_GENDER, Mono.just(Optional.of(genderLookupValueDetail))),
+                Pair.of(
+                    COMMON_VALUE_MARITAL_STATUS,
+                    Mono.just(Optional.of(maritalStatusLookupValueDetail))),
+                Pair.of(
+                    COMMON_VALUE_ETHNIC_ORIGIN, Mono.just(Optional.of(ethnicityLookupValueDetail))),
+                Pair.of(
+                    COMMON_VALUE_DISABILITY, Mono.just(Optional.of(disabilityLookupValueDetail))),
+                Pair.of(
+                    COMMON_VALUE_CORRESPONDENCE_METHOD,
+                    Mono.just(Optional.of(correspondenceMethodLookupValueDetail)))));
 
     when(lookupService.addCommonLookupsToModel(anyList(), any(Model.class)))
         .thenReturn(Mono.empty());
-
 
     when(clientService.getClient(any(), any(), any())).thenReturn(Mono.just(new ClientDetail()));
 
     when(clientDetailsMapper.toClientFlowFormData(any())).thenReturn(clientFlowFormData);
 
-    mockMvc.perform(get("/application/sections/client/details/summary")
-            .sessionAttr(USER_DETAILS, userDetails)
-            .sessionAttr(ACTIVE_CASE, activeCase))
+    mockMvc
+        .perform(
+            get("/application/sections/client/details/summary")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk())
         .andExpect(view().name("application/sections/client-summary-details"));
 
@@ -204,17 +207,18 @@ class EditClientSummaryControllerTest {
   void testPostClientDetailsSummary() throws Exception {
     final ClientFlowFormData clientFlowFormData = new ClientFlowFormData("edit");
 
-    when(clientService.updateClient(any(), any(), any())).thenReturn(
-        Mono.just(new ClientTransactionResponse()));
+    when(clientService.updateClient(any(), any(), any()))
+        .thenReturn(Mono.just(new ClientTransactionResponse()));
 
-    mockMvc.perform(post("/application/sections/client/details/summary")
-            .sessionAttr(USER_DETAILS, userDetails)
-            .sessionAttr(ACTIVE_CASE, activeCase)
-            .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+    mockMvc
+        .perform(
+            post("/application/sections/client/details/summary")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/client-update"));
 
     verify(clientService).updateClient(any(), any(), any());
   }
-
 }

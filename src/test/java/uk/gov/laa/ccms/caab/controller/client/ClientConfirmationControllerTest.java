@@ -47,25 +47,19 @@ import uk.gov.laa.ccms.soa.gateway.model.RecordHistory;
 @WebAppConfiguration
 class ClientConfirmationControllerTest {
 
-  @Mock
-  private HttpSession httpSession;
+  @Mock private HttpSession httpSession;
 
-  @Mock
-  private ClientService clientService;
+  @Mock private ClientService clientService;
 
-  @Mock
-  private ApplicationService applicationService;
+  @Mock private ApplicationService applicationService;
 
-  @Mock
-  private ResultDisplayMapper resultDisplayMapper;
+  @Mock private ResultDisplayMapper resultDisplayMapper;
 
-  @InjectMocks
-  private ClientConfirmationController clientConfirmationController;
+  @InjectMocks private ClientConfirmationController clientConfirmationController;
 
   private MockMvc mockMvc;
 
-  @Autowired
-  private WebApplicationContext webApplicationContext;
+  @Autowired private WebApplicationContext webApplicationContext;
 
   @BeforeEach
   public void setup() {
@@ -78,12 +72,15 @@ class ClientConfirmationControllerTest {
     UserDetail user = buildUser(); // Assuming buildUser() method creates a UserDetail object
     ClientDetail clientInformation = new ClientDetail(); // Assuming proper initialization
 
-    when(clientService.getClient(clientReferenceNumber, user.getLoginId(),
-        user.getUserType())).thenReturn(Mono.just(clientInformation));
+    when(clientService.getClient(clientReferenceNumber, user.getLoginId(), user.getUserType()))
+        .thenReturn(Mono.just(clientInformation));
 
-    this.mockMvc.perform(get("/application/client/" + clientReferenceNumber + "/confirm")
-            .sessionAttr(USER_DETAILS,
-                user))// using the constant USER_DETAILS for the session attribute name
+    this.mockMvc
+        .perform(
+            get("/application/client/" + clientReferenceNumber + "/confirm")
+                .sessionAttr(
+                    USER_DETAILS,
+                    user)) // using the constant USER_DETAILS for the session attribute name
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-client-confirmation"))
@@ -93,18 +90,21 @@ class ClientConfirmationControllerTest {
 
   @Test
   void testClientConfirmedSuccess() throws Exception {
-    String confirmedClientReference = "12345"; //must match client reference above
+    String confirmedClientReference = "12345"; // must match client reference above
     ApplicationFormData applicationFormData = buildApplicationDetails();
     ClientDetail clientInformation = buildClientInformation();
     UserDetail user = buildUser();
 
-    when(applicationService.createApplication(applicationFormData, clientInformation, user)).thenReturn(Mono.empty());
+    when(applicationService.createApplication(applicationFormData, clientInformation, user))
+        .thenReturn(Mono.empty());
 
-    this.mockMvc.perform(post("/application/client/confirmed")
-            .param("confirmedClientReference", confirmedClientReference)
-            .sessionAttr(APPLICATION_FORM_DATA, applicationFormData)
-            .sessionAttr("clientInformation", clientInformation)
-            .sessionAttr(USER_DETAILS, user))
+    this.mockMvc
+        .perform(
+            post("/application/client/confirmed")
+                .param("confirmedClientReference", confirmedClientReference)
+                .sessionAttr(APPLICATION_FORM_DATA, applicationFormData)
+                .sessionAttr("clientInformation", clientInformation)
+                .sessionAttr(USER_DETAILS, user))
         .andReturn();
 
     verify(applicationService).createApplication(applicationFormData, clientInformation, user);
@@ -120,11 +120,12 @@ class ClientConfirmationControllerTest {
     Exception exception = null;
 
     try {
-      this.mockMvc.perform(post("/application/client/confirmed")
-          .param("confirmedClientReference", wrongReference)
-          .sessionAttr(APPLICATION_FORM_DATA, applicationFormData)
-          .sessionAttr("clientInformation", clientInformation)
-          .sessionAttr(USER_DETAILS, user));
+      this.mockMvc.perform(
+          post("/application/client/confirmed")
+              .param("confirmedClientReference", wrongReference)
+              .sessionAttr(APPLICATION_FORM_DATA, applicationFormData)
+              .sessionAttr("clientInformation", clientInformation)
+              .sessionAttr(USER_DETAILS, user));
     } catch (Exception e) {
       exception = e;
     }
@@ -143,12 +144,7 @@ class ClientConfirmationControllerTest {
   }
 
   private BaseProvider buildProvider() {
-    return new BaseProvider()
-        .id(123)
-        .addOfficesItem(
-            new BaseOffice()
-                .id(1)
-                .name("Office 1"));
+    return new BaseProvider().id(123).addOfficesItem(new BaseOffice().id(1).name("Office 1"));
   }
 
   private ApplicationFormData buildApplicationDetails() {
@@ -166,8 +162,7 @@ class ClientConfirmationControllerTest {
     String clientReferenceNumber = "12345";
     return new ClientDetail()
         .clientReferenceNumber(clientReferenceNumber)
-        .details(new ClientDetailDetails()
-            .name(new NameDetail()))
+        .details(new ClientDetailDetails().name(new NameDetail()))
         .recordHistory(new RecordHistory());
   }
 }

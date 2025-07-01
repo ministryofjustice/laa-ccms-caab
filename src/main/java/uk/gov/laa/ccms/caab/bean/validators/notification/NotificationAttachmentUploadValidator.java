@@ -9,9 +9,7 @@ import uk.gov.laa.ccms.caab.bean.notification.NotificationAttachmentUploadFormDa
 import uk.gov.laa.ccms.caab.bean.validators.file.FileUploadValidator;
 import uk.gov.laa.ccms.caab.constants.SendBy;
 
-/**
- * Validate the evidence document details provided by evidence upload flow.
- */
+/** Validate the evidence document details provided by evidence upload flow. */
 @Component
 @Getter
 public class NotificationAttachmentUploadValidator extends FileUploadValidator {
@@ -42,6 +40,5 @@ public class NotificationAttachmentUploadValidator extends FileUploadValidator {
       validateDocumentType(notificationAttachmentUploadFormData, errors);
       validateDocumentDescription(notificationAttachmentUploadFormData, errors);
     }
-
   }
 }

@@ -64,11 +64,9 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @ExtendWith(MockitoExtension.class)
 class CaseControllerTest {
 
-  @Mock
-  private ApplicationService applicationService;
+  @Mock private ApplicationService applicationService;
 
-  @InjectMocks
-  private CaseController caseController;
+  @InjectMocks private CaseController caseController;
 
   private MockMvcTester mockMvc;
 
@@ -101,35 +99,67 @@ class CaseControllerTest {
 
       // EBS Case
       ApplicationDetail applicationDetail =
-          getEbsCase(selectedCaseRef, providerId, providerReference, clientFirstname, clientSurname,
-              clientReference, false, null, null, List.of(FunctionConstants.AMEND_CASE));
+          getEbsCase(
+              selectedCaseRef,
+              providerId,
+              providerReference,
+              clientFirstname,
+              clientSurname,
+              clientReference,
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.AMEND_CASE));
 
       final ActiveCase activeCase =
-          getActiveCase(selectedCaseRef, providerId, clientFirstname, clientSurname, clientReference,
+          getActiveCase(
+              selectedCaseRef,
+              providerId,
+              clientFirstname,
+              clientSurname,
+              clientReference,
               providerReference);
 
-      assertThat(mockMvc
-          .perform(
-              get("/case/overview", selectedCaseRef)
-                  .sessionAttr(USER_DETAILS, user)
-                  .sessionAttr(CASE, applicationDetail)))
+      assertThat(
+              mockMvc.perform(
+                  get("/case/overview", selectedCaseRef)
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, applicationDetail)))
           .hasViewName("application/case-overview")
-          .satisfies(response -> {
-            assertThat(response).request().sessionAttributes()
-                .hasEntrySatisfying(CASE, value -> assertThat(value).isEqualTo(applicationDetail))
-                .hasEntrySatisfying(ACTIVE_CASE, value -> assertThat(value).isEqualTo(activeCase));
-            assertThat(response).model()
-                .hasEntrySatisfying("hasEbsAmendments", value -> assertThat(value).asInstanceOf(
-                    InstanceOfAssertFactories.BOOLEAN).isFalse())
-                .hasEntrySatisfying("draftProceedings", value -> assertThat(value).asInstanceOf(
-                    InstanceOfAssertFactories.COLLECTION).isEmpty())
-                .hasEntrySatisfying("draftCosts", value -> assertThat(value).isNull())
-                .hasEntrySatisfying("availableActions", value -> assertThat(value).asInstanceOf(
-                    InstanceOfAssertFactories.COLLECTION).hasSize(1))
-                .hasEntrySatisfying("returnTo", value -> assertThat(value)
-                    .isEqualTo("caseSearchResults"))
-                .hasEntrySatisfying(NOTIFICATION_ID, value -> assertThat(value).isNull());
-          });
+          .satisfies(
+              response -> {
+                assertThat(response)
+                    .request()
+                    .sessionAttributes()
+                    .hasEntrySatisfying(
+                        CASE, value -> assertThat(value).isEqualTo(applicationDetail))
+                    .hasEntrySatisfying(
+                        ACTIVE_CASE, value -> assertThat(value).isEqualTo(activeCase));
+                assertThat(response)
+                    .model()
+                    .hasEntrySatisfying(
+                        "hasEbsAmendments",
+                        value ->
+                            assertThat(value)
+                                .asInstanceOf(InstanceOfAssertFactories.BOOLEAN)
+                                .isFalse())
+                    .hasEntrySatisfying(
+                        "draftProceedings",
+                        value ->
+                            assertThat(value)
+                                .asInstanceOf(InstanceOfAssertFactories.COLLECTION)
+                                .isEmpty())
+                    .hasEntrySatisfying("draftCosts", value -> assertThat(value).isNull())
+                    .hasEntrySatisfying(
+                        "availableActions",
+                        value ->
+                            assertThat(value)
+                                .asInstanceOf(InstanceOfAssertFactories.COLLECTION)
+                                .hasSize(1))
+                    .hasEntrySatisfying(
+                        "returnTo", value -> assertThat(value).isEqualTo("caseSearchResults"))
+                    .hasEntrySatisfying(NOTIFICATION_ID, value -> assertThat(value).isNull());
+              });
     }
 
     @Test
@@ -145,37 +175,69 @@ class CaseControllerTest {
 
       // EBS Case
       ApplicationDetail applicationDetail =
-          getEbsCase(selectedCaseRef, providerId, providerReference, clientFirstname, clientSurname,
-              clientReference, false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              providerId,
+              providerReference,
+              clientFirstname,
+              clientSurname,
+              clientReference,
+              false,
+              null,
+              null);
 
       final ActiveCase activeCase =
-          getActiveCase(selectedCaseRef, providerId, clientFirstname, clientSurname, clientReference,
+          getActiveCase(
+              selectedCaseRef,
+              providerId,
+              clientFirstname,
+              clientSurname,
+              clientReference,
               providerReference);
 
-      assertThat(mockMvc
-          .perform(
-              get("/case/overview", selectedCaseRef)
-                  .sessionAttr(USER_DETAILS, user)
-                  .sessionAttr(CASE, applicationDetail)
-                  .sessionAttr(NOTIFICATION_ID, notificationId)
-                  .header("referer", "/notifications/%s".formatted(notificationId))))
+      assertThat(
+              mockMvc.perform(
+                  get("/case/overview", selectedCaseRef)
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, applicationDetail)
+                      .sessionAttr(NOTIFICATION_ID, notificationId)
+                      .header("referer", "/notifications/%s".formatted(notificationId))))
           .hasViewName("application/case-overview")
-          .satisfies(response -> {
-            assertThat(response).request().sessionAttributes()
-                .hasEntrySatisfying(CASE, value -> assertThat(value).isEqualTo(applicationDetail))
-                .hasEntrySatisfying(ACTIVE_CASE, value -> assertThat(value).isEqualTo(activeCase));
-            assertThat(response).model()
-                .hasEntrySatisfying("hasEbsAmendments", value -> assertThat(value).asInstanceOf(
-                    InstanceOfAssertFactories.BOOLEAN).isFalse())
-                .hasEntrySatisfying("draftProceedings", value -> assertThat(value).asInstanceOf(
-                    InstanceOfAssertFactories.COLLECTION).isEmpty())
-                .hasEntrySatisfying("draftCosts", value -> assertThat(value).isNull())
-                .hasEntrySatisfying("availableActions", value -> assertThat(value).asInstanceOf(
-                    InstanceOfAssertFactories.COLLECTION).hasSize(1))
-                .hasEntrySatisfying("returnTo", value -> assertThat(value)
-                    .isEqualTo("notification"))
-                .hasEntrySatisfying(NOTIFICATION_ID, value -> assertThat(value).isEqualTo(notificationId));
-          });
+          .satisfies(
+              response -> {
+                assertThat(response)
+                    .request()
+                    .sessionAttributes()
+                    .hasEntrySatisfying(
+                        CASE, value -> assertThat(value).isEqualTo(applicationDetail))
+                    .hasEntrySatisfying(
+                        ACTIVE_CASE, value -> assertThat(value).isEqualTo(activeCase));
+                assertThat(response)
+                    .model()
+                    .hasEntrySatisfying(
+                        "hasEbsAmendments",
+                        value ->
+                            assertThat(value)
+                                .asInstanceOf(InstanceOfAssertFactories.BOOLEAN)
+                                .isFalse())
+                    .hasEntrySatisfying(
+                        "draftProceedings",
+                        value ->
+                            assertThat(value)
+                                .asInstanceOf(InstanceOfAssertFactories.COLLECTION)
+                                .isEmpty())
+                    .hasEntrySatisfying("draftCosts", value -> assertThat(value).isNull())
+                    .hasEntrySatisfying(
+                        "availableActions",
+                        value ->
+                            assertThat(value)
+                                .asInstanceOf(InstanceOfAssertFactories.COLLECTION)
+                                .hasSize(1))
+                    .hasEntrySatisfying(
+                        "returnTo", value -> assertThat(value).isEqualTo("notification"))
+                    .hasEntrySatisfying(
+                        NOTIFICATION_ID, value -> assertThat(value).isEqualTo(notificationId));
+              });
     }
 
     @Test
@@ -194,18 +256,32 @@ class CaseControllerTest {
 
       // EBS Case
       ApplicationDetail applicationDetail =
-          getEbsCase(selectedCaseRef, providerId, providerReference, clientFirstname, clientSurname,
-              clientReference, hasEbsAmendments, proceedingId, costId);
+          getEbsCase(
+              selectedCaseRef,
+              providerId,
+              providerReference,
+              clientFirstname,
+              clientSurname,
+              clientReference,
+              hasEbsAmendments,
+              proceedingId,
+              costId);
 
       final ActiveCase activeCase =
-          getActiveCase(selectedCaseRef, providerId, clientFirstname, clientSurname, clientReference,
+          getActiveCase(
+              selectedCaseRef,
+              providerId,
+              clientFirstname,
+              clientSurname,
+              clientReference,
               providerReference);
 
       // TDS application
-      BaseApplicationDetail tdsApplication = new BaseApplicationDetail()
-          .id(Integer.parseInt(appRef))
-          .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
-          .caseReferenceNumber(selectedCaseRef);
+      BaseApplicationDetail tdsApplication =
+          new BaseApplicationDetail()
+              .id(Integer.parseInt(appRef))
+              .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
+              .caseReferenceNumber(selectedCaseRef);
 
       when(applicationService.getApplication(any())).thenReturn(Mono.empty());
       when(applicationService.isAmendment(any(), any())).thenReturn(Boolean.TRUE);
@@ -214,29 +290,49 @@ class CaseControllerTest {
       CostStructureDetail expectedCost =
           new CostStructureDetail().addCostEntriesItem(new CostEntryDetail().ebsId(costId));
 
-      assertThat(mockMvc
-          .perform(
-              get("/case/overview", selectedCaseRef)
-                  .sessionAttr(USER_DETAILS, user)
-                  .sessionAttr(CASE, applicationDetail)
-                  .sessionAttr(APPLICATION_SUMMARY, tdsApplication)))
+      assertThat(
+              mockMvc.perform(
+                  get("/case/overview", selectedCaseRef)
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, applicationDetail)
+                      .sessionAttr(APPLICATION_SUMMARY, tdsApplication)))
           .hasViewName("application/case-overview")
-          .satisfies(response -> {
-            assertThat(response).request().sessionAttributes()
-                .hasEntrySatisfying(CASE, value -> assertThat(value).isEqualTo(applicationDetail))
-                .hasEntrySatisfying(ACTIVE_CASE, value -> assertThat(value).isEqualTo(activeCase));
-            assertThat(response).model()
-                .hasEntrySatisfying("hasEbsAmendments", value -> assertThat(value).asInstanceOf(
-                    InstanceOfAssertFactories.BOOLEAN).isEqualTo(hasEbsAmendments))
-                .hasEntrySatisfying("draftProceedings", value -> assertThat(value).asInstanceOf(
-                    InstanceOfAssertFactories.COLLECTION).hasSize(1).contains(expectedProceeding))
-                .hasEntrySatisfying("draftCosts", value -> assertThat(value).isEqualTo(expectedCost))
-                .hasEntrySatisfying("availableActions", value -> assertThat(value).asInstanceOf(
-                    InstanceOfAssertFactories.COLLECTION).hasSize(1))
-                .hasEntrySatisfying("returnTo", value -> assertThat(value)
-                    .isEqualTo("caseSearchResults"))
-                .hasEntrySatisfying(NOTIFICATION_ID, value -> assertThat(value).isNull());
-          });
+          .satisfies(
+              response -> {
+                assertThat(response)
+                    .request()
+                    .sessionAttributes()
+                    .hasEntrySatisfying(
+                        CASE, value -> assertThat(value).isEqualTo(applicationDetail))
+                    .hasEntrySatisfying(
+                        ACTIVE_CASE, value -> assertThat(value).isEqualTo(activeCase));
+                assertThat(response)
+                    .model()
+                    .hasEntrySatisfying(
+                        "hasEbsAmendments",
+                        value ->
+                            assertThat(value)
+                                .asInstanceOf(InstanceOfAssertFactories.BOOLEAN)
+                                .isEqualTo(hasEbsAmendments))
+                    .hasEntrySatisfying(
+                        "draftProceedings",
+                        value ->
+                            assertThat(value)
+                                .asInstanceOf(InstanceOfAssertFactories.COLLECTION)
+                                .hasSize(1)
+                                .contains(expectedProceeding))
+                    .hasEntrySatisfying(
+                        "draftCosts", value -> assertThat(value).isEqualTo(expectedCost))
+                    .hasEntrySatisfying(
+                        "availableActions",
+                        value ->
+                            assertThat(value)
+                                .asInstanceOf(InstanceOfAssertFactories.COLLECTION)
+                                .hasSize(1))
+                    .hasEntrySatisfying(
+                        "returnTo", value -> assertThat(value).isEqualTo("caseSearchResults"))
+                    .hasEntrySatisfying(NOTIFICATION_ID, value -> assertThat(value).isNull());
+              });
     }
 
     @Test
@@ -255,72 +351,114 @@ class CaseControllerTest {
 
       // EBS Case
       ApplicationDetail applicationDetail =
-          getEbsCase(selectedCaseRef, providerId, providerReference, clientFirstname, clientSurname,
-              clientReference, hasEbsAmendments, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              providerId,
+              providerReference,
+              clientFirstname,
+              clientSurname,
+              clientReference,
+              hasEbsAmendments,
+              null,
+              null);
 
       final ActiveCase activeCase =
-          getActiveCase(selectedCaseRef, providerId, clientFirstname, clientSurname, clientReference,
+          getActiveCase(
+              selectedCaseRef,
+              providerId,
+              clientFirstname,
+              clientSurname,
+              clientReference,
               providerReference);
 
       // TDS application
-      BaseApplicationDetail tdsApplication = new BaseApplicationDetail()
-          .id(Integer.parseInt(appRef))
-          .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
-          .caseReferenceNumber(selectedCaseRef);
+      BaseApplicationDetail tdsApplication =
+          new BaseApplicationDetail()
+              .id(Integer.parseInt(appRef))
+              .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
+              .caseReferenceNumber(selectedCaseRef);
 
       ProceedingDetail expectedProceeding = new ProceedingDetail().id(proceedingId);
       CostStructureDetail expectedCost =
           new CostStructureDetail().addCostEntriesItem(new CostEntryDetail().ebsId(costId));
 
       ApplicationDetail amendments =
-          new ApplicationDetail()
-              .proceedings(List.of(expectedProceeding))
-              .costs(expectedCost);
+          new ApplicationDetail().proceedings(List.of(expectedProceeding)).costs(expectedCost);
 
       when(applicationService.getApplication(any())).thenReturn(Mono.just(amendments));
       when(applicationService.isAmendment(any(), any())).thenReturn(Boolean.TRUE);
 
-      assertThat(mockMvc
-          .perform(
-              get("/case/overview", selectedCaseRef)
-                  .sessionAttr(USER_DETAILS, user)
-                  .sessionAttr(CASE, applicationDetail)
-                  .sessionAttr(APPLICATION_SUMMARY, tdsApplication)))
+      assertThat(
+              mockMvc.perform(
+                  get("/case/overview", selectedCaseRef)
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, applicationDetail)
+                      .sessionAttr(APPLICATION_SUMMARY, tdsApplication)))
           .hasViewName("application/case-overview")
-          .satisfies(response -> {
-            assertThat(response).request().sessionAttributes()
-                .hasEntrySatisfying(CASE, value -> assertThat(value).isEqualTo(applicationDetail))
-                .hasEntrySatisfying(ACTIVE_CASE, value -> assertThat(value).isEqualTo(activeCase));
-            assertThat(response).model()
-                .hasEntrySatisfying("hasEbsAmendments", value -> assertThat(value).asInstanceOf(
-                    InstanceOfAssertFactories.BOOLEAN).isEqualTo(hasEbsAmendments))
-                .hasEntrySatisfying("draftProceedings", value -> assertThat(value).asInstanceOf(
-                    InstanceOfAssertFactories.COLLECTION).hasSize(1).contains(expectedProceeding))
-                .hasEntrySatisfying("draftCosts", value -> assertThat(value).isEqualTo(expectedCost))
-                .hasEntrySatisfying("availableActions", value -> assertThat(value).asInstanceOf(
-                    InstanceOfAssertFactories.COLLECTION).hasSize(1))
-                .hasEntrySatisfying("returnTo", value -> assertThat(value)
-                    .isEqualTo("caseSearchResults"))
-                .hasEntrySatisfying(NOTIFICATION_ID, value -> assertThat(value).isNull());
-          });
+          .satisfies(
+              response -> {
+                assertThat(response)
+                    .request()
+                    .sessionAttributes()
+                    .hasEntrySatisfying(
+                        CASE, value -> assertThat(value).isEqualTo(applicationDetail))
+                    .hasEntrySatisfying(
+                        ACTIVE_CASE, value -> assertThat(value).isEqualTo(activeCase));
+                assertThat(response)
+                    .model()
+                    .hasEntrySatisfying(
+                        "hasEbsAmendments",
+                        value ->
+                            assertThat(value)
+                                .asInstanceOf(InstanceOfAssertFactories.BOOLEAN)
+                                .isEqualTo(hasEbsAmendments))
+                    .hasEntrySatisfying(
+                        "draftProceedings",
+                        value ->
+                            assertThat(value)
+                                .asInstanceOf(InstanceOfAssertFactories.COLLECTION)
+                                .hasSize(1)
+                                .contains(expectedProceeding))
+                    .hasEntrySatisfying(
+                        "draftCosts", value -> assertThat(value).isEqualTo(expectedCost))
+                    .hasEntrySatisfying(
+                        "availableActions",
+                        value ->
+                            assertThat(value)
+                                .asInstanceOf(InstanceOfAssertFactories.COLLECTION)
+                                .hasSize(1))
+                    .hasEntrySatisfying(
+                        "returnTo", value -> assertThat(value).isEqualTo("caseSearchResults"))
+                    .hasEntrySatisfying(NOTIFICATION_ID, value -> assertThat(value).isNull());
+              });
     }
 
     @Test
     @DisplayName("Case overview screen shows no available actions when ebsCase has no functions")
     public void caseOverviewNoAvailableFunctionsShowsNoActions() {
       final String selectedCaseRef = "3";
-      ApplicationDetail ebsCase = getEbsCase(
-          selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null,
-          Collections.emptyList());
+      ApplicationDetail ebsCase =
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              Collections.emptyList());
 
-      assertThat(mockMvc.perform(
-              get("/case/overview")
-                  .sessionAttr(USER_DETAILS, user)
-                  .sessionAttr(CASE, ebsCase)))
+      assertThat(
+              mockMvc.perform(
+                  get("/case/overview").sessionAttr(USER_DETAILS, user).sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .model()
-          .hasEntrySatisfying("availableActions", value -> assertThat(value).asInstanceOf(
-              InstanceOfAssertFactories.COLLECTION).isEmpty());
+          .hasEntrySatisfying(
+              "availableActions",
+              value ->
+                  assertThat(value).asInstanceOf(InstanceOfAssertFactories.COLLECTION).isEmpty());
     }
 
     @Test
@@ -328,17 +466,18 @@ class CaseControllerTest {
         "Case overview screen shows 'Continue Amendment' when AMEND_CASE is available and it's a TDS amendment")
     public void caseOverviewAmendCaseIsTdsAmendmentShowsContinueAmendment() {
       final String selectedCaseRef = "4";
-      ApplicationDetail ebsCase = getEbsCase(
-          selectedCaseRef,
-          1,
-          "ref",
-          "client",
-          "smith",
-          "clientRef",
-          false,
-          null,
-          null,
-          List.of(FunctionConstants.AMEND_CASE));
+      ApplicationDetail ebsCase =
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.AMEND_CASE));
       BaseApplicationDetail tdsApplication =
           new BaseApplicationDetail().id(100); // Indicates an amendment
 
@@ -352,15 +491,18 @@ class CaseControllerTest {
       when(applicationService.getApplication(any())).thenReturn(Mono.just(amendments));
       when(applicationService.isAmendment(any(), any())).thenReturn(Boolean.TRUE);
 
-      assertThat(mockMvc.perform(
-              get("/case/overview")
-                  .sessionAttr(USER_DETAILS, user)
-                  .sessionAttr(CASE, ebsCase)
-                  .sessionAttr(APPLICATION_SUMMARY, tdsApplication)))
+      assertThat(
+              mockMvc.perform(
+                  get("/case/overview")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION_SUMMARY, tdsApplication)))
           .hasStatusOk()
           .model()
-          .hasEntrySatisfying("availableActions", value -> assertThat(value).asInstanceOf(
-              InstanceOfAssertFactories.COLLECTION).hasSize(1));
+          .hasEntrySatisfying(
+              "availableActions",
+              value ->
+                  assertThat(value).asInstanceOf(InstanceOfAssertFactories.COLLECTION).hasSize(1));
     }
 
     @Test
@@ -368,52 +510,57 @@ class CaseControllerTest {
         "Case overview screen shows 'Continue Amendment' when AMEND_CASE is available and there are EBS amendments")
     public void caseOverviewAmendCaseHasEbsAmendmentsShowsContinueAmendment() throws Exception {
       final String selectedCaseRef = "5";
-      ApplicationDetail ebsCase = getEbsCase(
-          selectedCaseRef,
-          1,
-          "ref",
-          "client",
-          "smith",
-          "clientRef",
-          true,
-          1,
-          "cost1",
-          List.of(FunctionConstants.AMEND_CASE)); // hasEbsAmendments = true
+      ApplicationDetail ebsCase =
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              true,
+              1,
+              "cost1",
+              List.of(FunctionConstants.AMEND_CASE)); // hasEbsAmendments = true
 
-      assertThat(mockMvc.perform(
-          get("/case/overview")
-              .sessionAttr(USER_DETAILS, user)
-              .sessionAttr(CASE, ebsCase)))
+      assertThat(
+              mockMvc.perform(
+                  get("/case/overview").sessionAttr(USER_DETAILS, user).sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .model()
-          .hasEntrySatisfying("availableActions", value -> assertThat(value).asInstanceOf(
-              InstanceOfAssertFactories.COLLECTION).hasSize(1));
+          .hasEntrySatisfying(
+              "availableActions",
+              value ->
+                  assertThat(value).asInstanceOf(InstanceOfAssertFactories.COLLECTION).hasSize(1));
     }
 
     @Test
-    @DisplayName("Case overview screen filters available actions based on predefined list and ebsCase functions")
+    @DisplayName(
+        "Case overview screen filters available actions based on predefined list and ebsCase functions")
     public void caseOverviewFiltersAvailableActions() throws Exception {
       final String selectedCaseRef = "6";
-      ApplicationDetail ebsCase = getEbsCase(
-          selectedCaseRef,
-          1,
-          "ref",
-          "client",
-          "smith",
-          "clientRef",
-          false,
-          null,
-          null,
-          List.of(FunctionConstants.AMEND_CASE, FunctionConstants.BILLING));
+      ApplicationDetail ebsCase =
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.AMEND_CASE, FunctionConstants.BILLING));
 
-      assertThat(mockMvc.perform(
-          get("/case/overview")
-              .sessionAttr(USER_DETAILS, user)
-              .sessionAttr(CASE, ebsCase)))
+      assertThat(
+              mockMvc.perform(
+                  get("/case/overview").sessionAttr(USER_DETAILS, user).sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .model()
-          .hasEntrySatisfying("availableActions", value -> assertThat(value).asInstanceOf(
-              InstanceOfAssertFactories.COLLECTION).hasSize(2));
+          .hasEntrySatisfying(
+              "availableActions",
+              value ->
+                  assertThat(value).asInstanceOf(InstanceOfAssertFactories.COLLECTION).hasSize(2));
     }
   }
 
@@ -547,14 +694,13 @@ class CaseControllerTest {
       opponent.setType("Organisation");
       ApplicationDetail ebsCase = new ApplicationDetail();
       ebsCase.setOpponents(Collections.singletonList(opponent));
-      OrganisationDetailsSectionDisplay otherParty = new OrganisationDetailsSectionDisplay(
-          new OrganisationOrganisationDetailsSectionDisplay(),
-          new OrganisationAddressDetailsSectionDisplay());
+      OrganisationDetailsSectionDisplay otherParty =
+          new OrganisationDetailsSectionDisplay(
+              new OrganisationOrganisationDetailsSectionDisplay(),
+              new OrganisationAddressDetailsSectionDisplay());
 
-      when(applicationService.getOrganisationDetailsSectionDisplay(any())).thenReturn(
-          otherParty);
-      assertThat(mockMvc.perform(get("/case/details/other-party/0")
-          .sessionAttr(CASE, ebsCase)))
+      when(applicationService.getOrganisationDetailsSectionDisplay(any())).thenReturn(otherParty);
+      assertThat(mockMvc.perform(get("/case/details/other-party/0").sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/case-details-other-party-organisation")
           .model()
@@ -565,8 +711,7 @@ class CaseControllerTest {
   @Test
   void handleAbandonGetReturnsCorrectView() {
     ApplicationDetail ebsCase = new ApplicationDetail();
-    assertThat(mockMvc.perform(get("/case/amendment/abandon")
-        .sessionAttr(APPLICATION, ebsCase)))
+    assertThat(mockMvc.perform(get("/case/amendment/abandon").sessionAttr(APPLICATION, ebsCase)))
         .hasStatusOk()
         .hasViewName("application/amendment-remove");
   }
@@ -577,9 +722,11 @@ class CaseControllerTest {
     final UserDetail user = buildUserDetail();
     doNothing().when(applicationService).abandonApplication(ebsCase, user);
 
-    assertThat(mockMvc.perform(post("/case/amendment/abandon")
-        .sessionAttr(APPLICATION, ebsCase)
-        .sessionAttr(USER_DETAILS, user)))
+    assertThat(
+            mockMvc.perform(
+                post("/case/amendment/abandon")
+                    .sessionAttr(APPLICATION, ebsCase)
+                    .sessionAttr(USER_DETAILS, user)))
         .hasStatus3xxRedirection()
         .hasRedirectedUrl("/case/overview");
 
@@ -591,12 +738,15 @@ class CaseControllerTest {
     ApplicationDetail ebsCase = new ApplicationDetail();
     final UserDetail user = buildUserDetail();
 
-    doThrow(new CaabApplicationException("Something went wrong")).when(applicationService)
+    doThrow(new CaabApplicationException("Something went wrong"))
+        .when(applicationService)
         .abandonApplication(ebsCase, user);
 
-    assertThat(mockMvc.perform(post("/case/amendment/abandon")
-        .sessionAttr(APPLICATION, ebsCase)
-        .sessionAttr(USER_DETAILS, user)))
+    assertThat(
+            mockMvc.perform(
+                post("/case/amendment/abandon")
+                    .sessionAttr(APPLICATION, ebsCase)
+                    .sessionAttr(USER_DETAILS, user)))
         .failure()
         .hasCauseInstanceOf(CaabApplicationException.class)
         .hasMessageContaining("Something went wrong");
@@ -610,8 +760,7 @@ class CaseControllerTest {
     PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
     ebsCase.setPriorAuthorities(List.of(priorAuthority));
 
-    assertThat(mockMvc.perform(get("/case/details/prior-authority/0")
-        .sessionAttr(CASE, ebsCase)))
+    assertThat(mockMvc.perform(get("/case/details/prior-authority/0").sessionAttr(CASE, ebsCase)))
         .hasStatusOk()
         .hasViewName("application/prior-authority-review")
         .model()
@@ -623,8 +772,7 @@ class CaseControllerTest {
     ApplicationDetail ebsCase = new ApplicationDetail();
     ebsCase.setPriorAuthorities(List.of());
 
-    assertThat(mockMvc.perform(get("/case/details/prior-authority/0")
-        .sessionAttr(CASE, ebsCase)))
+    assertThat(mockMvc.perform(get("/case/details/prior-authority/0").sessionAttr(CASE, ebsCase)))
         .failure()
         .hasCauseInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Could not find prior authority with index: 0");
@@ -635,23 +783,24 @@ class CaseControllerTest {
     ApplicationDetail ebsCase = new ApplicationDetail();
     ebsCase.setPriorAuthorities(List.of(new PriorAuthorityDetail()));
 
-    assertThat(mockMvc.perform(get("/case/details/prior-authority/1")
-        .sessionAttr(CASE, ebsCase)))
+    assertThat(mockMvc.perform(get("/case/details/prior-authority/1").sessionAttr(CASE, ebsCase)))
         .failure()
         .hasCauseInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Could not find prior authority with index: 1");
   }
-
 
   @Test
   @DisplayName("editGeneralDetails redirects to delegated functions for emergency app type")
   void editGeneralDetailsRedirectsToDelegatedFunctionsForEmergency() {
     ApplicationDetail tdsApplication = new ApplicationDetail();
     tdsApplication.setId(123);
-    tdsApplication.setApplicationType(new uk.gov.laa.ccms.caab.model.ApplicationType().id(APP_TYPE_EMERGENCY));
+    tdsApplication.setApplicationType(
+        new uk.gov.laa.ccms.caab.model.ApplicationType().id(APP_TYPE_EMERGENCY));
 
-    assertThat(mockMvc.perform(get("/case/amendment/edit-general-details")
-        .sessionAttr(APPLICATION, tdsApplication)))
+    assertThat(
+            mockMvc.perform(
+                get("/case/amendment/edit-general-details")
+                    .sessionAttr(APPLICATION, tdsApplication)))
         .hasStatus3xxRedirection()
         .hasRedirectedUrl("/amendments/edit-delegated-functions");
   }
@@ -661,10 +810,13 @@ class CaseControllerTest {
   void editGeneralDetailsRedirectsToLinkedCasesForNonEmergency() {
     ApplicationDetail tdsApplication = new ApplicationDetail();
     tdsApplication.setId(456);
-    tdsApplication.setApplicationType(new uk.gov.laa.ccms.caab.model.ApplicationType().id("NON_EMERGENCY"));
+    tdsApplication.setApplicationType(
+        new uk.gov.laa.ccms.caab.model.ApplicationType().id("NON_EMERGENCY"));
 
-    assertThat(mockMvc.perform(get("/case/amendment/edit-general-details")
-        .sessionAttr(APPLICATION, tdsApplication)))
+    assertThat(
+            mockMvc.perform(
+                get("/case/amendment/edit-general-details")
+                    .sessionAttr(APPLICATION, tdsApplication)))
         .hasStatus3xxRedirection()
         .hasRedirectedUrl("/amendments/sections/linked-cases");
   }
@@ -675,8 +827,10 @@ class CaseControllerTest {
     ApplicationDetail tdsApplication = new ApplicationDetail();
     tdsApplication.setId(789);
 
-    assertThat(mockMvc.perform(get("/case/amendment/edit-general-details")
-        .sessionAttr(APPLICATION, tdsApplication)))
+    assertThat(
+            mockMvc.perform(
+                get("/case/amendment/edit-general-details")
+                    .sessionAttr(APPLICATION, tdsApplication)))
         .failure()
         .hasCauseInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("TDS Application type must not be null");
@@ -717,31 +871,38 @@ class CaseControllerTest {
       Integer proceedingId,
       String costId,
       List<String> availableFunctions) {
-    ApplicationDetail ebsCase = new ApplicationDetail()
-        .caseReferenceNumber(selectedCaseRef)
-        .providerDetails(new ApplicationProviderDetails()
-            .provider(new IntDisplayValue().id(providerId))
-            .providerCaseReference(providerReference))
-        .client(new ClientDetail()
-            .firstName(clientFirstname)
-            .surname(clientSurname)
-            .reference(clientReference))
-        .costs(new CostStructureDetail().addCostEntriesItem(new CostEntryDetail().ebsId(costId)))
-        .availableFunctions(availableFunctions)// Use provided functions
-        .amendment(false);
+    ApplicationDetail ebsCase =
+        new ApplicationDetail()
+            .caseReferenceNumber(selectedCaseRef)
+            .providerDetails(
+                new ApplicationProviderDetails()
+                    .provider(new IntDisplayValue().id(providerId))
+                    .providerCaseReference(providerReference))
+            .client(
+                new ClientDetail()
+                    .firstName(clientFirstname)
+                    .surname(clientSurname)
+                    .reference(clientReference))
+            .costs(
+                new CostStructureDetail().addCostEntriesItem(new CostEntryDetail().ebsId(costId)))
+            .availableFunctions(availableFunctions) // Use provided functions
+            .amendment(false);
 
     if (hasEbsAmendments
-        && proceedingId !=
-        null) { // ensure proceedingId is not null if hasEbsAmendments is true for this setup
+        && proceedingId
+            != null) { // ensure proceedingId is not null if hasEbsAmendments is true for this setup
       ebsCase.setAmendmentProceedingsInEbs(List.of(new ProceedingDetail().id(proceedingId)));
     }
 
     return ebsCase;
   }
 
-  private ActiveCase getActiveCase(String selectedCaseRef, Integer providerId,
+  private ActiveCase getActiveCase(
+      String selectedCaseRef,
+      Integer providerId,
       String clientFirstname,
-      String clientSurname, String clientReference,
+      String clientSurname,
+      String clientReference,
       String providerReference) {
     return ActiveCase.builder()
         .caseReferenceNumber(selectedCaseRef)

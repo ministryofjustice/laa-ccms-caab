@@ -18,8 +18,7 @@ import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 @ExtendWith(SpringExtension.class)
 class DelegatedFunctionsValidatorTest {
 
-  @InjectMocks
-  private DelegatedFunctionsValidator delegatedFunctionsValidator;
+  @InjectMocks private DelegatedFunctionsValidator delegatedFunctionsValidator;
 
   private ApplicationFormData applicationFormData;
 
@@ -56,9 +55,8 @@ class DelegatedFunctionsValidatorTest {
 
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("delegatedFunctionUsedDate"));
-    assertEquals("required.delegatedFunctionUsedDate",
+    assertEquals(
+        "required.delegatedFunctionUsedDate",
         errors.getFieldError("delegatedFunctionUsedDate").getCode());
-
   }
-
 }

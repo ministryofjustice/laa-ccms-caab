@@ -27,9 +27,7 @@ public final class FeatureService {
     logFeatureInitialization();
   }
 
-  /**
-   * Log the status of each feature.
-   */
+  /** Log the status of each feature. */
   private void logFeatureInitialization() {
     Arrays.stream(Feature.values())
         .forEach(

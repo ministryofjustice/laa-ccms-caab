@@ -17,8 +17,7 @@ import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataProceedingDetails;
 @ExtendWith(SpringExtension.class)
 class ProceedingDetailsValidatorTest {
 
-  @InjectMocks
-  private ProceedingDetailsValidator proceedingDetailsValidator;
+  @InjectMocks private ProceedingDetailsValidator proceedingDetailsValidator;
 
   private ProceedingFormDataProceedingDetails proceedingDetails;
 
@@ -26,7 +25,9 @@ class ProceedingDetailsValidatorTest {
 
   @BeforeEach
   public void setUp() {
-    proceedingDetails = new ProceedingFormDataProceedingDetails(); // Assuming that the default constructor sets all fields to null.
+    proceedingDetails =
+        new ProceedingFormDataProceedingDetails(); // Assuming that the default constructor sets all
+    // fields to null.
     errors = new BeanPropertyBindingResult(proceedingDetails, "proceedingDetails");
   }
 
@@ -55,5 +56,4 @@ class ProceedingDetailsValidatorTest {
     proceedingDetailsValidator.validate(proceedingDetails, errors);
     assertFalse(errors.hasErrors());
   }
-
 }

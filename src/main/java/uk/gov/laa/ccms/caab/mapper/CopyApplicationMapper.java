@@ -14,9 +14,7 @@ import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 
-/**
- * Mapper class to copy a subset of attributes from one CAAB ApplicationDetail to another.
- */
+/** Mapper class to copy a subset of attributes from one CAAB ApplicationDetail to another. */
 @Mapper(componentModel = "spring")
 public interface CopyApplicationMapper {
 
@@ -25,9 +23,11 @@ public interface CopyApplicationMapper {
   @Mapping(target = "applicationType.displayValue", source = "applicationType.displayValue")
   @Mapping(target = "applicationType.id", source = "applicationType.id")
   @Mapping(target = "applicationType.devolvedPowers.contractFlag", ignore = true)
-  @Mapping(target = "applicationType.devolvedPowers.dateUsed",
+  @Mapping(
+      target = "applicationType.devolvedPowers.dateUsed",
       source = "applicationType.devolvedPowers.dateUsed")
-  @Mapping(target = "applicationType.devolvedPowers.used",
+  @Mapping(
+      target = "applicationType.devolvedPowers.used",
       source = "applicationType.devolvedPowers.used")
   @Mapping(target = "providerDetails", source = "providerDetails")
   @Mapping(target = "categoryOfLaw", source = "categoryOfLaw")
@@ -36,8 +36,7 @@ public interface CopyApplicationMapper {
   @Mapping(target = "proceedings", source = "proceedings")
   @Mapping(target = "opponents", source = "opponents")
   ApplicationDetail copyApplication(
-      @MappingTarget ApplicationDetail newApplication,
-      ApplicationDetail applicationToCopy);
+      @MappingTarget ApplicationDetail newApplication, ApplicationDetail applicationToCopy);
 
   @Mapping(target = "providerCaseReference", ignore = true)
   ApplicationProviderDetails copyApplicationProviderDetails(
@@ -57,8 +56,7 @@ public interface CopyApplicationMapper {
   @Mapping(target = "defaultInd", ignore = true)
   @Mapping(target = "nonDefaultWordingReqd", ignore = true)
   @Mapping(target = "stage", ignore = true)
-  ScopeLimitationDetail copyScopeLimitation(
-      ScopeLimitationDetail scopeLimitationToCopy);
+  ScopeLimitationDetail copyScopeLimitation(ScopeLimitationDetail scopeLimitationToCopy);
 
   List<OpponentDetail> copyOpponentList(List<OpponentDetail> opponentList);
 
@@ -67,7 +65,8 @@ public interface CopyApplicationMapper {
   @Mapping(target = "amendment", constant = "false")
   @Mapping(target = "appMode", constant = "true")
   @Mapping(target = "award", constant = "false")
-  @Mapping(target = "address",
+  @Mapping(
+      target = "address",
       defaultExpression = "java(new uk.gov.laa.ccms.caab.model.AddressDetail())")
   OpponentDetail copyOpponent(OpponentDetail opponentToCopy);
 }

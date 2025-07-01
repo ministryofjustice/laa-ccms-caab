@@ -14,8 +14,7 @@ import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityTypeFormData;
 @ExtendWith(SpringExtension.class)
 class PriorAuthorityTypeDetailsValidatorTest {
 
-  @InjectMocks
-  private PriorAuthorityTypeDetailsValidator priorAuthorityTypeDetailsValidator;
+  @InjectMocks private PriorAuthorityTypeDetailsValidator priorAuthorityTypeDetailsValidator;
 
   private PriorAuthorityTypeFormData priorAuthorityTypeDetails;
 
@@ -43,7 +42,8 @@ class PriorAuthorityTypeDetailsValidatorTest {
     priorAuthorityTypeDetailsValidator.validate(priorAuthorityTypeDetails, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("priorAuthorityType"));
-    assertEquals("required.priorAuthorityType", errors.getFieldError("priorAuthorityType").getCode());
+    assertEquals(
+        "required.priorAuthorityType", errors.getFieldError("priorAuthorityType").getCode());
   }
 
   @Test

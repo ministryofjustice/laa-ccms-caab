@@ -25,5 +25,4 @@ public class IndividualEmploymentDetailsSectionDisplay {
   private BigDecimal assessedIncome;
   private BigDecimal assessedAssets;
   private String otherInformation;
-
 }

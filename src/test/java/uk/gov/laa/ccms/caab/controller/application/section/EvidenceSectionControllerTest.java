@@ -61,39 +61,30 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @WebAppConfiguration
 class EvidenceSectionControllerTest {
 
-  @Mock
-  private EvidenceService evidenceService;
+  @Mock private EvidenceService evidenceService;
 
-  @Mock
-  private AvScanService avScanService;
+  @Mock private AvScanService avScanService;
 
-  @Mock
-  private LookupService lookupService;
+  @Mock private LookupService lookupService;
 
-  @Mock
-  private EvidenceUploadValidator evidenceUploadValidator;
+  @Mock private EvidenceUploadValidator evidenceUploadValidator;
 
-  @Mock
-  private EvidenceMapper evidenceMapper;
+  @Mock private EvidenceMapper evidenceMapper;
 
-  @InjectMocks
-  private EvidenceSectionController controller;
+  @InjectMocks private EvidenceSectionController controller;
 
   private MockMvc mockMvc;
 
-  private final UserDetail user = new UserDetail()
-      .userId(1)
-      .userType("testUserType")
-      .loginId("testLoginId");
-
+  private final UserDetail user =
+      new UserDetail().userId(1).userType("testUserType").loginId("testLoginId");
 
   @BeforeEach
   void setUp() {
-    mockMvc = MockMvcBuilders
-        .standaloneSetup(controller)
-        .setControllerAdvice(new GlobalExceptionHandler())
-        .setConversionService(getConversionService())
-        .build();
+    mockMvc =
+        MockMvcBuilders.standaloneSetup(controller)
+            .setControllerAdvice(new GlobalExceptionHandler())
+            .setConversionService(getConversionService())
+            .build();
   }
 
   @ParameterizedTest
@@ -102,37 +93,35 @@ class EvidenceSectionControllerTest {
     ActiveCase activeCase = buildActiveCase();
 
     when(evidenceService.getDocumentsRequired(
-        String.valueOf(activeCase.getApplicationId()),
-        activeCase.getCaseReferenceNumber(),
-        activeCase.getProviderId()))
+            String.valueOf(activeCase.getApplicationId()),
+            activeCase.getCaseReferenceNumber(),
+            activeCase.getProviderId()))
         .thenReturn(Mono.just(Collections.emptyList()));
 
     when(evidenceService.getEvidenceDocumentsForCase(
-        activeCase.getCaseReferenceNumber(),
-        APPLICATION))
+            activeCase.getCaseReferenceNumber(), APPLICATION))
         .thenReturn(Mono.just(new EvidenceDocumentDetails()));
 
-    when(evidenceMapper.toEvidenceRequiredList(
-        any(List.class),
-        any(List.class))).thenReturn(Collections.emptyList());
+    when(evidenceMapper.toEvidenceRequiredList(any(List.class), any(List.class)))
+        .thenReturn(Collections.emptyList());
 
-    mockMvc.perform(get("/%s/sections/evidence".formatted(caseContext))
-            .sessionAttr(ACTIVE_CASE, activeCase))
+    mockMvc
+        .perform(
+            get("/%s/sections/evidence".formatted(caseContext))
+                .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk())
         .andExpect(view().name("application/sections/evidence-section"));
 
-    verify(evidenceService).getDocumentsRequired(
-        String.valueOf(activeCase.getApplicationId()),
-        activeCase.getCaseReferenceNumber(),
-        activeCase.getProviderId());
+    verify(evidenceService)
+        .getDocumentsRequired(
+            String.valueOf(activeCase.getApplicationId()),
+            activeCase.getCaseReferenceNumber(),
+            activeCase.getProviderId());
 
-    verify(evidenceService).getEvidenceDocumentsForCase(
-        activeCase.getCaseReferenceNumber(),
-        APPLICATION);
+    verify(evidenceService)
+        .getEvidenceDocumentsForCase(activeCase.getCaseReferenceNumber(), APPLICATION);
 
-    verify(evidenceMapper).toEvidenceRequiredList(
-        any(List.class),
-        any(List.class));
+    verify(evidenceMapper).toEvidenceRequiredList(any(List.class), any(List.class));
   }
 
   @ParameterizedTest
@@ -140,18 +129,19 @@ class EvidenceSectionControllerTest {
   void viewAddEvidenceScreen(String caseContext) throws Exception {
     ActiveCase activeCase = buildActiveCase();
 
-    List<EvidenceRequired> evidenceRequired = List.of(
-        new EvidenceRequired("code", "desc"));
+    List<EvidenceRequired> evidenceRequired = List.of(new EvidenceRequired("code", "desc"));
 
-    CommonLookupDetail documentTypesLookup = new CommonLookupDetail()
-        .addContentItem(new CommonLookupValueDetail());
+    CommonLookupDetail documentTypesLookup =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
     when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
         .thenReturn(Mono.just(documentTypesLookup));
 
-    mockMvc.perform(get("/%s/evidence/add".formatted(caseContext))
-            .sessionAttr(ACTIVE_CASE, activeCase)
-            .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
-            .sessionAttr(USER_DETAILS, user))
+    mockMvc
+        .perform(
+            get("/%s/evidence/add".formatted(caseContext))
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
+                .sessionAttr(USER_DETAILS, user))
         .andExpect(status().isOk())
         .andExpect(model().attributeExists(EVIDENCE_UPLOAD_FORM_DATA))
         .andExpect(model().attribute(EVIDENCE_REQUIRED, evidenceRequired))
@@ -165,25 +155,28 @@ class EvidenceSectionControllerTest {
       throws Exception {
     EvidenceUploadFormData formData = buildEvidenceUploadFormData();
 
-    doAnswer(invocation -> {
-      Errors errors = (Errors) invocation.getArguments()[1];
-      errors.rejectValue("file", "required.file",
-          "Please choose a file.");
-      return null;
-    }).when(evidenceUploadValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue("file", "required.file", "Please choose a file.");
+              return null;
+            })
+        .when(evidenceUploadValidator)
+        .validate(any(), any());
 
-    List<EvidenceRequired> evidenceRequired = List.of(
-        new EvidenceRequired("code", "desc"));
+    List<EvidenceRequired> evidenceRequired = List.of(new EvidenceRequired("code", "desc"));
 
-    CommonLookupDetail documentTypesLookup = new CommonLookupDetail()
-        .addContentItem(new CommonLookupValueDetail());
+    CommonLookupDetail documentTypesLookup =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
     when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
         .thenReturn(Mono.just(documentTypesLookup));
 
-    mockMvc.perform(post("/%s/evidence/add".formatted(caseContext))
-            .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
-            .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
-            .sessionAttr(USER_DETAILS, user))
+    mockMvc
+        .perform(
+            post("/%s/evidence/add".formatted(caseContext))
+                .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
+                .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
+                .sessionAttr(USER_DETAILS, user))
         .andExpect(status().isOk())
         .andExpect(model().attributeExists(EVIDENCE_UPLOAD_FORM_DATA))
         .andExpect(model().attribute(EVIDENCE_REQUIRED, evidenceRequired))
@@ -197,26 +190,29 @@ class EvidenceSectionControllerTest {
       throws Exception {
     EvidenceUploadFormData formData = buildEvidenceUploadFormData();
 
-    doThrow(new AvScanException("Virus alert")).when(avScanService).performAvScan(
-        eq(formData.getCaseReferenceNumber()),
-        eq(formData.getProviderId()),
-        eq(formData.getDocumentSender()),
-        eq(APPLICATION),
-        eq(formData.getFile().getOriginalFilename()),
-        any(InputStream.class));
+    doThrow(new AvScanException("Virus alert"))
+        .when(avScanService)
+        .performAvScan(
+            eq(formData.getCaseReferenceNumber()),
+            eq(formData.getProviderId()),
+            eq(formData.getDocumentSender()),
+            eq(APPLICATION),
+            eq(formData.getFile().getOriginalFilename()),
+            any(InputStream.class));
 
-    List<EvidenceRequired> evidenceRequired = List.of(
-        new EvidenceRequired("code", "desc"));
+    List<EvidenceRequired> evidenceRequired = List.of(new EvidenceRequired("code", "desc"));
 
-    CommonLookupDetail documentTypesLookup = new CommonLookupDetail()
-        .addContentItem(new CommonLookupValueDetail());
+    CommonLookupDetail documentTypesLookup =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
     when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
         .thenReturn(Mono.just(documentTypesLookup));
 
-    mockMvc.perform(post("/%s/evidence/add".formatted(caseContext))
-            .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
-            .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
-            .sessionAttr(USER_DETAILS, user))
+    mockMvc
+        .perform(
+            post("/%s/evidence/add".formatted(caseContext))
+                .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
+                .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
+                .sessionAttr(USER_DETAILS, user))
         .andExpect(status().isOk())
         .andExpect(model().attributeExists(EVIDENCE_UPLOAD_FORM_DATA))
         .andExpect(model().attribute(EVIDENCE_REQUIRED, evidenceRequired))
@@ -231,26 +227,28 @@ class EvidenceSectionControllerTest {
     final EvidenceUploadFormData formData = buildEvidenceUploadFormData();
     final String filename = formData.getFile().getOriginalFilename();
 
-    final List<EvidenceRequired> evidenceRequired = List.of(
-        new EvidenceRequired("code", "desc"));
+    final List<EvidenceRequired> evidenceRequired = List.of(new EvidenceRequired("code", "desc"));
 
     when(evidenceService.registerDocument(
-        formData.getDocumentType(),
-        filename.substring(filename.lastIndexOf(".") + 1),
-        formData.getDocumentDescription(),
-        ELECTRONIC.getCode(),
-        user.getLoginId(),
-        user.getUserType())).thenReturn(Mono.empty());
+            formData.getDocumentType(),
+            filename.substring(filename.lastIndexOf('.') + 1),
+            formData.getDocumentDescription(),
+            ELECTRONIC.getCode(),
+            user.getLoginId(),
+            user.getUserType()))
+        .thenReturn(Mono.empty());
 
-    mockMvc.perform(post("/%s/evidence/add".formatted(caseContext))
-            .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
-            .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
-            .sessionAttr(USER_DETAILS, user))
+    mockMvc
+        .perform(
+            post("/%s/evidence/add".formatted(caseContext))
+                .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
+                .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
+                .sessionAttr(USER_DETAILS, user))
         .andExpect(status().isOk())
         .andExpect(view().name("error"));
 
-    verify(evidenceService, never()).addDocument(any(EvidenceDocumentDetail.class),
-        any(String.class));
+    verify(evidenceService, never())
+        .addDocument(any(EvidenceDocumentDetail.class), any(String.class));
   }
 
   @ParameterizedTest
@@ -264,27 +262,29 @@ class EvidenceSectionControllerTest {
     final EvidenceUploadFormData formData = buildEvidenceUploadFormData();
     final String filename = formData.getFile().getOriginalFilename();
 
-    final List<EvidenceRequired> evidenceRequired = List.of(
-        new EvidenceRequired("code", "desc"));
+    final List<EvidenceRequired> evidenceRequired = List.of(new EvidenceRequired("code", "desc"));
 
     when(evidenceService.registerDocument(
-        formData.getDocumentType(),
-        filename.substring(filename.lastIndexOf(".") + 1),
-        formData.getDocumentDescription(),
-        ELECTRONIC.getCode(),
-        user.getLoginId(),
-        user.getUserType())).thenReturn(Mono.just(registeredDocumentId));
+            formData.getDocumentType(),
+            filename.substring(filename.lastIndexOf('.') + 1),
+            formData.getDocumentDescription(),
+            ELECTRONIC.getCode(),
+            user.getLoginId(),
+            user.getUserType()))
+        .thenReturn(Mono.just(registeredDocumentId));
 
-    when(evidenceMapper.toEvidenceDocumentDetail(
-        any(EvidenceUploadFormData.class))).thenReturn(evidenceDocumentDetail);
+    when(evidenceMapper.toEvidenceDocumentDetail(any(EvidenceUploadFormData.class)))
+        .thenReturn(evidenceDocumentDetail);
 
     when(evidenceService.addDocument(evidenceDocumentDetail, user.getLoginId()))
         .thenReturn(Mono.just(tdsId));
 
-    mockMvc.perform(post("/%s/evidence/add".formatted(caseContext))
-            .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
-            .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
-            .sessionAttr(USER_DETAILS, user))
+    mockMvc
+        .perform(
+            post("/%s/evidence/add".formatted(caseContext))
+                .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, formData)
+                .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
+                .sessionAttr(USER_DETAILS, user))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/%s/sections/evidence".formatted(caseContext)));
 
@@ -301,24 +301,25 @@ class EvidenceSectionControllerTest {
     final Integer tdsId = 123;
     final ActiveCase activeCase = buildActiveCase();
 
-    mockMvc.perform(get("/%s/evidence/{evidence-document-id}/remove".formatted(caseContext), tdsId)
-            .sessionAttr(ACTIVE_CASE, activeCase)
-            .sessionAttr(USER_DETAILS, user))
+    mockMvc
+        .perform(
+            get("/%s/evidence/{evidence-document-id}/remove".formatted(caseContext), tdsId)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(USER_DETAILS, user))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/%s/sections/evidence".formatted(caseContext)));
 
-    verify(evidenceService).removeDocument(
-        String.valueOf(activeCase.getApplicationId()),
-        tdsId,
-        APPLICATION,
-        user.getLoginId());
+    verify(evidenceService)
+        .removeDocument(
+            String.valueOf(activeCase.getApplicationId()), tdsId, APPLICATION, user.getLoginId());
   }
 
   private ActiveCase buildActiveCase() {
     return ActiveCase.builder()
         .applicationId(123)
         .caseReferenceNumber("caseRef")
-        .providerId(789).build();
+        .providerId(789)
+        .build();
   }
 
   private EvidenceUploadFormData buildEvidenceUploadFormData() {
@@ -331,14 +332,11 @@ class EvidenceSectionControllerTest {
     formData.setDocumentType("docType");
     formData.setDocumentTypeDisplayValue("doc type");
     formData.setEvidenceTypes(List.of("type 1", "type 2"));
-    formData.setFile(new MockMultipartFile(
-        "theFile",
-        "originalName.pdf",
-        "contentType",
-        "the file data".getBytes()));
+    formData.setFile(
+        new MockMultipartFile(
+            "theFile", "originalName.pdf", "contentType", "the file data".getBytes()));
     formData.setProviderId(789);
     formData.setRegisteredDocumentId("regId");
     return formData;
   }
-
 }

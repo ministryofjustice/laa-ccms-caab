@@ -54,9 +54,7 @@ import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 
-/**
- * Service class to handle Common Lookups.
- */
+/** Service class to handle Common Lookups. */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -66,23 +64,24 @@ public class LookupService {
   /**
    * Get a list of Country Common Values.
    *
-   * @return CommonLookupDetail containing the common lookup values. Remove all null objects due
-   *         to data returned from ebs.
+   * @return CommonLookupDetail containing the common lookup values. Remove all null objects due to
+   *     data returned from ebs.
    */
   public Mono<CommonLookupDetail> getCountries() {
-    return ebsApiClient.getCountries()
-        .flatMap(countries -> {
-          if (countries != null) {
-            final List<CommonLookupValueDetail> filteredContent = countries
-                .getContent()
-                .stream()
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-            return Mono.just(new CommonLookupDetail().content(filteredContent));
-          } else {
-            return Mono.just(new CommonLookupDetail().content(Collections.emptyList()));
-          }
-        });
+    return ebsApiClient
+        .getCountries()
+        .flatMap(
+            countries -> {
+              if (countries != null) {
+                final List<CommonLookupValueDetail> filteredContent =
+                    countries.getContent().stream()
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+                return Mono.just(new CommonLookupDetail().content(filteredContent));
+              } else {
+                return Mono.just(new CommonLookupDetail().content(Collections.emptyList()));
+              }
+            });
   }
 
   /**
@@ -93,12 +92,12 @@ public class LookupService {
    */
   public Mono<Optional<CommonLookupValueDetail>> getCountry(final String code) {
     return getCountries()
-        .map(commonLookupDetail -> commonLookupDetail
-              .getContent()
-              .stream()
-              .filter(Objects::nonNull)
-              .filter(countryDetail -> code.equals(countryDetail.getCode()))
-              .findFirst());
+        .map(
+            commonLookupDetail ->
+                commonLookupDetail.getContent().stream()
+                    .filter(Objects::nonNull)
+                    .filter(countryDetail -> code.equals(countryDetail.getCode()))
+                    .findFirst());
   }
 
   /**
@@ -125,19 +124,15 @@ public class LookupService {
       final String applicationType,
       final Boolean isLead) {
 
-    return ebsApiClient.getProceedings(
-        searchCriteria,
-        larScopeFlag,
-        applicationType,
-        isLead);
+    return ebsApiClient.getProceedings(searchCriteria, larScopeFlag, applicationType, isLead);
   }
 
   /**
    * Retrieves Client involvement types with detailed parameters.
    *
    * @param proceedingCode The proceeding code.
-   * @return A Mono containing the ClientInvolvementTypeLookupDetail or an error handler if an
-   *         error occurs.
+   * @return A Mono containing the ClientInvolvementTypeLookupDetail or an error handler if an error
+   *     occurs.
    */
   public Mono<ClientInvolvementTypeLookupDetail> getProceedingClientInvolvementTypes(
       final String proceedingCode) {
@@ -145,9 +140,8 @@ public class LookupService {
   }
 
   /**
-   * Retrieves the level of service types for a given proceeding.
-   * The level of service types are fetched based on the proceeding code, category of law, and
-   * matter type.
+   * Retrieves the level of service types for a given proceeding. The level of service types are
+   * fetched based on the proceeding code, category of law, and matter type.
    *
    * @param categoryOfLaw The category of law.
    * @param proceedingCode The code of the proceeding.
@@ -155,9 +149,7 @@ public class LookupService {
    * @return A Mono of LevelOfServiceLookupDetail containing the level of service types.
    */
   public Mono<LevelOfServiceLookupDetail> getProceedingLevelOfServiceTypes(
-      final String categoryOfLaw,
-      final String proceedingCode,
-      final String matterType) {
+      final String categoryOfLaw, final String proceedingCode, final String matterType) {
 
     return ebsApiClient.getLevelOfServiceTypes(proceedingCode, categoryOfLaw, matterType);
   }
@@ -169,11 +161,14 @@ public class LookupService {
    */
   public Mono<String> getOrderTypeDescription(final String code) {
     return getCommonValues(COMMON_VALUE_PROCEEDING_ORDER_TYPE)
-        .map(commonLookupDetail -> commonLookupDetail.getContent().stream()
-            .filter(commonLookupValueDetail -> commonLookupValueDetail.getCode().equals(code))
-            .findFirst()
-            .map(CommonLookupValueDetail::getDescription)
-            .orElse(code));
+        .map(
+            commonLookupDetail ->
+                commonLookupDetail.getContent().stream()
+                    .filter(
+                        commonLookupValueDetail -> commonLookupValueDetail.getCode().equals(code))
+                    .findFirst()
+                    .map(CommonLookupValueDetail::getDescription)
+                    .orElse(code));
   }
 
   /**
@@ -188,16 +183,14 @@ public class LookupService {
   }
 
   /**
-   * Retrieves court details.
-   * A wildcard match is performed for both courtCode and description to return all Courts
-   * which contain the provided values.
+   * Retrieves court details. A wildcard match is performed for both courtCode and description to
+   * return all Courts which contain the provided values.
    *
    * @param courtCode - the court code value.
    * @param description - the court description.
    * @return A Mono containing the CommonLookupDetail or an error handler if an error occurs.
    */
-  public Mono<CommonLookupDetail> getCourts(
-      final String courtCode, final String description) {
+  public Mono<CommonLookupDetail> getCourts(final String courtCode, final String description) {
     return ebsApiClient.getCommonValues(
         COMMON_VALUE_COURTS,
         StringUtils.hasText(courtCode) ? "*%s*".formatted(courtCode) : null,
@@ -205,15 +198,13 @@ public class LookupService {
   }
 
   /**
-   * Retrieves court details.
-   * A wildcard match is performed for courtCode to return all Courts
-   * which contain the provided value.
+   * Retrieves court details. A wildcard match is performed for courtCode to return all Courts which
+   * contain the provided value.
    *
    * @param courtCode - the court code.
    * @return A Mono containing the CommonLookupDetail or an error handler if an error occurs.
    */
-  public Mono<CommonLookupDetail> getCourts(
-      final String courtCode) {
+  public Mono<CommonLookupDetail> getCourts(final String courtCode) {
     return this.getCourts(courtCode, null);
   }
 
@@ -225,8 +216,7 @@ public class LookupService {
    * @return A Mono containing the OutcomeResultLookupDetail or an error handler if an error occurs.
    */
   public Mono<OutcomeResultLookupDetail> getOutcomeResults(
-      final String proceedingCode,
-      final String outcomeResult) {
+      final String proceedingCode, final String outcomeResult) {
     return ebsApiClient.getOutcomeResults(proceedingCode, outcomeResult);
   }
 
@@ -238,16 +228,15 @@ public class LookupService {
    * @return A Mono containing the StageEndLookupDetail or an error handler if an error occurs.
    */
   public Mono<StageEndLookupDetail> getStageEnds(
-      final String proceedingCode,
-      final String stageEnd) {
+      final String proceedingCode, final String stageEnd) {
     return ebsApiClient.getStageEnds(proceedingCode, stageEnd);
   }
 
   /**
    * Retrieves all prior authority types.
    *
-   * @return A Mono containing the PriorAuthorityLookupDetail
-   *     or an error handler if an error occurs.
+   * @return A Mono containing the PriorAuthorityLookupDetail or an error handler if an error
+   *     occurs.
    */
   public Mono<PriorAuthorityTypeDetails> getPriorAuthorityTypes() {
     return this.getPriorAuthorityTypes(null, null);
@@ -258,8 +247,8 @@ public class LookupService {
    *
    * @param code - the prior authority code.
    * @param valueRequired - the value required flag.
-   * @return A Mono containing the PriorAuthorityLookupDetail
-   *     or an error handler if an error occurs.
+   * @return A Mono containing the PriorAuthorityLookupDetail or an error handler if an error
+   *     occurs.
    */
   public Mono<PriorAuthorityTypeDetails> getPriorAuthorityTypes(
       final String code, final Boolean valueRequired) {
@@ -270,22 +259,20 @@ public class LookupService {
    * Retrieve a single prior authority type matching the specified code.
    *
    * @param code - the prior authority code.
-   * @return A Mono containing an Optional PriorAuthorityTypeDetail
-   *     or an error handler if an error occurs.
+   * @return A Mono containing an Optional PriorAuthorityTypeDetail or an error handler if an error
+   *     occurs.
    */
-  public Mono<Optional<PriorAuthorityTypeDetail>> getPriorAuthorityType(
-      final String code) {
+  public Mono<Optional<PriorAuthorityTypeDetail>> getPriorAuthorityType(final String code) {
     return this.getPriorAuthorityTypes(code, null)
-        .mapNotNull(priorAuthorityTypeDetails -> priorAuthorityTypeDetails.getContent()
-            .stream()
-            .findFirst());
+        .mapNotNull(
+            priorAuthorityTypeDetails ->
+                priorAuthorityTypeDetails.getContent().stream().findFirst());
   }
 
   /**
    * Retrieves all award types.
    *
-   * @return A Mono containing the AwardTypeLookupDetail
-   *     or an error handler if an error occurs.
+   * @return A Mono containing the AwardTypeLookupDetail or an error handler if an error occurs.
    */
   public Mono<AwardTypeLookupDetail> getAwardTypes() {
     return this.getAwardTypes(null, null);
@@ -296,11 +283,9 @@ public class LookupService {
    *
    * @param code - the award type code.
    * @param awardType - the award type value.
-   * @return A Mono containing the AwardTypeLookupDetail
-   *     or an error handler if an error occurs.
+   * @return A Mono containing the AwardTypeLookupDetail or an error handler if an error occurs.
    */
-  public Mono<AwardTypeLookupDetail> getAwardTypes(
-      final String code, final String awardType) {
+  public Mono<AwardTypeLookupDetail> getAwardTypes(final String code, final String awardType) {
     return ebsApiClient.getAwardTypes(code, awardType);
   }
 
@@ -320,9 +305,11 @@ public class LookupService {
    * @return Mono containing an Optional category of law.
    */
   public Mono<Optional<CategoryOfLawLookupValueDetail>> getCategoryOfLaw(final String code) {
-    return ebsApiClient.getCategoriesOfLaw(code, null, null)
-        .mapNotNull(categoryOfLawLookupDetail -> categoryOfLawLookupDetail.getContent().stream()
-            .findFirst());
+    return ebsApiClient
+        .getCategoriesOfLaw(code, null, null)
+        .mapNotNull(
+            categoryOfLawLookupDetail ->
+                categoryOfLawLookupDetail.getContent().stream().findFirst());
   }
 
   /**
@@ -341,9 +328,11 @@ public class LookupService {
    */
   public Mono<Optional<RelationshipToCaseLookupValueDetail>> getPersonToCaseRelationship(
       final String code) {
-    return ebsApiClient.getPersonToCaseRelationships(code, null)
-        .mapNotNull(relationshipToCaseLookupDetail -> relationshipToCaseLookupDetail.getContent()
-            .stream().findFirst());
+    return ebsApiClient
+        .getPersonToCaseRelationships(code, null)
+        .mapNotNull(
+            relationshipToCaseLookupDetail ->
+                relationshipToCaseLookupDetail.getContent().stream().findFirst());
   }
 
   /**
@@ -362,9 +351,11 @@ public class LookupService {
    */
   public Mono<Optional<RelationshipToCaseLookupValueDetail>> getOrganisationToCaseRelationship(
       final String code) {
-    return ebsApiClient.getOrganisationToCaseRelationshipValues(code, null)
-        .mapNotNull(relationshipToCaseLookupDetail -> relationshipToCaseLookupDetail.getContent()
-            .stream().findFirst());
+    return ebsApiClient
+        .getOrganisationToCaseRelationshipValues(code, null)
+        .mapNotNull(
+            relationshipToCaseLookupDetail ->
+                relationshipToCaseLookupDetail.getContent().stream().findFirst());
   }
 
   /**
@@ -396,15 +387,14 @@ public class LookupService {
    *
    * @param type - the value type.
    * @param code - the value code.
-   * @return a Mono containing the Optional CommonLookupValueDetail
-   *     or an error handler if an error occurs.
+   * @return a Mono containing the Optional CommonLookupValueDetail or an error handler if an error
+   *     occurs.
    */
   public Mono<Optional<CommonLookupValueDetail>> getCommonValue(
       final String type, final String code) {
-    return ebsApiClient.getCommonValues(type, code)
-        .mapNotNull(commonLookupDetail -> commonLookupDetail
-            .getContent().stream()
-            .findFirst());
+    return ebsApiClient
+        .getCommonValues(type, code)
+        .mapNotNull(commonLookupDetail -> commonLookupDetail.getContent().stream().findFirst());
   }
 
   /**
@@ -427,44 +417,49 @@ public class LookupService {
       final ClientFlowFormData clientFlowFormData) {
 
     return List.of(
-        Pair.of("contactTitle",
+        Pair.of(
+            "contactTitle",
             getCommonValue(
-                COMMON_VALUE_CONTACT_TITLE,
-                clientFlowFormData.getBasicDetails().getTitle())),
-        Pair.of("countryOfOrigin",
-            getCountry(
-                clientFlowFormData.getBasicDetails().getCountryOfOrigin())),
-        Pair.of("maritalStatus",
+                COMMON_VALUE_CONTACT_TITLE, clientFlowFormData.getBasicDetails().getTitle())),
+        Pair.of(
+            "countryOfOrigin",
+            getCountry(clientFlowFormData.getBasicDetails().getCountryOfOrigin())),
+        Pair.of(
+            "maritalStatus",
             getCommonValue(
                 COMMON_VALUE_MARITAL_STATUS,
                 clientFlowFormData.getBasicDetails().getMaritalStatus())),
-        Pair.of("gender",
-            getCommonValue(
-                COMMON_VALUE_GENDER,
-                clientFlowFormData.getBasicDetails().getGender())),
-        Pair.of("correspondenceMethod",
+        Pair.of(
+            "gender",
+            getCommonValue(COMMON_VALUE_GENDER, clientFlowFormData.getBasicDetails().getGender())),
+        Pair.of(
+            "correspondenceMethod",
             getCommonValue(
                 COMMON_VALUE_CORRESPONDENCE_METHOD,
                 clientFlowFormData.getContactDetails().getCorrespondenceMethod())),
-        Pair.of("ethnicity",
+        Pair.of(
+            "ethnicity",
             getCommonValue(
                 COMMON_VALUE_ETHNIC_ORIGIN,
                 clientFlowFormData.getMonitoringDetails().getEthnicOrigin())),
-        Pair.of("disability",
+        Pair.of(
+            "disability",
             getCommonValue(
                 COMMON_VALUE_DISABILITY,
                 clientFlowFormData.getMonitoringDetails().getDisability())),
 
-        //Processed differently due to optionality
-        Pair.of("country",
+        // Processed differently due to optionality
+        Pair.of(
+            "country",
             StringUtils.hasText(clientFlowFormData.getAddressDetails().getCountry())
-                ? getCountry(
-                clientFlowFormData.getAddressDetails().getCountry())
+                ? getCountry(clientFlowFormData.getAddressDetails().getCountry())
                 : Mono.just(Optional.of(new CommonLookupValueDetail()))),
-        Pair.of("correspondenceLanguage",
+        Pair.of(
+            "correspondenceLanguage",
             StringUtils.hasText(clientFlowFormData.getContactDetails().getCorrespondenceLanguage())
-                ? getCommonValue(COMMON_VALUE_CORRESPONDENCE_LANGUAGE,
-                clientFlowFormData.getContactDetails().getCorrespondenceLanguage())
+                ? getCommonValue(
+                    COMMON_VALUE_CORRESPONDENCE_LANGUAGE,
+                    clientFlowFormData.getContactDetails().getCorrespondenceLanguage())
                 : Mono.just(Optional.of(new CommonLookupValueDetail()))));
   }
 
@@ -479,15 +474,15 @@ public class LookupService {
       final List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups,
       final Model model) {
     return Flux.fromIterable(lookups)
-        .flatMap(pair -> pair.getRight()
-            .map(optionalValue -> optionalValue.orElseGet(CommonLookupValueDetail::new))
-            .map(value -> Pair.of(pair.getLeft(), value)))
+        .flatMap(
+            pair ->
+                pair.getRight()
+                    .map(optionalValue -> optionalValue.orElseGet(CommonLookupValueDetail::new))
+                    .map(value -> Pair.of(pair.getLeft(), value)))
         .collectList()
         .doOnNext(list -> list.forEach(pair -> model.addAttribute(pair.getLeft(), pair.getRight())))
         .then();
   }
-
-
 
   /**
    * Retrieves a map of common lookups.
@@ -499,18 +494,19 @@ public class LookupService {
       final List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups) {
 
     return Flux.fromIterable(lookups)
-        .flatMap(pair -> pair.getRight()
-            .map(optionalValue -> optionalValue.orElseGet(CommonLookupValueDetail::new))
-            .map(value -> Pair.of(pair.getLeft(), value)))
+        .flatMap(
+            pair ->
+                pair.getRight()
+                    .map(optionalValue -> optionalValue.orElseGet(CommonLookupValueDetail::new))
+                    .map(value -> Pair.of(pair.getLeft(), value)))
         .collectList()
-        .map(list -> {
-          final HashMap<String, CommonLookupValueDetail> clientLookupsMap = new HashMap<>();
-          list.forEach(pair -> clientLookupsMap.put(pair.getLeft(), pair.getRight()));
-          return clientLookupsMap;
-        });
+        .map(
+            list -> {
+              final HashMap<String, CommonLookupValueDetail> clientLookupsMap = new HashMap<>();
+              list.forEach(pair -> clientLookupsMap.put(pair.getLeft(), pair.getRight()));
+              return clientLookupsMap;
+            });
   }
-
-
 
   /**
    * Retrieves client summary list lookups.
@@ -534,10 +530,10 @@ public class LookupService {
    *
    * <p>This method combines multiple asynchronous calls to fetch various lookup details required
    * for mapping general details submission summaries. The following components are included:
-   * </p>
+   *
    * <ul>
-   *   <li>preferredAddress - Common lookup detail for the preferred address option</li>
-   *   <li>country - Common lookup detail for countries</li>
+   *   <li>preferredAddress - Common lookup detail for the preferred address option
+   *   <li>country - Common lookup detail for countries
    * </ul>
    *
    * @return a Mono emitting the GeneralDetailsSubmissionSummaryMappingContext
@@ -546,26 +542,25 @@ public class LookupService {
       getGeneralDetailsSubmissionMappingContext() {
     final Mono<CommonLookupDetail> preferredAddressMono =
         getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION);
-    final Mono<CommonLookupDetail> countriesMono =
-        getCountries();
+    final Mono<CommonLookupDetail> countriesMono = getCountries();
 
-    return Mono.zip(
-            preferredAddressMono,
-            countriesMono)
-        .map(tuple -> GeneralDetailsSubmissionSummaryMappingContext.builder()
-            .preferredAddress(tuple.getT1())
-            .country(tuple.getT2())
-            .build());
+    return Mono.zip(preferredAddressMono, countriesMono)
+        .map(
+            tuple ->
+                GeneralDetailsSubmissionSummaryMappingContext.builder()
+                    .preferredAddress(tuple.getT1())
+                    .country(tuple.getT2())
+                    .build());
   }
 
   /**
    * Retrieves the proceeding submission mapping context.
    *
-   * <p>This method fetches the lookup detail for the type of order required for
-   * mapping proceeding submission summaries. The following component is included:
-   * </p>
+   * <p>This method fetches the lookup detail for the type of order required for mapping proceeding
+   * submission summaries. The following component is included:
+   *
    * <ul>
-   *   <li>typeOfOrder - Common lookup detail for the type of order</li>
+   *   <li>typeOfOrder - Common lookup detail for the type of order
    * </ul>
    *
    * @return a Mono emitting the ProceedingSubmissionSummaryMappingContext
@@ -574,11 +569,9 @@ public class LookupService {
     final Mono<CommonLookupDetail> typeOfOrderMono =
         getCommonValues(COMMON_VALUE_PROCEEDING_ORDER_TYPE);
 
-    return typeOfOrderMono.map(typeOfOrder ->
-        ProceedingSubmissionSummaryMappingContext.builder()
-            .typeOfOrder(typeOfOrder)
-            .build()
-    );
+    return typeOfOrderMono.map(
+        typeOfOrder ->
+            ProceedingSubmissionSummaryMappingContext.builder().typeOfOrder(typeOfOrder).build());
   }
 
   /**
@@ -586,19 +579,18 @@ public class LookupService {
    *
    * <p>This method combines multiple asynchronous calls to fetch various lookup details required
    * for mapping opponent submission summaries. The following components are included:
-   * </p>
+   *
    * <ul>
-   *   <li>contactTitle - Common lookup detail for contact titles</li>
-   *   <li>organisationRelationshipsToCase - Relationship details for organisations to cases</li>
-   *   <li>individualRelationshipsToCase - Relationship details for individuals to cases</li>
-   *   <li>relationshipToClient - Common lookup detail for relationships to clients</li>
+   *   <li>contactTitle - Common lookup detail for contact titles
+   *   <li>organisationRelationshipsToCase - Relationship details for organisations to cases
+   *   <li>individualRelationshipsToCase - Relationship details for individuals to cases
+   *   <li>relationshipToClient - Common lookup detail for relationships to clients
    * </ul>
    *
    * @return a Mono emitting the OpponentSubmissionSummaryMappingContext
    */
   public Mono<OpponentSubmissionSummaryMappingContext> getOpponentSubmissionMappingContext() {
-    final Mono<CommonLookupDetail> contactTitleMono =
-        getCommonValues(COMMON_VALUE_CONTACT_TITLE);
+    final Mono<CommonLookupDetail> contactTitleMono = getCommonValues(COMMON_VALUE_CONTACT_TITLE);
     final Mono<RelationshipToCaseLookupDetail> organisationRelationshipsToCaseMono =
         getOrganisationToCaseRelationships();
     final Mono<RelationshipToCaseLookupDetail> individualRelationshipsToCaseMono =
@@ -611,12 +603,14 @@ public class LookupService {
             organisationRelationshipsToCaseMono,
             individualRelationshipsToCaseMono,
             relationshipToClientMono)
-        .map(tuple -> OpponentSubmissionSummaryMappingContext.builder()
-            .contactTitle(tuple.getT1())
-            .organisationRelationshipsToCase(tuple.getT2())
-            .individualRelationshipsToCase(tuple.getT3())
-            .relationshipToClient(tuple.getT4())
-            .build());
+        .map(
+            tuple ->
+                OpponentSubmissionSummaryMappingContext.builder()
+                    .contactTitle(tuple.getT1())
+                    .organisationRelationshipsToCase(tuple.getT2())
+                    .individualRelationshipsToCase(tuple.getT3())
+                    .relationshipToClient(tuple.getT4())
+                    .build());
   }
 
   /**
@@ -625,11 +619,9 @@ public class LookupService {
    * @param submissionType the type of submission for the declaration
    * @return a Mono emitting the declaration lookup details
    */
-  public Mono<DeclarationLookupDetail> getDeclarations(
-      final String submissionType) {
+  public Mono<DeclarationLookupDetail> getDeclarations(final String submissionType) {
     return ebsApiClient.getDeclarations(submissionType, null);
   }
-
 
   /**
    * Retrieves provider request types based on parameters.
@@ -639,10 +631,7 @@ public class LookupService {
    * @return a Mono emitting the declaration lookup details
    */
   public Mono<ProviderRequestTypeLookupDetail> getProviderRequestTypes(
-      final Boolean isCaseRelated,
-      final String type) {
+      final Boolean isCaseRelated, final String type) {
     return ebsApiClient.getProviderRequestTypes(isCaseRelated, type);
   }
-
-
 }

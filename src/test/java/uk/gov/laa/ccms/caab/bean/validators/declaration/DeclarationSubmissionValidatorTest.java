@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.bean.validators.declaration;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -17,12 +16,10 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.SummarySubmissionFormData;
 import uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox;
 
-
 @ExtendWith(SpringExtension.class)
 class DeclarationSubmissionValidatorTest {
 
-  @InjectMocks
-  private DeclarationSubmissionValidator declarationSubmissionValidator;
+  @InjectMocks private DeclarationSubmissionValidator declarationSubmissionValidator;
 
   private SummarySubmissionFormData summarySubmissionFormData;
 
@@ -77,5 +74,4 @@ class DeclarationSubmissionValidatorTest {
 
     assertFalse(errors.hasErrors());
   }
-
 }

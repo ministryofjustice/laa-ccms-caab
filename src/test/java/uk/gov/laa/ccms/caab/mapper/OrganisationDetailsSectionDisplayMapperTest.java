@@ -28,10 +28,10 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 @DisplayName("OrganisationDetailsSectionDisplay Mapper test")
 class OrganisationDetailsSectionDisplayMapperTest {
 
-  OrganisationDetailsSectionDisplayMapper mapper = new OrganisationDetailsSectionDisplayMapperImpl();
+  OrganisationDetailsSectionDisplayMapper mapper =
+      new OrganisationDetailsSectionDisplayMapperImpl();
 
-  @Mock
-  LookupService lookupService;
+  @Mock LookupService lookupService;
 
   @BeforeEach
   void beforeEach() {
@@ -50,35 +50,52 @@ class OrganisationDetailsSectionDisplayMapperTest {
     organisationDetails.setRelationshipToClient("REL");
     organisationDetails.setRelationshipToCase("Related to case as organisation");
     when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
-        .thenReturn(Mono.just(new CommonLookupDetail()
-            .content(singletonList(new CommonLookupValueDetail()
-                .code("REL").description("Related to client")))));
+        .thenReturn(
+            Mono.just(
+                new CommonLookupDetail()
+                    .content(
+                        singletonList(
+                            new CommonLookupValueDetail()
+                                .code("REL")
+                                .description("Related to client")))));
     when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES))
-        .thenReturn(Mono.just(new CommonLookupDetail()
-            .content(singletonList(new CommonLookupValueDetail()
-                .code("LA").description("Local Authority")))));
+        .thenReturn(
+            Mono.just(
+                new CommonLookupDetail()
+                    .content(
+                        singletonList(
+                            new CommonLookupValueDetail()
+                                .code("LA")
+                                .description("Local Authority")))));
     final RelationshipToCaseLookupDetail orgRelationshipsDetail =
         new RelationshipToCaseLookupDetail();
-    orgRelationshipsDetail.addContentItem(new RelationshipToCaseLookupValueDetail().code("REL")
-        .description("Related to case as organisation"));
+    orgRelationshipsDetail.addContentItem(
+        new RelationshipToCaseLookupValueDetail()
+            .code("REL")
+            .description("Related to case as organisation"));
     final RelationshipToCaseLookupDetail personRelationshipsDetail =
         new RelationshipToCaseLookupDetail();
-    personRelationshipsDetail.addContentItem(new RelationshipToCaseLookupValueDetail().code("REL")
-        .description("Related to case as individual"));
-    when(lookupService.getOrganisationToCaseRelationships()).thenReturn(
-        Mono.just(orgRelationshipsDetail));
+    personRelationshipsDetail.addContentItem(
+        new RelationshipToCaseLookupValueDetail()
+            .code("REL")
+            .description("Related to case as individual"));
+    when(lookupService.getOrganisationToCaseRelationships())
+        .thenReturn(Mono.just(orgRelationshipsDetail));
     // When
-    OrganisationDetailsSectionDisplay result
-        = mapper.toOrganisationDetailsSectionDisplay(organisationDetails);
+    OrganisationDetailsSectionDisplay result =
+        mapper.toOrganisationDetailsSectionDisplay(organisationDetails);
     // Then
-    OrganisationOrganisationDetailsSectionDisplay organisationOrganisationDetails = result.organisationDetails();
+    OrganisationOrganisationDetailsSectionDisplay organisationOrganisationDetails =
+        result.organisationDetails();
     assertThat(organisationOrganisationDetails).isNotNull();
     assertThat(organisationOrganisationDetails.getOrganisationName()).isEqualTo("TestOrganisation");
     assertThat(organisationOrganisationDetails.getCurrentlyTrading()).isEqualTo(true);
     assertThat(organisationOrganisationDetails.getContactNameRole()).isEqualTo("Joe Blogs");
     assertThat(organisationOrganisationDetails.getOrganisationType()).isEqualTo("Local Authority");
-    assertThat(organisationOrganisationDetails.getRelationshipToClient()).isEqualTo("Related to client");
-    assertThat(organisationOrganisationDetails.getRelationshipToCase()).isEqualTo("Related to case as organisation");
+    assertThat(organisationOrganisationDetails.getRelationshipToClient())
+        .isEqualTo("Related to client");
+    assertThat(organisationOrganisationDetails.getRelationshipToCase())
+        .isEqualTo("Related to case as organisation");
   }
 
   @Test
@@ -99,12 +116,13 @@ class OrganisationDetailsSectionDisplayMapperTest {
     organisationDetails.setEmailAddress("email@address.com");
     organisationDetails.setFaxNumber("00000111111");
     organisationDetails.setOtherInformation("More information");
-    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(Mono.empty());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.empty());
     when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES)).thenReturn(Mono.empty());
     when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.empty());
     // When
-    OrganisationDetailsSectionDisplay result
-        = mapper.toOrganisationDetailsSectionDisplay(organisationDetails);
+    OrganisationDetailsSectionDisplay result =
+        mapper.toOrganisationDetailsSectionDisplay(organisationDetails);
     // Then
     OrganisationAddressDetailsSectionDisplay addressDetails = result.addressDetails();
     assertThat(addressDetails).isNotNull();
@@ -120,5 +138,4 @@ class OrganisationDetailsSectionDisplayMapperTest {
     assertThat(addressDetails.getFax()).isEqualTo("00000111111");
     assertThat(addressDetails.getOtherInformation()).isEqualTo("More information");
   }
-
 }

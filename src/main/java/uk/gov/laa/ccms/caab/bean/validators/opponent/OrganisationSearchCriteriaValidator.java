@@ -11,9 +11,7 @@ import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
-/**
- * Validator component responsible for validating {@link OrganisationSearchCriteria} objects.
- */
+/** Validator component responsible for validating {@link OrganisationSearchCriteria} objects. */
 @Component
 public class OrganisationSearchCriteriaValidator extends AbstractValidator {
 
@@ -21,8 +19,8 @@ public class OrganisationSearchCriteriaValidator extends AbstractValidator {
    * Determines if the Validator supports the provided class.
    *
    * @param clazz The class to check for support.
-   * @return {@code true} if the class is assignable from {@link CaseSearchCriteria},
-   *         {@code false} otherwise.
+   * @return {@code true} if the class is assignable from {@link CaseSearchCriteria}, {@code false}
+   *     otherwise.
    */
   @Override
   public boolean supports(Class<?> clazz) {
@@ -38,8 +36,7 @@ public class OrganisationSearchCriteriaValidator extends AbstractValidator {
   @Override
   public void validate(Object target, Errors errors) {
     OrganisationSearchCriteria searchCriteria = (OrganisationSearchCriteria) target;
-    validateRequiredField("name", searchCriteria.getName(),
-        "Organisation name", errors);
+    validateRequiredField("name", searchCriteria.getName(), "Organisation name", errors);
 
     validateCity(searchCriteria.getCity(), errors);
     validateName(searchCriteria.getName(), errors);
@@ -53,15 +50,16 @@ public class OrganisationSearchCriteriaValidator extends AbstractValidator {
    */
   private void validateCity(final String city, Errors errors) {
     if (StringUtils.hasText(city)) {
-      //check no double spaces
+      // check no double spaces
       if (!city.matches(ALPHA_NUMERIC_SPACES_COMMAS)) {
-        errors.rejectValue("city", "invalid.city",
+        errors.rejectValue(
+            "city",
+            "invalid.city",
             "Your input for 'City' contains an "
                 + "invalid character. Please amend your entry using numbers, "
                 + "letters and spaces only");
       } else if (city.matches(DOUBLE_SPACE)) {
-        errors.rejectValue("city", "invalid.city",
-            GENERIC_DOUBLE_SPACES.formatted("City"));
+        errors.rejectValue("city", "invalid.city", GENERIC_DOUBLE_SPACES.formatted("City"));
       }
     }
   }
@@ -74,15 +72,14 @@ public class OrganisationSearchCriteriaValidator extends AbstractValidator {
    */
   private void validateName(final String name, Errors errors) {
     if (StringUtils.hasText(name)) {
-      //check no double spaces
+      // check no double spaces
       if (!name.matches(CHARACTER_SET_A)) {
-        errors.rejectValue("name", "invalid.name",
-            GENERIC_INCORRECT_FORMAT.formatted("Organisation name"));
+        errors.rejectValue(
+            "name", "invalid.name", GENERIC_INCORRECT_FORMAT.formatted("Organisation name"));
       } else if (name.matches(DOUBLE_SPACE)) {
-        errors.rejectValue("name", "invalid.name",
-            GENERIC_DOUBLE_SPACES.formatted("Organisation name"));
+        errors.rejectValue(
+            "name", "invalid.name", GENERIC_DOUBLE_SPACES.formatted("Organisation name"));
       }
     }
   }
-
 }

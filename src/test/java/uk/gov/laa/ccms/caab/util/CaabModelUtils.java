@@ -49,37 +49,40 @@ public final class CaabModelUtils {
         .allSectionsComplete(flag)
         .amendment(flag)
         .addAmendmentProceedingsInEbsItem(buildProceeding(date, BigDecimal.ONE))
-        .applicationType(new ApplicationType()
-            .id("type" + id)
-            .displayValue("the type " + id)
-            .devolvedPowers(new DevolvedPowersDetail()
-                .used(flag)
-                .dateUsed(flag ? date : null)
-                .contractFlag("flag" + id)))
+        .applicationType(
+            new ApplicationType()
+                .id("type" + id)
+                .displayValue("the type " + id)
+                .devolvedPowers(
+                    new DevolvedPowersDetail()
+                        .used(flag)
+                        .dateUsed(flag ? date : null)
+                        .contractFlag("flag" + id)))
         .appMode(flag)
         .auditTrail(new AuditDetail().createdBy("person" + id))
         .availableFunctions(new ArrayList<>(Arrays.asList("a" + id, "b" + id, "c" + id)))
         .award(flag)
-        .caseOutcome(new CaseOutcomeDetail()
-            .caseReferenceNumber(id + ""))
+        .caseOutcome(new CaseOutcomeDetail().caseReferenceNumber(id + ""))
         .certificate(new StringDisplayValue().id("cert" + id).displayValue("certificate " + id))
         .correspondenceAddress(new AddressDetail().addressLine1("addressline1, " + id))
         .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.ONE).changed(Boolean.TRUE))
-        .costs(new CostStructureDetail()
-            .auditTrail(new AuditDetail().createdBy("user" + id))
-            .addCostEntriesItem(new CostEntryDetail()
-                .amountBilled(BigDecimal.TEN)
-                .costCategory("costcat")
-                .ebsId("ebsId")
-                .lscResourceId("lscResource")
-                .newEntry(Boolean.TRUE)
-                .requestedCosts(BigDecimal.ONE)
-                .resourceName("resname")
-                .submitted(Boolean.TRUE))
-            .currentProviderBilledAmount(BigDecimal.ONE)
-            .grantedCostLimitation(BigDecimal.ZERO)
-            .defaultCostLimitation(BigDecimal.ONE)
-            .requestedCostLimitation(BigDecimal.TEN))
+        .costs(
+            new CostStructureDetail()
+                .auditTrail(new AuditDetail().createdBy("user" + id))
+                .addCostEntriesItem(
+                    new CostEntryDetail()
+                        .amountBilled(BigDecimal.TEN)
+                        .costCategory("costcat")
+                        .ebsId("ebsId")
+                        .lscResourceId("lscResource")
+                        .newEntry(Boolean.TRUE)
+                        .requestedCosts(BigDecimal.ONE)
+                        .resourceName("resname")
+                        .submitted(Boolean.TRUE))
+                .currentProviderBilledAmount(BigDecimal.ONE)
+                .grantedCostLimitation(BigDecimal.ZERO)
+                .defaultCostLimitation(BigDecimal.ONE)
+                .requestedCostLimitation(BigDecimal.TEN))
         .dateCreated(date)
         .editProceedingsAndCostsAllowed(flag)
         .larScopeFlag(flag)
@@ -168,9 +171,7 @@ public final class CaabModelUtils {
   public static ScopeLimitationDetail buildScopeLimitation() {
     return new ScopeLimitationDetail()
         .ebsId("ebsid")
-        .delegatedFuncApplyInd(new BooleanDisplayValue()
-            .flag(Boolean.TRUE)
-            .displayValue("delfunc"))
+        .delegatedFuncApplyInd(new BooleanDisplayValue().flag(Boolean.TRUE).displayValue("delfunc"))
         .scopeLimitation(new StringDisplayValue().id("scopelim").displayValue("scope lim"))
         .scopeLimitationWording("wording")
         .stage("stage")
@@ -241,8 +242,5 @@ public final class CaabModelUtils {
         .preferredAddress("prefAdd");
   }
 
-  private CaabModelUtils() {
-  }
-
-
+  private CaabModelUtils() {}
 }

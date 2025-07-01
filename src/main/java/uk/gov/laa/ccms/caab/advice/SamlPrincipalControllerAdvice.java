@@ -11,8 +11,8 @@ import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
- * Controller advice class responsible for adding the SAML authenticated principal and user
- * details to the model.
+ * Controller advice class responsible for adding the SAML authenticated principal and user details
+ * to the model.
  */
 @ControllerAdvice
 @RequiredArgsConstructor
@@ -29,9 +29,9 @@ public class SamlPrincipalControllerAdvice {
    */
   @ModelAttribute
   public void addSamlPrincipalToModel(
-          @AuthenticationPrincipal Saml2AuthenticatedPrincipal principal,
-          Model model,
-          HttpSession session) {
+      @AuthenticationPrincipal Saml2AuthenticatedPrincipal principal,
+      Model model,
+      HttpSession session) {
 
     if (principal != null) {
 
@@ -55,5 +55,4 @@ public class SamlPrincipalControllerAdvice {
       session.setAttribute("user", user);
     }
   }
-
 }

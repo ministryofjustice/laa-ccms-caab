@@ -23,9 +23,7 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Provides cryptographic functions for encrypting and decrypting a given String.
- */
+/** Provides cryptographic functions for encrypting and decrypting a given String. */
 @Slf4j
 public class Encryptor {
 
@@ -46,12 +44,19 @@ public class Encryptor {
     use its functions.*/
     final char[] pass = password.toCharArray();
 
-    final byte[] salt = {(byte) 0xa3, (byte) 0x21, (byte) 0x24, (byte) 0x2c,
-        (byte) 0xf2, (byte) 0xd2, (byte) 0x3e, (byte) 0x19};
+    final byte[] salt = {
+      (byte) 0xa3,
+      (byte) 0x21,
+      (byte) 0x24,
+      (byte) 0x2c,
+      (byte) 0xf2,
+      (byte) 0xd2,
+      (byte) 0x3e,
+      (byte) 0x19
+    };
     final int iterations = 3;
 
     init(pass, salt, iterations);
-
   }
 
   private void init(final char[] pass, final byte[] salt, final int iterations)
@@ -69,7 +74,6 @@ public class Encryptor {
     } catch (final Exception e) {
       throw new SecurityException("Could not initialize CryptoLibrary: " + e.getMessage());
     }
-
   }
 
   /**
@@ -113,5 +117,4 @@ public class Encryptor {
     decryptedValue = decryptCipher.doFinal(Base64.getDecoder().decode(str));
     return new String(decryptedValue, StandardCharsets.UTF_8);
   }
-
 }
