@@ -16,6 +16,7 @@ import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
+import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -28,6 +29,7 @@ import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 
 /**
  * Service class responsible for handling amendments to existing legal aid cases.
@@ -46,6 +48,7 @@ public class AmendmentService {
 
   private final ApplicationService applicationService;
   private final CaabApiClient caabApiClient;
+  private final SoaApiClient soaApiClient;
 
   /**
    * Creates and submits an amendment for an existing case using the provided application details
@@ -164,7 +167,7 @@ public class AmendmentService {
   }
 
   public String submitQuickAmendmentCorrespondenceAddress(
-      AddressFormData editCorrespondenceAddress,
+      final AddressFormData editCorrespondenceAddress,
       final String caseReferenceNumber,
       final UserDetail userDetail) {
     // Check CorrespondenceAddressController:110
@@ -176,6 +179,9 @@ public class AmendmentService {
     amendment.setQuickEditType(FunctionConstants.CASE_CORRESPONDENCE_PREFERENCE);
 
     AddressDetail address = amendment.getCorrespondenceAddress();
+    if (Objects.isNull(address)) {
+      address = new AddressDetail();
+    }
 
     address.setAddressLine1(editCorrespondenceAddress.getAddressLine1());
     address.setAddressLine2(editCorrespondenceAddress.getAddressLine2());
@@ -189,10 +195,12 @@ public class AmendmentService {
 
     cleanAppForQuickAmendSubmit(amendment);
 
-    // Submit application and return transaction ID
+    // TODO: Submit application and return transaction ID
+    Mono<CaseTransactionResponse> caseTransactionResponseMono = soaApiClient.updateCase(
+        userDetail.getLoginId(), userDetail.getUserType(),
+        amendment);
 
-    // TODO: Return the transaction ID
-    return "";
+    return Objects.requireNonNull(caseTransactionResponseMono.block()).getTransactionId();
   }
 
   private void cleanAppForQuickAmendSubmit(ApplicationDetail app) {
