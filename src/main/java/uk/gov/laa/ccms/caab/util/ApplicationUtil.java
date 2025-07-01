@@ -117,5 +117,6 @@ public final class ApplicationUtil {
     return latestKeyChange;
   }
 
-  private ApplicationUtil() {}
+
+private ApplicationUtil() {}
 }
