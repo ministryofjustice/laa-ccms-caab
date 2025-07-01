@@ -108,7 +108,6 @@ public class AmendCaseController {
     httpSession.setAttribute(APPLICATION_ID, amendment.getId());
     httpSession.setAttribute(ACTIVE_CASE, activeCase);
     httpSession.setAttribute(APPLICATION_COSTS, amendment.getCosts());
-    httpSession.setAttribute("Hello", "World");
 
     model.addAttribute("summary", applicationSectionDisplay);
 
