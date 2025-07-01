@@ -240,7 +240,7 @@ public class CaabApiClient {
    * @return a Mono containing application's application type
    */
   public Mono<Void> putApplicationType(final Integer id, final String loginId,
-                                                  final Object data) {
+                                                  final ApplicationType data) {
     return caabApiWebClient
         .put()
         .uri("/applications/{id}/application-type", id)
