@@ -5,7 +5,6 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 
-import java.util.ArrayList;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,16 +17,14 @@ import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
-import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
-import uk.gov.laa.ccms.caab.model.OpponentDetail;
-import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
+import uk.gov.laa.ccms.caab.util.AmendmentUtil;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 
@@ -193,7 +190,7 @@ public class AmendmentService {
     address.setPostcode(editCorrespondenceAddress.getPostcode());
     address.setPreferredAddress(editCorrespondenceAddress.getPreferredAddress());
 
-    cleanAppForQuickAmendSubmit(amendment);
+    AmendmentUtil.cleanAppForQuickAmendSubmit(amendment);
 
     // TODO: Submit application and return transaction ID
     Mono<CaseTransactionResponse> caseTransactionResponseMono = soaApiClient.updateCase(
@@ -203,56 +200,7 @@ public class AmendmentService {
     return Objects.requireNonNull(caseTransactionResponseMono.block()).getTransactionId();
   }
 
-  private void cleanAppForQuickAmendSubmit(ApplicationDetail app) {
-    ArrayList<ProceedingDetail> noProceedings = new ArrayList<>();
-    ArrayList<OpponentDetail> noOpponents = new ArrayList<>();
-    app.setProceedings(noProceedings);
-    app.setOpponents(noOpponents);
-    // app.setApplicationType(null);
-    app.setLarScopeFlag(null);
-    if (app.getQuickEditType().equals(QuickEditTypeConstants.MESSAGE_TYPE_EDIT_PROVIDER)) {
-      app.setCorrespondenceAddress(null);
-      app.setCategoryOfLaw(null);
-      app.setCosts(null);
-    } else if (app.getQuickEditType()
-        .equals(QuickEditTypeConstants.MESSAGE_TYPE_CASE_CORRESPONDENCE_PREFERENCE)) {
-      // Commented out as it causes the provider reference to disappear when returning to the
-      // view case screens
-      // app.setProviderCaseReference(null);
-      // TODO: Check if you can just set provider details to null
-      app.getProviderDetails().setSupervisor(null);
-      app.getProviderDetails().setFeeEarner(null);
-      app.getProviderDetails().setProviderContact(null);
-      app.setCategoryOfLaw(null);
-      app.setCosts(null);
-    } else if (app.getQuickEditType()
-        .equals(QuickEditTypeConstants.MESSAGE_TYPE_ALLOCATE_COST_LIMIT)) {
-      // Commented out as it causes the provider reference to disappear when returning to the
-      // view case screens
-      // app.setProviderCaseReference(null);
-      // TODO: Check if you can just set provider details to null
-      app.getProviderDetails().setSupervisor(null);
-      app.getProviderDetails().setFeeEarner(null);
-      app.getProviderDetails().setProviderContact(null);
-      app.setCorrespondenceAddress(null);
-    } else if (app.getQuickEditType()
-        .equals(QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT)) {
-      // Commented out as it causes the provider reference to disappear when returning to the
-      // view case screens
-      // app.setProviderCaseReference(null);
-      // TODO: Check if you can just set provider details to null
-      app.setMeansAssessmentAmended(true);
-      app.setMeritsAssessmentAmended(false);
-      app.getProviderDetails().setSupervisor(null);
-      app.getProviderDetails().setFeeEarner(null);
-      app.getProviderDetails().setProviderContact(null);
-      app.setCorrespondenceAddress(null);
-      app.setCosts(null);
-      app.setCategoryOfLaw(null);
-    }
 
-
-  }
 
 
   /**
