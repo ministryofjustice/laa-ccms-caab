@@ -27,7 +27,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
-import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
 import static uk.gov.laa.ccms.caab.controller.application.section.ApplicationSubmissionController.CHILD_LOOKUP;
 import static uk.gov.laa.ccms.caab.controller.application.section.ApplicationSubmissionController.PARENT_LOOKUP;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
@@ -372,7 +372,7 @@ class ApplicationSubmissionControllerTest {
                 .sessionAttr(USER_DETAILS, mockUser)
                 .sessionAttr(ACTIVE_CASE, mockActiveCase))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/%s".formatted(SUBMISSION_CREATE_CASE)));
+        .andExpect(redirectedUrl("/application/%s".formatted(SUBMISSION_SUBMIT_CASE)));
 
     // Verify interactions
     verify(declarationSubmissionValidator, times(1)).validate(any(), any());
