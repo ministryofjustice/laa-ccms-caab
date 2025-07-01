@@ -107,7 +107,8 @@ public class DelegatedFunctionsController {
         Boolean.TRUE.equals(tdsApplication.getApplicationType().getDevolvedPowers().getUsed()));
     applicationFormData.setDelegatedFunctionUsedDate(
         tdsApplication.getApplicationType().getDevolvedPowers().getDateUsed() != null
-            ? tdsApplication.getApplicationType().getDevolvedPowers().getDateUsed().toString()
+            ? DateUtils.convertToComponentDate(
+            tdsApplication.getApplicationType().getDevolvedPowers().getDateUsed())
             : null);
 
     model.addAttribute(APPLICATION_FORM_DATA, applicationFormData);
