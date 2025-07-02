@@ -3,8 +3,10 @@ package uk.gov.laa.ccms.caab.controller.application.section;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
+import jakarta.servlet.http.HttpSession;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -29,7 +31,9 @@ import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
+
 
 /**
  * Controller for the application's provider details section.
@@ -61,6 +65,7 @@ public class ProviderDetailsSectionController {
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       @PathVariable final CaseContext caseContext,
+      HttpSession session,
       Model model) {
 
     if (caseContext.isAmendment()) {
@@ -77,13 +82,15 @@ public class ProviderDetailsSectionController {
               clientDetail,
               user
               ).block();
+
+      session.setAttribute(APPLICATION_ID, applicationId);
     }
 
     ApplicationFormData applicationFormData =
             applicationService.getProviderDetailsFormData(applicationId);
+    model.addAttribute(ACTIVE_CASE, activeCase);
 
     populateDropdowns(applicationFormData, user, model);
-    model.addAttribute(ACTIVE_CASE, activeCase);
 
     return "application/sections/provider-details-section";
   }
@@ -108,19 +115,34 @@ public class ProviderDetailsSectionController {
       @SessionAttribute(USER_DETAILS) UserDetail user,
       @Validated @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       BindingResult bindingResult,
+      HttpSession session,
       Model model) {
 
     providerDetailsValidator.validate(applicationFormData, bindingResult);
 
     if (bindingResult.hasErrors()) {
       populateDropdowns(applicationFormData, user, model);
-      model.addAttribute(ACTIVE_CASE, activeCase);
 
       return "application/sections/provider-details-section";
     }
 
-    applicationService.updateProviderDetails(applicationId, applicationFormData, user);
+    if (caseContext.isAmendment()) {
+      applicationService.updateProviderDetails(applicationId, applicationFormData, user);
 
+      CaseTransactionResponse transactionResponse = applicationService.createCase(
+              user,
+              applicationService.getApplication(applicationId).block(),
+              null,
+              null,
+              null
+      );
+      session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionResponse.getTransactionId());
+
+      return "redirect:/application/case-create";
+    }
+
+    applicationService.updateProviderDetails(applicationId, applicationFormData, user);
+    
     return "redirect:/application/sections";
   }
 
