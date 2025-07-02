@@ -93,8 +93,7 @@ public class CorrespondenceAddressValidator extends AbstractValidator {
             "invalid." + fieldName,
             "Your input for '"
                 + displayFieldName
-                + "'"
-                + " contains double spaces. Please amend your entry.");
+                + "' contains double spaces. Please amend your entry.");
       }
     }
   }

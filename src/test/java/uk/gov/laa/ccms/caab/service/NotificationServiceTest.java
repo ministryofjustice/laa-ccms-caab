@@ -457,7 +457,7 @@ class NotificationServiceTest {
         () ->
             notificationService.removeDraftNotificationAttachment(
                 notificationId, notificationAttachmentId, loginId, providerId),
-        "Expected CaabApplicationException to be thrown, but " + "wasn't.");
+        "Expected CaabApplicationException to be thrown, but wasn't.");
   }
 
   @Test

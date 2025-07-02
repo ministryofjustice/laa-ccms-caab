@@ -9,8 +9,7 @@ public enum CaseProceedingDisplayStatus {
   SUBMITTED("Submitted"),
   ADDED("Added"),
   UNCHANGED("Unchanged"),
-  UPDATED("Updated"),
-  ;
+  UPDATED("Updated");
 
   private final String status;
 

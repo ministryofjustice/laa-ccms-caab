@@ -193,7 +193,7 @@ public class EditGeneralDetailsSectionController {
       // TODO: Submit address amendments: https://dsdmoj.atlassian.net/browse/CCMSPUI-527
       if (caseContext.isAmendment()) {
         throw new NotImplementedException(
-            "Submission of correspondence address amendments " + "is not yet implemented.");
+            "Submission of correspondence address amendments is not yet implemented.");
       }
       applicationService.updateCorrespondenceAddress(applicationId, addressDetails, user);
       session.removeAttribute("addressDetails");

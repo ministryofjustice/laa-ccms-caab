@@ -19,8 +19,7 @@ import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 @Component
 public class ClientBasicDetailsValidator extends AbstractValidator {
   private static final String HOME_OFFICE_NUMBER_ERROR =
-      "Your input for 'Home office number' is in an incorrect format. "
-          + "Please amend your entry.";
+      "Your input for 'Home office number' is in an incorrect format. Please amend your entry.";
 
   private static final String NATIONAL_INSURANCE_NUMBER_ERROR =
       " Your input for 'National insurance number' is not in the correct format. "
@@ -90,8 +89,7 @@ public class ClientBasicDetailsValidator extends AbstractValidator {
         errors.rejectValue(
             "middleNames",
             "invalid.middleNames",
-            "Your input for 'Middle name(s)'"
-                + " contains double spaces. Please amend your entry.");
+            "Your input for 'Middle name(s)' contains double spaces. Please amend your entry.");
       }
     }
   }
@@ -117,13 +115,12 @@ public class ClientBasicDetailsValidator extends AbstractValidator {
         errors.rejectValue(
             "surname",
             "invalid.surname-char",
-            "Your input for 'Surname' contains an invalid character. "
-                + "Please amend your entry.");
+            "Your input for 'Surname' contains an invalid character. Please amend your entry.");
       } else if (patternMatches(surname, DOUBLE_SPACE)) {
         errors.rejectValue(
             "surname",
             "invalid.surname",
-            "Your input for 'Surname'" + " contains double spaces. Please amend your entry.");
+            "Your input for 'Surname' contains double spaces. Please amend your entry.");
       }
     }
   }

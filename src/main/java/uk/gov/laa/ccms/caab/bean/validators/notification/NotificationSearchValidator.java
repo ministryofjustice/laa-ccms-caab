@@ -73,7 +73,7 @@ public class NotificationSearchValidator extends AbstractValidator {
           && searchCriteria.getFeeEarnerId() == null) {
         errors.reject(
             "invalid.criteria",
-            "You must provide at least one search criteria below. " + "Please amend your entry.");
+            "You must provide at least one search criteria below. Please amend your entry.");
       }
     }
   }
@@ -188,8 +188,7 @@ public class NotificationSearchValidator extends AbstractValidator {
         errors.rejectValue(
             "clientSurname",
             "invalid.surname",
-            "Your input for 'Client surname'"
-                + " contains double spaces. Please amend your entry.");
+            "Your input for 'Client surname' contains double spaces. Please amend your entry.");
       }
     }
   }

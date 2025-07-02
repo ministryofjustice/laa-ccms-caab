@@ -180,7 +180,7 @@ public class NotificationService {
       log.debug("Document with ID '{}' found in S3.", attachmentId);
     } else {
       log.debug(
-          "Document with ID '{}' missing in S3. Attempting to retrieve " + "from database instead.",
+          "Document with ID '{}' missing in S3. Attempting to retrieve from database instead.",
           attachmentId);
 
       if (isDraftDocument) {

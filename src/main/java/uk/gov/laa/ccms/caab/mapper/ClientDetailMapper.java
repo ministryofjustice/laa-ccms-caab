@@ -178,17 +178,15 @@ public interface ClientDetailMapper {
   @Mapping(
       target = "telephoneHomePresent",
       expression =
-          "java(contacts.getTelephoneHome() != null "
-              + "&& !contacts.getTelephoneHome().isEmpty())")
+          "java(contacts.getTelephoneHome() != null && !contacts.getTelephoneHome().isEmpty())")
   @Mapping(
       target = "telephoneWorkPresent",
       expression =
-          "java(contacts.getTelephoneWork() != null "
-              + "&& !contacts.getTelephoneWork().isEmpty())")
+          "java(contacts.getTelephoneWork() != null && !contacts.getTelephoneWork().isEmpty())")
   @Mapping(
       target = "telephoneMobilePresent",
       expression =
-          "java(contacts.getMobileNumber() != null " + "&& !contacts.getMobileNumber().isEmpty())")
+          "java(contacts.getMobileNumber() != null && !contacts.getMobileNumber().isEmpty())")
   ClientFormDataContactDetails toClientFormDataContactDetails(ContactDetail contacts);
 
   @Mapping(target = "houseNameNumber", source = "house")

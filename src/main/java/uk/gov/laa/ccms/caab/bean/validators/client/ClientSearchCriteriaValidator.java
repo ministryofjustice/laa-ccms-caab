@@ -62,13 +62,12 @@ public class ClientSearchCriteriaValidator extends AbstractValidator {
         errors.rejectValue(
             "forename",
             "invalid.forename-char",
-            "Your input for 'First name' contains an invalid character. "
-                + "Please amend your entry.");
+            "Your input for 'First name' contains an invalid character. Please amend your entry.");
       } else if (patternMatches(forename, DOUBLE_SPACE)) {
         errors.rejectValue(
             "forename",
             "invalid.forename",
-            "Your input for 'First name'" + " contains double spaces. Please amend your entry.");
+            "Your input for 'First name' contains double spaces. Please amend your entry.");
       }
     }
   }
@@ -103,8 +102,7 @@ public class ClientSearchCriteriaValidator extends AbstractValidator {
         errors.rejectValue(
             "surname",
             "invalid.surname",
-            "Your input for 'Surname at birth'"
-                + " contains double spaces. Please amend your entry.");
+            "Your input for 'Surname at birth' contains double spaces. Please amend your entry.");
       }
     }
   }

@@ -62,8 +62,7 @@ public class FeatureServiceTest {
 
   @Test
   @DisplayName(
-      "featureRequired does not throw an exception when the given feature is disabled, "
-          + "but the provided condition is not met")
+      "featureRequired does not throw an exception when the given feature is disabled, but the provided condition is not met")
   void featureRequiredDoesNotThrowExceptionWhenFeatureIsDisabledButConditionIsNotMet() {
     Feature feature = mock(Feature.class);
     when(feature.getName()).thenReturn("feature");
@@ -80,8 +79,7 @@ public class FeatureServiceTest {
 
   @Test
   @DisplayName(
-      "featureRequired throws an exception when the given feature is disabled and the"
-          + "condition is met")
+      "featureRequired throws an exception when the given feature is disabled and thecondition is met")
   void featureRequiredThrowsExceptionWhenFeatureIsDisabledAndConditionIsMet() {
     Feature feature = mock(Feature.class);
     when(feature.getName()).thenReturn("feature");

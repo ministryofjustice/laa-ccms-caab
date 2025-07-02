@@ -121,8 +121,7 @@ public class ClientContactDetailsValidator extends AbstractValidator {
       errors.rejectValue(
           "password",
           "same.passwordReminder",
-          "Your password reminder cannot be the same as your password. "
-              + "Please amend your entry.");
+          "Your password reminder cannot be the same as your password. Please amend your entry.");
     }
   }
 

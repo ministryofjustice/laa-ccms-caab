@@ -335,8 +335,7 @@ public class ApplicationSearchControllerTest {
 
   @Test
   @DisplayName(
-      "Selecting an application with a status other than unsubmitted"
-          + "redirects the user to the case overview screen")
+      "Selecting an application with a status other than unsubmittedredirects the user to the case overview screen")
   public void selectApplicationWithOtherStatusRedirectsToCaseOverview() throws Exception {
     final String selectedCaseRef = "2";
     final String appRef = "3";
@@ -372,7 +371,7 @@ public class ApplicationSearchControllerTest {
 
   @Test
   @DisplayName(
-      "Selecting an application under amendment redirects" + "the user to the case overview screen")
+      "Selecting an application under amendment redirects the user to the case overview screen")
   public void selectApplicationAmendmentRedirectsToCaseOverview() throws Exception {
     final String selectedCaseRef = "2";
 

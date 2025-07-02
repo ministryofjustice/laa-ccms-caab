@@ -54,7 +54,7 @@ public class SecurityUtils {
       final String ezgovId) {
     final ContextToken contextToken = new ContextToken();
     log.debug(
-        "createHubContext() based on supplied details caseId:[{}], " + "ruleBaseName:[{}]",
+        "createHubContext() based on supplied details caseId:[{}], ruleBaseName:[{}]",
         lscCaseReference,
         ruleBaseId);
     log.debug("returnURL: {}", returnUrl);

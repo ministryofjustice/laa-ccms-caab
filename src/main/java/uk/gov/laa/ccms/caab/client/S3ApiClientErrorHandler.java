@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 public class S3ApiClientErrorHandler {
 
   private static final String S3_FAILURE_MSG =
-      "An error occurred when processing the request to " + "S3.";
+      "An error occurred when processing the request to S3.";
 
   private static final String S3_FILE_NOT_FOUND_MSG = "The document specified was not found in S3.";
 

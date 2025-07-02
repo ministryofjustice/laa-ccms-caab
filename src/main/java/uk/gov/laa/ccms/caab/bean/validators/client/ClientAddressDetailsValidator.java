@@ -127,7 +127,7 @@ public class ClientAddressDetailsValidator extends AbstractClientAddressValidato
         errors.rejectValue(
             "cityTown",
             "invalid.cityTown",
-            "Your input for 'City /Town'" + " contains double spaces. Please amend your entry.");
+            "Your input for 'City /Town' contains double spaces. Please amend your entry.");
       }
     }
   }
@@ -152,7 +152,7 @@ public class ClientAddressDetailsValidator extends AbstractClientAddressValidato
         errors.rejectValue(
             "county",
             "invalid.county",
-            "Your input for 'County'" + " contains double spaces. Please amend your entry.");
+            "Your input for 'County' contains double spaces. Please amend your entry.");
       }
     }
   }

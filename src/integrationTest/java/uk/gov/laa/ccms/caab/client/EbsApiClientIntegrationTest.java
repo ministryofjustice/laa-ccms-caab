@@ -200,7 +200,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   public void testGetUsers_notFound() {
     final Integer providerId = 123;
     final String expectedMessage =
-        "Failed to retrieve Users with parameters: size=1000, " + "provider-id=123";
+        "Failed to retrieve Users with parameters: size=1000, provider-id=123";
     wiremock.stubFor(
         get("/users?size=1000&provider-id=%s".formatted(providerId)).willReturn(notFound()));
     final Mono<UserDetails> userDetailsMono = ebsApiClient.getUsers(providerId);
@@ -266,8 +266,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
     wiremock.stubFor(
         get(String.format(
-                "/notifications?provider-id=20&assigned-to-user-id=%s&include-closed=%s&page=%s&"
-                    + "size=%s",
+                "/notifications?provider-id=20&assigned-to-user-id=%s&include-closed=%s&page=%s&size=%s",
                 criteria.getAssignedToUserId(), criteria.isIncludeClosed(), page, size))
             .willReturn(okJson(notificationsJson)));
     Mono<Notifications> notificationsMono = ebsApiClient.getNotifications(criteria, 20, page, size);
@@ -325,15 +324,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
     wiremock.stubFor(
         get(String.format(
-                "/cases?provider-id=%s&"
-                    + "case-reference-number=%s&"
-                    + "provider-case-reference=%s&"
-                    + "case-status=%s&"
-                    + "fee-earner-id=%s&"
-                    + "office-id=%s&"
-                    + "client-surname=%s&"
-                    + "page=%s&"
-                    + "size=%s",
+                "/cases?provider-id=%s&case-reference-number=%s&provider-case-reference=%s&case-status=%s&fee-earner-id=%s&office-id=%s&client-surname=%s&page=%s&size=%s",
                 providerId,
                 searchCriteria.getCaseReference(),
                 searchCriteria.getProviderCaseReference(),

@@ -333,8 +333,7 @@ public interface ProceedingAndCostsMapper {
   @Mapping(
       target = "type.displayValue",
       source =
-          "priorAuthorityFlowFormData.priorAuthorityTypeFormData"
-              + ".priorAuthorityTypeDisplayValue")
+          "priorAuthorityFlowFormData.priorAuthorityTypeFormData.priorAuthorityTypeDisplayValue")
   @Mapping(
       target = "summary",
       source = "priorAuthorityFlowFormData.priorAuthorityDetailsFormData.summary")

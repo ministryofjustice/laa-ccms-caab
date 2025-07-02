@@ -136,8 +136,7 @@ class AmendmentServiceTest {
 
     @Test
     @DisplayName(
-        "Should return amendment sections with document upload enabled "
-            + "when draft prior authority")
+        "Should return amendment sections with document upload enabled when draft prior authority")
     void shouldReturnAmendmentSectionsWithDocumentUploadEnabledWhenDraftPriorAuthority() {
       // Given
       ApplicationDetail amendment = buildFullApplicationDetail();

@@ -994,8 +994,7 @@ class CaabApiClientTest {
 
     final String expectedUri =
         String.format(
-            "/notification-attachments?notification-reference=%s"
-                + "&provider-id=%s&document-type=%s&send-by=%s",
+            "/notification-attachments?notification-reference=%s&provider-id=%s&document-type=%s&send-by=%s",
             notificationReference, providerId, documentType, sendBy);
 
     final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor =
@@ -1029,8 +1028,7 @@ class CaabApiClientTest {
 
     final String expectedUri =
         String.format(
-            "/notification-attachments?size=%s&notification-reference=%s"
-                + "&provider-id=%s&document-type=%s&send-by=%s",
+            "/notification-attachments?size=%s&notification-reference=%s&provider-id=%s&document-type=%s&send-by=%s",
             size, notificationReference, providerId, documentType, sendBy);
 
     final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor =

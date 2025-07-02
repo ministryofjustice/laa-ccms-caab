@@ -32,12 +32,12 @@ public abstract class AbstractValidator implements Validator {
   private static final String GENERIC_NUMERIC_REQUIRED = "Please enter a numeric value for '%s'.";
   private static final String GENERIC_CURRENCY_REQUIRED = "Please enter a currency value for '%s'.";
   private static final String GENERIC_DATEFIELD_ENTRY =
-      "Your date range is invalid." + " Please amend your entry for the %s field.";
+      "Your date range is invalid. Please amend your entry for the %s field.";
   protected static String GENERIC_INCORRECT_FORMAT =
-      "Your input for '%s' is in an incorrect " + "format. Please amend your entry.";
+      "Your input for '%s' is in an incorrect format. Please amend your entry.";
 
   protected static String GENERIC_MISSING_DATE_FIELDS_FORMAT =
-      "Your input for '%s' is incomplete. " + "Please enter a value for day, month and year.";
+      "Your input for '%s' is incomplete. Please enter a value for day, month and year.";
 
   protected static String GENERIC_FIRST_CHAR_ALPHA =
       "Your input for %s is invalid. "

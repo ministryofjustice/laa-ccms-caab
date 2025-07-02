@@ -631,7 +631,7 @@ public class ApplicationService {
                 .orElseThrow(
                     () ->
                         new CaabApplicationException(
-                            "Failed to retrieve lookup details for application " + "summary"));
+                            "Failed to retrieve lookup details for application summary"));
 
     final List<RelationshipToCaseLookupValueDetail> organisationRelationships =
         applicationSummaryMonos.getT1().getContent();

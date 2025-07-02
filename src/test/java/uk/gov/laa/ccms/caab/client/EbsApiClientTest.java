@@ -271,8 +271,7 @@ public class EbsApiClientTest {
       int size = 10;
       String expectedUri =
           String.format(
-              "/notifications?provider-id=1&assigned-to-user-id=%s&include-closed=%s&page=%s&"
-                  + "size=%s",
+              "/notifications?provider-id=1&assigned-to-user-id=%s&include-closed=%s&page=%s&size=%s",
               criteria.getAssignedToUserId(), criteria.isIncludeClosed(), page, size);
 
       ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
@@ -307,8 +306,7 @@ public class EbsApiClientTest {
       int size = 10;
       String expectedUri =
           String.format(
-              "/notifications?provider-id=1&assigned-to-user-id=%s&include-closed=%s&page=%s&"
-                  + "size=%s",
+              "/notifications?provider-id=1&assigned-to-user-id=%s&include-closed=%s&page=%s&size=%s",
               criteria.getAssignedToUserId(), criteria.isIncludeClosed(), page, size);
 
       ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
@@ -863,10 +861,7 @@ public class EbsApiClientTest {
 
       final String expectedUri =
           String.format(
-              "/scope-limitations?size=1000&scope-limitations=%s&category-of-law=%s&matter-type=%s"
-                  + "&proceeding-code=%s&level-of-service=%s&default-wording=%s"
-                  + "&stage=%s&cost-limitation=%s&emergency-cost-limitation=%s&non-standard-wording=%s"
-                  + "&emergency-scope-default=%s&emergency=%s&default-code=%s&scope-default=%s",
+              "/scope-limitations?size=1000&scope-limitations=%s&category-of-law=%s&matter-type=%s&proceeding-code=%s&level-of-service=%s&default-wording=%s&stage=%s&cost-limitation=%s&emergency-cost-limitation=%s&non-standard-wording=%s&emergency-scope-default=%s&emergency=%s&default-code=%s&scope-default=%s",
               scopeLimitationDetail.getScopeLimitations(),
               scopeLimitationDetail.getCategoryOfLaw(),
               scopeLimitationDetail.getMatterType(),
@@ -1440,8 +1435,7 @@ public class EbsApiClientTest {
 
     @ParameterizedTest
     @CsvSource({
-      "DECLARATION_TYPE, BILL_TYPE, /lookup/declarations?size=1000&type=DECLARATION_TYPE&billType"
-          + "=BILL_TYPE",
+      "DECLARATION_TYPE, BILL_TYPE, /lookup/declarations?size=1000&type=DECLARATION_TYPE&billType=BILL_TYPE",
       "DECLARATION_TYPE, , /lookup/declarations?size=1000&type=DECLARATION_TYPE",
       ", BILL_TYPE, /lookup/declarations?size=1000&billType=BILL_TYPE",
       ", , /lookup/declarations?size=1000"
@@ -1472,8 +1466,7 @@ public class EbsApiClientTest {
 
     @ParameterizedTest
     @CsvSource({
-      "DECLARATION_TYPE, BILL_TYPE, /lookup/declarations?size=1000&type=DECLARATION_TYPE&billType"
-          + "=BILL_TYPE",
+      "DECLARATION_TYPE, BILL_TYPE, /lookup/declarations?size=1000&type=DECLARATION_TYPE&billType=BILL_TYPE",
       "DECLARATION_TYPE, , /lookup/declarations?size=1000&type=DECLARATION_TYPE"
     })
     @DisplayName("getDeclarations handles errors in a parameterized test")

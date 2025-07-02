@@ -354,8 +354,7 @@ public class AssessmentService {
         // be kept in sync.
         if (Boolean.TRUE.equals(application.getMeritsReassessmentRequired())) {
           log.info(
-              "Reassessment Required for {} as application.getMeritsReassessmentRequired() "
-                  + "IS TRUE",
+              "Reassessment Required for {} as application.getMeritsReassessmentRequired() IS TRUE",
               application.getCaseReferenceNumber());
           return true;
         }
