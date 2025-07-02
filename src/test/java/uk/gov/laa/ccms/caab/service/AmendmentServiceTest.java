@@ -102,10 +102,9 @@ class AmendmentServiceTest {
                   .content(Collections.singletonList(new BaseApplicationDetail())));
       // When / Then
       assertThatThrownBy(
-              () -> {
-                amendmentService.createAndSubmitAmendmentForCase(
-                    applicationFormData, caseRef, userDetails);
-              })
+              () ->
+                  amendmentService.createAndSubmitAmendmentForCase(
+                      applicationFormData, caseRef, userDetails))
           .isInstanceOf(CaabApplicationException.class)
           .hasMessageContaining("Application already exists for case reference: 12345");
     }

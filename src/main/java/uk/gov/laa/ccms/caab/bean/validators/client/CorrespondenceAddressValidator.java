@@ -39,7 +39,7 @@ public class CorrespondenceAddressValidator extends AbstractValidator {
     validateRequiredField(
         "preferredAddress", addressFormData.getPreferredAddress(), "Preferred address", errors);
 
-    if (addressFormData.getPreferredAddress().equals("CASE")) {
+    if ("CASE".equals(addressFormData.getPreferredAddress())) {
       validateRequiredField("country", addressFormData.getCountry(), "Country", errors);
 
       validateRequiredField(

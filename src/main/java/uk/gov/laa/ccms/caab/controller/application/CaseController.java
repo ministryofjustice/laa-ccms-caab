@@ -138,12 +138,12 @@ public class CaseController {
 
     final OpponentDetail opponentDetail = ebsCase.getOpponents().get(index);
 
-    if (opponentDetail.getType().equals("Individual")) {
+    if ("Individual".equals(opponentDetail.getType())) {
       final IndividualDetailsSectionDisplay opponentDisplay =
           applicationService.getIndividualDetailsSectionDisplay(opponentDetail);
       model.addAttribute("otherParty", opponentDisplay);
       return "application/case-details-other-party";
-    } else if (opponentDetail.getType().equals("Organisation")) {
+    } else if ("Organisation".equals(opponentDetail.getType())) {
       final OrganisationDetailsSectionDisplay opponentDisplay =
           applicationService.getOrganisationDetailsSectionDisplay(opponentDetail);
       model.addAttribute("otherPartyOrganisation", opponentDisplay);
@@ -263,7 +263,7 @@ public class CaseController {
     log.info("Editing general details for case id {}", tdsApplication.getId());
     Assert.notNull(tdsApplication.getApplicationType(), "TDS Application type must not be null");
 
-    if (tdsApplication.getApplicationType().getId().equals(APP_TYPE_EMERGENCY)) {
+    if (APP_TYPE_EMERGENCY.equals(tdsApplication.getApplicationType().getId())) {
       return "redirect:/amendments/edit-delegated-functions";
     }
 

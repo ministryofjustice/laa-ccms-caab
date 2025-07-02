@@ -956,7 +956,7 @@ public class ApplicationService {
       final String applicationType,
       final List<ScopeLimitationDetail> scopeLimitations) {
 
-    BigDecimal maxValue = new BigDecimal(0);
+    BigDecimal maxValue = BigDecimal.valueOf(0);
     final List<Float> costLimitations = new ArrayList<>();
 
     for (final ScopeLimitationDetail scopeLimitation : scopeLimitations) {

@@ -464,9 +464,9 @@ public class AssessmentService {
               .orElse(null);
 
       final boolean applicationTypeMismatch =
-          (applicationTypeFromAssessment != null
+          applicationTypeFromAssessment != null
               && (applicationType == null
-                  || !applicationType.equalsIgnoreCase(applicationTypeFromAssessment)));
+                  || !applicationType.equalsIgnoreCase(applicationTypeFromAssessment));
 
       if (applicationTypeMismatch) {
         if (APP_TYPE_EXCEPTIONAL_CASE_FUNDING.equalsIgnoreCase(applicationType)) {

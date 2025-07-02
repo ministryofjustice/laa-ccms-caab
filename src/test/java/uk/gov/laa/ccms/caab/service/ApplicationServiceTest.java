@@ -1454,12 +1454,12 @@ class ApplicationServiceTest {
         new ScopeLimitationDetails()
             .addContentItem(
                 new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
-                    .costLimitation(new BigDecimal(500)));
+                    .costLimitation(BigDecimal.valueOf(500)));
     ScopeLimitationDetails mockScopeLimitationDetails2 =
         new ScopeLimitationDetails()
             .addContentItem(
                 new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
-                    .costLimitation(new BigDecimal(1000)));
+                    .costLimitation(BigDecimal.valueOf(1000)));
 
     when(lookupService.getScopeLimitationDetails(
             any(uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
@@ -1474,7 +1474,7 @@ class ApplicationServiceTest {
             applicationType,
             scopeLimitations);
 
-    assertEquals(new BigDecimal(1000).setScale(2), result.setScale(2));
+    assertEquals(BigDecimal.valueOf(1000).setScale(2), result.setScale(2));
   }
 
   @Test
@@ -1493,12 +1493,12 @@ class ApplicationServiceTest {
         new ScopeLimitationDetails()
             .addContentItem(
                 new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
-                    .costLimitation(new BigDecimal(300)));
+                    .costLimitation(BigDecimal.valueOf(300)));
     ScopeLimitationDetails mockScopeLimitationDetails2 =
         new ScopeLimitationDetails()
             .addContentItem(
                 new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
-                    .costLimitation(new BigDecimal(800)));
+                    .costLimitation(BigDecimal.valueOf(800)));
 
     when(lookupService.getScopeLimitationDetails(
             any(uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
@@ -1513,7 +1513,7 @@ class ApplicationServiceTest {
             applicationType,
             scopeLimitations);
 
-    assertEquals(new BigDecimal(800).setScale(2), result.setScale(2));
+    assertEquals(BigDecimal.valueOf(800).setScale(2), result.setScale(2));
   }
 
   @Test

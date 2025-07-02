@@ -33,7 +33,7 @@ public final class PaginationUtil {
    */
   public static <T> Page<T> paginateList(final Pageable pageable, List<T> list) {
     int start = (int) pageable.getOffset();
-    int end = Math.min((start + pageable.getPageSize()), list.size());
+    int end = Math.min(start + pageable.getPageSize(), list.size());
 
     /*
      if there's no sort in the request, just return the default page
