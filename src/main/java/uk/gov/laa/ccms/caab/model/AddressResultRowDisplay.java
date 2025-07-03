@@ -2,9 +2,7 @@ package uk.gov.laa.ccms.caab.model;
 
 import lombok.Data;
 
-/**
- * Represents the display details for a single client address result row.
- */
+/** Represents the display details for a single client address result row. */
 @Data
 public class AddressResultRowDisplay {
 

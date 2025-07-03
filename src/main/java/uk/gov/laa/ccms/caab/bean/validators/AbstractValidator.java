@@ -22,28 +22,26 @@ import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
 import uk.gov.laa.ccms.caab.bean.common.Individual;
 
-/**
- * Abstract validator used for all form validation.
- */
+/** Abstract validator used for all form validation. */
 @Slf4j
 public abstract class AbstractValidator implements Validator {
 
-  /**
-   * Generic error message.
-   */
+  /** Generic error message. */
   private static final String GENERIC_REQUIRED_ERROR = "Please complete '%s'.";
+
   private static final String GENERIC_NUMERIC_REQUIRED = "Please enter a numeric value for '%s'.";
   private static final String GENERIC_CURRENCY_REQUIRED = "Please enter a currency value for '%s'.";
-  private static final String GENERIC_DATEFIELD_ENTRY = "Your date range is invalid."
-      + " Please amend your entry for the %s field.";
-  protected static String GENERIC_INCORRECT_FORMAT = "Your input for '%s' is in an incorrect "
-      + "format. Please amend your entry.";
+  private static final String GENERIC_DATEFIELD_ENTRY =
+      "Your date range is invalid. Please amend your entry for the %s field.";
+  protected static String GENERIC_INCORRECT_FORMAT =
+      "Your input for '%s' is in an incorrect format. Please amend your entry.";
 
-  protected static String GENERIC_MISSING_DATE_FIELDS_FORMAT = "Your input for '%s' is incomplete. "
-      + "Please enter a value for day, month and year.";
+  protected static String GENERIC_MISSING_DATE_FIELDS_FORMAT =
+      "Your input for '%s' is incomplete. Please enter a value for day, month and year.";
 
-  protected static String GENERIC_FIRST_CHAR_ALPHA = "Your input for %s is invalid. "
-      + "The first character must be a letter. Please amend your entry.";
+  protected static String GENERIC_FIRST_CHAR_ALPHA =
+      "Your input for %s is invalid. "
+          + "The first character must be a letter. Please amend your entry.";
 
   protected static String GENERIC_NUMERIC_LIMIT_ERROR = "'%s' must be less than %s";
 
@@ -60,8 +58,8 @@ public abstract class AbstractValidator implements Validator {
       final String field, final String fieldValue, final String displayValue, Errors errors) {
 
     if (!StringUtils.hasText(fieldValue)) {
-      errors.rejectValue(field, "required." + field,
-          GENERIC_REQUIRED_ERROR.formatted(displayValue));
+      errors.rejectValue(
+          field, "required." + field, GENERIC_REQUIRED_ERROR.formatted(displayValue));
     }
   }
 
@@ -69,8 +67,8 @@ public abstract class AbstractValidator implements Validator {
       final String field, final Integer fieldValue, final String displayValue, Errors errors) {
 
     if (fieldValue == null) {
-      errors.rejectValue(field, "required." + field,
-          GENERIC_REQUIRED_ERROR.formatted(displayValue));
+      errors.rejectValue(
+          field, "required." + field, GENERIC_REQUIRED_ERROR.formatted(displayValue));
     }
   }
 
@@ -78,8 +76,8 @@ public abstract class AbstractValidator implements Validator {
       final String field, final String fieldValue, final String displayValue, Errors errors) {
 
     if (fieldValue == null || !fieldValue.matches(NUMERIC_PATTERN)) {
-      errors.rejectValue(field, "invalid.numeric",
-          GENERIC_NUMERIC_REQUIRED.formatted(displayValue));
+      errors.rejectValue(
+          field, "invalid.numeric", GENERIC_NUMERIC_REQUIRED.formatted(displayValue));
     }
   }
 
@@ -87,33 +85,40 @@ public abstract class AbstractValidator implements Validator {
       final String field, final String fieldValue, final String displayValue, Errors errors) {
 
     if (fieldValue == null || !fieldValue.matches(CURRENCY_PATTERN)) {
-      errors.rejectValue(field, "invalid.currency",
-          GENERIC_CURRENCY_REQUIRED.formatted(displayValue));
+      errors.rejectValue(
+          field, "invalid.currency", GENERIC_CURRENCY_REQUIRED.formatted(displayValue));
     }
   }
 
   protected void validateNumericLimit(
-      final String field, final String fieldValue,
-      final String displayValue, final BigDecimal maxLimit, final Errors errors) {
+      final String field,
+      final String fieldValue,
+      final String displayValue,
+      final BigDecimal maxLimit,
+      final Errors errors) {
     try {
       final BigDecimal value = new BigDecimal(fieldValue);
       if (value.compareTo(maxLimit) >= 0) {
-        errors.rejectValue(field, "value.exceeds.max",
+        errors.rejectValue(
+            field,
+            "value.exceeds.max",
             GENERIC_NUMERIC_LIMIT_ERROR.formatted(displayValue, maxLimit));
       }
     } catch (final NumberFormatException e) {
-      errors.rejectValue(field, "invalid.numeric",
-          GENERIC_NUMERIC_REQUIRED.formatted(displayValue));
+      errors.rejectValue(
+          field, "invalid.numeric", GENERIC_NUMERIC_REQUIRED.formatted(displayValue));
     }
   }
 
   protected void validateFieldFormat(
-      final String field, final String fieldValue, final String format,
-      String displayValue, Errors errors) {
+      final String field,
+      final String fieldValue,
+      final String format,
+      String displayValue,
+      Errors errors) {
 
     if (fieldValue == null || (!fieldValue.matches(format) && !fieldValue.isEmpty())) {
-      errors.rejectValue(field, "invalid.format",
-          GENERIC_INCORRECT_FORMAT.formatted(displayValue));
+      errors.rejectValue(field, "invalid.format", GENERIC_INCORRECT_FORMAT.formatted(displayValue));
     }
   }
 
@@ -122,8 +127,8 @@ public abstract class AbstractValidator implements Validator {
 
     if (fieldValue == null
         || (!fieldValue.matches(FIRST_CHARACTER_MUST_BE_ALPHA) && !fieldValue.isEmpty())) {
-      errors.rejectValue(field, "first.char.alpha",
-          GENERIC_FIRST_CHAR_ALPHA.formatted(displayValue));
+      errors.rejectValue(
+          field, "first.char.alpha", GENERIC_FIRST_CHAR_ALPHA.formatted(displayValue));
     }
   }
 
@@ -131,28 +136,36 @@ public abstract class AbstractValidator implements Validator {
       final String field, final String fieldValue, String displayValue, Errors errors) {
 
     if (fieldValue != null && fieldValue.contains("\s\s")) {
-      errors.rejectValue(field, "double.spaces",
-          GENERIC_DOUBLE_SPACES.formatted(displayValue));
+      errors.rejectValue(field, "double.spaces", GENERIC_DOUBLE_SPACES.formatted(displayValue));
     }
   }
 
   protected void validateFieldMaxLength(
-      final String field, final String fieldValue, final int maxLength,
-      String displayValue, Errors errors) {
+      final String field,
+      final String fieldValue,
+      final int maxLength,
+      String displayValue,
+      Errors errors) {
 
     if (fieldValue == null || fieldValue.length() > maxLength) {
-      errors.rejectValue(field, "length.exceeds.max", new Object[]{maxLength, displayValue},
+      errors.rejectValue(
+          field,
+          "length.exceeds.max",
+          new Object[] {maxLength, displayValue},
           GENERIC_MAX_LENGTH.formatted(maxLength, displayValue));
     }
   }
 
   protected void validateFieldMinLength(
-      final String field, final String fieldValue, final int minLength,
-      String displayValue, Errors errors) {
+      final String field,
+      final String fieldValue,
+      final int minLength,
+      String displayValue,
+      Errors errors) {
 
     if (fieldValue == null || fieldValue.length() < minLength) {
-      errors.rejectValue(field, "length.below.min",
-          GENERIC_MIN_LENGTH.formatted(minLength, displayValue));
+      errors.rejectValue(
+          field, "length.below.min", GENERIC_MIN_LENGTH.formatted(minLength, displayValue));
     }
   }
 
@@ -176,8 +189,7 @@ public abstract class AbstractValidator implements Validator {
     }
 
     if (StringUtils.hasText(postcode)) {
-      validateFieldFormat("postcode", postcode, UK_POSTCODE, "Postcode",
-          errors);
+      validateFieldFormat("postcode", postcode, UK_POSTCODE, "Postcode", errors);
     }
   }
 
@@ -189,13 +201,16 @@ public abstract class AbstractValidator implements Validator {
     }
 
     if (StringUtils.hasText(postcode)) {
-      validateFieldFormat("postcode", postcode, INTERNATIONAL_POSTCODE, "Postcode",
-          errors);
+      validateFieldFormat("postcode", postcode, INTERNATIONAL_POSTCODE, "Postcode", errors);
     }
   }
 
-  protected void validateTelephoneNumber(final String field, final String fieldValue,
-      final boolean required, final String displayValue, final Errors errors) {
+  protected void validateTelephoneNumber(
+      final String field,
+      final String fieldValue,
+      final boolean required,
+      final String displayValue,
+      final Errors errors) {
 
     if (required) {
       validateRequiredField(field, fieldValue, displayValue, errors);
@@ -208,8 +223,12 @@ public abstract class AbstractValidator implements Validator {
     }
   }
 
-  protected Date validateValidDateField(final String dateString,
-      final String field, final String displayName, final String datePattern, Errors errors) {
+  protected Date validateValidDateField(
+      final String dateString,
+      final String field,
+      final String displayName,
+      final String datePattern,
+      Errors errors) {
     SimpleDateFormat sdf = new SimpleDateFormat(datePattern);
     sdf.setLenient(false);
     ParsePosition pos = new ParsePosition(0);
@@ -223,14 +242,13 @@ public abstract class AbstractValidator implements Validator {
 
   protected static void reportInvalidDate(String field, String displayName, Errors errors) {
     log.warn("invalid %s".formatted(field));
-    errors.rejectValue(field, "invalid.format",
-        GENERIC_INCORRECT_FORMAT.formatted(displayName));
+    errors.rejectValue(field, "invalid.format", GENERIC_INCORRECT_FORMAT.formatted(displayName));
   }
 
   protected static void reportMissingDateFields(String field, String displayName, Errors errors) {
     log.warn("missing input for %s".formatted(field));
-    errors.rejectValue(field, "invalid.input",
-        GENERIC_MISSING_DATE_FIELDS_FORMAT.formatted(displayName));
+    errors.rejectValue(
+        field, "invalid.input", GENERIC_MISSING_DATE_FIELDS_FORMAT.formatted(displayName));
   }
 
   /**
@@ -241,42 +259,40 @@ public abstract class AbstractValidator implements Validator {
    */
   public void validateDateOfBirth(Object target, Errors errors, boolean required) {
     if (required) {
-      ValidationUtils.rejectIfEmpty(errors, "dateOfBirth",
-          "required.dob", "Please complete 'Date of birth'");
+      ValidationUtils.rejectIfEmpty(
+          errors, "dateOfBirth", "required.dob", "Please complete 'Date of birth'");
     }
 
     Individual individual = (Individual) target;
 
     if (individual.getDateOfBirth() != null && !individual.getDateOfBirth().isBlank()) {
-      validateValidDateField(individual.getDateOfBirth(), "dateOfBirth", "Date of birth",
-          COMPONENT_DATE_PATTERN, errors);
+      validateValidDateField(
+          individual.getDateOfBirth(),
+          "dateOfBirth",
+          "Date of birth",
+          COMPONENT_DATE_PATTERN,
+          errors);
     }
   }
 
-  protected void validateFromBeforeToDates(final Date fromDate, final String fieldName,
-      final Date toDate, Errors errors) {
+  protected void validateFromBeforeToDates(
+      final Date fromDate, final String fieldName, final Date toDate, Errors errors) {
     if (!toDate.after(fromDate)) {
-      errors.rejectValue(fieldName, "invalid.input",
-          GENERIC_DATEFIELD_ENTRY.formatted(fieldName));
+      errors.rejectValue(fieldName, "invalid.input", GENERIC_DATEFIELD_ENTRY.formatted(fieldName));
     }
   }
 
-  protected void validateDateInPast(final Date dateToCheck, final String fieldName,
-      String field, Errors errors) {
+  protected void validateDateInPast(
+      final Date dateToCheck, final String fieldName, String field, Errors errors) {
     Date today = Date.from(Instant.now());
     if (!today.after(dateToCheck)) {
-      errors.rejectValue(fieldName, "invalid.input",
-          GENERIC_DATEFIELD_ENTRY.formatted(field));
+      errors.rejectValue(fieldName, "invalid.input", GENERIC_DATEFIELD_ENTRY.formatted(field));
     }
   }
 
   protected boolean patternMatches(String inputString, String pattern) {
     Pattern p = Pattern.compile(pattern);
     Matcher m = p.matcher(inputString);
-    //return inputString.matches(pattern);
     return m.find();
   }
-
-
-
 }

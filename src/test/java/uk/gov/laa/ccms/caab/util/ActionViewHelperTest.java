@@ -43,8 +43,7 @@ class ActionViewHelperTest {
     assertThat(actions).as("Should be 13 actions in total (1 amendment + 12 static)").hasSize(13);
 
     // All action codes should be unique
-    List<String> codes =
-        actions.stream().map(AvailableAction::actionCode).toList();
+    List<String> codes = actions.stream().map(AvailableAction::actionCode).toList();
     assertThat(codes).as("Action codes should be unique").doesNotHaveDuplicates();
 
     // Verify the static actions part
@@ -61,18 +60,17 @@ class ActionViewHelperTest {
 
     // Last static action: MEANS_REASSESSMENT (index 11 of staticActions)
     AvailableAction meansReassessmentAction = staticActions.get(11);
-    assertThat(meansReassessmentAction.actionCode()).isEqualTo(
-        FunctionConstants.MEANS_REASSESSMENT);
-    assertThat(meansReassessmentAction.actionKey()).isEqualTo(
-        "action.completeMeansReassessment.name");
+    assertThat(meansReassessmentAction.actionCode())
+        .isEqualTo(FunctionConstants.MEANS_REASSESSMENT);
+    assertThat(meansReassessmentAction.actionKey())
+        .isEqualTo("action.completeMeansReassessment.name");
     assertThat(meansReassessmentAction.descriptionKey())
         .isEqualTo("action.completeMeansReassessment.description");
     assertThat(meansReassessmentAction.link()).isEqualTo("#");
   }
 
-  private record ExpectedAction(String actionCode, String actionKey, String descriptionKey,
-                                String link) {
-  }
+  private record ExpectedAction(
+      String actionCode, String actionKey, String descriptionKey, String link) {}
 
   @Test
   void testStaticActionsHaveCorrectPropertiesAndOrder() {
@@ -82,55 +80,97 @@ class ActionViewHelperTest {
     assertThat(staticActions).as("Incorrect number of static actions").hasSize(12);
 
     // Define the expected static actions in order based on ActionViewHelper.AVAILABLE_ACTION_LIST
-    List<ExpectedAction> expectedStaticActions = List.of(
-        new ExpectedAction(FunctionConstants.AMEND_CLIENT, "action.amendClient.name",
-            "action.amendClient.description", "/amendments/sections/client/details/summary"),
-        new ExpectedAction(FunctionConstants.BILLING, "action.billing.name",
-            "action.billing.description", "#"),
-        new ExpectedAction(FunctionConstants.OUTCOME_WITH_DISCHARGE, "action.recordOutcome.name",
-            "action.recordOutcome.description", "#"),
-        new ExpectedAction(FunctionConstants.OUTCOME_NO_DISCHARGE, "action.recordOutcome.name",
-            "action.recordOutcome.description", "#"),
-        new ExpectedAction(FunctionConstants.SUBMIT_CASE_REQUEST, "action.submitCaseQuery.name",
-            "action.submitCaseQuery.description", "#"),
-        new ExpectedAction(FunctionConstants.VIEW_CASE, "action.viewCase.name",
-            "action.viewCase.description", "/case/details"),
-        new ExpectedAction(FunctionConstants.NOTIFICATIONS, "action.viewNotifications.name",
-            "action.viewNotifications.description", "#"),
-        new ExpectedAction(FunctionConstants.VIEW_CASE_OUTCOME, "action.viewOutcome.name",
-            "action.viewOutcome.description", "#"),
-        new ExpectedAction(FunctionConstants.EDIT_PROVIDER, "action.amendProviderDetails.name",
-            "action.amendProviderDetails.description", "/amendments/sections/provider-details"),
-        new ExpectedAction(FunctionConstants.CASE_CORRESPONDENCE_PREFERENCE,
-            "action.amendCorrespondenceAddress.name",
-            "action.amendCorrespondenceAddress.description", "/amendments/sections/correspondence-address"),
-        new ExpectedAction(FunctionConstants.ALLOCATE_COST_LIMIT, "action.allocateCostLimit.name",
-            "action.allocateCostLimit.description", "#"),
-        new ExpectedAction(FunctionConstants.MEANS_REASSESSMENT,
-            "action.completeMeansReassessment.name", "action.completeMeansReassessment.description",
-            "#")
-    );
+    List<ExpectedAction> expectedStaticActions =
+        List.of(
+            new ExpectedAction(
+                FunctionConstants.AMEND_CLIENT,
+                "action.amendClient.name",
+                "action.amendClient.description",
+                "/amendments/sections/client/details/summary"),
+            new ExpectedAction(
+                FunctionConstants.BILLING,
+                "action.billing.name",
+                "action.billing.description",
+                "#"),
+            new ExpectedAction(
+                FunctionConstants.OUTCOME_WITH_DISCHARGE,
+                "action.recordOutcome.name",
+                "action.recordOutcome.description",
+                "#"),
+            new ExpectedAction(
+                FunctionConstants.OUTCOME_NO_DISCHARGE,
+                "action.recordOutcome.name",
+                "action.recordOutcome.description",
+                "#"),
+            new ExpectedAction(
+                FunctionConstants.SUBMIT_CASE_REQUEST,
+                "action.submitCaseQuery.name",
+                "action.submitCaseQuery.description",
+                "#"),
+            new ExpectedAction(
+                FunctionConstants.VIEW_CASE,
+                "action.viewCase.name",
+                "action.viewCase.description",
+                "/case/details"),
+            new ExpectedAction(
+                FunctionConstants.NOTIFICATIONS,
+                "action.viewNotifications.name",
+                "action.viewNotifications.description",
+                "#"),
+            new ExpectedAction(
+                FunctionConstants.VIEW_CASE_OUTCOME,
+                "action.viewOutcome.name",
+                "action.viewOutcome.description",
+                "#"),
+            new ExpectedAction(
+                FunctionConstants.EDIT_PROVIDER,
+                "action.amendProviderDetails.name",
+                "action.amendProviderDetails.description",
+                "/amendments/sections/provider-details"),
+            new ExpectedAction(
+                FunctionConstants.CASE_CORRESPONDENCE_PREFERENCE,
+                "action.amendCorrespondenceAddress.name",
+                "action.amendCorrespondenceAddress.description",
+                "/amendments/sections/correspondence-address"),
+            new ExpectedAction(
+                FunctionConstants.ALLOCATE_COST_LIMIT,
+                "action.allocateCostLimit.name",
+                "action.allocateCostLimit.description",
+                "#"),
+            new ExpectedAction(
+                FunctionConstants.MEANS_REASSESSMENT,
+                "action.completeMeansReassessment.name",
+                "action.completeMeansReassessment.description",
+                "#"));
 
-    assertSoftly(softly -> {
-      for (int i = 0; i < expectedStaticActions.size(); i++) {
-        AvailableAction actual = staticActions.get(i);
-        ExpectedAction expected = expectedStaticActions.get(i);
-        softly.assertThat(actual.actionCode())
-            .as("Action code mismatch for static action at index %d (%s)", i,
-                expected.actionCode)
-            .isEqualTo(expected.actionCode);
-        softly.assertThat(actual.actionKey())
-            .as("Action key mismatch for static action at index %d (%s)", i,
-                expected.actionCode)
-            .isEqualTo(expected.actionKey);
-        softly.assertThat(actual.descriptionKey())
-            .as("Description key mismatch for static action at index %d (%s)", i,
-                expected.actionCode)
-            .isEqualTo(expected.descriptionKey);
-        softly.assertThat(actual.link())
-            .as("Link mismatch for static action at index %d (%s)", i, expected.actionCode)
-            .isEqualTo(expected.link);
-      }
-    });
+    assertSoftly(
+        softly -> {
+          for (int i = 0; i < expectedStaticActions.size(); i++) {
+            AvailableAction actual = staticActions.get(i);
+            ExpectedAction expected = expectedStaticActions.get(i);
+            softly
+                .assertThat(actual.actionCode())
+                .as(
+                    "Action code mismatch for static action at index %d (%s)",
+                    i, expected.actionCode)
+                .isEqualTo(expected.actionCode);
+            softly
+                .assertThat(actual.actionKey())
+                .as(
+                    "Action key mismatch for static action at index %d (%s)",
+                    i, expected.actionCode)
+                .isEqualTo(expected.actionKey);
+            softly
+                .assertThat(actual.descriptionKey())
+                .as(
+                    "Description key mismatch for static action at index %d (%s)",
+                    i, expected.actionCode)
+                .isEqualTo(expected.descriptionKey);
+            softly
+                .assertThat(actual.link())
+                .as("Link mismatch for static action at index %d (%s)", i, expected.actionCode)
+                .isEqualTo(expected.link);
+          }
+        });
   }
 }

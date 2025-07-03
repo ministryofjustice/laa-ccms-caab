@@ -37,26 +37,27 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
  * Adding it to the model will amend the header bar with case details.
  */
 @Slf4j
-@ControllerAdvice(assignableTypes = {
-    ApplicationSectionsController.class,
-    ApplicationSubmissionController.class,
-    ApplicationTypeSectionController.class,
-    ProviderDetailsSectionController.class,
-    EditClientAddressDetailsController.class,
-    EditClientAddressDetailsSearchController.class,
-    EditClientBasicDetailsController.class,
-    EditClientContactDetailsController.class,
-    EditClientDeceasedDetailsController.class,
-    EditClientEqualOpportunitiesMonitoringDetailsController.class,
-    EditClientSummaryController.class,
-    EditGeneralDetailsSectionController.class,
-    EditProceedingsAndCostsSectionController.class,
-    OpponentsSectionController.class,
-    EvidenceSectionController.class,
-    AssessmentController.class,
-    CaseSubmissionController.class,
-    CaseController.class
-})
+@ControllerAdvice(
+    assignableTypes = {
+      ApplicationSectionsController.class,
+      ApplicationSubmissionController.class,
+      ApplicationTypeSectionController.class,
+      ProviderDetailsSectionController.class,
+      EditClientAddressDetailsController.class,
+      EditClientAddressDetailsSearchController.class,
+      EditClientBasicDetailsController.class,
+      EditClientContactDetailsController.class,
+      EditClientDeceasedDetailsController.class,
+      EditClientEqualOpportunitiesMonitoringDetailsController.class,
+      EditClientSummaryController.class,
+      EditGeneralDetailsSectionController.class,
+      EditProceedingsAndCostsSectionController.class,
+      OpponentsSectionController.class,
+      EvidenceSectionController.class,
+      AssessmentController.class,
+      CaseSubmissionController.class,
+      CaseController.class
+    })
 public class ActiveCaseModelAdvice {
 
   /**
@@ -78,8 +79,7 @@ public class ActiveCaseModelAdvice {
         session.setAttribute(ACTIVE_CASE, activeCase);
       } else {
         log.debug(
-            "Case found in session but was incorrect type: '{}'",
-            sessionCase.getClass().getName());
+            "Case found in session but was incorrect type: '{}'", sessionCase.getClass().getName());
       }
     }
   }
@@ -95,8 +95,7 @@ public class ActiveCaseModelAdvice {
       log.debug("Unable to find client for case: '{}'", caseReference);
     } else {
       String clientSurname = client.getSurname();
-      clientFullName = client.getFirstName()
-          + (clientSurname.isEmpty() ? "" : " " + clientSurname);
+      clientFullName = client.getFirstName() + (clientSurname.isEmpty() ? "" : " " + clientSurname);
 
       clientReference = client.getReference();
     }

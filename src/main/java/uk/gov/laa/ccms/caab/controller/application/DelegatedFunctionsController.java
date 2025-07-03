@@ -26,9 +26,7 @@ import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-/**
- * Controller responsible for handling the application's delegated functions operations.
- */
+/** Controller responsible for handling the application's delegated functions operations. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -56,9 +54,9 @@ public class DelegatedFunctionsController {
    * Processes the user's delegated functions selection and redirects accordingly.
    *
    * @param applicationFormData The details of the current application.
-   * @param bindingResult       Validation result for the delegated functions form.
+   * @param bindingResult Validation result for the delegated functions form.
    * @return The path to the next step in the application process or the current page based on
-   *         validation.
+   *     validation.
    */
   @PostMapping("/{caseContext}/delegated-functions")
   public String delegatedFunction(
@@ -83,7 +81,6 @@ public class DelegatedFunctionsController {
     return "redirect:/application/client/search";
   }
 
-
   /**
    * Displays the delegated functions selection page.
    *
@@ -92,7 +89,8 @@ public class DelegatedFunctionsController {
   @GetMapping("/amendments/edit-delegated-functions")
   public String editDelegatedFunction(
       @SessionAttribute(APPLICATION) final ApplicationDetail tdsApplication,
-      HttpSession httpSession, Model model) {
+      HttpSession httpSession,
+      Model model) {
 
     Assert.notNull(tdsApplication.getApplicationType(), "TDS Application type must not be null");
 
@@ -108,7 +106,7 @@ public class DelegatedFunctionsController {
     applicationFormData.setDelegatedFunctionUsedDate(
         tdsApplication.getApplicationType().getDevolvedPowers().getDateUsed() != null
             ? DateUtils.convertToComponentDate(
-            tdsApplication.getApplicationType().getDevolvedPowers().getDateUsed())
+                tdsApplication.getApplicationType().getDevolvedPowers().getDateUsed())
             : null);
 
     model.addAttribute(APPLICATION_FORM_DATA, applicationFormData);
@@ -122,16 +120,17 @@ public class DelegatedFunctionsController {
    * Processes the user's delegated functions selection and redirects accordingly.
    *
    * @param applicationFormData The details of the current application.
-   * @param bindingResult       Validation result for the delegated functions form.
+   * @param bindingResult Validation result for the delegated functions form.
    * @return The path to the next step in the application process or the current page based on
-   *         validation.
+   *     validation.
    */
   @PostMapping("/amendments/edit-delegated-functions")
   public String editDelegatedFunction(
       @SessionAttribute(APPLICATION) final ApplicationDetail tdsApplication,
       @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       @SessionAttribute(USER_DETAILS) UserDetail user,
-      BindingResult bindingResult, Model model) {
+      BindingResult bindingResult,
+      Model model) {
 
     delegatedFunctionsValidator.validate(applicationFormData, bindingResult);
 
@@ -147,12 +146,15 @@ public class DelegatedFunctionsController {
 
     ApplicationType applicationType = tdsApplication.getApplicationType();
     applicationType.getDevolvedPowers().setUsed(applicationFormData.isDelegatedFunctions());
-    applicationType.getDevolvedPowers().setDateUsed(applicationFormData.isDelegatedFunctions()
-        ? DateUtils.convertToDate(applicationFormData.getDelegatedFunctionUsedDate()) : null);
+    applicationType
+        .getDevolvedPowers()
+        .setDateUsed(
+            applicationFormData.isDelegatedFunctions()
+                ? DateUtils.convertToDate(applicationFormData.getDelegatedFunctionUsedDate())
+                : null);
 
     applicationService.putApplicationTypeFormData(tdsApplication.getId(), applicationType, user);
 
     return "redirect:/amendments/sections/linked-cases";
   }
-
 }

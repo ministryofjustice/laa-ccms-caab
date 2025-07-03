@@ -21,9 +21,7 @@ import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(value = {
-    CLIENT_SEARCH_CRITERIA,
-    CLIENT_FLOW_FORM_DATA})
+@SessionAttributes(value = {CLIENT_SEARCH_CRITERIA, CLIENT_FLOW_FORM_DATA})
 public class CancelClientRegistrationController {
 
   /**
@@ -43,13 +41,11 @@ public class CancelClientRegistrationController {
    * @return A redirect string to the agreement page.
    */
   @PostMapping("/application/client/details/cancel")
-  public String postClientDetailsCancel(
-      Model model) {
+  public String postClientDetailsCancel(Model model) {
 
     model.addAttribute(CLIENT_SEARCH_CRITERIA, new ClientSearchCriteria());
     model.addAttribute(CLIENT_FLOW_FORM_DATA, new ClientFlowFormData(ACTION_CREATE));
 
     return "redirect:/application/client/search";
   }
-
 }

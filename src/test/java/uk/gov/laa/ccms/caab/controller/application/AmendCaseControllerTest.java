@@ -42,20 +42,20 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @DisplayName("Amend case controller tests")
 class AmendCaseControllerTest {
 
-  @Mock
-  private ApplicationService applicationService;
-  @Mock
-  private AmendmentService amendmentService;
+  @Mock private ApplicationService applicationService;
+  @Mock private AmendmentService amendmentService;
 
-  @InjectMocks
-  AmendCaseController amendCaseController;
+  @InjectMocks AmendCaseController amendCaseController;
 
   private MockMvcTester mockMvc;
 
   @BeforeEach
   void setUp() {
-    mockMvc = MockMvcTester.create(MockMvcBuilders.standaloneSetup(amendCaseController)
-        .setControllerAdvice(new GlobalExceptionHandler()).build());
+    mockMvc =
+        MockMvcTester.create(
+            MockMvcBuilders.standaloneSetup(amendCaseController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build());
   }
 
   @Nested
@@ -72,16 +72,17 @@ class AmendCaseControllerTest {
       when(applicationService.getTdsApplications(any(), any(), eq(0), eq(1)))
           .thenReturn(new ApplicationDetails());
 
-      assertThat(mockMvc.perform(get("/amendments/create")
-          .sessionAttr(CASE, ebsCase)
-          .sessionAttr(USER_DETAILS, userDetail)
-          .sessionAttr(APPLICATION_FORM_DATA, applicationFormData)))
+      assertThat(
+              mockMvc.perform(
+                  get("/amendments/create")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, userDetail)
+                      .sessionAttr(APPLICATION_FORM_DATA, applicationFormData)))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/amendments/summary");
 
       verify(amendmentService, times(1))
           .createAndSubmitAmendmentForCase(applicationFormData, "123", userDetail);
-
     }
   }
 
@@ -94,22 +95,24 @@ class AmendCaseControllerTest {
     void shouldReturnExpectedView() {
       UserDetail userDetail = new UserDetail();
       BaseApplicationDetail tdsApplication = new BaseApplicationDetail().id(123);
-      CostStructureDetail costs = new CostStructureDetail().addCostEntriesItem(
-          new CostEntryDetail().costCategory("Test cat").requestedCosts(
-              BigDecimal.ONE));
-      ApplicationDetail amendment = new ApplicationDetail().id(123).caseReferenceNumber("123")
-          .costs(costs);
+      CostStructureDetail costs =
+          new CostStructureDetail()
+              .addCostEntriesItem(
+                  new CostEntryDetail().costCategory("Test cat").requestedCosts(BigDecimal.ONE));
+      ApplicationDetail amendment =
+          new ApplicationDetail().id(123).caseReferenceNumber("123").costs(costs);
       ApplicationSectionDisplay applicationSectionDisplay =
           ApplicationSectionDisplay.builder().build();
 
       when(applicationService.getApplication(any())).thenReturn(Mono.just(amendment));
       when(amendmentService.getAmendmentSections(amendment, userDetail))
           .thenReturn(applicationSectionDisplay);
-      assertThat(mockMvc.perform(get("/amendments/summary")
-          .sessionAttr(APPLICATION_SUMMARY, tdsApplication)
-          .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
-          .sessionAttr(USER_DETAILS, userDetail)
-      ))
+      assertThat(
+              mockMvc.perform(
+                  get("/amendments/summary")
+                      .sessionAttr(APPLICATION_SUMMARY, tdsApplication)
+                      .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
+                      .sessionAttr(USER_DETAILS, userDetail)))
           .hasStatusOk()
           .hasViewName("application/amendment-summary")
           .model()

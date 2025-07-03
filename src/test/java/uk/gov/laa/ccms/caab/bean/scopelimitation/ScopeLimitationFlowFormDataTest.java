@@ -22,5 +22,4 @@ class ScopeLimitationFlowFormDataTest {
     scopeLimitationFlowFormData.setScopeLimitationDetails(newDetails);
     assertEquals(newDetails, scopeLimitationFlowFormData.getScopeLimitationDetails());
   }
-
 }

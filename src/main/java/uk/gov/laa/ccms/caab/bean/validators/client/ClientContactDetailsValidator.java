@@ -9,8 +9,8 @@ import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
 /**
- * Validator component responsible for validating
- * {@link uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails} objects.
+ * Validator component responsible for validating {@link
+ * uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails} objects.
  */
 @Component
 public class ClientContactDetailsValidator extends AbstractValidator {
@@ -21,9 +21,8 @@ public class ClientContactDetailsValidator extends AbstractValidator {
    * Determines if the Validator supports the provided class.
    *
    * @param clazz The class to check for support.
-   * @return {@code true} if the class is assignable from
-   *         {@link uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails},
-   *         {@code false} otherwise.
+   * @return {@code true} if the class is assignable from {@link
+   *     uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails}, {@code false} otherwise.
    */
   @Override
   public boolean supports(Class<?> clazz) {
@@ -41,22 +40,21 @@ public class ClientContactDetailsValidator extends AbstractValidator {
     if (!contactDetails.isTelephoneHomePresent()
         && !contactDetails.isTelephoneWorkPresent()
         && !contactDetails.isTelephoneMobilePresent()) {
-      errors.reject("required.telephones",
-          "Please provide at least one contact telephone number.");
+      errors.reject("required.telephones", "Please provide at least one contact telephone number.");
     }
 
     // Validate each telephone number for non-numeric characters and minimum length
     if (contactDetails.isTelephoneHomePresent()) {
-      validateTelephoneField("telephoneHome",
-          contactDetails.getTelephoneHome(), "Telephone Home", errors);
+      validateTelephoneField(
+          "telephoneHome", contactDetails.getTelephoneHome(), "Telephone Home", errors);
     }
     if (contactDetails.isTelephoneWorkPresent()) {
-      validateTelephoneField("telephoneWork",
-          contactDetails.getTelephoneWork(), "Telephone Work", errors);
+      validateTelephoneField(
+          "telephoneWork", contactDetails.getTelephoneWork(), "Telephone Work", errors);
     }
     if (contactDetails.isTelephoneMobilePresent()) {
-      validateTelephoneField("telephoneMobile",
-          contactDetails.getTelephoneMobile(), "Mobile", errors);
+      validateTelephoneField(
+          "telephoneMobile", contactDetails.getTelephoneMobile(), "Mobile", errors);
     }
   }
 
@@ -72,15 +70,22 @@ public class ClientContactDetailsValidator extends AbstractValidator {
       String field, String fieldValue, String displayValue, Errors errors) {
     if (fieldValue != null && !fieldValue.isEmpty()) {
       if (!fieldValue.matches("[0-9+/-]+")) {
-        errors.rejectValue(field, "invalid." + field, "Your input for '"
-            + displayValue + "' contains an invalid character. Please amend your entry.");
+        errors.rejectValue(
+            field,
+            "invalid." + field,
+            "Your input for '"
+                + displayValue
+                + "' contains an invalid character. Please amend your entry.");
       } else if (fieldValue.length() < 8) {
-        errors.rejectValue(field, "length." + field, "Your input for '"
-            + displayValue + "' must contain at least 8 characters. Please amend your entry.");
+        errors.rejectValue(
+            field,
+            "length." + field,
+            "Your input for '"
+                + displayValue
+                + "' must contain at least 8 characters. Please amend your entry.");
       }
     } else {
-      errors.rejectValue(field, "invalid." + field, "Please enter '"
-          + displayValue + "'");
+      errors.rejectValue(field, "invalid." + field, "Please enter '" + displayValue + "'");
     }
   }
 
@@ -93,11 +98,13 @@ public class ClientContactDetailsValidator extends AbstractValidator {
   private void validateEmailField(ClientFormDataContactDetails contactDetails, Errors errors) {
     if (!StringUtils.hasText(contactDetails.getEmailAddress())
         && CORRESPONDENCE_EMAIL.equalsIgnoreCase(contactDetails.getCorrespondenceMethod())) {
-      errors.rejectValue("emailAddress", "required.emailAddress",
+      errors.rejectValue(
+          "emailAddress",
+          "required.emailAddress",
           "Please provide an email address, or select another correspondence method.");
     } else {
-      validateFieldFormat("emailAddress", contactDetails.getEmailAddress(), EMAIL_ADDRESS,
-             "Email address", errors);
+      validateFieldFormat(
+          "emailAddress", contactDetails.getEmailAddress(), EMAIL_ADDRESS, "Email address", errors);
     }
   }
 
@@ -111,11 +118,11 @@ public class ClientContactDetailsValidator extends AbstractValidator {
       ClientFormDataContactDetails contactDetails, Errors errors) {
     if (StringUtils.hasText(contactDetails.getPassword())
         && contactDetails.getPassword().equalsIgnoreCase(contactDetails.getPasswordReminder())) {
-      errors.rejectValue("password", "same.passwordReminder",
-          "Your password reminder cannot be the same as your password. "
-              + "Please amend your entry.");
+      errors.rejectValue(
+          "password",
+          "same.passwordReminder",
+          "Your password reminder cannot be the same as your password. Please amend your entry.");
     }
-
   }
 
   /**
@@ -128,19 +135,20 @@ public class ClientContactDetailsValidator extends AbstractValidator {
   public void validate(Object target, Errors errors) {
     ClientFormDataContactDetails contactDetails = (ClientFormDataContactDetails) target;
 
-    validateRequiredField("password", contactDetails.getPassword(),
-        "Password", errors);
-    validateRequiredField("passwordReminder", contactDetails.getPasswordReminder(),
-        "Password reminder", errors);
+    validateRequiredField("password", contactDetails.getPassword(), "Password", errors);
+    validateRequiredField(
+        "passwordReminder", contactDetails.getPasswordReminder(), "Password reminder", errors);
 
     validatePasswordNeedsReminder(contactDetails, errors);
 
     if (Boolean.FALSE.equals(contactDetails.getVulnerableClient())) {
       validateEmailField(contactDetails, errors);
       validateTelephones(contactDetails, errors);
-      validateRequiredField("correspondenceMethod", contactDetails.getCorrespondenceMethod(),
-          "Correspondence method", errors);
+      validateRequiredField(
+          "correspondenceMethod",
+          contactDetails.getCorrespondenceMethod(),
+          "Correspondence method",
+          errors);
     }
   }
-
 }

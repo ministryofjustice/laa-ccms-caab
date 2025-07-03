@@ -25,9 +25,9 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 /**
  * Service class responsible for handling amendments to existing legal aid cases.
  *
- * <p>This class provides methods for creating and submitting amendments as well as
- * retrieving application section details specific to amendments. It interacts with the
- * application service and CAAB API client to perform the necessary operations.</p>
+ * <p>This class provides methods for creating and submitting amendments as well as retrieving
+ * application section details specific to amendments. It interacts with the application service and
+ * CAAB API client to perform the necessary operations.
  *
  * @author Jamie Briggs
  */
@@ -44,11 +44,11 @@ public class AmendmentService {
    * and user information.
    *
    * @param applicationFormData the data for the application form, including the application type
-   *                            and delegated function details
+   *     and delegated function details
    * @param caseReferenceNumber the reference number of the case for which the amendment will be
-   *                            created
-   * @param userDetail          the details of the user submitting the amendment, including provider
-   *                            and login information
+   *     created
+   * @param userDetail the details of the user submitting the amendment, including provider and
+   *     login information
    * @return the detailed information of the created amendment application
    */
   public ApplicationDetail createAndSubmitAmendmentForCase(
@@ -59,25 +59,31 @@ public class AmendmentService {
     CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     caseSearchCriteria.setCaseReference(caseReferenceNumber);
     boolean applicationExists =
-        applicationService.getTdsApplications(caseSearchCriteria, userDetail, 0, 1)
-            .getContent().stream().findFirst().isPresent();
+        applicationService
+            .getTdsApplications(caseSearchCriteria, userDetail, 0, 1)
+            .getContent()
+            .stream()
+            .findFirst()
+            .isPresent();
     if (applicationExists) {
-      throw new CaabApplicationException("Application already exists for case reference: "
-          + caseReferenceNumber);
+      throw new CaabApplicationException(
+          "Application already exists for case reference: " + caseReferenceNumber);
     }
 
-    ApplicationDetail amendment = applicationService.getCase(caseReferenceNumber,
-        userDetail.getProvider().getId(), userDetail.getLoginId());
+    ApplicationDetail amendment =
+        applicationService.getCase(
+            caseReferenceNumber, userDetail.getProvider().getId(), userDetail.getLoginId());
 
     // Set application type based on previously entered answers prior to creating an amendment.
-    ApplicationType amendmentType = new ApplicationTypeBuilder()
-        .applicationType(
-            applicationFormData.getApplicationTypeCategory(),
-            applicationFormData.isDelegatedFunctions())
-        .devolvedPowers(
-            applicationFormData.isDelegatedFunctions(),
-            applicationFormData.getDelegatedFunctionUsedDate())
-        .build();
+    ApplicationType amendmentType =
+        new ApplicationTypeBuilder()
+            .applicationType(
+                applicationFormData.getApplicationTypeCategory(),
+                applicationFormData.isDelegatedFunctions())
+            .devolvedPowers(
+                applicationFormData.isDelegatedFunctions(),
+                applicationFormData.getDelegatedFunctionUsedDate())
+            .build();
 
     // Set the amendment type
     amendment.setApplicationType(amendmentType);
@@ -92,35 +98,45 @@ public class AmendmentService {
 
     // Merits status is unchange, if the requested cost limit is increased then the merits
     // assessment needs to be redone.
-    amendment.getCostLimit()
+    amendment
+        .getCostLimit()
         .setLimitAtTimeOfMerits(amendment.getCosts().getRequestedCostLimitation());
-    amendment.setStatus(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE)
-        .displayValue(STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY));
+    amendment.setStatus(
+        new StringDisplayValue()
+            .id(STATUS_UNSUBMITTED_ACTUAL_VALUE)
+            .displayValue(STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY));
 
     // Update all linked cases
     amendment.getLinkedCases().forEach(x -> x.setId(null));
 
     // Update all proceedings
-    amendment.getProceedings().forEach(x -> {
-      x.setId(null);
-      x.setStatus(new StringDisplayValue().id(STATUS_DRAFT)
-          .displayValue(PROCEEDING_STATUS_UNCHANGED_DISPLAY));
-    });
+    amendment
+        .getProceedings()
+        .forEach(
+            x -> {
+              x.setId(null);
+              x.setStatus(
+                  new StringDisplayValue()
+                      .id(STATUS_DRAFT)
+                      .displayValue(PROCEEDING_STATUS_UNCHANGED_DISPLAY));
+            });
 
     // Update prior authorities
     amendment.getPriorAuthorities().forEach(x -> x.setId(null));
 
     // Update opponents
-    amendment.getOpponents().forEach(x -> {
-      x.setConfirmed(true);
-      x.setId(null);
-      x.setAmendment(true);
-      x.setAppMode(false);
-      x.setAward(false);
-    });
+    amendment
+        .getOpponents()
+        .forEach(
+            x -> {
+              x.setConfirmed(true);
+              x.setId(null);
+              x.setAmendment(true);
+              x.setAppMode(false);
+              x.setAward(false);
+            });
 
-
-    //assessmentService.calculateAssessmentStatuses(amendment, );
+    // assessmentService.calculateAssessmentStatuses(amendment, );
     // TODO: Add merits & means assessments ~ Awaiting on CCMSPUI-380
 
     // Create application/amendment in TDS.
@@ -130,24 +146,23 @@ public class AmendmentService {
   }
 
   /**
-   * Retrieves the amendment-specific sections of an application. Additionally, enables the
-   * document upload feature if certain conditions related to prior authorities or assessment
-   * completions are met:
+   * Retrieves the amendment-specific sections of an application. Additionally, enables the document
+   * upload feature if certain conditions related to prior authorities or assessment completions are
+   * met:
+   *
    * <ul>
-   *   <li>There is a draft prior authority.</li>
-   *   <li>Means assessment has been amended.</li>
-   *   <li>Merits assessment has been amended.</li>
+   *   <li>There is a draft prior authority.
+   *   <li>Means assessment has been amended.
+   *   <li>Merits assessment has been amended.
    * </ul>
    *
    * @param application The application details for which the amendment sections need to be fetched.
-   * @param user        The user details, providing context for retrieving and tailoring the
-   *                    sections.
+   * @param user The user details, providing context for retrieving and tailoring the sections.
    * @return An ApplicationSectionDisplay object containing the relevant sections for the amendment,
-   *         with document upload enabled based on specific conditions.
+   *     with document upload enabled based on specific conditions.
    */
   public ApplicationSectionDisplay getAmendmentSections(
-      final ApplicationDetail application,
-      final UserDetail user) {
+      final ApplicationDetail application, final UserDetail user) {
     final ApplicationSectionDisplay sectionDisplay =
         applicationService.getApplicationSections(application, user);
 
@@ -155,8 +170,8 @@ public class AmendmentService {
     boolean isPriorAuthorityAdded =
         sectionDisplay.getPriorAuthorities().stream()
             .anyMatch(x -> "Draft".equalsIgnoreCase(x.getStatus()));
-    boolean assessmentComplete = application.getMeansAssessmentAmended()
-        || application.getMeritsAssessmentAmended();
+    boolean assessmentComplete =
+        application.getMeansAssessmentAmended() || application.getMeritsAssessmentAmended();
     sectionDisplay.getDocumentUpload().setEnabled(isPriorAuthorityAdded || assessmentComplete);
 
     return sectionDisplay;

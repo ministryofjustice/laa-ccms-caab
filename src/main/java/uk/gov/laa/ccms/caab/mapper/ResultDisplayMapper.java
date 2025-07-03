@@ -20,9 +20,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationSummary;
 
-/**
- * Maps between multiple objects into results display objects.
- */
+/** Maps between multiple objects into results display objects. */
 @Mapper(componentModel = "spring", uses = CommonMapper.class)
 public interface ResultDisplayMapper {
 
@@ -40,13 +38,14 @@ public interface ResultDisplayMapper {
   @Mapping(target = "clientFirstName", source = "client.firstName")
   @Mapping(target = "clientSurname", source = "client.surname")
   @Mapping(target = "clientReferenceNumber", source = "client.reference")
-  @Mapping(target = "relationToCase",
-      expression = """
+  @Mapping(
+      target = "relationToCase",
+      expression =
+          """
           java(ResultDisplayMapper
           .getValueFromLookup(relationLookup, linkedCase.getRelationToCase()))""")
-  LinkedCaseResultRowDisplay toLinkedCaseResultRowDisplay(LinkedCaseDetail linkedCase,
-                                                          @Context
-                                                          Map<String, String> relationLookup);
+  LinkedCaseResultRowDisplay toLinkedCaseResultRowDisplay(
+      LinkedCaseDetail linkedCase, @Context Map<String, String> relationLookup);
 
   @Mapping(target = "clientFirstName", source = "client.firstName")
   @Mapping(target = "clientSurname", source = "client.surname")
@@ -73,9 +72,7 @@ public interface ResultDisplayMapper {
       OrganisationDetails organisationDetails,
       @Context List<CommonLookupValueDetail> organisationTypes);
 
-
   static String getValueFromLookup(Map<String, String> map, String key) {
     return map.getOrDefault(key, key);
   }
-
 }

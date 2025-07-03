@@ -3,9 +3,7 @@ package uk.gov.laa.ccms.caab.bean.common;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.util.DateUtils;
 
-/**
- * Represents the common attributes for an individual.
- */
+/** Represents the common attributes for an individual. */
 public interface Individual {
 
   /**

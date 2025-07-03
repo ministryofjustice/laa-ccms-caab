@@ -18,8 +18,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFormDataMonitoringDetails;
 @ExtendWith(SpringExtension.class)
 class ClientEqualOpportunitiesMonitoringDetailsValidatorTest {
 
-  @InjectMocks
-  private ClientEqualOpportunitiesMonitoringDetailsValidator validator;
+  @InjectMocks private ClientEqualOpportunitiesMonitoringDetailsValidator validator;
 
   private ClientFormDataMonitoringDetails monitoringDetails;
 
@@ -73,5 +72,4 @@ class ClientEqualOpportunitiesMonitoringDetailsValidatorTest {
     monitoringDetails1.setDisability("TEST");
     return monitoringDetails1;
   }
-
 }

@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.bean.validators.notification;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,15 +12,12 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 @ExtendWith(SpringExtension.class)
 class NotificationSearchValidatorTest {
 
   private NotificationSearchCriteria criteria;
 
-  @InjectMocks
-  private NotificationSearchValidator validator;
+  @InjectMocks private NotificationSearchValidator validator;
 
   private Errors errors;
 
@@ -38,7 +37,6 @@ class NotificationSearchValidatorTest {
     assertFalse(validator.supports(Object.class));
   }
 
-
   @Test
   void testAllFieldsBlankValidator() {
     // Set dates to empty
@@ -56,7 +54,6 @@ class NotificationSearchValidatorTest {
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
     assertNotNull(errors.getFieldError("notificationFromDate"));
-
   }
 
   @Test

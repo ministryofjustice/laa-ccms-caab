@@ -15,8 +15,8 @@ import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResponse;
 import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResult;
 
 /**
- * Maps between Ordinance survey models and CAAB models. Requires the
- * {@link uk.gov.laa.ccms.caab.mapper.IgnoreUnmappedMapperConfig}.
+ * Maps between Ordinance survey models and CAAB models. Requires the {@link
+ * uk.gov.laa.ccms.caab.mapper.IgnoreUnmappedMapperConfig}.
  */
 @Mapper(componentModel = "spring", config = IgnoreUnmappedMapperConfig.class)
 public interface ClientAddressResultDisplayMapper {
@@ -50,13 +50,16 @@ public interface ClientAddressResultDisplayMapper {
    */
   @Mapping(target = "fullAddress", source = "deliveryPointAddress.address")
   @Mapping(target = "uprn", source = "deliveryPointAddress.uprn")
-  @Mapping(target = "addressLine1",
+  @Mapping(
+      target = "addressLine1",
       source = "deliveryPointAddress",
       qualifiedByName = "addressLine1Translator")
-  @Mapping(target = "addressLine2",
+  @Mapping(
+      target = "addressLine2",
       source = "deliveryPointAddress",
       qualifiedByName = "addressLine2Translator")
-  @Mapping(target = "houseNameNumber",
+  @Mapping(
+      target = "houseNameNumber",
       source = "deliveryPointAddress",
       qualifiedByName = "houseNameNumberTranslator")
   @Mapping(target = "postcode", source = "deliveryPointAddress.postcode")
@@ -77,15 +80,18 @@ public interface ClientAddressResultDisplayMapper {
     if (StringUtils.hasText(deliveryPointAddress.getSubBuildingName())
         || StringUtils.hasText(deliveryPointAddress.getOrganisationName())) {
 
-      return Stream.of(deliveryPointAddress.getOrganisationName(),
-          deliveryPointAddress.getSubBuildingName()).filter(StringUtils::hasText).collect(
-          Collectors.joining(","));
+      return Stream.of(
+              deliveryPointAddress.getOrganisationName(), deliveryPointAddress.getSubBuildingName())
+          .filter(StringUtils::hasText)
+          .collect(Collectors.joining(","));
 
     } else {
-      return Stream.of(deliveryPointAddress.getBuildingNumber(),
-          deliveryPointAddress.getBuildingName(),
-          deliveryPointAddress.getThoroughfareName()).filter(StringUtils::hasText).collect(
-          Collectors.joining(","));
+      return Stream.of(
+              deliveryPointAddress.getBuildingNumber(),
+              deliveryPointAddress.getBuildingName(),
+              deliveryPointAddress.getThoroughfareName())
+          .filter(StringUtils::hasText)
+          .collect(Collectors.joining(","));
     }
   }
 
@@ -99,10 +105,12 @@ public interface ClientAddressResultDisplayMapper {
   default String toAddressLine2(DeliveryPointAddress deliveryPointAddress) {
     if (StringUtils.hasText(deliveryPointAddress.getSubBuildingName())
         || StringUtils.hasText(deliveryPointAddress.getOrganisationName())) {
-      return Stream.of(deliveryPointAddress.getBuildingNumber(),
-          deliveryPointAddress.getBuildingName(),
-          deliveryPointAddress.getThoroughfareName()).filter(StringUtils::hasText).collect(
-          Collectors.joining(","));
+      return Stream.of(
+              deliveryPointAddress.getBuildingNumber(),
+              deliveryPointAddress.getBuildingName(),
+              deliveryPointAddress.getThoroughfareName())
+          .filter(StringUtils::hasText)
+          .collect(Collectors.joining(","));
     } else {
       return null;
     }
@@ -116,8 +124,8 @@ public interface ClientAddressResultDisplayMapper {
    */
   @Named("houseNameNumberTranslator")
   default String toHouseNameNumber(DeliveryPointAddress deliveryPointAddress) {
-    return Stream.of(deliveryPointAddress.getBuildingNumber(),
-        deliveryPointAddress.getBuildingName())
+    return Stream.of(
+            deliveryPointAddress.getBuildingNumber(), deliveryPointAddress.getBuildingName())
         .filter(StringUtils::hasText)
         .collect(Collectors.joining(","));
   }

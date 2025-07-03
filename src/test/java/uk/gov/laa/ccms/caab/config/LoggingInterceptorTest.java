@@ -14,9 +14,9 @@ import static org.mockito.Mockito.when;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Arrays;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -101,7 +101,6 @@ public class LoggingInterceptorTest {
     // verify that the second debug call was made with those specific arguments
     inOrder.verify(loggerMock).debug(eq("[DISPLAY] {}"), eq(modelAndView.getViewName()));
   }
-
 
   // Example controller and rest controller classes for testing
   @Controller

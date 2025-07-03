@@ -84,5 +84,4 @@ public class EditClientDeceasedDetailsController {
 
     return "redirect:/%s/sections/client/details/summary".formatted(caseContext.getPathValue());
   }
-
 }

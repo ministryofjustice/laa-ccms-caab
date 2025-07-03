@@ -4,9 +4,7 @@ import java.util.List;
 import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-/**
- * Utility class which provides methods for handling user roles.
- */
+/** Utility class which provides methods for handling user roles. */
 public final class UserRoleUtil {
 
   /**

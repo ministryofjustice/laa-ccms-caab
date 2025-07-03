@@ -5,9 +5,7 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
-/**
- * Validates the category of law details provided by the user.
- */
+/** Validates the category of law details provided by the user. */
 @Component
 public class CategoryOfLawValidator extends AbstractValidator {
 
@@ -31,7 +29,7 @@ public class CategoryOfLawValidator extends AbstractValidator {
   @Override
   public void validate(Object target, Errors errors) {
     ApplicationFormData applicationFormData = (ApplicationFormData) target;
-    validateRequiredField("categoryOfLawId", applicationFormData.getCategoryOfLawId(),
-        "Category of law", errors);
+    validateRequiredField(
+        "categoryOfLawId", applicationFormData.getCategoryOfLawId(), "Category of law", errors);
   }
 }

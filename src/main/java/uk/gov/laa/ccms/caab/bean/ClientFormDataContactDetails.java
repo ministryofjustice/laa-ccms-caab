@@ -4,9 +4,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-/**
- * Represents the client contact details form.
- */
+/** Represents the client contact details form. */
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class ClientFormDataContactDetails extends AbstractClientFormData {
@@ -36,13 +34,10 @@ public class ClientFormDataContactDetails extends AbstractClientFormData {
   private boolean telephoneWorkPresent;
   private boolean telephoneMobilePresent;
 
-  /**
-   * Cleanup mobile numbers if not selected in the UI.
-   */
+  /** Cleanup mobile numbers if not selected in the UI. */
   public void clearUnsetPhoneNumbers() {
     telephoneHome = telephoneHomePresent ? telephoneHome : null;
     telephoneWork = telephoneWorkPresent ? telephoneWork : null;
     telephoneMobile = telephoneMobilePresent ? telephoneMobile : null;
   }
-
 }

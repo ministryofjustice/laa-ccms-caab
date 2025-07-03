@@ -21,8 +21,7 @@ import uk.gov.laa.ccms.caab.model.sections.ProviderSectionDisplay;
 @ExtendWith(SpringExtension.class)
 class ApplicationSectionValidatorTest {
 
-  @InjectMocks
-  private ApplicationSectionValidator applicationSectionValidator;
+  @InjectMocks private ApplicationSectionValidator applicationSectionValidator;
 
   private ApplicationSectionDisplay sectionData;
 
@@ -57,8 +56,10 @@ class ApplicationSectionValidatorTest {
 
   @Test
   void validate_GeneralDetailsNotComplete_HasErrors() {
-    sectionData.setProvider(ProviderSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
-    sectionData.setGeneralDetails(GeneralDetailsSectionDisplay.builder().status("Incomplete").build());
+    sectionData.setProvider(
+        ProviderSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
+    sectionData.setGeneralDetails(
+        GeneralDetailsSectionDisplay.builder().status("Incomplete").build());
 
     applicationSectionValidator.validate(sectionData, errors);
 
@@ -69,9 +70,12 @@ class ApplicationSectionValidatorTest {
 
   @Test
   void validate_ProceedingsAndCostsNotComplete_HasErrors() {
-    sectionData.setProvider(ProviderSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
-    sectionData.setGeneralDetails(GeneralDetailsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
-    sectionData.setProceedingsAndCosts(ProceedingsAndCostsSectionDisplay.builder().status("Incomplete").build());
+    sectionData.setProvider(
+        ProviderSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
+    sectionData.setGeneralDetails(
+        GeneralDetailsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
+    sectionData.setProceedingsAndCosts(
+        ProceedingsAndCostsSectionDisplay.builder().status("Incomplete").build());
 
     applicationSectionValidator.validate(sectionData, errors);
 
@@ -82,10 +86,14 @@ class ApplicationSectionValidatorTest {
 
   @Test
   void validate_OpponentsNotComplete_HasErrors() {
-    sectionData.setProvider(ProviderSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
-    sectionData.setGeneralDetails(GeneralDetailsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
-    sectionData.setProceedingsAndCosts(ProceedingsAndCostsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
-    sectionData.setOpponentsAndOtherParties(OpponentsSectionDisplay.builder().status("Incomplete").build());
+    sectionData.setProvider(
+        ProviderSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
+    sectionData.setGeneralDetails(
+        GeneralDetailsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
+    sectionData.setProceedingsAndCosts(
+        ProceedingsAndCostsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
+    sectionData.setOpponentsAndOtherParties(
+        OpponentsSectionDisplay.builder().status("Incomplete").build());
 
     applicationSectionValidator.validate(sectionData, errors);
 
@@ -96,11 +104,16 @@ class ApplicationSectionValidatorTest {
 
   @Test
   void validate_MeansAssessmentNotComplete_HasErrors() {
-    sectionData.setProvider(ProviderSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
-    sectionData.setGeneralDetails(GeneralDetailsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
-    sectionData.setProceedingsAndCosts(ProceedingsAndCostsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
-    sectionData.setOpponentsAndOtherParties(OpponentsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
-    sectionData.setMeansAssessment(ApplicationSectionStatusDisplay.builder().status("Incomplete").build());
+    sectionData.setProvider(
+        ProviderSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
+    sectionData.setGeneralDetails(
+        GeneralDetailsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
+    sectionData.setProceedingsAndCosts(
+        ProceedingsAndCostsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
+    sectionData.setOpponentsAndOtherParties(
+        OpponentsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
+    sectionData.setMeansAssessment(
+        ApplicationSectionStatusDisplay.builder().status("Incomplete").build());
 
     applicationSectionValidator.validate(sectionData, errors);
 
@@ -111,13 +124,18 @@ class ApplicationSectionValidatorTest {
 
   @Test
   void validate_MeritsAssessmentNotComplete_HasErrors() {
-    sectionData.setProvider(ProviderSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
-    sectionData.setGeneralDetails(GeneralDetailsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
-    sectionData.setProceedingsAndCosts(ProceedingsAndCostsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
+    sectionData.setProvider(
+        ProviderSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
+    sectionData.setGeneralDetails(
+        GeneralDetailsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
+    sectionData.setProceedingsAndCosts(
+        ProceedingsAndCostsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
     sectionData.setOpponentsAndOtherParties(
         OpponentsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
-    sectionData.setMeansAssessment(ApplicationSectionStatusDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
-    sectionData.setMeritsAssessment(ApplicationSectionStatusDisplay.builder().status("Incomplete").build());
+    sectionData.setMeansAssessment(
+        ApplicationSectionStatusDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
+    sectionData.setMeritsAssessment(
+        ApplicationSectionStatusDisplay.builder().status("Incomplete").build());
 
     applicationSectionValidator.validate(sectionData, errors);
 
@@ -128,13 +146,18 @@ class ApplicationSectionValidatorTest {
 
   @Test
   void validate_AllSectionsComplete_NoErrors() {
-    sectionData.setProvider(ProviderSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
-    sectionData.setGeneralDetails(GeneralDetailsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
+    sectionData.setProvider(
+        ProviderSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
+    sectionData.setGeneralDetails(
+        GeneralDetailsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
     sectionData.setProceedingsAndCosts(
         ProceedingsAndCostsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
-    sectionData.setOpponentsAndOtherParties(OpponentsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
-    sectionData.setMeansAssessment(ApplicationSectionStatusDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
-    sectionData.setMeritsAssessment(ApplicationSectionStatusDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
+    sectionData.setOpponentsAndOtherParties(
+        OpponentsSectionDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
+    sectionData.setMeansAssessment(
+        ApplicationSectionStatusDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
+    sectionData.setMeritsAssessment(
+        ApplicationSectionStatusDisplay.builder().status(SECTION_STATUS_COMPLETE).build());
 
     applicationSectionValidator.validate(sectionData, errors);
 

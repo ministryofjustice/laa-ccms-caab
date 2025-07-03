@@ -3,9 +3,7 @@ package uk.gov.laa.ccms.caab.constants.assessment;
 import java.util.Arrays;
 import lombok.Getter;
 
-/**
- * Represents the different statuses an assessment can have within the system.
- */
+/** Represents the different statuses an assessment can have within the system. */
 @Getter
 public enum AssessmentStatus {
   COMPLETE("COMPLETE"),
@@ -26,7 +24,6 @@ public enum AssessmentStatus {
     this.status = status;
   }
 
-
   /**
    * Finds and returns an AssessmentStatus enum by its status string.
    *
@@ -39,5 +36,4 @@ public enum AssessmentStatus {
         .findFirst()
         .orElse(null);
   }
-
 }

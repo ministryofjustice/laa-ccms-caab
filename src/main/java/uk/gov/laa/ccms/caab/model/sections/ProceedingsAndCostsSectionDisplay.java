@@ -8,9 +8,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-/**
- * Represents the Section display values for proceedings and costs.
- */
+/** Represents the Section display values for proceedings and costs. */
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
@@ -18,19 +16,12 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class ProceedingsAndCostsSectionDisplay extends ApplicationSectionStatusDisplay {
 
-  /**
-   * The requested cost limitation value.
-   */
+  /** The requested cost limitation value. */
   private BigDecimal requestedCostLimitation;
 
-  /**
-   * The granted cost limitation value.
-   */
+  /** The granted cost limitation value. */
   private BigDecimal grantedCostLimitation;
 
-  /**
-   * The list of proceedings for the application.
-   */
+  /** The list of proceedings for the application. */
   private List<ProceedingSectionDisplay> proceedings;
-
 }

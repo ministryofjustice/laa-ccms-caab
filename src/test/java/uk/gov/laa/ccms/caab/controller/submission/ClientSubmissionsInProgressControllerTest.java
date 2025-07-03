@@ -32,24 +32,22 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @ExtendWith(MockitoExtension.class)
 public class ClientSubmissionsInProgressControllerTest {
 
-  @Mock
-  private ClientService clientService;
+  @Mock private ClientService clientService;
 
-  @Mock
-  private SubmissionConstants submissionConstants;
+  @Mock private SubmissionConstants submissionConstants;
 
-  @Mock
-  private HttpSession session;
+  @Mock private HttpSession session;
 
-  @InjectMocks
-  private ClientSubmissionsInProgressController controller;
+  @InjectMocks private ClientSubmissionsInProgressController controller;
 
   private MockMvc mockMvc;
 
   @BeforeEach
   void setup() {
-    mockMvc = MockMvcBuilders.standaloneSetup(controller)
-        .setConversionService(getConversionService()).build();
+    mockMvc =
+        MockMvcBuilders.standaloneSetup(controller)
+            .setConversionService(getConversionService())
+            .build();
   }
 
   @Test
@@ -63,7 +61,8 @@ public class ClientSubmissionsInProgressControllerTest {
 
     when(clientService.getClientStatus(anyString())).thenReturn(Mono.just(clientStatus));
 
-    mockMvc.perform(
+    mockMvc
+        .perform(
             get("/application/client-create")
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
                 .sessionAttr(USER_DETAILS, user))
@@ -81,7 +80,8 @@ public class ClientSubmissionsInProgressControllerTest {
 
     when(clientService.getClientStatus(anyString())).thenReturn(Mono.just(clientStatus));
 
-    mockMvc.perform(
+    mockMvc
+        .perform(
             get("/application/client-create")
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
                 .sessionAttr(USER_DETAILS, user))
@@ -104,7 +104,8 @@ public class ClientSubmissionsInProgressControllerTest {
     // Set the submission poll count below the threshold (6 in your current logic)
     final int submissionPollCount = 3;
 
-    mockMvc.perform(
+    mockMvc
+        .perform(
             get("/application/client-create")
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
                 .sessionAttr(USER_DETAILS, user)
@@ -125,7 +126,8 @@ public class ClientSubmissionsInProgressControllerTest {
     // Set the submission poll count at the threshold (6 in your current logic)
     int submissionPollCount = 6;
 
-    mockMvc.perform(
+    mockMvc
+        .perform(
             get("/application/client-create")
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
                 .sessionAttr(USER_DETAILS, user)
@@ -140,7 +142,8 @@ public class ClientSubmissionsInProgressControllerTest {
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
 
-    final BaseClientDetail baseClient = new BaseClientDetail().firstName("testFirstName").surname("testSurname");
+    final BaseClientDetail baseClient =
+        new BaseClientDetail().firstName("testFirstName").surname("testSurname");
 
     final TransactionStatus clientStatus = new TransactionStatus();
     clientStatus.setReferenceNumber("123456");
@@ -148,7 +151,8 @@ public class ClientSubmissionsInProgressControllerTest {
     when(clientService.getClientStatus(anyString())).thenReturn(Mono.just(clientStatus));
     when(clientService.updateClientNames(anyString(), any(), any())).thenReturn(Mono.empty());
 
-    mockMvc.perform(
+    mockMvc
+        .perform(
             get("/application/client-update")
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
                 .sessionAttr(USER_DETAILS, user)
@@ -163,13 +167,15 @@ public class ClientSubmissionsInProgressControllerTest {
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
 
-    final BaseClientDetail baseClient = new BaseClientDetail().firstName("testFirstName").surname("testSurname");
+    final BaseClientDetail baseClient =
+        new BaseClientDetail().firstName("testFirstName").surname("testSurname");
 
     final TransactionStatus clientStatus = new TransactionStatus();
 
     when(clientService.getClientStatus(anyString())).thenReturn(Mono.just(clientStatus));
 
-    mockMvc.perform(
+    mockMvc
+        .perform(
             get("/application/client-update")
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
                 .sessionAttr(USER_DETAILS, user)
@@ -177,6 +183,4 @@ public class ClientSubmissionsInProgressControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("submissions/submissionInProgress"));
   }
-
-
 }

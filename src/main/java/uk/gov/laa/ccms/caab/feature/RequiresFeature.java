@@ -5,9 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * Annotation to control access to methods by feature.
- */
+/** Annotation to control access to methods by feature. */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RequiresFeature {

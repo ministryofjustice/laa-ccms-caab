@@ -22,10 +22,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 
-
-/**
- * Mapper interface for converting common data between different representations.
- */
+/** Mapper interface for converting common data between different representations. */
 @Mapper(componentModel = "spring")
 public interface CommonMapper {
 
@@ -83,9 +80,7 @@ public interface CommonMapper {
    * @return Base64 encoded String, or null.
    */
   default String toBase64EncodedStringFromByteArray(byte[] bytes) {
-    return Optional.ofNullable(bytes)
-        .map(b -> Base64.getEncoder().encodeToString(b))
-        .orElse(null);
+    return Optional.ofNullable(bytes).map(b -> Base64.getEncoder().encodeToString(b)).orElse(null);
   }
 
   default String toCaretSeparatedString(List<String> items) {
@@ -105,8 +100,7 @@ public interface CommonMapper {
    */
   @Named("toDisplayValue")
   default String toDisplayValue(
-      final String code,
-      @Context final List<CommonLookupValueDetail> lookups) {
+      final String code, @Context final List<CommonLookupValueDetail> lookups) {
     return lookups.stream()
         .filter(lookup -> lookup.getCode().equals(code))
         .findFirst()
@@ -119,14 +113,13 @@ public interface CommonMapper {
    *
    * @param code the code to be converted
    * @param lookup the lookup details to be used for conversion
-   * @return the display value corresponding to the code, or {@code null} if the lookup is
-   *         {@code null}
+   * @return the display value corresponding to the code, or {@code null} if the lookup is {@code
+   *     null}
    */
-  default String toDisplayValue(
-      final String code,
-      final CommonLookupDetail lookup) {
+  default String toDisplayValue(final String code, final CommonLookupDetail lookup) {
     return lookup != null && lookup.getContent() != null
-        ? toDisplayValue(code, lookup.getContent()) : null;
+        ? toDisplayValue(code, lookup.getContent())
+        : null;
   }
 
   /**
@@ -137,8 +130,7 @@ public interface CommonMapper {
    * @return the display value corresponding to the code, or the code itself if not found
    */
   default String toRelationshipDisplayValue(
-      final String code,
-      @Context final List<RelationshipToCaseLookupValueDetail> lookups) {
+      final String code, @Context final List<RelationshipToCaseLookupValueDetail> lookups) {
     return lookups.stream()
         .filter(lookup -> lookup.getCode().equals(code))
         .findFirst()
@@ -151,19 +143,17 @@ public interface CommonMapper {
    *
    * @param code the code to be converted
    * @param lookup the relationship lookup details to be used for conversion
-   * @return the display value corresponding to the code, or {@code null} if the lookup is
-   *         {@code null}
+   * @return the display value corresponding to the code, or {@code null} if the lookup is {@code
+   *     null}
    */
   default String toRelationshipDisplayValue(
-      final String code,
-      final RelationshipToCaseLookupDetail lookup) {
+      final String code, final RelationshipToCaseLookupDetail lookup) {
     return lookup != null && lookup.getContent() != null
-        ? toRelationshipDisplayValue(code, lookup.getContent()) : null;
+        ? toRelationshipDisplayValue(code, lookup.getContent())
+        : null;
   }
 
-  /**
-   * A simplified implementation of MultipartFile used for mapping.
-   */
+  /** A simplified implementation of MultipartFile used for mapping. */
   @Getter
   @Setter
   @RequiredArgsConstructor
@@ -194,5 +184,4 @@ public interface CommonMapper {
       throw new IllegalStateException();
     }
   }
-
 }

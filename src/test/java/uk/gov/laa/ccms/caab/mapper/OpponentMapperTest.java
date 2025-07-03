@@ -24,9 +24,8 @@ public class OpponentMapperTest {
   @Test
   void testOrganisationDetail_toOrganisationOpponentFormData() {
     OrganisationDetail organisationDetail = buildOrganisationDetail("");
-    CommonLookupValueDetail orgTypeLookup = new CommonLookupValueDetail()
-        .code("thecode")
-        .description("org type");
+    CommonLookupValueDetail orgTypeLookup =
+        new CommonLookupValueDetail().code("thecode").description("org type");
 
     OrganisationOpponentFormData result =
         opponentMapper.toOrganisationOpponentFormData(organisationDetail, orgTypeLookup);
@@ -37,9 +36,11 @@ public class OpponentMapperTest {
     assertEquals(organisationDetail.getAddress().getCity(), result.getCity());
     assertEquals(organisationDetail.getAddress().getCountry(), result.getCountry());
     assertEquals(organisationDetail.getAddress().getPostalCode(), result.getPostcode());
-    assertEquals(organisationDetail.getContactDetails().getEmailAddress(), result.getEmailAddress());
+    assertEquals(
+        organisationDetail.getContactDetails().getEmailAddress(), result.getEmailAddress());
     assertEquals(organisationDetail.getContactDetails().getFax(), result.getFaxNumber());
-    assertEquals(organisationDetail.getContactDetails().getTelephoneWork(), result.getTelephoneWork());
+    assertEquals(
+        organisationDetail.getContactDetails().getTelephoneWork(), result.getTelephoneWork());
     assertEquals(organisationDetail.getContactName(), result.getContactNameRole());
     assertEquals(organisationDetail.getName(), result.getOrganisationName());
     assertEquals(organisationDetail.getType(), result.getOrganisationType());
@@ -55,7 +56,8 @@ public class OpponentMapperTest {
     OpponentDetail result = opponentMapper.toOpponent(opponentFormData);
 
     assertNotNull(result);
-    assertEquals(opponentFormData.getHouseNameOrNumber(), result.getAddress().getHouseNameOrNumber());
+    assertEquals(
+        opponentFormData.getHouseNameOrNumber(), result.getAddress().getHouseNameOrNumber());
     assertEquals(opponentFormData.getAddressLine1(), result.getAddress().getAddressLine1());
     assertEquals(opponentFormData.getAddressLine2(), result.getAddress().getAddressLine2());
     assertEquals(opponentFormData.getCity(), result.getAddress().getCity());
@@ -83,7 +85,8 @@ public class OpponentMapperTest {
     OpponentDetail result = opponentMapper.toOpponent(opponentFormData);
 
     assertNotNull(result);
-    assertEquals(opponentFormData.getHouseNameOrNumber(), result.getAddress().getHouseNameOrNumber());
+    assertEquals(
+        opponentFormData.getHouseNameOrNumber(), result.getAddress().getHouseNameOrNumber());
     assertEquals(opponentFormData.getAddressLine1(), result.getAddress().getAddressLine1());
     assertEquals(opponentFormData.getAddressLine2(), result.getAddress().getAddressLine2());
     assertEquals(opponentFormData.getCity(), result.getAddress().getCity());
@@ -97,8 +100,11 @@ public class OpponentMapperTest {
     assertEquals(opponentFormData.getFirstName(), result.getFirstName());
     assertEquals(opponentFormData.getMiddleNames(), result.getMiddleNames());
     assertEquals(opponentFormData.getSurname(), result.getSurname());
-    assertEquals(opponentFormData.getDateOfBirth(), new SimpleDateFormat("d/M/yyyy").format(result.getDateOfBirth()));
-    assertEquals(opponentFormData.getNationalInsuranceNumber(), result.getNationalInsuranceNumber());
+    assertEquals(
+        opponentFormData.getDateOfBirth(),
+        new SimpleDateFormat("d/M/yyyy").format(result.getDateOfBirth()));
+    assertEquals(
+        opponentFormData.getNationalInsuranceNumber(), result.getNationalInsuranceNumber());
     assertEquals(opponentFormData.getLegalAided(), result.getLegalAided());
     assertEquals(opponentFormData.getCertificateNumber(), result.getCertificateNumber());
 
@@ -112,7 +118,6 @@ public class OpponentMapperTest {
     assertEquals(opponentFormData.getTelephoneMobile(), result.getTelephoneMobile());
   }
 
-
   @Test
   void testOrganisationOpponent_toOrganisationOpponentFormData() {
     OpponentDetail opponent = buildOpponent(new Date());
@@ -122,13 +127,14 @@ public class OpponentMapperTest {
     final String organisationTypeDisplayValue = "org type";
     final String relationshipToCaseDisplayValue = "relationship 2 case";
     final String relationshipToClientDisplayValue = "relationship 2 client";
-    AbstractOpponentFormData result = opponentMapper.toOpponentFormData(
-        opponent,
-        partyName,
-        organisationTypeDisplayValue,
-        relationshipToCaseDisplayValue,
-        relationshipToClientDisplayValue,
-        true);
+    AbstractOpponentFormData result =
+        opponentMapper.toOpponentFormData(
+            opponent,
+            partyName,
+            organisationTypeDisplayValue,
+            relationshipToCaseDisplayValue,
+            relationshipToClientDisplayValue,
+            true);
 
     assertNotNull(result);
     assertInstanceOf(OrganisationOpponentFormData.class, result);
@@ -172,13 +178,14 @@ public class OpponentMapperTest {
     final String organisationTypeDisplayValue = "org type";
     final String relationshipToCaseDisplayValue = "relationship 2 case";
     final String relationshipToClientDisplayValue = "relationship 2 client";
-    AbstractOpponentFormData result = opponentMapper.toOpponentFormData(
-        opponent,
-        partyName,
-        organisationTypeDisplayValue,
-        relationshipToCaseDisplayValue,
-        relationshipToClientDisplayValue,
-        true);
+    AbstractOpponentFormData result =
+        opponentMapper.toOpponentFormData(
+            opponent,
+            partyName,
+            organisationTypeDisplayValue,
+            relationshipToCaseDisplayValue,
+            relationshipToClientDisplayValue,
+            true);
 
     assertNotNull(result);
     assertInstanceOf(IndividualOpponentFormData.class, result);
@@ -203,7 +210,8 @@ public class OpponentMapperTest {
     assertEquals(opponent.getMiddleNames(), orgResult.getMiddleNames());
     assertEquals(opponent.getSurname(), orgResult.getSurname());
 
-    assertEquals(new SimpleDateFormat("d/M/yyyy").format(opponent.getDateOfBirth()),
+    assertEquals(
+        new SimpleDateFormat("d/M/yyyy").format(opponent.getDateOfBirth()),
         orgResult.getDateOfBirth());
 
     assertEquals(opponent.getPartyId(), orgResult.getPartyId());

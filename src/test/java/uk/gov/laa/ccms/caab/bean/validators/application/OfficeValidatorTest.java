@@ -18,8 +18,7 @@ import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 @ExtendWith(SpringExtension.class)
 class OfficeValidatorTest {
 
-  @InjectMocks
-  private OfficeValidator officeValidator;
+  @InjectMocks private OfficeValidator officeValidator;
 
   private ApplicationFormData applicationFormData;
 
@@ -49,5 +48,4 @@ class OfficeValidatorTest {
     assertNotNull(errors.getFieldError("officeId"));
     assertEquals("required.officeId", errors.getFieldError("officeId").getCode());
   }
-
 }

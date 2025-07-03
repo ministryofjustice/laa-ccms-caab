@@ -35,14 +35,12 @@ class ClientSearchCriteriaTest {
   }
 
   @ParameterizedTest
-  @CsvSource({"01/2000",
-      "01//2000",
-      "01/01/"})
+  @CsvSource({"01/2000", "01//2000", "01/01/"})
   void testGetDateOfBirth_NullComponent(String dobDay) {
     clientSearchCriteria.setDateOfBirth(dobDay);
 
-    Assertions.assertThrows(CaabApplicationException.class, () ->
-      clientSearchCriteria.getFormattedDateOfBirth());
+    Assertions.assertThrows(
+        CaabApplicationException.class, () -> clientSearchCriteria.getFormattedDateOfBirth());
   }
 
   @Test

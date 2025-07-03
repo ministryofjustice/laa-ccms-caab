@@ -56,5 +56,4 @@ class ClientResultRowDisplayTest {
     String postCodeDistrict = clientResultRowDisplay.getPostCodeDistrict();
     assertEquals("   ", postCodeDistrict);
   }
-
 }

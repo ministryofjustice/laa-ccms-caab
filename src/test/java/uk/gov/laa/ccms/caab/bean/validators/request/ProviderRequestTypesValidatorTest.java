@@ -14,8 +14,7 @@ import uk.gov.laa.ccms.caab.bean.request.ProviderRequestTypeFormData;
 @ExtendWith(SpringExtension.class)
 class ProviderRequestTypesValidatorTest {
 
-  @InjectMocks
-  private ProviderRequestTypesValidator providerRequestTypesValidator;
+  @InjectMocks private ProviderRequestTypesValidator providerRequestTypesValidator;
 
   private ProviderRequestTypeFormData providerRequestTypeFormData;
 
@@ -24,7 +23,8 @@ class ProviderRequestTypesValidatorTest {
   @BeforeEach
   public void setUp() {
     providerRequestTypeFormData = new ProviderRequestTypeFormData();
-    errors = new BeanPropertyBindingResult(providerRequestTypeFormData, "providerRequestTypeFormData");
+    errors =
+        new BeanPropertyBindingResult(providerRequestTypeFormData, "providerRequestTypeFormData");
   }
 
   @Test
@@ -43,7 +43,9 @@ class ProviderRequestTypesValidatorTest {
     providerRequestTypesValidator.validate(providerRequestTypeFormData, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("providerRequestType"));
-    assertEquals("Please complete 'Request type'.", errors.getFieldError("providerRequestType").getDefaultMessage());
+    assertEquals(
+        "Please complete 'Request type'.",
+        errors.getFieldError("providerRequestType").getDefaultMessage());
   }
 
   @Test

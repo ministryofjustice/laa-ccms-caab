@@ -17,8 +17,7 @@ import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 @ExtendWith(SpringExtension.class)
 class PrivacyNoticeAgreementValidatorTest {
 
-  @InjectMocks
-  private PrivacyNoticeAgreementValidator privacyNoticeAgreementValidator;
+  @InjectMocks private PrivacyNoticeAgreementValidator privacyNoticeAgreementValidator;
 
   private ApplicationFormData applicationFormData;
 
@@ -55,5 +54,4 @@ class PrivacyNoticeAgreementValidatorTest {
     privacyNoticeAgreementValidator.validate(applicationFormData, errors);
     assertFalse(errors.hasErrors());
   }
-
 }

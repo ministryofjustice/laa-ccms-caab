@@ -5,9 +5,7 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 
-/**
- * Validates the linked case form data.
- */
+/** Validates the linked case form data. */
 @Component
 public class LinkedCaseValidator extends AbstractValidator {
 

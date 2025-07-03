@@ -16,8 +16,7 @@ import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
 @ExtendWith(SpringExtension.class)
 class AddressSearchValidatorTest {
 
-  @InjectMocks
-  private AddressSearchValidator addressSearchValidator;
+  @InjectMocks private AddressSearchValidator addressSearchValidator;
 
   private AddressSearchFormData addressSearch;
 
@@ -26,7 +25,8 @@ class AddressSearchValidatorTest {
   @BeforeEach
   public void setUp() {
     addressSearch =
-        new AddressSearchFormData(); // Assuming that the default constructor sets all fields to null.
+        new AddressSearchFormData(); // Assuming that the default constructor sets all fields to
+    // null.
     errors = new BeanPropertyBindingResult(addressSearch, "clientDetails");
   }
 
@@ -54,5 +54,4 @@ class AddressSearchValidatorTest {
     addressSearchValidator.validate(addressSearch, errors);
     assertFalse(errors.hasErrors());
   }
-
 }

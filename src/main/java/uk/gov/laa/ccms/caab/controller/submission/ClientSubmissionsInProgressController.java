@@ -26,9 +26,7 @@ import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-/**
- * Controller for client creation submissions in progress.
- */
+/** Controller for client creation submissions in progress. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -51,13 +49,12 @@ public class ClientSubmissionsInProgressController {
 
     model.addAttribute("submissionType", SUBMISSION_CREATE_CLIENT);
 
-    final TransactionStatus clientStatus = clientService.getClientStatus(
-        transactionId).block();
+    final TransactionStatus clientStatus = clientService.getClientStatus(transactionId).block();
 
     if (clientStatus != null && StringUtils.hasText(clientStatus.getReferenceNumber())) {
       session.setAttribute(CLIENT_REFERENCE, clientStatus.getReferenceNumber());
 
-      //Do some session tidy up
+      // Do some session tidy up
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
       session.removeAttribute(CLIENT_SEARCH_CRITERIA);
       session.removeAttribute(CLIENT_FLOW_FORM_DATA);
@@ -79,20 +76,17 @@ public class ClientSubmissionsInProgressController {
       @SessionAttribute(SUBMISSION_TRANSACTION_ID) final String transactionId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(APPLICATION_CLIENT_NAMES) final BaseClientDetail baseClient,
-      final HttpSession session, final Model model) {
+      final HttpSession session,
+      final Model model) {
 
     model.addAttribute("submissionType", SUBMISSION_UPDATE_CLIENT);
 
-    final TransactionStatus clientStatus = clientService.getClientStatus(
-        transactionId).block();
+    final TransactionStatus clientStatus = clientService.getClientStatus(transactionId).block();
 
     if (clientStatus != null && StringUtils.hasText(clientStatus.getReferenceNumber())) {
-      clientService.updateClientNames(
-          clientStatus.getReferenceNumber(),
-          user,
-          baseClient).block();
+      clientService.updateClientNames(clientStatus.getReferenceNumber(), user, baseClient).block();
 
-      //Do some session tidy up
+      // Do some session tidy up
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
       session.removeAttribute(CLIENT_FLOW_FORM_DATA);
       session.removeAttribute(APPLICATION_CLIENT_NAMES);
@@ -103,9 +97,7 @@ public class ClientSubmissionsInProgressController {
     return viewIncludingPollCount(session, SUBMISSION_UPDATE_CLIENT);
   }
 
-  private String viewIncludingPollCount(
-      final HttpSession session,
-      final String submissionType) {
+  private String viewIncludingPollCount(final HttpSession session, final String submissionType) {
     int submissionPollCount = 0;
 
     if (session.getAttribute(SUBMISSION_POLL_COUNT) != null) {
@@ -114,9 +106,8 @@ public class ClientSubmissionsInProgressController {
         return "redirect:/application/%s/failed".formatted(submissionType);
       }
     }
-    submissionPollCount = submissionPollCount + 1;
+    submissionPollCount += 1;
     session.setAttribute(SUBMISSION_POLL_COUNT, submissionPollCount);
     return "submissions/submissionInProgress";
   }
-
 }

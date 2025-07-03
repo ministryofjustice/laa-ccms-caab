@@ -2,9 +2,7 @@ package uk.gov.laa.ccms.caab.constants.assessment;
 
 import lombok.Getter;
 
-/**
- * Enumerates the types of entities related to an assessment.
- */
+/** Enumerates the types of entities related to an assessment. */
 @Getter
 public enum AssessmentEntityType {
   PROCEEDING("PROCEEDING"),
@@ -21,5 +19,4 @@ public enum AssessmentEntityType {
   AssessmentEntityType(final String type) {
     this.type = type;
   }
-
 }

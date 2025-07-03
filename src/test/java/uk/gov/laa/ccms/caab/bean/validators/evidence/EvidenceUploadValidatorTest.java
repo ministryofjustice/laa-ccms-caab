@@ -21,9 +21,8 @@ import uk.gov.laa.ccms.caab.constants.CcmsModule;
 @ExtendWith(SpringExtension.class)
 class EvidenceUploadValidatorTest {
 
-  private final EvidenceUploadValidator validator = new EvidenceUploadValidator(
-      List.of("pdf", "doc"),
-      "20B");
+  private final EvidenceUploadValidator validator =
+      new EvidenceUploadValidator(List.of("pdf", "doc"), "20B");
 
   private EvidenceUploadFormData evidenceUploadFormData;
 
@@ -31,8 +30,7 @@ class EvidenceUploadValidatorTest {
 
   @BeforeEach
   public void setUp() {
-    evidenceUploadFormData =
-        new EvidenceUploadFormData();
+    evidenceUploadFormData = new EvidenceUploadFormData();
     errors = new BeanPropertyBindingResult(evidenceUploadFormData, EVIDENCE_UPLOAD_FORM_DATA);
   }
 
@@ -67,11 +65,9 @@ class EvidenceUploadValidatorTest {
   @Test
   public void validate_fileExtension() {
     evidenceUploadFormData = buildEvidenceUploadFormData();
-    evidenceUploadFormData.setFile(new MockMultipartFile(
-        "theFile",
-        "originalName.ppp",
-        "contentType",
-        "the file data".getBytes()));
+    evidenceUploadFormData.setFile(
+        new MockMultipartFile(
+            "theFile", "originalName.ppp", "contentType", "the file data".getBytes()));
 
     validator.validate(evidenceUploadFormData, errors);
     assertEquals(1, errors.getErrorCount());
@@ -82,11 +78,12 @@ class EvidenceUploadValidatorTest {
   @Test
   public void validate_fileSize() {
     evidenceUploadFormData = buildEvidenceUploadFormData();
-    evidenceUploadFormData.setFile(new MockMultipartFile(
-        "theFile",
-        "originalName.pdf",
-        "contentType",
-        "file content which is over twenty bytes in length".getBytes()));
+    evidenceUploadFormData.setFile(
+        new MockMultipartFile(
+            "theFile",
+            "originalName.pdf",
+            "contentType",
+            "file content which is over twenty bytes in length".getBytes()));
 
     validator.validate(evidenceUploadFormData, errors);
     assertEquals(1, errors.getErrorCount());
@@ -134,11 +131,9 @@ class EvidenceUploadValidatorTest {
     formData.setDocumentType("docType");
     formData.setDocumentTypeDisplayValue("doc type");
     formData.setEvidenceTypes(List.of("type 1", "type 2"));
-    formData.setFile(new MockMultipartFile(
-        "theFile",
-        "originalName.pdf",
-        "contentType",
-        "the file data".getBytes()));
+    formData.setFile(
+        new MockMultipartFile(
+            "theFile", "originalName.pdf", "contentType", "the file data".getBytes()));
     formData.setProviderId(789);
     formData.setRegisteredDocumentId("regId");
     return formData;

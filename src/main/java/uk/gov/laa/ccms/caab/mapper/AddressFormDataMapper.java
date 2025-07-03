@@ -8,9 +8,7 @@ import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 
-/**
- * Maps between AddressFormData and AddressDetail models.
- */
+/** Maps between AddressFormData and AddressDetail models. */
 @Mapper(componentModel = "spring")
 public interface AddressFormDataMapper {
 
@@ -25,8 +23,7 @@ public interface AddressFormDataMapper {
   AddressDetail toAddress(AddressFormData addressFormData);
 
   /**
-   * Updates the AddressFormData object with information from the AddressResultRowDisplay
-   * object.
+   * Updates the AddressFormData object with information from the AddressResultRowDisplay object.
    *
    * @param addressDetails Target address details object to update.
    * @param addressResultRowDisplay Source object containing the address details.
@@ -36,5 +33,4 @@ public interface AddressFormDataMapper {
   void updateAddressFormData(
       @MappingTarget AddressFormData addressDetails,
       AddressResultRowDisplay addressResultRowDisplay);
-
 }

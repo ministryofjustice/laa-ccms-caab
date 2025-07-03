@@ -20,9 +20,7 @@ import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 
-/**
- * Service class to handle Providers.
- */
+/** Service class to handle Providers. */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -34,32 +32,25 @@ public class ProviderService {
   /**
    * Fetches the Contract Details for the provided provider and office.
    *
-   * @param providerFirmId       The identifier for the provider firm.
-   * @param officeId             The identifier for the office.
-   * @param loginId              The login identifier for the user.
-   * @param userType             Type of the user (e.g., admin, user).
+   * @param providerFirmId The identifier for the provider firm.
+   * @param officeId The identifier for the office.
+   * @param loginId The login identifier for the user.
+   * @param userType Type of the user (e.g., admin, user).
    * @return A Contract Details containing all Contracts.
    */
   public Mono<ContractDetails> getContractDetails(
-      Integer providerFirmId,
-      Integer officeId,
-      String loginId,
-      String userType) {
-    return soaApiClient.getContractDetails(
-        providerFirmId,
-        officeId,
-        loginId,
-        userType);
+      Integer providerFirmId, Integer officeId, String loginId, String userType) {
+    return soaApiClient.getContractDetails(providerFirmId, officeId, loginId, userType);
   }
 
   /**
    * Fetches the list of Category of Law codes based on specified criteria.
    *
-   * @param providerFirmId       The identifier for the provider firm.
-   * @param officeId             The identifier for the office.
-   * @param loginId              The login identifier for the user.
-   * @param userType             Type of the user (e.g., admin, user).
-   * @param initialApplication   Whether it's an initial application or not.
+   * @param providerFirmId The identifier for the provider firm.
+   * @param officeId The identifier for the office.
+   * @param loginId The login identifier for the user.
+   * @param userType Type of the user (e.g., admin, user).
+   * @param initialApplication Whether it's an initial application or not.
    * @return A list of Category of Law codes.
    */
   public List<String> getCategoryOfLawCodes(
@@ -68,11 +59,8 @@ public class ProviderService {
       String loginId,
       String userType,
       Boolean initialApplication) {
-    ContractDetails contractDetails = this.getContractDetails(
-        providerFirmId,
-        officeId,
-        loginId,
-        userType).block();
+    ContractDetails contractDetails =
+        this.getContractDetails(providerFirmId, officeId, loginId, userType).block();
 
     // Process and filter the response
     return Optional.ofNullable(contractDetails)
@@ -81,25 +69,27 @@ public class ProviderService {
   }
 
   /**
-   * Build a filtered list of Category Of Law.
-   * Include the Category code only if
-   * - CreateNewMatters is true
-   * or
-   * - This is not an initial Application and RemainderAuthorisation is true
+   * Build a filtered list of Category Of Law. Include the Category code only if - CreateNewMatters
+   * is true or - This is not an initial Application and RemainderAuthorisation is true
    *
-   * @param contractDetails    The List of contract details to process
+   * @param contractDetails The List of contract details to process
    * @param initialApplication if it is an initial application
    * @return List of Category Of Law Codes
    */
-  private List<String> filterCategoriesOfLaw(List<ContractDetail> contractDetails,
-      final Boolean initialApplication) {
-    return Optional.ofNullable(contractDetails)// Wrap the list in an Optional
-        .map(list -> list.stream()
-            .filter(c -> Boolean.TRUE.equals(c.isCreateNewMatters()) || (!initialApplication
-                && Boolean.TRUE.equals(c.isRemainderAuthorisation())))
-            .map(ContractDetail::getCategoryofLaw)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList()))
+  private List<String> filterCategoriesOfLaw(
+      List<ContractDetail> contractDetails, final Boolean initialApplication) {
+    return Optional.ofNullable(contractDetails) // Wrap the list in an Optional
+        .map(
+            list ->
+                list.stream()
+                    .filter(
+                        c ->
+                            Boolean.TRUE.equals(c.isCreateNewMatters())
+                                || (!initialApplication
+                                    && Boolean.TRUE.equals(c.isRemainderAuthorisation())))
+                    .map(ContractDetail::getCategoryofLaw)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList()))
         .orElse(Collections.emptyList());
   }
 
@@ -120,15 +110,17 @@ public class ProviderService {
    * @return List of contact details representing fee earners.
    */
   public List<ContactDetail> getAllFeeEarners(ProviderDetail provider) {
-    return provider.getOffices() != null ? provider.getOffices().stream()
-        .map(OfficeDetail::getFeeEarners)
-        .filter(Objects::nonNull)
-        .flatMap(Collection::stream)
-        .collect(Collectors.toSet())
-        .stream()
-        .filter(contactDetail -> contactDetail.getName() != null)
-        .sorted(Comparator.comparing(ContactDetail::getName))
-        .collect(Collectors.toList()) : Collections.emptyList();
+    return provider.getOffices() != null
+        ? provider.getOffices().stream()
+            .map(OfficeDetail::getFeeEarners)
+            .filter(Objects::nonNull)
+            .flatMap(Collection::stream)
+            .collect(Collectors.toSet())
+            .stream()
+            .filter(contactDetail -> contactDetail.getName() != null)
+            .sorted(Comparator.comparing(ContactDetail::getName))
+            .collect(Collectors.toList())
+        : Collections.emptyList();
   }
 
   /**
@@ -139,13 +131,18 @@ public class ProviderService {
    * @return List of contact details representing fee earners for the specified office.
    */
   public List<ContactDetail> getFeeEarnersByOffice(ProviderDetail provider, Integer officeId) {
-    return provider.getOffices() != null ? provider.getOffices().stream()
-        .filter(officeDetail -> officeDetail.getId().equals(officeId))
-        .flatMap(officeDetail -> officeDetail.getFeeEarners() != null
-            ? officeDetail.getFeeEarners().stream() : Stream.empty())
-        .filter(contactDetail -> contactDetail.getName() != null)
-        .sorted(Comparator.comparing(ContactDetail::getName))
-        .collect(Collectors.toList()) : Collections.emptyList();
+    return provider.getOffices() != null
+        ? provider.getOffices().stream()
+            .filter(officeDetail -> officeDetail.getId().equals(officeId))
+            .flatMap(
+                officeDetail ->
+                    officeDetail.getFeeEarners() != null
+                        ? officeDetail.getFeeEarners().stream()
+                        : Stream.empty())
+            .filter(contactDetail -> contactDetail.getName() != null)
+            .sorted(Comparator.comparing(ContactDetail::getName))
+            .collect(Collectors.toList())
+        : Collections.emptyList();
   }
 
   /**
@@ -157,16 +154,13 @@ public class ProviderService {
    * @return List of contact details representing fee earners for the specified office.
    */
   public ContactDetail getFeeEarnerByOfficeAndId(
-      final ProviderDetail provider,
-      final Integer officeId,
-      final Integer feeEarnerId) {
+      final ProviderDetail provider, final Integer officeId, final Integer feeEarnerId) {
 
     if (feeEarnerId == null) {
       return null;
     }
 
-    return getFeeEarnersByOffice(provider, officeId)
-        .stream()
+    return getFeeEarnersByOffice(provider, officeId).stream()
         .filter(fe -> feeEarnerId.equals(fe.getId()))
         .findFirst()
         .orElse(null);

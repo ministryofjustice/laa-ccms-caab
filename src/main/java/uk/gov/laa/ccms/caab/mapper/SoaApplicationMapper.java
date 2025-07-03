@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.mapper;
 
-
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_COST;
@@ -103,9 +102,7 @@ import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.TimeRelatedAward;
 import uk.gov.laa.ccms.soa.gateway.model.UserDetail;
 
-/**
- * Mapper class to convert a SoaApi Case into a CAAB ApplicationDetail.
- */
+/** Mapper class to convert a SoaApi Case into a CAAB ApplicationDetail. */
 @Mapper(componentModel = "spring")
 public interface SoaApplicationMapper {
 
@@ -130,10 +127,12 @@ public interface SoaApplicationMapper {
   @Mapping(target = "certificate", source = "certificate")
   @Mapping(target = "applicationType", source = "applicationMappingContext")
   @Mapping(target = "dateCreated", source = "soaCaseDetail.recordHistory.dateCreated")
-  @Mapping(target = "providerDetails.providerCaseReference",
+  @Mapping(
+      target = "providerDetails.providerCaseReference",
       source = "soaCaseDetail.applicationDetails.providerDetails.providerCaseReferenceNumber")
   @Mapping(target = "providerDetails.provider", source = "providerDetail")
-  @Mapping(target = "providerDetails.providerContact",
+  @Mapping(
+      target = "providerDetails.providerContact",
       source = "soaCaseDetail.applicationDetails.providerDetails.contactUserId")
   @Mapping(target = "providerDetails.office", source = "providerOffice")
   @Mapping(target = "providerDetails.supervisor", source = "supervisorContact")
@@ -142,8 +141,10 @@ public interface SoaApplicationMapper {
   @Mapping(target = "client", source = "soaCaseDetail.applicationDetails.client")
   @Mapping(target = "categoryOfLaw", source = "soaCaseDetail.applicationDetails.categoryOfLaw")
   @Mapping(target = "costs", source = "applicationMappingContext")
-  @Mapping(target = "larScopeFlag",
-      source = "soaCaseDetail.applicationDetails.larDetails.larScopeFlag", defaultValue = "false")
+  @Mapping(
+      target = "larScopeFlag",
+      source = "soaCaseDetail.applicationDetails.larDetails.larScopeFlag",
+      defaultValue = "false")
   @Mapping(target = "status", source = "soaCaseDetail.caseStatus")
   @Mapping(target = "opponents", source = "soaCaseDetail.applicationDetails.otherParties")
   @Mapping(target = "proceedings", source = "proceedings")
@@ -176,19 +177,22 @@ public interface SoaApplicationMapper {
   ApplicationType toApplicationType(SoaApplicationMappingContext applicationMappingContext);
 
   @Mapping(target = ".", source = "soaCaseDetail.applicationDetails.correspondenceAddress")
-  @Mapping(target = "careOf",
+  @Mapping(
+      target = "careOf",
       source = "soaCaseDetail.applicationDetails.correspondenceAddress.careOfName")
-  @Mapping(target = "houseNameOrNumber",
+  @Mapping(
+      target = "houseNameOrNumber",
       source = "soaCaseDetail.applicationDetails.correspondenceAddress.house")
-  @Mapping(target = "postcode",
+  @Mapping(
+      target = "postcode",
       source = "soaCaseDetail.applicationDetails.correspondenceAddress.postalCode")
   @Mapping(target = "noFixedAbode", constant = "false")
-  @Mapping(target = "preferredAddress",
+  @Mapping(
+      target = "preferredAddress",
       source = "soaCaseDetail.applicationDetails.preferredAddress")
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
   AddressDetail toCorrespondenceAddress(SoaApplicationMappingContext mappingContext);
-
 
   @Mapping(target = "edited", constant = "false")
   @Mapping(target = ".", source = "soaProceeding")
@@ -202,7 +206,9 @@ public interface SoaApplicationMapper {
   @Mapping(target = "status", source = "proceedingStatusLookup")
   @Mapping(target = "typeOfOrder", source = "soaProceeding.orderType")
   @Mapping(target = "costLimitation", source = "proceedingCostLimitation")
-  @Mapping(target = "outcome", source = "proceedingContext",
+  @Mapping(
+      target = "outcome",
+      source = "proceedingContext",
       conditionExpression = "java(proceedingContext.getSoaProceeding().getOutcome() != null)")
   @Mapping(target = "scopeLimitations", source = "scopeLimitations")
   @Mapping(target = "defaultScopeLimitation", ignore = true)
@@ -214,12 +220,15 @@ public interface SoaApplicationMapper {
   @Mapping(target = "id", ignore = true)
   ProceedingDetail toProceeding(SoaProceedingMappingContext proceedingContext);
 
-  @Mapping(target = "grantedCostLimitation",
+  @Mapping(
+      target = "grantedCostLimitation",
       source = "soaCaseDetail.applicationDetails.categoryOfLaw.grantedAmount")
-  @Mapping(target = "requestedCostLimitation",
+  @Mapping(
+      target = "requestedCostLimitation",
       source = "soaCaseDetail.applicationDetails.categoryOfLaw.requestedAmount")
   @Mapping(target = "defaultCostLimitation", ignore = true)
-  @Mapping(target = "costEntries",
+  @Mapping(
+      target = "costEntries",
       source = "soaCaseDetail.applicationDetails.categoryOfLaw.costLimitations")
   @Mapping(target = "currentProviderBilledAmount", source = "currentProviderBilledAmount")
   @Mapping(target = "auditTrail", ignore = true)
@@ -313,7 +322,6 @@ public interface SoaApplicationMapper {
   @Mapping(target = "partyId", ignore = true)
   OpponentDetail toIndividualOpponent(OtherParty otherParty);
 
-
   @Mapping(target = "type", constant = OPPONENT_TYPE_ORGANISATION)
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "ebsId", source = "otherPartyId")
@@ -384,12 +392,14 @@ public interface SoaApplicationMapper {
   @Mapping(target = "mandatory", source = "key.mandatoryFlag")
   @Mapping(target = "value", source = "value")
   @Mapping(target = "id", ignore = true)
-  ReferenceDataItemDetail toReferenceDataItem(Pair<uk.gov.laa.ccms.data.model.PriorAuthorityDetail,
-      CommonLookupValueDetail> priorAuthorityDetail);
+  ReferenceDataItemDetail toReferenceDataItem(
+      Pair<uk.gov.laa.ccms.data.model.PriorAuthorityDetail, CommonLookupValueDetail>
+          priorAuthorityDetail);
 
   @Mapping(target = ".", source = "soaCase")
   @Mapping(target = "legalCosts", source = "soaCase.legalHelpCosts")
-  @Mapping(target = "officeCode",
+  @Mapping(
+      target = "officeCode",
       source = "soaCase.applicationDetails.larDetails.legalHelpOfficeCode")
   @Mapping(target = "uniqueFileNo", source = "soaCase.applicationDetails.larDetails.legalHelpUfn")
   @Mapping(target = "otherDetails", source = "soaCase.dischargeStatus.otherDetails")
@@ -409,14 +419,22 @@ public interface SoaApplicationMapper {
   @Mapping(target = "awardCode", source = "awardType")
   @Mapping(target = ".", source = "costAward")
   @Mapping(target = "dateOfOrder", source = "costAward.orderDate")
-  @Mapping(target = "preCertificateLscCost",
-      source = "costAward.preCertificateAwardLsc", defaultValue = "0.00")
-  @Mapping(target = "preCertificateOtherCost",
-      source = "costAward.preCertificateAwardOth", defaultValue = "0.00")
-  @Mapping(target = "certificateCostLsc",
-      source = "costAward.certificateCostRateLsc", defaultValue = "0.00")
-  @Mapping(target = "certificateCostMarket",
-      source = "costAward.certificateCostRateMarket", defaultValue = "0.00")
+  @Mapping(
+      target = "preCertificateLscCost",
+      source = "costAward.preCertificateAwardLsc",
+      defaultValue = "0.00")
+  @Mapping(
+      target = "preCertificateOtherCost",
+      source = "costAward.preCertificateAwardOth",
+      defaultValue = "0.00")
+  @Mapping(
+      target = "certificateCostLsc",
+      source = "costAward.certificateCostRateLsc",
+      defaultValue = "0.00")
+  @Mapping(
+      target = "certificateCostMarket",
+      source = "costAward.certificateCostRateMarket",
+      defaultValue = "0.00")
   @Mapping(target = "orderServedDate", source = "costAward.orderDateServed")
   @Mapping(target = "interestStartDate", source = "costAward.interestAwardedStartDate")
   @Mapping(target = "addressLine1", source = "costAward.serviceAddress.addressLine1")
@@ -446,8 +464,8 @@ public interface SoaApplicationMapper {
     }
 
     // Calculate the total costs awarded by summing LSC and Market
-    costAward.setTotalCertCostsAwarded(costAward.getCertificateCostLsc()
-        .add(costAward.getCertificateCostMarket()));
+    costAward.setTotalCertCostsAwarded(
+        costAward.getCertificateCostLsc().add(costAward.getCertificateCostMarket()));
   }
 
   @Mapping(target = "ebsId", source = "awardId")
@@ -458,8 +476,7 @@ public interface SoaApplicationMapper {
   @Mapping(target = "dateOfOrder", source = "financialAward.orderDate")
   @Mapping(target = "awardAmount", source = "financialAward.amount")
   @Mapping(target = "orderServedDate", source = "financialAward.orderDateServed")
-  @Mapping(target = "statutoryChargeExemptReason",
-      source = "financialAward.statutoryChangeReason")
+  @Mapping(target = "statutoryChargeExemptReason", source = "financialAward.statutoryChangeReason")
   @Mapping(target = "addressLine1", source = "financialAward.serviceAddress.addressLine1")
   @Mapping(target = "addressLine2", source = "financialAward.serviceAddress.addressLine2")
   @Mapping(target = "addressLine3", source = "financialAward.serviceAddress.addressLine3")
@@ -493,12 +510,18 @@ public interface SoaApplicationMapper {
   @Mapping(target = "addressLine1", source = "landAward.propertyAddress.addressLine1")
   @Mapping(target = "addressLine2", source = "landAward.propertyAddress.addressLine2")
   @Mapping(target = "addressLine3", source = "landAward.propertyAddress.addressLine3")
-  @Mapping(target = "disputedPercentage",
-      source = "landAward.disputedPercentage", defaultValue = "0.00")
-  @Mapping(target = "awardedPercentage",
-      source = "landAward.awardedPercentage", defaultValue = "0.00")
-  @Mapping(target = "mortgageAmountDue",
-      source = "landAward.mortgageAmountDue", defaultValue = "0.00")
+  @Mapping(
+      target = "disputedPercentage",
+      source = "landAward.disputedPercentage",
+      defaultValue = "0.00")
+  @Mapping(
+      target = "awardedPercentage",
+      source = "landAward.awardedPercentage",
+      defaultValue = "0.00")
+  @Mapping(
+      target = "mortgageAmountDue",
+      source = "landAward.mortgageAmountDue",
+      defaultValue = "0.00")
   @Mapping(target = "valuationAmount", source = "landAward.valuation.amount", defaultValue = "0.00")
   @Mapping(target = "valuationCriteria", source = "landAward.valuation.criteria")
   @Mapping(target = "valuationDate", source = "landAward.valuation.date")
@@ -539,8 +562,10 @@ public interface SoaApplicationMapper {
   @Mapping(target = "awardType", constant = AWARD_TYPE_OTHER_ASSET)
   @Mapping(target = "awardCode", source = "awardType")
   @Mapping(target = ".", source = "otherAsset")
-  @Mapping(target = "valuationAmount",
-      source = "otherAsset.valuation.amount", defaultValue = "0.00")
+  @Mapping(
+      target = "valuationAmount",
+      source = "otherAsset.valuation.amount",
+      defaultValue = "0.00")
   @Mapping(target = "valuationCriteria", source = "otherAsset.valuation.criteria")
   @Mapping(target = "valuationDate", source = "otherAsset.valuation.date")
   @Mapping(target = "timeRecovery", source = "otherAsset.timeRelatedAward")
@@ -576,8 +601,9 @@ public interface SoaApplicationMapper {
    */
   @AfterMapping
   default void finaliseAward(@MappingTarget final BaseAwardDetail baseAward) {
-    baseAward.getLiableParties().forEach(
-        liableParty -> liableParty.setAwardType(baseAward.getAwardType()));
+    baseAward
+        .getLiableParties()
+        .forEach(liableParty -> liableParty.setAwardType(baseAward.getAwardType()));
   }
 
   @Mapping(target = "opponentId", source = ".")
@@ -587,20 +613,32 @@ public interface SoaApplicationMapper {
   LiablePartyDetail toLiableParty(String partyId);
 
   @Mapping(target = "awardAmount", source = "awardValue", defaultValue = "0.00")
-  @Mapping(target = "clientAmountPaidToLsc",
-      source = "recoveredAmount.client.paidToLsc", defaultValue = "0.00")
-  @Mapping(target = "clientRecoveryAmount",
-      source = "recoveredAmount.client.amount", defaultValue = "0.00")
+  @Mapping(
+      target = "clientAmountPaidToLsc",
+      source = "recoveredAmount.client.paidToLsc",
+      defaultValue = "0.00")
+  @Mapping(
+      target = "clientRecoveryAmount",
+      source = "recoveredAmount.client.amount",
+      defaultValue = "0.00")
   @Mapping(target = "clientRecoveryDate", source = "recoveredAmount.client.dateReceived")
-  @Mapping(target = "courtAmountPaidToLsc",
-      source = "recoveredAmount.court.paidToLsc", defaultValue = "0.00")
-  @Mapping(target = "courtRecoveryAmount",
-      source = "recoveredAmount.court.amount", defaultValue = "0.00")
+  @Mapping(
+      target = "courtAmountPaidToLsc",
+      source = "recoveredAmount.court.paidToLsc",
+      defaultValue = "0.00")
+  @Mapping(
+      target = "courtRecoveryAmount",
+      source = "recoveredAmount.court.amount",
+      defaultValue = "0.00")
   @Mapping(target = "courtRecoveryDate", source = "recoveredAmount.court.dateReceived")
-  @Mapping(target = "solicitorAmountPaidToLsc",
-      source = "recoveredAmount.solicitor.paidToLsc", defaultValue = "0.00")
-  @Mapping(target = "solicitorRecoveryAmount",
-      source = "recoveredAmount.solicitor.amount", defaultValue = "0.00")
+  @Mapping(
+      target = "solicitorAmountPaidToLsc",
+      source = "recoveredAmount.solicitor.paidToLsc",
+      defaultValue = "0.00")
+  @Mapping(
+      target = "solicitorRecoveryAmount",
+      source = "recoveredAmount.solicitor.amount",
+      defaultValue = "0.00")
   @Mapping(target = "solicitorRecoveryDate", source = "recoveredAmount.solicitor.dateReceived")
   @Mapping(target = "offeredAmount", source = "offeredAmount.amount", defaultValue = "0.00")
   @Mapping(target = "conditionsOfOffer", source = "offeredAmount.conditionsOfOffer")
@@ -623,7 +661,8 @@ public interface SoaApplicationMapper {
   default void finaliseRecovery(@MappingTarget final RecoveryDetail recovery) {
     // Set the total recovered amount to be a sum of solicitor, court and client.
     recovery.setRecoveredAmount(
-        recovery.getSolicitorRecoveryAmount()
+        recovery
+            .getSolicitorRecoveryAmount()
             .add(recovery.getCourtRecoveryAmount())
             .add(recovery.getClientRecoveryAmount()));
 
@@ -688,8 +727,7 @@ public interface SoaApplicationMapper {
 
   @Mapping(target = "id", source = "stageEnd")
   @Mapping(target = "displayValue", source = "description")
-  StringDisplayValue toStringDisplayValue(
-      StageEndLookupValueDetail stageEndLookupValueDetail);
+  StringDisplayValue toStringDisplayValue(StageEndLookupValueDetail stageEndLookupValueDetail);
 
   @Mapping(target = "flag", source = "flag")
   @Mapping(target = "displayValue", source = "flag")
@@ -700,13 +738,12 @@ public interface SoaApplicationMapper {
   @Mapping(target = "contractFlag", ignore = true)
   DevolvedPowersDetail toDevolvedPowers(Pair<Boolean, Date> devolvedPowersInfo);
 
-
   @Mapping(target = ".", source = "tdsApplication")
   @Mapping(target = "caseReferenceNumber", source = "tdsApplication.caseReferenceNumber")
   @Mapping(target = "applicationDetails", source = "context")
   @Mapping(target = "linkedCases", source = "tdsApplication.linkedCases")
   @Mapping(target = "recordHistory", source = ".", qualifiedByName = "toSoaRecordHistory")
-  //costs are not required as no awards will have been granted at this stage
+  // costs are not required as no awards will have been granted at this stage
   @Mapping(target = "certificateType", ignore = true)
   @Mapping(target = "certificateDate", ignore = true)
   @Mapping(target = "preCertificateCosts", ignore = true)
@@ -725,7 +762,9 @@ public interface SoaApplicationMapper {
   @Mapping(target = "priorAuthorityType", source = "type.id")
   @Mapping(target = "description", source = "summary")
   @Mapping(target = "reasonForRequest", source = "justification")
-  @Mapping(target = "requestAmount", source = "amountRequested",
+  @Mapping(
+      target = "requestAmount",
+      source = "amountRequested",
       qualifiedByName = "mapBigDecimalDefault")
   @Mapping(target = "decisionStatus", source = "status")
   @Mapping(target = "details", source = "items")
@@ -742,26 +781,28 @@ public interface SoaApplicationMapper {
   @Mapping(target = "linkType", source = "relationToCase")
   LinkedCase toSoaLinkedCase(LinkedCaseDetail linkedCase);
 
-  @Mapping(target = "client",
-      source = "tdsApplication.client")
-  @Mapping(target = "preferredAddress",
+  @Mapping(target = "client", source = "tdsApplication.client")
+  @Mapping(
+      target = "preferredAddress",
       source = "tdsApplication.correspondenceAddress.preferredAddress")
-  @Mapping(target = "providerDetails",
-      source = "tdsApplication.providerDetails")
-  @Mapping(target = "categoryOfLaw",
-      source = "tdsApplication")
-  @Mapping(target = "applicationAmendmentType",
-      source = "tdsApplication.applicationType.id")
-  @Mapping(target = "correspondenceAddress",
-      source = "tdsApplication.correspondenceAddress")
+  @Mapping(target = "providerDetails", source = "tdsApplication.providerDetails")
+  @Mapping(target = "categoryOfLaw", source = "tdsApplication")
+  @Mapping(target = "applicationAmendmentType", source = "tdsApplication.applicationType.id")
+  @Mapping(target = "correspondenceAddress", source = "tdsApplication.correspondenceAddress")
   @Mapping(target = "proceedings", source = "tdsApplication.proceedings")
   @Mapping(target = "larDetails.larScopeFlag", source = "tdsApplication.larScopeFlag")
   @Mapping(target = "otherParties", source = "tdsApplication.opponents")
-  @Mapping(target = "meansAssesments", source = "meansAssessment",
+  @Mapping(
+      target = "meansAssesments",
+      source = "meansAssessment",
       qualifiedByName = "mapMeansAssessment")
-  @Mapping(target = "meritsAssesments", source = "meritsAssessment",
+  @Mapping(
+      target = "meritsAssesments",
+      source = "meritsAssessment",
       qualifiedByName = "mapMeritsAssessment")
-  @Mapping(target = "devolvedPowersDate", source = "tdsApplication",
+  @Mapping(
+      target = "devolvedPowersDate",
+      source = "tdsApplication",
       qualifiedByName = "mapDevolvedPowersDate")
   @Mapping(target = "larDetails.legalHelpOfficeCode", ignore = true)
   @Mapping(target = "larDetails.legalHelpUfn", ignore = true)
@@ -776,13 +817,12 @@ public interface SoaApplicationMapper {
   SubmittedApplicationDetails toSubmittedApplicationDetails(CaseMappingContext context);
 
   /**
-   * Maps and returns the devolved powers date from the provided application details.
-   * The date is retrieved based on the application type being either emergency or substantive
-   * devolved powers.
+   * Maps and returns the devolved powers date from the provided application details. The date is
+   * retrieved based on the application type being either emergency or substantive devolved powers.
    *
    * @param app the application details
-   * @return the devolved powers date, or {@code null} if the application or devolved powers
-   *         details are not present
+   * @return the devolved powers date, or {@code null} if the application or devolved powers details
+   *     are not present
    */
   @Named("mapDevolvedPowersDate")
   default Date mapDevolvedPowersDate(final ApplicationDetail app) {
@@ -875,9 +915,13 @@ public interface SoaApplicationMapper {
   @Mapping(target = "contactName", source = "contactNameRole")
   @Mapping(target = "employersName", source = "employerName")
   @Mapping(target = "organizationAddress", source = "employerAddress")
-  @Mapping(target = "assessedIncome", source = "assessedIncome",
+  @Mapping(
+      target = "assessedIncome",
+      source = "assessedIncome",
       qualifiedByName = "mapBigDecimalDefault")
-  @Mapping(target = "assessedAssets", source = "assessedAssets",
+  @Mapping(
+      target = "assessedAssets",
+      source = "assessedAssets",
       qualifiedByName = "mapBigDecimalDefault")
   @Mapping(target = "contactDetails", ignore = true)
   @Mapping(target = "address", ignore = true)
@@ -889,8 +933,8 @@ public interface SoaApplicationMapper {
    * Maps the provided {@link BigDecimal} to a scaled value with 2 decimal places.
    *
    * @param value the {@link BigDecimal} value to be mapped
-   * @return the scaled {@link BigDecimal} value, or {@code BigDecimal.ZERO} if the value is
-   *         {@code null}
+   * @return the scaled {@link BigDecimal} value, or {@code BigDecimal.ZERO} if the value is {@code
+   *     null}
    */
   @Named("mapBigDecimalDefault")
   default BigDecimal mapBigDecimalDefault(final BigDecimal value) {
@@ -908,9 +952,9 @@ public interface SoaApplicationMapper {
   OtherPartyOrganisation toSoaOrganisation(OpponentDetail opponentDetail);
 
   /**
-   * Maps the provided assessment details into the given
-   * {@link uk.gov.laa.ccms.soa.gateway.model.AssessmentResult}. It organizes entity types,
-   * entities, and their attributes into an assessment screen summary.
+   * Maps the provided assessment details into the given {@link
+   * uk.gov.laa.ccms.soa.gateway.model.AssessmentResult}. It organizes entity types, entities, and
+   * their attributes into an assessment screen summary.
    *
    * @param assessmentResult the assessment result to which the mapped data will be added
    * @param assessment the assessment details containing entities and their attributes
@@ -920,8 +964,7 @@ public interface SoaApplicationMapper {
       final uk.gov.laa.ccms.soa.gateway.model.AssessmentResult assessmentResult,
       final AssessmentDetail assessment) {
 
-    final AssessmentScreen assessmentScreen = new AssessmentScreen()
-        .screenName("SUMMARY");
+    final AssessmentScreen assessmentScreen = new AssessmentScreen().screenName("SUMMARY");
 
     final AtomicInteger sequenceNumber = new AtomicInteger(1);
 
@@ -930,30 +973,40 @@ public interface SoaApplicationMapper {
 
     assessment.getEntityTypes().stream()
         .filter(entityType -> entityType.getEntities() != null)
-        .forEach(entityType -> entityType.getEntities().forEach(entity -> {
+        .forEach(
+            entityType ->
+                entityType
+                    .getEntities()
+                    .forEach(
+                        entity -> {
 
-          // Find existing OpaEntity or create a new one
-          final OpaEntity opaEntity = entityMap.computeIfAbsent(entityType.getName(), name ->
-              new OpaEntity()
-                  .sequenceNumber(sequenceNumber.getAndIncrement())
-                  .entityName(entityType.getName()));
+                          // Find existing OpaEntity or create a new one
+                          final OpaEntity opaEntity =
+                              entityMap.computeIfAbsent(
+                                  entityType.getName(),
+                                  name ->
+                                      new OpaEntity()
+                                          .sequenceNumber(sequenceNumber.getAndIncrement())
+                                          .entityName(entityType.getName()));
 
-          final OpaInstance opaInstance = new OpaInstance()
-              .instanceLabel(entity.getName());
+                          final OpaInstance opaInstance =
+                              new OpaInstance().instanceLabel(entity.getName());
 
-          // Only add the attributes if they have values
-          Optional.ofNullable(entity.getAttributes()).stream()
-              .flatMap(Collection::stream)
-              .filter(attribute -> attribute.getValue() != null)
-              .map(this::toOpaAttribute)
-              .forEach(opaInstance::addAttributesItem);
+                          // Only add the attributes if they have values
+                          Optional.ofNullable(entity.getAttributes()).stream()
+                              .flatMap(Collection::stream)
+                              .filter(attribute -> attribute.getValue() != null)
+                              .map(this::toOpaAttribute)
+                              .forEach(opaInstance::addAttributesItem);
 
-          // Only add the instance if it has attributes
-          Optional.of(opaInstance)
-              .filter(inst -> inst.getAttributes() != null && !inst.getAttributes().isEmpty())
-              .ifPresent(inst -> opaEntity.addInstancesItem(opaInstance));
-
-        }));
+                          // Only add the instance if it has attributes
+                          Optional.of(opaInstance)
+                              .filter(
+                                  inst ->
+                                      inst.getAttributes() != null
+                                          && !inst.getAttributes().isEmpty())
+                              .ifPresent(inst -> opaEntity.addInstancesItem(opaInstance));
+                        }));
 
     // Add each unique OpaEntity from the map to the assessmentScreen
     entityMap.values().stream()
@@ -964,9 +1017,9 @@ public interface SoaApplicationMapper {
   }
 
   /**
-   * Maps the means assessment details into a list of
-   * {@link uk.gov.laa.ccms.soa.gateway.model.AssessmentResult} using the goal attribute from the
-   * means rule base.
+   * Maps the means assessment details into a list of {@link
+   * uk.gov.laa.ccms.soa.gateway.model.AssessmentResult} using the goal attribute from the means
+   * rule base.
    *
    * @param meansAssessment the means assessment details to be mapped
    * @return a list containing the mapped means assessment result
@@ -978,9 +1031,9 @@ public interface SoaApplicationMapper {
   }
 
   /**
-   * Maps the merits assessment details into a list of
-   * {@link uk.gov.laa.ccms.soa.gateway.model.AssessmentResult} using the goal attribute from the
-   * merits rule base.
+   * Maps the merits assessment details into a list of {@link
+   * uk.gov.laa.ccms.soa.gateway.model.AssessmentResult} using the goal attribute from the merits
+   * rule base.
    *
    * @param meritsAssessment the merits assessment details to be mapped
    * @return a list containing the mapped merits assessment result
@@ -992,14 +1045,14 @@ public interface SoaApplicationMapper {
   }
 
   /**
-   * Maps the provided assessment details into a list of
-   * {@link uk.gov.laa.ccms.soa.gateway.model.AssessmentResult}. An {@link OpaGoal} with the
-   * specified goal attribute is created and added to the result.
+   * Maps the provided assessment details into a list of {@link
+   * uk.gov.laa.ccms.soa.gateway.model.AssessmentResult}. An {@link OpaGoal} with the specified goal
+   * attribute is created and added to the result.
    *
    * @param assessmentDetail the assessment details to be mapped
    * @param goalAttribute the goal attribute to be set in the assessment result
    * @return a list containing the mapped assessment result, or an empty list if the assessment
-   *         detail is null
+   *     detail is null
    */
   default List<uk.gov.laa.ccms.soa.gateway.model.AssessmentResult> mapAssessment(
       final AssessmentDetail assessmentDetail, final String goalAttribute) {
@@ -1010,9 +1063,7 @@ public interface SoaApplicationMapper {
     final uk.gov.laa.ccms.soa.gateway.model.AssessmentResult assessmentResult =
         new uk.gov.laa.ccms.soa.gateway.model.AssessmentResult();
 
-    final OpaGoal opaGoal = new OpaGoal()
-        .attribute(goalAttribute)
-        .attributeValue("true");
+    final OpaGoal opaGoal = new OpaGoal().attribute(goalAttribute).attributeValue("true");
 
     assessmentResult.addResultsItem(opaGoal);
     mapIntoAssessment(assessmentResult, assessmentDetail);
@@ -1024,12 +1075,10 @@ public interface SoaApplicationMapper {
   @Mapping(target = "attribute", source = "name")
   @Mapping(target = "responseType", source = "type")
   @Mapping(target = "responseValue", source = "value")
-  @Mapping(target = "userDefinedInd", source = ".",
-      qualifiedByName = "mapUserDefinedInd")
+  @Mapping(target = "userDefinedInd", source = ".", qualifiedByName = "mapUserDefinedInd")
   @Mapping(target = "caption", ignore = true)
   @Mapping(target = "responseText", ignore = true)
   OpaAttribute toOpaAttribute(AssessmentAttributeDetail attribute);
-
 
   @Named("toSoaRecordHistory")
   @Mapping(target = "dateCreated", source = "tdsApplication.auditTrail.created")
@@ -1044,8 +1093,8 @@ public interface SoaApplicationMapper {
    * Maps and returns a boolean indicating if the assessment attribute is user-defined.
    *
    * @param attribute the assessment attribute detail
-   * @return {@code true} if the attribute is user-defined, {@code false} otherwise,
-   *        or {@code null} if the attribute is null
+   * @return {@code true} if the attribute is user-defined, {@code false} otherwise, or {@code null}
+   *     if the attribute is null
    */
   @Named("mapUserDefinedInd")
   default Boolean mapUserDefinedInd(final AssessmentAttributeDetail attribute) {
@@ -1091,19 +1140,16 @@ public interface SoaApplicationMapper {
         : null;
   }
 
-
   /**
-   * Maps and returns the proceeding ID by formatting the provided ID.
-   * If the ID is not null, it is prefixed with "P_".
+   * Maps and returns the proceeding ID by formatting the provided ID. If the ID is not null, it is
+   * prefixed with "P_".
    *
    * @param id the proceeding ID to be formatted
    * @return the formatted proceeding ID, or {@code null} if the input ID is {@code null}
    */
   @Named("mapProceedingId")
   default String proceedingId(final Integer id) {
-    return id != null
-        ? "P_%s".formatted(id)
-        : null;
+    return id != null ? "P_%s".formatted(id) : null;
   }
 
   /**
@@ -1121,8 +1167,8 @@ public interface SoaApplicationMapper {
   }
 
   /**
-   * Maps the requested amount from the provided cost structure details.
-   * If the requested cost limitation is not available, the default cost limitation is returned.
+   * Maps the requested amount from the provided cost structure details. If the requested cost
+   * limitation is not available, the default cost limitation is returned.
    *
    * @param costs the cost structure details
    * @return the requested or default cost limitation, or {@code null} if the cost structure is null
@@ -1144,10 +1190,14 @@ public interface SoaApplicationMapper {
    * @return Mapped List of OpponentDetail.
    */
   default List<OpponentDetail> convertOpponents(final List<OtherParty> otherParties) {
-    return otherParties != null ? otherParties.stream()
-        .map(otherParty -> otherParty.getPerson() != null
-            ? toIndividualOpponent(otherParty) :
-            toOrganisationOpponent(otherParty))
-        .toList() : null;
+    return otherParties != null
+        ? otherParties.stream()
+            .map(
+                otherParty ->
+                    otherParty.getPerson() != null
+                        ? toIndividualOpponent(otherParty)
+                        : toOrganisationOpponent(otherParty))
+            .toList()
+        : null;
   }
 }

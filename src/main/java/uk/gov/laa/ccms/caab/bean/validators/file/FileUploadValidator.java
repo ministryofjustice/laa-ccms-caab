@@ -13,66 +13,55 @@ import uk.gov.laa.ccms.caab.bean.file.FileUploadFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
-/**
- * Validate the evidence document details provided by evidence upload flow.
- */
+/** Validate the evidence document details provided by evidence upload flow. */
 @Getter
 @RequiredArgsConstructor
 public abstract class FileUploadValidator extends AbstractValidator {
 
-  /**
-   * The error message for the required file field.
-   */
+  /** The error message for the required file field. */
   protected static final String FILE_REQUIRED_ERROR = "Please select a file to upload";
+
   protected static final String FILE_REQUIRED_ERROR_CODE = "validation.error.selectAFile";
 
-  /**
-   * The error message for an invalid file extension.
-   */
+  /** The error message for an invalid file extension. */
   protected static final String INVALID_EXTENSION_ERROR =
       "Invalid file extension. We can only accept %s files";
+
   protected static final String INVALID_EXTENSION_ERROR_CODE = "validation.error.invalidExtension";
 
-  /**
-   * The error message for an invalid file extension.
-   */
+  /** The error message for an invalid file extension. */
   public static final String MAX_FILESIZE_ERROR =
       "File is too large. The file must be less than %s";
+
   protected static final String MAX_FILESIZE_ERROR_CODE = "validation.error.maxFileSize";
 
-  /**
-   * The maximum length of the document description text area.
-   */
+  /** The maximum length of the document description text area. */
   protected static final Integer DOCUMENT_DESCRIPTION_MAX_LENGTH = 255;
 
-  /**
-   * The configurable list of valid file extensions.
-   */
+  /** The configurable list of valid file extensions. */
   private final List<String> validExtensions;
 
-  /**
-   * The configurable maximum allowed file size.
-   */
+  /** The configurable maximum allowed file size. */
   private final String maxFileSize;
 
   /**
-   * Validate generic file upload details such as file data, extension, type, description and
-   * size.
+   * Validate generic file upload details such as file data, extension, type, description and size.
    *
    * @param fileUploadFormData the file upload form data object.
    * @param errors the Errors object to store validation errors.
    */
   public void validateFile(FileUploadFormData fileUploadFormData, Errors errors) {
 
-    if (fileUploadFormData.getFile() == null
-        || fileUploadFormData.getFile().isEmpty()) {
+    if (fileUploadFormData.getFile() == null || fileUploadFormData.getFile().isEmpty()) {
       errors.rejectValue("file", FILE_REQUIRED_ERROR_CODE, FILE_REQUIRED_ERROR);
     } else {
       fileUploadFormData.setFileExtension(getFileExtension(fileUploadFormData.getFile()));
 
       if (!isValidExtension(fileUploadFormData.getFileExtension())) {
-        errors.rejectValue("file", INVALID_EXTENSION_ERROR_CODE,
-            new String[]{getCommaDelimitedString(validExtensions)},
+        errors.rejectValue(
+            "file",
+            INVALID_EXTENSION_ERROR_CODE,
+            new String[] {getCommaDelimitedString(validExtensions)},
             INVALID_EXTENSION_ERROR.formatted(getCommaDelimitedString(validExtensions)));
       } else {
         validateFileSize(fileUploadFormData, errors);
@@ -87,9 +76,12 @@ public abstract class FileUploadValidator extends AbstractValidator {
    * @param errors the Errors object to store validation errors.
    */
   public void validateDocumentDescription(FileUploadFormData fileUploadFormData, Errors errors) {
-    validateFieldMaxLength("documentDescription",
+    validateFieldMaxLength(
+        "documentDescription",
         fileUploadFormData.getDocumentDescription(),
-        DOCUMENT_DESCRIPTION_MAX_LENGTH, "description", errors);
+        DOCUMENT_DESCRIPTION_MAX_LENGTH,
+        "description",
+        errors);
   }
 
   /**
@@ -99,8 +91,8 @@ public abstract class FileUploadValidator extends AbstractValidator {
    * @param errors the Errors object to store validation errors.
    */
   public void validateDocumentType(FileUploadFormData fileUploadFormData, Errors errors) {
-    validateRequiredField("documentType", fileUploadFormData.getDocumentType(),
-        "Document type", errors);
+    validateRequiredField(
+        "documentType", fileUploadFormData.getDocumentType(), "Document type", errors);
   }
 
   /**
@@ -129,7 +121,10 @@ public abstract class FileUploadValidator extends AbstractValidator {
    * @param errors the Errors object to store validation errors.
    */
   public void rejectFileSize(Errors errors) {
-    errors.rejectValue("file", MAX_FILESIZE_ERROR_CODE, new String[]{maxFileSize},
+    errors.rejectValue(
+        "file",
+        MAX_FILESIZE_ERROR_CODE,
+        new String[] {maxFileSize},
         MAX_FILESIZE_ERROR.formatted(maxFileSize));
   }
 
@@ -143,5 +138,4 @@ public abstract class FileUploadValidator extends AbstractValidator {
   protected boolean isValidExtension(final String fileExtension) {
     return validExtensions.stream().anyMatch(ext -> ext.equalsIgnoreCase(fileExtension));
   }
-
 }

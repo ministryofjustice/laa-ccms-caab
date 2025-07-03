@@ -4,9 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import lombok.Getter;
 
-/**
- * Enumerates the different assessment rulebases.
- */
+/** Enumerates the different assessment rulebases. */
 @Getter
 public enum AssessmentRulebase {
   MEANS(1L, "MEANS", "meansAssessment", "global", "CLIENT_PROV_LA", false),

@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.bean.validators.request;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Arrays;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,8 +12,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
-
-import java.util.Arrays;
 import uk.gov.laa.ccms.caab.bean.validators.file.FileUploadValidator;
 
 @ExtendWith(SpringExtension.class)
@@ -26,10 +25,8 @@ class ProviderRequestDocumentUploadValidatorTest {
 
   @BeforeEach
   public void setUp() {
-    providerRequestDocumentUploadValidator = new ProviderRequestDocumentUploadValidator(
-        Arrays.asList("pdf", "jpg", "png"),
-        "5MB"
-    );
+    providerRequestDocumentUploadValidator =
+        new ProviderRequestDocumentUploadValidator(Arrays.asList("pdf", "jpg", "png"), "5MB");
     evidenceUploadFormData = new EvidenceUploadFormData();
     errors = new BeanPropertyBindingResult(evidenceUploadFormData, "evidenceUploadFormData");
   }
@@ -49,7 +46,8 @@ class ProviderRequestDocumentUploadValidatorTest {
   @Test
   @DisplayName("validate - Adds error when file size exceeds limit")
   public void validate_FileSizeExceedsLimit_HasErrors() {
-    final MockMultipartFile oversizedFile = new MockMultipartFile("file", "valid.pdf", "application/pdf", new byte[6000000]);
+    final MockMultipartFile oversizedFile =
+        new MockMultipartFile("file", "valid.pdf", "application/pdf", new byte[6000000]);
     evidenceUploadFormData.setFile(oversizedFile);
     evidenceUploadFormData.setFileExtension("pdf");
 
@@ -57,7 +55,8 @@ class ProviderRequestDocumentUploadValidatorTest {
 
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("file"));
-    assertEquals(FileUploadValidator.MAX_FILESIZE_ERROR.formatted("5MB"),
+    assertEquals(
+        FileUploadValidator.MAX_FILESIZE_ERROR.formatted("5MB"),
         errors.getFieldError("file").getDefaultMessage());
   }
 
@@ -72,5 +71,4 @@ class ProviderRequestDocumentUploadValidatorTest {
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("documentDescription"));
   }
-
 }

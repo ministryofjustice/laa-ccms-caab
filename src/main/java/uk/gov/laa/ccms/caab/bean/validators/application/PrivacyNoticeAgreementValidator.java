@@ -5,9 +5,7 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
-/**
- * Validates the application details provided by the user.
- */
+/** Validates the application details provided by the user. */
 @Component
 public class PrivacyNoticeAgreementValidator extends AbstractValidator {
 
@@ -33,7 +31,8 @@ public class PrivacyNoticeAgreementValidator extends AbstractValidator {
     ApplicationFormData applicationFormData = (ApplicationFormData) target;
 
     if (!applicationFormData.isAgreementAccepted()) {
-      errors.rejectValue("agreementAccepted",
+      errors.rejectValue(
+          "agreementAccepted",
           "agreement.not.accepted",
           "Please complete 'I confirm my client (or their representative) has read and "
               + "agreed to the Privacy Notice'.");

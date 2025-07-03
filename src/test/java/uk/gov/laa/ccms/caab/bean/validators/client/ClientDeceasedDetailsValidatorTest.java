@@ -21,8 +21,7 @@ class ClientDeceasedDetailsValidatorTest {
 
   private ClientFormDataDeceasedDetails deceasedDetails;
 
-  @InjectMocks
-  private ClientDeceasedDetailsValidator validator;
+  @InjectMocks private ClientDeceasedDetailsValidator validator;
 
   private Errors errors;
 
@@ -43,9 +42,7 @@ class ClientDeceasedDetailsValidatorTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"/01/2000",
-      "01//2000",
-      "01/01/"})
+  @ValueSource(strings = {"/01/2000", "01//2000", "01/01/"})
   void testValidate_numericFieldsError(String dodDay) {
     deceasedDetails.setDateOfDeath(dodDay);
 
@@ -75,6 +72,4 @@ class ClientDeceasedDetailsValidatorTest {
 
     assertFalse(errors.hasErrors());
   }
-
-
 }

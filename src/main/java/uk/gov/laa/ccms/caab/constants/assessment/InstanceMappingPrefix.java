@@ -2,9 +2,7 @@ package uk.gov.laa.ccms.caab.constants.assessment;
 
 import lombok.Getter;
 
-/**
- * Enumerates the prefix strings used for instance mapping in assessments.
- */
+/** Enumerates the prefix strings used for instance mapping in assessments. */
 @Getter
 public enum InstanceMappingPrefix {
   PROCEEDING("P_"),

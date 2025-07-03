@@ -1,13 +1,10 @@
 package uk.gov.laa.ccms.caab.client;
 
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
-/**
- * Provides error-handling capabilities for the CAAB API client interactions.
- */
+/** Provides error-handling capabilities for the CAAB API client interactions. */
 @Slf4j
 @Component
 public class CaabApiClientErrorHandler extends AbstractApiClientErrorHandler {
@@ -20,5 +17,4 @@ public class CaabApiClientErrorHandler extends AbstractApiClientErrorHandler {
   public CaabApiClientException createException(String message, HttpStatus httpStatus) {
     return new CaabApiClientException(message, httpStatus);
   }
-
 }

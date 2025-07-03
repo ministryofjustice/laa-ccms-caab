@@ -14,9 +14,7 @@ import uk.gov.laa.ccms.caab.util.UserRoleUtil;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-/**
- * Controller handling home page requests.
- */
+/** Controller handling home page requests. */
 @Controller
 @RequiredArgsConstructor
 public class HomeController {
@@ -37,8 +35,8 @@ public class HomeController {
     UserDetail user = (UserDetail) model.getAttribute(USER_DETAILS);
 
     // Retrieve a summary of the User's Notifications & Actions from the SOA Gateway
-    NotificationSummary notificationSummary = notificationService.getNotificationsSummary(
-        user.getLoginId()).block();
+    NotificationSummary notificationSummary =
+        notificationService.getNotificationsSummary(user.getLoginId()).block();
 
     boolean showNotifications =
         notificationSummary != null && UserRoleUtil.hasRole(user, UserRole.VIEW_NOTIFICATIONS);
@@ -49,30 +47,36 @@ public class HomeController {
        * Format the display message for Overdue Actions.
        * 'x overdue', or 'none overdue'
        */
-      final String overdueActionsMsg = "%s overdue".formatted(
-          notificationSummary.getOverdueActions() > 0
-              ? notificationSummary.getOverdueActions().toString() : "none");
+      final String overdueActionsMsg =
+          "%s overdue"
+              .formatted(
+                  notificationSummary.getOverdueActions() > 0
+                      ? notificationSummary.getOverdueActions().toString()
+                      : "none");
 
       /*
        * Format the overall display message for Actions.
        * 'x Outstanding Actions (x overdue)', or
        * 'No Outstanding Actions'
        */
-      int totalActions = notificationSummary.getStandardActions()
-          + notificationSummary.getOverdueActions();
-      final String actionsMsg = totalActions > 0
-              ? "%s Outstanding Actions (%s)".formatted(
-          totalActions,
-          overdueActionsMsg) : NO_OUTSTANDING_ACTIONS;
+      int totalActions =
+          notificationSummary.getStandardActions() + notificationSummary.getOverdueActions();
+      final String actionsMsg =
+          totalActions > 0
+              ? "%s Outstanding Actions (%s)".formatted(totalActions, overdueActionsMsg)
+              : NO_OUTSTANDING_ACTIONS;
 
       /*
        * Format the display message for Notifications.
        * 'View Notifications (x outstanding)' or,
        * 'View Notifications (none outstanding)'
        */
-      final String notificationsMsg = "View Notifications (%s outstanding)".formatted(
-          notificationSummary.getNotifications() > 0
-              ? notificationSummary.getNotifications().toString() : "none");
+      final String notificationsMsg =
+          "View Notifications (%s outstanding)"
+              .formatted(
+                  notificationSummary.getNotifications() > 0
+                      ? notificationSummary.getNotifications().toString()
+                      : "none");
 
       model.addAttribute("actionsMsg", actionsMsg);
       model.addAttribute("notificationsMsg", notificationsMsg);
@@ -80,5 +84,4 @@ public class HomeController {
 
     return "home";
   }
-
 }

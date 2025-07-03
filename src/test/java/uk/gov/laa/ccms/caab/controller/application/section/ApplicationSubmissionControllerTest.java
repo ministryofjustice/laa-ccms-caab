@@ -112,59 +112,39 @@ class ApplicationSubmissionControllerTest {
 
   private MockMvc mockMvc;
 
-  @Mock
-  private Model model;
+  @Mock private Model model;
 
   private static final String ERROR_ATTRIBUTE = "errorMessages";
 
-  @Mock
-  private ApplicationService applicationService;
+  @Mock private ApplicationService applicationService;
 
-  @Mock
-  private AssessmentService assessmentService;
+  @Mock private AssessmentService assessmentService;
 
-  @Mock
-  private LookupService lookupService;
+  @Mock private LookupService lookupService;
 
-  @Mock
-  private ClientService clientService;
+  @Mock private ClientService clientService;
 
-  @Mock
-  private EvidenceService evidenceService;
+  @Mock private EvidenceService evidenceService;
 
-  @Mock
-  private ClientDetailMapper clientDetailsMapper;
+  @Mock private ClientDetailMapper clientDetailsMapper;
 
-  @Mock
-  private SubmissionSummaryDisplayMapper submissionSummaryDisplayMapper;
+  @Mock private SubmissionSummaryDisplayMapper submissionSummaryDisplayMapper;
 
-  @Mock
-  private DeclarationSubmissionValidator declarationSubmissionValidator;
+  @Mock private DeclarationSubmissionValidator declarationSubmissionValidator;
 
-  @Mock
-  private ProceedingAndCostsMapper proceedingAndCostsMapper;
+  @Mock private ProceedingAndCostsMapper proceedingAndCostsMapper;
 
-  @Mock
-  private ProviderDetailsValidator providerDetailsValidator;
-  @Mock
-  private CorrespondenceAddressValidator correspondenceAddressValidator;
-  @Mock
-  private ProceedingMatterTypeDetailsValidator matterTypeValidator;
-  @Mock
-  private ProceedingDetailsValidator proceedingTypeValidator;
-  @Mock
-  private ProceedingFurtherDetailsValidator furtherDetailsValidator;
-  @Mock
-  private PriorAuthorityTypeDetailsValidator priorAuthorityTypeValidator;
-  @Mock
-  private PriorAuthorityDetailsValidator priorAuthorityDetailsValidator;
-  @Mock
-  private OrganisationOpponentValidator organisationOpponentValidator;
-  @Mock
-  private IndividualOpponentValidator individualOpponentValidator;
+  @Mock private ProviderDetailsValidator providerDetailsValidator;
+  @Mock private CorrespondenceAddressValidator correspondenceAddressValidator;
+  @Mock private ProceedingMatterTypeDetailsValidator matterTypeValidator;
+  @Mock private ProceedingDetailsValidator proceedingTypeValidator;
+  @Mock private ProceedingFurtherDetailsValidator furtherDetailsValidator;
+  @Mock private PriorAuthorityTypeDetailsValidator priorAuthorityTypeValidator;
+  @Mock private PriorAuthorityDetailsValidator priorAuthorityDetailsValidator;
+  @Mock private OrganisationOpponentValidator organisationOpponentValidator;
+  @Mock private IndividualOpponentValidator individualOpponentValidator;
 
-  @InjectMocks
-  private ApplicationSubmissionController applicationSubmissionController;
+  @InjectMocks private ApplicationSubmissionController applicationSubmissionController;
 
   private ActiveCase activeCase;
 
@@ -174,19 +154,21 @@ class ApplicationSubmissionControllerTest {
   public void setup() {
     mockMvc = MockMvcBuilders.standaloneSetup(applicationSubmissionController).build();
 
-    activeCase = ActiveCase.builder()
-        .providerId(1)
-        .applicationId(1)
-        .caseReferenceNumber("abc123")
-        .clientReferenceNumber("xyz123").build();
+    activeCase =
+        ActiveCase.builder()
+            .providerId(1)
+            .applicationId(1)
+            .caseReferenceNumber("abc123")
+            .clientReferenceNumber("xyz123")
+            .build();
   }
 
   @Test
   @DisplayName("Test /application/abandon")
   void testViewAbandonApplicationConfirmation() throws Exception {
 
-    mockMvc.perform(get("/application/abandon")
-            .sessionAttr(ACTIVE_CASE, activeCase))
+    mockMvc
+        .perform(get("/application/abandon").sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-abandon-confirmation"));
   }
@@ -198,14 +180,15 @@ class ApplicationSubmissionControllerTest {
 
     when(applicationService.getApplication("1")).thenReturn(Mono.just(applicationDetail));
 
-    mockMvc.perform(post("/application/abandon/confirmed")
-            .sessionAttr(ACTIVE_CASE, activeCase)
-            .sessionAttr(USER_DETAILS, userDetail))
+    mockMvc
+        .perform(
+            post("/application/abandon/confirmed")
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(USER_DETAILS, userDetail))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/home"));
 
-    verify(applicationService, times(1))
-        .abandonApplication(applicationDetail, userDetail);
+    verify(applicationService, times(1)).abandonApplication(applicationDetail, userDetail);
   }
 
   @Test
@@ -217,36 +200,52 @@ class ApplicationSubmissionControllerTest {
     meansTestAssessment.setName(AssessmentRulebase.MEANS.getName());
     final AssessmentDetail meritsTestAssessment = new AssessmentDetail();
     meritsTestAssessment.setName(AssessmentRulebase.MERITS.getName());
-    final AssessmentDetails assessmentDetails = new AssessmentDetails()
-        .content(List.of(meansTestAssessment, meritsTestAssessment));
+    final AssessmentDetails assessmentDetails =
+        new AssessmentDetails().content(List.of(meansTestAssessment, meritsTestAssessment));
 
     final ClientFlowFormData clientFlowFormData = new ClientFlowFormData(ACTION_VIEW);
     final List<AssessmentSummaryEntityLookupValueDetail> assessmentSummaryLookups = List.of();
-    final AssessmentSummaryEntityLookupDetail assessmentSummaryEntityLookupDetail = new AssessmentSummaryEntityLookupDetail();
+    final AssessmentSummaryEntityLookupDetail assessmentSummaryEntityLookupDetail =
+        new AssessmentSummaryEntityLookupDetail();
     assessmentSummaryEntityLookupDetail.setContent(assessmentSummaryLookups);
-    final ProceedingSubmissionSummaryMappingContext proceedingContext = ProceedingSubmissionSummaryMappingContext.builder().build();
-    final OpponentSubmissionSummaryMappingContext opponentContext = OpponentSubmissionSummaryMappingContext.builder().build();
-    final GeneralDetailsSubmissionSummaryMappingContext generalDetailsContext = GeneralDetailsSubmissionSummaryMappingContext.builder().build();
+    final ProceedingSubmissionSummaryMappingContext proceedingContext =
+        ProceedingSubmissionSummaryMappingContext.builder().build();
+    final OpponentSubmissionSummaryMappingContext opponentContext =
+        OpponentSubmissionSummaryMappingContext.builder().build();
+    final GeneralDetailsSubmissionSummaryMappingContext generalDetailsContext =
+        GeneralDetailsSubmissionSummaryMappingContext.builder().build();
 
     when(applicationService.getApplication(any())).thenReturn(Mono.just(applicationDetail));
-    when(assessmentService.getAssessments(any(), any(), any())).thenReturn(Mono.just(assessmentDetails));
+    when(assessmentService.getAssessments(any(), any(), any()))
+        .thenReturn(Mono.just(assessmentDetails));
     when(clientService.getClient(any(), any(), any())).thenReturn(Mono.just(buildClientDetail()));
-    when(lookupService.getAssessmentSummaryAttributes(any())).thenReturn(Mono.just(assessmentSummaryEntityLookupDetail));
-    when(lookupService.getProceedingSubmissionMappingContext()).thenReturn(Mono.just(proceedingContext));
-    when(lookupService.getOpponentSubmissionMappingContext()).thenReturn(Mono.just(opponentContext));
-    when(lookupService.getGeneralDetailsSubmissionMappingContext()).thenReturn(Mono.just(generalDetailsContext));
+    when(lookupService.getAssessmentSummaryAttributes(any()))
+        .thenReturn(Mono.just(assessmentSummaryEntityLookupDetail));
+    when(lookupService.getProceedingSubmissionMappingContext())
+        .thenReturn(Mono.just(proceedingContext));
+    when(lookupService.getOpponentSubmissionMappingContext())
+        .thenReturn(Mono.just(opponentContext));
+    when(lookupService.getGeneralDetailsSubmissionMappingContext())
+        .thenReturn(Mono.just(generalDetailsContext));
     when(clientDetailsMapper.toClientFlowFormData(any())).thenReturn(clientFlowFormData);
 
-    when(assessmentService.getAssessmentSummaryToDisplay(any(), any(), any())).thenReturn(List.of());
-    when(submissionSummaryDisplayMapper.toProviderSummaryDisplay(any())).thenReturn(new ProviderSubmissionSummaryDisplay());
+    when(assessmentService.getAssessmentSummaryToDisplay(any(), any(), any()))
+        .thenReturn(List.of());
+    when(submissionSummaryDisplayMapper.toProviderSummaryDisplay(any()))
+        .thenReturn(new ProviderSubmissionSummaryDisplay());
     when(lookupService.getClientSummaryListLookups(any())).thenReturn(Mono.just(new HashMap<>()));
-    when(submissionSummaryDisplayMapper.toGeneralDetailsSummaryDisplay(any(), any())).thenReturn(new GeneralDetailsSubmissionSummaryDisplay());
-    when(submissionSummaryDisplayMapper.toProceedingAndCostSummaryDisplay(any(), any())).thenReturn(new ProceedingAndCostSubmissionSummaryDisplay());
-    when(submissionSummaryDisplayMapper.toOpponentsAndOtherPartiesSummaryDisplay(any(), any())).thenReturn(new OpponentsAndOtherPartiesSubmissionSummaryDisplay());
+    when(submissionSummaryDisplayMapper.toGeneralDetailsSummaryDisplay(any(), any()))
+        .thenReturn(new GeneralDetailsSubmissionSummaryDisplay());
+    when(submissionSummaryDisplayMapper.toProceedingAndCostSummaryDisplay(any(), any()))
+        .thenReturn(new ProceedingAndCostSubmissionSummaryDisplay());
+    when(submissionSummaryDisplayMapper.toOpponentsAndOtherPartiesSummaryDisplay(any(), any()))
+        .thenReturn(new OpponentsAndOtherPartiesSubmissionSummaryDisplay());
 
-    mockMvc.perform(get("/application/summary")
-            .sessionAttr(USER_DETAILS, userDetail)
-            .sessionAttr(ACTIVE_CASE, activeCase))
+    mockMvc
+        .perform(
+            get("/application/summary")
+                .sessionAttr(USER_DETAILS, userDetail)
+                .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk())
         .andExpect(view().name("application/sections/application-summary-complete"))
         .andExpect(model().attributeExists("submissionSummary"));
@@ -266,13 +265,19 @@ class ApplicationSubmissionControllerTest {
   void testApplicationSummaryPrint() throws Exception {
     final SubmissionSummaryDisplay submissionSummary = SubmissionSummaryDisplay.builder().build();
 
-    mockMvc.perform(get("/application/summary/print")
-            .sessionAttr(SUBMISSION_SUMMARY, submissionSummary))
+    mockMvc
+        .perform(
+            get("/application/summary/print").sessionAttr(SUBMISSION_SUMMARY, submissionSummary))
         .andExpect(status().isOk())
         .andExpect(view().name("application/sections/application-summary-complete-printable"))
         .andExpect(model().attributeExists("submissionSummary"));
 
-    Mockito.verifyNoInteractions(applicationService, assessmentService, clientService, lookupService, submissionSummaryDisplayMapper);
+    Mockito.verifyNoInteractions(
+        applicationService,
+        assessmentService,
+        clientService,
+        lookupService,
+        submissionSummaryDisplayMapper);
   }
 
   @Test
@@ -281,13 +286,20 @@ class ApplicationSubmissionControllerTest {
     final SummarySubmissionFormData formData = new SummarySubmissionFormData();
     final SubmissionSummaryDisplay submissionSummary = SubmissionSummaryDisplay.builder().build();
 
-    mockMvc.perform(post("/application/summary")
-            .flashAttr("summarySubmissionFormData", formData)
-            .sessionAttr(SUBMISSION_SUMMARY, submissionSummary))
+    mockMvc
+        .perform(
+            post("/application/summary")
+                .flashAttr("summarySubmissionFormData", formData)
+                .sessionAttr(SUBMISSION_SUMMARY, submissionSummary))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/declaration"));
 
-    Mockito.verifyNoInteractions(applicationService, assessmentService, clientService, lookupService, submissionSummaryDisplayMapper);
+    Mockito.verifyNoInteractions(
+        applicationService,
+        assessmentService,
+        clientService,
+        lookupService,
+        submissionSummaryDisplayMapper);
   }
 
   @Test
@@ -297,15 +309,18 @@ class ApplicationSubmissionControllerTest {
     final List<DynamicCheckbox> checkboxes = List.of(new DynamicCheckbox());
 
     when(lookupService.getDeclarations(any())).thenReturn(Mono.just(declarationLookupDetail));
-    when(submissionSummaryDisplayMapper.toDeclarationFormDataDynamicOptionList(any())).thenReturn(checkboxes);
+    when(submissionSummaryDisplayMapper.toDeclarationFormDataDynamicOptionList(any()))
+        .thenReturn(checkboxes);
 
-    mockMvc.perform(get("/application/declaration"))
+    mockMvc
+        .perform(get("/application/declaration"))
         .andExpect(status().isOk())
         .andExpect(view().name("application/sections/application-submit-declaration"))
         .andExpect(model().attributeExists("summarySubmissionFormData"));
 
     verify(lookupService, times(1)).getDeclarations(any());
-    verify(submissionSummaryDisplayMapper, times(1)).toDeclarationFormDataDynamicOptionList(declarationLookupDetail);
+    verify(submissionSummaryDisplayMapper, times(1))
+        .toDeclarationFormDataDynamicOptionList(declarationLookupDetail);
   }
 
   @Test
@@ -315,22 +330,26 @@ class ApplicationSubmissionControllerTest {
 
     // Mock user session attributes
     final UserDetail mockUser = buildUserDetail();
-    final ActiveCase mockActiveCase = ActiveCase.builder()
-        .providerId(1)
-        .applicationId(1)
-        .caseReferenceNumber("caseRef123")
-        .clientReferenceNumber("clientRef456")
-        .build();
+    final ActiveCase mockActiveCase =
+        ActiveCase.builder()
+            .providerId(1)
+            .applicationId(1)
+            .caseReferenceNumber("caseRef123")
+            .clientReferenceNumber("clientRef456")
+            .build();
 
     // Mock evidence service behavior
     final EvidenceDocumentDetails mockEvidenceDocDetails = mock(EvidenceDocumentDetails.class);
-    when(evidenceService.getEvidenceDocumentsForCase(anyString(), eq(APPLICATION))).thenReturn(Mono.just(mockEvidenceDocDetails));
+    when(evidenceService.getEvidenceDocumentsForCase(anyString(), eq(APPLICATION)))
+        .thenReturn(Mono.just(mockEvidenceDocDetails));
     doNothing().when(evidenceService).registerPreviouslyUploadedDocuments(any(), any());
-    when(evidenceService.uploadAndUpdateDocuments(any(), anyString(), eq(null), any())).thenReturn(Mono.empty());
+    when(evidenceService.uploadAndUpdateDocuments(any(), anyString(), eq(null), any()))
+        .thenReturn(Mono.empty());
 
     // Mock application service
     final ApplicationDetail mockApplicationDetail = mock(ApplicationDetail.class);
-    when(applicationService.getApplication(anyString())).thenReturn(Mono.just(mockApplicationDetail));
+    when(applicationService.getApplication(anyString()))
+        .thenReturn(Mono.just(mockApplicationDetail));
 
     // Mock assessment service
     final AssessmentDetails mockMeansAssessments = mock(AssessmentDetails.class);
@@ -341,14 +360,17 @@ class ApplicationSubmissionControllerTest {
 
     // Mock application service case creation
     final CaseTransactionResponse mockCaseTransactionResponse = mock(CaseTransactionResponse.class);
-    when(applicationService.createCase(any(), any(), any(), any(), any())).thenReturn(mockCaseTransactionResponse);
+    when(applicationService.createCase(any(), any(), any(), any(), any()))
+        .thenReturn(mockCaseTransactionResponse);
     when(mockCaseTransactionResponse.getTransactionId()).thenReturn("transactionId123");
 
     // Perform the test
-    mockMvc.perform(post("/application/declaration")
-            .flashAttr("summarySubmissionFormData", formData)
-            .sessionAttr(USER_DETAILS, mockUser)
-            .sessionAttr(ACTIVE_CASE, mockActiveCase))
+    mockMvc
+        .perform(
+            post("/application/declaration")
+                .flashAttr("summarySubmissionFormData", formData)
+                .sessionAttr(USER_DETAILS, mockUser)
+                .sessionAttr(ACTIVE_CASE, mockActiveCase))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/%s".formatted(SUBMISSION_CREATE_CASE)));
 
@@ -375,7 +397,8 @@ class ApplicationSubmissionControllerTest {
     final AddressFormData mockGeneralDetails = new AddressFormData();
 
     final ProceedingDetail mockProceedingDetail = new ProceedingDetail();
-    mockProceedingDetail.setTypeOfOrder(new StringDisplayValue().id("orderTypeId").displayValue("Order Type"));
+    mockProceedingDetail.setTypeOfOrder(
+        new StringDisplayValue().id("orderTypeId").displayValue("Order Type"));
 
     final PriorAuthorityDetail mockPriorAuthorityDetail = new PriorAuthorityDetail();
 
@@ -390,9 +413,11 @@ class ApplicationSubmissionControllerTest {
     proceedingFlowFormData.setMatterTypeDetails(new ProceedingFormDataMatterTypeDetails());
     proceedingFlowFormData.setProceedingDetails(new ProceedingFormDataProceedingDetails());
 
-    final PriorAuthorityFlowFormData priorAuthorityFlowFormData = new PriorAuthorityFlowFormData("edit");
+    final PriorAuthorityFlowFormData priorAuthorityFlowFormData =
+        new PriorAuthorityFlowFormData("edit");
     priorAuthorityFlowFormData.setPriorAuthorityTypeFormData(new PriorAuthorityTypeFormData());
-    priorAuthorityFlowFormData.setPriorAuthorityDetailsFormData(new PriorAuthorityDetailsFormData());
+    priorAuthorityFlowFormData.setPriorAuthorityDetailsFormData(
+        new PriorAuthorityDetailsFormData());
 
     when(applicationService.getMonoProviderDetailsFormData(applicationId))
         .thenReturn(Mono.just(mockProviderDetails));
@@ -400,8 +425,7 @@ class ApplicationSubmissionControllerTest {
         .thenReturn(Mono.just(mockGeneralDetails));
     when(applicationService.getApplication(applicationId))
         .thenReturn(Mono.just(mockApplicationDetail));
-    when(applicationService.getOpponents(applicationId))
-        .thenReturn(mockOpponents);
+    when(applicationService.getOpponents(applicationId)).thenReturn(mockOpponents);
     when(lookupService.getOrderTypeDescription(any()))
         .thenReturn(Mono.just("Order Type Description"));
 
@@ -411,30 +435,41 @@ class ApplicationSubmissionControllerTest {
         .thenReturn(priorAuthorityFlowFormData);
 
     // Mock validation errors
-    doAnswer(invocation -> {
-      final Errors errors = invocation.getArgument(1);
-      errors.reject("provider.required", "Provider validation failed.");
-      return null;
-    }).when(providerDetailsValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.reject("provider.required", "Provider validation failed.");
+              return null;
+            })
+        .when(providerDetailsValidator)
+        .validate(any(), any());
 
-    doAnswer(invocation -> {
-      final Errors errors = invocation.getArgument(1);
-      errors.reject("correspondence.required", "General details validation failed.");
-      return null;
-    }).when(correspondenceAddressValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.reject("correspondence.required", "General details validation failed.");
+              return null;
+            })
+        .when(correspondenceAddressValidator)
+        .validate(any(), any());
 
-    doAnswer(invocation -> {
-      final Errors errors = invocation.getArgument(1);
-      errors.reject("proceeding.required", "Proceeding validation failed.");
-      return null;
-    }).when(matterTypeValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.reject("proceeding.required", "Proceeding validation failed.");
+              return null;
+            })
+        .when(matterTypeValidator)
+        .validate(any(), any());
 
-    final MvcResult mvcResult = mockMvc.perform(get("/application/validate")
-            .sessionAttr(APPLICATION_ID, applicationId))
-        .andExpect(request().asyncStarted())
-        .andReturn();
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(get("/application/validate").sessionAttr(APPLICATION_ID, applicationId))
+            .andExpect(request().asyncStarted())
+            .andReturn();
 
-    mockMvc.perform(asyncDispatch(mvcResult))
+    mockMvc
+        .perform(asyncDispatch(mvcResult))
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-validation-error-correction"))
         .andExpect(model().attributeExists("providerDetailsErrors"))
@@ -457,7 +492,8 @@ class ApplicationSubmissionControllerTest {
   void testValidateProceedings_WithErrors() {
     // Mock ProceedingDetail and ProceedingFlowFormData
     final ProceedingDetail proceedingDetail = new ProceedingDetail();
-    proceedingDetail.setTypeOfOrder(new StringDisplayValue().id("orderTypeId").displayValue("Order Type"));
+    proceedingDetail.setTypeOfOrder(
+        new StringDisplayValue().id("orderTypeId").displayValue("Order Type"));
 
     final ProceedingFlowFormData proceedingFlowFormData = new ProceedingFlowFormData("edit");
     proceedingFlowFormData.setMatterTypeDetails(new ProceedingFormDataMatterTypeDetails());
@@ -470,39 +506,54 @@ class ApplicationSubmissionControllerTest {
         .thenReturn(proceedingFlowFormData);
 
     // Mock validation for MatterTypeDetails
-    doAnswer(invocation -> {
-      final Errors errors = invocation.getArgument(1);
-      errors.reject("proceedingMatterTypeDetails.required", "Matter Type validation failed.");
-      return null;
-    }).when(matterTypeValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.reject(
+                  "proceedingMatterTypeDetails.required", "Matter Type validation failed.");
+              return null;
+            })
+        .when(matterTypeValidator)
+        .validate(any(), any());
 
     // Mock validation for ProceedingDetails
-    doAnswer(invocation -> {
-      final Errors errors = invocation.getArgument(1);
-      errors.reject("proceedingTypeDetails.required", "Proceeding Type validation failed.");
-      return null;
-    }).when(proceedingTypeValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.reject("proceedingTypeDetails.required", "Proceeding Type validation failed.");
+              return null;
+            })
+        .when(proceedingTypeValidator)
+        .validate(any(), any());
 
     // Mock validation for FurtherDetails
-    doAnswer(invocation -> {
-      final Errors errors = invocation.getArgument(1);
-      errors.reject("proceedingFurtherDetails.required", "Further Details validation failed.");
-      return null;
-    }).when(furtherDetailsValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.reject(
+                  "proceedingFurtherDetails.required", "Further Details validation failed.");
+              return null;
+            })
+        .when(furtherDetailsValidator)
+        .validate(any(), any());
 
     when(model.containsAttribute("proceedingMatterTypeDetails")).thenReturn(true);
-    when(model.getAttribute("proceedingMatterTypeDetails")).thenReturn(List.of("Matter Type validation failed."));
+    when(model.getAttribute("proceedingMatterTypeDetails"))
+        .thenReturn(List.of("Matter Type validation failed."));
 
     when(model.containsAttribute("proceedingTypeDetails")).thenReturn(true);
-    when(model.getAttribute("proceedingTypeDetails")).thenReturn(List.of("Proceeding Type validation failed."));
+    when(model.getAttribute("proceedingTypeDetails"))
+        .thenReturn(List.of("Proceeding Type validation failed."));
 
     when(model.containsAttribute("proceedingFurtherDetails")).thenReturn(true);
-    when(model.getAttribute("proceedingFurtherDetails")).thenReturn(List.of("Further Details validation failed."));
+    when(model.getAttribute("proceedingFurtherDetails"))
+        .thenReturn(List.of("Further Details validation failed."));
 
     final List<ProceedingDetail> proceedings = List.of(proceedingDetail);
 
-    final boolean result = Boolean.TRUE.equals(
-        applicationSubmissionController.validateProceedings(proceedings, model).block());
+    final boolean result =
+        Boolean.TRUE.equals(
+            applicationSubmissionController.validateProceedings(proceedings, model).block());
 
     assertTrue(result);
   }
@@ -512,8 +563,9 @@ class ApplicationSubmissionControllerTest {
   void testValidateProceedings_WithNoProceedings() {
     final List<ProceedingDetail> proceedings = List.of();
 
-    final boolean result = Boolean.TRUE.equals(
-        applicationSubmissionController.validateProceedings(proceedings, model).block());
+    final boolean result =
+        Boolean.TRUE.equals(
+            applicationSubmissionController.validateProceedings(proceedings, model).block());
 
     assertFalse(result);
   }
@@ -521,8 +573,9 @@ class ApplicationSubmissionControllerTest {
   @Test
   @DisplayName("Test validateProceedings with null proceedings returns false")
   void testValidateProceedings_WithNullProceedings() {
-    final boolean result = Boolean.TRUE.equals(
-        applicationSubmissionController.validateProceedings(null, model).block());
+    final boolean result =
+        Boolean.TRUE.equals(
+            applicationSubmissionController.validateProceedings(null, model).block());
 
     assertFalse(result);
   }
@@ -531,34 +584,47 @@ class ApplicationSubmissionControllerTest {
   @DisplayName("Test validatePriorAuthorities with PriorAuthority errors")
   void testValidatePriorAuthorities_WithErrors() {
     final PriorAuthorityDetail priorAuthorityDetail = new PriorAuthorityDetail();
-    final PriorAuthorityFlowFormData priorAuthorityFlowFormData = new PriorAuthorityFlowFormData("edit");
+    final PriorAuthorityFlowFormData priorAuthorityFlowFormData =
+        new PriorAuthorityFlowFormData("edit");
     priorAuthorityFlowFormData.setPriorAuthorityTypeFormData(new PriorAuthorityTypeFormData());
-    priorAuthorityFlowFormData.setPriorAuthorityDetailsFormData(new PriorAuthorityDetailsFormData());
+    priorAuthorityFlowFormData.setPriorAuthorityDetailsFormData(
+        new PriorAuthorityDetailsFormData());
 
     when(proceedingAndCostsMapper.toPriorAuthorityFlowFormData(any()))
         .thenReturn(priorAuthorityFlowFormData);
 
-    doAnswer(invocation -> {
-      final Errors errors = invocation.getArgument(1);
-      errors.reject("priorAuthorityType.required", "Prior Authority Type validation failed.");
-      return null;
-    }).when(priorAuthorityTypeValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.reject(
+                  "priorAuthorityType.required", "Prior Authority Type validation failed.");
+              return null;
+            })
+        .when(priorAuthorityTypeValidator)
+        .validate(any(), any());
 
-    doAnswer(invocation -> {
-      final Errors errors = invocation.getArgument(1);
-      errors.reject("priorAuthorityDetails.required", "Prior Authority Details validation failed.");
-      return null;
-    }).when(priorAuthorityDetailsValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.reject(
+                  "priorAuthorityDetails.required", "Prior Authority Details validation failed.");
+              return null;
+            })
+        .when(priorAuthorityDetailsValidator)
+        .validate(any(), any());
 
     when(model.containsAttribute("priorAuthorityType")).thenReturn(true);
-    when(model.getAttribute("priorAuthorityType")).thenReturn(List.of("Prior Authority Type validation failed."));
+    when(model.getAttribute("priorAuthorityType"))
+        .thenReturn(List.of("Prior Authority Type validation failed."));
 
     when(model.containsAttribute("priorAuthorityDetails")).thenReturn(true);
-    when(model.getAttribute("priorAuthorityDetails")).thenReturn(List.of("Prior Authority Details validation failed."));
+    when(model.getAttribute("priorAuthorityDetails"))
+        .thenReturn(List.of("Prior Authority Details validation failed."));
 
     final List<PriorAuthorityDetail> priorAuthorities = List.of(priorAuthorityDetail);
 
-    final boolean result = applicationSubmissionController.validatePriorAuthorities(priorAuthorities, model);
+    final boolean result =
+        applicationSubmissionController.validatePriorAuthorities(priorAuthorities, model);
 
     assertTrue(result);
   }
@@ -568,7 +634,8 @@ class ApplicationSubmissionControllerTest {
   void testValidatePriorAuthorities_WithNoPriorAuthorities() {
     final List<PriorAuthorityDetail> priorAuthorities = List.of();
 
-    boolean result = applicationSubmissionController.validatePriorAuthorities(priorAuthorities, model);
+    boolean result =
+        applicationSubmissionController.validatePriorAuthorities(priorAuthorities, model);
 
     assertFalse(result);
   }
@@ -586,11 +653,15 @@ class ApplicationSubmissionControllerTest {
   void testValidateOpponents_WithIndividualOpponentErrors() {
     final List<AbstractOpponentFormData> opponents = List.of(new IndividualOpponentFormData());
 
-    doAnswer(invocation -> {
-      final Errors errors = invocation.getArgument(1);
-      errors.reject("individualOpponent.required", "Error: Individual opponent validation failed.");
-      return null;
-    }).when(individualOpponentValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.reject(
+                  "individualOpponent.required", "Error: Individual opponent validation failed.");
+              return null;
+            })
+        .when(individualOpponentValidator)
+        .validate(any(), any());
 
     when(model.containsAttribute("individualOpponent")).thenReturn(true);
     when(model.getAttribute("individualOpponent")).thenReturn(List.of("Error 1"));
@@ -605,11 +676,16 @@ class ApplicationSubmissionControllerTest {
   void testValidateOpponents_WithOrganisationOpponentErrors() {
     final List<AbstractOpponentFormData> opponents = List.of(new OrganisationOpponentFormData());
 
-    doAnswer(invocation -> {
-      final Errors errors = invocation.getArgument(1);
-      errors.reject("organisationOpponent.required", "Error: Organisation opponent validation failed.");
-      return null;
-    }).when(organisationOpponentValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.reject(
+                  "organisationOpponent.required",
+                  "Error: Organisation opponent validation failed.");
+              return null;
+            })
+        .when(organisationOpponentValidator)
+        .validate(any(), any());
 
     when(model.containsAttribute("organisationOpponent")).thenReturn(true);
     when(model.getAttribute("organisationOpponent")).thenReturn(List.of("Error 1"));
@@ -645,7 +721,8 @@ class ApplicationSubmissionControllerTest {
     when(model.containsAttribute(ERROR_ATTRIBUTE)).thenReturn(true);
     when(model.getAttribute(ERROR_ATTRIBUTE)).thenReturn(expectedErrors);
 
-    final List<String> actualErrors = applicationSubmissionController.getErrorsFromModel(model, ERROR_ATTRIBUTE);
+    final List<String> actualErrors =
+        applicationSubmissionController.getErrorsFromModel(model, ERROR_ATTRIBUTE);
 
     assertEquals(expectedErrors, actualErrors);
   }
@@ -655,7 +732,8 @@ class ApplicationSubmissionControllerTest {
   void testGetErrorsFromModel_WithoutAttributePresent() {
     when(model.containsAttribute(ERROR_ATTRIBUTE)).thenReturn(false);
 
-    final List<String> actualErrors = applicationSubmissionController.getErrorsFromModel(model, ERROR_ATTRIBUTE);
+    final List<String> actualErrors =
+        applicationSubmissionController.getErrorsFromModel(model, ERROR_ATTRIBUTE);
 
     assertEquals(Collections.emptyList(), actualErrors);
   }
@@ -663,10 +741,9 @@ class ApplicationSubmissionControllerTest {
   @Test
   @DisplayName("Test POST /application/validate redirects to /application/sections")
   void testApplicationValidatePost_RedirectsToApplicationSections() throws Exception {
-    mockMvc.perform(post("/application/validate"))
+    mockMvc
+        .perform(post("/application/validate"))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/sections"));
   }
-
-
 }

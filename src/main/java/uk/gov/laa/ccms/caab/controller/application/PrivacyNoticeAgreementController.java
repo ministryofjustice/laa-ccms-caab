@@ -13,9 +13,7 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.PrivacyNoticeAgreementValidator;
 
-/**
- * Controller handling privacy notice agreement-related requests.
- */
+/** Controller handling privacy notice agreement-related requests. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -32,7 +30,7 @@ public class PrivacyNoticeAgreementController {
    */
   @GetMapping("/application/agreement")
   public String privacyNoticeAgreement(
-          @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData) {
+      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData) {
     return "application/privacy-notice-agreement";
   }
 
@@ -45,18 +43,18 @@ public class PrivacyNoticeAgreementController {
    */
   @PostMapping("/application/agreement")
   public String privacyNoticeAgreement(
-          @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
-          BindingResult bindingResult) {
+      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
+      BindingResult bindingResult) {
     applicationValidator.validate(applicationFormData, bindingResult);
 
     if (bindingResult.hasErrors()) {
       return "application/privacy-notice-agreement";
     } else {
       if (applicationFormData.isApplicationCreated()) {
-        //using an existing client
+        // using an existing client
         return "redirect:/application/sections";
       } else {
-        //registering a new client
+        // registering a new client
         return "redirect:/application/client/details/basic";
       }
     }
@@ -71,5 +69,4 @@ public class PrivacyNoticeAgreementController {
   public String privacyNoticeAgreementPrintable() {
     return "application/privacy-notice-agreement-printable";
   }
-
 }

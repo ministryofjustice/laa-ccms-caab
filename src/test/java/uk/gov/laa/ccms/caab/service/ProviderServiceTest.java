@@ -27,14 +27,11 @@ import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 
 @ExtendWith(MockitoExtension.class)
 public class ProviderServiceTest {
-  @Mock
-  private SoaApiClient soaApiClient;
+  @Mock private SoaApiClient soaApiClient;
 
-  @Mock
-  private EbsApiClient ebsApiClient;
+  @Mock private EbsApiClient ebsApiClient;
 
-  @InjectMocks
-  private ProviderService providerService;
+  @InjectMocks private ProviderService providerService;
 
   @Test
   void getCategoryOfLawCodes_returnData() {
@@ -44,18 +41,17 @@ public class ProviderServiceTest {
     String loginId = "user1";
     String userType = "userType";
 
-    ContractDetails contractDetails = new ContractDetails()
-        .addContractsItem(
-            createContractDetail("CAT1", true, true))
-        .addContractsItem(
-            createContractDetail("CAT2", true, true));
+    ContractDetails contractDetails =
+        new ContractDetails()
+            .addContractsItem(createContractDetail("CAT1", true, true))
+            .addContractsItem(createContractDetail("CAT2", true, true));
 
     when(soaApiClient.getContractDetails(providerFirmId, officeId, loginId, userType))
         .thenReturn(Mono.just(contractDetails));
 
     List<String> response =
-        providerService.getCategoryOfLawCodes(providerFirmId, officeId, loginId, userType,
-            Boolean.TRUE);
+        providerService.getCategoryOfLawCodes(
+            providerFirmId, officeId, loginId, userType, Boolean.TRUE);
 
     assertNotNull(response);
     assertEquals(2, response.size());
@@ -64,13 +60,21 @@ public class ProviderServiceTest {
   }
 
   @ParameterizedTest
-  @CsvSource(value = {
-      "null, true, true, CAT2, true, true, true",
-      "CAT1, null, true, CAT2, true, true, true",
-      "CAT1, false, null, CAT2, false, true, false",
-      "CAT1, false, false, CAT2, false, true, false"}, nullValues = {"null"})
-  void getCategoryOfLawCodes_filtersCorrectly(String cat1, Boolean newMatters1, Boolean remAuth1,
-      String cat2, Boolean newMatters2, Boolean remAuth2,
+  @CsvSource(
+      value = {
+        "null, true, true, CAT2, true, true, true",
+        "CAT1, null, true, CAT2, true, true, true",
+        "CAT1, false, null, CAT2, false, true, false",
+        "CAT1, false, false, CAT2, false, true, false"
+      },
+      nullValues = {"null"})
+  void getCategoryOfLawCodes_filtersCorrectly(
+      String cat1,
+      Boolean newMatters1,
+      Boolean remAuth1,
+      String cat2,
+      Boolean newMatters2,
+      Boolean remAuth2,
       Boolean initialApp) {
 
     Integer providerFirmId = 123;
@@ -78,23 +82,22 @@ public class ProviderServiceTest {
     String loginId = "user1";
     String userType = "userType";
 
-    ContractDetails contractDetails = new ContractDetails()
-        .addContractsItem(
-            createContractDetail(cat1, newMatters1, remAuth1))
-        .addContractsItem(
-            createContractDetail(cat2, newMatters2, remAuth2));
+    ContractDetails contractDetails =
+        new ContractDetails()
+            .addContractsItem(createContractDetail(cat1, newMatters1, remAuth1))
+            .addContractsItem(createContractDetail(cat2, newMatters2, remAuth2));
 
     when(soaApiClient.getContractDetails(providerFirmId, officeId, loginId, userType))
         .thenReturn(Mono.just(contractDetails));
 
     List<String> response =
-        providerService.getCategoryOfLawCodes(providerFirmId, officeId, loginId, userType,
-            initialApp);
+        providerService.getCategoryOfLawCodes(
+            providerFirmId, officeId, loginId, userType, initialApp);
 
     assertNotNull(response);
     assertEquals(1, response.size());
     assertEquals(cat2, response.getFirst());
- }
+  }
 
   @Test
   void getProvider_returnsData() {
@@ -105,9 +108,7 @@ public class ProviderServiceTest {
 
     Mono<ProviderDetail> providerMono = providerService.getProvider(providerId);
 
-    StepVerifier.create(providerMono)
-        .expectNext(providerDetail)
-        .verifyComplete();
+    StepVerifier.create(providerMono).expectNext(providerDetail).verifyComplete();
   }
 
   @Test
@@ -125,9 +126,8 @@ public class ProviderServiceTest {
 
   @Test
   void getAllFeeEarners_handlesNoResults() {
-    ProviderDetail providerDetail = new ProviderDetail()
-        .addOfficesItem(new OfficeDetail()
-            .feeEarners(new ArrayList<>()));
+    ProviderDetail providerDetail =
+        new ProviderDetail().addOfficesItem(new OfficeDetail().feeEarners(new ArrayList<>()));
 
     List<ContactDetail> feeEarners = providerService.getAllFeeEarners(providerDetail);
 

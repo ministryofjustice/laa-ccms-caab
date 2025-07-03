@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.util;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -15,11 +14,8 @@ class FileUtilTest {
     final String fileExt = "pdf";
     String filename = "originalName.%s".formatted(fileExt);
 
-    final MultipartFile multipartFile = new MockMultipartFile(
-        "theFile",
-        filename,
-        "contentType",
-        "the file data".getBytes());
+    final MultipartFile multipartFile =
+        new MockMultipartFile("theFile", filename, "contentType", "the file data".getBytes());
 
     final String result = FileUtil.getFileExtension(multipartFile);
 
@@ -31,11 +27,8 @@ class FileUtilTest {
   void testGetFileExtension_noExtension_returnsFilename() {
     String filename = "originalName";
 
-    final MultipartFile multipartFile = new MockMultipartFile(
-        "theFile",
-        filename,
-        "contentType",
-        "the file data".getBytes());
+    final MultipartFile multipartFile =
+        new MockMultipartFile("theFile", filename, "contentType", "the file data".getBytes());
 
     final String result = FileUtil.getFileExtension(multipartFile);
 

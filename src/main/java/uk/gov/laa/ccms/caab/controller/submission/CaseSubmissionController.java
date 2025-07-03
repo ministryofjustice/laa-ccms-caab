@@ -20,9 +20,7 @@ import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-/**
- * Controller for the add case submission into ebs.
- */
+/** Controller for the add case submission into ebs. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -40,8 +38,8 @@ public class CaseSubmissionController {
    * @param user the user details for the case submission
    * @param session the HTTP session to be updated
    * @param model the model to be updated with submission details
-   * @return the view name or a redirect to the confirmed submission page if the
-   *         case status is valid
+   * @return the view name or a redirect to the confirmed submission page if the case status is
+   *     valid
    */
   @GetMapping("/application/case-create")
   public String addCaseSubmission(
@@ -52,8 +50,7 @@ public class CaseSubmissionController {
 
     model.addAttribute("submissionType", SUBMISSION_CREATE_CASE);
 
-    final TransactionStatus caseStatus = applicationService.getCaseStatus(
-        transactionId).block();
+    final TransactionStatus caseStatus = applicationService.getCaseStatus(transactionId).block();
 
     if (caseStatus != null && StringUtils.hasText(caseStatus.getReferenceNumber())) {
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
@@ -62,7 +59,6 @@ public class CaseSubmissionController {
 
     return viewIncludingPollCount(session);
   }
-
 
   /**
    * Handles the confirmation of a case creation submission and updates the client session.
@@ -77,28 +73,25 @@ public class CaseSubmissionController {
   }
 
   /**
-   * Returns the view based on the submission poll count from the session.
-   * If the poll count exceeds the maximum, redirects to the failed submission page.
+   * Returns the view based on the submission poll count from the session. If the poll count exceeds
+   * the maximum, redirects to the failed submission page.
    *
    * @param session the HTTP session containing the submission poll count
-   * @return the view name or a redirect to the failed submission page if the max poll count
-   *         is exceeded
+   * @return the view name or a redirect to the failed submission page if the max poll count is
+   *     exceeded
    */
-  protected String viewIncludingPollCount(
-      final HttpSession session) {
+  protected String viewIncludingPollCount(final HttpSession session) {
     int submissionPollCount = 0;
 
     if (session.getAttribute(SUBMISSION_POLL_COUNT) != null) {
       submissionPollCount = (int) session.getAttribute(SUBMISSION_POLL_COUNT);
       if (submissionPollCount >= submissionConstants.getMaxPollCount()) {
-        return "redirect:/application/%s/failed".formatted(
-            SubmissionConstants.SUBMISSION_CREATE_CASE);
+        return "redirect:/application/%s/failed"
+            .formatted(SubmissionConstants.SUBMISSION_CREATE_CASE);
       }
     }
-    submissionPollCount = submissionPollCount + 1;
+    submissionPollCount += 1;
     session.setAttribute(SUBMISSION_POLL_COUNT, submissionPollCount);
     return "submissions/submissionInProgress";
   }
-
-
 }

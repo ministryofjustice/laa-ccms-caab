@@ -19,14 +19,11 @@ import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTest {
-  @Mock
-  private EbsApiClient ebsApiClient;
+  @Mock private EbsApiClient ebsApiClient;
 
-  @Mock
-  private SoaApiClient soaApiClient;
+  @Mock private SoaApiClient soaApiClient;
 
-  @InjectMocks
-  private UserService userService;
+  @InjectMocks private UserService userService;
 
   @Test
   void getUser_returnData() {
@@ -48,15 +45,14 @@ public class UserServiceTest {
   @Test
   void getUsers_returnsData() {
     Integer providerId = 1234;
-    UserDetails userDetails = new UserDetails()
-        .addContentItem(new BaseUser()
-            .userId(123)
-            .userType("type1")
-            .loginId("login1"));
+    UserDetails userDetails =
+        new UserDetails()
+            .addContentItem(new BaseUser().userId(123).userType("type1").loginId("login1"));
     when(ebsApiClient.getUsers(providerId)).thenReturn(Mono.just(userDetails));
     Mono<UserDetails> userDetailsMono = userService.getUsers(providerId);
     StepVerifier.create(userDetailsMono)
-        .expectNextMatches(userList -> "login1".equals(userList.getContent().getFirst().getLoginId()))
+        .expectNextMatches(
+            userList -> "login1".equals(userList.getContent().getFirst().getLoginId()))
         .verifyComplete();
   }
 
@@ -64,19 +60,17 @@ public class UserServiceTest {
   void updateUserOptions_updatesUser() {
     String loginId = "loginId";
     String userType = "userType";
-    UserOptions userOptions = new UserOptions()
-        .userLoginId(loginId)
-        .providerFirmId("12345");
+    UserOptions userOptions = new UserOptions().userLoginId(loginId).providerFirmId("12345");
 
     ClientTransactionResponse userUpdatedResponse = new ClientTransactionResponse();
 
-    when(soaApiClient.updateUserOptions(userOptions, loginId, userType)).thenReturn(Mono.just(userUpdatedResponse));
+    when(soaApiClient.updateUserOptions(userOptions, loginId, userType))
+        .thenReturn(Mono.just(userUpdatedResponse));
 
-    Mono<ClientTransactionResponse> responseMono = userService.updateUserOptions(12345, loginId,
-        userType);
+    Mono<ClientTransactionResponse> responseMono =
+        userService.updateUserOptions(12345, loginId, userType);
     StepVerifier.create(responseMono)
         .expectNextMatches(userUpdated -> userUpdated == userUpdatedResponse)
         .verifyComplete();
-
   }
 }

@@ -44,13 +44,10 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @WebAppConfiguration
 class NotificationsSearchResultsControllerTest {
 
-  @InjectMocks
-  NotificationsSearchResultsController notificationsSearchResultsController;
-  @Mock
-  private NotificationService notificationService;
+  @InjectMocks NotificationsSearchResultsController notificationsSearchResultsController;
+  @Mock private NotificationService notificationService;
 
-  @Autowired
-  private WebApplicationContext webApplicationContext;
+  @Autowired private WebApplicationContext webApplicationContext;
   private MockMvc mockMvc;
 
   @BeforeEach
@@ -65,10 +62,11 @@ class NotificationsSearchResultsControllerTest {
     when(notificationService.getNotifications(any(), anyInt(), any(), any()))
         .thenReturn(Mono.just(notificationsMock));
 
-    this.mockMvc.perform(get("/notifications/search-results")
-            .sessionAttr("user", userDetails)
-            .sessionAttr("notificationSearchCriteria", buildNotificationSearchCriteria())
-        )
+    this.mockMvc
+        .perform(
+            get("/notifications/search-results")
+                .sessionAttr("user", userDetails)
+                .sessionAttr("notificationSearchCriteria", buildNotificationSearchCriteria()))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("notifications/actions-and-notifications"));
@@ -76,15 +74,16 @@ class NotificationsSearchResultsControllerTest {
 
   @Test
   void testGetSearchResults_noData() throws Exception {
-    Notifications notificationsMock = new Notifications()
-        .content(new ArrayList<>());
+    Notifications notificationsMock = new Notifications().content(new ArrayList<>());
 
     when(notificationService.getNotifications(any(), anyInt(), any(), any()))
         .thenReturn(Mono.just(notificationsMock));
 
-    this.mockMvc.perform(get("/notifications/search-results")
-            .sessionAttr("user", userDetails)
-            .sessionAttr("notificationSearchCriteria", buildNotificationSearchCriteria()))
+    this.mockMvc
+        .perform(
+            get("/notifications/search-results")
+                .sessionAttr("user", userDetails)
+                .sessionAttr("notificationSearchCriteria", buildNotificationSearchCriteria()))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("notifications/actions-and-notifications-no-results"));
@@ -101,13 +100,13 @@ class NotificationsSearchResultsControllerTest {
     when(notificationService.getNotifications(any(), anyInt(), any(), any()))
         .thenReturn(Mono.empty());
 
-    Exception exception = assertThrows(Exception.class, () ->
-        this.mockMvc.perform(get("/notifications/search-results")
-            .flashAttrs(flashMap)));
+    Exception exception =
+        assertThrows(
+            Exception.class,
+            () -> this.mockMvc.perform(get("/notifications/search-results").flashAttrs(flashMap)));
 
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
     assertEquals("Error retrieving notifications", exception.getCause().getMessage());
-
   }
 
   @Test
@@ -123,10 +122,12 @@ class NotificationsSearchResultsControllerTest {
     ArgumentCaptor<NotificationSearchCriteria> criteriaArg =
         ArgumentCaptor.forClass(NotificationSearchCriteria.class);
 
-    this.mockMvc.perform(get("/notifications/search-results")
-            .sessionAttr("user", userDetails)
-            .queryParam("pageSort", "assignedDate,asc")
-            .sessionAttr("notificationSearchCriteria", searchCriteria))
+    this.mockMvc
+        .perform(
+            get("/notifications/search-results")
+                .sessionAttr("user", userDetails)
+                .queryParam("pageSort", "assignedDate,asc")
+                .sessionAttr("notificationSearchCriteria", searchCriteria))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("notifications/actions-and-notifications"));
@@ -146,12 +147,14 @@ class NotificationsSearchResultsControllerTest {
     NotificationSearchCriteria searchCriteria = buildNotificationSearchCriteria();
     searchCriteria.setSort("assignedDate,asc");
 
-    this.mockMvc.perform(get("/notifications/search-results")
-            .sessionAttr("user", userDetails)
-            .queryParam("page", "2")
-            .queryParam("size", "10")
-            .queryParam("pageSort", "assignedDate,desc")
-            .sessionAttr("notificationSearchCriteria", searchCriteria))
+    this.mockMvc
+        .perform(
+            get("/notifications/search-results")
+                .sessionAttr("user", userDetails)
+                .queryParam("page", "2")
+                .queryParam("size", "10")
+                .queryParam("pageSort", "assignedDate,desc")
+                .sessionAttr("notificationSearchCriteria", searchCriteria))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("notifications/actions-and-notifications"));
@@ -163,19 +166,18 @@ class NotificationsSearchResultsControllerTest {
     return new Notifications()
         .addContentItem(
             new NotificationInfo()
-                .user(new UserDetail()
-                    .loginId("user1")
-                    .userType("user1"))
+                .user(new UserDetail().loginId("user1").userType("user1"))
                 .notificationId("234")
                 .notificationType("N"));
   }
 
-  private static final UserDetail userDetails = new UserDetail()
-      .userId(1)
-      .provider(new BaseProvider().id(10))
-      .userType("testUserType")
-      .loginId("testLoginId")
-      .provider(new BaseProvider().id(1));
+  private static final UserDetail userDetails =
+      new UserDetail()
+          .userId(1)
+          .provider(new BaseProvider().id(10))
+          .userType("testUserType")
+          .loginId("testLoginId")
+          .provider(new BaseProvider().id(1));
 
   private static NotificationSearchCriteria buildNotificationSearchCriteria() {
     NotificationSearchCriteria criteria = new NotificationSearchCriteria();

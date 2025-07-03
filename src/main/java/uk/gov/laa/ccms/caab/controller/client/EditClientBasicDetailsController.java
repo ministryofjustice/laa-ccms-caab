@@ -23,9 +23,7 @@ import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.service.LookupService;
 
-/**
- * Controller for handling edits to client basic details during the application summary process.
- */
+/** Controller for handling edits to client basic details during the application summary process. */
 @Controller
 @Slf4j
 @RequiredArgsConstructor
@@ -74,7 +72,7 @@ public class EditClientBasicDetailsController {
   @PostMapping("/{caseContext}/sections/client/details/basic")
   public String postClientDetailsBasic(
       @PathVariable("caseContext") final CaseContext caseContext,
-      @SessionAttribute(CLIENT_FLOW_FORM_DATA) final  ClientFlowFormData clientFlowFormData,
+      @SessionAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
       @ModelAttribute("basicDetails") final ClientFormDataBasicDetails basicDetails,
       final BindingResult bindingResult,
       final Model model) {
@@ -101,14 +99,11 @@ public class EditClientBasicDetailsController {
     final DropdownBuilder builder = new DropdownBuilder(model);
 
     builder
-        .addDropdown("titles",
-            lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
-        .addDropdown("countries",
-            lookupService.getCountries())
-        .addDropdown("genders",
-            lookupService.getCommonValues(COMMON_VALUE_GENDER))
-        .addDropdown("maritalStatusList",
-            lookupService.getCommonValues(COMMON_VALUE_MARITAL_STATUS))
+        .addDropdown("titles", lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+        .addDropdown("countries", lookupService.getCountries())
+        .addDropdown("genders", lookupService.getCommonValues(COMMON_VALUE_GENDER))
+        .addDropdown(
+            "maritalStatusList", lookupService.getCommonValues(COMMON_VALUE_MARITAL_STATUS))
         .build();
   }
 }

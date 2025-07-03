@@ -42,8 +42,8 @@ public enum CaseContext {
    *
    * @param pathValue the string representation of the path value to match against.
    * @return the matching CaseContext enum constant if a match is found.
-   * @throws IllegalArgumentException if the provided path value does not correspond
-   *     to any enum constant.
+   * @throws IllegalArgumentException if the provided path value does not correspond to any enum
+   *     constant.
    */
   public static CaseContext fromPathValue(String pathValue) {
     for (CaseContext context : CaseContext.values()) {

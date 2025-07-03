@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -9,9 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 
-/**
- * Controller for confirmed submissions.
- */
+/** Controller for confirmed submissions. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j

@@ -7,15 +7,11 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 
-/**
- * Utility class for handling proceeding-related operations.
- */
+/** Utility class for handling proceeding-related operations. */
 public final class ProceedingUtil {
   private static final String NEW_PROCEEDING = "NEW";
   private static final String UNCHANGED_PROCEEDING = "UNCHANGED";
   private static final String CHANGED_PROCEEDING = "CHANGED";
-
-
 
   /**
    * Returns the assessment mapping ID for the given proceeding.
@@ -56,8 +52,11 @@ public final class ProceedingUtil {
   public static String getRequestedScopeForAssessmentInput(final ProceedingDetail proceeding) {
     return Optional.ofNullable(proceeding.getScopeLimitations())
         .filter(scopeLimitations -> !scopeLimitations.isEmpty())
-        .map(scopeLimitations -> scopeLimitations.size() > 1 ? "MULTIPLE" :
-            scopeLimitations.getFirst().getScopeLimitation().getId())
+        .map(
+            scopeLimitations ->
+                scopeLimitations.size() > 1
+                    ? "MULTIPLE"
+                    : scopeLimitations.getFirst().getScopeLimitation().getId())
         .orElse(null);
   }
 
@@ -71,9 +70,11 @@ public final class ProceedingUtil {
 
     return Optional.ofNullable(proceeding.getScopeLimitations())
         .filter(scopeLimitationList -> !scopeLimitationList.isEmpty())
-        .map(scopeLimitationList -> scopeLimitationList.stream()
-            .filter(Objects::nonNull)
-            .anyMatch(ScopeLimitationDetail::getDefaultInd))
+        .map(
+            scopeLimitationList ->
+                scopeLimitationList.stream()
+                    .filter(Objects::nonNull)
+                    .anyMatch(ScopeLimitationDetail::getDefaultInd))
         .isPresent();
   }
 
@@ -85,8 +86,7 @@ public final class ProceedingUtil {
    * @return the proceeding detail with the specified EBS ID, or {@code null} if not found
    */
   public static ProceedingDetail getProceedingByEbsId(
-      final ApplicationDetail application,
-      final String id) {
+      final ApplicationDetail application, final String id) {
     if (application.getProceedings() != null && id != null) {
       for (final ProceedingDetail proceeding : application.getProceedings()) {
         if (id.equals(proceeding.getEbsId())) {
@@ -105,8 +105,7 @@ public final class ProceedingUtil {
    * @return the proceeding detail with the specified ID, or {@code null} if not found
    */
   public static ProceedingDetail getProceedingById(
-      final ApplicationDetail application,
-      final Integer id) {
+      final ApplicationDetail application, final Integer id) {
     if (application.getProceedings() != null && id != null) {
       for (final ProceedingDetail proceeding : application.getProceedings()) {
         if (proceeding.getId().equals(id)) {
@@ -117,7 +116,5 @@ public final class ProceedingUtil {
     return null;
   }
 
-  private ProceedingUtil() {
-  }
-
+  private ProceedingUtil() {}
 }

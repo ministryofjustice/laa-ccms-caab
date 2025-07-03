@@ -39,14 +39,13 @@ public abstract class BaseApiClient {
    * null, the key is not added back to the map.
    *
    * @param queryParams the map of query parameters to which the key-value pair is added
-   * @param key         the key for the query parameter to be added
-   * @param value       the value associated with the given key; if null, the key is not added
+   * @param key the key for the query parameter to be added
+   * @param value the value associated with the given key; if null, the key is not added
    */
-  protected static void addQueryParam(MultiValueMap<String, String> queryParams,
-      String key, Object value) {
+  protected static void addQueryParam(
+      MultiValueMap<String, String> queryParams, String key, Object value) {
     // Remove key in case key is being overridden.
     queryParams.remove(key);
-    Optional.ofNullable(value)
-        .ifPresent(v -> queryParams.add(key, String.valueOf(v)));
+    Optional.ofNullable(value).ifPresent(v -> queryParams.add(key, String.valueOf(v)));
   }
 }

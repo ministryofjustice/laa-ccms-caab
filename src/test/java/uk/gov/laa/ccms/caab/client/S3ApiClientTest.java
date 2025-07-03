@@ -39,20 +39,16 @@ import uk.gov.laa.ccms.caab.config.S3DocumentBucketProperties;
 @ExtendWith(MockitoExtension.class)
 public class S3ApiClientTest {
 
-  @Mock
-  private S3Template s3Template;
+  @Mock private S3Template s3Template;
 
-  @Mock
-  private S3Client s3Client;
+  @Mock private S3Client s3Client;
 
-  @Mock
-  private S3DocumentBucketProperties s3DocumentBucketProperties;
+  @Mock private S3DocumentBucketProperties s3DocumentBucketProperties;
 
   @Mock(answer = Answers.CALLS_REAL_METHODS)
   private S3ApiClientErrorHandler s3ApiClientErrorHandler;
 
-  @InjectMocks
-  S3ApiClient s3ApiClient;
+  @InjectMocks S3ApiClient s3ApiClient;
 
   private static final String DOCUMENT_ID = "documentId";
   private static final String DOCUMENT_CONTENT = "documentContent";
@@ -76,9 +72,10 @@ public class S3ApiClientTest {
 
     when(s3Template.download(any(), eq(DOCUMENT_ID))).thenThrow(NoSuchKeyException.class);
 
-    assertThrows(S3ApiFileNotFoundException.class, () -> s3ApiClient.downloadDocument(DOCUMENT_ID),
+    assertThrows(
+        S3ApiFileNotFoundException.class,
+        () -> s3ApiClient.downloadDocument(DOCUMENT_ID),
         "Expected S3ApiFileNotFoundException to be thrown, but wasn't.");
-
   }
 
   @Test
@@ -89,9 +86,10 @@ public class S3ApiClientTest {
 
     when(s3Template.download(any(), eq(DOCUMENT_ID))).thenReturn(s3Resource);
 
-    assertThrows(S3ApiClientException.class, () -> s3ApiClient.downloadDocument(DOCUMENT_ID),
+    assertThrows(
+        S3ApiClientException.class,
+        () -> s3ApiClient.downloadDocument(DOCUMENT_ID),
         "Expected S3ApiClientException to be thrown, but wasn't.");
-
   }
 
   @Test
@@ -107,8 +105,7 @@ public class S3ApiClientTest {
     when(url.toString()).thenReturn("test-url");
 
     when(s3Template.listObjects(any(), eq(DOCUMENT_ID))).thenReturn(List.of(resource));
-    when(s3Template.createSignedGetURL(any(), eq(filename), any()))
-        .thenReturn(url);
+    when(s3Template.createSignedGetURL(any(), eq(filename), any())).thenReturn(url);
 
     String actual = s3ApiClient.getDocumentUrl(DOCUMENT_ID).get();
 
@@ -116,7 +113,6 @@ public class S3ApiClientTest {
     assertEquals("test-url", actual);
     verify(s3Template).listObjects(any(), eq(DOCUMENT_ID));
     verify(s3Template).createSignedGetURL(any(), eq(filename), any());
-
   }
 
   @Test
@@ -125,7 +121,6 @@ public class S3ApiClientTest {
     s3ApiClient.uploadDocument(DOCUMENT_ID, DOCUMENT_CONTENT, "xls");
 
     verify(s3Template).upload(any(), eq(DOCUMENT_ID + ".xls"), any());
-
   }
 
   @Test
@@ -135,8 +130,8 @@ public class S3ApiClientTest {
     final ArgumentCaptor<DeleteObjectsRequest> deleteRequestCaptor =
         ArgumentCaptor.forClass(DeleteObjectsRequest.class);
 
-    when(s3Client.deleteObjects(deleteRequestCaptor.capture())).thenReturn(
-        DeleteObjectsResponse.builder().build());
+    when(s3Client.deleteObjects(deleteRequestCaptor.capture()))
+        .thenReturn(DeleteObjectsResponse.builder().build());
 
     s3ApiClient.removeDraftDocuments(documentIds);
 
@@ -144,7 +139,8 @@ public class S3ApiClientTest {
 
     final DeleteObjectsRequest deleteRequest = deleteRequestCaptor.getValue();
 
-    Set<String> deletedKeys = deleteRequest.delete().objects().stream()
+    Set<String> deletedKeys =
+        deleteRequest.delete().objects().stream()
             .map(ObjectIdentifier::key)
             .collect(Collectors.toSet());
 
@@ -168,8 +164,8 @@ public class S3ApiClientTest {
     final ArgumentCaptor<DeleteObjectsRequest> deleteRequestCaptor =
         ArgumentCaptor.forClass(DeleteObjectsRequest.class);
 
-    when(s3Client.deleteObjects(deleteRequestCaptor.capture())).thenReturn(
-        DeleteObjectsResponse.builder().build());
+    when(s3Client.deleteObjects(deleteRequestCaptor.capture()))
+        .thenReturn(DeleteObjectsResponse.builder().build());
 
     s3ApiClient.removeDocuments(documentIds);
 
@@ -177,9 +173,10 @@ public class S3ApiClientTest {
 
     final DeleteObjectsRequest deleteRequest = deleteRequestCaptor.getValue();
 
-    Set<String> deletedKeys = deleteRequest.delete().objects().stream()
-        .map(ObjectIdentifier::key)
-        .collect(Collectors.toSet());
+    Set<String> deletedKeys =
+        deleteRequest.delete().objects().stream()
+            .map(ObjectIdentifier::key)
+            .collect(Collectors.toSet());
 
     assertEquals(2, deleteRequest.delete().objects().size());
     assertEquals(Set.of("1", "2"), deletedKeys);
@@ -221,8 +218,7 @@ public class S3ApiClientTest {
 
     URL url = mock(URL.class);
     when(url.toString()).thenReturn("test-url");
-    when(s3Template.createSignedGetURL(any(), eq(DRAFT_PREFIX + "1.pdf"), any()))
-        .thenReturn(url);
+    when(s3Template.createSignedGetURL(any(), eq(DRAFT_PREFIX + "1.pdf"), any())).thenReturn(url);
 
     String actual = s3ApiClient.getDraftDocumentUrl("1").get();
 
@@ -239,5 +235,4 @@ public class S3ApiClientTest {
 
     verify(s3Template).upload(any(), eq(DRAFT_PREFIX + "1.pdf"), any());
   }
-
 }

@@ -17,15 +17,16 @@ import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = {ApplicationConfig.class, TestConfig.class})
-@TestPropertySource(properties = {
-    "laa.ccms.ebs-api.url=http://mockUrl",
-    "laa.ccms.soa-api.url=http://mockUrl",
-    "laa.ccms.caab-api.url=http://mockUrl",
-    "os.api.url=http://mockUrl",
-    "av.api.hostname=http://mockUrl",
-    "av.api.port=3000",
-    "av.api.timeout=100"
-})
+@TestPropertySource(
+    properties = {
+      "laa.ccms.ebs-api.url=http://mockUrl",
+      "laa.ccms.soa-api.url=http://mockUrl",
+      "laa.ccms.caab-api.url=http://mockUrl",
+      "os.api.url=http://mockUrl",
+      "av.api.hostname=http://mockUrl",
+      "av.api.port=3000",
+      "av.api.timeout=100"
+    })
 class ApplicationConfigTest {
 
   @Qualifier("ebsApiWebClient")
@@ -48,14 +49,11 @@ class ApplicationConfigTest {
   @Autowired
   private ClamAVClient clamAvClient;
 
-  @Autowired
-  private ThymeleafViewResolver thymeleafViewResolver;
+  @Autowired private ThymeleafViewResolver thymeleafViewResolver;
 
-  @MockitoBean
-  private SpringTemplateEngine templateEngine;
+  @MockitoBean private SpringTemplateEngine templateEngine;
 
-  @MockitoBean
-  private LoggingInterceptor loggingInterceptor;
+  @MockitoBean private LoggingInterceptor loggingInterceptor;
 
   @Test
   void ebsApiWebClientBeanExists() {

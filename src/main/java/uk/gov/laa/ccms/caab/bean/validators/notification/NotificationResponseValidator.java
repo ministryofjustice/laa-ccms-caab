@@ -5,9 +5,7 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.notification.NotificationResponseFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
-/**
- * Validate notification response form data.
- */
+/** Validate notification response form data. */
 @Component
 public class NotificationResponseValidator extends AbstractValidator {
 
@@ -21,8 +19,7 @@ public class NotificationResponseValidator extends AbstractValidator {
     NotificationResponseFormData notificationResponseFormData =
         (NotificationResponseFormData) target;
 
-    validateRequiredField("action", notificationResponseFormData.getAction(),
-        "Notification response action", errors);
+    validateRequiredField(
+        "action", notificationResponseFormData.getAction(), "Notification response action", errors);
   }
-
 }

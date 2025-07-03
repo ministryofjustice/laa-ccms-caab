@@ -1,8 +1,8 @@
 package uk.gov.laa.ccms.caab.exception;
 
 /**
- * RuntimeException class for indicating that too many results have been returned from
- * a SOA request.
+ * RuntimeException class for indicating that too many results have been returned from a SOA
+ * request.
  */
 public class TooManyResultsException extends CaabApplicationException {
   /**

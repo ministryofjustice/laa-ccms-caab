@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.client;
 
-
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_INFORMATION;
@@ -25,18 +24,11 @@ import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
-
-/**
- * Controller for handling client confirmation operations.
- */
+/** Controller for handling client confirmation operations. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(value = {
-    USER_DETAILS,
-    APPLICATION_FORM_DATA,
-    CLIENT_INFORMATION
-})
+@SessionAttributes(value = {USER_DETAILS, APPLICATION_FORM_DATA, CLIENT_INFORMATION})
 public class ClientConfirmationController {
 
   private final ClientService clientService;
@@ -58,21 +50,20 @@ public class ClientConfirmationController {
   public String clientConfirm(
       @PathVariable("client-reference-number") final String clientReferenceNumber,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      Model model, HttpSession session) {
+      Model model,
+      HttpSession session) {
 
-    ClientDetail clientInformation = clientService.getClient(
-            clientReferenceNumber,
-            user.getLoginId(),
-            user.getUserType()).block();
+    ClientDetail clientInformation =
+        clientService
+            .getClient(clientReferenceNumber, user.getLoginId(), user.getUserType())
+            .block();
 
     session.setAttribute(CLIENT_INFORMATION, clientInformation);
     model.addAttribute("clientReferenceNumber", clientReferenceNumber);
-    model.addAttribute("client", resultDisplayMapper
-            .toClientResultRowDisplay(clientInformation));
+    model.addAttribute("client", resultDisplayMapper.toClientResultRowDisplay(clientInformation));
 
     return "application/application-client-confirmation";
   }
-
 
   /**
    * Handles the POST request for confirmed client submission.
@@ -85,22 +76,25 @@ public class ClientConfirmationController {
    */
   @PostMapping("/application/client/confirmed")
   public Mono<String> clientConfirmed(
-          String confirmedClientReference,
-          @SessionAttribute(APPLICATION_FORM_DATA) final ApplicationFormData applicationFormData,
-          @SessionAttribute(CLIENT_INFORMATION) final ClientDetail clientInformation,
-          @SessionAttribute(USER_DETAILS) final UserDetail user,
-          HttpSession session) throws ParseException {
+      String confirmedClientReference,
+      @SessionAttribute(APPLICATION_FORM_DATA) final ApplicationFormData applicationFormData,
+      @SessionAttribute(CLIENT_INFORMATION) final ClientDetail clientInformation,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      HttpSession session)
+      throws ParseException {
 
     if (!confirmedClientReference.equals(clientInformation.getClientReferenceNumber())) {
       throw new RuntimeException("Client information does not match");
     }
 
-    return applicationService.createApplication(applicationFormData, clientInformation, user)
-        .doOnSuccess(applicationId -> {
-          applicationFormData.setApplicationCreated(true);
-          log.info("Application details submitted");
-          session.setAttribute(APPLICATION_ID, applicationId);
-        })
+    return applicationService
+        .createApplication(applicationFormData, clientInformation, user)
+        .doOnSuccess(
+            applicationId -> {
+              applicationFormData.setApplicationCreated(true);
+              log.info("Application details submitted");
+              session.setAttribute(APPLICATION_ID, applicationId);
+            })
         .thenReturn("redirect:/application/agreement");
   }
 }

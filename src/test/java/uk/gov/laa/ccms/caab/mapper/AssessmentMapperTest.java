@@ -33,46 +33,42 @@ class AssessmentMapperTest {
 
   final String dateStr = new SimpleDateFormat("dd-MM-yyyy").format(new Date());
 
-  private final AssessmentMapper assessmentMapper = new AssessmentMapperImpl() {
-  };
+  private final AssessmentMapper assessmentMapper = new AssessmentMapperImpl() {};
 
   private AssessmentMappingContext context;
 
   @BeforeEach
   public void setUp() {
     final AssessmentOpponentMappingContext opponentMappingContext =
-        AssessmentOpponentMappingContext
-            .builder()
+        AssessmentOpponentMappingContext.builder()
             .opponent(buildOpponent(new Date()))
-            .titleCommonLookupValue(new CommonLookupValueDetail()
-                .code("MR")
-                .description("Mr"))
+            .titleCommonLookupValue(new CommonLookupValueDetail().code("MR").description("Mr"))
             .build();
 
-    final ApplicationDetail application =
-        buildApplicationDetail(1234567890, true, new Date());
+    final ApplicationDetail application = buildApplicationDetail(1234567890, true, new Date());
     final ClientDetail client = buildClientDetail();
     final UserDetail user = buildUserDetail();
 
-    this.context = AssessmentMappingContext
-        .builder()
-        .application(application)
-        .user(user)
-        .client(client)
-        .opponentContext(List.of(opponentMappingContext))
-        .build();
+    this.context =
+        AssessmentMappingContext.builder()
+            .application(application)
+            .user(user)
+            .client(client)
+            .opponentContext(List.of(opponentMappingContext))
+            .build();
   }
 
   @Test
   public void testToAssessmentEntityTypeList_whenContextIsNull() {
-    final List<AssessmentEntityTypeDetail> result
-        = assessmentMapper.toAssessmentEntityTypeList(null);
+    final List<AssessmentEntityTypeDetail> result =
+        assessmentMapper.toAssessmentEntityTypeList(null);
     assertNull(result);
   }
 
-  @Test void testToAssessmentEntityTypeList_whenContextIsNotNull() {
-    final List<AssessmentEntityTypeDetail> result
-        = assessmentMapper.toAssessmentEntityTypeList(context);
+  @Test
+  void testToAssessmentEntityTypeList_whenContextIsNotNull() {
+    final List<AssessmentEntityTypeDetail> result =
+        assessmentMapper.toAssessmentEntityTypeList(context);
     assertEquals(3, result.size());
   }
 
@@ -88,7 +84,6 @@ class AssessmentMapperTest {
     // Then
     assertProceedingAttributes(result);
   }
-
 
   @Test
   public void shouldConvertOpponentToAttributeList() {
@@ -147,7 +142,8 @@ class AssessmentMapperTest {
     assertContainsAttribute(attributes, AssessmentAttribute.DATE_OF_BIRTH, dateStr);
     assertContainsAttribute(attributes, AssessmentAttribute.DEFAULT_COST_LIMITATION, "1");
     assertContainsAttribute(attributes, AssessmentAttribute.DELEGATED_FUNCTIONS_DATE, dateStr);
-    assertContainsAttribute(attributes, AssessmentAttribute.DEVOLVED_POWERS_CONTRACT_FLAG, "flag1234567890");
+    assertContainsAttribute(
+        attributes, AssessmentAttribute.DEVOLVED_POWERS_CONTRACT_FLAG, "flag1234567890");
     assertContainsAttribute(attributes, AssessmentAttribute.ECF_FLAG, "false");
     assertContainsAttribute(attributes, AssessmentAttribute.FIRST_NAME, "firstname");
     assertContainsAttribute(attributes, AssessmentAttribute.HIGH_PROFILE, "false");
@@ -159,7 +155,8 @@ class AssessmentMapperTest {
     assertContainsAttribute(attributes, AssessmentAttribute.NI_NO, "nino");
     assertContainsAttribute(attributes, AssessmentAttribute.POA_OR_BILL_FLAG, "N/A");
     assertContainsAttribute(attributes, AssessmentAttribute.POST_CODE, "clientpc");
-    assertContainsAttribute(attributes, AssessmentAttribute.PROVIDER_CASE_REFERENCE, "provcaseref1234567890");
+    assertContainsAttribute(
+        attributes, AssessmentAttribute.PROVIDER_CASE_REFERENCE, "provcaseref1234567890");
     assertContainsAttribute(attributes, AssessmentAttribute.PROVIDER_HAS_CONTRACT, "false");
     assertContainsAttribute(attributes, AssessmentAttribute.REQ_COST_LIMITATION, "10");
     assertContainsAttribute(attributes, AssessmentAttribute.SURNAME, "surname");
@@ -167,6 +164,7 @@ class AssessmentMapperTest {
     assertContainsAttribute(attributes, AssessmentAttribute.USER_PROVIDER_FIRM_ID, "123");
     assertContainsAttribute(attributes, AssessmentAttribute.USER_TYPE, "testUserType");
   }
+
   private void assertProceedingAttributes(final List<AssessmentAttributeDetail> attributes) {
     assertEquals(10, attributes.size());
     assertContainsAttribute(attributes, AssessmentAttribute.CLIENT_INVOLVEMENT_TYPE, "clientInv");
@@ -180,11 +178,13 @@ class AssessmentMapperTest {
     assertContainsAttribute(attributes, AssessmentAttribute.REQUESTED_SCOPE, "scopelim");
     assertContainsAttribute(attributes, AssessmentAttribute.SCOPE_LIMIT_IS_DEFAULT, "true");
   }
+
   private void assertOpponentAttributes(final List<AssessmentAttributeDetail> attributes) {
     assertEquals(6, attributes.size());
     assertContainsAttribute(attributes, AssessmentAttribute.OPPONENT_DOB, dateStr);
     assertContainsAttribute(attributes, AssessmentAttribute.OTHER_PARTY_ID, "ebsid");
-    assertContainsAttribute(attributes, AssessmentAttribute.OTHER_PARTY_NAME, "Mr firstname surname");
+    assertContainsAttribute(
+        attributes, AssessmentAttribute.OTHER_PARTY_NAME, "Mr firstname surname");
     assertContainsAttribute(attributes, AssessmentAttribute.OTHER_PARTY_TYPE, "ORGANISATION");
     assertContainsAttribute(attributes, AssessmentAttribute.RELATIONSHIP_TO_CASE, "relToCase");
     assertContainsAttribute(attributes, AssessmentAttribute.RELATIONSHIP_TO_CLIENT, "relToClient");
@@ -197,7 +197,9 @@ class AssessmentMapperTest {
     boolean found = false;
     for (final AssessmentAttributeDetail attributeDetail : attributeDetails) {
       if (attributeDetail.getName().equals(expectedAttribute.name())) {
-        assertEquals(expectedValue, attributeDetail.getValue(),
+        assertEquals(
+            expectedValue,
+            attributeDetail.getValue(),
             "Value for attribute " + expectedAttribute.name() + " does not match expected value.");
         found = true;
         break;
@@ -237,7 +239,6 @@ class AssessmentMapperTest {
     assertNotNull(assessment.getEntityTypes());
     assertEquals(3, assessment.getEntityTypes().size());
   }
-
 
   @Test
   void toAssessmentDetail_whenContextIsNull() {
@@ -280,13 +281,14 @@ class AssessmentMapperTest {
 
   @Test
   void toAssessmentEntityDetail_whenOpponentContextIsNotNull() {
-    final AssessmentOpponentMappingContext opponentContext = context.getOpponentContext().getFirst();
-    final AssessmentEntityDetail result = assessmentMapper.toAssessmentEntityDetail(opponentContext);
+    final AssessmentOpponentMappingContext opponentContext =
+        context.getOpponentContext().getFirst();
+    final AssessmentEntityDetail result =
+        assessmentMapper.toAssessmentEntityDetail(opponentContext);
 
     assertNotNull(result);
     assertEquals("ebsid", result.getName());
     assertEquals(6, result.getAttributes().size());
     assertTrue(result.getPrepopulated());
   }
-
 }

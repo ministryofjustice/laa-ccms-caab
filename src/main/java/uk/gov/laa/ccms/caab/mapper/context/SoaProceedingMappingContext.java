@@ -12,8 +12,8 @@ import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ScopeLimitation;
 
 /**
- * Class to hold a SOA ProceedingDetail together with all additional data needed to
- * perform a mapping to a CAAB ProceedingDetail.
+ * Class to hold a SOA ProceedingDetail together with all additional data needed to perform a
+ * mapping to a CAAB ProceedingDetail.
  */
 @Builder
 @Data
@@ -73,5 +73,4 @@ public class SoaProceedingMappingContext {
    * A List of pairs of ScopeLimitation with associated lookup for display info.
    */
   List<Pair<ScopeLimitation, CommonLookupValueDetail>> scopeLimitations;
-
 }

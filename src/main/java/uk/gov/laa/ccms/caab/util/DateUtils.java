@@ -5,16 +5,13 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
-/**
- * DateUtils.
- */
+/** DateUtils. */
 public final class DateUtils {
 
   // Date pattern used for component-specific date formatting
   public static final String COMPONENT_DATE_PATTERN = "d/M/yyyy";
 
-  private DateUtils() {
-  }
+  private DateUtils() {}
 
   /**
    * Converts a date string in "d/M/yyyy" format to a {@link Date}.

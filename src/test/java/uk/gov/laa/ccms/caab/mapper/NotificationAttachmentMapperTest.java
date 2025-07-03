@@ -29,7 +29,8 @@ public class NotificationAttachmentMapperTest {
   CommonMapper commonMapper;
 
   @InjectMocks
-  NotificationAttachmentMapper notificationAttachmentMapper = new NotificationAttachmentMapperImpl();
+  NotificationAttachmentMapper notificationAttachmentMapper =
+      new NotificationAttachmentMapperImpl();
 
   @Test
   void testNotificationAttachmentDetail_toBaseDocument() {
@@ -40,18 +41,16 @@ public class NotificationAttachmentMapperTest {
     notificationAttachmentDetail.setFileName("fileName.pdf");
     notificationAttachmentDetail.setFileData("fileData");
     notificationAttachmentDetail.setNotificationReference("789");
-    notificationAttachmentDetail.setDocumentType(new StringDisplayValue().id("1").displayValue(
-        "docTypeDisplayValue"));
+    notificationAttachmentDetail.setDocumentType(
+        new StringDisplayValue().id("1").displayValue("docTypeDisplayValue"));
     notificationAttachmentDetail.setDescription("description");
     notificationAttachmentDetail.setNumber(1L);
     notificationAttachmentDetail.setSendBy("E");
     notificationAttachmentDetail.setStatus("status");
 
-    BaseDocument result =
-        notificationAttachmentMapper.toBaseDocument(notificationAttachmentDetail);
+    BaseDocument result = notificationAttachmentMapper.toBaseDocument(notificationAttachmentDetail);
 
-    assertEquals(notificationAttachmentDetail.getDocumentType().getId(),
-        result.getDocumentType());
+    assertEquals(notificationAttachmentDetail.getDocumentType().getId(), result.getDocumentType());
     assertEquals(notificationAttachmentDetail.getDescription(), result.getText());
     assertEquals("pdf", result.getFileExtension());
   }
@@ -65,18 +64,16 @@ public class NotificationAttachmentMapperTest {
     notificationAttachmentDetail.setFileName("fileName.pdf");
     notificationAttachmentDetail.setFileData("fileData");
     notificationAttachmentDetail.setNotificationReference("789");
-    notificationAttachmentDetail.setDocumentType(new StringDisplayValue().id("1").displayValue(
-        "docTypeDisplayValue"));
+    notificationAttachmentDetail.setDocumentType(
+        new StringDisplayValue().id("1").displayValue("docTypeDisplayValue"));
     notificationAttachmentDetail.setDescription("description");
     notificationAttachmentDetail.setNumber(1L);
     notificationAttachmentDetail.setSendBy("E");
     notificationAttachmentDetail.setStatus("status");
 
-    Document result =
-        notificationAttachmentMapper.toDocument(notificationAttachmentDetail);
+    Document result = notificationAttachmentMapper.toDocument(notificationAttachmentDetail);
 
-    assertEquals(notificationAttachmentDetail.getDocumentType().getId(),
-        result.getDocumentType());
+    assertEquals(notificationAttachmentDetail.getDocumentType().getId(), result.getDocumentType());
     assertEquals(notificationAttachmentDetail.getDescription(), result.getText());
     assertEquals("pdf", result.getFileExtension());
     assertEquals(notificationAttachmentDetail.getStatus(), result.getStatus());
@@ -98,8 +95,8 @@ public class NotificationAttachmentMapperTest {
     document.setText("text");
 
     BaseNotificationAttachmentDetail result =
-        notificationAttachmentMapper.toBaseNotificationAttachmentDetail(document,
-            "documentTypeDisplayValue");
+        notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
+            document, "documentTypeDisplayValue");
 
     assertNull(result.getProviderId());
     assertNull(result.getFileName());
@@ -123,30 +120,35 @@ public class NotificationAttachmentMapperTest {
     notificationAttachmentDetail.setFileName("fileName.pdf");
     notificationAttachmentDetail.setFileData("ZmlsZURhdGE=");
     notificationAttachmentDetail.setNotificationReference("789");
-    notificationAttachmentDetail.setDocumentType(new StringDisplayValue().id("1").displayValue(
-        "docTypeDisplayValue"));
+    notificationAttachmentDetail.setDocumentType(
+        new StringDisplayValue().id("1").displayValue("docTypeDisplayValue"));
     notificationAttachmentDetail.setDescription("description");
     notificationAttachmentDetail.setNumber(1L);
     notificationAttachmentDetail.setSendBy("E");
     notificationAttachmentDetail.setStatus("status");
 
     NotificationAttachmentUploadFormData result =
-        notificationAttachmentMapper.toNotificationAttachmentUploadFormData(notificationAttachmentDetail);
+        notificationAttachmentMapper.toNotificationAttachmentUploadFormData(
+            notificationAttachmentDetail);
 
     assertEquals(notificationAttachmentDetail.getDocumentType().getId(), result.getDocumentType());
-    assertEquals(notificationAttachmentDetail.getDocumentType().getDisplayValue(),
-      result.getDocumentTypeDisplayValue());
+    assertEquals(
+        notificationAttachmentDetail.getDocumentType().getDisplayValue(),
+        result.getDocumentTypeDisplayValue());
     assertEquals(notificationAttachmentDetail.getSendBy(), result.getSendBy().getCode());
-    assertEquals(notificationAttachmentDetail.getProviderId(),
-        String.valueOf(result.getProviderId()));
-    assertEquals(notificationAttachmentDetail.getFileName(),
-        result.getFile().getOriginalFilename());
-    assertTrue(Arrays.equals(Base64.getDecoder().decode(notificationAttachmentDetail.getFileData()),
-        result.getFile().getBytes()));
+    assertEquals(
+        notificationAttachmentDetail.getProviderId(), String.valueOf(result.getProviderId()));
+    assertEquals(
+        notificationAttachmentDetail.getFileName(), result.getFile().getOriginalFilename());
+    assertTrue(
+        Arrays.equals(
+            Base64.getDecoder().decode(notificationAttachmentDetail.getFileData()),
+            result.getFile().getBytes()));
     assertEquals(notificationAttachmentDetail.getDescription(), result.getDocumentDescription());
     assertEquals(notificationAttachmentDetail.getStatus(), result.getStatus());
     assertEquals(notificationAttachmentDetail.getNumber(), result.getNumber());
-    assertEquals(notificationAttachmentDetail.getNotificationReference(), result.getNotificationReference());
+    assertEquals(
+        notificationAttachmentDetail.getNotificationReference(), result.getNotificationReference());
   }
 
   @Test
@@ -157,11 +159,7 @@ public class NotificationAttachmentMapperTest {
     NotificationAttachmentUploadFormData notificationAttachmentUploadFormData =
         new NotificationAttachmentUploadFormData();
     notificationAttachmentUploadFormData.setFile(
-        new MockMultipartFile(
-          "name",
-          "filename.txt",
-          null,
-          Base64.getDecoder().decode(fileData)));
+        new MockMultipartFile("name", "filename.txt", null, Base64.getDecoder().decode(fileData)));
     notificationAttachmentUploadFormData.setProviderId(456);
     notificationAttachmentUploadFormData.setSendBy(SendBy.ELECTRONIC);
     notificationAttachmentUploadFormData.setDocumentType("DOCTYPE");
@@ -173,7 +171,8 @@ public class NotificationAttachmentMapperTest {
     notificationAttachmentUploadFormData.setNotificationReference("789");
 
     NotificationAttachmentDetail result =
-        notificationAttachmentMapper.toNotificationAttachmentDetail(notificationAttachmentUploadFormData);
+        notificationAttachmentMapper.toNotificationAttachmentDetail(
+            notificationAttachmentUploadFormData);
 
     assertNull(result.getId());
     assertNull(result.getAuditTrail());

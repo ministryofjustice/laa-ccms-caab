@@ -27,17 +27,17 @@ import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.ClientDetails;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-/**
- * Controller responsible for managing the search operations related to clients.
- */
+/** Controller responsible for managing the search operations related to clients. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(value = {
-    APPLICATION_FORM_DATA,
-    CLIENT_SEARCH_CRITERIA,
-    CLIENT_SEARCH_RESULTS,
-    CLIENT_FLOW_FORM_DATA})
+@SessionAttributes(
+    value = {
+      APPLICATION_FORM_DATA,
+      CLIENT_SEARCH_CRITERIA,
+      CLIENT_SEARCH_RESULTS,
+      CLIENT_FLOW_FORM_DATA
+    })
 public class ClientSearchResultsController {
 
   private final ClientService clientService;
@@ -49,37 +49,36 @@ public class ClientSearchResultsController {
   /**
    * Displays the search results for clients based on specified criteria.
    *
-   * @param page                Current page for pagination.
-   * @param size                Size of a page for pagination.
+   * @param page Current page for pagination.
+   * @param size Size of a page for pagination.
    * @param clientSearchCriteria Search criteria for finding clients.
-   * @param user                The details of the currently authenticated user.
-   * @param request             The HttpServletRequest.
-   * @param model               Model to pass data to the view.
+   * @param user The details of the currently authenticated user.
+   * @param request The HttpServletRequest.
+   * @param model Model to pass data to the view.
    * @return The view name for client search results or the appropriate error view.
    */
   @GetMapping("/application/client/results")
   public String clientSearchResults(
-          @RequestParam(value = "page", defaultValue = "0") int page,
-          @RequestParam(value = "size", defaultValue = "10") int size,
-          @ModelAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
-          @SessionAttribute(USER_DETAILS) UserDetail user,
-          HttpServletRequest request,
-          Model model) {
-    ClientDetails clientSearchResults = clientService.getClients(
-            clientSearchCriteria,
-            page,
-            size).block();
+      @RequestParam(value = "page", defaultValue = "0") int page,
+      @RequestParam(value = "size", defaultValue = "10") int size,
+      @ModelAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
+      @SessionAttribute(USER_DETAILS) UserDetail user,
+      HttpServletRequest request,
+      Model model) {
+    ClientDetails clientSearchResults =
+        clientService.getClients(clientSearchCriteria, page, size).block();
 
-    if (clientSearchResults != null && clientSearchResults.getContent() != null
-            && clientSearchResults.getTotalElements() > 0) {
+    if (clientSearchResults != null
+        && clientSearchResults.getContent() != null
+        && clientSearchResults.getTotalElements() > 0) {
       if (clientSearchResults.getTotalElements() > searchConstants.getMaxSearchResultsClients()) {
         return "application/application-client-search-too-many-results";
       }
       String currentUrl = request.getRequestURL().toString();
       model.addAttribute("currentUrl", currentUrl);
 
-      model.addAttribute(CLIENT_SEARCH_RESULTS,
-              resultDisplayMapper.toClientResultsDisplay(clientSearchResults));
+      model.addAttribute(
+          CLIENT_SEARCH_RESULTS, resultDisplayMapper.toClientResultsDisplay(clientSearchResults));
 
       return "application/application-client-search-results";
     } else {
@@ -95,14 +94,13 @@ public class ClientSearchResultsController {
    */
   @PostMapping("/application/client/results")
   public String clientSearch(
-      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
-      Model model) {
+      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData, Model model) {
 
     // a post only occurs when register new client has been clicked ,if so we want to amend
     // application created to false, so they get redirected correctly after the privacy notice
     applicationFormData.setApplicationCreated(false);
 
-    //always make a new client Details session object when clicking the register new client button
+    // always make a new client Details session object when clicking the register new client button
     model.addAttribute(CLIENT_FLOW_FORM_DATA, new ClientFlowFormData(ACTION_CREATE));
 
     return "redirect:/application/agreement";

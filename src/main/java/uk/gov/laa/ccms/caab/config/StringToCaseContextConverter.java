@@ -4,8 +4,8 @@ import org.springframework.core.convert.converter.Converter;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 
 /**
- * A converter that transforms a String value into a corresponding CaseContext enum.
- * Implements the Spring Framework's {@code Converter} interface for type conversion.
+ * A converter that transforms a String value into a corresponding CaseContext enum. Implements the
+ * Spring Framework's {@code Converter} interface for type conversion.
  *
  * @author Jamie Briggs
  */

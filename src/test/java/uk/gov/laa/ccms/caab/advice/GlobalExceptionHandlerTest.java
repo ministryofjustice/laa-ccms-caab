@@ -16,14 +16,11 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 @ExtendWith(MockitoExtension.class)
 class GlobalExceptionHandlerTest {
 
-  @Mock
-  private Model model;
+  @Mock private Model model;
 
-  @Mock
-  private HttpSession session;
+  @Mock private HttpSession session;
 
-  @InjectMocks
-  private GlobalExceptionHandler globalExceptionHandler;
+  @InjectMocks private GlobalExceptionHandler globalExceptionHandler;
 
   @Test
   void handleDataApiClientException() {
@@ -55,5 +52,4 @@ class GlobalExceptionHandlerTest {
 
     verify(model).addAttribute("error", errorMsg);
   }
-
 }

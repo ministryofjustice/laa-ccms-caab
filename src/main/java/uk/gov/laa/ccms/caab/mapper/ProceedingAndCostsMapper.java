@@ -24,36 +24,40 @@ import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 
 /**
- * This interface provides methods for mapping between {@link ProceedingFlowFormData} and
- * {@link ProceedingDetail} objects. It uses MapStruct for the mapping, with the Spring framework
- * providing the implementation at runtime.
+ * This interface provides methods for mapping between {@link ProceedingFlowFormData} and {@link
+ * ProceedingDetail} objects. It uses MapStruct for the mapping, with the Spring framework providing
+ * the implementation at runtime.
  */
 @Mapper(componentModel = "spring")
 public interface ProceedingAndCostsMapper {
 
-
-  @Mapping(target = "matterType.id",
-      source = "proceedingFlowFormData.matterTypeDetails.matterType")
-  @Mapping(target = "matterType.displayValue",
+  @Mapping(target = "matterType.id", source = "proceedingFlowFormData.matterTypeDetails.matterType")
+  @Mapping(
+      target = "matterType.displayValue",
       source = "proceedingFlowFormData.matterTypeDetails.matterTypeDisplayValue")
-  @Mapping(target = "proceedingType.id",
+  @Mapping(
+      target = "proceedingType.id",
       source = "proceedingFlowFormData.proceedingDetails.proceedingType")
-  @Mapping(target = "proceedingType.displayValue",
+  @Mapping(
+      target = "proceedingType.displayValue",
       source = "proceedingFlowFormData.proceedingDetails.proceedingTypeDisplayValue")
-  @Mapping(target = "description",
+  @Mapping(
+      target = "description",
       source = "proceedingFlowFormData.proceedingDetails.proceedingDescription")
-  @Mapping(target = "larScope",
-      source = "proceedingFlowFormData.proceedingDetails.larScope")
-  @Mapping(target = "clientInvolvement.id",
+  @Mapping(target = "larScope", source = "proceedingFlowFormData.proceedingDetails.larScope")
+  @Mapping(
+      target = "clientInvolvement.id",
       source = "proceedingFlowFormData.furtherDetails.clientInvolvementType")
-  @Mapping(target = "clientInvolvement.displayValue",
+  @Mapping(
+      target = "clientInvolvement.displayValue",
       source = "proceedingFlowFormData.furtherDetails.clientInvolvementTypeDisplayValue")
-  @Mapping(target = "levelOfService.id",
+  @Mapping(
+      target = "levelOfService.id",
       source = "proceedingFlowFormData.furtherDetails.levelOfService")
-  @Mapping(target = "levelOfService.displayValue",
+  @Mapping(
+      target = "levelOfService.displayValue",
       source = "proceedingFlowFormData.furtherDetails.levelOfServiceDisplayValue")
-  @Mapping(target = "typeOfOrder.id",
-      source = "proceedingFlowFormData.furtherDetails.typeOfOrder")
+  @Mapping(target = "typeOfOrder.id", source = "proceedingFlowFormData.furtherDetails.typeOfOrder")
   @Mapping(target = "stage", source = "stage")
   @Mapping(target = "costLimitation", source = "costLimitation")
   @Mapping(target = "id", source = "proceedingFlowFormData.existingProceedingId")
@@ -75,30 +79,33 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "orderTypeDisplayFlag", ignore = true)
   @Mapping(target = "deleteScopeLimitationFlag", ignore = true)
   @Mapping(target = "availableFunctions", ignore = true)
-  //used for mapping a new proceeding
+  // used for mapping a new proceeding
   ProceedingDetail toProceeding(
-      ProceedingFlowFormData proceedingFlowFormData,
-      BigDecimal costLimitation,
-      String stage);
+      ProceedingFlowFormData proceedingFlowFormData, BigDecimal costLimitation, String stage);
 
-  @Mapping(target = "matterType.id",
-      source = "proceedingFlowFormData.matterTypeDetails.matterType")
-  @Mapping(target = "matterType.displayValue",
+  @Mapping(target = "matterType.id", source = "proceedingFlowFormData.matterTypeDetails.matterType")
+  @Mapping(
+      target = "matterType.displayValue",
       source = "proceedingFlowFormData.matterTypeDetails.matterTypeDisplayValue")
-  @Mapping(target = "proceedingType.id",
+  @Mapping(
+      target = "proceedingType.id",
       source = "proceedingFlowFormData.proceedingDetails.proceedingType")
-  @Mapping(target = "proceedingType.displayValue",
+  @Mapping(
+      target = "proceedingType.displayValue",
       source = "proceedingFlowFormData.proceedingDetails.proceedingTypeDisplayValue")
-  @Mapping(target = "clientInvolvement.id",
+  @Mapping(
+      target = "clientInvolvement.id",
       source = "proceedingFlowFormData.furtherDetails.clientInvolvementType")
-  @Mapping(target = "clientInvolvement.displayValue",
+  @Mapping(
+      target = "clientInvolvement.displayValue",
       source = "proceedingFlowFormData.furtherDetails.clientInvolvementTypeDisplayValue")
-  @Mapping(target = "levelOfService.id",
+  @Mapping(
+      target = "levelOfService.id",
       source = "proceedingFlowFormData.furtherDetails.levelOfService")
-  @Mapping(target = "levelOfService.displayValue",
+  @Mapping(
+      target = "levelOfService.displayValue",
       source = "proceedingFlowFormData.furtherDetails.levelOfServiceDisplayValue")
-  @Mapping(target = "typeOfOrder.id",
-      source = "proceedingFlowFormData.furtherDetails.typeOfOrder")
+  @Mapping(target = "typeOfOrder.id", source = "proceedingFlowFormData.furtherDetails.typeOfOrder")
   @Mapping(target = "stage", source = "stage")
   @Mapping(target = "costLimitation", source = "costLimitation")
   @Mapping(target = "auditTrail", ignore = true)
@@ -122,38 +129,36 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "orderTypeDisplayFlag", ignore = true)
   @Mapping(target = "deleteScopeLimitationFlag", ignore = true)
   @Mapping(target = "availableFunctions", ignore = true)
-  //used for mapping an existing proceeding
-  //notice that some fields are ignored
+  // used for mapping an existing proceeding
+  // notice that some fields are ignored
   void toProceeding(
       @MappingTarget ProceedingDetail proceeding,
       ProceedingFlowFormData proceedingFlowFormData,
       BigDecimal costLimitation,
       String stage);
 
-  @Mapping(target = "matterTypeDetails.matterType",
-      source = "proceeding.matterType.id")
-  @Mapping(target = "matterTypeDetails.matterTypeDisplayValue",
+  @Mapping(target = "matterTypeDetails.matterType", source = "proceeding.matterType.id")
+  @Mapping(
+      target = "matterTypeDetails.matterTypeDisplayValue",
       source = "proceeding.matterType.displayValue")
-  @Mapping(target = "proceedingDetails.proceedingType",
-      source = "proceeding.proceedingType.id")
-  @Mapping(target = "proceedingDetails.proceedingTypeDisplayValue",
+  @Mapping(target = "proceedingDetails.proceedingType", source = "proceeding.proceedingType.id")
+  @Mapping(
+      target = "proceedingDetails.proceedingTypeDisplayValue",
       source = "proceeding.proceedingType.displayValue")
-  @Mapping(target = "proceedingDetails.proceedingDescription",
-      source = "proceeding.description")
-  @Mapping(target = "proceedingDetails.larScope",
-      source = "proceeding.larScope")
-  @Mapping(target = "furtherDetails.clientInvolvementType",
+  @Mapping(target = "proceedingDetails.proceedingDescription", source = "proceeding.description")
+  @Mapping(target = "proceedingDetails.larScope", source = "proceeding.larScope")
+  @Mapping(
+      target = "furtherDetails.clientInvolvementType",
       source = "proceeding.clientInvolvement.id")
-  @Mapping(target = "furtherDetails.clientInvolvementTypeDisplayValue",
+  @Mapping(
+      target = "furtherDetails.clientInvolvementTypeDisplayValue",
       source = "proceeding.clientInvolvement.displayValue")
-  @Mapping(target = "furtherDetails.levelOfService",
-      source = "proceeding.levelOfService.id")
-  @Mapping(target = "furtherDetails.levelOfServiceDisplayValue",
+  @Mapping(target = "furtherDetails.levelOfService", source = "proceeding.levelOfService.id")
+  @Mapping(
+      target = "furtherDetails.levelOfServiceDisplayValue",
       source = "proceeding.levelOfService.displayValue")
-  @Mapping(target = "furtherDetails.typeOfOrder",
-      source = "proceeding.typeOfOrder.id")
-  @Mapping(target = "furtherDetails.typeOfOrderDisplayValue",
-      source = "typeOfOrderDisplayValue")
+  @Mapping(target = "furtherDetails.typeOfOrder", source = "proceeding.typeOfOrder.id")
+  @Mapping(target = "furtherDetails.typeOfOrderDisplayValue", source = "typeOfOrderDisplayValue")
   @Mapping(target = "action", constant = "edit")
   @Mapping(target = "amended", constant = "false")
   @Mapping(target = "editingScopeLimitations", constant = "false")
@@ -194,26 +199,30 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "currentProviderBilledAmount", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
   void toCostStructure(
-      @MappingTarget CostStructureDetail costStructure,
-      CostsFormData costsFormData);
-
+      @MappingTarget CostStructureDetail costStructure, CostsFormData costsFormData);
 
   @Mapping(target = "action", constant = "edit")
   @Mapping(target = "priorAuthorityId", source = "priorAuthority.id")
-  @Mapping(target = "priorAuthorityTypeFormData.priorAuthorityType",
-        source = "priorAuthority.type.id")
-  @Mapping(target = "priorAuthorityTypeFormData.priorAuthorityTypeDisplayValue",
-        source = "priorAuthority.type.displayValue")
-  @Mapping(target = "priorAuthorityDetailsFormData.summary",
-        source = "priorAuthority.summary")
-  @Mapping(target = "priorAuthorityDetailsFormData.justification",
-        source = "priorAuthority.justification")
-  @Mapping(target = "priorAuthorityDetailsFormData.valueRequired",
-        source = "priorAuthority.valueRequired")
-  @Mapping(target = "priorAuthorityDetailsFormData.amountRequested",
-        source = "priorAuthority.amountRequested")
-  @Mapping(target = "priorAuthorityDetailsFormData.dynamicOptions",
-        source = "priorAuthority.items", qualifiedByName = "toDynamicOptions")
+  @Mapping(
+      target = "priorAuthorityTypeFormData.priorAuthorityType",
+      source = "priorAuthority.type.id")
+  @Mapping(
+      target = "priorAuthorityTypeFormData.priorAuthorityTypeDisplayValue",
+      source = "priorAuthority.type.displayValue")
+  @Mapping(target = "priorAuthorityDetailsFormData.summary", source = "priorAuthority.summary")
+  @Mapping(
+      target = "priorAuthorityDetailsFormData.justification",
+      source = "priorAuthority.justification")
+  @Mapping(
+      target = "priorAuthorityDetailsFormData.valueRequired",
+      source = "priorAuthority.valueRequired")
+  @Mapping(
+      target = "priorAuthorityDetailsFormData.amountRequested",
+      source = "priorAuthority.amountRequested")
+  @Mapping(
+      target = "priorAuthorityDetailsFormData.dynamicOptions",
+      source = "priorAuthority.items",
+      qualifiedByName = "toDynamicOptions")
   PriorAuthorityFlowFormData toPriorAuthorityFlowFormData(
       final PriorAuthorityDetail priorAuthority);
 
@@ -228,34 +237,33 @@ public interface ProceedingAndCostsMapper {
       final List<ReferenceDataItemDetail> items) {
 
     if (items != null) {
-      return items.stream().collect(
-          Collectors.toMap(
-              item -> item.getCode().getId(),
-              item -> {
-                final DynamicOptionFormData option =
-                    new DynamicOptionFormData();
-                option.setFieldDescription(item.getCode().getDisplayValue());
-                option.setFieldType(item.getType());
-                option.setMandatory(item.getMandatory());
-                option.setFieldValue(item.getValue().getId());
-                option.setFieldValueDisplayValue(item.getValue().getDisplayValue());
-                return option;
-              }));
+      return items.stream()
+          .collect(
+              Collectors.toMap(
+                  item -> item.getCode().getId(),
+                  item -> {
+                    final DynamicOptionFormData option = new DynamicOptionFormData();
+                    option.setFieldDescription(item.getCode().getDisplayValue());
+                    option.setFieldType(item.getType());
+                    option.setMandatory(item.getMandatory());
+                    option.setFieldValue(item.getValue().getId());
+                    option.setFieldValueDisplayValue(item.getValue().getDisplayValue());
+                    return option;
+                  }));
     }
     return null;
   }
-
 
   @Mapping(target = "summary", ignore = true)
   @Mapping(target = "justification", ignore = true)
   @Mapping(target = "amountRequested", ignore = true)
   @Mapping(target = "dynamicOptions", ignore = true)
-  @Mapping(target = "valueRequired",
+  @Mapping(
+      target = "valueRequired",
       source = "priorAuthorityFlowFormData.priorAuthorityDetailsFormData.valueRequired")
   void toPriorAuthorityDetailsFormData(
       @MappingTarget PriorAuthorityDetailsFormData priorAuthorityDetails,
       PriorAuthorityFlowFormData priorAuthorityFlowFormData);
-
 
   /**
    * Maps dynamic options from one form data to another.
@@ -269,17 +277,26 @@ public interface ProceedingAndCostsMapper {
       final PriorAuthorityFlowFormData priorAuthorityFlowFormData) {
 
     if (priorAuthorityFlowFormData.getPriorAuthorityDetailsFormData().getDynamicOptions() != null) {
-      priorAuthorityFlowFormData.getPriorAuthorityDetailsFormData()
-          .getDynamicOptions().forEach((key, value) -> {
-            if (priorAuthorityDetails.getDynamicOptions().containsKey(key)) {
-              priorAuthorityDetails.getDynamicOptions().get(key)
-                  .setMandatory(value.isMandatory());
-              priorAuthorityDetails.getDynamicOptions().get(key)
-                  .setFieldDescription(value.getFieldDescription());
-              priorAuthorityDetails.getDynamicOptions().get(key)
-                  .setFieldType(value.getFieldType());
-            }
-          });
+      priorAuthorityFlowFormData
+          .getPriorAuthorityDetailsFormData()
+          .getDynamicOptions()
+          .forEach(
+              (key, value) -> {
+                if (priorAuthorityDetails.getDynamicOptions().containsKey(key)) {
+                  priorAuthorityDetails
+                      .getDynamicOptions()
+                      .get(key)
+                      .setMandatory(value.isMandatory());
+                  priorAuthorityDetails
+                      .getDynamicOptions()
+                      .get(key)
+                      .setFieldDescription(value.getFieldDescription());
+                  priorAuthorityDetails
+                      .getDynamicOptions()
+                      .get(key)
+                      .setFieldType(value.getFieldType());
+                }
+              });
     }
   }
 
@@ -304,36 +321,43 @@ public interface ProceedingAndCostsMapper {
 
     for (final uk.gov.laa.ccms.data.model.PriorAuthorityDetail formOption :
         priorAuthorityTypeDetail.getPriorAuthorities()) {
-      final DynamicOptionFormData dynamicOption =
-          toPriorAuthorityFormDataDynamicOption(formOption);
+      final DynamicOptionFormData dynamicOption = toPriorAuthorityFormDataDynamicOption(formOption);
       priorAuthorityDetails.getDynamicOptions().put(formOption.getCode(), dynamicOption);
     }
   }
 
-  @Mapping(target = "id",
-      source = "priorAuthorityFlowFormData.priorAuthorityId")
-  @Mapping(target = "type.id",
+  @Mapping(target = "id", source = "priorAuthorityFlowFormData.priorAuthorityId")
+  @Mapping(
+      target = "type.id",
       source = "priorAuthorityFlowFormData.priorAuthorityTypeFormData.priorAuthorityType")
-  @Mapping(target = "type.displayValue",
-      source = "priorAuthorityFlowFormData.priorAuthorityTypeFormData"
-          + ".priorAuthorityTypeDisplayValue")
-  @Mapping(target = "summary",
+  @Mapping(
+      target = "type.displayValue",
+      source =
+          "priorAuthorityFlowFormData.priorAuthorityTypeFormData.priorAuthorityTypeDisplayValue")
+  @Mapping(
+      target = "summary",
       source = "priorAuthorityFlowFormData.priorAuthorityDetailsFormData.summary")
-  @Mapping(target = "justification",
+  @Mapping(
+      target = "justification",
       source = "priorAuthorityFlowFormData.priorAuthorityDetailsFormData.justification")
-  @Mapping(target = "valueRequired",
+  @Mapping(
+      target = "valueRequired",
       source = "priorAuthorityFlowFormData.priorAuthorityDetailsFormData.valueRequired")
-  @Mapping(target = "amountRequested",
+  @Mapping(
+      target = "amountRequested",
       source = "priorAuthorityFlowFormData.priorAuthorityDetailsFormData.amountRequested")
   @Mapping(target = "status", constant = "Draft")
-  @Mapping(target = "items",
-      expression = "java(toReferenceDataItems("
-          + "priorAuthorityFlowFormData.getPriorAuthorityDetailsFormData().getDynamicOptions(), "
-          + "priorAuthorityDynamicForm))")
+  @Mapping(
+      target = "items",
+      expression =
+          "java(toReferenceDataItems("
+              + "priorAuthorityFlowFormData.getPriorAuthorityDetailsFormData().getDynamicOptions(),"
+              + "priorAuthorityDynamicForm))")
   @Mapping(target = "ebsId", ignore = true)
   @Mapping(target = "auditTrail", ignore = true)
-  PriorAuthorityDetail toPriorAuthority(PriorAuthorityFlowFormData priorAuthorityFlowFormData,
-                                  PriorAuthorityTypeDetail priorAuthorityDynamicForm);
+  PriorAuthorityDetail toPriorAuthority(
+      PriorAuthorityFlowFormData priorAuthorityFlowFormData,
+      PriorAuthorityTypeDetail priorAuthorityDynamicForm);
 
   /**
    * Converts dynamic options map to ReferenceDataItemDetail list.
@@ -348,21 +372,20 @@ public interface ProceedingAndCostsMapper {
 
     final List<ReferenceDataItemDetail> referenceDataItems = new ArrayList<>();
 
-    for (final Map.Entry<String, DynamicOptionFormData> entry :
-        dynamicOptionsMap.entrySet()) {
+    for (final Map.Entry<String, DynamicOptionFormData> entry : dynamicOptionsMap.entrySet()) {
 
-      final ReferenceDataItemDetail referenceDataItem = toReferenceDataItem(
-          entry.getKey(),
-          entry.getValue());
+      final ReferenceDataItemDetail referenceDataItem =
+          toReferenceDataItem(entry.getKey(), entry.getValue());
 
       referenceDataItems.add(referenceDataItem);
 
-      //find the lov value from the prior authority dynamic form
-      priorAuthorityDynamicForm.getPriorAuthorities().stream().filter(priorAuthorityDetail ->
-          priorAuthorityDetail.getCode().equals(entry.getKey()))
-            .findFirst()
-            .ifPresent(priorAuthorityDetail -> referenceDataItem.lovLookUp(
-                priorAuthorityDetail.getLovCode()));
+      // find the lov value from the prior authority dynamic form
+      priorAuthorityDynamicForm.getPriorAuthorities().stream()
+          .filter(priorAuthorityDetail -> priorAuthorityDetail.getCode().equals(entry.getKey()))
+          .findFirst()
+          .ifPresent(
+              priorAuthorityDetail ->
+                  referenceDataItem.lovLookUp(priorAuthorityDetail.getLovCode()));
     }
     return referenceDataItems;
   }
@@ -376,7 +399,5 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "mandatory", source = "dynamicOption.mandatory")
   @Mapping(target = "lovLookUp", ignore = true)
   ReferenceDataItemDetail toReferenceDataItem(
-      final String key,
-      final DynamicOptionFormData dynamicOption);
-
+      final String key, final DynamicOptionFormData dynamicOption);
 }

@@ -21,11 +21,9 @@ import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 @ExtendWith(SpringExtension.class)
 class FindAddressValidatorTest {
 
-  @InjectMocks
-  private FindAddressValidator findAddressValidator;
+  @InjectMocks private FindAddressValidator findAddressValidator;
 
-  @Mock
-  private ClientFormDataAddressDetails addressDetails;
+  @Mock private ClientFormDataAddressDetails addressDetails;
 
   private Errors errors;
 
@@ -86,15 +84,15 @@ class FindAddressValidatorTest {
 
   @ParameterizedTest
   @CsvSource({
-      "country, , 2",
-      "country, test, 3",
-      "country, GBR, 3",
-      "houseNameNumber, test, 2",
-      "postcode, SW1A 1AA, 3",
-      "addressLine1, test, 3",
-      "addressLine2, test, 3",
-      "cityTown, test, 3",
-      "county, test, 3"
+    "country, , 2",
+    "country, test, 3",
+    "country, GBR, 3",
+    "houseNameNumber, test, 2",
+    "postcode, SW1A 1AA, 3",
+    "addressLine1, test, 3",
+    "addressLine2, test, 3",
+    "cityTown, test, 3",
+    "county, test, 3"
   })
   public void validate_noFixedAbode_invalid(String field, String value, int numberOfErrors) {
     addressDetails = new ClientFormDataAddressDetails();

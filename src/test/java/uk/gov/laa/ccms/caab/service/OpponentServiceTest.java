@@ -30,23 +30,17 @@ import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 
 @ExtendWith(MockitoExtension.class)
 public class OpponentServiceTest {
-  @Mock
-  private SoaApiClient soaApiClient;
+  @Mock private SoaApiClient soaApiClient;
 
-  @Mock
-  private LookupService lookupService;
+  @Mock private LookupService lookupService;
 
-  @Mock
-  private ResultDisplayMapper resultDisplayMapper;
+  @Mock private ResultDisplayMapper resultDisplayMapper;
 
-  @Mock
-  private SearchConstants searchConstants;
+  @Mock private SearchConstants searchConstants;
 
-  @Mock
-  private OpponentMapper opponentMapper;
+  @Mock private OpponentMapper opponentMapper;
 
-  @InjectMocks
-  private OpponentService opponentService;
+  @InjectMocks private OpponentService opponentService;
 
   @Test
   void getOrganisations_returnsdata() {
@@ -56,23 +50,23 @@ public class OpponentServiceTest {
     int size = 20;
 
     OrganisationSearchCriteria organisationSearchCriteria = new OrganisationSearchCriteria();
-    OrganisationDetails organisationDetails = new OrganisationDetails()
-        .totalElements(1);
+    OrganisationDetails organisationDetails = new OrganisationDetails().totalElements(1);
 
     ResultsDisplay<OrganisationResultRowDisplay> expectedResults = new ResultsDisplay<>();
 
     when(searchConstants.getMaxSearchResultsOrganisations()).thenReturn(10);
     when(soaApiClient.getOrganisations(organisationSearchCriteria, loginId, userType, page, size))
         .thenReturn(Mono.just(organisationDetails));
-    CommonLookupDetail commonLookupDetail = new CommonLookupDetail()
-        .addContentItem(new CommonLookupValueDetail());
-    when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES)).thenReturn(Mono.just(commonLookupDetail));
+    CommonLookupDetail commonLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES))
+        .thenReturn(Mono.just(commonLookupDetail));
     when(resultDisplayMapper.toOrganisationResultsDisplay(
-        organisationDetails, commonLookupDetail.getContent()))
+            organisationDetails, commonLookupDetail.getContent()))
         .thenReturn(expectedResults);
 
-    ResultsDisplay<OrganisationResultRowDisplay> result = opponentService.getOrganisations(
-        organisationSearchCriteria, loginId, userType, page, size);
+    ResultsDisplay<OrganisationResultRowDisplay> result =
+        opponentService.getOrganisations(organisationSearchCriteria, loginId, userType, page, size);
 
     assertEquals(expectedResults, result);
   }
@@ -85,15 +79,17 @@ public class OpponentServiceTest {
     int size = 20;
 
     OrganisationSearchCriteria organisationSearchCriteria = new OrganisationSearchCriteria();
-    OrganisationDetails organisationDetails = new OrganisationDetails()
-        .totalElements(11);
+    OrganisationDetails organisationDetails = new OrganisationDetails().totalElements(11);
 
     when(searchConstants.getMaxSearchResultsOrganisations()).thenReturn(10);
     when(soaApiClient.getOrganisations(organisationSearchCriteria, loginId, userType, page, size))
         .thenReturn(Mono.just(organisationDetails));
 
-    assertThrows(TooManyResultsException.class, () -> opponentService.getOrganisations(
-        organisationSearchCriteria, loginId, userType, page, size));
+    assertThrows(
+        TooManyResultsException.class,
+        () ->
+            opponentService.getOrganisations(
+                organisationSearchCriteria, loginId, userType, page, size));
 
     verifyNoInteractions(lookupService);
     verifyNoInteractions(resultDisplayMapper);
@@ -105,24 +101,22 @@ public class OpponentServiceTest {
     String userType = "test";
     String orgId = "123";
 
-    OrganisationDetail organisationDetail = new OrganisationDetail()
-        .type("type1");
+    OrganisationDetail organisationDetail = new OrganisationDetail().type("type1");
 
     OrganisationOpponentFormData expectedResults = new OrganisationOpponentFormData();
 
     when(soaApiClient.getOrganisation(orgId, loginId, userType))
         .thenReturn(Mono.just(organisationDetail));
     CommonLookupValueDetail orgLookup = new CommonLookupValueDetail();
-    when(lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES, organisationDetail.getType()))
+    when(lookupService.getCommonValue(
+            COMMON_VALUE_ORGANISATION_TYPES, organisationDetail.getType()))
         .thenReturn(Mono.just(Optional.of(orgLookup)));
-    when(opponentMapper.toOrganisationOpponentFormData(
-        organisationDetail, orgLookup))
+    when(opponentMapper.toOrganisationOpponentFormData(organisationDetail, orgLookup))
         .thenReturn(expectedResults);
 
-    AbstractOpponentFormData result = opponentService.getOrganisationOpponent(
-        orgId, loginId, userType);
+    AbstractOpponentFormData result =
+        opponentService.getOrganisationOpponent(orgId, loginId, userType);
 
     assertEquals(expectedResults, result);
   }
-
 }

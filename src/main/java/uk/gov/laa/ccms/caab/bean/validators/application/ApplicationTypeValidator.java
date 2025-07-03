@@ -5,9 +5,7 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
-/**
- * Validates the application type details provided by the user.
- */
+/** Validates the application type details provided by the user. */
 @Component
 public class ApplicationTypeValidator extends AbstractValidator {
 
@@ -31,7 +29,10 @@ public class ApplicationTypeValidator extends AbstractValidator {
   @Override
   public void validate(Object target, Errors errors) {
     ApplicationFormData applicationFormData = (ApplicationFormData) target;
-    validateRequiredField("applicationTypeCategory",
-        applicationFormData.getApplicationTypeCategory(), "Application type", errors);
+    validateRequiredField(
+        "applicationTypeCategory",
+        applicationFormData.getApplicationTypeCategory(),
+        "Application type",
+        errors);
   }
 }
