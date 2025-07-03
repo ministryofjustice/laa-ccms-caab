@@ -20,7 +20,7 @@ public class NotificationSearchCriteria {
    *     Must not be null.
    */
   public NotificationSearchCriteria(@NotNull NotificationSearchCriteria criteria) {
-    this.originFromCase = criteria.isOriginFromCase();
+    this.originatesFromCase = criteria.isOriginatesFromCase();
     this.caseReference = criteria.getCaseReference();
     this.clientSurname = criteria.getClientSurname();
     this.providerCaseReference = criteria.getProviderCaseReference();
@@ -36,7 +36,7 @@ public class NotificationSearchCriteria {
   }
 
   /** Flag which indicates whether to allow the user to modify the case reference.*/
-  private boolean originFromCase = false;
+  private boolean originatesFromCase = false;
 
   /** The LAA Application/Case Reference. */
   @Size(max = 35)
