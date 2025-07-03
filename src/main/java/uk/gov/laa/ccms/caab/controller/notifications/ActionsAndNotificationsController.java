@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.notifications;
 
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_NOTIFICATION_TYPE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATION_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -46,6 +47,7 @@ import uk.gov.laa.ccms.caab.exception.AvScanException;
 import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.NotificationAttachmentMapper;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
@@ -155,6 +157,28 @@ public class ActionsAndNotificationsController {
     populateDropdowns(user, model, criteria);
     return "notifications/actions-and-notifications-search";
   }
+
+  @GetMapping("/notifications/case-search")
+  public String notificationsCase(
+      @SessionAttribute(CASE) ApplicationDetail ebsCase,
+      @ModelAttribute(USER_DETAILS) UserDetail user,
+      @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
+      Model model) {
+
+      // For notifications
+      // TODO: Check this is the same in old PUI
+      criteria.setNotificationType("N");
+
+      criteria.setLoginId(user.getLoginId());
+      criteria.setUserType(user.getUserType());
+      criteria.setAssignedToUserId(user.getLoginId());
+      criteria.setOriginatesFromCase(true);
+      criteria.setCaseReference(ebsCase.getCaseReferenceNumber());
+      model.addAttribute(NOTIFICATION_SEARCH_CRITERIA, criteria);
+      return "redirect:/notifications/search-results";
+  }
+
+
 
   /**
    * Processes the search form from the Notifications Search page.
