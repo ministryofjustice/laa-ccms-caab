@@ -293,7 +293,6 @@ public abstract class AbstractValidator implements Validator {
   protected boolean patternMatches(String inputString, String pattern) {
     Pattern p = Pattern.compile(pattern);
     Matcher m = p.matcher(inputString);
-    // return inputString.matches(pattern);
     return m.find();
   }
 }
