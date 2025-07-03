@@ -158,28 +158,6 @@ public class ActionsAndNotificationsController {
     return "notifications/actions-and-notifications-search";
   }
 
-  @GetMapping("/notifications/case-search")
-  public String notificationsCase(
-      @SessionAttribute(CASE) ApplicationDetail ebsCase,
-      @ModelAttribute(USER_DETAILS) UserDetail user,
-      @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
-      Model model) {
-
-      // For notifications
-      // TODO: Check this is the same in old PUI
-      criteria.setNotificationType("N");
-
-      criteria.setLoginId(user.getLoginId());
-      criteria.setUserType(user.getUserType());
-      criteria.setAssignedToUserId(user.getLoginId());
-      criteria.setOriginatesFromCase(true);
-      criteria.setCaseReference(ebsCase.getCaseReferenceNumber());
-      model.addAttribute(NOTIFICATION_SEARCH_CRITERIA, criteria);
-      return "redirect:/notifications/search-results";
-  }
-
-
-
   /**
    * Processes the search form from the Notifications Search page.
    *
@@ -205,6 +183,35 @@ public class ActionsAndNotificationsController {
   }
 
   /**
+   * Handles the endpoint for searching notifications related to a specific case. It updates the
+   * notification search criteria based on the current user and case details, and then redirects to
+   * the search results page.
+   *
+   * @param ebsCase  the application details of the current case
+   * @param user     the details of the currently logged-in user
+   * @param criteria the notification search criteria to be populated
+   * @param model    the model object used to pass attributes to the view
+   * @return the redirect URL to the notifications search results page
+   */
+  @GetMapping("/notifications/case-search")
+  public String notificationsCase(
+      @SessionAttribute(CASE) ApplicationDetail ebsCase,
+      @ModelAttribute(USER_DETAILS) UserDetail user,
+      @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
+      Model model) {
+
+    // For notifications
+    criteria.setNotificationType("N");
+    criteria.setLoginId(user.getLoginId());
+    criteria.setUserType(user.getUserType());
+    criteria.setAssignedToUserId(user.getLoginId());
+    criteria.setOriginatesFromCase(true);
+    criteria.setCaseReference(ebsCase.getCaseReferenceNumber());
+    model.addAttribute(NOTIFICATION_SEARCH_CRITERIA, criteria);
+    return "redirect:/notifications/search-results";
+  }
+
+  /**
    * Get the required notification from the SOA Gateway response object.
    *
    * @param user current user details.
@@ -224,18 +231,18 @@ public class ActionsAndNotificationsController {
       Model model,
       HttpSession session) {
 
-    Notification notification =
-        notificationService
-            .getNotification(notificationId, user.getUserId(), user.getProvider().getId())
-            .blockOptional()
-            .orElseThrow(
-                () ->
-                    new CaabApplicationException(
-                        "Notification with id %s not found".formatted(notificationId)));
+    Notification notification = notificationService.getNotification(
+            notificationId,
+            user.getUserId(),
+            user.getProvider().getId())
+        .blockOptional()
+        .orElseThrow(() -> new CaabApplicationException(
+            "Notification with id %s not found".formatted(notificationId)));
 
     session.setAttribute(NOTIFICATION_ID, notificationId);
 
     return prepareNotificationPageModel(
+
         notification, new NotificationResponseFormData(), model, session);
   }
 
@@ -254,7 +261,7 @@ public class ActionsAndNotificationsController {
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @SessionAttribute(NOTIFICATION) Notification notification,
       @ModelAttribute(value = "notificationResponseFormData")
-          NotificationResponseFormData notificationResponseFormData,
+      NotificationResponseFormData notificationResponseFormData,
       @PathVariable(NOTIFICATION_ID) String notificationId,
       BindingResult bindingResult,
       Model model,
@@ -267,8 +274,7 @@ public class ActionsAndNotificationsController {
       return "notifications/notification";
     }
 
-    notificationService
-        .submitNotificationResponse(
+    notificationService.submitNotificationResponse(
             notificationId,
             notificationResponseFormData.getAction(),
             notificationResponseFormData.getMessage(),
@@ -278,6 +284,7 @@ public class ActionsAndNotificationsController {
         .orElseThrow(() -> new CaabApplicationException("Failed to submit notification response"));
 
     return prepareNotificationPageModel(
+
         notification, new NotificationResponseFormData(), model, session);
   }
 
@@ -408,7 +415,8 @@ public class ActionsAndNotificationsController {
     redirectAttributes.addFlashAttribute(formData);
 
     return "redirect:/notifications/%s/attachments/upload?sendBy=%s"
-        .formatted(notificationId, formData.getSendBy());
+        .formatted(
+        notificationId, formData.getSendBy());
   }
 
   /**
@@ -482,14 +490,12 @@ public class ActionsAndNotificationsController {
       HttpSession session) {
 
     String notificationId = notification.getNotificationId();
-    Notification updatedNotification =
-        notificationService
-            .getNotification(notificationId, user.getUserId(), user.getProvider().getId())
-            .blockOptional()
-            .orElseThrow(
-                () ->
-                    new CaabApplicationException(
-                        "Notification with id %s not found".formatted(notificationId)));
+    Notification updatedNotification = notificationService
+        .getNotification(notificationId, user.getUserId(), user.getProvider().getId())
+        .blockOptional()
+        .orElseThrow(() -> new CaabApplicationException(
+            "Notification with id %s not found".formatted(
+                notificationId)));
     session.setAttribute(NOTIFICATION, updatedNotification);
 
     return "redirect:/notifications/%s/provide-documents-or-evidence".formatted(notificationId);
@@ -523,11 +529,11 @@ public class ActionsAndNotificationsController {
   /**
    * Upload a notification attachment to TDS.
    *
-   * @param user the currently logged-in user.
-   * @param notificationId the ID of the notification.
+   * @param user                     the currently logged-in user.
+   * @param notificationId           the ID of the notification.
    * @param attachmentUploadFormData the attachment upload form data object.
-   * @param bindingResult validation result of the attachment upload form.
-   * @param model the view model.
+   * @param bindingResult            validation result of the attachment upload form.
+   * @param model                    the view model.
    * @return the provide documents or evidence page.
    */
   @PostMapping("/notifications/{notification_id}/attachments/upload")
@@ -578,6 +584,7 @@ public class ActionsAndNotificationsController {
 
     if (notificationAttachmentDetail.getId() != null) {
       notificationService.updateDraftNotificationAttachment(
+
           notificationAttachmentDetail, user.getLoginId());
     } else {
       Long attachmentNumber = getNextAttachmentNumber(notification, user.getUserId());
@@ -596,15 +603,15 @@ public class ActionsAndNotificationsController {
    * Get the next attachment number by incrementing the number of the attachment last added.
    *
    * @param notification the notification.
-   * @param userId the ID of the currently logged-in user.
+   * @param userId       the ID of the currently logged-in user.
    * @return the next attachment number.
    */
   private Long getNextAttachmentNumber(Notification notification, Integer userId) {
     int numberOfUploadedDocs = notification.getUploadedDocuments().size();
-    int numberOfDraftDocs =
-        notificationService
-            .getDraftNotificationAttachments(notification.getNotificationId(), userId)
-            .map(notificationAttachmentDetails -> notificationAttachmentDetails.getContent().size())
+    int numberOfDraftDocs = notificationService.getDraftNotificationAttachments(
+            notification.getNotificationId(), userId)
+        .map(notificationAttachmentDetails -> notificationAttachmentDetails.getContent()
+            .size())
             .blockOptional()
             .orElseThrow(
                 () -> new CaabApplicationException("Failed to retrieve attachment numbers"));
@@ -638,20 +645,24 @@ public class ActionsAndNotificationsController {
 
   private void populateNotificationAttachmentModel(Model model) {
     new DropdownBuilder(model)
-        .addDropdown("documentTypes", lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+        .addDropdown(
+            "documentTypes", lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
         .build();
     model.addAttribute(
-        "validExtensions", getCommaDelimitedString(attachmentUploadValidator.getValidExtensions()));
-    model.addAttribute("maxFileSize", attachmentUploadValidator.getMaxFileSize());
+
+        "validExtensions",getCommaDelimitedString(attachmentUploadValidator.getValidExtensions()));
+    model.addAttribute(
+        "maxFileSize",
+        attachmentUploadValidator.getMaxFileSize());
   }
 
   /**
    * Populate the view model with notification attachment details and S3 links.
    *
-   * @param user the logged-in user.
+   * @param user           the logged-in user.
    * @param notificationId the ID of the notification.
-   * @param notification the notification object.
-   * @param model the model to populate.
+   * @param notification   the notification object.
+   * @param model          the model to populate.
    */
   private void populateModelWithNotificationAttachmentDetails(
       UserDetail user, String notificationId, Notification notification, Model model) {
@@ -688,29 +699,26 @@ public class ActionsAndNotificationsController {
   /**
    * Get all notification attachments that have been submitted.
    *
-   * @param notification the notification to get attachments for.
+   * @param notification  the notification to get attachments for.
    * @param documentTypes a lookup of document types.
-   * @return a list of all the notification attachments that have been submitted, mapped to {@link
-   *     BaseNotificationAttachmentDetail}.
+   * @return a list of all the notification attachments that have been submitted, mapped to     {@link*     BaseNotificationAttachmentDetail}.
    */
-  private List<BaseNotificationAttachmentDetail> getSubmittedAttachments(
-      Notification notification, Map<String, String> documentTypes) {
-    return notification.getUploadedDocuments().stream()
-        .map(
-            document ->
-                new Document()
-                    .documentId(document.getDocumentId())
-                    .channel(document.getChannel())
-                    .documentLink(document.getDocumentLink())
-                    .fileData(document.getFileData())
-                    .status(document.getStatus())
-                    .statusDescription(document.getStatusDescription())
-                    .fileExtension(document.getFileExtension())
-                    .text(document.getText())
-                    .documentType(document.getDocumentType()))
-        .map(
-            document ->
-                notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
+  private List<BaseNotificationAttachmentDetail> getSubmittedAttachments(Notification notification,
+      Map<String, String> documentTypes) {
+    return notification
+        .getUploadedDocuments().stream()
+        .map(document -> new Document()
+            .documentId(document.getDocumentId())
+            .channel(document.getChannel())
+            .documentLink(document.getDocumentLink())
+            .fileData(document.getFileData())
+            .status(document.getStatus())
+            .statusDescription(document.getStatusDescription())
+            .fileExtension(document.getFileExtension())
+            .text(document.getText())
+            .documentType(document.getDocumentType()))
+        .map(document -> notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
+
                     document, documentTypes.get(document.getDocumentType())))
         .map(notificationAttachment -> notificationAttachment.status("Submitted"))
         .toList();
