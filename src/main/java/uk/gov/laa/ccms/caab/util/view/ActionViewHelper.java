@@ -42,7 +42,7 @@ public class ActionViewHelper {
               FunctionConstants.NOTIFICATIONS,
               "action.viewNotifications.name",
               "action.viewNotifications.description",
-              "/notifications/search-results(originFromCase=true, caseReference=${case.caseReferenceNumber})"),
+              "/notifications/case-search"),
           new AvailableAction(
               FunctionConstants.VIEW_CASE_OUTCOME,
               "action.viewOutcome.name",
