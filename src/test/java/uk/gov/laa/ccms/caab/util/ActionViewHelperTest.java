@@ -116,7 +116,7 @@ class ActionViewHelperTest {
                 FunctionConstants.NOTIFICATIONS,
                 "action.viewNotifications.name",
                 "action.viewNotifications.description",
-                "#"),
+                "/notifications/case-search"),
             new ExpectedAction(
                 FunctionConstants.VIEW_CASE_OUTCOME,
                 "action.viewOutcome.name",
