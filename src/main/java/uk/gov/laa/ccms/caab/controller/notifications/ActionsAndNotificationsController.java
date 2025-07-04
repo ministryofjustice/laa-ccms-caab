@@ -65,7 +65,9 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 
-/** Controller for handling requests for actions and notifications. */
+/**
+ * Controller for handling requests for actions and notifications.
+ */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -106,15 +108,15 @@ public class ActionsAndNotificationsController {
    * Endpoint to return the user to the Notifications Search Results.
    *
    * @param notifications the Notifications search results.
-   * @param user the logged-in user
-   * @param criteria the search criteria object
-   * @param model the model
+   * @param user          the logged-in user
+   * @param criteria      the search criteria object
+   * @param model         the model
    * @return the user to the results page or the full list if the results are null.
    */
   @GetMapping("/notifications")
   public String returnToNotifications(
       @SessionAttribute(value = NOTIFICATIONS_SEARCH_RESULTS, required = false)
-          Notifications notifications,
+      Notifications notifications,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
       Model model) {
@@ -130,10 +132,10 @@ public class ActionsAndNotificationsController {
   /**
    * Loads the Notifications Search Page and populates the dropdowns.
    *
-   * @param user current user details.
-   * @param criteria the search criteria object in the model.
+   * @param user             current user details.
+   * @param criteria         the search criteria object in the model.
    * @param notificationType the notification type
-   * @param model the model.
+   * @param model            the model.
    * @return the notifications search view.
    */
   @GetMapping("/notifications/search")
@@ -161,9 +163,9 @@ public class ActionsAndNotificationsController {
   /**
    * Processes the search form from the Notifications Search page.
    *
-   * @param user current user details.
-   * @param criteria the search criteria object in the model.
-   * @param model the model.
+   * @param user          current user details.
+   * @param criteria      the search criteria object in the model.
+   * @param model         the model.
    * @param bindingResult Validation result of the search criteria form.
    * @return Either redirects to the search results or reloads the form with validation errors.
    */
@@ -214,12 +216,12 @@ public class ActionsAndNotificationsController {
   /**
    * Get the required notification from the SOA Gateway response object.
    *
-   * @param user current user details.
-   * @param criteria the search criteria object in the model.
-   * @param notifications the notifications response from the prior call to SOA.
+   * @param user           current user details.
+   * @param criteria       the search criteria object in the model.
+   * @param notifications  the notifications response from the prior call to SOA.
    * @param notificationId the ID of the notification to retrieve.
-   * @param model the model.
-   * @param session the session.
+   * @param model          the model.
+   * @param session        the session.
    * @return the notification display page or an error if not found.
    */
   @GetMapping("/notifications/{notification_id}")
@@ -249,11 +251,11 @@ public class ActionsAndNotificationsController {
   /**
    * Submit a response to a notification.
    *
-   * @param user current user details.
-   * @param notification the current notification.
+   * @param user           current user details.
+   * @param notification   the current notification.
    * @param notificationId the ID of the notification to submit a response for.
-   * @param model the model.
-   * @param session the session.
+   * @param model          the model.
+   * @param session        the session.
    * @return the notification display page or an error if not found.
    */
   @PostMapping("/notifications/{notification_id}")
@@ -307,9 +309,9 @@ public class ActionsAndNotificationsController {
   /**
    * If the notification attachment does not exist in S3, retrieve it from EBS then upload to S3.
    *
-   * @param user current user details.
+   * @param user           current user details.
    * @param notificationId the ID of the notification of which the attachment belongs to.
-   * @param attachmentId the ID of the notification attachment to retrieve.
+   * @param attachmentId   the ID of the notification attachment to retrieve.
    * @return the notification page.
    */
   @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/retrieve")
@@ -335,9 +337,9 @@ public class ActionsAndNotificationsController {
   /**
    * If the notification attachment does not exist in S3, retrieve it from TDS then upload to S3.
    *
-   * @param user current user details.
+   * @param user           current user details.
    * @param notificationId the ID of the notification of which the attachment belongs to.
-   * @param attachmentId the ID of the notification attachment to retrieve.
+   * @param attachmentId   the ID of the notification attachment to retrieve.
    * @return the notification page.
    */
   @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/retrieveDraft")
@@ -355,9 +357,9 @@ public class ActionsAndNotificationsController {
   /**
    * If the cover sheet does not exist in S3, retrieve it from EBS then upload to S3.
    *
-   * @param user current user details.
+   * @param user           current user details.
    * @param notificationId the ID of the notification of which the attachment belongs to.
-   * @param attachmentId the ID of the notification attachment to retrieve.
+   * @param attachmentId   the ID of the notification attachment to retrieve.
    * @return the notification page.
    */
   @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/retrieveCoverSheet")
@@ -375,9 +377,9 @@ public class ActionsAndNotificationsController {
   /**
    * Remove a draft notification attachment from TDS and S3.
    *
-   * @param user the currently logged-in user.
+   * @param user           the currently logged-in user.
    * @param notificationId the ID of the notification.
-   * @param attachmentId the ID of the notification attachment to remove.
+   * @param attachmentId   the ID of the notification attachment to remove.
    * @return the provide documents or evidence page.
    */
   @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/remove")
@@ -394,9 +396,9 @@ public class ActionsAndNotificationsController {
   /**
    * Display the edit notification attachment screen.
    *
-   * @param user the currently logged-in user.
+   * @param user           the currently logged-in user.
    * @param notificationId the ID of the notification.
-   * @param attachmentId the ID of the notification attachment.
+   * @param attachmentId   the ID of the notification attachment.
    * @return the edit notification attachment screen.
    */
   @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/edit")
@@ -416,17 +418,17 @@ public class ActionsAndNotificationsController {
 
     return "redirect:/notifications/%s/attachments/upload?sendBy=%s"
         .formatted(
-        notificationId, formData.getSendBy());
+            notificationId, formData.getSendBy());
   }
 
   /**
    * Display the provide documents or evidence screen, with all uploaded and draft notification
    * attachments.
    *
-   * @param user the currently logged-in user.
+   * @param user           the currently logged-in user.
    * @param notificationId the ID of the notification.
-   * @param notification the notification object.
-   * @param model the view model.
+   * @param notification   the notification object.
+   * @param model          the view model.
    * @return the provide documents or evidence page.
    */
   @GetMapping("/notifications/{notification_id}/provide-documents-or-evidence")
@@ -444,7 +446,7 @@ public class ActionsAndNotificationsController {
   /**
    * Submit all draft notification attachments to EBS.
    *
-   * @param user the currently logged-in user.
+   * @param user           the currently logged-in user.
    * @param notificationId the ID of the notification.
    * @return the provide documents or evidence page.
    */
@@ -479,7 +481,7 @@ public class ActionsAndNotificationsController {
   /**
    * Submission confirmation for notification attachments.
    *
-   * @param user the currently logged-in user.
+   * @param user         the currently logged-in user.
    * @param notification the notification.
    * @return a redirect to the provide documents or evidence page.
    */
@@ -504,10 +506,10 @@ public class ActionsAndNotificationsController {
   /**
    * Display the notification attachment upload screen.
    *
-   * @param user the currently logged-in user.
+   * @param user           the currently logged-in user.
    * @param notificationId the ID of the notification.
-   * @param sendBy how the notification will be sent, e.g. by post or electronically.
-   * @param model the view model.
+   * @param sendBy         how the notification will be sent, e.g. by post or electronically.
+   * @param model          the view model.
    * @return the upload notification attachment page.
    */
   @GetMapping("/notifications/{notification_id}/attachments/upload")
@@ -542,7 +544,7 @@ public class ActionsAndNotificationsController {
       @SessionAttribute(NOTIFICATION) Notification notification,
       @PathVariable(NOTIFICATION_ID) String notificationId,
       @ModelAttribute(value = "attachmentUploadFormData")
-          NotificationAttachmentUploadFormData attachmentUploadFormData,
+      NotificationAttachmentUploadFormData attachmentUploadFormData,
       BindingResult bindingResult,
       Model model) {
 
@@ -612,9 +614,9 @@ public class ActionsAndNotificationsController {
             notification.getNotificationId(), userId)
         .map(notificationAttachmentDetails -> notificationAttachmentDetails.getContent()
             .size())
-            .blockOptional()
-            .orElseThrow(
-                () -> new CaabApplicationException("Failed to retrieve attachment numbers"));
+        .blockOptional()
+        .orElseThrow(
+            () -> new CaabApplicationException("Failed to retrieve attachment numbers"));
 
     return numberOfUploadedDocs + numberOfDraftDocs + 1L;
   }
@@ -646,11 +648,12 @@ public class ActionsAndNotificationsController {
   private void populateNotificationAttachmentModel(Model model) {
     new DropdownBuilder(model)
         .addDropdown(
-            "documentTypes", lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+            "documentTypes",
+            lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
         .build();
     model.addAttribute(
-
-        "validExtensions",getCommaDelimitedString(attachmentUploadValidator.getValidExtensions()));
+        "validExtensions",
+        getCommaDelimitedString(attachmentUploadValidator.getValidExtensions()));
     model.addAttribute(
         "maxFileSize",
         attachmentUploadValidator.getMaxFileSize());
@@ -701,7 +704,8 @@ public class ActionsAndNotificationsController {
    *
    * @param notification  the notification to get attachments for.
    * @param documentTypes a lookup of document types.
-   * @return a list of all the notification attachments that have been submitted, mapped to     {@link*     BaseNotificationAttachmentDetail}.
+   * @return a list of all the notification attachments that have been submitted, mapped to
+   *     {@link BaseNotificationAttachmentDetail}.
    */
   private List<BaseNotificationAttachmentDetail> getSubmittedAttachments(Notification notification,
       Map<String, String> documentTypes) {
@@ -719,7 +723,7 @@ public class ActionsAndNotificationsController {
             .documentType(document.getDocumentType()))
         .map(document -> notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
 
-                    document, documentTypes.get(document.getDocumentType())))
+            document, documentTypes.get(document.getDocumentType())))
         .map(notificationAttachment -> notificationAttachment.status("Submitted"))
         .toList();
   }
