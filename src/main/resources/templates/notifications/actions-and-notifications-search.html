@@ -18,7 +18,7 @@
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
 
       <span class="govuk-caption-l" th:text="#{notifications.search.subHeading}"/>
-      <h1 class="govuk-heading-l" th:text="#{notifications.heading}"/>
+      <h1 class="govuk-heading-l" th:text="#{notifications.refineSearch.heading}"/>
       <div class="govuk-body-l" th:text="#{search.leadParagraph('action or notification')}"/>
 
       <div class="govuk-grid-row">
@@ -27,9 +27,9 @@
           <h2 class="govuk-heading-m"
               th:text="#{notifications.search.responsibilityInformation.heading}"/>
           <div
-                  th:replace="~{partials/forms :: dropdown('assignedToUserId', #{common.assignedTo}, ${users}, 'loginId', 'loginId', false)}"></div>
+              th:replace="~{partials/forms :: dropdown('assignedToUserId', #{common.assignedTo}, ${users}, 'loginId', 'loginId', false)}"></div>
           <div
-                  th:replace="~{partials/forms :: dropdown('feeEarnerId', #{common.feeEarner}, ${feeEarners}, 'id', 'name', false)}"></div>
+              th:replace="~{partials/forms :: dropdown('feeEarnerId', #{common.feeEarner}, ${feeEarners}, 'id', 'name', false)}"></div>
 
           <h2 class="govuk-heading-m"
               th:text="#{notifications.search.notificationDates.heading}"/>
@@ -56,23 +56,34 @@
           <h2 class="govuk-heading-m"
               th:text="#{notifications.search.caseInformation.heading}"/>
 
-          <div
-                  th:replace="~{partials/forms :: textInput('providerCaseReference', #{common.providerRef}, 'govuk-input--width-20')}"></div>
+          <th:block th:if="${notificationSearchCriteria.originatesFromCase}">
+            <div class="govuk-inset-text" id="specific-case-reference-inset-text"
+              th:utext="#{notifications.search.specificCaseHintText(${notificationSearchCriteria.caseReference})}"></div>
+            <input type="hidden" th:field="*{caseReference}"/>
+          </th:block>
 
-          <govuk:details
-              th:summaryText="#{notifications.search.caseInformation.laaApplicationCaseReferenceHelp.summaryText}"
-              th:text="#{notifications.search.caseInformation.laaApplicationCaseReferenceHelp.text}"/>
-          <div
-                  th:replace="~{partials/forms :: textInput('caseReference', #{common.laaRef}, 'govuk-input--width-20')}"></div>
 
-          <div
-                  th:replace="~{partials/forms :: textInput('clientSurname', #{common.clientSurname}, 'govuk-input--width-20')}"></div>
+          <th:block th:unless="${notificationSearchCriteria.originatesFromCase}">
+            <div
+                th:replace="~{partials/forms :: textInput('providerCaseReference', #{common.providerRef}, 'govuk-input--width-20')}"></div>
+            <govuk:details
+                th:summaryText="#{notifications.search.caseInformation.laaApplicationCaseReferenceHelp.summaryText}"
+                th:text="#{notifications.search.caseInformation.laaApplicationCaseReferenceHelp.text}"/>
+
+            <div
+                th:replace="~{partials/forms :: textInput('caseReference', #{common.laaRef}, 'govuk-input--width-20')}"/>
+
+            <input type="hidden" th:field="*{originatesFromCase}"/>
+
+            <div
+                th:replace="~{partials/forms :: textInput('clientSurname', #{common.clientSurname}, 'govuk-input--width-20')}"></div>
+          </th:block>
 
           <h2 class="govuk-heading-m"
               th:text="#{notifications.subHeading.notificationDetails}"/>
 
           <div
-                  th:replace="~{partials/forms :: dropdown('notificationType', #{notifications.search.notificationDetails.actionType.label}, ${notificationTypes}, 'code', 'description', false)}"></div>
+              th:replace="~{partials/forms :: dropdown('notificationType', #{notifications.search.notificationDetails.actionType.label}, ${notificationTypes}, 'code', 'description', false)}"></div>
           <div class="govuk-form-group">
             <fieldset class="govuk-fieldset">
               <legend class="govuk-fieldset__legend"
