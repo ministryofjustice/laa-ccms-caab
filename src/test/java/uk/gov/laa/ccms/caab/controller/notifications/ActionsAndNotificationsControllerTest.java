@@ -312,10 +312,6 @@ class ActionsAndNotificationsControllerTest {
                       .loginId("login1")
                       .username("login1"));
 
-      UserDetails baseUsers =
-          new UserDetails()
-              .addContentItem(new BaseUser().userId(123).userType("type1").loginId("login1"));
-
       when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE))
           .thenReturn(Mono.just(notificationTypes));
       when(providerService.getProvider(userDetails.getProvider().getId()))
