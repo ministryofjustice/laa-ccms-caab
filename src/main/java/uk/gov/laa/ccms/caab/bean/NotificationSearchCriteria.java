@@ -35,7 +35,7 @@ public class NotificationSearchCriteria {
     this.sort = criteria.getSort();
   }
 
-  /** Flag which indicates whether to allow the user to modify the case reference.*/
+  /** Flag which indicates whether to allow the user to modify the case reference. */
   private boolean originatesFromCase = false;
 
   /** The LAA Application/Case Reference. */
