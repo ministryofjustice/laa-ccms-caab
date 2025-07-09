@@ -6,9 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-/**
- * Represents the client monitoring details form.
- */
+/** Represents the client monitoring details form. */
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class ClientFormDataMonitoringDetails extends AbstractClientFormData {

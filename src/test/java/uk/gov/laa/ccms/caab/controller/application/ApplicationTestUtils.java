@@ -21,22 +21,14 @@ public class ApplicationTestUtils {
     return new BaseProvider()
         .id(123)
         .name("provider1")
-        .addOfficesItem(new BaseOffice()
-            .id(10)
-            .name("Office 1"))
-        .addOfficesItem(new BaseOffice()
-            .id(11)
-            .name("Office 2"));
+        .addOfficesItem(new BaseOffice().id(10).name("Office 1"))
+        .addOfficesItem(new BaseOffice().id(11).name("Office 2"));
   }
 
   public static List<ContactDetail> buildFeeEarners() {
     List<ContactDetail> feeEarners = new ArrayList<>();
-    feeEarners.add(new ContactDetail()
-        .id(1)
-        .name("FeeEarner1"));
-    feeEarners.add(new ContactDetail()
-        .id(2)
-        .name("FeeEarner2"));
+    feeEarners.add(new ContactDetail().id(1).name("FeeEarner1"));
+    feeEarners.add(new ContactDetail().id(2).name("FeeEarner2"));
     return feeEarners;
   }
 }

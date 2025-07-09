@@ -9,8 +9,8 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 
 /**
- * Validator component responsible for validating
- * {@link uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails} objects.
+ * Validator component responsible for validating {@link
+ * uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails} objects.
  */
 @Component
 public class ClientAddressDetailsValidator extends AbstractClientAddressValidator {
@@ -19,9 +19,8 @@ public class ClientAddressDetailsValidator extends AbstractClientAddressValidato
    * Determines if the Validator supports the provided class.
    *
    * @param clazz The class to check for support.
-   * @return {@code true} if the class is assignable from
-   *         {@link uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails},
-   *         {@code false} otherwise.
+   * @return {@code true} if the class is assignable from {@link
+   *     uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails}, {@code false} otherwise.
    */
   @Override
   public boolean supports(Class<?> clazz) {
@@ -39,15 +38,13 @@ public class ClientAddressDetailsValidator extends AbstractClientAddressValidato
     ClientFormDataAddressDetails addressDetails = (ClientFormDataAddressDetails) target;
 
     if (!addressDetails.getVulnerableClient() && !addressDetails.getNoFixedAbode()) {
-      validateRequiredField("country", addressDetails.getCountry(),
-          "Country", errors);
-      validateRequiredField("houseNameNumber", addressDetails.getHouseNameNumber(),
-          "House name / number", errors);
+      validateRequiredField("country", addressDetails.getCountry(), "Country", errors);
+      validateRequiredField(
+          "houseNameNumber", addressDetails.getHouseNameNumber(), "House name / number", errors);
       validatePostcodeFormat(addressDetails.getCountry(), addressDetails.getPostcode(), errors);
-      validateRequiredField("addressLine1", addressDetails.getAddressLine1(),
-          "Address line 1", errors);
-      validateRequiredField("cityTown", addressDetails.getCityTown(),
-          "City / Town", errors);
+      validateRequiredField(
+          "addressLine1", addressDetails.getAddressLine1(), "Address line 1", errors);
+      validateRequiredField("cityTown", addressDetails.getCityTown(), "City / Town", errors);
     } else if (addressDetails.getNoFixedAbode()) {
       validateNoFixedAbode(addressDetails, errors);
     }
@@ -66,14 +63,18 @@ public class ClientAddressDetailsValidator extends AbstractClientAddressValidato
    */
   private void validateAddressLine1(final String addressLine1, Errors errors) {
     if (StringUtils.hasText(addressLine1)) {
-      //check no double spaces
+      // check no double spaces
       if (!addressLine1.matches(ALPHA_NUMERIC_SPACES_COMMAS)) {
-        errors.rejectValue("addressLine1", "invalid.addressLine1",
+        errors.rejectValue(
+            "addressLine1",
+            "invalid.addressLine1",
             "Your input for 'Address Line 1' contains an "
                 + "invalid character. Please amend your entry using numbers, "
                 + "letters and spaces only");
       } else if (addressLine1.matches(DOUBLE_SPACE)) {
-        errors.rejectValue("addressLine1", "invalid.addressLine1",
+        errors.rejectValue(
+            "addressLine1",
+            "invalid.addressLine1",
             "Your input for 'Address Line 1'"
                 + " contains double spaces. Please amend your entry.");
       }
@@ -88,14 +89,18 @@ public class ClientAddressDetailsValidator extends AbstractClientAddressValidato
    */
   private void validateAddressLine2(final String addressLine2, Errors errors) {
     if (StringUtils.hasText(addressLine2)) {
-      //check no double spaces
+      // check no double spaces
       if (!addressLine2.matches(ALPHA_NUMERIC_SPACES_COMMAS)) {
-        errors.rejectValue("addressLine2", "invalid.addressLine2",
+        errors.rejectValue(
+            "addressLine2",
+            "invalid.addressLine2",
             "Your input for 'Address Line 2' contains an "
                 + "invalid character. Please amend your entry using numbers, "
                 + "letters and spaces only");
       } else if (addressLine2.matches(DOUBLE_SPACE)) {
-        errors.rejectValue("addressLine2", "invalid.addressLine2",
+        errors.rejectValue(
+            "addressLine2",
+            "invalid.addressLine2",
             "Your input for 'Address Line 2'"
                 + " contains double spaces. Please amend your entry.");
       }
@@ -110,16 +115,19 @@ public class ClientAddressDetailsValidator extends AbstractClientAddressValidato
    */
   private void validateCityTown(final String cityTown, Errors errors) {
     if (StringUtils.hasText(cityTown)) {
-      //check no double spaces
+      // check no double spaces
       if (!cityTown.matches(ALPHA_NUMERIC_SPACES_COMMAS)) {
-        errors.rejectValue("cityTown", "invalid.cityTown",
+        errors.rejectValue(
+            "cityTown",
+            "invalid.cityTown",
             "Your input for 'City /Town' contains an "
                 + "invalid character. Please amend your entry using numbers, "
                 + "letters and spaces only");
       } else if (cityTown.matches(DOUBLE_SPACE)) {
-        errors.rejectValue("cityTown", "invalid.cityTown",
-            "Your input for 'City /Town'"
-                + " contains double spaces. Please amend your entry.");
+        errors.rejectValue(
+            "cityTown",
+            "invalid.cityTown",
+            "Your input for 'City /Town' contains double spaces. Please amend your entry.");
       }
     }
   }
@@ -132,16 +140,19 @@ public class ClientAddressDetailsValidator extends AbstractClientAddressValidato
    */
   private void validateCounty(final String county, Errors errors) {
     if (StringUtils.hasText(county)) {
-      //check no double spaces
+      // check no double spaces
       if (!county.matches(ALPHA_NUMERIC_SPACES_COMMAS)) {
-        errors.rejectValue("county", "invalid.county",
+        errors.rejectValue(
+            "county",
+            "invalid.county",
             "Your input for 'County' contains an "
                 + "invalid character. Please amend your entry using numbers, "
                 + "letters and spaces only");
       } else if (county.matches(DOUBLE_SPACE)) {
-        errors.rejectValue("county", "invalid.county",
-            "Your input for 'County'"
-                + " contains double spaces. Please amend your entry.");
+        errors.rejectValue(
+            "county",
+            "invalid.county",
+            "Your input for 'County' contains double spaces. Please amend your entry.");
       }
     }
   }

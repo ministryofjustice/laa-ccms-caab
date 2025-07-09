@@ -7,9 +7,7 @@ import org.springframework.stereotype.Service;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 
-/**
- * Service class to handle Case Outcomes.
- */
+/** Service class to handle Case Outcomes. */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -25,13 +23,10 @@ public class CaseOutcomeService {
    * @return Optional CaseOutcomeDetail if one exists for the supplied search criteria.
    */
   public Optional<CaseOutcomeDetail> getCaseOutcome(
-      final String caseReferenceNumber,
-      final Integer providerId) {
-    return caabApiClient.getCaseOutcomes(caseReferenceNumber, providerId)
-        .mapNotNull(caseOutcomeDetails -> caseOutcomeDetails.getContent().stream()
-            .findFirst())
+      final String caseReferenceNumber, final Integer providerId) {
+    return caabApiClient
+        .getCaseOutcomes(caseReferenceNumber, providerId)
+        .mapNotNull(caseOutcomeDetails -> caseOutcomeDetails.getContent().stream().findFirst())
         .block();
   }
-
-
 }

@@ -1,8 +1,8 @@
 package uk.gov.laa.ccms.caab.exception;
 
 /**
- * RuntimeException class to report a non-clean response from an external anti virus
- * scanning service.
+ * RuntimeException class to report a non-clean response from an external anti virus scanning
+ * service.
  */
 public class AvVirusFoundException extends CaabApplicationException {
   /**

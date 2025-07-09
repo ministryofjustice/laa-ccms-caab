@@ -4,9 +4,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * Describes the status of an individual feature.
- */
+/** Describes the status of an individual feature. */
 @Getter
 @Setter
 @EqualsAndHashCode

@@ -11,9 +11,7 @@ import uk.gov.laa.ccms.caab.opa.context.ContextToken;
 import uk.gov.laa.ccms.caab.opa.security.ContextUrlEncoder;
 import uk.gov.laa.ccms.caab.opa.security.Encryptor;
 
-/**
- * Utility class for security-related operations.
- */
+/** Utility class for security-related operations. */
 @Setter
 @Getter
 @Component
@@ -42,7 +40,7 @@ public class SecurityUtils {
    * Json structure is encrypted, and finally converted to legal Http characters as the excryption
    * process creates whitespace characters and is unsafe to transmit raw. where: LscCaseRef +
    * RuleBaseId Provider used by the connector to retrieve the OPASessoin from TDS puiSessionId is
-   * user Session Id of PUI - used to correlate connector log activity for support</p>
+   * user Session Id of PUI - used to correlate connector log activity for support
    *
    * @return String
    */
@@ -55,8 +53,10 @@ public class SecurityUtils {
       final String invokedForm,
       final String ezgovId) {
     final ContextToken contextToken = new ContextToken();
-    log.debug("createHubContext() based on supplied details caseId:[{}], "
-        + "ruleBaseName:[{}]", lscCaseReference, ruleBaseId);
+    log.debug(
+        "createHubContext() based on supplied details caseId:[{}], ruleBaseName:[{}]",
+        lscCaseReference,
+        ruleBaseId);
     log.debug("returnURL: {}", returnUrl);
 
     // Establish ContextToken POJO
@@ -134,5 +134,4 @@ public class SecurityUtils {
 
     return contextToken;
   }
-
 }

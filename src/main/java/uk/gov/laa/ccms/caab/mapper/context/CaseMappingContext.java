@@ -9,8 +9,8 @@ import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
- * Context for mapping case-related details, including application, assessments, documents,
- * and user information.
+ * Context for mapping case-related details, including application, assessments, documents, and user
+ * information.
  */
 @Builder
 @Getter
@@ -25,5 +25,4 @@ public class CaseMappingContext {
   List<BaseEvidenceDocumentDetail> caseDocs;
 
   UserDetail user;
-
 }

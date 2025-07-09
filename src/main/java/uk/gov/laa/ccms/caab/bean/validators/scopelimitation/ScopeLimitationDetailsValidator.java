@@ -5,9 +5,7 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
-/**
- * Validates the scope limitation details provided by scope limitation flow forms.
- */
+/** Validates the scope limitation details provided by scope limitation flow forms. */
 @Component
 public class ScopeLimitationDetailsValidator extends AbstractValidator {
 
@@ -15,9 +13,9 @@ public class ScopeLimitationDetailsValidator extends AbstractValidator {
    * Determines if the Validator supports the provided class.
    *
    * @param clazz The class to check for support.
-   * @return {@code true} if the class is assignable from
-   *         {@link uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails},
-   *         {@code false} otherwise.
+   * @return {@code true} if the class is assignable from {@link
+   *     uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails}, {@code false}
+   *     otherwise.
    */
   @Override
   public boolean supports(final Class<?> clazz) {
@@ -25,8 +23,8 @@ public class ScopeLimitationDetailsValidator extends AbstractValidator {
   }
 
   /**
-   * Validates the scope limitation details in the
-   * {@link uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails}.
+   * Validates the scope limitation details in the {@link
+   * uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails}.
    *
    * @param target The object to be validated.
    * @param errors The Errors object to store validation errors.
@@ -36,8 +34,7 @@ public class ScopeLimitationDetailsValidator extends AbstractValidator {
     final ScopeLimitationFormDataDetails scopeLimitationDetails =
         (ScopeLimitationFormDataDetails) target;
 
-    validateRequiredField("scopeLimitation", scopeLimitationDetails.getScopeLimitation(),
-        "Scope limitation", errors);
+    validateRequiredField(
+        "scopeLimitation", scopeLimitationDetails.getScopeLimitation(), "Scope limitation", errors);
   }
-
 }

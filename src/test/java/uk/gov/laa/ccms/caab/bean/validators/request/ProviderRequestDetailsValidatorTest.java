@@ -20,8 +20,7 @@ import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
 import uk.gov.laa.ccms.caab.bean.request.ProviderRequestDetailsFormData;
 
 @ExtendWith(SpringExtension.class)
-class
-ProviderRequestDetailsValidatorTest {
+class ProviderRequestDetailsValidatorTest {
 
   private ProviderRequestDetailsValidator providerRequestDetailsValidator;
 
@@ -31,10 +30,8 @@ ProviderRequestDetailsValidatorTest {
 
   @BeforeEach
   void setUp() {
-    providerRequestDetailsValidator = new ProviderRequestDetailsValidator(
-        List.of("pdf", "jpg", "png"),
-        "5MB"
-    );
+    providerRequestDetailsValidator =
+        new ProviderRequestDetailsValidator(List.of("pdf", "jpg", "png"), "5MB");
     formData = new ProviderRequestDetailsFormData();
     errors = new BeanPropertyBindingResult(formData, "providerRequestDetailsFormData");
   }
@@ -181,11 +178,14 @@ ProviderRequestDetailsValidatorTest {
     providerRequestDetailsValidator.validate(formData, errors);
 
     assertTrue(errors.hasErrors());
-    assertNotNull(errors.getFieldError("dynamicOptions[option1].fieldValue"),
+    assertNotNull(
+        errors.getFieldError("dynamicOptions[option1].fieldValue"),
         "option1 field not exceeds limit for FTS type");
-    assertNotNull(errors.getFieldError("dynamicOptions[option2].fieldValue"),
+    assertNotNull(
+        errors.getFieldError("dynamicOptions[option2].fieldValue"),
         "option2 field not exceeds limit for FTL type");
-    assertNotNull(errors.getFieldError("dynamicOptions[option3].fieldValue"),
+    assertNotNull(
+        errors.getFieldError("dynamicOptions[option3].fieldValue"),
         "option3 field not exceeds limit for INT type");
   }
 

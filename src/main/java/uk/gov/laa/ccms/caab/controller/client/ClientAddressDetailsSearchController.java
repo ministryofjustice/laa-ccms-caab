@@ -21,9 +21,7 @@ import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
 
-/**
- * Controller for handling address client details selection during the new application process.
- */
+/** Controller for handling address client details selection during the new application process. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -50,7 +48,7 @@ public class ClientAddressDetailsSearchController {
   @GetMapping("/application/client/details/address/search")
   public String clientDetailsAddressSearch(
       @SessionAttribute(ADDRESS_SEARCH_RESULTS)
-      final ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults,
+          final ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults,
       @ModelAttribute("addressSearch") final AddressSearchFormData addressSearch,
       final Model model) {
 
@@ -72,31 +70,30 @@ public class ClientAddressDetailsSearchController {
    */
   @PostMapping("/application/client/details/address/search")
   public String clientDetailsAddressSearch(
-      @SessionAttribute(ADDRESS_SEARCH_RESULTS) ResultsDisplay<AddressResultRowDisplay>
-          clientAddressSearchResults,
+      @SessionAttribute(ADDRESS_SEARCH_RESULTS)
+          ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       @ModelAttribute("addressSearch") AddressSearchFormData addressSearch,
       Model model,
       BindingResult bindingResult,
       HttpSession session) {
 
-    //validate if an address is selected
+    // validate if an address is selected
     addressSearchValidator.validate(addressSearch, bindingResult);
     if (bindingResult.hasErrors()) {
       model.addAttribute(ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
       return "application/client/address-client-search-results";
     }
 
-    //Add the address to the client session flow data
+    // Add the address to the client session flow data
     addressService.addAddressToClientDetails(
         addressSearch.getUprn(),
         clientAddressSearchResults,
         clientFlowFormData.getAddressDetails());
 
-    //Cleanup
+    // Cleanup
     session.removeAttribute(ADDRESS_SEARCH_RESULTS);
 
     return "redirect:/application/client/details/address";
   }
-
 }

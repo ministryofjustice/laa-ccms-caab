@@ -43,33 +43,36 @@ public class AmendCaseController {
   private final AmendmentService amendmentService;
 
   /**
-   * Initiates the amendment creation and submission process for a specific case.
-   * This method processes the provided session attributes, creates an amendment,
-   * and redirects to the summary page upon successful completion.
+   * Initiates the amendment creation and submission process for a specific case. This method
+   * processes the provided session attributes, creates an amendment, and redirects to the summary
+   * page upon successful completion.
    *
-   * @param detail            Session attribute containing application details,
-   *                          including the case reference number.
-   * @param userDetails       Session attribute containing user details.
-   * @param applicationFormData Session attribute containing application form data used
-   *                            for the amendment.
-   * @param httpSession       The current HTTP session to manage and store session attributes.
-   *
+   * @param detail Session attribute containing application details, including the case reference
+   *     number.
+   * @param userDetails Session attribute containing user details.
+   * @param applicationFormData Session attribute containing application form data used for the
+   *     amendment.
+   * @param httpSession The current HTTP session to manage and store session attributes.
    * @return A string representing the redirect URL to the amendments summary page.
    */
   @GetMapping("/amendments/create")
-  public String startAmendment(@SessionAttribute(CASE) final ApplicationDetail detail,
+  public String startAmendment(
+      @SessionAttribute(CASE) final ApplicationDetail detail,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
       @SessionAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       HttpSession httpSession) {
-    amendmentService.createAndSubmitAmendmentForCase(applicationFormData,
-        detail.getCaseReferenceNumber(),
-        userDetails);
+    amendmentService.createAndSubmitAmendmentForCase(
+        applicationFormData, detail.getCaseReferenceNumber(), userDetails);
 
     CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     caseSearchCriteria.setCaseReference(detail.getCaseReferenceNumber());
     BaseApplicationDetail tdsApplication =
-        applicationService.getTdsApplications(caseSearchCriteria, userDetails, 0, 1)
-            .getContent().stream().findFirst().orElse(null);
+        applicationService
+            .getTdsApplications(caseSearchCriteria, userDetails, 0, 1)
+            .getContent()
+            .stream()
+            .findFirst()
+            .orElse(null);
 
     httpSession.setAttribute(APPLICATION_SUMMARY, tdsApplication);
 
@@ -93,14 +96,14 @@ public class AmendCaseController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       Model model,
-      final HttpSession httpSession) {
+      HttpSession httpSession) {
 
     final ApplicationDetail amendment =
         applicationService.getApplication(String.valueOf(tdsApplication.getId())).block();
     final ApplicationSectionDisplay applicationSectionDisplay =
         Optional.ofNullable(amendmentService.getAmendmentSections(amendment, user))
-            .orElseThrow(() -> new CaabApplicationException(
-                "Failed to retrieve application summary"));
+            .orElseThrow(
+                () -> new CaabApplicationException("Failed to retrieve application summary"));
 
     activeCase.setApplicationId(amendment.getId());
 
@@ -113,5 +116,4 @@ public class AmendCaseController {
 
     return "application/amendment-summary";
   }
-
 }

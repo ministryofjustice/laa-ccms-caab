@@ -110,18 +110,18 @@ public class EditClientAddressDetailsController {
     model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
 
     if (ACTION_FIND_ADDRESS.equals(action)) {
-      //Search for addresses
+      // Search for addresses
       ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults =
           addressService.getAddresses(clientFlowFormData.getAddressDetails().getPostcode());
 
       if (clientAddressSearchResults.getContent() == null) {
         bindingResult.reject(
-            "address.none",
-            "Your input for address details has not returned any results");
+            "address.none", "Your input for address details has not returned any results");
       } else {
-        clientAddressSearchResults = addressService.filterByHouseNumber(
-            clientFlowFormData.getAddressDetails().getHouseNameNumber(),
-            clientAddressSearchResults);
+        clientAddressSearchResults =
+            addressService.filterByHouseNumber(
+                clientFlowFormData.getAddressDetails().getHouseNameNumber(),
+                clientAddressSearchResults);
         session.setAttribute(ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
       }
 
@@ -133,15 +133,11 @@ public class EditClientAddressDetailsController {
 
     return ACTION_FIND_ADDRESS.equals(action)
         ? "redirect:/%s/sections/client/details/address/search"
-          .formatted(caseContext.getPathValue())
-        : "redirect:/%s/sections/client/details/summary"
-            .formatted(caseContext.getPathValue());
+            .formatted(caseContext.getPathValue())
+        : "redirect:/%s/sections/client/details/summary".formatted(caseContext.getPathValue());
   }
 
   private void populateDropdowns(final Model model) {
-    new DropdownBuilder(model)
-        .addDropdown("countries",
-            lookupService.getCountries())
-        .build();
+    new DropdownBuilder(model).addDropdown("countries", lookupService.getCountries()).build();
   }
 }

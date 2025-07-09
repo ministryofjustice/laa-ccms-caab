@@ -7,8 +7,10 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/application/sections/correspondence-address}" class="govuk-back-link"
+        <a th:if="${caseContext.isApplication()}" th:href="@{/application/sections/correspondence-address}" class="govuk-back-link"
             th:text="#{application.generalDetails.linkCase.summary.goBack}"/>
+        <a th:if="${caseContext.isAmendment()}" th:href="@{/amendments/summary}" class="govuk-back-link"
+           th:text="#{application.evidence.returnToAmendmentsSummary}"/>
     </div>
     <div id="main-content">
         <span class="govuk-caption-l" th:text="#{application.create}"/>
@@ -44,7 +46,7 @@
                 <tr class="govuk-table__row" th:each="linkedCase, idx : ${linkedCases.content}">
                     <td class="govuk-table__cell">
                         <a th:id="|lsc-case-reference-${idx.index}|"
-                            th:href="@{/application/sections/linked-cases/{id}/confirm(id=${linkedCase.id})}"
+                            th:href="@{/{caseContext}/sections/linked-cases/{id}/confirm(caseContext=${caseContext.getPathValue()},id=${linkedCase.id})}"
                            class="govuk-link" th:text="${linkedCase.lscCaseReference}"/>
                     </td>
                     <td class="govuk-table__cell"
@@ -67,7 +69,7 @@
                         th:text="${linkedCase.status}"/>
                     <td class="govuk-table__cell">
                         <a th:id="|remove-linked-case-${idx.index}|"
-                            th:href="@{/application/sections/linked-cases/{id}/remove(id=${linkedCase.id})}"
+                            th:href="@{/{caseContext}/sections/linked-cases/{id}/remove(caseContext=${caseContext.getPathValue()},id=${linkedCase.id})}"
                            class="govuk-link" th:text="#{site.remove}"/>
                     </td>
                 </tr>
@@ -76,9 +78,11 @@
         <govuk:button classes="govuk-button--secondary"
                       id="link-a-case-button"
                       th:text="#{application.generalDetails.linkCase.summary.linkACaseButton}"
-                      th:href="@{/application/sections/linked-cases/search}"/>
+                      th:href="@{/{caseContext}/sections/linked-cases/search(caseContext=${caseContext.getPathValue()})}"/>
         <div class="govuk-button-group">
-            <govuk:button th:href="@{/application/sections}"
+            <govuk:button th:if="${caseContext.isApplication()}" th:href="@{/application/sections}"
+                          th:text="#{site.confirm}"/>
+            <govuk:button th:if="${caseContext.isAmendment()}" th:href="@{/amendments/summary}"
                           th:text="#{site.confirm}"/>
         </div>
     </div>

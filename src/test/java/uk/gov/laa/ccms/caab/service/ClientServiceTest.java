@@ -29,16 +29,12 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
 @ExtendWith(MockitoExtension.class)
 public class ClientServiceTest {
-  @Mock
-  private SoaApiClient soaApiClient;
-  @Mock
-  private EbsApiClient ebsApiClient;
+  @Mock private SoaApiClient soaApiClient;
+  @Mock private EbsApiClient ebsApiClient;
 
-  @Mock
-  private ClientDetailMapper clientDetailMapper;
+  @Mock private ClientDetailMapper clientDetailMapper;
 
-  @InjectMocks
-  private ClientService clientService;
+  @InjectMocks private ClientService clientService;
 
   @Test
   void getClient_returnsClientDetails_Successful() {
@@ -71,8 +67,7 @@ public class ClientServiceTest {
     clientSearchCriteria.setForename(firstName);
     clientSearchCriteria.setSurname(lastName);
 
-    ClientDetails mockClientDetails =
-        new ClientDetails();
+    ClientDetails mockClientDetails = new ClientDetails();
 
     when(ebsApiClient.getClients(clientSearchCriteria, page, size))
         .thenReturn(Mono.just(mockClientDetails));
@@ -91,11 +86,9 @@ public class ClientServiceTest {
 
     TransactionStatus mockClientStatus = new TransactionStatus();
 
-    when(ebsApiClient.getClientStatus(transactionId))
-        .thenReturn(Mono.just(mockClientStatus));
+    when(ebsApiClient.getClientStatus(transactionId)).thenReturn(Mono.just(mockClientStatus));
 
-    Mono<TransactionStatus> clientStatusMono =
-        clientService.getClientStatus(transactionId);
+    Mono<TransactionStatus> clientStatusMono = clientService.getClientStatus(transactionId);
 
     StepVerifier.create(clientStatusMono)
         .expectNextMatches(clientStatus -> clientStatus == mockClientStatus)
@@ -126,8 +119,7 @@ public class ClientServiceTest {
     userDetail.setLoginId(loginId);
     userDetail.setUserType(userType);
 
-    when(clientDetailMapper.toClientDetail(any()))
-        .thenReturn(clientDetail);
+    when(clientDetailMapper.toClientDetail(any())).thenReturn(clientDetail);
 
     when(soaApiClient.postClient(clientDetailDetails, loginId, userType))
         .thenReturn(Mono.just(mockClientCreated));
@@ -165,8 +157,7 @@ public class ClientServiceTest {
     userDetail.setLoginId(loginId);
     userDetail.setUserType(userType);
 
-    when(clientDetailMapper.toClientDetail(any()))
-        .thenReturn(clientDetail);
+    when(clientDetailMapper.toClientDetail(any())).thenReturn(clientDetail);
 
     when(soaApiClient.putClient(clientReferenceNumber, clientDetailDetails, loginId, userType))
         .thenReturn(Mono.just(mockClientUpdated));

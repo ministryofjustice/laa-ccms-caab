@@ -1,8 +1,6 @@
 package uk.gov.laa.ccms.caab.client;
 
-/**
- * Custom exception class representing clamav antivirus client related exceptions.
- */
+/** Custom exception class representing clamav antivirus client related exceptions. */
 public class AvApiClientException extends RuntimeException {
   /**
    * Constructs a new exception with the specified detail message.

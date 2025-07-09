@@ -21,8 +21,7 @@ import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
 @ExtendWith(SpringExtension.class)
 class CostDetailsValidatorTest {
 
-  @InjectMocks
-  private CostDetailsValidator costDetailsValidator;
+  @InjectMocks private CostDetailsValidator costDetailsValidator;
 
   private CostsFormData costsFormData;
   private Errors errors;
@@ -48,7 +47,6 @@ class CostDetailsValidatorTest {
     void supports_ReturnsFalseForOtherClasses() {
       assertFalse(costDetailsValidator.supports(Object.class));
     }
-
   }
 
   @Nested
@@ -85,12 +83,14 @@ class CostDetailsValidatorTest {
 
     @Test
     @DisplayName("Should have errors when below granted amount")
-    void shouldHaveErrorsWhenBelowGrantedAmount(){
+    void shouldHaveErrorsWhenBelowGrantedAmount() {
       costsFormData.setRequestedCostLimitation("100.00");
       costDetailsValidator.validate(costsFormData, errors);
       assertTrue(errors.hasErrors());
       assertNotNull(errors.getFieldError("requestedCostLimitation"));
-      assertEquals("caseCostLimitation.requestedAmount.belowGrantedAmount", errors.getFieldError("requestedCostLimitation").getCode());
+      assertEquals(
+          "caseCostLimitation.requestedAmount.belowGrantedAmount",
+          errors.getFieldError("requestedCostLimitation").getCode());
     }
   }
 }

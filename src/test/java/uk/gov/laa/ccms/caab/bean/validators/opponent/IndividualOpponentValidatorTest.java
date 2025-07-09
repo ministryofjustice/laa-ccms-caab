@@ -21,8 +21,7 @@ import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
 @ExtendWith(SpringExtension.class)
 class IndividualOpponentValidatorTest {
 
-  @InjectMocks
-  private IndividualOpponentValidator validator;
+  @InjectMocks private IndividualOpponentValidator validator;
 
   private IndividualOpponentFormData opponentFormData;
 
@@ -30,8 +29,7 @@ class IndividualOpponentValidatorTest {
 
   @BeforeEach
   public void setUp() {
-    opponentFormData =
-        new IndividualOpponentFormData();
+    opponentFormData = new IndividualOpponentFormData();
     errors = new BeanPropertyBindingResult(opponentFormData, CURRENT_OPPONENT);
   }
 
@@ -100,7 +98,7 @@ class IndividualOpponentValidatorTest {
       final Integer errorCount) {
     opponentFormData.setRelationshipToCase(relationshipToCase);
     opponentFormData.setRelationshipToClient(relationshipToClient);
-    
+
     opponentFormData.setHouseNameOrNumber(houseNameOrNumber);
     opponentFormData.setAddressLine1(addressLine1);
     opponentFormData.setAddressLine2(addressLine2);
@@ -133,8 +131,7 @@ class IndividualOpponentValidatorTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"USA", "GBR"})
-  public void validate_invalidPostcodeFormat(String country)
-  {
+  public void validate_invalidPostcodeFormat(String country) {
     opponentFormData.setRelationshipToCase("OPP");
     opponentFormData.setRelationshipToClient("CUSTOMER");
     opponentFormData.setTitle("Mr.");
@@ -152,8 +149,7 @@ class IndividualOpponentValidatorTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"USA", "GBR"})
-  public void validate_validPostcodeFormat(String country)
-  {
+  public void validate_validPostcodeFormat(String country) {
     opponentFormData.setRelationshipToCase("OPP");
     opponentFormData.setRelationshipToClient("CUSTOMER");
     opponentFormData.setTitle("Mr.");

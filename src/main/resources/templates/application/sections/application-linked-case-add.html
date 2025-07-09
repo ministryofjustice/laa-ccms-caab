@@ -1,17 +1,21 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title th:text="#{service.name} + ' - ' + #{application.start}"></title>
+    <title th:text="#{service.name} + ' - ' + #{application.start}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
-  <div id="breadcrumbs">
-    <a th:href="@{/application/sections/linked-cases}" class="govuk-back-link"
-      th:text="#{application.generalDetails.linkCase.add.goBack}"/>
-  </div>
-  <div id="main-content">
-    <th:block th:replace="~{application/partials/linked-cases :: confirmLinkedCase(action=${'/application/sections/linked-cases/add'})}"/>
-  </div>
+    <div id="breadcrumbs">
+        <a th:href="@{/{caseContext}/sections/linked-cases(caseContext=${caseContext.getPathValue()})}"
+           class="govuk-back-link"
+           th:text="#{application.generalDetails.linkCase.add.goBack}"/>
+    </div>
+    <div id="main-content">
+        <th:block
+                th:replace="~{application/partials/linked-cases :: confirmLinkedCase(action=${'/' + caseContext.getPathValue() + '/sections/linked-cases/add'})}"/>
+    </div>
 </div>
 </body>
 </html>

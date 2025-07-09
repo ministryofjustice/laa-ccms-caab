@@ -28,15 +28,13 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryAttributeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 
-/**
- * Utility class for handling assessment-related operations.
- */
+/** Utility class for handling assessment-related operations. */
 @Slf4j
 public final class AssessmentUtil {
 
   /**
-   * Retrieves the most recent assessment detail from a list of assessments based on the
-   * last saved date within their audit details.
+   * Retrieves the most recent assessment detail from a list of assessments based on the last saved
+   * date within their audit details.
    *
    * @param assessments the list of assessment details
    * @return the most recent assessment detail, or null if the list is empty or null
@@ -44,10 +42,14 @@ public final class AssessmentUtil {
   public static AssessmentDetail getMostRecentAssessmentDetail(
       final List<AssessmentDetail> assessments) {
 
-    return assessments != null ? assessments.stream()
-        .max(Comparator.comparing(assessment -> assessment.getAuditDetail().getLastSaved(),
-            Comparator.nullsFirst(Comparator.naturalOrder())))
-        .orElse(null) : null;
+    return assessments != null
+        ? assessments.stream()
+            .max(
+                Comparator.comparing(
+                    assessment -> assessment.getAuditDetail().getLastSaved(),
+                    Comparator.nullsFirst(Comparator.naturalOrder())))
+            .orElse(null)
+        : null;
   }
 
   /**
@@ -58,16 +60,15 @@ public final class AssessmentUtil {
    * @return the matching assessment entity type detail, or null if not found
    */
   public static AssessmentEntityTypeDetail getAssessmentEntityType(
-      final AssessmentDetail assessment,
-      final AssessmentEntityType entityType) {
+      final AssessmentDetail assessment, final AssessmentEntityType entityType) {
 
     if (assessment == null || entityType == null) {
       return null;
     }
 
     return assessment.getEntityTypes().stream()
-        .filter(entityTypeDetail -> entityTypeDetail.getName()
-            .equalsIgnoreCase(entityType.getType()))
+        .filter(
+            entityTypeDetail -> entityTypeDetail.getName().equalsIgnoreCase(entityType.getType()))
         .findFirst()
         .orElse(null);
   }
@@ -80,16 +81,14 @@ public final class AssessmentUtil {
    * @return the matching assessment entity type detail, or null if not found
    */
   public static AssessmentEntityTypeDetail getAssessmentEntityType(
-      final AssessmentDetail assessment,
-      final String entityType) {
+      final AssessmentDetail assessment, final String entityType) {
 
     if (assessment == null || entityType == null) {
       return null;
     }
 
     return assessment.getEntityTypes().stream()
-        .filter(entityTypeDetail -> entityTypeDetail.getName()
-            .equalsIgnoreCase(entityType))
+        .filter(entityTypeDetail -> entityTypeDetail.getName().equalsIgnoreCase(entityType))
         .findFirst()
         .orElse(null);
   }
@@ -102,8 +101,7 @@ public final class AssessmentUtil {
    * @return a list of assessment entity details, or an empty list if none found
    */
   public static List<AssessmentEntityDetail> getAssessmentEntitiesForEntityType(
-      final AssessmentDetail assessment,
-      final AssessmentEntityType entityType) {
+      final AssessmentDetail assessment, final AssessmentEntityType entityType) {
 
     return Optional.ofNullable(getAssessmentEntityType(assessment, entityType))
         .map(AssessmentEntityTypeDetail::getEntities)
@@ -118,14 +116,12 @@ public final class AssessmentUtil {
    * @return a list of assessment entity details, or an empty list if none found
    */
   public static List<AssessmentEntityDetail> getAssessmentEntitiesForEntityType(
-      final AssessmentDetail assessment,
-      final String entityType) {
+      final AssessmentDetail assessment, final String entityType) {
 
     return Optional.ofNullable(getAssessmentEntityType(assessment, entityType))
         .map(AssessmentEntityTypeDetail::getEntities)
         .orElse(new ArrayList<>());
   }
-
 
   /**
    * Retrieves the relationship detail for the specified assessment entity and relationship.
@@ -135,16 +131,14 @@ public final class AssessmentUtil {
    * @return the assessment relationship detail, or null if not found
    */
   public static AssessmentRelationshipDetail getEntityRelationship(
-      final AssessmentEntityDetail assessmentEntity,
-      final AssessmentRelationship relationship) {
+      final AssessmentEntityDetail assessmentEntity, final AssessmentRelationship relationship) {
 
     if (assessmentEntity == null || relationship == null) {
       return null;
     }
 
     return assessmentEntity.getRelations().stream()
-        .filter(relation -> relation.getName()
-            .equalsIgnoreCase(relationship.getRelationship()))
+        .filter(relation -> relation.getName().equalsIgnoreCase(relationship.getRelationship()))
         .findFirst()
         .orElse(null);
   }
@@ -157,8 +151,7 @@ public final class AssessmentUtil {
    * @return the matching assessment entity detail, or null if not found
    */
   public static AssessmentEntityDetail getAssessmentEntity(
-      final AssessmentEntityTypeDetail assessmentEntityType,
-      final String entityName) {
+      final AssessmentEntityTypeDetail assessmentEntityType, final String entityName) {
 
     return assessmentEntityType.getEntities().stream()
         .filter(entity -> entity.getName().equals(entityName))
@@ -174,14 +167,12 @@ public final class AssessmentUtil {
    * @return a list of related assessment entity details
    */
   public static List<AssessmentEntityDetail> getRelatedEntities(
-      final AssessmentRelationshipDetail relationship,
-      final AssessmentDetail assessment) {
+      final AssessmentRelationshipDetail relationship, final AssessmentDetail assessment) {
 
     final List<AssessmentEntityDetail> relatedEntities = new ArrayList<>();
 
     for (final AssessmentEntityTypeDetail entityType : assessment.getEntityTypes()) {
-      if (entityType.getName().equalsIgnoreCase(
-          relationship.getName().replace("_", ""))) {
+      if (entityType.getName().equalsIgnoreCase(relationship.getName().replace("_", ""))) {
         relatedEntities.addAll(entityType.getEntities());
       }
     }
@@ -196,16 +187,14 @@ public final class AssessmentUtil {
    * @return the matching assessment attribute detail, or null if not found
    */
   public static AssessmentAttributeDetail getAssessmentAttribute(
-      final AssessmentEntityDetail assessmentEntity,
-      final AssessmentAttribute attribute) {
+      final AssessmentEntityDetail assessmentEntity, final AssessmentAttribute attribute) {
 
     if (attribute == null || assessmentEntity == null) {
       return null;
     }
 
     return assessmentEntity.getAttributes().stream()
-        .filter(attributeDetail -> attributeDetail.getName()
-            .equalsIgnoreCase(attribute.name()))
+        .filter(attributeDetail -> attributeDetail.getName().equalsIgnoreCase(attribute.name()))
         .findFirst()
         .orElse(null);
   }
@@ -218,23 +207,21 @@ public final class AssessmentUtil {
    * @return the detail of the specified attribute, or null if not found or if any parameter is null
    */
   public static AssessmentAttributeDetail getAssessmentAttribute(
-      final AssessmentEntityDetail assessmentEntity,
-      final String attribute) {
+      final AssessmentEntityDetail assessmentEntity, final String attribute) {
 
     if (attribute == null || assessmentEntity == null) {
       return null;
     }
 
     return assessmentEntity.getAttributes().stream()
-        .filter(attributeDetail -> attributeDetail.getName()
-            .equalsIgnoreCase(attribute))
+        .filter(attributeDetail -> attributeDetail.getName().equalsIgnoreCase(attribute))
         .findFirst()
         .orElse(null);
   }
 
   /**
-   * Checks if the Assessment details has a consistent reference to the session,
-   * this checks over the global entities and attributes to ensure the case reference is consistent.
+   * Checks if the Assessment details has a consistent reference to the session, this checks over
+   * the global entities and attributes to ensure the case reference is consistent.
    *
    * @param assessment the assessment detail to check
    * @return {@code true} if the assessment is consistent, {@code false} otherwise
@@ -244,18 +231,22 @@ public final class AssessmentUtil {
     final List<AssessmentEntityDetail> globalEntites =
         getAssessmentEntitiesForEntityType(assessment, GLOBAL);
 
-    //Check entity ID matches
+    // Check entity ID matches
     for (final AssessmentEntityDetail globalEntity : globalEntites) {
       if (!assessment.getCaseReferenceNumber().equalsIgnoreCase(globalEntity.getName())) {
         log.info(
-            "CORRUPTED : Assessment : " + assessment.getCaseReferenceNumber() + "Assessment : "
-                + assessment.getName() + ", EntityId : " + globalEntity.getName());
+            "CORRUPTED : Assessment : "
+                + assessment.getCaseReferenceNumber()
+                + "Assessment : "
+                + assessment.getName()
+                + ", EntityId : "
+                + globalEntity.getName());
 
         return false;
       }
     }
 
-    //Check attribute APPLICATION_CASE_REF matches targetID
+    // Check attribute APPLICATION_CASE_REF matches targetID
     for (final AssessmentEntityDetail globalEntity : globalEntites) {
 
       final AssessmentAttributeDetail attribute =
@@ -268,9 +259,13 @@ public final class AssessmentUtil {
             && attribute.getValue().equalsIgnoreCase(assessment.getCaseReferenceNumber())) {
           return true;
         } else {
-          log.info("CORRUPTED : Assessment : " + assessment.getCaseReferenceNumber()
-              + ", EntityId : " + globalEntity.getName()
-              + ", Attribute : " + attribute.getValue());
+          log.info(
+              "CORRUPTED : Assessment : "
+                  + assessment.getCaseReferenceNumber()
+                  + ", EntityId : "
+                  + globalEntity.getName()
+                  + ", Attribute : "
+                  + attribute.getValue());
 
           return false;
         }
@@ -291,7 +286,7 @@ public final class AssessmentUtil {
         .flatMap(category -> AssessmentName.findAssessmentNamesByCategory(category).stream())
         .toList();
   }
-  
+
   /**
    * Formats the value of an AssessmentAttributeDetail based on its type.
    *
@@ -310,31 +305,39 @@ public final class AssessmentUtil {
         final Date storedDate = new SimpleDateFormat("yyyy-MM-dd").parse(attribute.getValue());
         formattedValue = new SimpleDateFormat("dd/MM/yyyy").format(storedDate);
       } catch (final ParseException e) {
-        log.debug("Unable to parse stored date according to format, "
-            + "will use the un-formatted date on the overview screen", e);
+        log.debug(
+            "Unable to parse stored date according to format, "
+                + "will use the un-formatted date on the overview screen",
+            e);
         formattedValue = attribute.getValue();
       }
     } else if ("CURRENCY".equalsIgnoreCase(attribute.getType()) && attribute.getValue() != null) {
       try {
         // Convert the value to a number and format it as currency
         final BigDecimal attributeAsNumber = new BigDecimal(attribute.getValue());
-        formattedValue = attributeAsNumber.setScale(2, RoundingMode.HALF_UP)
-            .toPlainString();
+        formattedValue = attributeAsNumber.setScale(2, RoundingMode.HALF_UP).toPlainString();
         formattedValue = "£" + formattedValue;
       } catch (final NumberFormatException e) {
-        log.debug("Unable to convert attribute value to a number, "
-            + "will use the un-formatted value on the overview screen.", e);
+        log.debug(
+            "Unable to convert attribute value to a number, "
+                + "will use the un-formatted value on the overview screen.",
+            e);
         formattedValue = attribute.getValue();
       }
     } else if ("NUMBER".equalsIgnoreCase(attribute.getType()) && attribute.getValue() != null) {
       try {
         // Convert the value to a number and format it, stripping trailing zeros
         final BigDecimal attributeAsNumber = new BigDecimal(attribute.getValue());
-        formattedValue = attributeAsNumber.setScale(2, RoundingMode.HALF_UP)
-            .stripTrailingZeros().toPlainString();
+        formattedValue =
+            attributeAsNumber
+                .setScale(2, RoundingMode.HALF_UP)
+                .stripTrailingZeros()
+                .toPlainString();
       } catch (final NumberFormatException e) {
-        log.debug("Unable to convert attribute value to a number, "
-            + "will use the un-formatted value on the overview screen.", e);
+        log.debug(
+            "Unable to convert attribute value to a number, "
+                + "will use the un-formatted value on the overview screen.",
+            e);
         formattedValue = attribute.getValue();
       }
     } else if ("BOOLEAN".equalsIgnoreCase(attribute.getType()) && attribute.getValue() != null) {
@@ -380,18 +383,15 @@ public final class AssessmentUtil {
    * @return the matching assessment detail, or throws an exception if not found
    */
   public static AssessmentDetail getAssessment(
-      final AssessmentDetails assessmentDetails,
-      final AssessmentRulebase assessmentRulebase) {
+      final AssessmentDetails assessmentDetails, final AssessmentRulebase assessmentRulebase) {
 
-    return assessmentDetails.getContent()
-        .stream()
-        .filter(assessmentDetail -> assessmentDetail.getName()
-            .equalsIgnoreCase(assessmentRulebase.getName()))
+    return assessmentDetails.getContent().stream()
+        .filter(
+            assessmentDetail ->
+                assessmentDetail.getName().equalsIgnoreCase(assessmentRulebase.getName()))
         .findFirst()
         .orElseThrow(() -> new CaabApplicationException("Failed to retrieve assessment"));
   }
 
-  private AssessmentUtil() {
-  }
-
+  private AssessmentUtil() {}
 }

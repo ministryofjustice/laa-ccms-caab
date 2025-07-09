@@ -3,69 +3,43 @@ package uk.gov.laa.ccms.caab.model.summary;
 import java.util.Date;
 import lombok.Data;
 
-/**
- * Display details for general details submission summary.
- */
+/** Display details for general details submission summary. */
 @Data
 public class GeneralDetailsSubmissionSummaryDisplay {
 
-  /**
-   * The category of law.
-   */
+  /** The category of law. */
   private String categoryOfLaw;
 
-  /**
-   * The type of application.
-   */
+  /** The type of application. */
   private String applicationType;
 
-  /**
-   * The date of delegated functions.
-   */
+  /** The date of delegated functions. */
   private Date delegatedFunctionsDate;
 
-  /**
-   * The preferred address.
-   */
+  /** The preferred address. */
   private String preferredAddress;
 
-  /**
-   * The country.
-   */
+  /** The country. */
   private String country;
 
-  /**
-   * The house name or number.
-   */
+  /** The house name or number. */
   private String houseNameOrNumber;
 
-  /**
-   * The postcode.
-   */
+  /** The postcode. */
   private String postcode;
 
-  /**
-   * The care of (C/O) address line.
-   */
+  /** The care of (C/O) address line. */
   private String careOf;
 
-  /**
-   * The first line of the address.
-   */
+  /** The first line of the address. */
   private String addressLine1;
 
-  /**
-   * The second line of the address.
-   */
+  /** The second line of the address. */
   private String addressLine2;
 
-  /**
-   * The city.
-   */
+  /** The city. */
   private String city;
 
-  /**
-   * The county.
-   */
+  /** The county. */
   private String county;
 }

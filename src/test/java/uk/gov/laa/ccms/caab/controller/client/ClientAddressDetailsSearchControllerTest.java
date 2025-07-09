@@ -33,14 +33,11 @@ import uk.gov.laa.ccms.caab.service.AddressService;
 @ExtendWith(MockitoExtension.class)
 public class ClientAddressDetailsSearchControllerTest {
 
-  @Mock
-  private AddressService addressService;
+  @Mock private AddressService addressService;
 
-  @Mock
-  private AddressSearchValidator addressSearchValidator;
+  @Mock private AddressSearchValidator addressSearchValidator;
 
-  @InjectMocks
-  private ClientAddressDetailsSearchController clientAddressDetailsSearchController;
+  @InjectMocks private ClientAddressDetailsSearchController clientAddressDetailsSearchController;
 
   private MockMvc mockMvc;
 
@@ -56,15 +53,16 @@ public class ClientAddressDetailsSearchControllerTest {
     searchResults = new ResultsDisplay<>();
     searchResults.setContent(new ArrayList<>());
     clientFlowFormData = new ClientFlowFormData(ACTION_CREATE);
-
   }
 
   @Test
   void testClientDetailsAddressSearch() throws Exception {
 
-    mockMvc.perform(get("/application/client/details/address/search")
-            .sessionAttr(ADDRESS_SEARCH_RESULTS, searchResults)
-            .flashAttr("addressSearch", addressSearch))
+    mockMvc
+        .perform(
+            get("/application/client/details/address/search")
+                .sessionAttr(ADDRESS_SEARCH_RESULTS, searchResults)
+                .flashAttr("addressSearch", addressSearch))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/address-client-search-results"))
@@ -74,10 +72,12 @@ public class ClientAddressDetailsSearchControllerTest {
   @Test
   void testClientDetailsAddressSearchPost() throws Exception {
 
-    mockMvc.perform(post("/application/client/details/address/search")
-            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-            .sessionAttr(ADDRESS_SEARCH_RESULTS, searchResults)
-            .flashAttr("addressSearch", addressSearch))
+    mockMvc
+        .perform(
+            post("/application/client/details/address/search")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                .sessionAttr(ADDRESS_SEARCH_RESULTS, searchResults)
+                .flashAttr("addressSearch", addressSearch))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/client/details/address"));
@@ -86,16 +86,21 @@ public class ClientAddressDetailsSearchControllerTest {
   @Test
   void testClientDetailsAddressSearchPost_ValidationError() throws Exception {
 
-    doAnswer(invocation -> {
-      Errors errors = (Errors) invocation.getArguments()[1];
-      errors.rejectValue("uprn", "required.uprn", "Please complete 'UPRN'.");
-      return null;
-    }).when(addressSearchValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue("uprn", "required.uprn", "Please complete 'UPRN'.");
+              return null;
+            })
+        .when(addressSearchValidator)
+        .validate(any(), any());
 
-    mockMvc.perform(post("/application/client/details/address/search")
-            .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-            .sessionAttr(ADDRESS_SEARCH_RESULTS, searchResults)
-            .flashAttr("addressSearch", addressSearch))
+    mockMvc
+        .perform(
+            post("/application/client/details/address/search")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                .sessionAttr(ADDRESS_SEARCH_RESULTS, searchResults)
+                .flashAttr("addressSearch", addressSearch))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/address-client-search-results"))

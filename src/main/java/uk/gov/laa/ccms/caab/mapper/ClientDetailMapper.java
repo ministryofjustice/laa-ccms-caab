@@ -25,8 +25,8 @@ import uk.gov.laa.ccms.soa.gateway.model.ContactDetail;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 
 /**
- * Maps between Client details form bean and the soa-api client detail. Requires the
- * {@link uk.gov.laa.ccms.caab.mapper.IgnoreUnmappedMapperConfig}.
+ * Maps between Client details form bean and the soa-api client detail. Requires the {@link
+ * uk.gov.laa.ccms.caab.mapper.IgnoreUnmappedMapperConfig}.
  */
 @Mapper(componentModel = "spring", config = IgnoreUnmappedMapperConfig.class)
 public interface ClientDetailMapper {
@@ -38,13 +38,12 @@ public interface ClientDetailMapper {
   @Mapping(target = "details", source = ".")
   ClientDetail toClientDetail(ClientFlowFormData clientFlowFormData);
 
-  @Mapping(target = "disabilityMonitoring.disabilityType",
+  @Mapping(
+      target = "disabilityMonitoring.disabilityType",
       source = "monitoringDetails.disability",
       qualifiedByName = "mapStringToList")
-  @Mapping(target = "ethnicMonitoring",
-      source = "monitoringDetails.ethnicOrigin")
-  @Mapping(target = "specialConsiderations",
-      source = "monitoringDetails.specialConsiderations")
+  @Mapping(target = "ethnicMonitoring", source = "monitoringDetails.ethnicOrigin")
+  @Mapping(target = "specialConsiderations", source = "monitoringDetails.specialConsiderations")
   @Mapping(target = "name", source = "basicDetails")
   @Mapping(target = "personalInformation", source = "basicDetails")
   @Mapping(target = "contacts", source = "contactDetails")
@@ -56,27 +55,18 @@ public interface ClientDetailMapper {
   @Mapping(target = "fullName", source = ".", qualifiedByName = "mapFullName")
   NameDetail toNameDetail(ClientFormDataBasicDetails basicDetails);
 
-  @Mapping(target = "dateOfBirth",
-      source = ".",
-      qualifiedByName = "mapDateOfBirth")
-  @Mapping(target = "dateOfDeath",
-      ignore = true)
-  @Mapping(target = "mentalCapacityInd",
-      source = "mentalIncapacity")
+  @Mapping(target = "dateOfBirth", source = ".", qualifiedByName = "mapDateOfBirth")
+  @Mapping(target = "dateOfDeath", ignore = true)
+  @Mapping(target = "mentalCapacityInd", source = "mentalIncapacity")
   ClientPersonalDetail toClientPersonalDetail(ClientFormDataBasicDetails basicDetails);
 
-  @Mapping(target = "mobileNumber",
-      source = "telephoneMobile")
+  @Mapping(target = "mobileNumber", source = "telephoneMobile")
   ContactDetail toContactDetails(ClientFormDataContactDetails contactDetails);
 
-  @Mapping(target = "addressId",
-      ignore = true)
-  @Mapping(target = "house",
-      source = "houseNameNumber")
-  @Mapping(target = "city",
-      source = "cityTown")
-  @Mapping(target = "postalCode",
-      source = "postcode")
+  @Mapping(target = "addressId", ignore = true)
+  @Mapping(target = "house", source = "houseNameNumber")
+  @Mapping(target = "city", source = "cityTown")
+  @Mapping(target = "postalCode", source = "postcode")
   AddressDetail toAddressDetail(ClientFormDataAddressDetails addressDetails);
 
   /**
@@ -101,13 +91,13 @@ public interface ClientDetailMapper {
    */
   @Named("mapFullName")
   default String mapFullName(final ClientFormDataBasicDetails basicDetails) {
-    final String fullName = Stream.of(
-            basicDetails.getFirstName(),
-            basicDetails.getMiddleNames(),
-            basicDetails.getSurname()
-        )
-        .filter(name -> name != null && !name.isEmpty())
-        .collect(Collectors.joining(" "));
+    final String fullName =
+        Stream.of(
+                basicDetails.getFirstName(),
+                basicDetails.getMiddleNames(),
+                basicDetails.getSurname())
+            .filter(name -> name != null && !name.isEmpty())
+            .collect(Collectors.joining(" "));
 
     return fullName.isEmpty() ? null : fullName;
   }
@@ -128,20 +118,19 @@ public interface ClientDetailMapper {
 
   @Mapping(target = "contactDetails", source = "contacts")
   @Mapping(target = "addressDetails", source = "address")
-  @Mapping(target = "monitoringDetails.ethnicOrigin",
-      source = "ethnicMonitoring")
-  @Mapping(target = "monitoringDetails.disability",
+  @Mapping(target = "monitoringDetails.ethnicOrigin", source = "ethnicMonitoring")
+  @Mapping(
+      target = "monitoringDetails.disability",
       source = "disabilityMonitoring.disabilityType",
       qualifiedByName = "mapListToString")
-  @Mapping(target = "monitoringDetails.specialConsiderations",
-      source = "specialConsiderations")
+  @Mapping(target = "monitoringDetails.specialConsiderations", source = "specialConsiderations")
   ClientFlowFormData toClientFlowFormData(ClientDetailDetails clientDetailDetails);
 
   /**
    * Adds the basic details to the client flow form data from soa client details, using nameDetails
    * and personal information.
    *
-   * @param clientFlowFormData  The client flow form data with basic details to be amended.
+   * @param clientFlowFormData The client flow form data with basic details to be amended.
    * @param clientDetailDetails The returned soa client details to map from.
    */
   @BeforeMapping
@@ -149,10 +138,10 @@ public interface ClientDetailMapper {
       @MappingTarget final ClientFlowFormData clientFlowFormData,
       final ClientDetailDetails clientDetailDetails) {
     clientFlowFormData.setBasicDetails(new ClientFormDataBasicDetails());
-    addClientFormDataBasicDetailsFromNameDetail(clientFlowFormData.getBasicDetails(),
-        clientDetailDetails.getName());
-    addClientFormDataBasicDetailsFromClientPersonalDetail(clientFlowFormData.getBasicDetails(),
-        clientDetailDetails.getPersonalInformation());
+    addClientFormDataBasicDetailsFromNameDetail(
+        clientFlowFormData.getBasicDetails(), clientDetailDetails.getName());
+    addClientFormDataBasicDetailsFromClientPersonalDetail(
+        clientFlowFormData.getBasicDetails(), clientDetailDetails.getPersonalInformation());
   }
 
   /**
@@ -161,8 +150,7 @@ public interface ClientDetailMapper {
    * @param clientFlowFormData The client flow form data with basic details to be amended.
    */
   @AfterMapping
-  default void setAddressDetailsIfNull(
-      @MappingTarget final ClientFlowFormData clientFlowFormData) {
+  default void setAddressDetailsIfNull(@MappingTarget final ClientFlowFormData clientFlowFormData) {
     if (clientFlowFormData.getAddressDetails() == null) {
       final ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
       addressDetails.setVulnerableClient(
@@ -171,9 +159,12 @@ public interface ClientDetailMapper {
     }
   }
 
-  @Mapping(target = "basicDetails.dateOfBirth", source = "personalInformation.dateOfBirth",
+  @Mapping(
+      target = "basicDetails.dateOfBirth",
+      source = "personalInformation.dateOfBirth",
       qualifiedByName = "mapComponentDateFromDate")
-  @Mapping(target = "basicDetails.mentalIncapacity",
+  @Mapping(
+      target = "basicDetails.mentalIncapacity",
       source = "personalInformation.mentalCapacityInd")
   void addClientFormDataBasicDetailsFromClientPersonalDetail(
       @MappingTarget ClientFormDataBasicDetails basicDetails,
@@ -183,17 +174,19 @@ public interface ClientDetailMapper {
   void addClientFormDataBasicDetailsFromNameDetail(
       @MappingTarget ClientFormDataBasicDetails basicDetails, NameDetail name);
 
-  @Mapping(target = "telephoneMobile",
-      source = "mobileNumber")
-  @Mapping(target = "telephoneHomePresent",
-      expression = "java(contacts.getTelephoneHome() != null "
-         + "&& !contacts.getTelephoneHome().isEmpty())")
-  @Mapping(target = "telephoneWorkPresent",
-      expression = "java(contacts.getTelephoneWork() != null "
-         + "&& !contacts.getTelephoneWork().isEmpty())")
-  @Mapping(target = "telephoneMobilePresent",
-      expression = "java(contacts.getMobileNumber() != null "
-         + "&& !contacts.getMobileNumber().isEmpty())")
+  @Mapping(target = "telephoneMobile", source = "mobileNumber")
+  @Mapping(
+      target = "telephoneHomePresent",
+      expression =
+          "java(contacts.getTelephoneHome() != null && !contacts.getTelephoneHome().isEmpty())")
+  @Mapping(
+      target = "telephoneWorkPresent",
+      expression =
+          "java(contacts.getTelephoneWork() != null && !contacts.getTelephoneWork().isEmpty())")
+  @Mapping(
+      target = "telephoneMobilePresent",
+      expression =
+          "java(contacts.getMobileNumber() != null && !contacts.getMobileNumber().isEmpty())")
   ClientFormDataContactDetails toClientFormDataContactDetails(ContactDetail contacts);
 
   @Mapping(target = "houseNameNumber", source = "house")
@@ -228,5 +221,4 @@ public interface ClientDetailMapper {
     }
     return DateUtils.convertToComponentDate(date);
   }
-
 }

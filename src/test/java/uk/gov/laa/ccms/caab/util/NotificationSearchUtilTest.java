@@ -54,7 +54,6 @@ class NotificationSearchUtilTest {
     assertEquals(toResultStringDate(toDate), result.getNotificationToDate());
   }
 
-
   @Test
   @DisplayName("Should set to date if from date is set")
   void shouldSetToDateIfFromDateIsSet() {
@@ -97,8 +96,8 @@ class NotificationSearchUtilTest {
         NotificationSearchUtil.prepareNotificationSearchCriteria(input);
     // Then
     assertEquals(toResultStringDate(LocalDate.now()), result.getNotificationToDate());
-    assertEquals(toResultStringDate(LocalDate.now().minusYears(3)),
-        result.getNotificationFromDate());
+    assertEquals(
+        toResultStringDate(LocalDate.now().minusYears(3)), result.getNotificationFromDate());
   }
 
   @Test
@@ -117,6 +116,4 @@ class NotificationSearchUtilTest {
     assertEquals(toResultStringDate(fromDate), result.getNotificationFromDate());
     assertEquals(toResultStringDate(toDate), result.getNotificationToDate());
   }
-
-
 }

@@ -35,16 +35,13 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @WebAppConfiguration
 public class OfficeControllerTest {
 
-  @Mock
-  private OfficeValidator officeValidator;
+  @Mock private OfficeValidator officeValidator;
 
-  @InjectMocks
-  private OfficeController officeController;
+  @InjectMocks private OfficeController officeController;
 
   private MockMvc mockMvc;
 
-  @Autowired
-  private WebApplicationContext webApplicationContext;
+  @Autowired private WebApplicationContext webApplicationContext;
 
   private UserDetail user;
 
@@ -59,16 +56,17 @@ public class OfficeControllerTest {
     final ApplicationFormData applicationFormData = new ApplicationFormData();
     applicationFormData.setOfficeId(1);
 
-    this.mockMvc.perform(get("/application/office")
-            .flashAttr("user", user)
-            .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
+    this.mockMvc
+        .perform(
+            get("/application/office")
+                .flashAttr("user", user)
+                .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/select-office"))
         .andExpect(model().attribute("user", user))
         .andExpect(model().attribute("offices", user.getProvider().getOffices()))
         .andExpect(model().attributeExists(APPLICATION_FORM_DATA));
-
   }
 
   @Test
@@ -76,9 +74,11 @@ public class OfficeControllerTest {
     final ApplicationFormData applicationFormData = new ApplicationFormData();
     applicationFormData.setOfficeId(1);
 
-    this.mockMvc.perform(post("/application/office")
-            .flashAttr("user", user)
-            .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
+    this.mockMvc
+        .perform(
+            post("/application/office")
+                .flashAttr("user", user)
+                .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
         .andExpect(redirectedUrl("/application/category-of-law"));
   }
@@ -87,15 +87,20 @@ public class OfficeControllerTest {
   public void testPostOfficeHandlesValidationError() throws Exception {
     final ApplicationFormData applicationFormData = new ApplicationFormData();
 
-    doAnswer(invocation -> {
-      Errors errors = (Errors) invocation.getArguments()[1];
-      errors.rejectValue("officeId", "required.officeId", "Please select an office.");
-      return null;
-    }).when(officeValidator).validate(any(), any());
-    
-    this.mockMvc.perform(post("/application/office")
-            .flashAttr("user", user)
-            .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
+              errors.rejectValue("officeId", "required.officeId", "Please select an office.");
+              return null;
+            })
+        .when(officeValidator)
+        .validate(any(), any());
+
+    this.mockMvc
+        .perform(
+            post("/application/office")
+                .flashAttr("user", user)
+                .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/select-office"))
@@ -111,13 +116,6 @@ public class OfficeControllerTest {
   }
 
   private BaseProvider buildProvider() {
-    return new BaseProvider()
-        .id(123)
-        .addOfficesItem(
-            new BaseOffice()
-                .id(1)
-                .name("Office 1"));
+    return new BaseProvider().id(123).addOfficesItem(new BaseOffice().id(1).name("Office 1"));
   }
-
-
 }

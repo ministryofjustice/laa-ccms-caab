@@ -17,22 +17,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class PuiMetricServiceTest {
 
   PuiMetricService puiMetricService;
-  @Mock
-  PrometheusRegistry prometheusRegistry;
+  @Mock PrometheusRegistry prometheusRegistry;
 
   @BeforeEach
-  void beforeEach(){
+  void beforeEach() {
     puiMetricService = new PuiMetricService(prometheusRegistry);
   }
 
   @Test
   @DisplayName("Verify counters initialized")
-  void verifyCounterInitialized(){
+  void verifyCounterInitialized() {
     // Then
-    verify(prometheusRegistry, times(1))
-        .register(puiMetricService.getApplicationsCreatedCounter());
-    verify(prometheusRegistry, times(1))
-        .register(puiMetricService.getApplicationsCopiedCounter());
+    verify(prometheusRegistry, times(1)).register(puiMetricService.getApplicationsCreatedCounter());
+    verify(prometheusRegistry, times(1)).register(puiMetricService.getApplicationsCopiedCounter());
     verify(prometheusRegistry, times(1))
         .register(puiMetricService.getApplicationsSubmittedCounter());
     verify(prometheusRegistry, times(1))
@@ -41,7 +38,7 @@ class PuiMetricServiceTest {
 
   @Test
   @DisplayName("Should increment created counter")
-  void shouldIncrementCreatedCounter(){
+  void shouldIncrementCreatedCounter() {
     // When
     puiMetricService.incrementCreatedApplicationsCount("123");
     // Then
@@ -50,7 +47,7 @@ class PuiMetricServiceTest {
 
   @Test
   @DisplayName("Should increment created counter twice")
-  void shouldIncrementCreatedCounterTwice(){
+  void shouldIncrementCreatedCounterTwice() {
     // When
     puiMetricService.incrementCreatedApplicationsCount("123");
     puiMetricService.incrementCreatedApplicationsCount("123");
@@ -58,12 +55,11 @@ class PuiMetricServiceTest {
     assertThat(puiMetricService.getApplicationsCreatedCounter().get()).isEqualTo(2);
   }
 
-
   @Test
   @DisplayName("Should increment copied counter")
-  void shouldIncrementCopiedCounter(){
+  void shouldIncrementCopiedCounter() {
     // When
-    puiMetricService.incrementCopyAndCreatedCount("456","123");
+    puiMetricService.incrementCopyAndCreatedCount("456", "123");
     // Then
     assertThat(puiMetricService.getApplicationsCreatedCounter().get()).isEqualTo(1);
     assertThat(puiMetricService.getApplicationsCopiedCounter().get()).isEqualTo(1);
@@ -71,10 +67,10 @@ class PuiMetricServiceTest {
 
   @Test
   @DisplayName("Should increment copied counter twice")
-  void shouldIncrementCopiedCounterTwice(){
+  void shouldIncrementCopiedCounterTwice() {
     // When
-    puiMetricService.incrementCopyAndCreatedCount("456","123");
-    puiMetricService.incrementCopyAndCreatedCount("456","123");
+    puiMetricService.incrementCopyAndCreatedCount("456", "123");
+    puiMetricService.incrementCopyAndCreatedCount("456", "123");
     // Then
     assertThat(puiMetricService.getApplicationsCreatedCounter().get()).isEqualTo(2);
     assertThat(puiMetricService.getApplicationsCopiedCounter().get()).isEqualTo(2);
@@ -82,7 +78,7 @@ class PuiMetricServiceTest {
 
   @Test
   @DisplayName("Should increment submitted counter")
-  void shouldIncrementSubmittedCounter(){
+  void shouldIncrementSubmittedCounter() {
     // When
     puiMetricService.incrementSubmitApplicationsCount("123");
     // Then
@@ -91,7 +87,7 @@ class PuiMetricServiceTest {
 
   @Test
   @DisplayName("Should increment submitted counter twice")
-  void shouldIncrementSubmittedCounterTwice(){
+  void shouldIncrementSubmittedCounterTwice() {
     // When
     puiMetricService.incrementSubmitApplicationsCount("123");
     puiMetricService.incrementSubmitApplicationsCount("123");
@@ -101,7 +97,7 @@ class PuiMetricServiceTest {
 
   @Test
   @DisplayName("Should increment abandoned counter")
-  void shouldIncrementAbandonedCounter(){
+  void shouldIncrementAbandonedCounter() {
     // When
     puiMetricService.incrementAbandonedCount("123");
     // Then
@@ -110,7 +106,7 @@ class PuiMetricServiceTest {
 
   @Test
   @DisplayName("Should increment abandoned counter twice")
-  void shouldIncrementAbandonedCounterTwice(){
+  void shouldIncrementAbandonedCounterTwice() {
     // When
     puiMetricService.incrementAbandonedCount("123");
     puiMetricService.incrementAbandonedCount("123");

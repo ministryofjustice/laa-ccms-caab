@@ -12,9 +12,7 @@ import uk.gov.laa.ccms.caab.util.EvidenceUtil;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 
-/**
- * Mapper class to convert Evidence between various formats.
- */
+/** Mapper class to convert Evidence between various formats. */
 @Mapper(componentModel = "spring", uses = CommonMapper.class)
 public interface EvidenceMapper {
 
@@ -30,8 +28,8 @@ public interface EvidenceMapper {
       @Context final List<BaseEvidenceDocumentDetail> evidenceUploaded);
 
   /**
-   * Check if any of the uploaded documents contains the provided evidence description.
-   * Evidence descriptions are separated by a caret char.
+   * Check if any of the uploaded documents contains the provided evidence description. Evidence
+   * descriptions are separated by a caret char.
    *
    * @param evidenceDescription - the evidence description.
    * @param evidenceUploaded - the list of uploaded evidence documents.
@@ -59,8 +57,6 @@ public interface EvidenceMapper {
   @Mapping(target = "ccmsModule", source = "ccmsModule.code")
   EvidenceDocumentDetail toEvidenceDocumentDetail(final EvidenceUploadFormData formData);
 
-
-
   @Mapping(target = "statusDescription", ignore = true)
   @Mapping(target = "documentLink", ignore = true)
   @Mapping(target = "status", ignore = true)
@@ -69,5 +65,4 @@ public interface EvidenceMapper {
   @Mapping(target = "documentType", source = "documentType.id")
   @Mapping(target = "text", source = "description")
   Document toDocument(final EvidenceDocumentDetail evidenceDocumentDetail);
-
 }

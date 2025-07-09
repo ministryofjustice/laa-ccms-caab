@@ -3,12 +3,9 @@ package uk.gov.laa.ccms.caab.config;
 import java.util.Arrays;
 import lombok.Getter;
 
-/**
- * Enumerates the allowed user roles.
- */
+/** Enumerates the allowed user roles. */
 @Getter
 public enum UserRole {
-
   AMEND_CASE("AC", "amend cases"),
   ADD_PROCEEDING("ADDPROC", "add proceedings"),
   VIEW_NOTIFICATION_ATTACHMENT("ATT", "retrieve/download notification attachments"),
@@ -69,5 +66,4 @@ public enum UserRole {
         .findFirst()
         .orElseThrow(() -> new RuntimeException("Provided role code does not exist."));
   }
-
 }

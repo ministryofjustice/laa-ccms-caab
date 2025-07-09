@@ -22,9 +22,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientSearchCriteriaValidator
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 
-/**
- * Controller for handling client search operations.
- */
+/** Controller for handling client search operations. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -55,9 +53,9 @@ public class ClientSearchController {
    */
   @GetMapping("/application/client/search")
   public String clientSearch(
-          @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
-          @ModelAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
-          Model model) {
+      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
+      @ModelAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
+      Model model) {
     applicationFormData.setApplicationCreated(false);
     applicationFormData.setAgreementAccepted(false);
 
@@ -75,10 +73,9 @@ public class ClientSearchController {
    */
   @PostMapping("/application/client/search")
   public String clientSearch(
-          @Validated @ModelAttribute(CLIENT_SEARCH_CRITERIA)
-          ClientSearchCriteria clientSearchCriteria,
-          BindingResult bindingResult,
-          Model model) {
+      @Validated @ModelAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
+      BindingResult bindingResult,
+      Model model) {
 
     clientSearchCriteriaValidator.validate(clientSearchCriteria, bindingResult);
 
@@ -102,8 +99,8 @@ public class ClientSearchController {
     model.addAttribute("genders", genders.getContent());
 
     CommonLookupDetail uniqueIdentifierTypes =
-        Optional.ofNullable(lookupService.getCommonValues(
-            COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE).block())
+        Optional.ofNullable(
+                lookupService.getCommonValues(COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE).block())
             .orElse(new CommonLookupDetail());
     model.addAttribute("uniqueIdentifierTypes", uniqueIdentifierTypes.getContent());
   }

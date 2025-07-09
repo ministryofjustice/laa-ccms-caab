@@ -1,14 +1,9 @@
 package uk.gov.laa.ccms.caab.exception;
 
-/**
- * RuntimeException class for errors originating in the CAAB's Controllers.
- */
+/** RuntimeException class for errors originating in the CAAB's Controllers. */
 public class CaabApplicationException extends RuntimeException {
 
-  /**
-   * Constructs a new exception.
-   *
-   */
+  /** Constructs a new exception. */
   public CaabApplicationException() {
     super();
   }

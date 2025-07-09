@@ -7,8 +7,8 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResponse;
 
 /**
- * Client class responsible for interacting with the ordinance survey api microservice to
- * retrieve address data entities.
+ * Client class responsible for interacting with the ordinance survey api microservice to retrieve
+ * address data entities.
  */
 @Service
 public class OrdinanceSurveyApiClient {
@@ -17,8 +17,7 @@ public class OrdinanceSurveyApiClient {
   private final String osApiKey;
 
   public OrdinanceSurveyApiClient(
-      final WebClient osApiWebClient,
-      @Value("${os.api.key}") final String osApiKey) {
+      final WebClient osApiWebClient, @Value("${os.api.key}") final String osApiKey) {
     this.osApiWebClient = osApiWebClient;
     this.osApiKey = osApiKey;
   }
@@ -31,13 +30,15 @@ public class OrdinanceSurveyApiClient {
    */
   public Mono<OrdinanceSurveyResponse> getAddresses(final String postcode) {
     return osApiWebClient
-      .get()
-          .uri(builder -> builder.path("/search/places/v1/postcode")
-              .queryParam("postcode", postcode)
-              .queryParam("key", osApiKey)
-              .build())
-          .retrieve()
-          .bodyToMono(OrdinanceSurveyResponse.class);
+        .get()
+        .uri(
+            builder ->
+                builder
+                    .path("/search/places/v1/postcode")
+                    .queryParam("postcode", postcode)
+                    .queryParam("key", osApiKey)
+                    .build())
+        .retrieve()
+        .bodyToMono(OrdinanceSurveyResponse.class);
   }
-
 }

@@ -3,12 +3,9 @@ package uk.gov.laa.ccms.caab.constants;
 import java.util.Arrays;
 import lombok.Getter;
 
-/**
- * Enumeration to describe the methods of sending a notification attachment.
- */
+/** Enumeration to describe the methods of sending a notification attachment. */
 @Getter
 public enum SendBy {
-
   ELECTRONIC("E", "Electronic"),
   POSTAL("P", "Postal");
 
@@ -32,8 +29,7 @@ public enum SendBy {
     return Arrays.stream(SendBy.values())
         .filter(sendBy -> sendBy.getCode().equals(rawCode))
         .findFirst()
-        .orElseThrow(() -> new IllegalArgumentException(
-        "%s is not a valid SendBy code".formatted(rawCode)));
+        .orElseThrow(
+            () -> new IllegalArgumentException("%s is not a valid SendBy code".formatted(rawCode)));
   }
-
 }

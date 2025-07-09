@@ -121,5 +121,4 @@ class AddressFormDataMapperTest {
     assertNull(addressDetails.getCityTown());
     assertNull(addressDetails.getCounty());
   }
-
 }

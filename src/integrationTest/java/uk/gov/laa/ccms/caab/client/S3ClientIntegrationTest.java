@@ -35,21 +35,18 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   public static final String BUCKET_NAME = "testbucket";
 
   @Container
-  static LocalStackContainer localstackContainer = new LocalStackContainer(
-      DockerImageName.parse("localstack/localstack:s3-latest")
-  )
-      .withServices(LocalStackContainer.Service.S3);
+  static LocalStackContainer localstackContainer =
+      new LocalStackContainer(DockerImageName.parse("localstack/localstack:s3-latest"))
+          .withServices(LocalStackContainer.Service.S3);
 
-  @Autowired
-  private S3ApiClient s3ApiClient;
+  @Autowired private S3ApiClient s3ApiClient;
 
-  @Autowired
-  private S3Template s3Template;
+  @Autowired private S3Template s3Template;
 
   @BeforeEach
   void beforeEach() {
     // Check if bucket exists, if not then create the bucket
-    if(!s3Template.bucketExists(BUCKET_NAME)){
+    if (!s3Template.bucketExists(BUCKET_NAME)) {
       s3Template.createBucket(BUCKET_NAME);
     }
   }
@@ -61,17 +58,20 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
 
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
-    registry.add("spring.cloud.aws.s3.endpoint", () -> localstackContainer.getEndpointOverride(S3).toString());
+    registry.add(
+        "spring.cloud.aws.s3.endpoint",
+        () -> localstackContainer.getEndpointOverride(S3).toString());
     registry.add("laa.ccms.s3.buckets.document-bucket.name", () -> BUCKET_NAME);
   }
-
 
   @AfterEach
   void cleanup() {
     List<S3Resource> testFiles = s3Template.listObjects(BUCKET_NAME, "integration-test-file");
-    List<S3Resource> testDraftFiles = s3Template.listObjects(BUCKET_NAME, "draft/integration-test-file");
+    List<S3Resource> testDraftFiles =
+        s3Template.listObjects(BUCKET_NAME, "draft/integration-test-file");
     testFiles.forEach(testFile -> s3Template.deleteObject(BUCKET_NAME, testFile.getFilename()));
-    testDraftFiles.forEach(testFile -> s3Template.deleteObject(BUCKET_NAME, testFile.getFilename()));
+    testDraftFiles.forEach(
+        testFile -> s3Template.deleteObject(BUCKET_NAME, testFile.getFilename()));
   }
 
   @Test
@@ -79,8 +79,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
     String documentName = "integration-test-file-1";
     s3Template.upload(BUCKET_NAME, documentName, new ByteArrayInputStream("content".getBytes()));
 
-    List<S3Resource> beforeFiles = s3Template.listObjects(BUCKET_NAME, "integration-test"
-        + "-file");
+    List<S3Resource> beforeFiles = s3Template.listObjects(BUCKET_NAME, "integration-test-file");
     assertEquals(1, beforeFiles.size());
 
     Optional<String> document = s3ApiClient.downloadDocument(documentName);
@@ -118,13 +117,14 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
     s3Template.upload(BUCKET_NAME, documentName2, InputStream.nullInputStream());
     s3Template.upload(BUCKET_NAME, documentName3, InputStream.nullInputStream());
 
-    List<S3Resource> beforeFiles = s3Template.listObjects(BUCKET_NAME, "draft/integration-test"
-        + "-file");
+    List<S3Resource> beforeFiles =
+        s3Template.listObjects(BUCKET_NAME, "draft/integration-test-file");
     assertEquals(3, beforeFiles.size());
 
     s3ApiClient.removeDraftDocuments(Set.of("integration-test-file-1", "integration-test-file-2"));
 
-    List<S3Resource> afterFiles = s3Template.listObjects(BUCKET_NAME, "draft/integration-test-file");
+    List<S3Resource> afterFiles =
+        s3Template.listObjects(BUCKET_NAME, "draft/integration-test-file");
     assertEquals(1, afterFiles.size());
     assertNotNull(afterFiles.getFirst());
     assertEquals(afterFiles.getFirst().getFilename(), documentName3);
@@ -135,8 +135,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
     String documentName = "integration-test-file-1";
     s3Template.upload(BUCKET_NAME, documentName, InputStream.nullInputStream());
 
-    List<S3Resource> beforeFiles = s3Template.listObjects(BUCKET_NAME, "integration-test"
-        + "-file");
+    List<S3Resource> beforeFiles = s3Template.listObjects(BUCKET_NAME, "integration-test-file");
     assertEquals(1, beforeFiles.size());
 
     s3ApiClient.removeDocument("integration-test-file-1");
@@ -150,13 +149,14 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
     String documentName = "draft/integration-test-file-1";
     s3Template.upload(BUCKET_NAME, documentName, InputStream.nullInputStream());
 
-    List<S3Resource> beforeFiles = s3Template.listObjects(BUCKET_NAME, "draft/integration-test"
-        + "-file");
+    List<S3Resource> beforeFiles =
+        s3Template.listObjects(BUCKET_NAME, "draft/integration-test-file");
     assertEquals(1, beforeFiles.size());
 
     s3ApiClient.removeDraftDocument("integration-test-file-1");
 
-    List<S3Resource> afterFiles = s3Template.listObjects(BUCKET_NAME, "draft/integration-test-file");
+    List<S3Resource> afterFiles =
+        s3Template.listObjects(BUCKET_NAME, "draft/integration-test-file");
     assertTrue(afterFiles.isEmpty());
   }
 
@@ -165,8 +165,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
     String documentName = "integration-test-file-1";
     s3Template.upload(BUCKET_NAME, documentName, InputStream.nullInputStream());
 
-    List<S3Resource> beforeFiles = s3Template.listObjects(BUCKET_NAME, "integration-test"
-        + "-file");
+    List<S3Resource> beforeFiles = s3Template.listObjects(BUCKET_NAME, "integration-test-file");
     assertEquals(1, beforeFiles.size());
 
     Optional<String> documentUrl = s3ApiClient.getDocumentUrl("integration-test-file-1");
@@ -184,8 +183,8 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
     String documentName = "draft/integration-test-file-1";
     s3Template.upload(BUCKET_NAME, documentName, InputStream.nullInputStream());
 
-    List<S3Resource> beforeFiles = s3Template.listObjects(BUCKET_NAME, "draft/integration-test"
-        + "-file");
+    List<S3Resource> beforeFiles =
+        s3Template.listObjects(BUCKET_NAME, "draft/integration-test-file");
     assertEquals(1, beforeFiles.size());
 
     Optional<String> documentUrl = s3ApiClient.getDraftDocumentUrl("integration-test-file-1");
@@ -213,7 +212,8 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
     assertEquals(1, afterFiles.size());
 
     assertEquals("integration-test-file-1.pdf", afterFiles.getFirst().getFilename());
-    assertEquals(documentContent,
+    assertEquals(
+        documentContent,
         Base64.getEncoder().encodeToString(afterFiles.getFirst().getContentAsByteArray()));
   }
 
@@ -223,18 +223,19 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
     String documentContent = "ZG9jdW1lbnRDb250ZW50"; // "documentContent" Base64 encoded
     String documentExtension = "pdf";
 
-    List<S3Resource> beforeFiles = s3Template.listObjects(BUCKET_NAME, "draft/integration-test"
-        + "-file");
+    List<S3Resource> beforeFiles =
+        s3Template.listObjects(BUCKET_NAME, "draft/integration-test-file");
     assertTrue(beforeFiles.isEmpty());
 
     s3ApiClient.uploadDraftDocument(documentName, documentContent, documentExtension);
 
-    List<S3Resource> afterFiles = s3Template.listObjects(BUCKET_NAME, "draft/integration-test-file");
+    List<S3Resource> afterFiles =
+        s3Template.listObjects(BUCKET_NAME, "draft/integration-test-file");
     assertEquals(1, afterFiles.size());
 
     assertEquals("draft/integration-test-file-1.pdf", afterFiles.getFirst().getFilename());
-    assertEquals(documentContent,
+    assertEquals(
+        documentContent,
         Base64.getEncoder().encodeToString(afterFiles.getFirst().getContentAsByteArray()));
   }
-
 }

@@ -4,9 +4,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-/**
- * Represents the client address details form.
- */
+/** Represents the client address details form. */
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class ClientFormDataAddressDetails extends AbstractClientFormData {
@@ -29,7 +27,6 @@ public class ClientFormDataAddressDetails extends AbstractClientFormData {
   @Size(max = 35)
   private String county;
 
-  //Required for address searching
+  // Required for address searching
   private AddressSearchFormData addressSearch;
-
 }

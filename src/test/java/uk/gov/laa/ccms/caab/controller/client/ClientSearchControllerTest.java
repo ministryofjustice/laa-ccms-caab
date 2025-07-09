@@ -38,14 +38,11 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @WebAppConfiguration
 class ClientSearchControllerTest {
 
-  @Mock
-  private LookupService lookupService;
+  @Mock private LookupService lookupService;
 
-  @Mock
-  private ClientSearchCriteriaValidator clientSearchCriteriaValidator;
+  @Mock private ClientSearchCriteriaValidator clientSearchCriteriaValidator;
 
-  @InjectMocks
-  private ClientSearchController clientSearchController;
+  @InjectMocks private ClientSearchController clientSearchController;
 
   private MockMvc mockMvc;
 
@@ -68,12 +65,14 @@ class ClientSearchControllerTest {
   @Test
   void testClientSearch_Get() throws Exception {
     when(lookupService.getCommonValues(COMMON_VALUE_GENDER)).thenReturn(Mono.empty());
-    when(lookupService.getCommonValues(COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE)).thenReturn(
-        Mono.empty());
+    when(lookupService.getCommonValues(COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE))
+        .thenReturn(Mono.empty());
 
-    this.mockMvc.perform(get("/application/client/search")
-            .flashAttr(APPLICATION_FORM_DATA, new ApplicationFormData())
-            .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
+    this.mockMvc
+        .perform(
+            get("/application/client/search")
+                .flashAttr(APPLICATION_FORM_DATA, new ApplicationFormData())
+                .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-client-search"));
 
@@ -86,19 +85,23 @@ class ClientSearchControllerTest {
     final ClientSearchCriteria clientSearchCriteria = new ClientSearchCriteria();
 
     when(lookupService.getCommonValues(COMMON_VALUE_GENDER)).thenReturn(Mono.empty());
-    when(lookupService.getCommonValues(COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE)).thenReturn(
-        Mono.empty());
+    when(lookupService.getCommonValues(COMMON_VALUE_UNIQUE_IDENTIFIER_TYPE))
+        .thenReturn(Mono.empty());
 
-    doAnswer(invocation -> {
-      Errors errors = (Errors) invocation.getArguments()[1];
+    doAnswer(
+            invocation -> {
+              Errors errors = (Errors) invocation.getArguments()[1];
 
-      errors.rejectValue("forename", "required.forename",
-          "Please complete 'First name'.");
-      return null;
-    }).when(clientSearchCriteriaValidator).validate(any(), any());
-    this.mockMvc.perform(post("/application/client/search")
-            .flashAttr("clientSearchCriteria", clientSearchCriteria)
-            .sessionAttr("user", user))
+              errors.rejectValue("forename", "required.forename", "Please complete 'First name'.");
+              return null;
+            })
+        .when(clientSearchCriteriaValidator)
+        .validate(any(), any());
+    this.mockMvc
+        .perform(
+            post("/application/client/search")
+                .flashAttr("clientSearchCriteria", clientSearchCriteria)
+                .sessionAttr("user", user))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-client-search"));
@@ -111,18 +114,17 @@ class ClientSearchControllerTest {
   void testClientSearch_Post_Successful() throws Exception {
     final ClientSearchCriteria clientSearchCriteria = buildClientSearchDetails();
 
-    this.mockMvc.perform(post("/application/client/search")
-            .flashAttr("clientSearchCriteria", clientSearchCriteria)
-            .sessionAttr("user", user))
+    this.mockMvc
+        .perform(
+            post("/application/client/search")
+                .flashAttr("clientSearchCriteria", clientSearchCriteria)
+                .sessionAttr("user", user))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/client/results"));
   }
 
   private UserDetail buildUser() {
-    return new UserDetail()
-        .userId(1)
-        .userType("testUserType")
-        .loginId("testLoginId");
+    return new UserDetail().userId(1).userType("testUserType").loginId("testLoginId");
   }
 
   private ClientSearchCriteria buildClientSearchDetails() {

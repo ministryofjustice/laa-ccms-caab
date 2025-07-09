@@ -2,10 +2,9 @@ package uk.gov.laa.ccms.caab.config;
 
 import org.springframework.stereotype.Component;
 
-
 /**
- * Provides access to user role codes.
- * This class is used in thymeleaf templates to access role codes.
+ * Provides access to user role codes. This class is used in thymeleaf templates to access role
+ * codes.
  */
 @Component("roles")
 public class UserRoleProvider {

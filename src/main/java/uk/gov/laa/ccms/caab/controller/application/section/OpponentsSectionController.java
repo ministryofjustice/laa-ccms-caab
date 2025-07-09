@@ -49,17 +49,17 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-/**
- * Controller for the application's opponents and other parties section.
- */
+/** Controller for the application's opponents and other parties section. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(value = {
-    APPLICATION_OPPONENTS,
-    ORGANISATION_SEARCH_CRITERIA,
-    ORGANISATION_SEARCH_RESULTS,
-    CURRENT_OPPONENT})
+@SessionAttributes(
+    value = {
+      APPLICATION_OPPONENTS,
+      ORGANISATION_SEARCH_CRITERIA,
+      ORGANISATION_SEARCH_RESULTS,
+      CURRENT_OPPONENT
+    })
 public class OpponentsSectionController {
 
   private final ApplicationService applicationService;
@@ -85,9 +85,9 @@ public class OpponentsSectionController {
   }
 
   /**
-   * This method registers a custom editor to automatically trim leading and trailing
-   * whitespace from String fields and convert empty strings to null.
-   * This method is executed before binding request parameters to the model attributes.
+   * This method registers a custom editor to automatically trim leading and trailing whitespace
+   * from String fields and convert empty strings to null. This method is executed before binding
+   * request parameters to the model attributes.
    */
   @InitBinder
   public void initBinder(WebDataBinder binder) {
@@ -104,11 +104,9 @@ public class OpponentsSectionController {
    */
   @GetMapping("/application/sections/opponents")
   public String opponents(
-      @SessionAttribute(APPLICATION_ID) final String applicationId,
-      final Model model) {
+      @SessionAttribute(APPLICATION_ID) final String applicationId, final Model model) {
 
-    final List<AbstractOpponentFormData> opponents =
-        applicationService.getOpponents(applicationId);
+    final List<AbstractOpponentFormData> opponents = applicationService.getOpponents(applicationId);
 
     model.addAttribute(APPLICATION_OPPONENTS, opponents);
 
@@ -136,14 +134,14 @@ public class OpponentsSectionController {
    * Processes the search form submission for organisations.
    *
    * @param searchCriteria The criteria used to search for organisations.
-   * @param bindingResult  Validation result of the search criteria form.
-   * @param model          The model used to pass data to the view.
+   * @param bindingResult Validation result of the search criteria form.
+   * @param model The model used to pass data to the view.
    * @return Either redirects to the search results or reloads the form with validation errors.
    */
   @PostMapping("/application/opponents/organisation/search")
   public String organisationSearch(
       @Validated @ModelAttribute(ORGANISATION_SEARCH_CRITERIA)
-      OrganisationSearchCriteria searchCriteria,
+          OrganisationSearchCriteria searchCriteria,
       BindingResult bindingResult,
       Model model) {
 
@@ -160,12 +158,12 @@ public class OpponentsSectionController {
   /**
    * Displays the search results for organisations based on specified criteria.
    *
-   * @param searchCriteria      Search criteria for finding organisations.
-   * @param user                The details of the currently authenticated user.
-   * @param page                Current page for pagination.
-   * @param size                Size of a page for pagination.
-   * @param request             The HttpServletRequest.
-   * @param model               Model to pass data to the view.
+   * @param searchCriteria Search criteria for finding organisations.
+   * @param user The details of the currently authenticated user.
+   * @param page Current page for pagination.
+   * @param size Size of a page for pagination.
+   * @param request The HttpServletRequest.
+   * @param model Model to pass data to the view.
    * @return The view name for organisation search results or the appropriate error view.
    */
   @GetMapping("/application/opponents/organisation/search/results")
@@ -179,11 +177,9 @@ public class OpponentsSectionController {
     ResultsDisplay<OrganisationResultRowDisplay> organisationResults;
 
     try {
-      organisationResults = opponentService.getOrganisations(searchCriteria,
-          user.getLoginId(),
-          user.getUserType(),
-          page,
-          size);
+      organisationResults =
+          opponentService.getOrganisations(
+              searchCriteria, user.getLoginId(), user.getUserType(), page, size);
 
       if (organisationResults.getContent().isEmpty()) {
         return "application/opponents/opponents-organisation-search-no-results";
@@ -201,8 +197,8 @@ public class OpponentsSectionController {
   }
 
   /**
-   * Validates the selected opponent before displaying the 'shared organisation' screen
-   * to gather final details for the opponent.
+   * Validates the selected opponent before displaying the 'shared organisation' screen to gather
+   * final details for the opponent.
    *
    * @param organisationId The id of the selected organisation.
    * @param searchResults Search results containing organisations.
@@ -214,14 +210,14 @@ public class OpponentsSectionController {
   public String selectSharedOrganisation(
       @PathVariable("id") final String organisationId,
       @SessionAttribute(ORGANISATION_SEARCH_RESULTS)
-      final ResultsDisplay<OrganisationResultRowDisplay> searchResults,
+          final ResultsDisplay<OrganisationResultRowDisplay> searchResults,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final Model model) {
 
     // Validate that the supplied organisation id is one from the search results in the session
     boolean validOrgId =
-        searchResults.getContent().stream().anyMatch(
-            org -> org.getPartyId().equals(organisationId));
+        searchResults.getContent().stream()
+            .anyMatch(org -> org.getPartyId().equals(organisationId));
 
     if (!validOrgId) {
       log.error("Invalid organisation partyId {} supplied", organisationId);
@@ -229,10 +225,9 @@ public class OpponentsSectionController {
     }
 
     // Retrieve the full Organisation details
-    OrganisationOpponentFormData opponentFormData = opponentService.getOrganisationOpponent(
-        organisationId,
-        user.getLoginId(),
-        user.getUserType());
+    OrganisationOpponentFormData opponentFormData =
+        opponentService.getOrganisationOpponent(
+            organisationId, user.getLoginId(), user.getUserType());
 
     model.addAttribute(CURRENT_OPPONENT, opponentFormData);
 
@@ -242,8 +237,7 @@ public class OpponentsSectionController {
   }
 
   /**
-   * Validates the form data before adding a new shared organisation opponent to the
-   * application.
+   * Validates the form data before adding a new shared organisation opponent to the application.
    *
    * @param opponentFormData the opponent form data.
    * @param applicationId The id of the opponents related application.
@@ -269,10 +263,7 @@ public class OpponentsSectionController {
     }
 
     // Call the service to add the opponent to the application.
-    applicationService.addOpponent(
-        applicationId,
-        opponentFormData,
-        user);
+    applicationService.addOpponent(applicationId, opponentFormData, user);
 
     return "redirect:/application/sections/opponents";
   }
@@ -284,8 +275,7 @@ public class OpponentsSectionController {
    * @return The view name for the organisation creation screen.
    */
   @GetMapping("/application/opponents/organisation/create")
-  public String createNewOrganisation(
-      final Model model) {
+  public String createNewOrganisation(final Model model) {
 
     populateOrganisationCreateDropdowns(model);
 
@@ -300,8 +290,8 @@ public class OpponentsSectionController {
    * @param opponentFormData The form data to create the organisation.
    * @param applicationId The application id.
    * @param user The user details.
-   * @param bindingResult  Validation result of the form.
-   * @param model          The model used to pass data to the view.
+   * @param bindingResult Validation result of the form.
+   * @param model The model used to pass data to the view.
    * @return Either redirects to the opponent list or reloads the form with validation errors.
    */
   @PostMapping("/application/opponents/organisation/create")
@@ -331,8 +321,7 @@ public class OpponentsSectionController {
    * @return The view name for the individual opponent creation screen.
    */
   @GetMapping("/application/opponents/individual/create")
-  public String createNewIndividual(
-      final Model model) {
+  public String createNewIndividual(final Model model) {
 
     populateIndividualCreateDropdowns(model);
 
@@ -347,8 +336,8 @@ public class OpponentsSectionController {
    * @param opponentFormData The form data to create the opponent.
    * @param applicationId The application id.
    * @param user The user details.
-   * @param bindingResult  Validation result of the form.
-   * @param model          The model used to pass data to the view.
+   * @param bindingResult Validation result of the form.
+   * @param model The model used to pass data to the view.
    * @return Either redirects to the opponent list or reloads the form with validation errors.
    */
   @PostMapping("/application/opponents/individual/create")
@@ -356,7 +345,7 @@ public class OpponentsSectionController {
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @Validated @ModelAttribute(CURRENT_OPPONENT)
-      final IndividualOpponentFormData opponentFormData,
+          final IndividualOpponentFormData opponentFormData,
       final BindingResult bindingResult,
       final Model model) {
 
@@ -364,16 +353,20 @@ public class OpponentsSectionController {
     // record again to determine if date of birth is mandatory.
     if (StringUtils.hasText(opponentFormData.getRelationshipToCase())) {
       RelationshipToCaseLookupValueDetail relationshipToCase =
-          lookupService.getPersonToCaseRelationship(
-              opponentFormData.getRelationshipToCase())
-              .map(relationshipToCaseLookupValueDetail -> relationshipToCaseLookupValueDetail
-                  .orElse(new RelationshipToCaseLookupValueDetail()
-                      .code(opponentFormData.getRelationshipToCase())
-                      .description(opponentFormData.getRelationshipToCase())))
+          lookupService
+              .getPersonToCaseRelationship(opponentFormData.getRelationshipToCase())
+              .map(
+                  relationshipToCaseLookupValueDetail ->
+                      relationshipToCaseLookupValueDetail.orElse(
+                          new RelationshipToCaseLookupValueDetail()
+                              .code(opponentFormData.getRelationshipToCase())
+                              .description(opponentFormData.getRelationshipToCase())))
               .blockOptional()
-              .orElseThrow(() -> new CaabApplicationException(
-              "Failed to retrieve relationship to case with code: %s".formatted(
-                  opponentFormData.getRelationshipToCase())));
+              .orElseThrow(
+                  () ->
+                      new CaabApplicationException(
+                          "Failed to retrieve relationship to case with code: %s"
+                              .formatted(opponentFormData.getRelationshipToCase())));
 
       opponentFormData.setDateOfBirthMandatory(relationshipToCase.getDateOfBirthMandatory());
     }
@@ -390,8 +383,6 @@ public class OpponentsSectionController {
     return "redirect:/application/sections/opponents";
   }
 
-
-
   /**
    * Displays the view to edit the form data for an opponent.
    *
@@ -402,19 +393,19 @@ public class OpponentsSectionController {
    */
   @GetMapping("/application/opponents/{opponent-id}/edit")
   public String editOpponent(
-      @PathVariable("opponent-id")
-      final Integer opponentId,
+      @PathVariable("opponent-id") final Integer opponentId,
       @SessionAttribute(APPLICATION_OPPONENTS)
-      final List<AbstractOpponentFormData> applicationOpponents,
+          final List<AbstractOpponentFormData> applicationOpponents,
       final Model model) {
 
     // First check that the opponentId refers to an Opponent in the current application.
     AbstractOpponentFormData currentOpponent =
         applicationOpponents.stream()
-        .filter(opponentFormData -> opponentFormData.getId().equals(opponentId))
-        .findFirst()
-        .orElseThrow(() -> new CaabApplicationException(
-            "Invalid Opponent Id: %s".formatted(opponentId)));
+            .filter(opponentFormData -> opponentFormData.getId().equals(opponentId))
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new CaabApplicationException("Invalid Opponent Id: %s".formatted(opponentId)));
 
     model.addAttribute(CURRENT_OPPONENT, currentOpponent);
 
@@ -438,11 +429,11 @@ public class OpponentsSectionController {
   /**
    * Processes the form submission for editing an opponent.
    *
-   * @param opponentId      The opponent id.
+   * @param opponentId The opponent id.
    * @param currentOpponent The form data to edit the opponent.
-   * @param user           The user details.
-   * @param bindingResult  Validation result of the form.
-   * @param model          The model used to pass data to the view.
+   * @param user The user details.
+   * @param bindingResult Validation result of the form.
+   * @param model The model used to pass data to the view.
    * @return Either redirects to the opponent list or reloads the form with validation errors.
    */
   @PostMapping("/application/opponents/{opponent-id}/edit")
@@ -491,21 +482,23 @@ public class OpponentsSectionController {
    */
   @GetMapping("/application/opponents/{opponent-id}/remove")
   public String removeOpponent(
-      @PathVariable("opponent-id")
-      final Integer opponentId,
+      @PathVariable("opponent-id") final Integer opponentId,
       @SessionAttribute(APPLICATION_OPPONENTS)
-      final List<AbstractOpponentFormData> applicationOpponents,
+          final List<AbstractOpponentFormData> applicationOpponents,
       final Model model) {
 
     // First check that the opponentId refers to an Opponent in the current application, and that
     // it is deletable.
     AbstractOpponentFormData currentOpponent =
         applicationOpponents.stream()
-            .filter(opponentFormData -> opponentFormData.getId().equals(opponentId)
-                && Boolean.TRUE.equals(opponentFormData.getDeletable()))
+            .filter(
+                opponentFormData ->
+                    opponentFormData.getId().equals(opponentId)
+                        && Boolean.TRUE.equals(opponentFormData.getDeletable()))
             .findFirst()
-            .orElseThrow(() -> new CaabApplicationException(
-            "Invalid Opponent Id: %s".formatted(opponentId)));
+            .orElseThrow(
+                () ->
+                    new CaabApplicationException("Invalid Opponent Id: %s".formatted(opponentId)));
 
     model.addAttribute(CURRENT_OPPONENT, currentOpponent);
 
@@ -522,18 +515,19 @@ public class OpponentsSectionController {
    */
   @PostMapping("/application/opponents/{opponent-id}/remove")
   public String removeOpponentPost(
-      @PathVariable("opponent-id")
-      final Integer opponentId,
+      @PathVariable("opponent-id") final Integer opponentId,
       @SessionAttribute(APPLICATION_OPPONENTS)
-      final List<AbstractOpponentFormData> applicationOpponents,
+          final List<AbstractOpponentFormData> applicationOpponents,
       @SessionAttribute(USER_DETAILS) final UserDetail user) {
 
     // First check that the opponentId refers to an Opponent in the current application, and that
     // it is deletable.
-    boolean validOpponentId = applicationOpponents.stream()
-            .anyMatch(opponentFormData ->
-                opponentFormData.getId().equals(opponentId)
-                    && Boolean.TRUE.equals(opponentFormData.getDeletable()));
+    boolean validOpponentId =
+        applicationOpponents.stream()
+            .anyMatch(
+                opponentFormData ->
+                    opponentFormData.getId().equals(opponentId)
+                        && Boolean.TRUE.equals(opponentFormData.getDeletable()));
 
     if (!validOpponentId) {
       throw new CaabApplicationException("Invalid Opponent Id: %s".formatted(opponentId));
@@ -544,72 +538,69 @@ public class OpponentsSectionController {
     return "redirect:/application/sections/opponents";
   }
 
-
   private void populateOrganisationSearchDropdowns(final Model model) {
     new DropdownBuilder(model)
-        .addDropdown("organisationTypes",
-            lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES))
+        .addDropdown(
+            "organisationTypes", lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES))
         .build();
   }
 
   private void populateConfirmSharedOrganisationDropdowns(final Model model) {
     RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
-          lookupService.getOrganisationToCaseRelationships()
-              .blockOptional()
-              .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
+        lookupService
+            .getOrganisationToCaseRelationships()
+            .blockOptional()
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
 
-    model.addAttribute("relationshipsToCase",
-        relationshipToCaseLookupDetail.getContent());
+    model.addAttribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent());
 
     new DropdownBuilder(model)
-        .addDropdown("relationshipsToClient",
+        .addDropdown(
+            "relationshipsToClient",
             lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
         .build();
   }
 
   private void populateOrganisationCreateDropdowns(final Model model) {
     RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
-        lookupService.getOrganisationToCaseRelationships()
+        lookupService
+            .getOrganisationToCaseRelationships()
             .blockOptional()
             .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
-    model.addAttribute("relationshipsToCase",
-        relationshipToCaseLookupDetail.getContent());
+    model.addAttribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent());
 
-    List<Pair<Boolean, String>> currentlyTradingOptions = List.of(
-        Pair.of(Boolean.FALSE, "No"),
-        Pair.of(Boolean.TRUE, "Yes"));
+    List<Pair<Boolean, String>> currentlyTradingOptions =
+        List.of(Pair.of(Boolean.FALSE, "No"), Pair.of(Boolean.TRUE, "Yes"));
     model.addAttribute("currentlyTradingOptions", currentlyTradingOptions);
 
     new DropdownBuilder(model)
-        .addDropdown("organisationTypes",
-            lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES))
-        .addDropdown("relationshipsToClient",
+        .addDropdown(
+            "organisationTypes", lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES))
+        .addDropdown(
+            "relationshipsToClient",
             lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
-        .addDropdown("countries",
-            lookupService.getCountries())
+        .addDropdown("countries", lookupService.getCountries())
         .build();
   }
 
   private void populateIndividualCreateDropdowns(final Model model) {
     RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
-        lookupService.getPersonToCaseRelationships()
+        lookupService
+            .getPersonToCaseRelationships()
             .blockOptional()
             .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
-    model.addAttribute("relationshipsToCase",
-        relationshipToCaseLookupDetail.getContent());
+    model.addAttribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent());
 
-    List<Pair<Boolean, String>> legalAidedOptions = List.of(
-        Pair.of(Boolean.FALSE, "No"),
-        Pair.of(Boolean.TRUE, "Yes"));
+    List<Pair<Boolean, String>> legalAidedOptions =
+        List.of(Pair.of(Boolean.FALSE, "No"), Pair.of(Boolean.TRUE, "Yes"));
     model.addAttribute("legalAidedOptions", legalAidedOptions);
 
     new DropdownBuilder(model)
-        .addDropdown("contactTitles",
-            lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
-        .addDropdown("relationshipsToClient",
+        .addDropdown("contactTitles", lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+        .addDropdown(
+            "relationshipsToClient",
             lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
-        .addDropdown("countries",
-            lookupService.getCountries())
+        .addDropdown("countries", lookupService.getCountries())
         .build();
   }
 }

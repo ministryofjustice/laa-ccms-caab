@@ -35,15 +35,14 @@ class CopyApplicationMapperTest {
     // Build and update the expected application in line with the expected mappings.
     ApplicationDetail expectedApplication = buildExpectedApplication(copyApplication);
 
-    ApplicationDetail newApplication = new ApplicationDetail()
-        .applicationType(
-            new ApplicationType()
-                .devolvedPowers(
-                    new DevolvedPowersDetail()
-                        .contractFlag("should remain unchanged")));
-    ApplicationDetail result = copyApplicationMapper.copyApplication(
-        newApplication,
-        copyApplication);
+    ApplicationDetail newApplication =
+        new ApplicationDetail()
+            .applicationType(
+                new ApplicationType()
+                    .devolvedPowers(
+                        new DevolvedPowersDetail().contractFlag("should remain unchanged")));
+    ApplicationDetail result =
+        copyApplicationMapper.copyApplication(newApplication, copyApplication);
 
     assertEquals(expectedApplication, result);
   }
@@ -110,19 +109,19 @@ class CopyApplicationMapperTest {
                         .dateUsed(
                             copyApplication.getApplicationType().getDevolvedPowers().getDateUsed())
                         .used(copyApplication.getApplicationType().getDevolvedPowers().getUsed())))
-        .providerDetails(new ApplicationProviderDetails()
-            .provider(copyApplication.getProviderDetails().getProvider())
-            .office(copyApplication.getProviderDetails().getOffice())
-            .supervisor(copyApplication.getProviderDetails().getSupervisor())
-            .feeEarner(copyApplication.getProviderDetails().getFeeEarner())
-            .providerContact(copyApplication.getProviderDetails().getProviderContact()))
+        .providerDetails(
+            new ApplicationProviderDetails()
+                .provider(copyApplication.getProviderDetails().getProvider())
+                .office(copyApplication.getProviderDetails().getOffice())
+                .supervisor(copyApplication.getProviderDetails().getSupervisor())
+                .feeEarner(copyApplication.getProviderDetails().getFeeEarner())
+                .providerContact(copyApplication.getProviderDetails().getProviderContact()))
         .categoryOfLaw(copyApplication.getCategoryOfLaw())
         .correspondenceAddress(copyApplication.getCorrespondenceAddress())
         .larScopeFlag(copyApplication.getLarScopeFlag())
         .proceedings(List.copyOf(copyApplication.getProceedings()))
-        .opponents(copyApplication.getOpponents().stream()
-            .map(this::applyOpponentMappingUpdates)
-            .toList())
+        .opponents(
+            copyApplication.getOpponents().stream().map(this::applyOpponentMappingUpdates).toList())
         .proceedings(
             copyApplication.getProceedings().stream()
                 .map(this::applyProceedingMappingUpdates)

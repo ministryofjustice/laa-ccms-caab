@@ -4,9 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
-/**
- * Represents the delivery point address returned by the ordinance survey api.
- */
+/** Represents the delivery point address returned by the ordinance survey api. */
 @Data
 @RequiredArgsConstructor
 public class DeliveryPointAddress {
@@ -40,6 +38,4 @@ public class DeliveryPointAddress {
 
   @JsonProperty("POSTCODE")
   private String postcode;
-
-
 }

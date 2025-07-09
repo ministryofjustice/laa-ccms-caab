@@ -3,9 +3,7 @@ package uk.gov.laa.ccms.caab.client;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
-/**
- * A generic API client exception providing http status if available.
- */
+/** A generic API client exception providing http status if available. */
 @Getter
 public class ApiClientException extends RuntimeException {
   HttpStatus httpStatus;
@@ -40,8 +38,7 @@ public class ApiClientException extends RuntimeException {
   }
 
   /**
-   * Constructs a new exception with the specified detail message and http status
-   * from the response.
+   * Constructs a new exception with the specified detail message and http status from the response.
    *
    * @param message the detail message
    * @param httpStatus the http status of the response
@@ -50,5 +47,4 @@ public class ApiClientException extends RuntimeException {
     super(message);
     this.httpStatus = httpStatus;
   }
-  
 }

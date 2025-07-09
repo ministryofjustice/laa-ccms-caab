@@ -3,9 +3,7 @@ package uk.gov.laa.ccms.caab.model;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
-/**
- * Represents the display details for a single client result row.
- */
+/** Represents the display details for a single client result row. */
 @Data
 @RequiredArgsConstructor
 public class ClientResultRowDisplay {
@@ -25,7 +23,7 @@ public class ClientResultRowDisplay {
     String postCodeDistrict = null;
     if (this.postalCode != null) {
       if (this.postalCode.trim().length() > 2 && this.postalCode.trim().contains(" ")) {
-        int spacePos = this.postalCode.indexOf(" ");
+        int spacePos = this.postalCode.indexOf(' ');
         postCodeDistrict = this.postalCode.substring(0, spacePos);
       } else {
         postCodeDistrict = this.postalCode;

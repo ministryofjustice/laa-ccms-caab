@@ -55,29 +55,21 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 @ExtendWith(MockitoExtension.class)
 public class ClientSummaryControllerTest {
 
-  @Mock
-  private ClientService clientService;
+  @Mock private ClientService clientService;
 
-  @Mock
-  private LookupService lookupService;
+  @Mock private LookupService lookupService;
 
-  @Mock
-  private ClientBasicDetailsValidator basicValidator;
+  @Mock private ClientBasicDetailsValidator basicValidator;
 
-  @Mock
-  private ClientContactDetailsValidator contactValidator;
+  @Mock private ClientContactDetailsValidator contactValidator;
 
-  @Mock
-  private ClientAddressDetailsValidator addressValidator;
+  @Mock private ClientAddressDetailsValidator addressValidator;
 
-  @Mock
-  private ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator;
+  @Mock private ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator;
 
-  @Mock
-  private ClientDetailMapper clientDetailsMapper;
+  @Mock private ClientDetailMapper clientDetailsMapper;
 
-  @InjectMocks
-  private ClientSummaryController clientSummaryController;
+  @InjectMocks private ClientSummaryController clientSummaryController;
 
   private MockMvc mockMvc;
 
@@ -92,10 +84,8 @@ public class ClientSummaryControllerTest {
 
   private ClientFlowFormData clientFlowFormData;
 
-  private static final UserDetail userDetails = new UserDetail()
-      .userId(1)
-      .userType("testUserType")
-      .loginId("testLoginId");
+  private static final UserDetail userDetails =
+      new UserDetail().userId(1).userType("testUserType").loginId("testLoginId");
 
   @BeforeEach
   public void setup() {
@@ -121,23 +111,29 @@ public class ClientSummaryControllerTest {
   @DisplayName("Test client details summary without correspondence language")
   void testClientDetailsSummary_Get() throws Exception {
 
-    when(lookupService.getClientLookups(any())).thenReturn(
-        List.of(
-            Pair.of(COMMON_VALUE_CONTACT_TITLE, Mono.just(Optional.of(titleLookupValueDetail))),
-            Pair.of(COMMON_VALUE_GENDER, Mono.just(Optional.of(genderLookupValueDetail))),
-            Pair.of(COMMON_VALUE_MARITAL_STATUS, Mono.just(Optional.of(maritalStatusLookupValueDetail))),
-            Pair.of(COMMON_VALUE_ETHNIC_ORIGIN, Mono.just(Optional.of(ethnicityLookupValueDetail))),
-            Pair.of(COMMON_VALUE_DISABILITY, Mono.just(Optional.of(disabilityLookupValueDetail))),
-            Pair.of(COMMON_VALUE_CORRESPONDENCE_METHOD, Mono.just(Optional.of(correspondenceMethodLookupValueDetail)))
-        )
-    );
+    when(lookupService.getClientLookups(any()))
+        .thenReturn(
+            List.of(
+                Pair.of(COMMON_VALUE_CONTACT_TITLE, Mono.just(Optional.of(titleLookupValueDetail))),
+                Pair.of(COMMON_VALUE_GENDER, Mono.just(Optional.of(genderLookupValueDetail))),
+                Pair.of(
+                    COMMON_VALUE_MARITAL_STATUS,
+                    Mono.just(Optional.of(maritalStatusLookupValueDetail))),
+                Pair.of(
+                    COMMON_VALUE_ETHNIC_ORIGIN, Mono.just(Optional.of(ethnicityLookupValueDetail))),
+                Pair.of(
+                    COMMON_VALUE_DISABILITY, Mono.just(Optional.of(disabilityLookupValueDetail))),
+                Pair.of(
+                    COMMON_VALUE_CORRESPONDENCE_METHOD,
+                    Mono.just(Optional.of(correspondenceMethodLookupValueDetail)))));
 
     when(lookupService.addCommonLookupsToModel(anyList(), any(Model.class)))
         .thenReturn(Mono.empty());
 
-
-    mockMvc.perform(get("/application/client/details/summary")
-            .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+    mockMvc
+        .perform(
+            get("/application/client/details/summary")
+                .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/client-summary-details"));
 
@@ -146,31 +142,38 @@ public class ClientSummaryControllerTest {
     verify(lookupService, never()).getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_LANGUAGE), any());
   }
 
-
   @Test
   @DisplayName("Test client details summary with correspondence language")
   void testClientDetailsSummary_Get_withCorrespondenceLanguage() throws Exception {
     final String testLanguage = "TEST";
     clientFlowFormData.getContactDetails().setCorrespondenceLanguage(testLanguage);
 
-    when(lookupService.getClientLookups(any())).thenReturn(
-        List.of(
-            Pair.of(COMMON_VALUE_CONTACT_TITLE, Mono.just(Optional.of(titleLookupValueDetail))),
-            Pair.of(COMMON_VALUE_GENDER, Mono.just(Optional.of(genderLookupValueDetail))),
-            Pair.of(COMMON_VALUE_MARITAL_STATUS, Mono.just(Optional.of(maritalStatusLookupValueDetail))),
-            Pair.of(COMMON_VALUE_ETHNIC_ORIGIN, Mono.just(Optional.of(ethnicityLookupValueDetail))),
-            Pair.of(COMMON_VALUE_DISABILITY, Mono.just(Optional.of(disabilityLookupValueDetail))),
-            Pair.of(COMMON_VALUE_CORRESPONDENCE_METHOD, Mono.just(Optional.of(correspondenceMethodLookupValueDetail))),
-            Pair.of(COMMON_VALUE_CORRESPONDENCE_LANGUAGE, Mono.just(Optional.of(correspondenceLanguageLookupValueDetail)))
-        )
-    );
+    when(lookupService.getClientLookups(any()))
+        .thenReturn(
+            List.of(
+                Pair.of(COMMON_VALUE_CONTACT_TITLE, Mono.just(Optional.of(titleLookupValueDetail))),
+                Pair.of(COMMON_VALUE_GENDER, Mono.just(Optional.of(genderLookupValueDetail))),
+                Pair.of(
+                    COMMON_VALUE_MARITAL_STATUS,
+                    Mono.just(Optional.of(maritalStatusLookupValueDetail))),
+                Pair.of(
+                    COMMON_VALUE_ETHNIC_ORIGIN, Mono.just(Optional.of(ethnicityLookupValueDetail))),
+                Pair.of(
+                    COMMON_VALUE_DISABILITY, Mono.just(Optional.of(disabilityLookupValueDetail))),
+                Pair.of(
+                    COMMON_VALUE_CORRESPONDENCE_METHOD,
+                    Mono.just(Optional.of(correspondenceMethodLookupValueDetail))),
+                Pair.of(
+                    COMMON_VALUE_CORRESPONDENCE_LANGUAGE,
+                    Mono.just(Optional.of(correspondenceLanguageLookupValueDetail)))));
 
     when(lookupService.addCommonLookupsToModel(anyList(), any(Model.class)))
         .thenReturn(Mono.empty());
 
-
-    mockMvc.perform(get("/application/client/details/summary")
-            .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+    mockMvc
+        .perform(
+            get("/application/client/details/summary")
+                .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/client-summary-details"));
 
@@ -178,17 +181,18 @@ public class ClientSummaryControllerTest {
     verify(lookupService, times(1)).addCommonLookupsToModel(anyList(), any(Model.class));
   }
 
-
   @Test
   void testClientDetailsSummary_Post() throws Exception {
     final ClientFlowFormData clientFlowFormData = new ClientFlowFormData("create");
 
-    when(clientService.createClient(any(), any())).thenReturn(
-        Mono.just(new ClientTransactionResponse()));
+    when(clientService.createClient(any(), any()))
+        .thenReturn(Mono.just(new ClientTransactionResponse()));
 
-    mockMvc.perform(post("/application/client/details/summary")
-            .sessionAttr(USER_DETAILS, userDetails)
-            .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+    mockMvc
+        .perform(
+            post("/application/client/details/summary")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .flashAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/client-create"));
 

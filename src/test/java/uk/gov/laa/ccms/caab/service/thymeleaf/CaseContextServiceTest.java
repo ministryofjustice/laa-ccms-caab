@@ -13,13 +13,13 @@ class CaseContextServiceTest {
   CaseContextService caseContextService;
 
   @BeforeEach
-  void beforeEach(){
+  void beforeEach() {
     caseContextService = new CaseContextService();
   }
 
   @Test
   @DisplayName("Should provide return to case overview message when application")
-  void shouldProvideReturnToCaseOverviewMessageWhenApplication(){
+  void shouldProvideReturnToCaseOverviewMessageWhenApplication() {
     // Given
     CaseContext caseContext = CaseContext.APPLICATION;
     // When
@@ -30,7 +30,7 @@ class CaseContextServiceTest {
 
   @Test
   @DisplayName("Should provide return to case overview when amendment")
-  void shouldProvideReturnToCaseOverviewWhenAmendment(){
+  void shouldProvideReturnToCaseOverviewWhenAmendment() {
     // Given
     CaseContext caseContext = CaseContext.AMENDMENTS;
     // When
@@ -38,5 +38,4 @@ class CaseContextServiceTest {
     // Then
     assertThat(result).isEqualTo("site.returnToCaseOverview");
   }
-
 }

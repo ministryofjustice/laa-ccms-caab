@@ -18,9 +18,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
-/**
- * Service class to handle Clients.
- */
+/** Service class to handle Clients. */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -35,15 +33,13 @@ public class ClientService {
   /**
    * Searches and retrieves client details based on provided search criteria.
    *
-   * @param clientSearchCriteria  The search criteria to use when fetching clients.
-   * @param page                  The page number for pagination.
-   * @param size                  The size or number of records per page.
+   * @param clientSearchCriteria The search criteria to use when fetching clients.
+   * @param page The page number for pagination.
+   * @param size The size or number of records per page.
    * @return A Mono wrapping the ClientDetails.
    */
   public Mono<ClientDetails> getClients(
-      final ClientSearchCriteria clientSearchCriteria,
-      final Integer page,
-      final Integer size) {
+      final ClientSearchCriteria clientSearchCriteria, final Integer page, final Integer size) {
     log.debug("EBS Clients to get using criteria: {}", clientSearchCriteria);
     return ebsApiClient.getClients(clientSearchCriteria, page, size);
   }
@@ -52,14 +48,12 @@ public class ClientService {
    * Fetches detailed client information based on a given client reference number.
    *
    * @param clientReferenceNumber The client's reference number.
-   * @param loginId               The login identifier for the user.
-   * @param userType              Type of the user (e.g., admin, user).
+   * @param loginId The login identifier for the user.
+   * @param userType Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ClientDetail.
    */
   public Mono<ClientDetail> getClient(
-      final String clientReferenceNumber,
-      final String loginId,
-      final String userType) {
+      final String clientReferenceNumber, final String loginId, final String userType) {
     log.debug("SOA Client to get using reference: {}", clientReferenceNumber);
     return soaApiClient.getClient(clientReferenceNumber, loginId, userType);
   }
@@ -67,11 +61,10 @@ public class ClientService {
   /**
    * Fetches the transaction status for a client transaction.
    *
-   * @param transactionId         The transaction id for the client transaction in soa.
+   * @param transactionId The transaction id for the client transaction in soa.
    * @return A Mono wrapping the TransactionStatus.
    */
-  public Mono<TransactionStatus> getClientStatus(
-      final String transactionId) {
+  public Mono<TransactionStatus> getClientStatus(final String transactionId) {
     log.debug("EBS Client Status to get using transaction Id: {}", transactionId);
     return ebsApiClient.getClientStatus(transactionId);
   }
@@ -79,13 +72,12 @@ public class ClientService {
   /**
    * Creates a client based on a given client details.
    *
-   * @param clientFlowFormData    The client's details.
-   * @param user                  The user.
+   * @param clientFlowFormData The client's details.
+   * @param user The user.
    * @return A Mono wrapping the ClientCreated transaction id.
    */
   public Mono<ClientTransactionResponse> createClient(
-      final ClientFlowFormData clientFlowFormData,
-      final UserDetail user) {
+      final ClientFlowFormData clientFlowFormData, final UserDetail user) {
 
     ReflectionUtils.nullifyStrings(clientFlowFormData.getBasicDetails());
     ReflectionUtils.nullifyStrings(clientFlowFormData.getContactDetails());
@@ -94,16 +86,14 @@ public class ClientService {
     final ClientDetail clientDetail = clientDetailsMapper.toClientDetail(clientFlowFormData);
 
     return soaApiClient.postClient(
-        clientDetail.getDetails(),
-        user.getLoginId(),
-        user.getUserType());
+        clientDetail.getDetails(), user.getLoginId(), user.getUserType());
   }
 
   /**
    * Updates a client based on a given client details.
    *
-   * @param clientFlowFormData    The client's details
-   * @param user                  The user.
+   * @param clientFlowFormData The client's details
+   * @param user The user.
    * @return A Mono wrapping the ClientCreated transaction id.
    */
   public Mono<ClientTransactionResponse> updateClient(
@@ -118,18 +108,15 @@ public class ClientService {
     final ClientDetail clientDetail = clientDetailsMapper.toClientDetail(clientFlowFormData);
 
     return soaApiClient.putClient(
-        clientReferenceNumber,
-        clientDetail.getDetails(),
-        user.getLoginId(),
-        user.getUserType());
+        clientReferenceNumber, clientDetail.getDetails(), user.getLoginId(), user.getUserType());
   }
 
   /**
    * Updates the client details stored against all applications with the client ref in the TDS.
    *
    * @param clientReferenceNumber The client's reference id
-   * @param user                  The user.
-   * @param baseClient            The client details to update.
+   * @param user The user.
+   * @param baseClient The client details to update.
    * @return A Mono wrapping the ClientCreated transaction id.
    */
   public Mono<Void> updateClientNames(
@@ -137,11 +124,6 @@ public class ClientService {
       final UserDetail user,
       final BaseClientDetail baseClient) {
 
-    return caabApiClient.updateClient(
-        clientReferenceNumber,
-        user.getLoginId(),
-        baseClient);
+    return caabApiClient.updateClient(clientReferenceNumber, user.getLoginId(), baseClient);
   }
-
-
 }

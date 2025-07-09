@@ -31,17 +31,13 @@ import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResult;
 @ExtendWith(MockitoExtension.class)
 public class AddressServiceTest {
 
-  @Mock
-  private OrdinanceSurveyApiClient ordinanceSurveyApiClient;
+  @Mock private OrdinanceSurveyApiClient ordinanceSurveyApiClient;
 
-  @Mock
-  private ClientAddressResultDisplayMapper clientAddressResultDisplayMapper;
+  @Mock private ClientAddressResultDisplayMapper clientAddressResultDisplayMapper;
 
-  @InjectMocks
-  private AddressService addressService;
+  @InjectMocks private AddressService addressService;
 
   private static final int MAX_RESULTS = 10;
-
 
   @Test
   void getAddresses_ReturnsAddresses_empty() {
@@ -70,7 +66,8 @@ public class AddressServiceTest {
     ResultsDisplay<AddressResultRowDisplay> mockDisplay = buildClientAddressResultsDisplay();
 
     when(ordinanceSurveyApiClient.getAddresses(postcode)).thenReturn(mockResponseMono);
-    when(clientAddressResultDisplayMapper.toClientAddressResultsDisplay(mockResponse)).thenReturn(mockDisplay);
+    when(clientAddressResultDisplayMapper.toClientAddressResultsDisplay(mockResponse))
+        .thenReturn(mockDisplay);
 
     ResultsDisplay<AddressResultRowDisplay> result = addressService.getAddresses(postcode);
 
@@ -88,8 +85,8 @@ public class AddressServiceTest {
 
     ResultsDisplay<AddressResultRowDisplay> initialResults = buildClientAddressResultsDisplay();
 
-    ResultsDisplay<AddressResultRowDisplay>
-        filteredResults = addressService.filterByHouseNumber(houseNameNumber, initialResults);
+    ResultsDisplay<AddressResultRowDisplay> filteredResults =
+        addressService.filterByHouseNumber(houseNameNumber, initialResults);
 
     assertNotNull(filteredResults);
     assertEquals(Collections.singletonList(row), filteredResults.getContent());
@@ -100,13 +97,12 @@ public class AddressServiceTest {
     String houseNameNumber = "nonexistent";
     ResultsDisplay<AddressResultRowDisplay> initialResults = buildClientAddressResultsDisplay();
 
-    ResultsDisplay<AddressResultRowDisplay>
-        filteredResults = addressService.filterByHouseNumber(houseNameNumber, initialResults);
+    ResultsDisplay<AddressResultRowDisplay> filteredResults =
+        addressService.filterByHouseNumber(houseNameNumber, initialResults);
 
     assertNotNull(filteredResults);
     assertEquals(initialResults.getContent(), filteredResults.getContent());
   }
-
 
   @Test
   void addAddressToClientDetails_UpdatesClientDetails() {
@@ -121,15 +117,17 @@ public class AddressServiceTest {
 
     ClientFormDataAddressDetails addressDetails = buildAddressDetails(); // Use the helper method
 
-    doAnswer(invocation -> {
-      ClientFormDataAddressDetails ad = invocation.getArgument(0);
-      AddressResultRowDisplay row = invocation.getArgument(1);
-      ad.setAddressLine1(row.getFullAddress());
-      ad.setHouseNameNumber(row.getHouseNameNumber());
-      return null;
-    }).when(clientAddressResultDisplayMapper).updateClientFormDataAddressDetails(
-        any(ClientFormDataAddressDetails.class),
-        any(AddressResultRowDisplay.class));
+    doAnswer(
+            invocation -> {
+              ClientFormDataAddressDetails ad = invocation.getArgument(0);
+              AddressResultRowDisplay row = invocation.getArgument(1);
+              ad.setAddressLine1(row.getFullAddress());
+              ad.setHouseNameNumber(row.getHouseNameNumber());
+              return null;
+            })
+        .when(clientAddressResultDisplayMapper)
+        .updateClientFormDataAddressDetails(
+            any(ClientFormDataAddressDetails.class), any(AddressResultRowDisplay.class));
 
     addressService.addAddressToClientDetails(uprn, results, addressDetails);
 

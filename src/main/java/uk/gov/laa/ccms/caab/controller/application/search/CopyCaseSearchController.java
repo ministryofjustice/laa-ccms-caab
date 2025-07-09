@@ -36,17 +36,11 @@ import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-
-/**
- * Controller responsible for managing the search operations related to copy cases.
- */
+/** Controller responsible for managing the search operations related to copy cases. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(value = {
-    APPLICATION_FORM_DATA,
-    CASE_SEARCH_CRITERIA,
-    CASE_SEARCH_RESULTS})
+@SessionAttributes(value = {APPLICATION_FORM_DATA, CASE_SEARCH_CRITERIA, CASE_SEARCH_RESULTS})
 public class CopyCaseSearchController {
 
   private final ProviderService providerService;
@@ -74,11 +68,10 @@ public class CopyCaseSearchController {
    * Displays the copy case search form.
    *
    * @param searchCriteria The search criteria used for finding copy cases.
-   * @param userDetails    The details of the currently authenticated user.
-   * @param model          The model used to pass data to the view.
+   * @param userDetails The details of the currently authenticated user.
+   * @param model The model used to pass data to the view.
    * @return The copy case search view.
    */
-
   @GetMapping("/application/copy-case/search")
   public String copyCaseSearch(
       @ModelAttribute(CASE_SEARCH_CRITERIA) CaseSearchCriteria searchCriteria,
@@ -94,9 +87,9 @@ public class CopyCaseSearchController {
    * Processes the search form submission for copy cases.
    *
    * @param caseSearchCriteria The criteria used to search for copy cases.
-   * @param user    The details of the currently authenticated user.
-   * @param bindingResult  Validation result of the search criteria form.
-   * @param model          The model used to pass data to the view.
+   * @param user The details of the currently authenticated user.
+   * @param bindingResult Validation result of the search criteria form.
+   * @param model The model used to pass data to the view.
    * @return Either redirects to the search results or reloads the form with validation errors.
    */
   @PostMapping("/application/copy-case/search")
@@ -155,8 +148,9 @@ public class CopyCaseSearchController {
       Model model) {
 
     // Paginate the results list, and convert to the Page wrapper object for display
-    ApplicationDetails searchResultsPage = applicationMapper.toApplicationDetails(
-        PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), caseSearchResults));
+    ApplicationDetails searchResultsPage =
+        applicationMapper.toApplicationDetails(
+            PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), caseSearchResults));
 
     model.addAttribute(CURRENT_URL, request.getRequestURL().toString());
     model.addAttribute(CASE_RESULTS_PAGE, searchResultsPage);
@@ -179,8 +173,10 @@ public class CopyCaseSearchController {
 
     // Validate that the supplied caseRef is one from the search results in the session
     boolean validCaseRef =
-        caseSearchResults.stream().anyMatch(
-            application -> application.getCaseReferenceNumber().equals(copyCaseReferenceNumber));
+        caseSearchResults.stream()
+            .anyMatch(
+                application ->
+                    application.getCaseReferenceNumber().equals(copyCaseReferenceNumber));
 
     if (!validCaseRef) {
       log.error("Invalid copyCaseReferenceNumber {} supplied", copyCaseReferenceNumber);
@@ -197,8 +193,7 @@ public class CopyCaseSearchController {
     ProviderDetail provider = providerService.getProvider(user.getProvider().getId()).block();
     if (provider == null) {
       throw new CaabApplicationException(
-          "Failed to retrieve Provider with id: %s".formatted(
-              user.getProvider().getId()));
+          "Failed to retrieve Provider with id: %s".formatted(user.getProvider().getId()));
     }
 
     model.addAttribute("feeEarners", providerService.getAllFeeEarners(provider));

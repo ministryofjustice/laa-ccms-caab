@@ -22,11 +22,9 @@ import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
 @ExtendWith(SpringExtension.class)
 class ClientContactDetailsValidatorTest {
 
-  @InjectMocks
-  private ClientContactDetailsValidator clientContactDetailsValidator;
+  @InjectMocks private ClientContactDetailsValidator clientContactDetailsValidator;
 
-  @Mock
-  private ClientFormDataContactDetails contactDetails;
+  @Mock private ClientFormDataContactDetails contactDetails;
 
   private Errors errors;
 
@@ -138,12 +136,12 @@ class ClientContactDetailsValidatorTest {
 
   @ParameterizedTest
   @CsvSource({
-      "telephoneHome, abc",
-      "telephoneHome, @£$",
-      "telephoneWork, abc",
-      "telephoneWork, @£$",
-      "telephoneMobile, abc",
-      "telephoneMobile, @£$",
+    "telephoneHome, abc",
+    "telephoneHome, @£$",
+    "telephoneWork, abc",
+    "telephoneWork, @£$",
+    "telephoneMobile, abc",
+    "telephoneMobile, @£$",
   })
   void validate_validateTelephoneField_invalidCharacters(String type, String telephone) {
     contactDetails.setVulnerableClient(false);
@@ -166,12 +164,12 @@ class ClientContactDetailsValidatorTest {
 
   @ParameterizedTest
   @CsvSource({
-      "telephoneHome, abc",
-      "telephoneHome, @£$",
-      "telephoneWork, abc",
-      "telephoneWork, @£$",
-      "telephoneMobile, abc",
-      "telephoneMobile, @£$",
+    "telephoneHome, abc",
+    "telephoneHome, @£$",
+    "telephoneWork, abc",
+    "telephoneWork, @£$",
+    "telephoneMobile, abc",
+    "telephoneMobile, @£$",
   })
   void validate_validateTelephoneField_invalidCharactersVulnerable(String type, String telephone) {
     contactDetails.setVulnerableClient(true);
@@ -192,12 +190,12 @@ class ClientContactDetailsValidatorTest {
 
   @ParameterizedTest
   @CsvSource({
-      "telephoneHome, 1234567",
-      "telephoneHome, 123",
-      "telephoneWork, 1234567",
-      "telephoneWork, 123",
-      "telephoneMobile, 1234567",
-      "telephoneMobile, 123",
+    "telephoneHome, 1234567",
+    "telephoneHome, 123",
+    "telephoneWork, 1234567",
+    "telephoneWork, 123",
+    "telephoneMobile, 1234567",
+    "telephoneMobile, 123",
   })
   void validate_validateTelephoneField_invalidLength(String type, String telephone) {
     contactDetails.setVulnerableClient(false);
@@ -218,7 +216,6 @@ class ClientContactDetailsValidatorTest {
     assertEquals("length." + type, errors.getFieldError(type).getCode());
   }
 
-
   private ClientFormDataContactDetails buildContactDetails() {
     ClientFormDataContactDetails contactDetails1 = new ClientFormDataContactDetails();
     contactDetails1.setTelephoneHome("1111111111");
@@ -234,8 +231,4 @@ class ClientContactDetailsValidatorTest {
     contactDetails1.setCorrespondenceLanguage("GBR");
     return contactDetails1;
   }
-
-
-
-
 }

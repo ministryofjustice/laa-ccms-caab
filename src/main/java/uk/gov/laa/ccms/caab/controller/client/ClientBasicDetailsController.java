@@ -30,9 +30,7 @@ import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
-/**
- * Controller for handling basic client details selection during the new application process.
- */
+/** Controller for handling basic client details selection during the new application process. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -58,10 +56,10 @@ public class ClientBasicDetailsController {
    */
   @GetMapping("/application/client/details/basic")
   public String clientDetailsBasic(
-          @SessionAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
-          @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
-          @ModelAttribute("basicDetails") ClientFormDataBasicDetails basicDetails,
-          Model model) {
+      @SessionAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
+      @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
+      @ModelAttribute("basicDetails") ClientFormDataBasicDetails basicDetails,
+      Model model) {
 
     populateDropdowns(model);
     basicDetails.setClientFlowFormAction(clientFlowFormData.getAction());
@@ -87,11 +85,11 @@ public class ClientBasicDetailsController {
    */
   @PostMapping("/application/client/details/basic")
   public String clientDetailsBasic(
-          @SessionAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
-          @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
-          @Validated @ModelAttribute("basicDetails") ClientFormDataBasicDetails basicDetails,
-          BindingResult bindingResult,
-          Model model) {
+      @SessionAttribute(CLIENT_SEARCH_CRITERIA) ClientSearchCriteria clientSearchCriteria,
+      @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
+      @Validated @ModelAttribute("basicDetails") ClientFormDataBasicDetails basicDetails,
+      BindingResult bindingResult,
+      Model model) {
 
     clientBasicDetailsValidator.validate(basicDetails, bindingResult);
 
@@ -113,9 +111,9 @@ public class ClientBasicDetailsController {
    * @param model The model for the view.
    */
   private void populateFields(
-          ClientSearchCriteria clientSearchCriteria,
-          ClientFormDataBasicDetails basicDetails,
-          Model model) {
+      ClientSearchCriteria clientSearchCriteria,
+      ClientFormDataBasicDetails basicDetails,
+      Model model) {
 
     basicDetails.setFirstName(clientSearchCriteria.getForename());
     basicDetails.setSurnameAtBirth(clientSearchCriteria.getSurname());
@@ -141,8 +139,10 @@ public class ClientBasicDetailsController {
       basicDetails.setGender(searchCriteriaGender);
 
       Optional.ofNullable((List<CommonLookupValueDetail>) model.getAttribute("genders"))
-              .ifPresent(genderList -> {
-                String genderDisplayValue = genderList.stream()
+          .ifPresent(
+              genderList -> {
+                String genderDisplayValue =
+                    genderList.stream()
                         .filter(genderDetail -> searchCriteriaGender.equals(genderDetail.getCode()))
                         .map(CommonLookupValueDetail::getDescription)
                         .findFirst()
@@ -160,14 +160,11 @@ public class ClientBasicDetailsController {
    */
   private void populateDropdowns(Model model) {
     new DropdownBuilder(model)
-        .addDropdown("titles",
-            lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
-        .addDropdown("countries",
-            lookupService.getCountries())
-        .addDropdown("genders",
-            lookupService.getCommonValues(COMMON_VALUE_GENDER))
-        .addDropdown("maritalStatusList",
-            lookupService.getCommonValues(COMMON_VALUE_MARITAL_STATUS))
+        .addDropdown("titles", lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+        .addDropdown("countries", lookupService.getCountries())
+        .addDropdown("genders", lookupService.getCommonValues(COMMON_VALUE_GENDER))
+        .addDropdown(
+            "maritalStatusList", lookupService.getCommonValues(COMMON_VALUE_MARITAL_STATUS))
         .build();
   }
 }

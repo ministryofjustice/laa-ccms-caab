@@ -2,12 +2,9 @@ package uk.gov.laa.ccms.caab.constants;
 
 import lombok.Getter;
 
-/**
- * Enumeration to describe the possible values for CCMS Module.
- */
+/** Enumeration to describe the possible values for CCMS Module. */
 @Getter
 public enum CcmsModule {
-
   APPLICATION("A", "Create Application"),
   AMENDMENT("M", "Application Amendment"),
   OUTCOME("O", "Record Outcome"),
@@ -21,5 +18,4 @@ public enum CcmsModule {
     this.code = code;
     this.description = description;
   }
-
 }

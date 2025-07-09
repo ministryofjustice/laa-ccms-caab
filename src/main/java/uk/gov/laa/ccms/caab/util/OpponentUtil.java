@@ -8,9 +8,7 @@ import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 
-/**
- * Utility class for handling proceeding-related operations.
- */
+/** Utility class for handling proceeding-related operations. */
 public final class OpponentUtil {
 
   private static final String OPPONENT_TYPE_ORGANISATION = "ORGANISATION";
@@ -25,8 +23,8 @@ public final class OpponentUtil {
    */
   public static String getAssessmentMappingId(final OpponentDetail opponent) {
     return opponent.getEbsId() == null
-        ? InstanceMappingPrefix.OPPONENT.getPrefix() + opponent.getId() :
-        opponent.getEbsId();
+        ? InstanceMappingPrefix.OPPONENT.getPrefix() + opponent.getId()
+        : opponent.getEbsId();
   }
 
   /**
@@ -37,7 +35,8 @@ public final class OpponentUtil {
    */
   public static String getAssessmentOpponentType(final String type) {
     return INDIVIDUAL_OPPONENT.equalsIgnoreCase(type)
-        ? OPPONENT_TYPE_PERSON : OPPONENT_TYPE_ORGANISATION;
+        ? OPPONENT_TYPE_PERSON
+        : OPPONENT_TYPE_ORGANISATION;
   }
 
   /**
@@ -58,11 +57,11 @@ public final class OpponentUtil {
    * @return the display name of the opponent
    */
   public static String getPartyName(
-      final OpponentDetail opponent,
-      final CommonLookupValueDetail titleLookup) {
+      final OpponentDetail opponent, final CommonLookupValueDetail titleLookup) {
 
     return isOrganisation(opponent)
-        ? opponent.getOrganisationName() : getFullName(opponent, titleLookup);
+        ? opponent.getOrganisationName()
+        : getFullName(opponent, titleLookup);
   }
 
   /**
@@ -73,16 +72,17 @@ public final class OpponentUtil {
    * @return the display name of the opponent
    */
   public static String getPartyName(
-      final OpponentDetail opponent,
-      final List<CommonLookupValueDetail> titleLookups) {
+      final OpponentDetail opponent, final List<CommonLookupValueDetail> titleLookups) {
 
     // Find the correct title lookup for this opponent.
-    CommonLookupValueDetail titleLookup = titleLookups.stream()
-        .filter(title -> title.getCode().equals(opponent.getTitle()))
-        .findFirst()
-        .orElse(new CommonLookupValueDetail()
-            .code(opponent.getTitle())
-            .description(opponent.getTitle()));
+    CommonLookupValueDetail titleLookup =
+        titleLookups.stream()
+            .filter(title -> title.getCode().equals(opponent.getTitle()))
+            .findFirst()
+            .orElse(
+                new CommonLookupValueDetail()
+                    .code(opponent.getTitle())
+                    .description(opponent.getTitle()));
 
     return getPartyName(opponent, titleLookup);
   }
@@ -95,8 +95,7 @@ public final class OpponentUtil {
    * @return the full name of the opponent, or "undefined" if no name is available
    */
   protected static String getFullName(
-      final OpponentDetail opponent,
-      final CommonLookupValueDetail titleLookup) {
+      final OpponentDetail opponent, final CommonLookupValueDetail titleLookup) {
     final StringBuilder builder = new StringBuilder();
 
     if (StringUtils.hasText(opponent.getTitle())) {
@@ -131,8 +130,7 @@ public final class OpponentUtil {
    * @return the opponent detail with the specified EBS ID, or {@code null} if not found
    */
   public static OpponentDetail getOpponentByEbsId(
-      final ApplicationDetail application,
-      final String id) {
+      final ApplicationDetail application, final String id) {
     if (application.getOpponents() != null && id != null) {
       for (final OpponentDetail opponent : application.getOpponents()) {
         if (id.equals(opponent.getEbsId())) {
@@ -151,8 +149,7 @@ public final class OpponentUtil {
    * @return the opponent detail with the specified ID, or {@code null} if not found
    */
   public static OpponentDetail getOpponentById(
-      final ApplicationDetail application,
-      final Integer id) {
+      final ApplicationDetail application, final Integer id) {
     if (application.getOpponents() != null && id != null) {
       for (final OpponentDetail opponent : application.getOpponents()) {
         if (opponent.getId().equals(id)) {
@@ -164,8 +161,8 @@ public final class OpponentUtil {
   }
 
   /**
-   * Find the relevant relationship to case for the supplied opponent, depending
-   * on whether it is an organisation of individual.
+   * Find the relevant relationship to case for the supplied opponent, depending on whether it is an
+   * organisation of individual.
    *
    * @param opponent - the opponent.
    * @param organisationRelationships - the list of organisation relationship lookups.
@@ -182,9 +179,10 @@ public final class OpponentUtil {
     return relationships.stream()
         .filter(rel -> rel.getCode().equals(opponent.getRelationshipToCase()))
         .findFirst()
-        .orElse(new RelationshipToCaseLookupValueDetail()
-            .code(opponent.getRelationshipToCase())
-            .description(opponent.getRelationshipToCase()));
+        .orElse(
+            new RelationshipToCaseLookupValueDetail()
+                .code(opponent.getRelationshipToCase())
+                .description(opponent.getRelationshipToCase()));
   }
 
   /**
@@ -195,14 +193,14 @@ public final class OpponentUtil {
    * @return the relationship lookup.
    */
   public static CommonLookupValueDetail getRelationshipToClient(
-      final OpponentDetail opponent,
-      final List<CommonLookupValueDetail> relationships) {
+      final OpponentDetail opponent, final List<CommonLookupValueDetail> relationships) {
     return relationships.stream()
         .filter(rel -> rel.getCode().equals(opponent.getRelationshipToClient()))
         .findFirst()
-        .orElse(new CommonLookupValueDetail()
-            .code(opponent.getRelationshipToClient())
-            .description(opponent.getRelationshipToClient()));
+        .orElse(
+            new CommonLookupValueDetail()
+                .code(opponent.getRelationshipToClient())
+                .description(opponent.getRelationshipToClient()));
   }
 
   /**
@@ -213,16 +211,15 @@ public final class OpponentUtil {
    * @return the relationship lookup.
    */
   public static CommonLookupValueDetail getOrganisationType(
-      final OpponentDetail opponent,
-      final List<CommonLookupValueDetail> relationships) {
+      final OpponentDetail opponent, final List<CommonLookupValueDetail> relationships) {
     return relationships.stream()
         .filter(rel -> rel.getCode().equals(opponent.getOrganisationType()))
         .findFirst()
-        .orElse(new CommonLookupValueDetail()
-            .code(opponent.getOrganisationType())
-            .description(opponent.getOrganisationType()));
+        .orElse(
+            new CommonLookupValueDetail()
+                .code(opponent.getOrganisationType())
+                .description(opponent.getOrganisationType()));
   }
 
-  private OpponentUtil() {
-  }
+  private OpponentUtil() {}
 }

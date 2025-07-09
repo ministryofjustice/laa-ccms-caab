@@ -20,8 +20,7 @@ import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 @ExtendWith(SpringExtension.class)
 class OrganisationSearchCriteriaValidatorTest {
 
-  @InjectMocks
-  private OrganisationSearchCriteriaValidator organisationSearchCriteriaValidator;
+  @InjectMocks private OrganisationSearchCriteriaValidator organisationSearchCriteriaValidator;
 
   private OrganisationSearchCriteria searchCriteria;
 
@@ -29,8 +28,7 @@ class OrganisationSearchCriteriaValidatorTest {
 
   @BeforeEach
   public void setUp() {
-    searchCriteria =
-        new OrganisationSearchCriteria();
+    searchCriteria = new OrganisationSearchCriteria();
     errors = new BeanPropertyBindingResult(searchCriteria, ORGANISATION_SEARCH_CRITERIA);
   }
 

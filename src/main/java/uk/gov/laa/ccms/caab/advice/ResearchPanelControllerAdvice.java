@@ -5,9 +5,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
-/**
- * Controller advice class responsible for adding the research panel link to the model.
- */
+/** Controller advice class responsible for adding the research panel link to the model. */
 @ControllerAdvice
 public class ResearchPanelControllerAdvice {
 

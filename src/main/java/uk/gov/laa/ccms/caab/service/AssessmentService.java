@@ -87,10 +87,10 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 /**
- * Service class for handling operations related to assessments. This class provides
- * methods to retrieve, manipulate, and evaluate assessment data using the assessment
- * API client and a lookup service. It facilitates operations such as fetching assessments
- * based on specific criteria, determining the status of assessments.
+ * Service class for handling operations related to assessments. This class provides methods to
+ * retrieve, manipulate, and evaluate assessment data using the assessment API client and a lookup
+ * service. It facilitates operations such as fetching assessments based on specific criteria,
+ * determining the status of assessments.
  */
 @Service
 @RequiredArgsConstructor
@@ -101,7 +101,6 @@ public class AssessmentService {
   private final CaabApiClient caabApiClient;
   private final AssessmentMapper assessmentMapper;
   private final LookupService lookupService;
-
 
   /**
    * Retrieves assessments matching the given criteria from the assessment API client.
@@ -115,8 +114,7 @@ public class AssessmentService {
       final List<String> assessmentNames,
       final String providerId,
       final String caseReferenceNumber) {
-    return assessmentApiClient.getAssessments(
-        assessmentNames, providerId, caseReferenceNumber);
+    return assessmentApiClient.getAssessments(assessmentNames, providerId, caseReferenceNumber);
   }
 
   /**
@@ -158,21 +156,17 @@ public class AssessmentService {
         user.getLoginId());
   }
 
-
   /**
-   * Saves an assessment by creating a new one or updating an existing one based on the
-   * assessment ID.
+   * Saves an assessment by creating a new one or updating an existing one based on the assessment
+   * ID.
    *
    * @param user the user details
    * @param assessment the assessment details
    * @return a Mono indicating when the save operation has completed
    */
-  public Mono<Void> saveAssessment(
-      final UserDetail user,
-      final AssessmentDetail assessment) {
+  public Mono<Void> saveAssessment(final UserDetail user, final AssessmentDetail assessment) {
     if (assessment.getId() == null) {
-      return assessmentApiClient.createAssessment(
-          assessment, user.getLoginId());
+      return assessmentApiClient.createAssessment(assessment, user.getLoginId());
     } else {
       return assessmentApiClient.updateAssessment(
           assessment.getId(), assessment, user.getLoginId());
@@ -180,8 +174,8 @@ public class AssessmentService {
   }
 
   /**
-   * Calculates and updates the statuses for both means and merits assessments of an application.
-   * It determines which assessment was last saved to set the isMeansLast flag and applies status
+   * Calculates and updates the statuses for both means and merits assessments of an application. It
+   * determines which assessment was last saved to set the isMeansLast flag and applies status
    * updates based on whether assessments have started or changed.
    *
    * @param application the application whose assessments are being evaluated
@@ -215,8 +209,8 @@ public class AssessmentService {
 
   /**
    * Calculates and updates the status of the provided assessment based on specific criteria,
-   * including the amendment state of the application and whether a reassessment is required.
-   * The status is updated through an API client and also set on the application object.
+   * including the amendment state of the application and whether a reassessment is required. The
+   * status is updated through an API client and also set on the application object.
    *
    * @param currentAssessment the assessment whose status needs to be evaluated
    * @param application the application related to the assessment
@@ -251,7 +245,8 @@ public class AssessmentService {
 
     // update the assessment status if it has changed
     if (statusChanged && currentAssessment != null) {
-      assessmentApiClient.patchAssessment(
+      assessmentApiClient
+          .patchAssessment(
               currentAssessment.getId(),
               user.getLoginId(),
               new PatchAssessmentDetail().status(assessmentStatus.getStatus()))
@@ -259,7 +254,6 @@ public class AssessmentService {
     }
 
     setAssessmentStatusOnApplication(application, currentAssessment, assessmentStatus);
-
   }
 
   /**
@@ -278,14 +272,15 @@ public class AssessmentService {
 
     if (assessment != null && assessmentStatus != null) {
       final String statusValue =
-          lookupService.getCommonValue(COMMON_VALUE_PROGRESS_STATUS_TYPES,
-                  assessmentStatus.getStatus())
-              .flatMap(commonLookupValueDetailOptional ->
-                  commonLookupValueDetailOptional
-                      .map(commonLookupValueDetail ->
-                          Mono.just(commonLookupValueDetail.getDescription()))
-                      .orElseGet(Mono::empty)
-              )
+          lookupService
+              .getCommonValue(COMMON_VALUE_PROGRESS_STATUS_TYPES, assessmentStatus.getStatus())
+              .flatMap(
+                  commonLookupValueDetailOptional ->
+                      commonLookupValueDetailOptional
+                          .map(
+                              commonLookupValueDetail ->
+                                  Mono.just(commonLookupValueDetail.getDescription()))
+                          .orElseGet(Mono::empty))
               .blockOptional()
               .orElse(assessmentStatus.getStatus());
 
@@ -306,8 +301,7 @@ public class AssessmentService {
    * @return true if the specified assessment type has been amended; false otherwise
    */
   private boolean isApplicationsAssessmentAmended(
-      final ApplicationDetail application,
-      final AssessmentDetail assessment) {
+      final ApplicationDetail application, final AssessmentDetail assessment) {
 
     if (assessment != null) {
       if (MEANS.getName().equalsIgnoreCase(assessment.getName())) {
@@ -319,18 +313,16 @@ public class AssessmentService {
     return false;
   }
 
-
   /**
-   * Determines if a reassessment is required based on changes between an
-   * application and its latest assessment.
+   * Determines if a reassessment is required based on changes between an application and its latest
+   * assessment.
    *
    * @param application the application details to compare against the assessment
    * @param assessment the assessment details to compare against the application
    * @return true if a reassessment is necessary; false otherwise
    */
   protected boolean isReassessmentRequired(
-      final ApplicationDetail application,
-      final AssessmentDetail assessment) {
+      final ApplicationDetail application, final AssessmentDetail assessment) {
 
     if (!application.getAmendment()) {
       if (assessment != null) {
@@ -338,15 +330,17 @@ public class AssessmentService {
         final AssessmentEntityTypeDetail proceedingEntityType =
             getAssessmentEntityType(assessment, PROCEEDING);
 
-        //check for any proceeding attribute changes between assessment and application
+        // check for any proceeding attribute changes between assessment and application
         if (checkAssessmentForProceedingKeyChange(application, proceedingEntityType)) {
           return true;
         }
 
-        //check if proceeding is deleted
+        // check if proceeding is deleted
         if (application.getProceedings() != null) {
-          log.debug("app.getProceedings().size(): {} - opaListEntity.getOpaEntities().size(): {}",
-              application.getProceedings().size(), proceedingEntityType.getEntities().size());
+          log.debug(
+              "app.getProceedings().size(): {} - opaListEntity.getOpaEntities().size(): {}",
+              application.getProceedings().size(),
+              proceedingEntityType.getEntities().size());
 
           if (application.getProceedings().size() < proceedingEntityType.getEntities().size()) {
             log.debug("When proceeding is deleted condition - returns TRUE");
@@ -354,53 +348,60 @@ public class AssessmentService {
           }
         }
 
-        //used to check if the proceeding is deleted - this should be included for both assessments,
-        //although not specifically needed for means, both assessments and application data should
-        //be kept in sync.
+        // used to check if the proceeding is deleted - this should be included for both
+        // assessments,
+        // although not specifically needed for means, both assessments and application data should
+        // be kept in sync.
         if (Boolean.TRUE.equals(application.getMeritsReassessmentRequired())) {
           log.info(
-              "Reassessment Required for {} as application.getMeritsReassessmentRequired() "
-                  + "IS TRUE", application.getCaseReferenceNumber());
+              "Reassessment Required for {} as application.getMeritsReassessmentRequired() IS TRUE",
+              application.getCaseReferenceNumber());
           return true;
         }
 
-        //used specifically for merits - this should be included for both assessments,
-        //although not specifically needed for means, both assessments and application data should
-        //be kept in sync.
+        // used specifically for merits - this should be included for both assessments,
+        // although not specifically needed for means, both assessments and application data should
+        // be kept in sync.
         for (final OpponentDetail opponent : application.getOpponents()) {
           if (OPPONENT_TYPE_INDIVIDUAL.equalsIgnoreCase(opponent.getType())
               && differenceGreaterThanTenSecs(
-              opponent.getAuditTrail().getLastSaved(),
-              assessment.getAuditDetail().getCreated())) {
+                  opponent.getAuditTrail().getLastSaved(),
+                  assessment.getAuditDetail().getCreated())) {
 
-            log.info("Reassessment Required for {} as When individual is updated - IS TRUE",
+            log.info(
+                "Reassessment Required for {} as When individual is updated - IS TRUE",
                 application.getCaseReferenceNumber());
             return true;
           }
         }
 
-        //When Individual/Organisation deleted
-        //used specifically for merits - this should be included for both assessments,
-        //although not specifically needed for means, both assessments and application data should
-        //be kept in sync.
+        // When Individual/Organisation deleted
+        // used specifically for merits - this should be included for both assessments,
+        // although not specifically needed for means, both assessments and application data should
+        // be kept in sync.
         final AssessmentEntityTypeDetail opponentEntityType =
             getAssessmentEntityType(assessment, OPPONENT);
         if ((application.getOpponents() != null) && (opponentEntityType != null)) {
           if (application.getOpponents().size() < opponentEntityType.getEntities().size()) {
             log.info(
                 "Reassessment Required for {} as When organisation/individual is deleted "
-                    + "condition - IS TRUE", application.getCaseReferenceNumber());
+                    + "condition - IS TRUE",
+                application.getCaseReferenceNumber());
             return true;
           }
         }
 
-        //only check when it's a merits assessment
+        // only check when it's a merits assessment
         if (assessment.getName().equalsIgnoreCase(MERITS.getName())) {
-          final boolean meritReassessmentRequired = Optional.ofNullable(application.getCostLimit())
-              .map(CostLimitDetail::getLimitAtTimeOfMerits)
-              .map(limitAtTimeOfMerits -> limitAtTimeOfMerits.compareTo(
-                  application.getCosts().getRequestedCostLimitation()) < 0)
-              .orElse(true);
+          final boolean meritReassessmentRequired =
+              Optional.ofNullable(application.getCostLimit())
+                  .map(CostLimitDetail::getLimitAtTimeOfMerits)
+                  .map(
+                      limitAtTimeOfMerits ->
+                          limitAtTimeOfMerits.compareTo(
+                                  application.getCosts().getRequestedCostLimitation())
+                              < 0)
+                  .orElse(true);
 
           if (meritReassessmentRequired) {
             log.info(
@@ -411,26 +412,25 @@ public class AssessmentService {
             return true;
           }
         }
-
       }
     } else {
       // TODO CCMSPUI-738 - Amend case ~ need an EBS Case to workout if its required
-      //if (application.getAmendment()){
+      // if (application.getAmendment()){
       //  if (meansAssessment == null && !ebsCase.hasEbsAmendments()
       //    && application.getApplicationType().getId().equals("SUBSTANTIVE")
       //    && ebsCase.getCertificateType().getId().equals("EMERGENCY")
       //  ){
       //    return true;
       //  }
-      //}
+      // }
     }
 
     return false;
   }
 
   /**
-   * Checks if there are any discrepancies between the key data of the applications type details
-   * and their corresponding assessment records based on the specified assessment.
+   * Checks if there are any discrepancies between the key data of the applications type details and
+   * their corresponding assessment records based on the specified assessment.
    *
    * @param application the application containing application type details to check
    * @param assessment the assessment data
@@ -448,22 +448,24 @@ public class AssessmentService {
 
     final String applicationType = application.getApplicationType().getId();
 
-    final Optional<LocalDate> applicationDateUsed = Optional.of(application)
-        .map(ApplicationDetail::getApplicationType)
-        .map(ApplicationType::getDevolvedPowers)
-        .map(DevolvedPowersDetail::getDateUsed)
-        .map(date -> date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+    final Optional<LocalDate> applicationDateUsed =
+        Optional.of(application)
+            .map(ApplicationDetail::getApplicationType)
+            .map(ApplicationType::getDevolvedPowers)
+            .map(DevolvedPowersDetail::getDateUsed)
+            .map(date -> date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
 
     for (final AssessmentEntityDetail globalEntity : globalEntities) {
 
-      final String applicationTypeFromAssessment = Optional.ofNullable(
-              getAssessmentAttribute(globalEntity, APP_AMEND_TYPE))
-          .map(AssessmentAttributeDetail::getValue)
-          .orElse(null);
+      final String applicationTypeFromAssessment =
+          Optional.ofNullable(getAssessmentAttribute(globalEntity, APP_AMEND_TYPE))
+              .map(AssessmentAttributeDetail::getValue)
+              .orElse(null);
 
-      final boolean applicationTypeMismatch = (applicationTypeFromAssessment != null
-          && (applicationType == null
-          || !applicationType.equalsIgnoreCase(applicationTypeFromAssessment)));
+      final boolean applicationTypeMismatch =
+          applicationTypeFromAssessment != null
+              && (applicationType == null
+                  || !applicationType.equalsIgnoreCase(applicationTypeFromAssessment));
 
       if (applicationTypeMismatch) {
         if (APP_TYPE_EXCEPTIONAL_CASE_FUNDING.equalsIgnoreCase(applicationType)) {
@@ -479,10 +481,10 @@ public class AssessmentService {
           getAssessmentAttribute(globalEntity, DELEGATED_FUNCTIONS_DATE);
 
       if (delegatedFunctionsAttribute != null) {
-        final Optional<LocalDate> attributeDate = Optional.ofNullable(
-            delegatedFunctionsAttribute.getValue())
-            .map(dateStr -> 
-                LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+        final Optional<LocalDate> attributeDate =
+            Optional.ofNullable(delegatedFunctionsAttribute.getValue())
+                .map(
+                    dateStr -> LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("dd-MM-yyyy")));
 
         if (attributeDate.isPresent()) {
           if (!applicationDateUsed.isPresent()
@@ -500,16 +502,15 @@ public class AssessmentService {
 
   /**
    * Checks if there are any discrepancies between the key data of the proceedings in the
-   * application and their corresponding assessment records based on the specified assessment
-   * entity type.
+   * application and their corresponding assessment records based on the specified assessment entity
+   * type.
    *
    * @param application the application containing proceedings to check
    * @param proceedingEntityType the type of assessment entity to match against proceedings
    * @return true if any discrepancies are found; false otherwise
    */
   protected boolean checkAssessmentForProceedingKeyChange(
-      final ApplicationDetail application,
-      final AssessmentEntityTypeDetail proceedingEntityType) {
+      final ApplicationDetail application, final AssessmentEntityTypeDetail proceedingEntityType) {
 
     if (proceedingEntityType == null
         && (application.getProceedings() == null || application.getProceedings().isEmpty())) {
@@ -522,7 +523,7 @@ public class AssessmentService {
       final String clientInvolvementType = proceeding.getClientInvolvement().getId();
       final String entityId = ProceedingUtil.getAssessmentMappingId(proceeding);
 
-      //find entity in entity type where matched entity id
+      // find entity in entity type where matched entity id
       final AssessmentEntityDetail proceedingEntity =
           getAssessmentEntity(proceedingEntityType, entityId);
 
@@ -531,14 +532,11 @@ public class AssessmentService {
       }
 
       final AssessmentAttributeDetail matterTypeAttribute =
-          getAssessmentAttribute(proceedingEntity,
-              AssessmentAttribute.MATTER_TYPE);
+          getAssessmentAttribute(proceedingEntity, AssessmentAttribute.MATTER_TYPE);
       final AssessmentAttributeDetail proceedingTypeAttribute =
-          getAssessmentAttribute(proceedingEntity,
-              AssessmentAttribute.PROCEEDING_NAME);
+          getAssessmentAttribute(proceedingEntity, AssessmentAttribute.PROCEEDING_NAME);
       final AssessmentAttributeDetail clientInvolvementTypeAttribute =
-          getAssessmentAttribute(proceedingEntity,
-              AssessmentAttribute.CLIENT_INVOLVEMENT_TYPE);
+          getAssessmentAttribute(proceedingEntity, AssessmentAttribute.CLIENT_INVOLVEMENT_TYPE);
 
       if (!matterType.equals(matterTypeAttribute.getValue())
           || !proceedingType.equals(proceedingTypeAttribute.getValue())
@@ -546,23 +544,19 @@ public class AssessmentService {
         return true;
       }
 
-      //Check scope limitations for both, although not specifically needed for means, both
-      //assessments and application data should be kept in sync.
+      // Check scope limitations for both, although not specifically needed for means, both
+      // assessments and application data should be kept in sync.
       final AssessmentAttributeDetail scopeLimitationAttribute =
-          getAssessmentAttribute(proceedingEntity,
-              AssessmentAttribute.REQUESTED_SCOPE);
+          getAssessmentAttribute(proceedingEntity, AssessmentAttribute.REQUESTED_SCOPE);
 
       if (scopeLimitationAttribute != null) {
         final String assessmentScopeLimitation = scopeLimitationAttribute.getValue();
-        final String applicationScopeLimitation =
-            getRequestedScopeForAssessmentInput(proceeding);
+        final String applicationScopeLimitation = getRequestedScopeForAssessmentInput(proceeding);
         if (!assessmentScopeLimitation.equals(applicationScopeLimitation)) {
           return true;
         }
       }
-
     }
-
 
     return false;
   }
@@ -602,16 +596,14 @@ public class AssessmentService {
    * @param assessment the assessment detail to clean up
    * @param application the application detail for reference
    */
-  public void cleanupData(
-      final AssessmentDetail assessment,
-      final ApplicationDetail application) {
+  public void cleanupData(final AssessmentDetail assessment, final ApplicationDetail application) {
 
     if (assessment != null) {
       deleteRedundantOpponents(assessment, application);
       deleteRedundantProceedings(assessment, application);
 
       if (application != null && application.getAmendment()) {
-        //todo - future implementation for amendments
+        // todo - future implementation for amendments
       }
     }
   }
@@ -623,19 +615,16 @@ public class AssessmentService {
    * @param application the application details
    */
   private void deleteRedundantOpponents(
-      final AssessmentDetail assessment,
-      final ApplicationDetail application) {
-    final List<String> opponentsToDelete =  getEntitiesToDelete(
-        assessment,
-        OPPONENT,
-        AssessmentRelationship.OPPONENT,
-        (list, id) -> addRedundantOpponent(list, id, application));
+      final AssessmentDetail assessment, final ApplicationDetail application) {
+    final List<String> opponentsToDelete =
+        getEntitiesToDelete(
+            assessment,
+            OPPONENT,
+            AssessmentRelationship.OPPONENT,
+            (list, id) -> addRedundantOpponent(list, id, application));
 
     deleteEntityAndRelationship(
-        assessment,
-        OPPONENT,
-        AssessmentRelationship.OPPONENT,
-        opponentsToDelete);
+        assessment, OPPONENT, AssessmentRelationship.OPPONENT, opponentsToDelete);
   }
 
   /**
@@ -645,24 +634,21 @@ public class AssessmentService {
    * @param application the application details
    */
   private void deleteRedundantProceedings(
-      final AssessmentDetail assessment,
-      final ApplicationDetail application) {
-    final List<String> proceedingsToDelete = getEntitiesToDelete(
-        assessment,
-        PROCEEDING,
-        AssessmentRelationship.PROCEEDING,
-        (list, id) -> addRedundantProceeding(list, id, application));
+      final AssessmentDetail assessment, final ApplicationDetail application) {
+    final List<String> proceedingsToDelete =
+        getEntitiesToDelete(
+            assessment,
+            PROCEEDING,
+            AssessmentRelationship.PROCEEDING,
+            (list, id) -> addRedundantProceeding(list, id, application));
 
     deleteEntityAndRelationship(
-        assessment,
-        PROCEEDING,
-        AssessmentRelationship.PROCEEDING,
-        proceedingsToDelete);
+        assessment, PROCEEDING, AssessmentRelationship.PROCEEDING, proceedingsToDelete);
   }
 
   /**
-   * Deletes entities and their relationships from the assessment based on the given entity type
-   * and relationship type.
+   * Deletes entities and their relationships from the assessment based on the given entity type and
+   * relationship type.
    *
    * @param assessment the assessment details
    * @param entityType the type of entities to delete
@@ -682,10 +668,11 @@ public class AssessmentService {
       entities.stream()
           .filter(entity -> entity.getName().equals(entityName))
           .findFirst()
-          .ifPresent(entity -> {
-            log.debug("Removing entity: {}", entityName);
-            entities.remove(entity);
-          });
+          .ifPresent(
+              entity -> {
+                log.debug("Removing entity: {}", entityName);
+                entities.remove(entity);
+              });
       removeOpaRelationshipTarget(assessment, relationshipType, entityName);
     }
   }
@@ -721,17 +708,19 @@ public class AssessmentService {
         getAssessmentEntitiesForEntityType(assessment, GLOBAL);
 
     globalEntities.stream()
-        .filter(globalEntity -> assessment.getCaseReferenceNumber()
-            .equalsIgnoreCase(globalEntity.getName()))
+        .filter(
+            globalEntity ->
+                assessment.getCaseReferenceNumber().equalsIgnoreCase(globalEntity.getName()))
         .map(globalEntity -> getEntityRelationship(globalEntity, relationshipType))
         .filter(Objects::nonNull)
         .flatMap(relationship -> relationship.getRelationshipTargets().stream())
-        .forEach(target -> {
-          log.debug("%s relationship target entity ID : %s".formatted(
-              relationshipType,
-              target.getTargetEntityId()));
-          addRedundantEntityMethod.accept(entitiesToDelete, target.getTargetEntityId());
-        });
+        .forEach(
+            target -> {
+              log.debug(
+                  "%s relationship target entity ID : %s"
+                      .formatted(relationshipType, target.getTargetEntityId()));
+              addRedundantEntityMethod.accept(entitiesToDelete, target.getTargetEntityId());
+            });
 
     return entitiesToDelete;
   }
@@ -749,11 +738,17 @@ public class AssessmentService {
       final String entityName,
       final ApplicationDetail application) {
 
-    addRedundantEntity(opponentsToDelete, entityName, application.getOpponents(), opponent ->
-        (opponent.getEbsId() != null && entityName.equalsIgnoreCase(opponent.getEbsId()))
-            || (opponent.getId() != null && entityName.equalsIgnoreCase(
-                InstanceMappingPrefix.OPPONENT.getPrefix().concat(opponent.getId().toString())))
-    );
+    addRedundantEntity(
+        opponentsToDelete,
+        entityName,
+        application.getOpponents(),
+        opponent ->
+            (opponent.getEbsId() != null && entityName.equalsIgnoreCase(opponent.getEbsId()))
+                || (opponent.getId() != null
+                    && entityName.equalsIgnoreCase(
+                        InstanceMappingPrefix.OPPONENT
+                            .getPrefix()
+                            .concat(opponent.getId().toString()))));
   }
 
   /**
@@ -769,11 +764,17 @@ public class AssessmentService {
       final String entityName,
       final ApplicationDetail application) {
 
-    addRedundantEntity(proceedingsToDelete, entityName, application.getProceedings(), proceeding ->
-        (proceeding.getEbsId() != null && entityName.equalsIgnoreCase(proceeding.getEbsId()))
-            || (proceeding.getId() != null && entityName.equalsIgnoreCase(
-                InstanceMappingPrefix.PROCEEDING.getPrefix().concat(proceeding.getId().toString())))
-    );
+    addRedundantEntity(
+        proceedingsToDelete,
+        entityName,
+        application.getProceedings(),
+        proceeding ->
+            (proceeding.getEbsId() != null && entityName.equalsIgnoreCase(proceeding.getEbsId()))
+                || (proceeding.getId() != null
+                    && entityName.equalsIgnoreCase(
+                        InstanceMappingPrefix.PROCEEDING
+                            .getPrefix()
+                            .concat(proceeding.getId().toString()))));
   }
 
   /**
@@ -818,22 +819,28 @@ public class AssessmentService {
         getAssessmentEntitiesForEntityType(assessment, GLOBAL);
     log.debug("globalEntities size : " + globalEntities.size());
 
-    final Optional<AssessmentEntityDetail> globalEntity = globalEntities.stream()
-        .filter(entity -> assessment.getCaseReferenceNumber().equalsIgnoreCase(entity.getName()))
-        .findFirst();
+    final Optional<AssessmentEntityDetail> globalEntity =
+        globalEntities.stream()
+            .filter(
+                entity -> assessment.getCaseReferenceNumber().equalsIgnoreCase(entity.getName()))
+            .findFirst();
 
-    globalEntity.ifPresent(entity -> {
-      final AssessmentRelationshipDetail relationship =
-          getEntityRelationship(globalEntity.get(), assessmentRelationship);
+    globalEntity.ifPresent(
+        entity -> {
+          final AssessmentRelationshipDetail relationship =
+              getEntityRelationship(globalEntity.get(), assessmentRelationship);
 
-      if (relationship != null) {
-        relationship.getRelationshipTargets().removeIf(target -> {
-          log.debug("Target Entity ID to be removed : " + target.getTargetEntityId());
-          return removeEntityId != null
-              && removeEntityId.equalsIgnoreCase(target.getTargetEntityId());
+          if (relationship != null) {
+            relationship
+                .getRelationshipTargets()
+                .removeIf(
+                    target -> {
+                      log.debug("Target Entity ID to be removed : " + target.getTargetEntityId());
+                      return removeEntityId != null
+                          && removeEntityId.equalsIgnoreCase(target.getTargetEntityId());
+                    });
+          }
         });
-      }
-    });
   }
 
   /**
@@ -850,14 +857,12 @@ public class AssessmentService {
       final ClientDetail client,
       final UserDetail user) {
 
-    //remove previous assessment
+    // remove previous assessment
     deleteAssessments(
-        user,
-        List.of(assessmentRulebase.getName()),
-        application.getCaseReferenceNumber(),
-        null).block();
+            user, List.of(assessmentRulebase.getName()), application.getCaseReferenceNumber(), null)
+        .block();
 
-    //start new assessment
+    // start new assessment
     startNewAssessment(assessmentRulebase, application, client, user);
   }
 
@@ -874,8 +879,7 @@ public class AssessmentService {
       final ApplicationDetail application,
       final ClientDetail client,
       final UserDetail user) {
-    log.debug("Name - {}, AssessmentType - {}",
-        user.getUsername(), assessmentRulebase.getType());
+    log.debug("Name - {}, AssessmentType - {}", user.getUsername(), assessmentRulebase.getType());
     final String referenceId = application.getCaseReferenceNumber();
     final String providerId = user.getProvider().getId().toString();
 
@@ -883,48 +887,49 @@ public class AssessmentService {
 
     final List<AssessmentEntityType> opaEntitiesRetrievedFromEbs = null;
 
-    //find or Create
-    final AssessmentDetail assessment = findOrCreate(
-        providerId, referenceId, assessmentRulebase.getName());
-    final AssessmentDetail prepopAssessment = findOrCreate(
-        providerId, referenceId, assessmentRulebase.getPrePopAssessmentName());
+    // find or Create
+    final AssessmentDetail assessment =
+        findOrCreate(providerId, referenceId, assessmentRulebase.getName());
+    final AssessmentDetail prepopAssessment =
+        findOrCreate(providerId, referenceId, assessmentRulebase.getPrePopAssessmentName());
 
     // find or create an opa session
     final boolean createdNewPrepopAssessment = prepopAssessment.getId() == null;
 
-    //used to populate the lookups for title for the opponent
-    final List<AssessmentOpponentMappingContext>
-        opponentContext = getAssessmentOpponentMappingContexts(application);
+    // used to populate the lookups for title for the opponent
+    final List<AssessmentOpponentMappingContext> opponentContext =
+        getAssessmentOpponentMappingContexts(application);
 
-    final AssessmentMappingContext assessmentContext = AssessmentMappingContext.builder()
-        .application(application)
-        .opponentContext(opponentContext)
-        .assessment(assessment)
-        .client(client)
-        .user(user)
-        .build();
+    final AssessmentMappingContext assessmentContext =
+        AssessmentMappingContext.builder()
+            .application(application)
+            .opponentContext(opponentContext)
+            .assessment(assessment)
+            .client(client)
+            .user(user)
+            .build();
 
-    //if we create a new prepop assessment, we need to map the context to it,
+    // if we create a new prepop assessment, we need to map the context to it,
     // otherwise we will just use the existing one
     if (createdNewPrepopAssessment) {
       assessmentMapper.toAssessmentDetail(prepopAssessment, assessmentContext);
     }
 
-    //always map to the assessment as it should always be new here.
+    // always map to the assessment as it should always be new here.
     assessmentMapper.toAssessmentDetail(assessment, assessmentContext);
 
     updateCostLimitIfMeritsAssessment(assessmentRulebase, application, user);
 
     if (prepopulateFromEbs) {
-      //todo - later implementation in future story
+      // todo - later implementation in future story
     }
 
-    //if means and merits:
+    // if means and merits:
     if (!assessmentRulebase.isFinancialAssessment()) {
       if (isAssessmentReferenceConsistent(prepopAssessment)
           && isAssessmentReferenceConsistent(assessment)) {
 
-        //call opa - save to database
+        // call opa - save to database
         saveAssessment(user, assessment).block();
         saveAssessment(user, prepopAssessment).block();
       } else {
@@ -933,9 +938,8 @@ public class AssessmentService {
       }
 
     } else {
-      //todo - later implementation in future story
+      // todo - later implementation in future story
     }
-
   }
 
   /**
@@ -950,19 +954,23 @@ public class AssessmentService {
 
     for (final OpponentDetail opponent : application.getOpponents()) {
 
-      final CommonLookupValueDetail titleCommonLookup = lookupService.getCommonValue(
-              COMMON_VALUE_CONTACT_TITLE, opponent.getTitle())
-          .map(commonLookupValueDetail -> commonLookupValueDetail
-              .orElse(new CommonLookupValueDetail()
-                  .code(opponent.getTitle())
-                  .description(opponent.getTitle())))
-          .blockOptional()
-          .orElseThrow();
+      final CommonLookupValueDetail titleCommonLookup =
+          lookupService
+              .getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle())
+              .map(
+                  commonLookupValueDetail ->
+                      commonLookupValueDetail.orElse(
+                          new CommonLookupValueDetail()
+                              .code(opponent.getTitle())
+                              .description(opponent.getTitle())))
+              .blockOptional()
+              .orElseThrow();
 
-      opponentContext.add(AssessmentOpponentMappingContext.builder()
-          .opponent(opponent)
-          .titleCommonLookupValue(titleCommonLookup)
-          .build());
+      opponentContext.add(
+          AssessmentOpponentMappingContext.builder()
+              .opponent(opponent)
+              .titleCommonLookupValue(titleCommonLookup)
+              .build());
     }
     return opponentContext;
   }
@@ -977,23 +985,20 @@ public class AssessmentService {
    * @return the found or newly created assessment detail
    */
   protected AssessmentDetail findOrCreate(
-      final String providerId,
-      final String referenceId,
-      final String assessmentName) {
+      final String providerId, final String referenceId, final String assessmentName) {
 
-    final AssessmentDetails assessments = getAssessments(
-        List.of(assessmentName),
-        providerId,
-        referenceId).block();
+    final AssessmentDetails assessments =
+        getAssessments(List.of(assessmentName), providerId, referenceId).block();
 
     if (assessments != null && !assessments.getContent().isEmpty()) {
       return getMostRecentAssessmentDetail(assessments.getContent());
     } else {
-      final AssessmentDetail assessment = new AssessmentDetail()
-          .caseReferenceNumber(referenceId)
-          .providerId(providerId)
-          .name(assessmentName)
-          .status(INCOMPLETE.getStatus());
+      final AssessmentDetail assessment =
+          new AssessmentDetail()
+              .caseReferenceNumber(referenceId)
+              .providerId(providerId)
+              .name(assessmentName)
+              .status(INCOMPLETE.getStatus());
       log.debug("Created Assessment {} ", assessment.toString());
       return assessment;
     }
@@ -1008,8 +1013,7 @@ public class AssessmentService {
    * @return {@code true} if the checkpoint should be deleted, {@code false} otherwise
    */
   public boolean isAssessmentCheckpointToBeDeleted(
-      final ApplicationDetail application,
-      final AssessmentDetail assessment) {
+      final ApplicationDetail application, final AssessmentDetail assessment) {
     boolean isMatching = false;
     final Date dateOfLastChange = getDateOfLatestKeyChange(application);
 
@@ -1026,12 +1030,11 @@ public class AssessmentService {
    *
    * @param application the application details containing proceedings
    * @param assessment the assessment details containing proceeding entities
-   * @return true if a proceeding entity in the assessment does not exist in the application, or
-   *         if there is a mismatch with application proceedings, otherwise false
+   * @return true if a proceeding entity in the assessment does not exist in the application, or if
+   *     there is a mismatch with application proceedings, otherwise false
    */
   protected boolean isProceedingsCountMismatch(
-      final ApplicationDetail application,
-      final AssessmentDetail assessment) {
+      final ApplicationDetail application, final AssessmentDetail assessment) {
 
     final List<AssessmentEntityDetail> proceedingEntities =
         getAssessmentEntitiesForEntityType(assessment, PROCEEDING);
@@ -1046,12 +1049,11 @@ public class AssessmentService {
    *
    * @param application the application details containing proceedings
    * @param assessment the assessment details containing proceeding entities
-   * @return true if a proceeding entity in the assessment does not exist in the application, or
-   *         if there is a mismatch with application proceedings, otherwise false
+   * @return true if a proceeding entity in the assessment does not exist in the application, or if
+   *     there is a mismatch with application proceedings, otherwise false
    */
   protected boolean isAssessmentProceedingsMatchingApplication(
-      final ApplicationDetail application,
-      final AssessmentDetail assessment) {
+      final ApplicationDetail application, final AssessmentDetail assessment) {
 
     boolean isMatching = false;
 
@@ -1059,9 +1061,8 @@ public class AssessmentService {
         getAssessmentEntitiesForEntityType(assessment, PROCEEDING);
 
     for (final AssessmentEntityDetail proceedingEntity : proceedingEntities) {
-      final String proceedingId = proceedingEntity
-          .getName()
-          .replaceFirst(InstanceMappingPrefix.PROCEEDING.getPrefix(), "");
+      final String proceedingId =
+          proceedingEntity.getName().replaceFirst(InstanceMappingPrefix.PROCEEDING.getPrefix(), "");
 
       // Check if proceedingEntity with the given name or proceedingId exists in the application
       final boolean proceedingExists =
@@ -1072,23 +1073,21 @@ public class AssessmentService {
         // If no proceeding exists, set isMatching to true
         isMatching = true;
       }
-
     }
     return isMatching || isApplicationProceedingsMatchingAssessment(application, assessment);
   }
 
   /**
-   * Checks if the proceedings in the application exist in the assessment's session and if
-   * their scopes match.
+   * Checks if the proceedings in the application exist in the assessment's session and if their
+   * scopes match.
    *
    * @param application the application details containing proceedings
    * @param assessment the assessment details to check against
    * @return true if a proceeding in the application does not exist in the assessment or if the
-   *         scope of any proceeding has changed, otherwise false
+   *     scope of any proceeding has changed, otherwise false
    */
   protected boolean isApplicationProceedingsMatchingAssessment(
-      final ApplicationDetail application,
-      final AssessmentDetail assessment) {
+      final ApplicationDetail application, final AssessmentDetail assessment) {
 
     boolean isMatching = false;
     for (final ProceedingDetail proceeding : application.getProceedings()) {
@@ -1123,17 +1122,16 @@ public class AssessmentService {
   }
 
   /**
-   * Checks if the number of opponents in the application matches the number of opponent entities
-   * in the assessment and verifies the opponent details.
+   * Checks if the number of opponents in the application matches the number of opponent entities in
+   * the assessment and verifies the opponent details.
    *
    * @param application the application details containing opponents
    * @param assessment the assessment details containing opponent entities
    * @return true if the opponent counts do not match or if an opponent entity in the assessment
-   *         does not exist in the application, otherwise false
+   *     does not exist in the application, otherwise false
    */
   protected boolean isOpponentCountMatchingAssessments(
-      final ApplicationDetail application,
-      final AssessmentDetail assessment) {
+      final ApplicationDetail application, final AssessmentDetail assessment) {
 
     final List<AssessmentEntityDetail> opponentEntities =
         getAssessmentEntitiesForEntityType(assessment, OPPONENT);
@@ -1148,11 +1146,10 @@ public class AssessmentService {
    * @param application the application details containing opponents
    * @param assessment the assessment details containing opponent entities
    * @return true if an opponent entity in the assessment does not exist in the application,
-   *         otherwise false
+   *     otherwise false
    */
   protected boolean isAssessmentOpponentsMatchingApplication(
-      final ApplicationDetail application,
-      final AssessmentDetail assessment) {
+      final ApplicationDetail application, final AssessmentDetail assessment) {
 
     boolean isMatching = false;
 
@@ -1162,9 +1159,8 @@ public class AssessmentService {
     for (final AssessmentEntityDetail opponentEntity : opponentEntities) {
       log.debug("Assessment Opponent EntityID : " + opponentEntity.getName());
 
-      final String opponentId = opponentEntity
-          .getName()
-          .replaceFirst(InstanceMappingPrefix.OPPONENT.getPrefix(), "");
+      final String opponentId =
+          opponentEntity.getName().replaceFirst(InstanceMappingPrefix.OPPONENT.getPrefix(), "");
 
       final boolean opponentExists =
           getOpponentByEbsId(application, opponentEntity.getName()) != null
@@ -1184,11 +1180,10 @@ public class AssessmentService {
    * @param application the application details containing opponents
    * @param assessment the assessment details to check against
    * @return true if an opponent in the application does not exist in the assessment, otherwise
-   *         false
+   *     false
    */
   protected boolean isApplicationOpponentsMatchingAssessments(
-      final ApplicationDetail application,
-      final AssessmentDetail assessment) {
+      final ApplicationDetail application, final AssessmentDetail assessment) {
 
     boolean isMatching = false;
 
@@ -1209,11 +1204,9 @@ public class AssessmentService {
         log.debug("APP OPPONENTS DOESN'T EXIST IN OPASESSION OBJECT");
         isMatching = true;
       }
-
     }
     return isMatching || applicationTypeMatches(application, assessment);
   }
-
 
   /**
    * Updates the cost limit if the assessment rulebase is for merits assessment.
@@ -1227,19 +1220,17 @@ public class AssessmentService {
       final UserDetail user) {
     if (assessmentRulebase != null && assessmentRulebase.equals(AssessmentRulebase.MERITS)) {
 
-      application.getCostLimit().setLimitAtTimeOfMerits(
-          application.getCosts().getRequestedCostLimitation());
+      application
+          .getCostLimit()
+          .setLimitAtTimeOfMerits(application.getCosts().getRequestedCostLimitation());
 
       final CostLimitDetail costLimit = application.getCostLimit();
-      costLimit.setLimitAtTimeOfMerits(
-          application.getCosts().getRequestedCostLimitation());
+      costLimit.setLimitAtTimeOfMerits(application.getCosts().getRequestedCostLimitation());
 
       final ApplicationDetail patch = new ApplicationDetail().costLimit(costLimit);
-      caabApiClient.patchApplication(
-          String.valueOf(application.getId()),
-          patch,
-          user.getLoginId()).block();
-
+      caabApiClient
+          .patchApplication(String.valueOf(application.getId()), patch, user.getLoginId())
+          .block();
     }
   }
 
@@ -1256,25 +1247,21 @@ public class AssessmentService {
 
     final List<AssessmentSummaryEntityDisplay> summaryToDisplay = new ArrayList<>();
 
-    //loop through all parent summary lookups
-    for (final AssessmentSummaryEntityLookupValueDetail parentSummaryLookup
-        : parentSummaryLookups) {
+    // loop through all parent summary lookups
+    for (final AssessmentSummaryEntityLookupValueDetail parentSummaryLookup :
+        parentSummaryLookups) {
       log.debug("Parent Summary: {}", parentSummaryLookup.getDisplayName());
 
       // get all entities for the parent summary lookup
       final List<AssessmentEntityDetail> entities =
           getAssessmentEntitiesForEntityType(assessment, parentSummaryLookup.getName());
 
-      //loop through all entities in the assessment where the entity type matches
+      // loop through all entities in the assessment where the entity type matches
       // the parent summary lookup
       for (final AssessmentEntityDetail entity : entities) {
         log.debug("Entity: {}", entity.getName());
         createSummaryEntity(
-            assessment,
-            summaryToDisplay,
-            childSummaryLookups,
-            parentSummaryLookup,
-            entity);
+            assessment, summaryToDisplay, childSummaryLookups, parentSummaryLookup, entity);
       }
     }
 
@@ -1297,10 +1284,10 @@ public class AssessmentService {
       final AssessmentSummaryEntityLookupValueDetail summaryEntityLookup,
       final AssessmentEntityDetail entity) {
 
-    //we have the entity from the assessment where it matched the parent summary lookup
+    // we have the entity from the assessment where it matched the parent summary lookup
 
-    //need to stream through each attribute in the summaryEntityLookup
-    //check it matches the assessment entity attributes, then add it to a list if matches
+    // need to stream through each attribute in the summaryEntityLookup
+    // check it matches the assessment entity attributes, then add it to a list if matches
     final List<AssessmentSummaryAttributeDisplay> attributesToDisplay =
         summaryEntityLookup.getAttributes().stream()
             .map(attributeLookup -> getAssessmentAttribute(entity, attributeLookup.getName()))
@@ -1310,19 +1297,19 @@ public class AssessmentService {
             .toList();
 
     if (!attributesToDisplay.isEmpty()) {
-      //if we have data in the list then we can create a summary display entity
+      // if we have data in the list then we can create a summary display entity
       final AssessmentSummaryEntityDisplay summaryEntityToDisplay =
           new AssessmentSummaryEntityDisplay(
               summaryEntityLookup.getName(),
               summaryEntityLookup.getDisplayName(),
               summaryEntityLookup.getEntityLevel());
 
-      //then we add all the attributes to the summary entity
+      // then we add all the attributes to the summary entity
       summaryEntityToDisplay.getAttributes().addAll(attributesToDisplay);
-      //then add the summary entity to the list
+      // then add the summary entity to the list
       summaryEntitiesToDisplay.add(summaryEntityToDisplay);
 
-      //Child entities to add
+      // Child entities to add
       if (!GLOBAL.getType().equalsIgnoreCase(summaryEntityToDisplay.getName())) {
         for (final AssessmentRelationshipDetail relationship : entity.getRelations()) {
           final String relationType = relationship.getName();
@@ -1369,13 +1356,13 @@ public class AssessmentService {
         // Check if the formatted attribute value has text or if the attribute was asked
         .filter(attr -> StringUtils.hasText(formattedAttributeValue) || attr.getAsked())
         // If the condition is met, create a new AssessmentSummaryAttributeDisplay
-        .map(attr -> new AssessmentSummaryAttributeDisplay(
-            attr.getName(),
-            getDisplayNameForAttribute(summaryEntityLookup, attr.getName()),
-            formattedAttributeValue))
+        .map(
+            attr ->
+                new AssessmentSummaryAttributeDisplay(
+                    attr.getName(),
+                    getDisplayNameForAttribute(summaryEntityLookup, attr.getName()),
+                    formattedAttributeValue))
         // If the condition is not met, return null
         .orElse(null);
   }
-
-
 }

@@ -16,14 +16,14 @@ class OpponentUtilTest {
   void testGetPartyName_buildsFullName() {
     final OpponentDetail opponent = buildOpponent(new Date());
 
-    final CommonLookupValueDetail titleLookup = new CommonLookupValueDetail()
-        .code(opponent.getTitle())
-        .description("test");
+    final CommonLookupValueDetail titleLookup =
+        new CommonLookupValueDetail().code(opponent.getTitle()).description("test");
 
     final String fullName = getPartyName(opponent, titleLookup);
 
     assertNotNull(fullName);
-    final String expectedResult = titleLookup.getDescription() + " " + opponent.getFirstName() + " " + opponent.getSurname();
+    final String expectedResult =
+        titleLookup.getDescription() + " " + opponent.getFirstName() + " " + opponent.getSurname();
     assertEquals(expectedResult, fullName);
   }
 
@@ -31,13 +31,14 @@ class OpponentUtilTest {
   void testGetPartyName_noTitleMatchReturnsCode() {
     final OpponentDetail opponent = buildOpponent(new Date());
 
-    final CommonLookupValueDetail titleLookup = new CommonLookupValueDetail()
-        .code(opponent.getTitle());
+    final CommonLookupValueDetail titleLookup =
+        new CommonLookupValueDetail().code(opponent.getTitle());
 
     final String fullName = getPartyName(opponent, titleLookup);
 
     assertNotNull(fullName);
-    final String expectedResult = opponent.getTitle() + " " + opponent.getFirstName() + " " + opponent.getSurname();
+    final String expectedResult =
+        opponent.getTitle() + " " + opponent.getFirstName() + " " + opponent.getSurname();
     assertEquals(expectedResult, fullName);
   }
 
@@ -59,8 +60,8 @@ class OpponentUtilTest {
     final OpponentDetail opponent = buildOpponent(new Date());
     opponent.setFirstName(null);
 
-    final CommonLookupValueDetail titleLookup = new CommonLookupValueDetail()
-        .code(opponent.getTitle());
+    final CommonLookupValueDetail titleLookup =
+        new CommonLookupValueDetail().code(opponent.getTitle());
 
     final String fullName = getPartyName(opponent, titleLookup);
 
@@ -74,8 +75,8 @@ class OpponentUtilTest {
     final OpponentDetail opponent = buildOpponent(new Date());
     opponent.setSurname(null);
 
-    final CommonLookupValueDetail titleLookup = new CommonLookupValueDetail()
-        .code(opponent.getTitle());
+    final CommonLookupValueDetail titleLookup =
+        new CommonLookupValueDetail().code(opponent.getTitle());
 
     final String fullName = getPartyName(opponent, titleLookup);
 
@@ -90,8 +91,8 @@ class OpponentUtilTest {
     opponent.setFirstName(null);
     opponent.setSurname(null);
 
-    final CommonLookupValueDetail titleLookup = new CommonLookupValueDetail()
-        .code(opponent.getTitle());
+    final CommonLookupValueDetail titleLookup =
+        new CommonLookupValueDetail().code(opponent.getTitle());
 
     final String fullName = getPartyName(opponent, titleLookup);
 
@@ -99,6 +100,4 @@ class OpponentUtilTest {
     final String expectedResult = opponent.getTitle();
     assertEquals(expectedResult, fullName);
   }
-
-
 }

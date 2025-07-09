@@ -23,9 +23,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.service.LookupService;
 
-/**
- * Controller for handling contact client details selection during the new application process.
- */
+/** Controller for handling contact client details selection during the new application process. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -56,8 +54,7 @@ public class ClientContactDetailsController {
       Model model) {
 
     populateDropdowns(model);
-    contactDetails.setVulnerableClient(
-        clientFlowFormData.getBasicDetails().getVulnerableClient());
+    contactDetails.setVulnerableClient(clientFlowFormData.getBasicDetails().getVulnerableClient());
     contactDetails.setClientFlowFormAction(clientFlowFormData.getAction());
 
     if (clientFlowFormData.getContactDetails() != null) {
@@ -90,9 +87,8 @@ public class ClientContactDetailsController {
     if (bindingResult.hasErrors()) {
       populateDropdowns(model);
       // Extract global error codes for checkboxes to show error messages
-      List<String> globalErrorCodes = bindingResult.getGlobalErrors().stream()
-          .map(ObjectError::getCode)
-          .toList();
+      List<String> globalErrorCodes =
+          bindingResult.getGlobalErrors().stream().map(ObjectError::getCode).toList();
       model.addAttribute("globalErrorCodes", globalErrorCodes);
       return "application/client/contact-client-details";
     }
@@ -105,9 +101,11 @@ public class ClientContactDetailsController {
 
   private void populateDropdowns(Model model) {
     new DropdownBuilder(model)
-        .addDropdown("correspondenceMethods",
+        .addDropdown(
+            "correspondenceMethods",
             lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD))
-        .addDropdown("correspondenceLanguages",
+        .addDropdown(
+            "correspondenceLanguages",
             lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE))
         .build();
   }

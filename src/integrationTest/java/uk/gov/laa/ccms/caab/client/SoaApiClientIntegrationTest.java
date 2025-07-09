@@ -37,18 +37,15 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   public static final String SOA_GATEWAY_USER_ROLE = "SoaGateway-User-Role";
 
   @RegisterExtension
-  protected static WireMockExtension wiremock = WireMockExtension.newInstance()
-      .options(wireMockConfig().dynamicPort())
-      .build();
+  protected static WireMockExtension wiremock =
+      WireMockExtension.newInstance().options(wireMockConfig().dynamicPort()).build();
 
   @DynamicPropertySource
   public static void properties(DynamicPropertyRegistry registry) {
     registry.add("laa.ccms.soa-api.port", wiremock::getPort);
   }
 
-
-  @Autowired
-  private SoaApiClient soaApiClient;
+  @Autowired private SoaApiClient soaApiClient;
 
   private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -62,8 +59,7 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     String contractDetailsJson = objectMapper.writeValueAsString(contractDetails);
 
     wiremock.stubFor(
-        get("/contract-details?providerFirmId=%s&officeId=%s".formatted(providerFirmId,
-                officeId))
+        get("/contract-details?providerFirmId=%s&officeId=%s".formatted(providerFirmId, officeId))
             .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
             .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
             .willReturn(okJson(contractDetailsJson)));
@@ -83,10 +79,11 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     ClientDetail clientDetail = new ClientDetail(); // Fill with appropriate data
     String clientDetailJson = objectMapper.writeValueAsString(clientDetail);
 
-    wiremock.stubFor(get("/clients/%s".formatted(clientReferenceNumber))
-        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
-        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
-        .willReturn(okJson(clientDetailJson)));
+    wiremock.stubFor(
+        get("/clients/%s".formatted(clientReferenceNumber))
+            .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+            .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
+            .willReturn(okJson(clientDetailJson)));
 
     Mono<ClientDetail> clientMono =
         soaApiClient.getClient(clientReferenceNumber, loginId, userType);
@@ -103,16 +100,16 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     String loginId = "loginId";
     String userType = "userType";
 
-    Document notificationAttachment = new Document()
-        .documentId(documentId)
-        .fileData(documentContent);
+    Document notificationAttachment =
+        new Document().documentId(documentId).fileData(documentContent);
 
     String notificationAttachmentJson = objectMapper.writeValueAsString(notificationAttachment);
 
-    wiremock.stubFor(get("/documents/%s".formatted(documentId))
-        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
-        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
-        .willReturn(okJson(notificationAttachmentJson)));
+    wiremock.stubFor(
+        get("/documents/%s".formatted(documentId))
+            .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+            .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
+            .willReturn(okJson(notificationAttachmentJson)));
 
     Document response = soaApiClient.downloadDocument(documentId, loginId, userType).block();
 
@@ -123,17 +120,17 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   public void testRegisterDocument_returnsData() throws Exception {
     String loginId = USER_1;
     String userType = USER_TYPE;
-    ClientTransactionResponse clientTransactionResponse = new ClientTransactionResponse()
-        .transactionId("01234")
-        .referenceNumber("56789");
+    ClientTransactionResponse clientTransactionResponse =
+        new ClientTransactionResponse().transactionId("01234").referenceNumber("56789");
 
-    String clientTransactionResponseString = objectMapper
-        .writeValueAsString(clientTransactionResponse);
+    String clientTransactionResponseString =
+        objectMapper.writeValueAsString(clientTransactionResponse);
 
-    wiremock.stubFor(post("/documents")
-        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
-        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
-        .willReturn(okJson(clientTransactionResponseString)));
+    wiremock.stubFor(
+        post("/documents")
+            .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+            .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
+            .willReturn(okJson(clientTransactionResponseString)));
 
     Mono<ClientTransactionResponse> clientTransactionResponseMono =
         soaApiClient.registerDocument(new Document(), loginId, userType);
@@ -147,17 +144,17 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   public void testUploadDocument_returnsData() throws Exception {
     String loginId = USER_1;
     String userType = USER_TYPE;
-    ClientTransactionResponse clientTransactionResponse = new ClientTransactionResponse()
-        .transactionId("01234")
-        .referenceNumber("56789");
+    ClientTransactionResponse clientTransactionResponse =
+        new ClientTransactionResponse().transactionId("01234").referenceNumber("56789");
 
-    String clientTransactionResponseString = objectMapper
-        .writeValueAsString(clientTransactionResponse);
+    String clientTransactionResponseString =
+        objectMapper.writeValueAsString(clientTransactionResponse);
 
-    wiremock.stubFor(post("/documents?notification-reference=12345")
-        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
-        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
-        .willReturn(okJson(clientTransactionResponseString)));
+    wiremock.stubFor(
+        post("/documents?notification-reference=12345")
+            .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+            .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
+            .willReturn(okJson(clientTransactionResponseString)));
 
     Mono<ClientTransactionResponse> clientTransactionResponseMono =
         soaApiClient.uploadDocument(new Document(), "12345", null, loginId, userType);
@@ -171,20 +168,21 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   public void testUpdateDocument_returnsData() throws Exception {
     String loginId = USER_1;
     String userType = USER_TYPE;
-    ClientTransactionResponse clientTransactionResponse = new ClientTransactionResponse()
-        .transactionId("01234")
-        .referenceNumber("56789");
+    ClientTransactionResponse clientTransactionResponse =
+        new ClientTransactionResponse().transactionId("01234").referenceNumber("56789");
 
-    String clientTransactionResponseString = objectMapper
-        .writeValueAsString(clientTransactionResponse);
+    String clientTransactionResponseString =
+        objectMapper.writeValueAsString(clientTransactionResponse);
 
-    wiremock.stubFor(put("/documents/56789?notification-reference=12345")
-        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
-        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
-        .willReturn(okJson(clientTransactionResponseString)));
+    wiremock.stubFor(
+        put("/documents/56789?notification-reference=12345")
+            .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+            .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
+            .willReturn(okJson(clientTransactionResponseString)));
 
     Mono<ClientTransactionResponse> clientTransactionResponseMono =
-        soaApiClient.updateDocument(new Document().documentId("56789"), "12345", null, loginId, userType);
+        soaApiClient.updateDocument(
+            new Document().documentId("56789"), "12345", null, loginId, userType);
 
     ClientTransactionResponse response = clientTransactionResponseMono.block();
 
@@ -195,19 +193,20 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   public void testDownloadCoverSheet_returnsData() throws Exception {
     String loginId = USER_1;
     String userType = USER_TYPE;
-    CoverSheet coverSheet = new CoverSheet()
-        .fileData("Y29udGVudA==")//content
-        .documentId("12345");
+    CoverSheet coverSheet =
+        new CoverSheet()
+            .fileData("Y29udGVudA==") // content
+            .documentId("12345");
 
     String coverSheetResponse = objectMapper.writeValueAsString(coverSheet);
 
-    wiremock.stubFor(get("/documents/12345/cover-sheet")
-        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
-        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
-        .willReturn(okJson(coverSheetResponse)));
+    wiremock.stubFor(
+        get("/documents/12345/cover-sheet")
+            .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+            .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
+            .willReturn(okJson(coverSheetResponse)));
 
-    Mono<CoverSheet> coverSheetMono =
-        soaApiClient.downloadCoverSheet("12345", loginId, userType);
+    Mono<CoverSheet> coverSheetMono = soaApiClient.downloadCoverSheet("12345", loginId, userType);
 
     CoverSheet response = coverSheetMono.block();
 
@@ -218,25 +217,26 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   public void testDownloadDocument_returnsData() throws Exception {
     String loginId = USER_1;
     String userType = USER_TYPE;
-    Document document = new Document()
-        .fileData("Y29udGVudA==")//content
-        .documentId("12345")
-        .channel(ELECTRONIC.getCode())
-        .documentType("DOC_TYPE")
-        .fileExtension("ext")
-        .status("status")
-        .statusDescription("status description")
-        .text("text");
+    Document document =
+        new Document()
+            .fileData("Y29udGVudA==") // content
+            .documentId("12345")
+            .channel(ELECTRONIC.getCode())
+            .documentType("DOC_TYPE")
+            .fileExtension("ext")
+            .status("status")
+            .statusDescription("status description")
+            .text("text");
 
     String documentResponse = objectMapper.writeValueAsString(document);
 
-    wiremock.stubFor(get("/documents/12345")
-        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
-        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
-        .willReturn(okJson(documentResponse)));
+    wiremock.stubFor(
+        get("/documents/12345")
+            .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+            .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
+            .willReturn(okJson(documentResponse)));
 
-    Mono<Document> documentMono =
-        soaApiClient.downloadDocument("12345", loginId, userType);
+    Mono<Document> documentMono = soaApiClient.downloadDocument("12345", loginId, userType);
 
     Document response = documentMono.block();
 
@@ -247,16 +247,17 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   public void testUpdateUserOptions_returnsData() throws Exception {
     String loginId = USER_1;
     String userType = USER_TYPE;
-    ClientTransactionResponse clientTransactionResponse = new ClientTransactionResponse()
-        .transactionId("01234");
+    ClientTransactionResponse clientTransactionResponse =
+        new ClientTransactionResponse().transactionId("01234");
 
-    String clientTransactionResponseString = objectMapper
-        .writeValueAsString(clientTransactionResponse);
+    String clientTransactionResponseString =
+        objectMapper.writeValueAsString(clientTransactionResponse);
 
-    wiremock.stubFor(put("/users/options")
-        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
-        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
-        .willReturn(okJson(clientTransactionResponseString)));
+    wiremock.stubFor(
+        put("/users/options")
+            .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+            .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
+            .willReturn(okJson(clientTransactionResponseString)));
 
     Mono<ClientTransactionResponse> clientTransactionResponseMono =
         soaApiClient.updateUserOptions(new UserOptions(), loginId, userType);
@@ -271,16 +272,17 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
     String loginId = USER_1;
     String userType = USER_TYPE;
     String notificationId = "12345";
-    ClientTransactionResponse clientTransactionResponse = new ClientTransactionResponse()
-        .transactionId("01234");
+    ClientTransactionResponse clientTransactionResponse =
+        new ClientTransactionResponse().transactionId("01234");
 
-    String clientTransactionResponseString = objectMapper
-        .writeValueAsString(clientTransactionResponse);
+    String clientTransactionResponseString =
+        objectMapper.writeValueAsString(clientTransactionResponse);
 
-    wiremock.stubFor(put("/notifications/%s".formatted(notificationId))
-        .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
-        .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
-        .willReturn(okJson(clientTransactionResponseString)));
+    wiremock.stubFor(
+        put("/notifications/%s".formatted(notificationId))
+            .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
+            .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
+            .willReturn(okJson(clientTransactionResponseString)));
 
     Mono<ClientTransactionResponse> clientTransactionResponseMono =
         soaApiClient.updateNotification(notificationId, new Notification(), loginId, userType);
@@ -292,14 +294,13 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
 
   private ContractDetails buildContractDetails() {
     return new ContractDetails()
-        .addContractsItem(new ContractDetail()
-            .categoryofLaw("CAT1")
-            .subCategory("SUBCAT1")
-            .createNewMatters(true)
-            .remainderAuthorisation(true)
-            .contractualDevolvedPowers("CATDEVPOW")
-            .authorisationType("AUTHTYPE1"));
+        .addContractsItem(
+            new ContractDetail()
+                .categoryofLaw("CAT1")
+                .subCategory("SUBCAT1")
+                .createNewMatters(true)
+                .remainderAuthorisation(true)
+                .contractualDevolvedPowers("CATDEVPOW")
+                .authorisationType("AUTHTYPE1"));
   }
-
-
 }

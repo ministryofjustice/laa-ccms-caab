@@ -10,14 +10,13 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.opa.context.exception.ConnectorSecurityContextException;
 
 /**
- * Represents a context token with various parameters required for validation and processing
- * within the PUI and OWD (connector) systems.
+ * Represents a context token with various parameters required for validation and processing within
+ * the PUI and OWD (connector) systems.
  */
 @Setter
 @Getter
 @Slf4j
 public class ContextToken {
-
 
   // query String associated to this context
   // i.e. {url}?val=xxxxxxx  used in checking the context within the PUI Connector Load() operation
@@ -41,13 +40,13 @@ public class ContextToken {
   public static final String INVOKED_FORM = "ifo";
   // Pui returned URL
   public static final String RETURN_URL = "url";
-  //Required for return URL
+  // Required for return URL
   protected static final String EZGOV_ID = "ezg";
 
   private String caseId;
   private Long rulebaseId;
   private String providerId;
-  private Long ttl;    // ie. system.currentMillis
+  private Long ttl; // ie. system.currentMillis
 
   private String invokedForm;
   private String returnUrl;
@@ -65,8 +64,8 @@ public class ContextToken {
   private String userId = "connector";
 
   /**
-   * Forms a JSON structure with values necessary for OWD to invoke its data connector with a
-   * valid context.
+   * Forms a JSON structure with values necessary for OWD to invoke its data connector with a valid
+   * context.
    *
    * @return String value of JSON context structure
    * @throws UnsupportedOperationException if any mandatory field is null
@@ -110,7 +109,6 @@ public class ContextToken {
     return jsonObj.toString();
   }
 
-
   /**
    * Parses values from a JSON string to set the fields of this Context Token.
    *
@@ -131,48 +129,57 @@ public class ContextToken {
     // process Mandatory properties
     if (!jsonObj.has(ContextToken.CASE_ID)) {
       throw new ConnectorSecurityContextException(
-          "Unable to locate expected top level Jsonstructure '" + ContextToken.CASE_ID
+          "Unable to locate expected top level Jsonstructure '"
+              + ContextToken.CASE_ID
               + "' from parsed structure");
     }
     if (!jsonObj.has(ContextToken.RULE_BASE_ID)) {
       throw new ConnectorSecurityContextException(
-          "Unable to locate expected top level Jsonstructure '" + ContextToken.RULE_BASE_ID
+          "Unable to locate expected top level Jsonstructure '"
+              + ContextToken.RULE_BASE_ID
               + "' from parsed structure");
     }
     if (!jsonObj.has(ContextToken.PROVIDER_ID)) {
       throw new ConnectorSecurityContextException(
-          "Unable to locate expected top level Jsonstructure '" + ContextToken.PROVIDER_ID
+          "Unable to locate expected top level Jsonstructure '"
+              + ContextToken.PROVIDER_ID
               + "' from parsed structure");
     }
     if (!jsonObj.has(ContextToken.TIME_TO_LIVE)) {
       throw new ConnectorSecurityContextException(
-          "Unable to locate expected top level Jsonstructure '" + ContextToken.TIME_TO_LIVE
+          "Unable to locate expected top level Jsonstructure '"
+              + ContextToken.TIME_TO_LIVE
               + "' from parsed structure");
     }
     if (!jsonObj.has(ContextToken.INVOKED_FORM)) {
       throw new ConnectorSecurityContextException(
-          "Unable to locate expected top level Jsonstructure '" + ContextToken.INVOKED_FORM
+          "Unable to locate expected top level Jsonstructure '"
+              + ContextToken.INVOKED_FORM
               + "' from parsed structure");
     }
     if (!jsonObj.has(ContextToken.RETURN_URL)) {
       throw new ConnectorSecurityContextException(
-          "Unable to locate expected top level Jsonstructure '" + ContextToken.RETURN_URL
+          "Unable to locate expected top level Jsonstructure '"
+              + ContextToken.RETURN_URL
               + "' from parsed structure");
     }
     if (!jsonObj.has(ContextToken.EZGOV_ID)) {
       throw new ConnectorSecurityContextException(
-          "Unable to locate expected top level Jsonstructure '" + ContextToken.EZGOV_ID
+          "Unable to locate expected top level Jsonstructure '"
+              + ContextToken.EZGOV_ID
               + "' from parsed structure");
     }
     // process optional properties
     if (!jsonObj.has(ContextToken.USER_ID)) {
       throw new ConnectorSecurityContextException(
-          "Unable to locate expected top level Jsonstructure '" + ContextToken.USER_ID
+          "Unable to locate expected top level Jsonstructure '"
+              + ContextToken.USER_ID
               + "' from parsed structure");
     }
     if (!jsonObj.has(ContextToken.SESSION_ID)) {
       throw new ConnectorSecurityContextException(
-          "Unable to locate expected top level Jsonstructure '" + ContextToken.SESSION_ID
+          "Unable to locate expected top level Jsonstructure '"
+              + ContextToken.SESSION_ID
               + "' from parsed structure");
     }
     this.setCaseId((String) jsonObj.get(ContextToken.CASE_ID));
@@ -218,8 +225,7 @@ public class ContextToken {
         && StringUtils.hasText(providerId)
         && rulebaseId.intValue() > 0
         && ttl.longValue()
-            > 0;      // only do basic TTL check, here. Other code gets more specific regards TTL.
-
+            > 0; // only do basic TTL check, here. Other code gets more specific regards TTL.
   }
 
   /**
@@ -286,7 +292,6 @@ public class ContextToken {
     } else {
       return false;
     }
-
   }
 
   /**
@@ -304,7 +309,7 @@ public class ContextToken {
     // seed the Log with details of the attack
     if (expired) {
       final long expiredByMillis = currentTimeMillis - (getTtl() + elapseTimeMillis);
-      // this is serious! - it represents a potential attack. 
+      // this is serious! - it represents a potential attack.
       // We need to record some details in the log.
       log.error("isTTLExpired ********************************************");
       log.error("isTTLExpired ** WARNING - A T T A C K  ! detected      **");
@@ -314,8 +319,11 @@ public class ContextToken {
       log.error("isTTLExpired ** elapseTimemMillis....... : " + elapseTimeMillis);
       log.error("isTTLExpired ** this context TTL Millis. : " + getTtl());
       log.error(
-          "isTTLExpired ** Expired by millis....... : " + expiredByMillis + " ("
-              + (expiredByMillis / 1000) + " sec. )");
+          "isTTLExpired ** Expired by millis....... : "
+              + expiredByMillis
+              + " ("
+              + (expiredByMillis / 1000)
+              + " sec. )");
       log.error("isTTLExpired ** Expired................. : true");
       log.error("isTTLExpired ** Context Details......... : " + this);
       log.error("isTTLExpired ********************************************");
@@ -325,5 +333,4 @@ public class ContextToken {
 
     return expired;
   }
-
 }

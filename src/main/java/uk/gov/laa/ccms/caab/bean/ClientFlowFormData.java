@@ -2,9 +2,7 @@ package uk.gov.laa.ccms.caab.bean;
 
 import lombok.Data;
 
-/**
- * Represents the client details stored during client creation/edit flows.
- */
+/** Represents the client details stored during client creation/edit flows. */
 @Data
 public class ClientFlowFormData {
 
@@ -24,9 +22,7 @@ public class ClientFlowFormData {
     this.action = action;
   }
 
-  /**
-   * Overrides the Default setter, so we can set the vulnerable clients for other child objects.
-   */
+  /** Overrides the Default setter, so we can set the vulnerable clients for other child objects. */
   public void setBasicDetails(final ClientFormDataBasicDetails basicDetails) {
     this.basicDetails = basicDetails;
     if (this.contactDetails != null) {
@@ -37,5 +33,4 @@ public class ClientFlowFormData {
       }
     }
   }
-
 }

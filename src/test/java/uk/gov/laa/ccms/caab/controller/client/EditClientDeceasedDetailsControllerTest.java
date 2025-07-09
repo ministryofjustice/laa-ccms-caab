@@ -30,18 +30,18 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientDeceasedDetailsValidato
 @ExtendWith(MockitoExtension.class)
 class EditClientDeceasedDetailsControllerTest {
 
-  @Mock
-  private ClientDeceasedDetailsValidator clientDeceasedDetailsValidator;
-  @InjectMocks
-  private EditClientDeceasedDetailsController editClientDeceasedDetailsController;
+  @Mock private ClientDeceasedDetailsValidator clientDeceasedDetailsValidator;
+  @InjectMocks private EditClientDeceasedDetailsController editClientDeceasedDetailsController;
   private MockMvc mockMvc;
   private ClientFlowFormData clientFlowFormData;
   private ClientFormDataDeceasedDetails deceasedDetails;
 
   @BeforeEach
   void setup() {
-    mockMvc = standaloneSetup(editClientDeceasedDetailsController)
-        .setConversionService(getConversionService()).build();
+    mockMvc =
+        standaloneSetup(editClientDeceasedDetailsController)
+            .setConversionService(getConversionService())
+            .build();
 
     deceasedDetails = new ClientFormDataDeceasedDetails();
 
@@ -55,8 +55,10 @@ class EditClientDeceasedDetailsControllerTest {
 
     @Test
     void testEditClientDetailsDeceased() throws Exception {
-      mockMvc.perform(get("/application/sections/client/details/deceased")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+      mockMvc
+          .perform(
+              get("/application/sections/client/details/deceased")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/client-deceased-details"));
@@ -65,9 +67,11 @@ class EditClientDeceasedDetailsControllerTest {
     @Test
     void testEditClientDetailsDeceasedPost() throws Exception {
 
-      mockMvc.perform(post("/application/sections/client/details/deceased")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("deceasedDetails", deceasedDetails))
+      mockMvc
+          .perform(
+              post("/application/sections/client/details/deceased")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("deceasedDetails", deceasedDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/sections/client/details/summary"));
     }
@@ -75,29 +79,36 @@ class EditClientDeceasedDetailsControllerTest {
     @Test
     void testEditClientDetailsDeceasedPostValidationError() throws Exception {
 
-      doAnswer(invocation -> {
-        Errors errors = (Errors) invocation.getArguments()[1];
-        errors.rejectValue("dateOfDeath", "invalid.format", "Please enter the date of death");
-        return null;
-      }).when(clientDeceasedDetailsValidator).validate(any(), any());
+      doAnswer(
+              invocation -> {
+                Errors errors = (Errors) invocation.getArguments()[1];
+                errors.rejectValue(
+                    "dateOfDeath", "invalid.format", "Please enter the date of death");
+                return null;
+              })
+          .when(clientDeceasedDetailsValidator)
+          .validate(any(), any());
 
-      mockMvc.perform(post("/application/sections/client/details/deceased")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("deceasedDetails", deceasedDetails))
+      mockMvc
+          .perform(
+              post("/application/sections/client/details/deceased")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("deceasedDetails", deceasedDetails))
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/client-deceased-details"));
     }
-
   }
 
   @Nested
   @DisplayName("Amendments tests")
-  class AmendmentsTests{
+  class AmendmentsTests {
 
     @Test
     void testEditClientDetailsDeceased() throws Exception {
-      mockMvc.perform(get("/amendments/sections/client/details/deceased")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+      mockMvc
+          .perform(
+              get("/amendments/sections/client/details/deceased")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/client-deceased-details"));
@@ -106,9 +117,11 @@ class EditClientDeceasedDetailsControllerTest {
     @Test
     void testEditClientDetailsDeceasedPost() throws Exception {
 
-      mockMvc.perform(post("/amendments/sections/client/details/deceased")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("deceasedDetails", deceasedDetails))
+      mockMvc
+          .perform(
+              post("/amendments/sections/client/details/deceased")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("deceasedDetails", deceasedDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/amendments/sections/client/details/summary"));
     }
@@ -116,15 +129,21 @@ class EditClientDeceasedDetailsControllerTest {
     @Test
     void testEditClientDetailsDeceasedPostValidationError() throws Exception {
 
-      doAnswer(invocation -> {
-        Errors errors = (Errors) invocation.getArguments()[1];
-        errors.rejectValue("dateOfDeath", "invalid.format", "Please enter the date of death");
-        return null;
-      }).when(clientDeceasedDetailsValidator).validate(any(), any());
+      doAnswer(
+              invocation -> {
+                Errors errors = (Errors) invocation.getArguments()[1];
+                errors.rejectValue(
+                    "dateOfDeath", "invalid.format", "Please enter the date of death");
+                return null;
+              })
+          .when(clientDeceasedDetailsValidator)
+          .validate(any(), any());
 
-      mockMvc.perform(post("/amendments/sections/client/details/deceased")
-              .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-              .flashAttr("deceasedDetails", deceasedDetails))
+      mockMvc
+          .perform(
+              post("/amendments/sections/client/details/deceased")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("deceasedDetails", deceasedDetails))
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/client-deceased-details"));
     }

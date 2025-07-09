@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
-
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
@@ -26,9 +25,7 @@ import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-/**
- * Controller for the application sections.
- */
+/** Controller for the application sections. */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
@@ -56,31 +53,34 @@ public class ApplicationSectionsController {
 
     final ApplicationDetail application =
         Optional.ofNullable(applicationService.getApplication(applicationId).block())
-            .orElseThrow(() -> new CaabApplicationException(
-                "Failed to retrieve application detail"));
+            .orElseThrow(
+                () -> new CaabApplicationException("Failed to retrieve application detail"));
 
     final ApplicationSectionDisplay sections =
         Optional.ofNullable(applicationService.getApplicationSections(application, user))
-            .orElseThrow(() -> new CaabApplicationException(
-                "Failed to retrieve section for application summary"));
+            .orElseThrow(
+                () ->
+                    new CaabApplicationException(
+                        "Failed to retrieve section for application summary"));
 
     model.addAttribute("summary", sections);
 
-    final ActiveCase activeCase = ActiveCase.builder()
-        .applicationId(application.getId())
-        .caseReferenceNumber(sections.getCaseReferenceNumber())
-        .providerId(application.getProviderDetails().getProvider().getId())
-        .client(sections.getClient().getClientFullName())
-        .clientReferenceNumber(sections.getClient().getClientReferenceNumber())
-        .providerCaseReferenceNumber(sections.getProvider().getProviderCaseReferenceNumber())
-        .build();
+    final ActiveCase activeCase =
+        ActiveCase.builder()
+            .applicationId(application.getId())
+            .caseReferenceNumber(sections.getCaseReferenceNumber())
+            .providerId(application.getProviderDetails().getProvider().getId())
+            .client(sections.getClient().getClientFullName())
+            .clientReferenceNumber(sections.getClient().getClientReferenceNumber())
+            .providerCaseReferenceNumber(sections.getProvider().getProviderCaseReferenceNumber())
+            .build();
 
     model.addAttribute(ACTIVE_CASE, activeCase);
     session.setAttribute(ACTIVE_CASE, activeCase);
     session.removeAttribute(CLIENT_FLOW_FORM_DATA);
     session.setAttribute(SECTIONS_DATA, sections);
 
-    //create a new base object to store the form data
+    // create a new base object to store the form data
     model.addAttribute("formData", new Object());
 
     return "application/sections/task-page";
@@ -101,22 +101,22 @@ public class ApplicationSectionsController {
       final Model model) {
 
     final ApplicationDetail application =
-        Optional.ofNullable(applicationService.getApplication(
-                String.valueOf(activeCase.getApplicationId())).block())
-            .orElseThrow(() -> new CaabApplicationException(
-                "Failed to retrieve application detail"));
+        Optional.ofNullable(
+                applicationService
+                    .getApplication(String.valueOf(activeCase.getApplicationId()))
+                    .block())
+            .orElseThrow(
+                () -> new CaabApplicationException("Failed to retrieve application detail"));
 
     final ApplicationSectionDisplay inProgressSummary =
         Optional.ofNullable(applicationService.getApplicationSections(application, user))
-            .orElseThrow(() -> new CaabApplicationException(
-                "Failed to retrieve application summary"));
+            .orElseThrow(
+                () -> new CaabApplicationException("Failed to retrieve application summary"));
 
     model.addAttribute("summary", inProgressSummary);
 
     return "application/sections/application-summary";
   }
-
-
 
   /**
    * Handles the completion of an application section and performs validation.
@@ -126,7 +126,7 @@ public class ApplicationSectionsController {
    * @param bindingResult the result of binding form data to the model
    * @param model the model used to pass data to the view
    * @return the view name for the task page if there are validation errors, or a redirect to the
-   *         validation page if the section is valid
+   *     validation page if the section is valid
    */
   @PostMapping("/application/sections")
   public String completeApplication(
@@ -135,7 +135,7 @@ public class ApplicationSectionsController {
       final BindingResult bindingResult,
       final Model model) {
 
-    //simple validation to ensure all sections are complete
+    // simple validation to ensure all sections are complete
     applicationSectionValidator.validate(sectionData, bindingResult);
 
     if (bindingResult.hasErrors()) {
@@ -145,5 +145,4 @@ public class ApplicationSectionsController {
 
     return "redirect:/application/validate";
   }
-
 }

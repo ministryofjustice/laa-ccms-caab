@@ -4,9 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import lombok.Getter;
 
-/**
- * Enumerates the names of different types of assessments.
- */
+/** Enumerates the names of different types of assessments. */
 @Getter
 public enum AssessmentName {
   MEANS("meansAssessment", "means"),

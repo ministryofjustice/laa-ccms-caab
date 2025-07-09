@@ -82,6 +82,7 @@ import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
 import uk.gov.laa.ccms.caab.builders.EbsApplicationMappingContextBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
+import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
@@ -140,69 +141,48 @@ import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 
 @ExtendWith(MockitoExtension.class)
 class ApplicationServiceTest {
-  @Mock
-  private CaabApiClient caabApiClient;
-  @Mock
-  private SoaApiClient soaApiClient;
-  @Mock
-  private EbsApiClient ebsApiClient;
+  @Mock private CaabApiClient caabApiClient;
+  @Mock private SoaApiClient soaApiClient;
+  @Mock private EbsApiClient ebsApiClient;
 
-  @Mock
-  private LookupService lookupService;
-  @Mock
-  private AssessmentService assessmentService;
+  @Mock private LookupService lookupService;
+  @Mock private AssessmentService assessmentService;
 
-  @Mock
-  private PuiMetricService puiMetricService;
+  @Mock private PuiMetricService puiMetricService;
 
   @Mock EvidenceService evidenceService;
-  @Mock
-  private ProviderService providerService;
+  @Mock private ProviderService providerService;
 
-  @Mock
-  private ApplicationFormDataMapper applicationFormDataMapper;
+  @Mock private ApplicationFormDataMapper applicationFormDataMapper;
 
-  @Mock
-  private SoaApplicationMapper soaApplicationMapper;
-  @Mock
-  private EbsApplicationMapper ebsApplicationMapper;
+  @Mock private SoaApplicationMapper soaApplicationMapper;
+  @Mock private EbsApplicationMapper ebsApplicationMapper;
 
-  @Mock
-  private AddressFormDataMapper addressFormDataMapper;
+  @Mock private AddressFormDataMapper addressFormDataMapper;
 
-  @Mock
-  private ResultDisplayMapper resultDisplayMapper;
+  @Mock private ResultDisplayMapper resultDisplayMapper;
 
-  @Mock
-  private CopyApplicationMapperImpl copyApplicationMapper;
+  @Mock private CopyApplicationMapperImpl copyApplicationMapper;
 
-  @Mock
-  private IndividualDetailsSectionDisplayMapper individualDetailsSectionDisplayMapper;
+  @Mock private IndividualDetailsSectionDisplayMapper individualDetailsSectionDisplayMapper;
 
-  @Mock
-  private OrganisationDetailsSectionDisplayMapper organisationDetailsSectionDisplayMapper;
+  @Mock private OrganisationDetailsSectionDisplayMapper organisationDetailsSectionDisplayMapper;
 
-  @Mock
-  private OpponentMapper opponentMapper;
+  @Mock private OpponentMapper opponentMapper;
 
-  @Mock
-  private SearchConstants searchConstants;
+  @Mock private SearchConstants searchConstants;
 
-  @Mock
-  private EbsApplicationMappingContextBuilder ebsApplicationMappingContextBuilder;
+  @Mock private EbsApplicationMappingContextBuilder ebsApplicationMappingContextBuilder;
 
-
-
-  @InjectMocks
-  private ApplicationService applicationService;
+  @InjectMocks private ApplicationService applicationService;
 
   @Test
   void getCaseReference_returnsCaseReferenceSummary_Successful() {
 
     final CaseReferenceSummary mockCaseReferenceSummary = new CaseReferenceSummary();
 
-    when(ebsApiClient.postAllocateNextCaseReference()).thenReturn(
-        Mono.just(mockCaseReferenceSummary));
+    when(ebsApiClient.postAllocateNextCaseReference())
+        .thenReturn(Mono.just(mockCaseReferenceSummary));
 
     final Mono<CaseReferenceSummary> caseReferenceSummaryMono =
         applicationService.getCaseReference();
@@ -227,19 +207,20 @@ class ApplicationServiceTest {
     final int page = 0;
     final int size = 10;
 
-    final ApplicationDetails mockApplicationDetails = new ApplicationDetails()
-        .addContentItem(new BaseApplicationDetail());
+    final ApplicationDetails mockApplicationDetails =
+        new ApplicationDetails().addContentItem(new BaseApplicationDetail());
 
-    when(caabApiClient.getApplications(caseSearchCriteria, userDetail.getProvider().getId(),
-        page, size)).thenReturn(Mono.just(mockApplicationDetails));
+    when(caabApiClient.getApplications(
+            caseSearchCriteria, userDetail.getProvider().getId(), page, size))
+        .thenReturn(Mono.just(mockApplicationDetails));
     when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
 
     final List<BaseApplicationDetail> results =
         applicationService.getCases(caseSearchCriteria, userDetail);
 
     verifyNoInteractions(soaApiClient);
-    verify(caabApiClient).getApplications(caseSearchCriteria, userDetail.getProvider().getId(),
-        page, size);
+    verify(caabApiClient)
+        .getApplications(caseSearchCriteria, userDetail.getProvider().getId(), page, size);
 
     assertNotNull(results);
     assertEquals(mockApplicationDetails.getContent(), results);
@@ -261,39 +242,40 @@ class ApplicationServiceTest {
     final int page = 0;
     final int size = 10;
 
-    final CaseDetails mockCaseDetails = new CaseDetails()
-        .totalElements(1)
-        .size(1)
-        .addContentItem(new CaseSummary().caseReferenceNumber("2"));
+    final CaseDetails mockCaseDetails =
+        new CaseDetails()
+            .totalElements(1)
+            .size(1)
+            .addContentItem(new CaseSummary().caseReferenceNumber("2"));
 
-    final BaseApplicationDetail mockEbsApplication = new BaseApplicationDetail()
-        .caseReferenceNumber("2");
+    final BaseApplicationDetail mockEbsApplication =
+        new BaseApplicationDetail().caseReferenceNumber("2");
 
-    final ApplicationDetails mockTdsApplicationDetails = new ApplicationDetails()
-        .totalElements(1)
-        .size(1)
-        .addContentItem(new BaseApplicationDetail()
-            .caseReferenceNumber("1"));
+    final ApplicationDetails mockTdsApplicationDetails =
+        new ApplicationDetails()
+            .totalElements(1)
+            .size(1)
+            .addContentItem(new BaseApplicationDetail().caseReferenceNumber("1"));
 
     // expected result, sorted by case reference
-    final List<BaseApplicationDetail> expectedResult = List.of(mockTdsApplicationDetails.getContent().getFirst(),
-        mockEbsApplication);
+    final List<BaseApplicationDetail> expectedResult =
+        List.of(mockTdsApplicationDetails.getContent().getFirst(), mockEbsApplication);
 
-    when(ebsApiClient.getCases(
-        caseSearchCriteria, userDetail.getProvider().getId(), page, size))
+    when(ebsApiClient.getCases(caseSearchCriteria, userDetail.getProvider().getId(), page, size))
         .thenReturn(Mono.just(mockCaseDetails));
     when(soaApplicationMapper.toBaseApplication(mockCaseDetails.getContent().getFirst()))
         .thenReturn(mockEbsApplication);
-    when(caabApiClient.getApplications(caseSearchCriteria, userDetail.getProvider().getId(),
-        page, size)).thenReturn(Mono.just(mockTdsApplicationDetails));
+    when(caabApiClient.getApplications(
+            caseSearchCriteria, userDetail.getProvider().getId(), page, size))
+        .thenReturn(Mono.just(mockTdsApplicationDetails));
     when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
 
     final List<BaseApplicationDetail> result =
         applicationService.getCases(caseSearchCriteria, userDetail);
 
     verify(ebsApiClient).getCases(caseSearchCriteria, userDetail.getProvider().getId(), page, size);
-    verify(caabApiClient).getApplications(caseSearchCriteria,
-        userDetail.getProvider().getId(), page, size);
+    verify(caabApiClient)
+        .getApplications(caseSearchCriteria, userDetail.getProvider().getId(), page, size);
 
     assertNotNull(result);
     assertEquals(expectedResult, result);
@@ -315,37 +297,34 @@ class ApplicationServiceTest {
     final int page = 0;
     final int size = 10;
 
-    final CaseSummary soaCaseSummary = new CaseSummary()
-        .caseReferenceNumber("1")
-        .caseStatusDisplay("the soa one");
+    final CaseSummary soaCaseSummary =
+        new CaseSummary().caseReferenceNumber("1").caseStatusDisplay("the soa one");
 
-    final BaseApplicationDetail mockEbsApplication = new BaseApplicationDetail()
-        .caseReferenceNumber(soaCaseSummary.getCaseReferenceNumber())
-        .status(new StringDisplayValue().displayValue(soaCaseSummary.getCaseStatusDisplay()));
+    final BaseApplicationDetail mockEbsApplication =
+        new BaseApplicationDetail()
+            .caseReferenceNumber(soaCaseSummary.getCaseReferenceNumber())
+            .status(new StringDisplayValue().displayValue(soaCaseSummary.getCaseStatusDisplay()));
 
-    final BaseApplicationDetail mockTdsApplication = new BaseApplicationDetail()
-        .caseReferenceNumber("1")
-        .status(new StringDisplayValue().displayValue("the tds one"));
+    final BaseApplicationDetail mockTdsApplication =
+        new BaseApplicationDetail()
+            .caseReferenceNumber("1")
+            .status(new StringDisplayValue().displayValue("the tds one"));
 
-    final CaseDetails mockCaseDetails = new CaseDetails()
-        .totalElements(1)
-        .size(1)
-        .addContentItem(soaCaseSummary);
+    final CaseDetails mockCaseDetails =
+        new CaseDetails().totalElements(1).size(1).addContentItem(soaCaseSummary);
 
-    final ApplicationDetails mockTdsApplicationDetails = new ApplicationDetails()
-        .totalElements(1)
-        .size(1)
-        .addContentItem(mockTdsApplication);
+    final ApplicationDetails mockTdsApplicationDetails =
+        new ApplicationDetails().totalElements(1).size(1).addContentItem(mockTdsApplication);
 
     // expected result, only the soa case retained
     final List<BaseApplicationDetail> expectedResult = List.of(mockEbsApplication);
 
-    when(ebsApiClient.getCases(caseSearchCriteria, userDetail.getProvider().getId(),
-        page, size)).thenReturn(Mono.just(mockCaseDetails));
+    when(ebsApiClient.getCases(caseSearchCriteria, userDetail.getProvider().getId(), page, size))
+        .thenReturn(Mono.just(mockCaseDetails));
     when(soaApplicationMapper.toBaseApplication(mockCaseDetails.getContent().getFirst()))
         .thenReturn(mockEbsApplication);
-    when(caabApiClient.getApplications(caseSearchCriteria,
-        userDetail.getProvider().getId(), page, size))
+    when(caabApiClient.getApplications(
+            caseSearchCriteria, userDetail.getProvider().getId(), page, size))
         .thenReturn(Mono.just(mockTdsApplicationDetails));
     when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
 
@@ -353,8 +332,8 @@ class ApplicationServiceTest {
         applicationService.getCases(caseSearchCriteria, userDetail);
 
     verify(ebsApiClient).getCases(caseSearchCriteria, userDetail.getProvider().getId(), page, size);
-    verify(caabApiClient).getApplications(caseSearchCriteria,
-        userDetail.getProvider().getId(), page, size);
+    verify(caabApiClient)
+        .getApplications(caseSearchCriteria, userDetail.getProvider().getId(), page, size);
 
     assertNotNull(result);
     assertEquals(expectedResult, result);
@@ -376,18 +355,20 @@ class ApplicationServiceTest {
 
     caseSearchCriteria.setStatus(STATUS_DRAFT);
 
-    final CaseDetails mockCaseDetails = new CaseDetails()
-        .totalElements(2)
-        .size(2)
-        .addContentItem(new CaseSummary())
-        .addContentItem(new CaseSummary());
+    final CaseDetails mockCaseDetails =
+        new CaseDetails()
+            .totalElements(2)
+            .size(2)
+            .addContentItem(new CaseSummary())
+            .addContentItem(new CaseSummary());
 
-    when(ebsApiClient.getCases(caseSearchCriteria, userDetail.getProvider().getId(),
-        page, size)).thenReturn(Mono.just(mockCaseDetails));
+    when(ebsApiClient.getCases(caseSearchCriteria, userDetail.getProvider().getId(), page, size))
+        .thenReturn(Mono.just(mockCaseDetails));
     when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
 
-    assertThrows(TooManyResultsException.class, () ->
-        applicationService.getCases(caseSearchCriteria, userDetail));
+    assertThrows(
+        TooManyResultsException.class,
+        () -> applicationService.getCases(caseSearchCriteria, userDetail));
   }
 
   @Test
@@ -406,32 +387,38 @@ class ApplicationServiceTest {
 
     caseSearchCriteria.setStatus(STATUS_DRAFT);
 
-    final CaseDetails mockCaseDetails = new CaseDetails()
-        .totalElements(2)
-        .size(2)
-        .addContentItem(new CaseSummary().caseReferenceNumber("1"))
-        .addContentItem(new CaseSummary().caseReferenceNumber("2"));
+    final CaseDetails mockCaseDetails =
+        new CaseDetails()
+            .totalElements(2)
+            .size(2)
+            .addContentItem(new CaseSummary().caseReferenceNumber("1"))
+            .addContentItem(new CaseSummary().caseReferenceNumber("2"));
 
-    final ApplicationDetails mockTdsApplicationDetails = new ApplicationDetails()
-        .totalElements(1)
-        .size(1)
-        .addContentItem(new BaseApplicationDetail().caseReferenceNumber("3"));
+    final ApplicationDetails mockTdsApplicationDetails =
+        new ApplicationDetails()
+            .totalElements(1)
+            .size(1)
+            .addContentItem(new BaseApplicationDetail().caseReferenceNumber("3"));
 
-    when(ebsApiClient.getCases(caseSearchCriteria,
-        userDetail.getProvider().getId(), page, size))
+    when(ebsApiClient.getCases(caseSearchCriteria, userDetail.getProvider().getId(), page, size))
         .thenReturn(Mono.just(mockCaseDetails));
     when(soaApplicationMapper.toBaseApplication(mockCaseDetails.getContent().getFirst()))
-        .thenReturn(new BaseApplicationDetail()
-            .caseReferenceNumber(mockCaseDetails.getContent().getFirst().getCaseReferenceNumber()));
+        .thenReturn(
+            new BaseApplicationDetail()
+                .caseReferenceNumber(
+                    mockCaseDetails.getContent().getFirst().getCaseReferenceNumber()));
     when(soaApplicationMapper.toBaseApplication(mockCaseDetails.getContent().get(1)))
-        .thenReturn(new BaseApplicationDetail()
-            .caseReferenceNumber(mockCaseDetails.getContent().get(1).getCaseReferenceNumber()));
-    when(caabApiClient.getApplications(caseSearchCriteria, userDetail.getProvider().getId(),
-        page, size)).thenReturn(Mono.just(mockTdsApplicationDetails));
+        .thenReturn(
+            new BaseApplicationDetail()
+                .caseReferenceNumber(mockCaseDetails.getContent().get(1).getCaseReferenceNumber()));
+    when(caabApiClient.getApplications(
+            caseSearchCriteria, userDetail.getProvider().getId(), page, size))
+        .thenReturn(Mono.just(mockTdsApplicationDetails));
     when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
 
-    assertThrows(TooManyResultsException.class, () ->
-        applicationService.getCases(caseSearchCriteria, userDetail));
+    assertThrows(
+        TooManyResultsException.class,
+        () -> applicationService.getCases(caseSearchCriteria, userDetail));
   }
 
   @Test
@@ -439,8 +426,8 @@ class ApplicationServiceTest {
     final CaseStatusLookupDetail caseStatusLookupDetail = new CaseStatusLookupDetail();
     caseStatusLookupDetail.addContentItem(new CaseStatusLookupValueDetail());
 
-    when(lookupService.getCaseStatusValues(Boolean.TRUE)).thenReturn(
-        Mono.just(caseStatusLookupDetail));
+    when(lookupService.getCaseStatusValues(Boolean.TRUE))
+        .thenReturn(Mono.just(caseStatusLookupDetail));
 
     final CaseStatusLookupValueDetail lookupValue = applicationService.getCopyCaseStatus();
 
@@ -467,32 +454,33 @@ class ApplicationServiceTest {
     // Mocking dependencies
     final CaseReferenceSummary caseReferenceSummary =
         new CaseReferenceSummary().caseReferenceNumber("REF123");
-    final CategoryOfLawLookupValueDetail categoryOfLawValue = new CategoryOfLawLookupValueDetail()
-        .code(applicationFormData.getCategoryOfLawId()).matterTypeDescription("DESC1");
+    final CategoryOfLawLookupValueDetail categoryOfLawValue =
+        new CategoryOfLawLookupValueDetail()
+            .code(applicationFormData.getCategoryOfLawId())
+            .matterTypeDescription("DESC1");
     final ContractDetails contractDetails = new ContractDetails();
 
-    final AmendmentTypeLookupValueDetail amendmentType = new AmendmentTypeLookupValueDetail()
-        .applicationTypeCode("TEST")
-        .applicationTypeDescription("TEST")
-        .defaultLarScopeFlag("Y");
+    final AmendmentTypeLookupValueDetail amendmentType =
+        new AmendmentTypeLookupValueDetail()
+            .applicationTypeCode("TEST")
+            .applicationTypeDescription("TEST")
+            .defaultLarScopeFlag("Y");
 
     final AmendmentTypeLookupDetail amendmentTypes =
         new AmendmentTypeLookupDetail().addContentItem(amendmentType);
 
-    when(ebsApiClient.postAllocateNextCaseReference()).thenReturn(
-        Mono.just(caseReferenceSummary));
-    when(soaApiClient.getContractDetails(anyInt(), anyInt(), anyString(),
-        anyString())).thenReturn(Mono.just(contractDetails));
-    when(lookupService.getCategoryOfLaw(applicationFormData.getCategoryOfLawId())).thenReturn(
-        Mono.just(Optional.of(categoryOfLawValue)));
+    when(ebsApiClient.postAllocateNextCaseReference()).thenReturn(Mono.just(caseReferenceSummary));
+    when(soaApiClient.getContractDetails(anyInt(), anyInt(), anyString(), anyString()))
+        .thenReturn(Mono.just(contractDetails));
+    when(lookupService.getCategoryOfLaw(applicationFormData.getCategoryOfLawId()))
+        .thenReturn(Mono.just(Optional.of(categoryOfLawValue)));
     when(ebsApiClient.getAmendmentTypes(any())).thenReturn(Mono.just(amendmentTypes));
     when(caabApiClient.createApplication(anyString(), any())).thenReturn(Mono.empty());
 
-    final Mono<String> applicationMono = applicationService.createApplication(
-        applicationFormData, clientInformation, user);
+    final Mono<String> applicationMono =
+        applicationService.createApplication(applicationFormData, clientInformation, user);
 
-    StepVerifier.create(applicationMono)
-        .verifyComplete();
+    StepVerifier.create(applicationMono).verifyComplete();
 
     verify(ebsApiClient).postAllocateNextCaseReference();
     verify(lookupService).getCategoryOfLaw(applicationFormData.getCategoryOfLawId());
@@ -518,27 +506,31 @@ class ApplicationServiceTest {
     CaseDetail ebsCase = buildCaseDetail(APP_TYPE_EMERGENCY);
     ebsCase.setCaseReferenceNumber(copyCaseReference);
     // Reduce down to a single ProceedingDetail for this test
-    ebsCase.getApplicationDetails().getProceedings().remove(
-        ebsCase.getApplicationDetails().getProceedings().size() - 1);
+    ebsCase
+        .getApplicationDetails()
+        .getProceedings()
+        .remove(ebsCase.getApplicationDetails().getProceedings().size() - 1);
 
-    when(ebsApiClient.getCase(copyCaseReference, Long.valueOf(user.getProvider().getId()),
-        "testUser")).thenReturn(Mono.just(ebsCase));
+    when(ebsApiClient.getCase(
+            copyCaseReference, Long.valueOf(user.getProvider().getId()), "testUser"))
+        .thenReturn(Mono.just(ebsCase));
 
-    when(ebsApiClient.postAllocateNextCaseReference())
-        .thenReturn(Mono.just(caseReferenceSummary));
+    when(ebsApiClient.postAllocateNextCaseReference()).thenReturn(Mono.just(caseReferenceSummary));
 
     // Add just a couple portions to EbsApplicationMappingContext. This is build using
     //  EbsApplicationMappingContextBuilder.class.
     CommonLookupValueDetail applicationTypeLookup = new CommonLookupValueDetail();
-    ProviderDetail providerDetail = buildProviderDetail(
-        ebsCase.getApplicationDetails().getProviderDetails().getProviderOfficeId(),
-        ebsCase.getApplicationDetails().getProviderDetails().getFeeEarnerContactId(),
-        ebsCase.getApplicationDetails().getProviderDetails().getSupervisorContactId());
+    ProviderDetail providerDetail =
+        buildProviderDetail(
+            ebsCase.getApplicationDetails().getProviderDetails().getProviderOfficeId(),
+            ebsCase.getApplicationDetails().getProviderDetails().getFeeEarnerContactId(),
+            ebsCase.getApplicationDetails().getProviderDetails().getSupervisorContactId());
 
-    EbsApplicationMappingContext build = EbsApplicationMappingContext.builder()
-        .applicationType(applicationTypeLookup)
-        .providerDetail(providerDetail)
-        .build();
+    EbsApplicationMappingContext build =
+        EbsApplicationMappingContext.builder()
+            .applicationType(applicationTypeLookup)
+            .providerDetail(providerDetail)
+            .build();
 
     when(ebsApplicationMappingContextBuilder.buildApplicationMappingContext(any(CaseDetail.class)))
         .thenReturn(build);
@@ -549,44 +541,42 @@ class ApplicationServiceTest {
     // Mock out the additional calls for copying the application
     when(lookupService.getCategoryOfLaw(applicationToCopy.getCategoryOfLaw().getId()))
         .thenReturn(Mono.just(Optional.of(new CategoryOfLawLookupValueDetail())));
-    when(lookupService.getPersonToCaseRelationships()).thenReturn(
-        Mono.just(new RelationshipToCaseLookupDetail()));
+    when(lookupService.getPersonToCaseRelationships())
+        .thenReturn(Mono.just(new RelationshipToCaseLookupDetail()));
     when(soaApiClient.getContractDetails(
-        user.getProvider().getId(),
-        applicationToCopy.getProviderDetails().getOffice().getId(),
-        user.getLoginId(),
-        user.getUserType())).thenReturn(Mono.just(new ContractDetails()));
+            user.getProvider().getId(),
+            applicationToCopy.getProviderDetails().getOffice().getId(),
+            user.getLoginId(),
+            user.getUserType()))
+        .thenReturn(Mono.just(new ContractDetails()));
 
-    when(copyApplicationMapper.copyApplication(
-        any(ApplicationDetail.class),
-        eq(applicationToCopy)))
+    when(copyApplicationMapper.copyApplication(any(ApplicationDetail.class), eq(applicationToCopy)))
         .thenReturn(applicationToCopy);
 
     when(caabApiClient.createApplication(anyString(), any())).thenReturn(Mono.empty());
 
     // Call the method under test
-    Mono<String> applicationMono = applicationService.createApplication(
-        applicationFormData, clientDetail, user);
+    Mono<String> applicationMono =
+        applicationService.createApplication(applicationFormData, clientDetail, user);
 
-    StepVerifier.create(applicationMono)
-        .verifyComplete();
+    StepVerifier.create(applicationMono).verifyComplete();
 
-    verify(copyApplicationMapper).copyApplication(
-        any(ApplicationDetail.class),
-        eq(applicationToCopy));
+    verify(copyApplicationMapper)
+        .copyApplication(any(ApplicationDetail.class), eq(applicationToCopy));
     verify(puiMetricService, times(1))
-        .incrementCopyAndCreatedCount(eq(applicationFormData.getCopyCaseReferenceNumber()),
-            anyString());
+        .incrementCopyAndCreatedCount(
+            eq(applicationFormData.getCopyCaseReferenceNumber()), anyString());
   }
 
-
   @ParameterizedTest
-  @CsvSource({"true, 1, 10, other, false, false, false",
-      "true, 10, 1, other, false, false, false",
-      "false, 10, 1, other, false, false, false",
-      "false, 10, 1, other, false, true, false",
-      "false, 10, 1, " + OPPONENT_TYPE_INDIVIDUAL + ", true, true, false",
-      "false, 10, 1, " + OPPONENT_TYPE_INDIVIDUAL + ", false, true, true"})
+  @CsvSource({
+    "true, 1, 10, other, false, false, false",
+    "true, 10, 1, other, false, false, false",
+    "false, 10, 1, other, false, false, false",
+    "false, 10, 1, other, false, true, false",
+    "false, 10, 1, " + OPPONENT_TYPE_INDIVIDUAL + ", true, true, false",
+    "false, 10, 1, " + OPPONENT_TYPE_INDIVIDUAL + ", false, true, true"
+  })
   void testCopyApplication(
       Boolean copyCostLimit,
       BigDecimal costLimit1,
@@ -612,8 +602,7 @@ class ApplicationServiceTest {
     applicationToCopy.getOpponents().getFirst().setType(opponentType);
     applicationToCopy.getOpponents().getFirst().setSharedInd(opponentShared);
 
-    when(ebsApiClient.postAllocateNextCaseReference())
-        .thenReturn(Mono.just(caseReferenceSummary));
+    when(ebsApiClient.postAllocateNextCaseReference()).thenReturn(Mono.just(caseReferenceSummary));
 
     CategoryOfLawLookupValueDetail categoryOfLawLookupValueDetail =
         buildCategoryOfLawLookupValueDetail(copyCostLimit);
@@ -628,14 +617,15 @@ class ApplicationServiceTest {
     // Update the relationshipToCase lookup for this test
     relationshipToCaseLookupDetail.getContent().getFirst().setCopyParty(opponentRelCopyParty);
 
-    when(lookupService.getPersonToCaseRelationships()).thenReturn(
-        Mono.just(relationshipToCaseLookupDetail));
+    when(lookupService.getPersonToCaseRelationships())
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
 
     when(soaApiClient.getContractDetails(
-        userDetail.getProvider().getId(),
-        applicationToCopy.getProviderDetails().getOffice().getId(),
-        userDetail.getLoginId(),
-        userDetail.getUserType())).thenReturn(Mono.just(new ContractDetails()));
+            userDetail.getProvider().getId(),
+            applicationToCopy.getProviderDetails().getOffice().getId(),
+            userDetail.getLoginId(),
+            userDetail.getUserType()))
+        .thenReturn(Mono.just(new ContractDetails()));
 
     // If the category of law has copyCostLimit set to TRUE the requested cost
     // limit from the applicationToCopy's costs should be used.
@@ -645,11 +635,11 @@ class ApplicationServiceTest {
     // Get the max cost limitation
     BigDecimal expectedDefaultCostLimit = costLimit1.max(costLimit2);
 
-    ArgumentCaptor<ApplicationDetail> newApplicationCaptor = ArgumentCaptor.forClass(ApplicationDetail.class);
+    ArgumentCaptor<ApplicationDetail> newApplicationCaptor =
+        ArgumentCaptor.forClass(ApplicationDetail.class);
 
     when(copyApplicationMapper.copyApplication(
-        newApplicationCaptor.capture(),
-        eq(applicationToCopy)))
+            newApplicationCaptor.capture(), eq(applicationToCopy)))
         .then(returnsSecondArg());
 
     /* Call the method under test */
@@ -659,13 +649,15 @@ class ApplicationServiceTest {
     // If the opponent is an INDIVIDUAL, it is not shared, and the opponents relationship
     // to the case is set to 'Copy Party' then the ebsId should be null.
     StepVerifier.create(resultMono)
-        .expectNextMatches(applicationDetail ->
-            opponentEbsIdCleared == (applicationDetail.getOpponents().getFirst().getEbsId() == null)
-                && expectedDefaultCostLimit.equals(
-                newApplicationCaptor.getValue().getCosts().getDefaultCostLimitation())
-                && expectedRequestedCostLimit.equals(
-                newApplicationCaptor.getValue().getCosts().getRequestedCostLimitation())
-        ).verifyComplete();
+        .expectNextMatches(
+            applicationDetail ->
+                opponentEbsIdCleared
+                        == (applicationDetail.getOpponents().getFirst().getEbsId() == null)
+                    && expectedDefaultCostLimit.equals(
+                        newApplicationCaptor.getValue().getCosts().getDefaultCostLimitation())
+                    && expectedRequestedCostLimit.equals(
+                        newApplicationCaptor.getValue().getCosts().getRequestedCostLimitation()))
+        .verifyComplete();
   }
 
   @Test
@@ -674,17 +666,19 @@ class ApplicationServiceTest {
     final UserDetail user = buildUserDetail();
 
     // Create mock data for successful Mono results
-    final RelationshipToCaseLookupDetail orgRelationshipsDetail = new RelationshipToCaseLookupDetail();
+    final RelationshipToCaseLookupDetail orgRelationshipsDetail =
+        new RelationshipToCaseLookupDetail();
     orgRelationshipsDetail.addContentItem(new RelationshipToCaseLookupValueDetail());
 
-    final RelationshipToCaseLookupDetail personRelationshipsDetail = new RelationshipToCaseLookupDetail();
+    final RelationshipToCaseLookupDetail personRelationshipsDetail =
+        new RelationshipToCaseLookupDetail();
     personRelationshipsDetail.addContentItem(new RelationshipToCaseLookupValueDetail());
 
-    final CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
-        .addContentItem(new CommonLookupValueDetail());
+    final CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
 
-    final CommonLookupDetail contactTitleLookupDetail = new CommonLookupDetail()
-        .addContentItem(new CommonLookupValueDetail());
+    final CommonLookupDetail contactTitleLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
 
     final AuditDetail auditDetail = new AuditDetail();
     auditDetail.setLastSaved(Date.from(Instant.now()));
@@ -702,10 +696,10 @@ class ApplicationServiceTest {
     applicationType.setDisplayValue("testing123");
 
     ApplicationProviderDetails providerDetails = buildApplicationProviderDetails(1);
-    providerDetails.setProviderContact(null); // used to determine the provider status in the builder.
+    providerDetails.setProviderContact(
+        null); // used to determine the provider status in the builder.
 
-    AddressDetail address = new AddressDetail()
-        .preferredAddress("prefAdd");
+    AddressDetail address = new AddressDetail().preferredAddress("prefAdd");
 
     final ApplicationDetail applicationDetail = new ApplicationDetail();
     applicationDetail.setProviderDetails(providerDetails);
@@ -718,48 +712,54 @@ class ApplicationServiceTest {
     applicationDetail.setCosts(costStructure);
     applicationDetail.setCorrespondenceAddress(address);
 
-    final AssessmentDetails meansAssessmentDetails = new AssessmentDetails()
-        .addContentItem(new AssessmentDetail()
-            .status(AssessmentStatus.INCOMPLETE.getStatus()));
+    final AssessmentDetails meansAssessmentDetails =
+        new AssessmentDetails()
+            .addContentItem(new AssessmentDetail().status(AssessmentStatus.INCOMPLETE.getStatus()));
 
-    final AssessmentDetails meritsAssessmentDetails = new AssessmentDetails()
-        .addContentItem(new AssessmentDetail()
-            .status(AssessmentStatus.COMPLETE.getStatus()));
+    final AssessmentDetails meritsAssessmentDetails =
+        new AssessmentDetails()
+            .addContentItem(new AssessmentDetail().status(AssessmentStatus.COMPLETE.getStatus()));
 
     CommonLookupValueDetail correspondenceMethodLookup =
-        new CommonLookupValueDetail()
-            .description("correspondence method1");
+        new CommonLookupValueDetail().description("correspondence method1");
 
-    when(lookupService.getCommonValue(COMMON_VALUE_CASE_ADDRESS_OPTION,
-        applicationDetail.getCorrespondenceAddress().getPreferredAddress()))
+    when(lookupService.getCommonValue(
+            COMMON_VALUE_CASE_ADDRESS_OPTION,
+            applicationDetail.getCorrespondenceAddress().getPreferredAddress()))
         .thenReturn(Mono.just(Optional.of(correspondenceMethodLookup)));
-    when(lookupService.getOrganisationToCaseRelationships()).thenReturn(
-        Mono.just(orgRelationshipsDetail));
-    when(lookupService.getPersonToCaseRelationships()).thenReturn(
-        Mono.just(personRelationshipsDetail));
-    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(
-        Mono.just(relationshipToClientLookupDetail));
-    when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(
-        Mono.just(contactTitleLookupDetail));
+    when(lookupService.getOrganisationToCaseRelationships())
+        .thenReturn(Mono.just(orgRelationshipsDetail));
+    when(lookupService.getPersonToCaseRelationships())
+        .thenReturn(Mono.just(personRelationshipsDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+        .thenReturn(Mono.just(contactTitleLookupDetail));
 
-    when(assessmentService.getAssessments(List.of("meansAssessment"),
-        user.getProvider().getId().toString(), applicationDetail.getCaseReferenceNumber()))
+    when(assessmentService.getAssessments(
+            List.of("meansAssessment"),
+            user.getProvider().getId().toString(),
+            applicationDetail.getCaseReferenceNumber()))
         .thenReturn(Mono.just(meansAssessmentDetails));
-    when(assessmentService.getAssessments(List.of("meritsAssessment"),
-        user.getProvider().getId().toString(), applicationDetail.getCaseReferenceNumber()))
+    when(assessmentService.getAssessments(
+            List.of("meritsAssessment"),
+            user.getProvider().getId().toString(),
+            applicationDetail.getCaseReferenceNumber()))
         .thenReturn(Mono.just(meritsAssessmentDetails));
     when(evidenceService.isEvidenceRequired(
-        any(AssessmentDetail.class),
-        any(AssessmentDetail.class),
-        eq(applicationType),
-        anyList())).thenReturn(false);
+            any(AssessmentDetail.class),
+            any(AssessmentDetail.class),
+            eq(applicationType),
+            anyList()))
+        .thenReturn(false);
 
     final ApplicationSectionDisplay summary =
         applicationService.getApplicationSections(applicationDetail, user);
 
     assertNotNull(summary);
     assertEquals("Complete", summary.getGeneralDetails().getStatus());
-    assertEquals(correspondenceMethodLookup.getDescription(),
+    assertEquals(
+        correspondenceMethodLookup.getDescription(),
         summary.getGeneralDetails().getCorrespondenceMethod());
     assertEquals("bob ross", summary.getClient().getClientFullName());
     assertEquals(applicationType.getDisplayValue(), summary.getApplicationType().getDescription());
@@ -772,43 +772,45 @@ class ApplicationServiceTest {
   @Test
   void shouldReturnCaseDetailsDisplay() {
 
-    final RelationshipToCaseLookupDetail orgRelationshipsDetail = new RelationshipToCaseLookupDetail();
+    final RelationshipToCaseLookupDetail orgRelationshipsDetail =
+        new RelationshipToCaseLookupDetail();
     orgRelationshipsDetail.addContentItem(new RelationshipToCaseLookupValueDetail().code("SSS"));
 
-    final RelationshipToCaseLookupDetail personRelationshipsDetail = new RelationshipToCaseLookupDetail();
+    final RelationshipToCaseLookupDetail personRelationshipsDetail =
+        new RelationshipToCaseLookupDetail();
     personRelationshipsDetail.addContentItem(new RelationshipToCaseLookupValueDetail().code("DES"));
 
-    final CommonLookupDetail relationshipToClientLookupDetail = new CommonLookupDetail()
-        .addContentItem(new CommonLookupValueDetail().code("ABC"));
+    final CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail().code("ABC"));
 
-    final CommonLookupDetail contactTitleLookupDetail = new CommonLookupDetail()
-        .addContentItem(new CommonLookupValueDetail().code("GGG"));
+    final CommonLookupDetail contactTitleLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail().code("GGG"));
 
-    final CommonLookupDetail linkedCaseLookupDetail = new CommonLookupDetail()
-        .addContentItem(
-            new CommonLookupValueDetail().code("LEGAL").description("Linked Legal Issue"));
+    final CommonLookupDetail linkedCaseLookupDetail =
+        new CommonLookupDetail()
+            .addContentItem(
+                new CommonLookupValueDetail().code("LEGAL").description("Linked Legal Issue"));
 
     ApplicationDetail applicationDetail = buildFullApplicationDetail();
 
     CommonLookupValueDetail correspondenceMethodLookup =
-        new CommonLookupValueDetail()
-            .description("correspondence method1");
+        new CommonLookupValueDetail().description("correspondence method1");
 
-    when(lookupService.getCommonValue(COMMON_VALUE_CASE_ADDRESS_OPTION,
-        applicationDetail.getCorrespondenceAddress().getPreferredAddress()))
+    when(lookupService.getCommonValue(
+            COMMON_VALUE_CASE_ADDRESS_OPTION,
+            applicationDetail.getCorrespondenceAddress().getPreferredAddress()))
         .thenReturn(Mono.just(Optional.of(correspondenceMethodLookup)));
-    when(lookupService.getOrganisationToCaseRelationships()).thenReturn(
-        Mono.just(orgRelationshipsDetail));
-    when(lookupService.getPersonToCaseRelationships()).thenReturn(
-        Mono.just(personRelationshipsDetail));
-    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT)).thenReturn(
-        Mono.just(relationshipToClientLookupDetail));
-    when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(
-        Mono.just(contactTitleLookupDetail));
+    when(lookupService.getOrganisationToCaseRelationships())
+        .thenReturn(Mono.just(orgRelationshipsDetail));
+    when(lookupService.getPersonToCaseRelationships())
+        .thenReturn(Mono.just(personRelationshipsDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+        .thenReturn(Mono.just(contactTitleLookupDetail));
 
-    when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(
-        Mono.just(linkedCaseLookupDetail));
-
+    when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE))
+        .thenReturn(Mono.just(linkedCaseLookupDetail));
 
     final ApplicationSectionDisplay summary =
         applicationService.getCaseDetailsDisplay(applicationDetail);
@@ -832,8 +834,6 @@ class ApplicationServiceTest {
         .hasMessage("Failed to retrieve application summary");
   }
 
-
-
   @Test
   void testGetApplicationTypeFormData() {
     final String id = "12345";
@@ -841,8 +841,7 @@ class ApplicationServiceTest {
     final ApplicationType applicationType = new ApplicationType();
     // Set up any necessary mocks for caabApiClient.getApplicationType
 
-    when(caabApiClient.getApplicationType(id))
-        .thenReturn(Mono.just(applicationType));
+    when(caabApiClient.getApplicationType(id)).thenReturn(Mono.just(applicationType));
     when(applicationFormDataMapper.toApplicationTypeFormData(applicationType))
         .thenReturn(mockApplicationFormData);
 
@@ -857,8 +856,7 @@ class ApplicationServiceTest {
     final ApplicationFormData mockApplicationFormData = new ApplicationFormData();
     final ApplicationProviderDetails providerDetails = new ApplicationProviderDetails();
 
-    when(caabApiClient.getProviderDetails(id))
-        .thenReturn(Mono.just(providerDetails));
+    when(caabApiClient.getProviderDetails(id)).thenReturn(Mono.just(providerDetails));
     when(applicationFormDataMapper.toApplicationProviderDetailsFormData(providerDetails))
         .thenReturn(mockApplicationFormData);
 
@@ -881,7 +879,8 @@ class ApplicationServiceTest {
     final Mono<ApplicationFormData> result = applicationService.getMonoProviderDetailsFormData(id);
 
     StepVerifier.create(result)
-        .expectNextMatches(applicationFormData -> applicationFormData == expectedApplicationFormData)
+        .expectNextMatches(
+            applicationFormData -> applicationFormData == expectedApplicationFormData)
         .verifyComplete();
 
     verify(caabApiClient).getProviderDetails(id);
@@ -908,7 +907,8 @@ class ApplicationServiceTest {
   }
 
   @Test
-  @DisplayName("getMonoCorrespondenceAddressFormData returns Mono of AddressFormData when successful")
+  @DisplayName(
+      "getMonoCorrespondenceAddressFormData returns Mono of AddressFormData when successful")
   void testGetMonoCorrespondenceAddressFormData_Successful() {
     final String id = "12345";
     final AddressDetail mockAddress = new AddressDetail();
@@ -917,7 +917,8 @@ class ApplicationServiceTest {
     when(caabApiClient.getCorrespondenceAddress(id)).thenReturn(Mono.just(mockAddress));
     when(addressFormDataMapper.toAddressFormData(mockAddress)).thenReturn(expectedAddressFormData);
 
-    final Mono<AddressFormData> result = applicationService.getMonoCorrespondenceAddressFormData(id);
+    final Mono<AddressFormData> result =
+        applicationService.getMonoCorrespondenceAddressFormData(id);
 
     StepVerifier.create(result)
         .expectNextMatches(addressFormData -> addressFormData == expectedAddressFormData)
@@ -936,18 +937,17 @@ class ApplicationServiceTest {
         new CommonLookupValueDetail().code("LNK02").description("Child Case");
     CommonLookupDetail commonLookupDetail =
         new CommonLookupDetail().content(Arrays.asList(lookup1, lookup2));
-    Map<String, String> expectedLookupMap =
-        Map.of("LNK01", "Parent Case", "LNK02", "Child Case");
+    Map<String, String> expectedLookupMap = Map.of("LNK01", "Parent Case", "LNK02", "Child Case");
 
-    when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE)).thenReturn(
-        Mono.just(commonLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_CASE_LINK_TYPE))
+        .thenReturn(Mono.just(commonLookupDetail));
 
     LinkedCaseDetail detail1 =
         new LinkedCaseDetail().lscCaseReference("Case001").relationToCase("LNK01");
     LinkedCaseDetail detail2 =
         new LinkedCaseDetail().lscCaseReference("Case002").relationToCase("LNK02");
-    when(caabApiClient.getLinkedCases("APPLICATION_ID")).thenReturn(
-        Mono.just(Arrays.asList(detail1, detail2)));
+    when(caabApiClient.getLinkedCases("APPLICATION_ID"))
+        .thenReturn(Mono.just(Arrays.asList(detail1, detail2)));
 
     LinkedCaseResultRowDisplay row1 = new LinkedCaseResultRowDisplay();
     row1.setRelationToCase("Parent Case");
@@ -956,18 +956,15 @@ class ApplicationServiceTest {
     row2.setRelationToCase("Child Case");
     row2.setLscCaseReference("Case002");
 
-    when(resultDisplayMapper.toLinkedCaseResultRowDisplay(detail1, expectedLookupMap)).thenReturn(
-        row1);
-    when(resultDisplayMapper.toLinkedCaseResultRowDisplay(detail2, expectedLookupMap)).thenReturn(
-        row2);
+    when(resultDisplayMapper.toLinkedCaseResultRowDisplay(detail1, expectedLookupMap))
+        .thenReturn(row1);
+    when(resultDisplayMapper.toLinkedCaseResultRowDisplay(detail2, expectedLookupMap))
+        .thenReturn(row2);
 
     ResultsDisplay<LinkedCaseResultRowDisplay> actualResults =
         applicationService.getLinkedCases("APPLICATION_ID");
 
-    assertThat(actualResults.getContent())
-        .isNotNull()
-        .hasSize(2)
-        .containsExactly(row1, row2);
+    assertThat(actualResults.getContent()).isNotNull().hasSize(2).containsExactly(row1, row2);
   }
 
   @Test
@@ -975,8 +972,7 @@ class ApplicationServiceTest {
     final String linkedCaseId = "67890";
     final UserDetail user = new UserDetail().loginId("userLoginId");
 
-    when(caabApiClient.removeLinkedCase(linkedCaseId, user.getLoginId()))
-        .thenReturn(Mono.empty());
+    when(caabApiClient.removeLinkedCase(linkedCaseId, user.getLoginId())).thenReturn(Mono.empty());
 
     applicationService.removeLinkedCase(linkedCaseId, user);
 
@@ -991,7 +987,8 @@ class ApplicationServiceTest {
     final LinkedCaseDetail linkedCase = new LinkedCaseDetail();
 
     when(resultDisplayMapper.toLinkedCase(data)).thenReturn(linkedCase);
-    when(caabApiClient.updateLinkedCase(linkedCaseId, linkedCase, user.getLoginId())).thenReturn(Mono.empty());
+    when(caabApiClient.updateLinkedCase(linkedCaseId, linkedCase, user.getLoginId()))
+        .thenReturn(Mono.empty());
 
     applicationService.updateLinkedCase(linkedCaseId, data, user);
 
@@ -1008,19 +1005,14 @@ class ApplicationServiceTest {
 
     when(addressFormDataMapper.toAddress(addressFormData)).thenReturn(correspondenceAddress);
     when(caabApiClient.putApplication(
-        id,
-        user.getLoginId(),
-        correspondenceAddress,
-        "correspondence-address")).thenReturn(Mono.empty());
+            id, user.getLoginId(), correspondenceAddress, "correspondence-address"))
+        .thenReturn(Mono.empty());
 
     applicationService.updateCorrespondenceAddress(id, addressFormData, user);
 
     verify(addressFormDataMapper).toAddress(addressFormData);
-    verify(caabApiClient).putApplication(
-        id,
-        user.getLoginId(),
-        correspondenceAddress,
-        "correspondence-address");
+    verify(caabApiClient)
+        .putApplication(id, user.getLoginId(), correspondenceAddress, "correspondence-address");
   }
 
   @Test
@@ -1034,10 +1026,9 @@ class ApplicationServiceTest {
 
     applicationService.updateApplicationType(id, applicationFormData, user);
 
-    verify(caabApiClient).putApplication(eq(id), eq(user.getLoginId()), any(), eq("application-type"));
-
+    verify(caabApiClient)
+        .putApplication(eq(id), eq(user.getLoginId()), any(), eq("application-type"));
   }
-
 
   @Test
   void makeLeadProceeding_UpdatesLeadProceeding_Successful() {
@@ -1045,31 +1036,33 @@ class ApplicationServiceTest {
     final Integer newLeadProceedingId = 2;
     final UserDetail user = new UserDetail().loginId("user1");
 
-    final List<ProceedingDetail> mockProceedings = Arrays.asList(
-        new ProceedingDetail().id(1).leadProceedingInd(true),
-        new ProceedingDetail().id(2).leadProceedingInd(false)
-    );
+    final List<ProceedingDetail> mockProceedings =
+        Arrays.asList(
+            new ProceedingDetail().id(1).leadProceedingInd(true),
+            new ProceedingDetail().id(2).leadProceedingInd(false));
 
     when(caabApiClient.getProceedings(applicationId)).thenReturn(Mono.just(mockProceedings));
-    when(caabApiClient.updateProceeding(anyInt(), any(ProceedingDetail.class), eq(user.getLoginId())))
+    when(caabApiClient.updateProceeding(
+            anyInt(), any(ProceedingDetail.class), eq(user.getLoginId())))
         .thenReturn(Mono.empty());
     when(caabApiClient.patchApplication(
-        eq(applicationId),
-        any(ApplicationDetail.class),
-        eq(user.getLoginId())))
+            eq(applicationId), any(ApplicationDetail.class), eq(user.getLoginId())))
         .thenReturn(Mono.empty());
 
     applicationService.makeLeadProceeding(applicationId, newLeadProceedingId, user);
 
-    final ArgumentCaptor<ProceedingDetail> proceedingArgumentCaptor = ArgumentCaptor.forClass(ProceedingDetail.class);
-    verify(caabApiClient, times(2)).updateProceeding(anyInt(), proceedingArgumentCaptor.capture(), eq(user.getLoginId()));
+    final ArgumentCaptor<ProceedingDetail> proceedingArgumentCaptor =
+        ArgumentCaptor.forClass(ProceedingDetail.class);
+    verify(caabApiClient, times(2))
+        .updateProceeding(anyInt(), proceedingArgumentCaptor.capture(), eq(user.getLoginId()));
 
     final List<ProceedingDetail> capturedProceedings = proceedingArgumentCaptor.getAllValues();
 
     assertFalse(capturedProceedings.getFirst().getLeadProceedingInd());
     assertTrue(capturedProceedings.get(1).getLeadProceedingInd());
 
-    verify(caabApiClient).patchApplication(eq(applicationId), any(ApplicationDetail.class), eq(user.getLoginId()));
+    verify(caabApiClient)
+        .patchApplication(eq(applicationId), any(ApplicationDetail.class), eq(user.getLoginId()));
   }
 
   @Test
@@ -1077,35 +1070,37 @@ class ApplicationServiceTest {
     OpponentDetail opponent = buildOpponent(new Date());
     opponent.setType(OPPONENT_TYPE_INDIVIDUAL);
 
-    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle())).thenReturn(
-        Mono.just(Optional.empty()));
-    when(lookupService.getPersonToCaseRelationship(opponent.getRelationshipToCase())).thenReturn(
-        Mono.just(Optional.empty()));
-    when(lookupService.getCommonValue(COMMON_VALUE_RELATIONSHIP_TO_CLIENT,
-        opponent.getRelationshipToClient())).thenReturn(
-        Mono.just(Optional.empty()));
+    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle()))
+        .thenReturn(Mono.just(Optional.empty()));
+    when(lookupService.getPersonToCaseRelationship(opponent.getRelationshipToCase()))
+        .thenReturn(Mono.just(Optional.empty()));
+    when(lookupService.getCommonValue(
+            COMMON_VALUE_RELATIONSHIP_TO_CLIENT, opponent.getRelationshipToClient()))
+        .thenReturn(Mono.just(Optional.empty()));
 
     String expectedPartyName =
         opponent.getTitle() + " " + opponent.getFirstName() + " " + opponent.getSurname();
 
     when(opponentMapper.toOpponentFormData(
-        opponent,
-        expectedPartyName,
-        null,
-        opponent.getRelationshipToCase(),
-        opponent.getRelationshipToClient(),
-        true)).thenReturn(new IndividualOpponentFormData());
+            opponent,
+            expectedPartyName,
+            null,
+            opponent.getRelationshipToCase(),
+            opponent.getRelationshipToClient(),
+            true))
+        .thenReturn(new IndividualOpponentFormData());
 
     AbstractOpponentFormData result = applicationService.buildOpponentFormData(opponent);
 
     assertNotNull(result);
-    verify(opponentMapper).toOpponentFormData(
-        opponent,
-        expectedPartyName,
-        null,
-        opponent.getRelationshipToCase(),
-        opponent.getRelationshipToClient(),
-        true);
+    verify(opponentMapper)
+        .toOpponentFormData(
+            opponent,
+            expectedPartyName,
+            null,
+            opponent.getRelationshipToCase(),
+            opponent.getRelationshipToClient(),
+            true);
   }
 
   @Test
@@ -1113,38 +1108,39 @@ class ApplicationServiceTest {
     OpponentDetail opponent = buildOpponent(new Date());
     opponent.setType(OPPONENT_TYPE_ORGANISATION);
 
-    when(lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES,
-        opponent.getOrganisationType())).thenReturn(
-        Mono.just(Optional.empty()));
-    when(lookupService.getOrganisationToCaseRelationship(opponent.getRelationshipToCase())).thenReturn(
-        Mono.just(Optional.empty()));
-    when(lookupService.getCommonValue(COMMON_VALUE_RELATIONSHIP_TO_CLIENT,
-        opponent.getRelationshipToClient())).thenReturn(
-        Mono.just(Optional.empty()));
-    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE,
-        opponent.getTitle())).thenReturn(
-        Mono.just(Optional.empty()));
+    when(lookupService.getCommonValue(
+            COMMON_VALUE_ORGANISATION_TYPES, opponent.getOrganisationType()))
+        .thenReturn(Mono.just(Optional.empty()));
+    when(lookupService.getOrganisationToCaseRelationship(opponent.getRelationshipToCase()))
+        .thenReturn(Mono.just(Optional.empty()));
+    when(lookupService.getCommonValue(
+            COMMON_VALUE_RELATIONSHIP_TO_CLIENT, opponent.getRelationshipToClient()))
+        .thenReturn(Mono.just(Optional.empty()));
+    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle()))
+        .thenReturn(Mono.just(Optional.empty()));
 
     String expectedPartyName = opponent.getOrganisationName();
 
     when(opponentMapper.toOpponentFormData(
-        opponent,
-        expectedPartyName,
-        opponent.getOrganisationType(),
-        opponent.getRelationshipToCase(),
-        opponent.getRelationshipToClient(),
-        true)).thenReturn(new OrganisationOpponentFormData());
+            opponent,
+            expectedPartyName,
+            opponent.getOrganisationType(),
+            opponent.getRelationshipToCase(),
+            opponent.getRelationshipToClient(),
+            true))
+        .thenReturn(new OrganisationOpponentFormData());
 
     AbstractOpponentFormData result = applicationService.buildOpponentFormData(opponent);
 
     assertNotNull(result);
-    verify(opponentMapper).toOpponentFormData(
-        opponent,
-        expectedPartyName,
-        opponent.getOrganisationType(),
-        opponent.getRelationshipToCase(),
-        opponent.getRelationshipToClient(),
-        true);
+    verify(opponentMapper)
+        .toOpponentFormData(
+            opponent,
+            expectedPartyName,
+            opponent.getOrganisationType(),
+            opponent.getRelationshipToCase(),
+            opponent.getRelationshipToClient(),
+            true);
   }
 
   @Test
@@ -1152,59 +1148,58 @@ class ApplicationServiceTest {
     OpponentDetail opponent = buildOpponent(new Date());
     opponent.setType(OPPONENT_TYPE_ORGANISATION);
 
-    CommonLookupValueDetail organisationTypeLookup = new CommonLookupValueDetail()
-        .code(opponent.getOrganisationType())
-        .description("org type");
+    CommonLookupValueDetail organisationTypeLookup =
+        new CommonLookupValueDetail().code(opponent.getOrganisationType()).description("org type");
 
-    when(lookupService.getCommonValue(COMMON_VALUE_ORGANISATION_TYPES,
-        opponent.getOrganisationType())).thenReturn(
-        Mono.just(Optional.of(organisationTypeLookup)));
+    when(lookupService.getCommonValue(
+            COMMON_VALUE_ORGANISATION_TYPES, opponent.getOrganisationType()))
+        .thenReturn(Mono.just(Optional.of(organisationTypeLookup)));
 
     RelationshipToCaseLookupValueDetail orgRelationshipToCase =
         new RelationshipToCaseLookupValueDetail()
             .code(opponent.getRelationshipToCase())
             .description("org rel");
 
-    when(lookupService.getOrganisationToCaseRelationship(opponent.getRelationshipToCase())).thenReturn(
-        Mono.just(Optional.of(orgRelationshipToCase)));
+    when(lookupService.getOrganisationToCaseRelationship(opponent.getRelationshipToCase()))
+        .thenReturn(Mono.just(Optional.of(orgRelationshipToCase)));
 
-    CommonLookupValueDetail relationshipToClient = new CommonLookupValueDetail()
-        .code(opponent.getRelationshipToClient())
-        .description("rel 2 client");
+    CommonLookupValueDetail relationshipToClient =
+        new CommonLookupValueDetail()
+            .code(opponent.getRelationshipToClient())
+            .description("rel 2 client");
 
-    when(lookupService.getCommonValue(COMMON_VALUE_RELATIONSHIP_TO_CLIENT,
-        opponent.getRelationshipToClient())).thenReturn(
-        Mono.just(Optional.of(relationshipToClient)));
+    when(lookupService.getCommonValue(
+            COMMON_VALUE_RELATIONSHIP_TO_CLIENT, opponent.getRelationshipToClient()))
+        .thenReturn(Mono.just(Optional.of(relationshipToClient)));
 
-    CommonLookupValueDetail titleLookup = new CommonLookupValueDetail()
-        .code(opponent.getTitle())
-        .description("Mr");
+    CommonLookupValueDetail titleLookup =
+        new CommonLookupValueDetail().code(opponent.getTitle()).description("Mr");
 
-    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE,
-        opponent.getTitle())).thenReturn(
-        Mono.just(Optional.of(titleLookup)));
+    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle()))
+        .thenReturn(Mono.just(Optional.of(titleLookup)));
 
-    String expectedPartyName =
-        opponent.getOrganisationName();
+    String expectedPartyName = opponent.getOrganisationName();
 
     when(opponentMapper.toOpponentFormData(
-        opponent,
-        expectedPartyName,
-        organisationTypeLookup.getDescription(),
-        orgRelationshipToCase.getDescription(),
-        relationshipToClient.getDescription(),
-        true)).thenReturn(new OrganisationOpponentFormData());
+            opponent,
+            expectedPartyName,
+            organisationTypeLookup.getDescription(),
+            orgRelationshipToCase.getDescription(),
+            relationshipToClient.getDescription(),
+            true))
+        .thenReturn(new OrganisationOpponentFormData());
 
     AbstractOpponentFormData result = applicationService.buildOpponentFormData(opponent);
 
     assertNotNull(result);
-    verify(opponentMapper).toOpponentFormData(
-        opponent,
-        expectedPartyName,
-        organisationTypeLookup.getDescription(),
-        orgRelationshipToCase.getDescription(),
-        relationshipToClient.getDescription(),
-        true);
+    verify(opponentMapper)
+        .toOpponentFormData(
+            opponent,
+            expectedPartyName,
+            organisationTypeLookup.getDescription(),
+            orgRelationshipToCase.getDescription(),
+            relationshipToClient.getDescription(),
+            true);
   }
 
   @Test
@@ -1212,46 +1207,49 @@ class ApplicationServiceTest {
     OpponentDetail opponent = buildOpponent(new Date());
     opponent.setType(OPPONENT_TYPE_INDIVIDUAL);
 
-    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE,
-        opponent.getTitle())).thenReturn(
-        Mono.just(Optional.empty()));
+    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle()))
+        .thenReturn(Mono.just(Optional.empty()));
 
     RelationshipToCaseLookupValueDetail personRelationshipToCase =
         new RelationshipToCaseLookupValueDetail()
             .code(opponent.getRelationshipToCase())
             .description("ind rel");
 
-    when(lookupService.getPersonToCaseRelationship(opponent.getRelationshipToCase())).thenReturn(
-        Mono.just(Optional.of(personRelationshipToCase)));
+    when(lookupService.getPersonToCaseRelationship(opponent.getRelationshipToCase()))
+        .thenReturn(Mono.just(Optional.of(personRelationshipToCase)));
 
-    CommonLookupValueDetail relationshipToClient = new CommonLookupValueDetail()
-        .code(opponent.getRelationshipToClient())
-        .description("rel 2 client");
+    CommonLookupValueDetail relationshipToClient =
+        new CommonLookupValueDetail()
+            .code(opponent.getRelationshipToClient())
+            .description("rel 2 client");
 
-    when(lookupService.getCommonValue(COMMON_VALUE_RELATIONSHIP_TO_CLIENT,
-        opponent.getRelationshipToClient())).thenReturn(
-        Mono.just(Optional.of(relationshipToClient)));
+    when(lookupService.getCommonValue(
+            COMMON_VALUE_RELATIONSHIP_TO_CLIENT, opponent.getRelationshipToClient()))
+        .thenReturn(Mono.just(Optional.of(relationshipToClient)));
 
     String expectedPartyName =
         opponent.getTitle() + " " + opponent.getFirstName() + " " + opponent.getSurname();
 
     when(opponentMapper.toOpponentFormData(
-        opponent,
-        expectedPartyName,
-        null,
-        personRelationshipToCase.getDescription(),
-        relationshipToClient.getDescription(),
-        true)).thenReturn(new IndividualOpponentFormData());
+            opponent,
+            expectedPartyName,
+            null,
+            personRelationshipToCase.getDescription(),
+            relationshipToClient.getDescription(),
+            true))
+        .thenReturn(new IndividualOpponentFormData());
 
     AbstractOpponentFormData result = applicationService.buildOpponentFormData(opponent);
 
     assertNotNull(result);
-    verify(opponentMapper).toOpponentFormData(opponent,
-        expectedPartyName,
-        null,
-        personRelationshipToCase.getDescription(),
-        relationshipToClient.getDescription(),
-        true);
+    verify(opponentMapper)
+        .toOpponentFormData(
+            opponent,
+            expectedPartyName,
+            null,
+            personRelationshipToCase.getDescription(),
+            relationshipToClient.getDescription(),
+            true);
   }
 
   @Test
@@ -1266,19 +1264,22 @@ class ApplicationServiceTest {
         .thenReturn(Mono.just(Optional.empty()));
     when(lookupService.getPersonToCaseRelationship(opponent.getRelationshipToCase()))
         .thenReturn(Mono.just(Optional.empty()));
-    when(lookupService.getCommonValue(COMMON_VALUE_RELATIONSHIP_TO_CLIENT, opponent.getRelationshipToClient()))
+    when(lookupService.getCommonValue(
+            COMMON_VALUE_RELATIONSHIP_TO_CLIENT, opponent.getRelationshipToClient()))
         .thenReturn(Mono.just(Optional.empty()));
 
-    when(opponentMapper.toOpponentFormData(eq(opponent), anyString(), isNull(), anyString(), anyString(), anyBoolean()))
+    when(opponentMapper.toOpponentFormData(
+            eq(opponent), anyString(), isNull(), anyString(), anyString(), anyBoolean()))
         .thenReturn(new IndividualOpponentFormData());
 
-    List<AbstractOpponentFormData> result =
-        applicationService.getOpponents(applicationId);
+    List<AbstractOpponentFormData> result = applicationService.getOpponents(applicationId);
 
     assertNotNull(result);
     assertEquals(1, result.size());
 
-    verify(opponentMapper).toOpponentFormData(eq(opponent), anyString(), isNull(), anyString(), anyString(), anyBoolean());
+    verify(opponentMapper)
+        .toOpponentFormData(
+            eq(opponent), anyString(), isNull(), anyString(), anyString(), anyBoolean());
   }
 
   private ApplicationFormData buildApplicationFormData() {
@@ -1291,6 +1292,7 @@ class ApplicationServiceTest {
     applicationFormData.setDelegatedFunctionUsedDate("1/1/2022");
     return applicationFormData;
   }
+
   @Test
   void getApplication_returnsApplicationDetail_Successful() {
     final String applicationId = "12345";
@@ -1298,7 +1300,8 @@ class ApplicationServiceTest {
 
     when(caabApiClient.getApplication(applicationId)).thenReturn(Mono.just(mockApplicationDetail));
 
-    final Mono<ApplicationDetail> applicationDetailMono = applicationService.getApplication(applicationId);
+    final Mono<ApplicationDetail> applicationDetailMono =
+        applicationService.getApplication(applicationId);
 
     StepVerifier.create(applicationDetailMono)
         .expectNextMatches(applicationDetail -> applicationDetail == mockApplicationDetail)
@@ -1308,26 +1311,30 @@ class ApplicationServiceTest {
   @Test
   void abandonApplication_success() {
     final ApplicationDetail application = buildApplicationDetail(1, true, new Date());
-    List<String> expectedAssessmentNames = List.of(
-        MEANS.getName(),
-        MEANS_PREPOP.getName(),
-        MERITS.getName(),
-        MERITS_PREPOP.getName());
+    List<String> expectedAssessmentNames =
+        List.of(MEANS.getName(), MEANS_PREPOP.getName(), MERITS.getName(), MERITS_PREPOP.getName());
     final UserDetail user = new UserDetail().loginId("userLoginId");
 
-    when(evidenceService.removeDocuments(application.getCaseReferenceNumber(), user.getLoginId())).thenReturn(Mono.empty());
+    when(evidenceService.removeDocuments(application.getCaseReferenceNumber(), user.getLoginId()))
+        .thenReturn(Mono.empty());
 
-    when(caabApiClient.deleteApplication(String.valueOf(application.getId()), user.getLoginId())).thenReturn(Mono.empty());
+    when(caabApiClient.deleteApplication(String.valueOf(application.getId()), user.getLoginId()))
+        .thenReturn(Mono.empty());
 
-    when(assessmentService.deleteAssessments(user, expectedAssessmentNames, application.getCaseReferenceNumber(), null)).thenReturn(Mono.empty());
+    when(assessmentService.deleteAssessments(
+            user, expectedAssessmentNames, application.getCaseReferenceNumber(), null))
+        .thenReturn(Mono.empty());
 
     applicationService.abandonApplication(application, user);
 
-    verify(evidenceService).removeDocuments(application.getCaseReferenceNumber(), user.getLoginId());
+    verify(evidenceService)
+        .removeDocuments(application.getCaseReferenceNumber(), user.getLoginId());
 
     verify(caabApiClient).deleteApplication(String.valueOf(application.getId()), user.getLoginId());
 
-    verify(assessmentService).deleteAssessments(user, expectedAssessmentNames, application.getCaseReferenceNumber(), null);
+    verify(assessmentService)
+        .deleteAssessments(
+            user, expectedAssessmentNames, application.getCaseReferenceNumber(), null);
 
     verify(puiMetricService).incrementAbandonedCount(application.getCaseReferenceNumber());
   }
@@ -1338,7 +1345,8 @@ class ApplicationServiceTest {
     String matterType = "FAM";
     String proceedingCode = "PC001";
     String levelOfService = "3";
-    String applicationType = APP_TYPE_EMERGENCY; // Assume this is one of the emergency application type codes
+    String applicationType =
+        APP_TYPE_EMERGENCY; // Assume this is one of the emergency application type codes
 
     uk.gov.laa.ccms.data.model.ScopeLimitationDetail criteria =
         new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
@@ -1351,18 +1359,22 @@ class ApplicationServiceTest {
 
     ScopeLimitationDetails mockScopeLimitationDetails = new ScopeLimitationDetails();
 
-    when(lookupService.getScopeLimitationDetails(criteria)).thenReturn(Mono.just(mockScopeLimitationDetails));
+    when(lookupService.getScopeLimitationDetails(criteria))
+        .thenReturn(Mono.just(mockScopeLimitationDetails));
 
-    Mono<ScopeLimitationDetails> result = applicationService.getDefaultScopeLimitation(
-        categoryOfLaw, matterType, proceedingCode, levelOfService, applicationType);
+    Mono<ScopeLimitationDetails> result =
+        applicationService.getDefaultScopeLimitation(
+            categoryOfLaw, matterType, proceedingCode, levelOfService, applicationType);
 
     StepVerifier.create(result)
-        .expectNextMatches(scopeLimitationDetails -> scopeLimitationDetails == mockScopeLimitationDetails)
+        .expectNextMatches(
+            scopeLimitationDetails -> scopeLimitationDetails == mockScopeLimitationDetails)
         .verifyComplete();
   }
 
   @Test
-  void getDefaultScopeLimitation_withSubstantiveDevolvedPowersApplicationType_returnsEmergencyScopeLimitations() {
+  void
+      getDefaultScopeLimitation_withSubstantiveDevolvedPowersApplicationType_returnsEmergencyScopeLimitations() {
     String categoryOfLaw = "Criminal";
     String matterType = "CRM";
     String proceedingCode = "PC002";
@@ -1380,13 +1392,16 @@ class ApplicationServiceTest {
 
     ScopeLimitationDetails mockScopeLimitationDetails = new ScopeLimitationDetails();
 
-    when(lookupService.getScopeLimitationDetails(criteria)).thenReturn(Mono.just(mockScopeLimitationDetails));
+    when(lookupService.getScopeLimitationDetails(criteria))
+        .thenReturn(Mono.just(mockScopeLimitationDetails));
 
-    Mono<ScopeLimitationDetails> result = applicationService.getDefaultScopeLimitation(
-        categoryOfLaw, matterType, proceedingCode, levelOfService, applicationType);
+    Mono<ScopeLimitationDetails> result =
+        applicationService.getDefaultScopeLimitation(
+            categoryOfLaw, matterType, proceedingCode, levelOfService, applicationType);
 
     StepVerifier.create(result)
-        .expectNextMatches(scopeLimitationDetails -> scopeLimitationDetails == mockScopeLimitationDetails)
+        .expectNextMatches(
+            scopeLimitationDetails -> scopeLimitationDetails == mockScopeLimitationDetails)
         .verifyComplete();
   }
 
@@ -1396,7 +1411,8 @@ class ApplicationServiceTest {
     String matterType = "HOU";
     String proceedingCode = "PC003";
     String levelOfService = "1";
-    String applicationType = APP_TYPE_SUBSTANTIVE; // Assume this is a non-emergency application type
+    String applicationType =
+        APP_TYPE_SUBSTANTIVE; // Assume this is a non-emergency application type
 
     uk.gov.laa.ccms.data.model.ScopeLimitationDetail criteria =
         new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
@@ -1408,13 +1424,16 @@ class ApplicationServiceTest {
 
     ScopeLimitationDetails mockScopeLimitationDetails = new ScopeLimitationDetails();
 
-    when(lookupService.getScopeLimitationDetails(criteria)).thenReturn(Mono.just(mockScopeLimitationDetails));
+    when(lookupService.getScopeLimitationDetails(criteria))
+        .thenReturn(Mono.just(mockScopeLimitationDetails));
 
-    Mono<ScopeLimitationDetails> result = applicationService.getDefaultScopeLimitation(
-        categoryOfLaw, matterType, proceedingCode, levelOfService, applicationType);
+    Mono<ScopeLimitationDetails> result =
+        applicationService.getDefaultScopeLimitation(
+            categoryOfLaw, matterType, proceedingCode, levelOfService, applicationType);
 
     StepVerifier.create(result)
-        .expectNextMatches(scopeLimitationDetails -> scopeLimitationDetails == mockScopeLimitationDetails)
+        .expectNextMatches(
+            scopeLimitationDetails -> scopeLimitationDetails == mockScopeLimitationDetails)
         .verifyComplete();
   }
 
@@ -1424,27 +1443,38 @@ class ApplicationServiceTest {
     String matterType = "FAM";
     String proceedingCode = "PC001";
     String levelOfService = "3";
-    String applicationType = APP_TYPE_EMERGENCY; // Assume this is one of the emergency application type codes
-    List<ScopeLimitationDetail> scopeLimitations = List.of(
-        new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL1")),
-        new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL2"))
-    );
+    String applicationType =
+        APP_TYPE_EMERGENCY; // Assume this is one of the emergency application type codes
+    List<ScopeLimitationDetail> scopeLimitations =
+        List.of(
+            new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL1")),
+            new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL2")));
 
-    ScopeLimitationDetails mockScopeLimitationDetails1 = new ScopeLimitationDetails()
-        .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
-            .costLimitation(new BigDecimal(500)));
-    ScopeLimitationDetails mockScopeLimitationDetails2 = new ScopeLimitationDetails()
-        .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
-            .costLimitation(new BigDecimal(1000)));
+    ScopeLimitationDetails mockScopeLimitationDetails1 =
+        new ScopeLimitationDetails()
+            .addContentItem(
+                new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+                    .costLimitation(BigDecimal.valueOf(500)));
+    ScopeLimitationDetails mockScopeLimitationDetails2 =
+        new ScopeLimitationDetails()
+            .addContentItem(
+                new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+                    .costLimitation(BigDecimal.valueOf(1000)));
 
-    when(lookupService.getScopeLimitationDetails(any(
-        uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
+    when(lookupService.getScopeLimitationDetails(
+            any(uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
         .thenReturn(Mono.just(mockScopeLimitationDetails1), Mono.just(mockScopeLimitationDetails2));
 
-    BigDecimal result = applicationService.getProceedingCostLimitation(
-        categoryOfLaw, matterType, proceedingCode, levelOfService, applicationType, scopeLimitations);
+    BigDecimal result =
+        applicationService.getProceedingCostLimitation(
+            categoryOfLaw,
+            matterType,
+            proceedingCode,
+            levelOfService,
+            applicationType,
+            scopeLimitations);
 
-    assertEquals(new BigDecimal(1000).setScale(2), result.setScale(2));
+    assertEquals(BigDecimal.valueOf(1000).setScale(2), result.setScale(2));
   }
 
   @Test
@@ -1454,26 +1484,36 @@ class ApplicationServiceTest {
     String proceedingCode = "PC003";
     String levelOfService = "1";
     String applicationType = APP_TYPE_SUBSTANTIVE;
-    List<ScopeLimitationDetail> scopeLimitations = List.of(
-        new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL1")),
-        new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL2"))
-    );
+    List<ScopeLimitationDetail> scopeLimitations =
+        List.of(
+            new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL1")),
+            new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL2")));
 
-    ScopeLimitationDetails mockScopeLimitationDetails1 = new ScopeLimitationDetails()
-        .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
-            .costLimitation(new BigDecimal(300)));
-    ScopeLimitationDetails mockScopeLimitationDetails2 = new ScopeLimitationDetails()
-        .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
-            .costLimitation(new BigDecimal(800)));
+    ScopeLimitationDetails mockScopeLimitationDetails1 =
+        new ScopeLimitationDetails()
+            .addContentItem(
+                new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+                    .costLimitation(BigDecimal.valueOf(300)));
+    ScopeLimitationDetails mockScopeLimitationDetails2 =
+        new ScopeLimitationDetails()
+            .addContentItem(
+                new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+                    .costLimitation(BigDecimal.valueOf(800)));
 
-    when(lookupService.getScopeLimitationDetails(any(
-        uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
+    when(lookupService.getScopeLimitationDetails(
+            any(uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
         .thenReturn(Mono.just(mockScopeLimitationDetails1), Mono.just(mockScopeLimitationDetails2));
 
-    BigDecimal result = applicationService.getProceedingCostLimitation(
-        categoryOfLaw, matterType, proceedingCode, levelOfService, applicationType, scopeLimitations);
+    BigDecimal result =
+        applicationService.getProceedingCostLimitation(
+            categoryOfLaw,
+            matterType,
+            proceedingCode,
+            levelOfService,
+            applicationType,
+            scopeLimitations);
 
-    assertEquals(new BigDecimal(800).setScale(2), result.setScale(2));
+    assertEquals(BigDecimal.valueOf(800).setScale(2), result.setScale(2));
   }
 
   @Test
@@ -1485,8 +1525,14 @@ class ApplicationServiceTest {
     String applicationType = APP_TYPE_SUBSTANTIVE; // Any non-emergency application type
     List<ScopeLimitationDetail> scopeLimitations = Collections.emptyList();
 
-    BigDecimal result = applicationService.getProceedingCostLimitation(
-        categoryOfLaw, matterType, proceedingCode, levelOfService, applicationType, scopeLimitations);
+    BigDecimal result =
+        applicationService.getProceedingCostLimitation(
+            categoryOfLaw,
+            matterType,
+            proceedingCode,
+            levelOfService,
+            applicationType,
+            scopeLimitations);
 
     assertEquals(BigDecimal.ZERO.setScale(2), result.setScale(2));
   }
@@ -1498,21 +1544,26 @@ class ApplicationServiceTest {
     String proceedingCode = "PC001";
     String levelOfService = "3";
     boolean isAmendment = false;
-    List<ScopeLimitationDetail> scopeLimitations = List.of(
-        new ScopeLimitationDetail().scopeLimitation(
-            new StringDisplayValue().id("SL1"))
-    );
+    List<ScopeLimitationDetail> scopeLimitations =
+        List.of(new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL1")));
 
-    ScopeLimitationDetails mockScopeLimitationDetails = new ScopeLimitationDetails()
-        .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(1))
-        .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(2));
+    ScopeLimitationDetails mockScopeLimitationDetails =
+        new ScopeLimitationDetails()
+            .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(1))
+            .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(2));
 
-    when(lookupService.getScopeLimitationDetails(any(
-        uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
+    when(lookupService.getScopeLimitationDetails(
+            any(uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
         .thenReturn(Mono.just(mockScopeLimitationDetails));
 
-    Integer result = applicationService.getProceedingStage(
-        categoryOfLaw, matterType, proceedingCode, levelOfService, scopeLimitations, isAmendment);
+    Integer result =
+        applicationService.getProceedingStage(
+            categoryOfLaw,
+            matterType,
+            proceedingCode,
+            levelOfService,
+            scopeLimitations,
+            isAmendment);
 
     assertEquals(1, result);
   }
@@ -1524,28 +1575,35 @@ class ApplicationServiceTest {
     String proceedingCode = "PC002";
     String levelOfService = "2";
     boolean isAmendment = false;
-    List<ScopeLimitationDetail> scopeLimitations = List.of(
-        new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL1")),
-        new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL2"))
-    );
+    List<ScopeLimitationDetail> scopeLimitations =
+        List.of(
+            new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL1")),
+            new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL2")));
 
-    ScopeLimitationDetails mockScopeLimitationDetails1 = new ScopeLimitationDetails()
-        .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(1))
-        .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(2));
-    ScopeLimitationDetails mockScopeLimitationDetails2 = new ScopeLimitationDetails()
-        .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(2))
-        .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(3));
+    ScopeLimitationDetails mockScopeLimitationDetails1 =
+        new ScopeLimitationDetails()
+            .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(1))
+            .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(2));
+    ScopeLimitationDetails mockScopeLimitationDetails2 =
+        new ScopeLimitationDetails()
+            .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(2))
+            .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(3));
 
-    when(lookupService.getScopeLimitationDetails(any(
-        uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
+    when(lookupService.getScopeLimitationDetails(
+            any(uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
         .thenReturn(Mono.just(mockScopeLimitationDetails1), Mono.just(mockScopeLimitationDetails2));
 
-    Integer result = applicationService.getProceedingStage(
-        categoryOfLaw, matterType, proceedingCode, levelOfService, scopeLimitations, isAmendment);
+    Integer result =
+        applicationService.getProceedingStage(
+            categoryOfLaw,
+            matterType,
+            proceedingCode,
+            levelOfService,
+            scopeLimitations,
+            isAmendment);
 
     assertEquals(1, result);
   }
-
 
   @Test
   void getProceedingStage_multipleScopeLimitationsWithoutCommonStages_returnsMinOfMinStages() {
@@ -1554,24 +1612,32 @@ class ApplicationServiceTest {
     String proceedingCode = "PC003";
     String levelOfService = "1";
     boolean isAmendment = false;
-    List<ScopeLimitationDetail> scopeLimitations = List.of(
-        new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL1")),
-        new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL2"))
-    );
+    List<ScopeLimitationDetail> scopeLimitations =
+        List.of(
+            new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL1")),
+            new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL2")));
 
-    ScopeLimitationDetails mockScopeLimitationDetails1 = new ScopeLimitationDetails()
-        .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(1))
-        .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(3));
-    ScopeLimitationDetails mockScopeLimitationDetails2 = new ScopeLimitationDetails()
-        .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(4))
-        .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(5));
+    ScopeLimitationDetails mockScopeLimitationDetails1 =
+        new ScopeLimitationDetails()
+            .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(1))
+            .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(3));
+    ScopeLimitationDetails mockScopeLimitationDetails2 =
+        new ScopeLimitationDetails()
+            .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(4))
+            .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(5));
 
-    when(lookupService.getScopeLimitationDetails(any(
-        uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
+    when(lookupService.getScopeLimitationDetails(
+            any(uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
         .thenReturn(Mono.just(mockScopeLimitationDetails1), Mono.just(mockScopeLimitationDetails2));
 
-    Integer result = applicationService.getProceedingStage(
-        categoryOfLaw, matterType, proceedingCode, levelOfService, scopeLimitations, isAmendment);
+    Integer result =
+        applicationService.getProceedingStage(
+            categoryOfLaw,
+            matterType,
+            proceedingCode,
+            levelOfService,
+            scopeLimitations,
+            isAmendment);
 
     assertEquals(1, result);
   }
@@ -1583,19 +1649,25 @@ class ApplicationServiceTest {
     String proceedingCode = "PC004";
     String levelOfService = "4";
     boolean isAmendment = true;
-    List<ScopeLimitationDetail> scopeLimitations = List.of(
-        new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL1"))
-    );
+    List<ScopeLimitationDetail> scopeLimitations =
+        List.of(new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL1")));
 
-    ScopeLimitationDetails mockScopeLimitationDetails = new ScopeLimitationDetails()
-        .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(2));
+    ScopeLimitationDetails mockScopeLimitationDetails =
+        new ScopeLimitationDetails()
+            .addContentItem(new uk.gov.laa.ccms.data.model.ScopeLimitationDetail().stage(2));
 
-    when(lookupService.getScopeLimitationDetails(any(
-        uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
+    when(lookupService.getScopeLimitationDetails(
+            any(uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
         .thenReturn(Mono.just(mockScopeLimitationDetails));
 
-    Integer result = applicationService.getProceedingStage(
-        categoryOfLaw, matterType, proceedingCode, levelOfService, scopeLimitations, isAmendment);
+    Integer result =
+        applicationService.getProceedingStage(
+            categoryOfLaw,
+            matterType,
+            proceedingCode,
+            levelOfService,
+            scopeLimitations,
+            isAmendment);
 
     assertEquals(2, result);
   }
@@ -1612,17 +1684,25 @@ class ApplicationServiceTest {
     applicationFormData.setContactNameId("401");
     applicationFormData.setProviderCaseReference("CaseRef123");
 
-    ProviderDetail providerDetail = new ProviderDetail()
-        .id(1)
-        .name("Provider Name")
-        .contactNames(List.of(new ContactDetail().id(401).name("Contact Name")));
+    ProviderDetail providerDetail =
+        new ProviderDetail()
+            .id(1)
+            .name("Provider Name")
+            .contactNames(List.of(new ContactDetail().id(401).name("Contact Name")));
     ContactDetail feeEarner = new ContactDetail().id(201).name("Fee Earner Name");
     ContactDetail supervisor = new ContactDetail().id(301).name("Supervisor Name");
 
-    when(providerService.getProvider(user.getProvider().getId())).thenReturn(Mono.just(providerDetail));
-    when(providerService.getFeeEarnerByOfficeAndId(providerDetail, applicationFormData.getOfficeId(), applicationFormData.getFeeEarnerId()))
+    when(providerService.getProvider(user.getProvider().getId()))
+        .thenReturn(Mono.just(providerDetail));
+    when(providerService.getFeeEarnerByOfficeAndId(
+            providerDetail,
+            applicationFormData.getOfficeId(),
+            applicationFormData.getFeeEarnerId()))
         .thenReturn(feeEarner);
-    when(providerService.getFeeEarnerByOfficeAndId(providerDetail, applicationFormData.getOfficeId(), applicationFormData.getSupervisorId()))
+    when(providerService.getFeeEarnerByOfficeAndId(
+            providerDetail,
+            applicationFormData.getOfficeId(),
+            applicationFormData.getSupervisorId()))
         .thenReturn(supervisor);
 
     when(caabApiClient.putApplication(eq(id), eq(user.getLoginId()), any(), eq("provider-details")))
@@ -1630,9 +1710,12 @@ class ApplicationServiceTest {
 
     applicationService.updateProviderDetails(id, applicationFormData, user);
 
-    ArgumentCaptor<ApplicationProviderDetails> providerDetailsCaptor = ArgumentCaptor.forClass(ApplicationProviderDetails.class);
+    ArgumentCaptor<ApplicationProviderDetails> providerDetailsCaptor =
+        ArgumentCaptor.forClass(ApplicationProviderDetails.class);
 
-    verify(caabApiClient).putApplication(eq(id), eq(user.getLoginId()), providerDetailsCaptor.capture(), eq("provider-details"));
+    verify(caabApiClient)
+        .putApplication(
+            eq(id), eq(user.getLoginId()), providerDetailsCaptor.capture(), eq("provider-details"));
 
     ApplicationProviderDetails capturedProviderDetails = providerDetailsCaptor.getValue();
 
@@ -1641,7 +1724,9 @@ class ApplicationServiceTest {
     assertEquals(applicationFormData.getOfficeId(), capturedProviderDetails.getOffice().getId());
     assertEquals(feeEarner.getId().toString(), capturedProviderDetails.getFeeEarner().getId());
     assertEquals(supervisor.getId().toString(), capturedProviderDetails.getSupervisor().getId());
-    assertEquals(applicationFormData.getProviderCaseReference(), capturedProviderDetails.getProviderCaseReference());
+    assertEquals(
+        applicationFormData.getProviderCaseReference(),
+        capturedProviderDetails.getProviderCaseReference());
   }
 
   @Test
@@ -1651,17 +1736,21 @@ class ApplicationServiceTest {
 
     ApplicationDetail application = getApplicationDetail();
 
-    when(caabApiClient.updateCostStructure(eq(id), any(CostStructureDetail.class), eq(user.getLoginId()))).thenReturn(Mono.empty());
+    when(caabApiClient.updateCostStructure(
+            eq(id), any(CostStructureDetail.class), eq(user.getLoginId())))
+        .thenReturn(Mono.empty());
 
     applicationService.prepareProceedingSummary(id, application, user);
 
-    ArgumentCaptor<CostStructureDetail> costsCaptor = ArgumentCaptor.forClass(CostStructureDetail.class);
+    ArgumentCaptor<CostStructureDetail> costsCaptor =
+        ArgumentCaptor.forClass(CostStructureDetail.class);
 
     verify(caabApiClient).updateCostStructure(eq(id), costsCaptor.capture(), eq(user.getLoginId()));
 
     CostStructureDetail capturedCosts = costsCaptor.getValue();
     assertNotNull(capturedCosts.getRequestedCostLimitation());
-    assertEquals(0, capturedCosts.getRequestedCostLimitation().compareTo(new BigDecimal("1500.00")));
+    assertEquals(
+        0, capturedCosts.getRequestedCostLimitation().compareTo(new BigDecimal("1500.00")));
   }
 
   @Test
@@ -1675,7 +1764,8 @@ class ApplicationServiceTest {
 
     when(opponentMapper.toOpponent(opponentFormData)).thenReturn(opponent);
     when(caabApiClient.getApplication(appplicationId)).thenReturn(Mono.just(application));
-    when(caabApiClient.addOpponent(appplicationId, opponent, user.getLoginId())).thenReturn(Mono.empty());
+    when(caabApiClient.addOpponent(appplicationId, opponent, user.getLoginId()))
+        .thenReturn(Mono.empty());
 
     applicationService.addOpponent(appplicationId, opponentFormData, user);
 
@@ -1689,10 +1779,9 @@ class ApplicationServiceTest {
   void testGetCaseStatus() {
     // Given
     String transactionId = "12345";
-    TransactionStatus expected = new TransactionStatus().submissionStatus("Success")
-        .referenceNumber("123");
-    when(ebsApiClient.getCaseStatus(transactionId)).thenReturn(Mono
-        .just(expected));
+    TransactionStatus expected =
+        new TransactionStatus().submissionStatus("Success").referenceNumber("123");
+    when(ebsApiClient.getCaseStatus(transactionId)).thenReturn(Mono.just(expected));
     // When
     Mono<TransactionStatus> result = ebsApiClient.getCaseStatus(transactionId);
     // Then
@@ -1709,13 +1798,13 @@ class ApplicationServiceTest {
     CaseDetail caseDetails = new CaseDetail();
     ApplicationDetail applicationDetail = new ApplicationDetail();
 
-    when(ebsApiClient.getCase(caseRef, providerId, userName))
-        .thenReturn(Mono.just(caseDetails));
-    EbsApplicationMappingContext ebsApplicationMappingContext = EbsApplicationMappingContext.builder().build();
+    when(ebsApiClient.getCase(caseRef, providerId, userName)).thenReturn(Mono.just(caseDetails));
+    EbsApplicationMappingContext ebsApplicationMappingContext =
+        EbsApplicationMappingContext.builder().build();
     when(ebsApplicationMappingContextBuilder.buildApplicationMappingContext(caseDetails))
         .thenReturn(ebsApplicationMappingContext);
-    when(ebsApplicationMapper.toApplicationDetail(ebsApplicationMappingContext)).thenReturn(
-        applicationDetail);
+    when(ebsApplicationMapper.toApplicationDetail(ebsApplicationMappingContext))
+        .thenReturn(applicationDetail);
     // When
     ApplicationDetail result = applicationService.getCase(caseRef, providerId, userName);
     // Then
@@ -1733,7 +1822,8 @@ class ApplicationServiceTest {
     when(ebsApiClient.getCase(caseRef, providerId, userName))
         .thenThrow(new EbsApiClientException("not found", HttpStatus.NOT_FOUND));
     // When / Then
-    assertThrows(EbsApiClientException.class,
+    assertThrows(
+        EbsApiClientException.class,
         () -> applicationService.getCase(caseRef, providerId, userName));
   }
 
@@ -1741,26 +1831,28 @@ class ApplicationServiceTest {
     ApplicationDetail application = new ApplicationDetail();
     application.setAmendment(false);
     CostStructureDetail costs = new CostStructureDetail();
-    costs.setDefaultCostLimitation(new BigDecimal("1000.00")); // Assume this gets set within getDefaultCostLimitation
+    costs.setDefaultCostLimitation(
+        new BigDecimal("1000.00")); // Assume this gets set within getDefaultCostLimitation
     application.setCosts(costs);
 
     ProceedingDetail proceeding = new ProceedingDetail();
-    proceeding.setCostLimitation(new BigDecimal("1500.00")); // This should trigger an update to default cost limitation
+    proceeding.setCostLimitation(
+        new BigDecimal("1500.00")); // This should trigger an update to default cost limitation
     application.setProceedings(List.of(proceeding));
     return application;
   }
 
   @Test
   @DisplayName("Should return mapped response when getting individual details")
-  void shouldReturnMappedResponseWhenGettingIndividualDetailsSectionDisplay(){
+  void shouldReturnMappedResponseWhenGettingIndividualDetailsSectionDisplay() {
     // Given
-    IndividualDetailsSectionDisplay expected = new IndividualDetailsSectionDisplay(null,
-        null, null);
+    IndividualDetailsSectionDisplay expected =
+        new IndividualDetailsSectionDisplay(null, null, null);
     when(individualDetailsSectionDisplayMapper.toIndividualDetailsSectionDisplay(any()))
         .thenReturn(expected);
     // When
-    IndividualDetailsSectionDisplay result = applicationService.getIndividualDetailsSectionDisplay(
-        new OpponentDetail());
+    IndividualDetailsSectionDisplay result =
+        applicationService.getIndividualDetailsSectionDisplay(new OpponentDetail());
     // Then
     assertNotNull(result);
     assertThat(result).isEqualTo(expected);
@@ -1768,19 +1860,44 @@ class ApplicationServiceTest {
 
   @Test
   @DisplayName("Should return mapped response when getting organisation details")
-  void shouldReturnMappedResponseWhenGettingOrganisationDetailsSectionDisplay(){
+  void shouldReturnMappedResponseWhenGettingOrganisationDetailsSectionDisplay() {
     // Given
-    OrganisationDetailsSectionDisplay expected = new OrganisationDetailsSectionDisplay(null,
-        null);
+    OrganisationDetailsSectionDisplay expected = new OrganisationDetailsSectionDisplay(null, null);
     when(organisationDetailsSectionDisplayMapper.toOrganisationDetailsSectionDisplay(any()))
         .thenReturn(expected);
     // When
-    OrganisationDetailsSectionDisplay result = applicationService.getOrganisationDetailsSectionDisplay(
-        new OpponentDetail());
+    OrganisationDetailsSectionDisplay result =
+        applicationService.getOrganisationDetailsSectionDisplay(new OpponentDetail());
     // Then
     assertNotNull(result);
     assertThat(result).isEqualTo(expected);
   }
 
+  @Test
+  void putApplicationTypeFormDataCallsApiClientWithCorrectParameters() {
+    Integer id = 123;
+    ApplicationType applicationType = new ApplicationType();
+    UserDetail user = new UserDetail().loginId("testUser");
 
+    when(caabApiClient.putApplicationType(id, "testUser", applicationType))
+        .thenReturn(Mono.empty());
+
+    applicationService.putApplicationTypeFormData(id, applicationType, user);
+
+    verify(caabApiClient).putApplicationType(id, "testUser", applicationType);
+  }
+
+  @Test
+  void putApplicationTypeFormDataHandlesApiClientException() {
+    Integer id = 123;
+    ApplicationType applicationType = new ApplicationType();
+    UserDetail user = new UserDetail().loginId("testUser");
+
+    when(caabApiClient.putApplicationType(id, "testUser", applicationType))
+        .thenReturn(Mono.error(new CaabApiClientException("API error")));
+
+    assertThrows(
+        CaabApiClientException.class,
+        () -> applicationService.putApplicationTypeFormData(id, applicationType, user));
+  }
 }

@@ -19,8 +19,7 @@ import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataProceedingDetails;
 @ExtendWith(SpringExtension.class)
 class ProceedingFurtherDetailsValidatorTest {
 
-  @InjectMocks
-  private ProceedingFurtherDetailsValidator proceedingFurtherDetailsValidator;
+  @InjectMocks private ProceedingFurtherDetailsValidator proceedingFurtherDetailsValidator;
 
   private ProceedingFlowFormData proceedingFlowFormData;
 
@@ -50,7 +49,8 @@ class ProceedingFurtherDetailsValidatorTest {
     proceedingFurtherDetailsValidator.validate(proceedingFlowFormData, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("clientInvolvementType"));
-    assertEquals("required.clientInvolvementType", errors.getFieldError("clientInvolvementType").getCode());
+    assertEquals(
+        "required.clientInvolvementType", errors.getFieldError("clientInvolvementType").getCode());
     assertNotNull(errors.getFieldError("levelOfService"));
     assertEquals("required.levelOfService", errors.getFieldError("levelOfService").getCode());
   }
@@ -66,7 +66,8 @@ class ProceedingFurtherDetailsValidatorTest {
 
   @Test
   public void validate_WithValidFields_NoErrors_withTypeOfOrder() {
-    final ProceedingFormDataProceedingDetails proceedingDetails = new ProceedingFormDataProceedingDetails();
+    final ProceedingFormDataProceedingDetails proceedingDetails =
+        new ProceedingFormDataProceedingDetails();
     proceedingDetails.setOrderTypeRequired(true);
     furtherDetails.setClientInvolvementType("Valid Client Involvement Type");
     furtherDetails.setLevelOfService("Valid Level Of Service");
@@ -76,5 +77,4 @@ class ProceedingFurtherDetailsValidatorTest {
     proceedingFurtherDetailsValidator.validate(proceedingFlowFormData, errors);
     assertFalse(errors.hasErrors());
   }
-
 }

@@ -73,7 +73,6 @@ class ClientDetailMapperTest {
   private final String month = "6";
   private final String year = "2000";
 
-
   @BeforeEach
   void setUp() {
     clientDetailMapper = Mappers.getMapper(ClientDetailMapper.class);
@@ -94,11 +93,7 @@ class ClientDetailMapperTest {
   }
 
   @ParameterizedTest
-  @CsvSource({
-      "1/1/2000, 1, 0, 2000",
-      "15/7/1990, 15, 6, 1990",
-      "31/12/2022, 31, 11, 2022"
-  })
+  @CsvSource({"1/1/2000, 1, 0, 2000", "15/7/1990, 15, 6, 1990", "31/12/2022, 31, 11, 2022"})
   void testMapDateOfBirth(String day, int expectedDay, int expectedMonth, int expectedYear) {
     // Create a ClientDetails object for testing
     ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
@@ -124,14 +119,14 @@ class ClientDetailMapperTest {
 
   @ParameterizedTest
   @CsvSource({
-      "John, James, TEST, John James TEST",
-      "John, , TEST, John TEST",
-      ", James, TEST, James TEST",
-      "John, James,, John James",
-      ",,,",
+    "John, James, TEST, John James TEST",
+    "John, , TEST, John TEST",
+    ", James, TEST, James TEST",
+    "John, James,, John James",
+    ",,,",
   })
-  void testMapFullName(String firstName, String middleNames, String surname,
-                       String expectedFullName) {
+  void testMapFullName(
+      String firstName, String middleNames, String surname, String expectedFullName) {
     // Create a ClientDetails object for testing
     ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
     basicDetails.setFirstName(firstName);
@@ -212,7 +207,6 @@ class ClientDetailMapperTest {
     assertNull(clientDetailDetails);
   }
 
-
   @Test
   void toNameDetail() {
     NameDetail expectedNameDetail = buildNameDetail();
@@ -266,7 +260,6 @@ class ClientDetailMapperTest {
     assertNull(contactDetail);
   }
 
-
   @Test
   void toAddressDetail() {
     AddressDetail expectedAddressDetail = buildAddressDetail();
@@ -286,7 +279,7 @@ class ClientDetailMapperTest {
   @Test
   void toClientFlowFormData() {
     ClientFlowFormData expectedClientFlowFormData = buildClientFlowFormData();
-    //null out action as it's not mapped backwards
+    // null out action as it's not mapped backwards
     expectedClientFlowFormData.setAction(null);
 
     ClientDetailDetails clientDetailDetails = buildClientDetailDetails();
@@ -323,12 +316,11 @@ class ClientDetailMapperTest {
     NameDetail nameDetail = buildNameDetail();
     ClientFormDataBasicDetails clientFormDataBasicDetails = new ClientFormDataBasicDetails();
 
-    clientDetailMapper.addClientFormDataBasicDetailsFromNameDetail(clientFormDataBasicDetails,
-        nameDetail);
+    clientDetailMapper.addClientFormDataBasicDetailsFromNameDetail(
+        clientFormDataBasicDetails, nameDetail);
 
     assertThat(clientFormDataBasicDetails).isEqualTo(expectedClientFormDataBasicDetails);
   }
-
 
   @Test
   void addClientFormDataBasicDetailsFromNameDetail_null() {
@@ -357,7 +349,6 @@ class ClientDetailMapperTest {
 
     assertThat(clientFormDataBasicDetails).isEqualTo(expectedClientFormDataBasicDetails);
   }
-
 
   @Test
   void addClientFormDataBasicDetailsFromClientPersonalDetail_null() {
@@ -421,8 +412,7 @@ class ClientDetailMapperTest {
     assertNull(clientFlowFormData);
   }
 
-
-  //SOA Helper methods
+  // SOA Helper methods
 
   private ClientDetailDetails buildClientDetailDetails() {
     ClientDetailDetails clientDetailDetails = new ClientDetailDetails();
@@ -501,7 +491,7 @@ class ClientDetailMapperTest {
     return disabilityMonitoring;
   }
 
-  //CAAB Helper methods
+  // CAAB Helper methods
 
   private ClientFlowFormData buildClientFlowFormData() {
     ClientFlowFormData clientFlowFormData = new ClientFlowFormData("create");
@@ -577,6 +567,4 @@ class ClientDetailMapperTest {
     monitoringDetails.setSpecialConsiderations(specialConsiderations);
     return monitoringDetails;
   }
-
-
 }

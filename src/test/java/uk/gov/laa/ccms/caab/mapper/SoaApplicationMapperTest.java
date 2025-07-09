@@ -120,8 +120,7 @@ import uk.gov.laa.ccms.soa.gateway.model.TimeRelatedAward;
 @DisplayName("SOA Application Mapper Test")
 class SoaApplicationMapperTest {
 
-  private final SoaApplicationMapper applicationMapper = new SoaApplicationMapperImpl() {
-  };
+  private final SoaApplicationMapper applicationMapper = new SoaApplicationMapperImpl() {};
 
   private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -130,23 +129,23 @@ class SoaApplicationMapperTest {
     CaseDetail soaCaseDetail = buildCaseDetail(APP_TYPE_EMERGENCY_DEVOLVED_POWERS);
     SoaApplicationMappingContext applicationMappingContext =
         buildApplicationMappingContext(
-            soaCaseDetail,
-            true,
-            soaCaseDetail.getApplicationDetails().getDevolvedPowersDate());
+            soaCaseDetail, true, soaCaseDetail.getApplicationDetails().getDevolvedPowersDate());
     ApplicationDetail result = applicationMapper.toApplicationDetail(applicationMappingContext);
 
     assertNotNull(result);
     assertEquals(soaCaseDetail.getCaseReferenceNumber(), result.getCaseReferenceNumber());
-    assertEquals(applicationMappingContext.getCertificate().getCode(),
-        result.getCertificate().getId());
-    assertEquals(applicationMappingContext.getCertificate().getDescription(),
+    assertEquals(
+        applicationMappingContext.getCertificate().getCode(), result.getCertificate().getId());
+    assertEquals(
+        applicationMappingContext.getCertificate().getDescription(),
         result.getCertificate().getDisplayValue());
-    assertEquals(soaCaseDetail.getApplicationDetails().getApplicationAmendmentType(),
+    assertEquals(
+        soaCaseDetail.getApplicationDetails().getApplicationAmendmentType(),
         result.getApplicationType().getId());
-    assertEquals(applicationMappingContext.getApplicationType().getDescription(),
+    assertEquals(
+        applicationMappingContext.getApplicationType().getDescription(),
         result.getApplicationType().getDisplayValue());
-    assertEquals(soaCaseDetail.getRecordHistory().getDateCreated(),
-        result.getDateCreated());
+    assertEquals(soaCaseDetail.getRecordHistory().getDateCreated(), result.getDateCreated());
     assertEquals(
         soaCaseDetail.getApplicationDetails().getProviderDetails().getProviderCaseReferenceNumber(),
         result.getProviderDetails().getProviderCaseReference());
@@ -157,26 +156,34 @@ class SoaApplicationMapperTest {
         applicationMappingContext.getProviderDetail().getName(),
         result.getProviderDetails().getProvider().getDisplayValue());
     assertEquals(
-        soaCaseDetail.getApplicationDetails().getProviderDetails()
-            .getContactUserId().getUserLoginId(),
+        soaCaseDetail
+            .getApplicationDetails()
+            .getProviderDetails()
+            .getContactUserId()
+            .getUserLoginId(),
         result.getProviderDetails().getProviderContact().getId());
     assertEquals(
-        soaCaseDetail.getApplicationDetails().getProviderDetails()
-            .getContactUserId().getUserName(),
+        soaCaseDetail.getApplicationDetails().getProviderDetails().getContactUserId().getUserName(),
         result.getProviderDetails().getProviderContact().getDisplayValue());
-    assertEquals(applicationMappingContext.getProviderOffice().getId(),
+    assertEquals(
+        applicationMappingContext.getProviderOffice().getId(),
         result.getProviderDetails().getOffice().getId());
-    assertEquals(applicationMappingContext.getProviderOffice().getName(),
+    assertEquals(
+        applicationMappingContext.getProviderOffice().getName(),
         result.getProviderDetails().getOffice().getDisplayValue());
-    assertEquals(applicationMappingContext.getSupervisorContact().getId().toString(),
+    assertEquals(
+        applicationMappingContext.getSupervisorContact().getId().toString(),
         result.getProviderDetails().getSupervisor().getId());
-    assertEquals(applicationMappingContext.getSupervisorContact().getName(),
+    assertEquals(
+        applicationMappingContext.getSupervisorContact().getName(),
         result.getProviderDetails().getSupervisor().getDisplayValue());
-    assertEquals(applicationMappingContext.getFeeEarnerContact().getId().toString(),
+    assertEquals(
+        applicationMappingContext.getFeeEarnerContact().getId().toString(),
         result.getProviderDetails().getFeeEarner().getId());
-    assertEquals(applicationMappingContext.getFeeEarnerContact().getName(),
+    assertEquals(
+        applicationMappingContext.getFeeEarnerContact().getName(),
         result.getProviderDetails().getFeeEarner().getDisplayValue());
-    assertNotNull(result.getCorrespondenceAddress());  // Detail tested in specific test case
+    assertNotNull(result.getCorrespondenceAddress()); // Detail tested in specific test case
     assertNotNull(result.getClient()); // Detail tested in specific test case
     assertEquals(
         soaCaseDetail.getApplicationDetails().getCategoryOfLaw().getCategoryOfLawCode(),
@@ -202,17 +209,13 @@ class SoaApplicationMapperTest {
     assertEquals(
         soaCaseDetail.getApplicationDetails().getLarDetails().isLarScopeFlag(),
         result.getLarScopeFlag());
+    assertEquals(soaCaseDetail.getCaseStatus().getActualCaseStatus(), result.getStatus().getId());
     assertEquals(
-        soaCaseDetail.getCaseStatus().getActualCaseStatus(),
-        result.getStatus().getId());
-    assertEquals(
-        soaCaseDetail.getCaseStatus().getDisplayCaseStatus(),
-        result.getStatus().getDisplayValue());
-    assertEquals(
-        soaCaseDetail.getAvailableFunctions(),
-        result.getAvailableFunctions());
+        soaCaseDetail.getCaseStatus().getDisplayCaseStatus(), result.getStatus().getDisplayValue());
+    assertEquals(soaCaseDetail.getAvailableFunctions(), result.getAvailableFunctions());
     assertTrue(result.getApplicationType().getDevolvedPowers().getUsed());
-    assertEquals(soaCaseDetail.getApplicationDetails().getDevolvedPowersDate(),
+    assertEquals(
+        soaCaseDetail.getApplicationDetails().getDevolvedPowersDate(),
         result.getApplicationType().getDevolvedPowers().getDateUsed());
     assertNotNull(result.getCorrespondenceAddress());
     assertNotNull(result.getMeansAssessment());
@@ -222,16 +225,12 @@ class SoaApplicationMapperTest {
     assertEquals(2, result.getOpponents().size());
     assertEquals(OPPONENT_TYPE_INDIVIDUAL, result.getOpponents().getFirst().getType());
     assertEquals(OPPONENT_TYPE_ORGANISATION, result.getOpponents().get(1).getType());
-
   }
 
   @Test
   void testToApplicationDetailNonDevolvedPowers() {
     SoaApplicationMappingContext applicationMappingContext =
-        buildApplicationMappingContext(
-            buildCaseDetail(APP_TYPE_EMERGENCY),
-            false,
-            null);
+        buildApplicationMappingContext(buildCaseDetail(APP_TYPE_EMERGENCY), false, null);
 
     ApplicationDetail result = applicationMapper.toApplicationDetail(applicationMappingContext);
 
@@ -243,30 +242,27 @@ class SoaApplicationMapperTest {
   @Test
   void testToCorrespondenceAddress() {
     SoaApplicationMappingContext applicationMappingContext =
-        buildApplicationMappingContext(
-            buildCaseDetail(APP_TYPE_EMERGENCY),
-            false,
-            null);
+        buildApplicationMappingContext(buildCaseDetail(APP_TYPE_EMERGENCY), false, null);
     SubmittedApplicationDetails soaApplicationDetails =
         applicationMappingContext.getSoaCaseDetail().getApplicationDetails();
 
     AddressDetail result = applicationMapper.toCorrespondenceAddress(applicationMappingContext);
 
     assertNotNull(result);
-    assertEquals(soaApplicationDetails.getCorrespondenceAddress().getAddressLine1(),
+    assertEquals(
+        soaApplicationDetails.getCorrespondenceAddress().getAddressLine1(),
         result.getAddressLine1());
-    assertEquals(soaApplicationDetails.getCorrespondenceAddress().getAddressLine2(),
+    assertEquals(
+        soaApplicationDetails.getCorrespondenceAddress().getAddressLine2(),
         result.getAddressLine2());
-    assertEquals(soaApplicationDetails.getCorrespondenceAddress().getCareOfName(),
-        result.getCareOf());
-    assertEquals(soaApplicationDetails.getCorrespondenceAddress().getCity(),
-        result.getCity());
-    assertEquals(soaApplicationDetails.getCorrespondenceAddress().getCountry(),
-        result.getCountry());
-    assertEquals(soaApplicationDetails.getCorrespondenceAddress().getCounty(),
-        result.getCounty());
-    assertEquals(soaApplicationDetails.getCorrespondenceAddress().getHouse(),
-        result.getHouseNameOrNumber());
+    assertEquals(
+        soaApplicationDetails.getCorrespondenceAddress().getCareOfName(), result.getCareOf());
+    assertEquals(soaApplicationDetails.getCorrespondenceAddress().getCity(), result.getCity());
+    assertEquals(
+        soaApplicationDetails.getCorrespondenceAddress().getCountry(), result.getCountry());
+    assertEquals(soaApplicationDetails.getCorrespondenceAddress().getCounty(), result.getCounty());
+    assertEquals(
+        soaApplicationDetails.getCorrespondenceAddress().getHouse(), result.getHouseNameOrNumber());
     assertFalse(result.getNoFixedAbode());
     assertEquals(soaApplicationDetails.getPreferredAddress(), result.getPreferredAddress());
   }
@@ -299,47 +295,45 @@ class SoaApplicationMapperTest {
 
     assertNotNull(result);
     assertFalse(result.getEdited());
-    assertEquals(soaProceeding.getAvailableFunctions(),
-        result.getAvailableFunctions());
-    assertEquals(soaProceeding.getStage(),
-        result.getStage());
-    assertEquals(soaProceeding.getDateGranted(),
-        result.getDateGranted());
-    assertEquals(soaProceeding.getDateCostsValid(),
-        result.getDateCostsValid());
-    assertEquals(soaProceeding.getAvailableFunctions(),
-        result.getAvailableFunctions());
+    assertEquals(soaProceeding.getAvailableFunctions(), result.getAvailableFunctions());
+    assertEquals(soaProceeding.getStage(), result.getStage());
+    assertEquals(soaProceeding.getDateGranted(), result.getDateGranted());
+    assertEquals(soaProceeding.getDateCostsValid(), result.getDateCostsValid());
+    assertEquals(soaProceeding.getAvailableFunctions(), result.getAvailableFunctions());
 
-    assertEquals(soaProceeding.getProceedingCaseId(),
-        result.getEbsId());
-    assertEquals(soaProceeding.isLeadProceedingIndicator(),
-        result.getLeadProceedingInd());
-    assertEquals(proceedingMappingContext.getMatterType().getCode(),
-        result.getMatterType().getId());
-    assertEquals(proceedingMappingContext.getMatterType().getDescription(),
+    assertEquals(soaProceeding.getProceedingCaseId(), result.getEbsId());
+    assertEquals(soaProceeding.isLeadProceedingIndicator(), result.getLeadProceedingInd());
+    assertEquals(
+        proceedingMappingContext.getMatterType().getCode(), result.getMatterType().getId());
+    assertEquals(
+        proceedingMappingContext.getMatterType().getDescription(),
         result.getMatterType().getDisplayValue());
-    assertEquals(proceedingMappingContext.getProceedingLookup().getCode(),
+    assertEquals(
+        proceedingMappingContext.getProceedingLookup().getCode(),
         result.getProceedingType().getId());
-    assertEquals(proceedingMappingContext.getProceedingLookup().getName(),
+    assertEquals(
+        proceedingMappingContext.getProceedingLookup().getName(),
         result.getProceedingType().getDisplayValue());
-    assertEquals(soaProceeding.getProceedingDescription(),
-        result.getDescription());
-    assertEquals(proceedingMappingContext.getProceedingLookup().getLarScope(),
-        result.getLarScope());
-    assertEquals(proceedingMappingContext.getLevelOfService().getCode(),
-        result.getLevelOfService().getId());
-    assertEquals(proceedingMappingContext.getLevelOfService().getDescription(),
+    assertEquals(soaProceeding.getProceedingDescription(), result.getDescription());
+    assertEquals(
+        proceedingMappingContext.getProceedingLookup().getLarScope(), result.getLarScope());
+    assertEquals(
+        proceedingMappingContext.getLevelOfService().getCode(), result.getLevelOfService().getId());
+    assertEquals(
+        proceedingMappingContext.getLevelOfService().getDescription(),
         result.getLevelOfService().getDisplayValue());
-    assertEquals(proceedingMappingContext.getClientInvolvement().getCode(),
+    assertEquals(
+        proceedingMappingContext.getClientInvolvement().getCode(),
         result.getClientInvolvement().getId());
-    assertEquals(proceedingMappingContext.getClientInvolvement().getDescription(),
+    assertEquals(
+        proceedingMappingContext.getClientInvolvement().getDescription(),
         result.getClientInvolvement().getDisplayValue());
-    assertEquals(proceedingMappingContext.getProceedingStatusLookup().getCode(),
-        result.getStatus().getId());
-    assertEquals(proceedingMappingContext.getProceedingStatusLookup().getDescription(),
+    assertEquals(
+        proceedingMappingContext.getProceedingStatusLookup().getCode(), result.getStatus().getId());
+    assertEquals(
+        proceedingMappingContext.getProceedingStatusLookup().getDescription(),
         result.getStatus().getDisplayValue());
-    assertEquals(soaProceeding.getOrderType(),
-        result.getTypeOfOrder().getId());
+    assertEquals(soaProceeding.getOrderType(), result.getTypeOfOrder().getId());
 
     assertNotNull(result.getScopeLimitations());
     assertEquals(1, result.getScopeLimitations().size());
@@ -357,22 +351,21 @@ class SoaApplicationMapperTest {
   @Test
   void testToScopeLimitation() {
     ScopeLimitation soaScopeLimitation = buildScopeLimitation("");
-    CommonLookupValueDetail scopeLimitationLookup = new CommonLookupValueDetail()
-        .code("scopecode")
-        .description("scopedesc");
+    CommonLookupValueDetail scopeLimitationLookup =
+        new CommonLookupValueDetail().code("scopecode").description("scopedesc");
 
     ScopeLimitationDetail result =
-        applicationMapper.toScopeLimitation(
-            Pair.of(soaScopeLimitation, scopeLimitationLookup));
+        applicationMapper.toScopeLimitation(Pair.of(soaScopeLimitation, scopeLimitationLookup));
 
     assertNotNull(result);
     assertEquals(soaScopeLimitation.getScopeLimitationId(), result.getEbsId());
     assertEquals(scopeLimitationLookup.getCode(), result.getScopeLimitation().getId());
-    assertEquals(scopeLimitationLookup.getDescription(),
-        result.getScopeLimitation().getDisplayValue());
-    assertEquals(soaScopeLimitation.getScopeLimitationWording(),
-        result.getScopeLimitationWording());
-    assertEquals(soaScopeLimitation.isDelegatedFunctionsApply(),
+    assertEquals(
+        scopeLimitationLookup.getDescription(), result.getScopeLimitation().getDisplayValue());
+    assertEquals(
+        soaScopeLimitation.getScopeLimitationWording(), result.getScopeLimitationWording());
+    assertEquals(
+        soaScopeLimitation.isDelegatedFunctionsApply(),
         result.getDelegatedFuncApplyInd().getFlag());
     assertNull(result.getDefaultInd());
     assertNull(result.getNonDefaultWordingReqd());
@@ -387,18 +380,22 @@ class SoaApplicationMapperTest {
         buildProceedingMappingContext(soaProceeding);
     OutcomeDetail soaOutcomeDetail = soaProceeding.getOutcome();
 
-    ProceedingOutcomeDetail result = applicationMapper.toProceedingOutcome(proceedingMappingContext);
+    ProceedingOutcomeDetail result =
+        applicationMapper.toProceedingOutcome(proceedingMappingContext);
 
     assertNotNull(result);
     assertEquals(soaProceeding.getProceedingDescription(), result.getDescription());
-    assertEquals(proceedingMappingContext.getMatterType().getCode(),
-        result.getMatterType().getId());
-    assertEquals(proceedingMappingContext.getMatterType().getDescription(),
+    assertEquals(
+        proceedingMappingContext.getMatterType().getCode(), result.getMatterType().getId());
+    assertEquals(
+        proceedingMappingContext.getMatterType().getDescription(),
         result.getMatterType().getDisplayValue());
     assertEquals(soaProceeding.getProceedingCaseId(), result.getProceedingCaseId());
-    assertEquals(proceedingMappingContext.getProceedingLookup().getCode(),
+    assertEquals(
+        proceedingMappingContext.getProceedingLookup().getCode(),
         result.getProceedingType().getId());
-    assertEquals(proceedingMappingContext.getProceedingLookup().getName(),
+    assertEquals(
+        proceedingMappingContext.getProceedingLookup().getName(),
         result.getProceedingType().getDisplayValue());
     assertEquals(soaOutcomeDetail.getAltAcceptanceReason(), result.getAdrInfo());
     assertEquals(soaOutcomeDetail.getAltDisputeResolution(), result.getAlternativeResolution());
@@ -407,13 +404,16 @@ class SoaApplicationMapperTest {
     assertEquals(soaOutcomeDetail.getFinalWorkDate(), result.getDateOfFinalWork());
     assertNull(result.getDateOfIssue());
     assertEquals(soaOutcomeDetail.getResolutionMethod(), result.getResolutionMethod());
-    assertEquals(proceedingMappingContext.getOutcomeResultLookup().getOutcomeResult(),
+    assertEquals(
+        proceedingMappingContext.getOutcomeResultLookup().getOutcomeResult(),
         result.getResult().getId());
-    assertEquals(proceedingMappingContext.getOutcomeResultLookup().getOutcomeResultDescription(),
+    assertEquals(
+        proceedingMappingContext.getOutcomeResultLookup().getOutcomeResultDescription(),
         result.getResult().getDisplayValue());
     assertEquals(soaOutcomeDetail.getAdditionalResultInfo(), result.getResultInfo());
     assertEquals(soaOutcomeDetail.getStageEnd(), result.getStageEnd().getId());
-    assertEquals(proceedingMappingContext.getStageEndLookup().getDescription(),
+    assertEquals(
+        proceedingMappingContext.getStageEndLookup().getDescription(),
         result.getStageEnd().getDisplayValue());
     assertEquals(soaOutcomeDetail.getWiderBenefits(), result.getWiderBenefits());
     assertEquals(soaOutcomeDetail.getOutcomeCourtCaseNumber(), result.getOutcomeCourtCaseNo());
@@ -427,59 +427,177 @@ class SoaApplicationMapperTest {
     AssessmentResult result = applicationMapper.toAssessmentResult(soaAssessmentResult);
 
     assertNotNull(result);
-    assertEquals(soaAssessmentResult.getAssessmentId(),
-        result.getAssessmentId());
-    assertEquals(soaAssessmentResult.getDate(),
-        result.getDate());
-    assertEquals(soaAssessmentResult.getAssessmentDetails().getFirst().getCaption(),
+    assertEquals(soaAssessmentResult.getAssessmentId(), result.getAssessmentId());
+    assertEquals(soaAssessmentResult.getDate(), result.getDate());
+    assertEquals(
+        soaAssessmentResult.getAssessmentDetails().getFirst().getCaption(),
         result.getAssessmentDetails().getFirst().getCaption());
-    assertEquals(soaAssessmentResult.getAssessmentDetails().getFirst().getScreenName(),
+    assertEquals(
+        soaAssessmentResult.getAssessmentDetails().getFirst().getScreenName(),
         result.getAssessmentDetails().getFirst().getScreenName());
-    assertEquals(soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getCaption(),
+    assertEquals(
+        soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getCaption(),
         result.getAssessmentDetails().getFirst().getEntity().getFirst().getCaption());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getEntityName(),
+        soaAssessmentResult
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getEntityName(),
         result.getAssessmentDetails().getFirst().getEntity().getFirst().getEntityName());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getSequenceNumber(),
+        soaAssessmentResult
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getSequenceNumber(),
         result.getAssessmentDetails().getFirst().getEntity().getFirst().getSequenceNumber());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+        soaAssessmentResult
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
             .getCaption(),
-        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst().getCaption());
+        result
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getCaption());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+        soaAssessmentResult
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
             .getInstanceLabel(),
-        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
+        result
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
             .getInstanceLabel());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getAttribute(),
-        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getAttribute());
+        soaAssessmentResult
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getAttribute(),
+        result
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getAttribute());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getCaption(),
-        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getCaption());
+        soaAssessmentResult
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getCaption(),
+        result
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getCaption());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getResponseText(),
-        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getResponseText());
+        soaAssessmentResult
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getResponseText(),
+        result
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getResponseText());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getResponseType(),
-        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getResponseType());
+        soaAssessmentResult
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getResponseType(),
+        result
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getResponseType());
     assertEquals(
-        soaAssessmentResult.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getResponseValue(),
-        result.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst()
-            .getAttributes().getFirst().getResponseValue());
-    assertEquals(soaAssessmentResult.getResults().getFirst().getAttribute(),
+        soaAssessmentResult
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getResponseValue(),
+        result
+            .getAssessmentDetails()
+            .getFirst()
+            .getEntity()
+            .getFirst()
+            .getInstances()
+            .getFirst()
+            .getAttributes()
+            .getFirst()
+            .getResponseValue());
+    assertEquals(
+        soaAssessmentResult.getResults().getFirst().getAttribute(),
         result.getResults().getFirst().getAttribute());
-    assertEquals(soaAssessmentResult.getResults().getFirst().getAttributeValue(),
+    assertEquals(
+        soaAssessmentResult.getResults().getFirst().getAttributeValue(),
         result.getResults().getFirst().getAttributeValue());
   }
 
@@ -503,13 +621,10 @@ class SoaApplicationMapperTest {
     ClientDetail result = applicationMapper.toClient(soaBaseClient);
 
     assertNotNull(result);
-    assertEquals(soaBaseClient.getClientReferenceNumber(),
-        result.getReference());
+    assertEquals(soaBaseClient.getClientReferenceNumber(), result.getReference());
 
-    assertEquals(soaBaseClient.getFirstName(),
-        result.getFirstName());
-    assertEquals(soaBaseClient.getSurname(),
-        result.getSurname());
+    assertEquals(soaBaseClient.getFirstName(), result.getFirstName());
+    assertEquals(soaBaseClient.getSurname(), result.getSurname());
   }
 
   @Test
@@ -521,61 +636,48 @@ class SoaApplicationMapperTest {
     assertNotNull(result);
     assertEquals(OPPONENT_TYPE_INDIVIDUAL, result.getType());
     assertEquals(soaOtherParty.getOtherPartyId(), result.getEbsId());
-    assertEquals(soaOtherParty.getPerson().isCourtOrderedMeansAssesment(),
+    assertEquals(
+        soaOtherParty.getPerson().isCourtOrderedMeansAssesment(),
         result.getCourtOrderedMeansAssessment());
-    assertEquals(soaOtherParty.getPerson().getOrganizationAddress(),
-        result.getEmployerAddress());
-    assertEquals(soaOtherParty.getPerson().getOrganizationName(),
-        result.getEmployerName());
-    assertEquals(soaOtherParty.getPerson().isPartyLegalAidedInd(),
-        result.getLegalAided());
-    assertEquals(soaOtherParty.getPerson().getNiNumber(),
-        result.getNationalInsuranceNumber());
-    assertEquals(soaOtherParty.getPerson().getRelationToCase(),
-        result.getRelationshipToCase());
-    assertEquals(soaOtherParty.getPerson().getRelationToClient(),
-        result.getRelationshipToClient());
-    assertEquals(soaOtherParty.getPerson().getContactDetails().getMobileNumber(),
+    assertEquals(soaOtherParty.getPerson().getOrganizationAddress(), result.getEmployerAddress());
+    assertEquals(soaOtherParty.getPerson().getOrganizationName(), result.getEmployerName());
+    assertEquals(soaOtherParty.getPerson().isPartyLegalAidedInd(), result.getLegalAided());
+    assertEquals(soaOtherParty.getPerson().getNiNumber(), result.getNationalInsuranceNumber());
+    assertEquals(soaOtherParty.getPerson().getRelationToCase(), result.getRelationshipToCase());
+    assertEquals(soaOtherParty.getPerson().getRelationToClient(), result.getRelationshipToClient());
+    assertEquals(
+        soaOtherParty.getPerson().getContactDetails().getMobileNumber(),
         result.getTelephoneMobile());
-    assertEquals(soaOtherParty.getPerson().getContactDetails().getFax(),
-        result.getFaxNumber());
-    assertEquals(soaOtherParty.getPerson().isPublicFundingAppliedInd(),
-        result.getPublicFundingApplied());
+    assertEquals(soaOtherParty.getPerson().getContactDetails().getFax(), result.getFaxNumber());
+    assertEquals(
+        soaOtherParty.getPerson().isPublicFundingAppliedInd(), result.getPublicFundingApplied());
     assertFalse(result.getDeleteInd());
 
-    assertEquals(soaOtherParty.getPerson().getDateOfBirth(),
-        result.getDateOfBirth());
+    assertEquals(soaOtherParty.getPerson().getDateOfBirth(), result.getDateOfBirth());
     assertNotNull(result.getAddress()); // Detail tested elsewhere
-    assertEquals(soaOtherParty.getPerson().getEmploymentStatus(),
-        result.getEmploymentStatus());
-    assertEquals(soaOtherParty.getPerson().getCertificateNumber(),
-        result.getCertificateNumber());
-    assertEquals(soaOtherParty.getPerson().getAssessedIncomeFrequency(),
+    assertEquals(soaOtherParty.getPerson().getEmploymentStatus(), result.getEmploymentStatus());
+    assertEquals(soaOtherParty.getPerson().getCertificateNumber(), result.getCertificateNumber());
+    assertEquals(
+        soaOtherParty.getPerson().getAssessedIncomeFrequency(),
         result.getAssessedIncomeFrequency());
-    assertEquals(soaOtherParty.getPerson().getAssessedIncome(),
-        result.getAssessedIncome());
-    assertEquals(soaOtherParty.getPerson().getAssessedAssets(),
-        result.getAssessedAssets());
-    assertEquals(soaOtherParty.getPerson().getAssessmentDate(),
-        result.getAssessmentDate());
-    assertEquals(soaOtherParty.getPerson().getOtherInformation(),
-        result.getOtherInformation());
+    assertEquals(soaOtherParty.getPerson().getAssessedIncome(), result.getAssessedIncome());
+    assertEquals(soaOtherParty.getPerson().getAssessedAssets(), result.getAssessedAssets());
+    assertEquals(soaOtherParty.getPerson().getAssessmentDate(), result.getAssessmentDate());
+    assertEquals(soaOtherParty.getPerson().getOtherInformation(), result.getOtherInformation());
 
-    assertEquals(soaOtherParty.getPerson().getContactDetails().getTelephoneHome(),
+    assertEquals(
+        soaOtherParty.getPerson().getContactDetails().getTelephoneHome(),
         result.getTelephoneHome());
-    assertEquals(soaOtherParty.getPerson().getContactDetails().getTelephoneWork(),
+    assertEquals(
+        soaOtherParty.getPerson().getContactDetails().getTelephoneWork(),
         result.getTelephoneWork());
-    assertEquals(soaOtherParty.getPerson().getContactDetails().getEmailAddress(),
-        result.getEmailAddress());
+    assertEquals(
+        soaOtherParty.getPerson().getContactDetails().getEmailAddress(), result.getEmailAddress());
 
-    assertEquals(soaOtherParty.getPerson().getName().getTitle(),
-        result.getTitle());
-    assertEquals(soaOtherParty.getPerson().getName().getFirstName(),
-        result.getFirstName());
-    assertEquals(soaOtherParty.getPerson().getName().getSurname(),
-        result.getSurname());
-    assertEquals(soaOtherParty.getPerson().getName().getMiddleName(),
-        result.getMiddleNames());
+    assertEquals(soaOtherParty.getPerson().getName().getTitle(), result.getTitle());
+    assertEquals(soaOtherParty.getPerson().getName().getFirstName(), result.getFirstName());
+    assertEquals(soaOtherParty.getPerson().getName().getSurname(), result.getSurname());
+    assertEquals(soaOtherParty.getPerson().getName().getMiddleName(), result.getMiddleNames());
   }
 
   @Test
@@ -587,37 +689,39 @@ class SoaApplicationMapperTest {
     assertNotNull(result);
     assertEquals(OPPONENT_TYPE_ORGANISATION, result.getType());
     assertEquals(soaOtherParty.getOtherPartyId(), result.getEbsId());
-    assertEquals(soaOtherParty.getOrganisation().getOrganizationName(),
-        result.getOrganisationName());
-    assertEquals(soaOtherParty.getOrganisation().getOrganizationType(),
-        result.getOrganisationType());
-    assertEquals(soaOtherParty.getOrganisation().getContactName(),
-        result.getContactNameRole());
-    assertEquals(soaOtherParty.getOrganisation().getRelationToCase(),
-        result.getRelationshipToCase());
-    assertEquals(soaOtherParty.getOrganisation().getRelationToClient(),
-        result.getRelationshipToClient());
-    assertEquals(soaOtherParty.getOrganisation().getContactDetails().getMobileNumber(),
+    assertEquals(
+        soaOtherParty.getOrganisation().getOrganizationName(), result.getOrganisationName());
+    assertEquals(
+        soaOtherParty.getOrganisation().getOrganizationType(), result.getOrganisationType());
+    assertEquals(soaOtherParty.getOrganisation().getContactName(), result.getContactNameRole());
+    assertEquals(
+        soaOtherParty.getOrganisation().getRelationToCase(), result.getRelationshipToCase());
+    assertEquals(
+        soaOtherParty.getOrganisation().getRelationToClient(), result.getRelationshipToClient());
+    assertEquals(
+        soaOtherParty.getOrganisation().getContactDetails().getMobileNumber(),
         result.getTelephoneMobile());
-    assertEquals(soaOtherParty.getOrganisation().getContactDetails().getFax(),
-        result.getFaxNumber());
-    assertEquals(soaOtherParty.getOrganisation().getRelationToCase(),
-        result.getRelationshipToCase());
+    assertEquals(
+        soaOtherParty.getOrganisation().getContactDetails().getFax(), result.getFaxNumber());
+    assertEquals(
+        soaOtherParty.getOrganisation().getRelationToCase(), result.getRelationshipToCase());
     assertFalse(result.getDeleteInd());
 
-    assertEquals(soaOtherParty.getOrganisation().isCurrentlyTrading(),
-        result.getCurrentlyTrading());
-    assertEquals(soaOtherParty.getOrganisation().getOtherInformation(),
-        result.getOtherInformation());
+    assertEquals(
+        soaOtherParty.getOrganisation().isCurrentlyTrading(), result.getCurrentlyTrading());
+    assertEquals(
+        soaOtherParty.getOrganisation().getOtherInformation(), result.getOtherInformation());
     assertNotNull(result.getAddress()); // Detail tested elsewhere
-    assertEquals(soaOtherParty.getOrganisation().getContactDetails().getEmailAddress(),
+    assertEquals(
+        soaOtherParty.getOrganisation().getContactDetails().getEmailAddress(),
         result.getEmailAddress());
-    assertEquals(soaOtherParty.getOrganisation().getContactDetails().getTelephoneHome(),
+    assertEquals(
+        soaOtherParty.getOrganisation().getContactDetails().getTelephoneHome(),
         result.getTelephoneHome());
-    assertEquals(soaOtherParty.getOrganisation().getContactDetails().getTelephoneWork(),
+    assertEquals(
+        soaOtherParty.getOrganisation().getContactDetails().getTelephoneWork(),
         result.getTelephoneWork());
   }
-
 
   @Test
   void testToLinkedCase() {
@@ -627,12 +731,10 @@ class SoaApplicationMapperTest {
 
     assertNotNull(result);
     assertEquals(soaLinkedCase.getCaseReferenceNumber(), result.getLscCaseReference());
-    assertEquals(soaLinkedCase.getClient().getClientReferenceNumber(),
-        result.getClient().getReference());
-    assertEquals(soaLinkedCase.getClient().getFirstName(),
-        result.getClient().getFirstName());
-    assertEquals(soaLinkedCase.getClient().getSurname(),
-        result.getClient().getSurname());
+    assertEquals(
+        soaLinkedCase.getClient().getClientReferenceNumber(), result.getClient().getReference());
+    assertEquals(soaLinkedCase.getClient().getFirstName(), result.getClient().getFirstName());
+    assertEquals(soaLinkedCase.getClient().getSurname(), result.getClient().getSurname());
     assertEquals(soaLinkedCase.getCategoryOfLawDesc(), result.getCategoryOfLaw());
     assertEquals(soaLinkedCase.getProviderReferenceNumber(), result.getProviderCaseReference());
     assertEquals(soaLinkedCase.getFeeEarnerName(), result.getFeeEarner());
@@ -642,8 +744,7 @@ class SoaApplicationMapperTest {
 
   @Test
   void testToPriorAuthority() {
-    PriorAuthority soaPriorAuthority =
-        buildPriorAuthority();
+    PriorAuthority soaPriorAuthority = buildPriorAuthority();
     SoaPriorAuthorityMappingContext priorAuthorityMappingContext =
         buildPriorAuthorityMappingContext(soaPriorAuthority);
     PriorAuthorityTypeDetail priorAuthorityTypeDetail =
@@ -669,8 +770,8 @@ class SoaApplicationMapperTest {
         buildPriorAuthorityDetail("dataType");
     CommonLookupValueDetail priorAuthLookup = new CommonLookupValueDetail();
 
-    ReferenceDataItemDetail result = applicationMapper.toReferenceDataItem(
-        Pair.of(priorAuthorityDetail, priorAuthLookup));
+    ReferenceDataItemDetail result =
+        applicationMapper.toReferenceDataItem(Pair.of(priorAuthorityDetail, priorAuthLookup));
 
     assertNotNull(result);
     assertEquals(priorAuthorityDetail.getCode(), result.getCode().getId());
@@ -683,24 +784,24 @@ class SoaApplicationMapperTest {
   @Test
   void testToCaseOutcome() {
     CaseDetail soaCaseDetail = buildCaseDetail(APP_TYPE_EMERGENCY);
-    SoaCaseOutcomeMappingContext caseOutcomeMappingContext = buildCaseOutcomeMappingContext(soaCaseDetail);
+    SoaCaseOutcomeMappingContext caseOutcomeMappingContext =
+        buildCaseOutcomeMappingContext(soaCaseDetail);
 
     CaseOutcomeDetail result = applicationMapper.toCaseOutcome(caseOutcomeMappingContext);
 
     assertNotNull(result);
     assertEquals(soaCaseDetail.getLegalHelpCosts(), result.getLegalCosts());
-    assertEquals(soaCaseDetail.getApplicationDetails().getLarDetails().getLegalHelpOfficeCode(),
+    assertEquals(
+        soaCaseDetail.getApplicationDetails().getLarDetails().getLegalHelpOfficeCode(),
         result.getOfficeCode());
-    assertEquals(soaCaseDetail.getApplicationDetails().getLarDetails().getLegalHelpUfn(),
+    assertEquals(
+        soaCaseDetail.getApplicationDetails().getLarDetails().getLegalHelpUfn(),
         result.getUniqueFileNo());
-    assertEquals(soaCaseDetail.getDischargeStatus().getOtherDetails(),
-        result.getOtherDetails());
-    assertEquals(soaCaseDetail.getDischargeStatus().getReason(),
-        result.getDischargeReason());
-    assertEquals(soaCaseDetail.getDischargeStatus().isClientContinuePvtInd(),
-        result.getClientContinueInd());
+    assertEquals(soaCaseDetail.getDischargeStatus().getOtherDetails(), result.getOtherDetails());
+    assertEquals(soaCaseDetail.getDischargeStatus().getReason(), result.getDischargeReason());
+    assertEquals(
+        soaCaseDetail.getDischargeStatus().isClientContinuePvtInd(), result.getClientContinueInd());
   }
-
 
   @Test
   void testToTimeRecovery() {
@@ -726,27 +827,34 @@ class SoaApplicationMapperTest {
 
     assertNotNull(result);
     assertEquals(soaRecovery.getAwardValue(), result.getAwardAmount());
-    assertEquals(soaRecovery.getRecoveredAmount().getClient().getPaidToLsc(),
+    assertEquals(
+        soaRecovery.getRecoveredAmount().getClient().getPaidToLsc(),
         result.getClientAmountPaidToLsc());
-    assertEquals(soaRecovery.getRecoveredAmount().getClient().getAmount(),
-        result.getClientRecoveryAmount());
-    assertEquals(soaRecovery.getRecoveredAmount().getClient().getDateReceived(),
+    assertEquals(
+        soaRecovery.getRecoveredAmount().getClient().getAmount(), result.getClientRecoveryAmount());
+    assertEquals(
+        soaRecovery.getRecoveredAmount().getClient().getDateReceived(),
         result.getClientRecoveryDate());
-    assertEquals(soaRecovery.getRecoveredAmount().getCourt().getPaidToLsc(),
+    assertEquals(
+        soaRecovery.getRecoveredAmount().getCourt().getPaidToLsc(),
         result.getCourtAmountPaidToLsc());
-    assertEquals(soaRecovery.getRecoveredAmount().getCourt().getAmount(),
-        result.getCourtRecoveryAmount());
-    assertEquals(soaRecovery.getRecoveredAmount().getCourt().getDateReceived(),
+    assertEquals(
+        soaRecovery.getRecoveredAmount().getCourt().getAmount(), result.getCourtRecoveryAmount());
+    assertEquals(
+        soaRecovery.getRecoveredAmount().getCourt().getDateReceived(),
         result.getCourtRecoveryDate());
-    assertEquals(soaRecovery.getRecoveredAmount().getSolicitor().getPaidToLsc(),
+    assertEquals(
+        soaRecovery.getRecoveredAmount().getSolicitor().getPaidToLsc(),
         result.getSolicitorAmountPaidToLsc());
-    assertEquals(soaRecovery.getRecoveredAmount().getSolicitor().getAmount(),
+    assertEquals(
+        soaRecovery.getRecoveredAmount().getSolicitor().getAmount(),
         result.getSolicitorRecoveryAmount());
-    assertEquals(soaRecovery.getRecoveredAmount().getSolicitor().getDateReceived(),
+    assertEquals(
+        soaRecovery.getRecoveredAmount().getSolicitor().getDateReceived(),
         result.getSolicitorRecoveryDate());
     assertEquals(soaRecovery.getOfferedAmount().getAmount(), result.getOfferedAmount());
-    assertEquals(soaRecovery.getOfferedAmount().getConditionsOfOffer(),
-        result.getConditionsOfOffer());
+    assertEquals(
+        soaRecovery.getOfferedAmount().getConditionsOfOffer(), result.getConditionsOfOffer());
     assertEquals(soaRecovery.getOfferedAmount().getConditionsOfOffer(), result.getOfferDetails());
     assertEquals(soaRecovery.isLeaveOfCourtReqdInd(), result.getLeaveOfCourtRequiredInd());
     assertNull(result.getAwardType()); // Populated by a specific award mapper method
@@ -754,11 +862,15 @@ class SoaApplicationMapperTest {
 
     // From the afterMapping, the sum of recovered amounts
     assertEquals(
-        soaRecovery.getRecoveredAmount().getClient().getAmount()
+        soaRecovery
+            .getRecoveredAmount()
+            .getClient()
+            .getAmount()
             .add(soaRecovery.getRecoveredAmount().getCourt().getAmount())
             .add(soaRecovery.getRecoveredAmount().getSolicitor().getAmount()),
         result.getRecoveredAmount());
-    assertEquals(result.getAwardAmount().subtract(result.getRecoveredAmount()),
+    assertEquals(
+        result.getAwardAmount().subtract(result.getRecoveredAmount()),
         result.getUnrecoveredAmount());
   }
 
@@ -786,51 +898,52 @@ class SoaApplicationMapperTest {
     assertEquals(AWARD_TYPE_COST_DESCRIPTION, result.getDescription());
     assertEquals(soaAward.getAwardType(), result.getAwardCode());
     assertEquals(soaAward.getCostAward().getOrderDate(), result.getDateOfOrder());
-    assertEquals(soaAward.getCostAward().getPreCertificateAwardLsc(),
-        result.getPreCertificateLscCost());
-    assertEquals(soaAward.getCostAward().getPreCertificateAwardOth(),
-        result.getPreCertificateOtherCost());
-    assertEquals(soaAward.getCostAward().getCertificateCostRateLsc(),
-        result.getCertificateCostLsc());
+    assertEquals(
+        soaAward.getCostAward().getPreCertificateAwardLsc(), result.getPreCertificateLscCost());
+    assertEquals(
+        soaAward.getCostAward().getPreCertificateAwardOth(), result.getPreCertificateOtherCost());
+    assertEquals(
+        soaAward.getCostAward().getCertificateCostRateLsc(), result.getCertificateCostLsc());
     assertNotNull(result.getRecovery()); // detail tested separately
     assertNotNull(result.getLiableParties()); // detail tested separately
-    assertEquals(soaAward.getCostAward().getLiableParties().size(),
-        result.getLiableParties().size());
+    assertEquals(
+        soaAward.getCostAward().getLiableParties().size(), result.getLiableParties().size());
 
     // Like for like mappings
     assertEquals(soaAward.isDeleteAllowed(), result.getDeleteAllowed());
     assertEquals(soaAward.isUpdateAllowed(), result.getUpdateAllowed());
-    assertEquals(soaAward.getCostAward().getServiceAddress().getAddressLine1(),
-        result.getAddressLine1());
-    assertEquals(soaAward.getCostAward().getServiceAddress().getAddressLine2(),
-        result.getAddressLine2());
-    assertEquals(soaAward.getCostAward().getServiceAddress().getAddressLine3(),
-        result.getAddressLine3());
-    assertEquals(soaAward.getCostAward().getCertificateCostRateMarket(),
-        result.getCertificateCostMarket());
-    assertEquals(soaAward.getCostAward().getCourtAssessmentStatus(),
-        result.getCourtAssessmentStatus());
-    assertEquals(soaAward.getCostAward().getOrderDateServed(),
-        result.getOrderServedDate());
-    assertEquals(soaAward.getCostAward().getInterestAwardedRate(),
-        result.getInterestAwardedRate());
-    assertEquals(soaAward.getCostAward().getInterestAwardedStartDate(),
-        result.getInterestStartDate());
-    assertEquals(soaAward.getCostAward().getAwardedBy(),
-        result.getAwardedBy());
+    assertEquals(
+        soaAward.getCostAward().getServiceAddress().getAddressLine1(), result.getAddressLine1());
+    assertEquals(
+        soaAward.getCostAward().getServiceAddress().getAddressLine2(), result.getAddressLine2());
+    assertEquals(
+        soaAward.getCostAward().getServiceAddress().getAddressLine3(), result.getAddressLine3());
+    assertEquals(
+        soaAward.getCostAward().getCertificateCostRateMarket(), result.getCertificateCostMarket());
+    assertEquals(
+        soaAward.getCostAward().getCourtAssessmentStatus(), result.getCourtAssessmentStatus());
+    assertEquals(soaAward.getCostAward().getOrderDateServed(), result.getOrderServedDate());
+    assertEquals(soaAward.getCostAward().getInterestAwardedRate(), result.getInterestAwardedRate());
+    assertEquals(
+        soaAward.getCostAward().getInterestAwardedStartDate(), result.getInterestStartDate());
+    assertEquals(soaAward.getCostAward().getAwardedBy(), result.getAwardedBy());
 
     assertEquals(soaAward.getCostAward().getOtherDetails(), result.getOtherDetails());
 
     // afterMapping
     assertEquals(AWARD_TYPE_COST, result.getRecovery().getAwardType());
     assertEquals(AWARD_TYPE_COST_DESCRIPTION, result.getRecovery().getDescription());
-    assertEquals(soaAward.getCostAward().getCertificateCostRateLsc()
+    assertEquals(
+        soaAward
+            .getCostAward()
+            .getCertificateCostRateLsc()
             .add(soaAward.getCostAward().getCertificateCostRateMarket()),
         result.getTotalCertCostsAwarded());
 
     // afterMapping (baseAward)
-    result.getLiableParties().forEach(
-        liableParty -> assertEquals(AWARD_TYPE_COST, liableParty.getAwardType()));
+    result
+        .getLiableParties()
+        .forEach(liableParty -> assertEquals(AWARD_TYPE_COST, liableParty.getAwardType()));
   }
 
   @Test
@@ -845,35 +958,36 @@ class SoaApplicationMapperTest {
     assertEquals(AWARD_TYPE_FINANCIAL_DESCRIPTION, result.getDescription());
     assertEquals(soaAward.getAwardType(), result.getAwardCode());
     assertEquals(soaAward.getFinancialAward().getOrderDate(), result.getDateOfOrder());
-    assertEquals(soaAward.getFinancialAward().getAmount(),
-        result.getAwardAmount());
-    assertEquals(soaAward.getFinancialAward().getOrderDateServed(),
-        result.getOrderServedDate());
-    assertEquals(soaAward.getFinancialAward().getStatutoryChangeReason(),
+    assertEquals(soaAward.getFinancialAward().getAmount(), result.getAwardAmount());
+    assertEquals(soaAward.getFinancialAward().getOrderDateServed(), result.getOrderServedDate());
+    assertEquals(
+        soaAward.getFinancialAward().getStatutoryChangeReason(),
         result.getStatutoryChargeExemptReason());
 
     assertNotNull(result.getRecovery()); // detail tested separately
 
     assertNotNull(result.getLiableParties());
-    assertEquals(soaAward.getFinancialAward().getLiableParties().size(),
-        result.getLiableParties().size());
+    assertEquals(
+        soaAward.getFinancialAward().getLiableParties().size(), result.getLiableParties().size());
 
     // Like for like mappings
     assertEquals(soaAward.isDeleteAllowed(), result.getDeleteAllowed());
     assertEquals(soaAward.isUpdateAllowed(), result.getUpdateAllowed());
-    assertEquals(soaAward.getFinancialAward().getServiceAddress().getAddressLine1(),
+    assertEquals(
+        soaAward.getFinancialAward().getServiceAddress().getAddressLine1(),
         result.getAddressLine1());
-    assertEquals(soaAward.getFinancialAward().getServiceAddress().getAddressLine2(),
+    assertEquals(
+        soaAward.getFinancialAward().getServiceAddress().getAddressLine2(),
         result.getAddressLine2());
-    assertEquals(soaAward.getFinancialAward().getServiceAddress().getAddressLine3(),
+    assertEquals(
+        soaAward.getFinancialAward().getServiceAddress().getAddressLine3(),
         result.getAddressLine3());
-    assertEquals(soaAward.getFinancialAward().getInterimAward().toString(),
-        result.getInterimAward());
+    assertEquals(
+        soaAward.getFinancialAward().getInterimAward().toString(), result.getInterimAward());
     assertEquals(soaAward.getFinancialAward().getAwardedBy(), result.getAwardedBy());
-    assertEquals(soaAward.getFinancialAward().getOrderDateServed(),
-        result.getOrderServedDate());
-    assertEquals(soaAward.getFinancialAward().getAwardJustifications(),
-        result.getAwardJustifications());
+    assertEquals(soaAward.getFinancialAward().getOrderDateServed(), result.getOrderServedDate());
+    assertEquals(
+        soaAward.getFinancialAward().getAwardJustifications(), result.getAwardJustifications());
     assertEquals(soaAward.getFinancialAward().getOtherDetails(), result.getOtherDetails());
 
     // afterMapping
@@ -881,8 +995,9 @@ class SoaApplicationMapperTest {
     assertEquals(AWARD_TYPE_FINANCIAL_DESCRIPTION, result.getRecovery().getDescription());
 
     // afterMapping (baseAward)
-    result.getLiableParties().forEach(
-        liableParty -> assertEquals(AWARD_TYPE_FINANCIAL, liableParty.getAwardType()));
+    result
+        .getLiableParties()
+        .forEach(liableParty -> assertEquals(AWARD_TYPE_FINANCIAL, liableParty.getAwardType()));
   }
 
   @Test
@@ -896,50 +1011,49 @@ class SoaApplicationMapperTest {
     assertEquals(soaAward.getAwardId(), result.getEbsId());
     assertEquals(soaAward.getLandAward().getOrderDate(), result.getDateOfOrder());
     assertEquals(AWARD_TYPE_LAND, result.getAwardType());
-    assertEquals(soaAward.getLandAward().getValuation().getAmount(),
-        result.getValuationAmount());
-    assertEquals(soaAward.getLandAward().getValuation().getCriteria(),
-        result.getValuationCriteria());
-    assertEquals(soaAward.getLandAward().getValuation().getDate(),
-        result.getValuationDate());
+    assertEquals(soaAward.getLandAward().getValuation().getAmount(), result.getValuationAmount());
+    assertEquals(
+        soaAward.getLandAward().getValuation().getCriteria(), result.getValuationCriteria());
+    assertEquals(soaAward.getLandAward().getValuation().getDate(), result.getValuationDate());
     assertNotNull(result.getTimeRecovery());
     assertNotNull(result.getLiableParties());
-    assertEquals(soaAward.getLandAward().getOtherProprietors().size(),
-        result.getLiableParties().size());
+    assertEquals(
+        soaAward.getLandAward().getOtherProprietors().size(), result.getLiableParties().size());
 
     // Like for like mappings
     assertEquals(soaAward.isDeleteAllowed(), result.getDeleteAllowed());
     assertEquals(soaAward.isUpdateAllowed(), result.getUpdateAllowed());
     assertEquals(soaAward.getLandAward().getDescription(), result.getDescription());
     assertEquals(soaAward.getLandAward().getTitleNo(), result.getTitleNumber());
-    assertEquals(soaAward.getLandAward().getPropertyAddress().getAddressLine1(),
-        result.getAddressLine1());
-    assertEquals(soaAward.getLandAward().getPropertyAddress().getAddressLine2(),
-        result.getAddressLine2());
-    assertEquals(soaAward.getLandAward().getPropertyAddress().getAddressLine3(),
-        result.getAddressLine3());
+    assertEquals(
+        soaAward.getLandAward().getPropertyAddress().getAddressLine1(), result.getAddressLine1());
+    assertEquals(
+        soaAward.getLandAward().getPropertyAddress().getAddressLine2(), result.getAddressLine2());
+    assertEquals(
+        soaAward.getLandAward().getPropertyAddress().getAddressLine3(), result.getAddressLine3());
     assertEquals(soaAward.getLandAward().getDisputedPercentage(), result.getDisputedPercentage());
     assertEquals(soaAward.getLandAward().getAwardedPercentage(), result.getAwardedPercentage());
     assertEquals(soaAward.getLandAward().getMortgageAmountDue(), result.getMortgageAmountDue());
     assertEquals(soaAward.getLandAward().getAwardedBy(), result.getAwardedBy());
     assertEquals(soaAward.getLandAward().getRecovery(), result.getRecovery());
     assertEquals(soaAward.getLandAward().getNoRecoveryDetails(), result.getNoRecoveryDetails());
-    assertEquals(soaAward.getLandAward().getStatChargeExemptReason(),
+    assertEquals(
+        soaAward.getLandAward().getStatChargeExemptReason(),
         result.getStatutoryChargeExemptReason());
-    assertEquals(soaAward.getLandAward().getLandChargeRegistration(),
-        result.getLandChargeRegistration());
-    assertEquals(soaAward.getLandAward().getRegistrationRef(),
-        result.getRegistrationReference());
+    assertEquals(
+        soaAward.getLandAward().getLandChargeRegistration(), result.getLandChargeRegistration());
+    assertEquals(soaAward.getLandAward().getRegistrationRef(), result.getRegistrationReference());
 
     // afterMapping
     assertTrue(result.getRecoveryOfAwardTimeRelated());
     assertEquals(AWARD_TYPE_LAND, result.getTimeRecovery().getAwardType());
-    assertEquals(result.getValuationAmount().subtract(result.getMortgageAmountDue()),
-        result.getEquity());
+    assertEquals(
+        result.getValuationAmount().subtract(result.getMortgageAmountDue()), result.getEquity());
 
     // afterMapping (baseAward)
-    result.getLiableParties().forEach(
-        liableParty -> assertEquals(AWARD_TYPE_LAND, liableParty.getAwardType()));
+    result
+        .getLiableParties()
+        .forEach(liableParty -> assertEquals(AWARD_TYPE_LAND, liableParty.getAwardType()));
   }
 
   @Test
@@ -953,16 +1067,13 @@ class SoaApplicationMapperTest {
     assertEquals(soaAward.getOtherAsset().getOrderDate(), result.getDateOfOrder());
     assertEquals(AWARD_TYPE_OTHER_ASSET, result.getAwardType());
     assertEquals(soaAward.getAwardType(), result.getAwardCode());
-    assertEquals(soaAward.getOtherAsset().getValuation().getAmount(),
-        result.getValuationAmount());
-    assertEquals(soaAward.getOtherAsset().getValuation().getCriteria(),
-        result.getValuationCriteria());
-    assertEquals(soaAward.getOtherAsset().getValuation().getDate(),
-        result.getValuationDate());
+    assertEquals(soaAward.getOtherAsset().getValuation().getAmount(), result.getValuationAmount());
+    assertEquals(
+        soaAward.getOtherAsset().getValuation().getCriteria(), result.getValuationCriteria());
+    assertEquals(soaAward.getOtherAsset().getValuation().getDate(), result.getValuationDate());
     assertNotNull(result.getTimeRecovery());
     assertNotNull(result.getLiableParties());
-    assertEquals(soaAward.getOtherAsset().getHeldBy().size(),
-        result.getLiableParties().size());
+    assertEquals(soaAward.getOtherAsset().getHeldBy().size(), result.getLiableParties().size());
 
     // Like for like mappings
     assertEquals(soaAward.isDeleteAllowed(), result.getDeleteAllowed());
@@ -972,13 +1083,14 @@ class SoaApplicationMapperTest {
     assertEquals(soaAward.getOtherAsset().getAwardedAmount(), result.getAwardedAmount());
     assertEquals(soaAward.getOtherAsset().getAwardedPercentage(), result.getAwardedPercentage());
     assertEquals(soaAward.getOtherAsset().getRecoveredAmount(), result.getRecoveredAmount());
-    assertEquals(soaAward.getOtherAsset().getRecoveredPercentage(),
-        result.getRecoveredPercentage());
+    assertEquals(
+        soaAward.getOtherAsset().getRecoveredPercentage(), result.getRecoveredPercentage());
     assertEquals(soaAward.getOtherAsset().getDisputedAmount(), result.getDisputedAmount());
     assertEquals(soaAward.getOtherAsset().getDisputedPercentage(), result.getDisputedPercentage());
     assertEquals(soaAward.getOtherAsset().getRecovery(), result.getRecovery());
     assertEquals(soaAward.getOtherAsset().getNoRecoveryDetails(), result.getNoRecoveryDetails());
-    assertEquals(soaAward.getOtherAsset().getStatChargeExemptReason(),
+    assertEquals(
+        soaAward.getOtherAsset().getStatChargeExemptReason(),
         result.getStatutoryChargeExemptReason());
 
     // afterMapping
@@ -986,15 +1098,15 @@ class SoaApplicationMapperTest {
     assertEquals(AWARD_TYPE_OTHER_ASSET, result.getTimeRecovery().getAwardType());
 
     // afterMapping (baseAward)
-    result.getLiableParties().forEach(
-        liableParty -> assertEquals(AWARD_TYPE_OTHER_ASSET, liableParty.getAwardType()));
+    result
+        .getLiableParties()
+        .forEach(liableParty -> assertEquals(AWARD_TYPE_OTHER_ASSET, liableParty.getAwardType()));
   }
 
   @Test
   public void testToApplicationDetails() {
-    List<BaseApplicationDetail> baseApplicationList = List.of(
-        buildBaseApplication(1),
-        buildBaseApplication(2));
+    List<BaseApplicationDetail> baseApplicationList =
+        List.of(buildBaseApplication(1), buildBaseApplication(2));
 
     ApplicationDetails result =
         applicationMapper.toApplicationDetails(new PageImpl<>(baseApplicationList));
@@ -1015,47 +1127,47 @@ class SoaApplicationMapperTest {
     assertEquals(soaCaseSummary.getCaseReferenceNumber(), result.getCaseReferenceNumber());
     assertEquals(soaCaseSummary.getCaseStatusDisplay(), result.getStatus().getDisplayValue());
     assertEquals(soaCaseSummary.getCategoryOfLaw(), result.getCategoryOfLaw().getDisplayValue());
-    assertEquals(soaCaseSummary.getClient().getClientReferenceNumber(), result.getClient().getReference());
+    assertEquals(
+        soaCaseSummary.getClient().getClientReferenceNumber(), result.getClient().getReference());
     assertEquals(soaCaseSummary.getClient().getFirstName(), result.getClient().getFirstName());
     assertEquals(soaCaseSummary.getClient().getSurname(), result.getClient().getSurname());
     assertNotNull(result.getProviderDetails());
-    assertEquals(soaCaseSummary.getFeeEarnerName(), result.getProviderDetails().getFeeEarner().getDisplayValue());
-    assertEquals(soaCaseSummary.getProviderCaseReferenceNumber(), result.getProviderDetails().getProviderCaseReference());
+    assertEquals(
+        soaCaseSummary.getFeeEarnerName(),
+        result.getProviderDetails().getFeeEarner().getDisplayValue());
+    assertEquals(
+        soaCaseSummary.getProviderCaseReferenceNumber(),
+        result.getProviderDetails().getProviderCaseReference());
   }
 
   private SoaApplicationMappingContext buildApplicationMappingContext(
-      CaseDetail soaCase,
-      Boolean devolvedPowers,
-      Date devolvedPowersDate) {
+      CaseDetail soaCase, Boolean devolvedPowers, Date devolvedPowersDate) {
     return SoaApplicationMappingContext.builder()
         .soaCaseDetail(soaCase)
-        .applicationType(new CommonLookupValueDetail()
-            .code("apptypecode")
-            .description("apptypedesc"))
-        .amendmentProceedingsInEbs(Collections.singletonList(
-            buildProceedingMappingContext(soaCase.getApplicationDetails().getProceedings().getFirst())))
+        .applicationType(
+            new CommonLookupValueDetail().code("apptypecode").description("apptypedesc"))
+        .amendmentProceedingsInEbs(
+            Collections.singletonList(
+                buildProceedingMappingContext(
+                    soaCase.getApplicationDetails().getProceedings().getFirst())))
         .caseOutcome(buildCaseOutcomeMappingContext(soaCase))
         .caseWithOnlyDraftProceedings(Boolean.TRUE)
-        .certificate(new CommonLookupValueDetail()
-            .code("certcode")
-            .description("certificate descr"))
+        .certificate(
+            new CommonLookupValueDetail().code("certcode").description("certificate descr"))
         .currentProviderBilledAmount(BigDecimal.ONE)
         .devolvedPowers(Pair.of(devolvedPowers, devolvedPowersDate))
-        .feeEarnerContact(new ContactDetail()
-            .id(100)
-            .name("feeEarnerName"))
-        .supervisorContact(new ContactDetail()
-            .id(101)
-            .name("supName"))
+        .feeEarnerContact(new ContactDetail().id(100).name("feeEarnerName"))
+        .supervisorContact(new ContactDetail().id(101).name("supName"))
         .meansAssessment(soaCase.getApplicationDetails().getMeansAssesments().getFirst())
         .meritsAssessment(soaCase.getApplicationDetails().getMeritsAssesments().getFirst())
-        .priorAuthorities(Collections.singletonList(buildPriorAuthorityMappingContext(
-            soaCase.getPriorAuthorities().getFirst())))
-        .proceedings(Collections.singletonList(
-            buildProceedingMappingContext(soaCase.getApplicationDetails().getProceedings().getFirst())))
-        .providerDetail(new ProviderDetail()
-            .id(1)
-            .name("provname"))
+        .priorAuthorities(
+            Collections.singletonList(
+                buildPriorAuthorityMappingContext(soaCase.getPriorAuthorities().getFirst())))
+        .proceedings(
+            Collections.singletonList(
+                buildProceedingMappingContext(
+                    soaCase.getApplicationDetails().getProceedings().getFirst())))
+        .providerDetail(new ProviderDetail().id(1).name("provname"))
         .providerOffice(new OfficeDetail().id(1000).name("offName"))
         .build();
   }
@@ -1064,36 +1176,31 @@ class SoaApplicationMapperTest {
       uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail soaProceeding) {
     return SoaProceedingMappingContext.builder()
         .soaProceeding(soaProceeding)
-        .clientInvolvement(new CommonLookupValueDetail()
-            .code("clientInv")
-            .description("clientDesc"))
+        .clientInvolvement(
+            new CommonLookupValueDetail().code("clientInv").description("clientDesc"))
         .proceedingCostLimitation(BigDecimal.TEN)
-        .proceedingStatusLookup(new CommonLookupValueDetail()
-            .code("procStatCode")
-            .description("procStatDesc"))
-        .levelOfService(new CommonLookupValueDetail()
-            .code("losCode")
-            .description("losDescr"))
-        .proceedingLookup(new uk.gov.laa.ccms.data.model.ProceedingDetail()
-            .code("procCode")
-            .name("procName")
-            .larScope("procLarScope"))
-        .scopeLimitations(Collections.singletonList(Pair.of(buildScopeLimitation(""),
-            new CommonLookupValueDetail()
-                .code("scopeLimitCode")
-                .description("scopeLimitDescr"))))
-        .outcomeResultLookup(new OutcomeResultLookupValueDetail()
-            .outcomeResult("or")
-            .outcomeResultDescription("orDesc"))
-        .courtLookup(new CommonLookupValueDetail()
-            .code("crt")
-            .description("crtDescr"))
-        .stageEndLookup(new StageEndLookupValueDetail()
-            .stageEnd("se")
-            .description("seDescr"))
-        .matterType(new CommonLookupValueDetail()
-            .code("mat")
-            .description("matDescr"))
+        .proceedingStatusLookup(
+            new CommonLookupValueDetail().code("procStatCode").description("procStatDesc"))
+        .levelOfService(new CommonLookupValueDetail().code("losCode").description("losDescr"))
+        .proceedingLookup(
+            new uk.gov.laa.ccms.data.model.ProceedingDetail()
+                .code("procCode")
+                .name("procName")
+                .larScope("procLarScope"))
+        .scopeLimitations(
+            Collections.singletonList(
+                Pair.of(
+                    buildScopeLimitation(""),
+                    new CommonLookupValueDetail()
+                        .code("scopeLimitCode")
+                        .description("scopeLimitDescr"))))
+        .outcomeResultLookup(
+            new OutcomeResultLookupValueDetail()
+                .outcomeResult("or")
+                .outcomeResultDescription("orDesc"))
+        .courtLookup(new CommonLookupValueDetail().code("crt").description("crtDescr"))
+        .stageEndLookup(new StageEndLookupValueDetail().stageEnd("se").description("seDescr"))
+        .matterType(new CommonLookupValueDetail().code("mat").description("matDescr"))
         .build();
   }
 
@@ -1104,8 +1211,10 @@ class SoaApplicationMapperTest {
         .financialAwards(Collections.singletonList(soaCase.getAwards().get(1)))
         .landAwards(Collections.singletonList(soaCase.getAwards().get(2)))
         .otherAssetAwards(Collections.singletonList(soaCase.getAwards().get(3)))
-        .proceedingOutcomes(Collections.singletonList(buildProceedingMappingContext(
-            soaCase.getApplicationDetails().getProceedings().getFirst())))
+        .proceedingOutcomes(
+            Collections.singletonList(
+                buildProceedingMappingContext(
+                    soaCase.getApplicationDetails().getProceedings().getFirst())))
         .build();
   }
 
@@ -1114,10 +1223,13 @@ class SoaApplicationMapperTest {
     return SoaPriorAuthorityMappingContext.builder()
         .soaPriorAuthority(soaPriorAuthority)
         .priorAuthorityTypeLookup(buildPriorAuthorityTypeDetail("dataType"))
-        .items(Collections.singletonList(Pair.of(buildPriorAuthorityDetail("dataType"),
-            new CommonLookupValueDetail()
-                .code("priorAuthCode")
-                .description("priorAuthDesc"))))
+        .items(
+            Collections.singletonList(
+                Pair.of(
+                    buildPriorAuthorityDetail("dataType"),
+                    new CommonLookupValueDetail()
+                        .code("priorAuthCode")
+                        .description("priorAuthDesc"))))
         .build();
   }
 
@@ -1125,16 +1237,20 @@ class SoaApplicationMapperTest {
   @DisplayName("Test toCaseDetail with valid CaseMappingContext")
   void testToCaseDetail_Valid() {
     final ApplicationDetail applicationDetail = buildApplicationDetail(1, false, new Date());
-    final LinkedCaseDetail linkedCaseDetail = new LinkedCaseDetail().lscCaseReference("LC123").relationToCase("Related");
-    final PriorAuthorityDetail priorAuthorityDetail = new PriorAuthorityDetail().summary("Test Prior Authority");
-    final BaseEvidenceDocumentDetail caseDocDetail = new BaseEvidenceDocumentDetail().registeredDocumentId("DOC123");
+    final LinkedCaseDetail linkedCaseDetail =
+        new LinkedCaseDetail().lscCaseReference("LC123").relationToCase("Related");
+    final PriorAuthorityDetail priorAuthorityDetail =
+        new PriorAuthorityDetail().summary("Test Prior Authority");
+    final BaseEvidenceDocumentDetail caseDocDetail =
+        new BaseEvidenceDocumentDetail().registeredDocumentId("DOC123");
     applicationDetail.setLinkedCases(Collections.singletonList(linkedCaseDetail));
     applicationDetail.setPriorAuthorities(Collections.singletonList(priorAuthorityDetail));
 
-    final CaseMappingContext context = CaseMappingContext.builder()
-        .tdsApplication(applicationDetail)
-        .caseDocs(Collections.singletonList(caseDocDetail))
-        .build();
+    final CaseMappingContext context =
+        CaseMappingContext.builder()
+            .tdsApplication(applicationDetail)
+            .caseDocs(Collections.singletonList(caseDocDetail))
+            .build();
 
     final CaseDetail result = applicationMapper.toCaseDetail(context);
 
@@ -1159,15 +1275,13 @@ class SoaApplicationMapperTest {
     assertNull(applicationMapper.toCaseDetail(null));
   }
 
-
   @Test
   @DisplayName("Test toSoaCaseDoc with valid BaseEvidenceDocumentDetail")
   void testToSoaCaseDoc_Valid() {
-    final BaseEvidenceDocumentDetail evidenceDocumentDetail
-        = new BaseEvidenceDocumentDetail()
-        .documentType(new StringDisplayValue()
-            .displayValue("Test Document"))
-        .registeredDocumentId("12345");
+    final BaseEvidenceDocumentDetail evidenceDocumentDetail =
+        new BaseEvidenceDocumentDetail()
+            .documentType(new StringDisplayValue().displayValue("Test Document"))
+            .registeredDocumentId("12345");
 
     final CaseDoc result = applicationMapper.toSoaCaseDoc(evidenceDocumentDetail);
 
@@ -1185,13 +1299,17 @@ class SoaApplicationMapperTest {
   @Test
   @DisplayName("Test toSoaPriorAuthority with valid PriorAuthorityDetail")
   void testToSoaPriorAuthority_Valid() {
-    final PriorAuthorityDetail priorAuthorityDetail = new PriorAuthorityDetail()
-        .summary("Test Summary")
-        .justification("Test Justification")
-        .amountRequested(new BigDecimal("1000.00"))
-        .status("Approved")
-        .items(Collections.singletonList(new ReferenceDataItemDetail()
-            .code(new StringDisplayValue().id("PA123").displayValue("Test Attribute"))));
+    final PriorAuthorityDetail priorAuthorityDetail =
+        new PriorAuthorityDetail()
+            .summary("Test Summary")
+            .justification("Test Justification")
+            .amountRequested(new BigDecimal("1000.00"))
+            .status("Approved")
+            .items(
+                Collections.singletonList(
+                    new ReferenceDataItemDetail()
+                        .code(
+                            new StringDisplayValue().id("PA123").displayValue("Test Attribute"))));
 
     final PriorAuthority result = applicationMapper.toSoaPriorAuthority(priorAuthorityDetail);
 
@@ -1211,15 +1329,16 @@ class SoaApplicationMapperTest {
     assertNull(applicationMapper.toSoaPriorAuthority(null));
   }
 
-
   @Test
   @DisplayName("Test toSoaPriorAuthorityAttribute with valid ReferenceDataItemDetail")
   void testToSoaPriorAuthorityAttribute_Valid() {
-    final ReferenceDataItemDetail referenceDataItemDetail = new ReferenceDataItemDetail()
-        .code(new StringDisplayValue().id("AttributeName"))
-        .value(new StringDisplayValue().id("AttributeValue"));
+    final ReferenceDataItemDetail referenceDataItemDetail =
+        new ReferenceDataItemDetail()
+            .code(new StringDisplayValue().id("AttributeName"))
+            .value(new StringDisplayValue().id("AttributeValue"));
 
-    final PriorAuthorityAttribute result = applicationMapper.toSoaPriorAuthorityAttribute(referenceDataItemDetail);
+    final PriorAuthorityAttribute result =
+        applicationMapper.toSoaPriorAuthorityAttribute(referenceDataItemDetail);
 
     assertNotNull(result);
     assertEquals("AttributeName", result.getName());
@@ -1232,14 +1351,12 @@ class SoaApplicationMapperTest {
     assertNull(applicationMapper.toSoaPriorAuthorityAttribute(null));
   }
 
-
   @Test
   @DisplayName("Test toSoaLinkedCase with valid LinkedCaseDetail")
   void testToSoaLinkedCase_Valid() {
 
-    final LinkedCaseDetail linkedCaseDetail = new LinkedCaseDetail()
-        .lscCaseReference("LSC123")
-        .relationToCase("Related Case");
+    final LinkedCaseDetail linkedCaseDetail =
+        new LinkedCaseDetail().lscCaseReference("LSC123").relationToCase("Related Case");
 
     final LinkedCase result = applicationMapper.toSoaLinkedCase(linkedCaseDetail);
 
@@ -1254,7 +1371,6 @@ class SoaApplicationMapperTest {
     assertNull(applicationMapper.toSoaLinkedCase(null));
   }
 
-
   @Test
   @DisplayName("Test toSubmittedApplicationDetails with valid CaseMappingContext")
   void testToSubmittedApplicationDetails_Valid() {
@@ -1262,18 +1378,22 @@ class SoaApplicationMapperTest {
     applicationDetail.setApplicationType(new ApplicationType().id("type123"));
     applicationDetail.setCorrespondenceAddress(new AddressDetail().preferredAddress("preferred"));
     applicationDetail.setClient(new ClientDetail().reference("client123"));
-    applicationDetail.setProviderDetails(new ApplicationProviderDetails().providerCaseReference("CASE123"));
+    applicationDetail.setProviderDetails(
+        new ApplicationProviderDetails().providerCaseReference("CASE123"));
     applicationDetail.setCategoryOfLaw(new StringDisplayValue().id("category123"));
-    applicationDetail.setCosts(new CostStructureDetail().requestedCostLimitation(new BigDecimal("1000.00")));
+    applicationDetail.setCosts(
+        new CostStructureDetail().requestedCostLimitation(new BigDecimal("1000.00")));
 
-    final CaseMappingContext context = CaseMappingContext.builder()
-        .tdsApplication(applicationDetail)
-        .meansAssessment(new AssessmentDetail())
-        .meritsAssessment(new AssessmentDetail())
-        .caseDocs(Collections.singletonList(new BaseEvidenceDocumentDetail()))
-        .build();
+    final CaseMappingContext context =
+        CaseMappingContext.builder()
+            .tdsApplication(applicationDetail)
+            .meansAssessment(new AssessmentDetail())
+            .meritsAssessment(new AssessmentDetail())
+            .caseDocs(Collections.singletonList(new BaseEvidenceDocumentDetail()))
+            .build();
 
-    final SubmittedApplicationDetails result = applicationMapper.toSubmittedApplicationDetails(context);
+    final SubmittedApplicationDetails result =
+        applicationMapper.toSubmittedApplicationDetails(context);
 
     assertNotNull(result);
     assertNotNull(result.getLarDetails());
@@ -1289,7 +1409,6 @@ class SoaApplicationMapperTest {
   void testToSubmittedApplicationDetails_Null() {
     assertNull(applicationMapper.toSubmittedApplicationDetails(null));
   }
-
 
   @Test
   @DisplayName("Test toBaseClient with valid ClientDetail")
@@ -1327,7 +1446,8 @@ class SoaApplicationMapperTest {
     providerDetails.supervisor(new StringDisplayValue().id("300"));
     providerDetails.feeEarner(new StringDisplayValue().id("400"));
 
-    final uk.gov.laa.ccms.soa.gateway.model.ProviderDetail result = applicationMapper.toSoaProviderDetail(providerDetails);
+    final uk.gov.laa.ccms.soa.gateway.model.ProviderDetail result =
+        applicationMapper.toSoaProviderDetail(providerDetails);
 
     assertNotNull(result);
     assertEquals("user123", result.getContactUserId().getUserLoginId());
@@ -1344,12 +1464,12 @@ class SoaApplicationMapperTest {
     assertNull(applicationMapper.toSoaProviderDetail(null));
   }
 
-
   @ParameterizedTest
   @CsvSource({
-      "'LAW123', 'Test Law Description', '1000', '500', '1000'",  // Case with requested amount
-      "'LAW124', 'Another Law Description', '', '500', '500'",    // Case with default amount (requested amount is null)
-      "'LAW125', 'Third Law Description', '', '', ''"             // Case with no costs (null amounts)
+    "'LAW123', 'Test Law Description', '1000', '500', '1000'", // Case with requested amount
+    "'LAW124', 'Another Law Description', '', '500', '500'", // Case with default amount (requested
+    // amount is null)
+    "'LAW125', 'Third Law Description', '', '', ''" // Case with no costs (null amounts)
   })
   @DisplayName("Parameterized Test toSoaCategoryOfLaw with different ApplicationDetail inputs")
   void testToSoaCategoryOfLaw_Parameterized(
@@ -1365,8 +1485,10 @@ class SoaApplicationMapperTest {
     categoryOfLaw.setDisplayValue(lawDescription);
 
     final CostStructureDetail costStructureDetail = new CostStructureDetail();
-    costStructureDetail.setRequestedCostLimitation(requestedCostStr.isEmpty() ? null : new BigDecimal(requestedCostStr));
-    costStructureDetail.setDefaultCostLimitation(defaultCostStr.isEmpty() ? null : new BigDecimal(defaultCostStr));
+    costStructureDetail.setRequestedCostLimitation(
+        requestedCostStr.isEmpty() ? null : new BigDecimal(requestedCostStr));
+    costStructureDetail.setDefaultCostLimitation(
+        defaultCostStr.isEmpty() ? null : new BigDecimal(defaultCostStr));
 
     final ApplicationDetail applicationDetail = new ApplicationDetail();
     applicationDetail.setCategoryOfLaw(categoryOfLaw);
@@ -1377,7 +1499,8 @@ class SoaApplicationMapperTest {
 
     // Assertions
     if (expectedCostStr.isEmpty()) {
-      assertNull(result.getRequestedAmount());  // No costs provided, so requested amount should be null
+      assertNull(
+          result.getRequestedAmount()); // No costs provided, so requested amount should be null
     } else {
       assertNotNull(result);
       assertEquals(lawCode, result.getCategoryOfLawCode());
@@ -1391,7 +1514,6 @@ class SoaApplicationMapperTest {
   void testToSoaCategoryOfLaw_Null() {
     assertNull(applicationMapper.toSoaCategoryOfLaw(null));
   }
-
 
   @Test
   @DisplayName("Test toSoaAddressDetail with valid AddressDetail")
@@ -1407,7 +1529,8 @@ class SoaApplicationMapperTest {
     addressDetail.setCountry("Test Country");
     addressDetail.setCounty("Test County");
 
-    final uk.gov.laa.ccms.soa.gateway.model.AddressDetail result = applicationMapper.toSoaAddressDetail(addressDetail);
+    final uk.gov.laa.ccms.soa.gateway.model.AddressDetail result =
+        applicationMapper.toSoaAddressDetail(addressDetail);
 
     assertNotNull(result);
     assertEquals("123", result.getAddressId());
@@ -1444,7 +1567,8 @@ class SoaApplicationMapperTest {
     proceedingDetail.setDateDevolvedPowersUsed(new Date());
     proceedingDetail.setDateGranted(new Date());
 
-    final uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail result = applicationMapper.toSoaProceedingDetail(proceedingDetail);
+    final uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail result =
+        applicationMapper.toSoaProceedingDetail(proceedingDetail);
 
     assertNotNull(result);
     assertEquals("P_123", result.getProceedingCaseId());
@@ -1471,7 +1595,8 @@ class SoaApplicationMapperTest {
   @DisplayName("Test toSoaScopeLimitation with valid ScopeLimitationDetail")
   void testToSoaScopeLimitation_Valid() {
     final ScopeLimitationDetail scopeLimitationDetail = new ScopeLimitationDetail();
-    scopeLimitationDetail.setScopeLimitation(new StringDisplayValue().id("scopeId").displayValue("Scope Description"));
+    scopeLimitationDetail.setScopeLimitation(
+        new StringDisplayValue().id("scopeId").displayValue("Scope Description"));
     scopeLimitationDetail.setScopeLimitationWording("Scope Limitation Wording");
     scopeLimitationDetail.setDelegatedFuncApplyInd(new BooleanDisplayValue().flag(true));
 
@@ -1488,7 +1613,6 @@ class SoaApplicationMapperTest {
   void testToSoaScopeLimitation_Null() {
     assertNull(applicationMapper.toSoaScopeLimitation(null));
   }
-
 
   @Test
   @DisplayName("Test toSoaOtherParty with individual type OpponentDetail")
@@ -1554,14 +1678,27 @@ class SoaApplicationMapperTest {
   @ParameterizedTest
   @DisplayName("Test toSoaPerson with valid OpponentDetail inputs")
   @CsvSource({
-      "'TestClientRel', 'TestCaseRel', '123456', 'true', 'true', 'John Doe', 'Test Employer', 'Employer Address', '1000', '500', '1990-01-01', 'Employed', 'Cert123', 'Monthly', '2023-10-12', 'OtherInfo'",
-      "'ClientRel2', 'CaseRel2', '987654', 'false', 'false', 'Jane Smith', 'Another Employer', 'Another Address', '2000', '1000', '1985-05-05', 'Unemployed', 'Cert456', 'Weekly', '2023-08-20', 'Info2'"
+    "'TestClientRel', 'TestCaseRel', '123456', 'true', 'true', 'John Doe', 'Test Employer', 'Employer Address', '1000', '500', '1990-01-01', 'Employed', 'Cert123', 'Monthly', '2023-10-12', 'OtherInfo'",
+    "'ClientRel2', 'CaseRel2', '987654', 'false', 'false', 'Jane Smith', 'Another Employer', 'Another Address', '2000', '1000', '1985-05-05', 'Unemployed', 'Cert456', 'Weekly', '2023-08-20', 'Info2'"
   })
-  void testToSoaPerson_Valid(final String relationToClient, final String relationToCase, final String niNumber, final boolean legalAided,
-      final boolean courtOrderedMeansAssesment, final String contactName, final String employerName,
-      final String employerAddress, final String assessedIncome, final String assessedAssets, final String dateOfBirth,
-      final String employmentStatus, final String certificateNumber, final String assessedIncomeFrequency,
-      final String assessmentDate, final String otherInformation) throws ParseException {
+  void testToSoaPerson_Valid(
+      final String relationToClient,
+      final String relationToCase,
+      final String niNumber,
+      final boolean legalAided,
+      final boolean courtOrderedMeansAssesment,
+      final String contactName,
+      final String employerName,
+      final String employerAddress,
+      final String assessedIncome,
+      final String assessedAssets,
+      final String dateOfBirth,
+      final String employmentStatus,
+      final String certificateNumber,
+      final String assessedIncomeFrequency,
+      final String assessmentDate,
+      final String otherInformation)
+      throws ParseException {
 
     final Date parsedDateOfBirth = dateFormat.parse(dateOfBirth);
     final Date parsedAssessmentDate = dateFormat.parse(assessmentDate);
@@ -1615,11 +1752,17 @@ class SoaApplicationMapperTest {
   @ParameterizedTest
   @DisplayName("Test toSoaOrganisation with valid OpponentDetail inputs")
   @CsvSource({
-      "'ClientRelation', 'CaseRelation', 'OrgName', 'OrgType', 'ContactName', 'true', 'OtherInfo'",
-      "'ClientRelation2', 'CaseRelation2', 'OrgName2', 'OrgType2', 'ContactName2', 'false', 'OtherInfo2'"
+    "'ClientRelation', 'CaseRelation', 'OrgName', 'OrgType', 'ContactName', 'true', 'OtherInfo'",
+    "'ClientRelation2', 'CaseRelation2', 'OrgName2', 'OrgType2', 'ContactName2', 'false', 'OtherInfo2'"
   })
-  void testToSoaOrganisation_Valid(final String relationToClient, final String relationToCase, final String organisationName, final String organisationType,
-      final String contactName, final boolean currentlyTrading, final String otherInformation) {
+  void testToSoaOrganisation_Valid(
+      final String relationToClient,
+      final String relationToCase,
+      final String organisationName,
+      final String organisationType,
+      final String contactName,
+      final boolean currentlyTrading,
+      final String otherInformation) {
     final OpponentDetail opponentDetail = new OpponentDetail();
     opponentDetail.setRelationshipToClient(relationToClient);
     opponentDetail.setRelationshipToCase(relationToCase);
@@ -1649,16 +1792,21 @@ class SoaApplicationMapperTest {
   }
 
   @ParameterizedTest
-  @DisplayName("Test toOpaAttribute with different AssessmentAttributeDetail inputs, with different user defined indicator values")
+  @DisplayName(
+      "Test toOpaAttribute with different AssessmentAttributeDetail inputs, with different user defined indicator values")
   @CsvSource({
-      "'TestName', 'TestType', 'TestValue', 'nonIntermediate', true",
-      "'SA_TestName', 'TestType', 'TestValue', 'intermediate', false",
-      "'TestName', 'TestType', 'TestValue', 'intermediate', false",
-      "'SA_TestName', 'TestType', 'TestValue', 'nonIntermediate', false",
-      "'TestName', 'TestType', 'TestValue', 'nonIntermediate', true"
+    "'TestName', 'TestType', 'TestValue', 'nonIntermediate', true",
+    "'SA_TestName', 'TestType', 'TestValue', 'intermediate', false",
+    "'TestName', 'TestType', 'TestValue', 'intermediate', false",
+    "'SA_TestName', 'TestType', 'TestValue', 'nonIntermediate', false",
+    "'TestName', 'TestType', 'TestValue', 'nonIntermediate', true"
   })
-  void testToOpaAttribute_Valid_userDefinedIndicator(final String name, final String type, final String value,
-      final String inferencingType, final boolean expectedUserDefinedInd) {
+  void testToOpaAttribute_Valid_userDefinedIndicator(
+      final String name,
+      final String type,
+      final String value,
+      final String inferencingType,
+      final boolean expectedUserDefinedInd) {
     final AssessmentAttributeDetail assessmentAttributeDetail =
         new AssessmentAttributeDetail()
             .name(name)
@@ -1692,10 +1840,8 @@ class SoaApplicationMapperTest {
 
     final UserDetail user = buildUserDetail();
 
-    final CaseMappingContext caseMappingContext = CaseMappingContext.builder()
-        .tdsApplication(application)
-        .user(user)
-        .build();
+    final CaseMappingContext caseMappingContext =
+        CaseMappingContext.builder().tdsApplication(application).user(user).build();
 
     final RecordHistory result = applicationMapper.toSoaRecordHistory(caseMappingContext);
 
@@ -1710,8 +1856,4 @@ class SoaApplicationMapperTest {
   void testToSoaRecordHistory_NullContext() {
     assertNull(applicationMapper.toSoaRecordHistory(null));
   }
-
-
-
-
 }

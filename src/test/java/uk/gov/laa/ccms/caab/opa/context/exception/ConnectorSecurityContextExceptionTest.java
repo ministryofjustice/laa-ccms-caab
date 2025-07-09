@@ -9,8 +9,7 @@ class ConnectorSecurityContextExceptionTest {
 
   @Test
   void shouldConstructWithNoArgs() {
-    final ConnectorSecurityContextException exception =
-        new ConnectorSecurityContextException();
+    final ConnectorSecurityContextException exception = new ConnectorSecurityContextException();
     assertNull(exception.getMessage());
     assertNull(exception.getCause());
   }

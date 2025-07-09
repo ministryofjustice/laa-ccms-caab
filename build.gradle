@@ -1,6 +1,7 @@
 plugins {
 	id 'net.researchgate.release' version '3.1.0'
-	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.36'
+	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.37'
+	id("com.diffplug.spotless") version "7.0.4"
 }
 
 subprojects {
@@ -60,11 +61,11 @@ dependencies {
 
 	}
 
-	implementation 'uk.gov.laa.ccms.data:data-api:0.0.59'
+	implementation 'uk.gov.laa.ccms.data:data-api:0.0.61'
 
-	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.67'
+	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.69'
 
-	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.58'
+	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.60'
 
 	implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.38'
 
@@ -88,7 +89,7 @@ dependencies {
 	implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.4.0")
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
-	implementation 'software.amazon.awssdk:sts:2.31.70'
+	implementation 'software.amazon.awssdk:sts:2.31.77'
 
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
@@ -114,7 +115,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.webjars/webjars-locator-lite
 	implementation 'org.webjars:webjars-locator-lite'
 	// https://mvnrepository.com/artifact/org.webjars.npm/govuk-frontend
-	implementation 'org.webjars.npm:govuk-frontend:5.10.2'
+	implementation 'org.webjars.npm:govuk-frontend:5.11.0'
 	implementation 'org.webjars.npm:ministryofjustice__frontend:5.1.3'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -123,10 +124,10 @@ dependencies {
 
 	integrationTestImplementation 'org.wiremock:wiremock-standalone:3.13.1'
 
-	testImplementation platform('org.testcontainers:testcontainers-bom:1.21.2')
+	testImplementation platform('org.testcontainers:testcontainers-bom:1.21.3')
 	testImplementation 'org.testcontainers:testcontainers'
 	testImplementation 'org.testcontainers:junit-jupiter'
-	testImplementation 'org.testcontainers:localstack:1.21.2'
+	testImplementation 'org.testcontainers:localstack:1.21.3'
 
 }
 
@@ -152,5 +153,15 @@ jacocoTestCoverageVerification {
 		classDirectories.setFrom(files(classDirectories.files.collect {
 			fileTree(dir: it, exclude: ['**/CaabApplication.class', '**/SecurityConfiguration.class'])
 		}))
+	}
+}
+
+spotless {
+	java {
+		target 'src/*/java/**/*.java'
+		importOrder()
+		removeUnusedImports()
+		cleanthat()
+		googleJavaFormat()
 	}
 }

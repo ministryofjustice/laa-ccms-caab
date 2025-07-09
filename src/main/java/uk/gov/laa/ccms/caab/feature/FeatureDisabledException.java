@@ -2,9 +2,7 @@ package uk.gov.laa.ccms.caab.feature;
 
 import lombok.Getter;
 
-/**
- * Exception raised when an attempt was made to access a disabled feature.
- */
+/** Exception raised when an attempt was made to access a disabled feature. */
 @Getter
 public class FeatureDisabledException extends RuntimeException {
 

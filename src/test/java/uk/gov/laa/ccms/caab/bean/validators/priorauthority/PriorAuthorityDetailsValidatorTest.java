@@ -18,8 +18,7 @@ import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityDetailsFormData;
 @ExtendWith(SpringExtension.class)
 class PriorAuthorityDetailsValidatorTest {
 
-  @InjectMocks
-  private PriorAuthorityDetailsValidator priorAuthorityDetailsValidator;
+  @InjectMocks private PriorAuthorityDetailsValidator priorAuthorityDetailsValidator;
 
   private PriorAuthorityDetailsFormData priorAuthorityDetailsFormData;
 
@@ -28,7 +27,9 @@ class PriorAuthorityDetailsValidatorTest {
   @BeforeEach
   public void setUp() {
     priorAuthorityDetailsFormData = new PriorAuthorityDetailsFormData();
-    errors = new BeanPropertyBindingResult(priorAuthorityDetailsFormData, "priorAuthorityFormDataDetails");
+    errors =
+        new BeanPropertyBindingResult(
+            priorAuthorityDetailsFormData, "priorAuthorityFormDataDetails");
   }
 
   @Test

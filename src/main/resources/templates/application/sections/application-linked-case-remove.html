@@ -8,7 +8,7 @@
     <div id="breadcrumbs"></div>
     <div id="main-content" style="padding-top: 40px;">
         <form action="#"
-              th:action="@{/application/sections/linked-cases/{id}/remove(id=${linkedCase.id})}" method="post">
+              th:action="@{/{caseContext}/sections/linked-cases/{id}/remove(caseContext=${caseContext.getPathValue()},id=${linkedCase.id})}" method="post">
         <span class="govuk-caption-l" th:text="#{application.create}"/>
         <h1 class="govuk-heading-l"
             th:text="#{application.generalDetails.linkCase.remove.title(${linkedCase.lscCaseReference})}"/>
@@ -18,7 +18,7 @@
             <govuk:button type="submit" th:text="#{site.confirm}"/>
             <govuk:button classes="govuk-button--secondary"
                           th:text="#{site.cancel}"
-                          th:href="@{/application/sections/linked-cases}"/>
+                          th:href="@{/{caseContext}/sections/linked-cases(caseContext=${caseContext.getPathValue()})}"/>
         </div>
         </form>
     </div>

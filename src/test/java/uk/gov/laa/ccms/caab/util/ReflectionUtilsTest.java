@@ -1,13 +1,12 @@
 package uk.gov.laa.ccms.caab.util;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 class ReflectionUtilsTest {
 
-  static class TestClassNoFields {
-  }
+  static class TestClassNoFields {}
 
   static class TestClassNonStringFields {
     int number = 42;

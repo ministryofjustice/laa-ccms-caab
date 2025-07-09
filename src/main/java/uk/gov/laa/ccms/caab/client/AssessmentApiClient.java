@@ -13,9 +13,7 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.assessment.model.PatchAssessmentDetail;
 
-/**
- * Client responsible for interactions with the Assessment API.
- */
+/** Client responsible for interactions with the Assessment API. */
 @Service
 @RequiredArgsConstructor
 public class AssessmentApiClient {
@@ -43,14 +41,13 @@ public class AssessmentApiClient {
 
     return assessmentApiWebClient
         .get()
-        .uri(uriBuilder -> uriBuilder
-            .path("/assessments")
-            .queryParams(queryParams)
-            .build())
+        .uri(uriBuilder -> uriBuilder.path("/assessments").queryParams(queryParams).build())
         .retrieve()
         .bodyToMono(AssessmentDetails.class)
-        .onErrorResume(e -> assessmentApiClientErrorHandler
-          .handleApiRetrieveError(e, RESOURCE_TYPE_ASSESSMENT, queryParams));
+        .onErrorResume(
+            e ->
+                assessmentApiClientErrorHandler.handleApiRetrieveError(
+                    e, RESOURCE_TYPE_ASSESSMENT, queryParams));
   }
 
   /**
@@ -73,14 +70,13 @@ public class AssessmentApiClient {
 
     return assessmentApiWebClient
         .get()
-        .uri(uriBuilder -> uriBuilder
-            .path("/assessments")
-            .queryParams(queryParams)
-            .build())
+        .uri(uriBuilder -> uriBuilder.path("/assessments").queryParams(queryParams).build())
         .retrieve()
         .bodyToMono(AssessmentDetails.class)
-        .onErrorResume(e -> assessmentApiClientErrorHandler
-            .handleApiRetrieveError(e, RESOURCE_TYPE_ASSESSMENT, queryParams));
+        .onErrorResume(
+            e ->
+                assessmentApiClientErrorHandler.handleApiRetrieveError(
+                    e, RESOURCE_TYPE_ASSESSMENT, queryParams));
   }
 
   /**
@@ -105,15 +101,14 @@ public class AssessmentApiClient {
 
     return assessmentApiWebClient
         .delete()
-        .uri(uriBuilder -> uriBuilder
-            .path("/assessments")
-            .queryParams(queryParams)
-            .build())
+        .uri(uriBuilder -> uriBuilder.path("/assessments").queryParams(queryParams).build())
         .header("Caab-User-Login-Id", userLoginId)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> assessmentApiClientErrorHandler
-            .handleApiDeleteError(e, RESOURCE_TYPE_ASSESSMENT, queryParams));
+        .onErrorResume(
+            e ->
+                assessmentApiClientErrorHandler.handleApiDeleteError(
+                    e, RESOURCE_TYPE_ASSESSMENT, queryParams));
   }
 
   /**
@@ -123,9 +118,7 @@ public class AssessmentApiClient {
    * @param userLoginId the login ID of the user
    * @return a Mono that completes when the creation is finished
    */
-  public Mono<Void> createAssessment(
-      final AssessmentDetail assessment,
-      final String userLoginId) {
+  public Mono<Void> createAssessment(final AssessmentDetail assessment, final String userLoginId) {
 
     return assessmentApiWebClient
         .post()
@@ -135,8 +128,8 @@ public class AssessmentApiClient {
         .bodyValue(assessment)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> assessmentApiClientErrorHandler
-            .handleApiCreateError(e, RESOURCE_TYPE_ASSESSMENT));
+        .onErrorResume(
+            e -> assessmentApiClientErrorHandler.handleApiCreateError(e, RESOURCE_TYPE_ASSESSMENT));
   }
 
   /**
@@ -148,9 +141,7 @@ public class AssessmentApiClient {
    * @return a Mono that completes when the update is finished
    */
   public Mono<Void> updateAssessment(
-      final Long assessmentId,
-      final AssessmentDetail assessment,
-      final String userLoginId) {
+      final Long assessmentId, final AssessmentDetail assessment, final String userLoginId) {
 
     return assessmentApiWebClient
         .put()
@@ -160,11 +151,10 @@ public class AssessmentApiClient {
         .bodyValue(assessment)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> assessmentApiClientErrorHandler
-            .handleApiUpdateError(e,
-                RESOURCE_TYPE_ASSESSMENT,
-                "id",
-                String.valueOf(assessmentId)));
+        .onErrorResume(
+            e ->
+                assessmentApiClientErrorHandler.handleApiUpdateError(
+                    e, RESOURCE_TYPE_ASSESSMENT, "id", String.valueOf(assessmentId)));
   }
 
   /**
@@ -181,10 +171,9 @@ public class AssessmentApiClient {
       final String providerId,
       final String caseReferenceNumber,
       final String status) {
-    final MultiValueMap<String, String> queryParams = retrieveAssessmentsQueryParams(
-        assessmentNames, providerId, caseReferenceNumber);
-    Optional.ofNullable(status)
-        .ifPresent(param -> queryParams.add("status", param));
+    final MultiValueMap<String, String> queryParams =
+        retrieveAssessmentsQueryParams(assessmentNames, providerId, caseReferenceNumber);
+    Optional.ofNullable(status).ifPresent(param -> queryParams.add("status", param));
     return queryParams;
   }
 
@@ -203,8 +192,7 @@ public class AssessmentApiClient {
     final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
     Optional.ofNullable(assessmentNames)
         .ifPresent(names -> queryParams.add("name", String.join(",", names)));
-    Optional.ofNullable(providerId)
-        .ifPresent(param -> queryParams.add("provider-id", param));
+    Optional.ofNullable(providerId).ifPresent(param -> queryParams.add("provider-id", param));
     Optional.ofNullable(caseReferenceNumber)
         .ifPresent(param -> queryParams.add("case-reference-number", param));
     return queryParams;
@@ -219,9 +207,7 @@ public class AssessmentApiClient {
    * @return a Mono of AssessmentDetails containing the updated assessment.
    */
   public Mono<Void> patchAssessment(
-      final Long assessmentId,
-      final String userLoginId,
-      final PatchAssessmentDetail patch) {
+      final Long assessmentId, final String userLoginId, final PatchAssessmentDetail patch) {
 
     return assessmentApiWebClient
         .patch()
@@ -230,14 +216,9 @@ public class AssessmentApiClient {
         .bodyValue(patch)
         .retrieve()
         .bodyToMono(Void.class)
-        .onErrorResume(e -> assessmentApiClientErrorHandler
-            .handleApiUpdateError(
-                e,
-                RESOURCE_TYPE_ASSESSMENT,
-                "assessment-id",
-                String.valueOf(assessmentId)));
+        .onErrorResume(
+            e ->
+                assessmentApiClientErrorHandler.handleApiUpdateError(
+                    e, RESOURCE_TYPE_ASSESSMENT, "assessment-id", String.valueOf(assessmentId)));
   }
-
-
-
 }

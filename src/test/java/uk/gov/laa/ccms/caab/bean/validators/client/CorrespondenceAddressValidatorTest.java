@@ -22,11 +22,9 @@ import uk.gov.laa.ccms.caab.bean.AddressFormData;
 @ExtendWith(SpringExtension.class)
 class CorrespondenceAddressValidatorTest {
 
-  @InjectMocks
-  private CorrespondenceAddressValidator correspondenceAddressValidator;
+  @InjectMocks private CorrespondenceAddressValidator correspondenceAddressValidator;
 
-  @Mock
-  private AddressFormData addressDetails;
+  @Mock private AddressFormData addressDetails;
 
   private Errors errors;
 
@@ -101,10 +99,7 @@ class CorrespondenceAddressValidatorTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {
-      "USA",
-      "GBR"
-  })
+  @ValueSource(strings = {"USA", "GBR"})
   @DisplayName("Returns false if the Postcode format is invalid")
   void validate_validatePostcodeFormat(String country) {
     addressDetails.setCountry(country);
@@ -128,10 +123,11 @@ class CorrespondenceAddressValidatorTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {
-      "12  The  Street",//Double Spaces
-      "12@The :Street"//Invalid Characters
-  })
+  @ValueSource(
+      strings = {
+        "12  The  Street", // Double Spaces
+        "12@The :Street" // Invalid Characters
+      })
   @DisplayName("Returns false if Address line 1 has invalid characters or double spaces")
   void validate_InvalidAddressLine1Format(String addressLine1) {
     addressDetails.setAddressLine1(addressLine1);
@@ -141,10 +137,11 @@ class CorrespondenceAddressValidatorTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {
-      "12  The  Street",//Double Spaces
-      "12@The :Street"//Invalid Characters
-  })
+  @ValueSource(
+      strings = {
+        "12  The  Street", // Double Spaces
+        "12@The :Street" // Invalid Characters
+      })
   @DisplayName("Returns false if Address line 2 has invalid characters or double spaces")
   void validate_InvalidAddressLine2Format(String addressLine2) {
     addressDetails.setAddressLine2(addressLine2);
@@ -154,10 +151,11 @@ class CorrespondenceAddressValidatorTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {
-      "South  Cardiff",//Double Spaces
-      "North:@Swansea;"//Invalid Characters
-  })
+  @ValueSource(
+      strings = {
+        "South  Cardiff", // Double Spaces
+        "North:@Swansea;" // Invalid Characters
+      })
   @DisplayName("Returns false if City / town has invalid characters or double spaces")
   void validate_InvalidCityTownFormat(String cityTown) {
     addressDetails.setCityTown(cityTown);
@@ -167,10 +165,11 @@ class CorrespondenceAddressValidatorTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {
-      "Vale  of  Glamorgan",//Double Spaces
-      "Vale;of@Glamorgan:"//Invalid Characters
-  })
+  @ValueSource(
+      strings = {
+        "Vale  of  Glamorgan", // Double Spaces
+        "Vale;of@Glamorgan:" // Invalid Characters
+      })
   @DisplayName("Returns false if the County has invalid characters or double spaces")
   void validate_InvalidCountyFormat(String county) {
     addressDetails.setCounty(county);

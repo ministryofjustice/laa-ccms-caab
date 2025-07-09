@@ -17,8 +17,8 @@ import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 /**
- * Validator component responsible for validating
- * {@link uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria} objects.
+ * Validator component responsible for validating {@link
+ * uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria} objects.
  */
 @Component
 @Slf4j
@@ -31,8 +31,8 @@ public class NotificationSearchValidator extends AbstractValidator {
    * Determines if the Validator supports the provided class.
    *
    * @param clazz The class to check for support.
-   * @return {@code true} if the class is assignable from
-   *     {@link uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria}, {@code false} otherwise.
+   * @return {@code true} if the class is assignable from {@link
+   *     uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria}, {@code false} otherwise.
    */
   @Override
   public boolean supports(Class<?> clazz) {
@@ -40,8 +40,8 @@ public class NotificationSearchValidator extends AbstractValidator {
   }
 
   /**
-   * Validates the client address search details in the
-   * {@link uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria}.
+   * Validates the client address search details in the {@link
+   * uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria}.
    *
    * @param target The object to be validated.
    * @param errors The Errors object to store validation errors.
@@ -71,13 +71,12 @@ public class NotificationSearchValidator extends AbstractValidator {
           && !StringUtils.hasText(searchCriteria.getCaseReference())
           && !StringUtils.hasText(searchCriteria.getClientSurname())
           && searchCriteria.getFeeEarnerId() == null) {
-        errors.reject("invalid.criteria",
-            "You must provide at least one search criteria below. "
-                + "Please amend your entry.");
+        errors.reject(
+            "invalid.criteria",
+            "You must provide at least one search criteria below. Please amend your entry.");
       }
     }
   }
-
 
   private void validateDateFieldFormats(NotificationSearchCriteria criteria, Errors errors) {
     String dateFromFieldName = "notificationFromDate";
@@ -86,18 +85,21 @@ public class NotificationSearchValidator extends AbstractValidator {
     String dateToFieldName = "notificationToDate";
     String dateToDisplayName = "date to";
 
-    boolean fromDateEmpty = criteria.getNotificationFromDate() == null
-        || !StringUtils.hasText(criteria.getNotificationFromDate());
-    boolean toDateEmpty = criteria.getNotificationToDate() == null
-        || !StringUtils.hasText(criteria.getNotificationToDate());
+    boolean fromDateEmpty =
+        criteria.getNotificationFromDate() == null
+            || !StringUtils.hasText(criteria.getNotificationFromDate());
+    boolean toDateEmpty =
+        criteria.getNotificationToDate() == null
+            || !StringUtils.hasText(criteria.getNotificationToDate());
 
     // Validate from
     Date from = null;
     if (!fromDateEmpty) {
       try {
         String dateFrom = criteria.getNotificationFromDate();
-        from = validateValidDateField(dateFrom, dateFromFieldName, dateFromDisplayName,
-            DATE_FORMAT, errors);
+        from =
+            validateValidDateField(
+                dateFrom, dateFromFieldName, dateFromDisplayName, DATE_FORMAT, errors);
       } catch (CaabApplicationException e) {
         reportInvalidDate(dateFromFieldName, dateFromDisplayName, errors);
       }
@@ -108,8 +110,8 @@ public class NotificationSearchValidator extends AbstractValidator {
     if (!toDateEmpty) {
       try {
         String dateTo = criteria.getNotificationToDate();
-        to = validateValidDateField(dateTo, dateToFieldName, dateToDisplayName,
-            DATE_FORMAT, errors);
+        to =
+            validateValidDateField(dateTo, dateToFieldName, dateToDisplayName, DATE_FORMAT, errors);
       } catch (CaabApplicationException e) {
         reportInvalidDate(dateToFieldName, dateToDisplayName, errors);
       }
@@ -132,17 +134,13 @@ public class NotificationSearchValidator extends AbstractValidator {
       validateFromBeforeToDates(from, dateFromFieldName, to, errors);
       validateLessThanThreeYearsBetweenDates(from, dateToFieldName, to, errors);
     }
-
   }
 
+  protected void validateLessThanThreeYearsBetweenDates(
+      final Date fromDate, final String fieldName, final Date toDate, Errors errors) {
 
-  protected void validateLessThanThreeYearsBetweenDates(final Date fromDate, final String fieldName,
-      final Date toDate, Errors errors) {
-
-    LocalDate fromLocalDate = fromDate.toInstant().atZone(ZoneId.systemDefault())
-        .toLocalDate();
-    LocalDate toLocalDate = toDate.toInstant().atZone(ZoneId.systemDefault())
-        .toLocalDate();
+    LocalDate fromLocalDate = fromDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    LocalDate toLocalDate = toDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
     LocalDate threeYearsAfterFrom = fromLocalDate.plusYears(3L);
 
     // If three years after From date is still before the To date, then the date range is more than
@@ -154,14 +152,18 @@ public class NotificationSearchValidator extends AbstractValidator {
 
   private void validateCaseRef(final String caseRef, Errors errors) {
     if (StringUtils.hasText(caseRef)) {
-      //check no double spaces
+      // check no double spaces
       if (!caseRef.matches(ALPHA_NUMERIC_SLASH_SPACE_STRING)) {
-        errors.rejectValue("caseReference", "invalid.case-ref",
+        errors.rejectValue(
+            "caseReference",
+            "invalid.case-ref",
             "Your input for 'LAA application / case reference' contains an "
                 + "invalid character. Please amend your entry using numbers, "
                 + "letters and spaces only");
       } else if (caseRef.matches(DOUBLE_SPACE)) {
-        errors.rejectValue("caseReference", "invalid.case-ref",
+        errors.rejectValue(
+            "caseReference",
+            "invalid.case-ref",
             "Your input for 'LAA application / case reference'"
                 + " contains double spaces. Please amend your entry.");
       }
@@ -171,28 +173,35 @@ public class NotificationSearchValidator extends AbstractValidator {
   private void validateClientSurname(String clientSurname, Errors errors) {
     if (StringUtils.hasText(clientSurname)) {
       if (!clientSurname.matches(FIRST_CHARACTER_MUST_BE_ALPHA)) {
-        errors.rejectValue("clientSurname", "invalid.surname",
+        errors.rejectValue(
+            "clientSurname",
+            "invalid.surname",
             "Your input for 'Client surname' is invalid. "
                 + "The first character must be a letter. Please amend your entry.");
       } else if (!clientSurname.matches(CHARACTER_SET_C)) {
-        errors.rejectValue("clientSurname", "invalid.surname-char",
+        errors.rejectValue(
+            "clientSurname",
+            "invalid.surname-char",
             "Your input for 'Client surname' contains an invalid character. "
                 + "Please amend your entry.");
       } else if (patternMatches(clientSurname, DOUBLE_SPACE)) {
-        errors.rejectValue("clientSurname", "invalid.surname",
-            "Your input for 'Client surname'"
-                + " contains double spaces. Please amend your entry.");
+        errors.rejectValue(
+            "clientSurname",
+            "invalid.surname",
+            "Your input for 'Client surname' contains double spaces. Please amend your entry.");
       }
     }
   }
 
   private void validateProviderCaseRef(String providerCaseReference, Errors errors) {
     if (StringUtils.hasText(providerCaseReference)) {
-      //check no double spaces
+      // check no double spaces
       if (providerCaseReference.matches(DOUBLE_SPACE)) {
-        errors.rejectValue("providerCaseReference", "invalid.providerCaseReference-char",
-                "Your input for 'Provider case reference'"
-                        + " contains double spaces. Please amend your entry.");
+        errors.rejectValue(
+            "providerCaseReference",
+            "invalid.providerCaseReference-char",
+            "Your input for 'Provider case reference'"
+                + " contains double spaces. Please amend your entry.");
       }
     }
   }

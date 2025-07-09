@@ -16,10 +16,7 @@ import uk.gov.laa.ccms.caab.util.FileUtil;
 import uk.gov.laa.ccms.soa.gateway.model.BaseDocument;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 
-
-/**
- * Mapper class to convert Notification Attachments between various formats.
- */
+/** Mapper class to convert Notification Attachments between various formats. */
 @Mapper(componentModel = "spring", uses = CommonMapper.class)
 public interface NotificationAttachmentMapper {
 
@@ -47,8 +44,8 @@ public interface NotificationAttachmentMapper {
   @Mapping(target = "description", source = "document.text")
   @Mapping(target = "documentType.id", source = "document.documentType")
   @Mapping(target = "documentType.displayValue", source = "documentTypeDisplayValue")
-  BaseNotificationAttachmentDetail toBaseNotificationAttachmentDetail(Document document,
-      String documentTypeDisplayValue);
+  BaseNotificationAttachmentDetail toBaseNotificationAttachmentDetail(
+      Document document, String documentTypeDisplayValue);
 
   @Mapping(target = "auditTrail", ignore = true)
   @Mapping(target = "id", source = "documentId")
@@ -77,8 +74,8 @@ public interface NotificationAttachmentMapper {
    * Set the file extension on the attachment upload form data based on the filename of the
    * notification attachment.
    *
-   * @param notificationAttachmentUploadFormData  The notification attachment upload form data.
-   * @param notificationAttachmentDetail          The notification attachment.
+   * @param notificationAttachmentUploadFormData The notification attachment upload form data.
+   * @param notificationAttachmentDetail The notification attachment.
    */
   @AfterMapping
   default void setFileExtension(
@@ -95,11 +92,12 @@ public interface NotificationAttachmentMapper {
    * Set the file extension on the base document based on the filename of the notification
    * attachment.
    *
-   * @param baseDocument                  The base document.
-   * @param notificationAttachmentDetail  The notification attachment.
+   * @param baseDocument The base document.
+   * @param notificationAttachmentDetail The notification attachment.
    */
   @AfterMapping
-  default void setFileExtension(@MappingTarget BaseDocument baseDocument,
+  default void setFileExtension(
+      @MappingTarget BaseDocument baseDocument,
       NotificationAttachmentDetail notificationAttachmentDetail) {
     if (notificationAttachmentDetail.getSendBy().equals(ELECTRONIC.getCode())) {
       baseDocument.setFileExtension(
@@ -108,15 +106,14 @@ public interface NotificationAttachmentMapper {
   }
 
   /**
-   * Set the file extension on the document based on the filename of the notification
-   * attachment.
+   * Set the file extension on the document based on the filename of the notification attachment.
    *
-   * @param document                      The document.
-   * @param notificationAttachmentDetail  The notification attachment.
+   * @param document The document.
+   * @param notificationAttachmentDetail The notification attachment.
    */
   @AfterMapping
-  default void setFileExtension(@MappingTarget Document document,
-      NotificationAttachmentDetail notificationAttachmentDetail) {
+  default void setFileExtension(
+      @MappingTarget Document document, NotificationAttachmentDetail notificationAttachmentDetail) {
     if (notificationAttachmentDetail.getSendBy().equals(ELECTRONIC.getCode())) {
       document.setFileExtension(
           FileUtil.getFileExtension(notificationAttachmentDetail.getFileName()));

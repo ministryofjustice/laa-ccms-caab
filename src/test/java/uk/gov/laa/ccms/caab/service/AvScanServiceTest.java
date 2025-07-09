@@ -23,8 +23,7 @@ import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 @ExtendWith(MockitoExtension.class)
 public class AvScanServiceTest {
 
-  @Mock
-  private AvApiClient avApiClient;
+  @Mock private AvApiClient avApiClient;
 
   private AvScanService avScanService;
 
@@ -55,16 +54,17 @@ public class AvScanServiceTest {
     InputStream inputStream = InputStream.nullInputStream();
     AvApiClientException avApiClientException = new AvApiClientException("error");
 
-    doThrow(avApiClientException).when(avApiClient)
-        .scan(inputStream);
+    doThrow(avApiClientException).when(avApiClient).scan(inputStream);
 
     Exception e =
-        assertThrows(AvScanException.class, () -> avScanService.performAvScan(
-            caseReferenceNumber, providerId, userId, source, filename, inputStream));
+        assertThrows(
+            AvScanException.class,
+            () ->
+                avScanService.performAvScan(
+                    caseReferenceNumber, providerId, userId, source, filename, inputStream));
 
     assertEquals(
-        SCAN_ERROR_FORMAT.formatted(filename, avApiClientException.getMessage()),
-        e.getMessage());
+        SCAN_ERROR_FORMAT.formatted(filename, avApiClientException.getMessage()), e.getMessage());
   }
 
   @Test
@@ -73,12 +73,14 @@ public class AvScanServiceTest {
     InputStream inputStream = InputStream.nullInputStream();
     AvApiVirusFoundException avApiVirusFoundException = new AvApiVirusFoundException("error");
 
-    doThrow(avApiVirusFoundException).when(avApiClient)
-        .scan(inputStream);
+    doThrow(avApiVirusFoundException).when(avApiClient).scan(inputStream);
 
     Exception e =
-        assertThrows(AvVirusFoundException.class, () -> avScanService.performAvScan(
-            caseReferenceNumber, providerId, userId, source, filename, inputStream));
+        assertThrows(
+            AvVirusFoundException.class,
+            () ->
+                avScanService.performAvScan(
+                    caseReferenceNumber, providerId, userId, source, filename, inputStream));
 
     assertEquals(
         VIRUS_FOUND_ERROR_FORMAT.formatted(filename, avApiVirusFoundException.getMessage()),

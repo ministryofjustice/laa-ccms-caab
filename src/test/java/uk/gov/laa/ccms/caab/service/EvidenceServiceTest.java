@@ -50,23 +50,17 @@ import uk.gov.laa.ccms.soa.gateway.model.Document;
 @ExtendWith(MockitoExtension.class)
 class EvidenceServiceTest {
 
-  @Mock
-  private CaabApiClient caabApiClient;
+  @Mock private CaabApiClient caabApiClient;
 
-  @Mock
-  private EbsApiClient ebsApiClient;
+  @Mock private EbsApiClient ebsApiClient;
 
-  @Mock
-  private SoaApiClient soaApiClient;
+  @Mock private SoaApiClient soaApiClient;
 
-  @Mock
-  private AssessmentService assessmentService;
+  @Mock private AssessmentService assessmentService;
 
-  @Mock
-  private CaseOutcomeService caseOutcomeService;
+  @Mock private CaseOutcomeService caseOutcomeService;
 
-  @InjectMocks
-  private EvidenceService evidenceService;
+  @InjectMocks private EvidenceService evidenceService;
 
   private final String documentType = "docType";
 
@@ -86,32 +80,20 @@ class EvidenceServiceTest {
 
   private final CcmsModule source = CcmsModule.APPLICATION;
 
-
   @Test
   void getEvidenceDocumentsForCase_callsApiClient() {
     EvidenceDocumentDetails evidenceDocumentDetails = new EvidenceDocumentDetails();
     when(caabApiClient.getEvidenceDocuments(
-        null,
-        caseReferenceNumber,
-        null,
-        null,
-        source.getCode(),
-        true)).thenReturn(Mono.just(evidenceDocumentDetails));
+            null, caseReferenceNumber, null, null, source.getCode(), true))
+        .thenReturn(Mono.just(evidenceDocumentDetails));
 
-    Mono<EvidenceDocumentDetails> resultMono = evidenceService.getEvidenceDocumentsForCase(
-        caseReferenceNumber, source);
+    Mono<EvidenceDocumentDetails> resultMono =
+        evidenceService.getEvidenceDocumentsForCase(caseReferenceNumber, source);
 
-    StepVerifier.create(resultMono)
-        .expectNext(evidenceDocumentDetails)
-        .verifyComplete();
+    StepVerifier.create(resultMono).expectNext(evidenceDocumentDetails).verifyComplete();
 
-    verify(caabApiClient).getEvidenceDocuments(
-        null,
-        caseReferenceNumber,
-        null,
-        null,
-        source.getCode(),
-        true);
+    verify(caabApiClient)
+        .getEvidenceDocuments(null, caseReferenceNumber, null, null, source.getCode(), true);
   }
 
   @Test
@@ -125,9 +107,7 @@ class EvidenceServiceTest {
     Mono<EvidenceDocumentDetail> resultMono =
         evidenceService.getEvidenceDocument(evidenceDocumentId);
 
-    StepVerifier.create(resultMono)
-        .expectNext(evidenceDocumentDetail)
-        .verifyComplete();
+    StepVerifier.create(resultMono).expectNext(evidenceDocumentDetail).verifyComplete();
 
     verify(caabApiClient).getEvidenceDocument(evidenceDocumentId);
   }
@@ -136,28 +116,22 @@ class EvidenceServiceTest {
   void registerDocument_callsApiClient() {
     final String docId = "123";
 
-    ArgumentCaptor<Document> documentArgumentCaptor =
-        ArgumentCaptor.forClass(Document.class);
+    ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.forClass(Document.class);
 
     final ClientTransactionResponse clientTransactionResponse = new ClientTransactionResponse();
     clientTransactionResponse.setReferenceNumber(docId);
 
-    when(soaApiClient.registerDocument(
-        any(Document.class),
-        eq(userId),
-        eq(userType))).thenReturn(Mono.just(clientTransactionResponse));
+    when(soaApiClient.registerDocument(any(Document.class), eq(userId), eq(userType)))
+        .thenReturn(Mono.just(clientTransactionResponse));
 
-    final Mono<String> resultMono = evidenceService.registerDocument(
-        documentType, fileExtension, documentDescription, null, userId, userType);
+    final Mono<String> resultMono =
+        evidenceService.registerDocument(
+            documentType, fileExtension, documentDescription, null, userId, userType);
 
-    StepVerifier.create(resultMono)
-        .expectNext(docId)
-        .verifyComplete();
+    StepVerifier.create(resultMono).expectNext(docId).verifyComplete();
 
-    verify(soaApiClient).registerDocument(
-        documentArgumentCaptor.capture(),
-        eq(userId),
-        eq(userType));
+    verify(soaApiClient)
+        .registerDocument(documentArgumentCaptor.capture(), eq(userId), eq(userType));
 
     assertEquals(documentType, documentArgumentCaptor.getValue().getDocumentType());
     assertEquals(fileExtension, documentArgumentCaptor.getValue().getFileExtension());
@@ -169,16 +143,12 @@ class EvidenceServiceTest {
     final String docId = "123";
     EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
 
-    when(caabApiClient.createEvidenceDocument(
-        evidenceDocumentDetail,
-        userId)).thenReturn(Mono.just(docId));
+    when(caabApiClient.createEvidenceDocument(evidenceDocumentDetail, userId))
+        .thenReturn(Mono.just(docId));
 
-    final Mono<String> resultMono = evidenceService.addDocument(
-        evidenceDocumentDetail, userId);
+    final Mono<String> resultMono = evidenceService.addDocument(evidenceDocumentDetail, userId);
 
-    StepVerifier.create(resultMono)
-        .expectNext(docId)
-        .verifyComplete();
+    StepVerifier.create(resultMono).expectNext(docId).verifyComplete();
   }
 
   @Test
@@ -186,28 +156,17 @@ class EvidenceServiceTest {
     final Integer docId = 123;
     final CcmsModule ccmsModule = CcmsModule.APPLICATION;
 
-    final BaseEvidenceDocumentDetail doc = new BaseEvidenceDocumentDetail()
-        .id(docId);
+    final BaseEvidenceDocumentDetail doc = new BaseEvidenceDocumentDetail().id(docId);
 
     when(caabApiClient.getEvidenceDocuments(
-        applicationId,
-        null,
-        null,
-        null,
-        ccmsModule.getCode(),
-        true)).thenReturn(Mono.just(new EvidenceDocumentDetails().addContentItem(doc)));
+            applicationId, null, null, null, ccmsModule.getCode(), true))
+        .thenReturn(Mono.just(new EvidenceDocumentDetails().addContentItem(doc)));
 
     when(caabApiClient.deleteEvidenceDocument(docId, userId)).thenReturn(Mono.empty());
 
-    evidenceService.removeDocument(
-        applicationId,
-        docId,
-        CcmsModule.APPLICATION,
-        userId);
+    evidenceService.removeDocument(applicationId, docId, CcmsModule.APPLICATION, userId);
 
-    verify(caabApiClient).deleteEvidenceDocument(
-        docId,
-        userId);
+    verify(caabApiClient).deleteEvidenceDocument(docId, userId);
   }
 
   @Test
@@ -215,26 +174,17 @@ class EvidenceServiceTest {
     final Integer docId = 123;
     final CcmsModule ccmsModule = CcmsModule.APPLICATION;
 
-    final BaseEvidenceDocumentDetail doc = new BaseEvidenceDocumentDetail()
-        .id(456);
+    final BaseEvidenceDocumentDetail doc = new BaseEvidenceDocumentDetail().id(456);
 
     when(caabApiClient.getEvidenceDocuments(
-        applicationId,
-        null,
-        null,
-        null,
-        ccmsModule.getCode(),
-        true)).thenReturn(Mono.just(new EvidenceDocumentDetails().addContentItem(doc)));
+            applicationId, null, null, null, ccmsModule.getCode(), true))
+        .thenReturn(Mono.just(new EvidenceDocumentDetails().addContentItem(doc)));
 
-    assertThrows(CaabApplicationException.class, () -> evidenceService.removeDocument(
-        applicationId,
-        docId,
-        CcmsModule.APPLICATION,
-        userId));
+    assertThrows(
+        CaabApplicationException.class,
+        () -> evidenceService.removeDocument(applicationId, docId, CcmsModule.APPLICATION, userId));
 
-    verify(caabApiClient, never()).deleteEvidenceDocument(
-        docId,
-        userId);
+    verify(caabApiClient, never()).deleteEvidenceDocument(docId, userId);
   }
 
   @Test
@@ -244,37 +194,44 @@ class EvidenceServiceTest {
     meansAssessment.setName(MEANS.getName());
 
     // Grab the first means attribute in the first entity type, and set its value to 'true'
-    AssessmentAttributeDetail meansFirstAttribute = meansAssessment
-        .getEntityTypes().getFirst()
-        .getEntities().getFirst()
-        .getAttributes().getFirst();
+    AssessmentAttributeDetail meansFirstAttribute =
+        meansAssessment
+            .getEntityTypes()
+            .getFirst()
+            .getEntities()
+            .getFirst()
+            .getAttributes()
+            .getFirst();
     meansFirstAttribute.setValue("true");
 
     // Grab the second means attribute in the first entity type, and set its value to 'false'
-    AssessmentAttributeDetail meansSecondAttribute = meansAssessment
-        .getEntityTypes().getFirst()
-        .getEntities().getFirst()
-        .getAttributes().get(1);
+    AssessmentAttributeDetail meansSecondAttribute =
+        meansAssessment.getEntityTypes().getFirst().getEntities().getFirst().getAttributes().get(1);
     meansSecondAttribute.setValue("false");
 
     AssessmentDetail meritsAssessment = AssessmentModelUtils.buildAssessmentDetail(new Date());
     meansAssessment.setName(MERITS.getName());
 
     // Grab the first merits attribute in the first entity type, and set its value to 'true'
-    AssessmentAttributeDetail meritsFirstAttribute = meritsAssessment
-        .getEntityTypes().getFirst()
-        .getEntities().getFirst()
-        .getAttributes().getFirst();
+    AssessmentAttributeDetail meritsFirstAttribute =
+        meritsAssessment
+            .getEntityTypes()
+            .getFirst()
+            .getEntities()
+            .getFirst()
+            .getAttributes()
+            .getFirst();
     meritsFirstAttribute.setValue("true");
 
     assessmentDetails.addContentItem(meansAssessment);
     assessmentDetails.addContentItem(meritsAssessment);
 
     when(assessmentService.getAssessments(
-        List.of(MEANS.getName(), MERITS.getName()),
-        String.valueOf(providerId),
-        caseReferenceNumber,
-        AssessmentStatus.COMPLETE.getStatus())).thenReturn(Mono.just(assessmentDetails));
+            List.of(MEANS.getName(), MERITS.getName()),
+            String.valueOf(providerId),
+            caseReferenceNumber,
+            AssessmentStatus.COMPLETE.getStatus()))
+        .thenReturn(Mono.just(assessmentDetails));
 
     EvidenceDocumentTypeLookupValueDetail requiredDocType1 =
         new EvidenceDocumentTypeLookupValueDetail()
@@ -300,121 +257,121 @@ class EvidenceServiceTest {
     evidenceDocumentTypeLookupDetail.addContentItem(requiredDocType2);
     evidenceDocumentTypeLookupDetail.addContentItem(unmatchedNotRequiredDocType);
 
-    when(ebsApiClient.getEvidenceDocumentTypes(
-        COMMON_VALUE_OPA_EVIDENCE_ITEMS, null)).thenReturn(
-        Mono.just(evidenceDocumentTypeLookupDetail));
+    when(ebsApiClient.getEvidenceDocumentTypes(COMMON_VALUE_OPA_EVIDENCE_ITEMS, null))
+        .thenReturn(Mono.just(evidenceDocumentTypeLookupDetail));
 
     Mono<List<EvidenceDocumentTypeLookupValueDetail>> resultMono =
         evidenceService.getOpaDocumentsRequired(caseReferenceNumber, providerId);
 
     StepVerifier.create(resultMono)
-        .expectNextMatches(result -> result.size() == 2
-            && result.contains(requiredDocType1)
-            && result.contains(requiredDocType2))
+        .expectNextMatches(
+            result ->
+                result.size() == 2
+                    && result.contains(requiredDocType1)
+                    && result.contains(requiredDocType2))
         .verifyComplete();
-
   }
 
   @Test
   void getOpaDocumentsRequired_noAssessments_returnsEmptyList() {
     when(assessmentService.getAssessments(
-        List.of(MEANS.getName(), MERITS.getName()),
-        String.valueOf(providerId),
-        caseReferenceNumber,
-        AssessmentStatus.COMPLETE.getStatus())).thenReturn(Mono.just(new AssessmentDetails()));
+            List.of(MEANS.getName(), MERITS.getName()),
+            String.valueOf(providerId),
+            caseReferenceNumber,
+            AssessmentStatus.COMPLETE.getStatus()))
+        .thenReturn(Mono.just(new AssessmentDetails()));
 
     final EvidenceDocumentTypeLookupDetail evidenceDocumentTypeLookupDetail =
         new EvidenceDocumentTypeLookupDetail();
-    evidenceDocumentTypeLookupDetail.addContentItem(new EvidenceDocumentTypeLookupValueDetail()
-        .code("code1")
-        .description("doc 1"));
+    evidenceDocumentTypeLookupDetail.addContentItem(
+        new EvidenceDocumentTypeLookupValueDetail().code("code1").description("doc 1"));
 
-    when(ebsApiClient.getEvidenceDocumentTypes(
-        COMMON_VALUE_OPA_EVIDENCE_ITEMS, null)).thenReturn(
-        Mono.just(evidenceDocumentTypeLookupDetail));
+    when(ebsApiClient.getEvidenceDocumentTypes(COMMON_VALUE_OPA_EVIDENCE_ITEMS, null))
+        .thenReturn(Mono.just(evidenceDocumentTypeLookupDetail));
 
     Mono<List<EvidenceDocumentTypeLookupValueDetail>> resultMono =
         evidenceService.getOpaDocumentsRequired(caseReferenceNumber, providerId);
 
-    StepVerifier.create(resultMono)
-        .expectNextMatches(List::isEmpty)
-        .verifyComplete();
+    StepVerifier.create(resultMono).expectNextMatches(List::isEmpty).verifyComplete();
   }
 
   @Test
   void getOpaDocumentsRequired_noRequiredAttributes_returnsEmptyList() {
-    final AssessmentDetails assessmentDetails = new AssessmentDetails()
-        .addContentItem(
-            AssessmentModelUtils.buildAssessmentDetail(new Date()).name(MEANS.getName()));
+    final AssessmentDetails assessmentDetails =
+        new AssessmentDetails()
+            .addContentItem(
+                AssessmentModelUtils.buildAssessmentDetail(new Date()).name(MEANS.getName()));
 
     // Grab the first means attribute in the first entity type, and set its value to 'true'
-    AssessmentAttributeDetail meansFirstAttribute = assessmentDetails.getContent().getFirst()
-        .getEntityTypes().getFirst()
-        .getEntities().getFirst()
-        .getAttributes().getFirst();
+    AssessmentAttributeDetail meansFirstAttribute =
+        assessmentDetails
+            .getContent()
+            .getFirst()
+            .getEntityTypes()
+            .getFirst()
+            .getEntities()
+            .getFirst()
+            .getAttributes()
+            .getFirst();
 
     when(assessmentService.getAssessments(
-        List.of(MEANS.getName(), MERITS.getName()),
-        String.valueOf(providerId),
-        caseReferenceNumber,
-        AssessmentStatus.COMPLETE.getStatus())).thenReturn(
-        Mono.just(assessmentDetails));
+            List.of(MEANS.getName(), MERITS.getName()),
+            String.valueOf(providerId),
+            caseReferenceNumber,
+            AssessmentStatus.COMPLETE.getStatus()))
+        .thenReturn(Mono.just(assessmentDetails));
 
     // Create an evidence doc type with code matching the first attribute of the means assessment
     // (which isn't set to 'true')
     final EvidenceDocumentTypeLookupDetail evidenceDocumentTypeLookupDetail =
         new EvidenceDocumentTypeLookupDetail();
-    evidenceDocumentTypeLookupDetail.addContentItem(new EvidenceDocumentTypeLookupValueDetail()
-        .code(meansFirstAttribute.getName())
-        .description("doc 1"));
+    evidenceDocumentTypeLookupDetail.addContentItem(
+        new EvidenceDocumentTypeLookupValueDetail()
+            .code(meansFirstAttribute.getName())
+            .description("doc 1"));
 
-    when(ebsApiClient.getEvidenceDocumentTypes(
-        COMMON_VALUE_OPA_EVIDENCE_ITEMS, null)).thenReturn(
-        Mono.just(evidenceDocumentTypeLookupDetail));
+    when(ebsApiClient.getEvidenceDocumentTypes(COMMON_VALUE_OPA_EVIDENCE_ITEMS, null))
+        .thenReturn(Mono.just(evidenceDocumentTypeLookupDetail));
 
     Mono<List<EvidenceDocumentTypeLookupValueDetail>> resultMono =
         evidenceService.getOpaDocumentsRequired(caseReferenceNumber, providerId);
 
-    StepVerifier.create(resultMono)
-        .expectNextMatches(List::isEmpty)
-        .verifyComplete();
+    StepVerifier.create(resultMono).expectNextMatches(List::isEmpty).verifyComplete();
   }
 
   @Test
   void getPriorAuthDocumentsRequired_hasPriorAuth_returnsPriorAuthDocTypes() {
 
     // Return a prior authority for the application.
-    when(caabApiClient.getPriorAuthorities(applicationId)).thenReturn(
-        Mono.just(List.of(new PriorAuthorityDetail())));
+    when(caabApiClient.getPriorAuthorities(applicationId))
+        .thenReturn(Mono.just(List.of(new PriorAuthorityDetail())));
 
-    when(ebsApiClient.getEvidenceDocumentTypes(
-        COMMON_VALUE_PRIOR_AUTHORITY_EVIDENCE_ITEMS, null)).thenReturn(
-        Mono.just(new EvidenceDocumentTypeLookupDetail().addContentItem(
-            new EvidenceDocumentTypeLookupValueDetail())));
+    when(ebsApiClient.getEvidenceDocumentTypes(COMMON_VALUE_PRIOR_AUTHORITY_EVIDENCE_ITEMS, null))
+        .thenReturn(
+            Mono.just(
+                new EvidenceDocumentTypeLookupDetail()
+                    .addContentItem(new EvidenceDocumentTypeLookupValueDetail())));
 
     Mono<List<EvidenceDocumentTypeLookupValueDetail>> resultMono =
         evidenceService.getPriorAuthorityDocumentsRequired(applicationId);
 
-    StepVerifier.create(resultMono)
-        .expectNextMatches(result -> !result.isEmpty())
-        .verifyComplete();
+    StepVerifier.create(resultMono).expectNextMatches(result -> !result.isEmpty()).verifyComplete();
 
     verify(caabApiClient).getPriorAuthorities(applicationId);
-    verify(ebsApiClient).getEvidenceDocumentTypes(COMMON_VALUE_PRIOR_AUTHORITY_EVIDENCE_ITEMS, null);
+    verify(ebsApiClient)
+        .getEvidenceDocumentTypes(COMMON_VALUE_PRIOR_AUTHORITY_EVIDENCE_ITEMS, null);
   }
 
   @Test
   void getPriorAuthDocumentsRequired_noPriorAuth_returnsEmptyPriorAuthDocTypes() {
 
-    when(caabApiClient.getPriorAuthorities(applicationId)).thenReturn(
-        Mono.just(Collections.emptyList()));
+    when(caabApiClient.getPriorAuthorities(applicationId))
+        .thenReturn(Mono.just(Collections.emptyList()));
 
     Mono<List<EvidenceDocumentTypeLookupValueDetail>> resultMono =
         evidenceService.getPriorAuthorityDocumentsRequired(applicationId);
 
-    StepVerifier.create(resultMono)
-        .expectNextMatches(List::isEmpty)
-        .verifyComplete();
+    StepVerifier.create(resultMono).expectNextMatches(List::isEmpty).verifyComplete();
 
     verify(caabApiClient).getPriorAuthorities(applicationId);
     verifyNoInteractions(ebsApiClient);
@@ -424,41 +381,37 @@ class EvidenceServiceTest {
   void getCaseOutcomeDocumentsRequired_hasCaseOutcome_returnsOutcomeDocs() {
 
     // Return a prior authority for the application.
-    when(caseOutcomeService.getCaseOutcome(caseReferenceNumber, providerId)).thenReturn(
-        Optional.of(new CaseOutcomeDetail()));
+    when(caseOutcomeService.getCaseOutcome(caseReferenceNumber, providerId))
+        .thenReturn(Optional.of(new CaseOutcomeDetail()));
 
     when(ebsApiClient.getEvidenceDocumentTypes(
-        COMMON_VALUE_DOCUMENT_TYPES,
-        COMMON_VALUE_OUTCOME_DOCUMENT_CODE)).thenReturn(
-        Mono.just(new EvidenceDocumentTypeLookupDetail().addContentItem(
-            new EvidenceDocumentTypeLookupValueDetail())));
+            COMMON_VALUE_DOCUMENT_TYPES, COMMON_VALUE_OUTCOME_DOCUMENT_CODE))
+        .thenReturn(
+            Mono.just(
+                new EvidenceDocumentTypeLookupDetail()
+                    .addContentItem(new EvidenceDocumentTypeLookupValueDetail())));
 
     Mono<List<EvidenceDocumentTypeLookupValueDetail>> resultMono =
         evidenceService.getCaseOutcomeDocumentsRequired(caseReferenceNumber, providerId);
 
-    StepVerifier.create(resultMono)
-        .expectNextMatches(result -> !result.isEmpty())
-        .verifyComplete();
+    StepVerifier.create(resultMono).expectNextMatches(result -> !result.isEmpty()).verifyComplete();
 
     verify(caseOutcomeService).getCaseOutcome(caseReferenceNumber, providerId);
-    verify(ebsApiClient).getEvidenceDocumentTypes(
-        COMMON_VALUE_DOCUMENT_TYPES,
-        COMMON_VALUE_OUTCOME_DOCUMENT_CODE);
+    verify(ebsApiClient)
+        .getEvidenceDocumentTypes(COMMON_VALUE_DOCUMENT_TYPES, COMMON_VALUE_OUTCOME_DOCUMENT_CODE);
   }
 
   @Test
   void getCaseOutcomeDocumentsRequired_noCaseOutcome_returnsEmptyOutcomeDocs() {
 
     // No prior auth
-    when(caseOutcomeService.getCaseOutcome(caseReferenceNumber, providerId)).thenReturn(
-        Optional.empty());
+    when(caseOutcomeService.getCaseOutcome(caseReferenceNumber, providerId))
+        .thenReturn(Optional.empty());
 
     Mono<List<EvidenceDocumentTypeLookupValueDetail>> resultMono =
         evidenceService.getCaseOutcomeDocumentsRequired(caseReferenceNumber, providerId);
 
-    StepVerifier.create(resultMono)
-        .expectNextMatches(List::isEmpty)
-        .verifyComplete();
+    StepVerifier.create(resultMono).expectNextMatches(List::isEmpty).verifyComplete();
 
     verify(caseOutcomeService).getCaseOutcome(caseReferenceNumber, providerId);
     verifyNoInteractions(ebsApiClient);
@@ -468,38 +421,35 @@ class EvidenceServiceTest {
   void getDocumentsRequired_combinesThreeEvidenceTypes() {
     // Return empty responses - this has been tested separately.
     when(assessmentService.getAssessments(
-        List.of(MEANS.getName(), MERITS.getName()),
-        String.valueOf(providerId),
-        caseReferenceNumber,
-        AssessmentStatus.COMPLETE.getStatus())).thenReturn(Mono.just(new AssessmentDetails()));
+            List.of(MEANS.getName(), MERITS.getName()),
+            String.valueOf(providerId),
+            caseReferenceNumber,
+            AssessmentStatus.COMPLETE.getStatus()))
+        .thenReturn(Mono.just(new AssessmentDetails()));
 
-    when(ebsApiClient.getEvidenceDocumentTypes(
-        COMMON_VALUE_OPA_EVIDENCE_ITEMS, null)).thenReturn(
-        Mono.just(new EvidenceDocumentTypeLookupDetail()));
+    when(ebsApiClient.getEvidenceDocumentTypes(COMMON_VALUE_OPA_EVIDENCE_ITEMS, null))
+        .thenReturn(Mono.just(new EvidenceDocumentTypeLookupDetail()));
 
-    when(caabApiClient.getPriorAuthorities(applicationId)).thenReturn(
-        Mono.just(Collections.emptyList()));
+    when(caabApiClient.getPriorAuthorities(applicationId))
+        .thenReturn(Mono.just(Collections.emptyList()));
 
-    when(caseOutcomeService.getCaseOutcome(caseReferenceNumber, providerId)).thenReturn(
-        Optional.empty());
+    when(caseOutcomeService.getCaseOutcome(caseReferenceNumber, providerId))
+        .thenReturn(Optional.empty());
 
     Mono<List<EvidenceDocumentTypeLookupValueDetail>> resultMono =
         evidenceService.getDocumentsRequired(applicationId, caseReferenceNumber, providerId);
 
-    StepVerifier.create(resultMono)
-        .expectNextMatches(List::isEmpty)
-        .verifyComplete();
+    StepVerifier.create(resultMono).expectNextMatches(List::isEmpty).verifyComplete();
 
-    verify(assessmentService).getAssessments(
-        List.of(MEANS.getName(), MERITS.getName()),
-        String.valueOf(providerId),
-        caseReferenceNumber,
-        AssessmentStatus.COMPLETE.getStatus());
+    verify(assessmentService)
+        .getAssessments(
+            List.of(MEANS.getName(), MERITS.getName()),
+            String.valueOf(providerId),
+            caseReferenceNumber,
+            AssessmentStatus.COMPLETE.getStatus());
 
     verify(caabApiClient).getPriorAuthorities(applicationId);
 
     verify(caseOutcomeService).getCaseOutcome(caseReferenceNumber, providerId);
   }
-
-
 }

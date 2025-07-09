@@ -22,14 +22,11 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @ExtendWith(SpringExtension.class)
 class SamlPrincipalControllerAdviceTest {
 
-  @Mock
-  private UserService userService;
+  @Mock private UserService userService;
 
-  @Mock
-  private HttpSession session;
+  @Mock private HttpSession session;
 
-  @Mock
-  private Model model;
+  @Mock private Model model;
 
   private SamlPrincipalControllerAdvice advice;
   private Saml2AuthenticatedPrincipal principal;
@@ -58,7 +55,8 @@ class SamlPrincipalControllerAdviceTest {
   }
 
   @Test
-  public void addSamlPrincipalToModelTest_WhenPrincipalNotNullAndSessionContainsUserWithDifferentLoginId() {
+  public void
+      addSamlPrincipalToModelTest_WhenPrincipalNotNullAndSessionContainsUserWithDifferentLoginId() {
     UserDetail sessionUser = new UserDetail();
     sessionUser.setLoginId("different");
     when(session.getAttribute("user")).thenReturn(sessionUser);
