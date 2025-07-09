@@ -248,26 +248,25 @@ public class ProviderDetailsSectionControllerTest {
     final ActiveCase activeCase = ActiveCase.builder().build();
     final UserDetail user = new UserDetail();
     final ApplicationFormData applicationFormData = new ApplicationFormData();
-    final Mono<ClientDetail> clientDetailMono = Mono.just(new  ClientDetail());
+    final Mono<ClientDetail> clientDetailMono = Mono.just(new ClientDetail());
 
     when(clientService.getClient(any(), any(), any())).thenReturn(clientDetailMono);
     when(applicationService.getProviderDetailsFormData(applicationId))
-            .thenReturn(applicationFormData);
-    when(applicationService.createApplication(applicationFormData, clientDetailMono.block(), user)).thenReturn(
-            Mono.just(applicationId)
-    );
+        .thenReturn(applicationFormData);
+    when(applicationService.createApplication(applicationFormData, clientDetailMono.block(), user))
+        .thenReturn(Mono.just(applicationId));
 
     this.mockMvc
-            .perform(
-                    get("/amendments/sections/provider-details")
-                            .sessionAttr(APPLICATION_ID, "345")
-                            .sessionAttr(ACTIVE_CASE, activeCase)
-                            .sessionAttr(USER_DETAILS, user))
-            .andDo(print())
-            .andExpect(status().isOk())
-            .andExpect(view().name("application/sections/provider-details-section"))
-            .andExpect(model().attribute(APPLICATION_FORM_DATA, applicationFormData))
-            .andExpect(model().attribute(ACTIVE_CASE, activeCase));
+        .perform(
+            get("/amendments/sections/provider-details")
+                .sessionAttr(APPLICATION_ID, "345")
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(USER_DETAILS, user))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/sections/provider-details-section"))
+        .andExpect(model().attribute(APPLICATION_FORM_DATA, applicationFormData))
+        .andExpect(model().attribute(ACTIVE_CASE, activeCase));
 
     verify(applicationService, times(1)).getProviderDetailsFormData(applicationId);
     verifyNoInteractions(providerService);
