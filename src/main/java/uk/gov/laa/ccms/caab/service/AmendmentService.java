@@ -32,8 +32,7 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
  * Service class responsible for handling amendments to existing legal aid cases.
  *
  * <p>This class provides methods for creating and submitting amendments as well as retrieving
- * application section details specific to amendments. It interacts with the application
- * service and
+ * application section details specific to amendments. It interacts with the application service and
  * CAAB API client to perform the necessary operations.
  *
  * @author Jamie Briggs
@@ -101,12 +100,12 @@ public class AmendmentService {
     return amendment;
   }
 
-  private ApplicationDetail createAmendmentObject(String caseReferenceNumber,
-      UserDetail userDetail) {
+  private ApplicationDetail createAmendmentObject(
+      String caseReferenceNumber, UserDetail userDetail) {
 
-    ApplicationDetail amendment = applicationService.getCase(
-        caseReferenceNumber,
-        userDetail.getProvider().getId(), userDetail.getLoginId());
+    ApplicationDetail amendment =
+        applicationService.getCase(
+            caseReferenceNumber, userDetail.getProvider().getId(), userDetail.getLoginId());
 
     // Set the amendment type
     amendment.setAmendment(true);
@@ -164,13 +163,14 @@ public class AmendmentService {
   }
 
   /**
-   * Submits a quick amendment to the correspondence address for a given case.
-   * This method creates a quick amendment application, applies the new correspondence address
-   * details, and submits the amendment. Finally, a case is updated which returns the
-   * transaction ID associated with the submission.
+   * Submits a quick amendment to the correspondence address for a given case. This method creates a
+   * quick amendment application, applies the new correspondence address details, and submits the
+   * amendment. Finally, a case is updated which returns the transaction ID associated with the
+   * submission.
    *
    * @param editCorrespondenceAddress the data representing the updated correspondence address
-   * @param caseReferenceNumber the unique reference number of the case to which the amendment applies
+   * @param caseReferenceNumber the unique reference number of the case to which the amendment
+   *     applies
    * @param userDetail the details of the user initiating the amendment
    * @return the transaction ID of the submitted amendment
    */
@@ -210,15 +210,13 @@ public class AmendmentService {
     AmendmentUtil.cleanAppForQuickAmendSubmit(amendment);
 
     // Create an application in TDS
-    //caabApiClient.createApplication(userDetail.getLoginId(), amendment);
+    // caabApiClient.createApplication(userDetail.getLoginId(), amendment);
 
-    Mono<CaseTransactionResponse> caseTransactionResponseMono = soaApiClient.updateCase(
-        userDetail.getLoginId(), userDetail.getUserType(),
-        amendment);
+    Mono<CaseTransactionResponse> caseTransactionResponseMono =
+        soaApiClient.updateCase(userDetail.getLoginId(), userDetail.getUserType(), amendment);
 
     return Objects.requireNonNull(caseTransactionResponseMono.block()).getTransactionId();
   }
-
 
   /**
    * Retrieves the amendment-specific sections of an application. Additionally, enables the document
@@ -231,11 +229,10 @@ public class AmendmentService {
    *   <li>Merits assessment has been amended.
    * </ul>
    *
-   * @param application The application details for which the amendment sections need to be
-   *                    fetched.
+   * @param application The application details for which the amendment sections need to be fetched.
    * @param user The user details, providing context for retrieving and tailoring the sections.
    * @return An ApplicationSectionDisplay object containing the relevant sections for the amendment,
-   * with document upload enabled based on specific conditions.
+   *     with document upload enabled based on specific conditions.
    */
   public ApplicationSectionDisplay getAmendmentSections(
       final ApplicationDetail application, final UserDetail user) {

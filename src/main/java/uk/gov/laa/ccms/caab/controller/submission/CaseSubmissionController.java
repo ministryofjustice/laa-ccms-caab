@@ -57,8 +57,8 @@ public class CaseSubmissionController {
 
     if (caseStatus != null && StringUtils.hasText(caseStatus.getReferenceNumber())) {
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
-      return "redirect:/%s/%s/confirmed".formatted(caseContext.getPathValue(),
-          SUBMISSION_SUBMIT_CASE);
+      return "redirect:/%s/%s/confirmed"
+          .formatted(caseContext.getPathValue(), SUBMISSION_SUBMIT_CASE);
     }
 
     return viewIncludingPollCount(session);
@@ -72,12 +72,11 @@ public class CaseSubmissionController {
    */
   @PostMapping("/{caseContext}/submit-case/confirmed")
   public String clientUpdateSubmitted(
-      @PathVariable("caseContext") CaseContext caseContext,
-      final HttpSession session) {
+      @PathVariable("caseContext") CaseContext caseContext, final HttpSession session) {
     session.removeAttribute(ACTIVE_CASE);
-    if(caseContext.isApplication()){
+    if (caseContext.isApplication()) {
       return "redirect:/home";
-    }else{
+    } else {
       return "redirect:/case/overview";
     }
   }

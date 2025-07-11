@@ -90,8 +90,7 @@ class EditGeneralDetailsSectionControllerTest {
 
   @Mock private ApplicationService applicationService;
 
-  @Mock
-  private AmendmentService amendmentService;
+  @Mock private AmendmentService amendmentService;
 
   @Mock private AddressService addressService;
 
@@ -203,7 +202,7 @@ class EditGeneralDetailsSectionControllerTest {
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(USER_DETAILS, user)
                   .sessionAttr(CASE, ebsCase)
-              .flashAttr("addressDetails", addressDetails))
+                  .flashAttr("addressDetails", addressDetails))
           .andDo(print())
           .andExpect(redirectedUrl("/application/sections/linked-cases"));
 
@@ -220,20 +219,23 @@ class EditGeneralDetailsSectionControllerTest {
       final AddressFormData addressDetails = new AddressFormData();
       final ApplicationDetail ebsCase = new ApplicationDetail();
       ebsCase.setCaseReferenceNumber("123456789");
-      when(amendmentService.submitQuickAmendmentCorrespondenceAddress(addressDetails,
-          "123456789", user)).thenReturn("12345");
+      when(amendmentService.submitQuickAmendmentCorrespondenceAddress(
+              addressDetails, "123456789", user))
+          .thenReturn("12345");
 
-      mockMvc.perform(post("/amendments/sections/correspondence-address")
-              .param("action", "update")
-              .sessionAttr(APPLICATION_ID, applicationId)
-              .sessionAttr(CASE, ebsCase)
-              .sessionAttr(USER_DETAILS, user)
-              .flashAttr("addressDetails", addressDetails))
+      mockMvc
+          .perform(
+              post("/amendments/sections/correspondence-address")
+                  .param("action", "update")
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(CASE, ebsCase)
+                  .sessionAttr(USER_DETAILS, user)
+                  .flashAttr("addressDetails", addressDetails))
           .andDo(print())
           .andExpect(redirectedUrl("/amendments/%s".formatted(SUBMISSION_SUBMIT_CASE)));
 
-      verify(applicationService, times(1)).updateCorrespondenceAddress(
-          applicationId, addressDetails, user);
+      verify(applicationService, times(1))
+          .updateCorrespondenceAddress(applicationId, addressDetails, user);
       verify(addressService, never()).getAddresses(any());
     }
 
@@ -259,7 +261,7 @@ class EditGeneralDetailsSectionControllerTest {
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(USER_DETAILS, user)
                   .sessionAttr(CASE, ebsCase)
-              .flashAttr("addressDetails", addressDetails))
+                  .flashAttr("addressDetails", addressDetails))
           .andDo(print())
           .andExpect(
               redirectedUrl("/%s/sections/correspondence-address/search".formatted(caseContext)));
@@ -294,7 +296,7 @@ class EditGeneralDetailsSectionControllerTest {
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(USER_DETAILS, user)
                   .sessionAttr(CASE, ebsCase)
-              .flashAttr("addressDetails", addressDetails))
+                  .flashAttr("addressDetails", addressDetails))
           .andDo(print())
           .andExpect(view().name("application/sections/correspondence-address-details"));
 
@@ -336,7 +338,7 @@ class EditGeneralDetailsSectionControllerTest {
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(USER_DETAILS, user)
                   .sessionAttr(CASE, ebsCase)
-              .flashAttr("addressDetails", addressDetails))
+                  .flashAttr("addressDetails", addressDetails))
           .andDo(print())
           .andExpect(view().name("application/sections/correspondence-address-details"));
 
@@ -367,7 +369,7 @@ class EditGeneralDetailsSectionControllerTest {
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(USER_DETAILS, user)
                   .sessionAttr(CASE, ebsCase)
-              .flashAttr("addressDetails", addressDetails))
+                  .flashAttr("addressDetails", addressDetails))
           .andDo(print())
           .andExpect(redirectedUrl("/application/sections/linked-cases"));
 
@@ -404,7 +406,7 @@ class EditGeneralDetailsSectionControllerTest {
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(USER_DETAILS, user)
                   .sessionAttr(CASE, ebsCase)
-              .flashAttr("addressDetails", addressDetails))
+                  .flashAttr("addressDetails", addressDetails))
           .andDo(print())
           .andExpect(view().name("application/sections/correspondence-address-details"))
           .andExpect(model().attributeHasFieldErrors("addressDetails", "houseNameNumber"))

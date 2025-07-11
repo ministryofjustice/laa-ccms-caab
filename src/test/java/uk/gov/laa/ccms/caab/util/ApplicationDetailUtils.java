@@ -47,7 +47,8 @@ public final class ApplicationDetailUtils {
     providerDetails.setFeeEarner(new StringDisplayValue().id("3").displayValue("Fee Earner"));
     providerDetails.setSupervisor(new StringDisplayValue().id("4").displayValue("Supervisor"));
     providerDetails.setProviderCaseReference("PROV-REF-789");
-    providerDetails.setProviderContact(new StringDisplayValue().id("5").displayValue("Provider Contact"));
+    providerDetails.setProviderContact(
+        new StringDisplayValue().id("5").displayValue("Provider Contact"));
     applicationDetail.setProviderDetails(providerDetails);
 
     // Client

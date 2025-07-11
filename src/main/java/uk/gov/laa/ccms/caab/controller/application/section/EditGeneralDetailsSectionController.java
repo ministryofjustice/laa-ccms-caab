@@ -196,9 +196,9 @@ public class EditGeneralDetailsSectionController {
     } else {
       if (caseContext.isAmendment()) {
         // Submit the amendment, and redirect to polling endpoint
-        String transactionId = amendmentService.submitQuickAmendmentCorrespondenceAddress(
-            addressDetails,
-            ebsCase.getCaseReferenceNumber(), user);
+        String transactionId =
+            amendmentService.submitQuickAmendmentCorrespondenceAddress(
+                addressDetails, ebsCase.getCaseReferenceNumber(), user);
         session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
 
         return "redirect:/amendments/%s".formatted(SUBMISSION_SUBMIT_CASE);
