@@ -35,7 +35,7 @@ class AmendmentUtilTest {
 
   @Test
   @DisplayName("Should clean when edit type is edit provider")
-  void shouldCleanWhenEditTypeEditProvider(){
+  void shouldCleanWhenEditTypeEditProvider() {
     // Given
     ApplicationDetail amendmentDetail = ApplicationDetailUtils.buildFullApplicationDetail();
     amendmentDetail.setQuickEditType(QuickEditTypeConstants.MESSAGE_TYPE_EDIT_PROVIDER);
@@ -49,10 +49,11 @@ class AmendmentUtilTest {
 
   @Test
   @DisplayName("Should clean when edit type is correspondence")
-  void shouldCleanWhenEditTypeCorrespondence(){
+  void shouldCleanWhenEditTypeCorrespondence() {
     // Given
     ApplicationDetail amendmentDetail = ApplicationDetailUtils.buildFullApplicationDetail();
-    amendmentDetail.setQuickEditType(QuickEditTypeConstants.MESSAGE_TYPE_CASE_CORRESPONDENCE_PREFERENCE);
+    amendmentDetail.setQuickEditType(
+        QuickEditTypeConstants.MESSAGE_TYPE_CASE_CORRESPONDENCE_PREFERENCE);
     // When
     AmendmentUtil.cleanAppForQuickAmendSubmit(amendmentDetail);
     // Then
@@ -65,7 +66,7 @@ class AmendmentUtilTest {
 
   @Test
   @DisplayName("Should clean when edit type is allocate cost limit")
-  void shouldCleanWhenEditTypeAllocateCostLimit(){
+  void shouldCleanWhenEditTypeAllocateCostLimit() {
     // Given
     ApplicationDetail amendmentDetail = ApplicationDetailUtils.buildFullApplicationDetail();
     amendmentDetail.setQuickEditType(QuickEditTypeConstants.MESSAGE_TYPE_ALLOCATE_COST_LIMIT);
@@ -80,7 +81,7 @@ class AmendmentUtilTest {
 
   @Test
   @DisplayName("Should clean when edit type is means reassessment")
-  void shouldCleanWhenEditTypeMeansReassessment(){
+  void shouldCleanWhenEditTypeMeansReassessment() {
     // Given
     ApplicationDetail amendmentDetail = ApplicationDetailUtils.buildFullApplicationDetail();
     amendmentDetail.setQuickEditType(QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT);

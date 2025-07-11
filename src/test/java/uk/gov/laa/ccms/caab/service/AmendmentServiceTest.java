@@ -42,9 +42,7 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 @ExtendWith(MockitoExtension.class)
 class AmendmentServiceTest {
 
-
-  @Mock
-  private ApplicationService applicationService;
+  @Mock private ApplicationService applicationService;
   @Mock private CaabApiClient caabApiClient;
   @Mock private SoaApiClient soaApiClient;
 
@@ -135,8 +133,7 @@ class AmendmentServiceTest {
           .thenReturn(originalDisplay);
       // When
       ApplicationSectionDisplay result =
-          amendmentService.getAmendmentSections(
-          amendment, userDetails);
+          amendmentService.getAmendmentSections(amendment, userDetails);
       // Then
       assertThat(result).isNotNull();
       assertThat(result.getDocumentUpload()).isNotNull();
@@ -152,16 +149,15 @@ class AmendmentServiceTest {
       UserDetail userDetails = new UserDetail().loginId("123");
       ApplicationSectionDisplay originalDisplay = expectedApplicationSectionDisplay();
       originalDisplay.setPriorAuthorities(
-          Collections.singletonList(PriorAuthoritySectionDisplay.builder()
-              .status("Draft").build()));
+          Collections.singletonList(
+              PriorAuthoritySectionDisplay.builder().status("Draft").build()));
       amendment.setMeritsAssessmentAmended(false);
       amendment.setMeansAssessmentAmended(false);
       when(applicationService.getApplicationSections(amendment, userDetails))
           .thenReturn(originalDisplay);
       // When
       ApplicationSectionDisplay result =
-          amendmentService.getAmendmentSections(
-          amendment, userDetails);
+          amendmentService.getAmendmentSections(amendment, userDetails);
       // Then
       assertThat(result).isNotNull();
       assertThat(result.getDocumentUpload()).isNotNull();
@@ -170,8 +166,7 @@ class AmendmentServiceTest {
 
     @Test
     @DisplayName(
-        "Should return amendment sections with document upload enabled when merits "
-        + "modified")
+        "Should return amendment sections with document upload enabled when merits " + "modified")
     void shouldReturnAmendmentSectionsWithDocumentUploadEnabledWhenMeritsModified() {
       // Given
       ApplicationDetail amendment = buildFullApplicationDetail();
@@ -183,8 +178,7 @@ class AmendmentServiceTest {
           .thenReturn(originalDisplay);
       // When
       ApplicationSectionDisplay result =
-          amendmentService.getAmendmentSections(
-          amendment, userDetails);
+          amendmentService.getAmendmentSections(amendment, userDetails);
       // Then
       assertThat(result).isNotNull();
       assertThat(result.getDocumentUpload()).isNotNull();
@@ -193,8 +187,7 @@ class AmendmentServiceTest {
 
     @Test
     @DisplayName(
-        "Should return amendment sections with document upload enabled when means "
-        + "modified")
+        "Should return amendment sections with document upload enabled when means " + "modified")
     void shouldReturnAmendmentSectionsWithDocumentUploadEnabledWhenMeansModified() {
       // Given
       ApplicationDetail amendment = buildFullApplicationDetail();
@@ -206,14 +199,12 @@ class AmendmentServiceTest {
           .thenReturn(originalDisplay);
       // When
       ApplicationSectionDisplay result =
-          amendmentService.getAmendmentSections(
-          amendment, userDetails);
+          amendmentService.getAmendmentSections(amendment, userDetails);
       // Then
       assertThat(result).isNotNull();
       assertThat(result.getDocumentUpload()).isNotNull();
       assertThat(result.getDocumentUpload().isEnabled()).isTrue();
     }
-
   }
 
   @Nested
@@ -239,14 +230,14 @@ class AmendmentServiceTest {
 
       UserDetail userDetails =
           new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
-      when(applicationService.getCase(any(), anyLong(), any())).thenReturn(
-          buildFullApplicationDetail());
-      when(soaApiClient.updateCase(any(), any(), any())).thenReturn(
-          Mono.just(new CaseTransactionResponse().transactionId("12345")));
+      when(applicationService.getCase(any(), anyLong(), any()))
+          .thenReturn(buildFullApplicationDetail());
+      when(soaApiClient.updateCase(any(), any(), any()))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("12345")));
       // When
-      String transactionId = amendmentService.submitQuickAmendmentCorrespondenceAddress(
-          addressFormData,
-          caseRef, userDetails);
+      String transactionId =
+          amendmentService.submitQuickAmendmentCorrespondenceAddress(
+              addressFormData, caseRef, userDetails);
       // Then
       verify(caabApiClient, times(1)).createApplication(eq("123"), any(ApplicationDetail.class));
       verify(soaApiClient, times(1)).updateCase(eq("123"), eq("Type"), any());
