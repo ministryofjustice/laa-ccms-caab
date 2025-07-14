@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.client;
 
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_EDIT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.AMEND_CLIENT_ORIGIN;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_CLIENT_NAMES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
@@ -35,7 +36,7 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
  */
 @Controller
 @Slf4j
-@SessionAttributes({CLIENT_FLOW_FORM_DATA})
+@SessionAttributes({CLIENT_FLOW_FORM_DATA, AMEND_CLIENT_ORIGIN})
 public class EditClientSummaryController extends AbstractClientSummaryController {
 
   /** Default constructor method implementing the abstract controller's constructor. */

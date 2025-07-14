@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.AMEND_CLIENT_ORIGIN;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.proceeding.CaseProceedingDisplayStatus;
+import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.AvailableAction;
@@ -94,6 +96,7 @@ public class CaseController {
     model.addAttribute("draftCosts", draftCosts);
     session.setAttribute(CASE_REFERENCE_NUMBER, ebsCase.getCaseReferenceNumber());
     session.setAttribute(APPLICATION, amendments);
+    session.setAttribute(AMEND_CLIENT_ORIGIN, AmendClientOrigin.CASE_OVERVIEW);
     return "application/case-overview";
   }
 
@@ -113,6 +116,7 @@ public class CaseController {
             .orElseThrow(() -> new CaabApplicationException("Failed to retrieve case details"));
 
     model.addAttribute("summary", applicationSectionDisplay);
+    session.setAttribute(AMEND_CLIENT_ORIGIN, AmendClientOrigin.VIEW_CASE_DETAILS);
 
     return "application/case-details";
   }

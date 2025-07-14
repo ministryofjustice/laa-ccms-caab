@@ -123,6 +123,9 @@ public class SessionConstants {
   /** Session attribute used to keep track of the current proceeding being processed or viewed. */
   public static final String CURRENT_PROCEEDING = "proceeding";
 
+  /** Session attribute used to keep track of the origin URL for amend client. */
+  public static final String AMEND_CLIENT_ORIGIN = "amendClientOrigin";
+
   /**
    * Session attribute used to keep track of the proceeding flow data during the creation or
    * modification of a proceeding.
