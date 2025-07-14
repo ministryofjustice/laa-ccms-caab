@@ -52,6 +52,10 @@ dependencies {
 			because("Fixes CVE-2023-2976."
 					+ "Parent: org.springframework.security:spring-security-saml2-service-provider")
 		}
+		implementation('org.apache.commons:commons-lang3:3.18.0'){
+			because("Fixes CVE-2025-48924."
+					+ "Parent: org.springframework.boot:spring-boot-dependencies:3.5.3")
+		}
 
 		// Test dependencies
 		testImplementation('org.apache.commons:commons-compress:1.27.1') {
