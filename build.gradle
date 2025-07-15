@@ -61,6 +61,9 @@ dependencies {
 
 	}
 
+	// Fixes CVE-2025-48924 - remove this when bumped in parent library
+    implementation 'org.apache.commons:commons-lang3:3.18.0'
+
 	implementation 'uk.gov.laa.ccms.data:data-api:0.0.61'
 
 	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.69'
