@@ -16,10 +16,12 @@ import static uk.gov.laa.ccms.caab.util.OpponentUtil.getPartyName;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -47,6 +49,8 @@ import uk.gov.laa.ccms.caab.builders.InitialApplicationBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.config.UserRole;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -75,6 +79,7 @@ import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
@@ -1009,7 +1014,7 @@ public class ApplicationService {
       final boolean isAmendment) {
 
     // String existingStage = null;
-    // todo - see GetDefaultScopeLimitation in pui
+    // todo - see GetDefaultCostLimitations in pui
     //    if (isAmendment) {
     //
     //      // for (ProceedingDetail caseProceeding : myCase.getProceedings()) {
@@ -1414,14 +1419,16 @@ public class ApplicationService {
    *
    * @param id The ID of the application.
    * @param application The application details.
+   * @param isAmendment Whether the application is an amendment.
    * @param user The user performing the operation.
    */
   public void prepareProceedingSummary(
-      final String id, final ApplicationDetail application, final UserDetail user) {
+      final String id, final ApplicationDetail application, final boolean isAmendment,
+      final UserDetail user) {
 
-    setCostLimitations(application);
+    setCostLimitations(application, isAmendment);
 
-    if (Boolean.FALSE.equals(application.getAmendment())
+    if (Boolean.FALSE.equals(isAmendment)
         && application.getCosts().getRequestedCostLimitation() == null) {
       application
           .getCosts()
@@ -1431,7 +1438,120 @@ public class ApplicationService {
     caabApiClient.updateCostStructure(id, application.getCosts(), user.getLoginId()).block();
   }
 
-  private void setCostLimitations(final ApplicationDetail application) {
+  /**
+   * Determines whether the given proceeding can be updated.
+   *
+   * @param caseContext the case context
+   * @param editProceedingAllowed boolean representing whether the proceeding is editable
+   * @param proceeding the draft proceeding
+   * @param originalProceedingLookup the original proceeding lookup
+   * @return true if the proceeding can be updated, false otherwise
+   */
+  public boolean isUpdateProceedingAllowed(
+      final CaseContext caseContext,
+      final boolean editProceedingAllowed,
+      final ProceedingDetail proceeding,
+      final Map<Integer, ProceedingDetail> originalProceedingLookup) {
+
+    if (caseContext.isApplication()) {
+      return true;
+    } else {
+      ProceedingDetail originalProceeding = originalProceedingLookup.get(proceeding.getId());
+      ProceedingOutcomeDetail outcome =
+          originalProceeding == null ? null : originalProceeding.getOutcome();
+
+      return editProceedingAllowed
+          && (originalProceeding == null
+          || originalProceeding.getAvailableFunctions().contains(
+          UserRole.UPDATE_PROCEEDING.getCode())
+          && (outcome == null || outcome.getId() == null));
+    }
+  }
+
+  /**
+   * Constructs a map of draft proceeding ids and a boolean representing whether they can be
+   * deleted.
+   *
+   * @param caseContext the case context
+   * @param editProceedingAllowed boolean representing whether the proceeding is editable
+   * @param proceedings the list of draft proceedings
+   * @param originalProceedingLookup the original proceeding lookup
+   * @return a map of draft proceeding ids and a boolean representing whether they can be deleted
+   */
+  public Map<Integer, Boolean> getDeleteProceedingAllowedLookup(
+      final CaseContext caseContext,
+      final boolean editProceedingAllowed,
+      final List<ProceedingDetail> proceedings,
+      final Map<Integer, ProceedingDetail> originalProceedingLookup) {
+    return proceedings.stream()
+        .map(proceeding ->
+            new AbstractMap.SimpleEntry<>(proceeding.getId(),
+                isDeleteProceedingAllowed(caseContext, editProceedingAllowed,
+                    proceeding, originalProceedingLookup))
+        ).collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
+  }
+
+  private boolean isDeleteProceedingAllowed(final CaseContext caseContext,
+      final boolean editProceedingAllowed,
+      final ProceedingDetail proceeding,
+      final Map<Integer, ProceedingDetail> originalProceedingLookup) {
+    // Is currently the lead proceeding
+    if (Boolean.TRUE.equals(proceeding.getLeadProceedingInd())) {
+      return false;
+    }
+
+    // Is an application (all proceedings are drafts)
+    if (caseContext.isApplication()) {
+      return true;
+    }
+
+    // Editing proceedings is not allowed (category of law is invalid)
+    if (!editProceedingAllowed) {
+      return false;
+    }
+
+    ProceedingDetail originalProceeding = originalProceedingLookup.get(proceeding.getId());
+
+    // Newly added proceeding
+    if (originalProceeding == null) {
+      return true;
+    }
+
+    ProceedingOutcomeDetail outcome = originalProceeding.getOutcome();
+    return originalProceeding.getAvailableFunctions().contains(UserRole.DELETE_PROCEEDING.getCode())
+        && (outcome == null || outcome.getId() == null);
+  }
+
+  /**
+   * Constructs a map of draft proceeding ids and the corresponding original proceeding object,
+   * if it exists.
+   *
+   * @param proceedings the list of draft proceedings
+   * @param ebsCase the case from EBS
+   * @return a map of draft proceeding ids and corresponding original proceeding object
+   */
+  public Map<Integer, ProceedingDetail> getOriginalProceedingLookup(
+      final List<ProceedingDetail> proceedings,
+      final ApplicationDetail ebsCase) {
+    return proceedings.stream()
+        .map(proceeding ->
+            new AbstractMap.SimpleEntry<>(proceeding.getId(),
+                getOriginalProceeding(proceeding.getEbsId(), ebsCase))
+        ).collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
+  }
+
+  private ProceedingDetail getOriginalProceeding(final String ebsId,
+      final ApplicationDetail ebsCase) {
+    if (ebsCase == null || ebsId == null) {
+      return null;
+    }
+    return ebsCase.getProceedings().stream()
+        .filter(proceeding -> ebsId.equals(proceeding.getEbsId()))
+        .findFirst()
+        .orElse(null);
+  }
+
+  private void setCostLimitations(final ApplicationDetail application, boolean isAmendment) {
     BigDecimal defaultCostLimitation = new BigDecimal("0.00");
 
     final BigDecimal currentDefault = application.getCosts().getDefaultCostLimitation();
@@ -1455,7 +1575,7 @@ public class ApplicationService {
     application.getCosts().setDefaultCostLimitation(defaultCostLimitation);
 
     if (application.getCosts().getRequestedCostLimitation() != null
-        && !application.getAmendment()
+        && !isAmendment
         && !costManuallyChanged) {
       application.getCosts().setRequestedCostLimitation(defaultCostLimitation);
     } else if (application.getCosts().getRequestedCostLimitation() == null) {
@@ -1622,6 +1742,26 @@ public class ApplicationService {
   public Mono<TransactionStatus> getCaseStatus(final String transactionId) {
     log.debug("SOA Case Status to get using transaction Id: {}", transactionId);
     return ebsApiClient.getCaseStatus(transactionId);
+  }
+
+  /**
+   * Checks whether the current category of law for the provided application is valid.
+   *
+   * @param application   the application details
+   * @param user          the currently logged-in user
+   * @return true if the category of law is valid, false otherwise
+   */
+  public boolean isCategoryOfLawValid(ApplicationDetail application, UserDetail user) {
+    String categoryOfLaw = application.getCategoryOfLaw().getId();
+    ApplicationProviderDetails providerDetails = application.getProviderDetails();
+    return soaApiClient.getContractDetails(
+        providerDetails.getProvider().getId(),
+        providerDetails.getOffice().getId(),
+        user.getLoginId(),
+        user.getUserType()).blockOptional().map(
+            contractDetails -> contractDetails.getContracts().stream()
+              .anyMatch(contractDetail -> categoryOfLaw.equals(contractDetail.getCategoryofLaw()))
+    ).orElse(false);
   }
 
   public boolean isAmendment(ApplicationDetail ebsCase, BaseApplicationDetail tdsApplication) {

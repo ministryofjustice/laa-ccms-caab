@@ -127,6 +127,18 @@ public class SessionConstants {
   public static final String AMEND_CLIENT_ORIGIN = "amendClientOrigin";
 
   /**
+   * Session attribute used to keep track of the proceedings that exist on the case being amended.
+   */
+  public static final String ORIGINAL_PROCEEDING_LOOKUP = "originalProceedingLookup";
+
+  /**
+   * Session attribute used to keep track of whether case proceedings can be edited (depending on
+   * whether the category of law is valid for the provider).
+   */
+  public static final String EDIT_PROCEEDINGS_ALLOWED = "editProceedingsAllowed";
+
+
+  /**
    * Session attribute used to keep track of the proceeding flow data during the creation or
    * modification of a proceeding.
    */
