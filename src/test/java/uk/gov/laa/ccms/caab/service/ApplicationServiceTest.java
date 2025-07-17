@@ -1962,7 +1962,7 @@ class ApplicationServiceTest {
   class GetDeleteProceedingAllowedLookupTest {
 
     @ParameterizedTest
-    @CsvSource({ "application", "amendments" })
+    @CsvSource({"application", "amendments"})
     @DisplayName("Should always return false for lead proceedings")
     void shouldAlwaysReturnFalseForLeadProceedings(String caseContext) {
 
@@ -1972,9 +1972,7 @@ class ApplicationServiceTest {
           applicationService.getDeleteProceedingAllowedLookup(
               CaseContext.fromPathValue(caseContext),
               true,
-              List.of(
-                  new ProceedingDetail().id(1).leadProceedingInd(true)
-              ),
+              List.of(new ProceedingDetail().id(1).leadProceedingInd(true)),
               Map.of());
 
       assertEquals(expected, actual);
@@ -1988,12 +1986,7 @@ class ApplicationServiceTest {
 
       Map<Integer, Boolean> actual =
           applicationService.getDeleteProceedingAllowedLookup(
-              CaseContext.APPLICATION,
-              true,
-              List.of(
-                  new ProceedingDetail().id(1)
-              ),
-              Map.of());
+              CaseContext.APPLICATION, true, List.of(new ProceedingDetail().id(1)), Map.of());
 
       assertEquals(expected, actual);
     }
@@ -2006,17 +1999,15 @@ class ApplicationServiceTest {
 
       Map<Integer, Boolean> actual =
           applicationService.getDeleteProceedingAllowedLookup(
-              CaseContext.AMENDMENTS,
-              false,
-              List.of(new ProceedingDetail().id(1)),
-              Map.of());
+              CaseContext.AMENDMENTS, false, List.of(new ProceedingDetail().id(1)), Map.of());
 
       assertEquals(expected, actual);
     }
 
     @Test
-    @DisplayName("Should return false for amendments when editProceedingAllowed is true, "
-        + "but the original proceeding does not contain the delete proceeding function")
+    @DisplayName(
+        "Should return false for amendments when editProceedingAllowed is true, "
+            + "but the original proceeding does not contain the delete proceeding function")
     void shouldReturnFalseForAmendmentsWhenEditProceedingAllowedIsTrueButMissingFunction() {
 
       Map<Integer, Boolean> expected = Map.of(1, false);
@@ -2026,16 +2017,16 @@ class ApplicationServiceTest {
               CaseContext.AMENDMENTS,
               true,
               List.of(new ProceedingDetail().id(1)),
-              Map.of(1, new ProceedingDetail().availableFunctions(List.of()))
-          );
+              Map.of(1, new ProceedingDetail().availableFunctions(List.of())));
 
       assertEquals(expected, actual);
     }
 
     @Test
-    @DisplayName("Should return false for amendments when editProceedingAllowed is true, "
-        + "and the original proceeding has the delete proceeding function, "
-        + "but the original proceeding has an outcome")
+    @DisplayName(
+        "Should return false for amendments when editProceedingAllowed is true, "
+            + "and the original proceeding has the delete proceeding function, "
+            + "but the original proceeding has an outcome")
     void shouldReturnFalseForAmendmentsWhenEditProceedingAllowedIsTrueButHasOutcome() {
 
       Map<Integer, Boolean> expected = Map.of(1, false);
@@ -2055,9 +2046,10 @@ class ApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("Should return true for amendments when editProceedingAllowed is true, "
-        + "and the original proceeding has the delete proceeding function, "
-        + "and the original proceeding does not have an outcome")
+    @DisplayName(
+        "Should return true for amendments when editProceedingAllowed is true, "
+            + "and the original proceeding has the delete proceeding function, "
+            + "and the original proceeding does not have an outcome")
     void shouldReturnTrueForAmendmentsWhenEditProceedingAllowedIsTrueAndDoesNotHaveOutcome() {
 
       Map<Integer, Boolean> expected = Map.of(1, true);
@@ -2077,8 +2069,9 @@ class ApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("Should return true for amendments when editProceedingAllowed is true, "
-        + "and the proceeding is newly drafted (there is no matching original proceeding)")
+    @DisplayName(
+        "Should return true for amendments when editProceedingAllowed is true, "
+            + "and the proceeding is newly drafted (there is no matching original proceeding)")
     void shouldReturnTrueForAmendmentsWhenProceedingIsNewlyDrafted() {
 
       Map<Integer, Boolean> expected = Map.of(1, true);
@@ -2102,9 +2095,7 @@ class ApplicationServiceTest {
   class IsUpdateProceedingAllowedTest {
 
     @ParameterizedTest
-    @CsvSource({
-        "application, true",
-        "amendments, false"})
+    @CsvSource({"application, true", "amendments, false"})
     @DisplayName("Should return true for applications")
     void shouldReturnTrueForApplications(String caseContext, boolean expected) {
 
@@ -2143,31 +2134,27 @@ class ApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("Should return false for amendments when editProceedingsAllowed is true, "
-        + "but the original proceeding is missing the update proceeding function")
+    @DisplayName(
+        "Should return false for amendments when editProceedingsAllowed is true, "
+            + "but the original proceeding is missing the update proceeding function")
     void shouldReturnFalseForAmendmentsIfEditProceedingAllowedIsTrueButMissingFunction() {
 
       Map<Integer, ProceedingDetail> originalProceedingLookup = new HashMap<>();
       originalProceedingLookup.put(
-          1,
-          new ProceedingDetail()
-              .availableFunctions(List.of())
-              .outcome(null));
+          1, new ProceedingDetail().availableFunctions(List.of()).outcome(null));
 
       boolean actual =
           applicationService.isUpdateProceedingAllowed(
-              CaseContext.AMENDMENTS,
-              true,
-              new ProceedingDetail().id(1),
-              originalProceedingLookup);
+              CaseContext.AMENDMENTS, true, new ProceedingDetail().id(1), originalProceedingLookup);
 
       assertFalse(actual);
     }
 
     @Test
-    @DisplayName("Should return false for amendments when editProceedingsAllowed is true, "
-        + "and the original proceeding has the update proceeding function, "
-        + "but the original proceeding has an outcome")
+    @DisplayName(
+        "Should return false for amendments when editProceedingsAllowed is true, "
+            + "and the original proceeding has the update proceeding function, "
+            + "but the original proceeding has an outcome")
     void shouldReturnFalseForAmendmentsIfEditProceedingAllowedIsTrueButHasOutcome() {
 
       Map<Integer, ProceedingDetail> originalProceedingLookup = new HashMap<>();
@@ -2179,19 +2166,18 @@ class ApplicationServiceTest {
 
       boolean actual =
           applicationService.isUpdateProceedingAllowed(
-              CaseContext.AMENDMENTS,
-              true,
-              new ProceedingDetail().id(1),
-              originalProceedingLookup);
+              CaseContext.AMENDMENTS, true, new ProceedingDetail().id(1), originalProceedingLookup);
 
       assertFalse(actual);
     }
 
     @Test
-    @DisplayName("Should return true for amendments when editProceedingsAllowed is true, "
-        + "and the original proceeding has the update proceeding function, "
-        + "but the original proceeding does not have an outcome")
-    void shouldReturnTrueForAmendmentsIfEditProceedingAllowedIsTrueAndHasFunctionAndDoesNotHaveOutcome() {
+    @DisplayName(
+        "Should return true for amendments when editProceedingsAllowed is true, "
+            + "and the original proceeding has the update proceeding function, "
+            + "but the original proceeding does not have an outcome")
+    void
+        shouldReturnTrueForAmendmentsIfEditProceedingAllowedIsTrueAndHasFunctionAndDoesNotHaveOutcome() {
 
       Map<Integer, ProceedingDetail> originalProceedingLookup = new HashMap<>();
       originalProceedingLookup.put(
@@ -2202,10 +2188,7 @@ class ApplicationServiceTest {
 
       boolean actual =
           applicationService.isUpdateProceedingAllowed(
-              CaseContext.AMENDMENTS,
-              true,
-              new ProceedingDetail().id(1),
-              originalProceedingLookup);
+              CaseContext.AMENDMENTS, true, new ProceedingDetail().id(1), originalProceedingLookup);
 
       assertTrue(actual);
     }
@@ -2216,8 +2199,9 @@ class ApplicationServiceTest {
   class IsCategoryOfLawValidTests {
 
     @Test
-    @DisplayName("Should return true when returned contract detail "
-        + "contains application category of law")
+    @DisplayName(
+        "Should return true when returned contract detail "
+            + "contains application category of law")
     void shouldReturnTrueWhenContractDetailHasCategoryOfLaw() {
       Integer providerId = 1;
       Integer officeId = 2;
@@ -2226,21 +2210,21 @@ class ApplicationServiceTest {
 
       String categoryOfLaw = "categoryOfLaw";
 
-      ApplicationDetail application = new ApplicationDetail()
-          .providerDetails(new ApplicationProviderDetails()
-                  .provider(new IntDisplayValue().id(providerId))
-                  .office(new IntDisplayValue().id(officeId)))
-          .categoryOfLaw(new StringDisplayValue().id(categoryOfLaw));
+      ApplicationDetail application =
+          new ApplicationDetail()
+              .providerDetails(
+                  new ApplicationProviderDetails()
+                      .provider(new IntDisplayValue().id(providerId))
+                      .office(new IntDisplayValue().id(officeId)))
+              .categoryOfLaw(new StringDisplayValue().id(categoryOfLaw));
 
-      UserDetail user = new UserDetail()
-          .loginId(loginId)
-          .userType(userType);
+      UserDetail user = new UserDetail().loginId(loginId).userType(userType);
 
-      when(soaApiClient.getContractDetails(providerId, officeId, loginId, userType)).thenReturn(
-          Mono.just(new ContractDetails()
-              .contracts(List.of(
-                  new ContractDetail().categoryofLaw(categoryOfLaw)
-              ))));
+      when(soaApiClient.getContractDetails(providerId, officeId, loginId, userType))
+          .thenReturn(
+              Mono.just(
+                  new ContractDetails()
+                      .contracts(List.of(new ContractDetail().categoryofLaw(categoryOfLaw)))));
 
       boolean actual = applicationService.isCategoryOfLawValid(application, user);
 
@@ -2257,18 +2241,18 @@ class ApplicationServiceTest {
 
       String categoryOfLaw = "categoryOfLaw";
 
-      ApplicationDetail application = new ApplicationDetail()
-          .providerDetails(new ApplicationProviderDetails()
-              .provider(new IntDisplayValue().id(providerId))
-              .office(new IntDisplayValue().id(officeId)))
-          .categoryOfLaw(new StringDisplayValue().id(categoryOfLaw));
+      ApplicationDetail application =
+          new ApplicationDetail()
+              .providerDetails(
+                  new ApplicationProviderDetails()
+                      .provider(new IntDisplayValue().id(providerId))
+                      .office(new IntDisplayValue().id(officeId)))
+              .categoryOfLaw(new StringDisplayValue().id(categoryOfLaw));
 
-      UserDetail user = new UserDetail()
-          .loginId(loginId)
-          .userType(userType);
+      UserDetail user = new UserDetail().loginId(loginId).userType(userType);
 
-      when(soaApiClient.getContractDetails(providerId, officeId, loginId, userType)).thenReturn(
-          Mono.just(new ContractDetails().contracts(List.of())));
+      when(soaApiClient.getContractDetails(providerId, officeId, loginId, userType))
+          .thenReturn(Mono.just(new ContractDetails().contracts(List.of())));
 
       boolean actual = applicationService.isCategoryOfLawValid(application, user);
 
@@ -2285,21 +2269,22 @@ class ApplicationServiceTest {
 
       String categoryOfLaw = "categoryOfLaw";
 
-      ApplicationDetail application = new ApplicationDetail()
-          .providerDetails(new ApplicationProviderDetails()
-              .provider(new IntDisplayValue().id(providerId))
-              .office(new IntDisplayValue().id(officeId)))
-          .categoryOfLaw(new StringDisplayValue().id(categoryOfLaw));
+      ApplicationDetail application =
+          new ApplicationDetail()
+              .providerDetails(
+                  new ApplicationProviderDetails()
+                      .provider(new IntDisplayValue().id(providerId))
+                      .office(new IntDisplayValue().id(officeId)))
+              .categoryOfLaw(new StringDisplayValue().id(categoryOfLaw));
 
-      UserDetail user = new UserDetail()
-          .loginId(loginId)
-          .userType(userType);
+      UserDetail user = new UserDetail().loginId(loginId).userType(userType);
 
-      when(soaApiClient.getContractDetails(providerId, officeId, loginId, userType)).thenReturn(
-          Mono.just(new ContractDetails()
-              .contracts(List.of(
-                  new ContractDetail().categoryofLaw("anotherCategoryOfLaw")
-              ))));
+      when(soaApiClient.getContractDetails(providerId, officeId, loginId, userType))
+          .thenReturn(
+              Mono.just(
+                  new ContractDetails()
+                      .contracts(
+                          List.of(new ContractDetail().categoryofLaw("anotherCategoryOfLaw")))));
 
       boolean actual = applicationService.isCategoryOfLawValid(application, user);
 

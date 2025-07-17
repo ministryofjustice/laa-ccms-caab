@@ -163,11 +163,10 @@ public class EditProceedingsAndCostsSectionController {
         Optional.ofNullable(applicationService.getApplication(applicationId).block())
             .orElseThrow(
                 () ->
-                    new CaabApplicationException(
-                        "No application found with id: " + applicationId));
+                    new CaabApplicationException("No application found with id: " + applicationId));
 
-    applicationService.prepareProceedingSummary(applicationId, application,
-        caseContext.isAmendment(), user);
+    applicationService.prepareProceedingSummary(
+        applicationId, application, caseContext.isAmendment(), user);
 
     Boolean editProceedingsAllowed = applicationService.isCategoryOfLawValid(application, user);
     model.addAttribute(EDIT_PROCEEDINGS_ALLOWED, editProceedingsAllowed);
@@ -179,15 +178,24 @@ public class EditProceedingsAndCostsSectionController {
     final List<ProceedingDetail> proceedings =
         Optional.ofNullable(application.getProceedings()).orElse(Collections.emptyList());
 
-    Optional<CaseOutcomeDetail> caseOutcome = caseOutcomeService.getCaseOutcome(
-        application.getCaseReferenceNumber(), user.getProvider().getId());
+    Optional<CaseOutcomeDetail> caseOutcome =
+        caseOutcomeService.getCaseOutcome(
+            application.getCaseReferenceNumber(), user.getProvider().getId());
 
-    caseOutcome.ifPresent(outcome -> outcome.getProceedingOutcomes().forEach(
-        proceedingOutcome -> proceedings.stream()
-            .filter(proceeding -> proceeding.getProceedingCaseId()
-                .equals(proceedingOutcome.getProceedingCaseId()))
-            .findFirst()
-            .ifPresent(proceeding -> proceeding.setOutcome(proceedingOutcome))));
+    caseOutcome.ifPresent(
+        outcome ->
+            outcome
+                .getProceedingOutcomes()
+                .forEach(
+                    proceedingOutcome ->
+                        proceedings.stream()
+                            .filter(
+                                proceeding ->
+                                    proceeding
+                                        .getProceedingCaseId()
+                                        .equals(proceedingOutcome.getProceedingCaseId()))
+                            .findFirst()
+                            .ifPresent(proceeding -> proceeding.setOutcome(proceedingOutcome))));
 
     model.addAttribute(APPLICATION_PROCEEDINGS, proceedings);
 
@@ -196,8 +204,8 @@ public class EditProceedingsAndCostsSectionController {
     model.addAttribute(ORIGINAL_PROCEEDING_LOOKUP, originalProceedingLookup);
 
     Map<Integer, Boolean> deleteProceedingAllowedLookup =
-        applicationService.getDeleteProceedingAllowedLookup(caseContext, editProceedingsAllowed,
-            proceedings, originalProceedingLookup);
+        applicationService.getDeleteProceedingAllowedLookup(
+            caseContext, editProceedingsAllowed, proceedings, originalProceedingLookup);
     model.addAttribute("deleteProceedingAllowedLookup", deleteProceedingAllowedLookup);
 
     final List<PriorAuthorityDetail> priorAuthorities =
@@ -250,7 +258,8 @@ public class EditProceedingsAndCostsSectionController {
   @GetMapping("/{caseContext}/proceedings/{proceeding-id}/remove")
   public String proceedingsRemove(
       @PathVariable("caseContext") final CaseContext caseContext,
-      @PathVariable("proceeding-id") final Integer proceedingId, final Model model) {
+      @PathVariable("proceeding-id") final Integer proceedingId,
+      final Model model) {
 
     model.addAttribute("proceedingId", proceedingId);
 
@@ -295,8 +304,8 @@ public class EditProceedingsAndCostsSectionController {
    * @param applicationId The id of the application, retrieved from the session.
    * @param application The application details, retrieved from the session.
    * @param proceedings The list of proceedings, retrieved from the session.
-   * @param originalProceedingLookup A lookup containing draft proceeding ids
-   *                                 and the corresponding original proceeding.
+   * @param originalProceedingLookup A lookup containing draft proceeding ids and the corresponding
+   *     original proceeding.
    * @param editProceedingsAllowed A boolean representing whether the proceeding can be edited.
    * @param user The UserDetail object representing the user, retrieved from the session.
    * @param proceedingId The id of the proceeding to retrieve the summary for.
@@ -309,8 +318,8 @@ public class EditProceedingsAndCostsSectionController {
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
       @SessionAttribute(APPLICATION_PROCEEDINGS) final List<ProceedingDetail> proceedings,
-      @SessionAttribute(ORIGINAL_PROCEEDING_LOOKUP) final Map<Integer, ProceedingDetail>
-          originalProceedingLookup,
+      @SessionAttribute(ORIGINAL_PROCEEDING_LOOKUP)
+          final Map<Integer, ProceedingDetail> originalProceedingLookup,
       @SessionAttribute(EDIT_PROCEEDINGS_ALLOWED) final boolean editProceedingsAllowed,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @PathVariable("proceeding-id") final Integer proceedingId,
@@ -322,8 +331,9 @@ public class EditProceedingsAndCostsSectionController {
             .findFirst()
             .orElseThrow();
 
-    boolean updateProceedingAllowed = applicationService.isUpdateProceedingAllowed(caseContext,
-        editProceedingsAllowed, proceeding, originalProceedingLookup);
+    boolean updateProceedingAllowed =
+        applicationService.isUpdateProceedingAllowed(
+            caseContext, editProceedingsAllowed, proceeding, originalProceedingLookup);
     model.addAttribute("updateProceedingAllowed", updateProceedingAllowed);
 
     if (proceeding.getTypeOfOrder() != null && proceeding.getTypeOfOrder().getId() != null) {
@@ -338,8 +348,8 @@ public class EditProceedingsAndCostsSectionController {
         APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS.equals(application.getApplicationType().getId()));
 
     // default cost limitations
-    applicationService.prepareProceedingSummary(applicationId, application,
-        caseContext.isAmendment(), user);
+    applicationService.prepareProceedingSummary(
+        applicationId, application, caseContext.isAmendment(), user);
 
     // reset needed to determine navigation
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, new ProceedingFlowFormData(ACTION_EDIT));
@@ -448,8 +458,8 @@ public class EditProceedingsAndCostsSectionController {
     proceedingFlow.setMatterTypeDetails(matterTypeDetails);
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
 
-    return "redirect:/%s/proceedings/%s/proceeding-type".formatted(
-        caseContext.getPathValue(), action);
+    return "redirect:/%s/proceedings/%s/proceeding-type"
+        .formatted(caseContext.getPathValue(), action);
   }
 
   /**
@@ -555,9 +565,8 @@ public class EditProceedingsAndCostsSectionController {
     proceedingFlow.setProceedingDetails(proceedingTypeDetails);
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
 
-    return "redirect:/%s/proceedings/%s/further-details".formatted(
-        caseContext.getPathValue(), action);
-
+    return "redirect:/%s/proceedings/%s/further-details"
+        .formatted(caseContext.getPathValue(), action);
   }
 
   /**
@@ -698,8 +707,7 @@ public class EditProceedingsAndCostsSectionController {
     proceedingFlow.setFurtherDetails(furtherDetails);
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
 
-    return "redirect:/%s/proceedings/%s/confirm".formatted(
-        caseContext.getPathValue(), action);
+    return "redirect:/%s/proceedings/%s/confirm".formatted(caseContext.getPathValue(), action);
   }
 
   /**
@@ -1055,8 +1063,8 @@ public class EditProceedingsAndCostsSectionController {
       model.addAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
     }
 
-    return "redirect:/%s/proceedings/scope-limitations/confirm".formatted(
-        caseContext.getPathValue());
+    return "redirect:/%s/proceedings/scope-limitations/confirm"
+        .formatted(caseContext.getPathValue());
   }
 
   /**
@@ -1135,8 +1143,8 @@ public class EditProceedingsAndCostsSectionController {
     scopeLimitationFlow.setScopeLimitationDetails(scopeLimitationDetails);
     populateScopeLimitationDetails(model, application, proceedingFlow, scopeLimitationFlow);
 
-    return "redirect:/%s/proceedings/scope-limitations/confirm".formatted(
-        caseContext.getPathValue());
+    return "redirect:/%s/proceedings/scope-limitations/confirm"
+        .formatted(caseContext.getPathValue());
   }
 
   /**
@@ -1325,8 +1333,8 @@ public class EditProceedingsAndCostsSectionController {
       model.addAttribute(CURRENT_PROCEEDING, proceeding);
     }
 
-    return "redirect:/%s/proceedings/%s/confirm".formatted(caseContext.getPathValue(),
-        proceedingFlow.getAction());
+    return "redirect:/%s/proceedings/%s/confirm"
+        .formatted(caseContext.getPathValue(), proceedingFlow.getAction());
   }
 
   /**
@@ -1395,8 +1403,8 @@ public class EditProceedingsAndCostsSectionController {
       model.addAttribute(CURRENT_PROCEEDING, proceeding);
     }
 
-    return "redirect:/%s/proceedings/%s/confirm".formatted(
-        caseContext.getPathValue(), proceedingFlow.getAction());
+    return "redirect:/%s/proceedings/%s/confirm"
+        .formatted(caseContext.getPathValue(), proceedingFlow.getAction());
   }
 
   /**

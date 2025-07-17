@@ -128,8 +128,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
   @Mock private ApplicationService applicationService;
   @Mock private CaseOutcomeService caseOutcomeService;
-  @Mock
-  private LookupService lookupService;
+  @Mock private LookupService lookupService;
   @Mock private ProceedingMatterTypeDetailsValidator matterTypeValidator;
   @Mock private ProceedingDetailsValidator proceedingTypeValidator;
   @Mock private ProceedingFurtherDetailsValidator furtherDetailsValidator;
@@ -179,9 +178,7 @@ class EditProceedingsAndCostsSectionControllerTest {
       final ProceedingDetail proceeding = new ProceedingDetail().id(1);
       final ApplicationDetail application = new ApplicationDetail();
       application.setCaseReferenceNumber(caseReferenceNumber);
-      application.setProceedings(List.of(
-          proceeding
-      ));
+      application.setProceedings(List.of(proceeding));
       // Mock the applicationService to return a Mono of ApplicationDetail
       when(applicationService.getApplication(applicationId)).thenReturn(Mono.just(application));
 
@@ -191,8 +188,7 @@ class EditProceedingsAndCostsSectionControllerTest {
           .thenReturn(new HashMap<>());
 
       when(applicationService.getDeleteProceedingAllowedLookup(
-          CaseContext.fromPathValue(caseContext), true,
-          List.of(proceeding), new HashMap<>()))
+              CaseContext.fromPathValue(caseContext), true, List.of(proceeding), new HashMap<>()))
           .thenReturn(new HashMap<>());
 
       when(caseOutcomeService.getCaseOutcome(caseReferenceNumber, user.getProvider().getId()))
@@ -213,8 +209,8 @@ class EditProceedingsAndCostsSectionControllerTest {
       boolean isAmendment = "amendments".equals(caseContext);
 
       verify(applicationService, times(1)).getApplication(applicationId);
-      verify(applicationService, times(1)).prepareProceedingSummary(applicationId, application, isAmendment,
-          user);
+      verify(applicationService, times(1))
+          .prepareProceedingSummary(applicationId, application, isAmendment, user);
     }
   }
 
@@ -255,7 +251,8 @@ class EditProceedingsAndCostsSectionControllerTest {
       final Integer proceedingId = 1;
 
       mockMvc
-          .perform(get("/{caseContext}/proceedings/{proceeding-id}/remove", caseContext, proceedingId))
+          .perform(
+              get("/{caseContext}/proceedings/{proceeding-id}/remove", caseContext, proceedingId))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-remove"))
           .andExpect(model().attribute("proceedingId", proceedingId));
@@ -310,9 +307,10 @@ class EditProceedingsAndCostsSectionControllerTest {
       ApplicationType applicationType = new ApplicationType();
       applicationType.setId("SUBDP");
       application.setApplicationType(applicationType);
-      ProceedingDetail proceeding = new ProceedingDetail()
-          .id(proceedingId)
-          .typeOfOrder(new StringDisplayValue().id("orderType"));
+      ProceedingDetail proceeding =
+          new ProceedingDetail()
+              .id(proceedingId)
+              .typeOfOrder(new StringDisplayValue().id("orderType"));
       final List<ProceedingDetail> proceedings = Collections.singletonList(proceeding);
 
       when(lookupService.getOrderTypeDescription(any()))
@@ -327,8 +325,8 @@ class EditProceedingsAndCostsSectionControllerTest {
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(APPLICATION, application)
                   .sessionAttr(APPLICATION_PROCEEDINGS, proceedings)
-              .sessionAttr(ORIGINAL_PROCEEDING_LOOKUP, originalProceedingLookup)
-              .sessionAttr(EDIT_PROCEEDINGS_ALLOWED, editProceedingsAllowed)
+                  .sessionAttr(ORIGINAL_PROCEEDING_LOOKUP, originalProceedingLookup)
+                  .sessionAttr(EDIT_PROCEEDINGS_ALLOWED, editProceedingsAllowed)
                   .sessionAttr(USER_DETAILS, user))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-summary"))
@@ -338,10 +336,14 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       boolean isAmendment = "amendments".equals(caseContext);
 
-      verify(applicationService, times(1)).isUpdateProceedingAllowed(CaseContext.fromPathValue(caseContext),
-          editProceedingsAllowed, proceeding, originalProceedingLookup);
-      verify(applicationService, times(1)).prepareProceedingSummary(applicationId, application, isAmendment,
-          user);
+      verify(applicationService, times(1))
+          .isUpdateProceedingAllowed(
+              CaseContext.fromPathValue(caseContext),
+              editProceedingsAllowed,
+              proceeding,
+              originalProceedingLookup);
+      verify(applicationService, times(1))
+          .prepareProceedingSummary(applicationId, application, isAmendment, user);
       verify(lookupService, times(1)).getOrderTypeDescription(any());
     }
   }
@@ -365,7 +367,8 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              get("/{caseContext}/proceedings/add/matter-type", caseContext).sessionAttr(APPLICATION, application))
+              get("/{caseContext}/proceedings/add/matter-type", caseContext)
+                  .sessionAttr(APPLICATION, application))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-matter-type"))
           .andExpect(model().attributeExists("matterTypes"))
@@ -439,7 +442,8 @@ class EditProceedingsAndCostsSectionControllerTest {
     @ParameterizedTest
     @DisplayName("Should return expected result - edit")
     @ValueSource(strings = {"application", "amendments"})
-    void testProceedingsActionMatterTypePost_Edit_AmendmentCheck(String caseContext) throws Exception {
+    void testProceedingsActionMatterTypePost_Edit_AmendmentCheck(String caseContext)
+        throws Exception {
       final String action = "edit";
       final ApplicationDetail application =
           new ApplicationDetail().categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
@@ -674,13 +678,10 @@ class EditProceedingsAndCostsSectionControllerTest {
   class GetFurtherDetailsTests {
 
     @ParameterizedTest
-    @CsvSource({
-        "true, application",
-        "false, application",
-        "true, amendments",
-        "false, amendments"})
+    @CsvSource({"true, application", "false, application", "true, amendments", "false, amendments"})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult(final boolean orderTypeRequired, String caseContext) throws Exception {
+    void shouldReturnExpectedResult(final boolean orderTypeRequired, String caseContext)
+        throws Exception {
       final String action = "add";
       final ApplicationDetail application =
           new ApplicationDetail().categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
@@ -786,21 +787,54 @@ class EditProceedingsAndCostsSectionControllerTest {
 
     private static Stream<Arguments> provideFurtherDetailsForEdit() {
       return Stream.of(
-          Arguments.of("newClientInvolvementType", "newLevelOfService", "newTypeOfOrder", "application", true),
-          Arguments.of("originalClientInvolvementType", "newLevelOfService", "newTypeOfOrder", "application",
+          Arguments.of(
+              "newClientInvolvementType",
+              "newLevelOfService",
+              "newTypeOfOrder",
+              "application",
               true),
-          Arguments.of("originalClientInvolvementType", "originalLevelOfService", "newTypeOfOrder", "application",
+          Arguments.of(
+              "originalClientInvolvementType",
+              "newLevelOfService",
+              "newTypeOfOrder",
+              "application",
               true),
-          Arguments.of("originalClientInvolvementType", "originalLevelOfService", "originalTypeOfOrder", "application",
+          Arguments.of(
+              "originalClientInvolvementType",
+              "originalLevelOfService",
+              "newTypeOfOrder",
+              "application",
+              true),
+          Arguments.of(
+              "originalClientInvolvementType",
+              "originalLevelOfService",
+              "originalTypeOfOrder",
+              "application",
               false),
-          Arguments.of("newClientInvolvementType", "newLevelOfService", "newTypeOfOrder", "amendments", true),
-          Arguments.of("originalClientInvolvementType", "newLevelOfService", "newTypeOfOrder", "amendments",
+          Arguments.of(
+              "newClientInvolvementType",
+              "newLevelOfService",
+              "newTypeOfOrder",
+              "amendments",
               true),
-          Arguments.of("originalClientInvolvementType", "originalLevelOfService", "newTypeOfOrder", "amendments",
+          Arguments.of(
+              "originalClientInvolvementType",
+              "newLevelOfService",
+              "newTypeOfOrder",
+              "amendments",
               true),
-          Arguments.of("originalClientInvolvementType", "originalLevelOfService", "originalTypeOfOrder", "amendments",
-              false)
-      );
+          Arguments.of(
+              "originalClientInvolvementType",
+              "originalLevelOfService",
+              "newTypeOfOrder",
+              "amendments",
+              true),
+          Arguments.of(
+              "originalClientInvolvementType",
+              "originalLevelOfService",
+              "originalTypeOfOrder",
+              "amendments",
+              false));
     }
 
     @ParameterizedTest
@@ -897,7 +931,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/{caseContext}/proceedings/{action}/further-details", caseContext,  action)
+              post("/{caseContext}/proceedings/{action}/further-details", caseContext, action)
                   .sessionAttr(APPLICATION, application)
                   .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
                   .flashAttr("furtherDetails", furtherDetails))
@@ -1097,11 +1131,12 @@ class EditProceedingsAndCostsSectionControllerTest {
           .perform(
               get(
                       "/{caseContext}/proceedings/scope-limitations/{scope-limitation-id}/edit",
-              caseContext,
+                      caseContext,
                       scopeLimitationId)
                   .session(session))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/%s/proceedings/scope-limitations/confirm".formatted(caseContext)));
+          .andExpect(
+              redirectedUrl("/%s/proceedings/scope-limitations/confirm".formatted(caseContext)));
 
       verify(proceedingAndCostsMapper, times(1))
           .toScopeLimitationFlow(any(ScopeLimitationDetail.class));
@@ -1132,11 +1167,12 @@ class EditProceedingsAndCostsSectionControllerTest {
           .perform(
               get(
                       "/{caseContext}/proceedings/scope-limitations/{scope-limitation-id}/edit",
-              caseContext,
+                      caseContext,
                       scopeLimitationId)
                   .session(session))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/%s/proceedings/scope-limitations/confirm".formatted(caseContext)));
+          .andExpect(
+              redirectedUrl("/%s/proceedings/scope-limitations/confirm".formatted(caseContext)));
 
       verify(proceedingAndCostsMapper, times(1))
           .toScopeLimitationFlow(any(ScopeLimitationDetail.class));
@@ -1180,7 +1216,10 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              get("/{caseContext}/proceedings/scope-limitations/{action}/details", caseContext, action)
+              get(
+                      "/{caseContext}/proceedings/scope-limitations/{action}/details",
+                      caseContext,
+                      action)
                   .session(session))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-scope-limitations-details"))
@@ -1227,7 +1266,10 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              get("/{caseContext}/proceedings/scope-limitations/{action}/details", caseContext, action)
+              get(
+                      "/{caseContext}/proceedings/scope-limitations/{action}/details",
+                      caseContext,
+                      action)
                   .session(session))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-scope-limitations-details"))
@@ -1285,11 +1327,15 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/{caseContext}/proceedings/scope-limitations/{action}/details", caseContext, action)
+              post(
+                      "/{caseContext}/proceedings/scope-limitations/{action}/details",
+                      caseContext,
+                      action)
                   .session(session)
                   .flashAttr("scopeLimitationDetails", scopeLimitationDetails))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/%s/proceedings/scope-limitations/confirm".formatted(caseContext)));
+          .andExpect(
+              redirectedUrl("/%s/proceedings/scope-limitations/confirm".formatted(caseContext)));
     }
 
     @ParameterizedTest
@@ -1341,7 +1387,10 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/{caseContext}/proceedings/scope-limitations/{action}/details", caseContext, action)
+              post(
+                      "/{caseContext}/proceedings/scope-limitations/{action}/details",
+                      caseContext,
+                      action)
                   .session(session)
                   .flashAttr("scopeLimitationDetails", scopeLimitationDetails))
           .andExpect(status().isOk())
@@ -1368,7 +1417,9 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
 
       mockMvc
-          .perform(get("/{caseContext}/proceedings/scope-limitations/confirm", caseContext).session(session))
+          .perform(
+              get("/{caseContext}/proceedings/scope-limitations/confirm", caseContext)
+                  .session(session))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-scope-limitations-confirm"))
           .andExpect(model().attributeExists(CURRENT_SCOPE_LIMITATION))
@@ -1405,7 +1456,9 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(USER_DETAILS, new UserDetail()); // Mocked user detail
 
       mockMvc
-          .perform(post("/{caseContext}/proceedings/scope-limitations/confirm", caseContext).session(session))
+          .perform(
+              post("/{caseContext}/proceedings/scope-limitations/confirm", caseContext)
+                  .session(session))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/%s/proceedings/%s/confirm".formatted(caseContext, action)));
     }
@@ -1447,7 +1500,9 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(USER_DETAILS, user);
 
       mockMvc
-          .perform(post("/{caseContext}/proceedings/scope-limitations/confirm", caseContext).session(session))
+          .perform(
+              post("/{caseContext}/proceedings/scope-limitations/confirm", caseContext)
+                  .session(session))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/%s/proceedings/%s/confirm".formatted(caseContext, action)));
     }
@@ -1476,7 +1531,7 @@ class EditProceedingsAndCostsSectionControllerTest {
           .perform(
               post(
                       "/{caseContext}/proceedings/scope-limitations/{scope-limitation-id}/remove",
-                  caseContext,
+                      caseContext,
                       scopeLimitationIndex)
                   .session(session))
           .andExpect(status().is3xxRedirection())
@@ -1501,7 +1556,7 @@ class EditProceedingsAndCostsSectionControllerTest {
           .perform(
               get(
                       "/{caseContext}/proceedings/scope-limitations/{scope-limitation-id}/remove",
-              caseContext,
+                      caseContext,
                       scopeLimitationId)
                   .session(session))
           .andExpect(status().isOk())
@@ -1538,7 +1593,7 @@ class EditProceedingsAndCostsSectionControllerTest {
           .perform(
               post(
                       "/{caseContext}/proceedings/scope-limitations/{scope-limitation-id}/remove",
-                  caseContext,
+                      caseContext,
                       scopeLimitationId)
                   .session(session))
           .andExpect(status().is3xxRedirection())

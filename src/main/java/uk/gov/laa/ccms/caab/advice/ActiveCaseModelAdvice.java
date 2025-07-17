@@ -37,27 +37,28 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
  * Adding it to the model will amend the header bar with case details.
  */
 @Slf4j
-@ControllerAdvice(assignableTypes = {
-    ApplicationSectionsController.class,
-    ApplicationSubmissionController.class,
-    ApplicationTypeSectionController.class,
-    ProviderDetailsSectionController.class,
-    EditClientAddressDetailsController.class,
-    EditClientAddressDetailsSearchController.class,
-    EditClientBasicDetailsController.class,
-    EditClientContactDetailsController.class,
-    EditClientDeceasedDetailsController.class,
-    EditClientEqualOpportunitiesMonitoringDetailsController.class,
-    EditClientSummaryController.class,
-    EditGeneralDetailsSectionController.class,
-    EditProceedingsAndCostsSectionController.class,
-    OpponentsSectionController.class,
-    EvidenceSectionController.class,
-    AssessmentController.class,
-    CaseSubmissionController.class,
-    CaseController.class,
-    EditProceedingsAndCostsSectionController.class
-})
+@ControllerAdvice(
+    assignableTypes = {
+      ApplicationSectionsController.class,
+      ApplicationSubmissionController.class,
+      ApplicationTypeSectionController.class,
+      ProviderDetailsSectionController.class,
+      EditClientAddressDetailsController.class,
+      EditClientAddressDetailsSearchController.class,
+      EditClientBasicDetailsController.class,
+      EditClientContactDetailsController.class,
+      EditClientDeceasedDetailsController.class,
+      EditClientEqualOpportunitiesMonitoringDetailsController.class,
+      EditClientSummaryController.class,
+      EditGeneralDetailsSectionController.class,
+      EditProceedingsAndCostsSectionController.class,
+      OpponentsSectionController.class,
+      EvidenceSectionController.class,
+      AssessmentController.class,
+      CaseSubmissionController.class,
+      CaseController.class,
+      EditProceedingsAndCostsSectionController.class
+    })
 public class ActiveCaseModelAdvice {
 
   /**

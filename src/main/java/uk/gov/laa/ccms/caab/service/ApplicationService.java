@@ -1423,7 +1423,9 @@ public class ApplicationService {
    * @param user The user performing the operation.
    */
   public void prepareProceedingSummary(
-      final String id, final ApplicationDetail application, final boolean isAmendment,
+      final String id,
+      final ApplicationDetail application,
+      final boolean isAmendment,
       final UserDetail user) {
 
     setCostLimitations(application, isAmendment);
@@ -1462,9 +1464,10 @@ public class ApplicationService {
 
       return editProceedingAllowed
           && (originalProceeding == null
-          || originalProceeding.getAvailableFunctions().contains(
-          UserRole.UPDATE_PROCEEDING.getCode())
-          && (outcome == null || outcome.getId() == null));
+              || originalProceeding
+                      .getAvailableFunctions()
+                      .contains(UserRole.UPDATE_PROCEEDING.getCode())
+                  && (outcome == null || outcome.getId() == null));
     }
   }
 
@@ -1484,14 +1487,17 @@ public class ApplicationService {
       final List<ProceedingDetail> proceedings,
       final Map<Integer, ProceedingDetail> originalProceedingLookup) {
     return proceedings.stream()
-        .map(proceeding ->
-            new AbstractMap.SimpleEntry<>(proceeding.getId(),
-                isDeleteProceedingAllowed(caseContext, editProceedingAllowed,
-                    proceeding, originalProceedingLookup))
-        ).collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
+        .map(
+            proceeding ->
+                new AbstractMap.SimpleEntry<>(
+                    proceeding.getId(),
+                    isDeleteProceedingAllowed(
+                        caseContext, editProceedingAllowed, proceeding, originalProceedingLookup)))
+        .collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
   }
 
-  private boolean isDeleteProceedingAllowed(final CaseContext caseContext,
+  private boolean isDeleteProceedingAllowed(
+      final CaseContext caseContext,
       final boolean editProceedingAllowed,
       final ProceedingDetail proceeding,
       final Map<Integer, ProceedingDetail> originalProceedingLookup) {
@@ -1523,25 +1529,25 @@ public class ApplicationService {
   }
 
   /**
-   * Constructs a map of draft proceeding ids and the corresponding original proceeding object,
-   * if it exists.
+   * Constructs a map of draft proceeding ids and the corresponding original proceeding object, if
+   * it exists.
    *
    * @param proceedings the list of draft proceedings
    * @param ebsCase the case from EBS
    * @return a map of draft proceeding ids and corresponding original proceeding object
    */
   public Map<Integer, ProceedingDetail> getOriginalProceedingLookup(
-      final List<ProceedingDetail> proceedings,
-      final ApplicationDetail ebsCase) {
+      final List<ProceedingDetail> proceedings, final ApplicationDetail ebsCase) {
     return proceedings.stream()
-        .map(proceeding ->
-            new AbstractMap.SimpleEntry<>(proceeding.getId(),
-                getOriginalProceeding(proceeding.getEbsId(), ebsCase))
-        ).collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
+        .map(
+            proceeding ->
+                new AbstractMap.SimpleEntry<>(
+                    proceeding.getId(), getOriginalProceeding(proceeding.getEbsId(), ebsCase)))
+        .collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
   }
 
-  private ProceedingDetail getOriginalProceeding(final String ebsId,
-      final ApplicationDetail ebsCase) {
+  private ProceedingDetail getOriginalProceeding(
+      final String ebsId, final ApplicationDetail ebsCase) {
     if (ebsCase == null || ebsId == null) {
       return null;
     }
@@ -1747,21 +1753,26 @@ public class ApplicationService {
   /**
    * Checks whether the current category of law for the provided application is valid.
    *
-   * @param application   the application details
-   * @param user          the currently logged-in user
+   * @param application the application details
+   * @param user the currently logged-in user
    * @return true if the category of law is valid, false otherwise
    */
   public boolean isCategoryOfLawValid(ApplicationDetail application, UserDetail user) {
     String categoryOfLaw = application.getCategoryOfLaw().getId();
     ApplicationProviderDetails providerDetails = application.getProviderDetails();
-    return soaApiClient.getContractDetails(
-        providerDetails.getProvider().getId(),
-        providerDetails.getOffice().getId(),
-        user.getLoginId(),
-        user.getUserType()).blockOptional().map(
-            contractDetails -> contractDetails.getContracts().stream()
-              .anyMatch(contractDetail -> categoryOfLaw.equals(contractDetail.getCategoryofLaw()))
-    ).orElse(false);
+    return soaApiClient
+        .getContractDetails(
+            providerDetails.getProvider().getId(),
+            providerDetails.getOffice().getId(),
+            user.getLoginId(),
+            user.getUserType())
+        .blockOptional()
+        .map(
+            contractDetails ->
+                contractDetails.getContracts().stream()
+                    .anyMatch(
+                        contractDetail -> categoryOfLaw.equals(contractDetail.getCategoryofLaw())))
+        .orElse(false);
   }
 
   public boolean isAmendment(ApplicationDetail ebsCase, BaseApplicationDetail tdsApplication) {
