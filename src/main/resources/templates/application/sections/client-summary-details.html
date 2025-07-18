@@ -11,8 +11,13 @@
   <div id="breadcrumbs">
     <a th:if="${caseContext.isApplication()}" th:href="@{/application/sections}" class="govuk-back-link"
        th:text="#{${@caseContextService.getGoBackText(caseContext)}}"/>
-    <a th:if="${caseContext.isAmendment()}" th:href="@{/case/overview}" class="govuk-back-link"
+    <!--/*@thymesVar id="amendClientOrigin" type="uk.gov.laa.ccms.caab.constants.AmendClientOrigin"*/-->
+    <a th:if="${caseContext.isAmendment() && amendClientOrigin != null}" th:href="@{__${amendClientOrigin?.href}__}" class="govuk-back-link"
+       th:text="#{${amendClientOrigin?.getTextCode()}}"/>
+    <!-- Fail-safe backlink in-case amendClientOrigin is lost.-->
+    <a th:if="${caseContext.isAmendment() && amendClientOrigin == null}" th:href="@{/case/overview}" class="govuk-back-link"
        th:text="#{${@caseContextService.getGoBackText(caseContext)}}"/>
+
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/{caseContext}/sections/client/details/summary(caseContext=${caseContext.pathValue})}"
