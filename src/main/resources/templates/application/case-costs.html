@@ -8,8 +8,8 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/{caseContext}/proceedings-and-costs#case-costs(caseContext=${caseContext.pathValue})}" class="govuk-back-link"
-      th:text="#{proceedings.cancelAndGoBack}"/>
+    <a th:if="${caseContext.isApplication()}" th:href="@{/application/proceedings-and-costs#case-costs}" class="govuk-back-link" th:text="#{proceedings.cancelAndGoBack}"/>
+    <a th:if="${caseContext.isAmendment()}" th:href="@{/amendments/summary}" class="govuk-back-link" th:text="#{site.returnToAmendmentSummary}"/>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/{caseContext}/case-costs(caseContext=${caseContext.pathValue})}"

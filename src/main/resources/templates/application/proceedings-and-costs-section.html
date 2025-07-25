@@ -2,20 +2,21 @@
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='VIEWPROC,ADDPROC,DELPROC')}"
       xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
-  <title th:text="#{service.name} + ' - ' + #{application.create}"></title>
+  <title th:if="${caseContext.isApplication()}" th:text="#{service.name} + ' - ' + #{application.create}"/>
+  <title th:if="${caseContext.isAmendment()}" th:text="#{service.name} + ' - ' + #{amendment.case}"/>
 </head>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections}" class="govuk-back-link" th:text="#{site.returnToApplication}"/>
+    <a th:if="${caseContext.isApplication()}" th:href="@{/application/sections}"
+       class="govuk-back-link" th:text="#{site.returnToApplication}"/>
+    <a th:if="${caseContext.isAmendment()}" th:href="@{/amendments/summary}" class="govuk-back-link" th:text="#{site.returnToAmendmentSummary}"/>
   </div>
   <div id="main-content">
-    <span class="govuk-caption-l" th:text="#{application.create}"/>
+    <span th:if="${caseContext.isApplication()}" class="govuk-caption-l" th:text="#{application.create}"/>
+    <span th:if="${caseContext.isAmendment()}" class="govuk-caption-l" th:text="#{amendment.case}"/>
     <h1 class="govuk-heading-l" th:text="#{application.section.proceedingsCosts}"/>
-
     <p class="govuk-body-l" th:text="#{proceedingsAndCosts.leadParagraph}"/>
-
-
     <div class="govuk-tabs" data-module="govuk-tabs">
       <h2 class="govuk-tabs__title" th:text="#{proceedingsAndCosts.tabs.subHeading}"/>
       <ul class="govuk-tabs__list">
@@ -55,7 +56,7 @@
           <tr class="govuk-table__row" th:each="proceeding : ${proceedings}" th:unless="${proceedings.isEmpty()}">
             <td class="govuk-table__cell">
               <div th:replace="~{partials/actions :: restrictedActionLink(${proceeding.matterType.displayValue},
-              ${user.functions}, 'VIEWPROC', false, '', @{/application/proceedings/{id}/summary(id=${proceeding.id})}, true)}"></div>
+              ${user.functions}, 'VIEWPROC', false, '', @{/{caseContext}/proceedings/{id}/summary(id=${proceeding.id},caseContext=${caseContext.pathValue})}, true)}"></div>
             </td>
             <td class="govuk-table__cell" th:text="${proceeding.proceedingType.displayValue}"/>
             <td class="govuk-table__cell" th:text="${proceeding.levelOfService.displayValue}"/>
@@ -66,19 +67,26 @@
                 <img class="govuk-!-padding-left-2 govuk-!-padding-right-2"
                      th:src="@{/assets/ccms/tick.gif}" alt="tick">
               </td>
+            </th:block>
+            <th:block th:unless="${proceeding.leadProceedingInd}">
               <td class="govuk-table__cell"></td>
             </th:block>
 
-            <th:block th:unless="${proceeding.leadProceedingInd}">
-              <td class="govuk-table__cell"></td>
-              <td class="govuk-table__cell">
-                <th:block th:replace="~{partials/actions :: restrictedActionLink(#{site.delete},
-              ${user.functions}, 'DELPROC', false, '', @{/application/proceedings/{id}/remove(id=${proceeding.id})}, true)}"/>
-                 |
-                <a th:href="@{/application/proceedings/{id}/make-lead(id=${proceeding.id})}" class="govuk-link"
-                  th:text="#{proceedings.proceedingDetails.link.makeLead}"/>
-              </td>
-            </th:block>
+            <td class="govuk-table__cell">
+              <th:block th:with="showDelete=${deleteProceedingAllowedLookup.get(proceeding.id)}, showMakeLead=${proceeding.leadProceedingInd != true}">
+              <th:block th:if="${showDelete}">
+              <th:block th:replace="~{partials/actions :: restrictedActionLink(#{site.delete},
+            ${user.functions}, 'DELPROC', false, '', @{/{caseContext}/proceedings/{id}/remove(id=${proceeding.id},caseContext=${caseContext.pathValue})}, true)}"/>
+              </th:block>
+              <th:block th:if="${showDelete && showMakeLead}">
+              |
+              </th:block>
+              <a th:if="${showMakeLead}"
+                 th:href="@{/{caseContext}/proceedings/{id}/make-lead(id=${proceeding.id},caseContext=${caseContext.pathValue})}"
+                 class="govuk-link"
+                 th:text="#{proceedings.proceedingDetails.link.makeLead}"/>
+              </th:block>
+            </td>
           </tr>
           <tr class="govuk-table__row" th:if="${proceedings.isEmpty()}">
             <td class="govuk-table__cell" colspan="6" th:text="#{site.none}"/>
@@ -87,7 +95,7 @@
         </table>
         <th:block
             th:replace="~{partials/actions :: restrictedActionLink(#{proceedings.button.addProceeding},
-            ${user.functions}, 'ADDPROC', true, 'govuk-button--secondary', @{/application/proceedings/add/matter-type}, false)}"/>
+            ${user.functions}, 'ADDPROC', true, 'govuk-button--secondary', @{/{caseContext}/proceedings/add/matter-type(caseContext=${caseContext.pathValue})}, false)}"/>
       </div>
       <div class="govuk-tabs__panel govuk-tabs__panel--hidden" id="case-costs" aria-labelledby="tab_case-costs">
         <h2 class="govuk-heading-l" th:text="#{proceedings.caseCosts.subHeading}"/>
@@ -105,7 +113,7 @@
           <tbody class="govuk-table__body">
             <tr class="govuk-table__row">
               <td class="govuk-table__cell">
-                <a th:href="@{/application/case-costs}" id="case-cost-limitation-link"
+                <a th:href="@{/{caseContext}/case-costs(caseContext=${caseContext.pathValue})}" id="case-cost-limitation-link"
                    class="govuk-link"
                    th:text="#{proceedings.caseCosts.link.caseCostLimitation}"/>
               </td>
@@ -140,14 +148,14 @@
           <tr class="govuk-table__row" th:each="priorAuthority : ${priorAuthorities}"
               th:unless="${priorAuthorities.isEmpty()}">
             <td class="govuk-table__cell">
-              <a th:href="@{/application/prior-authorities/{id}/confirm(id=${priorAuthority.id})}"
+              <a th:href="@{/{caseContext}/prior-authorities/{id}/confirm(id=${priorAuthority.id},caseContext=${caseContext.pathValue})}"
                  class="govuk-link" th:text="${priorAuthority.summary}"/>
             </td>
             <td class="govuk-table__cell" th:text="${priorAuthority.type.displayValue}"/>
             <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(priorAuthority.amountRequested)}"/>
             <td class="govuk-table__cell" th:text="${priorAuthority.status}"/>
             <td class="govuk-table__cell">
-              <a th:href="@{/application/prior-authorities/{id}/remove(id=${priorAuthority.id})}"
+              <a th:href="@{/{caseContext}/prior-authorities/{id}/remove(id=${priorAuthority.id},caseContext=${caseContext.pathValue})}"
                  class="govuk-link" th:text="#{site.delete}"/>
             </td>
           </tr>
@@ -159,7 +167,7 @@
         <govuk:button classes="govuk-button--secondary"
                       id="add-prior-authority-link"
                       th:text="#{proceedings.priorAuthority}"
-                      th:href="@{/application/prior-authorities/add/type}"/>
+                      th:href="@{/{caseContext}/prior-authorities/add/type(caseContext=${caseContext.pathValue})}"/>
       </div>
     </div>
   </div>
