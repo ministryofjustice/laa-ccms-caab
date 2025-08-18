@@ -1,6 +1,6 @@
 plugins {
 	id 'net.researchgate.release' version '3.1.0'
-	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.39'
+	id 'uk.gov.laa.ccms.springboot.laa-ccms-spring-boot-gradle-plugin' version '0.0.42'
 	id("com.diffplug.spotless") version "7.1.0"
 }
 
@@ -70,9 +70,9 @@ dependencies {
 
 	implementation 'uk.gov.laa.ccms.data:data-api:0.0.61'
 
-	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.70'
+	implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.71'
 
-	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.61'
+	implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.62'
 
 	implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.38'
 
