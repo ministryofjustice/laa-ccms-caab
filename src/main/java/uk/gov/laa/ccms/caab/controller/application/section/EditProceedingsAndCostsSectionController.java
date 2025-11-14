@@ -356,8 +356,8 @@ public class EditProceedingsAndCostsSectionController {
     // reset needed to determine navigation
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, new ProceedingFlowFormData(ACTION_EDIT));
 
-    boolean isOriginalProceeding = !caseContext.isApplication()
-        && originalProceedingLookup.get(proceedingId) != null;
+    boolean isOriginalProceeding =
+        !caseContext.isApplication() && originalProceedingLookup.get(proceedingId) != null;
     model.addAttribute(IS_ORIGINAL_PROCEEDING, isOriginalProceeding);
 
     return "application/proceedings-summary";
@@ -633,7 +633,7 @@ public class EditProceedingsAndCostsSectionController {
       @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) ProceedingFlowFormData proceedingFlow,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
       @SessionAttribute(value = IS_ORIGINAL_PROCEEDING, required = false)
-      final boolean isOriginalProceeding,
+          final boolean isOriginalProceeding,
       @PathVariable("action") final String action,
       HttpSession session,
       final Model model) {
@@ -642,8 +642,7 @@ public class EditProceedingsAndCostsSectionController {
       final ProceedingDetail proceeding =
           (ProceedingDetail) session.getAttribute(CURRENT_PROCEEDING);
 
-      proceedingFlow =
-          proceedingAndCostsMapper.toProceedingFlow(proceeding, null);
+      proceedingFlow = proceedingAndCostsMapper.toProceedingFlow(proceeding, null);
 
       // set orderTypeRequired flag if typeOfOrder is not null
       if (proceeding.getTypeOfOrder().getId() != null) {
