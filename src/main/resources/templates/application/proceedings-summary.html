@@ -36,10 +36,15 @@
             th:text="#{proceedings.proceedingDetails.subHeading}"/>
         <ul class="govuk-summary-card__actions">
           <li class="govuk-summary-card__action">
-            <a th:if="${updateProceedingAllowed}"
+            <a th:if="${updateProceedingAllowed && !isOriginalProceeding}"
                class="govuk-link"
                th:href="@{/{caseContext}/proceedings/edit/matter-type(caseContext=${caseContext.pathValue})}"
-               id="edit-proceeding-details-link"
+               id="edit-proceeding-matter-type-link"
+               th:text="#{proceedings.summary.editProceedingDetails}"/>
+            <a th:if="${updateProceedingAllowed && isOriginalProceeding}"
+               class="govuk-link"
+               th:href="@{/{caseContext}/proceedings/edit/further-details(caseContext=${caseContext.pathValue})}"
+               id="edit-proceeding-further-details-link"
                th:text="#{proceedings.summary.editProceedingDetails}"/>
           </li>
         </ul>

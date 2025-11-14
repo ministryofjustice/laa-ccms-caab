@@ -13,6 +13,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_SCOPE_LIMITATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EDIT_PROCEEDINGS_ALLOWED;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.IS_ORIGINAL_PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ORIGINAL_PROCEEDING_LOOKUP;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRIOR_AUTHORITY_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA;
@@ -110,7 +111,8 @@ import uk.gov.laa.ccms.data.model.UserDetail;
       CURRENT_SCOPE_LIMITATION,
       PRIOR_AUTHORITY_FLOW_FORM_DATA,
       ORIGINAL_PROCEEDING_LOOKUP,
-      EDIT_PROCEEDINGS_ALLOWED
+      EDIT_PROCEEDINGS_ALLOWED,
+      IS_ORIGINAL_PROCEEDING
     })
 @SuppressWarnings("unchecked")
 public class EditProceedingsAndCostsSectionController {
@@ -353,6 +355,10 @@ public class EditProceedingsAndCostsSectionController {
 
     // reset needed to determine navigation
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, new ProceedingFlowFormData(ACTION_EDIT));
+
+    boolean isOriginalProceeding = !caseContext.isApplication()
+        && originalProceedingLookup.get(proceedingId) != null;
+    model.addAttribute(IS_ORIGINAL_PROCEEDING, isOriginalProceeding);
 
     return "application/proceedings-summary";
   }
@@ -624,9 +630,28 @@ public class EditProceedingsAndCostsSectionController {
   @GetMapping("/{caseContext}/proceedings/{action}/further-details")
   public String proceedingsActionFurtherDetails(
       @PathVariable("caseContext") final CaseContext caseContext,
-      @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
+      @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) ProceedingFlowFormData proceedingFlow,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
+      @SessionAttribute(value = IS_ORIGINAL_PROCEEDING, required = false)
+      final boolean isOriginalProceeding,
+      @PathVariable("action") final String action,
+      HttpSession session,
       final Model model) {
+
+    if (action.equals(ACTION_EDIT) && isOriginalProceeding) {
+      final ProceedingDetail proceeding =
+          (ProceedingDetail) session.getAttribute(CURRENT_PROCEEDING);
+
+      proceedingFlow =
+          proceedingAndCostsMapper.toProceedingFlow(proceeding, null);
+
+      // set orderTypeRequired flag if typeOfOrder is not null
+      if (proceeding.getTypeOfOrder().getId() != null) {
+        proceedingFlow.getProceedingDetails().setOrderTypeRequired(true);
+      }
+
+      model.addAttribute(PROCEEDING_FLOW_FORM_DATA_OLD, proceedingFlow);
+    }
 
     populateFurtherDetailsDropdowns(
         model,

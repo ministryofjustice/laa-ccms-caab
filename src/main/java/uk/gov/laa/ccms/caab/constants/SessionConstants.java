@@ -138,6 +138,12 @@ public class SessionConstants {
   public static final String EDIT_PROCEEDINGS_ALLOWED = "editProceedingsAllowed";
 
   /**
+   * Session attribute used to keep track of whether case proceeding is an original proceeding
+   * (present before amendment).
+   */
+  public static final String IS_ORIGINAL_PROCEEDING = "isOriginalProceeding";
+
+  /**
    * Session attribute used to keep track of the proceeding flow data during the creation or
    * modification of a proceeding.
    */
