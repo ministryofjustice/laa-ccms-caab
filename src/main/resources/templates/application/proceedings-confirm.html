@@ -3,16 +3,17 @@
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html" xmlns:govuk="http://www.thymeleaf.org">
 <head>
-  <title th:text="#{service.name} + ' - ' + #{application.create}"></title>
+  <title th:if="${caseContext.isApplication()}" th:text="#{service.name} + ' - ' + #{application.create}"/>
+  <title th:if="${caseContext.isAmendment()}" th:text="#{service.name} + ' - ' + #{amendment.case}"/>
 </head>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/proceedings-and-costs}" class="govuk-back-link"
+    <a th:href="@{/{caseContext}/proceedings-and-costs(caseContext=${caseContext.pathValue})}" class="govuk-back-link"
       th:text="#{proceedings.cancelAndGoBack}"/>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/proceedings/{action}/confirm(action=${proceedingFlow.action})}"
+    <form action="#" th:action="@{/{caseContext}/proceedings/{action}/confirm(action=${proceedingFlow.action}, caseContext=${caseContext.pathValue})}"
           th:object="${scopeDelegatedFunctionsApplyFormData}" method="post">
       <span class="govuk-caption-l" th:text="#{proceedings.addEdit.caption}"></span>
       <h1 class="govuk-heading-l" th:text="#{proceedings.proceedingDetails.step4.heading}"></h1>
@@ -74,10 +75,10 @@
         <tr class="govuk-table__row" th:each="scopeLimitation, rowStat : ${scopeLimitations}">
           <td class="govuk-table__cell">
             <a th:if="${proceedingFlow.action} == 'add'"
-               th:href="@{/application/proceedings/scope-limitations/{scopeLimitationId}/edit(scopeLimitationId=${rowStat.index})}"
+               th:href="@{/{caseContext}/proceedings/scope-limitations/{scopeLimitationId}/edit(scopeLimitationId=${rowStat.index}, caseContext=${caseContext.pathValue})}"
                class="govuk-link" th:text="${scopeLimitation.scopeLimitation.displayValue}"/>
             <a th:if="${proceedingFlow.action} == 'edit'"
-               th:href="@{/application/proceedings/scope-limitations/{scopeLimitationId}/edit(scopeLimitationId=${scopeLimitation.id})}"
+               th:href="@{/{caseContext}/proceedings/scope-limitations/{scopeLimitationId}/edit(scopeLimitationId=${scopeLimitation.id}, caseContext=${caseContext.pathValue})}"
                class="govuk-link" th:text="${scopeLimitation.scopeLimitation.displayValue}"/>
           </td>
           <td class="govuk-table__cell" th:text="${scopeLimitation.scopeLimitationWording}"/>
@@ -96,11 +97,11 @@
           <td class="govuk-table__cell">
             <th:block th:if="${scopeLimitations.size()} > 1 ">
               <a th:if="${proceedingFlow.action} == 'add'"
-                 th:href="@{/application/proceedings/scope-limitations/{scopeLimitationId}/remove(scopeLimitationId=${rowStat.index})}"
+                 th:href="@{/{caseContext}/proceedings/scope-limitations/{scopeLimitationId}/remove(scopeLimitationId=${rowStat.index}, caseContext=${caseContext.pathValue})}"
                  class="govuk-link"
                  th:text="#{site.remove}"/>
               <a th:if="${proceedingFlow.action} == 'edit'"
-                 th:href="@{/application/proceedings/scope-limitations/{scopeLimitationId}/remove(scopeLimitationId=${scopeLimitation.id})}"
+                 th:href="@{/{caseContext}/proceedings/scope-limitations/{scopeLimitationId}/remove(scopeLimitationId=${scopeLimitation.id}, caseContext=${caseContext.pathValue})}"
                  class="govuk-link"
                  th:text="#{site.remove}"/>
             </th:block>
@@ -111,7 +112,7 @@
       <a class="govuk-button govuk-button--secondary"
          id="add-scope-limitation-button"
          data-module="govuk-button"
-         th:href="@{/application/proceedings/scope-limitations/add/details}"
+         th:href="@{/{caseContext}/proceedings/scope-limitations/add/details(caseContext=${caseContext.pathValue})}"
         th:text="#{proceedings.summary.addScopeLimitation}"/>
       <div class="govuk-button-group">
         <govuk:button type="submit"

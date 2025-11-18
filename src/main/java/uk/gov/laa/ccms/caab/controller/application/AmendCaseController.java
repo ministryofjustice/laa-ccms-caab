@@ -115,6 +115,8 @@ public class AmendCaseController {
     httpSession.setAttribute(ACTIVE_CASE, activeCase);
     httpSession.setAttribute(APPLICATION_COSTS, amendment.getCosts());
 
+    model.addAttribute(APPLICATION_ID, amendment.getId());
+
     model.addAttribute("summary", applicationSectionDisplay);
 
     return "application/amendment-summary";

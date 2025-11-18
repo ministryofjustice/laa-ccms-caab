@@ -56,10 +56,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -86,6 +88,8 @@ import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.config.UserRole;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -109,10 +113,12 @@ import uk.gov.laa.ccms.caab.model.AuditDetail;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ClientDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
@@ -137,6 +143,7 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 
 @ExtendWith(MockitoExtension.class)
@@ -1740,7 +1747,7 @@ class ApplicationServiceTest {
             eq(id), any(CostStructureDetail.class), eq(user.getLoginId())))
         .thenReturn(Mono.empty());
 
-    applicationService.prepareProceedingSummary(id, application, user);
+    applicationService.prepareProceedingSummary(id, application, false, user);
 
     ArgumentCaptor<CostStructureDetail> costsCaptor =
         ArgumentCaptor.forClass(CostStructureDetail.class);
@@ -1899,5 +1906,389 @@ class ApplicationServiceTest {
     assertThrows(
         CaabApiClientException.class,
         () -> applicationService.putApplicationTypeFormData(id, applicationType, user));
+  }
+
+  @Nested
+  @DisplayName("getOriginalProceedingLookup")
+  class GetOriginalProceedingLookupTest {
+
+    @Test
+    @DisplayName("Should return null values for proceedings with no matching case proceeding")
+    void getOriginalProceedingLookupNoMatchingCaseProceeding() {
+      List<ProceedingDetail> proceedings = List.of(new ProceedingDetail().id(1));
+
+      Map<Integer, ProceedingDetail> expected = new HashMap<>();
+      expected.put(1, null);
+
+      Map<Integer, ProceedingDetail> actual =
+          applicationService.getOriginalProceedingLookup(proceedings, null);
+
+      assertEquals(expected, actual);
+    }
+
+    @Test
+    @DisplayName(
+        "Should return original proceeding value for proceedings with matching case proceeding")
+    void getOriginalProceedingLookupMatchingCaseProceeding() {
+      List<ProceedingDetail> proceedings = List.of(new ProceedingDetail().id(1).ebsId("2"));
+
+      ProceedingDetail caseProceeding = new ProceedingDetail().ebsId("2");
+
+      ApplicationDetail ebsCase = new ApplicationDetail().proceedings(List.of(caseProceeding));
+
+      Map<Integer, ProceedingDetail> expected = new HashMap<>();
+      expected.put(1, caseProceeding);
+
+      Map<Integer, ProceedingDetail> actual =
+          applicationService.getOriginalProceedingLookup(proceedings, ebsCase);
+
+      assertEquals(expected, actual);
+    }
+
+    @Test
+    @DisplayName("Should return empty lookup when no proceedings are provided")
+    void getOriginalProceedingLookupShouldReturnEmptyLookupWhenNoProceedings() {
+      Map<Integer, ProceedingDetail> expected = new HashMap<>();
+
+      Map<Integer, ProceedingDetail> actual =
+          applicationService.getOriginalProceedingLookup(List.of(), null);
+
+      assertEquals(expected, actual);
+    }
+  }
+
+  @Nested
+  @DisplayName("getDeleteProceedingAllowedLookup")
+  class GetDeleteProceedingAllowedLookupTest {
+
+    @ParameterizedTest
+    @CsvSource({"application", "amendments"})
+    @DisplayName("Should always return false for lead proceedings")
+    void shouldAlwaysReturnFalseForLeadProceedings(String caseContext) {
+
+      Map<Integer, Boolean> expected = Map.of(1, false);
+
+      Map<Integer, Boolean> actual =
+          applicationService.getDeleteProceedingAllowedLookup(
+              CaseContext.fromPathValue(caseContext),
+              true,
+              List.of(new ProceedingDetail().id(1).leadProceedingInd(true)),
+              Map.of());
+
+      assertEquals(expected, actual);
+    }
+
+    @Test
+    @DisplayName("Should return true for non-lead proceedings on new applications")
+    void shouldReturnTrueForNonLeadProceedingsOnNewApplications() {
+
+      Map<Integer, Boolean> expected = Map.of(1, true);
+
+      Map<Integer, Boolean> actual =
+          applicationService.getDeleteProceedingAllowedLookup(
+              CaseContext.APPLICATION, true, List.of(new ProceedingDetail().id(1)), Map.of());
+
+      assertEquals(expected, actual);
+    }
+
+    @Test
+    @DisplayName("Should return false for amendments when editProceedingAllowed is false")
+    void shouldReturnFalseForAmendmentsWhenEditProceedingAllowedIsFalse() {
+
+      Map<Integer, Boolean> expected = Map.of(1, false);
+
+      Map<Integer, Boolean> actual =
+          applicationService.getDeleteProceedingAllowedLookup(
+              CaseContext.AMENDMENTS, false, List.of(new ProceedingDetail().id(1)), Map.of());
+
+      assertEquals(expected, actual);
+    }
+
+    @Test
+    @DisplayName(
+        "Should return false for amendments when editProceedingAllowed is true, "
+            + "but the original proceeding does not contain the delete proceeding function")
+    void shouldReturnFalseForAmendmentsWhenEditProceedingAllowedIsTrueButMissingFunction() {
+
+      Map<Integer, Boolean> expected = Map.of(1, false);
+
+      Map<Integer, Boolean> actual =
+          applicationService.getDeleteProceedingAllowedLookup(
+              CaseContext.AMENDMENTS,
+              true,
+              List.of(new ProceedingDetail().id(1)),
+              Map.of(1, new ProceedingDetail().availableFunctions(List.of())));
+
+      assertEquals(expected, actual);
+    }
+
+    @Test
+    @DisplayName(
+        "Should return false for amendments when editProceedingAllowed is true, "
+            + "and the original proceeding has the delete proceeding function, "
+            + "but the original proceeding has an outcome")
+    void shouldReturnFalseForAmendmentsWhenEditProceedingAllowedIsTrueButHasOutcome() {
+
+      Map<Integer, Boolean> expected = Map.of(1, false);
+
+      Map<Integer, Boolean> actual =
+          applicationService.getDeleteProceedingAllowedLookup(
+              CaseContext.AMENDMENTS,
+              true,
+              List.of(new ProceedingDetail().id(1)),
+              Map.of(
+                  1,
+                  new ProceedingDetail()
+                      .availableFunctions(List.of(UserRole.DELETE_PROCEEDING.getCode()))
+                      .outcome(new ProceedingOutcomeDetail().id(1))));
+
+      assertEquals(expected, actual);
+    }
+
+    @Test
+    @DisplayName(
+        "Should return true for amendments when editProceedingAllowed is true, "
+            + "and the original proceeding has the delete proceeding function, "
+            + "and the original proceeding does not have an outcome")
+    void shouldReturnTrueForAmendmentsWhenEditProceedingAllowedIsTrueAndDoesNotHaveOutcome() {
+
+      Map<Integer, Boolean> expected = Map.of(1, true);
+
+      Map<Integer, Boolean> actual =
+          applicationService.getDeleteProceedingAllowedLookup(
+              CaseContext.AMENDMENTS,
+              true,
+              List.of(new ProceedingDetail().id(1)),
+              Map.of(
+                  1,
+                  new ProceedingDetail()
+                      .availableFunctions(List.of(UserRole.DELETE_PROCEEDING.getCode()))
+                      .outcome(null)));
+
+      assertEquals(expected, actual);
+    }
+
+    @Test
+    @DisplayName(
+        "Should return true for amendments when editProceedingAllowed is true, "
+            + "and the proceeding is newly drafted (there is no matching original proceeding)")
+    void shouldReturnTrueForAmendmentsWhenProceedingIsNewlyDrafted() {
+
+      Map<Integer, Boolean> expected = Map.of(1, true);
+
+      Map<Integer, ProceedingDetail> originalProceedingLookup = new HashMap<>();
+      originalProceedingLookup.put(1, null);
+
+      Map<Integer, Boolean> actual =
+          applicationService.getDeleteProceedingAllowedLookup(
+              CaseContext.AMENDMENTS,
+              true,
+              List.of(new ProceedingDetail().id(1)),
+              originalProceedingLookup);
+
+      assertEquals(expected, actual);
+    }
+  }
+
+  @Nested
+  @DisplayName("isUpdateProceedingAllowed")
+  class IsUpdateProceedingAllowedTest {
+
+    @ParameterizedTest
+    @CsvSource({"application, true", "amendments, false"})
+    @DisplayName("Should return true for applications")
+    void shouldReturnTrueForApplications(String caseContext, boolean expected) {
+
+      Map<Integer, ProceedingDetail> originalProceedingLookup = new HashMap<>();
+      originalProceedingLookup.put(1, null);
+
+      boolean actual =
+          applicationService.isUpdateProceedingAllowed(
+              CaseContext.fromPathValue(caseContext),
+              false,
+              new ProceedingDetail().id(1),
+              originalProceedingLookup);
+
+      assertEquals(expected, actual);
+    }
+
+    @Test
+    @DisplayName("Should return false for amendments when editProceedingsAllowed is false")
+    void shouldReturnFalseForAmendmentsIfEditProceedingAllowedIsFalse() {
+
+      Map<Integer, ProceedingDetail> originalProceedingLookup = new HashMap<>();
+      originalProceedingLookup.put(
+          1,
+          new ProceedingDetail()
+              .availableFunctions(List.of(UserRole.UPDATE_PROCEEDING.getCode()))
+              .outcome(null));
+
+      boolean actual =
+          applicationService.isUpdateProceedingAllowed(
+              CaseContext.AMENDMENTS,
+              false,
+              new ProceedingDetail().id(1),
+              originalProceedingLookup);
+
+      assertFalse(actual);
+    }
+
+    @Test
+    @DisplayName(
+        "Should return false for amendments when editProceedingsAllowed is true, "
+            + "but the original proceeding is missing the update proceeding function")
+    void shouldReturnFalseForAmendmentsIfEditProceedingAllowedIsTrueButMissingFunction() {
+
+      Map<Integer, ProceedingDetail> originalProceedingLookup = new HashMap<>();
+      originalProceedingLookup.put(
+          1, new ProceedingDetail().availableFunctions(List.of()).outcome(null));
+
+      boolean actual =
+          applicationService.isUpdateProceedingAllowed(
+              CaseContext.AMENDMENTS, true, new ProceedingDetail().id(1), originalProceedingLookup);
+
+      assertFalse(actual);
+    }
+
+    @Test
+    @DisplayName(
+        "Should return false for amendments when editProceedingsAllowed is true, "
+            + "and the original proceeding has the update proceeding function, "
+            + "but the original proceeding has an outcome")
+    void shouldReturnFalseForAmendmentsIfEditProceedingAllowedIsTrueButHasOutcome() {
+
+      Map<Integer, ProceedingDetail> originalProceedingLookup = new HashMap<>();
+      originalProceedingLookup.put(
+          1,
+          new ProceedingDetail()
+              .availableFunctions(List.of(UserRole.UPDATE_PROCEEDING.getCode()))
+              .outcome(new ProceedingOutcomeDetail().id(1)));
+
+      boolean actual =
+          applicationService.isUpdateProceedingAllowed(
+              CaseContext.AMENDMENTS, true, new ProceedingDetail().id(1), originalProceedingLookup);
+
+      assertFalse(actual);
+    }
+
+    @Test
+    @DisplayName(
+        "Should return true for amendments when editProceedingsAllowed is true, "
+            + "and the original proceeding has the update proceeding function, "
+            + "but the original proceeding does not have an outcome")
+    void
+        shouldReturnTrueForAmendmentsIfEditProceedingAllowedIsTrueAndHasFunctionAndDoesNotHaveOutcome() {
+
+      Map<Integer, ProceedingDetail> originalProceedingLookup = new HashMap<>();
+      originalProceedingLookup.put(
+          1,
+          new ProceedingDetail()
+              .availableFunctions(List.of(UserRole.UPDATE_PROCEEDING.getCode()))
+              .outcome(null));
+
+      boolean actual =
+          applicationService.isUpdateProceedingAllowed(
+              CaseContext.AMENDMENTS, true, new ProceedingDetail().id(1), originalProceedingLookup);
+
+      assertTrue(actual);
+    }
+  }
+
+  @Nested
+  @DisplayName("isCategoryOfLawValid")
+  class IsCategoryOfLawValidTests {
+
+    @Test
+    @DisplayName(
+        "Should return true when returned contract detail "
+            + "contains application category of law")
+    void shouldReturnTrueWhenContractDetailHasCategoryOfLaw() {
+      Integer providerId = 1;
+      Integer officeId = 2;
+      String loginId = "loginId";
+      String userType = "userType";
+
+      String categoryOfLaw = "categoryOfLaw";
+
+      ApplicationDetail application =
+          new ApplicationDetail()
+              .providerDetails(
+                  new ApplicationProviderDetails()
+                      .provider(new IntDisplayValue().id(providerId))
+                      .office(new IntDisplayValue().id(officeId)))
+              .categoryOfLaw(new StringDisplayValue().id(categoryOfLaw));
+
+      UserDetail user = new UserDetail().loginId(loginId).userType(userType);
+
+      when(soaApiClient.getContractDetails(providerId, officeId, loginId, userType))
+          .thenReturn(
+              Mono.just(
+                  new ContractDetails()
+                      .contracts(List.of(new ContractDetail().categoryofLaw(categoryOfLaw)))));
+
+      boolean actual = applicationService.isCategoryOfLawValid(application, user);
+
+      assertTrue(actual);
+    }
+
+    @Test
+    @DisplayName("Should return false when returned contract detail is empty")
+    void shouldReturnFalseWhenContractDetailIsEmpty() {
+      Integer providerId = 1;
+      Integer officeId = 2;
+      String loginId = "loginId";
+      String userType = "userType";
+
+      String categoryOfLaw = "categoryOfLaw";
+
+      ApplicationDetail application =
+          new ApplicationDetail()
+              .providerDetails(
+                  new ApplicationProviderDetails()
+                      .provider(new IntDisplayValue().id(providerId))
+                      .office(new IntDisplayValue().id(officeId)))
+              .categoryOfLaw(new StringDisplayValue().id(categoryOfLaw));
+
+      UserDetail user = new UserDetail().loginId(loginId).userType(userType);
+
+      when(soaApiClient.getContractDetails(providerId, officeId, loginId, userType))
+          .thenReturn(Mono.just(new ContractDetails().contracts(List.of())));
+
+      boolean actual = applicationService.isCategoryOfLawValid(application, user);
+
+      assertFalse(actual);
+    }
+
+    @Test
+    @DisplayName("Should return false when returned contract detail category of law does not match")
+    void shouldReturnFalseWhenContractDetailCategoryOfLawDoesNotMatch() {
+      Integer providerId = 1;
+      Integer officeId = 2;
+      String loginId = "loginId";
+      String userType = "userType";
+
+      String categoryOfLaw = "categoryOfLaw";
+
+      ApplicationDetail application =
+          new ApplicationDetail()
+              .providerDetails(
+                  new ApplicationProviderDetails()
+                      .provider(new IntDisplayValue().id(providerId))
+                      .office(new IntDisplayValue().id(officeId)))
+              .categoryOfLaw(new StringDisplayValue().id(categoryOfLaw));
+
+      UserDetail user = new UserDetail().loginId(loginId).userType(userType);
+
+      when(soaApiClient.getContractDetails(providerId, officeId, loginId, userType))
+          .thenReturn(
+              Mono.just(
+                  new ContractDetails()
+                      .contracts(
+                          List.of(new ContractDetail().categoryofLaw("anotherCategoryOfLaw")))));
+
+      boolean actual = applicationService.isCategoryOfLawValid(application, user);
+
+      assertFalse(actual);
+    }
   }
 }
