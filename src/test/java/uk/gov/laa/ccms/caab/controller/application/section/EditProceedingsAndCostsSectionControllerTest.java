@@ -1736,12 +1736,14 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("GET: /application/prior-authorities/add/type")
+  @DisplayName("GET: /{caseContext}/prior-authorities/add/type")
   class GetPriorAuthorityTypeTests {
 
-    @Test
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
+
       final List<PriorAuthorityTypeDetail> priorAuthorityTypes =
           List.of(
               new PriorAuthorityTypeDetail().code("1").description("Type 1"),
@@ -1749,12 +1751,13 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       final PriorAuthorityTypeDetails priorAuthorityTypeDetails =
           new PriorAuthorityTypeDetails().content(priorAuthorityTypes);
+
       when(lookupService.getPriorAuthorityTypes()).thenReturn(Mono.just(priorAuthorityTypeDetails));
 
       final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData("add");
 
       mockMvc
-          .perform(get("/application/prior-authorities/add/type"))
+          .perform(get("/{caseContext}/prior-authorities/add/type", caseContext))
           .andExpect(status().isOk())
           .andExpect(view().name("application/prior-authority-type"))
           .andExpect(model().attribute("priorAuthorityTypes", priorAuthorityTypes))
@@ -1770,12 +1773,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("POST: /application/prior-authorities/add/type")
+  @DisplayName("POST: /{caseContext}/prior-authorities/add/type")
   class PostPriorAuthorityTypeTests {
 
-    @Test
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final PriorAuthorityTypeFormData priorAuthorityTypeDetails = new PriorAuthorityTypeFormData();
       priorAuthorityTypeDetails.setPriorAuthorityType("1");
 
@@ -1783,19 +1787,20 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/prior-authorities/add/type")
+              post("/{caseContext}/prior-authorities/add/type", caseContext)
                   .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
                   .flashAttr("priorAuthorityTypeDetails", priorAuthorityTypeDetails))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/prior-authorities/add/details"));
+          .andExpect(redirectedUrl("/%s/prior-authorities/add/details".formatted(caseContext)));
 
       verify(priorAuthorityTypeDetailsValidator, times(1))
           .validate(any(PriorAuthorityTypeFormData.class), any(BindingResult.class));
     }
 
-    @Test
-    @DisplayName("ShReould have validation errors")
-    void shouldHaveValidationErrors() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    @DisplayName("Should have validation errors")
+    void shouldHaveValidationErrors(String caseContext) throws Exception {
       final PriorAuthorityTypeFormData priorAuthorityTypeFormData =
           new PriorAuthorityTypeFormData();
       priorAuthorityTypeFormData.setPriorAuthorityType("1");
@@ -1825,7 +1830,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/prior-authorities/add/type")
+              post("/{caseContext}/prior-authorities/add/type", caseContext)
                   .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
                   .flashAttr("priorAuthorityTypeDetails", priorAuthorityTypeFormData))
           .andExpect(status().isOk())
@@ -1853,12 +1858,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("GET: /application/prior-authorities/{action}/details")
+  @DisplayName("GET: /{caseContext}/prior-authorities/{action}/details")
   class GetPriorAuthoritiesDetailsTests {
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result - add")
-    void shouldReturnExpectedResultAdd() throws Exception {
+    void shouldReturnExpectedResultAdd(String caseContext) throws Exception {
       final String priorAuthorityAction = "add";
       final PriorAuthorityTypeFormData typeDetails = new PriorAuthorityTypeFormData();
       typeDetails.setPriorAuthorityType("1");
@@ -1880,7 +1886,10 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              get("/application/prior-authorities/{action}/details", priorAuthorityAction)
+              get(
+                      "/{caseContext}/prior-authorities/{action}/details",
+                      caseContext,
+                      priorAuthorityAction)
                   .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow))
           .andExpect(status().isOk())
           .andExpect(view().name("application/prior-authority-details"))
@@ -1895,9 +1904,10 @@ class EditProceedingsAndCostsSectionControllerTest {
       verify(lookupService, times(1)).getCommonValues("testLovCode");
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result - edit")
-    void shouldReturnExpectedResultEdit() throws Exception {
+    void shouldReturnExpectedResultEdit(String caseContext) throws Exception {
       final String priorAuthorityAction = "edit";
       final PriorAuthorityTypeFormData typeDetails = new PriorAuthorityTypeFormData();
       typeDetails.setPriorAuthorityType("1");
@@ -1919,7 +1929,10 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              get("/application/prior-authorities/{action}/details", priorAuthorityAction)
+              get(
+                      "/{caseContext}/prior-authorities/{action}/details",
+                      caseContext,
+                      priorAuthorityAction)
                   .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow))
           .andExpect(status().isOk())
           .andExpect(view().name("application/prior-authority-details"))
@@ -1936,13 +1949,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("POST: /application/prior-authorities/{action}/details")
+  @DisplayName("POST: /{caseContext}/prior-authorities/{action}/details")
   class PostPriorAuthoritiesDetails {
 
-    @ParameterizedTest
-    @CsvSource({"add", "edit"})
+    @ParameterizedTest(name = "{0} case with action type {1}")
+    @CsvSource({"application, add", "application, edit", "amendments, add", "amendments, edit"})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult(final String action) throws Exception {
+    void shouldReturnExpectedResult(final String caseText, final String action) throws Exception {
       final String applicationId = "app123";
       final UserDetail user = new UserDetail();
 
@@ -1957,13 +1970,14 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/prior-authorities/{action}/details", action)
+              post("/{caseContext}/prior-authorities/{action}/details", caseText, action)
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
                   .sessionAttr(USER_DETAILS, user)
                   .flashAttr("priorAuthorityDetails", priorAuthorityDetails))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/proceedings-and-costs#prior-authority"));
+          .andExpect(
+              redirectedUrl(String.format("/%s/proceedings-and-costs#prior-authority", caseText)));
 
       if ("add".equals(action)) {
         verify(applicationService, times(1)).addPriorAuthority(eq(applicationId), any(), eq(user));
@@ -1972,10 +1986,11 @@ class EditProceedingsAndCostsSectionControllerTest {
       }
     }
 
-    @ParameterizedTest
-    @CsvSource({"add", "edit"})
+    @ParameterizedTest(name = "{0} case with action type {1}")
+    @CsvSource({"application, add", "application, edit", "amendments, add", "amendments, edit"})
     @DisplayName("Should have validation errors")
-    void shouldHaveValidationErrors(final String action) throws Exception {
+    void shouldHaveValidationErrors(final String caseContext, final String action)
+        throws Exception {
       final String applicationId = "app123";
       final UserDetail user = new UserDetail();
 
@@ -2010,7 +2025,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/prior-authorities/{action}/details", action)
+              post("/{caseContext}/prior-authorities/{action}/details", caseContext, action)
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
                   .sessionAttr(USER_DETAILS, user)
@@ -2026,10 +2041,11 @@ class EditProceedingsAndCostsSectionControllerTest {
       verify(lookupService, times(1)).getCommonValues("testLovCode");
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"add", "edit"})
+    @ParameterizedTest(name = "{0} case with action type {1}")
+    @CsvSource({"application, add", "application, edit", "amendments, add", "amendments, edit"})
     @DisplayName("Should return expected result max lengths not exceeded")
-    void shouldReturnExpectedResultMaxLengthsNotExceeded(final String action) throws Exception {
+    void shouldReturnExpectedResultMaxLengthsNotExceeded(
+        final String caseContext, final String action) throws Exception {
       final String applicationId = "app123";
       final UserDetail user = new UserDetail();
 
@@ -2047,13 +2063,14 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/prior-authorities/{action}/details", action)
+              post("/{caseContext}/prior-authorities/{action}/details", caseContext, action)
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
                   .sessionAttr(USER_DETAILS, user)
                   .flashAttr("priorAuthorityDetails", priorAuthorityDetails))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/proceedings-and-costs#prior-authority"));
+          .andExpect(
+              redirectedUrl("/%s/proceedings-and-costs#prior-authority".formatted(caseContext)));
 
       if ("add".equals(action)) {
         verify(applicationService, times(1)).addPriorAuthority(eq(applicationId), any(), eq(user));
@@ -2062,10 +2079,11 @@ class EditProceedingsAndCostsSectionControllerTest {
       }
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"add", "edit"})
+    @ParameterizedTest(name = "{0} case with action type {1}")
+    @CsvSource({"application, add", "application, edit", "amendments, add", "amendments, edit"})
     @DisplayName("Should have validation errors max lengths exceeded")
-    void shouldHaveValidationErrorsMaxLengthsExceeded(final String action) throws Exception {
+    void shouldHaveValidationErrorsMaxLengthsExceeded(final String caseContext, final String action)
+        throws Exception {
       final String applicationId = "app123";
       final UserDetail user = new UserDetail();
 
@@ -2094,7 +2112,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/prior-authorities/{action}/details", action)
+              post("/{caseContext}/prior-authorities/{action}/details", caseContext, action)
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
                   .sessionAttr(USER_DETAILS, user)
@@ -2113,12 +2131,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("GET: /application/prior-authorities/{prior-authority-id}/confirm")
+  @DisplayName("GET: /{caseContext}/prior-authorities/{prior-authority-id}/confirm")
   class GetPriorAuthorityConfirmTests {
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final int priorAuthorityId = 1;
       final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
       priorAuthority.setId(priorAuthorityId);
@@ -2130,17 +2149,21 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              get("/application/prior-authorities/{prior-authority-id}/confirm", priorAuthorityId)
+              get(
+                      "/{caseContext}/prior-authorities/{prior-authority-id}/confirm",
+                      caseContext,
+                      priorAuthorityId)
                   .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/prior-authorities/edit/details"));
+          .andExpect(redirectedUrl("/%s/prior-authorities/edit/details".formatted(caseContext)));
 
       verify(proceedingAndCostsMapper, times(1)).toPriorAuthorityFlowFormData(priorAuthority);
     }
 
-    @Test
-    @DisplayName("Shoudl throw exception when prior authority not found")
-    void shouldThrowExceptionWhenPriorAuthorityNotFound() {
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    @DisplayName("Should throw exception when prior authority not found")
+    void shouldThrowExceptionWhenPriorAuthorityNotFound(String caseContext) {
       final int priorAuthorityId = 1;
       final List<PriorAuthorityDetail> priorAuthorities = Collections.emptyList();
 
@@ -2150,7 +2173,8 @@ class EditProceedingsAndCostsSectionControllerTest {
               () ->
                   mockMvc.perform(
                       get(
-                              "/application/prior-authorities/{prior-authority-id}/confirm",
+                              "/{caseContext}/prior-authorities/{prior-authority-id}/confirm",
+                              caseContext,
                               priorAuthorityId)
                           .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities)));
 
@@ -2162,12 +2186,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("GET: /application/prior-authorities/{prior-authority-id}/remove")
+  @DisplayName("GET: /{caseContext}/prior-authorities/{prior-authority-id}/remove")
   class GetPriorAuthorityRemoveTests {
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final int priorAuthorityId = 1;
       final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
       priorAuthority.setId(priorAuthorityId);
@@ -2176,16 +2201,20 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              get("/application/prior-authorities/{prior-authority-id}/remove", priorAuthorityId)
+              get(
+                      "/{caseContext}/prior-authorities/{prior-authority-id}/remove",
+                      caseContext,
+                      priorAuthorityId)
                   .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities))
           .andExpect(status().isOk())
           .andExpect(view().name("application/prior-authority-remove"))
           .andExpect(model().attribute("priorAuthority", priorAuthority));
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should throw exception when prior authority not found")
-    void shouldThrowExceptionWhenPriorAuthorityNotFound() {
+    void shouldThrowExceptionWhenPriorAuthorityNotFound(String caseContext) {
       final int priorAuthorityId = 1;
       final List<PriorAuthorityDetail> priorAuthorities = Collections.emptyList();
 
@@ -2195,7 +2224,8 @@ class EditProceedingsAndCostsSectionControllerTest {
               () ->
                   mockMvc.perform(
                       get(
-                              "/application/prior-authorities/{prior-authority-id}/remove",
+                              "/{caseContext}/prior-authorities/{prior-authority-id}/remove",
+                              caseContext,
                               priorAuthorityId)
                           .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities)));
 
@@ -2207,12 +2237,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("POST: /application/prior-authorities/{prior-authority-id}/remove")
+  @DisplayName("POST: /{caseContext}/prior-authorities/{prior-authority-id}/remove")
   class PostPriorAuthorityRemoveTests {
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final int priorAuthorityId = 1;
       final UserDetail user = new UserDetail();
       final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
@@ -2223,18 +2254,23 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/prior-authorities/{prior-authority-id}/remove", priorAuthorityId)
+              post(
+                      "/{caseContext}/prior-authorities/{prior-authority-id}/remove",
+                      caseContext,
+                      priorAuthorityId)
                   .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities)
                   .sessionAttr(USER_DETAILS, user))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/proceedings-and-costs#prior-authority"));
+          .andExpect(
+              redirectedUrl("/%s/proceedings-and-costs#prior-authority".formatted(caseContext)));
 
       verify(applicationService, times(1)).deletePriorAuthority(priorAuthorityId, user);
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should throw exception when prior authority not found")
-    void shouldThrowExceptionWhenPriorAuthorityNotFound() {
+    void shouldThrowExceptionWhenPriorAuthorityNotFound(String caseContext) {
       final int priorAuthorityId = 1;
       final UserDetail user = new UserDetail();
       final List<PriorAuthorityDetail> priorAuthorities = new ArrayList<>();
@@ -2245,7 +2281,8 @@ class EditProceedingsAndCostsSectionControllerTest {
               () ->
                   mockMvc.perform(
                       post(
-                              "/application/prior-authorities/{prior-authority-id}/remove",
+                              "/{caseContext}/prior-authorities/{prior-authority-id}/remove",
+                              caseContext,
                               priorAuthorityId)
                           .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities)
                           .sessionAttr(USER_DETAILS, user)));

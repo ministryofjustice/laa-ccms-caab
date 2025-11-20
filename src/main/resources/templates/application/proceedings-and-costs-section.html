@@ -33,8 +33,10 @@
              th:text="#{proceedings.priorAuthorities.subHeading}"/>
         </li>
       </ul>
+
+      <!-- Proceedings -->
       <div class="govuk-tabs__panel" id="proceedings" aria-labelledby="tab_proceedings">
-        <h2 class="govuk-heading-l" th:text="#{proceedingsAndCosts.proceedings.subHeading}">Proceedings</h2>
+        <h2 class="govuk-heading-l" th:text="#{proceedingsAndCosts.proceedings.subHeading}"/>
         <table class="govuk-table" id="proceedings-table">
           <thead class="govuk-table__head">
           <tr class="govuk-table__row">
@@ -97,6 +99,8 @@
             th:replace="~{partials/actions :: restrictedActionLink(#{proceedings.button.addProceeding},
             ${user.functions}, 'ADDPROC', true, 'govuk-button--secondary', @{/{caseContext}/proceedings/add/matter-type(caseContext=${caseContext.pathValue})}, false)}"/>
       </div>
+
+        <!-- Case costs -->
       <div class="govuk-tabs__panel govuk-tabs__panel--hidden" id="case-costs" aria-labelledby="tab_case-costs">
         <h2 class="govuk-heading-l" th:text="#{proceedings.caseCosts.subHeading}"/>
         <table class="govuk-table">
@@ -127,6 +131,7 @@
           </tbody>
         </table>
       </div>
+      <!-- Prior Authorities -->
       <div class="govuk-tabs__panel govuk-tabs__panel--hidden" id="prior-authority" aria-labelledby="tab_prior-authority">
         <h2 class="govuk-heading-l" th:text="#{proceedings.priorAuthorities.subHeading}"/>
         <table class="govuk-table" id="prior-authorities-table">

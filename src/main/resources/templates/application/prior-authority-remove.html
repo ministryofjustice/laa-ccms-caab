@@ -7,11 +7,13 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/proceedings-and-costs#prior-authority}" class="govuk-back-link"
+    <a th:href="@{/{caseContext}/proceedings-and-costs#prior-authority(caseContext=${caseContext.pathValue})}" class="govuk-back-link"
       th:text="#{proceedings.cancelAndGoBack}"/>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/prior-authorities/{priorAuthorityId}/remove(priorAuthorityId=${priorAuthority.id})}" method="post">
+    <form action="#"
+          th:action="@{/{caseContext}/prior-authorities/{priorAuthorityId}/remove(priorAuthorityId=${priorAuthority.id}, caseContext=${caseContext.pathValue})}"
+          method="post">
       <h1 class="govuk-heading-l" th:text="#{proceedings.priorAuthorities.remove.heading}"/>
       <p class="govuk-body-l"
          th:utext="#{proceedings.priorAuthorities.remove.leadParagraph(${#strings.toLowerCase(priorAuthority.type.displayValue)})}"/>

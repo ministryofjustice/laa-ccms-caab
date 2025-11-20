@@ -1502,8 +1502,9 @@ public class EditProceedingsAndCostsSectionController {
    * @param model the model to add attributes to for the view.
    * @return the view name for prior authority type selection.
    */
-  @GetMapping("/application/prior-authorities/add/type")
-  public String priorAuthorityType(final Model model) {
+  @GetMapping("/{caseContext}/prior-authorities/add/type")
+  public String priorAuthorityType(
+      final Model model, @PathVariable("caseContext") final CaseContext caseContext) {
 
     final PriorAuthorityFlowFormData priorAuthorityFlow =
         new PriorAuthorityFlowFormData(ACTION_ADD);
@@ -1536,8 +1537,10 @@ public class EditProceedingsAndCostsSectionController {
    * @param bindingResult the result of form validation.
    * @return the redirect URL for the prior authority details page.
    */
-  @PostMapping("/application/prior-authorities/add/type")
+  @PostMapping("/{caseContext}/prior-authorities/{action}/type")
   public String priorAuthorityTypePost(
+      @PathVariable("caseContext") final CaseContext caseContext,
+      @PathVariable("action") final String priorAuthorityAction,
       @SessionAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA)
           final PriorAuthorityFlowFormData priorAuthorityFlow,
       @ModelAttribute("priorAuthorityTypeDetails")
@@ -1557,7 +1560,8 @@ public class EditProceedingsAndCostsSectionController {
     priorAuthorityFlow.setPriorAuthorityTypeFormData(priorAuthorityTypeDetails);
     model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
 
-    return "redirect:/application/prior-authorities/add/details";
+    return "redirect:/%s/prior-authorities/%s/details"
+        .formatted(caseContext.getPathValue(), priorAuthorityAction);
   }
 
   /**
@@ -1568,8 +1572,9 @@ public class EditProceedingsAndCostsSectionController {
    * @param model the model for adding attributes to the view.
    * @return the view name for prior authority details.
    */
-  @GetMapping("/application/prior-authorities/{action}/details")
+  @GetMapping("/{caseContext}/prior-authorities/{action}/details")
   public String priorAuthorityDetails(
+      @PathVariable("caseContext") final CaseContext caseContext,
       @PathVariable("action") final String priorAuthorityAction,
       @SessionAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA)
           final PriorAuthorityFlowFormData priorAuthorityFlow,
@@ -1613,8 +1618,9 @@ public class EditProceedingsAndCostsSectionController {
    * @param bindingResult the result of form validation.
    * @return the redirect URL for the next step or back to details on error.
    */
-  @PostMapping("/application/prior-authorities/{action}/details")
+  @PostMapping("/{caseContext}/prior-authorities/{action}/details")
   public String priorAuthorityDetailsPost(
+      @PathVariable("caseContext") final CaseContext caseContext,
       @PathVariable("action") final String priorAuthorityAction,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA)
@@ -1655,7 +1661,8 @@ public class EditProceedingsAndCostsSectionController {
       applicationService.updatePriorAuthority(priorAuthority, user);
     }
 
-    return "redirect:/application/proceedings-and-costs#prior-authority";
+    return "redirect:/%s/proceedings-and-costs#prior-authority"
+        .formatted(caseContext.getPathValue());
   }
 
   /**
@@ -1706,8 +1713,9 @@ public class EditProceedingsAndCostsSectionController {
    * @param model the model to add attributes for the view.
    * @return the redirect URL to the details editing page.
    */
-  @GetMapping("/application/prior-authorities/{prior-authority-id}/confirm")
+  @GetMapping("/{caseContext}/prior-authorities/{prior-authority-id}/confirm")
   public String priorAuthorityConfirm(
+      @PathVariable("caseContext") final CaseContext caseContext,
       @PathVariable("prior-authority-id") final int priorAuthorityId,
       @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES)
           final List<PriorAuthorityDetail> priorAuthorities,
@@ -1727,7 +1735,7 @@ public class EditProceedingsAndCostsSectionController {
 
     model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
 
-    return "redirect:/application/prior-authorities/edit/details";
+    return "redirect:/%s/prior-authorities/edit/details".formatted(caseContext.getPathValue());
   }
 
   /**
@@ -1738,8 +1746,9 @@ public class EditProceedingsAndCostsSectionController {
    * @param model the model to add attributes for the view.
    * @return the name of the view to render for removing a prior authority.
    */
-  @GetMapping("/application/prior-authorities/{prior-authority-id}/remove")
+  @GetMapping("/{caseContext}/prior-authorities/{prior-authority-id}/remove")
   public String priorAuthorityRemove(
+      @PathVariable("caseContext") final CaseContext caseContext,
       @PathVariable("prior-authority-id") final int priorAuthorityId,
       @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES)
           final List<PriorAuthorityDetail> priorAuthorities,
@@ -1767,8 +1776,9 @@ public class EditProceedingsAndCostsSectionController {
    * @param user the current user's details.
    * @return the redirect URL after the prior authority is removed.
    */
-  @PostMapping("/application/prior-authorities/{prior-authority-id}/remove")
+  @PostMapping("/{caseContext}/prior-authorities/{prior-authority-id}/remove")
   public String priorAuthorityRemovePost(
+      @PathVariable("caseContext") final CaseContext caseContext,
       @PathVariable("prior-authority-id") final int priorAuthorityId,
       @SessionAttribute(APPLICATION_PRIOR_AUTHORITIES)
           final List<PriorAuthorityDetail> priorAuthorities,
@@ -1784,6 +1794,7 @@ public class EditProceedingsAndCostsSectionController {
 
     applicationService.deletePriorAuthority(priorAuthorityId, user);
 
-    return "redirect:/application/proceedings-and-costs#prior-authority";
+    return "redirect:/%s/proceedings-and-costs#prior-authority"
+        .formatted(caseContext.getPathValue());
   }
 }
