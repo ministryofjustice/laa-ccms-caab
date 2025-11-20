@@ -19,3 +19,7 @@ CVE-2025-4673
 
 # libc6 - 2.39-0ubuntu8.4
 CVE-2025-5702
+
+# golang.org/x/crypto
+CVE-2025-47914
+CVE-2025-58181
