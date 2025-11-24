@@ -15,12 +15,12 @@ release {
 repositories {
 
 	// Latest version of saml requires this
-	maven { url "https://build.shibboleth.net/nexus/content/repositories/releases/" }
+	maven { url = "https://build.shibboleth.net/nexus/content/repositories/releases/" }
 
 	// Define the common configuration block for GitHub repositories
 	def githubRepoConfig = { repoUrl ->
 		maven {
-			url repoUrl
+			url = repoUrl
 			credentials {
 				username = System.getenv("GITHUB_ACTOR")?.trim() ?: project.findProperty('project.ext.gitPackageUser')
 				password = System.getenv("GITHUB_TOKEN")?.trim() ?: project.findProperty('project.ext.gitPackageKey')
