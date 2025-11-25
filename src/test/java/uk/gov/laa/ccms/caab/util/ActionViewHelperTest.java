@@ -136,7 +136,7 @@ class ActionViewHelperTest {
                 FunctionConstants.ALLOCATE_COST_LIMIT,
                 "action.allocateCostLimit.name",
                 "action.allocateCostLimit.description",
-                "#"),
+                "/allocate-cost-limit"),
             new ExpectedAction(
                 FunctionConstants.MEANS_REASSESSMENT,
                 "action.completeMeansReassessment.name",
