@@ -39,14 +39,14 @@
                             <td class="govuk-table__cell"></td>
                         </tr>
                         <tr class="govuk-table__row">
-                            <td class="govuk-table__cell" th:text="${summary.provider.providerName}"/>
+                            <td class="govuk-table__cell" th:text="${case.providerDetails.provider.displayValue}"/>
                             <td class="govuk-table__cell " th:text="#{caseCosts.provider}"/>
                             <td class="govuk-table__cell"></td>
                             <td class="govuk-table__cell govuk-table__header" th:text="'£ ' + ${totalRemaining}"></td>
                             <td class="govuk-table__cell"></td>
                         </tr>
 
-                        <tr class="govuk-table__row" th:each="costEntryDetail, idx : ${costEntries}">
+                        <tr class="govuk-table__row" th:each="costEntryDetail, idx : ${case.costs.costEntries.stream().distinct().toList()}">
 
                             <td class="govuk-table__cell" th:text="${costEntryDetail.resourceName}"/>
 
