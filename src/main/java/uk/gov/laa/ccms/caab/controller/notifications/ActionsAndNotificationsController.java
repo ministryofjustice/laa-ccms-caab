@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.notifications;
 
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_NOTIFICATION_TYPE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATION_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -46,6 +47,7 @@ import uk.gov.laa.ccms.caab.exception.AvScanException;
 import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.NotificationAttachmentMapper;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
@@ -177,6 +179,35 @@ public class ActionsAndNotificationsController {
       return "notifications/actions-and-notifications-search";
     }
 
+    return "redirect:/notifications/search-results";
+  }
+
+  /**
+   * Handles the endpoint for searching notifications related to a specific case. It updates the
+   * notification search criteria based on the current user and case details, and then redirects to
+   * the search results page.
+   *
+   * @param ebsCase the application details of the current case
+   * @param user the details of the currently logged-in user
+   * @param criteria the notification search criteria to be populated
+   * @param model the model object used to pass attributes to the view
+   * @return the redirect URL to the notifications search results page
+   */
+  @GetMapping("/notifications/case-search")
+  public String notificationsCase(
+      @SessionAttribute(CASE) ApplicationDetail ebsCase,
+      @ModelAttribute(USER_DETAILS) UserDetail user,
+      @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
+      Model model) {
+
+    // For notifications
+    criteria.setNotificationType("N");
+    criteria.setLoginId(user.getLoginId());
+    criteria.setUserType(user.getUserType());
+    criteria.setAssignedToUserId(user.getLoginId());
+    criteria.setOriginatesFromCase(true);
+    criteria.setCaseReference(ebsCase.getCaseReferenceNumber());
+    model.addAttribute(NOTIFICATION_SEARCH_CRITERIA, criteria);
     return "redirect:/notifications/search-results";
   }
 

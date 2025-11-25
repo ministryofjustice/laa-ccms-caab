@@ -6,7 +6,10 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/home}" class="govuk-back-link" th:text="#{site.returnToHome}"></a>
+    <a th:unless="${notificationSearchCriteria.originatesFromCase}"
+       th:href="@{/home}" class="govuk-back-link" th:text="#{site.returnToHome}"/>
+    <a th:if="${notificationSearchCriteria.originatesFromCase}"
+       th:href="@{/case/overview}" class="govuk-back-link" th:text="#{site.returnToCaseOverview}"/>
   </div>
   <div id="main-content">
     <h1 class="govuk-heading-l" th:text="#{notifications.heading}"/>
@@ -15,6 +18,7 @@
     <p class="govuk-body govuk-!-text-align-right">
       <a class="govuk-button govuk-button--secondary"
          data-module="govuk-button"
+         id="refine-search-button"
          th:href="@{/notifications/search}"
           th:text="#{notifications.search.results.refineSearch}"/>
     </p>
