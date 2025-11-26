@@ -59,7 +59,7 @@ public class AllocateCostLimitControllerTest {
 
       assertThat(mockMvc.perform(get("/allocate-cost-limit").sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
-          .hasViewName("application/costAllocation")
+          .hasViewName("application/cost-allocation")
           .model()
           .containsEntry("case", ebsCase)
           .containsEntry("totalRemaining", new BigDecimal("24395.37"));
