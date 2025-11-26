@@ -8,17 +8,17 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/proceedings-and-costs#prior-authority}" class="govuk-back-link"
+    <a th:href="@{/{caseContext}/proceedings-and-costs#prior-authority(caseContext=${caseContext.pathValue})}" class="govuk-back-link"
       th:text="#{proceedings.cancelAndGoBack}"/>
   </div>
   <div id="main-content">
     <form action="#"
-          th:action="@{/application/prior-authorities/{action}/details(action=${priorAuthorityFlow.action})}"
+          th:action="@{/{caseContext}/prior-authorities/{action}/details(action=${priorAuthorityFlow.action}, caseContext=${caseContext.pathValue})}"
           th:object="${priorAuthorityDetails}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l"
-        th:text="#{proceedings.addPriorAuthorities.caption}"/>
-      <h1 class="govuk-heading-l"
+        <span th:if="${caseContext.isApplication()}" class="govuk-caption-l" th:text="#{application.create} + ' - ' + ${#strings.toLowerCase(#messages.msg('proceedings.addPriorAuthorities.caption'))}"/>
+        <span th:if="${caseContext.isAmendment()}" class="govuk-caption-l" th:text="#{amendment.case}  + ' - ' + ${#strings.toLowerCase(#messages.msg('proceedings.addPriorAuthorities.caption'))}"/>
+        <h1 class="govuk-heading-l"
         th:text="#{proceedings.addPriorAuthorities.step2.heading}"/>
       <p class="govuk-body-l"
          th:text="#{proceedings.addPriorAuthorities.step2.leadParagraph}"/>

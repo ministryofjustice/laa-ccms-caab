@@ -36,6 +36,16 @@ public class NotificationsSearchResultsController {
   private final NotificationService notificationService;
 
   /**
+   * Provides an instance of {@link NotificationSearchCriteria} for use in the model.
+   *
+   * @return an instance of {@link NotificationSearchCriteria}.
+   */
+  @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA)
+  public NotificationSearchCriteria notificationSearchCriteria() {
+    return new NotificationSearchCriteria();
+  }
+
+  /**
    * Displays the search results of notifications.
    *
    * @param page Page number for pagination.

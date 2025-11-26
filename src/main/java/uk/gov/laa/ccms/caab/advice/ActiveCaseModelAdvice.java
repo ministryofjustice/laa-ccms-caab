@@ -56,7 +56,8 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
       EvidenceSectionController.class,
       AssessmentController.class,
       CaseSubmissionController.class,
-      CaseController.class
+      CaseController.class,
+      EditProceedingsAndCostsSectionController.class
     })
 public class ActiveCaseModelAdvice {
 

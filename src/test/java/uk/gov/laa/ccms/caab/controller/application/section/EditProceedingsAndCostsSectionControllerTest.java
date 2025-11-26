@@ -31,6 +31,8 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PRIOR_
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PROCEEDINGS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_SCOPE_LIMITATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.EDIT_PROCEEDINGS_ALLOWED;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ORIGINAL_PROCEEDING_LOOKUP;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRIOR_AUTHORITY_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA_OLD;
@@ -44,7 +46,10 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -88,6 +93,7 @@ import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidat
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingFurtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.scopelimitation.ScopeLimitationDetailsValidator;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -98,7 +104,9 @@ import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -119,6 +127,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 class EditProceedingsAndCostsSectionControllerTest {
 
   @Mock private ApplicationService applicationService;
+  @Mock private CaseOutcomeService caseOutcomeService;
   @Mock private LookupService lookupService;
   @Mock private ProceedingMatterTypeDetailsValidator matterTypeValidator;
   @Mock private ProceedingDetailsValidator proceedingTypeValidator;
@@ -150,42 +159,69 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   private static final UserDetail user =
-      new UserDetail().userId(1).userType("testUserType").loginId("testLoginId");
+      new UserDetail()
+          .userId(1)
+          .userType("testUserType")
+          .loginId("testLoginId")
+          .provider(new BaseProvider().id(1));
 
   @Nested
-  @DisplayName("GET: /application/proceedings-and-costs")
+  @DisplayName("GET: /{caseContext}/proceedings-and-costs")
   class GetProceedingsAndCostsTests {
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final String applicationId = "testApplicationId";
+      final String caseReferenceNumber = "caseReferenceNumber";
+      final ProceedingDetail proceeding = new ProceedingDetail().id(1);
       final ApplicationDetail application = new ApplicationDetail();
+      application.setCaseReferenceNumber(caseReferenceNumber);
+      application.setProceedings(List.of(proceeding));
       // Mock the applicationService to return a Mono of ApplicationDetail
       when(applicationService.getApplication(applicationId)).thenReturn(Mono.just(application));
 
+      when(applicationService.isCategoryOfLawValid(application, user)).thenReturn(true);
+
+      when(applicationService.getOriginalProceedingLookup(List.of(proceeding), null))
+          .thenReturn(new HashMap<>());
+
+      when(applicationService.getDeleteProceedingAllowedLookup(
+              CaseContext.fromPathValue(caseContext), true, List.of(proceeding), new HashMap<>()))
+          .thenReturn(new HashMap<>());
+
+      when(caseOutcomeService.getCaseOutcome(caseReferenceNumber, user.getProvider().getId()))
+          .thenReturn(Optional.empty());
+
       mockMvc
           .perform(
-              get("/application/proceedings-and-costs")
+              get("/%s/proceedings-and-costs".formatted(caseContext))
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(USER_DETAILS, user))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-and-costs-section"))
-          .andExpect(model().attribute(APPLICATION, application));
+          .andExpect(model().attribute(APPLICATION, application))
+          .andExpect(model().attribute("editProceedingsAllowed", true))
+          .andExpect(model().attribute("deleteProceedingAllowedLookup", new HashMap<>()))
+          .andExpect(model().attribute("originalProceedingLookup", new HashMap<>()));
+
+      boolean isAmendment = "amendments".equals(caseContext);
 
       verify(applicationService, times(1)).getApplication(applicationId);
       verify(applicationService, times(1))
-          .prepareProceedingSummary(applicationId, application, user);
+          .prepareProceedingSummary(applicationId, application, isAmendment, user);
     }
   }
 
   @Nested
-  @DisplayName("GET: /application/proceedings/{proceeding-id}/make-lead")
+  @DisplayName("GET: /{caseContext}/proceedings/{proceeding-id}/make-lead")
   class GetMakeLeadTests {
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final String applicationId = "testApplicationId";
       final Integer proceedingId = 1;
       final List<ProceedingDetail> proceedings =
@@ -193,28 +229,30 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              get("/application/proceedings/{proceeding-id}/make-lead", proceedingId)
+              get("/{caseContext}/proceedings/{proceeding-id}/make-lead", caseContext, proceedingId)
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(APPLICATION_PROCEEDINGS, proceedings)
                   .sessionAttr(USER_DETAILS, user))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/proceedings-and-costs"));
+          .andExpect(redirectedUrl("/%s/proceedings-and-costs".formatted(caseContext)));
 
       verify(applicationService, times(1)).makeLeadProceeding(applicationId, proceedingId, user);
     }
   }
 
   @Nested
-  @DisplayName("GET: /application/proceedings/{proceeding-id}/remove")
+  @DisplayName("GET: /{caseContext}/proceedings/{proceeding-id}/remove")
   class GetProceedingsRemoveTests {
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final Integer proceedingId = 1;
 
       mockMvc
-          .perform(get("/application/proceedings/{proceeding-id}/remove", proceedingId))
+          .perform(
+              get("/{caseContext}/proceedings/{proceeding-id}/remove", caseContext, proceedingId))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-remove"))
           .andExpect(model().attribute("proceedingId", proceedingId));
@@ -222,12 +260,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("POST: /application/proceedings/{proceeding-id}/remove")
+  @DisplayName("POST: /{caseContext}}/proceedings/{proceeding-id}/remove")
   class PostProceedingsRemoveTests {
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final String applicationId = "testApplicationId";
       final Integer proceedingId = 1;
       final List<ProceedingDetail> proceedings =
@@ -241,12 +280,12 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/proceedings/{proceeding-id}/remove", proceedingId)
+              post("/{caseContext}/proceedings/{proceeding-id}/remove", caseContext, proceedingId)
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(APPLICATION_PROCEEDINGS, proceedings)
                   .sessionAttr(USER_DETAILS, userDetail))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/proceedings-and-costs"));
+          .andExpect(redirectedUrl("/%s/proceedings-and-costs".formatted(caseContext)));
 
       verify(applicationService, times(1))
           .deleteProceeding(eq(applicationId), eq(proceedingId), eq(userDetail));
@@ -254,52 +293,69 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("GET: /application/proceedings/{proceeding-id}/summary")
+  @DisplayName("GET: /{caseContext}/proceedings/{proceeding-id}/summary")
   class GetProceedingsSummaryTests {
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result")
-    public void shouldReturnExpectedResult() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    public void shouldReturnExpectedResult(String caseContext) throws Exception {
       final String applicationId = "testApplicationId";
       final Integer proceedingId = 1;
+      final boolean editProceedingsAllowed = true;
       final ApplicationDetail application = new ApplicationDetail();
       ApplicationType applicationType = new ApplicationType();
       applicationType.setId("SUBDP");
       application.setApplicationType(applicationType);
-      final List<ProceedingDetail> proceedings =
-          Collections.singletonList(
-              new ProceedingDetail()
-                  .id(proceedingId)
-                  .typeOfOrder(new StringDisplayValue().id("orderType")));
+      ProceedingDetail proceeding =
+          new ProceedingDetail()
+              .id(proceedingId)
+              .typeOfOrder(new StringDisplayValue().id("orderType"));
+      final List<ProceedingDetail> proceedings = Collections.singletonList(proceeding);
 
       when(lookupService.getOrderTypeDescription(any()))
           .thenReturn(Mono.just("orderTypeDisplayValue"));
 
+      Map<Integer, ProceedingDetail> originalProceedingLookup = new HashMap<>();
+      originalProceedingLookup.put(proceedingId, null);
+
       mockMvc
           .perform(
-              get("/application/proceedings/{proceeding-id}/summary", proceedingId)
+              get("/{caseContext}/proceedings/{proceeding-id}/summary", caseContext, proceedingId)
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(APPLICATION, application)
                   .sessionAttr(APPLICATION_PROCEEDINGS, proceedings)
+                  .sessionAttr(ORIGINAL_PROCEEDING_LOOKUP, originalProceedingLookup)
+                  .sessionAttr(EDIT_PROCEEDINGS_ALLOWED, editProceedingsAllowed)
                   .sessionAttr(USER_DETAILS, user))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-summary"))
           .andExpect(model().attributeExists("orderTypeDisplayValue"))
+          .andExpect(model().attributeExists("updateProceedingAllowed"))
           .andExpect(model().attributeExists(CURRENT_PROCEEDING));
 
+      boolean isAmendment = "amendments".equals(caseContext);
+
       verify(applicationService, times(1))
-          .prepareProceedingSummary(applicationId, application, user);
+          .isUpdateProceedingAllowed(
+              CaseContext.fromPathValue(caseContext),
+              editProceedingsAllowed,
+              proceeding,
+              originalProceedingLookup);
+      verify(applicationService, times(1))
+          .prepareProceedingSummary(applicationId, application, isAmendment, user);
       verify(lookupService, times(1)).getOrderTypeDescription(any());
     }
   }
 
   @Nested
-  @DisplayName("GET: /application/proceedings/{action}/matter-type")
+  @DisplayName("GET: /{caseContext}/proceedings/{action}/matter-type")
   class GetMatterTypeActionTests {
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result - add")
-    void shouldReturnExpectedResult_Add() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResult_Add(String caseContext) throws Exception {
       final ApplicationDetail application = new ApplicationDetail();
       application.setCategoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
       final List<MatterTypeLookupValueDetail> matterTypes =
@@ -311,7 +367,8 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              get("/application/proceedings/add/matter-type").sessionAttr(APPLICATION, application))
+              get("/{caseContext}/proceedings/add/matter-type", caseContext)
+                  .sessionAttr(APPLICATION, application))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-matter-type"))
           .andExpect(model().attributeExists("matterTypes"))
@@ -320,9 +377,10 @@ class EditProceedingsAndCostsSectionControllerTest {
       verify(lookupService, times(1)).getMatterTypes(application.getCategoryOfLaw().getId());
     }
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result - edit")
-    void shouldReturnExpectedResult_Edit() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResult_Edit(String caseContext) throws Exception {
       final ApplicationDetail application = new ApplicationDetail();
       application.setCategoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
       final ProceedingDetail proceeding =
@@ -339,7 +397,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              get("/application/proceedings/edit/matter-type")
+              get("/{caseContext}/proceedings/edit/matter-type", caseContext)
                   .sessionAttr(APPLICATION, application)
                   .sessionAttr(CURRENT_PROCEEDING, proceeding))
           .andExpect(status().isOk())
@@ -353,12 +411,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("POST: /application/proceedings/{action}/matter-type")
+  @DisplayName("POST: /{caseContext}/proceedings/{action}/matter-type")
   class PostMatterTypeActionTests {
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result - add")
-    void shouldReturnExpectedResult_Add() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResult_Add(String caseContext) throws Exception {
       final String action = "add";
       final ApplicationDetail application =
           new ApplicationDetail().categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
@@ -368,21 +427,23 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/proceedings/{action}/matter-type", action)
+              post("/{caseContext}/proceedings/{action}/matter-type", caseContext, action)
                   .sessionAttr(APPLICATION, application)
                   .sessionAttr(PROCEEDING_FLOW_FORM_DATA, new ProceedingFlowFormData(action))
                   .flashAttr("matterTypeDetails", matterTypeDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(
-              redirectedUrl("/application/proceedings/%s/proceeding-type".formatted(action)));
+              redirectedUrl("/%s/proceedings/%s/proceeding-type".formatted(caseContext, action)));
 
       verify(matterTypeValidator, times(1))
           .validate(eq(matterTypeDetails), any(BindingResult.class));
     }
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result - edit")
-    void testProceedingsActionMatterTypePost_Edit_AmendmentCheck() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void testProceedingsActionMatterTypePost_Edit_AmendmentCheck(String caseContext)
+        throws Exception {
       final String action = "edit";
       final ApplicationDetail application =
           new ApplicationDetail().categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
@@ -397,21 +458,22 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/proceedings/{action}/matter-type", action)
+              post("/{caseContext}/proceedings/{action}/matter-type", caseContext, action)
                   .sessionAttr(APPLICATION, application)
                   .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
                   .sessionAttr(PROCEEDING_FLOW_FORM_DATA_OLD, oldProceedingFlow)
                   .flashAttr("matterTypeDetails", matterTypeDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(
-              redirectedUrl("/application/proceedings/%s/proceeding-type".formatted(action)));
+              redirectedUrl("/%s/proceedings/%s/proceeding-type".formatted(caseContext, action)));
 
       assertTrue(proceedingFlow.isAmended());
     }
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should have validation errors")
-    void shouldHaveValidationErrors() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldHaveValidationErrors(String caseContext) throws Exception {
       final String action = "add";
       final ApplicationDetail application =
           new ApplicationDetail().categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
@@ -435,7 +497,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/proceedings/{action}/matter-type", action)
+              post("/{caseContext}/proceedings/{action}/matter-type", caseContext, action)
                   .sessionAttr(APPLICATION, application)
                   .sessionAttr(PROCEEDING_FLOW_FORM_DATA, new ProceedingFlowFormData(action))
                   .flashAttr("matterTypeDetails", matterTypeDetails))
@@ -449,12 +511,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("GET: /application/proceedings/{action}/proceeding-type")
+  @DisplayName("GET: /{caseContext}/proceedings/{action}/proceeding-type")
   class GetProceedingTypeTests {
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final String action = "add";
       final ApplicationDetail application =
           new ApplicationDetail()
@@ -481,7 +544,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              get("/application/proceedings/{action}/proceeding-type", action)
+              get("/{caseContext}/proceedings/{action}/proceeding-type", caseContext, action)
                   .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
                   .sessionAttr(APPLICATION, application))
           .andExpect(status().isOk())
@@ -493,12 +556,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("POST: /application/proceedings/{action}/proceeding-type")
+  @DisplayName("POST: /{caseContext}/proceedings/{action}/proceeding-type")
   class PostProceedingTypeTests {
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result - add")
-    void shouldReturnExpectedResultAdd() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResultAdd(String caseContext) throws Exception {
       final String action = "add";
       final ApplicationDetail application = new ApplicationDetail();
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
@@ -510,21 +574,22 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/proceedings/{action}/proceeding-type", action)
+              post("/{caseContext}/proceedings/{action}/proceeding-type", caseContext, action)
                   .sessionAttr(APPLICATION, application)
                   .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
                   .flashAttr("proceedingTypeDetails", proceedingTypeDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(
-              redirectedUrl("/application/proceedings/%s/further-details".formatted(action)));
+              redirectedUrl("/%s/proceedings/%s/further-details".formatted(caseContext, action)));
 
       assertEquals(Boolean.TRUE, proceedingFlow.isAmended());
       assertEquals(proceedingTypeDetails, proceedingFlow.getProceedingDetails());
     }
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result - edit")
-    void shouldReturnExpectedResultEdit() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResultEdit(String caseContext) throws Exception {
       final String action = "edit";
       final ApplicationDetail application = new ApplicationDetail();
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
@@ -542,14 +607,14 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/proceedings/{action}/proceeding-type", action)
+              post("/{caseContext}/proceedings/{action}/proceeding-type", caseContext, action)
                   .sessionAttr(APPLICATION, application)
                   .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
                   .sessionAttr(PROCEEDING_FLOW_FORM_DATA_OLD, oldProceedingFlow)
                   .flashAttr("proceedingTypeDetails", proceedingTypeDetails))
           .andExpect(status().is3xxRedirection())
           .andExpect(
-              redirectedUrl("/application/proceedings/%s/further-details".formatted(action)));
+              redirectedUrl("/%s/proceedings/%s/further-details".formatted(caseContext, action)));
 
       assertTrue(
           proceedingFlow.isAmended(),
@@ -577,7 +642,7 @@ class EditProceedingsAndCostsSectionControllerTest {
       when(lookupService.getProceedings(
               any(uk.gov.laa.ccms.data.model.ProceedingDetail.class),
               eq(null),
-              eq("applicationTypeId"),
+              eq(null),
               eq(false)))
           .thenReturn(Mono.just(new ProceedingDetails().content(proceedingDetails)));
 
@@ -591,9 +656,11 @@ class EditProceedingsAndCostsSectionControllerTest {
           .when(proceedingTypeValidator)
           .validate(any(), any(BindingResult.class));
 
+      String caseContext = "application";
+
       mockMvc
           .perform(
-              post("/application/proceedings/{action}/proceeding-type", action)
+              post("/{caseContext}/proceedings/{action}/proceeding-type", caseContext, action)
                   .sessionAttr(APPLICATION, application)
                   .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
                   .flashAttr("proceedingTypeDetails", proceedingTypeDetails))
@@ -607,13 +674,14 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("GET: /application/proceedings/{action}/further-details")
+  @DisplayName("GET: /{caseContext}/proceedings/{action}/further-details")
   class GetFurtherDetailsTests {
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
+    @CsvSource({"true, application", "false, application", "true, amendments", "false, amendments"})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult(final boolean orderTypeRequired) throws Exception {
+    void shouldReturnExpectedResult(final boolean orderTypeRequired, String caseContext)
+        throws Exception {
       final String action = "add";
       final ApplicationDetail application =
           new ApplicationDetail().categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
@@ -656,7 +724,7 @@ class EditProceedingsAndCostsSectionControllerTest {
       final ResultActions resultActions =
           mockMvc
               .perform(
-                  get("/application/proceedings/{action}/further-details", action)
+                  get("/{caseContext}/proceedings/{action}/further-details", caseContext, action)
                       .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
                       .sessionAttr(APPLICATION, application))
               .andExpect(status().isOk())
@@ -683,12 +751,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("POST: /application/proceedings/{action}/further-details")
+  @DisplayName("POST: /{caseContext}/proceedings/{action}/further-details")
   class PostFurtherDetailsTests {
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result - add")
-    void shouldReturnExpectedResultAdd() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResultAdd(String caseContext) throws Exception {
       final String action = "add";
       final ApplicationDetail application = new ApplicationDetail();
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
@@ -705,12 +774,12 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/proceedings/{action}/further-details", action)
+              post("/{caseContext}/proceedings/{action}/further-details", caseContext, action)
                   .sessionAttr(APPLICATION, application)
                   .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
                   .flashAttr("furtherDetails", furtherDetails))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/proceedings/%s/confirm".formatted(action)));
+          .andExpect(redirectedUrl("/%s/proceedings/%s/confirm".formatted(caseContext, action)));
 
       assertTrue(proceedingFlow.isAmended());
       assertEquals(furtherDetails, proceedingFlow.getFurtherDetails());
@@ -718,15 +787,53 @@ class EditProceedingsAndCostsSectionControllerTest {
 
     private static Stream<Arguments> provideFurtherDetailsForEdit() {
       return Stream.of(
-          Arguments.of("newClientInvolvementType", "newLevelOfService", "newTypeOfOrder", true),
           Arguments.of(
-              "originalClientInvolvementType", "newLevelOfService", "newTypeOfOrder", true),
+              "newClientInvolvementType",
+              "newLevelOfService",
+              "newTypeOfOrder",
+              "application",
+              true),
           Arguments.of(
-              "originalClientInvolvementType", "originalLevelOfService", "newTypeOfOrder", true),
+              "originalClientInvolvementType",
+              "newLevelOfService",
+              "newTypeOfOrder",
+              "application",
+              true),
+          Arguments.of(
+              "originalClientInvolvementType",
+              "originalLevelOfService",
+              "newTypeOfOrder",
+              "application",
+              true),
           Arguments.of(
               "originalClientInvolvementType",
               "originalLevelOfService",
               "originalTypeOfOrder",
+              "application",
+              false),
+          Arguments.of(
+              "newClientInvolvementType",
+              "newLevelOfService",
+              "newTypeOfOrder",
+              "amendments",
+              true),
+          Arguments.of(
+              "originalClientInvolvementType",
+              "newLevelOfService",
+              "newTypeOfOrder",
+              "amendments",
+              true),
+          Arguments.of(
+              "originalClientInvolvementType",
+              "originalLevelOfService",
+              "newTypeOfOrder",
+              "amendments",
+              true),
+          Arguments.of(
+              "originalClientInvolvementType",
+              "originalLevelOfService",
+              "originalTypeOfOrder",
+              "amendments",
               false));
     }
 
@@ -737,6 +844,7 @@ class EditProceedingsAndCostsSectionControllerTest {
         final String clientInvolvementType,
         final String levelOfService,
         final String typeOfOrder,
+        final String caseContext,
         final boolean expectedAmendment)
         throws Exception {
 
@@ -762,13 +870,13 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/proceedings/{action}/further-details", action)
+              post("/{caseContext}/proceedings/{action}/further-details", caseContext, action)
                   .sessionAttr(APPLICATION, application)
                   .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
                   .session(session)
                   .flashAttr("furtherDetails", furtherDetails))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/proceedings/%s/confirm".formatted(action)));
+          .andExpect(redirectedUrl("/%s/proceedings/%s/confirm".formatted(caseContext, action)));
 
       assertEquals(
           expectedAmendment,
@@ -776,9 +884,10 @@ class EditProceedingsAndCostsSectionControllerTest {
           "ProceedingDetail flow amendment status does not match expected.");
     }
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should have validation errors")
-    void shouldHaveValidationErrors() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldHaveValidationErrors(String caseContext) throws Exception {
       final String action = "add";
       final ApplicationDetail application =
           new ApplicationDetail().categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
@@ -822,7 +931,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/proceedings/{action}/further-details", action)
+              post("/{caseContext}/proceedings/{action}/further-details", caseContext, action)
                   .sessionAttr(APPLICATION, application)
                   .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
                   .flashAttr("furtherDetails", furtherDetails))
@@ -836,12 +945,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("GET: /application/proceedings/{action}/confirm")
+  @DisplayName("GET: /{caseContext}/proceedings/{action}/confirm")
   class GetConfirmTests {
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected results - add")
-    void shouldReturnExpectedResultAdd() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResultAdd(String caseContext) throws Exception {
       final String action = "add";
       final ApplicationDetail application =
           new ApplicationDetail()
@@ -881,7 +991,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              get("/application/proceedings/{action}/confirm", action)
+              get("/{caseContext}/proceedings/{action}/confirm", caseContext, action)
                   .sessionAttr(APPLICATION, application)
                   .session(session))
           .andExpect(status().isOk())
@@ -891,9 +1001,10 @@ class EditProceedingsAndCostsSectionControllerTest {
               model().attribute(PROCEEDING_FLOW_FORM_DATA, hasProperty("amended", is(false))));
     }
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result - edit")
-    void shouldReturnExpectedResultEdit() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResultEdit(String caseContext) throws Exception {
       final String action = "edit";
       final ApplicationDetail application = new ApplicationDetail();
       ApplicationType applicationType = new ApplicationType();
@@ -921,7 +1032,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              get("/application/proceedings/{action}/confirm", action)
+              get("/{caseContext}/proceedings/{action}/confirm", caseContext, action)
                   .sessionAttr(APPLICATION, application)
                   .session(session))
           .andExpect(status().isOk())
@@ -936,12 +1047,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("POST: /application/proceedings/{action}/confirm")
+  @DisplayName("POST: /{caseContext}/proceedings/{action}/confirm")
   class PostConfirmTests {
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result")
-    public void shouldReturnExpectedResult() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    public void shouldReturnExpectedResult(String caseContext) throws Exception {
       final String action = "add";
       final ApplicationDetail application =
           new ApplicationDetail()
@@ -977,7 +1089,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/proceedings/{action}/confirm", action)
+              post("/{caseContext}/proceedings/{action}/confirm", caseContext, action)
                   .sessionAttr(APPLICATION, application)
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(PROCEEDING_FLOW_FORM_DATA, proceedingFlow)
@@ -985,7 +1097,7 @@ class EditProceedingsAndCostsSectionControllerTest {
                   .sessionAttr(APPLICATION_PROCEEDINGS, proceedings)
                   .sessionAttr(USER_DETAILS, user))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/proceedings-and-costs"));
+          .andExpect(redirectedUrl("/%s/proceedings-and-costs".formatted(caseContext)));
 
       verify(applicationService, times(1))
           .addProceeding(eq(applicationId), any(ProceedingDetail.class), eq(user));
@@ -993,12 +1105,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("GET: /application/proceedings/scope-limitations/{scope-limitation-id}/edit")
+  @DisplayName("GET: /{caseContext}/proceedings/scope-limitations/{scope-limitation-id}/edit")
   class GetEditScopeLimitationTests {
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result - add")
-    void shouldReturnExpectedResultAdd() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResultAdd(String caseContext) throws Exception {
       final Integer scopeLimitationId = 0;
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData("add");
       proceedingFlow.setAction("add");
@@ -1017,19 +1130,22 @@ class EditProceedingsAndCostsSectionControllerTest {
       mockMvc
           .perform(
               get(
-                      "/application/proceedings/scope-limitations/{scope-limitation-id}/edit",
+                      "/{caseContext}/proceedings/scope-limitations/{scope-limitation-id}/edit",
+                      caseContext,
                       scopeLimitationId)
                   .session(session))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/proceedings/scope-limitations/edit/details"));
+          .andExpect(
+              redirectedUrl("/%s/proceedings/scope-limitations/confirm".formatted(caseContext)));
 
       verify(proceedingAndCostsMapper, times(1))
           .toScopeLimitationFlow(any(ScopeLimitationDetail.class));
     }
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result - edit")
-    void shouldReturnExpectedResultEdit() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResultEdit(String caseContext) throws Exception {
       final Integer scopeLimitationId = 1;
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData("edit");
       proceedingFlow.setAction("edit");
@@ -1050,11 +1166,13 @@ class EditProceedingsAndCostsSectionControllerTest {
       mockMvc
           .perform(
               get(
-                      "/application/proceedings/scope-limitations/{scope-limitation-id}/edit",
+                      "/{caseContext}/proceedings/scope-limitations/{scope-limitation-id}/edit",
+                      caseContext,
                       scopeLimitationId)
                   .session(session))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/proceedings/scope-limitations/edit/details"));
+          .andExpect(
+              redirectedUrl("/%s/proceedings/scope-limitations/confirm".formatted(caseContext)));
 
       verify(proceedingAndCostsMapper, times(1))
           .toScopeLimitationFlow(any(ScopeLimitationDetail.class));
@@ -1062,12 +1180,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("GET: /application/proceedings/scope-limitations/{action}/details")
+  @DisplayName("GET: /{caseContext}/proceedings/scope-limitations/{action}/details")
   class GetScopeLimitationsDetailsTests {
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result - add")
-    void shouldReturnExpectedResultAdd() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResultAdd(String caseContext) throws Exception {
       final String action = "add";
       final ApplicationDetail application =
           new ApplicationDetail()
@@ -1097,7 +1216,10 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              get("/application/proceedings/scope-limitations/{action}/details", action)
+              get(
+                      "/{caseContext}/proceedings/scope-limitations/{action}/details",
+                      caseContext,
+                      action)
                   .session(session))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-scope-limitations-details"))
@@ -1107,9 +1229,10 @@ class EditProceedingsAndCostsSectionControllerTest {
                   .attribute(SCOPE_LIMITATION_FLOW_FORM_DATA, hasProperty("action", is(action))));
     }
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result - edit")
-    void shouldReturnExpectedResultEdit() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResultEdit(String caseContext) throws Exception {
       final String action = "edit";
       final ApplicationDetail application =
           new ApplicationDetail()
@@ -1143,7 +1266,10 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              get("/application/proceedings/scope-limitations/{action}/details", action)
+              get(
+                      "/{caseContext}/proceedings/scope-limitations/{action}/details",
+                      caseContext,
+                      action)
                   .session(session))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-scope-limitations-details"))
@@ -1153,12 +1279,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("POST: /application/proceedings/scope-limitations/{action}/details")
+  @DisplayName("POST: /{caseContext}/proceedings/scope-limitations/{action}/details")
   class PostScopeLimitationsDetailsTests {
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final String action = "edit";
       final ApplicationDetail application =
           new ApplicationDetail()
@@ -1200,16 +1327,21 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/proceedings/scope-limitations/{action}/details", action)
+              post(
+                      "/{caseContext}/proceedings/scope-limitations/{action}/details",
+                      caseContext,
+                      action)
                   .session(session)
                   .flashAttr("scopeLimitationDetails", scopeLimitationDetails))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/proceedings/scope-limitations/confirm"));
+          .andExpect(
+              redirectedUrl("/%s/proceedings/scope-limitations/confirm".formatted(caseContext)));
     }
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should have validation errors")
-    void shouldHaveValidationErrors() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldHaveValidationErrors(String caseContext) throws Exception {
       final String action = "edit";
       final ApplicationDetail application =
           new ApplicationDetail()
@@ -1255,7 +1387,10 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/proceedings/scope-limitations/{action}/details", action)
+              post(
+                      "/{caseContext}/proceedings/scope-limitations/{action}/details",
+                      caseContext,
+                      action)
                   .session(session)
                   .flashAttr("scopeLimitationDetails", scopeLimitationDetails))
           .andExpect(status().isOk())
@@ -1265,12 +1400,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("GET: /application/proceedings/scope-limitations/confirm")
+  @DisplayName("GET: /{caseContext}/proceedings/scope-limitations/confirm")
   class GetScopelimitationsConfirmTests {
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final String action = "edit";
       final ScopeLimitationDetail scopeLimitation = new ScopeLimitationDetail();
       final ScopeLimitationFlowFormData scopeLimitationFlow =
@@ -1281,7 +1417,9 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
 
       mockMvc
-          .perform(get("/application/proceedings/scope-limitations/confirm").session(session))
+          .perform(
+              get("/{caseContext}/proceedings/scope-limitations/confirm", caseContext)
+                  .session(session))
           .andExpect(status().isOk())
           .andExpect(view().name("application/proceedings-scope-limitations-confirm"))
           .andExpect(model().attributeExists(CURRENT_SCOPE_LIMITATION))
@@ -1292,12 +1430,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("POST: /application/proceedings/scope-limitations/confirm")
+  @DisplayName("POST: /{caseContext}/proceedings/scope-limitations/confirm")
   class PostScopeLimitationsConfirmTests {
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result - add")
-    void shouldReturnExpectedResultAdd() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResultAdd(String caseContext) throws Exception {
       final String action = "add";
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
       proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
@@ -1317,14 +1456,17 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(USER_DETAILS, new UserDetail()); // Mocked user detail
 
       mockMvc
-          .perform(post("/application/proceedings/scope-limitations/confirm").session(session))
+          .perform(
+              post("/{caseContext}/proceedings/scope-limitations/confirm", caseContext)
+                  .session(session))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/proceedings/%s/confirm".formatted(action)));
+          .andExpect(redirectedUrl("/%s/proceedings/%s/confirm".formatted(caseContext, action)));
     }
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result - edit")
-    void shouldReturnExpectedResultEdit() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResultEdit(String caseContext) throws Exception {
       final String action = "edit";
       final ApplicationDetail application =
           new ApplicationDetail()
@@ -1358,19 +1500,22 @@ class EditProceedingsAndCostsSectionControllerTest {
       session.setAttribute(USER_DETAILS, user);
 
       mockMvc
-          .perform(post("/application/proceedings/scope-limitations/confirm").session(session))
+          .perform(
+              post("/{caseContext}/proceedings/scope-limitations/confirm", caseContext)
+                  .session(session))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/proceedings/%s/confirm".formatted(action)));
+          .andExpect(redirectedUrl("/%s/proceedings/%s/confirm".formatted(caseContext, action)));
     }
   }
 
   @Nested
-  @DisplayName("GET: /application/proceedings/scope-limitations/{scope-limitation-id}/remove")
+  @DisplayName("GET: /{caseContext}/proceedings/scope-limitations/{scope-limitation-id}/remove")
   class GetScopeLimitationRemoveTests {
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result - add")
-    void shouldReturnExpectedResultAdd() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResultAdd(String caseContext) throws Exception {
       final String action = "add";
       final int scopeLimitationIndex = 0;
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
@@ -1385,19 +1530,21 @@ class EditProceedingsAndCostsSectionControllerTest {
       mockMvc
           .perform(
               post(
-                      "/application/proceedings/scope-limitations/{scope-limitation-id}/remove",
+                      "/{caseContext}/proceedings/scope-limitations/{scope-limitation-id}/remove",
+                      caseContext,
                       scopeLimitationIndex)
                   .session(session))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/proceedings/%s/confirm".formatted(action)));
+          .andExpect(redirectedUrl("/%s/proceedings/%s/confirm".formatted(caseContext, action)));
 
       assertTrue(
           scopeLimitations.isEmpty(), "Scope limitations list should be empty after removal");
     }
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result - edit")
-    void shouldReturnExpectedResultEdit() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResultEdit(String caseContext) throws Exception {
       final String action = "edit";
       final int scopeLimitationId = 1;
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
@@ -1408,7 +1555,8 @@ class EditProceedingsAndCostsSectionControllerTest {
       mockMvc
           .perform(
               get(
-                      "/application/proceedings/scope-limitations/{scope-limitation-id}/remove",
+                      "/{caseContext}/proceedings/scope-limitations/{scope-limitation-id}/remove",
+                      caseContext,
                       scopeLimitationId)
                   .session(session))
           .andExpect(status().isOk())
@@ -1421,12 +1569,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("POST: /applications/proceedings/scope-limitations/{scope-limitation-id}/remove")
+  @DisplayName("POST: /{caseContext}/proceedings/scope-limitations/{scope-limitation-id}/remove")
   class PostScopeLimitationsRemoveTests {
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should return expected result - edit")
-    void shouldReturnExpectedResultEdit() throws Exception {
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResultEdit(String caseContext) throws Exception {
       final int scopeLimitationId = 1;
       final String action = "edit";
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
@@ -1443,11 +1592,12 @@ class EditProceedingsAndCostsSectionControllerTest {
       mockMvc
           .perform(
               post(
-                      "/application/proceedings/scope-limitations/{scope-limitation-id}/remove",
+                      "/{caseContext}/proceedings/scope-limitations/{scope-limitation-id}/remove",
+                      caseContext,
                       scopeLimitationId)
                   .session(session))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/proceedings/%s/confirm".formatted(action)));
+          .andExpect(redirectedUrl("/%s/proceedings/%s/confirm".formatted(caseContext, action)));
 
       assertTrue(
           proceeding.getScopeLimitations().isEmpty(),
@@ -1541,7 +1691,7 @@ class EditProceedingsAndCostsSectionControllerTest {
                   .session(session)
                   .flashAttr("costDetails", costsFormData))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/amendments/summary"));
+          .andExpect(redirectedUrl("/amendments/proceedings-and-costs#case-costs"));
     }
 
     @ParameterizedTest
@@ -1586,12 +1736,14 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("GET: /application/prior-authorities/add/type")
+  @DisplayName("GET: /{caseContext}/prior-authorities/add/type")
   class GetPriorAuthorityTypeTests {
 
-    @Test
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
+
       final List<PriorAuthorityTypeDetail> priorAuthorityTypes =
           List.of(
               new PriorAuthorityTypeDetail().code("1").description("Type 1"),
@@ -1599,12 +1751,13 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       final PriorAuthorityTypeDetails priorAuthorityTypeDetails =
           new PriorAuthorityTypeDetails().content(priorAuthorityTypes);
+
       when(lookupService.getPriorAuthorityTypes()).thenReturn(Mono.just(priorAuthorityTypeDetails));
 
       final PriorAuthorityFlowFormData priorAuthorityFlow = new PriorAuthorityFlowFormData("add");
 
       mockMvc
-          .perform(get("/application/prior-authorities/add/type"))
+          .perform(get("/{caseContext}/prior-authorities/add/type", caseContext))
           .andExpect(status().isOk())
           .andExpect(view().name("application/prior-authority-type"))
           .andExpect(model().attribute("priorAuthorityTypes", priorAuthorityTypes))
@@ -1620,12 +1773,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("POST: /application/prior-authorities/add/type")
+  @DisplayName("POST: /{caseContext}/prior-authorities/add/type")
   class PostPriorAuthorityTypeTests {
 
-    @Test
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final PriorAuthorityTypeFormData priorAuthorityTypeDetails = new PriorAuthorityTypeFormData();
       priorAuthorityTypeDetails.setPriorAuthorityType("1");
 
@@ -1633,19 +1787,20 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/prior-authorities/add/type")
+              post("/{caseContext}/prior-authorities/add/type", caseContext)
                   .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
                   .flashAttr("priorAuthorityTypeDetails", priorAuthorityTypeDetails))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/prior-authorities/add/details"));
+          .andExpect(redirectedUrl("/%s/prior-authorities/add/details".formatted(caseContext)));
 
       verify(priorAuthorityTypeDetailsValidator, times(1))
           .validate(any(PriorAuthorityTypeFormData.class), any(BindingResult.class));
     }
 
-    @Test
-    @DisplayName("ShReould have validation errors")
-    void shouldHaveValidationErrors() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    @DisplayName("Should have validation errors")
+    void shouldHaveValidationErrors(String caseContext) throws Exception {
       final PriorAuthorityTypeFormData priorAuthorityTypeFormData =
           new PriorAuthorityTypeFormData();
       priorAuthorityTypeFormData.setPriorAuthorityType("1");
@@ -1675,7 +1830,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/prior-authorities/add/type")
+              post("/{caseContext}/prior-authorities/add/type", caseContext)
                   .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
                   .flashAttr("priorAuthorityTypeDetails", priorAuthorityTypeFormData))
           .andExpect(status().isOk())
@@ -1703,12 +1858,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("GET: /application/prior-authorities/{action}/details")
+  @DisplayName("GET: /{caseContext}/prior-authorities/{action}/details")
   class GetPriorAuthoritiesDetailsTests {
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result - add")
-    void shouldReturnExpectedResultAdd() throws Exception {
+    void shouldReturnExpectedResultAdd(String caseContext) throws Exception {
       final String priorAuthorityAction = "add";
       final PriorAuthorityTypeFormData typeDetails = new PriorAuthorityTypeFormData();
       typeDetails.setPriorAuthorityType("1");
@@ -1730,7 +1886,10 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              get("/application/prior-authorities/{action}/details", priorAuthorityAction)
+              get(
+                      "/{caseContext}/prior-authorities/{action}/details",
+                      caseContext,
+                      priorAuthorityAction)
                   .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow))
           .andExpect(status().isOk())
           .andExpect(view().name("application/prior-authority-details"))
@@ -1745,9 +1904,10 @@ class EditProceedingsAndCostsSectionControllerTest {
       verify(lookupService, times(1)).getCommonValues("testLovCode");
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result - edit")
-    void shouldReturnExpectedResultEdit() throws Exception {
+    void shouldReturnExpectedResultEdit(String caseContext) throws Exception {
       final String priorAuthorityAction = "edit";
       final PriorAuthorityTypeFormData typeDetails = new PriorAuthorityTypeFormData();
       typeDetails.setPriorAuthorityType("1");
@@ -1769,7 +1929,10 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              get("/application/prior-authorities/{action}/details", priorAuthorityAction)
+              get(
+                      "/{caseContext}/prior-authorities/{action}/details",
+                      caseContext,
+                      priorAuthorityAction)
                   .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow))
           .andExpect(status().isOk())
           .andExpect(view().name("application/prior-authority-details"))
@@ -1786,13 +1949,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("POST: /application/prior-authorities/{action}/details")
+  @DisplayName("POST: /{caseContext}/prior-authorities/{action}/details")
   class PostPriorAuthoritiesDetails {
 
-    @ParameterizedTest
-    @CsvSource({"add", "edit"})
+    @ParameterizedTest(name = "{0} case with action type {1}")
+    @CsvSource({"application, add", "application, edit", "amendments, add", "amendments, edit"})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult(final String action) throws Exception {
+    void shouldReturnExpectedResult(final String caseText, final String action) throws Exception {
       final String applicationId = "app123";
       final UserDetail user = new UserDetail();
 
@@ -1807,13 +1970,14 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/prior-authorities/{action}/details", action)
+              post("/{caseContext}/prior-authorities/{action}/details", caseText, action)
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
                   .sessionAttr(USER_DETAILS, user)
                   .flashAttr("priorAuthorityDetails", priorAuthorityDetails))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/proceedings-and-costs#prior-authority"));
+          .andExpect(
+              redirectedUrl(String.format("/%s/proceedings-and-costs#prior-authority", caseText)));
 
       if ("add".equals(action)) {
         verify(applicationService, times(1)).addPriorAuthority(eq(applicationId), any(), eq(user));
@@ -1822,10 +1986,11 @@ class EditProceedingsAndCostsSectionControllerTest {
       }
     }
 
-    @ParameterizedTest
-    @CsvSource({"add", "edit"})
+    @ParameterizedTest(name = "{0} case with action type {1}")
+    @CsvSource({"application, add", "application, edit", "amendments, add", "amendments, edit"})
     @DisplayName("Should have validation errors")
-    void shouldHaveValidationErrors(final String action) throws Exception {
+    void shouldHaveValidationErrors(final String caseContext, final String action)
+        throws Exception {
       final String applicationId = "app123";
       final UserDetail user = new UserDetail();
 
@@ -1860,7 +2025,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/prior-authorities/{action}/details", action)
+              post("/{caseContext}/prior-authorities/{action}/details", caseContext, action)
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
                   .sessionAttr(USER_DETAILS, user)
@@ -1876,10 +2041,11 @@ class EditProceedingsAndCostsSectionControllerTest {
       verify(lookupService, times(1)).getCommonValues("testLovCode");
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"add", "edit"})
+    @ParameterizedTest(name = "{0} case with action type {1}")
+    @CsvSource({"application, add", "application, edit", "amendments, add", "amendments, edit"})
     @DisplayName("Should return expected result max lengths not exceeded")
-    void shouldReturnExpectedResultMaxLengthsNotExceeded(final String action) throws Exception {
+    void shouldReturnExpectedResultMaxLengthsNotExceeded(
+        final String caseContext, final String action) throws Exception {
       final String applicationId = "app123";
       final UserDetail user = new UserDetail();
 
@@ -1897,13 +2063,14 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/prior-authorities/{action}/details", action)
+              post("/{caseContext}/prior-authorities/{action}/details", caseContext, action)
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
                   .sessionAttr(USER_DETAILS, user)
                   .flashAttr("priorAuthorityDetails", priorAuthorityDetails))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/proceedings-and-costs#prior-authority"));
+          .andExpect(
+              redirectedUrl("/%s/proceedings-and-costs#prior-authority".formatted(caseContext)));
 
       if ("add".equals(action)) {
         verify(applicationService, times(1)).addPriorAuthority(eq(applicationId), any(), eq(user));
@@ -1912,10 +2079,11 @@ class EditProceedingsAndCostsSectionControllerTest {
       }
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"add", "edit"})
+    @ParameterizedTest(name = "{0} case with action type {1}")
+    @CsvSource({"application, add", "application, edit", "amendments, add", "amendments, edit"})
     @DisplayName("Should have validation errors max lengths exceeded")
-    void shouldHaveValidationErrorsMaxLengthsExceeded(final String action) throws Exception {
+    void shouldHaveValidationErrorsMaxLengthsExceeded(final String caseContext, final String action)
+        throws Exception {
       final String applicationId = "app123";
       final UserDetail user = new UserDetail();
 
@@ -1944,7 +2112,7 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/prior-authorities/{action}/details", action)
+              post("/{caseContext}/prior-authorities/{action}/details", caseContext, action)
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
                   .sessionAttr(USER_DETAILS, user)
@@ -1963,12 +2131,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("GET: /application/prior-authorities/{prior-authority-id}/confirm")
+  @DisplayName("GET: /{caseContext}/prior-authorities/{prior-authority-id}/confirm")
   class GetPriorAuthorityConfirmTests {
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final int priorAuthorityId = 1;
       final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
       priorAuthority.setId(priorAuthorityId);
@@ -1980,17 +2149,21 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              get("/application/prior-authorities/{prior-authority-id}/confirm", priorAuthorityId)
+              get(
+                      "/{caseContext}/prior-authorities/{prior-authority-id}/confirm",
+                      caseContext,
+                      priorAuthorityId)
                   .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/prior-authorities/edit/details"));
+          .andExpect(redirectedUrl("/%s/prior-authorities/edit/details".formatted(caseContext)));
 
       verify(proceedingAndCostsMapper, times(1)).toPriorAuthorityFlowFormData(priorAuthority);
     }
 
-    @Test
-    @DisplayName("Shoudl throw exception when prior authority not found")
-    void shouldThrowExceptionWhenPriorAuthorityNotFound() {
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    @DisplayName("Should throw exception when prior authority not found")
+    void shouldThrowExceptionWhenPriorAuthorityNotFound(String caseContext) {
       final int priorAuthorityId = 1;
       final List<PriorAuthorityDetail> priorAuthorities = Collections.emptyList();
 
@@ -2000,7 +2173,8 @@ class EditProceedingsAndCostsSectionControllerTest {
               () ->
                   mockMvc.perform(
                       get(
-                              "/application/prior-authorities/{prior-authority-id}/confirm",
+                              "/{caseContext}/prior-authorities/{prior-authority-id}/confirm",
+                              caseContext,
                               priorAuthorityId)
                           .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities)));
 
@@ -2012,12 +2186,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("GET: /application/prior-authorities/{prior-authority-id}/remove")
+  @DisplayName("GET: /{caseContext}/prior-authorities/{prior-authority-id}/remove")
   class GetPriorAuthorityRemoveTests {
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final int priorAuthorityId = 1;
       final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
       priorAuthority.setId(priorAuthorityId);
@@ -2026,16 +2201,20 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              get("/application/prior-authorities/{prior-authority-id}/remove", priorAuthorityId)
+              get(
+                      "/{caseContext}/prior-authorities/{prior-authority-id}/remove",
+                      caseContext,
+                      priorAuthorityId)
                   .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities))
           .andExpect(status().isOk())
           .andExpect(view().name("application/prior-authority-remove"))
           .andExpect(model().attribute("priorAuthority", priorAuthority));
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should throw exception when prior authority not found")
-    void shouldThrowExceptionWhenPriorAuthorityNotFound() {
+    void shouldThrowExceptionWhenPriorAuthorityNotFound(String caseContext) {
       final int priorAuthorityId = 1;
       final List<PriorAuthorityDetail> priorAuthorities = Collections.emptyList();
 
@@ -2045,7 +2224,8 @@ class EditProceedingsAndCostsSectionControllerTest {
               () ->
                   mockMvc.perform(
                       get(
-                              "/application/prior-authorities/{prior-authority-id}/remove",
+                              "/{caseContext}/prior-authorities/{prior-authority-id}/remove",
+                              caseContext,
                               priorAuthorityId)
                           .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities)));
 
@@ -2057,12 +2237,13 @@ class EditProceedingsAndCostsSectionControllerTest {
   }
 
   @Nested
-  @DisplayName("POST: /application/prior-authorities/{prior-authority-id}/remove")
+  @DisplayName("POST: /{caseContext}/prior-authorities/{prior-authority-id}/remove")
   class PostPriorAuthorityRemoveTests {
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should return expected result")
-    void shouldReturnExpectedResult() throws Exception {
+    void shouldReturnExpectedResult(String caseContext) throws Exception {
       final int priorAuthorityId = 1;
       final UserDetail user = new UserDetail();
       final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
@@ -2073,18 +2254,23 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       mockMvc
           .perform(
-              post("/application/prior-authorities/{prior-authority-id}/remove", priorAuthorityId)
+              post(
+                      "/{caseContext}/prior-authorities/{prior-authority-id}/remove",
+                      caseContext,
+                      priorAuthorityId)
                   .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities)
                   .sessionAttr(USER_DETAILS, user))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/application/proceedings-and-costs#prior-authority"));
+          .andExpect(
+              redirectedUrl("/%s/proceedings-and-costs#prior-authority".formatted(caseContext)));
 
       verify(applicationService, times(1)).deletePriorAuthority(priorAuthorityId, user);
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should throw exception when prior authority not found")
-    void shouldThrowExceptionWhenPriorAuthorityNotFound() {
+    void shouldThrowExceptionWhenPriorAuthorityNotFound(String caseContext) {
       final int priorAuthorityId = 1;
       final UserDetail user = new UserDetail();
       final List<PriorAuthorityDetail> priorAuthorities = new ArrayList<>();
@@ -2095,7 +2281,8 @@ class EditProceedingsAndCostsSectionControllerTest {
               () ->
                   mockMvc.perform(
                       post(
-                              "/application/prior-authorities/{prior-authority-id}/remove",
+                              "/{caseContext}/prior-authorities/{prior-authority-id}/remove",
+                              caseContext,
                               priorAuthorityId)
                           .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities)
                           .sessionAttr(USER_DETAILS, user)));

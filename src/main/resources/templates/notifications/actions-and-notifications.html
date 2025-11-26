@@ -9,7 +9,10 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/home}" class="govuk-back-link" th:text="#{site.returnToHome}"></a>
+    <a th:unless="${notificationSearchCriteria.originatesFromCase}"
+       th:href="@{/home}" class="govuk-back-link" th:text="#{site.returnToHome}"/>
+    <a th:if="${notificationSearchCriteria.originatesFromCase}"
+       th:href="@{/case/overview}" class="govuk-back-link" th:text="#{site.returnToCaseOverview}"/>
   </div>
   <div id="main-content">
 
@@ -20,6 +23,7 @@
 
     <a class="govuk-button moj-button-menu__item govuk-button--secondary moj-page-header-actions__action"
        role="button"
+       id="refine-search-button"
        th:href="@{/notifications/search}"
        th:text="#{notifications.search.results.refineSearch}"
        data-module="govuk-button"/>
@@ -51,10 +55,12 @@
         </tr>
         </thead>
         <tbody class="govuk-table__body">
-        <tr class="govuk-table__row" th:each="notification : ${notificationsSearchResults.content}">
+        <tr class="govuk-table__row" th:each="notification, idx : ${notificationsSearchResults.content}">
           <td class="govuk-table__cell"
               th:text="${#temporals.format(notification?.assignDate,'dd/MM/yyyy')}"></td>
-          <td class="govuk-table__cell"><a class="govuk-link--no-visited-state"
+          <td class="govuk-table__cell"><a
+              th:id="|notification-link-${idx.index}|"
+              class="govuk-link--no-visited-state"
               th:href="@{/notifications/{notification_id}(notification_id=${notification.notificationId})}"
               th:text="${#strings.capitalize(#strings.toLowerCase(notification.subject))}"></a></td>
           <td class="govuk-table__cell"
