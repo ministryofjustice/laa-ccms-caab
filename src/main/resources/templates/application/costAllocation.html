@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+    <title th:text="|#{service.name} - #{caseCosts.title}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a th:href="@{/case/overview}" class="govuk-back-link"
+           th:text="#{caseDetails.overview.return}"></a>
+    </div>
+
+    <div id="main-content">
+        <h1 class="govuk-heading-l" id="main-heading" th:text="#{case.overview.costs.title}"></h1>
+        <p class="govuk-body-s " th:text="#{caseCosts.details}"></p>
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                    <table class="govuk-table">
+                        <caption class="govuk-table__caption govuk-table__caption--m" th:text="#{caseCosts.header}"/>
+                        <thead>
+                        <tr>
+                            <th class="govuk-table__header" th:text="#{caseCosts.provider}"/>
+                            <th class="govuk-table__header" th:text="#{caseCosts.type}"/>
+                            <th class="govuk-table__header" th:text="#{caseCosts.amount}"/>
+                            <th class="govuk-table__header" th:text="#{caseCosts.providerCost}"/>
+                            <th class="govuk-table__header" th:text="#{caseCosts.action}"/>
+                        </tr>
+                        </thead>
+                        <tbody class="govuk-table__body">
+                        <tr class="govuk-table__row">
+
+                            <th scope="row" class="govuk-table__header" th:text="#{caseCosts.grantedCost}"/>
+                            <td class="govuk-table__cell"></td>
+                            <td class="govuk-table__cell"></td>
+                            <td class="govuk-table__cell govuk-table__header" th:text="'£ ' + ${case.costs.grantedCostLimitation}"></td>
+                            <td class="govuk-table__cell"></td>
+                        </tr>
+                        <tr class="govuk-table__row">
+                            <td class="govuk-table__cell" th:text="${case.providerDetails.provider.displayValue}"/>
+                            <td class="govuk-table__cell " th:text="#{caseCosts.provider}"/>
+                            <td class="govuk-table__cell"></td>
+                            <td class="govuk-table__cell govuk-table__header" th:text="'£ ' + ${totalRemaining}"></td>
+                            <td class="govuk-table__cell"></td>
+                        </tr>
+
+                        <tr class="govuk-table__row" th:each="costEntryDetail, idx : ${case.costs.costEntries.stream().distinct().toList()}">
+
+                            <td class="govuk-table__cell" th:text="${costEntryDetail.resourceName}"/>
+
+                            <td class="govuk-table__cell" style="text-transform: capitalize" th:text=" ${costEntryDetail.costCategory.toLowerCase()}"></td>
+                            <td  class="govuk-table__cell" th:text="'£ ' + ${costEntryDetail.amountBilled}"></td>
+                            <td class="govuk-table__cell">
+                                <span class="prefix">£</span>
+                                <input class="govuk-input govuk-input--width-5"
+                                       type="decimal"
+                                       th:value="${costEntryDetail.requestedCosts}">
+                            </td>
+                            <td class="govuk-table__cell"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+            </div>
+        </div>
+        <div class="govuk-button-group">
+            <button type="submit" class="govuk-button govuk-button--secondary" data-module="govuk-button">
+                Add Counsel
+            </button>
+            <button type="submit" class="govuk-button govuk-button--secondary" data-module="govuk-button" th:text="#{caseCosts.calculate}"/>
+         </div>
+        <button type="submit" class="govuk-button" data-module="govuk-button" th:text="#{site.next}"/>
+    </div>
+</div>
+</body>
+</html>
