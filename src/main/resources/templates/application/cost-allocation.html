@@ -14,7 +14,7 @@
 
     <div id="main-content">
         <h1 class="govuk-heading-l" id="main-heading" th:text="#{case.overview.costs.title}"></h1>
-        <p class="govuk-body-s " th:text="#{caseCosts.details}"></p>
+        <p class="govuk-body-l " th:text="#{caseCosts.details}"></p>
 
         <div class="govuk-grid-row">
             <div class="govuk-grid-column-full">
@@ -65,9 +65,7 @@
             </div>
         </div>
         <div class="govuk-button-group">
-            <button type="submit" class="govuk-button govuk-button--secondary" data-module="govuk-button">
-                Add Counsel
-            </button>
+            <button type="submit" class="govuk-button govuk-button--secondary" data-module="govuk-button" th:text="#{caseCosts.counsel}"/>
             <button type="submit" class="govuk-button govuk-button--secondary" data-module="govuk-button" th:text="#{caseCosts.calculate}"/>
          </div>
         <button type="submit" class="govuk-button" data-module="govuk-button" th:text="#{site.next}"/>

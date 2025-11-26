@@ -69,8 +69,6 @@ dependencies {
 
 	}
 
-	implementation 'javax.persistence:javax.persistence-api:2.2'
-
 	// Fixes CVE-2025-48924 - remove this when bumped in parent library
     implementation 'org.apache.commons:commons-lang3:3.18.0'
 

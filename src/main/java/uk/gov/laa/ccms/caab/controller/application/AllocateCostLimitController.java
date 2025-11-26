@@ -39,6 +39,6 @@ public class AllocateCostLimitController {
 
     model.addAttribute("totalRemaining", grantedCostLimitation.subtract(sum));
     model.addAttribute("case", ebsCase);
-    return "application/costAllocation";
+    return "application/cost-allocation";
   }
 }
