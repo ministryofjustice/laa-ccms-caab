@@ -62,7 +62,7 @@ public class ActionViewHelper {
               FunctionConstants.ALLOCATE_COST_LIMIT,
               "action.allocateCostLimit.name",
               "action.allocateCostLimit.description",
-              "#"),
+              "/allocate-cost-limit"),
           new AvailableAction(
               FunctionConstants.MEANS_REASSESSMENT,
               "action.completeMeansReassessment.name",
