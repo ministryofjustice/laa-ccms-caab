@@ -16,6 +16,7 @@
         <h1 class="govuk-heading-l" id="main-heading" th:text="#{case.overview.costs.title}"></h1>
         <p class="govuk-body-l " th:text="#{caseCosts.details}"></p>
 
+        <form th:action="@{/allocate-cost-limit}" th:object="${case}" method="post">
         <div class="govuk-grid-row">
             <div class="govuk-grid-column-full">
                     <table class="govuk-table">
@@ -46,17 +47,15 @@
                             <td class="govuk-table__cell"></td>
                         </tr>
 
-                        <tr class="govuk-table__row" th:each="costEntryDetail, idx : ${case.costs.costEntries.stream().distinct().toList()}">
+                        <tr class="govuk-table__row" th:each="costEntryDetail, idx : *{costs.costEntries.stream().distinct().toList()}">
 
                             <td class="govuk-table__cell" th:text="${costEntryDetail.resourceName}"/>
-
                             <td class="govuk-table__cell" style="text-transform: capitalize" th:text=" ${costEntryDetail.costCategory.toLowerCase()}"></td>
                             <td  class="govuk-table__cell" th:text="'£ ' + ${costEntryDetail.amountBilled}"></td>
                             <td class="govuk-table__cell">
                                 <span class="prefix">£</span>
-                                <input class="govuk-input govuk-input--width-5"
-                                       type="decimal"
-                                       th:value="${costEntryDetail.requestedCosts}">
+                                <input class="govuk-input govuk-input--width-5" type="number" step="0.01"
+                                       th:field="*{costs.costEntries[__${idx.index}__].requestedCosts}">
                             </td>
                             <td class="govuk-table__cell"></td>
                         </tr>
@@ -65,9 +64,11 @@
             </div>
         </div>
         <div class="govuk-button-group">
-            <button type="submit" class="govuk-button govuk-button--secondary" data-module="govuk-button" th:text="#{caseCosts.counsel}"/>
+            <button type="button" class="govuk-button govuk-button--secondary" data-module="govuk-button" th:text="#{caseCosts.counsel}"/>
             <button type="submit" class="govuk-button govuk-button--secondary" data-module="govuk-button" th:text="#{caseCosts.calculate}"/>
          </div>
+        </form>
+
         <button type="submit" class="govuk-button" data-module="govuk-button" th:text="#{site.next}"/>
     </div>
 </div>

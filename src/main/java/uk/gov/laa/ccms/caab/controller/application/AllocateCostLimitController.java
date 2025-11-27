@@ -8,7 +8,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
@@ -17,6 +20,7 @@ import uk.gov.laa.ccms.caab.service.ApplicationService;
 @RequiredArgsConstructor
 @Controller
 @Slf4j
+@SessionAttributes({CASE})
 public class AllocateCostLimitController {
   private final ApplicationService applicationService;
 
@@ -24,21 +28,41 @@ public class AllocateCostLimitController {
    * Displays the cost limitation allocation screen.
    *
    * @param ebsCase The case details from EBS.
+   * @param model the Model object used to pass attributes to the view.
    * @return The cost limitation allocation view.
    */
   @GetMapping("/allocate-cost-limit")
   public String caseDetails(@SessionAttribute(CASE) final ApplicationDetail ebsCase, Model model) {
 
+    model.addAttribute("totalRemaining", getTotalRemaining(ebsCase));
+    model.addAttribute("case", ebsCase);
+    return "application/cost-allocation";
+  }
+
+  /**
+   * Displays the cost limitation allocation screen.
+   *
+   * @param ebsCase The case cost details from session.
+   * @param model the Model object used to pass attributes to the view.
+   * @return The cost limitation allocation view.
+   */
+  @PostMapping("/allocate-cost-limit")
+  public String updateCost(@ModelAttribute("ebsCase") ApplicationDetail ebsCase, Model model) {
+
+    model.addAttribute("case", ebsCase);
+    model.addAttribute("totalRemaining", getTotalRemaining(ebsCase));
+
+    return "application/cost-allocation";
+  }
+
+  private BigDecimal getTotalRemaining(ApplicationDetail ebsCase) {
     BigDecimal sum =
         ebsCase.getCosts().getCostEntries().stream()
             .distinct()
             .map(CostEntryDetail::getRequestedCosts)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
-
     BigDecimal grantedCostLimitation = ebsCase.getCosts().getGrantedCostLimitation();
 
-    model.addAttribute("totalRemaining", grantedCostLimitation.subtract(sum));
-    model.addAttribute("case", ebsCase);
-    return "application/cost-allocation";
+    return grantedCostLimitation.subtract(sum);
   }
 }
