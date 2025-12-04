@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,11 @@ import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataFurtherDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataProceedingDetails;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFlowFormData;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
+import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ReferenceDataItemDetail;
@@ -308,6 +313,43 @@ class ProceedingAndCostsMapperTest {
     assertNotNull(result);
     assertEquals(grantedCostLimitation, result.getGrantedCostLimitation());
     assertEquals(costLimitation.toString(), result.getRequestedCostLimitation());
+  }
+
+  @Test
+  void testToCostsData() {
+    final BigDecimal grantedCostLimitation = new BigDecimal("3000.00");
+    final BigDecimal costLimitation = new BigDecimal("5000.00");
+    final ApplicationProviderDetails provider =
+        new ApplicationProviderDetails().provider(new IntDisplayValue().displayValue("City Law"));
+    final CostEntryDetail costEntryDetail =
+        new CostEntryDetail()
+            .resourceName("Patrick")
+            .costCategory("counsel")
+            .resourceName("Marie Bowe")
+            .requestedCosts(new BigDecimal("3000.00"))
+            .amountBilled(new BigDecimal("100.00"));
+
+    final CostStructureDetail costStructureDetail =
+        new CostStructureDetail()
+            .requestedCostLimitation(costLimitation)
+            .grantedCostLimitation(grantedCostLimitation)
+            .costEntries(Collections.singletonList(costEntryDetail));
+    final ApplicationDetail applicationDetail =
+        new ApplicationDetail().providerDetails(provider).costs(costStructureDetail);
+    final CostsFormData result = mapper.toCostsForm(applicationDetail);
+
+    assertNotNull(result);
+    assertEquals(grantedCostLimitation, result.getGrantedCostLimitation());
+    assertEquals(provider.getProvider().getDisplayValue(), result.getProviderName());
+    assertEquals(costEntryDetail, result.getCostEntries().get(0));
+    assertEquals(costLimitation.toString(), result.getRequestedCostLimitation());
+  }
+
+  @Test
+  void testToCostsForm_withNull() {
+    final CostsFormData result = mapper.toCostsForm(null);
+
+    assertNull(result);
   }
 
   @Test
