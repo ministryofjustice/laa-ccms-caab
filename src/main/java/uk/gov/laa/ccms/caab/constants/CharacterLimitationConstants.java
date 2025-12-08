@@ -31,7 +31,7 @@ public final class CharacterLimitationConstants {
   public static final int SPECIAL_CONSIDERATIONS_CHARACTER_SIZE = 2000;
 
   /** the size for justification. */
-  public static final int JUSTIFICATION_CHARACTER_SIZE = 8000;
+  public static final int JUSTIFICATION_CHARACTER_SIZE = 200;
 
   private CharacterLimitationConstants() {}
 }

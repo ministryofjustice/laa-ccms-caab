@@ -19,6 +19,9 @@
          th:utext="#{proceedings.priorAuthorities.remove.leadParagraph(${#strings.toLowerCase(priorAuthority.type.displayValue)})}"/>
       <div class="govuk-button-group">
         <govuk:button type="submit" th:text="#{site.confirm}"/>
+        <govuk:button classes="govuk-button--secondary"
+                      th:text="#{site.cancel}"
+                      th:href="@{/{caseContext}/proceedings-and-costs#prior-authority(caseContext=${caseContext.pathValue})}"/>s
       </div>
     </form>
   </div>
