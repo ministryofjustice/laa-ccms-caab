@@ -20,6 +20,8 @@ public class PriorAuthorityDetailsValidator extends AbstractValidator {
 
   private static final String FIELD_TYPE_AMT = "AMT";
   private static final String FIELD_TYPE_INT = "INT";
+  private static final String FIELD_TYPE_FTS = "FTS";
+  private static final String FIELD_TYPE_FTL = "FTL";
 
   private static final BigDecimal MAX_COST_LIMIT = new BigDecimal("100000000.00");
 
@@ -87,27 +89,47 @@ public class PriorAuthorityDetailsValidator extends AbstractValidator {
         }
 
         if (StringUtils.hasText(value.getFieldValue())) {
-          if (FIELD_TYPE_AMT.equals(value.getFieldType())) {
-            validateCurrencyField(
-                "dynamicOptions[%s].fieldValue".formatted(key),
-                value.getFieldValue(),
-                value.getFieldDescription(),
-                errors);
 
-            validateNumericLimit(
-                "dynamicOptions[%s].fieldValue".formatted(key),
-                value.getFieldValue(),
-                value.getFieldDescription(),
-                MAX_COST_LIMIT,
-                errors);
+            switch (value.getFieldType()) {
+                case FIELD_TYPE_AMT -> {
+                    validateCurrencyField(
+                            "dynamicOptions[%s].fieldValue".formatted(key),
+                            value.getFieldValue(),
+                            value.getFieldDescription(),
+                            errors);
 
-          } else if (FIELD_TYPE_INT.equals(value.getFieldType())) {
-            validateNumericField(
-                "dynamicOptions[%s].fieldValue".formatted(key),
-                value.getFieldValue(),
-                value.getFieldDescription(),
-                errors);
-          }
+                    validateNumericLimit(
+                            "dynamicOptions[%s].fieldValue".formatted(key),
+                            value.getFieldValue(),
+                            value.getFieldDescription(),
+                            MAX_COST_LIMIT,
+                            errors);
+                }
+                case FIELD_TYPE_INT -> {
+                    validateNumericField(
+                            "dynamicOptions[%s].fieldValue".formatted(key),
+                            value.getFieldValue(),
+                            value.getFieldDescription(),
+                            errors);
+                }
+                case FIELD_TYPE_FTS -> {
+                        validateFieldMaxLength(
+                                "dynamicOptions[%s].fieldValue".formatted(key),
+                                value.getFieldValue(),
+                                30,
+                                value.getFieldDescription(),
+                                errors
+                        );
+                }
+                case FIELD_TYPE_FTL ->
+                        validateFieldMaxLength(
+                                "dynamicOptions[%s].fieldValue".formatted(key),
+                                value.getFieldValue(),
+                                80,
+                                value.getFieldDescription(),
+                                errors
+                        );
+            }
         }
       }
     }
