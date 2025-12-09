@@ -323,8 +323,7 @@ public class AssessmentService {
    */
   protected boolean isReassessmentRequired(
       final ApplicationDetail application, final AssessmentDetail assessment) {
-
-    if (!application.getAmendment()) {
+    if (application.getAmendment()) {
       if (assessment != null) {
 
         final AssessmentEntityTypeDetail proceedingEntityType =
@@ -335,7 +334,7 @@ public class AssessmentService {
           return true;
         }
 
-        // check if proceeding is deleted
+        // check if proceeding has been deleted
         if (application.getProceedings() != null) {
           log.debug(
               "app.getProceedings().size(): {} - opaListEntity.getOpaEntities().size(): {}",
@@ -348,10 +347,7 @@ public class AssessmentService {
           }
         }
 
-        // used to check if the proceeding is deleted - this should be included for both
-        // assessments,
-        // although not specifically needed for means, both assessments and application data should
-        // be kept in sync.
+        // check if the proceeding is deleted
         if (Boolean.TRUE.equals(application.getMeritsReassessmentRequired())) {
           log.info(
               "Reassessment Required for {} as application.getMeritsReassessmentRequired() IS TRUE",
@@ -359,9 +355,7 @@ public class AssessmentService {
           return true;
         }
 
-        // used specifically for merits - this should be included for both assessments,
-        // although not specifically needed for means, both assessments and application data should
-        // be kept in sync.
+        // check if individual/organisation has changed
         for (final OpponentDetail opponent : application.getOpponents()) {
           if (OPPONENT_TYPE_INDIVIDUAL.equalsIgnoreCase(opponent.getType())
               && differenceGreaterThanTenSecs(
@@ -375,10 +369,7 @@ public class AssessmentService {
           }
         }
 
-        // When Individual/Organisation deleted
-        // used specifically for merits - this should be included for both assessments,
-        // although not specifically needed for means, both assessments and application data should
-        // be kept in sync.
+        // If Individual/Organisation has been deleted
         final AssessmentEntityTypeDetail opponentEntityType =
             getAssessmentEntityType(assessment, OPPONENT);
         if ((application.getOpponents() != null) && (opponentEntityType != null)) {
@@ -391,7 +382,8 @@ public class AssessmentService {
           }
         }
 
-        // only check when it's a merits assessment
+        // Cost limit at the time the assessment was created is less than the current requested or
+        // default cost
         if (assessment.getName().equalsIgnoreCase(MERITS.getName())) {
           final boolean meritReassessmentRequired =
               Optional.ofNullable(application.getCostLimit())

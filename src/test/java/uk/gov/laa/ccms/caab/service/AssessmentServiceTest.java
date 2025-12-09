@@ -422,15 +422,86 @@ public class AssessmentServiceTest {
     assertEquals(application.getMeritsAssessmentStatus(), PROGRESS_STATUS_DESC);
   }
 
-  // todo - test to be amended when amendment scenarios are added
   @Test
   void testIsReassessmentRequired_isAmendment() {
     final ApplicationDetail application = new ApplicationDetail().amendment(true);
 
-    final AssessmentDetail assessment = new AssessmentDetail();
-    final boolean result = assessmentService.isReassessmentRequired(application, assessment);
+    final boolean result = assessmentService.isReassessmentRequired(application, null);
 
     assertFalse(result);
+  }
+
+  private AssessmentDetail meritsAssessment() {
+    AssessmentEntityDetail aEntityToDelete =
+        new AssessmentEntityDetail().id(2L).name("P_123").prepopulated(true).completed(false);
+
+    final AssessmentEntityTypeDetail proceedingsEntityTypeDetail =
+        buildProceedingsEntityTypeDetail().addEntitiesItem(aEntityToDelete);
+
+    ArrayList<AssessmentEntityTypeDetail> entityTypeList = new ArrayList<>();
+    entityTypeList.add(proceedingsEntityTypeDetail);
+
+    final AssessmentDetail assessment =
+        new AssessmentDetail()
+            .id(3L)
+            .name("meritsAssessment")
+            .providerId("321")
+            .caseReferenceNumber("300000")
+            .status("INCOMPLETE")
+            .entityTypes(entityTypeList);
+
+    return assessment;
+  }
+
+  private ApplicationDetail application() {
+    final String matterType = "TEST";
+    final String proceedingType = "TEST";
+    final String clientInvolvement = "TEST";
+    final String scopeLimitation = "TEST";
+
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .meritsAssessmentAmended(true)
+            .amendment(true)
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .id(123)
+                    .matterType(new StringDisplayValue().id(matterType))
+                    .proceedingType(new StringDisplayValue().id(proceedingType))
+                    .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
+                    .addScopeLimitationsItem(
+                        new ScopeLimitationDetail()
+                            .scopeLimitation(new StringDisplayValue().id(scopeLimitation))))
+            .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
+            .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
+
+    return application;
+  }
+
+  @Test
+  void testIsReassessmentRequired_proceedingHaveBeenDeleted() {
+    AssessmentEntityDetail aEntityToDelete =
+        new AssessmentEntityDetail().id(2L).name("P_123").prepopulated(true).completed(false);
+
+    final AssessmentEntityTypeDetail proceedingsEntityTypeDetail =
+        buildProceedingsEntityTypeDetail().addEntitiesItem(aEntityToDelete);
+
+    ArrayList<AssessmentEntityTypeDetail> entityTypeList = new ArrayList<>();
+    entityTypeList.add(proceedingsEntityTypeDetail);
+    entityTypeList.add(proceedingsEntityTypeDetail);
+
+    final AssessmentDetail assessment =
+        new AssessmentDetail()
+            .id(3L)
+            .name("meritsAssessment")
+            .providerId("321")
+            .caseReferenceNumber("300000")
+            .status("INCOMPLETE")
+            .entityTypes(entityTypeList);
+
+    final boolean result = assessmentService.isReassessmentRequired(application(), assessment);
+
+    assertTrue(result);
   }
 
   @Test
@@ -473,58 +544,22 @@ public class AssessmentServiceTest {
 
   @Test
   void testIsReassessmentRequired_meritsReassessmentRequired_assertsTrue() {
-    final String matterType = "TEST";
-    final String proceedingType = "TEST";
-    final String clientInvolvement = "TEST";
-    final String scopeLimitation = "TEST";
-
-    final ApplicationDetail application =
-        new ApplicationDetail()
-            .meritsReassessmentRequired(true)
-            .amendment(false)
-            .addProceedingsItem(
-                new ProceedingDetail()
-                    .id(123)
-                    .matterType(new StringDisplayValue().id(matterType))
-                    .proceedingType(new StringDisplayValue().id(proceedingType))
-                    .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-                    .addScopeLimitationsItem(
-                        new ScopeLimitationDetail()
-                            .scopeLimitation(new StringDisplayValue().id(scopeLimitation))))
-            .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
-            .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
-
     final AssessmentDetail assessment = buildAssessmentDetail(auditDate);
 
-    final boolean result = assessmentService.isReassessmentRequired(application, assessment);
+    final boolean result = assessmentService.isReassessmentRequired(application(), assessment);
 
     assertTrue(result);
   }
 
   @Test
   void testIsReassessmentRequired_opponentsHaveBeenUpdated_assertsTrue() {
-    final String matterType = "TEST";
-    final String proceedingType = "TEST";
-    final String clientInvolvement = "TEST";
-    final String scopeLimitation = "TEST";
-
     // lased saved date = now - 11 seconds
     final long currentTime = System.currentTimeMillis();
     final Date lastSaved = new Date(currentTime - 11000);
     final Date currentDate = new Date(currentTime);
 
     final ApplicationDetail application =
-        new ApplicationDetail()
-            .amendment(false)
-            .addProceedingsItem(
-                new ProceedingDetail()
-                    .id(123)
-                    .matterType(new StringDisplayValue().id(matterType))
-                    .proceedingType(new StringDisplayValue().id(proceedingType))
-                    .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-                    .addScopeLimitationsItem(
-                        new ScopeLimitationDetail()
-                            .scopeLimitation(new StringDisplayValue().id(scopeLimitation))))
+        application()
             .addOpponentsItem(
                 new OpponentDetail()
                     .id(234)
@@ -534,7 +569,14 @@ public class AssessmentServiceTest {
             .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
             .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
 
-    final AssessmentDetail assessment = buildAssessmentDetail(lastSaved);
+    final AssessmentDetail assessment =
+        meritsAssessment()
+            .auditDetail(
+                new AuditDetail()
+                    .createdBy("test")
+                    .created(currentDate)
+                    .lastSavedBy("test")
+                    .lastSaved(lastSaved));
 
     final boolean result = assessmentService.isReassessmentRequired(application, assessment);
 
@@ -543,23 +585,8 @@ public class AssessmentServiceTest {
 
   @Test
   void testIsReassessmentRequired_assessmentHasMoreOpponentsThanApplication_assertsTrue() {
-    final String matterType = "TEST";
-    final String proceedingType = "TEST";
-    final String clientInvolvement = "TEST";
-    final String scopeLimitation = "TEST";
-
     final ApplicationDetail application =
-        new ApplicationDetail()
-            .amendment(false)
-            .addProceedingsItem(
-                new ProceedingDetail()
-                    .id(123)
-                    .matterType(new StringDisplayValue().id(matterType))
-                    .proceedingType(new StringDisplayValue().id(proceedingType))
-                    .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-                    .addScopeLimitationsItem(
-                        new ScopeLimitationDetail()
-                            .scopeLimitation(new StringDisplayValue().id(scopeLimitation))))
+        application()
             .addOpponentsItem(
                 new OpponentDetail()
                     .id(234)
@@ -576,32 +603,11 @@ public class AssessmentServiceTest {
   }
 
   @ParameterizedTest
-  @CsvSource({"meritsAssessment, true", "meansAssessment, false"})
+  @CsvSource({"meritsAssessment, true", "meansAssessment, true"})
   void testIsReassessmentRequired_costLimitDifference(
       final String assessmentName, final boolean expectedResult) {
-
-    final String matterType = "TEST";
-    final String proceedingType = "TEST";
-    final String clientInvolvement = "TEST";
-    final String scopeLimitation = "TEST";
-
     final ApplicationDetail application =
-        new ApplicationDetail()
-            .amendment(false)
-            .addProceedingsItem(
-                new ProceedingDetail()
-                    .id(123)
-                    .matterType(new StringDisplayValue().id(matterType))
-                    .proceedingType(new StringDisplayValue().id(proceedingType))
-                    .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
-                    .addScopeLimitationsItem(
-                        new ScopeLimitationDetail()
-                            .scopeLimitation(new StringDisplayValue().id(scopeLimitation))))
-            .addOpponentsItem(
-                new OpponentDetail()
-                    .id(234)
-                    .type("Individual")
-                    .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(auditDate)))
+        application()
             .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(999.00)))
             .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
 
