@@ -31,9 +31,9 @@
               ${priorAuthorityFlow.priorAuthorityTypeFormData.priorAuthorityTypeDisplayValue})}"/>
           </dl>
 
-          <th:block th:replace="~{partials/forms :: textInput35('summary',
-            #{site.summary},
-            'govuk-input--width-10', 35)}"/>
+          <th:block th:replace="~{partials/forms :: textInput(fieldId = 'summary',
+           label =  #{site.summary},
+            inputClass = 'govuk-input--width-10', maxlength= 35)}"/>
           <th:block th:replace="~{partials/forms :: largeTextInput('justification',
             #{proceedings.priorAuthorities.justification},
             200)}"/>
