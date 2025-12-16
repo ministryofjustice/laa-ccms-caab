@@ -53,6 +53,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class CaseController {
 
   private final ApplicationService applicationService;
+    private static final String SEARCH_URL = "SEARCH URL";
 
   /**
    * Displays the case overview screen.
@@ -72,6 +73,8 @@ public class CaseController {
       HttpServletRequest request) {
 
     boolean isAmendment = applicationService.isAmendment(ebsCase, tdsApplication);
+
+    String returnSearchUrl = session.getAttribute(SEARCH_URL).toString();
 
     setReturnDetails(model, notificationId, request);
 
@@ -94,6 +97,7 @@ public class CaseController {
     model.addAttribute("hasEbsAmendments", hasEbsAmendments(ebsCase));
     model.addAttribute("draftProceedings", draftProceedings);
     model.addAttribute("draftCosts", draftCosts);
+    model.addAttribute("searchUrl", returnSearchUrl);
     session.setAttribute(CASE_REFERENCE_NUMBER, ebsCase.getCaseReferenceNumber());
     session.setAttribute(APPLICATION, amendments);
     session.setAttribute(AMEND_CLIENT_ORIGIN, AmendClientOrigin.CASE_OVERVIEW);
