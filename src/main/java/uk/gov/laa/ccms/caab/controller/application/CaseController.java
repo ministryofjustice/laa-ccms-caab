@@ -74,8 +74,6 @@ public class CaseController {
 
     boolean isAmendment = applicationService.isAmendment(ebsCase, tdsApplication);
 
-    String returnSearchUrl = session.getAttribute(SEARCH_URL).toString();
-
     setReturnDetails(model, notificationId, request);
 
     ApplicationDetail amendments = null;
@@ -90,14 +88,15 @@ public class CaseController {
     setProceedingDisplayStatuses(ebsCase, amendments);
 
     List<AvailableAction> availableActions = getAvailableActions(ebsCase, isAmendment);
+    String returnSearchUrl = session.getAttribute(SEARCH_URL).toString();
 
+    model.addAttribute("searchUrl", returnSearchUrl);
     model.addAttribute("case", ebsCase);
     model.addAttribute("isAmendment", isAmendment);
     model.addAttribute("availableActions", availableActions);
     model.addAttribute("hasEbsAmendments", hasEbsAmendments(ebsCase));
     model.addAttribute("draftProceedings", draftProceedings);
     model.addAttribute("draftCosts", draftCosts);
-    model.addAttribute("searchUrl", returnSearchUrl);
     session.setAttribute(CASE_REFERENCE_NUMBER, ebsCase.getCaseReferenceNumber());
     session.setAttribute(APPLICATION, amendments);
     session.setAttribute(AMEND_CLIENT_ORIGIN, AmendClientOrigin.CASE_OVERVIEW);
