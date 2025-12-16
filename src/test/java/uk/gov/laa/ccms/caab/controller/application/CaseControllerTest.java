@@ -459,7 +459,9 @@ class CaseControllerTest {
 
       assertThat(
               mockMvc.perform(
-                  get("/case/overview").sessionAttr(USER_DETAILS, user).sessionAttr(CASE, ebsCase)
+                  get("/case/overview")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
                       .sessionAttr("SEARCH URL", returnUrl)))
           .hasStatusOk()
           .model()
@@ -534,7 +536,9 @@ class CaseControllerTest {
 
       assertThat(
               mockMvc.perform(
-                  get("/case/overview").sessionAttr(USER_DETAILS, user).sessionAttr(CASE, ebsCase)
+                  get("/case/overview")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
                       .sessionAttr("SEARCH URL", returnUrl)))
           .hasStatusOk()
           .model()
@@ -564,7 +568,9 @@ class CaseControllerTest {
 
       assertThat(
               mockMvc.perform(
-                  get("/case/overview").sessionAttr(USER_DETAILS, user).sessionAttr(CASE, ebsCase)
+                  get("/case/overview")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
                       .sessionAttr("SEARCH URL", returnUrl)))
           .hasStatusOk()
           .model()
