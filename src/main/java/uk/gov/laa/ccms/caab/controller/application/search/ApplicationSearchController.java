@@ -175,8 +175,8 @@ public class ApplicationSearchController {
 
     String queryString = request.getQueryString();
     if (queryString != null && !queryString.isBlank()) {
-        String searchUrl = request.getRequestURL().toString() + "?" + queryString;
-        httpSession.setAttribute(SEARCH_URL, searchUrl);
+      String searchUrl = request.getRequestURL().toString() + "?" + queryString;
+      httpSession.setAttribute(SEARCH_URL, searchUrl);
     }
 
     model.addAttribute(CASE_RESULTS_PAGE, applicationDetails);

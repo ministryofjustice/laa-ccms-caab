@@ -53,7 +53,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class CaseController {
 
   private final ApplicationService applicationService;
-    private static final String SEARCH_URL = "SEARCH URL";
+  private static final String SEARCH_URL = "SEARCH URL";
 
   /**
    * Displays the case overview screen.
