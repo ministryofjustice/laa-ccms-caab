@@ -60,9 +60,6 @@ dependencies {
 			because("Fixes CVE-2025-48924."
 					+ "Parent: org.springframework.boot:spring-boot-dependencies:3.5.3")
 		}
-        implementation('io.netty:netty-codec-http-4.1.129.Final'){
-            because("Fixes CVE-2025-67735.")
-        }
 
 		// Test dependencies
 		testImplementation('org.apache.commons:commons-compress:1.27.1') {
