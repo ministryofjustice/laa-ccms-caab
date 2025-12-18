@@ -95,7 +95,7 @@
          th:id="${fieldId}"
          th:name="${fieldId}"
          type="text"
-         th:attr="aria-label=${hideLabel ? label : null}, maxlength=${maxlength != null ? maxlength : null}"
+         th:attr="aria-label=${hideLabel ? label : null}, maxlength=${maxlength}"
          data-module="govuk-input"
          th:field="*{__${fieldId}__}">
 </div>
