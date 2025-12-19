@@ -174,11 +174,9 @@ public class ApplicationSearchController {
             PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), caseSearchResults));
 
     String queryString = request.getQueryString();
-    String searchUrl;
+    String searchUrl = request.getRequestURL().toString();
     if (queryString != null && !queryString.isBlank()) {
-      searchUrl = request.getRequestURL().toString() + "?" + queryString;
-    } else {
-      searchUrl = request.getRequestURL().toString();
+      searchUrl += "?" + queryString;
     }
 
     httpSession.setAttribute(SEARCH_URL, searchUrl);
