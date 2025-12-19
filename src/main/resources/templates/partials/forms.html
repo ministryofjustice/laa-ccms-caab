@@ -82,7 +82,7 @@
 </div>
 
 <div th:fragment="textInput(fieldId, label, inputClass)"
-     th:with="hideLabel=${hideLabel?:false}"
+     th:with="hideLabel=${hideLabel?:false}, maxlength=${maxlength}"
      class="govuk-form-group"
      th:classappend="${#fields.hasErrors(fieldId)} ? 'govuk-form-group--error' : ''">
   <label class="govuk-label" th:unless="${hideLabel}" th:for="${fieldId}" th:text="${label}"></label>
@@ -95,7 +95,7 @@
          th:id="${fieldId}"
          th:name="${fieldId}"
          type="text"
-         th:attr="aria-label=${hideLabel ? label : null}"
+         th:attr="aria-label=${hideLabel ? label : null}, maxlength=${maxlength}"
          data-module="govuk-input"
          th:field="*{__${fieldId}__}">
 </div>
