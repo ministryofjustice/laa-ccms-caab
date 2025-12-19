@@ -69,6 +69,8 @@ public class ApplicationSearchController {
 
   private final EbsApplicationMapper applicationMapper;
 
+  private static final String SEARCH_URL = "SEARCH_URL";
+
   protected static final String CURRENT_URL = "currentUrl";
 
   protected static final String CASE_RESULTS_PAGE = "caseResultsPage";
@@ -163,6 +165,7 @@ public class ApplicationSearchController {
       @RequestParam(value = "size", defaultValue = "10") final int size,
       @ModelAttribute(CASE_SEARCH_RESULTS) final List<BaseApplicationDetail> caseSearchResults,
       final HttpServletRequest request,
+      final HttpSession httpSession,
       final Model model) {
 
     // Paginate the results list, and convert to the Page wrapper object for display
@@ -170,7 +173,12 @@ public class ApplicationSearchController {
         applicationMapper.toApplicationDetails(
             PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), caseSearchResults));
 
-    model.addAttribute(CURRENT_URL, request.getRequestURL().toString());
+    String queryString = request.getQueryString();
+    if (queryString != null && !queryString.isBlank()) {
+      String searchUrl = request.getRequestURL().toString() + "?" + queryString;
+      httpSession.setAttribute(SEARCH_URL, searchUrl);
+    }
+
     model.addAttribute(CASE_RESULTS_PAGE, applicationDetails);
     model.addAttribute("amendmentsEnabled", featureService.isEnabled(Feature.AMENDMENTS));
     return "application/application-search-results";

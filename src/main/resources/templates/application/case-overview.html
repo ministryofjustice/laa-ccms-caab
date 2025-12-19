@@ -8,14 +8,14 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a class="govuk-back-link"
-       th:if="${returnTo ==  'notification'}"
-       th:href="@{/notifications/{notification_id}(notification_id=${notification_id})}"
-       th:text="#{site.returnToNotification}"/>
-    <a class="govuk-back-link"
-       th:unless="${returnTo ==  'notification'}"
-       th:href="@{/application/search/results}"
-       th:text="#{site.returnToSearchResults}"/>
+      <a class="govuk-back-link"
+         th:if="${searchUrl != null}"
+         th:href="${searchUrl}"
+         th:text="#{site.returnToSearchResults}"/>
+      <a class="govuk-back-link"
+         th:unless="${searchUrl != null}"
+         th:href="@{/application/search/results}"
+         th:text="#{site.returnToSearchResults}"/>
   </div>
   <div id="main-content">
     <h1 class="govuk-heading-l" th:text="#{case.overview}"></h1>
