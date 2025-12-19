@@ -69,7 +69,7 @@ public class ApplicationSearchController {
 
   private final EbsApplicationMapper applicationMapper;
 
-  private static final String SEARCH_URL = "SEARCH URL";
+  private static final String SEARCH_URL = "SEARCH_URL";
 
   protected static final String CURRENT_URL = "currentUrl";
 
