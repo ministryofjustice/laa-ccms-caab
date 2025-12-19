@@ -174,10 +174,12 @@ public class ApplicationSearchController {
             PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), caseSearchResults));
 
     String queryString = request.getQueryString();
+    String searchUrl = request.getRequestURL().toString();
     if (queryString != null && !queryString.isBlank()) {
-      String searchUrl = request.getRequestURL().toString() + "?" + queryString;
-      httpSession.setAttribute(SEARCH_URL, searchUrl);
+      searchUrl += "?" + queryString;
     }
+
+    httpSession.setAttribute(SEARCH_URL, searchUrl);
 
     model.addAttribute(CASE_RESULTS_PAGE, applicationDetails);
     model.addAttribute("amendmentsEnabled", featureService.isEnabled(Feature.AMENDMENTS));
