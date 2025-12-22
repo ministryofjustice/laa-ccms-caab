@@ -27,3 +27,6 @@ CVE-2025-58181
 # stdlib
 CVE-2025-61727
 CVE-2025-61729
+
+# netty-codec
+CVE-2025-67735

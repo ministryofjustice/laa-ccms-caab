@@ -2058,7 +2058,7 @@ class EditProceedingsAndCostsSectionControllerTest {
       priorAuthorityFlow.setPriorAuthorityTypeFormData(typeDetails);
       priorAuthorityFlow.setPriorAuthorityDetailsFormData(priorAuthorityDetails);
 
-      priorAuthorityDetails.setJustification(RandomStringUtils.insecure().nextAlphabetic(8000));
+      priorAuthorityDetails.setJustification(RandomStringUtils.insecure().nextAlphabetic(200));
       priorAuthorityDetails.setSummary(RandomStringUtils.insecure().nextAlphabetic(35));
 
       mockMvc

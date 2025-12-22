@@ -53,6 +53,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class CaseController {
 
   private final ApplicationService applicationService;
+  private static final String SEARCH_URL = "SEARCH_URL";
 
   /**
    * Displays the case overview screen.
@@ -87,7 +88,9 @@ public class CaseController {
     setProceedingDisplayStatuses(ebsCase, amendments);
 
     List<AvailableAction> availableActions = getAvailableActions(ebsCase, isAmendment);
+    String returnSearchUrl = session.getAttribute(SEARCH_URL).toString();
 
+    model.addAttribute("searchUrl", returnSearchUrl);
     model.addAttribute("case", ebsCase);
     model.addAttribute("isAmendment", isAmendment);
     model.addAttribute("availableActions", availableActions);

@@ -72,6 +72,10 @@ class CaseControllerTest {
 
   private UserDetail user;
 
+  private String returnUrl;
+
+  private static final String SEARCH_URL = "SEARCH_URL";
+
   @BeforeEach
   void setUp() {
     mockMvc =
@@ -81,6 +85,7 @@ class CaseControllerTest {
                 .setControllerAdvice(new ActiveCaseModelAdvice())
                 .build());
     this.user = ApplicationTestUtils.buildUser();
+    returnUrl = "returnUrl";
   }
 
   @Nested
@@ -124,7 +129,8 @@ class CaseControllerTest {
               mockMvc.perform(
                   get("/case/overview", selectedCaseRef)
                       .sessionAttr(USER_DETAILS, user)
-                      .sessionAttr(CASE, applicationDetail)))
+                      .sessionAttr(CASE, applicationDetail)
+                      .sessionAttr(SEARCH_URL, returnUrl)))
           .hasViewName("application/case-overview")
           .satisfies(
               response -> {
@@ -201,6 +207,7 @@ class CaseControllerTest {
                       .sessionAttr(USER_DETAILS, user)
                       .sessionAttr(CASE, applicationDetail)
                       .sessionAttr(NOTIFICATION_ID, notificationId)
+                      .sessionAttr(SEARCH_URL, returnUrl)
                       .header("referer", "/notifications/%s".formatted(notificationId))))
           .hasViewName("application/case-overview")
           .satisfies(
@@ -295,7 +302,8 @@ class CaseControllerTest {
                   get("/case/overview", selectedCaseRef)
                       .sessionAttr(USER_DETAILS, user)
                       .sessionAttr(CASE, applicationDetail)
-                      .sessionAttr(APPLICATION_SUMMARY, tdsApplication)))
+                      .sessionAttr(APPLICATION_SUMMARY, tdsApplication)
+                      .sessionAttr(SEARCH_URL, returnUrl)))
           .hasViewName("application/case-overview")
           .satisfies(
               response -> {
@@ -393,7 +401,8 @@ class CaseControllerTest {
                   get("/case/overview", selectedCaseRef)
                       .sessionAttr(USER_DETAILS, user)
                       .sessionAttr(CASE, applicationDetail)
-                      .sessionAttr(APPLICATION_SUMMARY, tdsApplication)))
+                      .sessionAttr(APPLICATION_SUMMARY, tdsApplication)
+                      .sessionAttr(SEARCH_URL, returnUrl)))
           .hasViewName("application/case-overview")
           .satisfies(
               response -> {
@@ -452,7 +461,10 @@ class CaseControllerTest {
 
       assertThat(
               mockMvc.perform(
-                  get("/case/overview").sessionAttr(USER_DETAILS, user).sessionAttr(CASE, ebsCase)))
+                  get("/case/overview")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(SEARCH_URL, returnUrl)))
           .hasStatusOk()
           .model()
           .hasEntrySatisfying(
@@ -496,7 +508,8 @@ class CaseControllerTest {
                   get("/case/overview")
                       .sessionAttr(USER_DETAILS, user)
                       .sessionAttr(CASE, ebsCase)
-                      .sessionAttr(APPLICATION_SUMMARY, tdsApplication)))
+                      .sessionAttr(APPLICATION_SUMMARY, tdsApplication)
+                      .sessionAttr(SEARCH_URL, returnUrl)))
           .hasStatusOk()
           .model()
           .hasEntrySatisfying(
@@ -525,7 +538,10 @@ class CaseControllerTest {
 
       assertThat(
               mockMvc.perform(
-                  get("/case/overview").sessionAttr(USER_DETAILS, user).sessionAttr(CASE, ebsCase)))
+                  get("/case/overview")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(SEARCH_URL, returnUrl)))
           .hasStatusOk()
           .model()
           .hasEntrySatisfying(
@@ -554,7 +570,10 @@ class CaseControllerTest {
 
       assertThat(
               mockMvc.perform(
-                  get("/case/overview").sessionAttr(USER_DETAILS, user).sessionAttr(CASE, ebsCase)))
+                  get("/case/overview")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(SEARCH_URL, returnUrl)))
           .hasStatusOk()
           .model()
           .hasEntrySatisfying(
