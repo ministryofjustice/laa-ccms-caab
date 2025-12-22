@@ -16,6 +16,7 @@ import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFlowFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFlowFormData;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
@@ -192,6 +193,12 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "requestedCostLimitation", source = "requestedCostLimitation")
   @Mapping(target = "grantedCostLimitation", source = "grantedCostLimitation")
   CostsFormData toCostsFormData(CostStructureDetail costLimitation);
+
+  @Mapping(target = "requestedCostLimitation", source = "costs.requestedCostLimitation")
+  @Mapping(target = "grantedCostLimitation", source = "costs.grantedCostLimitation")
+  @Mapping(target = "costEntries", source = "costs.costEntries")
+  @Mapping(target = "providerName", source = "providerDetails.provider.displayValue")
+  CostsFormData toCostsForm(ApplicationDetail applicationDetail);
 
   @Mapping(target = "defaultCostLimitation", ignore = true)
   @Mapping(target = "grantedCostLimitation", ignore = true)
