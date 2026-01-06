@@ -45,7 +45,7 @@
             <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(case.costs.requestedCostLimitation)}"/>
             <td class="govuk-table__cell"
                 th:unless="${case.status.displayValue == 'Submitted'}"
-                th:text="${case.certificate.displayValue}"/>
+                th:text="${case.status.displayValue}"/>
             <td class="govuk-table__cell"
                 th:if="${case.status.displayValue == 'Submitted'}"
                 th:text="${case.applicationType.displayValue}"/>
