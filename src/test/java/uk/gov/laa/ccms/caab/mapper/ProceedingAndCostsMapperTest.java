@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
+import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFlowFormData;
@@ -316,7 +317,9 @@ class ProceedingAndCostsMapperTest {
   }
 
   @Test
-  void testToCostsData() {
+  void toAllocateCostsFormWithoutCostEntries() {
+    AllocateCostsFormData result = new AllocateCostsFormData();
+
     final BigDecimal grantedCostLimitation = new BigDecimal("3000.00");
     final BigDecimal costLimitation = new BigDecimal("5000.00");
     final ApplicationProviderDetails provider =
@@ -333,21 +336,59 @@ class ProceedingAndCostsMapperTest {
         new CostStructureDetail()
             .requestedCostLimitation(costLimitation)
             .grantedCostLimitation(grantedCostLimitation)
+            .currentProviderBilledAmount(new BigDecimal("100.00"))
             .costEntries(Collections.singletonList(costEntryDetail));
     final ApplicationDetail applicationDetail =
         new ApplicationDetail().providerDetails(provider).costs(costStructureDetail);
-    final CostsFormData result = mapper.toCostsForm(applicationDetail);
+
+    mapper.toAllocateCostsFormWithoutCostEntries(applicationDetail, result);
 
     assertNotNull(result);
-    assertEquals(grantedCostLimitation, result.getGrantedCostLimitation());
+    assertEquals(result.getGrantedCostLimitation(), grantedCostLimitation);
     assertEquals(provider.getProvider().getDisplayValue(), result.getProviderName());
-    assertEquals(costEntryDetail, result.getCostEntries().get(0));
-    assertEquals(costLimitation.toString(), result.getRequestedCostLimitation());
+    assertEquals(
+        costStructureDetail.getCurrentProviderBilledAmount(),
+        result.getCurrentProviderBilledAmount());
+    assertNull(result.getCostEntries());
   }
 
   @Test
-  void testToCostsForm_withNull() {
-    final CostsFormData result = mapper.toCostsForm(null);
+  void testToAllocateCostsFormData() {
+    final BigDecimal grantedCostLimitation = new BigDecimal("3000.00");
+    final BigDecimal costLimitation = new BigDecimal("5000.00");
+    final ApplicationProviderDetails provider =
+        new ApplicationProviderDetails().provider(new IntDisplayValue().displayValue("City Law"));
+    final CostEntryDetail costEntryDetail =
+        new CostEntryDetail()
+            .resourceName("Patrick")
+            .costCategory("counsel")
+            .resourceName("Marie Bowe")
+            .requestedCosts(new BigDecimal("3000.00"))
+            .amountBilled(new BigDecimal("100.00"));
+
+    final CostStructureDetail costStructureDetail =
+        new CostStructureDetail()
+            .requestedCostLimitation(costLimitation)
+            .grantedCostLimitation(grantedCostLimitation)
+            .currentProviderBilledAmount(new BigDecimal("100.00"))
+            .costEntries(Collections.singletonList(costEntryDetail));
+    final ApplicationDetail applicationDetail =
+        new ApplicationDetail().providerDetails(provider).costs(costStructureDetail);
+    final AllocateCostsFormData result = mapper.toAllocateCostsForm(applicationDetail);
+
+    assertNotNull(result);
+    assertEquals(grantedCostLimitation, result.getGrantedCostLimitation());
+    assertEquals(costLimitation, result.getRequestedCostLimitation());
+    assertEquals(provider.getProvider().getDisplayValue(), result.getProviderName());
+    assertEquals(
+        costStructureDetail.getCurrentProviderBilledAmount(),
+        result.getCurrentProviderBilledAmount());
+    assertEquals(costEntryDetail, result.getCostEntries().get(0));
+  }
+
+  @Test
+  void testToAllocateCostsFormData_withNull() {
+    final AllocateCostsFormData result = mapper.toAllocateCostsForm(null);
 
     assertNull(result);
   }

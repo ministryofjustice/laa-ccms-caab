@@ -18,7 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
-import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
+import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
@@ -69,21 +69,21 @@ public class AllocateCostLimitControllerTest {
           new ApplicationProviderDetails()
               .provider(new IntDisplayValue().displayValue("provider")));
 
-      final CostsFormData costsFormData = new CostsFormData(new BigDecimal("25000"));
-      costsFormData.setRequestedCostLimitation(String.valueOf(costs.getRequestedCostLimitation()));
-      costsFormData.setCostEntries(ebsCase.getCosts().getCostEntries());
-      costsFormData.setProviderName(ebsCase.getProviderDetails().getProvider().getDisplayValue());
+      final AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
+      allocateCostsFormData.setRequestedCostLimitation(costs.getRequestedCostLimitation());
+      allocateCostsFormData.setCostEntries(ebsCase.getCosts().getCostEntries());
+      allocateCostsFormData.setProviderName(
+          ebsCase.getProviderDetails().getProvider().getDisplayValue());
 
-      when(proceedingAndCostsMapper.toCostsForm(any(ApplicationDetail.class)))
-          .thenReturn(costsFormData);
+      when(proceedingAndCostsMapper.toAllocateCostsForm(any(ApplicationDetail.class)))
+          .thenReturn(allocateCostsFormData);
 
       assertThat(mockMvc.perform(get("/allocate-cost-limit").sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/cost-allocation")
           .model()
           .containsEntry("case", ebsCase)
-          .containsEntry("costDetails", costsFormData)
-          .containsEntry("totalRemaining", new BigDecimal("24395.37"));
+          .containsEntry("costDetails", allocateCostsFormData);
     }
   }
 }

@@ -34,7 +34,6 @@
                         </thead>
                         <tbody class="govuk-table__body">
                         <tr class="govuk-table__row">
-
                             <th scope="row" class="govuk-table__header" th:text="#{caseCosts.grantedCost}"/>
                             <td class="govuk-table__cell"></td>
                             <td class="govuk-table__cell"></td>
@@ -42,11 +41,12 @@
                                 th:text="'£ ' + ${case.costs.grantedCostLimitation}"></td>
                             <td class="govuk-table__cell"></td>
                         </tr>
-                        <tr class="govuk-table__row">
+                        <tr class="govuk-table__row"
+                            th:classappend="${#fields.hasErrors('grantedCostLimitation')} ? ' govuk-form-group--error'">
                             <td class="govuk-table__cell" th:text="${case.providerDetails.provider.displayValue}"/>
                             <td class="govuk-table__cell " th:text="#{caseCosts.provider}"/>
                             <td class="govuk-table__cell"></td>
-                            <td class="govuk-table__cell govuk-table__header" th:text="'£ ' + ${totalRemaining}"></td>
+                            <td class="govuk-table__cell govuk-table__header" th:text="'£ ' + ${costDetails.totalRemaining}"></td>
                             <td class="govuk-table__cell"></td>
                         </tr>
 

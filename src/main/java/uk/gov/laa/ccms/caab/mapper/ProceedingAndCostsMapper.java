@@ -6,11 +6,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.mapstruct.AfterMapping;
+import org.mapstruct.InheritConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
+import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFlowFormData;
@@ -197,8 +199,15 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "requestedCostLimitation", source = "costs.requestedCostLimitation")
   @Mapping(target = "grantedCostLimitation", source = "costs.grantedCostLimitation")
   @Mapping(target = "costEntries", source = "costs.costEntries")
+  @Mapping(target = "currentProviderBilledAmount", source = "costs.currentProviderBilledAmount")
   @Mapping(target = "providerName", source = "providerDetails.provider.displayValue")
-  CostsFormData toCostsForm(ApplicationDetail applicationDetail);
+  @Mapping(target = "totalRemaining", ignore = true)
+  AllocateCostsFormData toAllocateCostsForm(ApplicationDetail applicationDetail);
+
+  @InheritConfiguration(name = "toAllocateCostsForm")
+  @Mapping(target = "costEntries", ignore = true)
+  void toAllocateCostsFormWithoutCostEntries(
+      ApplicationDetail applicationDetail, @MappingTarget AllocateCostsFormData target);
 
   @Mapping(target = "defaultCostLimitation", ignore = true)
   @Mapping(target = "grantedCostLimitation", ignore = true)

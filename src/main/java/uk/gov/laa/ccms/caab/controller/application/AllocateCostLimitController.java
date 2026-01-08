@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
-import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
+import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.bean.validators.costs.AllocateCostLimitValidator;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -38,10 +38,11 @@ public class AllocateCostLimitController {
   @GetMapping("/allocate-cost-limit")
   public String caseDetails(@SessionAttribute(CASE) final ApplicationDetail ebsCase, Model model) {
 
-    final CostsFormData costsFormData = proceedingAndCostsMapper.toCostsForm(ebsCase);
+    AllocateCostsFormData allocateCostsFormData =
+        proceedingAndCostsMapper.toAllocateCostsForm(ebsCase);
+    allocateCostsFormData.setTotalRemaining(getTotalRemaining(allocateCostsFormData));
 
-    model.addAttribute("costDetails", costsFormData);
-    model.addAttribute("totalRemaining", getTotalRemaining(costsFormData));
+    model.addAttribute("costDetails", allocateCostsFormData);
     model.addAttribute("case", ebsCase);
     return "application/cost-allocation";
   }
@@ -49,14 +50,14 @@ public class AllocateCostLimitController {
   /**
    * Displays the cost limitation allocation screen.
    *
-   * @param costsFormData the submitted form data for costs.
+   * @param allocateCostsFormData the submitted form data for costs.
    * @param ebsCase The case cost details from session.
    * @param model the Model object used to pass attributes to the view.
    * @return The cost limitation allocation view.
    */
   @PostMapping("/allocate-cost-limit")
   public String updateCost(
-      @ModelAttribute("costDetails") CostsFormData costsFormData,
+      @ModelAttribute("costDetails") AllocateCostsFormData allocateCostsFormData,
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       final Model model,
       final BindingResult bindingResult) {
@@ -68,33 +69,35 @@ public class AllocateCostLimitController {
             .stream()
             .map(list -> list.get(0))
             .toList();
+    proceedingAndCostsMapper.toAllocateCostsFormWithoutCostEntries(ebsCase, allocateCostsFormData);
 
     for (int i = 0; i < costs.size(); i++) {
-      costs.get(i).setRequestedCosts(costsFormData.getCostEntries().get(i).getRequestedCosts());
+      costs
+          .get(i)
+          .setRequestedCosts(allocateCostsFormData.getCostEntries().get(i).getRequestedCosts());
     }
-    costsFormData.setCostEntries(costs);
-
-    allocateCostLimitValidator.validate(costsFormData, bindingResult);
+    allocateCostsFormData.setCostEntries(costs);
+    allocateCostLimitValidator.validate(allocateCostsFormData, bindingResult);
+    allocateCostsFormData.setTotalRemaining(getTotalRemaining(allocateCostsFormData));
 
     model.addAttribute("case", ebsCase);
-    model.addAttribute("costDetails", costsFormData);
-    model.addAttribute("totalRemaining", getTotalRemaining(costsFormData));
+    model.addAttribute("costDetails", allocateCostsFormData);
 
     return "application/cost-allocation";
   }
 
   /** Calculates the total requests costs by the granted cost limitation. */
-  private BigDecimal getTotalRemaining(CostsFormData cost) {
-    if (cost.getCostEntries() == null || cost.getGrantedCostLimitation() == null) {
+  private BigDecimal getTotalRemaining(AllocateCostsFormData allocateCostsFormData) {
+    if (allocateCostsFormData.getCostEntries() == null
+        || allocateCostsFormData.getGrantedCostLimitation() == null) {
       return BigDecimal.ZERO;
     }
-
     BigDecimal sum =
-        cost.getCostEntries().stream()
+        allocateCostsFormData.getCostEntries().stream()
             .distinct()
             .map(CostEntryDetail::getRequestedCosts)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-    return cost.getGrantedCostLimitation().subtract(sum);
+    return allocateCostsFormData.getGrantedCostLimitation().subtract(sum);
   }
 }
