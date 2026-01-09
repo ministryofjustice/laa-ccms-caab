@@ -40,6 +40,7 @@ public class AllocateCostLimitValidatorTest {
                     .resourceName("PATRICK J BOWE")
                     .costCategory("Counsel")
                     .amountBilled(new BigDecimal("604.63"))
+                    .newEntry(Boolean.TRUE)
                     .requestedCosts(new BigDecimal("604.63")));
     app.costs(costs);
 
@@ -61,8 +62,9 @@ public class AllocateCostLimitValidatorTest {
           .setRequestedCosts(new BigDecimal("100000001.00"));
       allocateCostLimitValidator.validate(allocateCostsFormData, errors);
       assertTrue(errors.hasErrors());
-      assertNotNull(errors.getFieldError("costEntries[0]"));
-      assertEquals("value.exceeds.max", errors.getFieldError("costEntries[0]").getCode());
+      assertNotNull(errors.getFieldError("costEntries[0].requestedCosts"));
+      assertEquals(
+          "value.exceeds.max", errors.getFieldError("costEntries[0].requestedCosts").getCode());
     }
 
     @Test
@@ -81,10 +83,10 @@ public class AllocateCostLimitValidatorTest {
       allocateCostsFormData.getCostEntries().getFirst().setRequestedCosts(new BigDecimal("100.00"));
       allocateCostLimitValidator.validate(allocateCostsFormData, errors);
       assertTrue(errors.hasErrors());
-      assertNotNull(errors.getFieldError("costEntries[0]"));
+      assertNotNull(errors.getFieldError("costEntries[0].requestedCosts"));
       assertEquals(
           "costCostAllocation.requestedAmount.belowBilledAmount",
-          errors.getFieldError("costEntries[0]").getCode());
+          errors.getFieldError("costEntries[0].requestedCosts").getCode());
     }
 
     @Test
@@ -95,10 +97,10 @@ public class AllocateCostLimitValidatorTest {
       allocateCostsFormData.setCurrentProviderBilledAmount(new BigDecimal("0"));
       allocateCostLimitValidator.validate(allocateCostsFormData, errors);
       assertTrue(errors.hasErrors());
-      assertNotNull(errors.getFieldError("grantedCostLimitation"));
+      assertNotNull(errors.getFieldError("costEntries[0].requestedCosts"));
       assertEquals(
           "costCostAllocation.exceeded.requestedCost",
-          errors.getFieldError("grantedCostLimitation").getCode());
+          errors.getFieldError("costEntries[0].requestedCosts").getCode());
     }
 
     @Test
@@ -109,10 +111,10 @@ public class AllocateCostLimitValidatorTest {
       allocateCostsFormData.setCurrentProviderBilledAmount(new BigDecimal("2"));
       allocateCostLimitValidator.validate(allocateCostsFormData, errors);
       assertTrue(errors.hasErrors());
-      assertNotNull(errors.getFieldError("currentProviderBilledAmount"));
+      assertNotNull(errors.getFieldError("costEntries[0].requestedCosts"));
       assertEquals(
           "costCostAllocation.requestedAmount.belowBilledAmount",
-          errors.getFieldError("currentProviderBilledAmount").getCode());
+          errors.getFieldError("costEntries[0].requestedCosts").getCode());
     }
   }
 }

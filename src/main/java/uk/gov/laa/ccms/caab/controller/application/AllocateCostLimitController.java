@@ -63,15 +63,16 @@ public class AllocateCostLimitController {
       final BindingResult bindingResult) {
 
     List<CostEntryDetail> costs =
-        ebsCase.getCosts().getCostEntries().stream()
-            .collect(Collectors.groupingBy(CostEntryDetail::getEbsId))
-            .values()
-            .stream()
-            .map(list -> list.get(0))
-            .toList();
+        ebsCase.getCosts().getCostEntries().stream().distinct().collect(Collectors.toList());
     proceedingAndCostsMapper.toAllocateCostsFormWithoutCostEntries(ebsCase, allocateCostsFormData);
 
     for (int i = 0; i < costs.size(); i++) {
+      if (!costs
+          .get(i)
+          .getRequestedCosts()
+          .equals(allocateCostsFormData.getCostEntries().get(i).getRequestedCosts())) {
+        costs.get(i).setNewEntry(true);
+      }
       costs
           .get(i)
           .setRequestedCosts(allocateCostsFormData.getCostEntries().get(i).getRequestedCosts());
