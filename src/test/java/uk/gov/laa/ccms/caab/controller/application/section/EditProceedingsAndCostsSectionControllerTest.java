@@ -1615,7 +1615,7 @@ class EditProceedingsAndCostsSectionControllerTest {
     void shouldReturnExpectedResult(String caseContext) throws Exception {
       final ApplicationDetail application = new ApplicationDetail();
       final CostStructureDetail costs = new CostStructureDetail();
-      costs.setRequestedCostLimitation(new BigDecimal("6000"));
+      costs.setRequestedCostLimitation(new BigDecimal("1000"));
 
       final CostsFormData costsFormData = new CostsFormData(new BigDecimal("20000.00"));
       costsFormData.setRequestedCostLimitation(String.valueOf(costs.getRequestedCostLimitation()));

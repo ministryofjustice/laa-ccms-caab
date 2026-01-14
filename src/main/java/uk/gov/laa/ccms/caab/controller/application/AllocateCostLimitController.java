@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.bean.validators.costs.AllocateCostLimitValidator;
+import uk.gov.laa.ccms.caab.mapper.CopyApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
@@ -26,6 +27,7 @@ import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 @Slf4j
 public class AllocateCostLimitController {
   private final ProceedingAndCostsMapper proceedingAndCostsMapper;
+  private final CopyApplicationMapper copyApplicationMapper;
   private final AllocateCostLimitValidator allocateCostLimitValidator;
 
   /**
@@ -56,15 +58,18 @@ public class AllocateCostLimitController {
    * @return The cost limitation allocation view.
    */
   @PostMapping("/allocate-cost-limit")
-  public String updateCost(
+  public String calculateCost(
       @ModelAttribute("costDetails") AllocateCostsFormData allocateCostsFormData,
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       final Model model,
       final BindingResult bindingResult) {
 
+    ApplicationDetail appCopy = new ApplicationDetail();
+    appCopy = copyApplicationMapper.copyApplication(appCopy, ebsCase);
+
     List<CostEntryDetail> costs =
-        ebsCase.getCosts().getCostEntries().stream().distinct().collect(Collectors.toList());
-    proceedingAndCostsMapper.toAllocateCostsFormWithoutCostEntries(ebsCase, allocateCostsFormData);
+        appCopy.getCosts().getCostEntries().stream().distinct().collect(Collectors.toList());
+    proceedingAndCostsMapper.toAllocateCostsFormWithoutCostEntries(appCopy, allocateCostsFormData);
 
     for (int i = 0; i < costs.size(); i++) {
       if (!costs

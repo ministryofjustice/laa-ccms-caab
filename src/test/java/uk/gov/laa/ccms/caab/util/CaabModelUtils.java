@@ -242,5 +242,24 @@ public final class CaabModelUtils {
         .preferredAddress("prefAdd");
   }
 
+  public static CostStructureDetail buildCostStructureDetail() {
+    return new CostStructureDetail()
+        .auditTrail(new AuditDetail().createdBy("user1"))
+        .addCostEntriesItem(
+            new CostEntryDetail()
+                .amountBilled(BigDecimal.TEN)
+                .costCategory("costcat")
+                .ebsId("ebsId")
+                .lscResourceId("lscResource")
+                .newEntry(Boolean.TRUE)
+                .requestedCosts(BigDecimal.ONE)
+                .resourceName("resname")
+                .submitted(Boolean.TRUE))
+        .currentProviderBilledAmount(BigDecimal.ONE)
+        .grantedCostLimitation(BigDecimal.ZERO)
+        .defaultCostLimitation(BigDecimal.ONE)
+        .requestedCostLimitation(BigDecimal.TEN);
+  }
+
   private CaabModelUtils() {}
 }
