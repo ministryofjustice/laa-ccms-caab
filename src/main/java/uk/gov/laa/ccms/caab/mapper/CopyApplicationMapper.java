@@ -10,6 +10,8 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
+import uk.gov.laa.ccms.caab.model.CostEntryDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
@@ -35,6 +37,7 @@ public interface CopyApplicationMapper {
   @Mapping(target = "larScopeFlag", source = "larScopeFlag")
   @Mapping(target = "proceedings", source = "proceedings")
   @Mapping(target = "opponents", source = "opponents")
+  @Mapping(target = "costs", source = "costs")
   ApplicationDetail copyApplication(
       @MappingTarget ApplicationDetail newApplication, ApplicationDetail applicationToCopy);
 
@@ -69,4 +72,10 @@ public interface CopyApplicationMapper {
       target = "address",
       defaultExpression = "java(new uk.gov.laa.ccms.caab.model.AddressDetail())")
   OpponentDetail copyOpponent(OpponentDetail opponentToCopy);
+
+  List<CostEntryDetail> copyCostEntryList(List<CostEntryDetail> costEntryList);
+
+  CostEntryDetail copyCostEntry(CostEntryDetail costEntryToCopy);
+
+  CostStructureDetail copyCostStructure(CostStructureDetail costStructureToCopy);
 }

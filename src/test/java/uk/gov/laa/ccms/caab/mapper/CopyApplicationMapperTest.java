@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.PROCEEDING_STATUS_UNCHANGED_DISPLAY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
+import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildCostStructureDetail;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildProceeding;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildScopeLimitation;
@@ -17,6 +18,8 @@ import org.junit.jupiter.api.Test;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
+import uk.gov.laa.ccms.caab.model.CostEntryDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
@@ -88,6 +91,19 @@ class CopyApplicationMapperTest {
   }
 
   @Test
+  void testCopyCost() {
+    CostStructureDetail expectedCostStructure = buildCostStructureDetail();
+
+    CostStructureDetail result =
+        copyApplicationMapper.copyCostStructure(buildCostStructureDetail());
+
+    // Now update the expected opponent to what the mapper should return
+    applyCostStructureMappingUpdates(expectedCostStructure);
+
+    assertEquals(expectedCostStructure, result);
+  }
+
+  @Test
   @DisplayName("Should copy opponent with null address as empty address")
   void testCopyOpponentIfAddressIsNull() {
     Date date = new Date();
@@ -116,6 +132,18 @@ class CopyApplicationMapperTest {
                 .supervisor(copyApplication.getProviderDetails().getSupervisor())
                 .feeEarner(copyApplication.getProviderDetails().getFeeEarner())
                 .providerContact(copyApplication.getProviderDetails().getProviderContact()))
+        .costs(
+            new CostStructureDetail()
+                .defaultCostLimitation(copyApplication.getCosts().getDefaultCostLimitation())
+                .grantedCostLimitation(copyApplication.getCosts().getGrantedCostLimitation())
+                .requestedCostLimitation(copyApplication.getCosts().getRequestedCostLimitation())
+                .currentProviderBilledAmount(
+                    copyApplication.getCosts().getCurrentProviderBilledAmount())
+                .auditTrail(copyApplication.getCosts().getAuditTrail())
+                .costEntries(
+                    copyApplication.getCosts().getCostEntries().stream()
+                        .map(this::applyCostEntryMappingUpdates)
+                        .toList()))
         .categoryOfLaw(copyApplication.getCategoryOfLaw())
         .correspondenceAddress(copyApplication.getCorrespondenceAddress())
         .larScopeFlag(copyApplication.getLarScopeFlag())
@@ -152,5 +180,15 @@ class CopyApplicationMapperTest {
     expectedOpponent.setAward(Boolean.FALSE);
 
     return expectedOpponent;
+  }
+
+  private CostEntryDetail applyCostEntryMappingUpdates(CostEntryDetail expectedCostEntry) {
+    expectedCostEntry.setEbsId(null);
+    return expectedCostEntry;
+  }
+
+  private CostStructureDetail applyCostStructureMappingUpdates(
+      CostStructureDetail expectedCostStructure) {
+    return expectedCostStructure;
   }
 }

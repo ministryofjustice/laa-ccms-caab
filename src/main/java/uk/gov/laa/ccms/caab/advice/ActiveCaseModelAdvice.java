@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.controller.AssessmentController;
+import uk.gov.laa.ccms.caab.controller.application.AllocateCostLimitController;
 import uk.gov.laa.ccms.caab.controller.application.CaseController;
 import uk.gov.laa.ccms.caab.controller.application.section.ApplicationSectionsController;
 import uk.gov.laa.ccms.caab.controller.application.section.ApplicationSubmissionController;
@@ -57,7 +58,8 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
       AssessmentController.class,
       CaseSubmissionController.class,
       CaseController.class,
-      EditProceedingsAndCostsSectionController.class
+      EditProceedingsAndCostsSectionController.class,
+      AllocateCostLimitController.class
     })
 public class ActiveCaseModelAdvice {
 

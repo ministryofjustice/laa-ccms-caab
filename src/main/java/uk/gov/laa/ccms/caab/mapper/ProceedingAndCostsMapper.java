@@ -6,16 +6,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.mapstruct.AfterMapping;
+import org.mapstruct.InheritConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
+import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFlowFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFlowFormData;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
@@ -192,6 +195,19 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "requestedCostLimitation", source = "requestedCostLimitation")
   @Mapping(target = "grantedCostLimitation", source = "grantedCostLimitation")
   CostsFormData toCostsFormData(CostStructureDetail costLimitation);
+
+  @Mapping(target = "requestedCostLimitation", source = "costs.requestedCostLimitation")
+  @Mapping(target = "grantedCostLimitation", source = "costs.grantedCostLimitation")
+  @Mapping(target = "costEntries", source = "costs.costEntries")
+  @Mapping(target = "currentProviderBilledAmount", source = "costs.currentProviderBilledAmount")
+  @Mapping(target = "providerName", source = "providerDetails.provider.displayValue")
+  @Mapping(target = "totalRemaining", ignore = true)
+  AllocateCostsFormData toAllocateCostsForm(ApplicationDetail applicationDetail);
+
+  @InheritConfiguration(name = "toAllocateCostsForm")
+  @Mapping(target = "costEntries", ignore = true)
+  void toAllocateCostsFormWithoutCostEntries(
+      ApplicationDetail applicationDetail, @MappingTarget AllocateCostsFormData target);
 
   @Mapping(target = "defaultCostLimitation", ignore = true)
   @Mapping(target = "grantedCostLimitation", ignore = true)

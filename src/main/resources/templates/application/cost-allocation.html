@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+    <title th:text="|#{service.name} - #{caseCosts.title}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a th:href="@{/case/overview}" class="govuk-back-link"
+           th:text="#{caseDetails.overview.return}"></a>
+    </div>
+
+    <div id="main-content">
+        <h1 class="govuk-heading-l" id="main-heading" th:text="#{case.overview.costs.title}"></h1>
+        <p class="govuk-body-l " th:text="#{caseCosts.details}"></p>
+
+        <form th:action="@{/allocate-cost-limit}" th:object="${costDetails}" method="post">
+            <div th:replace="~{partials/error-summary :: error-summary}"></div>
+
+            <div class="govuk-grid-row">
+                <div class="govuk-grid-column-full">
+                    <table class="govuk-table">
+                        <caption class="govuk-table__caption govuk-table__caption--m" th:text="#{caseCosts.header}"/>
+                        <thead>
+                        <tr>
+                            <th class="govuk-table__header" th:text="#{caseCosts.provider}"/>
+                            <th class="govuk-table__header" th:text="#{caseCosts.type}"/>
+                            <th class="govuk-table__header" th:text="#{caseCosts.amount}"/>
+                            <th class="govuk-table__header" th:text="#{caseCosts.providerCost}"/>
+                            <th class="govuk-table__header" th:text="#{caseCosts.action}"/>
+                        </tr>
+                        </thead>
+                        <tbody class="govuk-table__body">
+                        <tr class="govuk-table__row">
+                            <th scope="row" class="govuk-table__header" th:text="#{caseCosts.grantedCost}"/>
+                            <td class="govuk-table__cell"></td>
+                            <td class="govuk-table__cell"></td>
+                            <td class="govuk-table__cell govuk-table__header"
+                                th:text="'£ ' + ${case.costs.grantedCostLimitation}"></td>
+                            <td class="govuk-table__cell"></td>
+                        </tr>
+                        <tr class="govuk-table__row">
+                            <td class="govuk-table__cell" th:text="${case.providerDetails.provider.displayValue}"/>
+                            <td class="govuk-table__cell " th:text="#{caseCosts.provider}"/>
+                            <td class="govuk-table__cell"></td>
+                            <td class="govuk-table__cell" >
+                                <div class="govuk-form-group"
+                                     th:classappend="${#fields.hasErrors('grantedCostLimitation')} ? 'govuk-form-group--error govuk-!-font-weight-bold' : ''"
+                                th:text="'£ ' + ${costDetails.totalRemaining}" >
+                                </div>
+                            </td>
+                            <td class="govuk-table__cell"></td>
+                        </tr>
+
+                        <tr class="govuk-table__row"
+                            th:each="costEntryDetail, idx : *{costEntries.stream().distinct().toList()}">
+
+                            <td class="govuk-table__cell" th:text="${costEntryDetail.resourceName}"/>
+                            <td class="govuk-table__cell" style="text-transform: capitalize"
+                                th:text=" ${costEntryDetail.costCategory.toLowerCase()}"></td>
+                            <td class="govuk-table__cell" th:text="'£ ' + ${costEntryDetail.amountBilled}"></td>
+                            <td class="govuk-table__cell">
+                                <div class="govuk-form-group"
+                                     th:classappend="${#fields.hasErrors('costEntries[__${idx.index}__].requestedCosts')} ? 'govuk-form-group--error' : ''">
+                                    <div class="govuk-input__wrapper">
+                                        <div class="govuk-input__prefix" aria-hidden="true">£</div>
+
+                                        <input th:errorclass="govuk-input--error"
+                                               class="govuk-input govuk-input--width-5"
+                                               type="number"
+                                               step="0.01"
+                                               th:id="'costEntries[__${idx.index}__].requestedCosts'"
+                                               th:field="*{costEntries[__${idx.index}__].requestedCosts}">
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="govuk-table__cell"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="govuk-button-group">
+                <button type="button" class="govuk-button govuk-button--secondary" data-module="govuk-button"
+                        th:text="#{caseCosts.counsel}"/>
+                <button type="submit" class="govuk-button govuk-button--secondary" data-module="govuk-button"
+                        th:text="#{caseCosts.calculate}"/>
+            </div>
+        </form>
+
+        <button type="submit" class="govuk-button" data-module="govuk-button" th:text="#{site.next}"/>
+    </div>
+</div>
+</body>
+</html>
