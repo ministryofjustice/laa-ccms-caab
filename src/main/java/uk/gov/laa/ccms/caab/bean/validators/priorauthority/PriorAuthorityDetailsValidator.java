@@ -53,7 +53,7 @@ public class PriorAuthorityDetailsValidator extends AbstractValidator {
     validateRequiredField("summary", priorAuthorityDetails.getSummary(), "Summary", errors);
 
     validateRequiredField(
-        "justification", priorAuthorityDetails.getSummary(), "Justification", errors);
+        "justification", priorAuthorityDetails.getJustification(), "Justification", errors);
 
     if (priorAuthorityDetails.isValueRequired()) {
       validateRequiredField(
