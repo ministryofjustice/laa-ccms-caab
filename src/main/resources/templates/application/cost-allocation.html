@@ -45,9 +45,12 @@
                             <td class="govuk-table__cell" th:text="${case.providerDetails.provider.displayValue}"/>
                             <td class="govuk-table__cell " th:text="#{caseCosts.provider}"/>
                             <td class="govuk-table__cell"></td>
-                            <td class="govuk-table__cell govuk-table__header"
-                                th:classappend="${#fields.hasErrors('grantedCostLimitation')} ? ' govuk-form-group--error'"
-                                th:text="'£ ' + ${costDetails.totalRemaining}"></td>
+                            <td class="govuk-table__cell" >
+                                <div class="govuk-form-group"
+                                     th:classappend="${#fields.hasErrors('grantedCostLimitation')} ? 'govuk-form-group--error govuk-!-font-weight-bold' : ''"
+                                th:text="'£ ' + ${costDetails.totalRemaining}" >
+                                </div>
+                            </td>
                             <td class="govuk-table__cell"></td>
                         </tr>
 
