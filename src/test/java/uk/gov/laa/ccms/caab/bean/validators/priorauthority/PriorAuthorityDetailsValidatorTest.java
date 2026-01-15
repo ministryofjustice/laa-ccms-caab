@@ -107,4 +107,16 @@ class PriorAuthorityDetailsValidatorTest {
 
     assertTrue(errors.hasFieldErrors("dynamicOptions[intKey].fieldValue"));
   }
+
+  @Test
+  public void validate_whenJustificationMissingButSummaryPresent_HasJustificationErrorOnly() {
+    priorAuthorityDetailsFormData.setSummary("Some summary");
+    priorAuthorityDetailsFormData.setJustification(null);
+    priorAuthorityDetailsFormData.setValueRequired(false);
+
+    priorAuthorityDetailsValidator.validate(priorAuthorityDetailsFormData, errors);
+
+    assertTrue(errors.hasFieldErrors("justification"));
+    assertFalse(errors.hasFieldErrors("summary"));
+  }
 }
