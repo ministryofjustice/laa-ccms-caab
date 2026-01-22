@@ -1,5 +1,5 @@
 
-[![Ministry of Justice Repository Compliance Badge](https://github-community.service.justice.gov.uk/repository-standards/api/laa-spring-boot-common/badge)](https://github-community.service.justice.gov.uk/repository-standards/laa-spring-boot-common)
+[![Ministry of Justice Repository Compliance Badge](https://github-community.service.justice.gov.uk/repository-standards/api/laa-ccms-caab/badge)](https://github-community.service.justice.gov.uk/repository-standards/laa-ccms-caab)
 
 # laa-ccms-caab-ui
 
