@@ -60,7 +60,7 @@ dependencies {
 			because("Fixes CVE-2025-48924."
 					+ "Parent: org.springframework.boot:spring-boot-dependencies:3.5.3")
 		}
-
+        
 		// Test dependencies
 		testImplementation('org.apache.commons:commons-compress:1.27.1') {
 			because("Fixes CVE-2024-25710, CVE-2024-26308."

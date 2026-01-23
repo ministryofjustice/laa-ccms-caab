@@ -1,3 +1,6 @@
+
+[![Ministry of Justice Repository Compliance Badge](https://github-community.service.justice.gov.uk/repository-standards/api/laa-ccms-caab/badge)](https://github-community.service.justice.gov.uk/repository-standards/laa-ccms-caab)
+
 # laa-ccms-caab-ui
 
 ## How to run this application:
@@ -469,3 +472,6 @@ docker-compose --compatibility -p laa-ccms-caab-development up -d laa-ccms-caab-
 
 This instance is already setup to scrape the `/actuator/prometheus` endpoint of the various CAAB
 services. To access the local Prometheus instance, visit http://localhost:9090.
+
+## Contributing
+Follow the [contribution guide](./CONTRIBUTING.md) to make code changes.
