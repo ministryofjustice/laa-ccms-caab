@@ -60,7 +60,7 @@ dependencies {
 			because("Fixes CVE-2025-48924."
 					+ "Parent: org.springframework.boot:spring-boot-dependencies:3.5.3")
 		}
-        implementation('ch.qos.logback:logback-core:1.5.25') {
+        implementation('ch.qos.logback:logback-core:1.5.20') {
             because("Fixes CVE-2026-1225."
                     + "Parent: org.springframework.boot:spring-boot-starter-thymeleaf:3.5.7")
         }
