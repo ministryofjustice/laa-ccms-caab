@@ -40,20 +40,26 @@ public class AllocateCostLimitValidator extends AbstractValidator {
       BigDecimal requestedCost = requestedCosts.get(i);
       BigDecimal amountBilled = amountsBilled.get(i);
       // Is the entered cost less than the amount already billed
-      if (requestedCost.compareTo(amountBilled) < 0) {
-        errors.rejectValue(
-            "costEntries[" + i + "].requestedCosts",
-            "costCostAllocation.requestedAmount.belowBilledAmount");
-      } else {
-        total = total.add(requestedCost);
-      }
-      // Is the number smaller than the max limit (99999999.99)
-      validateNumericLimit(
-          "costEntries[" + i + "].requestedCosts",
-          String.valueOf(requestedCost),
-          "Requested cost limitation",
-          MAX_COST_LIMIT,
-          errors);
+
+        if (requestedCost == null) {
+            errors.rejectValue("costEntries[" + i + "].requestedCosts", "costCostAllocation.requestedAmount.nullAmount");
+            requestedCost = BigDecimal.ZERO;
+        } else {
+            if (requestedCost.compareTo(amountBilled) < 0) {
+                errors.rejectValue(
+                        "costEntries[" + i + "].requestedCosts",
+                        "costCostAllocation.requestedAmount.belowBilledAmount");
+            } else {
+                total = total.add(requestedCost);
+            }
+            // Is the number smaller than the max limit (99999999.99)
+            validateNumericLimit(
+                    "costEntries[" + i + "].requestedCosts",
+                    String.valueOf(requestedCost),
+                    "Requested cost limitation",
+                    MAX_COST_LIMIT,
+                    errors);
+        }
     }
     if (!errors.hasErrors()) {
       BigDecimal remaining = allocateCostsFormData.getGrantedCostLimitation().subtract(total);
