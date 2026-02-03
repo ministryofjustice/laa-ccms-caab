@@ -94,18 +94,18 @@ public class AllocateCostLimitController {
 
   /** Calculates the total requests costs by the granted cost limitation. */
   private BigDecimal getTotalRemaining(AllocateCostsFormData allocateCostsFormData) {
-      if (allocateCostsFormData.getCostEntries() == null ||
-              allocateCostsFormData.getGrantedCostLimitation() == null
-      ) {
-          return BigDecimal.ZERO;
-      }
+    if (allocateCostsFormData.getCostEntries() == null
+        || allocateCostsFormData.getGrantedCostLimitation() == null) {
+      return BigDecimal.ZERO;
+    }
 
-      BigDecimal sum = allocateCostsFormData.getCostEntries().stream()
-              .distinct()
-              .map(CostEntryDetail::getRequestedCosts)
-              .map(x -> x == null ? BigDecimal.ZERO : x)
-              .reduce(BigDecimal.ZERO, BigDecimal::add);
+    BigDecimal sum =
+        allocateCostsFormData.getCostEntries().stream()
+            .distinct()
+            .map(CostEntryDetail::getRequestedCosts)
+            .map(x -> x == null ? BigDecimal.ZERO : x)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-      return allocateCostsFormData.getGrantedCostLimitation().subtract(sum);
+    return allocateCostsFormData.getGrantedCostLimitation().subtract(sum);
   }
 }
