@@ -61,6 +61,10 @@ public class AllocateCostLimitValidator extends AbstractValidator {
             "Requested cost limitation",
             MAX_COST_LIMIT,
             errors);
+
+        // Does the number have a maximum of 2 Decimal Places
+        validateNumberAllowed2dp(
+            "costEntries[" + i + "].requestedCosts", String.valueOf(requestedCost), errors);
       }
     }
     if (!errors.hasErrors()) {
