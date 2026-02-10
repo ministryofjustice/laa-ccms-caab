@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.bean.validators;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CURRENCY_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.FIRST_CHARACTER_MUST_BE_ALPHA;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.INTERNATIONAL_POSTCODE;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.MONETARY_INPUT_2DP;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NUMERIC_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.TELEPHONE_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.UK_POSTCODE;
@@ -53,6 +54,9 @@ public abstract class AbstractValidator implements Validator {
 
   protected static final String GENERIC_DOUBLE_SPACES =
       "Your input for '%s' contains double spaces. Please amend your entry.";
+
+  protected static final String GENERIC_DECIMAL_PLACES =
+      "Your input for '%s' cannot contain more than %s decimal places. Please amend your entry.";
 
   protected void validateRequiredField(
       final String field, final String fieldValue, final String displayValue, Errors errors) {
@@ -107,6 +111,17 @@ public abstract class AbstractValidator implements Validator {
     } catch (final NumberFormatException e) {
       errors.rejectValue(
           field, "invalid.numeric", GENERIC_NUMERIC_REQUIRED.formatted(displayValue));
+    }
+  }
+
+  protected void validateNumberAllowed2dp(
+      final String field, final String fieldValue, Errors errors) {
+
+    if (!fieldValue.matches(MONETARY_INPUT_2DP)) {
+      errors.rejectValue(
+          field,
+          "invalid.decimal.places",
+          GENERIC_DECIMAL_PLACES.formatted("Provider Cost Breakdown", 2));
     }
   }
 
