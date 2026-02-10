@@ -3,7 +3,7 @@ package uk.gov.laa.ccms.caab.bean.validators;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CURRENCY_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.FIRST_CHARACTER_MUST_BE_ALPHA;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.INTERNATIONAL_POSTCODE;
-import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.MONETRY_INPUT_2DP;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.MONETARY_INPUT_2DP;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NUMERIC_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.TELEPHONE_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.UK_POSTCODE;
@@ -117,7 +117,7 @@ public abstract class AbstractValidator implements Validator {
   protected void validateNumberAllowed2dp(
       final String field, final String fieldValue, Errors errors) {
 
-    if (!fieldValue.matches(MONETRY_INPUT_2DP)) {
+    if (!fieldValue.matches(MONETARY_INPUT_2DP)) {
       errors.rejectValue(
           field,
           "invalid.decimal.places",

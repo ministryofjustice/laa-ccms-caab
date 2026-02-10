@@ -10,8 +10,8 @@ public class ValidationPatternConstants {
   /** Validation pattern to check for numerical values. */
   public static final String NUMERIC_PATTERN = "[0-9]+";
 
-  // DValidation pattern to check for number have a maximum of 2 Decimal Places
-  public static final String MONETRY_INPUT_2DP = "[0-9]+(\\.[0-9][0-9]?)?";
+  // Validation pattern to check for number have a maximum of 2 Decimal Places
+  public static final String MONETARY_INPUT_2DP = "[0-9]+(\\.[0-9][0-9]?)?";
 
   /** Validation pattern to check for currency values. */
   public static final String CURRENCY_PATTERN = "[0-9]+(.[0-9]{1,2})?";
