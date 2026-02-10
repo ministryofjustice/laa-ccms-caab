@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.bean.validators.costs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
@@ -15,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
+import org.springframework.validation.FieldError;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
@@ -116,5 +118,38 @@ public class AllocateCostLimitValidatorTest {
           "costCostAllocation.requestedAmount.belowBilledAmount",
           errors.getFieldError("costEntries[0].requestedCosts").getCode());
     }
+
+      @Test
+      @DisplayName("Should accept number with 2 decimals places")
+      void shouldValidateNumberAllowed2dp() {
+          allocateCostsFormData.getCostEntries().getFirst().setRequestedCosts(new BigDecimal("9995.12"));
+          allocateCostsFormData.setGrantedCostLimitation(new BigDecimal("999999"));
+          allocateCostsFormData.setCurrentProviderBilledAmount(new BigDecimal("2"));
+          allocateCostLimitValidator.validate(allocateCostsFormData, errors);
+
+          boolean hasErrors = errors.hasErrors();
+          assertFalse(hasErrors);
+
+          FieldError fieldError = errors.getFieldError("costEntries[0].requestedCosts");
+          assertNull(fieldError);
+      }
+
+      @Test
+      @DisplayName("Should not accept number with decimals places more than 2")
+      void shouldNotValidateNumberAllowed2dp() {
+          allocateCostsFormData.getCostEntries().getFirst().setRequestedCosts(new BigDecimal("9998.123"));
+          allocateCostsFormData.setGrantedCostLimitation(new BigDecimal("9999"));
+          allocateCostsFormData.setCurrentProviderBilledAmount(new BigDecimal("2"));
+          allocateCostLimitValidator.validate(allocateCostsFormData, errors);
+
+          boolean hasErrors = errors.hasErrors();
+          assertTrue(errors.hasErrors());
+
+          FieldError fieldError = errors.getFieldError("costEntries[0].requestedCosts");
+          assertNotNull(fieldError);
+
+          String errorCode = errors.getFieldError("costEntries[0].requestedCosts").getCode();
+          assertEquals("invalid.decimal.places", errorCode);
+      }
   }
 }
