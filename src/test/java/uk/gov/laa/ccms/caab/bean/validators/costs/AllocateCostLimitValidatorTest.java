@@ -119,37 +119,43 @@ public class AllocateCostLimitValidatorTest {
           errors.getFieldError("costEntries[0].requestedCosts").getCode());
     }
 
-      @Test
-      @DisplayName("Should accept number with 2 decimals places")
-      void shouldValidateNumberAllowed2dp() {
-          allocateCostsFormData.getCostEntries().getFirst().setRequestedCosts(new BigDecimal("9995.12"));
-          allocateCostsFormData.setGrantedCostLimitation(new BigDecimal("999999"));
-          allocateCostsFormData.setCurrentProviderBilledAmount(new BigDecimal("2"));
-          allocateCostLimitValidator.validate(allocateCostsFormData, errors);
+    @Test
+    @DisplayName("Should accept number with 2 decimals places")
+    void shouldValidateNumberAllowed2dp() {
+      allocateCostsFormData
+          .getCostEntries()
+          .getFirst()
+          .setRequestedCosts(new BigDecimal("9995.12"));
+      allocateCostsFormData.setGrantedCostLimitation(new BigDecimal("999999"));
+      allocateCostsFormData.setCurrentProviderBilledAmount(new BigDecimal("2"));
+      allocateCostLimitValidator.validate(allocateCostsFormData, errors);
 
-          boolean hasErrors = errors.hasErrors();
-          assertFalse(hasErrors);
+      boolean hasErrors = errors.hasErrors();
+      assertFalse(hasErrors);
 
-          FieldError fieldError = errors.getFieldError("costEntries[0].requestedCosts");
-          assertNull(fieldError);
-      }
+      FieldError fieldError = errors.getFieldError("costEntries[0].requestedCosts");
+      assertNull(fieldError);
+    }
 
-      @Test
-      @DisplayName("Should not accept number with decimals places more than 2")
-      void shouldNotValidateNumberAllowed2dp() {
-          allocateCostsFormData.getCostEntries().getFirst().setRequestedCosts(new BigDecimal("9998.123"));
-          allocateCostsFormData.setGrantedCostLimitation(new BigDecimal("9999"));
-          allocateCostsFormData.setCurrentProviderBilledAmount(new BigDecimal("2"));
-          allocateCostLimitValidator.validate(allocateCostsFormData, errors);
+    @Test
+    @DisplayName("Should not accept number with decimals places more than 2")
+    void shouldNotValidateNumberAllowed2dp() {
+      allocateCostsFormData
+          .getCostEntries()
+          .getFirst()
+          .setRequestedCosts(new BigDecimal("9998.123"));
+      allocateCostsFormData.setGrantedCostLimitation(new BigDecimal("9999"));
+      allocateCostsFormData.setCurrentProviderBilledAmount(new BigDecimal("2"));
+      allocateCostLimitValidator.validate(allocateCostsFormData, errors);
 
-          boolean hasErrors = errors.hasErrors();
-          assertTrue(errors.hasErrors());
+      boolean hasErrors = errors.hasErrors();
+      assertTrue(errors.hasErrors());
 
-          FieldError fieldError = errors.getFieldError("costEntries[0].requestedCosts");
-          assertNotNull(fieldError);
+      FieldError fieldError = errors.getFieldError("costEntries[0].requestedCosts");
+      assertNotNull(fieldError);
 
-          String errorCode = errors.getFieldError("costEntries[0].requestedCosts").getCode();
-          assertEquals("invalid.decimal.places", errorCode);
-      }
+      String errorCode = errors.getFieldError("costEntries[0].requestedCosts").getCode();
+      assertEquals("invalid.decimal.places", errorCode);
+    }
   }
 }
