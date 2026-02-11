@@ -106,7 +106,7 @@ public class AllocateCostLimitController {
             .map(CostEntryDetail::getRequestedCosts)
             .map(x -> x == null ? BigDecimal.ZERO : x)
             .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .setScale(2, RoundingMode.HALF_UP);
+            .setScale(2, RoundingMode.HALF_UP);
 
     return allocateCostsFormData.getGrantedCostLimitation().subtract(sum);
   }
