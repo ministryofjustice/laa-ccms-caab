@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.controller.application;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -104,7 +105,8 @@ public class AllocateCostLimitController {
             .distinct()
             .map(CostEntryDetail::getRequestedCosts)
             .map(x -> x == null ? BigDecimal.ZERO : x)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+            .reduce(BigDecimal.ZERO, BigDecimal::add)
+            .setScale(2, RoundingMode.HALF_UP);
 
     return allocateCostsFormData.getGrantedCostLimitation().subtract(sum);
   }

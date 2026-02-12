@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.bean.costs;
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.Data;
+import org.springframework.format.annotation.NumberFormat;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 
 /** Represents form data for allocate costs. */
@@ -17,6 +18,7 @@ public class AllocateCostsFormData {
 
   private List<CostEntryDetail> costEntries;
 
+  @NumberFormat(pattern = "#.00")
   private BigDecimal totalRemaining;
 
   private BigDecimal currentProviderBilledAmount;
