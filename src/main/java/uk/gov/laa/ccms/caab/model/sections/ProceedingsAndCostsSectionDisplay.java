@@ -22,6 +22,9 @@ public class ProceedingsAndCostsSectionDisplay extends ApplicationSectionStatusD
   /** The granted cost limitation value. */
   private BigDecimal grantedCostLimitation;
 
+  /** The default cost limitation value. */
+  private BigDecimal defaultCostLimitation;
+
   /** The list of proceedings for the application. */
   private List<ProceedingSectionDisplay> proceedings;
 }

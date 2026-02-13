@@ -602,6 +602,32 @@ class CaseControllerTest {
     }
 
     @Test
+    @DisplayName("Should return view and model for case cost details")
+    void caseCostDetailsReturnsViewAndModel() {
+      ApplicationDetail ebsCase = new ApplicationDetail();
+      ApplicationSectionDisplay display = ApplicationSectionDisplay.builder().build();
+      when(applicationService.getCaseDetailsDisplay(ebsCase)).thenReturn(display);
+
+      assertThat(mockMvc.perform(get("/case/details/costs").sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/case-cost-details")
+          .model()
+          .containsEntry("summary", display);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when case details missing for case cost details")
+    void caseCostDetailsThrowsExceptionWhenCaseDetailsMissing() {
+      ApplicationDetail ebsCase = new ApplicationDetail();
+      when(applicationService.getCaseDetailsDisplay(ebsCase)).thenReturn(null);
+
+      assertThat(mockMvc.perform(get("/case/details/costs").sessionAttr(CASE, ebsCase)))
+          .failure()
+          .hasCauseInstanceOf(CaabApplicationException.class)
+          .hasMessageContaining("Failed to retrieve case details");
+    }
+
+    @Test
     @DisplayName("Should throw exception when case details missing")
     void caseDetailsThrowsExceptionWhenCaseDetailsMissing() {
       ApplicationDetail ebsCase = new ApplicationDetail();
