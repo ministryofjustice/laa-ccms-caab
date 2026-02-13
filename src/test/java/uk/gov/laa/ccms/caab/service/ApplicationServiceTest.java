@@ -1834,6 +1834,79 @@ class ApplicationServiceTest {
         () -> applicationService.getCase(caseRef, providerId, userName));
   }
 
+  @Test
+  @DisplayName("getCaseDetailsDisplay should apply cost limitation logic")
+  void shouldReturnCaseDetailsDisplay_AppliesCostLimitationLogic() {
+    // Given
+    ApplicationDetail application = buildFullApplicationDetail();
+    // buildFullApplicationDetail has one proceeding with 1000.00 cost limit.
+    // Default in costs is 2000.00.
+
+    // Let's modify it to trigger a change
+    application.getProceedings().get(0).setCostLimitation(new BigDecimal("2500.00"));
+    // currentDefault(2000) != currentRequested(1500). So costManuallyChanged = true.
+    // requested stays 1500.00.
+    // default becomes 2500.00.
+
+    RelationshipToCaseLookupDetail relLookup = new RelationshipToCaseLookupDetail();
+    relLookup.setContent(Collections.emptyList());
+
+    CommonLookupDetail commonLookup = new CommonLookupDetail();
+    commonLookup.setContent(Collections.emptyList());
+
+    when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.just(relLookup));
+    when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.just(relLookup));
+    when(lookupService.getCommonValues(anyString())).thenReturn(Mono.just(commonLookup));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_CASE_ADDRESS_OPTION), anyString()))
+        .thenReturn(Mono.just(Optional.of(new CommonLookupValueDetail().description("method"))));
+
+    // When
+    ApplicationSectionDisplay result = applicationService.getCaseDetailsDisplay(application);
+
+    // Then
+    assertNotNull(result);
+    assertThat(result.getProceedingsAndCosts().getDefaultCostLimitation())
+        .isEqualTo(new BigDecimal("2500.00"));
+    assertThat(result.getProceedingsAndCosts().getRequestedCostLimitation())
+        .isEqualTo(new BigDecimal("1500.00"));
+  }
+
+  @Test
+  @DisplayName(
+      "getCaseDetailsDisplay should return fallback default cost limitation when proceeding amounts are zero")
+  void shouldReturnCaseDetailsDisplay_DefaultCostLimitationShouldNotBeZeroWhenAmountsArePresent() {
+    // Given
+    ApplicationDetail application = buildFullApplicationDetail();
+    // User scenario: granted amount is 2250, requested amount is 2250, but default is returning 0.00
+    application.getCosts().setGrantedCostLimitation(new BigDecimal("2250.00"));
+    application.getCosts().setRequestedCostLimitation(new BigDecimal("2250.00"));
+
+    // Force proceedings to have null or zero cost limitations
+    application.getProceedings().get(0).setCostLimitation(BigDecimal.ZERO);
+
+    RelationshipToCaseLookupDetail relLookup = new RelationshipToCaseLookupDetail();
+    relLookup.setContent(Collections.emptyList());
+
+    CommonLookupDetail commonLookup = new CommonLookupDetail();
+    commonLookup.setContent(Collections.emptyList());
+
+    when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.just(relLookup));
+    when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.just(relLookup));
+    when(lookupService.getCommonValues(anyString())).thenReturn(Mono.just(commonLookup));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_CASE_ADDRESS_OPTION), anyString()))
+        .thenReturn(Mono.just(Optional.of(new CommonLookupValueDetail().description("method"))));
+
+    // When
+    ApplicationSectionDisplay result = applicationService.getCaseDetailsDisplay(application);
+
+    // Then
+    assertNotNull(result);
+    assertThat(result.getProceedingsAndCosts().getDefaultCostLimitation())
+        .isGreaterThan(BigDecimal.ZERO);
+    assertThat(result.getProceedingsAndCosts().getDefaultCostLimitation())
+        .isEqualTo(new BigDecimal("2250.00"));
+  }
+
   private static ApplicationDetail getApplicationDetail() {
     ApplicationDetail application = new ApplicationDetail();
     application.setAmendment(false);

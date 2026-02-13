@@ -280,6 +280,7 @@ public class ApplicationSectionsBuilder {
     if (costs != null) {
       proceedingsSection.setGrantedCostLimitation(costs.getGrantedCostLimitation());
       proceedingsSection.setRequestedCostLimitation(costs.getRequestedCostLimitation());
+      proceedingsSection.setDefaultCostLimitation(costs.getDefaultCostLimitation());
 
       checkAndSetLastSaved(proceedingsSection, costs.getAuditTrail());
     }

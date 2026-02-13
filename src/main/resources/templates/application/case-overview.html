@@ -145,7 +145,7 @@
             <th scope="col" class="govuk-table__header"
                 th:text="#{case.overview.costs.title}"/>
             <th scope="col" class="govuk-table__header"
-                th:text="${(case.status.displayValue == 'Submitted' || isAmendment)
+                th:text="${(case.status.displayValue == 'Submitted' || isAmendment || hasEbsAmendments)
                 ? #messages.msg('case.overview.costs.requestedAmount')
                 : #messages.msg('case.overview.costs.grantedAmount')}"/>
           </tr>
@@ -153,13 +153,14 @@
           <tbody class="govuk-table__body">
           <tr class="govuk-table__row">
             <td class="govuk-table__cell"
-                th:text="${(case.status.displayValue == 'Submitted'|| (hasEbsAmendments && !isAmendment))
+                th:text="${(case.status.displayValue == 'Submitted' || isAmendment || hasEbsAmendments)
                 ? #messages.msg('case.overview.costs.costLimitation')
                 : #messages.msg('case.overview.costs.caseCostLimitation')}"/>
             <td class="govuk-table__cell"
-                th:text="${(hasEbsAmendments || isAmendment)
-                ? (draftCosts != null ? #numbers.formatCurrency(draftCosts.requestedCostLimitation) : #numbers.formatCurrency(0))
-                : #numbers.formatCurrency(case.costs.requestedCostLimitation)}"/>
+                th:text="${isAmendment ? (draftCosts != null ? #numbers.formatCurrency(draftCosts.requestedCostLimitation) : #numbers.formatCurrency(0)) : 
+                ((case.status.displayValue == 'Submitted' || hasEbsAmendments) ? 
+                (case.costs != null ? #numbers.formatCurrency(case.costs.requestedCostLimitation) : #numbers.formatCurrency(0)) : 
+                (case.costs != null ? #numbers.formatCurrency(case.costs.grantedCostLimitation) : #numbers.formatCurrency(0)))}"/>
           </tr>
           </tbody>
         </table>
@@ -177,7 +178,7 @@
                       <th scope="col" class="govuk-table__header"
                           th:text="#{case.overview.availableActions.table.action}"></th>
                       <th scope="col" class="govuk-table__header"
-                          th:text="#{case.overview.availableActions.table.action}"></th>
+                          th:text="#{case.overview.availableActions.table.description}"></th>
                   </tr>
                   </thead>
                   <tbody class="govuk-table__body">
