@@ -44,8 +44,16 @@ dependencies {
 	constraints {
 // 		// Example
 //		implementation('group:name:version') {
-//			because("Fixes CVE-XXXX-XXXXX Parent: parent-group:parent-name")
+//			because('Fixes CVE-XXXX-XXXXX Parent: parent-group:parent-name')
 //		}
+
+		implementation('org.bouncycastle:bcprov-jdk18on:1.83') {
+			because('Fixes multiple CVEs Parent: org.opensaml:opensaml-saml-api')
+		}
+
+		implementation('org.bouncycastle:bcpkix-jdk18on:1.83') {
+			because('Fixes multiple CVEs Parent: org.opensaml:opensaml-saml-api')
+		}
 
 		implementation "org.opensaml:opensaml-saml-api:5.1.3"
 		implementation "org.opensaml:opensaml-saml-impl:5.1.3"
