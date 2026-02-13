@@ -22,6 +22,8 @@ jobs:
       contents: write
       packages: write
     with:
+      java_version: '25'
+      java_distribution: 'corretto'
       build_command: 'assemble'
       publish_package: 'false'
       junit_results: 'false'
@@ -38,6 +40,8 @@ jobs:
       contents: read
       id-token: write
     with:
+      java_version: '25'
+      java_distribution: 'corretto'
       image_version: ${{ format('{0}-{1}', vars.IMAGE_PREFIX, needs.assemble.outputs.published_artifact_version) }}
     secrets:
       gh_token: ${{ secrets.GITHUB_TOKEN }}
