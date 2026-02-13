@@ -3,7 +3,6 @@ package uk.gov.laa.ccms.caab.client;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-//import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
 
 import io.awspring.cloud.s3.S3Resource;
 import io.awspring.cloud.s3.S3Template;
@@ -22,9 +21,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
 
@@ -59,8 +58,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
     registry.add(
-        "spring.cloud.aws.s3.endpoint",
-        () -> localstackContainer.getEndpoint().toString());
+        "spring.cloud.aws.s3.endpoint", () -> localstackContainer.getEndpoint().toString());
     registry.add("laa.ccms.s3.buckets.document-bucket.name", () -> BUCKET_NAME);
   }
 
