@@ -3,7 +3,7 @@ package uk.gov.laa.ccms.caab.client;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
+//import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
 
 import io.awspring.cloud.s3.S3Resource;
 import io.awspring.cloud.s3.S3Template;
@@ -22,7 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -37,7 +37,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   @Container
   static LocalStackContainer localstackContainer =
       new LocalStackContainer(DockerImageName.parse("localstack/localstack:s3-latest"))
-          .withServices(LocalStackContainer.Service.S3);
+          .withServices("s3");
 
   @Autowired private S3ApiClient s3ApiClient;
 
@@ -60,7 +60,7 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   static void properties(DynamicPropertyRegistry registry) {
     registry.add(
         "spring.cloud.aws.s3.endpoint",
-        () -> localstackContainer.getEndpointOverride(S3).toString());
+        () -> localstackContainer.getEndpoint().toString());
     registry.add("laa.ccms.s3.buckets.document-bucket.name", () -> BUCKET_NAME);
   }
 
