@@ -12,12 +12,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.servlet.ModelAndView;
 import uk.gov.laa.ccms.caab.constants.SessionConstants;
 import uk.gov.laa.ccms.data.model.UserDetails;
 
-@ExtendWith(SpringExtension.class)
+@ExtendWith(MockitoExtension.class)
 public class FeatureDisabledExceptionHandlerTest {
 
   FeatureDisabledExceptionHandler exceptionHandler;
@@ -68,12 +68,6 @@ public class FeatureDisabledExceptionHandlerTest {
   void resolveExceptionIgnoresOtherExceptions() {
 
     HttpServletRequest request = mock(HttpServletRequest.class);
-    HttpSession session = mock(HttpSession.class);
-
-    UserDetails userDetails = new UserDetails();
-
-    when(request.getSession()).thenReturn(session);
-    when(session.getAttribute(SessionConstants.USER_DETAILS)).thenReturn(userDetails);
 
     ModelAndView modelAndView =
         exceptionHandler.resolveException(

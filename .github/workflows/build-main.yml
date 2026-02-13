@@ -20,6 +20,8 @@ jobs:
       contents: write
       packages: write
     with:
+      java_version: '25'
+      java_distribution: 'corretto'
       integration_test_task: "integrationTest"
       create_tag: 'true'
       github_bot_username: 'laa-ccms-caab-service'

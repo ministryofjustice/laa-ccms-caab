@@ -33,15 +33,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.ui.Model;
 import org.springframework.validation.Errors;
-import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
@@ -66,9 +62,7 @@ import uk.gov.laa.ccms.data.model.ProviderRequestTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderRequestTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration
-@WebAppConfiguration
+@ExtendWith(MockitoExtension.class)
 class ProviderRequestsControllerTest {
 
   private MockMvc mockMvc;
@@ -90,8 +84,6 @@ class ProviderRequestsControllerTest {
   @Mock private Model model;
 
   @InjectMocks private ProviderRequestsController providerRequestsController;
-
-  @Autowired private WebApplicationContext webApplicationContext;
 
   @BeforeEach
   public void setup() {
@@ -180,8 +172,6 @@ class ProviderRequestsControllerTest {
         new ProviderRequestTypeFormData();
 
     doAnswer(invocation -> null).when(providerRequestTypeValidator).validate(any(), any());
-    when(lookupService.getProviderRequestTypes(eq(false), isNull()))
-        .thenReturn(Mono.just(new ProviderRequestTypeLookupDetail()));
 
     mockMvc
         .perform(
@@ -567,8 +557,6 @@ class ProviderRequestsControllerTest {
 
     when(lookupService.getProviderRequestTypes(null, "testType"))
         .thenReturn(Mono.just(lookupDetail));
-    when(evidenceService.getEvidenceDocumentsForApplicationOrOutcome(any(), eq(CcmsModule.REQUEST)))
-        .thenReturn(Mono.just(new EvidenceDocumentDetails()));
 
     doThrow(new AvScanException("Virus detected"))
         .when(avScanService)

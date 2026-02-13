@@ -42,6 +42,8 @@ jobs:
       contents: write
       packages: write
     with:
+      java_version: '25'
+      java_distribution: 'corretto'
       integration_test_task: "integrationTest"
       publish_package: 'false'
       override_version: ${{ needs.define-feature-version.outputs.feature_version }}
@@ -56,6 +58,8 @@ jobs:
       contents: read
       id-token: write
     with:
+      java_version: '25'
+      java_distribution: 'corretto'
       image_version: ${{ format('{0}-{1}', vars.IMAGE_PREFIX, needs.build.outputs.published_artifact_version) }}
     secrets:
       gh_token: ${{ secrets.GITHUB_TOKEN }}
