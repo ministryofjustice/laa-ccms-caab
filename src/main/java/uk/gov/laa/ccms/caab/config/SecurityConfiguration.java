@@ -131,7 +131,7 @@ public class SecurityConfiguration {
       Saml2AssertionAuthentication authentication =
           (Saml2AssertionAuthentication) delegate.convert(responseToken);
 
-      Saml2ResponseAssertionAccessor accessor = authentication.getCredentials();;
+      Saml2ResponseAssertionAccessor accessor = authentication.getCredentials();
 
       Map<String, List<Object>> attributes = accessor.getAttributes();
 
@@ -147,13 +147,15 @@ public class SecurityConfiguration {
       }
       String principal = authentication.getName();
       authorities.addAll(getUserFunctions(principal));
-      return new Saml2AssertionAuthentication(principal, authentication.getCredentials(),
-          authorities, authentication.getRelyingPartyRegistrationId());
+      return new Saml2AssertionAuthentication(
+          principal,
+          authentication.getCredentials(),
+          authorities,
+          authentication.getRelyingPartyRegistrationId());
     };
   }
 
-  private Collection<? extends GrantedAuthority> getUserFunctions(
-      String principal) {
+  private Collection<? extends GrantedAuthority> getUserFunctions(String principal) {
     return userService
         .getUser(principal)
         .blockOptional()

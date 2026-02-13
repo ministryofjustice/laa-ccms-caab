@@ -50,8 +50,7 @@ public class SamlPrincipalControllerAdvice {
       }
 
       model.addAttribute("user", user);
-      model.addAttribute(
-          "userAttributes", saml2Authentication.getCredentials().getAttributes());
+      model.addAttribute("userAttributes", saml2Authentication.getCredentials().getAttributes());
 
       session.setAttribute("user", user);
     }
