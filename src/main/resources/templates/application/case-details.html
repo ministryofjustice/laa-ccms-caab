@@ -233,11 +233,11 @@
                 th:text="#{caseDetails.costs.granted}"/>
             <dd class="govuk-summary-list__value"
                 id="costs-granted-amount-value"
-                th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)}"/>
+                 th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)}"/>
             <dd class="govuk-summary-list__actions">
               <a class="govuk-link govuk-link--no-visited-state"
                  id="case-cost-limitation-link"
-                 href="#">
+                 th:href="@{/case/details/costs}">
                 <th:block th:text="#{site.view}"/>
                 <span class="govuk-visually-hidden"
                       th:with="content=#{caseDetails.costs.limitation}"
