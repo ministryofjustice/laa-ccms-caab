@@ -2,8 +2,8 @@ package uk.gov.laa.ccms.caab.advice;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.saml2.provider.service.authentication.Saml2AuthenticatedPrincipal;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.saml2.provider.service.authentication.Saml2AssertionAuthentication;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -23,25 +23,25 @@ public class SamlPrincipalControllerAdvice {
   /**
    * Adds the SAML authenticated principal and user details to the model.
    *
-   * @param principal The SAML2 authenticated principal representing the authenticated user.
+   * @param authentication The authenticated principal representing the authenticated user.
    * @param model The Model object to which attributes will be added.
    * @param session The HttpSession to store and retrieve user details.
    */
   @ModelAttribute
   public void addSamlPrincipalToModel(
-      @AuthenticationPrincipal Saml2AuthenticatedPrincipal principal,
-      Model model,
-      HttpSession session) {
+      Authentication authentication, Model model, HttpSession session) {
 
-    if (principal != null) {
+    if (authentication instanceof Saml2AssertionAuthentication saml2Authentication) {
+
+      String loginId = saml2Authentication.getName();
 
       UserDetail user = new UserDetail();
-      user.setLoginId(principal.getName());
+      user.setLoginId(loginId);
 
       if (session.getAttribute("user") != null) {
         user = (UserDetail) session.getAttribute("user");
 
-        if (!user.getLoginId().equals(principal.getName())) {
+        if (!user.getLoginId().equals(loginId)) {
           user = userService.getUser(user.getLoginId()).block();
         }
 
@@ -50,7 +50,8 @@ public class SamlPrincipalControllerAdvice {
       }
 
       model.addAttribute("user", user);
-      model.addAttribute("userAttributes", principal.getAttributes());
+      model.addAttribute(
+          "userAttributes", saml2Authentication.getCredentials().getAttributes());
 
       session.setAttribute("user", user);
     }

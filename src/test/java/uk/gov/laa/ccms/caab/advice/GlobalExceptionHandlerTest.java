@@ -5,22 +5,24 @@ import static org.mockito.Mockito.verify;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.ServletRequestBindingException;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith(SpringExtension.class)
+@SpringBootTest(classes = {GlobalExceptionHandler.class})
 class GlobalExceptionHandlerTest {
 
-  @Mock private Model model;
+  @MockitoBean private Model model;
 
-  @Mock private HttpSession session;
+  @MockitoBean private HttpSession session;
 
-  @InjectMocks private GlobalExceptionHandler globalExceptionHandler;
+  @Autowired private GlobalExceptionHandler globalExceptionHandler;
 
   @Test
   void handleDataApiClientException() {

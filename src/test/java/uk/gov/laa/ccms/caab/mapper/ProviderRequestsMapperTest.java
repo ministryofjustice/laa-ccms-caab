@@ -19,7 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
@@ -32,7 +32,7 @@ import uk.gov.laa.ccms.data.model.ProviderRequestDataLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ProviderRequestTypeLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ProviderRequestAttribute;
 
-@ExtendWith(SpringExtension.class)
+@ExtendWith(MockitoExtension.class)
 class ProviderRequestsMapperTest {
 
   @Mock(answer = Answers.CALLS_REAL_METHODS)
@@ -421,9 +421,6 @@ class ProviderRequestsMapperTest {
 
     final MultipartFile mockFile = mock(MultipartFile.class);
     when(mockFile.getOriginalFilename()).thenReturn("testFile.pdf");
-    when(commonMapper.toFileBytes(mockFile)).thenReturn(new byte[] {1, 2, 3});
-    when(commonMapper.toBase64EncodedStringFromByteArray(new byte[] {1, 2, 3}))
-        .thenReturn("Base64String");
 
     formData.setFile(mockFile);
 

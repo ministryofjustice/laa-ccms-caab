@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
@@ -23,7 +23,7 @@ import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 
 @DisplayName("Cost allocation validator test")
-@ExtendWith(SpringExtension.class)
+@ExtendWith(MockitoExtension.class)
 public class AllocateCostLimitValidatorTest {
 
   @InjectMocks private AllocateCostLimitValidator allocateCostLimitValidator;
