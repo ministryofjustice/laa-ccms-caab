@@ -14,7 +14,8 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_POLL_COUNT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
-import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
+import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
 import jakarta.servlet.http.HttpSession;
@@ -56,7 +57,10 @@ class CaseSubmissionControllerTest {
 
   @BeforeEach
   void setUp() {
-    mockMvc = MockMvcBuilders.standaloneSetup(caseSubmissionController).build();
+    mockMvc =
+        MockMvcBuilders.standaloneSetup(caseSubmissionController)
+            .setConversionService(getConversionService())
+            .build();
 
     activeCase =
         ActiveCase.builder()
@@ -77,11 +81,30 @@ class CaseSubmissionControllerTest {
 
     mockMvc
         .perform(
-            get("/application/case-create")
+            get("/application/submit-case")
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
                 .sessionAttr(USER_DETAILS, userDetail))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/%s/confirmed".formatted(SUBMISSION_CREATE_CASE)));
+        .andExpect(redirectedUrl("/application/%s/confirmed".formatted(SUBMISSION_SUBMIT_CASE)));
+
+    verify(applicationService, times(1)).getCaseStatus(anyString());
+  }
+
+  @Test
+  @DisplayName("Test addCaseSubmission - Amendment confirmed")
+  void testAddCaseSubmission_AmendmentConfirmed() throws Exception {
+
+    final TransactionStatus mockStatus = new TransactionStatus();
+    mockStatus.setReferenceNumber("ref123");
+    when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
+
+    mockMvc
+        .perform(
+            get("/amendments/submit-case")
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
+                .sessionAttr(USER_DETAILS, userDetail))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/amendments/%s/confirmed".formatted(SUBMISSION_SUBMIT_CASE)));
 
     verify(applicationService, times(1)).getCaseStatus(anyString());
   }
@@ -94,7 +117,25 @@ class CaseSubmissionControllerTest {
 
     mockMvc
         .perform(
-            get("/application/case-create")
+            get("/application/submit-case")
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
+                .sessionAttr(USER_DETAILS, userDetail))
+        .andExpect(status().isOk())
+        .andExpect(view().name("submissions/submissionInProgress"));
+
+    verify(applicationService, times(1)).getCaseStatus(anyString());
+    verify(session, times(0)).removeAttribute(SUBMISSION_TRANSACTION_ID);
+  }
+
+  @Test
+  @DisplayName("Test addCaseSubmission - Amendment not confirmed, poll continues")
+  void testAddCaseSubmission_AmendmentNotConfirmed() throws Exception {
+    final TransactionStatus mockStatus = new TransactionStatus(); // No reference number set
+    when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
+
+    mockMvc
+        .perform(
+            get("/amendments/submit-case")
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
                 .sessionAttr(USER_DETAILS, userDetail))
         .andExpect(status().isOk())
@@ -108,9 +149,18 @@ class CaseSubmissionControllerTest {
   @DisplayName("Test clientUpdateSubmitted - Removes active case and redirects to home")
   void testClientUpdateSubmitted() throws Exception {
     mockMvc
-        .perform(post("/application/case-create/confirmed").sessionAttr(ACTIVE_CASE, activeCase))
+        .perform(post("/application/submit-case/confirmed").sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/home"));
+  }
+
+  @Test
+  @DisplayName("Test clientUpdateSubmitted - Removes active case and redirects to case overview")
+  void testCaseSubmittedRedirectToCaseOverview() throws Exception {
+    mockMvc
+        .perform(post("/amendments/submit-case/confirmed").sessionAttr(ACTIVE_CASE, activeCase))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/case/overview"));
   }
 
   @Test
@@ -133,7 +183,7 @@ class CaseSubmissionControllerTest {
 
     final String view = caseSubmissionController.viewIncludingPollCount(session);
 
-    assertEquals("redirect:/application/%s/failed".formatted(SUBMISSION_CREATE_CASE), view);
+    assertEquals("redirect:/application/%s/failed".formatted(SUBMISSION_SUBMIT_CASE), view);
   }
 
   @Test

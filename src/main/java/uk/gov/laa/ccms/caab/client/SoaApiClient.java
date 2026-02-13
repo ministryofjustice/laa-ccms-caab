@@ -196,6 +196,12 @@ public class SoaApiClient {
         .onErrorResume(e -> soaApiClientErrorHandler.handleApiCreateError(e, "Cases"));
   }
 
+  public Mono<CaseTransactionResponse> updateCase(
+      final String loginId, final String userType, final Object caseUpdate) {
+    // TODO: Complete when endpoint has been created from CCCMSPUI-692
+    return Mono.just(new CaseTransactionResponse().transactionId("123"));
+  }
+
   /**
    * Searches and retrieves organisation details based on provided search criteria.
    *
@@ -221,7 +227,6 @@ public class SoaApiClient {
         .ifPresent(postcode -> queryParams.add("postcode", postcode));
     Optional.ofNullable(page).ifPresent(param -> queryParams.add("page", String.valueOf(param)));
     Optional.ofNullable(size).ifPresent(param -> queryParams.add("size", String.valueOf(param)));
-
     return soaApiWebClient
         .get()
         .uri(builder -> builder.path("/organisations").queryParams(queryParams).build())
