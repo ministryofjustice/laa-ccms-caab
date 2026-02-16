@@ -75,7 +75,6 @@ public class CaseController {
     boolean isAmendment = applicationService.isAmendment(ebsCase, tdsApplication);
 
     setReturnDetails(model, notificationId, request);
-
     ApplicationDetail amendments = null;
     List<ProceedingDetail> draftProceedings = new ArrayList<>();
     CostStructureDetail draftCosts = null;
@@ -87,7 +86,7 @@ public class CaseController {
     }
     setProceedingDisplayStatuses(ebsCase, amendments);
 
-    List<AvailableAction> availableActions = getAvailableActions(ebsCase, isAmendment);
+    List<AvailableAction> availableActions = getAvailableActions(ebsCase, isAmendment, amendments);
     String returnSearchUrl = session.getAttribute(SEARCH_URL).toString();
 
     model.addAttribute("searchUrl", returnSearchUrl);
@@ -278,14 +277,14 @@ public class CaseController {
   }
 
   private static List<AvailableAction> getAvailableActions(
-      ApplicationDetail ebsCase, boolean amendment) {
+      ApplicationDetail ebsCase, boolean amendment, ApplicationDetail amendments) {
 
     if (ebsCase.getAvailableFunctions() == null || ebsCase.getAvailableFunctions().isEmpty()) {
       return Collections.emptyList();
     }
 
     Set<String> caseAvailableFunctions = Set.copyOf(ebsCase.getAvailableFunctions());
-    boolean openAmendment = amendment || hasEbsAmendments(ebsCase);
+    boolean openAmendment = amendment || (hasEbsAmendments(ebsCase) && amendments != null);
 
     return ActionViewHelper.getAllAvailableActions(openAmendment).stream()
         .filter(availableAction -> caseAvailableFunctions.contains(availableAction.actionCode()))
