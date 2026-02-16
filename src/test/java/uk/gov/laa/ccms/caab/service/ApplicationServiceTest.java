@@ -1877,7 +1877,8 @@ class ApplicationServiceTest {
   void shouldReturnCaseDetailsDisplay_DefaultCostLimitationShouldNotBeZeroWhenAmountsArePresent() {
     // Given
     ApplicationDetail application = buildFullApplicationDetail();
-    // User scenario: granted amount is 2250, requested amount is 2250, but default is returning 0.00
+    // User scenario: granted amount is 2250, requested amount is 2250, but default is returning
+    // 0.00
     application.getCosts().setGrantedCostLimitation(new BigDecimal("2250.00"));
     application.getCosts().setRequestedCostLimitation(new BigDecimal("2250.00"));
 
