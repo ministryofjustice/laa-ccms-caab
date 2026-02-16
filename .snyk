@@ -1,6 +1,14 @@
 # Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
 version: v1.25.1
-ignore: {}
+ignore:
+  'snyk:lic:maven:ch.qos.logback:logback-classic:(EPL-1.0_OR_LGPL-2.1)':
+    - '*':
+      reason: "ignore license issue"
+      expires: "2027-01-02T00:00:00Z"
+  'snyk:lic:maven:ch.qos.logback:logback-core:(EPL-1.0_OR_LGPL-2.1)':
+    - '*':
+      reason: "ignore license issue"
+      expires: "2027-01-02T00:00:00Z"
 patch: {}
 exclude:
   global:
