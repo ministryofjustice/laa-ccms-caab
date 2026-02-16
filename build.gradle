@@ -55,6 +55,10 @@ dependencies {
 			because('Fixes multiple CVEs Parent: org.opensaml:opensaml-saml-api')
 		}
 
+		implementation('commons-io:commons-io:2.21.0') {
+			because('Fixes CVE-2024-47554')
+		}
+
 		implementation "org.opensaml:opensaml-saml-api:5.1.3"
 		implementation "org.opensaml:opensaml-saml-impl:5.1.3"
 	}
