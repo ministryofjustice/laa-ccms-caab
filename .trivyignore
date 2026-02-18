@@ -1,46 +1,5 @@
 # commons-io:commons-io (velocity-engine-core-2.3.jar)
-CVE-2024-47554
-
-# org.apache.tomcat.embed:tomcat-embed-core (tomcat-embed-core-10.1.41.jar)
-CVE-2025-48988
-CVE-2025-49125
-
-# org.bouncycastle:bcpkix-jdk18on (bcpkix-jdk18on-1.72.jar)
-CVE-2023-33202
-
-# org.springframework:spring-web (spring-web-6.2.7.jar)
-CVE-2025-41234
-
-# cnb/lifecycle/launcher (gobinary)
-# layers/sbom/launch/buildpacksio_lifecycle/launcher/sbom.spdx.json (gobinary)
-CVE-2025-22874
-CVE-2025-0913
-CVE-2025-4673
-
-# libc6 - 2.39-0ubuntu8.4
-CVE-2025-5702
-
-# golang.org/x/crypto
-CVE-2025-47914
-CVE-2025-58181
+CVE-2024-47554 exp:2026-04-01
 
 # stdlib
-CVE-2025-61727
-CVE-2025-61729
-
-# netty-codec
-CVE-2025-67735
-
-# ch.qos.logback:logback-core:1.5.20 (ch.qos.logback:logback-core@1.5.20)
-CVE-2026-1225
-
-# layers/paketo-buildpacks_ca-certificates/helper/helper (gobinary)
-# golang: net/url: Memory exhaustion in query parameter arsing in net/url https://avd.aquasec.com/nvd/cve-2025-61726
-CVE-2025-61726
-# golang: archive/zip: Excessive CPU consumption when building archive index in archive/zip https://avd.aquasec.com/nvd/cve-2025-61728
-CVE-2025-61728
-# During the TLS 1.3 handshake if multiple messages are sent in records https://avd.aquasec.com/nvd/cve-2025-61730
-CVE-2025-61730
-
-# cnb/lifecycle/launcher (gobinary) https://avd.aquasec.com/nvd/cve-2025-68121
-CVE-2025-68121
+CVE-2025-68121 exp:2026-04-01

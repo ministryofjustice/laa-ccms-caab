@@ -12,13 +12,13 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
 
 @DisplayName("Cost details validator test")
-@ExtendWith(SpringExtension.class)
+@ExtendWith(MockitoExtension.class)
 class CostDetailsValidatorTest {
 
   @InjectMocks private CostDetailsValidator costDetailsValidator;

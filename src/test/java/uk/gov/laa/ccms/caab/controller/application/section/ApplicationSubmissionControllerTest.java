@@ -45,7 +45,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -107,7 +107,7 @@ import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 
-@ExtendWith(SpringExtension.class)
+@ExtendWith(MockitoExtension.class)
 class ApplicationSubmissionControllerTest {
 
   private MockMvc mockMvc;
@@ -514,16 +514,6 @@ class ApplicationSubmissionControllerTest {
               return null;
             })
         .when(matterTypeValidator)
-        .validate(any(), any());
-
-    // Mock validation for ProceedingDetails
-    doAnswer(
-            invocation -> {
-              final Errors errors = invocation.getArgument(1);
-              errors.reject("proceedingTypeDetails.required", "Proceeding Type validation failed.");
-              return null;
-            })
-        .when(proceedingTypeValidator)
         .validate(any(), any());
 
     // Mock validation for FurtherDetails

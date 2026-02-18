@@ -31,13 +31,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.web.WebAppConfiguration;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
-import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
@@ -57,9 +53,7 @@ import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration
-@WebAppConfiguration
+@ExtendWith(MockitoExtension.class)
 public class CopyCaseSearchControllerTest {
   @Mock private CaseSearchCriteriaValidator validator;
 
@@ -77,14 +71,10 @@ public class CopyCaseSearchControllerTest {
 
   private UserDetail user;
 
-  @Autowired private WebApplicationContext webApplicationContext;
-
   @BeforeEach
   public void setup() {
     mockMvc = standaloneSetup(copyCaseSearchController).build();
     this.user = buildUser();
-
-    when(searchConstants.getMaxSearchResultsCases()).thenReturn(200);
   }
 
   @Test

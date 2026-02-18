@@ -21,6 +21,8 @@ jobs:
       contents: write
       packages: write
     with:
+      java_version: '25'
+      java_distribution: 'corretto'
       integration_test_task: "integrationTest"
       publish_package: 'false'
     secrets:
@@ -34,6 +36,8 @@ jobs:
       contents: read
       id-token: write
     with:
+      java_version: '25'
+      java_distribution: 'corretto'
       image_version: ${{ format('{0}-{1}', vars.IMAGE_PREFIX, needs.build.outputs.published_artifact_version) }}
       publish: false
     secrets:

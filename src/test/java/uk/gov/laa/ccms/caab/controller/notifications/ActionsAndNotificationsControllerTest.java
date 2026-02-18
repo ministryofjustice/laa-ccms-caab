@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
@@ -39,18 +38,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.Errors;
-import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
@@ -86,9 +80,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration
-@WebAppConfiguration
+@ExtendWith(MockitoExtension.class)
 class ActionsAndNotificationsControllerTest {
 
   private static final UserDetail userDetails =
@@ -107,7 +99,7 @@ class ActionsAndNotificationsControllerTest {
   @Mock private NotificationAttachmentUploadValidator notificationAttachmentUploadValidator;
   @Mock private NotificationResponseValidator notificationResponseValidator;
   @Mock private AvScanService avScanService;
-  @Autowired private WebApplicationContext webApplicationContext;
+
   private MockMvc oldmockMvc;
   private MockMvcTester mockMvc;
 
@@ -173,20 +165,20 @@ class ActionsAndNotificationsControllerTest {
             MockMvcBuilders.standaloneSetup(actionsAndNotificationsController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build());
-    when(notificationSearchValidator.supports(any())).thenReturn(true);
   }
 
   @Nested
   @DisplayName("GET: /notifications/search")
   class GetNotificationsSearchTests {
 
+    @BeforeEach
+    void setUp() {
+      when(notificationSearchValidator.supports(any())).thenReturn(true);
+    }
+
     @Test
     @DisplayName("Should redirect to search results with notifications")
     void shouldRedirectToSearchResultsWithNotifications() {
-      Notifications notificationsMock = getNotificationsMock();
-
-      Mockito.when(notificationService.getNotifications(any(), anyInt(), any(), any()))
-          .thenReturn(Mono.just(notificationsMock));
 
       assertThat(
               mockMvc.perform(
@@ -237,11 +229,6 @@ class ActionsAndNotificationsControllerTest {
       when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
       when(userService.getUsers(any())).thenReturn(Mono.just(baseUsers));
 
-      Notifications notificationsMock = new Notifications().content(new ArrayList<>());
-
-      Mockito.when(notificationService.getNotifications(any(), anyInt(), any(), any()))
-          .thenReturn(Mono.just(notificationsMock));
-
       assertThat(mockMvc.perform(get("/notifications/search").flashAttrs(flashMap)))
           .hasStatusOk()
           .hasViewName("notifications/actions-and-notifications-search");
@@ -288,6 +275,11 @@ class ActionsAndNotificationsControllerTest {
   @Nested
   @DisplayName("POST: /notifications/search")
   class PostNotificationSearchTests {
+
+    @BeforeEach
+    void setUp() {
+      when(notificationSearchValidator.supports(any())).thenReturn(true);
+    }
 
     @Test
     @DisplayName("Should have validation errors when date larger than 3 years")
@@ -366,8 +358,7 @@ class ActionsAndNotificationsControllerTest {
 
       Notifications notificationsMock = getNotificationsMock();
 
-      Mockito.when(notificationService.getNotifications(any(), anyInt(), any(), any()))
-          .thenReturn(Mono.just(notificationsMock));
+      when(notificationSearchValidator.supports(any())).thenReturn(true);
 
       ApplicationDetail ebsCase = buildFullApplicationDetail();
       assertThat(
@@ -386,6 +377,11 @@ class ActionsAndNotificationsControllerTest {
   @Nested
   @DisplayName("GET: /notifications/{notification-id}")
   class GetNotification {
+
+    @BeforeEach
+    void setUp() {
+      when(notificationSearchValidator.supports(any())).thenReturn(true);
+    }
 
     @Test
     @DisplayName("Should return expected result")
@@ -469,6 +465,11 @@ class ActionsAndNotificationsControllerTest {
   @Nested
   @DisplayName("GET: /notifications")
   class GetNotificationsTests {
+
+    @BeforeEach
+    void setUp() {
+      when(notificationSearchValidator.supports(any())).thenReturn(true);
+    }
 
     @Test
     @DisplayName("Should return expected result")
@@ -632,6 +633,11 @@ class ActionsAndNotificationsControllerTest {
   @DisplayName("GET: /notifications/{notification-id}/attachments/upload")
   class GetUploadAttachmentTests {
 
+    @BeforeEach
+    void setUp() {
+      when(notificationSearchValidator.supports(any())).thenReturn(true);
+    }
+
     @Test
     @DisplayName("Should return expected result")
     void shouldReturnExpectedResult() {
@@ -741,8 +747,6 @@ class ActionsAndNotificationsControllerTest {
 
       when(notificationAttachmentMapper.toNotificationAttachmentDetail(attachmentUploadFormData))
           .thenReturn(notificationAttachment);
-      when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
-          .thenReturn(Mono.just(notificationAttachmentDetails));
 
       Notification notification = buildNotification();
       Map<String, Object> flashMap = new HashMap<>();
@@ -814,6 +818,11 @@ class ActionsAndNotificationsControllerTest {
   @Nested
   @DisplayName("GET: /notifications/{notification-id}/provide-documents-or-evidence")
   class GetProvideDocumentsOrEvidencePageTests {
+
+    @BeforeEach
+    void setUp() {
+      when(notificationSearchValidator.supports(any())).thenReturn(true);
+    }
 
     @Test
     @DisplayName("Should return expected result")
@@ -900,10 +909,6 @@ class ActionsAndNotificationsControllerTest {
               notification.getNotificationId(), userDetails.getUserId()))
           .thenReturn(Mono.just(notificationAttachmentDetails));
 
-      when(notificationAttachmentMapper.toBaseNotificationAttachmentDetail(
-              any(uk.gov.laa.ccms.soa.gateway.model.Document.class), eq("Test Document")))
-          .thenReturn(new BaseNotificationAttachmentDetail());
-
       Map<String, Object> flashMap = new HashMap<>();
       flashMap.put("user", userDetails);
 
@@ -941,6 +946,8 @@ class ActionsAndNotificationsControllerTest {
 
       CommonLookupDetail documentTypes = new CommonLookupDetail();
       documentTypes.addContentItem(documentType);
+
+      when(notificationSearchValidator.supports(any())).thenReturn(true);
 
       when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
           .thenReturn(Mono.just(documentTypes));
@@ -1016,6 +1023,8 @@ class ActionsAndNotificationsControllerTest {
 
       String notificationId = "12345";
 
+      when(notificationSearchValidator.supports(any())).thenReturn(true);
+
       when(notificationService.submitNotificationResponse(
               notificationId,
               formData.getAction(),
@@ -1090,6 +1099,8 @@ class ActionsAndNotificationsControllerTest {
       Notification notification = buildNotification();
 
       String notificationId = "12345";
+
+      when(notificationSearchValidator.supports(any())).thenReturn(true);
 
       doAnswer(
               invocation -> {

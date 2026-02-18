@@ -13,11 +13,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@ExtendWith(SpringExtension.class)
+@ExtendWith(MockitoExtension.class)
 public class FeatureAspectTest {
 
   @Mock private FeatureService featureService;
@@ -85,15 +85,11 @@ public class FeatureAspectTest {
   }
 
   @Test
-  @DisplayName(
-      "checkRequiredFeature join point proceeds when "
-          + "the given feature is enabled but the condition has not been met")
-  void shouldProceedWhenConditionNotMetAndFeatureEnabled() throws Throwable {
+  @DisplayName("checkRequiredFeature join point proceeds when " + "the condition has not been met")
+  void shouldProceedWhenConditionNotMet() throws Throwable {
     RequiresFeature requiresFeature = mock(RequiresFeature.class);
     when(requiresFeature.value()).thenReturn(Feature.AMENDMENTS);
     when(requiresFeature.conditionExpression()).thenReturn("test expression");
-
-    when(featureService.isEnabled(Feature.AMENDMENTS)).thenReturn(true);
 
     ProceedingJoinPoint proceedingJoinPoint = mock(ProceedingJoinPoint.class);
     when(proceedingJoinPoint.getArgs()).thenReturn(new Object[] {});

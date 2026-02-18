@@ -30,9 +30,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
@@ -47,7 +47,7 @@ import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-@ExtendWith(SpringExtension.class)
+@ExtendWith(MockitoExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
 public class ProviderDetailsSectionControllerTest {
@@ -165,9 +165,6 @@ public class ProviderDetailsSectionControllerTest {
     applicationFormData.setProviderCaseReference(providerCaseReference);
     applicationFormData.setContactNameId(contactNameId);
 
-    when(applicationService.getProviderDetailsFormData(applicationId))
-        .thenReturn(applicationFormData);
-
     this.mockMvc
         .perform(
             post("/application/sections/provider-details")
@@ -192,9 +189,6 @@ public class ProviderDetailsSectionControllerTest {
     final ApplicationFormData applicationFormData = new ApplicationFormData();
 
     applicationFormData.setProviderCaseReference(RandomStringUtils.insecure().nextAlphabetic(35));
-
-    when(applicationService.getProviderDetailsFormData(applicationId))
-        .thenReturn(applicationFormData);
 
     this.mockMvc
         .perform(

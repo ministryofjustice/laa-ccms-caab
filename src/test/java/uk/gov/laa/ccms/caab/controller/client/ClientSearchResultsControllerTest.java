@@ -16,12 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.web.WebAppConfiguration;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
@@ -32,9 +28,7 @@ import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.ClientDetails;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration
-@WebAppConfiguration
+@ExtendWith(MockitoExtension.class)
 public class ClientSearchResultsControllerTest {
 
   @Mock private ClientService clientService;
@@ -49,14 +43,10 @@ public class ClientSearchResultsControllerTest {
 
   private UserDetail user;
 
-  @Autowired private WebApplicationContext webApplicationContext;
-
   @BeforeEach
   public void setup() {
     mockMvc = standaloneSetup(clientSearchResultsController).build();
     this.user = buildUser();
-
-    when(searchConstants.getMaxSearchResultsClients()).thenReturn(200);
   }
 
   @Test
@@ -99,6 +89,8 @@ public class ClientSearchResultsControllerTest {
     clientDetails.setTotalElements(100);
 
     when(clientService.getClients(any(), any(), any())).thenReturn(Mono.just(clientDetails));
+
+    when(searchConstants.getMaxSearchResultsClients()).thenReturn(200);
 
     this.mockMvc
         .perform(
