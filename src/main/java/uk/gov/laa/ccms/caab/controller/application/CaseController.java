@@ -124,6 +124,24 @@ public class CaseController {
   }
 
   /**
+   * Displays the case cost details screen.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param model The model used to pass data to the view.
+   * @return The case cost details view.
+   */
+  @GetMapping("/case/details/costs")
+  public String caseCostDetails(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase, final Model model) {
+    final ApplicationSectionDisplay applicationSectionDisplay =
+        Optional.ofNullable(applicationService.getCaseDetailsDisplay(ebsCase))
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve case details"));
+
+    model.addAttribute("summary", applicationSectionDisplay);
+    return "application/case-cost-details";
+  }
+
+  /**
    * Returns a display object containing an other party within a case.
    *
    * @param ebsCase The case details from EBS.

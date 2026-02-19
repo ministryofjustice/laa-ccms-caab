@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="|#{service.name} - #{caseCostDetails.title}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/case/details}" class="govuk-back-link"
+       th:text="#{caseDetails.details.return}"></a>
+  </div>
+
+  <div id="main-content">
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h1 class="govuk-heading-l" id="main-heading" th:text="#{caseCostDetails.title}"></h1>
+        <p class="govuk-body-l" id="lead-paragraph" th:text="#{caseCostDetails.leadParagraph}"></p>
+
+        <dl class="govuk-summary-list govuk-!-margin-bottom-9">
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key" th:text="#{caseDetails.costs.limitation.default}"></dt>
+            <dd class="govuk-summary-list__value" id="costs-default-amount-value"
+                th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.defaultCostLimitation)}"></dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key" th:text="#{caseDetails.costs.limitation.granted}"></dt>
+            <dd class="govuk-summary-list__value" id="costs-granted-amount-value"
+                th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)}"></dd>
+            <dd class="govuk-summary-list__actions">
+              <a class="govuk-link govuk-link--no-visited-state"
+                 id="case-cost-limitation-link"
+                 href="#">
+                <th:block th:text="#{caseCostDetails.allocation.link}"/></a>
+            </dd>
+          </div>
+          <div class="govuk-summary-list__row">
+            <dt class="govuk-summary-list__key" th:text="#{caseDetails.costs.limitation.requested}"></dt>
+            <dd class="govuk-summary-list__value" id="costs-requested-amount-value"
+                th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.requestedCostLimitation)}"></dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
