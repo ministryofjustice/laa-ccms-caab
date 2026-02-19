@@ -42,10 +42,12 @@ import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.ProviderDetailsValidator;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 @ExtendWith(MockitoExtension.class)
 @ContextConfiguration
@@ -57,6 +59,8 @@ public class ProviderDetailsSectionControllerTest {
   @Mock private ProviderService providerService;
 
   @Mock private ProviderDetailsValidator providerDetailsValidator;
+
+  @Mock private ClientService clientService;
 
   @InjectMocks private ProviderDetailsSectionController providerDetailsController;
 
@@ -236,5 +240,35 @@ public class ProviderDetailsSectionControllerTest {
     verify(providerService, times(1))
         .getFeeEarnersByOffice(providerDetail, applicationFormData.getOfficeId());
     verifyNoInteractions(applicationService);
+  }
+
+  @Test
+  public void testCaseSummaryProviderDetailsGet() throws Exception {
+    final String applicationId = "123";
+    final ActiveCase activeCase = ActiveCase.builder().build();
+    final UserDetail user = new UserDetail();
+    final ApplicationFormData applicationFormData = new ApplicationFormData();
+    final Mono<ClientDetail> clientDetailMono = Mono.just(new ClientDetail());
+
+    when(clientService.getClient(any(), any(), any())).thenReturn(clientDetailMono);
+    when(applicationService.getProviderDetailsFormData(applicationId))
+        .thenReturn(applicationFormData);
+    when(applicationService.createApplication(applicationFormData, clientDetailMono.block(), user))
+        .thenReturn(Mono.just(applicationId));
+
+    this.mockMvc
+        .perform(
+            get("/amendments/sections/provider-details")
+                .sessionAttr(APPLICATION_ID, "345")
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(USER_DETAILS, user))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/sections/provider-details-section"))
+        .andExpect(model().attribute(APPLICATION_FORM_DATA, applicationFormData))
+        .andExpect(model().attribute(ACTIVE_CASE, activeCase));
+
+    verify(applicationService, times(1)).getProviderDetailsFormData(applicationId);
+    verifyNoInteractions(providerService);
   }
 }
