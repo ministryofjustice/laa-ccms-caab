@@ -129,7 +129,7 @@ dependencies {
 
 	testImplementation 'org.testcontainers:testcontainers'
 	testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
-	testImplementation 'org.testcontainers:testcontainers-localstack:2.0.3'
+	testImplementation 'org.testcontainers:testcontainers-localstack'
 
 }
 
