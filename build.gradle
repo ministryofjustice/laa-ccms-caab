@@ -55,12 +55,12 @@ dependencies {
 			because('Fixes multiple CVEs Parent: org.opensaml:opensaml-saml-api')
 		}
 
-		implementation "org.opensaml:opensaml-saml-api:5.1.3"
-		implementation "org.opensaml:opensaml-saml-impl:5.1.3"
+		implementation "org.opensaml:opensaml-saml-api:5.2.1"
+		implementation "org.opensaml:opensaml-saml-impl:5.2.1"
 	}
 
 	// Fixes CVE-2025-48924 - remove this when bumped in parent library
-    implementation 'org.apache.commons:commons-lang3:3.18.0'
+    implementation 'org.apache.commons:commons-lang3:3.20.0'
 
 	implementation 'uk.gov.laa.ccms.data:data-api:0.0.61'
 
@@ -90,13 +90,13 @@ dependencies {
 	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.0.0')
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
-	implementation 'software.amazon.awssdk:sts:2.41.27'
+	implementation 'software.amazon.awssdk:sts:2.41.32'
 
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
-	implementation 'org.json:json:20250517'
+	implementation 'org.json:json:20251224'
 
-	implementation 'io.swagger.core.v3:swagger-annotations:2.2.42'
+	implementation 'io.swagger.core.v3:swagger-annotations:2.2.43'
 
 	//SAML security
 	implementation 'org.springframework.boot:spring-boot-starter-security-saml2'
@@ -117,20 +117,20 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.webjars/webjars-locator-lite
 	implementation 'org.webjars:webjars-locator-lite'
 	// https://mvnrepository.com/artifact/org.webjars.npm/govuk-frontend
-	implementation 'org.webjars.npm:govuk-frontend:5.11.0'
-	implementation 'org.webjars.npm:ministryofjustice__frontend:5.1.3'
+	implementation 'org.webjars.npm:govuk-frontend:5.14.0'
+	implementation 'org.webjars.npm:ministryofjustice__frontend:7.1.0'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testImplementation 'io.projectreactor:reactor-test:3.8.3'
 
-	integrationTestImplementation 'org.wiremock:wiremock-standalone:3.13.1'
+	integrationTestImplementation 'org.wiremock:wiremock-standalone:3.13.2'
 
-	testImplementation platform('org.testcontainers:testcontainers-bom:1.21.3')
+	testImplementation platform('org.testcontainers:testcontainers-bom:2.0.3')
 	testImplementation 'org.testcontainers:testcontainers'
 	testImplementation 'org.testcontainers:junit-jupiter'
-	testImplementation 'org.testcontainers:localstack:1.21.3'
+	testImplementation 'org.testcontainers:localstack:2.0.3'
 
 }
 
