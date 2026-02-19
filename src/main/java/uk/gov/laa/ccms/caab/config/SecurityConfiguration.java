@@ -99,6 +99,8 @@ public class SecurityConfiguration {
                     .hasAuthority(UserRole.SUBMIT_APPLICATION.getCode())
                     .requestMatchers("/case/overview")
                     .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode())
+                    .requestMatchers(HttpMethod.GET, "/case/details/costs/allocation")
+                    .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode())
                     .anyRequest()
                     .authenticated())
         .sessionManagement(
