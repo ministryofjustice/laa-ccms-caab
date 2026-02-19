@@ -957,4 +957,111 @@ class CaseControllerTest {
         .providerCaseReferenceNumber(providerReference)
         .build();
   }
+
+  @Nested
+  @DisplayName("caseCostAllocation tests")
+  class CaseCostAllocationTests {
+
+    @Test
+    @DisplayName("Should display cost allocation page with calculated values")
+    void shouldDisplayCostAllocationPageWithCalculatedValues() {
+      // Given
+      final java.math.BigDecimal grantedCost = new java.math.BigDecimal("1000.00");
+      final java.math.BigDecimal counselCost1 = new java.math.BigDecimal("300.00");
+      final java.math.BigDecimal counselCost2 = new java.math.BigDecimal("200.00");
+      final java.math.BigDecimal mainProviderAllocation = new java.math.BigDecimal("500.00");
+      final java.math.BigDecimal currentProviderBilled = new java.math.BigDecimal("150.00");
+
+      final ApplicationDetail ebsCase = new ApplicationDetail();
+      final CostStructureDetail costs = new CostStructureDetail();
+      costs.setGrantedCostLimitation(grantedCost);
+
+      final CostEntryDetail counsel1 = new CostEntryDetail();
+      counsel1.setRequestedCosts(counselCost1);
+      counsel1.setResourceName("Counsel One");
+
+      final CostEntryDetail counsel2 = new CostEntryDetail();
+      counsel2.setRequestedCosts(counselCost2);
+      counsel2.setResourceName("Counsel Two");
+
+      costs.setCostEntries(List.of(counsel1, counsel2));
+      costs.setCurrentProviderBilledAmount(currentProviderBilled);
+      ebsCase.setCosts(costs);
+
+      final ApplicationSectionDisplay applicationSectionDisplay =
+          ApplicationSectionDisplay.builder().build();
+
+      when(applicationService.getCaseDetailsDisplay(ebsCase)).thenReturn(applicationSectionDisplay);
+      when(applicationService.calculateMainProviderAllocation(ebsCase))
+          .thenReturn(mainProviderAllocation);
+      when(applicationService.getCurrentProviderBilledAmount(ebsCase))
+          .thenReturn(currentProviderBilled);
+
+      // When/Then
+      assertThat(mockMvc.perform(get("/case/details/costs/allocation").sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/cost-limit-allocation")
+          .model()
+          .containsEntry("summary", applicationSectionDisplay)
+          .containsEntry("case", ebsCase)
+          .containsEntry("mainProviderAllocation", mainProviderAllocation)
+          .containsEntry("currentProviderBilledAmount", currentProviderBilled);
+
+      verify(applicationService).getCaseDetailsDisplay(ebsCase);
+      verify(applicationService).calculateMainProviderAllocation(ebsCase);
+      verify(applicationService).getCurrentProviderBilledAmount(ebsCase);
+    }
+
+    @Test
+    @DisplayName("Should handle null current provider billed amount")
+    void shouldHandleNullCurrentProviderBilledAmount() {
+      // Given
+      final ApplicationDetail ebsCase = new ApplicationDetail();
+      final CostStructureDetail costs = new CostStructureDetail();
+      costs.setGrantedCostLimitation(new java.math.BigDecimal("1000.00"));
+      costs.setCostEntries(Collections.emptyList());
+      costs.setCurrentProviderBilledAmount(null);
+      ebsCase.setCosts(costs);
+
+      final ApplicationSectionDisplay applicationSectionDisplay =
+          ApplicationSectionDisplay.builder().build();
+      final java.math.BigDecimal mainProviderAllocation = new java.math.BigDecimal("1000.00");
+
+      when(applicationService.getCaseDetailsDisplay(ebsCase)).thenReturn(applicationSectionDisplay);
+      when(applicationService.calculateMainProviderAllocation(ebsCase))
+          .thenReturn(mainProviderAllocation);
+      when(applicationService.getCurrentProviderBilledAmount(ebsCase)).thenReturn(null);
+
+      // When/Then
+      assertThat(mockMvc.perform(get("/case/details/costs/allocation").sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/cost-limit-allocation")
+          .model()
+          .containsEntry("summary", applicationSectionDisplay)
+          .containsEntry("case", ebsCase)
+          .containsEntry("mainProviderAllocation", mainProviderAllocation)
+          .containsEntry("currentProviderBilledAmount", null);
+
+      verify(applicationService).getCaseDetailsDisplay(ebsCase);
+      verify(applicationService).calculateMainProviderAllocation(ebsCase);
+      verify(applicationService).getCurrentProviderBilledAmount(ebsCase);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when case details display fails")
+    void shouldThrowExceptionWhenCaseDetailsDisplayFails() {
+      // Given
+      final ApplicationDetail ebsCase = new ApplicationDetail();
+      final CostStructureDetail costs = new CostStructureDetail();
+      ebsCase.setCosts(costs);
+
+      when(applicationService.getCaseDetailsDisplay(ebsCase)).thenReturn(null);
+
+      // When/Then
+      assertThat(mockMvc.perform(get("/case/details/costs/allocation").sessionAttr(CASE, ebsCase)))
+          .failure()
+          .hasCauseInstanceOf(CaabApplicationException.class)
+          .hasMessageContaining("Failed to retrieve case details");
+    }
+  }
 }

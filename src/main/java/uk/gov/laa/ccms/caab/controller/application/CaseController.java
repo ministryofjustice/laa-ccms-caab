@@ -12,6 +12,7 @@ import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificati
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -138,6 +139,7 @@ public class CaseController {
             .orElseThrow(() -> new CaabApplicationException("Failed to retrieve case details"));
 
     model.addAttribute("summary", applicationSectionDisplay);
+    model.addAttribute("case", ebsCase);
     return "application/case-cost-details";
   }
 
@@ -200,6 +202,44 @@ public class CaseController {
 
     model.addAttribute("priorAuthority", priorAuthorities.get(index));
     return "application/prior-authority-review";
+  }
+
+  /**
+   * Displays the case cost allocation screen showing how granted costs are allocated to the
+   * provider and counsels.
+   *
+   * <p>This read-only view corresponds to the old PUI VC04a screen and shows:
+   *
+   * <ul>
+   *   <li>Granted cost limitation
+   *   <li>Current provider with their billed amount and remaining allocation
+   *   <li>Counsel entries with their billed amounts and requested costs
+   * </ul>
+   *
+   * <p>The main provider allocation is calculated by subtracting the sum of all counsel requested
+   * costs from the granted cost limitation.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param model The model used to pass data to the view.
+   * @return The case cost allocation view.
+   */
+  @GetMapping("/case/details/costs/allocation")
+  public String caseCostAllocation(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase, final Model model) {
+    final ApplicationSectionDisplay applicationSectionDisplay =
+        Optional.ofNullable(applicationService.getCaseDetailsDisplay(ebsCase))
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve case details"));
+
+    final BigDecimal mainProviderAllocation =
+        applicationService.calculateMainProviderAllocation(ebsCase);
+    final BigDecimal currentProviderBilledAmount =
+        applicationService.getCurrentProviderBilledAmount(ebsCase);
+
+    model.addAttribute("summary", applicationSectionDisplay);
+    model.addAttribute("case", ebsCase);
+    model.addAttribute("mainProviderAllocation", mainProviderAllocation);
+    model.addAttribute("currentProviderBilledAmount", currentProviderBilledAmount);
+    return "application/cost-limit-allocation";
   }
 
   /**
