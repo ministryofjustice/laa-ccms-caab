@@ -45,15 +45,3 @@ jobs:
       ecr_repository: ${{ vars.ECR_REPOSITORY }}
       ecr_region: ${{ vars.ECR_REGION }}
       ecr_role_to_assume: ${{ secrets.ECR_ROLE_TO_ASSUME }}
-
-  vulnerability-scan:
-    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/snyk-vulnerability-scan.yml@v1
-    permissions:
-      contents: read
-    with:
-      snyk_organisation: 'legal-aid-agency'
-      snyk_test_exclude: 'build'
-      snyk_target_reference: 'main'
-    secrets:
-      gh_token: ${{ secrets.GITHUB_TOKEN }}
-      snyk_token: ${{ secrets.SNYK_TOKEN }}
