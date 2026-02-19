@@ -112,6 +112,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AuditDetail;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ClientDetail;
+import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
@@ -2363,6 +2364,190 @@ class ApplicationServiceTest {
       boolean actual = applicationService.isCategoryOfLawValid(application, user);
 
       assertFalse(actual);
+    }
+  }
+
+  @Nested
+  @DisplayName("Cost Allocation Calculations")
+  class CostAllocationCalculations {
+
+    @Test
+    @DisplayName("calculateCounselCosts - should return zero when costs is null")
+    void shouldReturnZeroWhenCostsIsNull() {
+      ApplicationDetail application = new ApplicationDetail();
+      application.setCosts(null);
+
+      BigDecimal result = applicationService.calculateCounselCosts(application);
+
+      assertEquals(BigDecimal.ZERO, result);
+    }
+
+    @Test
+    @DisplayName("calculateCounselCosts - should return zero when cost entries is null")
+    void shouldReturnZeroWhenCostEntriesIsNull() {
+      ApplicationDetail application = new ApplicationDetail();
+      CostStructureDetail costs = new CostStructureDetail();
+      costs.setCostEntries(null);
+      application.setCosts(costs);
+
+      BigDecimal result = applicationService.calculateCounselCosts(application);
+
+      assertEquals(BigDecimal.ZERO, result);
+    }
+
+    @Test
+    @DisplayName("calculateCounselCosts - should return zero when cost entries is empty")
+    void calculateCounselCosts_costEntriesEmpty_returnsZero() {
+      ApplicationDetail application = new ApplicationDetail();
+      CostStructureDetail costs = new CostStructureDetail();
+      costs.setCostEntries(new ArrayList<>());
+      application.setCosts(costs);
+
+      BigDecimal result = applicationService.calculateCounselCosts(application);
+
+      assertEquals(BigDecimal.ZERO, result);
+    }
+
+    @Test
+    @DisplayName("calculateCounselCosts - should sum all counsel requested costs")
+    void calculateCounselCosts_withMultipleCounsels_returnsSumOfCosts() {
+      ApplicationDetail application = new ApplicationDetail();
+      CostStructureDetail costs = new CostStructureDetail();
+
+      CostEntryDetail counsel1 = new CostEntryDetail();
+      counsel1.setRequestedCosts(new BigDecimal("100.00"));
+
+      CostEntryDetail counsel2 = new CostEntryDetail();
+      counsel2.setRequestedCosts(new BigDecimal("200.50"));
+
+      CostEntryDetail counsel3 = new CostEntryDetail();
+      counsel3.setRequestedCosts(new BigDecimal("50.25"));
+
+      costs.setCostEntries(List.of(counsel1, counsel2, counsel3));
+      application.setCosts(costs);
+
+      BigDecimal result = applicationService.calculateCounselCosts(application);
+
+      assertEquals(new BigDecimal("350.75"), result);
+    }
+
+    @Test
+    @DisplayName("calculateCounselCosts - should treat null requested costs as zero")
+    void calculateCounselCosts_withNullRequestedCosts_treatsAsZero() {
+      ApplicationDetail application = new ApplicationDetail();
+      CostStructureDetail costs = new CostStructureDetail();
+
+      CostEntryDetail counsel1 = new CostEntryDetail();
+      counsel1.setRequestedCosts(new BigDecimal("100.00"));
+
+      CostEntryDetail counsel2 = new CostEntryDetail();
+      counsel2.setRequestedCosts(null);
+
+      costs.setCostEntries(List.of(counsel1, counsel2));
+      application.setCosts(costs);
+
+      BigDecimal result = applicationService.calculateCounselCosts(application);
+
+      assertEquals(new BigDecimal("100.00"), result);
+    }
+
+    @Test
+    @DisplayName("calculateMainProviderAllocation - should return zero when costs is null")
+    void calculateMainProviderAllocation_costsNull_returnsZero() {
+      ApplicationDetail application = new ApplicationDetail();
+      application.setCosts(null);
+
+      BigDecimal result = applicationService.calculateMainProviderAllocation(application);
+
+      assertEquals(BigDecimal.ZERO, result);
+    }
+
+    @Test
+    @DisplayName("calculateMainProviderAllocation - should return zero when granted cost is null")
+    void calculateMainProviderAllocation_grantedCostNull_returnsZero() {
+      ApplicationDetail application = new ApplicationDetail();
+      CostStructureDetail costs = new CostStructureDetail();
+      costs.setGrantedCostLimitation(null);
+      costs.setCostEntries(new ArrayList<>());
+      application.setCosts(costs);
+
+      BigDecimal result = applicationService.calculateMainProviderAllocation(application);
+
+      assertEquals(BigDecimal.ZERO, result);
+    }
+
+    @Test
+    @DisplayName(
+        "calculateMainProviderAllocation - should subtract counsel costs from granted limitation")
+    void calculateMainProviderAllocation_withCounselCosts_returnsCorrectAllocation() {
+      ApplicationDetail application = new ApplicationDetail();
+      CostStructureDetail costs = new CostStructureDetail();
+      costs.setGrantedCostLimitation(new BigDecimal("1000.00"));
+
+      CostEntryDetail counsel1 = new CostEntryDetail();
+      counsel1.setRequestedCosts(new BigDecimal("300.00"));
+
+      CostEntryDetail counsel2 = new CostEntryDetail();
+      counsel2.setRequestedCosts(new BigDecimal("200.00"));
+
+      costs.setCostEntries(List.of(counsel1, counsel2));
+      application.setCosts(costs);
+
+      BigDecimal result = applicationService.calculateMainProviderAllocation(application);
+
+      assertEquals(new BigDecimal("500.00"), result);
+    }
+
+    @Test
+    @DisplayName(
+        "calculateMainProviderAllocation - should return full granted amount when no counsels")
+    void calculateMainProviderAllocation_noCounsels_returnsFullGrantedAmount() {
+      ApplicationDetail application = new ApplicationDetail();
+      CostStructureDetail costs = new CostStructureDetail();
+      costs.setGrantedCostLimitation(new BigDecimal("1000.00"));
+      costs.setCostEntries(new ArrayList<>());
+      application.setCosts(costs);
+
+      BigDecimal result = applicationService.calculateMainProviderAllocation(application);
+
+      assertEquals(new BigDecimal("1000.00"), result);
+    }
+
+    @Test
+    @DisplayName("getCurrentProviderBilledAmount - should return null when costs is null")
+    void getCurrentProviderBilledAmount_costsNull_returnsNull() {
+      ApplicationDetail application = new ApplicationDetail();
+      application.setCosts(null);
+
+      BigDecimal result = applicationService.getCurrentProviderBilledAmount(application);
+
+      assertNull(result);
+    }
+
+    @Test
+    @DisplayName("getCurrentProviderBilledAmount - should return billed amount when available")
+    void getCurrentProviderBilledAmount_amountAvailable_returnsAmount() {
+      ApplicationDetail application = new ApplicationDetail();
+      CostStructureDetail costs = new CostStructureDetail();
+      costs.setCurrentProviderBilledAmount(new BigDecimal("750.50"));
+      application.setCosts(costs);
+
+      BigDecimal result = applicationService.getCurrentProviderBilledAmount(application);
+
+      assertEquals(new BigDecimal("750.50"), result);
+    }
+
+    @Test
+    @DisplayName("getCurrentProviderBilledAmount - should return null when billed amount is null")
+    void getCurrentProviderBilledAmount_amountNull_returnsNull() {
+      ApplicationDetail application = new ApplicationDetail();
+      CostStructureDetail costs = new CostStructureDetail();
+      costs.setCurrentProviderBilledAmount(null);
+      application.setCosts(costs);
+
+      BigDecimal result = applicationService.getCurrentProviderBilledAmount(application);
+
+      assertNull(result);
     }
   }
 }

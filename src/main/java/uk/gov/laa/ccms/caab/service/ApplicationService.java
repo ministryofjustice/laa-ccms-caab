@@ -1795,4 +1795,52 @@ public class ApplicationService {
   public boolean isAmendment(ApplicationDetail ebsCase, BaseApplicationDetail tdsApplication) {
     return (ebsCase != null) && (tdsApplication != null);
   }
+
+  /**
+   * Calculates the total requested costs for all counsel entries in a case.
+   *
+   * @param application The application detail containing cost entries.
+   * @return The sum of all counsel requested costs, or zero if no costs exist.
+   */
+  public BigDecimal calculateCounselCosts(final ApplicationDetail application) {
+    if (application.getCosts() == null || application.getCosts().getCostEntries() == null) {
+      return BigDecimal.ZERO;
+    }
+
+    return application.getCosts().getCostEntries().stream()
+        .distinct()
+        .map(ce -> ce.getRequestedCosts() != null ? ce.getRequestedCosts() : BigDecimal.ZERO)
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
+  }
+
+  /**
+   * Calculates the main provider's allocation by subtracting counsel costs from the granted cost
+   * limitation.
+   *
+   * @param application The application detail containing cost information.
+   * @return The calculated main provider allocation.
+   */
+  public BigDecimal calculateMainProviderAllocation(final ApplicationDetail application) {
+    BigDecimal grantedCostLimitation = BigDecimal.ZERO;
+    if (application.getCosts() != null
+        && application.getCosts().getGrantedCostLimitation() != null) {
+      grantedCostLimitation = application.getCosts().getGrantedCostLimitation();
+    }
+
+    BigDecimal counselCosts = calculateCounselCosts(application);
+    return grantedCostLimitation.subtract(counselCosts);
+  }
+
+  /**
+   * Retrieves the current provider's billed amount from the case costs.
+   *
+   * @param application The application detail containing cost information.
+   * @return The current provider billed amount, or null if not available.
+   */
+  public BigDecimal getCurrentProviderBilledAmount(final ApplicationDetail application) {
+    if (application.getCosts() != null) {
+      return application.getCosts().getCurrentProviderBilledAmount();
+    }
+    return null;
+  }
 }

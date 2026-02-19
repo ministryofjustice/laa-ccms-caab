@@ -28,11 +28,13 @@
             <dt class="govuk-summary-list__key" th:text="#{caseDetails.costs.limitation.granted}"></dt>
             <dd class="govuk-summary-list__value" id="costs-granted-amount-value"
                 th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)}"></dd>
-            <dd class="govuk-summary-list__actions">
+            <dd class="govuk-summary-list__actions"
+                th:if="${case.costs != null and case.costs.grantedCostLimitation != null and case.costs.costEntries != null and !#lists.isEmpty(case.costs.costEntries)}">
               <a class="govuk-link govuk-link--no-visited-state"
                  id="case-cost-limitation-link"
-                 href="#">
-                <th:block th:text="#{caseCostDetails.allocation.link}"/></a>
+                 th:href="@{/case/details/costs/allocation}">
+                <th:block th:text="#{caseCostDetails.allocation.link}"/>
+              </a>
             </dd>
           </div>
           <div class="govuk-summary-list__row">

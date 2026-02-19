@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="|#{service.name} - #{caseCosts.title}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a th:href="@{/case/details/costs}" class="govuk-back-link">Return to case cost details</a>
+    </div>
+
+    <div id="main-content">
+        <h1 class="govuk-heading-l" id="main-heading" th:text="#{caseCosts.header}">Cost limit allocation</h1>
+        <p class="govuk-body" th:text="#{caseCostDetails.leadParagraph}">Please view the case cost details below.</p>
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <table class="govuk-table">
+                    <thead>
+                    <tr>
+                        <th class="govuk-table__header" th:text="#{caseCosts.provider}">Provider name</th>
+                        <th class="govuk-table__header" th:text="#{caseCosts.type}">Type</th>
+                        <th class="govuk-table__header" th:text="#{caseCosts.amount}">Amount used</th>
+                        <th class="govuk-table__header" th:text="#{caseCosts.providerCost}">Provider cost breakdown</th>
+                    </tr>
+                    </thead>
+                    <tbody class="govuk-table__body">
+                    <tr class="govuk-table__row">
+                        <th scope="row" class="govuk-table__header" th:text="#{caseDetails.costs.limitation.granted}">Granted cost limitation</th>
+                        <td class="govuk-table__cell"></td>
+                        <td class="govuk-table__cell"></td>
+                        <td class="govuk-table__cell govuk-table__header"
+                            th:text="${#numbers.formatCurrency(case.costs.grantedCostLimitation)}">£0.00</td>
+                    </tr>
+                    <tr class="govuk-table__row">
+                        <td class="govuk-table__cell" th:text="${case.providerDetails.provider.displayValue}"></td>
+                        <td class="govuk-table__cell" th:text="#{caseCosts.provider}">Provider</td>
+                        <td class="govuk-table__cell"
+                            th:text="${currentProviderBilledAmount != null ? #numbers.formatCurrency(currentProviderBilledAmount) : ''}"></td>
+                        <td class="govuk-table__cell"
+                            th:text="${#numbers.formatCurrency(mainProviderAllocation)}">£0.00</td>
+                    </tr>
+                    <tr class="govuk-table__row"
+                        th:each="costEntryDetail : ${case.costs.costEntries.stream().distinct().toList()}">
+                        <td class="govuk-table__cell" th:text="${costEntryDetail.resourceName}">KEVIN J LISTER</td>
+                        <td class="govuk-table__cell" style="text-transform: capitalize"
+                            th:text="${#strings.toLowerCase(costEntryDetail.costCategory)}">Counsel</td>
+                        <td class="govuk-table__cell"
+                            th:text="${#numbers.formatCurrency(costEntryDetail.amountBilled)}">£0.00</td>
+                        <td class="govuk-table__cell"
+                            th:text="${#numbers.formatCurrency(costEntryDetail.requestedCosts != null ? costEntryDetail.requestedCosts : 0)}">£0.00</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>
