@@ -11,7 +11,7 @@
     <a th:if="${caseContext.isAmendment()}"  th:href="@{/application/{case-reference-number}/view(case-reference-number=${activeCase.caseReferenceNumber})}" class="govuk-back-link" th:text="#{site.returnToCaseOverview}"></a>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/sections/provider-details}" th:object="${applicationFormData}" method="post">
+    <form action="#" th:action="@{/{caseContext}/sections/provider-details(caseContext=${caseContext.pathValue})}" th:object="${applicationFormData}" method="post">
       <input type="hidden" th:field="*{officeId}" th:value="${applicationFormData.officeId}" />
       <input type="hidden" th:field="*{officeName}" th:value="${applicationFormData.officeName}" />
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
