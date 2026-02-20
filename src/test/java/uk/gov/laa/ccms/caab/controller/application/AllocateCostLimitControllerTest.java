@@ -2,8 +2,10 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 
 import java.math.BigDecimal;
@@ -35,6 +37,12 @@ public class AllocateCostLimitControllerTest {
   private MockMvcTester mockMvc;
 
   @Mock private ProceedingAndCostsMapper proceedingAndCostsMapper;
+
+  @Mock
+  private uk.gov.laa.ccms.caab.bean.validators.costs.AllocateCostLimitValidator
+      allocateCostLimitValidator;
+
+  @Mock private uk.gov.laa.ccms.caab.mapper.CopyApplicationMapper copyApplicationMapper;
 
   @BeforeEach
   void setUp() {
@@ -84,6 +92,209 @@ public class AllocateCostLimitControllerTest {
           .model()
           .containsEntry("case", ebsCase)
           .containsEntry("costDetails", allocateCostsFormData);
+    }
+  }
+
+  @Nested
+  @DisplayName("POST: /allocate-cost-limit")
+  class PostAllocateCostLimitTests {
+
+    @Test
+    @DisplayName("Should return cost allocation view when calculate button clicked")
+    void shouldReturnViewWithCalculateAction() {
+      ApplicationDetail ebsCase = new ApplicationDetail();
+      CostStructureDetail costs =
+          new CostStructureDetail()
+              .addCostEntriesItem(
+                  new CostEntryDetail()
+                      .requestedCosts(new BigDecimal("604.63"))
+                      .resourceName("PATRICK J BOWE")
+                      .costCategory("Counsel")
+                      .amountBilled(new BigDecimal("604.63")))
+              .grantedCostLimitation(new BigDecimal("25000"))
+              .requestedCostLimitation(new BigDecimal("25000"));
+      ebsCase.costs(costs);
+      ebsCase.providerDetails(
+          new ApplicationProviderDetails()
+              .provider(new IntDisplayValue().displayValue("provider")));
+
+      final AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
+      allocateCostsFormData.setGrantedCostLimitation(costs.getGrantedCostLimitation());
+      allocateCostsFormData.setCostEntries(ebsCase.getCosts().getCostEntries());
+
+      when(copyApplicationMapper.copyApplication(
+              any(ApplicationDetail.class), any(ApplicationDetail.class)))
+          .thenReturn(ebsCase);
+
+      assertThat(
+              mockMvc.perform(
+                  post("/allocate-cost-limit")
+                      .param("action", "calculate")
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("costDetails", allocateCostsFormData)))
+          .hasStatusOk()
+          .hasViewName("application/cost-allocation");
+    }
+
+    @Test
+    @DisplayName("Should redirect to review page when next button clicked with valid data")
+    void shouldRedirectToReviewPageWithNextAction() {
+      ApplicationDetail ebsCase = new ApplicationDetail();
+      CostStructureDetail costs =
+          new CostStructureDetail()
+              .addCostEntriesItem(
+                  new CostEntryDetail()
+                      .requestedCosts(new BigDecimal("604.63"))
+                      .resourceName("PATRICK J BOWE")
+                      .costCategory("Counsel")
+                      .amountBilled(new BigDecimal("604.63")))
+              .grantedCostLimitation(new BigDecimal("25000"))
+              .requestedCostLimitation(new BigDecimal("25000"));
+      ebsCase.costs(costs);
+      ebsCase.providerDetails(
+          new ApplicationProviderDetails()
+              .provider(new IntDisplayValue().displayValue("provider")));
+
+      final AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
+      allocateCostsFormData.setGrantedCostLimitation(costs.getGrantedCostLimitation());
+      allocateCostsFormData.setCostEntries(ebsCase.getCosts().getCostEntries());
+
+      when(copyApplicationMapper.copyApplication(
+              any(ApplicationDetail.class), any(ApplicationDetail.class)))
+          .thenReturn(ebsCase);
+
+      assertThat(
+              mockMvc.perform(
+                  post("/allocate-cost-limit")
+                      .param("action", "next")
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("costDetails", allocateCostsFormData)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/allocate-cost-limit/review");
+    }
+
+    @Test
+    @DisplayName("Should return cost allocation view when next clicked with validation errors")
+    void shouldReturnViewWhenNextActionHasValidationErrors() {
+      ApplicationDetail ebsCase = new ApplicationDetail();
+      CostStructureDetail costs =
+          new CostStructureDetail()
+              .addCostEntriesItem(
+                  new CostEntryDetail()
+                      .requestedCosts(new BigDecimal("30000")) // Exceeds granted cost
+                      .resourceName("PATRICK J BOWE")
+                      .costCategory("Counsel")
+                      .amountBilled(new BigDecimal("604.63")))
+              .grantedCostLimitation(new BigDecimal("25000"))
+              .requestedCostLimitation(new BigDecimal("25000"));
+      ebsCase.costs(costs);
+      ebsCase.providerDetails(
+          new ApplicationProviderDetails()
+              .provider(new IntDisplayValue().displayValue("provider")));
+
+      final AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
+      allocateCostsFormData.setGrantedCostLimitation(costs.getGrantedCostLimitation());
+      allocateCostsFormData.setCostEntries(ebsCase.getCosts().getCostEntries());
+
+      when(copyApplicationMapper.copyApplication(
+              any(ApplicationDetail.class), any(ApplicationDetail.class)))
+          .thenReturn(ebsCase);
+
+      // Mock validator to add an error
+      doAnswer(
+              invocation -> {
+                org.springframework.validation.Errors errors = invocation.getArgument(1);
+                errors.rejectValue(
+                    "costEntries[0].requestedCosts",
+                    "costCostAllocation.exceeded.requestedCost",
+                    "Exceeded granted cost limitation");
+                return null;
+              })
+          .when(allocateCostLimitValidator)
+          .validate(
+              any(AllocateCostsFormData.class), any(org.springframework.validation.Errors.class));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/allocate-cost-limit")
+                      .param("action", "next")
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("costDetails", allocateCostsFormData)))
+          .hasStatusOk()
+          .hasViewName("application/cost-allocation");
+    }
+  }
+
+  @Nested
+  @DisplayName("GET: /allocate-cost-limit/review")
+  class GetReviewCaseCostsTests {
+
+    @Test
+    @DisplayName("Should return expected view for review page")
+    void shouldReturnExpectedViewForReviewPage() {
+      ApplicationDetail ebsCase = new ApplicationDetail();
+      CostStructureDetail costs =
+          new CostStructureDetail()
+              .addCostEntriesItem(
+                  new CostEntryDetail()
+                      .requestedCosts(new BigDecimal("2250"))
+                      .resourceName("PATRICK J BOWE")
+                      .costCategory("Counsel")
+                      .amountBilled(new BigDecimal("604.63"))
+                      .requestedCosts(new BigDecimal("604.63")))
+              .grantedCostLimitation(new BigDecimal("25000"))
+              .requestedCostLimitation(new BigDecimal("25000"));
+      ebsCase.costs(costs);
+      ebsCase.providerDetails(
+          new ApplicationProviderDetails()
+              .provider(new IntDisplayValue().displayValue("provider")));
+
+      final AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
+      allocateCostsFormData.setRequestedCostLimitation(costs.getRequestedCostLimitation());
+      allocateCostsFormData.setCostEntries(ebsCase.getCosts().getCostEntries());
+      allocateCostsFormData.setProviderName(
+          ebsCase.getProviderDetails().getProvider().getDisplayValue());
+
+      when(proceedingAndCostsMapper.toAllocateCostsForm(any(ApplicationDetail.class)))
+          .thenReturn(allocateCostsFormData);
+
+      assertThat(mockMvc.perform(get("/allocate-cost-limit/review").sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/case-costs-review")
+          .model()
+          .containsEntry("case", ebsCase)
+          .containsEntry("costDetails", allocateCostsFormData);
+    }
+  }
+
+  @Nested
+  @DisplayName("POST: /allocate-cost-limit/review")
+  class PostSubmitCaseCostsTests {
+
+    @Test
+    @DisplayName("Should redirect to case overview after successful submission")
+    void shouldRedirectToCaseOverviewAfterSubmission() {
+      ApplicationDetail ebsCase = new ApplicationDetail();
+      ebsCase.caseReferenceNumber("123456");
+      CostStructureDetail costs =
+          new CostStructureDetail()
+              .addCostEntriesItem(
+                  new CostEntryDetail()
+                      .requestedCosts(new BigDecimal("2250"))
+                      .resourceName("PATRICK J BOWE")
+                      .costCategory("Counsel")
+                      .amountBilled(new BigDecimal("604.63"))
+                      .requestedCosts(new BigDecimal("604.63")))
+              .grantedCostLimitation(new BigDecimal("25000"))
+              .requestedCostLimitation(new BigDecimal("25000"));
+      ebsCase.costs(costs);
+      ebsCase.providerDetails(
+          new ApplicationProviderDetails()
+              .provider(new IntDisplayValue().displayValue("provider")));
+
+      assertThat(mockMvc.perform(post("/allocate-cost-limit/review").sessionAttr(CASE, ebsCase)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/overview");
     }
   }
 }

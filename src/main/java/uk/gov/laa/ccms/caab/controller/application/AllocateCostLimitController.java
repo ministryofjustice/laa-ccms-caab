@@ -55,42 +55,98 @@ public class AllocateCostLimitController {
    *
    * @param allocateCostsFormData the submitted form data for costs.
    * @param ebsCase The case cost details from session.
+   * @param action the button action (calculate or next).
    * @param model the Model object used to pass attributes to the view.
-   * @return The cost limitation allocation view.
+   * @return The cost limitation allocation view or redirect to review.
    */
   @PostMapping("/allocate-cost-limit")
   public String calculateCost(
       @ModelAttribute("costDetails") AllocateCostsFormData allocateCostsFormData,
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @org.springframework.web.bind.annotation.RequestParam(value = "action", required = false)
+          String action,
       final Model model,
       final BindingResult bindingResult) {
 
-    ApplicationDetail appCopy = new ApplicationDetail();
-    appCopy = copyApplicationMapper.copyApplication(appCopy, ebsCase);
+    ApplicationDetail appCopy =
+        copyApplicationMapper.copyApplication(new ApplicationDetail(), ebsCase);
 
     List<CostEntryDetail> costs =
         appCopy.getCosts().getCostEntries().stream().distinct().collect(Collectors.toList());
+
     proceedingAndCostsMapper.toAllocateCostsFormWithoutCostEntries(appCopy, allocateCostsFormData);
 
+    // Update costs in a single pass
     for (int i = 0; i < costs.size(); i++) {
-      if (!costs
-          .get(i)
-          .getRequestedCosts()
-          .equals(allocateCostsFormData.getCostEntries().get(i).getRequestedCosts())) {
-        costs.get(i).setNewEntry(true);
+      CostEntryDetail cost = costs.get(i);
+      CostEntryDetail formCost = allocateCostsFormData.getCostEntries().get(i);
+
+      if (!cost.getRequestedCosts().equals(formCost.getRequestedCosts())) {
+        cost.setNewEntry(true);
       }
-      costs
-          .get(i)
-          .setRequestedCosts(allocateCostsFormData.getCostEntries().get(i).getRequestedCosts());
+      cost.setRequestedCosts(formCost.getRequestedCosts());
     }
+
     allocateCostsFormData.setCostEntries(costs);
-    allocateCostLimitValidator.validate(allocateCostsFormData, bindingResult);
     allocateCostsFormData.setTotalRemaining(getTotalRemaining(allocateCostsFormData));
+
+    allocateCostLimitValidator.validate(allocateCostsFormData, bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      model.addAttribute("case", ebsCase);
+      model.addAttribute("costDetails", allocateCostsFormData);
+      return "application/cost-allocation";
+    }
+
+    if ("next".equals(action)) {
+      ebsCase.getCosts().setCostEntries(costs);
+      return "redirect:/allocate-cost-limit/review";
+    }
 
     model.addAttribute("case", ebsCase);
     model.addAttribute("costDetails", allocateCostsFormData);
-
     return "application/cost-allocation";
+  }
+
+  /**
+   * Displays the review case costs screen.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param model the Model object used to pass attributes to the view.
+   * @return The review case costs view.
+   */
+  @GetMapping("/allocate-cost-limit/review")
+  public String reviewCaseCosts(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase, Model model) {
+
+    AllocateCostsFormData allocateCostsFormData =
+        proceedingAndCostsMapper.toAllocateCostsForm(ebsCase);
+    allocateCostsFormData.setTotalRemaining(getTotalRemaining(allocateCostsFormData));
+
+    model.addAttribute("costDetails", allocateCostsFormData);
+    model.addAttribute("case", ebsCase);
+    return "application/case-costs-review";
+  }
+
+  /**
+   * Handles submission of the review case costs form.
+   *
+   * @param allocateCostsFormData the submitted form data for costs.
+   * @param ebsCase The case cost details from session.
+   * @param model the Model object used to pass attributes to the view.
+   * @return Redirect to the next step in the workflow.
+   */
+  @PostMapping("/allocate-cost-limit/review")
+  public String submitCaseCosts(
+      @ModelAttribute("costDetails") AllocateCostsFormData allocateCostsFormData,
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      final Model model) {
+
+    // TODO: Add API call to finalize the cost allocations
+    log.info("Submitting case costs for case: {}", ebsCase.getCaseReferenceNumber());
+
+    // TODO: Redirect to the next workflow step or show success message
+    return "redirect:/case/overview";
   }
 
   /** Calculates the total requests costs by the granted cost limitation. */
