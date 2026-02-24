@@ -31,7 +31,7 @@ registries:
     password: ${{ secrets.REPO_TOKEN }}
   spring-boot-common-github-packages:
     type: maven-repository
-    url: https://maven.pkg.github.com/ministryofjustice/laa-ccms-spring-boot-common
+    url: https://maven.pkg.github.com/ministryofjustice/laa-spring-boot-common
     username: ${{ secrets.USER }}
     password: ${{ secrets.REPO_TOKEN }}
 
@@ -46,7 +46,7 @@ updates:
       - soa-api-github-packages
       - spring-boot-common-github-packages
     schedule:
-      interval: "weekly"
+      interval: "daily"
     groups:
       external-dependencies:
         exclude-patterns:
@@ -57,7 +57,7 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
     groups:
       npm-dependencies:
         patterns:
@@ -65,7 +65,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
     groups:
       github-actions-dependencies:
         patterns:
