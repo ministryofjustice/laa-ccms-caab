@@ -994,14 +994,17 @@ class CaseControllerTest {
       final ApplicationSectionDisplay applicationSectionDisplay =
           ApplicationSectionDisplay.builder().build();
 
-      when(applicationService.getCaseDetailsDisplay(ebsCase)).thenReturn(applicationSectionDisplay);
       when(applicationService.calculateMainProviderAllocation(ebsCase))
           .thenReturn(mainProviderAllocation);
       when(applicationService.getCurrentProviderBilledAmount(ebsCase))
           .thenReturn(currentProviderBilled);
 
       // When/Then
-      assertThat(mockMvc.perform(get("/case/details/costs/allocation").sessionAttr(CASE, ebsCase)))
+      assertThat(
+              mockMvc.perform(
+                  get("/case/details/costs/allocation")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr("applicationSectionDisplay", applicationSectionDisplay)))
           .hasStatusOk()
           .hasViewName("application/cost-limit-allocation")
           .model()
@@ -1010,7 +1013,6 @@ class CaseControllerTest {
           .containsEntry("mainProviderAllocation", mainProviderAllocation)
           .containsEntry("currentProviderBilledAmount", currentProviderBilled);
 
-      verify(applicationService).getCaseDetailsDisplay(ebsCase);
       verify(applicationService).calculateMainProviderAllocation(ebsCase);
       verify(applicationService).getCurrentProviderBilledAmount(ebsCase);
     }
@@ -1030,13 +1032,16 @@ class CaseControllerTest {
           ApplicationSectionDisplay.builder().build();
       final java.math.BigDecimal mainProviderAllocation = new java.math.BigDecimal("1000.00");
 
-      when(applicationService.getCaseDetailsDisplay(ebsCase)).thenReturn(applicationSectionDisplay);
       when(applicationService.calculateMainProviderAllocation(ebsCase))
           .thenReturn(mainProviderAllocation);
       when(applicationService.getCurrentProviderBilledAmount(ebsCase)).thenReturn(null);
 
       // When/Then
-      assertThat(mockMvc.perform(get("/case/details/costs/allocation").sessionAttr(CASE, ebsCase)))
+      assertThat(
+              mockMvc.perform(
+                  get("/case/details/costs/allocation")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr("applicationSectionDisplay", applicationSectionDisplay)))
           .hasStatusOk()
           .hasViewName("application/cost-limit-allocation")
           .model()
@@ -1045,7 +1050,6 @@ class CaseControllerTest {
           .containsEntry("mainProviderAllocation", mainProviderAllocation)
           .containsEntry("currentProviderBilledAmount", null);
 
-      verify(applicationService).getCaseDetailsDisplay(ebsCase);
       verify(applicationService).calculateMainProviderAllocation(ebsCase);
       verify(applicationService).getCurrentProviderBilledAmount(ebsCase);
     }
@@ -1058,13 +1062,11 @@ class CaseControllerTest {
       final CostStructureDetail costs = new CostStructureDetail();
       ebsCase.setCosts(costs);
 
-      when(applicationService.getCaseDetailsDisplay(ebsCase)).thenReturn(null);
-
       // When/Then
       assertThat(mockMvc.perform(get("/case/details/costs/allocation").sessionAttr(CASE, ebsCase)))
           .failure()
-          .hasCauseInstanceOf(CaabApplicationException.class)
-          .hasMessageContaining("Failed to retrieve case details");
+          .isInstanceOf(ServletRequestBindingException.class)
+          .hasMessageContaining("applicationSectionDisplay");
     }
   }
 }
