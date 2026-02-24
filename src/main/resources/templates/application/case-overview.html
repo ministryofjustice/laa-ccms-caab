@@ -145,7 +145,7 @@
             <th scope="col" class="govuk-table__header"
                 th:text="#{case.overview.costs.title}"/>
             <th scope="col" class="govuk-table__header"
-                th:text="${(case.status.displayValue == 'Submitted' || isAmendment || hasEbsAmendments)
+                th:text="${(case.status.displayValue == 'Submitted' || isAmendment)
                 ? #messages.msg('case.overview.costs.requestedAmount')
                 : #messages.msg('case.overview.costs.grantedAmount')}"/>
           </tr>
@@ -153,7 +153,7 @@
           <tbody class="govuk-table__body">
           <tr class="govuk-table__row">
             <td class="govuk-table__cell"
-                th:text="${(case.status.displayValue == 'Submitted' || isAmendment || hasEbsAmendments)
+                th:text="${(case.status.displayValue == 'Submitted'|| (hasEbsAmendments && !isAmendment))
                 ? #messages.msg('case.overview.costs.costLimitation')
                 : #messages.msg('case.overview.costs.caseCostLimitation')}"/>
             <td class="govuk-table__cell"

@@ -32,6 +32,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.bind.ServletRequestBindingException;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
@@ -606,9 +607,12 @@ class CaseControllerTest {
     void caseCostDetailsReturnsViewAndModel() {
       ApplicationDetail ebsCase = new ApplicationDetail();
       ApplicationSectionDisplay display = ApplicationSectionDisplay.builder().build();
-      when(applicationService.getCaseDetailsDisplay(ebsCase)).thenReturn(display);
 
-      assertThat(mockMvc.perform(get("/case/details/costs").sessionAttr(CASE, ebsCase)))
+      assertThat(
+              mockMvc.perform(
+                  get("/case/details/costs")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr("applicationSectionDisplay", display)))
           .hasStatusOk()
           .hasViewName("application/case-cost-details")
           .model()
@@ -619,12 +623,11 @@ class CaseControllerTest {
     @DisplayName("Should throw exception when case details missing for case cost details")
     void caseCostDetailsThrowsExceptionWhenCaseDetailsMissing() {
       ApplicationDetail ebsCase = new ApplicationDetail();
-      when(applicationService.getCaseDetailsDisplay(ebsCase)).thenReturn(null);
 
       assertThat(mockMvc.perform(get("/case/details/costs").sessionAttr(CASE, ebsCase)))
           .failure()
-          .hasCauseInstanceOf(CaabApplicationException.class)
-          .hasMessageContaining("Failed to retrieve case details");
+          .isInstanceOf(ServletRequestBindingException.class)
+          .hasMessageContaining("applicationSectionDisplay");
     }
 
     @Test
