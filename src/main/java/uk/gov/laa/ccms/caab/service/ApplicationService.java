@@ -15,6 +15,7 @@ import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getNonFinancialAssessment
 import static uk.gov.laa.ccms.caab.util.OpponentUtil.getPartyName;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.ParseException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -463,17 +464,6 @@ public class ApplicationService {
           final ContractDetails contractDetails = tuple.getT3();
           final RelationshipToCaseLookupDetail relationshipToCaseLookupDetail = tuple.getT4();
 
-          // Get a Map of RelationshipToCase by code, filtered for those with the 'copyParty'
-          // flag set.
-          Map<String, RelationshipToCaseLookupValueDetail> copyPartyRelationships =
-              relationshipToCaseLookupDetail.getContent() != null
-                  ? relationshipToCaseLookupDetail.getContent().stream()
-                      .filter(RelationshipToCaseLookupValueDetail::getCopyParty)
-                      .collect(
-                          Collectors.toMap(
-                              RelationshipToCaseLookupValueDetail::getCode, Function.identity()))
-                  : Collections.emptyMap();
-
           // Find the max cost limitation across the Proceedings, and set this as the
           // default cost limitation for the application.
           BigDecimal defaultCostLimitation = BigDecimal.ZERO;
@@ -508,6 +498,19 @@ public class ApplicationService {
 
           // Use a mapper to copy the relevant attributes into the new application
           newApplication = copyApplicationMapper.copyApplication(newApplication, applicationToCopy);
+
+          setCostLimitations(newApplication, false);
+
+          // Get a Map of RelationshipToCase by code, filtered for those with the 'copyParty'
+          // flag set.
+          final Map<String, RelationshipToCaseLookupValueDetail> copyPartyRelationships =
+              relationshipToCaseLookupDetail.getContent() != null
+                  ? relationshipToCaseLookupDetail.getContent().stream()
+                      .filter(RelationshipToCaseLookupValueDetail::getCopyParty)
+                      .collect(
+                          Collectors.toMap(
+                              RelationshipToCaseLookupValueDetail::getCode, Function.identity()))
+                  : Collections.emptyMap();
 
           // Clear the ebsId for an opponent if it is of type INDIVIDUAL AND it is NOT shared AND
           // the relationship to case for the opponent is of type Copy Party.
@@ -659,6 +662,8 @@ public class ApplicationService {
     assessmentService.calculateAssessmentStatuses(
         application, meansAssessment, meritsAssessment, user);
 
+    setCostLimitations(application, Boolean.TRUE.equals(application.getAmendment()));
+
     final boolean evidenceRequired =
         evidenceService.isEvidenceRequired(
             meansAssessment,
@@ -756,6 +761,8 @@ public class ApplicationService {
         applicationSummaryMonos.getT4().getContent();
 
     final Map<String, String> linkedCaseLookup = applicationSummaryMonos.getT5();
+
+    setCostLimitations(application, true);
 
     return new ApplicationSectionsBuilder()
         .caseReferenceNumber(application.getCaseReferenceNumber())
@@ -1574,8 +1581,18 @@ public class ApplicationService {
       }
     }
 
+    if (defaultCostLimitation.compareTo(BigDecimal.ZERO) == 0) {
+      if (application.getCosts().getGrantedCostLimitation() != null
+          && application.getCosts().getGrantedCostLimitation().compareTo(BigDecimal.ZERO) > 0) {
+        defaultCostLimitation = application.getCosts().getGrantedCostLimitation();
+      } else if (application.getCosts().getRequestedCostLimitation() != null
+          && application.getCosts().getRequestedCostLimitation().compareTo(BigDecimal.ZERO) > 0) {
+        defaultCostLimitation = application.getCosts().getRequestedCostLimitation();
+      }
+    }
+
     if (defaultCostLimitation.scale() < 2) {
-      defaultCostLimitation = defaultCostLimitation.setScale(2);
+      defaultCostLimitation = defaultCostLimitation.setScale(2, RoundingMode.HALF_UP);
     }
 
     application.getCosts().setDefaultCostLimitation(defaultCostLimitation);

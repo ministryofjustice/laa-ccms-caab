@@ -142,6 +142,7 @@ public final class ApplicationDetailUtils {
             ProceedingsAndCostsSectionDisplay.builder()
                 .requestedCostLimitation(new BigDecimal("1500.00"))
                 .grantedCostLimitation(null)
+                .defaultCostLimitation(new BigDecimal("1000.00"))
                 .proceedings(
                     List.of(
                         ProceedingSectionDisplay.builder()

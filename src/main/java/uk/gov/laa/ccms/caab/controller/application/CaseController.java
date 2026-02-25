@@ -117,10 +117,30 @@ public class CaseController {
         Optional.ofNullable(applicationService.getCaseDetailsDisplay(ebsCase))
             .orElseThrow(() -> new CaabApplicationException("Failed to retrieve case details"));
 
+    // Store the expensive object in the session for reuse
+    session.setAttribute("applicationSectionDisplay", applicationSectionDisplay);
     model.addAttribute("summary", applicationSectionDisplay);
     session.setAttribute(AMEND_CLIENT_ORIGIN, AmendClientOrigin.VIEW_CASE_DETAILS);
 
     return "application/case-details";
+  }
+
+  /**
+   * Displays the case cost details screen.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param model The model used to pass data to the view.
+   * @return The case cost details view.
+   */
+  @GetMapping("/case/details/costs")
+  public String caseCostDetails(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute("applicationSectionDisplay")
+          final ApplicationSectionDisplay applicationSectionDisplay,
+      final Model model) {
+
+    model.addAttribute("summary", applicationSectionDisplay);
+    return "application/case-cost-details";
   }
 
   /**
