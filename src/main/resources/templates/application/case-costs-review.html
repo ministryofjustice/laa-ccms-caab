@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+    <title th:text="|#{service.name} - #{caseCosts.review.title}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a th:href="@{/allocate-cost-limit}" class="govuk-back-link"
+           th:text="#{site.back}"></a>
+    </div>
+
+    <div id="main-content">
+        <span class="govuk-caption-l" th:text="#{caseCosts.review.caption}"/>
+        <h1 class="govuk-heading-l" id="main-heading" th:text="#{caseCosts.review.heading}"></h1>
+        <p class="govuk-body-l" th:text="#{caseCosts.review.leadParagraph}"></p>
+
+        <form th:action="@{/allocate-cost-limit/review}" th:object="${costDetails}" method="post">
+            <div class="govuk-grid-row">
+                <div class="govuk-grid-column-full">
+                    <table class="govuk-table">
+                        <caption class="govuk-table__caption govuk-table__caption--m" th:text="#{caseCosts.header}"/>
+                        <thead>
+                        <tr>
+                            <th class="govuk-table__header" th:text="#{caseCosts.provider}"/>
+                            <th class="govuk-table__header" th:text="#{caseCosts.type}"/>
+                            <th class="govuk-table__header" th:text="#{caseCosts.amount}"/>
+                            <th class="govuk-table__header" th:text="#{caseCosts.providerCost}"/>
+                        </tr>
+                        </thead>
+                        <tbody class="govuk-table__body">
+                        <tr class="govuk-table__row">
+                            <th scope="row" class="govuk-table__header" th:text="#{caseCosts.grantedCost}"/>
+                            <td class="govuk-table__cell"></td>
+                            <td class="govuk-table__cell"></td>
+                            <td class="govuk-table__cell govuk-table__header"
+                                th:text="'£ ' + ${case.costs.grantedCostLimitation}"></td>
+                        </tr>
+                        <tr class="govuk-table__row">
+                            <td class="govuk-table__cell" th:text="${case.providerDetails.provider.displayValue}"/>
+                            <td class="govuk-table__cell" th:text="#{caseCosts.provider}"/>
+                            <td class="govuk-table__cell"></td>
+                            <td class="govuk-table__cell govuk-table__header"
+                                th:text="'£ ' + ${#numbers.formatDecimal(costDetails.totalRemaining, 1, 2)}">
+                            </td>
+                        </tr>
+
+                        <tr class="govuk-table__row"
+                            th:each="costEntryDetail : *{costEntries.stream().distinct().toList()}">
+                            <td class="govuk-table__cell" th:text="${costEntryDetail.resourceName}"/>
+                            <td class="govuk-table__cell" style="text-transform: capitalize"
+                                th:text="${costEntryDetail.costCategory.toLowerCase()}"></td>
+                            <td class="govuk-table__cell" th:text="'£ ' + ${costEntryDetail.amountBilled}"></td>
+                            <td class="govuk-table__cell govuk-table__header"
+                                th:text="'£ ' + ${#numbers.formatDecimal(costEntryDetail.requestedCosts, 1, 2)}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="govuk-button-group">
+                <button type="submit" class="govuk-button" data-module="govuk-button" th:text="#{site.submit}"/>
+                <a th:href="@{/allocate-cost-limit}" class="govuk-link govuk-link--no-visited-state" data-module="govuk-button" th:text="#{site.back}"></a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>
