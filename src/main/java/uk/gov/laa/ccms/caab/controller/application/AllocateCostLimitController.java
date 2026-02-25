@@ -92,20 +92,14 @@ public class AllocateCostLimitController {
 
     allocateCostLimitValidator.validate(allocateCostsFormData, bindingResult);
 
-    if (bindingResult.hasErrors()) {
+    if (bindingResult.hasErrors() || "calculate".equals(action)) {
       model.addAttribute("case", ebsCase);
       model.addAttribute("costDetails", allocateCostsFormData);
       return "application/cost-allocation";
     }
 
-    if ("next".equals(action)) {
-      ebsCase.getCosts().setCostEntries(costs);
-      return "redirect:/allocate-cost-limit/review";
-    }
-
-    model.addAttribute("case", ebsCase);
-    model.addAttribute("costDetails", allocateCostsFormData);
-    return "application/cost-allocation";
+    ebsCase.getCosts().setCostEntries(costs);
+    return "redirect:/allocate-cost-limit/review";
   }
 
   /**
