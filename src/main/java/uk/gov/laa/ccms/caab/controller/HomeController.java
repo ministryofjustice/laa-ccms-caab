@@ -10,7 +10,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.service.NotificationService;
-import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.caab.util.UserRoleUtil;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -23,8 +22,6 @@ public class HomeController {
   public static final String NO_OUTSTANDING_ACTIONS = "No Outstanding Actions";
 
   private final NotificationService notificationService;
-
-  private final UserService userService;
 
   /**
    * Handles requests to the home page. Retrieves and formats user notifications and actions.
