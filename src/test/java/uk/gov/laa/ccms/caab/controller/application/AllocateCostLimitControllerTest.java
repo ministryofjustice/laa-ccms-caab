@@ -2,11 +2,14 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +30,9 @@ import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
+import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.data.model.BaseProvider;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Allocate cost limit controller tests")
@@ -43,6 +49,8 @@ public class AllocateCostLimitControllerTest {
       allocateCostLimitValidator;
 
   @Mock private uk.gov.laa.ccms.caab.mapper.CopyApplicationMapper copyApplicationMapper;
+
+  @Mock private ApplicationService applicationService;
 
   @BeforeEach
   void setUp() {
@@ -61,6 +69,7 @@ public class AllocateCostLimitControllerTest {
     @DisplayName("Should return expected view")
     void shouldReturnExpectedView() {
       ApplicationDetail ebsCase = new ApplicationDetail();
+      ebsCase.setCaseReferenceNumber("123");
       CostStructureDetail costs =
           new CostStructureDetail()
               .addCostEntriesItem(
@@ -77,16 +86,26 @@ public class AllocateCostLimitControllerTest {
           new ApplicationProviderDetails()
               .provider(new IntDisplayValue().displayValue("provider")));
 
+      UserDetail user = new UserDetail();
+      user.setUsername("user");
+      user.setProvider(new BaseProvider());
+      user.getProvider().setId(123);
+
       final AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
       allocateCostsFormData.setRequestedCostLimitation(costs.getRequestedCostLimitation());
       allocateCostsFormData.setCostEntries(ebsCase.getCosts().getCostEntries());
       allocateCostsFormData.setProviderName(
           ebsCase.getProviderDetails().getProvider().getDisplayValue());
 
+      when(applicationService.getCase(anyString(), anyLong(), anyString())).thenReturn(ebsCase);
       when(proceedingAndCostsMapper.toAllocateCostsForm(any(ApplicationDetail.class)))
           .thenReturn(allocateCostsFormData);
 
-      assertThat(mockMvc.perform(get("/allocate-cost-limit").sessionAttr(CASE, ebsCase)))
+      assertThat(
+              mockMvc.perform(
+                  get("/allocate-cost-limit")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
           .hasStatusOk()
           .hasViewName("application/cost-allocation")
           .model()

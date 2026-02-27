@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -21,6 +22,8 @@ import uk.gov.laa.ccms.caab.mapper.CopyApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
+import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 /** Controller responsible for handling cost limit allocation. */
 @RequiredArgsConstructor
@@ -30,23 +33,34 @@ public class AllocateCostLimitController {
   private final ProceedingAndCostsMapper proceedingAndCostsMapper;
   private final CopyApplicationMapper copyApplicationMapper;
   private final AllocateCostLimitValidator allocateCostLimitValidator;
+  private final ApplicationService applicationService;
 
   /**
    * Displays the cost limitation allocation screen.
    *
    * @param ebsCase The case details from EBS.
+   * @param userDetails The details of the currently authenticated user.
    * @param model the Model object used to pass attributes to the view.
    * @return The cost limitation allocation view.
    */
   @GetMapping("/allocate-cost-limit")
-  public String caseDetails(@SessionAttribute(CASE) final ApplicationDetail ebsCase, Model model) {
+  public String caseDetails(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
+      Model model) {
+
+    ApplicationDetail freshCase =
+        applicationService.getCase(
+            ebsCase.getCaseReferenceNumber(),
+            userDetails.getProvider().getId(),
+            userDetails.getUsername());
 
     AllocateCostsFormData allocateCostsFormData =
-        proceedingAndCostsMapper.toAllocateCostsForm(ebsCase);
+        proceedingAndCostsMapper.toAllocateCostsForm(freshCase);
     allocateCostsFormData.setTotalRemaining(getTotalRemaining(allocateCostsFormData));
 
     model.addAttribute("costDetails", allocateCostsFormData);
-    model.addAttribute("case", ebsCase);
+    model.addAttribute("case", freshCase);
     return "application/cost-allocation";
   }
 
