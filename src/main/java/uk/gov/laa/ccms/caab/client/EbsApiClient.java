@@ -902,14 +902,14 @@ public class EbsApiClient extends BaseApiClient {
    *
    * @param caseReferenceNumber The reference number for the case to fetch.
    * @param providerId The provider ID who owns this case.
-   * @param userName The username of the logged in user.
+   * @param userLoginId The login id of the logged in user.
    * @return A {@link Mono} wrapping the {@link CaseDetail}.
    */
   public Mono<CaseDetail> getCase(
-      final String caseReferenceNumber, final long providerId, final String userName) {
+      final String caseReferenceNumber, final long providerId, final String userLoginId) {
     final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
     queryParams.add("provider-id", String.valueOf(providerId));
-    queryParams.add("user-name", userName);
+    queryParams.add("user-name", userLoginId);
     return ebsApiWebClient
         .get()
         .uri(

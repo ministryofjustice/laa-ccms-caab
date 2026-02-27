@@ -205,7 +205,7 @@ public class ApplicationSearchController {
     try {
       ebsCase =
           applicationService.getCase(
-              caseReferenceNumber, userDetails.getProvider().getId(), userDetails.getUsername());
+              caseReferenceNumber, userDetails.getProvider().getId(), userDetails.getLoginId());
     } catch (EbsApiClientException e) {
       if (!e.hasHttpStatus(HttpStatus.NOT_FOUND)) {
         throw new CaabApplicationException("Failed to retrieve EBS case " + caseReferenceNumber);
