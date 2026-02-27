@@ -44,7 +44,7 @@ public class SamlPrincipalControllerAdvice {
 
       // When the home page is requested, user details must be retrieved from the database to
       // ensure the correct provider is displayed, as it can be updated outside the control of
-      // this service (via legacy PUI or EBS).
+      // this service (via legacy PUI or EBS). See https://dsdmoj.atlassian.net/browse/CCMSPUI-949.
       if (session.getAttribute("user") != null
           && !requestIsForController(request, HomeController.class)) {
         user = (UserDetail) session.getAttribute("user");
@@ -64,6 +64,14 @@ public class SamlPrincipalControllerAdvice {
     }
   }
 
+  /**
+   * Determines whether the target of the given {@code request} matches the provided controller
+   * class.
+   *
+   * @param request the request to be inspected.
+   * @param targetClass the controller class to test against.
+   * @return true if the target controller class matches, false otherwise.
+   */
   private boolean requestIsForController(HttpServletRequest request, Class<?> targetClass) {
     Object handler = request.getAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE);
     return handler instanceof HandlerMethod handlerMethod
