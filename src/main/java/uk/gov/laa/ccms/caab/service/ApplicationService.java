@@ -299,13 +299,13 @@ public class ApplicationService {
    *
    * @param caseReferenceNumber The reference of the case to be retrieved.
    * @param providerId The identifier for the provider.
-   * @param userName The username of the logged-in user.
+   * @param userLoginId The login id of the logged-in user.
    * @return A Mono wrapping the CaseDetails.
    */
   public ApplicationDetail getCase(
-      final String caseReferenceNumber, final long providerId, final String userName) {
+      final String caseReferenceNumber, final long providerId, final String userLoginId) {
     uk.gov.laa.ccms.data.model.CaseDetail ebsCase =
-        ebsApiClient.getCase(caseReferenceNumber, providerId, userName).block();
+        ebsApiClient.getCase(caseReferenceNumber, providerId, userLoginId).block();
 
     return ebsApplicationMapper.toApplicationDetail(
         ebsApplicationMappingContextBuilder.buildApplicationMappingContext(ebsCase));
