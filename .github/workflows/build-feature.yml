@@ -31,7 +31,7 @@ jobs:
 
   scan-image:
     needs: [ build ]
-    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@v1
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@fix/update-trivy
     permissions:
       contents: read
       id-token: write
