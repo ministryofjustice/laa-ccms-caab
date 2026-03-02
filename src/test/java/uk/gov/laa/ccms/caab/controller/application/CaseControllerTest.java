@@ -13,6 +13,9 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERG
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -30,6 +33,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.ServletRequestBindingException;
@@ -37,6 +41,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -440,6 +445,72 @@ class CaseControllerTest {
                     .hasEntrySatisfying(
                         "returnTo", value -> assertThat(value).isEqualTo("caseSearchResults"))
                     .hasEntrySatisfying(NOTIFICATION_ID, value -> assertThat(value).isNull());
+              });
+    }
+
+    @Test
+    @DisplayName("Case overview clears stale TDS amendment when not found")
+    public void caseOverviewClearsStaleTdsAmendment() {
+      final String selectedCaseRef = "2";
+      final Integer providerId = 1;
+      final String providerReference = "providerReference";
+      final String clientFirstname = "firstname";
+      final String clientSurname = "surname";
+      final String clientReference = "clientReference";
+      final String applicationId = "applicationId";
+      final ApplicationDetail amendmentApplication = new ApplicationDetail().id(99);
+      final CostStructureDetail amendmentCosts = new CostStructureDetail();
+      final String applicationFormData = "applicationFormData";
+
+      ApplicationDetail applicationDetail =
+          getEbsCase(
+              selectedCaseRef,
+              providerId,
+              providerReference,
+              clientFirstname,
+              clientSurname,
+              clientReference,
+              false,
+              null,
+              null);
+
+      BaseApplicationDetail tdsApplication =
+          new BaseApplicationDetail().id(3).caseReferenceNumber(selectedCaseRef);
+
+      when(applicationService.getApplication(any()))
+          .thenReturn(Mono.error(new CaabApiClientException("not found", HttpStatus.NOT_FOUND)));
+      when(applicationService.isAmendment(any(), any())).thenReturn(Boolean.TRUE);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/overview", selectedCaseRef)
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, applicationDetail)
+                      .sessionAttr(APPLICATION_SUMMARY, tdsApplication)
+                      .sessionAttr(APPLICATION_ID, applicationId)
+                      .sessionAttr(APPLICATION, amendmentApplication)
+                      .sessionAttr(APPLICATION_COSTS, amendmentCosts)
+                      .sessionAttr(APPLICATION_FORM_DATA, applicationFormData)
+                      .sessionAttr(SEARCH_URL, returnUrl)))
+          .hasViewName("application/case-overview")
+          .satisfies(
+              response -> {
+                assertThat(response)
+                    .request()
+                    .sessionAttributes()
+                    .doesNotContainKey(APPLICATION_SUMMARY)
+                    .doesNotContainKey(APPLICATION_ID)
+                    .doesNotContainKey(APPLICATION)
+                    .doesNotContainKey(APPLICATION_COSTS)
+                    .doesNotContainKey(APPLICATION_FORM_DATA);
+                assertThat(response)
+                    .model()
+                    .hasEntrySatisfying(
+                        "isAmendment",
+                        value ->
+                            assertThat(value)
+                                .asInstanceOf(InstanceOfAssertFactories.BOOLEAN)
+                                .isFalse());
               });
     }
 
@@ -931,10 +1002,13 @@ class CaseControllerTest {
                     .firstName(clientFirstname)
                     .surname(clientSurname)
                     .reference(clientReference))
-            .costs(
-                new CostStructureDetail().addCostEntriesItem(new CostEntryDetail().ebsId(costId)))
             .availableFunctions(availableFunctions) // Use provided functions
             .amendment(false);
+
+    if (costId != null) {
+      ebsCase.setCosts(
+          new CostStructureDetail().addCostEntriesItem(new CostEntryDetail().ebsId(costId)));
+    }
 
     if (hasEbsAmendments
         && proceedingId
