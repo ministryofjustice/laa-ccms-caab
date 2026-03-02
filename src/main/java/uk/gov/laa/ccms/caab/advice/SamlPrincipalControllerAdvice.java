@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.advice;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -7,6 +8,9 @@ import org.springframework.security.saml2.provider.service.authentication.Saml2A
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerMapping;
+import uk.gov.laa.ccms.caab.controller.HomeController;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -29,7 +33,7 @@ public class SamlPrincipalControllerAdvice {
    */
   @ModelAttribute
   public void addSamlPrincipalToModel(
-      Authentication authentication, Model model, HttpSession session) {
+      Authentication authentication, Model model, HttpSession session, HttpServletRequest request) {
 
     if (authentication instanceof Saml2AssertionAuthentication saml2Authentication) {
 
@@ -38,7 +42,11 @@ public class SamlPrincipalControllerAdvice {
       UserDetail user = new UserDetail();
       user.setLoginId(loginId);
 
-      if (session.getAttribute("user") != null) {
+      // When the home page is requested, user details must be retrieved from the database to
+      // ensure the correct provider is displayed, as it can be updated outside the control of
+      // this service (via legacy PUI or EBS). See https://dsdmoj.atlassian.net/browse/CCMSPUI-949.
+      if (session.getAttribute("user") != null
+          && !requestIsForController(request, HomeController.class)) {
         user = (UserDetail) session.getAttribute("user");
 
         if (!user.getLoginId().equals(loginId)) {
@@ -54,5 +62,19 @@ public class SamlPrincipalControllerAdvice {
 
       session.setAttribute("user", user);
     }
+  }
+
+  /**
+   * Determines whether the target of the given {@code request} matches the provided controller
+   * class.
+   *
+   * @param request the request to be inspected.
+   * @param targetClass the controller class to test against.
+   * @return true if the target controller class matches, false otherwise.
+   */
+  private boolean requestIsForController(HttpServletRequest request, Class<?> targetClass) {
+    Object handler = request.getAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE);
+    return handler instanceof HandlerMethod handlerMethod
+        && handlerMethod.getBeanType().equals(targetClass);
   }
 }
