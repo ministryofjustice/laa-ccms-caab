@@ -215,6 +215,9 @@ public class EditProceedingsAndCostsSectionController {
 
     model.addAttribute(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities);
 
+    Map<Integer, Boolean> deletePriorAuthoritiesAllowedLookup =
+        applicationService.getDeletePriorAuthorityAllowedLookup(priorAuthorities);
+    model.addAttribute("deletePriorAuthoritiesAllowedLookup", deletePriorAuthoritiesAllowedLookup);
     return "application/proceedings-and-costs-section";
   }
 
