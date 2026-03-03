@@ -3,6 +3,8 @@ package uk.gov.laa.ccms.caab.controller.application;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.AMEND_CLIENT_ORIGIN;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
@@ -13,7 +15,6 @@ import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificati
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -21,6 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -29,13 +31,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import uk.gov.laa.ccms.caab.bean.proceeding.CaseProceedingDisplayStatus;
+import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.AvailableAction;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
-import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
@@ -73,34 +76,57 @@ public class CaseController {
       HttpSession session,
       HttpServletRequest request) {
 
-    boolean isAmendment = applicationService.isAmendment(ebsCase, tdsApplication);
-
     setReturnDetails(model, notificationId, request);
-    ApplicationDetail amendments = null;
-    List<ProceedingDetail> draftProceedings = new ArrayList<>();
-    CostStructureDetail draftCosts = null;
-    if (isAmendment) {
-      amendments = applicationService.getApplication(tdsApplication.getId().toString()).block();
-      draftProceedings =
-          amendments != null ? amendments.getProceedings() : ebsCase.getAmendmentProceedingsInEbs();
-      draftCosts = amendments != null ? amendments.getCosts() : ebsCase.getCosts();
+
+    boolean isAmendment = applicationService.isAmendment(ebsCase, tdsApplication);
+    ApplicationDetail amendments = isAmendment ? resolveAmendment(tdsApplication, session) : null;
+
+    // If resolveAmendment returned null, the amendment was abandoned
+    if (isAmendment && amendments == null) {
+      isAmendment = false;
     }
+
     setProceedingDisplayStatuses(ebsCase, amendments);
 
-    List<AvailableAction> availableActions = getAvailableActions(ebsCase, isAmendment, amendments);
-    String returnSearchUrl = session.getAttribute(SEARCH_URL).toString();
-
-    model.addAttribute("searchUrl", returnSearchUrl);
+    model.addAttribute("searchUrl", session.getAttribute(SEARCH_URL).toString());
     model.addAttribute("case", ebsCase);
     model.addAttribute("isAmendment", isAmendment);
-    model.addAttribute("availableActions", availableActions);
+    model.addAttribute("availableActions", getAvailableActions(ebsCase, isAmendment, amendments));
     model.addAttribute("hasEbsAmendments", hasEbsAmendments(ebsCase));
-    model.addAttribute("draftProceedings", draftProceedings);
-    model.addAttribute("draftCosts", draftCosts);
+    model.addAttribute(
+        "draftProceedings",
+        isAmendment ? amendments.getProceedings() : ebsCase.getAmendmentProceedingsInEbs());
+    model.addAttribute("draftCosts", isAmendment ? amendments.getCosts() : ebsCase.getCosts());
+
     session.setAttribute(CASE_REFERENCE_NUMBER, ebsCase.getCaseReferenceNumber());
     session.setAttribute(APPLICATION, amendments);
     session.setAttribute(AMEND_CLIENT_ORIGIN, AmendClientOrigin.CASE_OVERVIEW);
+
     return "application/case-overview";
+  }
+
+  private ApplicationDetail resolveAmendment(
+      BaseApplicationDetail tdsApplication, HttpSession session) {
+    try {
+      ApplicationDetail amendments =
+          applicationService.getApplication(tdsApplication.getId().toString()).block();
+      if (amendments != null) {
+        return amendments;
+      }
+      log.warn(
+          "Amendment application {} returned no data, clearing session state.",
+          tdsApplication.getId());
+    } catch (CaabApiClientException ex) {
+      if (!isNotFound(ex)) {
+        throw ex;
+      }
+      log.warn(
+          "Amendment application {} no longer available, clearing session state.",
+          tdsApplication.getId(),
+          ex);
+    }
+    clearAmendmentSession(session);
+    return null;
   }
 
   /**
@@ -311,8 +337,7 @@ public class CaseController {
     log.info("Abandoning amendments for case id {}", amendments.getId());
     applicationService.abandonApplication(amendments, user);
 
-    httpSession.removeAttribute(APPLICATION_SUMMARY);
-    httpSession.removeAttribute(APPLICATION_ID);
+    clearAmendmentSession(httpSession);
 
     return "redirect:/case/overview";
   }
@@ -362,6 +387,23 @@ public class CaseController {
         referer != null && referer.contains("notifications") ? "notification" : "caseSearchResults";
     model.addAttribute("returnTo", returnTo);
     model.addAttribute(NOTIFICATION_ID, notificationId);
+  }
+
+  private void clearAmendmentSession(HttpSession session) {
+    session.removeAttribute(APPLICATION_SUMMARY);
+    session.removeAttribute(APPLICATION_ID);
+    session.removeAttribute(APPLICATION);
+    session.removeAttribute(APPLICATION_COSTS);
+    session.removeAttribute(APPLICATION_FORM_DATA);
+  }
+
+  private boolean isNotFound(CaabApiClientException ex) {
+    if (ex.hasHttpStatus(HttpStatus.NOT_FOUND)) {
+      return true;
+    }
+    Throwable cause = ex.getCause();
+    return cause instanceof WebClientResponseException wcre
+        && wcre.getStatusCode() == HttpStatus.NOT_FOUND;
   }
 
   private void setProceedingDisplayStatuses(
