@@ -16,7 +16,7 @@ on:
 
 jobs:
   build:
-    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/gradle-build-and-publish.yml@v1
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/gradle-build-and-publish.yml@main
     permissions:
       contents: write
       packages: write
@@ -31,7 +31,7 @@ jobs:
 
   scan-image:
     needs: [ build ]
-    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@v1
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@main
     permissions:
       contents: read
       id-token: write
