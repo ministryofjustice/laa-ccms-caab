@@ -1535,6 +1535,26 @@ public class ApplicationService {
         && (outcome == null || outcome.getId() == null);
   }
 
+  public Map<Integer, Boolean> getDeletePriorAuthorityAllowedLookup(
+      final List<PriorAuthorityDetail> priorAuthorities) {
+    return priorAuthorities.stream()
+        .map(
+            priorAuthority ->
+                new AbstractMap.SimpleEntry<>(
+                    priorAuthority.getId(),
+                    isDeletePriorAuthorityAllowed(priorAuthority)))
+        .collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll);
+  }
+
+  private boolean isDeletePriorAuthorityAllowed(
+      final PriorAuthorityDetail priorAuthority
+  ) {
+    if (priorAuthority.getStatus().equals("Grant")) {
+      return false;
+    }
+  return true;
+  }
+
   /**
    * Constructs a map of draft proceeding ids and the corresponding original proceeding object, if
    * it exists.

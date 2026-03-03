@@ -160,8 +160,8 @@
             <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(priorAuthority.amountRequested)}"/>
             <td class="govuk-table__cell" th:text="${priorAuthority.status}"/>
             <td class="govuk-table__cell">
-              <a th:href="@{/{caseContext}/prior-authorities/{id}/remove(id=${priorAuthority.id},caseContext=${caseContext.pathValue})}"
-                 class="govuk-link" th:text="#{site.delete}"/>
+                <a th:if="${deletePriorAuthoritiesAllowedLookup.get(priorAuthority.id)}" th:href="@{/{caseContext}/prior-authorities/{id}/remove(id=${priorAuthority.id},caseContext=${caseContext.pathValue})}"
+                   class="govuk-link" th:text="#{site.delete}"/>
             </td>
           </tr>
           <tr class="govuk-table__row" th:if="${priorAuthorities.isEmpty()}">
