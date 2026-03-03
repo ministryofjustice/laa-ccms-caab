@@ -1539,7 +1539,7 @@ public class ApplicationService {
    * Constructs a map of prior authorities ids and a boolean representing whether they can be
    * deleted.
    *
-   * @param priorAuthorities
+   * @param priorAuthorities the list of prior authorities
    * @return a map of prior authorities ids and a boolean representing whether they can be deleted.
    */
   public Map<Integer, Boolean> getDeletePriorAuthorityAllowedLookup(
