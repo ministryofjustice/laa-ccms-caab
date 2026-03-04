@@ -45,6 +45,7 @@ import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
@@ -445,6 +446,75 @@ class CaseControllerTest {
                     .hasEntrySatisfying(
                         "returnTo", value -> assertThat(value).isEqualTo("caseSearchResults"))
                     .hasEntrySatisfying(NOTIFICATION_ID, value -> assertThat(value).isNull());
+              });
+    }
+
+    @Test
+    @DisplayName("Case overview refreshes TDS amendment summary when missing from session")
+    public void caseOverviewRefreshesTdsSummaryWhenMissing() {
+      final String selectedCaseRef = "7";
+      final Integer providerId = 1;
+      final String providerReference = "providerReference";
+      final String clientFirstname = "firstname";
+      final String clientSurname = "surname";
+      final String clientReference = "clientReference";
+
+      ApplicationDetail ebsCase =
+          getEbsCase(
+              selectedCaseRef,
+              providerId,
+              providerReference,
+              clientFirstname,
+              clientSurname,
+              clientReference,
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.AMEND_CASE));
+
+      BaseApplicationDetail tdsApplication =
+          new BaseApplicationDetail()
+              .id(100)
+              .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
+              .caseReferenceNumber(selectedCaseRef);
+
+      ApplicationDetails applicationDetails =
+          new ApplicationDetails().addContentItem(tdsApplication);
+
+      ProceedingDetail expectedProceeding = new ProceedingDetail().id(2);
+      CostStructureDetail expectedCost =
+          new CostStructureDetail().addCostEntriesItem(new CostEntryDetail().ebsId("4"));
+
+      ApplicationDetail amendments =
+          new ApplicationDetail().proceedings(List.of(expectedProceeding)).costs(expectedCost);
+
+      when(applicationService.getTdsApplications(any(), any(), any(), any()))
+          .thenReturn(applicationDetails);
+      when(applicationService.getApplication(any())).thenReturn(Mono.just(amendments));
+      when(applicationService.isAmendment(any(), any())).thenReturn(Boolean.TRUE);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/overview", selectedCaseRef)
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(SEARCH_URL, returnUrl)))
+          .hasViewName("application/case-overview")
+          .satisfies(
+              response -> {
+                assertThat(response)
+                    .request()
+                    .sessionAttributes()
+                    .hasEntrySatisfying(
+                        APPLICATION_SUMMARY, value -> assertThat(value).isNotNull());
+                assertThat(response)
+                    .model()
+                    .hasEntrySatisfying(
+                        "isAmendment",
+                        value ->
+                            assertThat(value)
+                                .asInstanceOf(InstanceOfAssertFactories.BOOLEAN)
+                                .isTrue());
               });
     }
 
