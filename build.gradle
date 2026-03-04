@@ -90,13 +90,13 @@ dependencies {
 	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.0.0')
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
-	implementation 'software.amazon.awssdk:sts:2.42.4'
+	implementation 'software.amazon.awssdk:sts:2.42.5'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
     implementation 'org.json:json:20251224'
 
-    implementation 'io.swagger.core.v3:swagger-annotations:2.2.43'
+    implementation 'io.swagger.core.v3:swagger-annotations:2.2.44'
 
     //SAML security
     implementation 'org.springframework.boot:spring-boot-starter-security-saml2'
