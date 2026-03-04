@@ -216,35 +216,32 @@
       </div>
     </div>
     <div class="govuk-grid-row">
-      <div class="govuk-grid-column-two-thirds">
-        <h2 class="govuk-heading-m" id="costs" th:text="#{caseDetails.costs.limitation}">
+      <div class="govuk-grid-column-full">
+        <h2 class="govuk-heading-m" id="costs" th:text="#{case.overview.costs.title}">
           Costs
         </h2>
-        <dl class="govuk-summary-list">
-          <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
-            <dt class="govuk-summary-list__key"
-                th:text="#{caseDetails.costs.requested}"/>
-            <dd class="govuk-summary-list__value"
-                id="costs-requested-amount-value"
+        <table class="govuk-table">
+          <thead>
+          <tr>
+            <th class="govuk-table__header" th:text="#{case.overview.costs.title}"></th>
+            <th class="govuk-table__header" th:text="#{case.overview.costs.requestedAmount}"></th>
+            <th class="govuk-table__header" th:text="#{case.overview.costs.grantedAmount}"></th>
+          </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell">
+              <a th:href="@{/case/details/costs}"
+                 th:text="#{case.overview.costs.caseCostLimitation}">
+              </a>
+            </td>
+            <td class="govuk-table__cell"
                 th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.requestedCostLimitation)}"/>
-          </div>
-          <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key"
-                th:text="#{caseDetails.costs.granted}"/>
-            <dd class="govuk-summary-list__value"
-                id="costs-granted-amount-value"
+            <td class="govuk-table__cell"
                 th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)}"/>
-            <dd class="govuk-summary-list__actions">
-              <a class="govuk-link govuk-link--no-visited-state"
-                 id="case-cost-details-link"
-                 th:href="@{/case/details/costs}">
-                <th:block th:text="#{site.view}"/>
-                <span class="govuk-visually-hidden"
-                      th:with="content=#{caseDetails.costs.limitation}"
-                      th:text="${#strings.toLowerCase(content)}"/></a>
-            </dd>
-          </div>
-        </dl>
+          </tr>
+          </tbody>
+        </table>
       </div>
     </div>
     <div class="govuk-grid-row">

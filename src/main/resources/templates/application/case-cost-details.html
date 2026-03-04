@@ -13,36 +13,45 @@
   </div>
 
   <div id="main-content">
+    <h1 class="govuk-heading-l" id="main-heading" th:text="#{caseCostDetails.title}"></h1>
+    <p class="govuk-body-l" id="lead-paragraph" th:text="#{caseCostDetails.leadParagraph}"></p>
+
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
-        <h1 class="govuk-heading-l" id="main-heading" th:text="#{caseCostDetails.title}"></h1>
-        <p class="govuk-body-l" id="lead-paragraph" th:text="#{caseCostDetails.leadParagraph}"></p>
-
-        <dl class="govuk-summary-list govuk-!-margin-bottom-9">
-          <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key" th:text="#{caseDetails.costs.limitation.default}"></dt>
-            <dd class="govuk-summary-list__value" id="costs-default-amount-value"
-                th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.defaultCostLimitation)}"></dd>
-          </div>
-          <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key" th:text="#{caseDetails.costs.limitation.granted}"></dt>
-            <dd class="govuk-summary-list__value" id="costs-granted-amount-value"
-                th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)}"></dd>
-            <dd class="govuk-summary-list__actions"
-                th:if="${case.costs != null and case.costs.grantedCostLimitation != null and case.costs.costEntries != null and !#lists.isEmpty(case.costs.costEntries)}">
+        <table class="govuk-table">
+          <thead>
+          <tr>
+            <th class="govuk-table__header" style="width: 30%" th:text="#{caseDetails.costs.limitation}"></th>
+            <th class="govuk-table__header" th:text="#{caseDetails.costs.amount}"></th>
+            <th class="govuk-table__header" th:text="#{caseDetails.costs.action}"></th>
+          </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell" th:text="#{caseDetails.costs.limitation.default}"></td>
+            <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.defaultCostLimitation)}"></td>
+            <td class="govuk-table__cell"></td>
+          </tr>
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell" th:text="#{caseDetails.costs.limitation.granted}"></td>
+            <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)}"></td>
+            <td class="govuk-table__cell">
+              <span th:if="${case.costs != null and case.costs.grantedCostLimitation != null and case.costs.costEntries != null and !#lists.isEmpty(case.costs.costEntries)}">
               <a class="govuk-link govuk-link--no-visited-state"
                  id="case-cost-limitation-link"
                  th:href="@{/case/details/costs/allocation}">
                 <th:block th:text="#{caseCostDetails.allocation.link}"/>
               </a>
-            </dd>
-          </div>
-          <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key" th:text="#{caseDetails.costs.limitation.requested}"></dt>
-            <dd class="govuk-summary-list__value" id="costs-requested-amount-value"
-                th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.requestedCostLimitation)}"></dd>
-          </div>
-        </dl>
+                </span>
+            </td>
+          </tr>
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell" th:text="#{caseDetails.costs.limitation.requested}"></td>
+            <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.requestedCostLimitation)}"></td>
+            <td class="govuk-table__cell"></td>
+          </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>

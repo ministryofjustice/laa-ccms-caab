@@ -8,12 +8,12 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/case/details/costs}" class="govuk-back-link"
-           th:text="#{caseDetails.cost.return}"></a>
+        <a th:href="@{/case/details}" class="govuk-back-link"
+           th:text="#{caseDetails.details.return}"></a>
     </div>
 
     <div id="main-content">
-        <h1 class="govuk-heading-l" id="main-heading" th:text="#{caseCosts.header}"></h1>
+        <h1 class="govuk-heading-l" id="main-heading" th:text="#{caseCostDetails.title}"></h1>
         <p class="govuk-body" th:text="#{caseCostDetails.leadParagraph}"></p>
 
         <div class="govuk-grid-row">
@@ -40,7 +40,7 @@
                         <td class="govuk-table__cell" th:text="#{caseCosts.provider}"></td>
                         <td class="govuk-table__cell"
                             th:text="${currentProviderBilledAmount != null ? #numbers.formatCurrency(currentProviderBilledAmount) : ''}"></td>
-                        <td class="govuk-table__cell"
+                        <td class="govuk-table__cell govuk-!-font-weight-bold"
                             th:text="${#numbers.formatCurrency(mainProviderAllocation)}"></td>
                     </tr>
                     <tr class="govuk-table__row"
