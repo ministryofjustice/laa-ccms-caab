@@ -17,7 +17,6 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULT
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -289,8 +288,7 @@ public class ApplicationSearchControllerTest {
       String caseReference = "1";
 
       // No TDS applications
-      when(applicationService.getTdsApplications(any(), any(), any(), any()))
-          .thenReturn(new ApplicationDetails().content(Collections.emptyList()));
+      when(applicationService.getTdsApplicationSummary(any(), any())).thenReturn(null);
 
       assertThat(
               mockMvc.perform(
@@ -312,15 +310,13 @@ public class ApplicationSearchControllerTest {
       final String appRef = "2";
 
       // TDS application
-      ApplicationDetails applicationDetails =
-          new ApplicationDetails()
-              .addContentItem(
-                  new BaseApplicationDetail()
-                      .id(Integer.parseInt(appRef))
-                      .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
-                      .caseReferenceNumber(selectedCaseRef));
+      BaseApplicationDetail applicationDetails =
+          new BaseApplicationDetail()
+              .id(Integer.parseInt(appRef))
+              .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
+              .caseReferenceNumber(selectedCaseRef);
 
-      when(applicationService.getTdsApplications(any(), any(), any(), any()))
+      when(applicationService.getTdsApplicationSummary(any(), any()))
           .thenReturn(applicationDetails);
 
       assertThat(
@@ -354,10 +350,7 @@ public class ApplicationSearchControllerTest {
               .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
               .caseReferenceNumber(selectedCaseRef);
 
-      ApplicationDetails appDetails = new ApplicationDetails().addContentItem(tdsApplication);
-
-      when(applicationService.getTdsApplications(any(), any(), any(), any()))
-          .thenReturn(appDetails);
+      when(applicationService.getTdsApplicationSummary(any(), any())).thenReturn(tdsApplication);
 
       assertThat(
               mockMvc.perform(
@@ -383,8 +376,7 @@ public class ApplicationSearchControllerTest {
           new ApplicationDetail().caseReferenceNumber(selectedCaseRef);
 
       // No TDS applications
-      when(applicationService.getTdsApplications(any(), any(), any(), any()))
-          .thenReturn(new ApplicationDetails().content(Collections.emptyList()));
+      when(applicationService.getTdsApplicationSummary(any(), any())).thenReturn(null);
 
       when(applicationService.getCase(any(), any(Long.class), any())).thenReturn(applicationDetail);
 

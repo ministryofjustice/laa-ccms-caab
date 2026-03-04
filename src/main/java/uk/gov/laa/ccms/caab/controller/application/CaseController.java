@@ -32,13 +32,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
-import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.proceeding.CaseProceedingDisplayStatus;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.AvailableAction;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
@@ -81,15 +79,23 @@ public class CaseController {
 
     setReturnDetails(model, notificationId, request);
 
-    BaseApplicationDetail resolvedTds = getTdsApplication(tdsApplication, ebsCase, user, session);
-    AmendmentState amendmentState = resolveAmendmentState(ebsCase, resolvedTds, session);
-    ApplicationDetail amendments = amendmentState.getAmendments();
+    BaseApplicationDetail resolvedTds = getTdsApplication(tdsApplication, ebsCase, user);
+    if (resolvedTds != null) {
+      session.setAttribute(APPLICATION_SUMMARY, resolvedTds);
+    }
+
+    ApplicationDetail amendments = resolveAmendments(ebsCase, resolvedTds);
+
+    final boolean isAmendment = amendments != null;
+
+    if (!isAmendment) {
+      clearAmendmentSession(session);
+    }
 
     setProceedingDisplayStatuses(ebsCase, amendments);
 
     model.addAttribute("searchUrl", Objects.toString(session.getAttribute(SEARCH_URL), ""));
     model.addAttribute("case", ebsCase);
-    final boolean isAmendment = amendmentState.isAmendment();
     model.addAttribute("isAmendment", isAmendment);
     model.addAttribute("availableActions", getAvailableActions(ebsCase, isAmendment, amendments));
     model.addAttribute("hasEbsAmendments", hasEbsAmendments(ebsCase));
@@ -106,40 +112,24 @@ public class CaseController {
   }
 
   private BaseApplicationDetail getTdsApplication(
-      @Nullable BaseApplicationDetail tdsApplication,
-      ApplicationDetail ebsCase,
-      UserDetail user,
-      HttpSession session) {
+      @Nullable BaseApplicationDetail tdsApplication, ApplicationDetail ebsCase, UserDetail user) {
     if (tdsApplication != null) {
       return tdsApplication;
     }
 
-    BaseApplicationDetail fetched = getTdsApplicationSummary(ebsCase, user);
-    if (fetched != null) {
-      session.setAttribute(APPLICATION_SUMMARY, fetched);
-    }
-
-    return fetched;
+    return applicationService.getTdsApplicationSummary(ebsCase.getCaseReferenceNumber(), user);
   }
 
-  private AmendmentState resolveAmendmentState(
-      ApplicationDetail ebsCase,
-      @Nullable BaseApplicationDetail tdsApplication,
-      HttpSession session) {
-    if (tdsApplication == null || !applicationService.isAmendment(ebsCase, tdsApplication)) {
-      return new AmendmentState(null, false);
+  private ApplicationDetail resolveAmendments(
+      ApplicationDetail ebsCase, @Nullable BaseApplicationDetail tdsApplication) {
+    if (!applicationService.isAmendment(ebsCase, tdsApplication)) {
+      return null;
     }
 
-    ApplicationDetail amendments = resolveAmendment(tdsApplication, session);
-    if (amendments == null) {
-      return new AmendmentState(null, false);
-    }
-
-    return new AmendmentState(amendments, true);
+    return resolveAmendment(tdsApplication);
   }
 
-  private ApplicationDetail resolveAmendment(
-      BaseApplicationDetail tdsApplication, HttpSession session) {
+  private ApplicationDetail resolveAmendment(BaseApplicationDetail tdsApplication) {
     try {
       ApplicationDetail amendments =
           applicationService.getApplication(tdsApplication.getId().toString()).block();
@@ -158,24 +148,7 @@ public class CaseController {
           tdsApplication.getId(),
           ex);
     }
-    clearAmendmentSession(session);
     return null;
-  }
-
-  private BaseApplicationDetail getTdsApplicationSummary(
-      ApplicationDetail ebsCase, UserDetail user) {
-    if (ebsCase.getCaseReferenceNumber() == null) {
-      return null;
-    }
-
-    CaseSearchCriteria criteria = new CaseSearchCriteria();
-    criteria.setCaseReference(ebsCase.getCaseReferenceNumber());
-
-    return Optional.ofNullable(applicationService.getTdsApplications(criteria, user, 0, 1))
-        .map(ApplicationDetails::getContent)
-        .filter(c -> !c.isEmpty())
-        .map(c -> c.get(0))
-        .orElse(null);
   }
 
   /**
@@ -428,24 +401,6 @@ public class CaseController {
   private static boolean hasEbsAmendments(ApplicationDetail ebsCase) {
     return ebsCase.getAmendmentProceedingsInEbs() != null
         && !ebsCase.getAmendmentProceedingsInEbs().isEmpty();
-  }
-
-  private static final class AmendmentState {
-    private final ApplicationDetail amendments;
-    private final boolean isAmendment;
-
-    private AmendmentState(ApplicationDetail amendments, boolean isAmendment) {
-      this.amendments = amendments;
-      this.isAmendment = isAmendment;
-    }
-
-    private ApplicationDetail getAmendments() {
-      return amendments;
-    }
-
-    private boolean isAmendment() {
-      return isAmendment;
-    }
   }
 
   private void setReturnDetails(Model model, String notificationId, HttpServletRequest request) {
