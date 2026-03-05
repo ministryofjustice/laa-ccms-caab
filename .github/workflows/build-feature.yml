@@ -21,6 +21,7 @@ jobs:
       contents: write
       packages: write
     with:
+      semgrep_check: true
       java_version: '25'
       java_distribution: 'corretto'
       integration_test_task: "integrationTest"

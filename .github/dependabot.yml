@@ -29,11 +29,6 @@ registries:
     url: https://maven.pkg.github.com/ministryofjustice/laa-ccms-soa-gateway-api
     username: ${{ secrets.USER }}
     password: ${{ secrets.REPO_TOKEN }}
-  spring-boot-common-github-packages:
-    type: maven-repository
-    url: https://maven.pkg.github.com/ministryofjustice/laa-spring-boot-common
-    username: ${{ secrets.USER }}
-    password: ${{ secrets.REPO_TOKEN }}
 
 updates:
   - package-ecosystem: "gradle"
@@ -44,7 +39,6 @@ updates:
       - assessment-api-github-packages
       - ebs-api-github-packages
       - soa-api-github-packages
-      - spring-boot-common-github-packages
     schedule:
       interval: "daily"
     groups:
