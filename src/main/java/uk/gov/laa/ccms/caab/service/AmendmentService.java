@@ -10,17 +10,23 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
+import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
+import uk.gov.laa.ccms.caab.util.AmendmentUtil;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 
 /**
  * Service class responsible for handling amendments to existing legal aid cases.
@@ -38,6 +44,7 @@ public class AmendmentService {
 
   private final ApplicationService applicationService;
   private final CaabApiClient caabApiClient;
+  private final SoaApiClient soaApiClient;
 
   /**
    * Creates and submits an amendment for an existing case using the provided application details
@@ -85,8 +92,22 @@ public class AmendmentService {
                 applicationFormData.getDelegatedFunctionUsedDate())
             .build();
 
-    // Set the amendment type
     amendment.setApplicationType(amendmentType);
+
+    // Create application/amendment in TDS.
+    Mono<String> application = caabApiClient.createApplication(userDetail.getLoginId(), amendment);
+    log.info("Application created: {}", application.block());
+    return amendment;
+  }
+
+  private ApplicationDetail createAmendmentObject(
+      String caseReferenceNumber, UserDetail userDetail) {
+
+    ApplicationDetail amendment =
+        applicationService.getCase(
+            caseReferenceNumber, userDetail.getProvider().getId(), userDetail.getLoginId());
+
+    // Set the amendment type
     amendment.setAmendment(true);
 
     // Set cost limit changed flag to false if it exists
@@ -138,11 +159,63 @@ public class AmendmentService {
 
     // assessmentService.calculateAssessmentStatuses(amendment, );
     // TODO: Add merits & means assessments ~ Awaiting on CCMSPUI-380
-
-    // Create application/amendment in TDS.
-    Mono<String> application = caabApiClient.createApplication(userDetail.getLoginId(), amendment);
-    log.info("Application created: {}", application.block());
     return amendment;
+  }
+
+  /**
+   * Submits a quick amendment to the correspondence address for a given case. This method creates a
+   * quick amendment application, applies the new correspondence address details, and submits the
+   * amendment. Finally, a case is updated which returns the transaction ID associated with the
+   * submission.
+   *
+   * @param editCorrespondenceAddress the data representing the updated correspondence address
+   * @param caseReferenceNumber the unique reference number of the case to which the amendment
+   *     applies
+   * @param userDetail the details of the user initiating the amendment
+   * @return the transaction ID of the submitted amendment
+   */
+  public String submitQuickAmendmentCorrespondenceAddress(
+      final AddressFormData editCorrespondenceAddress,
+      final String caseReferenceNumber,
+      final UserDetail userDetail) {
+    ApplicationDetail amendment = createAmendmentObject(caseReferenceNumber, userDetail);
+    amendment.setQuickEditType(FunctionConstants.CASE_CORRESPONDENCE_PREFERENCE);
+
+    AddressDetail address = amendment.getCorrespondenceAddress();
+    if (Objects.isNull(address)) {
+      address = new AddressDetail();
+    }
+
+    address.setAddressLine1(editCorrespondenceAddress.getAddressLine1());
+    address.setAddressLine2(editCorrespondenceAddress.getAddressLine2());
+    address.setCareOf(editCorrespondenceAddress.getCareOf());
+    address.setCity(editCorrespondenceAddress.getCityTown());
+    address.setCountry(editCorrespondenceAddress.getCountry());
+    address.setCounty(editCorrespondenceAddress.getCounty());
+    address.setHouseNameOrNumber(editCorrespondenceAddress.getHouseNameNumber());
+    address.setPostcode(editCorrespondenceAddress.getPostcode());
+    address.setPreferredAddress(editCorrespondenceAddress.getPreferredAddress());
+
+    return updateCaseWithQuickAmendment(userDetail, amendment);
+  }
+
+  /**
+   * Common update case logic for quick amendments.
+   *
+   * @param userDetail User updating the case.
+   * @param amendment The amendment to be applied to the case.
+   * @return Transaction ID of the updated case.
+   */
+  private String updateCaseWithQuickAmendment(UserDetail userDetail, ApplicationDetail amendment) {
+    AmendmentUtil.cleanAppForQuickAmendSubmit(amendment);
+
+    // Create an application in TDS
+    // caabApiClient.createApplication(userDetail.getLoginId(), amendment);
+
+    Mono<CaseTransactionResponse> caseTransactionResponseMono =
+        soaApiClient.updateCase(userDetail.getLoginId(), userDetail.getUserType(), amendment);
+
+    return Objects.requireNonNull(caseTransactionResponseMono.block()).getTransactionId();
   }
 
   /**
