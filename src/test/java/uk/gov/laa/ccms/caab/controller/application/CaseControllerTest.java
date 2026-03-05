@@ -501,7 +501,7 @@ class CaseControllerTest {
                     .request()
                     .sessionAttributes()
                     .hasEntrySatisfying(
-                        APPLICATION_SUMMARY, value -> assertThat(value).isNotNull());
+                        APPLICATION_SUMMARY, value -> assertThat(value).isEqualTo(tdsApplication));
                 assertThat(response)
                     .model()
                     .hasEntrySatisfying(
