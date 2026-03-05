@@ -90,7 +90,7 @@ dependencies {
 	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.0.0')
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
-	implementation 'software.amazon.awssdk:sts:2.42.5'
+	implementation 'software.amazon.awssdk:sts:2.42.6'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
@@ -117,7 +117,7 @@ dependencies {
     // https://mvnrepository.com/artifact/org.webjars/webjars-locator-lite
     implementation 'org.webjars:webjars-locator-lite'
     // https://mvnrepository.com/artifact/org.webjars.npm/govuk-frontend
-    implementation 'org.webjars.npm:govuk-frontend:5.14.0'
+    implementation 'org.webjars.npm:govuk-frontend:6.1.0'
     implementation 'org.webjars.npm:ministryofjustice__frontend:7.1.0'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
