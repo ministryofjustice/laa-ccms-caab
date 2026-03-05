@@ -63,9 +63,8 @@ clean:
 .PHONY: help
 help:
 	@echo "Available targets:"
-	@echo "  all              - Run audit, test, integration-test, and build"
+	@echo "  all              - Run format, audit, test, integration-test, and build"
 	@echo "  audit            - Run Trivy vulnerability scan on filesystem"
-	@echo "  audit-image      - Run Trivy vulnerability scan on Docker image (requires built image)"
 	@echo "  test             - Run unit tests"
 	@echo "  integration-test - Run integration tests"
 	@echo "  format           - Run spotlessApply to format code"
