@@ -71,6 +71,7 @@ public class CaseController {
   public String caseOverview(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(APPLICATION_SUMMARY) @Nullable final BaseApplicationDetail tdsApplication,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(NOTIFICATION_ID) @Nullable final String notificationId,
       Model model,
       HttpSession session,
@@ -78,17 +79,22 @@ public class CaseController {
 
     setReturnDetails(model, notificationId, request);
 
-    boolean isAmendment = applicationService.isAmendment(ebsCase, tdsApplication);
-    ApplicationDetail amendments = isAmendment ? resolveAmendment(tdsApplication, session) : null;
+    BaseApplicationDetail resolvedTds = getTdsApplication(tdsApplication, ebsCase, user);
+    if (resolvedTds != null) {
+      session.setAttribute(APPLICATION_SUMMARY, resolvedTds);
+    }
 
-    // If resolveAmendment returned null, the amendment was abandoned
-    if (isAmendment && amendments == null) {
-      isAmendment = false;
+    ApplicationDetail amendments = resolveAmendments(ebsCase, resolvedTds);
+
+    final boolean isAmendment = amendments != null;
+
+    if (!isAmendment) {
+      clearAmendmentSession(session);
     }
 
     setProceedingDisplayStatuses(ebsCase, amendments);
 
-    model.addAttribute("searchUrl", session.getAttribute(SEARCH_URL).toString());
+    model.addAttribute("searchUrl", Objects.toString(session.getAttribute(SEARCH_URL), ""));
     model.addAttribute("case", ebsCase);
     model.addAttribute("isAmendment", isAmendment);
     model.addAttribute("availableActions", getAvailableActions(ebsCase, isAmendment, amendments));
@@ -105,8 +111,25 @@ public class CaseController {
     return "application/case-overview";
   }
 
-  private ApplicationDetail resolveAmendment(
-      BaseApplicationDetail tdsApplication, HttpSession session) {
+  private BaseApplicationDetail getTdsApplication(
+      @Nullable BaseApplicationDetail tdsApplication, ApplicationDetail ebsCase, UserDetail user) {
+    if (tdsApplication != null) {
+      return tdsApplication;
+    }
+
+    return applicationService.getTdsApplicationSummary(ebsCase.getCaseReferenceNumber(), user);
+  }
+
+  private ApplicationDetail resolveAmendments(
+      ApplicationDetail ebsCase, @Nullable BaseApplicationDetail tdsApplication) {
+    if (!applicationService.isAmendment(ebsCase, tdsApplication)) {
+      return null;
+    }
+
+    return resolveAmendment(tdsApplication);
+  }
+
+  private ApplicationDetail resolveAmendment(BaseApplicationDetail tdsApplication) {
     try {
       ApplicationDetail amendments =
           applicationService.getApplication(tdsApplication.getId().toString()).block();
@@ -125,7 +148,6 @@ public class CaseController {
           tdsApplication.getId(),
           ex);
     }
-    clearAmendmentSession(session);
     return null;
   }
 

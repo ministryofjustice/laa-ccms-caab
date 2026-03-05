@@ -449,6 +449,71 @@ class CaseControllerTest {
     }
 
     @Test
+    @DisplayName("Case overview refreshes TDS amendment summary when missing from session")
+    public void caseOverviewRefreshesTdsSummaryWhenMissing() {
+      final String selectedCaseRef = "7";
+      final Integer providerId = 1;
+      final String providerReference = "providerReference";
+      final String clientFirstname = "firstname";
+      final String clientSurname = "surname";
+      final String clientReference = "clientReference";
+
+      ApplicationDetail ebsCase =
+          getEbsCase(
+              selectedCaseRef,
+              providerId,
+              providerReference,
+              clientFirstname,
+              clientSurname,
+              clientReference,
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.AMEND_CASE));
+
+      BaseApplicationDetail tdsApplication =
+          new BaseApplicationDetail()
+              .id(100)
+              .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
+              .caseReferenceNumber(selectedCaseRef);
+
+      ProceedingDetail expectedProceeding = new ProceedingDetail().id(2);
+      CostStructureDetail expectedCost =
+          new CostStructureDetail().addCostEntriesItem(new CostEntryDetail().ebsId("4"));
+
+      ApplicationDetail amendments =
+          new ApplicationDetail().proceedings(List.of(expectedProceeding)).costs(expectedCost);
+
+      when(applicationService.getTdsApplicationSummary(any(), any())).thenReturn(tdsApplication);
+      when(applicationService.getApplication(any())).thenReturn(Mono.just(amendments));
+      when(applicationService.isAmendment(any(), any())).thenReturn(Boolean.TRUE);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/overview", selectedCaseRef)
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(SEARCH_URL, returnUrl)))
+          .hasViewName("application/case-overview")
+          .satisfies(
+              response -> {
+                assertThat(response)
+                    .request()
+                    .sessionAttributes()
+                    .hasEntrySatisfying(
+                        APPLICATION_SUMMARY, value -> assertThat(value).isEqualTo(tdsApplication));
+                assertThat(response)
+                    .model()
+                    .hasEntrySatisfying(
+                        "isAmendment",
+                        value ->
+                            assertThat(value)
+                                .asInstanceOf(InstanceOfAssertFactories.BOOLEAN)
+                                .isTrue());
+              });
+    }
+
+    @Test
     @DisplayName("Case overview clears stale TDS amendment when not found")
     public void caseOverviewClearsStaleTdsAmendment() {
       final String selectedCaseRef = "2";

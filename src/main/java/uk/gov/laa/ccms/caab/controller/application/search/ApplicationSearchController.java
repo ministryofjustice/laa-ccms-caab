@@ -213,16 +213,8 @@ public class ApplicationSearchController {
       log.debug("Case not found in EBS.", e);
     }
 
-    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
-    caseSearchCriteria.setCaseReference(caseReferenceNumber);
-
     BaseApplicationDetail tdsApplication =
-        applicationService
-            .getTdsApplications(caseSearchCriteria, userDetails, 0, 1)
-            .getContent()
-            .stream()
-            .findFirst()
-            .orElse(null);
+        applicationService.getTdsApplicationSummary(caseReferenceNumber, userDetails);
 
     if (ebsCase == null && tdsApplication == null) {
       throw new CaabApplicationException(

@@ -276,7 +276,7 @@ public class ApplicationService {
    * Query for Applications in the TDS based on the supplied search criteria.
    *
    * @param caseSearchCriteria - the search criteria
-   * @param user - the currently logged in user
+   * @param user - the currently logged-in user
    * @param page - the page number
    * @param size - the page size
    * @return ApplicationDetails containing a List of BaseApplicationDetail.
@@ -292,6 +292,25 @@ public class ApplicationService {
                 .getApplications(caseSearchCriteria, user.getProvider().getId(), page, size)
                 .block())
         .orElseThrow(() -> new CaabApplicationException("Failed to query for applications"));
+  }
+
+  /**
+   * Query for a single application in the TDS based on the provided case reference number.
+   *
+   * @param caseReferenceNumber - the case reference number to search for.
+   * @param user - the currently logged-in user.
+   * @return the {code BaseApplicationDetail} if the application was found, null otherwise.
+   */
+  public BaseApplicationDetail getTdsApplicationSummary(
+      String caseReferenceNumber, UserDetail user) {
+    if (caseReferenceNumber == null) {
+      return null;
+    }
+
+    CaseSearchCriteria criteria = new CaseSearchCriteria();
+    criteria.setCaseReference(caseReferenceNumber);
+
+    return getTdsApplications(criteria, user, 0, 1).getContent().stream().findFirst().orElse(null);
   }
 
   /**
