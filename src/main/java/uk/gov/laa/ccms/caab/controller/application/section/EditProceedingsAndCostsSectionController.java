@@ -142,6 +142,7 @@ public class EditProceedingsAndCostsSectionController {
   private static final String STATUS_DISPLAY_VALUE_ADDED = "Added";
   private static final String STATUS_DISPLAY_VALUE_UPDATED = "Updated";
   private static final String STATUS_DRAFT = "Draft";
+  private static final String STATUS_GRANTED = "Grant";
 
   /**
    * Handles the GET request to fetch and display the proceedings and costs for a specific
@@ -212,7 +213,6 @@ public class EditProceedingsAndCostsSectionController {
 
     final List<PriorAuthorityDetail> priorAuthorities =
         Optional.ofNullable(application.getPriorAuthorities()).orElse(Collections.emptyList());
-
     model.addAttribute(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities);
 
     Map<Integer, Boolean> deletePriorAuthoritiesAllowedLookup =
@@ -1737,6 +1737,14 @@ public class EditProceedingsAndCostsSectionController {
         proceedingAndCostsMapper.toPriorAuthorityFlowFormData(priorAuthority);
 
     model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
+
+    if (priorAuthority.getStatus().equals(STATUS_GRANTED)) {
+      model.addAttribute("priorAuthority", priorAuthority);
+      model.addAttribute(
+          "backUrl",
+          "/civil/" + caseContext.getPathValue() + "/proceedings-and-costs#prior-authority");
+      return "application/prior-authority-review";
+    }
 
     return "redirect:/%s/prior-authorities/edit/details".formatted(caseContext.getPathValue());
   }

@@ -9,7 +9,9 @@
 
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/case/details}" class="govuk-back-link" th:text="#{caseDetails.details.return}"></a>
+        <a th:href="${backUrl != null} ? ${backUrl} : @{/case/details}"
+           class="govuk-back-link"
+           th:text="${backUrl != null} ? #{proceedingsAndCosts.goBack } : #{caseDetails.details.return}"></a>
     </div>
 
     <div id="main-content">
