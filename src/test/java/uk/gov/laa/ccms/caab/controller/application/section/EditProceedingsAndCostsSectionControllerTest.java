@@ -2139,8 +2139,10 @@ class EditProceedingsAndCostsSectionControllerTest {
     @DisplayName("Should return expected result")
     void shouldReturnExpectedResult(String caseContext) throws Exception {
       final int priorAuthorityId = 1;
+      final String priorAuthorityStatus = "Status";
       final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
       priorAuthority.setId(priorAuthorityId);
+      priorAuthority.setStatus(priorAuthorityStatus);
 
       final List<PriorAuthorityDetail> priorAuthorities = Collections.singletonList(priorAuthority);
 
@@ -2156,6 +2158,34 @@ class EditProceedingsAndCostsSectionControllerTest {
                   .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/%s/prior-authorities/edit/details".formatted(caseContext)));
+
+      verify(proceedingAndCostsMapper, times(1)).toPriorAuthorityFlowFormData(priorAuthority);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"application", "amendments"})
+    @DisplayName("Should redirect to review when prior authority is granted")
+    void shouldRedirectToReviewWhenGranted(String caseContext) throws Exception {
+      final int priorAuthorityId = 1;
+      final String priorAuthorityStatus = "Grant";
+      final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
+      priorAuthority.setId(priorAuthorityId);
+      priorAuthority.setStatus(priorAuthorityStatus);
+
+      final List<PriorAuthorityDetail> priorAuthorities = Collections.singletonList(priorAuthority);
+
+      when(proceedingAndCostsMapper.toPriorAuthorityFlowFormData(any(PriorAuthorityDetail.class)))
+          .thenReturn(new PriorAuthorityFlowFormData("edit"));
+
+      mockMvc
+          .perform(
+              get(
+                      "/{caseContext}/prior-authorities/{prior-authority-id}/confirm",
+                      caseContext,
+                      priorAuthorityId)
+                  .sessionAttr(APPLICATION_PRIOR_AUTHORITIES, priorAuthorities))
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/prior-authority-review"));
 
       verify(proceedingAndCostsMapper, times(1)).toPriorAuthorityFlowFormData(priorAuthority);
     }
