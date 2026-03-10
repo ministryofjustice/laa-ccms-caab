@@ -194,4 +194,7 @@ public class SessionConstants {
 
   /** Session attribute used to keep track of the provider request flow data. */
   public static final String PROVIDER_REQUEST_FLOW_FORM_DATA = "providerRequestFlow";
+
+  /** Session attribute for keeping track of counsel search criteria. */
+  public static final String COUNSEL_SEARCH_CRITERIA = "counselSearchCriteria";
 }
