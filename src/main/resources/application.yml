@@ -113,9 +113,16 @@ laa:
           DOCX,
           RTF,
           TIFF
+        valid-mime-types: >
+          application/pdf,
+          application/vnd.openxmlformats-officedocument.wordprocessingml.document
+          application/rtf
+          image/tiff
       claim-upload:
         valid-extensions: >
           XML
+        valid-mime-types: >
+          application/xml
       opa:
         security:
           password:  ${OPA_SECURITY_PASSWORD}
