@@ -25,6 +25,10 @@
                 </strong>
             </div>
 
+            <dl class="govuk-body">
+                <div>Please ensure there are no spaces in the file name.</div>
+            </dl>
+
             <div class="govuk-form-group"
                  th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
                 <label class="govuk-label" for="file" th:text="#{application.evidence.add.chooseFile}"></label>

@@ -32,8 +32,9 @@ public class ProviderRequestDetailsValidator extends FileUploadValidator {
 
   public ProviderRequestDetailsValidator(
       @Value("${laa.ccms.caab.claim-upload.valid-extensions}") final List<String> validExtensions,
-      @Value("${spring.servlet.multipart.max-file-size}") final String maxFileSize) {
-    super(validExtensions, maxFileSize);
+      @Value("${spring.servlet.multipart.max-file-size}") final String maxFileSize,
+      @Value("${laa.ccms.caab.claim-upload.valid-mime-types}") final List<String> validMimeTypes) {
+    super(validExtensions, maxFileSize, validMimeTypes);
   }
 
   @Override

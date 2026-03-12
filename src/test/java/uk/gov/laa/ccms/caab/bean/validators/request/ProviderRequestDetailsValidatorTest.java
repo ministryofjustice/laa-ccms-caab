@@ -31,7 +31,10 @@ class ProviderRequestDetailsValidatorTest {
   @BeforeEach
   void setUp() {
     providerRequestDetailsValidator =
-        new ProviderRequestDetailsValidator(List.of("pdf", "jpg", "png"), "5MB");
+        new ProviderRequestDetailsValidator(
+            List.of("pdf", "jpg", "png"),
+            "5MB",
+            List.of("application/pdf", "image/jpg", "image/png", "text/plain"));
     formData = new ProviderRequestDetailsFormData();
     errors = new BeanPropertyBindingResult(formData, "providerRequestDetailsFormData");
   }
@@ -67,7 +70,7 @@ class ProviderRequestDetailsValidatorTest {
   @DisplayName("validate - No errors for valid file when claim upload is enabled")
   void validate_ValidFile_NoErrors() {
     final MockMultipartFile validFile =
-        new MockMultipartFile("file", "valid.pdf", "application/pdf", new byte[3000000]);
+        new MockMultipartFile("file", "valid.pdf", "application/pdf", "something".getBytes());
     formData.setFile(validFile);
     formData.setFileExtension("pdf");
     formData.setClaimUploadEnabled(true);
@@ -219,5 +222,38 @@ class ProviderRequestDetailsValidatorTest {
     providerRequestDetailsValidator.validate(formData, errors);
 
     assertFalse(errors.hasErrors());
+  }
+
+  @Test
+  @DisplayName("validate - Adds error for invalid filename")
+  void validate_InvalidFilename_HasErrors() {
+    final MockMultipartFile invalidFile =
+        new MockMultipartFile(
+            "invalid name.pdf", "invalid name.pdf", "application/pdf", new byte[3000000]);
+    formData.setFile(invalidFile);
+    formData.setFileExtension("pdf");
+    formData.setClaimUploadEnabled(true);
+    formData.setAdditionalInformation("");
+
+    providerRequestDetailsValidator.validate(formData, errors);
+
+    assertTrue(errors.hasErrors());
+    assertNotNull(errors.getFieldError("file"));
+  }
+
+  @Test
+  @DisplayName("validate - Adds error for invalid magic bytes")
+  void validate_InvalidMagicBytes_HasErrors() {
+    final MockMultipartFile invalidFile =
+        new MockMultipartFile("file", "valid.pdf", "application/pdf", new byte[3000000]);
+    formData.setFile(invalidFile);
+    formData.setFileExtension("pdf");
+    formData.setClaimUploadEnabled(true);
+    formData.setAdditionalInformation("");
+
+    providerRequestDetailsValidator.validate(formData, errors);
+
+    assertTrue(errors.hasErrors());
+    assertNotNull(errors.getFieldError("file"));
   }
 }
