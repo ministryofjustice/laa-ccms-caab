@@ -64,7 +64,7 @@ public abstract class FileUploadValidator extends AbstractValidator {
   /** The configurable list of mime types. */
   private final List<String> validMimeTypes;
 
-  private final Tika tika = new Tika();
+  private static final Tika tika = new Tika();
 
   /**
    * Validate generic file upload details such as file data, extension, type, description and size.
