@@ -90,8 +90,8 @@ laa:
           TIFF
         valid-mime-types: >
           application/pdf,
-          application/vnd.openxmlformats-officedocument.wordprocessingml.document
-          application/rtf
+          application/vnd.openxmlformats-officedocument.wordprocessingml.document,
+          application/rtf,
           image/tiff
       claim-upload:
         valid-extensions: >

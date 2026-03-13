@@ -8,6 +8,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_UPLOAD_FO
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -89,7 +90,8 @@ class EvidenceUploadValidatorTest {
     validator.validate(evidenceUploadFormData, errors);
     assertEquals(1, errors.getErrorCount());
     assertNotNull(errors.getFieldError("file"));
-    assertEquals("validation.error.invalidMimeType", errors.getFieldError("file").getCode());
+    assertEquals("validation.error.invalidMimeType", Objects.requireNonNull(
+        errors.getFieldError("file")).getCode());
   }
 
   @Test
