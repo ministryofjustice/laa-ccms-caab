@@ -25,6 +25,7 @@
 
           <dl class="govuk-body">
             <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{request.type}, ${providerRequestFlow.requestTypeFormData.providerRequestTypeDisplayValue})}"></div>
+              <div>We can only accept XML files under 8MB in size. <br/> Please ensure there are no spaces in the file name.</div>
           </dl>
 
           <div class="govuk-form-group" th:if="*{claimUploadEnabled}" th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
