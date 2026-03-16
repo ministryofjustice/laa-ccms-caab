@@ -5,6 +5,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -62,29 +64,58 @@ public class AllocateCostLimitControllerTest {
   }
 
   @Nested
+  @DisplayName("GET: /allocate-cost-limit/start")
+  class StartAllocateCostLimitTests {
+
+    @Test
+    @DisplayName("Should fetch fresh case from DB and redirect to allocation page")
+    void shouldFetchFromDbAndRedirect() {
+      ApplicationDetail ebsCase = new ApplicationDetail();
+      ebsCase.setId(1);
+      ebsCase.setCaseReferenceNumber("123");
+
+      UserDetail user = new UserDetail();
+      user.setUsername("user");
+      user.setProvider(new BaseProvider());
+      user.getProvider().setId(123);
+      ApplicationDetail freshCase = new ApplicationDetail();
+      freshCase.setId(2);
+      freshCase.setCaseReferenceNumber("123");
+      freshCase.setCosts(new CostStructureDetail());
+
+      when(applicationService.getCase(anyString(), anyLong(), anyString())).thenReturn(freshCase);
+
+      final var result =
+          mockMvc.perform(
+              get("/allocate-cost-limit/start")
+                  .sessionAttr(CASE, ebsCase)
+                  .sessionAttr(USER_DETAILS, user));
+
+      assertThat(result)
+          .hasStatus3xxRedirection()
+          .matches(
+              mvcResult -> {
+                ApplicationDetail sessionCase =
+                    (ApplicationDetail) mvcResult.getRequest().getSession().getAttribute(CASE);
+                assertThat(sessionCase).isEqualTo(freshCase);
+                assertThat(sessionCase).isNotSameAs(ebsCase);
+              })
+          .hasRedirectedUrl("/allocate-cost-limit");
+
+      verify(applicationService).getCase("123", 123, "user");
+    }
+  }
+
+  @Nested
   @DisplayName("GET: /allocate-cost-limit")
   class GetAllocateCostLimitTests {
 
     @Test
-    @DisplayName("Should return expected view")
-    void shouldReturnExpectedView() {
+    @DisplayName("Should use session data")
+    void shouldUseSessionData() {
       ApplicationDetail ebsCase = new ApplicationDetail();
       ebsCase.setCaseReferenceNumber("123");
-      CostStructureDetail costs =
-          new CostStructureDetail()
-              .addCostEntriesItem(
-                  new CostEntryDetail()
-                      .requestedCosts(new BigDecimal("2250"))
-                      .resourceName("PATRICK J BOWE")
-                      .costCategory("Counsel")
-                      .amountBilled(new BigDecimal("604.63"))
-                      .requestedCosts(new BigDecimal("604.63")))
-              .grantedCostLimitation(new BigDecimal("25000"))
-              .requestedCostLimitation(new BigDecimal("25000"));
-      ebsCase.costs(costs);
-      ebsCase.providerDetails(
-          new ApplicationProviderDetails()
-              .provider(new IntDisplayValue().displayValue("provider")));
+      ebsCase.costs(new CostStructureDetail());
 
       UserDetail user = new UserDetail();
       user.setUsername("user");
@@ -92,12 +123,7 @@ public class AllocateCostLimitControllerTest {
       user.getProvider().setId(123);
 
       final AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
-      allocateCostsFormData.setRequestedCostLimitation(costs.getRequestedCostLimitation());
-      allocateCostsFormData.setCostEntries(ebsCase.getCosts().getCostEntries());
-      allocateCostsFormData.setProviderName(
-          ebsCase.getProviderDetails().getProvider().getDisplayValue());
 
-      when(applicationService.getCase(anyString(), anyLong(), anyString())).thenReturn(ebsCase);
       when(proceedingAndCostsMapper.toAllocateCostsForm(any(ApplicationDetail.class)))
           .thenReturn(allocateCostsFormData);
 
@@ -111,6 +137,8 @@ public class AllocateCostLimitControllerTest {
           .model()
           .containsEntry("case", ebsCase)
           .containsEntry("costDetails", allocateCostsFormData);
+
+      verify(applicationService, never()).getCase(anyString(), anyLong(), anyString());
     }
   }
 
@@ -119,8 +147,8 @@ public class AllocateCostLimitControllerTest {
   class PostAllocateCostLimitTests {
 
     @Test
-    @DisplayName("Should return cost allocation view when calculate button clicked")
-    void shouldReturnViewWithCalculateAction() {
+    @DisplayName("Should redirect to cost allocation view when calculate button clicked")
+    void shouldRedirectToViewWithCalculateAction() {
       ApplicationDetail ebsCase = new ApplicationDetail();
       CostStructureDetail costs =
           new CostStructureDetail()
@@ -151,8 +179,8 @@ public class AllocateCostLimitControllerTest {
                       .param("action", "calculate")
                       .sessionAttr(CASE, ebsCase)
                       .flashAttr("costDetails", allocateCostsFormData)))
-          .hasStatusOk()
-          .hasViewName("application/cost-allocation");
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/allocate-cost-limit");
     }
 
     @Test
