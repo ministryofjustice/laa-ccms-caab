@@ -215,6 +215,13 @@ public abstract class FileUploadValidator extends AbstractValidator {
   protected boolean hasValidFileName(FileUploadFormData fileUploadFormData) {
     String filename = StringUtils.cleanPath(fileUploadFormData.getFile().getOriginalFilename());
 
+    if (filename == null || filename.isEmpty()) {
+      return false;
+    } else if (filename.indexOf('\0') > -1) {
+      return false;
+    } else if (filename.contains("%00")) {
+      return false;
+    }
     return filename.matches("^[A-Za-z0-9_-]+\\.[A-Za-z0-9]+$");
   }
 
@@ -227,6 +234,7 @@ public abstract class FileUploadValidator extends AbstractValidator {
   protected boolean isValidMagicBytes(FileUploadFormData fileUploadFormData) {
     try (InputStream inputStream = fileUploadFormData.getFile().getInputStream()) {
       String detectedMime = tika.detect(inputStream);
+      System.out.println("WWWWWWW" + detectedMime);
 
       return validMimeTypes.stream().anyMatch(type -> type.equalsIgnoreCase(detectedMime));
     } catch (IOException e) {

@@ -90,8 +90,9 @@ class EvidenceUploadValidatorTest {
     validator.validate(evidenceUploadFormData, errors);
     assertEquals(1, errors.getErrorCount());
     assertNotNull(errors.getFieldError("file"));
-    assertEquals("validation.error.invalidMimeType", Objects.requireNonNull(
-        errors.getFieldError("file")).getCode());
+    assertEquals(
+        "validation.error.invalidMimeType",
+        Objects.requireNonNull(errors.getFieldError("file")).getCode());
   }
 
   @Test

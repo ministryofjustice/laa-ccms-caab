@@ -91,7 +91,9 @@ laa:
         valid-mime-types: >
           application/pdf,
           application/vnd.openxmlformats-officedocument.wordprocessingml.document,
+          application/x-tika-ooxml,
           application/rtf,
+          text/rtf,
           image/tiff
       claim-upload:
         valid-extensions: >
