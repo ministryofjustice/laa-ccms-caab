@@ -80,25 +80,27 @@ class ProviderRequestDocumentUploadValidatorTest {
   public void validate_InvalidFilename_HasErrors() {
     final MockMultipartFile invalidNamedFile =
         new MockMultipartFile(
-            "invalid name.pdf", "valid.pdf", "application/pdf", new byte[6000000]);
+            "invalid name.pdf", "invalid name.pdf", "application/pdf", "the file data".getBytes());
     evidenceUploadFormData.setFile(invalidNamedFile);
 
     providerRequestDocumentUploadValidator.validate(evidenceUploadFormData, errors);
 
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("file"));
+    assertEquals("validation.error.invalidFileName", errors.getFieldError("file").getCode());
   }
 
   @Test
   @DisplayName("validate - Adds error for invalid magic bytes")
   void validate_InvalidMagicBytes_HasErrors() {
     final MockMultipartFile invalidFile =
-        new MockMultipartFile("file", "valid.pdf", "application/pdf", new byte[3000000]);
+        new MockMultipartFile("file", "valid.pdf", "application/pdf", new byte[3]);
     evidenceUploadFormData.setFile(invalidFile);
 
     providerRequestDocumentUploadValidator.validate(evidenceUploadFormData, errors);
 
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("file"));
+    assertEquals("validation.error.invalidMagicBytes", errors.getFieldError("file").getCode());
   }
 }

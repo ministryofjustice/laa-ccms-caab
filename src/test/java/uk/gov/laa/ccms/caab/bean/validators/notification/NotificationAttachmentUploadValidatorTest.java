@@ -139,11 +139,12 @@ public class NotificationAttachmentUploadValidatorTest {
   void validate_InvalidMagicBytes_HasErrors() {
     notificationAttachmentUploadFormData = buildNotificationAttachmentUploadFormData();
     notificationAttachmentUploadFormData.setFile(
-        new MockMultipartFile("file", "valid.pdf", "application/pdf", new byte[3000000]));
+        new MockMultipartFile("file", "valid.pdf", "application/pdf", new byte[3]));
 
     validator.validate(notificationAttachmentUploadFormData, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("file"));
+    assertEquals("validation.error.invalidMagicBytes", errors.getFieldError("file").getCode());
   }
 
   @Test

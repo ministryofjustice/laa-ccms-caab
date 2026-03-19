@@ -234,7 +234,6 @@ public abstract class FileUploadValidator extends AbstractValidator {
   protected boolean isValidMagicBytes(FileUploadFormData fileUploadFormData) {
     try (InputStream inputStream = fileUploadFormData.getFile().getInputStream()) {
       String detectedMime = tika.detect(inputStream);
-      System.out.println("WWWWWWW" + detectedMime);
 
       return validMimeTypes.stream().anyMatch(type -> type.equalsIgnoreCase(detectedMime));
     } catch (IOException e) {
