@@ -7,7 +7,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
-import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessment;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getMostRecentAssessmentDetail;
 
@@ -765,7 +765,7 @@ public class ApplicationSubmissionController {
 
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
 
-    return "redirect:/application/%s".formatted(SUBMISSION_CREATE_CASE);
+    return "redirect:/application/%s".formatted(SUBMISSION_SUBMIT_CASE);
   }
 
   /**
