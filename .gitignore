@@ -2,6 +2,7 @@
 *.class
 **/bin/**
 /build
+target/
 # local config file
 .env
 
