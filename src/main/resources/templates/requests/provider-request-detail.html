@@ -25,16 +25,16 @@
 
           <dl class="govuk-body">
             <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{request.type}, ${providerRequestFlow.requestTypeFormData.providerRequestTypeDisplayValue})}"></div>
-              <div class="govuk-hint">
-                <span th:text="'We can only accept XML files under ' + ${maxFileSize} + ' in size.'"></span><br/>
-                <span th:text="#{request.noSpaces}"></span>
-              </div>
           </dl>
 
           <div class="govuk-form-group" th:if="*{claimUploadEnabled}" th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
             <label class="govuk-label" th:for="fileUpload"
                    th:text="*{claimUploadLabel}">
             </label>
+              <div class="govuk-hint">
+                  <span th:text="'We can only accept XML files under ' + ${maxFileSize} + ' in size.'"></span><br/>
+                  <span th:text="#{request.noSpaces}"></span>
+              </div>
             <input class="govuk-file-upload" id="file" name="file" type="file">
           </div>
 
