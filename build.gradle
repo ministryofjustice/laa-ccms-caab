@@ -1,7 +1,7 @@
 plugins {
     id 'net.researchgate.release' version '3.1.0'
     id 'uk.gov.laa.springboot.laa-spring-boot-gradle-plugin' version '2.0.7'
-    id 'com.diffplug.spotless' version '8.3.0'
+    id 'com.diffplug.spotless' version '8.4.0'
 }
 
 subprojects {
@@ -90,13 +90,13 @@ dependencies {
 	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.0.0')
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
-	implementation 'software.amazon.awssdk:sts:2.42.6'
+	implementation 'software.amazon.awssdk:sts:2.42.16'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
     implementation 'org.json:json:20251224'
 
-    implementation 'io.swagger.core.v3:swagger-annotations:2.2.44'
+    implementation 'io.swagger.core.v3:swagger-annotations:2.2.45'
 
     //SAML security
     implementation 'org.springframework.boot:spring-boot-starter-security-saml2'
@@ -123,7 +123,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-    testImplementation 'io.projectreactor:reactor-test:3.8.3'
+    testImplementation 'io.projectreactor:reactor-test:3.8.4'
 
     integrationTestImplementation 'org.wiremock:wiremock-standalone:3.13.2'
 
