@@ -341,6 +341,7 @@ class ProviderRequestsControllerTest {
     final ProviderRequestDetailsFormData providerRequestDetailsForm =
         new ProviderRequestDetailsFormData();
     final ProviderRequestTypeFormData providerRequestType = new ProviderRequestTypeFormData();
+    final String maxFileSize = String.valueOf(5L * 1024 * 1024);
     providerRequestType.setProviderRequestType("testType");
     providerRequestFlow.setRequestTypeFormData(providerRequestType);
     providerRequestFlow.setRequestDetailsFormData(providerRequestDetailsForm);
@@ -354,8 +355,16 @@ class ProviderRequestsControllerTest {
     final ProviderRequestTypeLookupDetail lookupDetail = new ProviderRequestTypeLookupDetail();
     lookupDetail.setContent(List.of(dynamicForm));
 
+    final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
+    commonLookupDetail.setContent(
+        List.of(new CommonLookupValueDetail().code("DOC1").description("Document Type 1")));
+    when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+        .thenReturn(Mono.just(commonLookupDetail));
     when(lookupService.getProviderRequestTypes(null, "testType"))
         .thenReturn(Mono.just(lookupDetail));
+    when(providerRequestDocumentUploadValidator.getValidExtensions())
+        .thenReturn(List.of("pdf", "docx"));
+    when(providerRequestDocumentUploadValidator.getMaxFileSize()).thenReturn(maxFileSize);
 
     mockMvc
         .perform(
