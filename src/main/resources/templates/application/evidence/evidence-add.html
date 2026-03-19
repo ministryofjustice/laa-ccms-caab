@@ -17,21 +17,14 @@
         <form action="#" th:action="@{/{caseContext}/evidence/add(caseContext=${caseContext.getPathValue()})}" method="post"
               th:object="${evidenceUploadForm}" enctype="multipart/form-data">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
-            <div class="govuk-warning-text">
-                <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
-                <strong class="govuk-warning-text__text">
-                    <span class="govuk-visually-hidden" th:text="#{site.warning}"></span>
-                    <span th:text="#{application.evidence.add.uploadWarning(${validExtensions}, ${maxFileSize})}"></span>
-                </strong>
-            </div>
-
-            <dl class="govuk-body">
-                <div>Please ensure there are no spaces in the file name.</div>
-            </dl>
 
             <div class="govuk-form-group"
                  th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
                 <label class="govuk-label" for="file" th:text="#{application.evidence.add.chooseFile}"></label>
+                <div id="file-upload-hint" class="govuk-hint">
+                    <span th:text="#{application.evidence.add.uploadWarning(${validExtensions}, ${maxFileSize})}"></span></br>
+                    <span th:text="#{request.noSpaces}"></span>
+                </div>
                 <input class="govuk-file-upload" id="file" name="file" type="file">
             </div>
 

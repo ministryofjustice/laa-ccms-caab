@@ -13,17 +13,14 @@
     <h1 class="govuk-heading-l" th:text="#{request.upload}"></h1>
     <form action="#" th:action="@{/provider-requests/documents}" method="post" th:object="${evidenceUploadForm}" enctype="multipart/form-data">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <div class="govuk-warning-text">
-        <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
-        <strong class="govuk-warning-text__text">
-          <span class="govuk-visually-hidden" th:text="#{site.warning}"></span>
-          <span th:text="#{request.fileValidation(${validExtensions},${maxFileSize})}"></span>
-        </strong>
-      </div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
           <div class="govuk-form-group" th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
             <label class="govuk-label" for="file" th:text="#{request.chooseFile}"></label>
+              <div id="file-upload-hint" class="govuk-hint">
+                <span th:text="#{request.fileValidation(${validExtensions},${maxFileSize})}"></span></br>
+                <span th:text="#{request.noSpaces}"></span>
+              </div>
             <input class="govuk-file-upload" id="file" name="file" type="file">
           </div>
           <div th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType', #{document.type}, ${documentTypes}, 'code', 'description')}"></div>

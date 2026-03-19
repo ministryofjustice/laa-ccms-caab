@@ -40,9 +40,7 @@
       </p>
       <div th:if="*{sendBy.code == 'E'}" class="govuk-form-group"
            th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
-          <dl class="govuk-body">
-              <div>Please ensure there are no spaces in the file name.</div>
-          </dl>
+          <div id="file-upload-hint" class="govuk-hint" th:text="#{request.noSpaces}"></div>
         <label class="govuk-label" for="file" th:text="#{notifications.documents.send.chooseFile}"/>
         <input class="govuk-file-upload" id="file" name="file" type="file">
       </div>

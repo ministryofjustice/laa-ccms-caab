@@ -191,6 +191,8 @@ public class ProviderRequestsController {
           final ProviderRequestFlowFormData providerRequestFlow,
       final Model model) {
 
+    populateAddEvidenceModel(model);
+
     final ProviderRequestDetailsFormData providerRequestDetailsForm =
         providerRequestFlow.getRequestDetailsFormData();
 
