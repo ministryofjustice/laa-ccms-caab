@@ -16,8 +16,9 @@ public class NotificationAttachmentUploadValidator extends FileUploadValidator {
 
   protected NotificationAttachmentUploadValidator(
       @Value("${laa.ccms.caab.upload.valid-extensions}") List<String> validExtensions,
-      @Value("${spring.servlet.multipart.max-file-size}") String maxFileSize) {
-    super(validExtensions, maxFileSize);
+      @Value("${spring.servlet.multipart.max-file-size}") String maxFileSize,
+      @Value("${laa.ccms.caab.upload.valid-mime-types}") final List<String> validMimeTypes) {
+    super(validExtensions, maxFileSize, validMimeTypes);
   }
 
   @Override

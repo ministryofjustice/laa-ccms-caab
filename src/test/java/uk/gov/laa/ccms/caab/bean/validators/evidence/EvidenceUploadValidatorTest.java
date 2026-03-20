@@ -8,7 +8,9 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_UPLOAD_FO
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -22,7 +24,10 @@ import uk.gov.laa.ccms.caab.constants.CcmsModule;
 class EvidenceUploadValidatorTest {
 
   private final EvidenceUploadValidator validator =
-      new EvidenceUploadValidator(List.of("pdf", "doc"), "20B");
+      new EvidenceUploadValidator(
+          List.of("pdf", "doc"),
+          "20B",
+          List.of("application/pdf", "application/msword", "text/plain"));
 
   private EvidenceUploadFormData evidenceUploadFormData;
 
@@ -76,19 +81,60 @@ class EvidenceUploadValidatorTest {
   }
 
   @Test
+  public void validate_mimeType() {
+    evidenceUploadFormData = buildEvidenceUploadFormData();
+    evidenceUploadFormData.setFile(
+        new MockMultipartFile(
+            "theFile", "originalName.pdf", "contentType", "the file data".getBytes()));
+
+    validator.validate(evidenceUploadFormData, errors);
+    assertEquals(1, errors.getErrorCount());
+    assertNotNull(errors.getFieldError("file"));
+    assertEquals(
+        "validation.error.invalidMimeType",
+        Objects.requireNonNull(errors.getFieldError("file")).getCode());
+  }
+
+  @Test
   public void validate_fileSize() {
     evidenceUploadFormData = buildEvidenceUploadFormData();
     evidenceUploadFormData.setFile(
         new MockMultipartFile(
             "theFile",
             "originalName.pdf",
-            "contentType",
+            "application/pdf",
             "file content which is over twenty bytes in length".getBytes()));
 
     validator.validate(evidenceUploadFormData, errors);
     assertEquals(1, errors.getErrorCount());
     assertNotNull(errors.getFieldError("file"));
     assertEquals("validation.error.maxFileSize", errors.getFieldError("file").getCode());
+  }
+
+  @Test
+  public void validate_fileName() {
+    evidenceUploadFormData = buildEvidenceUploadFormData();
+    evidenceUploadFormData.setFile(
+        new MockMultipartFile(
+            "invalid name.pdf", "invalid name.pdf", "application/pdf", "the file data".getBytes()));
+
+    validator.validate(evidenceUploadFormData, errors);
+    assertEquals(1, errors.getErrorCount());
+    assertNotNull(errors.getFieldError("file"));
+    assertEquals("validation.error.invalidFileName", errors.getFieldError("file").getCode());
+  }
+
+  @Test
+  @DisplayName("validate - Adds error for invalid magic bytes")
+  void validate_InvalidMagicBytes_HasErrors() {
+    evidenceUploadFormData = buildEvidenceUploadFormData();
+    evidenceUploadFormData.setFile(
+        new MockMultipartFile("file", "valid.pdf", "application/pdf", new byte[3]));
+
+    validator.validate(evidenceUploadFormData, errors);
+    assertTrue(errors.hasErrors());
+    assertNotNull(errors.getFieldError("file"));
+    assertEquals("validation.error.invalidMagicBytes", errors.getFieldError("file").getCode());
   }
 
   @Test
@@ -133,7 +179,7 @@ class EvidenceUploadValidatorTest {
     formData.setEvidenceTypes(List.of("type 1", "type 2"));
     formData.setFile(
         new MockMultipartFile(
-            "theFile", "originalName.pdf", "contentType", "the file data".getBytes()));
+            "theFile", "originalName.pdf", "application/pdf", "the file data".getBytes()));
     formData.setProviderId(789);
     formData.setRegisteredDocumentId("regId");
     return formData;

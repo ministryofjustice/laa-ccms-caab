@@ -21,13 +21,6 @@
         <th:block th:if="*{sendBy.code == 'E'}" th:text="#{notifications.documents.send.electronic.heading}"/>
       </h1>
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <div th:if="(*{sendBy.code}) == 'E'" class="govuk-warning-text">
-        <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
-        <strong class="govuk-warning-text__text">
-          <span class="govuk-visually-hidden" th:text="#{validation.warning}"/>
-          <th:block th:text="#{notifications.documents.send.validation.extensionSize(${validExtensions}, ${maxFileSize})}"/>
-        </strong>
-      </div>
       <p class="govuk-body-l">
         <th:block th:if="*{sendBy.code == 'P'}" th:text="#{notifications.documents.send.postal.line1}"/>
         <th:block th:if="*{sendBy.code == 'E'}" th:text="#{notifications.documents.send.electronic.line1}"/>
@@ -41,6 +34,10 @@
       <div th:if="*{sendBy.code == 'E'}" class="govuk-form-group"
            th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
         <label class="govuk-label" for="file" th:text="#{notifications.documents.send.chooseFile}"/>
+          <div id="file-upload-hint" class="govuk-hint">
+              <span th:text="#{notifications.documents.send.validation.extensionSize(${validExtensions}, ${maxFileSize})}"></span></br>
+              <span th:text="#{request.noSpaces}"></span>
+          </div>
         <input class="govuk-file-upload" id="file" name="file" type="file">
       </div>
       <th:block th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType',

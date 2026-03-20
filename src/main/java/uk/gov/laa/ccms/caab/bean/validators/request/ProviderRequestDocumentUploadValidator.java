@@ -15,8 +15,9 @@ public class ProviderRequestDocumentUploadValidator extends FileUploadValidator 
 
   public ProviderRequestDocumentUploadValidator(
       @Value("${laa.ccms.caab.upload.valid-extensions}") List<String> validExtensions,
-      @Value("${spring.servlet.multipart.max-file-size}") String maxFileSize) {
-    super(validExtensions, maxFileSize);
+      @Value("${spring.servlet.multipart.max-file-size}") String maxFileSize,
+      @Value("${laa.ccms.caab.upload.valid-mime-types}") final List<String> validMimeTypes) {
+    super(validExtensions, maxFileSize, validMimeTypes);
   }
 
   /** The error message for the required provider request document details field. */

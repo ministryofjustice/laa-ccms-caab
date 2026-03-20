@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -20,7 +21,13 @@ import uk.gov.laa.ccms.caab.constants.SendBy;
 public class NotificationAttachmentUploadValidatorTest {
 
   private final NotificationAttachmentUploadValidator validator =
-      new NotificationAttachmentUploadValidator(List.of("pdf", "doc"), "20B");
+      new NotificationAttachmentUploadValidator(
+          List.of("pdf", "doc"),
+          "20B",
+          List.of(
+              "application/pdf",
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              "text/plain"));
 
   private NotificationAttachmentUploadFormData notificationAttachmentUploadFormData;
 
@@ -86,19 +93,58 @@ public class NotificationAttachmentUploadValidatorTest {
   }
 
   @Test
+  public void validate_mimeType() {
+    notificationAttachmentUploadFormData = buildNotificationAttachmentUploadFormData();
+    notificationAttachmentUploadFormData.setFile(
+        new MockMultipartFile(
+            "theFile", "originalName.pdf", "contentType", "the file data".getBytes()));
+
+    validator.validate(notificationAttachmentUploadFormData, errors);
+    assertEquals(1, errors.getErrorCount());
+    assertNotNull(errors.getFieldError("file"));
+    assertEquals("validation.error.invalidMimeType", errors.getFieldError("file").getCode());
+  }
+
+  @Test
   public void validate_fileSize() {
     notificationAttachmentUploadFormData = buildNotificationAttachmentUploadFormData();
     notificationAttachmentUploadFormData.setFile(
         new MockMultipartFile(
             "theFile",
             "originalName.pdf",
-            "contentType",
+            "application/pdf",
             "file content which is over twenty bytes in length".getBytes()));
 
     validator.validate(notificationAttachmentUploadFormData, errors);
     assertEquals(1, errors.getErrorCount());
     assertNotNull(errors.getFieldError("file"));
     assertEquals("validation.error.maxFileSize", errors.getFieldError("file").getCode());
+  }
+
+  @Test
+  public void validate_fileName() {
+    notificationAttachmentUploadFormData = buildNotificationAttachmentUploadFormData();
+    notificationAttachmentUploadFormData.setFile(
+        new MockMultipartFile(
+            "invalid name.pdf", "invalid name.pdf", "application/pdf", "the file data".getBytes()));
+
+    validator.validate(notificationAttachmentUploadFormData, errors);
+    assertEquals(1, errors.getErrorCount());
+    assertNotNull(errors.getFieldError("file"));
+    assertEquals("validation.error.invalidFileName", errors.getFieldError("file").getCode());
+  }
+
+  @Test
+  @DisplayName("validate - Adds error for invalid magic bytes")
+  void validate_InvalidMagicBytes_HasErrors() {
+    notificationAttachmentUploadFormData = buildNotificationAttachmentUploadFormData();
+    notificationAttachmentUploadFormData.setFile(
+        new MockMultipartFile("file", "valid.pdf", "application/pdf", new byte[3]));
+
+    validator.validate(notificationAttachmentUploadFormData, errors);
+    assertTrue(errors.hasErrors());
+    assertNotNull(errors.getFieldError("file"));
+    assertEquals("validation.error.invalidMagicBytes", errors.getFieldError("file").getCode());
   }
 
   @Test
@@ -128,7 +174,7 @@ public class NotificationAttachmentUploadValidatorTest {
     formData.setDocumentTypeDisplayValue("doc type");
     formData.setFile(
         new MockMultipartFile(
-            "theFile", "originalName.pdf", "contentType", "the file data".getBytes()));
+            "theFile", "originalName.pdf", "application/pdf", "the file data".getBytes()));
     formData.setProviderId(789);
     formData.setDocumentId(123);
     formData.setSendBy(SendBy.ELECTRONIC);
