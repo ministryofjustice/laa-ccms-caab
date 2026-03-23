@@ -1,0 +1,40 @@
+{
+  "priority": 1,
+  "request": {
+    "method": "GET",
+    "urlPath": "/search/places/v1/postcode",
+    "queryParameters": {
+      "key": {
+        "equalTo": "TEST_KEY"
+      },
+      "postcode": {
+        "equalTo": "XX99 9XX"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "transformers": [
+      "response-template"
+    ],
+    "jsonBody": {
+      "header": {
+        "uri": "https://api.os.uk/search/places/v1/postcode?postcode={{request.query.postcode}}",
+        "query": "postcode={{request.query.postcode}}",
+        "offset": 0,
+        "totalresults": 0,
+        "format": "JSON",
+        "dataset": "DPA",
+        "lr": "EN,CY",
+        "maxresults": 100,
+        "epoch": "103",
+        "lastupdate": "2023-09-13",
+        "output_srs": "EPSG:00000"
+      },
+      "results": []
+    }
+  }
+}
