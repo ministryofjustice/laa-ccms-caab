@@ -76,7 +76,7 @@ dependencies {
     implementation 'org.mapstruct:mapstruct:1.6.3'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 
-    implementation 'org.apache.tika:tika-core:3.2.2'
+    implementation 'org.apache.tika:tika-core:3.2.3'
 
     // Starters
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
@@ -92,7 +92,7 @@ dependencies {
 	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.0.0')
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
-	implementation 'software.amazon.awssdk:sts:2.42.17'
+	implementation 'software.amazon.awssdk:sts:2.42.18'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
