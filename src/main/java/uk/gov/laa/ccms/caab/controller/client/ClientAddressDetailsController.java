@@ -113,7 +113,8 @@ public class ClientAddressDetailsController {
       ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults =
           addressService.getAddresses(clientFlowFormData.getAddressDetails().getPostcode());
 
-      if (clientAddressSearchResults.getContent() == null) {
+      if (clientAddressSearchResults.getContent() == null
+          || clientAddressSearchResults.getContent().isEmpty()) {
         bindingResult.reject(
             "address.none", "Your input for address details has not returned any results");
       } else {
