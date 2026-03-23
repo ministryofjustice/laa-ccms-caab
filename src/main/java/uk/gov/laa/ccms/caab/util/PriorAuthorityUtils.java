@@ -8,10 +8,18 @@ import org.springframework.stereotype.Service;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ReferenceDataItemDetail;
 
+/** Utility class that provides helper functions for prior authorities. */
 @Service
 public class PriorAuthorityUtils {
 
-  public Map<String, List<ReferenceDataItemDetail>> groupPriorAuthorityItems(PriorAuthorityDetail priorAuthorityDetail) {
+  /**
+   * Groups the items in a prior authority.
+   *
+   * @param priorAuthorityDetail details of the prior authority being reviewed
+   * @return returns a mapping of the groupings for each item.
+   */
+  public Map<String, List<ReferenceDataItemDetail>> groupPriorAuthorityItems(
+      PriorAuthorityDetail priorAuthorityDetail) {
     Map<String, List<ReferenceDataItemDetail>> groupedItems = new HashMap<>();
 
     switch (priorAuthorityDetail.getType().getId()) {
@@ -30,10 +38,15 @@ public class PriorAuthorityUtils {
       case "OTHER":
         groupedItems.put("EXPENSE_DETAILS", new ArrayList<>());
         break;
+
+      default:
+        throw new IllegalStateException(
+            "Unhandled prior authority type: " + priorAuthorityDetail.getType().getId());
     }
 
     for (ReferenceDataItemDetail item : priorAuthorityDetail.getItems()) {
-      String group = getGroupForCode(item.getCode().getId(), priorAuthorityDetail.getType().getId());
+      String group =
+          getGroupForCode(item.getCode().getId(), priorAuthorityDetail.getType().getId());
       if (groupedItems.containsKey(group)) {
         groupedItems.get(group).add(item);
       }
@@ -45,7 +58,6 @@ public class PriorAuthorityUtils {
   private String getGroupForCode(String codeId, String priorAuthorityType) {
 
     switch (priorAuthorityType) {
-
       case "COUNSEL":
         switch (codeId) {
           case "C01_AUTHORTY_REQD":
