@@ -1743,7 +1743,8 @@ public class EditProceedingsAndCostsSectionController {
     model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
 
     if (priorAuthority.getStatus().equals(STATUS_GRANTED)) {
-      Map<String, List<ReferenceDataItemDetail>> groupedPriorAuthorityItems = priorAuthorityUtils.groupPriorAuthorityItems(priorAuthority);
+      Map<String, List<ReferenceDataItemDetail>> groupedPriorAuthorityItems =
+          priorAuthorityUtils.groupPriorAuthorityItems(priorAuthority);
       model.addAttribute("priorAuthority", priorAuthority);
       model.addAttribute("groupedItems", groupedPriorAuthorityItems);
       model.addAttribute(
