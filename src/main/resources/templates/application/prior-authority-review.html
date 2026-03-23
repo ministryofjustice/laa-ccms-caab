@@ -73,11 +73,12 @@
                 <!-- Other -->
                 <!-- ========================================== -->
                 <th:block th:if="${priorAuthority.type.displayValue == 'Other'}">
-                    <th:block th:replace="application/partials/summary-section :: section('General details', ${priorAuthority.items})"></th:block>
+                    <th:block th:replace="application/partials/summary-section :: section('Expense details', ${priorAuthority.items})"></th:block>
                 </th:block>
                 </dl>
             </div>
         </div>
+    </div>
 </div>
 </body>
 </html>
