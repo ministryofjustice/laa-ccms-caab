@@ -3,7 +3,6 @@ package uk.gov.laa.ccms.caab.controller.application;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
-import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
@@ -17,7 +16,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.bean.validators.costs.AllocateCostLimitValidator;
 import uk.gov.laa.ccms.caab.mapper.CopyApplicationMapper;
@@ -38,31 +36,6 @@ public class AllocateCostLimitController {
   private final ApplicationService applicationService;
 
   /**
-   * Starts the cost limitation allocation journey by fetching fresh data.
-   *
-   * @param ebsCase The case details from EBS.
-   * @param userDetails The details of the currently authenticated user.
-   * @param session The current HTTP session.
-   * @return A redirect to the cost limitation allocation screen.
-   */
-  @GetMapping("/allocate-cost-limit/start")
-  public String startCaseDetails(
-      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
-      @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
-      final HttpSession session) {
-
-    final ApplicationDetail freshCase =
-        applicationService.getCase(
-            ebsCase.getCaseReferenceNumber(),
-            userDetails.getProvider().getId(),
-            userDetails.getUsername());
-
-    session.setAttribute(CASE, freshCase);
-
-    return "redirect:/allocate-cost-limit";
-  }
-
-  /**
    * Displays the cost limitation allocation screen.
    *
    * @param ebsCase The case details from EBS.
@@ -76,16 +49,25 @@ public class AllocateCostLimitController {
       @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
       Model model) {
 
-    AllocateCostsFormData allocateCostsFormData;
-    if (model.containsAttribute("costDetails")) {
-      allocateCostsFormData = (AllocateCostsFormData) model.asMap().get("costDetails");
-    } else {
-      allocateCostsFormData = proceedingAndCostsMapper.toAllocateCostsForm(ebsCase);
-      allocateCostsFormData.setTotalRemaining(getTotalRemaining(allocateCostsFormData));
-    }
+    // Load fresh case data to ensure we have the latest cost information
+    // Note: We don't update the session here to preserve availableFunctions and other session state
+    final ApplicationDetail freshCase =
+        applicationService.getCase(
+            ebsCase.getCaseReferenceNumber(),
+            userDetails.getProvider().getId(),
+            userDetails.getUsername());
+
+    // Use fresh cost data for form, but keep session case for display
+    ApplicationDetail displayCase =
+        copyApplicationMapper.copyApplication(new ApplicationDetail(), ebsCase);
+    displayCase.setCosts(freshCase.getCosts());
+
+    AllocateCostsFormData allocateCostsFormData =
+        proceedingAndCostsMapper.toAllocateCostsForm(displayCase);
+    allocateCostsFormData.setTotalRemaining(getTotalRemaining(allocateCostsFormData));
 
     model.addAttribute("costDetails", allocateCostsFormData);
-    model.addAttribute("case", ebsCase);
+    model.addAttribute("case", displayCase);
     return "application/cost-allocation";
   }
 
@@ -105,8 +87,7 @@ public class AllocateCostLimitController {
       @org.springframework.web.bind.annotation.RequestParam(value = "action", required = false)
           String action,
       final Model model,
-      final BindingResult bindingResult,
-      final RedirectAttributes redirectAttributes) {
+      final BindingResult bindingResult) {
 
     ApplicationDetail appCopy =
         copyApplicationMapper.copyApplication(new ApplicationDetail(), ebsCase);
@@ -132,15 +113,10 @@ public class AllocateCostLimitController {
 
     allocateCostLimitValidator.validate(allocateCostsFormData, bindingResult);
 
-    if (bindingResult.hasErrors()) {
+    if (bindingResult.hasErrors() || "calculate".equals(action)) {
       model.addAttribute("case", ebsCase);
       model.addAttribute("costDetails", allocateCostsFormData);
       return "application/cost-allocation";
-    }
-
-    if ("calculate".equals(action)) {
-      redirectAttributes.addFlashAttribute("costDetails", allocateCostsFormData);
-      return "redirect:/allocate-cost-limit";
     }
 
     ebsCase.getCosts().setCostEntries(costs);
