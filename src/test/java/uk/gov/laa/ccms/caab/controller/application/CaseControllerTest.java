@@ -65,15 +65,12 @@ import uk.gov.laa.ccms.caab.model.sections.OrganisationAddressDetailsSectionDisp
 import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.OrganisationOrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
-import uk.gov.laa.ccms.caab.util.PriorAuthorityUtils;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
 class CaseControllerTest {
 
   @Mock private ApplicationService applicationService;
-
-  @Mock private PriorAuthorityUtils priorAuthorityUtils;
 
   @InjectMocks private CaseController caseController;
 
@@ -945,6 +942,7 @@ class CaseControllerTest {
   void getCaseDetailsViewReturnsViewAndModelForValidIndex() {
     ApplicationDetail ebsCase = new ApplicationDetail();
     PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
+    priorAuthority.setType(new StringDisplayValue().id("EXPERT").displayValue("Expert"));
     ebsCase.setPriorAuthorities(List.of(priorAuthority));
 
     assertThat(mockMvc.perform(get("/case/details/prior-authority/0").sessionAttr(CASE, ebsCase)))

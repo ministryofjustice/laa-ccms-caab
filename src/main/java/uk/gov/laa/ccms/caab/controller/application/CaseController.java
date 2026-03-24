@@ -60,7 +60,6 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class CaseController {
 
   private final ApplicationService applicationService;
-  private final PriorAuthorityUtils priorAuthorityUtils;
   private static final String SEARCH_URL = "SEARCH_URL";
 
   /**
@@ -293,7 +292,7 @@ public class CaseController {
     Assert.isTrue(index < priorAuthorities.size(), () -> errorMessage);
 
     Map<String, List<ReferenceDataItemDetail>> groupedPriorAuthorityItems =
-        priorAuthorityUtils.groupPriorAuthorityItems(priorAuthorities.get(index));
+        PriorAuthorityUtils.groupPriorAuthorityItems(priorAuthorities.get(index));
     model.addAttribute("groupedItems", groupedPriorAuthorityItems);
     model.addAttribute("priorAuthority", priorAuthorities.get(index));
     return "application/prior-authority-review";

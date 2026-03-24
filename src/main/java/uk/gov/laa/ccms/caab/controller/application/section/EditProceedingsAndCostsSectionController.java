@@ -139,8 +139,6 @@ public class EditProceedingsAndCostsSectionController {
   // mappers
   private final ProceedingAndCostsMapper proceedingAndCostsMapper;
 
-  private final PriorAuthorityUtils priorAuthorityUtils;
-
   private static final String ACTION_EDIT = "edit";
   private static final String ACTION_ADD = "add";
   private static final String STATUS_DISPLAY_VALUE_ADDED = "Added";
@@ -1744,7 +1742,7 @@ public class EditProceedingsAndCostsSectionController {
 
     if (priorAuthority.getStatus().equals(STATUS_GRANTED)) {
       Map<String, List<ReferenceDataItemDetail>> groupedPriorAuthorityItems =
-          priorAuthorityUtils.groupPriorAuthorityItems(priorAuthority);
+          PriorAuthorityUtils.groupPriorAuthorityItems(priorAuthority);
       model.addAttribute("priorAuthority", priorAuthority);
       model.addAttribute("groupedItems", groupedPriorAuthorityItems);
       model.addAttribute(

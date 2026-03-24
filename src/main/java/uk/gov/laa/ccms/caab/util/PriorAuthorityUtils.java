@@ -4,12 +4,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.springframework.stereotype.Service;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ReferenceDataItemDetail;
 
 /** Utility class that provides helper functions for prior authorities. */
-@Service
 public class PriorAuthorityUtils {
 
   /**
@@ -18,13 +16,20 @@ public class PriorAuthorityUtils {
    * @param priorAuthorityDetail details of the prior authority being reviewed
    * @return returns a mapping of the groupings for each item.
    */
-  public Map<String, List<ReferenceDataItemDetail>> groupPriorAuthorityItems(
+  public static Map<String, List<ReferenceDataItemDetail>> groupPriorAuthorityItems(
       PriorAuthorityDetail priorAuthorityDetail) {
     Map<String, List<ReferenceDataItemDetail>> groupedItems = new HashMap<>();
 
+    if (priorAuthorityDetail.getType() == null) {
+      throw new IllegalStateException("Prior authority type is null");
+    }
+    if (priorAuthorityDetail.getType().getId() == null) {
+      throw new IllegalStateException("Prior authority type ID is missing");
+    }
     switch (priorAuthorityDetail.getType().getId()) {
       case "COUNSEL":
         groupedItems.put("COUNSEL_DETAILS", new ArrayList<>());
+        groupedItems.put("OTHER", new ArrayList<>());
         break;
 
       case "EXPERT":
@@ -33,10 +38,12 @@ public class PriorAuthorityUtils {
         groupedItems.put("RATES", new ArrayList<>());
         groupedItems.put("COSTS", new ArrayList<>());
         groupedItems.put("REASONING", new ArrayList<>());
+        groupedItems.put("OTHER", new ArrayList<>());
         break;
 
       case "OTHER":
         groupedItems.put("EXPENSE_DETAILS", new ArrayList<>());
+        groupedItems.put("OTHER", new ArrayList<>());
         break;
 
       default:
@@ -48,14 +55,18 @@ public class PriorAuthorityUtils {
       String group =
           getGroupForCode(item.getCode().getId(), priorAuthorityDetail.getType().getId());
       if (groupedItems.containsKey(group)) {
-        groupedItems.get(group).add(item);
+        if (item.getValue() != null
+            && item.getValue().getDisplayValue() != null
+            && !item.getValue().getDisplayValue().isBlank()) {
+          groupedItems.get(group).add(item);
+        }
       }
     }
 
     return groupedItems;
   }
 
-  private String getGroupForCode(String codeId, String priorAuthorityType) {
+  private static String getGroupForCode(String codeId, String priorAuthorityType) {
 
     switch (priorAuthorityType) {
       case "COUNSEL":
@@ -64,7 +75,7 @@ public class PriorAuthorityUtils {
           case "C02_COUNSEL_BRIEF_TYPE":
             return "COUNSEL_DETAILS";
           default:
-            return null;
+            return "OTHER";
         }
 
       case "EXPERT":
@@ -115,7 +126,7 @@ public class PriorAuthorityUtils {
           case "E32_EXPERT_COD_EXPLAIN":
             return "REASONING";
           default:
-            return null;
+            return "OTHER";
         }
 
       case "OTHER":
@@ -128,7 +139,7 @@ public class PriorAuthorityUtils {
             return null;
         }
       default:
-        return null;
+        return "OTHER";
     }
   }
 }
