@@ -17,6 +17,7 @@ import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -43,10 +44,12 @@ import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.ReferenceDataItemDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.util.PriorAuthorityUtils;
 import uk.gov.laa.ccms.caab.util.view.ActionViewHelper;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -288,6 +291,9 @@ public class CaseController {
     Assert.notEmpty(priorAuthorities, () -> errorMessage);
     Assert.isTrue(index < priorAuthorities.size(), () -> errorMessage);
 
+    Map<String, List<ReferenceDataItemDetail>> groupedPriorAuthorityItems =
+        PriorAuthorityUtils.groupPriorAuthorityItems(priorAuthorities.get(index));
+    model.addAttribute("groupedItems", groupedPriorAuthorityItems);
     model.addAttribute("priorAuthority", priorAuthorities.get(index));
     return "application/prior-authority-review";
   }

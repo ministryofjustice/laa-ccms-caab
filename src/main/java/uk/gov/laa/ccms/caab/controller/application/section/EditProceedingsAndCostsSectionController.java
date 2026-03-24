@@ -74,11 +74,13 @@ import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.ReferenceDataItemDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.util.PriorAuthorityUtils;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -1739,7 +1741,10 @@ public class EditProceedingsAndCostsSectionController {
     model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
 
     if (priorAuthority.getStatus().equals(STATUS_GRANTED)) {
+      Map<String, List<ReferenceDataItemDetail>> groupedPriorAuthorityItems =
+          PriorAuthorityUtils.groupPriorAuthorityItems(priorAuthority);
       model.addAttribute("priorAuthority", priorAuthority);
+      model.addAttribute("groupedItems", groupedPriorAuthorityItems);
       model.addAttribute(
           "backUrl",
           "/civil/" + caseContext.getPathValue() + "/proceedings-and-costs#prior-authority");

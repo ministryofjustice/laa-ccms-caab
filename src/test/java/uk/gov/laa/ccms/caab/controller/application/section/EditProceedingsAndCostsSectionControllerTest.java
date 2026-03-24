@@ -2169,6 +2169,7 @@ class EditProceedingsAndCostsSectionControllerTest {
       final int priorAuthorityId = 1;
       final String priorAuthorityStatus = "Grant";
       final PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
+      priorAuthority.setType(new StringDisplayValue().id("EXPERT").displayValue("Expert"));
       priorAuthority.setId(priorAuthorityId);
       priorAuthority.setStatus(priorAuthorityStatus);
 

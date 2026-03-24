@@ -942,6 +942,7 @@ class CaseControllerTest {
   void getCaseDetailsViewReturnsViewAndModelForValidIndex() {
     ApplicationDetail ebsCase = new ApplicationDetail();
     PriorAuthorityDetail priorAuthority = new PriorAuthorityDetail();
+    priorAuthority.setType(new StringDisplayValue().id("EXPERT").displayValue("Expert"));
     ebsCase.setPriorAuthorities(List.of(priorAuthority));
 
     assertThat(mockMvc.perform(get("/case/details/prior-authority/0").sessionAttr(CASE, ebsCase)))

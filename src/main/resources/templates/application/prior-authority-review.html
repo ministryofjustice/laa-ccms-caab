@@ -19,47 +19,89 @@
             <div class="govuk-grid-column-full">
                 <h1 class="govuk-heading-l" id="lead-heading" th:text="#{priorAuthorityReview.heading}"/>
                 <p class="govuk-body-l" th:text="#{priorAuthorityReview.leadParagraph}"/>
-                <dl class="govuk-summary-list">
-                    <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.type}"/>
-                        <dd class="govuk-summary-list__value" id="prior-authority-type-value"
-                            th:text="${priorAuthority.type.displayValue}"/>
+                <div class="govuk-summary-card">
+                    <div class="govuk-summary-card__title-wrapper">
+                        <h2 class="govuk-summary-card__title" th:text="#{proceedings.priorAuthorities.generalDetails}"></h2>
                     </div>
-                    <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.summary}"/>
-                        <dd class="govuk-summary-list__value" id="prior-authority-summary"
-                            th:text="${priorAuthority.summary}"/>
-                    </div>
-                    <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.justification}"/>
-                        <dd class="govuk-summary-list__value" id="prior-authority-justification"
-                            th:text="${priorAuthority.justification}"/>
-                    </div>
-                    <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.amountRequested}"/>
-                        <dd class="govuk-summary-list__value"
-                            id="prior-authority-amount-requested"
-                            th:text="${#numbers.formatCurrency(priorAuthority.amountRequested)}"/>
-                    </div>
-                    <th:block th:each="item : ${priorAuthority.items}">
+                    <div class="govuk-summary-card__content">
+                        <div class="govuk-summary-list">
                         <div class="govuk-summary-list__row">
-                            <dt class="govuk-summary-list__key" th:text="${item.code.displayValue}">
-                            </dt>
-                            <dd class="govuk-summary-list__value"
-                                th:with="itemCode = ${item.code.displayValue},
-                                         normalisedCode = ${itemCode.toLowerCase().replace(' ', '-')},
-                                         trimmedCode = ${normalisedCode.length() < 15 ? normalisedCode : normalisedCode.substring(0, 15)}"
-                                th:id="${'prior-authority-' + trimmedCode}"
-                                th:text="${item.type == 'AMT' ?
-                                #numbers.formatCurrency(item.value.displayValue) : item.value.displayValue}">
-                            </dd>
+                            <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.type}"/>
+                            <dd class="govuk-summary-list__value" id="prior-authority-type-value"
+                                th:text="${priorAuthority.type.displayValue}"/>
                         </div>
+                        <div class="govuk-summary-list__row">
+                            <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.summary}"/>
+                            <dd class="govuk-summary-list__value" id="prior-authority-summary"
+                                th:text="${priorAuthority.summary}"/>
+                        </div>
+                        <div class="govuk-summary-list__row">
+                            <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.justification}"/>
+                            <dd class="govuk-summary-list__value" id="prior-authority-justification"
+                                th:text="${priorAuthority.justification}"/>
+                        </div>
+                        <div class="govuk-summary-list__row">
+                            <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.amountRequested}"/>
+                            <dd class="govuk-summary-list__value"
+                                id="prior-authority-amount-requested"
+                                th:text="${#numbers.formatCurrency(priorAuthority.amountRequested)}"/>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- COUNSEL -->
+                <!-- ========================================== -->
+                <th:block th:if="${priorAuthority.type.displayValue == 'Counsel'}">
+                    <th:block th:if="${!#lists.isEmpty(groupedItems.COUNSEL_DETAILS)}">
+                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.counselDetails}, ${groupedItems.COUNSEL_DETAILS})"></th:block>
                     </th:block>
+                    <th:block th:if="${!#lists.isEmpty(groupedItems.OTHER)}">
+                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.other}, ${groupedItems.OTHER})"></th:block>
+                    </th:block>
+                </th:block>
+
+
+                <!-- ========================================== -->
+                <!-- EXPERT -->
+                <!-- ========================================== -->
+                <th:block th:if="${priorAuthority.type.displayValue == 'Expert'}">
+                    <th:block th:if="${!#lists.isEmpty(groupedItems.EXPERT_DETAILS)}">
+                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.expertDetails}, ${groupedItems.EXPERT_DETAILS})"></th:block>
+                    </th:block>
+                    <th:block th:if="${!#lists.isEmpty(groupedItems.TIME_SPENT)}">
+                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.timeSpent}, ${groupedItems.TIME_SPENT})"></th:block>
+                    </th:block>
+                    <th:block th:if="${!#lists.isEmpty(groupedItems.RATES)}">
+                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.rates}, ${groupedItems.RATES})"></th:block>
+                    </th:block>
+                    <th:block th:if="${!#lists.isEmpty(groupedItems.COSTS)}">
+                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.costs}, ${groupedItems.COSTS})"></th:block>
+                    </th:block>
+                    <th:block th:if="${!#lists.isEmpty(groupedItems.REASONING)}">
+                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.reasoning}, ${groupedItems.REASONING})"></th:block>
+                    </th:block>
+                    <th:block th:if="${!#lists.isEmpty(groupedItems.OTHER)}">
+                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.other}, ${groupedItems.OTHER})"></th:block>
+                    </th:block>
+                </th:block>
+
+                <!-- ========================================== -->
+                <!-- Other -->
+                <!-- ========================================== -->
+                <th:block th:if="${priorAuthority.type.displayValue == 'Other'}">
+                    <th:block th:if="${!#lists.isEmpty(groupedItems.EXPENSE_DETAILS)}">
+                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.expenseDetails}, ${priorAuthority.items})"></th:block>
+                    </th:block>
+                    <th:block th:if="${!#lists.isEmpty(groupedItems.OTHER)}">
+                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.other}, ${groupedItems.OTHER})"></th:block>
+                    </th:block>
+                </th:block>
                 </dl>
             </div>
         </div>
     </div>
-
 </div>
 </body>
 </html>
