@@ -106,7 +106,6 @@ import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
-import uk.gov.laa.ccms.caab.util.PriorAuthorityUtils;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupValueDetail;
@@ -142,8 +141,6 @@ class EditProceedingsAndCostsSectionControllerTest {
   @Mock private PriorAuthorityDetailsValidator priorAuthorityDetailsValidator;
 
   @Mock private ProceedingAndCostsMapper proceedingAndCostsMapper;
-
-  @Mock private PriorAuthorityUtils priorAuthorityUtils;
 
   @Mock private Model model;
 
