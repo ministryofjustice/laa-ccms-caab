@@ -39,7 +39,7 @@ jobs:
     with:
       java_version: '25'
       java_distribution: 'corretto'
-      image_version: ${{ format('{0}-{1}', vars.IMAGE_PREFIX, needs.build.outputs.published_artifact_version) }}
+      image_version: ${{ format('{0}-{1}', vars.IMAGE_PREFIX, github.ref_name) }}
       publish: false
     secrets:
       gh_token: ${{ secrets.GITHUB_TOKEN }}
