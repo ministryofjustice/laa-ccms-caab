@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -100,16 +101,13 @@ public class EbsApplicationMappingContextBuilder {
    */
   public EbsApplicationMappingContext buildApplicationMappingContext(final CaseDetail ebsCase) {
     final SubmittedApplicationDetails ebsApplicationDetails = ebsCase.getApplicationDetails();
-
     final ProviderDetails ebsProvider = ebsApplicationDetails.getProviderDetails();
 
-    // Determine whether all the proceedings in the ebsCase are at status DRAFT
+    // Determine whether all proceedings are at status DRAFT
     final boolean caseWithOnlyDraftProceedings =
         ebsApplicationDetails.getProceedings() != null
             && ebsApplicationDetails.getProceedings().stream()
-                .allMatch(
-                    proceedingDetail ->
-                        STATUS_DRAFT.equalsIgnoreCase(proceedingDetail.getStatus()));
+                .allMatch(p -> STATUS_DRAFT.equalsIgnoreCase(p.getStatus()));
 
     // Retrieve the full provider details
     final ProviderDetail providerDetail =
@@ -128,8 +126,8 @@ public class EbsApplicationMappingContextBuilder {
             ? lookupService
                 .getCommonValue(COMMON_VALUE_APPLICATION_TYPE, ebsCase.getCertificateType())
                 .map(
-                    commonLookupValueDetail ->
-                        commonLookupValueDetail.orElse(
+                    detail ->
+                        detail.orElse(
                             new CommonLookupValueDetail()
                                 .code(ebsCase.getCertificateType())
                                 .description(ebsCase.getCertificateType())))
@@ -141,16 +139,15 @@ public class EbsApplicationMappingContextBuilder {
                                 .formatted(ebsCase.getCertificateType())))
             : null;
 
-    // Lookup the application type display value - this should be based on the
-    // application/amendment type (if it has one), or the certificate type.
+    // Lookup the application type display value — based on the application/amendment type
+    // if present, otherwise falls back to the certificate type.
     final CommonLookupValueDetail applicationTypeLookup =
         ebsApplicationDetails.getApplicationAmendmentType() != null
             ? lookupService
                 .getCommonValue(
                     COMMON_VALUE_APPLICATION_TYPE,
                     ebsApplicationDetails.getApplicationAmendmentType())
-                .mapNotNull(
-                    commonLookupValueDetail -> commonLookupValueDetail.orElse(certificateLookup))
+                .mapNotNull(detail -> detail.orElse(certificateLookup))
                 .blockOptional()
                 .orElseThrow(
                     () ->
@@ -159,12 +156,11 @@ public class EbsApplicationMappingContextBuilder {
                                 .formatted(ebsApplicationDetails.getApplicationAmendmentType())))
             : certificateLookup;
 
-    // Find the correct provider office.
+    // Find the correct provider office
     final OfficeDetail providerOffice =
         providerDetail.getOffices().stream()
             .filter(
-                officeDetail ->
-                    ebsProvider.getProviderOfficeId().equals(String.valueOf(officeDetail.getId())))
+                office -> ebsProvider.getProviderOfficeId().equals(String.valueOf(office.getId())))
             .findAny()
             .orElseThrow(
                 () ->
@@ -172,12 +168,12 @@ public class EbsApplicationMappingContextBuilder {
                         "Failed to find Office with id: %s"
                             .formatted(ebsProvider.getProviderOfficeId())));
 
-    // Get the Fee Earners for the relevant office, and Map them by contact id.
+    // Get the fee earners for the relevant office, mapped by contact id
     final Map<Integer, ContactDetail> feeEarnerById =
         providerOffice.getFeeEarners().stream()
             .collect(Collectors.toMap(ContactDetail::getId, Function.identity()));
 
-    // Get the correct Supervisor and Fee Earner for this Provider.
+    // Resolve supervisor and fee earner contacts
     final ContactDetail supervisorContact =
         Objects.nonNull(ebsProvider.getSupervisorContactId())
             ? feeEarnerById.get(Integer.valueOf(ebsProvider.getSupervisorContactId()))
@@ -188,35 +184,24 @@ public class EbsApplicationMappingContextBuilder {
             ? feeEarnerById.get(Integer.valueOf(ebsProvider.getFeeEarnerContactId()))
             : null;
 
-    // Set the DevolvedPowers for the Application based on the ApplicationAmendmentType.
-    boolean isDevolvedPowers =
+    // Set the DevolvedPowers for the Application based on the ApplicationAmendmentType
+    final boolean isDevolvedPowers =
         APP_TYPE_EMERGENCY_DEVOLVED_POWERS.equalsIgnoreCase(
                 ebsApplicationDetails.getApplicationAmendmentType())
             || APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS.equalsIgnoreCase(
                 ebsApplicationDetails.getApplicationAmendmentType());
-    Pair<Boolean, LocalDate> devolvedPowersInfo =
+    final Pair<Boolean, LocalDate> devolvedPowersInfo =
         Pair.of(
             isDevolvedPowers,
             isDevolvedPowers ? ebsApplicationDetails.getDevolvedPowersDate() : null);
 
-    // Calculate the CurrentProviderBilledAmount for the Application's Costs.
-    BigDecimal currentProviderBilledAmount = BigDecimal.ZERO;
-    CategoryOfLaw categoryOfLaw = ebsApplicationDetails.getCategoryOfLaw();
-    if (categoryOfLaw.getCostLimitations() != null && categoryOfLaw.getTotalPaidToDate() != null) {
-      // Add the total amount billed across all cost entries.
-      final BigDecimal totalProviderAmount =
-          categoryOfLaw.getCostLimitations().stream()
-              .map(CostLimitation::getPaidToDate)
-              .reduce(BigDecimal.ZERO, BigDecimal::add);
+    // Calculate the CurrentProviderBilledAmount for the Application's Costs
+    final BigDecimal currentProviderBilledAmount =
+        calculateCurrentProviderBilledAmount(ebsApplicationDetails.getCategoryOfLaw());
 
-      currentProviderBilledAmount =
-          categoryOfLaw.getTotalPaidToDate().subtract(totalProviderAmount);
-    }
-
-    // Find the most recent Assessments
+    // Find the most recent assessments
     final AssessmentResult meansAssessment =
         getMostRecentAssessment(ebsApplicationDetails.getMeansAssessments());
-
     final AssessmentResult meritsAssessment =
         getMostRecentAssessment(ebsApplicationDetails.getMeritsAssessments());
 
@@ -228,17 +213,10 @@ public class EbsApplicationMappingContextBuilder {
         ebsApplicationDetails.getProceedings() != null
             ? ebsApplicationDetails.getProceedings().stream()
                 .filter(
-                    proceedingDetail ->
+                    p ->
                         !caseWithOnlyDraftProceedings
-                            && STATUS_DRAFT.equalsIgnoreCase(proceedingDetail.getStatus()))
-                .map(
-                    proceedingDetail ->
-                        Optional.ofNullable(
-                                buildProceedingMappingContext(proceedingDetail, ebsCase))
-                            .orElseThrow(
-                                () ->
-                                    new CaabApplicationException(
-                                        "Failed to build mapping context")))
+                            && STATUS_DRAFT.equalsIgnoreCase(p.getStatus()))
+                .map(p -> buildProceedingMappingContext(p, ebsCase))
                 .toList()
             : Collections.emptyList();
 
@@ -246,22 +224,15 @@ public class EbsApplicationMappingContextBuilder {
         ebsApplicationDetails.getProceedings() != null
             ? ebsApplicationDetails.getProceedings().stream()
                 .filter(
-                    proceedingDetail ->
+                    p ->
                         caseWithOnlyDraftProceedings
-                            || !STATUS_DRAFT.equalsIgnoreCase(proceedingDetail.getStatus()))
-                .map(
-                    proceedingDetail ->
-                        Optional.ofNullable(
-                                buildProceedingMappingContext(proceedingDetail, ebsCase))
-                            .orElseThrow(
-                                () ->
-                                    new CaabApplicationException(
-                                        "Failed to build mapping context")))
+                            || !STATUS_DRAFT.equalsIgnoreCase(p.getStatus()))
+                .map(p -> buildProceedingMappingContext(p, ebsCase))
                 .toList()
             : Collections.emptyList();
 
     // Build a mapping context for each Prior Authority in the application
-    List<EbsPriorAuthorityMappingContext> priorAuthorities =
+    final List<EbsPriorAuthorityMappingContext> priorAuthorities =
         ebsCase.getPriorAuthorities() != null
             ? ebsCase.getPriorAuthorities().stream()
                 .map(this::buildPriorAuthorityMappingContext)
@@ -269,7 +240,7 @@ public class EbsApplicationMappingContextBuilder {
             : Collections.emptyList();
 
     // Build a mapping context for the case outcome
-    EbsCaseOutcomeMappingContext caseOutcomeMappingContext =
+    final EbsCaseOutcomeMappingContext caseOutcomeMappingContext =
         buildCaseOutcomeMappingContext(
             ebsCase,
             Stream.concat(amendmentProceedingsInEbs.stream(), proceedings.stream()).toList());
@@ -333,11 +304,11 @@ public class EbsApplicationMappingContextBuilder {
                             "Failed to retrieve lookup data for ProceedingDetail"));
 
     // Calculate the overall cost limitation for this proceeding
-    BigDecimal proceedingCostLimitation =
-        this.calculateProceedingCostLimitation(ebsProceeding, ebsCase);
+    final BigDecimal proceedingCostLimitation =
+        calculateProceedingCostLimitation(ebsProceeding, ebsCase);
 
-    // Build a List of pairs of Scope Limitation and associated lookup
-    List<Pair<ScopeLimitation, CommonLookupValueDetail>> scopeLimitations =
+    // Build a list of pairs of ScopeLimitation and associated lookup
+    final List<Pair<ScopeLimitation, CommonLookupValueDetail>> scopeLimitations =
         ebsProceeding.getScopeLimitations().stream()
             .map(
                 scopeLimitation ->
@@ -348,15 +319,13 @@ public class EbsApplicationMappingContextBuilder {
                                 COMMON_VALUE_SCOPE_LIMITATIONS,
                                 scopeLimitation.getScopeLimitation())
                             .map(
-                                commonLookupValueDetail ->
-                                    commonLookupValueDetail.orElse(
+                                detail ->
+                                    detail.orElse(
                                         new CommonLookupValueDetail()
                                             .code(scopeLimitation.getScopeLimitation())
                                             .description(scopeLimitation.getScopeLimitation())))
                             .block()))
             .toList();
-
-    final ProceedingDetail proceedingLookup = lookupTuple.getT1();
 
     final CommonLookupValueDetail proceedingStatusLookup =
         lookupTuple
@@ -393,7 +362,7 @@ public class EbsApplicationMappingContextBuilder {
     EbsProceedingMappingContext.EbsProceedingMappingContextBuilder contextBuilder =
         EbsProceedingMappingContext.builder()
             .ebsProceeding(ebsProceeding)
-            .proceedingLookup(proceedingLookup)
+            .proceedingLookup(lookupTuple.getT1())
             .proceedingStatusLookup(proceedingStatusLookup)
             .proceedingCostLimitation(proceedingCostLimitation)
             .matterType(matterTypeLookup)
@@ -401,61 +370,61 @@ public class EbsApplicationMappingContextBuilder {
             .clientInvolvement(clientInvolvementLookup)
             .scopeLimitations(scopeLimitations);
 
-    this.addProceedingOutcomeContext(contextBuilder, ebsProceeding);
+    addProceedingOutcomeContext(contextBuilder, ebsProceeding);
 
     return contextBuilder.build();
   }
 
   protected BigDecimal calculateProceedingCostLimitation(
       final Proceeding proceeding, final CaseDetail ebsCase) {
-    BigDecimal maxCostLimitation = BigDecimal.ZERO;
-    if (ebsCase.getApplicationDetails().getCategoryOfLaw() != null
-        && proceeding.getMatterType() != null
-        && proceeding.getProceedingType() != null
-        && proceeding.getLevelOfService() != null
-        && proceeding.getScopeLimitations() != null
-        && !proceeding.getScopeLimitations().isEmpty()) {
 
-      final String applicationType = ebsCase.getApplicationDetails().getApplicationAmendmentType();
-      boolean isEmergency =
-          APP_TYPE_EMERGENCY.equalsIgnoreCase(applicationType)
-              || APP_TYPE_EMERGENCY_DEVOLVED_POWERS.equalsIgnoreCase(applicationType);
-
-      // Build the scope limitation search criteria.
-      // Only include the emergency flag in the criteria if the app type is classified as emergency.
-      ScopeLimitationDetail searchCriteria =
-          new ScopeLimitationDetail()
-              .categoryOfLaw(
-                  ebsCase.getApplicationDetails().getCategoryOfLaw().getCategoryOfLawCode())
-              .matterType(proceeding.getMatterType())
-              .proceedingCode(proceeding.getProceedingType())
-              .levelOfService(proceeding.getLevelOfService())
-              .emergency(isEmergency ? Boolean.TRUE : null);
-
-      for (ScopeLimitation limitation : proceeding.getScopeLimitations()) {
-        searchCriteria.setScopeLimitations(limitation.getScopeLimitation());
-        BigDecimal costLimitation =
-            lookupService
-                .getScopeLimitationDetails(searchCriteria)
-                .map(
-                    scopeLimitationDetails ->
-                        scopeLimitationDetails.getContent() != null
-                            ? scopeLimitationDetails.getContent().stream()
-                                .findFirst()
-                                .map(
-                                    scopeLimitationDetail ->
-                                        isEmergency
-                                            ? scopeLimitationDetail.getEmergencyCostLimitation()
-                                            : scopeLimitationDetail.getCostLimitation())
-                                .orElse(BigDecimal.ZERO)
-                            : BigDecimal.ZERO)
-                .block();
-
-        maxCostLimitation = maxCostLimitation.max(costLimitation);
-      }
+    if (ebsCase.getApplicationDetails().getCategoryOfLaw() == null
+        || proceeding.getMatterType() == null
+        || proceeding.getProceedingType() == null
+        || proceeding.getLevelOfService() == null
+        || proceeding.getScopeLimitations() == null
+        || proceeding.getScopeLimitations().isEmpty()) {
+      return BigDecimal.ZERO;
     }
 
-    return maxCostLimitation;
+    final String applicationType = ebsCase.getApplicationDetails().getApplicationAmendmentType();
+    final boolean isEmergency =
+        APP_TYPE_EMERGENCY.equalsIgnoreCase(applicationType)
+            || APP_TYPE_EMERGENCY_DEVOLVED_POWERS.equalsIgnoreCase(applicationType);
+
+    // Build the scope limitation search criteria.
+    // Only include the emergency flag if the app type is classified as emergency.
+    final ScopeLimitationDetail searchCriteria =
+        new ScopeLimitationDetail()
+            .categoryOfLaw(
+                ebsCase.getApplicationDetails().getCategoryOfLaw().getCategoryOfLawCode())
+            .matterType(proceeding.getMatterType())
+            .proceedingCode(proceeding.getProceedingType())
+            .levelOfService(proceeding.getLevelOfService())
+            .emergency(isEmergency ? Boolean.TRUE : null);
+
+    return proceeding.getScopeLimitations().stream()
+        .map(
+            limitation -> {
+              searchCriteria.setScopeLimitations(limitation.getScopeLimitation());
+              return lookupService
+                  .getScopeLimitationDetails(searchCriteria)
+                  .map(
+                      details ->
+                          details.getContent() == null
+                              ? BigDecimal.ZERO
+                              : details.getContent().stream()
+                                  .findFirst()
+                                  .map(
+                                      d ->
+                                          isEmergency
+                                              ? d.getEmergencyCostLimitation()
+                                              : d.getCostLimitation())
+                                  .orElse(BigDecimal.ZERO))
+                  .block();
+            })
+        .filter(Objects::nonNull)
+        .reduce(BigDecimal.ZERO, BigDecimal::max);
   }
 
   protected void addProceedingOutcomeContext(
@@ -463,7 +432,7 @@ public class EbsApplicationMappingContextBuilder {
       final Proceeding ebsProceeding) {
 
     if (ebsProceeding.getOutcome() == null) {
-      return; // Nothing to add
+      return;
     }
 
     // Lookup extra data relating to the ProceedingDetail Outcome
@@ -482,7 +451,7 @@ public class EbsApplicationMappingContextBuilder {
                 .orElseThrow(() -> new CaabApplicationException("Failed to query lookup data"));
 
     /*
-     * Only use the looked up Court data if we got a single match.
+     * Only use the looked-up Court data if we got a single match.
      * Otherwise, default to the court code for display.
      */
     final CommonLookupValueDetail courtLookup =
@@ -492,19 +461,16 @@ public class EbsApplicationMappingContextBuilder {
                 .code(ebsProceeding.getOutcome().getCourtCode())
                 .description(ebsProceeding.getOutcome().getCourtCode());
 
-    // Use the outcome result display data, if we have it.
     final OutcomeResultLookupValueDetail outcomeResultLookup =
         combinedOutcomeResults.getT2().getContent().isEmpty()
             ? null
             : combinedOutcomeResults.getT2().getContent().getFirst();
 
-    // Lookup the stage end display value.
     final StageEndLookupValueDetail stageEndLookup =
         combinedOutcomeResults.getT3().getContent().isEmpty()
             ? null
             : combinedOutcomeResults.getT3().getContent().getFirst();
 
-    // Update the builder with outcome-related lookup data
     contextBuilder
         .courtLookup(courtLookup)
         .outcomeResultLookup(outcomeResultLookup)
@@ -513,48 +479,28 @@ public class EbsApplicationMappingContextBuilder {
 
   protected EbsCaseOutcomeMappingContext buildCaseOutcomeMappingContext(
       final CaseDetail ebsCase, final List<EbsProceedingMappingContext> proceedingMappingContexts) {
+
     // Look up all Award Types and map by their code
-    Map<String, AwardTypeLookupValueDetail> awardTypes =
+    final Map<String, AwardTypeLookupValueDetail> awardTypes =
         Optional.ofNullable(lookupService.getAwardTypes().block())
             .map(AwardTypeLookupDetail::getContent)
             .orElseThrow(() -> new CaabApplicationException("Failed to retrieve AwardTypes"))
             .stream()
             .collect(Collectors.toMap(AwardTypeLookupValueDetail::getCode, Function.identity()));
 
-    // Split the ebs Awards into separate lists based on their award type.
-    List<Award> costAwards = null;
-    List<Award> financialAwards = null;
-    List<Award> landAwards = null;
-    List<Award> otherAssetAwards = null;
-
-    if (ebsCase.getAwards() != null) {
-      costAwards =
-          ebsCase.getAwards().stream()
-              .filter(award -> AWARD_TYPE_COST.equals(findAwardType(awardTypes, award)))
-              .toList();
-
-      financialAwards =
-          ebsCase.getAwards().stream()
-              .filter(award -> AWARD_TYPE_FINANCIAL.equals(findAwardType(awardTypes, award)))
-              .toList();
-
-      landAwards =
-          ebsCase.getAwards().stream()
-              .filter(award -> AWARD_TYPE_LAND.equals(findAwardType(awardTypes, award)))
-              .toList();
-
-      otherAssetAwards =
-          ebsCase.getAwards().stream()
-              .filter(award -> AWARD_TYPE_OTHER_ASSET.equals(findAwardType(awardTypes, award)))
-              .toList();
-    }
+    // Split awards into typed lists in a single pass
+    final Map<String, List<Award>> awardsByType =
+        ebsCase.getAwards() != null
+            ? ebsCase.getAwards().stream()
+                .collect(Collectors.groupingBy(award -> findAwardType(awardTypes, award)))
+            : Collections.emptyMap();
 
     return EbsCaseOutcomeMappingContext.builder()
         .ebsCase(ebsCase)
-        .costAwards(costAwards)
-        .financialAwards(financialAwards)
-        .landAwards(landAwards)
-        .otherAssetAwards(otherAssetAwards)
+        .costAwards(awardsByType.get(AWARD_TYPE_COST))
+        .financialAwards(awardsByType.get(AWARD_TYPE_FINANCIAL))
+        .landAwards(awardsByType.get(AWARD_TYPE_LAND))
+        .otherAssetAwards(awardsByType.get(AWARD_TYPE_OTHER_ASSET))
         .proceedingOutcomes(proceedingMappingContexts)
         .build();
   }
@@ -570,7 +516,7 @@ public class EbsApplicationMappingContextBuilder {
   }
 
   /**
-   * Build a mapping context to hold a EBS PriorAuthorityDetail and associated lookup data.
+   * Build a mapping context to hold an EBS PriorAuthorityDetail and associated lookup data.
    *
    * @param ebsPriorAuthority - the PriorAuthorityDetail to map.
    * @return a PriorAuthorityMappingContext containing all data to support mapping to a CAAB
@@ -580,12 +526,12 @@ public class EbsApplicationMappingContextBuilder {
       final PriorAuthority ebsPriorAuthority) {
 
     // Find the correct PriorAuthorityType lookup
-    PriorAuthorityTypeDetail priorAuthorityType =
+    final PriorAuthorityTypeDetail priorAuthorityType =
         lookupService
             .getPriorAuthorityType(ebsPriorAuthority.getPriorAuthorityType())
             .map(
-                priorAuthorityTypeDetail ->
-                    priorAuthorityTypeDetail.orElse(
+                detail ->
+                    detail.orElse(
                         new PriorAuthorityTypeDetail()
                             .code(ebsPriorAuthority.getPriorAuthorityType())
                             .description(ebsPriorAuthority.getPriorAuthorityType())))
@@ -597,20 +543,17 @@ public class EbsApplicationMappingContextBuilder {
                             .formatted(ebsPriorAuthority.getPriorAuthorityType())));
 
     // Build a Map of PriorAuthorityDetail keyed on code
-    Map<String, PriorAuthorityDetail> priorAuthDetailMap =
+    final Map<String, PriorAuthorityDetail> priorAuthDetailMap =
         priorAuthorityType.getPriorAuthorities().stream()
             .collect(Collectors.toMap(PriorAuthorityDetail::getCode, Function.identity()));
 
-    // Build a List of priorAuthorityDetails paired with the common lookup for display info.
-    List<Pair<PriorAuthorityDetail, CommonLookupValueDetail>> priorAuthorityDetails =
+    // Build a list of priorAuthorityDetails paired with the common lookup for display info
+    final List<Pair<PriorAuthorityDetail, CommonLookupValueDetail>> priorAuthorityDetails =
         ebsPriorAuthority.getDetails().stream()
             .map(
-                priorAuthorityAttribute -> {
-                  PriorAuthorityDetail priorAuthorityDetail =
-                      priorAuthDetailMap.get(priorAuthorityAttribute.getName());
-                  return Pair.of(
-                      priorAuthorityDetail,
-                      getPriorAuthLookup(priorAuthorityDetail, priorAuthorityAttribute));
+                attr -> {
+                  PriorAuthorityDetail detail = priorAuthDetailMap.get(attr.getName());
+                  return Pair.of(detail, getPriorAuthLookup(detail, attr));
                 })
             .toList();
 
@@ -624,18 +567,17 @@ public class EbsApplicationMappingContextBuilder {
   private CommonLookupValueDetail getPriorAuthLookup(
       final PriorAuthorityDetail priorAuthorityDetail,
       final PriorAuthorityAttribute priorAuthorityAttribute) {
-    String description;
 
-    // If this attribute is of type LOV, lookup the corresponding LOV record to get the
-    // display value.
+    // If this attribute is of type LOV, look up the corresponding LOV record for display value
+    final String description;
     if (priorAuthorityDetail != null
         && REFERENCE_DATA_ITEM_TYPE_LOV.equals(priorAuthorityDetail.getDataType())) {
       description =
           lookupService
               .getCommonValue(priorAuthorityDetail.getLovCode(), priorAuthorityAttribute.getValue())
               .map(
-                  commonLookupValueDetail ->
-                      commonLookupValueDetail
+                  detail ->
+                      detail
                           .map(CommonLookupValueDetail::getDescription)
                           .orElse(priorAuthorityAttribute.getValue()))
               .blockOptional()
@@ -651,5 +593,111 @@ public class EbsApplicationMappingContextBuilder {
     return new CommonLookupValueDetail()
         .code(priorAuthorityAttribute.getValue())
         .description(description);
+  }
+
+  private BigDecimal calculateCurrentProviderBilledAmount(final CategoryOfLaw categoryOfLaw) {
+    if (categoryOfLaw == null) {
+      return BigDecimal.ZERO;
+    }
+
+    final List<CostLimitation> costLimitations = categoryOfLaw.getCostLimitations();
+    if (costLimitations != null && !costLimitations.isEmpty()) {
+      deduplicateCostLimitations(costLimitations);
+    }
+
+    if (costLimitations == null || categoryOfLaw.getTotalPaidToDate() == null) {
+      return BigDecimal.ZERO;
+    }
+
+    final BigDecimal totalPaidToDate =
+        costLimitations.stream()
+            .filter(Objects::nonNull)
+            .map(CostLimitation::getPaidToDate)
+            .filter(Objects::nonNull)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    return categoryOfLaw.getTotalPaidToDate().subtract(totalPaidToDate);
+  }
+
+  private void deduplicateCostLimitations(final List<CostLimitation> costLimitations) {
+    final var deduplicated = new LinkedHashMap<String, CostLimitation>();
+
+    for (int i = 0; i < costLimitations.size(); i++) {
+      final CostLimitation cl = costLimitations.get(i);
+      final String key = computeCostLimitationKey(cl, i);
+
+      if (cl == null) {
+        deduplicated.put(key, null);
+      } else {
+        deduplicated.merge(key, cl, this::mergeCostLimitations);
+      }
+    }
+
+    if (deduplicated.size() != costLimitations.size()) {
+      costLimitations.clear();
+      costLimitations.addAll(deduplicated.values());
+    }
+  }
+
+  /** Aligns with legacy PUI uniqueness: LSC resource + cost category. */
+  private String computeCostLimitationKey(final CostLimitation cl, final int index) {
+    if (cl == null) {
+      return "idx:" + index;
+    }
+
+    final String costCategory = Objects.toString(cl.getCostCategory(), "");
+
+    if (isNotBlank(cl.getBillingProviderId())) {
+      return cl.getBillingProviderId() + "|" + costCategory;
+    }
+    if (isNotBlank(cl.getCostLimitId())) {
+      return "ebs:" + cl.getCostLimitId();
+    }
+    if (isNotBlank(cl.getBillingProviderName())) {
+      return "name:" + cl.getBillingProviderName() + "|" + costCategory;
+    }
+    return "idx:" + index;
+  }
+
+  private CostLimitation mergeCostLimitations(
+      final CostLimitation existing, final CostLimitation incoming) {
+
+    final boolean existingHasValues = hasPositiveValues(existing);
+    final boolean incomingHasValues = hasPositiveValues(incoming);
+
+    if (existingHasValues && !incomingHasValues) {
+      return existing;
+    }
+    if (!existingHasValues && incomingHasValues) {
+      return incoming;
+    }
+
+    final BigDecimal existingAmount = existing.getAmount();
+    final BigDecimal incomingAmount = incoming.getAmount();
+    if (incomingAmount != null
+        && existingAmount != null
+        && incomingAmount.compareTo(existingAmount) > 0) {
+      return incoming;
+    }
+
+    final BigDecimal existingPaid = existing.getPaidToDate();
+    final BigDecimal incomingPaid = incoming.getPaidToDate();
+    if (incomingPaid != null && existingPaid != null && incomingPaid.compareTo(existingPaid) > 0) {
+      return incoming;
+    }
+
+    return existing;
+  }
+
+  private boolean hasPositiveValues(final CostLimitation cl) {
+    return isPositive(cl.getAmount()) || isPositive(cl.getPaidToDate());
+  }
+
+  private boolean isPositive(final BigDecimal value) {
+    return value != null && value.compareTo(BigDecimal.ZERO) > 0;
+  }
+
+  private boolean isNotBlank(final String value) {
+    return value != null && !value.isBlank();
   }
 }
