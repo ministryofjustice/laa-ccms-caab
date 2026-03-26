@@ -55,6 +55,7 @@ import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CaseDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CostLimitation;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupValueDetail;
 import uk.gov.laa.ccms.data.model.PriorAuthority;
@@ -601,6 +602,102 @@ class EbsApplicationMappingContextBuilderTest {
     assertNotNull(result.getMeritsAssessment());
 
     assertTrue(result.getPriorAuthorities().isEmpty());
+  }
+
+  @Test
+  void testBuildEbsApplicationMappingContext_DeduplicatesCostLimitations() {
+    final CaseDetail ebsCase = buildCaseDetail(APP_TYPE_EMERGENCY_DEVOLVED_POWERS);
+    ebsCase
+        .getApplicationDetails()
+        .getProceedings()
+        .forEach(
+            proceedingDetail -> {
+              proceedingDetail.setOutcome(null);
+              proceedingDetail.getScopeLimitations().clear();
+              proceedingDetail.setStatus(STATUS_DRAFT);
+            });
+    ebsCase.getPriorAuthorities().clear();
+    ebsCase.getAwards().clear();
+
+    CommonLookupValueDetail applicationTypeLookup = new CommonLookupValueDetail();
+
+    ProviderDetail providerDetail =
+        buildProviderDetail(
+            ebsCase.getApplicationDetails().getProviderDetails().getProviderOfficeId(),
+            ebsCase.getApplicationDetails().getProviderDetails().getFeeEarnerContactId(),
+            ebsCase.getApplicationDetails().getProviderDetails().getSupervisorContactId());
+
+    when(lookupService.getCommonValue(COMMON_VALUE_APPLICATION_TYPE, ebsCase.getCertificateType()))
+        .thenReturn(Mono.just(Optional.of(applicationTypeLookup)));
+
+    when(lookupService.getCommonValue(
+            COMMON_VALUE_APPLICATION_TYPE,
+            ebsCase.getApplicationDetails().getApplicationAmendmentType()))
+        .thenReturn(Mono.just(Optional.of(applicationTypeLookup)));
+
+    when(providerService.getProvider(
+            Integer.parseInt(
+                ebsCase.getApplicationDetails().getProviderDetails().getProviderFirmId())))
+        .thenReturn(Mono.just(providerDetail));
+
+    CommonLookupValueDetail matterTypeLookup =
+        new CommonLookupValueDetail().code("mat1").description("mat 1");
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_MATTER_TYPES), anyString()))
+        .thenReturn(Mono.just(Optional.of(matterTypeLookup)));
+
+    CommonLookupValueDetail levelOfServiceLookup =
+        new CommonLookupValueDetail().code("los1").description("los 1");
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_LEVEL_OF_SERVICE), anyString()))
+        .thenReturn(Mono.just(Optional.of(levelOfServiceLookup)));
+
+    CommonLookupValueDetail clientInvolvementLookup =
+        new CommonLookupValueDetail().code("ci1").description("ci 1");
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_CLIENT_INVOLVEMENT_TYPES), anyString()))
+        .thenReturn(Mono.just(Optional.of(clientInvolvementLookup)));
+
+    when(ebsApiClient.getProceeding(any(String.class)))
+        .thenReturn(Mono.just(new ProceedingDetail()));
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROCEEDING_STATUS), any(String.class)))
+        .thenReturn(Mono.just(Optional.of(new CommonLookupValueDetail())));
+    when(lookupService.getAwardTypes())
+        .thenReturn(
+            Mono.just(
+                new AwardTypeLookupDetail().addContentItem(new AwardTypeLookupValueDetail())));
+
+    CostLimitation populated =
+        new CostLimitation()
+            .billingProviderId("LSC1")
+            .billingProviderName("ANDREW J LORD")
+            .costCategory("Counsel")
+            .costLimitId("cl1")
+            .amount(new BigDecimal("1000"))
+            .paidToDate(new BigDecimal("159.30"));
+    CostLimitation duplicateZero =
+        new CostLimitation()
+            .billingProviderId("LSC1")
+            .billingProviderName("ANDREW J LORD")
+            .costCategory("Counsel")
+            .costLimitId("cl2")
+            .amount(BigDecimal.ZERO)
+            .paidToDate(BigDecimal.ZERO);
+
+    ebsCase.getApplicationDetails().getCategoryOfLaw().getCostLimitations().clear();
+    ebsCase
+        .getApplicationDetails()
+        .getCategoryOfLaw()
+        .getCostLimitations()
+        .addAll(List.of(populated, duplicateZero));
+    ebsCase.getApplicationDetails().getCategoryOfLaw().setTotalPaidToDate(new BigDecimal("159.30"));
+
+    EbsApplicationMappingContext result =
+        applicationService.buildApplicationMappingContext(ebsCase);
+
+    List<CostLimitation> deduped =
+        result.getEbsCaseDetail().getApplicationDetails().getCategoryOfLaw().getCostLimitations();
+
+    assertEquals(1, deduped.size());
+    assertEquals(new BigDecimal("1000"), deduped.get(0).getAmount());
+    assertEquals(new BigDecimal("159.30"), deduped.get(0).getPaidToDate());
   }
 
   @Test
