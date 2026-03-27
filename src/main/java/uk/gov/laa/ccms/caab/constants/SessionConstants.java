@@ -200,4 +200,6 @@ public class SessionConstants {
 
   /** Session attribute for keeping track of counsel search criteria. */
   public static final String COUNSEL_SEARCH_CRITERIA = "counselSearchCriteria";
+
+  public static final String COUNSEL_SEARCH_RESULTS = "counselSearchResults";
 }

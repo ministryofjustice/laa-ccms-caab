@@ -15,8 +15,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.CounselSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.ApiError;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseDetail;
@@ -27,6 +29,7 @@ import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
 import uk.gov.laa.ccms.data.model.ClientDetails;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.CounselLookupDetail;
 import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
@@ -948,6 +951,34 @@ public class EbsApiClient extends BaseApiClient {
             e ->
                 ebsApiClientErrorHandler.handleApiRetrieveError(
                     e, "case transaction status", "transaction id", transactionId));
+  }
+
+  /**
+   * Retrieves the counsel lookup details based on the counsel search criteria.
+   *
+   * @return A {@link Mono} wrapping the {@link CaseDetail}.
+   */
+  public Mono<CounselLookupDetail> getCounselDetails(CounselSearchCriteria criteria) {
+
+    MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+
+    queryParams.add("name", criteria.getName());
+    queryParams.add("company", criteria.getCompany());
+    queryParams.add("legal_aid_supplier_number", criteria.getLaaCounselReference());
+    queryParams.add("category", criteria.getCategory());
+
+    HttpStatus rsc = HttpStatus.BAD_REQUEST;
+
+    return webClient
+        .get()
+        .uri(uriBuilder -> uriBuilder.path("/lookup/counsels").queryParams(queryParams).build())
+        .retrieve()
+        .onStatus(
+            s -> s.value() == 400,
+            r ->
+                r.bodyToMono(ApiError.class)
+                    .flatMap(err -> Mono.error(new EbsApiClientException(err.getMessage(), rsc))))
+        .bodyToMono(CounselLookupDetail.class);
   }
 
   private static MultiValueMap<String, String> buildQueryParams(

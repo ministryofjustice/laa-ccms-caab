@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
@@ -318,16 +319,9 @@ public abstract class AbstractValidator implements Validator {
   }
 
   protected void validateAllFieldsAreEmpty(
-      final String field, final String displayValue, Errors errors, final String... fieldValue) {
-    boolean allFieldsEmpty = true;
+      final String field, Errors errors, final String... fieldValue) {
 
-    for (String value : fieldValue) {
-      if (!StringUtils.hasText(value)) {
-        allFieldsEmpty = false;
-      }
-    }
-
-    if (allFieldsEmpty) {
+    if (Stream.of(fieldValue).allMatch(StringUtils::isEmpty)) {
       errors.rejectValue(
           field, "at.least.one.search.required", GENERIC_AT_LEAST_ONE_SEARCH_REQUIRED);
     }

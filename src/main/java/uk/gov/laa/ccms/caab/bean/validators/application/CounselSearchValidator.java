@@ -36,13 +36,13 @@ public class CounselSearchValidator extends AbstractValidator {
     String laaCounselRef = counselSearchCriteria.getLaaCounselReference();
     String category = counselSearchCriteria.getCategory();
 
-    validateAllFieldsAreEmpty("Name", null, errors, name, company, laaCounselRef, category);
+    validateAllFieldsAreEmpty("Name", errors, name, company, laaCounselRef, category);
 
     if (!errors.hasErrors()) {
 
       // Is category is null, empty, or not selected?
       // Is input field name null, empty?
-      if (StringUtils.hasText(company)) {
+      if (StringUtils.hasText(name)) {
         validateFieldPattern("Name", name, CHARACTER_SET_A, null, errors);
         validateFieldMaxLength("Name", name, 35, "name", errors);
       }

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="#{service.name} + ' - ' + #{counsel.search.caption}"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a th:href="@{/application/counsel}" class="govuk-back-link" th:text="#{site.returnToCounselSearch}"></a>
+    </div>
+    <div id="main-content">
+
+        <th:block>
+        <span class="govuk-caption-l" th:text="#{counsel.search.caption}"/>
+        <h1 class="govuk-heading-l" th:text="#{counsel.search.results}"></h1>
+        <p class="govuk-body-l" th:text="#{site.noResults(#{counsel.search})}"></p>
+        <p class="govuk-body-l" th:utext="#{counsel.search.results.amend}"></p>
+        </th:block>
+    </div>
+</div>
+</body>
+</html>
