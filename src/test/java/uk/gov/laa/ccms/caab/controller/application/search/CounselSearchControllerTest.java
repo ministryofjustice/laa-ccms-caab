@@ -19,9 +19,6 @@ import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.data.model.CounselLookupDetail;
 import uk.gov.laa.ccms.data.model.CounselLookupValueDetail;
 
-// @WebMvcTest(CounselSearchController.class)
-
-// @Import({CounselSearchValidator.class, CounselLookupMapper.class})
 @DisplayName("Counsel Search Controller Test")
 class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
 
