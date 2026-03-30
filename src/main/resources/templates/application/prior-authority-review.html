@@ -40,7 +40,7 @@
                             <dd class="govuk-summary-list__value" id="prior-authority-justification"
                                 th:text="${priorAuthority.justification}"/>
                         </div>
-                        <div class="govuk-summary-list__row">
+                        <div class="govuk-summary-list__row" th:unless="${priorAuthority.type.displayValue == 'Counsel'}">
                             <dt class="govuk-summary-list__key" th:text="#{priorAuthorityReview.amountRequested}"/>
                             <dd class="govuk-summary-list__value"
                                 id="prior-authority-amount-requested"
