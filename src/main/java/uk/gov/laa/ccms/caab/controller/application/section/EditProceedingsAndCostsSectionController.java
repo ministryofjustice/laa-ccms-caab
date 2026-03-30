@@ -46,6 +46,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFlowFormData;
@@ -1595,12 +1596,16 @@ public class EditProceedingsAndCostsSectionController {
     populatePriorAuthorityDetailsLookupDropdowns(model, priorAuthorityDynamicForm);
 
     if (ACTION_ADD.equals(priorAuthorityAction)) {
-      priorAuthorityDetails.setValueRequired(priorAuthorityDynamicForm.getValueRequired());
-
       proceedingAndCostsMapper.populatePriorAuthorityDetailsForm(
           priorAuthorityDetails, priorAuthorityDynamicForm);
 
       priorAuthorityFlow.setPriorAuthorityDetailsFormData(priorAuthorityDetails);
+
+      String typeId = priorAuthorityFlow.getPriorAuthorityTypeFormData().getPriorAuthorityType();
+      Map<String, List<DynamicOptionFormData>> groupedDynamicsOptions =
+          PriorAuthorityUtils.groupDynamicOptions(priorAuthorityDetails.getDynamicOptions(), typeId);
+      priorAuthorityDetails.setValueRequired(priorAuthorityDynamicForm.getValueRequired());
+      model.addAttribute("groupedDynamicOptions", groupedDynamicsOptions);
     }
 
     model.addAttribute("priorAuthorityDynamicForm", priorAuthorityDynamicForm);
@@ -1742,7 +1747,7 @@ public class EditProceedingsAndCostsSectionController {
 
     if (priorAuthority.getStatus().equals(STATUS_GRANTED)) {
       Map<String, List<ReferenceDataItemDetail>> groupedPriorAuthorityItems =
-          PriorAuthorityUtils.groupPriorAuthorityItems(priorAuthority);
+          PriorAuthorityUtils.groupItems(priorAuthority);
       model.addAttribute("priorAuthority", priorAuthority);
       model.addAttribute("groupedItems", groupedPriorAuthorityItems);
       model.addAttribute(

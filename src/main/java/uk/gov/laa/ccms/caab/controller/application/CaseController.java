@@ -294,7 +294,7 @@ public class CaseController {
     Assert.isTrue(index < priorAuthorities.size(), () -> errorMessage);
 
     Map<String, List<ReferenceDataItemDetail>> groupedPriorAuthorityItems =
-        PriorAuthorityUtils.groupPriorAuthorityItems(priorAuthorities.get(index));
+        PriorAuthorityUtils.groupItems(priorAuthorities.get(index));
     model.addAttribute("groupedItems", groupedPriorAuthorityItems);
     model.addAttribute("priorAuthority", priorAuthorities.get(index));
     return "application/prior-authority-review";

@@ -4,142 +4,137 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
+import uk.gov.laa.ccms.caab.constants.PriorAuthorityGroup;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ReferenceDataItemDetail;
+import uk.gov.laa.ccms.data.model.PriorAuthorityTypeDetail;
 
 /** Utility class that provides helper functions for prior authorities. */
 public class PriorAuthorityUtils {
 
-  /**
-   * Groups the items in a prior authority.
-   *
-   * @param priorAuthorityDetail details of the prior authority being reviewed
-   * @return returns a mapping of the groupings for each item.
-   */
-  public static Map<String, List<ReferenceDataItemDetail>> groupPriorAuthorityItems(
-      PriorAuthorityDetail priorAuthorityDetail) {
-    Map<String, List<ReferenceDataItemDetail>> groupedItems = new HashMap<>();
+  private PriorAuthorityUtils() {}
 
-    if (priorAuthorityDetail.getType() == null) {
-      throw new IllegalStateException("Prior authority type is null");
+  public static Map<String, List<ReferenceDataItemDetail>> groupItems(
+      PriorAuthorityDetail priorAuthorityDetail
+  ) {
+    if (priorAuthorityDetail == null || priorAuthorityDetail.getType() == null) {
+      return new HashMap<>();
     }
-    if (priorAuthorityDetail.getType().getId() == null) {
-      throw new IllegalStateException("Prior authority type ID is missing");
-    }
-    switch (priorAuthorityDetail.getType().getId()) {
-      case "COUNSEL":
-        groupedItems.put("COUNSEL_DETAILS", new ArrayList<>());
-        groupedItems.put("OTHER", new ArrayList<>());
-        break;
 
-      case "EXPERT":
-        groupedItems.put("EXPERT_DETAILS", new ArrayList<>());
-        groupedItems.put("TIME_SPENT", new ArrayList<>());
-        groupedItems.put("RATES", new ArrayList<>());
-        groupedItems.put("COSTS", new ArrayList<>());
-        groupedItems.put("REASONING", new ArrayList<>());
-        groupedItems.put("OTHER", new ArrayList<>());
-        break;
-
-      case "OTHER":
-        groupedItems.put("EXPENSE_DETAILS", new ArrayList<>());
-        groupedItems.put("OTHER", new ArrayList<>());
-        break;
-
-      default:
-        throw new IllegalStateException(
-            "Unhandled prior authority type: " + priorAuthorityDetail.getType().getId());
-    }
+    String typeId = priorAuthorityDetail.getType().getId();
+    Map<String, List<ReferenceDataItemDetail>> grouped = createEmptyStringMap(typeId);
 
     for (ReferenceDataItemDetail item : priorAuthorityDetail.getItems()) {
-      String group =
-          getGroupForCode(item.getCode().getId(), priorAuthorityDetail.getType().getId());
-      if (groupedItems.containsKey(group)) {
-        if (item.getValue() != null
-            && item.getValue().getDisplayValue() != null
-            && !item.getValue().getDisplayValue().isBlank()) {
-          groupedItems.get(group).add(item);
-        }
+      if (hasDisplayValue(item)) {
+        String groupKey = getGroupForCode(item.getCode().getId(), typeId);
+        grouped.getOrDefault(groupKey, grouped.get(PriorAuthorityGroup.OTHER.name()))
+            .add(item);
       }
     }
 
-    return groupedItems;
+    removeEmptyGroups(grouped);
+    return grouped;
+  }
+
+  public static Map<String, List<DynamicOptionFormData>> initialiseGroupsForForm(String typeId) {
+    Map<String, List<DynamicOptionFormData>> grouped = new HashMap<>();
+
+    for (PriorAuthorityGroup group : PriorAuthorityGroup.getGroupsForType(typeId)) {
+      grouped.put(group.name(), new ArrayList<>());
+    }
+
+    return grouped;
+  }
+
+  private static Map<String, List<ReferenceDataItemDetail>> createEmptyStringMap(String typeId) {
+    Map<String, List<ReferenceDataItemDetail>> map = new HashMap<>();
+    for (PriorAuthorityGroup group : PriorAuthorityGroup.getGroupsForType(typeId)) {
+      map.put(group.name(), new ArrayList<>());
+    }
+    return map;
+  }
+
+  private static <T> void removeEmptyGroups(Map<String, List<T>> grouped) {
+    grouped.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+  }
+
+  private static boolean hasDisplayValue(ReferenceDataItemDetail item) {
+    return item.getValue() != null && item.getValue().getDisplayValue() != null
+        && !item.getValue().getDisplayValue().isBlank();
   }
 
   private static String getGroupForCode(String codeId, String priorAuthorityType) {
 
+    if (codeId == null || priorAuthorityType == null) {
+      return PriorAuthorityGroup.OTHER.name();
+    }
+
     switch (priorAuthorityType) {
       case "COUNSEL":
-        switch (codeId) {
-          case "C01_AUTHORTY_REQD":
-          case "C02_COUNSEL_BRIEF_TYPE":
-            return "COUNSEL_DETAILS";
-          default:
-            return "OTHER";
-        }
+        return switch (codeId) {
+          case "C01_AUTHORTY_REQD", "C02_COUNSEL_BRIEF_TYPE" ->
+              PriorAuthorityGroup.COUNSEL_DETAILS.name();
+          default -> PriorAuthorityGroup.OTHER.name();
+        };
 
       case "EXPERT":
-        switch (codeId) {
-          case "E01_EXPERT_TYPE":
-          case "E02_EXPERT_NAME":
-          case "E03_COMPANY":
-          case "E04_ADDRESS":
-          case "E05_POST_CODE":
-          case "E06_EXPERT_REGION":
-            return "EXPERT_DETAILS";
-
-          case "E18_EXPERT_TOTAL_HOURS":
-          case "E19_PREPARATION_HOURS":
-          case "E20_EXPERT_COURT_HRS":
-          case "E21_TRAVEL_TIME":
-          case "E25_EXPERT_MILEAGE":
-          case "E26_EXPERT_MILEAGE_NUMBER":
-          case "E33_EXPERT_TOTAL_MIN":
-          case "E34_PREPARATION_MINS":
-          case "E35_EXPERT_COURT_MINS":
-          case "E36_TRAVEL_TIME_MINS":
-            return "TIME_SPENT";
-
-          case "E17_EXPERT_HOURLY_RATE":
-          case "E22_TRAVEL_HOURLY_RATE":
-          case "E28_EXPERT_VAT_RATE":
-            return "RATES";
-
-          case "E11_EXP_BEFORE_APP":
-          case "E23_TRAVEL_FARES":
-          case "E24_TRAVEL_FARES_DESCRIPTION":
-          case "E27_EXPERT_NET":
-          case "E29_EXPERT_VAT":
-          case "E30_EXPERT_TOTAL":
-            return "COSTS";
-
-          case "E07_JOINTLY_INSTRUCTED":
-          case "E08_REASON_NOT_JOINTLY_INSTR":
-          case "E09_CHILDREN_ACT_COURT_PERMI":
-          case "E10_REASON_LA_NOT_BEARING_COST":
-          case "E12_BASIS_OF_APPORTIONMENT":
-          case "E13_EXPERT_APPORTION":
-          case "E14_NUMBER_ALTERNATIVE_QUOTES":
-          case "E15_OTHER_QUOTES":
-          case "E16_REASON_FOR_SELECTED_QUOTE":
-          case "E31_EXPERT_COD":
-          case "E32_EXPERT_COD_EXPLAIN":
-            return "REASONING";
-          default:
-            return "OTHER";
-        }
-
+        return switch (codeId) {
+          case "E01_EXPERT_TYPE", "E02_EXPERT_NAME", "E03_COMPANY", "E04_ADDRESS", "E05_POST_CODE",
+               "E06_EXPERT_REGION" -> PriorAuthorityGroup.EXPENSE_DETAILS.name();
+          case "E18_EXPERT_TOTAL_HOURS", "E19_PREPARATION_HOURS", "E20_EXPERT_COURT_HRS",
+               "E21_TRAVEL_TIME", "E25_EXPERT_MILEAGE", "E26_EXPERT_MILEAGE_NUMBER",
+               "E33_EXPERT_TOTAL_MIN", "E34_PREPARATION_MINS", "E35_EXPERT_COURT_MINS",
+               "E36_TRAVEL_TIME_MINS" -> PriorAuthorityGroup.TIME_SPENT.name();
+          case "E17_EXPERT_HOURLY_RATE", "E22_TRAVEL_HOURLY_RATE", "E28_EXPERT_VAT_RATE" ->
+              PriorAuthorityGroup.RATES.name();
+          case "E11_EXP_BEFORE_APP", "E23_TRAVEL_FARES", "E24_TRAVEL_FARES_DESCRIPTION",
+               "E27_EXPERT_NET", "E29_EXPERT_VAT", "E30_EXPERT_TOTAL" ->
+              PriorAuthorityGroup.COSTS.name();
+          case "E07_JOINTLY_INSTRUCTED", "E08_REASON_NOT_JOINTLY_INSTR",
+               "E09_CHILDREN_ACT_COURT_PERMI", "E10_REASON_LA_NOT_BEARING_COST",
+               "E12_BASIS_OF_APPORTIONMENT", "E13_EXPERT_APPORTION",
+               "E14_NUMBER_ALTERNATIVE_QUOTES", "E15_OTHER_QUOTES", "E16_REASON_FOR_SELECTED_QUOTE",
+               "E31_EXPERT_COD", "E32_EXPERT_COD_EXPLAIN" -> PriorAuthorityGroup.REASONING.name();
+          default -> PriorAuthorityGroup.OTHER.name();
+        };
       case "OTHER":
-        switch (codeId) {
-          case "O01_EXPENSE_TYPE":
-          case "O02_EXPENSE_DETAILS":
-          case "O03_EXPENSE_REGION":
-            return "EXPENSE_DETAILS";
-          default:
-            return null;
-        }
+        return switch (codeId) {
+          case "O01_EXPENSE_TYPE", "O02_EXPENSE_DETAILS", "O03_EXPENSE_REGION" ->
+              PriorAuthorityGroup.EXPENSE_DETAILS.name();
+          default -> null;
+        };
       default:
-        return "OTHER";
+        return PriorAuthorityGroup.OTHER.name();
     }
+  }
+
+  public static Map<String, List<DynamicOptionFormData>> groupDynamicOptions(
+      Map<String, DynamicOptionFormData> optionMap, String typeId
+  ) {
+
+    Map<String, List<DynamicOptionFormData>> grouped = new HashMap<>();
+    for (PriorAuthorityGroup g : PriorAuthorityGroup.getGroupsForType(typeId)) {
+      grouped.put(g.name(), new ArrayList<>());
+    }
+
+    if (optionMap != null) {
+      for (Map.Entry<String, DynamicOptionFormData> entry : optionMap.entrySet()) {
+        String code = entry.getKey();
+        DynamicOptionFormData option = entry.getValue();
+
+        String groupKey = PriorAuthorityGroup.OTHER.name();
+
+        if (code != null) {
+          groupKey = getGroupForCode(code, typeId);
+        }
+
+        grouped.getOrDefault(groupKey, grouped.get(PriorAuthorityGroup.OTHER.name()))
+            .add(option);
+      }
+    }
+    removeEmptyGroups(grouped);
+    return grouped;
+
   }
 }

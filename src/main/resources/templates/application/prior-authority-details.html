@@ -43,78 +43,82 @@
               #{proceedings.priorAuthorities.amountRequested},'10')}"/>
           </th:block>
 
-          <th:block th:each="option : ${priorAuthorityDynamicForm.priorAuthorities}">
-            <div class="govuk-form-group"
-                 th:classappend="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue')} ? 'govuk-form-group--error' : ''">
+          <th:block th:each="groupEntry : ${groupedDynamicOptions}">
+              <th:block th:if="${!#lists.isEmpty(groupEntry)}">
+                  <h2 class="govuk-heading-m" th:text="${groupEntry.key}"></h2>
+                  <th:block th:each="option : ${groupEntry.value}">
+                    <div class="govuk-form-group"
+                    th:classappend="${#fields.hasErrors('dynamicOptions[__${option}__].fieldValue')} ? 'govuk-form-group--error' : ''">
 
-                <th:block th:if="${option.mandatoryFlag}">
-                  <label class="govuk-label" th:for="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                     th:text="${option.description}"/>
-                </th:block>
-                <th:block th:unless="${option.mandatoryFlag}">
-                  <label class="govuk-label" th:for="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                     th:text="${option.description + ' (optional)'}"/>
-                </th:block>
-                <span th:if="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue')}"
-                    th:errors="*{dynamicOptions[__${option.code}__].fieldValue}" class="govuk-error-message">
-                </span>
-              <th:block th:if="${option.dataType == 'LOV'}">
-                <input type="hidden" th:id="'dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'"
-                   th:name="'dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'"
-                   th:value="*{dynamicOptions[__${option.code}__].fieldValueDisplayValue}"/>
-                <select class="govuk-select"
-                        data-module="govuk-select"
-                        th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                        th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
-                        th:errorclass="govuk-select--error"
-                        th:attr="onchange=|document.getElementById('dynamicOptions[${option.code}].fieldValueDisplayValue').value = this.options[this.selectedIndex].text;|">
-                  <option value="" th:text="#{site.select}"></option>
-                  <option th:each="item : ${__${option.code}__}"
-                          th:value="${item['code']}"
-                          th:text="${item['description']}">
-                  </option>
-                </select>
-              </th:block>
-              <th:block th:if="${option.dataType == 'FTS'}">
-                <input class="govuk-input govuk-input--width-20"
-                       type="text"
-                       data-module="govuk-input"
-                       th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                       th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
-                       maxlength="30"
-                       th:errorclass="govuk-select--error"
+                    <th:block th:if="${option.mandatoryFlag}">
+                        <label class="govuk-label" th:for="'dynamicOptions[' + ${option} + '].fieldValue'"
+                        th:text="${option.description}"/>
+                    </th:block>
+                    <th:block th:unless="${option.mandatoryFlag}">
+                        <label class="govuk-label" th:for="'dynamicOptions[' + ${option} + '].fieldValue'"
+                        th:text="${option.description + ' (optional)'}"/>
+                    </th:block>
+                    <span th:if="${#fields.hasErrors('dynamicOptions[__${option}__].fieldValue')}"
+                        th:errors="*{dynamicOptions[__${option}__].fieldValue}" class="govuk-error-message">
+                    </span>
+                    <th:block th:if="${option.dataType == 'LOV'}">
+                        <input type="hidden" th:id="'dynamicOptions[' + ${option} + '].fieldValueDisplayValue'"
+                        th:name="'dynamicOptions[' + ${option.key} + '].fieldValueDisplayValue'"
+                        th:value="*{dynamicOptions[__${option.code}__].fieldValueDisplayValue}"/>
+                        <select class="govuk-select"
+                            data-module="govuk-select"
+                            th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                            th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
+                            th:errorclass="govuk-select--error"
+                            th:attr="onchange=|document.getElementById('dynamicOptions[${option.code}].fieldValueDisplayValue').value = this.options[this.selectedIndex].text;|">
+                            <option value="" th:text="#{site.select}"></option>
+                            <option th:each="item : ${__${option.code}__}"
+                                th:value="${item['code']}"
+                                th:text="${item['description']}">
+                            </option>
+                        </select>
+                    </th:block>
+                    <th:block th:if="${option.dataType == 'FTS'}">
+                        <input class="govuk-input govuk-input--width-20"
+                            type="text"
+                            data-module="govuk-input"
+                            th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                            th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
+                            maxlength="30"
+                            th:errorclass="govuk-select--error"
                         />
+                    </th:block>
+                    <th:block th:if="${option.dataType == 'FTL'}">
+                        <input class="govuk-input"
+                            th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                            th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
+                            type="text"
+                            data-module="govuk-input"
+                            maxlength="80"
+                            th:errorclass="govuk-select--error"/>
+                    </th:block>
+                    <th:block th:if="${option.dataType == 'AMT'}">
+                        <div class="govuk-input__wrapper">
+                        <div class="govuk-input__prefix" aria-hidden="true">£</div>
+                        <input class="govuk-input govuk-input--width-10"
+                            th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                            th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
+                            type="text" spellcheck="false"
+                            th:errorclass="govuk-select--error"/>
+                        </div>
+                    </th:block>
+                    <th:block th:if="${option.dataType == 'INT'}">
+                        <input class="govuk-input govuk-date-input__input govuk-input--width-10"
+                            th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                            th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
+                            type="text"
+                            inputmode="numeric"
+                            maxlength="10"
+                            th:errorclass="govuk-select--error"/>
+                    </th:block>
+                    </div>
+                </th:block>
               </th:block>
-              <th:block th:if="${option.dataType == 'FTL'}">
-                <input class="govuk-input"
-                       th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                       th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
-                       type="text"
-                       data-module="govuk-input"
-                       maxlength="80"
-                       th:errorclass="govuk-select--error"/>
-              </th:block>
-              <th:block th:if="${option.dataType == 'AMT'}">
-                <div class="govuk-input__wrapper">
-                  <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                  <input class="govuk-input govuk-input--width-10"
-                         th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                         th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
-                         type="text" spellcheck="false"
-                         th:errorclass="govuk-select--error"/>
-                </div>
-              </th:block>
-              <th:block th:if="${option.dataType == 'INT'}">
-                <input class="govuk-input govuk-date-input__input govuk-input--width-10"
-                       th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                       th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
-                       type="text"
-                       inputmode="numeric"
-                       maxlength="10"
-                       th:errorclass="govuk-select--error"/>
-              </th:block>
-
-            </div>
           </th:block>
 
           <div class="govuk-button-group">
