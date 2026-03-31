@@ -29,8 +29,19 @@ jobs:
       gh_token: ${{ secrets.GITHUB_TOKEN }}
       aws_region: 'eu-west-2'
 
+  get-branch-ref:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
+        id: meta
+        with:
+          tags: |
+            type=ref,event=branch
+
   scan-image:
-    needs: [ build ]
+    needs: [ get-branch-ref ]
     uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@v2
     permissions:
       contents: read
@@ -39,7 +50,7 @@ jobs:
     with:
       java_version: '25'
       java_distribution: 'corretto'
-      image_version: ${{ format('{0}-{1}', vars.IMAGE_PREFIX, github.ref_name) }}
+      image_version: ${{ format('{0}-{1}', vars.IMAGE_PREFIX, needs.get-branch-ref.outputs.version) }}
       publish: false
     secrets:
       gh_token: ${{ secrets.GITHUB_TOKEN }}
