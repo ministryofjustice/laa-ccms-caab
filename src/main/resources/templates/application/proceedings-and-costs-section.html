@@ -157,7 +157,9 @@
                  class="govuk-link" th:text="${priorAuthority.summary}"/>
             </td>
             <td class="govuk-table__cell" th:text="${priorAuthority.type.displayValue}"/>
-            <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(priorAuthority.amountRequested)}"/>
+            <td class="govuk-table__cell">
+                <a th:unless="${priorAuthority.type.displayValue == 'Counsel'}" th:text="${#numbers.formatCurrency(priorAuthority.amountRequested)}"/>
+            </td>
             <td class="govuk-table__cell" th:text="${priorAuthority.status}"/>
             <td class="govuk-table__cell">
                 <a th:if="${deletePriorAuthoritiesAllowedLookup.get(priorAuthority.id)}" th:href="@{/{caseContext}/prior-authorities/{id}/remove(id=${priorAuthority.id},caseContext=${caseContext.pathValue})}"
