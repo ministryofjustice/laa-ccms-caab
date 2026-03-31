@@ -261,9 +261,10 @@
                     <td class="govuk-table__cell"
                         th:id="|prior-authority-type-${idx.index}-value|"
                         th:text="${priorAuthority.type}"/>
-                    <td class="govuk-table__cell"
-                        th:id="|prior-amount-requested-${idx.index}+value|"
+                    <td class="govuk-table__cell" th:id="|prior-amount-requested-${idx.index}-value|">
+                        <a th:unless="${priorAuthority.type == 'Counsel'}"
                         th:text="${#numbers.formatCurrency(priorAuthority.amountRequested)}"/>
+                    </td>
                     <td class="govuk-table__cell"
                         th:id="|prior-authority-status-${idx.index}-value|"
                         th:text="${priorAuthority.status}"/>
