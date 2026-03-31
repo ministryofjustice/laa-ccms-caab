@@ -57,6 +57,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      security-events: write
     with:
       java_version: '25'
       java_distribution: 'corretto'
