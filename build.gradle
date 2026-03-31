@@ -14,8 +14,8 @@ release {
 
 repositories {
 
-    mavenCentral()
-
+//    mavenCentral()
+mavenLocal()
     // Latest version of saml requires this
     maven { url = 'https://build.shibboleth.net/nexus/content/repositories/releases/' }
 
