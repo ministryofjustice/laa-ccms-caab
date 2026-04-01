@@ -16,5 +16,4 @@ public @interface RequiresFeature {
    * @return the feature required.
    */
   Feature value();
-
 }
