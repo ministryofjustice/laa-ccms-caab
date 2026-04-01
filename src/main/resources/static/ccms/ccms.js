@@ -63,24 +63,6 @@ function stopTyping(field, event, size) {
   }
 }
 
-/*
- * Limits the text entry to size specified Parameters: field : The field. event :
- * the event size : The size limit
- */
-function updateCount(field, event, size) {
-  var txt = field.value;
-  var re = /\r\n/g
-  txt = txt.replace(re, "\n");
-
-  var counter = document.getElementById(field.id + '_count');
-  counter.innerHTML = txt.length + ' / ' + size;
-  if (field.value.length > size) {
-    counter.style = 'color:red;font-weight:bold';
-  } else {
-    counter.style = '';
-  }
-}
-
 function createPrintLink(parentElementId, linkText) {
   var parentElement = document.getElementById(parentElementId);
   var printLink = document.createElement("a");

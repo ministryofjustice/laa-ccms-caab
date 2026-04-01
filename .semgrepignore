@@ -1,0 +1,2 @@
+# Insecure cryptographic implementation, required by legacy integrations
+src/main/java/uk/gov/laa/ccms/caab/opa/security/Encryptor.java
