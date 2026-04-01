@@ -153,7 +153,7 @@
         <div class="govuk-grid-column-full">
           <h2 class="govuk-heading-m" th:text="#{notifications.subHeading.notificationResponse}"/>
           <div th:replace="~{partials/forms :: simpleDropdown('action', #{notifications.response}, ${notification.availableResponses})}"></div>
-          <div th:if="${notification.notificationOpenIndicator and notification.notificationType != 'N'}">
+          <div th:if="${notification.notificationType != 'N'}">
             <div th:replace="~{partials/forms :: largeTextInput('message',  #{notifications.messageToLAA}, 2000)}"></div>
           </div>
         </div>
