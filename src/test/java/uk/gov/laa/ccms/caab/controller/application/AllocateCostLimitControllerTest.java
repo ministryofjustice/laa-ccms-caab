@@ -2,12 +2,16 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.math.BigDecimal;
@@ -65,8 +69,8 @@ public class AllocateCostLimitControllerTest {
   class GetAllocateCostLimitTests {
 
     @Test
-    @DisplayName("Should fetch fresh cost data but preserve session case")
-    void shouldFetchFreshCostDataButPreserveSession() {
+    @DisplayName("Should fetch fresh cost data on first entry and update session costs")
+    void shouldFetchFreshCostDataOnFirstEntry() {
       ApplicationDetail ebsCase = new ApplicationDetail();
       ebsCase.setId(1);
       ebsCase.setCaseReferenceNumber("123");
@@ -83,11 +87,6 @@ public class AllocateCostLimitControllerTest {
               .grantedCostLimitation(new BigDecimal("25000"))
               .addCostEntriesItem(new CostEntryDetail().requestedCosts(new BigDecimal("1000"))));
 
-      ApplicationDetail displayCase = new ApplicationDetail();
-      displayCase.setId(1);
-      displayCase.setCaseReferenceNumber("123");
-      displayCase.costs(freshCase.getCosts());
-
       UserDetail user = new UserDetail();
       user.setUsername("user");
       user.setProvider(new BaseProvider());
@@ -96,9 +95,6 @@ public class AllocateCostLimitControllerTest {
       final AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
 
       when(applicationService.getCase("123", 123L, "user")).thenReturn(freshCase);
-      when(copyApplicationMapper.copyApplication(
-              any(ApplicationDetail.class), any(ApplicationDetail.class)))
-          .thenReturn(displayCase);
       when(proceedingAndCostsMapper.toAllocateCostsForm(any(ApplicationDetail.class)))
           .thenReturn(allocateCostsFormData);
 
@@ -114,9 +110,34 @@ public class AllocateCostLimitControllerTest {
 
       // Verify fresh data was fetched from database
       verify(applicationService).getCase("123", 123L, "user");
-      // Verify display case was created (merging session case with fresh costs)
-      verify(copyApplicationMapper)
-          .copyApplication(any(ApplicationDetail.class), any(ApplicationDetail.class));
+      assertThat(ebsCase.getCosts()).isEqualTo(freshCase.getCosts());
+    }
+
+    @Test
+    @DisplayName("Should reuse session cost data after first entry")
+    void shouldReuseSessionCostDataAfterFirstEntry() {
+      ApplicationDetail ebsCase = new ApplicationDetail();
+      ebsCase.setCaseReferenceNumber("123");
+
+      UserDetail user = new UserDetail();
+      user.setUsername("user");
+      user.setProvider(new BaseProvider());
+      user.getProvider().setId(123);
+
+      final AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
+
+      assertThat(
+              mockMvc.perform(
+                  get("/allocate-cost-limit")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(COST_ALLOCATION_FORM_DATA, allocateCostsFormData)))
+          .hasStatusOk()
+          .hasViewName("application/cost-allocation")
+          .model()
+          .containsEntry("costDetails", allocateCostsFormData);
+
+      verify(applicationService, never()).getCase(anyString(), anyLong(), anyString());
     }
   }
 
