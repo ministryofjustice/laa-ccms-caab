@@ -16,7 +16,7 @@
         <h1 class="govuk-heading-l" id="main-heading" th:text="#{case.overview.costs.title}"></h1>
         <p class="govuk-body-l " th:text="#{caseCosts.details}"></p>
 
-        <form th:action="@{/allocate-cost-limit}" th:object="${costDetails}" method="post">
+        <form id="cost-allocation-form" th:action="@{/allocate-cost-limit}" th:object="${costDetails}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
 
             <div class="govuk-grid-row">
@@ -88,8 +88,9 @@
                 <button type="submit" name="action" value="calculate" class="govuk-button govuk-button--secondary" data-module="govuk-button"
                         th:text="#{caseCosts.calculate}"/>
             </div>
-            <button type="submit" name="action" value="next" class="govuk-button" data-module="govuk-button" th:text="#{site.next}"/>
+            <button id="cost-allocation-next" type="submit" name="action" value="next" class="govuk-button" data-module="govuk-button" th:text="#{site.next}"/>
         </form>
+        <script th:src="@{/ccms/cost-allocation.js}"></script>
     </div>
 </div>
 </body>
