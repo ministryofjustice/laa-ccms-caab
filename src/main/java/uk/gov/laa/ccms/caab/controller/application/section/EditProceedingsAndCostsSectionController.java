@@ -68,6 +68,7 @@ import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDeta
 import uk.gov.laa.ccms.caab.bean.validators.scopelimitation.ScopeLimitationDetailsValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
+import uk.gov.laa.ccms.caab.constants.PriorAuthorityGroup;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -1602,7 +1603,12 @@ public class EditProceedingsAndCostsSectionController {
       priorAuthorityFlow.setPriorAuthorityDetailsFormData(priorAuthorityDetails);
 
       String typeId = priorAuthorityFlow.getPriorAuthorityTypeFormData().getPriorAuthorityType();
-      Map<String, List<DynamicOptionFormData>> groupedDynamicsOptions =
+
+      Map<String, DynamicOptionFormData> dynamicOptions = priorAuthorityDetails.getDynamicOptions();
+      if (dynamicOptions != null) {
+        dynamicOptions.forEach((code, option) -> option.setCode(code));
+      }
+      Map<PriorAuthorityGroup, List<DynamicOptionFormData>> groupedDynamicsOptions =
           PriorAuthorityUtils.groupDynamicOptions(priorAuthorityDetails.getDynamicOptions(), typeId);
       priorAuthorityDetails.setValueRequired(priorAuthorityDynamicForm.getValueRequired());
       model.addAttribute("groupedDynamicOptions", groupedDynamicsOptions);

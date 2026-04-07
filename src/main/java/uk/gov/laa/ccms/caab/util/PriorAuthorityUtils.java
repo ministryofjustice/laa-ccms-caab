@@ -1,7 +1,9 @@
 package uk.gov.laa.ccms.caab.util;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
@@ -27,7 +29,7 @@ public class PriorAuthorityUtils {
 
     for (ReferenceDataItemDetail item : priorAuthorityDetail.getItems()) {
       if (hasDisplayValue(item)) {
-        String groupKey = getGroupForCode(item.getCode().getId(), typeId);
+        PriorAuthorityGroup groupKey = getGroupForCode(item.getCode().getId(), typeId);
         grouped.getOrDefault(groupKey, grouped.get(PriorAuthorityGroup.OTHER.name()))
             .add(item);
       }
@@ -64,58 +66,59 @@ public class PriorAuthorityUtils {
         && !item.getValue().getDisplayValue().isBlank();
   }
 
-  private static String getGroupForCode(String codeId, String priorAuthorityType) {
+  private static PriorAuthorityGroup getGroupForCode(String codeId, String priorAuthorityType) {
 
     if (codeId == null || priorAuthorityType == null) {
-      return PriorAuthorityGroup.OTHER.name();
+      return PriorAuthorityGroup.OTHER;
     }
 
     switch (priorAuthorityType) {
       case "COUNSEL":
         return switch (codeId) {
           case "C01_AUTHORTY_REQD", "C02_COUNSEL_BRIEF_TYPE" ->
-              PriorAuthorityGroup.COUNSEL_DETAILS.name();
-          default -> PriorAuthorityGroup.OTHER.name();
+              PriorAuthorityGroup.COUNSEL_DETAILS;
+          default -> PriorAuthorityGroup.OTHER;
         };
 
       case "EXPERT":
         return switch (codeId) {
           case "E01_EXPERT_TYPE", "E02_EXPERT_NAME", "E03_COMPANY", "E04_ADDRESS", "E05_POST_CODE",
-               "E06_EXPERT_REGION" -> PriorAuthorityGroup.EXPENSE_DETAILS.name();
+               "E06_EXPERT_REGION" -> PriorAuthorityGroup.EXPERT_DETAILS;
           case "E18_EXPERT_TOTAL_HOURS", "E19_PREPARATION_HOURS", "E20_EXPERT_COURT_HRS",
                "E21_TRAVEL_TIME", "E25_EXPERT_MILEAGE", "E26_EXPERT_MILEAGE_NUMBER",
                "E33_EXPERT_TOTAL_MIN", "E34_PREPARATION_MINS", "E35_EXPERT_COURT_MINS",
-               "E36_TRAVEL_TIME_MINS" -> PriorAuthorityGroup.TIME_SPENT.name();
+               "E36_TRAVEL_TIME_MINS" -> PriorAuthorityGroup.TIME_SPENT;
           case "E17_EXPERT_HOURLY_RATE", "E22_TRAVEL_HOURLY_RATE", "E28_EXPERT_VAT_RATE" ->
-              PriorAuthorityGroup.RATES.name();
+              PriorAuthorityGroup.RATES;
           case "E11_EXP_BEFORE_APP", "E23_TRAVEL_FARES", "E24_TRAVEL_FARES_DESCRIPTION",
                "E27_EXPERT_NET", "E29_EXPERT_VAT", "E30_EXPERT_TOTAL" ->
-              PriorAuthorityGroup.COSTS.name();
+              PriorAuthorityGroup.COSTS;
           case "E07_JOINTLY_INSTRUCTED", "E08_REASON_NOT_JOINTLY_INSTR",
                "E09_CHILDREN_ACT_COURT_PERMI", "E10_REASON_LA_NOT_BEARING_COST",
                "E12_BASIS_OF_APPORTIONMENT", "E13_EXPERT_APPORTION",
                "E14_NUMBER_ALTERNATIVE_QUOTES", "E15_OTHER_QUOTES", "E16_REASON_FOR_SELECTED_QUOTE",
-               "E31_EXPERT_COD", "E32_EXPERT_COD_EXPLAIN" -> PriorAuthorityGroup.REASONING.name();
-          default -> PriorAuthorityGroup.OTHER.name();
+               "E31_EXPERT_COD", "E32_EXPERT_COD_EXPLAIN" -> PriorAuthorityGroup.REASONING;
+          default -> PriorAuthorityGroup.OTHER;
         };
       case "OTHER":
         return switch (codeId) {
           case "O01_EXPENSE_TYPE", "O02_EXPENSE_DETAILS", "O03_EXPENSE_REGION" ->
-              PriorAuthorityGroup.EXPENSE_DETAILS.name();
+              PriorAuthorityGroup.EXPENSE_DETAILS;
           default -> null;
         };
       default:
-        return PriorAuthorityGroup.OTHER.name();
+        return PriorAuthorityGroup.OTHER;
     }
   }
 
-  public static Map<String, List<DynamicOptionFormData>> groupDynamicOptions(
+  public static Map<PriorAuthorityGroup, List<DynamicOptionFormData>> groupDynamicOptions(
       Map<String, DynamicOptionFormData> optionMap, String typeId
   ) {
 
-    Map<String, List<DynamicOptionFormData>> grouped = new HashMap<>();
-    for (PriorAuthorityGroup g : PriorAuthorityGroup.getGroupsForType(typeId)) {
-      grouped.put(g.name(), new ArrayList<>());
+    Map<PriorAuthorityGroup, List<DynamicOptionFormData>> grouped = new LinkedHashMap<>();
+
+    for (PriorAuthorityGroup group : PriorAuthorityGroup.getGroupsForType(typeId)) {
+      grouped.put(group, new ArrayList<>());
     }
 
     if (optionMap != null) {
@@ -123,17 +126,24 @@ public class PriorAuthorityUtils {
         String code = entry.getKey();
         DynamicOptionFormData option = entry.getValue();
 
-        String groupKey = PriorAuthorityGroup.OTHER.name();
+        option.setCode(code);
 
-        if (code != null) {
-          groupKey = getGroupForCode(code, typeId);
+        PriorAuthorityGroup groupKey = getGroupForCode(code, typeId);
+
+        if (groupKey == null || !grouped.containsKey(groupKey)) {
+          groupKey = PriorAuthorityGroup.OTHER;
         }
 
-        grouped.getOrDefault(groupKey, grouped.get(PriorAuthorityGroup.OTHER.name()))
-            .add(option);
+        grouped.get(groupKey).add(option);
       }
     }
-    removeEmptyGroups(grouped);
+
+    grouped.values().forEach(list -> list.sort(
+        Comparator.comparing(DynamicOptionFormData::getCode)
+    ));
+
+    grouped.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+
     return grouped;
 
   }
