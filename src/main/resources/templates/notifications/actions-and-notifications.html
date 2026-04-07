@@ -16,41 +16,43 @@
   </div>
   <div id="main-content">
 
-    <h1 class="govuk-heading-l" th:text="#{notifications.heading}"/>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-two-thirds">
+        <h1 class="govuk-heading-l" th:text="#{notifications.heading}"/>
 
-    <p class="govuk-body-l"
-       th:text="#{notifications.search.results.leadParagraph(${notificationsSearchResults.totalElements})}"/>
+        <p class="govuk-body"
+           th:text="#{notifications.search.results.leadParagraph(${notificationsSearchResults.totalElements})}"/>
 
-    <a class="govuk-button moj-button-menu__item govuk-button--secondary moj-page-header-actions__action"
-       role="button"
-       id="refine-search-button"
-       th:href="@{/notifications/search}"
-       th:text="#{notifications.search.results.refineSearch}"
-       data-module="govuk-button"/>
+        <a class="govuk-button govuk-button--secondary"
+           role="button"
+           id="refine-search-button"
+           th:href="@{/notifications/search}"
+           th:text="#{notifications.search.results.refineSearch}"
+           data-module="govuk-button"/>
+      </div>
+    </div>
 
-    <div class="moj-scrollable-pane govuk-!-padding-top-4">
-      <table class="govuk-table ccms-compact-table">
-        <caption class="govuk-table__caption govuk-table__caption--m"
-                 th:text="#{search.results}"/>
+    <div class="moj-scrollable-pane">
+      <table class="govuk-table ccms-compact-table" data-module="moj-sortable-table">
         <thead class="govuk-table__head">
         <tr class="govuk-table__row">
-          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dateAssigned',
+          <th scope="col" th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dateAssigned',
           #{common.dateAssigned})}"></th>
-          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'subject',
+          <th scope="col" th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'subject',
           #{common.subject})}"></th>
-          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dueDate',
+          <th scope="col" th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dueDate',
           #{common.dueDate})}"></th>
-          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'userLoginId',
+          <th scope="col" th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'userLoginId',
           #{common.assignedTo})}"></th>
-          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'status',
+          <th scope="col" th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'status',
           #{common.status})}"></th>
-          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'lscCaseRefReference',
+          <th scope="col" th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'lscCaseRefReference',
           #{common.laaRef})}"></th>
-          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'providerCaseReference',
+          <th scope="col" th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'providerCaseReference',
           #{common.providerRef})}"></th>
-          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'clientName',
+          <th scope="col" th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'clientName',
           #{common.client})}"></th>
-          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'feeEarner',
+          <th scope="col" th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'feeEarner',
           #{common.feeEarner})}"></th>
         </tr>
         </thead>
@@ -60,7 +62,7 @@
               th:text="${#temporals.format(notification?.assignDate,'dd/MM/yyyy')}"></td>
           <td class="govuk-table__cell"><a
               th:id="|notification-link-${idx.index}|"
-              class="govuk-link--no-visited-state"
+              class="govuk-link govuk-link--no-visited-state"
               th:href="@{/notifications/{notification_id}(notification_id=${notification.notificationId})}"
               th:text="${#strings.capitalize(#strings.toLowerCase(notification.subject))}"></a></td>
           <td class="govuk-table__cell"
