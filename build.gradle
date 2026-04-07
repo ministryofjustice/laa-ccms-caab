@@ -49,6 +49,10 @@ dependencies {
 //			because('Fixes CVE-XXXX-XXXXX Parent: parent-group:parent-name')
 //		}
 
+        implementation('tools.jackson.core:jackson-core:3.1.1') {
+            because('Fixes SNYK-JAVA-TOOLSJACKSONCORE-15907550')
+        }
+
         implementation('org.bouncycastle:bcprov-jdk18on:1.83') {
             because('Fixes multiple CVEs Parent: org.opensaml:opensaml-saml-api')
         }
