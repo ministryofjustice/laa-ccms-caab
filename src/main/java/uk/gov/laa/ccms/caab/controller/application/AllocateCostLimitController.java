@@ -1,8 +1,10 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
+import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
@@ -47,27 +49,30 @@ public class AllocateCostLimitController {
   public String caseDetails(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
-      Model model) {
-
-    // Load fresh case data to ensure we have the latest cost information
-    // Note: We don't update the session here to preserve availableFunctions and other session state
-    final ApplicationDetail freshCase =
-        applicationService.getCase(
-            ebsCase.getCaseReferenceNumber(),
-            userDetails.getProvider().getId(),
-            userDetails.getUsername());
-
-    // Use fresh cost data for form, but keep session case for display
-    ApplicationDetail displayCase =
-        copyApplicationMapper.copyApplication(new ApplicationDetail(), ebsCase);
-    displayCase.setCosts(freshCase.getCosts());
+      Model model,
+      HttpSession session) {
 
     AllocateCostsFormData allocateCostsFormData =
-        proceedingAndCostsMapper.toAllocateCostsForm(displayCase);
+        (AllocateCostsFormData) session.getAttribute(COST_ALLOCATION_FORM_DATA);
+
+    if (allocateCostsFormData == null) {
+      final ApplicationDetail freshCase =
+          applicationService.getCase(
+              ebsCase.getCaseReferenceNumber(),
+              userDetails.getProvider().getId(),
+              userDetails.getUsername());
+
+      // Update only the costs to avoid overwriting session-scoped metadata like availableFunctions.
+      ebsCase.setCosts(freshCase.getCosts());
+
+      allocateCostsFormData = proceedingAndCostsMapper.toAllocateCostsForm(ebsCase);
+      session.setAttribute(COST_ALLOCATION_FORM_DATA, allocateCostsFormData);
+    }
+
     allocateCostsFormData.setTotalRemaining(getTotalRemaining(allocateCostsFormData));
 
     model.addAttribute("costDetails", allocateCostsFormData);
-    model.addAttribute("case", displayCase);
+    model.addAttribute("case", ebsCase);
     return "application/cost-allocation";
   }
 
@@ -87,7 +92,8 @@ public class AllocateCostLimitController {
       @org.springframework.web.bind.annotation.RequestParam(value = "action", required = false)
           String action,
       final Model model,
-      final BindingResult bindingResult) {
+      final BindingResult bindingResult,
+      final HttpSession session) {
 
     ApplicationDetail appCopy =
         copyApplicationMapper.copyApplication(new ApplicationDetail(), ebsCase);
@@ -110,6 +116,7 @@ public class AllocateCostLimitController {
 
     allocateCostsFormData.setCostEntries(costs);
     allocateCostsFormData.setTotalRemaining(getTotalRemaining(allocateCostsFormData));
+    session.setAttribute(COST_ALLOCATION_FORM_DATA, allocateCostsFormData);
 
     allocateCostLimitValidator.validate(allocateCostsFormData, bindingResult);
 
@@ -132,10 +139,18 @@ public class AllocateCostLimitController {
    */
   @GetMapping("/allocate-cost-limit/review")
   public String reviewCaseCosts(
-      @SessionAttribute(CASE) final ApplicationDetail ebsCase, Model model) {
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      final HttpSession session,
+      Model model) {
 
     AllocateCostsFormData allocateCostsFormData =
-        proceedingAndCostsMapper.toAllocateCostsForm(ebsCase);
+        (AllocateCostsFormData) session.getAttribute(COST_ALLOCATION_FORM_DATA);
+
+    if (allocateCostsFormData == null) {
+      allocateCostsFormData = proceedingAndCostsMapper.toAllocateCostsForm(ebsCase);
+      session.setAttribute(COST_ALLOCATION_FORM_DATA, allocateCostsFormData);
+    }
+
     allocateCostsFormData.setTotalRemaining(getTotalRemaining(allocateCostsFormData));
 
     model.addAttribute("costDetails", allocateCostsFormData);
@@ -148,17 +163,18 @@ public class AllocateCostLimitController {
    *
    * @param allocateCostsFormData the submitted form data for costs.
    * @param ebsCase The case cost details from session.
-   * @param model the Model object used to pass attributes to the view.
    * @return Redirect to the next step in the workflow.
    */
   @PostMapping("/allocate-cost-limit/review")
   public String submitCaseCosts(
       @ModelAttribute("costDetails") AllocateCostsFormData allocateCostsFormData,
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
-      final Model model) {
+      final HttpSession session) {
 
     // TODO: Add API call to finalize the cost allocations
     log.info("Submitting case costs for case: {}", ebsCase.getCaseReferenceNumber());
+
+    session.removeAttribute(COST_ALLOCATION_FORM_DATA);
 
     // TODO: Redirect to the next workflow step or show success message
     return "redirect:/case/overview";

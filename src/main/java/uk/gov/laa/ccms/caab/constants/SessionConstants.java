@@ -194,4 +194,7 @@ public class SessionConstants {
 
   /** Session attribute used to keep track of the provider request flow data. */
   public static final String PROVIDER_REQUEST_FLOW_FORM_DATA = "providerRequestFlow";
+
+  /** Session attribute used to store the cost allocation flow form data. */
+  public static final String COST_ALLOCATION_FORM_DATA = "costAllocationFormData";
 }

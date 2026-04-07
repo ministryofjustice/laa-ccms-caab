@@ -18,6 +18,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_D
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
@@ -41,6 +42,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -172,6 +174,46 @@ class CaseControllerTest {
                         "returnTo", value -> assertThat(value).isEqualTo("caseSearchResults"))
                     .hasEntrySatisfying(NOTIFICATION_ID, value -> assertThat(value).isNull());
               });
+    }
+
+    @Test
+    @DisplayName("Case overview clears cost allocation flow data")
+    public void caseOverviewClearsCostAllocationFlowData() {
+      final String selectedCaseRef = "2";
+      final Integer providerId = 1;
+      final String providerReference = "providerReference";
+      final String clientFirstname = "firstname";
+      final String clientSurname = "surname";
+      final String clientReference = "clientReference";
+
+      ApplicationDetail applicationDetail =
+          getEbsCase(
+              selectedCaseRef,
+              providerId,
+              providerReference,
+              clientFirstname,
+              clientSurname,
+              clientReference,
+              false,
+              null,
+              null);
+
+      AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/overview", selectedCaseRef)
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, applicationDetail)
+                      .sessionAttr(COST_ALLOCATION_FORM_DATA, allocateCostsFormData)
+                      .sessionAttr(SEARCH_URL, returnUrl)))
+          .hasViewName("application/case-overview")
+          .satisfies(
+              response ->
+                  assertThat(response)
+                      .request()
+                      .sessionAttributes()
+                      .doesNotContainKey(COST_ALLOCATION_FORM_DATA));
     }
 
     @Test
