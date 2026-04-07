@@ -2,6 +2,9 @@ package uk.gov.laa.ccms.caab.constants;
 
 import java.util.List;
 
+/**
+ * Enumeration of the possible groups for a Prior Authority.
+ */
 public enum PriorAuthorityGroup {
   COUNSEL_DETAILS("Counsel details"),
   EXPERT_DETAILS("Expert details"),
@@ -22,6 +25,12 @@ public enum PriorAuthorityGroup {
     return label;
   }
 
+  /**
+   * Method that returns a list of groups within a given Prior Authority depending on its type.
+   *
+   * @param typeId the type of Prior Authority (counsel, expert, or other expense)
+   * @return returns a list of groups for a given type of Prior Authority
+   */
   public static List<PriorAuthorityGroup> getGroupsForType(String typeId) {
     return switch (typeId != null ? typeId.toUpperCase() : "") {
       case "COUNSEL" -> List.of(COUNSEL_DETAILS, OTHER);

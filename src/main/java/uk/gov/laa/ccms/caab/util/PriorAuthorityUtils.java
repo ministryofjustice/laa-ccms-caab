@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.util;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +15,12 @@ public class PriorAuthorityUtils {
 
   private PriorAuthorityUtils() {}
 
+  /**
+   * Groups the items in a prior authority for the review page.
+   *
+   * @param priorAuthorityDetail details of the prior authority being reviewed
+   * @return returns a mapping of the groupings for each item.
+   */
   public static Map<PriorAuthorityGroup, List<ReferenceDataItemDetail>> groupItems(
       PriorAuthorityDetail priorAuthorityDetail) {
 
@@ -45,16 +50,6 @@ public class PriorAuthorityUtils {
     }
 
     grouped.entrySet().removeIf(entry -> entry.getValue().isEmpty());
-    return grouped;
-  }
-
-  public static Map<String, List<DynamicOptionFormData>> initialiseGroupsForForm(String typeId) {
-    Map<String, List<DynamicOptionFormData>> grouped = new HashMap<>();
-
-    for (PriorAuthorityGroup group : PriorAuthorityGroup.getGroupsForType(typeId)) {
-      grouped.put(group.name(), new ArrayList<>());
-    }
-
     return grouped;
   }
 
@@ -131,6 +126,13 @@ public class PriorAuthorityUtils {
     }
   }
 
+  /**
+   * Groups the dynamic options for the prior authority form.
+   *
+   * @param optionMap map of dynamic options for a given type of prior authority
+   * @param typeId the type of prior authority being created
+   * @return returns a mapping of the groupings for each form item.
+   */
   public static Map<PriorAuthorityGroup, List<DynamicOptionFormData>> groupDynamicOptions(
       Map<String, DynamicOptionFormData> optionMap, String typeId) {
 
