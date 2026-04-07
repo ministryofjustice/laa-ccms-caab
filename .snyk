@@ -5,14 +5,6 @@ ignore:
     - '*':
       reason: "temporary ignore while upgrade is scheduled"
       expires: "2026-06-01T00:00:00Z"
-  SNYK-JAVA-COMMONSIO-8161190:
-    - '*':
-      reason: "no direct upgrade path from velocity-engine-core"
-      expires: "2026-06-01T00:00:00Z"
-  'snyk:lic:maven:fi.solita.clamav:clamav-client:LGPL-2.1':
-    - '*':
-      reason: "ignore license issue"
-      expires: "2027-01-02T00:00:00Z"
 patch: {}
 exclude:
   global:
