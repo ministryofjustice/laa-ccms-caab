@@ -42,7 +42,7 @@ jobs:
 
   scan-image:
     needs: [ get-branch-ref ]
-    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@v2
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@snyk-add-policy-path
     permissions:
       contents: read
       id-token: write
