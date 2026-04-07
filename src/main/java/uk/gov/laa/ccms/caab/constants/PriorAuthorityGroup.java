@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.constants;
 
 import java.util.List;
-import org.checkerframework.checker.units.qual.C;
 
 public enum PriorAuthorityGroup {
   COUNSEL_DETAILS("Counsel details"),

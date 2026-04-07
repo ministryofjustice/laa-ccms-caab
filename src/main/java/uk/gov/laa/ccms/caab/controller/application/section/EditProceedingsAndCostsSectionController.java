@@ -1609,7 +1609,8 @@ public class EditProceedingsAndCostsSectionController {
         dynamicOptions.forEach((code, option) -> option.setCode(code));
       }
       Map<PriorAuthorityGroup, List<DynamicOptionFormData>> groupedDynamicsOptions =
-          PriorAuthorityUtils.groupDynamicOptions(priorAuthorityDetails.getDynamicOptions(), typeId);
+          PriorAuthorityUtils.groupDynamicOptions(
+              priorAuthorityDetails.getDynamicOptions(), typeId);
       priorAuthorityDetails.setValueRequired(priorAuthorityDynamicForm.getValueRequired());
       model.addAttribute("groupedDynamicOptions", groupedDynamicsOptions);
     }
@@ -1752,7 +1753,7 @@ public class EditProceedingsAndCostsSectionController {
     model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
 
     if (priorAuthority.getStatus().equals(STATUS_GRANTED)) {
-      Map<String, List<ReferenceDataItemDetail>> groupedPriorAuthorityItems =
+      Map<PriorAuthorityGroup, List<ReferenceDataItemDetail>> groupedPriorAuthorityItems =
           PriorAuthorityUtils.groupItems(priorAuthority);
       model.addAttribute("priorAuthority", priorAuthority);
       model.addAttribute("groupedItems", groupedPriorAuthorityItems);

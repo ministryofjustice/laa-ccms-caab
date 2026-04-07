@@ -54,11 +54,13 @@
                 <!-- COUNSEL -->
                 <!-- ========================================== -->
                 <th:block th:if="${priorAuthority.type.displayValue == 'Counsel'}">
-                    <th:block th:if="${!#lists.isEmpty(groupedItems['COUNSEL_DETAILS'])}">
-                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.counselDetails}, ${groupedItems.COUNSEL_DETAILS})"></th:block>
-                    </th:block>
-                    <th:block th:if="${!#lists.isEmpty(groupedItems['OTHER'])}">
-                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.other}, ${groupedItems.OTHER})"></th:block>
+                    <th:block th:each="groupEntry : ${groupedItems}">
+                        <th:block th:if="${!#lists.isEmpty(groupEntry.value)}">
+                            <th:block th:replace="application/partials/summary-section :: section(
+                            ${groupEntry.key.label},
+                            ${groupEntry.value}
+                        )"></th:block>
+                        </th:block>
                     </th:block>
                 </th:block>
 
@@ -67,23 +69,13 @@
                 <!-- EXPERT -->
                 <!-- ========================================== -->
                 <th:block th:if="${priorAuthority.type.displayValue == 'Expert'}">
-                    <th:block th:if="${!#lists.isEmpty(groupedItems['EXPERT_DETAILS'])}">
-                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.expertDetails}, ${groupedItems.EXPERT_DETAILS})"></th:block>
-                    </th:block>
-                    <th:block th:if="${!#lists.isEmpty(groupedItems['TIME_SPENT'])}">
-                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.timeSpent}, ${groupedItems.TIME_SPENT})"></th:block>
-                    </th:block>
-                    <th:block th:if="${!#lists.isEmpty(groupedItems['RATES'])}">
-                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.rates}, ${groupedItems.RATES})"></th:block>
-                    </th:block>
-                    <th:block th:if="${!#lists.isEmpty(groupedItems['COSTS'])}">
-                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.costs}, ${groupedItems.COSTS})"></th:block>
-                    </th:block>
-                    <th:block th:if="${!#lists.isEmpty(groupedItems['REASONING'])}">
-                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.reasoning}, ${groupedItems.REASONING})"></th:block>
-                    </th:block>
-                    <th:block th:if="${!#lists.isEmpty(groupedItems['OTHER'])}">
-                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.other}, ${groupedItems.OTHER})"></th:block>
+                    <th:block th:each="groupEntry : ${groupedItems}">
+                        <th:block th:if="${!#lists.isEmpty(groupEntry.value)}">
+                            <th:block th:replace="application/partials/summary-section :: section(
+                            ${groupEntry.key.label},
+                            ${groupEntry.value}
+                        )"></th:block>
+                        </th:block>
                     </th:block>
                 </th:block>
 
@@ -91,11 +83,13 @@
                 <!-- Other -->
                 <!-- ========================================== -->
                 <th:block th:if="${priorAuthority.type.displayValue == 'Other'}">
-                    <th:block th:if="${!#lists.isEmpty(groupedItems['EXPENSE_DETAILS'])}">
-                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.expenseDetails}, ${priorAuthority.items})"></th:block>
-                    </th:block>
-                    <th:block th:if="${!#lists.isEmpty(groupedItems['OTHER'])}">
-                        <th:block th:replace="application/partials/summary-section :: section(#{proceedings.priorAuthorities.other}, ${groupedItems.OTHER})"></th:block>
+                    <th:block th:each="groupEntry : ${groupedItems}">
+                        <th:block th:if="${!#lists.isEmpty(groupEntry.value)}">
+                            <th:block th:replace="application/partials/summary-section :: section(
+                            ${groupEntry.key.label},
+                            ${groupEntry.value}
+                        )"></th:block>
+                        </th:block>
                     </th:block>
                 </th:block>
                 </dl>

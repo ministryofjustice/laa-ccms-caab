@@ -37,6 +37,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import uk.gov.laa.ccms.caab.bean.proceeding.CaseProceedingDisplayStatus;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
+import uk.gov.laa.ccms.caab.constants.PriorAuthorityGroup;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.AvailableAction;
@@ -293,7 +294,7 @@ public class CaseController {
     Assert.notEmpty(priorAuthorities, () -> errorMessage);
     Assert.isTrue(index < priorAuthorities.size(), () -> errorMessage);
 
-    Map<String, List<ReferenceDataItemDetail>> groupedPriorAuthorityItems =
+    Map<PriorAuthorityGroup, List<ReferenceDataItemDetail>> groupedPriorAuthorityItems =
         PriorAuthorityUtils.groupItems(priorAuthorities.get(index));
     model.addAttribute("groupedItems", groupedPriorAuthorityItems);
     model.addAttribute("priorAuthority", priorAuthorities.get(index));
