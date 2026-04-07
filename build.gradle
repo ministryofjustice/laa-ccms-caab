@@ -122,7 +122,7 @@ dependencies {
     implementation 'org.webjars:webjars-locator-lite'
     // https://mvnrepository.com/artifact/org.webjars.npm/govuk-frontend
     implementation 'org.webjars.npm:govuk-frontend:6.1.0'
-    implementation 'org.webjars.npm:ministryofjustice__frontend:9.0.0'
+    implementation 'org.webjars.npm:ministryofjustice__frontend:7.1.0'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
