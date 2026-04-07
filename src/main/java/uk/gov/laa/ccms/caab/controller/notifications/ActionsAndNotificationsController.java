@@ -284,8 +284,17 @@ public class ActionsAndNotificationsController {
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException("Failed to submit notification response"));
 
+    Notification updatedNotification =
+        notificationService
+            .getNotification(notificationId, user.getUserId(), user.getProvider().getId())
+            .blockOptional()
+            .orElseThrow(
+                () ->
+                    new CaabApplicationException(
+                        "Notification with id %s not found".formatted(notificationId)));
+
     return prepareNotificationPageModel(
-        notification, new NotificationResponseFormData(), model, session);
+        updatedNotification, new NotificationResponseFormData(), model, session);
   }
 
   private String prepareNotificationPageModel(

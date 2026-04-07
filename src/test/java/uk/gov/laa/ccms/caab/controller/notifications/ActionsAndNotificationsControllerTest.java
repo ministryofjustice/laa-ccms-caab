@@ -1033,6 +1033,10 @@ class ActionsAndNotificationsControllerTest {
               userDetails.getUserType()))
           .thenReturn(Mono.just(new ClientTransactionResponse()));
 
+      when(notificationService.getNotification(
+              notificationId, userDetails.getUserId(), userDetails.getProvider().getId()))
+          .thenReturn(Mono.just(notification));
+
       assertThat(
               mockMvc.perform(
                   post("/notifications/" + notificationId)

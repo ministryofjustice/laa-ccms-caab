@@ -17,51 +17,49 @@
         <th:block th:text="${#strings.capitalize(#strings.toLowerCase(notification.subject))}"/>
       </h1>
       <div class="govuk-grid-row">
-        <div class="govuk-grid-column-full">
-
-          <div class="moj-scrollable-pane">
-          <table class="govuk-table">
-            <thead class="govuk-table__head">
-            <tr class="govuk-table__row">
-              <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-                  style="margin-top: 0; white-space: nowrap" th:text="#{common.dateAssigned}"/>
-                <td class="govuk-table__cell govuk-!-font-size-15"
-                    th:text="${#temporals.format(notification.assignDate,'dd/MM/yyyy')}"></td>
-              <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-                  style="margin-top: 0; white-space: nowrap" th:text="#{common.dueDate}"/>
-                <td class="govuk-table__cell govuk-!-font-size-15"
-                    th:text="${#temporals.format(notification.dueDate,'dd/MM/yyyy')}"></td>
-            <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-                style="margin-top: 0; white-space: nowrap" th:text="#{common.status}"/>
-              <td class="govuk-table__cell govuk-!-font-size-15"
-                  th:text="${notification.status}"></td>
-            <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-                style="margin-top: 0; white-space: nowrap" th:text="#{common.assignedTo}"/>
-              <td class="govuk-table__cell govuk-!-font-size-15"
-                  th:text="${notification.user.loginId}"></td>
-          </tr>
-          </thead>
-        </table>
-          </div>
+        <div class="govuk-grid-column-two-thirds">
+          <dl class="govuk-summary-list">
+            <div class="govuk-summary-list__row">
+              <dt class="govuk-summary-list__key" th:text="#{common.dateAssigned}"></dt>
+              <dd class="govuk-summary-list__value" th:text="${#temporals.format(notification.assignDate,'dd/MM/yyyy')}"></dd>
+            </div>
+            <div class="govuk-summary-list__row">
+              <dt class="govuk-summary-list__key" th:text="#{common.dueDate}"></dt>
+              <dd class="govuk-summary-list__value" th:text="${#temporals.format(notification.dueDate,'dd/MM/yyyy')}"></dd>
+            </div>
+            <div class="govuk-summary-list__row">
+              <dt class="govuk-summary-list__key" th:text="#{common.status}"></dt>
+              <dd class="govuk-summary-list__value" th:text="${notification.status}"></dd>
+            </div>
+            <div class="govuk-summary-list__row">
+              <dt class="govuk-summary-list__key" th:text="#{common.assignedTo}"></dt>
+              <dd class="govuk-summary-list__value" th:text="${notification.user.loginId}"></dd>
+            </div>
+          </dl>
         </div>
-    </div>
+      </div>
 
 
-    <div class="govuk-grid-row" >
+    <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
         <h2 class="govuk-heading-m" th:text="#{notifications.subHeading.notes}"/>
-        <div class="govuk-inset-text" th:if="${#lists.isEmpty(notification.notes)}">
-          <th:block th:text="#{notifications.noNotesAttached}"/>
+        <div th:if="${#lists.isEmpty(notification.notes)}" class="govuk-inset-text" th:text="#{notifications.noNotesAttached}"></div>
+
+        <div th:unless="${#lists.isEmpty(notification.notes)}" class="ccms-notes-container">
+          <div th:each="note, idx : ${notification.notes}" class="govuk-summary-card govuk-!-margin-bottom-4">
+            <div class="govuk-summary-card__title-wrapper">
+              <h3 class="govuk-summary-card__title"
+                  th:with="formattedDate=${#temporals.format(note.date,'dd MMMM yyyy')}, formattedTime=${#temporals.format(note.date,'HH:mm')}"
+                  th:text="#{notifications.noteTitle(${formattedDate}, ${formattedTime})}">
+              </h3>
+            </div>
+            <div class="govuk-summary-card__content">
+              <p class="govuk-body ccms-pre-formatted" th:id="|note-${idx.index}|" th:utext="${note.message}"></p>
+            </div>
+          </div>
         </div>
-        <th:block th:each="note, idx : ${notification.notes}" th:with="formattedDate=${#temporals.format(note.date,'dd MMMM yyyy')},
-              formattedTime=${#temporals.format(note.date,'HH:mm')}">
-          <p class="govuk-body govuk-!-font-weight-bold"
-            th:text="#{notifications.noteTitle(${formattedDate}, ${formattedTime})}"/>
-          <p th:unless="${#lists.isEmpty(notification.notes)}" class="govuk-body ccms-pre-formatted"
-            th:id="|note-${idx.index}|" th:utext="${note.message}"></p>
-        </th:block>
       </div>
-      </div>
+    </div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
           <h2 class="govuk-heading-m" th:text="#{notifications.subHeading.caseDetails}"/>
@@ -80,16 +78,16 @@
             </thead>
             <tbody class="govuk-table__body">
               <tr class="govuk-table__row">
-                <td class="govuk-table__cell"
-                    th:if="${#strings.isEmpty(notification.caseReferenceNumber)}" th:text="#{site.none}"/>
-                <td class="govuk-table__cell"
-                    th:unless="${#strings.isEmpty(notification.caseReferenceNumber)}">
-                  <a class="govuk-link govuk-link--no-visited-state"
-                     sec:authorize="hasAuthority(@roles.viewCaseDetails)"
-                     th:text="${notification.caseReferenceNumber}"
-                     th:href="@{/application/{case-reference-number}/view(case-reference-number=${notification.caseReferenceNumber})}"/>
+                <td class="govuk-table__cell">
+                  <span th:if="${#strings.isEmpty(notification.caseReferenceNumber)}" th:text="#{site.none}"/>
+                  <th:block th:unless="${#strings.isEmpty(notification.caseReferenceNumber)}">
+                    <a class="govuk-link govuk-link--no-visited-state"
+                       sec:authorize="hasAuthority(@roles.viewCaseDetails)"
+                       th:text="${notification.caseReferenceNumber}"
+                       th:href="@{/application/{case-reference-number}/view(case-reference-number=${notification.caseReferenceNumber})}"/>
 
-                  <span sec:authorize="!hasAuthority(@roles.viewCaseDetails)" th:text="${notification.caseReferenceNumber}"/>
+                    <span sec:authorize="!hasAuthority(@roles.viewCaseDetails)" th:text="${notification.caseReferenceNumber}"/>
+                  </th:block>
                 </td>
                 <td class="govuk-table__cell"
                     th:text="${notification.providerCaseReferenceNumber}"/>
@@ -103,7 +101,8 @@
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
           <h2 class="govuk-heading-m" th:text="#{notifications.subHeading.attachments}"/>
-          <table class="govuk-table">
+          <p class="govuk-body" th:if="${#lists.isEmpty(notification.attachedDocuments)}" th:text="#{notifications.noAttachments}"></p>
+          <table th:unless="${#lists.isEmpty(notification.attachedDocuments)}" class="govuk-table">
             <thead class="govuk-table__head">
             <tr class="govuk-table__row">
               <th scope="col" class="govuk-table__header" th:text="#{site.description}"/>
@@ -114,24 +113,22 @@
             <tbody class="govuk-table__body">
             <tr class="govuk-table__row" th:each="attachment : ${notification.attachedDocuments}">
               <td class="govuk-table__cell" th:text="${attachment.text}"></td>
-              <td th:if="${documentLinks.get(attachment.getDocumentId)} != null"
-                  class="govuk-table__cell">
-                <a class="govuk-link"
-                   sec:authorize="hasAuthority(@roles.viewNotificationAttachment)"
-                   th:text="#{site.download}"
-                   th:href="${documentLinks.get(attachment.getDocumentId)}"/>
-                <span sec:authorize="!hasAuthority(@roles.viewNotificationAttachment)" th:text="#{site.download}"/>
-              </td>
-              <td th:if="${documentLinks.get(attachment.getDocumentId)} == null"
-                  class="govuk-table__cell">
-                <a class="govuk-link ccms-download-link"
-                   sec:authorize="hasAuthority(@roles.viewNotificationAttachment)"
-                   th:text="#{site.retrieve}"
-                   th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/retrieve(notification_id=${notification.getNotificationId},attachment_id=${attachment.getDocumentId})}"/>
-                <span sec:authorize="!hasAuthority(@roles.viewNotificationAttachment)"  th:text="#{site.retrieve}"/>
-                <div
-                     style="visibility:hidden;display:inline-block"
-                     class="loader-small"></div>
+              <td class="govuk-table__cell">
+                <th:block th:if="${documentLinks.get(attachment.getDocumentId)} != null">
+                  <a class="govuk-link"
+                     sec:authorize="hasAuthority(@roles.viewNotificationAttachment)"
+                     th:text="#{site.download}"
+                     th:href="${documentLinks.get(attachment.getDocumentId)}"/>
+                  <span sec:authorize="!hasAuthority(@roles.viewNotificationAttachment)" th:text="#{site.download}"/>
+                </th:block>
+                <th:block th:if="${documentLinks.get(attachment.getDocumentId)} == null">
+                  <a class="govuk-link ccms-download-link"
+                     sec:authorize="hasAuthority(@roles.viewNotificationAttachment)"
+                     th:text="#{site.retrieve}"
+                     th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/retrieve(notification_id=${notification.getNotificationId},attachment_id=${attachment.getDocumentId})}"/>
+                  <span sec:authorize="!hasAuthority(@roles.viewNotificationAttachment)"  th:text="#{site.retrieve}"/>
+                  <div style="visibility:hidden;display:inline-block" class="loader-small"></div>
+                </th:block>
               </td>
             </tr>
             </tbody>
@@ -150,10 +147,10 @@
         </div>
       </div>
       <div class="govuk-grid-row" th:if="${notification.notificationOpenIndicator}">
-        <div class="govuk-grid-column-full">
+        <div class="govuk-grid-column-two-thirds">
           <h2 class="govuk-heading-m" th:text="#{notifications.subHeading.notificationResponse}"/>
           <div th:replace="~{partials/forms :: simpleDropdown('action', #{notifications.response}, ${notification.availableResponses})}"></div>
-          <div th:if="${notification.notificationOpenIndicator and notification.notificationType != 'N'}">
+          <div th:if="${notification.notificationType != 'N'}">
             <div th:replace="~{partials/forms :: largeTextInput('message',  #{notifications.messageToLAA}, 2000)}"></div>
           </div>
         </div>
