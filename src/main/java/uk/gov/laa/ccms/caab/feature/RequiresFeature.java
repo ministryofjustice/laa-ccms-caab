@@ -16,11 +16,4 @@ public @interface RequiresFeature {
    * @return the feature required.
    */
   Feature value();
-
-  /**
-   * An expression describing the condition to apply the feature flag.
-   *
-   * @return the condition expression.
-   */
-  String conditionExpression() default "";
 }
