@@ -7,6 +7,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -103,18 +104,31 @@ public class AllocateCostLimitController {
 
     proceedingAndCostsMapper.toAllocateCostsFormWithoutCostEntries(appCopy, allocateCostsFormData);
 
-    // Update costs in a single pass
-    for (int i = 0; i < costs.size(); i++) {
-      CostEntryDetail cost = costs.get(i);
-      CostEntryDetail formCost = allocateCostsFormData.getCostEntries().get(i);
+    List<CostEntryDetail> formCosts = allocateCostsFormData.getCostEntries();
+    List<CostEntryDetail> updatedCosts = new ArrayList<>();
 
-      if (!cost.getRequestedCosts().equals(formCost.getRequestedCosts())) {
-        cost.setNewEntry(true);
+    for (CostEntryDetail formCost : formCosts) {
+      // Find matching cost in existing costs
+      CostEntryDetail existingCost =
+          costs.stream()
+              .filter(c -> c.getResourceName().equals(formCost.getResourceName()))
+              .findFirst()
+              .orElse(null);
+
+      if (existingCost != null) {
+        if (!existingCost.getRequestedCosts().equals(formCost.getRequestedCosts())) {
+          existingCost.setNewEntry(true);
+        }
+        existingCost.setRequestedCosts(formCost.getRequestedCosts());
+        updatedCosts.add(existingCost);
+      } else {
+        // This is a new entry (e.g. added counsel)
+        formCost.setNewEntry(true);
+        updatedCosts.add(formCost);
       }
-      cost.setRequestedCosts(formCost.getRequestedCosts());
     }
 
-    allocateCostsFormData.setCostEntries(costs);
+    allocateCostsFormData.setCostEntries(updatedCosts);
     allocateCostsFormData.setTotalRemaining(getTotalRemaining(allocateCostsFormData));
     session.setAttribute(COST_ALLOCATION_FORM_DATA, allocateCostsFormData);
 
@@ -126,7 +140,7 @@ public class AllocateCostLimitController {
       return "application/cost-allocation";
     }
 
-    ebsCase.getCosts().setCostEntries(costs);
+    ebsCase.getCosts().setCostEntries(updatedCosts);
     return "redirect:/allocate-cost-limit/review";
   }
 

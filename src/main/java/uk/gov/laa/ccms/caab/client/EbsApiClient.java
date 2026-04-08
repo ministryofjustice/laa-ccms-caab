@@ -969,7 +969,7 @@ public class EbsApiClient extends BaseApiClient {
 
     HttpStatus rsc = HttpStatus.BAD_REQUEST;
 
-    return webClient
+    return ebsApiWebClient
         .get()
         .uri(uriBuilder -> uriBuilder.path("/lookup/counsels").queryParams(queryParams).build())
         .retrieve()

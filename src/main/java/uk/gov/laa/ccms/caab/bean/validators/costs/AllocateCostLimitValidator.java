@@ -39,8 +39,12 @@ public class AllocateCostLimitValidator extends AbstractValidator {
     for (int i = 0; i < size; i++) {
       BigDecimal requestedCost = requestedCosts.get(i);
       BigDecimal amountBilled = amountsBilled.get(i);
-      // Is the entered cost less than the amount already billed
 
+      if (amountBilled == null) {
+        amountBilled = BigDecimal.ZERO;
+      }
+
+      // Is the entered cost less than the amount already billed
       if (requestedCost == null) {
         errors.rejectValue(
             "costEntries[" + i + "].requestedCosts",
@@ -72,19 +76,23 @@ public class AllocateCostLimitValidator extends AbstractValidator {
       // Are the entered costs more than the granted cost limitation
       int index =
           IntStream.range(0, size)
-              .filter(i -> allocateCostsFormData.getCostEntries().get(i).getNewEntry())
+              .filter(
+                  i -> {
+                    Boolean isNew = allocateCostsFormData.getCostEntries().get(i).getNewEntry();
+                    return Boolean.TRUE.equals(isNew);
+                  })
               .findFirst()
               .orElse(-1);
       if (remaining.compareTo(BigDecimal.ZERO) < 0) {
         errors.rejectValue(
-            "costEntries[" + index + "].requestedCosts",
+            "costEntries[" + (index == -1 ? 0 : index) + "].requestedCosts",
             "costCostAllocation.exceeded.requestedCost");
         errors.rejectValue("grantedCostLimitation", "costCostAllocation.empty.error");
 
-      } else if (amountsBilled != null
+      } else if (allocateCostsFormData.getCurrentProviderBilledAmount() != null
           && remaining.compareTo(allocateCostsFormData.getCurrentProviderBilledAmount()) < 0) {
         errors.rejectValue(
-            "costEntries[" + index + "].requestedCosts",
+            "costEntries[" + (index == -1 ? 0 : index) + "].requestedCosts",
             "costCostAllocation.requestedAmount.belowBilledAmount");
       }
       allocateCostsFormData.getCostEntries().forEach(cd -> cd.setNewEntry(false));

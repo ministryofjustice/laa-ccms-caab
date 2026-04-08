@@ -8,7 +8,7 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/case/overview}" class="govuk-back-link"
+        <a th:href="@{/allocate-cost-limit}" class="govuk-back-link"
            th:text="#{caseCosts.allocateCostLimit.return}"></a>
     </div>
     <div id="main-content">
@@ -17,7 +17,7 @@
                     ~{application/partials/search-fragments :: searchCounselFormFragment(
                             caption=#{counsel.search.caption},
                             heading=#{counsel.search},
-                            action=${'/lookup/counsels'}
+                            action=${'/counsel/search'}
                     )}
                 ">
         </th:block>

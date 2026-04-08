@@ -16,7 +16,7 @@ import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 public class CounselSearchValidator extends AbstractValidator {
   @Override
   public boolean supports(Class<?> clazz) {
-    return false;
+    return CounselSearchCriteria.class.isAssignableFrom(clazz);
   }
 
   /**

@@ -74,6 +74,7 @@ public class ApplicationSearchController {
   protected static final String CURRENT_URL = "currentUrl";
 
   protected static final String CASE_RESULTS_PAGE = "caseResultsPage";
+
   private final CaseSearchCriteriaValidator caseSearchCriteriaValidator;
 
   /**
