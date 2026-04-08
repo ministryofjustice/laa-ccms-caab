@@ -16,6 +16,7 @@
     <form action="#"
           th:action="@{/notifications/{notification_id}/provide-documents-or-evidence(notification_id=${notification.getNotificationId})}"
           th:object="${notification}" method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <div class="govuk-error-summary" data-module="govuk-error-summary" th:if="${errorMessage}">
         <div role="alert">
           <h2 class="govuk-error-summary__title" th:text="#{validation.heading}"/>
@@ -29,54 +30,53 @@
         </div>
       </div>
       <h1 class="govuk-heading-l" th:text="#{notifications.documents.heading}"/>
-      <p class="govuk-body-l" th:text="#{notifications.documents.leadParagraph}"/>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+          <p class="govuk-body" th:text="#{notifications.documents.leadParagraph}"/>
+        </div>
+      </div>
 
       <h2 class="govuk-heading-m" th:text="#{notifications.subHeading.notificationDetails}"/>
       <div class="govuk-grid-row">
-        <div class="govuk-grid-column-full">
-          <div class="moj-scrollable-pane">
-
-            <table class="govuk-table">
-              <thead class="govuk-table__head">
-              <tr class="govuk-table__row">
-                <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-                    style="margin-top: 0; white-space: nowrap"
-                    th:text="#{common.dateAssigned}"/>
-                <td class="govuk-table__cell govuk-!-font-size-15"
-                    th:text="${#temporals.format(notification.assignDate,'dd/MM/yyyy')}"></td>
-                <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-                    style="margin-top: 0; white-space: nowrap" th:text="#{common.dueDate}"/>
-                <td class="govuk-table__cell govuk-!-font-size-15"
-                    th:text="${#temporals.format(notification.dueDate,'dd/MM/yyyy')}"></td>
-                <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-                    style="margin-top: 0; white-space: nowrap"
-                    th:text="#{common.status}"/>
-                <td class="govuk-table__cell govuk-!-font-size-15"
-                    th:text="${notification.status}"></td>
-                <th scope="col" class="govuk-table__header govuk-!-font-size-17-!-text-align-left"
-                    style="margin-top: 0; white-space: nowrap" th:text="#{common.assignedTo}"/>
-                <td class="govuk-table__cell govuk-!-font-size-15"
-                    th:text="${notification.user.loginId}"></td>
-              </tr>
-              </thead>
-            </table>
-          </div>
+        <div class="govuk-grid-column-two-thirds">
+          <dl class="govuk-summary-list">
+            <div class="govuk-summary-list__row">
+              <dt class="govuk-summary-list__key" th:text="#{common.dateAssigned}"></dt>
+              <dd class="govuk-summary-list__value" th:text="${#temporals.format(notification.assignDate,'dd/MM/yyyy')}"></dd>
+            </div>
+            <div class="govuk-summary-list__row">
+              <dt class="govuk-summary-list__key" th:text="#{common.dueDate}"></dt>
+              <dd class="govuk-summary-list__value" th:text="${#temporals.format(notification.dueDate,'dd/MM/yyyy')}"></dd>
+            </div>
+            <div class="govuk-summary-list__row">
+              <dt class="govuk-summary-list__key" th:text="#{common.status}"></dt>
+              <dd class="govuk-summary-list__value" th:text="${notification.status}"></dd>
+            </div>
+            <div class="govuk-summary-list__row">
+              <dt class="govuk-summary-list__key" th:text="#{common.assignedTo}"></dt>
+              <dd class="govuk-summary-list__value" th:text="${notification.user.loginId}"></dd>
+            </div>
+          </dl>
         </div>
       </div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
           <h2 class="govuk-heading-m" th:text="#{notifications.subHeading.notes}"/>
-          <div class="govuk-inset-text" th:if="${#lists.isEmpty(notification.notes)}">
-            <th:block th:text="#{notifications.noNotesAttached}"/>
+          <div th:if="${#lists.isEmpty(notification.notes)}" class="govuk-inset-text" th:text="#{notifications.noNotesAttached}"></div>
+
+          <div th:unless="${#lists.isEmpty(notification.notes)}" class="ccms-notes-container">
+            <div th:each="note, idx : ${notification.notes}" class="govuk-summary-card govuk-!-margin-bottom-4">
+              <div class="govuk-summary-card__title-wrapper">
+                <h3 class="govuk-summary-card__title"
+                    th:with="formattedDate=${#temporals.format(note.date,'dd MMMM yyyy')}, formattedTime=${#temporals.format(note.date,'HH:mm')}"
+                    th:text="#{notifications.noteTitle(${formattedDate}, ${formattedTime})}">
+                </h3>
+              </div>
+              <div class="govuk-summary-card__content">
+                <p class="govuk-body ccms-pre-formatted" th:id="|note-${idx.index}|" th:utext="${note.message}"></p>
+              </div>
+            </div>
           </div>
-          <th:block th:each="note, idx : ${notification.notes}" th:with="formattedDate=${#temporals.format(note.date,'dd MMMM yyyy')},
-              formattedTime=${#temporals.format(note.date,'HH:mm')}">
-            <p class="govuk-body govuk-!-font-weight-bold"
-               th:text="#{notifications.noteTitle(${formattedDate}, ${formattedTime})}"/>
-            <p th:unless="${#lists.isEmpty(notification.notes)}"
-               class="govuk-body ccms-pre-formatted"
-               th:id="|note-${idx.index}|" th:utext="${note.message}"></p>
-          </th:block>
         </div>
       </div>
       <div class="govuk-grid-row">
@@ -89,21 +89,20 @@
               <th scope="col" class="govuk-table__header"
                   th:text="#{notifications.documents.number}"/>
               <th scope="col" class="govuk-table__header"
-                  th:text="#{notifications.documents.sendBy}">
+                  th:text="#{notifications.documents.sendBy}"></th>
               <th scope="col" class="govuk-table__header"
                   th:text="#{notifications.documents.documentType}"/>
               <th scope="col" class="govuk-table__header" th:text="#{site.description}"/>
               <th scope="col" class="govuk-table__header"
                   th:text="#{notifications.documents.status}"/>
-              <th scope="col" class="govuk-table__header" th:text="#{site.action}">
+              <th scope="col" class="govuk-table__header" th:text="#{site.action}"></th>
             </tr>
             </thead>
             <tbody class="govuk-table__body">
+            <tr class="govuk-table__row" th:if="${#lists.isEmpty(notificationAttachments)}">
+              <td class="govuk-table__cell" colspan="6" th:text="#{site.none}"></td>
+            </tr>
             <tr class="govuk-table__row" th:each="attachment : ${notificationAttachments}">
-              <td class=govuk-table__cell colspan="8"
-                  th:if="${#lists.isEmpty(notificationAttachments)}">
-                [[#{site.none}]] None<br/>
-              </td>
               <td class="govuk-table__cell" th:text="${attachment.number}"></td>
               <td class="govuk-table__cell"
                   th:text="${attachment.sendBy == 'P' ? 'Post' : 'Electronic Upload'}"></td>
@@ -151,23 +150,19 @@
         </div>
       </div>
 
-      <div class="govuk-grid-row">
-        <div class="govuk-grid-column-two-thirds">
-          <div class="govuk-button-group">
-            <a class="govuk-button govuk-button--secondary"
-               data-module="govuk-button"
-               th:href="@{/notifications/{notification_id}/attachments/upload?sendBy=POSTAL(notification_id=${notification.getNotificationId})}"
-               th:text="#{notifications.documents.addPostalDocument}"/>
-            <a class="govuk-button govuk-button--secondary"
-               data-module="govuk-button"
-               th:href="@{/notifications/{notification_id}/attachments/upload?sendBy=ELECTRONIC(notification_id=${notification.getNotificationId})}"
-               th:text="#{notifications.documents.addElectronicDocument}"/>
-          </div>
-        </div>
+      <div class="govuk-button-group">
+        <a class="govuk-button govuk-button--secondary"
+           data-module="govuk-button"
+           th:href="@{/notifications/{notification_id}/attachments/upload?sendBy=POSTAL(notification_id=${notification.getNotificationId})}"
+           th:text="#{notifications.documents.addPostalDocument}"/>
+        <a class="govuk-button govuk-button--secondary"
+           data-module="govuk-button"
+           th:href="@{/notifications/{notification_id}/attachments/upload?sendBy=ELECTRONIC(notification_id=${notification.getNotificationId})}"
+           th:text="#{notifications.documents.addElectronicDocument}"/>
       </div>
 
       <div class="govuk-grid-row">
-        <div class="govuk-grid-column-one-third">
+        <div class="govuk-grid-column-full">
           <div th:replace="~{partials/actions :: restrictedSubmitButton(#{site.submit},
               ${user.functions}, 'SUBDOC')}"></div>
         </div>
