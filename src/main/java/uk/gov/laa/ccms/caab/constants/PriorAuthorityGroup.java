@@ -2,9 +2,7 @@ package uk.gov.laa.ccms.caab.constants;
 
 import java.util.List;
 
-/**
- * Enumeration of the possible groups for a Prior Authority.
- */
+/** Enumeration of the possible groups for a Prior Authority. */
 public enum PriorAuthorityGroup {
   COUNSEL_DETAILS("Counsel details"),
   EXPERT_DETAILS("Expert details"),
