@@ -85,7 +85,7 @@ public class PriorAuthorityUtils {
               "E19_PREPARATION_HOURS",
               "E20_EXPERT_COURT_HRS",
               "E21_TRAVEL_TIME",
-              "E25_EXPERT_MILEAGE",
+              "E26_EXPERT_MILEAGE_NUMBER",
               "E33_EXPERT_TOTAL_MIN",
               "E34_PREPARATION_MINS",
               "E35_EXPERT_COURT_MINS",
@@ -93,7 +93,7 @@ public class PriorAuthorityUtils {
               PriorAuthorityGroup.TIME_SPENT;
           case "E17_EXPERT_HOURLY_RATE",
               "E22_TRAVEL_HOURLY_RATE",
-              "E26_EXPERT_MILEAGE_NUMBER",
+              "E25_EXPERT_MILEAGE",
               "E28_EXPERT_VAT_RATE" ->
               PriorAuthorityGroup.RATES;
           case "E11_EXP_BEFORE_APP",

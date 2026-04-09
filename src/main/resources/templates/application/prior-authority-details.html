@@ -25,6 +25,8 @@
          th:text="#{proceedings.addPriorAuthorities.step2.leadParagraph}"/>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
+            <h2 class="govuk-heading-m"
+                th:text="#{proceedings.priorAuthorities.generalDetails}"></h2>
           <dl class="govuk-body">
             <th:block th:replace="~{application/partials/summary-fragments :: summaryListDisplay(
               #{proceedings.priorAuthorities.priorAuthorityType},
@@ -73,7 +75,7 @@
                             th:errorclass="govuk-select--error"
                             th:attr="onchange=|document.getElementById('dynamicOptions[${option.fieldValue}].fieldValueDisplayValue').value = this.options[this.selectedIndex].text;|">
                             <option value="" th:text="#{site.select}"></option>
-                            <option th:each="item : ${__${option.fieldValue}__}"
+                            <option th:each="item : ${#vars[option.code]}"
                                 th:value="${item['code']}"
                                 th:text="${item['description']}">
                             </option>
