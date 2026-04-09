@@ -4,6 +4,7 @@ import static uk.gov.laa.ccms.caab.constants.CounselLookupConstants.TOO_MANY_RES
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COUNSEL_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COUNSEL_SEARCH_RESULTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COUNSEL;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import uk.gov.laa.ccms.caab.bean.CounselSearchCriteria;
@@ -41,7 +43,12 @@ import uk.gov.laa.ccms.data.model.CounselLookupValueDetail;
 @RequiredArgsConstructor
 @Slf4j
 @SessionAttributes(
-    value = {COUNSEL_SEARCH_CRITERIA, COUNSEL_SEARCH_RESULTS, COST_ALLOCATION_FORM_DATA})
+    value = {
+      COUNSEL_SEARCH_CRITERIA,
+      COUNSEL_SEARCH_RESULTS,
+      COST_ALLOCATION_FORM_DATA,
+      SELECTED_COUNSEL
+    })
 public class CounselSearchController {
 
   private final CounselSearchValidator counselSearchValidator;
@@ -161,35 +168,79 @@ public class CounselSearchController {
    *
    * @param index The index of the selected counsel in the search results.
    * @param lookupValueDetails The full list of search results.
-   * @param allocateCostsFormData The cost-allocation form data from the session.
    * @param session The current HTTP session.
-   * @return A redirect to the allocate cost limit screen.
+   * @return A redirect to the counsel confirmation screen.
    */
   @GetMapping("/counsel/select")
   public String selectCounsel(
       @RequestParam("index") int index,
       @ModelAttribute(COUNSEL_SEARCH_RESULTS) List<CounselLookupValueDetail> lookupValueDetails,
-      @ModelAttribute(COST_ALLOCATION_FORM_DATA) AllocateCostsFormData allocateCostsFormData,
       HttpSession session) {
 
     if (lookupValueDetails != null && index >= 0 && index < lookupValueDetails.size()) {
       CounselLookupValueDetail selectedCounsel = lookupValueDetails.get(index);
-
-      CostEntryDetail newCostEntry = new CostEntryDetail();
-      newCostEntry.setResourceName(selectedCounsel.getName());
-      newCostEntry.setLscResourceId(selectedCounsel.getLegalAidSupplierNumber());
-      newCostEntry.setCostCategory(selectedCounsel.getCategory());
-      newCostEntry.setAmountBilled(BigDecimal.ZERO);
-      newCostEntry.setRequestedCosts(BigDecimal.ZERO);
-      newCostEntry.setNewEntry(true);
-
-      if (allocateCostsFormData.getCostEntries() == null) {
-        allocateCostsFormData.setCostEntries(new ArrayList<>());
-      }
-      allocateCostsFormData.getCostEntries().add(newCostEntry);
-
-      session.setAttribute(COST_ALLOCATION_FORM_DATA, allocateCostsFormData);
+      session.setAttribute(SELECTED_COUNSEL, selectedCounsel);
     }
+
+    return "redirect:/application/counsel/confirm";
+  }
+
+  /**
+   * GET method for showing the counsel confirmation screen.
+   *
+   * @param selectedCounsel The selected counsel from session.
+   * @param model Model (MVC) to pass data to view.
+   * @return View name for counsel confirmation.
+   */
+  @GetMapping("/application/counsel/confirm")
+  public String confirmCounselGet(
+      @SessionAttribute(value = SELECTED_COUNSEL, required = false)
+          final CounselLookupValueDetail selectedCounsel,
+      Model model) {
+
+    if (selectedCounsel == null) {
+      return "redirect:/application/counsel";
+    }
+
+    model.addAttribute("counsel", selectedCounsel);
+    return "application/counsel-confirm";
+  }
+
+  /**
+   * POST method for confirming the selected counsel.
+   *
+   * @param selectedCounsel The selected counsel from session.
+   * @param session The current HTTP session.
+   * @return A redirect to the allocate cost limit screen.
+   */
+  @PostMapping("/application/counsel/confirm")
+  public String confirmCounselPost(
+      @SessionAttribute(SELECTED_COUNSEL) CounselLookupValueDetail selectedCounsel,
+      HttpSession session) {
+
+    AllocateCostsFormData allocateCostsFormData =
+        (AllocateCostsFormData) session.getAttribute(COST_ALLOCATION_FORM_DATA);
+
+    if (allocateCostsFormData == null) {
+      log.warn("Expected session attribute '{}' not found", COST_ALLOCATION_FORM_DATA);
+      return "redirect:/allocate-cost-limit";
+    }
+
+    CostEntryDetail newCostEntry = new CostEntryDetail();
+    newCostEntry.setResourceName(selectedCounsel.getName());
+    newCostEntry.setLscResourceId(selectedCounsel.getLegalAidSupplierNumber());
+    newCostEntry.setCostCategory(selectedCounsel.getCategory());
+    newCostEntry.setAmountBilled(BigDecimal.ZERO);
+    newCostEntry.setRequestedCosts(BigDecimal.ZERO);
+    newCostEntry.setNewEntry(true);
+
+    if (allocateCostsFormData.getCostEntries() == null) {
+      allocateCostsFormData.setCostEntries(new ArrayList<>());
+    }
+    allocateCostsFormData.getCostEntries().add(newCostEntry);
+
+    session.setAttribute(COST_ALLOCATION_FORM_DATA, allocateCostsFormData);
+    session.removeAttribute(SELECTED_COUNSEL);
 
     return "redirect:/allocate-cost-limit";
   }
