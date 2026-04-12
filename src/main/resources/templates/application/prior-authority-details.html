@@ -62,7 +62,7 @@
                         th:text="${option.fieldDescription + ' (optional)'}"/>
                     </th:block>
                     <span th:if="${#fields.hasErrors('dynamicOptions[__${option.fieldValue}__].fieldValue')}"
-                        th:errors="*{dynamicOptions[__${option}__].fieldValue}" class="govuk-error-message">
+                        th:errors="*{dynamicOptions[__${option.code}__].fieldValue}" class="govuk-error-message">
                     </span>
                     <th:block th:if="${option.fieldType == 'LOV'}">
                         <input type="hidden" th:id="'dynamicOptions[' + ${option.fieldValue} + '].fieldValueDisplayValue'"

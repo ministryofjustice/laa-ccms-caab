@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.bean.priorauthority;
 
+import java.util.HashMap;
 import lombok.Data;
 
 /**
@@ -31,5 +32,18 @@ public class PriorAuthorityFlowFormData {
     this.action = action;
     this.priorAuthorityTypeFormData = new PriorAuthorityTypeFormData();
     this.priorAuthorityDetailsFormData = new PriorAuthorityDetailsFormData();
+  }
+
+  /**
+   * Resets the details form so that changing the prior authority type starts with a clean
+   * state for the new type.
+   *
+   */
+  public void resetForNewType() {
+    this.priorAuthorityDetailsFormData = new PriorAuthorityDetailsFormData();
+
+    if (this.priorAuthorityDetailsFormData.getDynamicOptions() != null) {
+      this.priorAuthorityDetailsFormData.setDynamicOptions(new HashMap<>());
+    }
   }
 }
