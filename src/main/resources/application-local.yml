@@ -65,7 +65,7 @@ logging:
 os:
   api:
     hostname: localhost
-    port: 8051
+    port: 8020
     url: http://${os.api.hostname}:${os.api.port}
     key: TEST_KEY
 
