@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -196,10 +197,15 @@ public class CounselSearchController {
   public String confirmCounselGet(
       @SessionAttribute(value = SELECTED_COUNSEL, required = false)
           final CounselLookupValueDetail selectedCounsel,
+      @RequestParam(value = "error", required = false) String error,
       Model model) {
 
     if (selectedCounsel == null) {
       return "redirect:/application/counsel";
+    }
+
+    if (error != null) {
+      model.addAttribute("error", error);
     }
 
     model.addAttribute("counsel", selectedCounsel);
@@ -216,7 +222,8 @@ public class CounselSearchController {
   @PostMapping("/application/counsel/confirm")
   public String confirmCounselPost(
       @SessionAttribute(SELECTED_COUNSEL) CounselLookupValueDetail selectedCounsel,
-      HttpSession session) {
+      HttpSession session,
+      RedirectAttributes redirectAttributes) {
 
     AllocateCostsFormData allocateCostsFormData =
         (AllocateCostsFormData) session.getAttribute(COST_ALLOCATION_FORM_DATA);
@@ -224,6 +231,21 @@ public class CounselSearchController {
     if (allocateCostsFormData == null) {
       log.warn("Expected session attribute '{}' not found", COST_ALLOCATION_FORM_DATA);
       return "redirect:/allocate-cost-limit";
+    }
+
+    if (allocateCostsFormData.getCostEntries() == null) {
+      allocateCostsFormData.setCostEntries(new ArrayList<>());
+    }
+
+    // Check for duplicate counsel
+    boolean duplicate = allocateCostsFormData.getCostEntries().stream()
+        .anyMatch(entry ->
+            Objects.equals(entry.getResourceName(), selectedCounsel.getName())
+                && Objects.equals(entry.getLscResourceId(), selectedCounsel.getLegalAidSupplierNumber()));
+
+    if (duplicate) {
+      redirectAttributes.addAttribute("error", "duplicate");
+      return "redirect:/application/counsel/confirm";
     }
 
     CostEntryDetail newCostEntry = new CostEntryDetail();

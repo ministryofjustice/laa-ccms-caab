@@ -15,6 +15,7 @@ import static uk.gov.laa.ccms.caab.constants.CounselLookupConstants.TOO_MANY_RES
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COUNSEL_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COUNSEL_SEARCH_RESULTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COUNSEL;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -160,4 +161,86 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
                 .attributeHasFieldErrorCode(
                     COUNSEL_SEARCH_CRITERIA, "Name", "at.least.one.search.required"));
   }
+
+
+    @Test
+    @DisplayName("WHEN -> counsel confirmation is requested, THEN -> the confirmation view is returned.")
+    void testConfirmCounselGet() throws Exception {
+        CounselLookupValueDetail selectedCounsel = new CounselLookupValueDetail()
+                .name("SHAUN S DODDS")
+                .company("SHAUN S DODDS")
+                .legalAidSupplierNumber("1099V")
+                .category("Junior");
+
+        mockMvc.perform(get("/application/counsel/confirm")
+                        .sessionAttr(SELECTED_COUNSEL, selectedCounsel))
+                .andExpect(status().isOk())
+                .andExpect(view().name("application/counsel-confirm"));
+    }
+
+    @Test
+    @DisplayName("WHEN -> counsel is confirmed, THEN -> it is added to cost entries and redirects.")
+    void testConfirmCounselPost() throws Exception {
+        CounselLookupValueDetail selectedCounsel = new CounselLookupValueDetail()
+                .name("SHAUN S DODDS")
+                .company("SHAUN S DODDS")
+                .legalAidSupplierNumber("1099V")
+                .category("Junior");
+
+        AllocateCostsFormData formData = new AllocateCostsFormData();
+        formData.setCostEntries(new ArrayList<>());
+
+        mockMvc.perform(post("/application/counsel/confirm")
+                        .sessionAttr(SELECTED_COUNSEL, selectedCounsel)
+                        .sessionAttr(COST_ALLOCATION_FORM_DATA, formData))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/allocate-cost-limit"));
+
+        assertEquals(1, formData.getCostEntries().size());
+        CostEntryDetail entry = formData.getCostEntries().get(0);
+        assertEquals("SHAUN S DODDS", entry.getResourceName());
+        assertEquals("1099V", entry.getLscResourceId());
+    }
+
+    @Test
+    @DisplayName("WHEN -> counsel is confirmed but form data is missing, THEN -> redirect to allocate costs.")
+    void testConfirmCounselPostMissingFormData() throws Exception {
+        CounselLookupValueDetail selectedCounsel = new CounselLookupValueDetail()
+                .name("SHAUN S DODDS")
+                .legalAidSupplierNumber("1099V")
+                .category("Junior");
+
+        mockMvc.perform(post("/application/counsel/confirm")
+                        .sessionAttr(SELECTED_COUNSEL, selectedCounsel))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/allocate-cost-limit"));
+    }
+
+    @Test
+    @DisplayName("WHEN -> counsel is confirmed but already exists, THEN -> redirect to confirmation with error.")
+    void testConfirmCounselPostDuplicate() throws Exception {
+        CounselLookupValueDetail selectedCounsel = new CounselLookupValueDetail()
+                .name("SHAUN S DODDS")
+                .company("SHAUN S DODDS")
+                .legalAidSupplierNumber("1099V")
+                .category("Junior");
+
+        AllocateCostsFormData formData = new AllocateCostsFormData();
+        List<CostEntryDetail> entries = new ArrayList<>();
+        CostEntryDetail existingEntry = new CostEntryDetail();
+        existingEntry.setResourceName("SHAUN S DODDS");
+        existingEntry.setLscResourceId("1099V");
+        entries.add(existingEntry);
+        formData.setCostEntries(entries);
+
+        mockMvc.perform(post("/application/counsel/confirm")
+                        .sessionAttr(SELECTED_COUNSEL, selectedCounsel)
+                        .sessionAttr(COST_ALLOCATION_FORM_DATA, formData))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/application/counsel/confirm?error=duplicate"));
+
+        // Size should still be 1
+        assertEquals(1, formData.getCostEntries().size());
+    }
+
 }

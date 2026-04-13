@@ -9,6 +9,17 @@
         <a th:href="@{/lookup/counsels}" class="govuk-back-link" th:text="#{counsel.confirm.link}"></a>
     </div>
     <div id="main-content">
+        <div th:if="${error != null}" class="govuk-error-summary" aria-labelledby="error-summary-title" role="alert" data-module="govuk-error-summary">
+            <h2 class="govuk-error-summary__title" id="error-summary-title" th:text="#{validation.heading}"></h2>
+            <div class="govuk-error-summary__body">
+                <ul class="govuk-list govuk-error-summary__list">
+                    <li>
+                        <a href="#main-content" th:if="${error == 'duplicate'}" th:text="#{counsel.confirm.duplicate}"></a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
         <h1 class="govuk-heading-l" th:text="#{counsel.confirm.heading}"></h1>
         <p class="govuk-body-l" th:utext="#{counsel.confirm.paragraph}"></p>
 
