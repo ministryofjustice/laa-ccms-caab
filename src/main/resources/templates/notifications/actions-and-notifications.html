@@ -16,43 +16,41 @@
   </div>
   <div id="main-content">
 
-    <div class="govuk-grid-row">
-      <div class="govuk-grid-column-two-thirds">
-        <h1 class="govuk-heading-l" th:text="#{notifications.heading}"/>
+    <h1 class="govuk-heading-l" th:text="#{notifications.heading}"/>
 
-        <p class="govuk-body"
-           th:text="#{notifications.search.results.leadParagraph(${notificationsSearchResults.totalElements})}"/>
+    <p class="govuk-body"
+       th:text="#{notifications.search.results.leadParagraph(${notificationsSearchResults.totalElements})}"/>
 
-        <a class="govuk-button govuk-button--secondary"
-           role="button"
-           id="refine-search-button"
-           th:href="@{/notifications/search}"
-           th:text="#{notifications.search.results.refineSearch}"
-           data-module="govuk-button"/>
-      </div>
-    </div>
+    <a class="govuk-button govuk-button--secondary"
+       role="button"
+       id="refine-search-button"
+       th:href="@{/notifications/search}"
+       th:text="#{notifications.search.results.refineSearch}"
+       data-module="govuk-button"/>
 
     <div class="moj-scrollable-pane">
-      <table class="govuk-table ccms-compact-table" data-module="moj-sortable-table">
+      <table class="govuk-table ccms-compact-table">
+        <caption class="govuk-table__caption govuk-table__caption--m"
+                 th:text="#{notifications.heading}"></caption>
         <thead class="govuk-table__head">
         <tr class="govuk-table__row">
-          <th scope="col" th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dateAssigned',
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dateAssigned',
           #{common.dateAssigned})}"></th>
-          <th scope="col" th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'subject',
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'subject',
           #{common.subject})}"></th>
-          <th scope="col" th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dueDate',
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dueDate',
           #{common.dueDate})}"></th>
-          <th scope="col" th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'userLoginId',
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'userLoginId',
           #{common.assignedTo})}"></th>
-          <th scope="col" th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'status',
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'status',
           #{common.status})}"></th>
-          <th scope="col" th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'lscCaseRefReference',
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'lscCaseRefReference',
           #{common.laaRef})}"></th>
-          <th scope="col" th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'providerCaseReference',
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'providerCaseReference',
           #{common.providerRef})}"></th>
-          <th scope="col" th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'clientName',
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'clientName',
           #{common.client})}"></th>
-          <th scope="col" th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'feeEarner',
+          <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'feeEarner',
           #{common.feeEarner})}"></th>
         </tr>
         </thead>
