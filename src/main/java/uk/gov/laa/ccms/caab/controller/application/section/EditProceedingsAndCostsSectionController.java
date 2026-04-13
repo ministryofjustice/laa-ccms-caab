@@ -47,7 +47,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
-import software.amazon.awssdk.services.s3.endpoints.internal.Value;
 import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityDetailsFormData;
@@ -1513,7 +1512,8 @@ public class EditProceedingsAndCostsSectionController {
    */
   @GetMapping("/{caseContext}/prior-authorities/add/type")
   public String priorAuthorityType(
-      final Model model, @PathVariable("caseContext") final CaseContext caseContext,
+      final Model model,
+      @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(required = false) PriorAuthorityFlowFormData priorAuthorityFlow) {
 
     if (priorAuthorityFlow == null) {
@@ -1675,18 +1675,14 @@ public class EditProceedingsAndCostsSectionController {
   }
 
   private void preparePriorAuthorityFormModel(
-      Model model,
-      PriorAuthorityFlowFormData flow,
-      PriorAuthorityTypeDetail dynamicForm
-  ) {
+      Model model, PriorAuthorityFlowFormData flow, PriorAuthorityTypeDetail dynamicForm) {
     String typeId = flow.getPriorAuthorityTypeFormData().getPriorAuthorityType();
 
     proceedingAndCostsMapper.populatePriorAuthorityDetailsForm(
-        flow.getPriorAuthorityDetailsFormData(), dynamicForm
-    );
+        flow.getPriorAuthorityDetailsFormData(), dynamicForm);
 
-    Map<String, DynamicOptionFormData> dynamicOptions = flow.getPriorAuthorityDetailsFormData()
-        .getDynamicOptions();
+    Map<String, DynamicOptionFormData> dynamicOptions =
+        flow.getPriorAuthorityDetailsFormData().getDynamicOptions();
     if (dynamicOptions != null) {
       dynamicOptions.forEach((code, opt) -> opt.setCode(code));
     }
@@ -1698,8 +1694,7 @@ public class EditProceedingsAndCostsSectionController {
 
     model.addAttribute("groupedDynamicOptions", grouped);
     model.addAttribute("priorAuthorityDynamicForm", dynamicForm);
-    model.addAttribute("priorAuthorityDetails",
-        flow.getPriorAuthorityDetailsFormData());
+    model.addAttribute("priorAuthorityDetails", flow.getPriorAuthorityDetailsFormData());
     model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, flow);
   }
 

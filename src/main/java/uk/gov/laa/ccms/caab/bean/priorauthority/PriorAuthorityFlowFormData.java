@@ -35,9 +35,8 @@ public class PriorAuthorityFlowFormData {
   }
 
   /**
-   * Resets the details form so that changing the prior authority type starts with a clean
-   * state for the new type.
-   *
+   * Resets the details form so that changing the prior authority type starts with a clean state for
+   * the new type.
    */
   public void resetForNewType() {
     this.priorAuthorityDetailsFormData = new PriorAuthorityDetailsFormData();
