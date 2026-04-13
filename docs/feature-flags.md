@@ -27,12 +27,13 @@ To create a feature flag, simply add the name of your feature to the `uk.gov.laa
 
 ### Using feature flags
 
-To put a method under a feature flag, use the `@RequiresFeature` annotation as follows.
+#### Controller Methods - @RequiresFeature
 
-**Example 1**
+To put a controller method under a feature flag, use the `@RequiresFeature` annotation as follows.
 
 If `FEATURE_1` is enabled, the controller method will execute as usual.
 Otherwise the user will be redirected to a 'feature unsupported' screen.
+
 ```java
   @GetMapping("/resource")
   @RequiresFeature(Feature.FEATURE_1)
@@ -46,28 +47,7 @@ Otherwise the user will be redirected to a 'feature unsupported' screen.
   }
 ```
 
-
-**Example 1**
-
-If `FEATURE_1` is enabled AND the requested resource id is `id1`, the controller method will execute as usual.
-Otherwise the user will be redirected to a 'feature unsupported' screen.
-
-The `conditionExpression` is a `SpEL` expression which allows granular control over what requests come under the feature, if required.
-```java
-  @GetMapping("/resource/{resource-id}")
-  @RequiresFeature(Feature.FEATURE_1, conditionExpression = "#resourceId == 'id1'")
-  public String resource(@PathVariable("resource-id") String resourceId,
-                         Model model) {
-
-    Resource resource = service.getResource(resourceId);
-
-    model.addAttribute("resource", resource);
-
-    return "resource_view";
-  }
-```
-
-**Example 3**
+#### Anywhere - `FeatureService.isEnabled(Feature feature)`
 
 If further granularity is required, the FeatureService can be injected directly. A `isEnabled(Feature feature)`
 method is available to check whether a feature is enabled. This can be used to carry out any conditional business logic.
