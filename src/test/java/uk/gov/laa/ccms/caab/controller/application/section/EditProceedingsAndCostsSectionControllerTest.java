@@ -1791,7 +1791,8 @@ class EditProceedingsAndCostsSectionControllerTest {
                   .sessionAttr(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow)
                   .flashAttr("priorAuthorityTypeDetails", priorAuthorityTypeDetails))
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/%s/prior-authorities/add/details?type=1".formatted(caseContext)));
+          .andExpect(
+              redirectedUrl("/%s/prior-authorities/add/details?type=1".formatted(caseContext)));
 
       verify(priorAuthorityTypeDetailsValidator, times(1))
           .validate(any(PriorAuthorityTypeFormData.class), any(BindingResult.class));
