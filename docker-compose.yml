@@ -47,7 +47,7 @@ services:
 
   laa-ccms-caab-prometheus:
     container_name: laa-ccms-caab-prometheus
-    image: bitnami/prometheus
+    image: prom/prometheus:v3
     restart: unless-stopped
     networks:
       - local-prom
