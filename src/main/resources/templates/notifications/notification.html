@@ -16,28 +16,24 @@
       <h1 class="govuk-heading-l">
         <th:block th:text="${#strings.capitalize(#strings.toLowerCase(notification.subject))}"/>
       </h1>
-      <div class="govuk-grid-row">
-        <div class="govuk-grid-column-two-thirds">
-          <dl class="govuk-summary-list">
-            <div class="govuk-summary-list__row">
-              <dt class="govuk-summary-list__key" th:text="#{common.dateAssigned}"></dt>
-              <dd class="govuk-summary-list__value" th:text="${#temporals.format(notification.assignDate,'dd/MM/yyyy')}"></dd>
-            </div>
-            <div class="govuk-summary-list__row">
-              <dt class="govuk-summary-list__key" th:text="#{common.dueDate}"></dt>
-              <dd class="govuk-summary-list__value" th:text="${#temporals.format(notification.dueDate,'dd/MM/yyyy')}"></dd>
-            </div>
-            <div class="govuk-summary-list__row">
-              <dt class="govuk-summary-list__key" th:text="#{common.status}"></dt>
-              <dd class="govuk-summary-list__value" th:text="${notification.status}"></dd>
-            </div>
-            <div class="govuk-summary-list__row">
-              <dt class="govuk-summary-list__key" th:text="#{common.assignedTo}"></dt>
-              <dd class="govuk-summary-list__value" th:text="${notification.user.loginId}"></dd>
-            </div>
-          </dl>
-        </div>
-      </div>
+      <table class="govuk-table ccms-compact-table">
+        <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th class="govuk-table__header" th:text="#{common.dateAssigned}"></th>
+            <th class="govuk-table__header" th:text="#{common.dueDate}"></th>
+            <th class="govuk-table__header" th:text="#{common.status}"></th>
+            <th class="govuk-table__header" th:text="#{common.assignedTo}"></th>
+          </tr>
+        </thead>
+        <tbody class="govuk-table__body">
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell" th:text="${#temporals.format(notification.assignDate,'dd/MM/yyyy')}"></td>
+            <td class="govuk-table__cell" th:text="${#temporals.format(notification.dueDate,'dd/MM/yyyy')}"></td>
+            <td class="govuk-table__cell" th:text="${notification.status}"></td>
+            <td class="govuk-table__cell" th:text="${notification.user.loginId}"></td>
+          </tr>
+        </tbody>
+      </table>
 
 
     <div class="govuk-grid-row">
@@ -46,16 +42,12 @@
         <div th:if="${#lists.isEmpty(notification.notes)}" class="govuk-inset-text" th:text="#{notifications.noNotesAttached}"></div>
 
         <div th:unless="${#lists.isEmpty(notification.notes)}" class="ccms-notes-container">
-          <div th:each="note, idx : ${notification.notes}" class="govuk-summary-card govuk-!-margin-bottom-4">
-            <div class="govuk-summary-card__title-wrapper">
-              <h3 class="govuk-summary-card__title"
-                  th:with="formattedDate=${#temporals.format(note.date,'dd MMMM yyyy')}, formattedTime=${#temporals.format(note.date,'HH:mm')}"
-                  th:text="#{notifications.noteTitle(${formattedDate}, ${formattedTime})}">
-              </h3>
-            </div>
-            <div class="govuk-summary-card__content">
-              <p class="govuk-body ccms-pre-formatted" th:id="|note-${idx.index}|" th:utext="${note.message}"></p>
-            </div>
+          <div th:each="note, idx : ${notification.notes}" class="ccms-note">
+            <h3 class="govuk-heading-s"
+                th:with="formattedDate=${#temporals.format(note.date,'dd MMMM yyyy')}, formattedTime=${#temporals.format(note.date,'HH:mm')}"
+                th:text="#{notifications.noteTitle(${formattedDate}, ${formattedTime})}">
+            </h3>
+            <p class="govuk-body ccms-pre-formatted" th:id="|note-${idx.index}|" th:utext="${note.message}"></p>
           </div>
         </div>
       </div>
@@ -101,7 +93,7 @@
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
           <h2 class="govuk-heading-m" th:text="#{notifications.subHeading.attachments}"/>
-          <p class="govuk-body" th:if="${#lists.isEmpty(notification.attachedDocuments)}" th:text="#{notifications.noAttachments}"></p>
+          <p class="govuk-body" th:if="${#lists.isEmpty(notification.attachedDocuments)}">No files attached</p>
           <table th:unless="${#lists.isEmpty(notification.attachedDocuments)}" class="govuk-table">
             <thead class="govuk-table__head">
             <tr class="govuk-table__row">
@@ -147,7 +139,7 @@
         </div>
       </div>
       <div class="govuk-grid-row" th:if="${notification.notificationOpenIndicator}">
-        <div class="govuk-grid-column-two-thirds">
+        <div class="govuk-grid-column-full">
           <h2 class="govuk-heading-m" th:text="#{notifications.subHeading.notificationResponse}"/>
           <div th:replace="~{partials/forms :: simpleDropdown('action', #{notifications.response}, ${notification.availableResponses})}"></div>
           <div th:if="${notification.notificationType != 'N'}">
