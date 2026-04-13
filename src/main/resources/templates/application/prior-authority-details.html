@@ -51,29 +51,29 @@
                       th:text="${groupEntry.key.label}"></h2>
                   <th:block th:each="option : ${groupEntry.value}">
                     <div class="govuk-form-group"
-                    th:classappend="${#fields.hasErrors('dynamicOptions[__${option.fieldValue}__].fieldValue')} ? 'govuk-form-group--error' : ''">
+                    th:classappend="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue')} ? 'govuk-form-group--error' : ''">
 
                     <th:block th:if="${option.mandatory}">
-                        <label class="govuk-label" th:for="'dynamicOptions[' + ${option.fieldValue} + '].fieldValue'"
+                        <label class="govuk-label" th:for="'dynamicOptions[' + ${option.code} + '].fieldValue'"
                         th:text="${option.fieldDescription}"/>
                     </th:block>
                     <th:block th:unless="${option.mandatory}">
-                        <label class="govuk-label" th:for="'dynamicOptions[' + ${option.fieldValue} + '].fieldValue'"
+                        <label class="govuk-label" th:for="'dynamicOptions[' + ${option.code} + '].fieldValue'"
                         th:text="${option.fieldDescription + ' (optional)'}"/>
                     </th:block>
-                    <span th:if="${#fields.hasErrors('dynamicOptions[__${option.fieldValue}__].fieldValue')}"
+                    <span th:if="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue')}"
                         th:errors="*{dynamicOptions[__${option.code}__].fieldValue}" class="govuk-error-message">
                     </span>
                     <th:block th:if="${option.fieldType == 'LOV'}">
-                        <input type="hidden" th:id="'dynamicOptions[' + ${option.fieldValue} + '].fieldValueDisplayValue'"
-                        th:name="'dynamicOptions[' + ${option.fieldValue} + '].fieldValueDisplayValue'"
+                        <input type="hidden" th:id="'dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'"
+                        th:name="'dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'"
                         th:value="*{dynamicOptions[__${option.code}__].fieldValueDisplayValue}"/>
                         <select class="govuk-select"
                             data-module="govuk-select"
-                            th:id="'dynamicOptions[' + ${option.fieldValue} + '].fieldValue'"
+                            th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
                             th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
                             th:errorclass="govuk-select--error"
-                            th:attr="onchange=|document.getElementById('dynamicOptions[${option.fieldValue}].fieldValueDisplayValue').value = this.options[this.selectedIndex].text;|">
+                            th:attr="onchange=|document.getElementById('dynamicOptions[${option.code}].fieldValueDisplayValue').value = this.options[this.selectedIndex].text;|">
                             <option value="" th:text="#{site.select}"></option>
                             <option th:each="item : ${#vars[option.code]}"
                                 th:value="${item['code']}"
@@ -85,7 +85,7 @@
                         <input class="govuk-input govuk-input--width-20"
                             type="text"
                             data-module="govuk-input"
-                            th:id="'dynamicOptions[' + ${option.fieldValue} + '].fieldValue'"
+                            th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
                             th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
                             maxlength="30"
                             th:errorclass="govuk-select--error"
@@ -93,7 +93,7 @@
                     </th:block>
                     <th:block th:if="${option.fieldType == 'FTL'}">
                         <input class="govuk-input"
-                            th:id="'dynamicOptions[' + ${option.fieldValue} + '].fieldValue'"
+                            th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
                             th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
                             type="text"
                             data-module="govuk-input"
@@ -104,7 +104,7 @@
                         <div class="govuk-input__wrapper">
                         <div class="govuk-input__prefix" aria-hidden="true">£</div>
                         <input class="govuk-input govuk-input--width-10"
-                            th:id="'dynamicOptions[' + ${option.fieldValue} + '].fieldValue'"
+                            th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
                             th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
                             type="text" spellcheck="false"
                             th:errorclass="govuk-select--error"/>
@@ -112,7 +112,7 @@
                     </th:block>
                     <th:block th:if="${option.fieldType == 'INT'}">
                         <input class="govuk-input govuk-date-input__input govuk-input--width-10"
-                            th:id="'dynamicOptions[' + ${option.fieldValue} + '].fieldValue'"
+                            th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
                             th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
                             type="text"
                             inputmode="numeric"

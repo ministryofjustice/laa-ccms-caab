@@ -1683,7 +1683,11 @@ public class EditProceedingsAndCostsSectionController {
 
     Map<String, DynamicOptionFormData> dynamicOptions =
         flow.getPriorAuthorityDetailsFormData().getDynamicOptions();
+
     if (dynamicOptions != null) {
+      dynamicOptions
+          .entrySet()
+          .removeIf(entry -> entry.getValue() == null || entry.getKey() == null);
       dynamicOptions.forEach((code, opt) -> opt.setCode(code));
     }
 
