@@ -156,7 +156,7 @@ public class CounselSearchController {
       final HttpSession httpSession,
       Model model) {
 
-    CounselLookupDetail counselLookupDetail =
+    final CounselLookupDetail counselLookupDetail =
         counselLookupMapper.toCounselLookupDetail(
             PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), lookupValueDetails));
 
