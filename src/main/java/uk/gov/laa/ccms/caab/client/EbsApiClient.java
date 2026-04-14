@@ -18,7 +18,6 @@ import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.CounselSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
-import uk.gov.laa.ccms.data.model.ApiError;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseDetail;
@@ -967,18 +966,15 @@ public class EbsApiClient extends BaseApiClient {
     queryParams.add("legal_aid_supplier_number", criteria.getLaaCounselReference());
     queryParams.add("category", criteria.getCategory());
 
-    HttpStatus rsc = HttpStatus.BAD_REQUEST;
-
     return ebsApiWebClient
         .get()
         .uri(uriBuilder -> uriBuilder.path("/lookup/counsels").queryParams(queryParams).build())
         .retrieve()
-        .onStatus(
-            s -> s.value() == 400,
-            r ->
-                r.bodyToMono(ApiError.class)
-                    .flatMap(err -> Mono.error(new EbsApiClientException(err.getMessage(), rsc))))
-        .bodyToMono(CounselLookupDetail.class);
+        .bodyToMono(CounselLookupDetail.class)
+        .onErrorResume(
+            e ->
+                ebsApiClientErrorHandler.handleApiRetrieveError(
+                    e, "Counsel details", queryParams));
   }
 
   private static MultiValueMap<String, String> buildQueryParams(
