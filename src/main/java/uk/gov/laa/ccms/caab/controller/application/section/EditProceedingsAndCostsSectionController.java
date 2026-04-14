@@ -1520,6 +1520,7 @@ public class EditProceedingsAndCostsSectionController {
       priorAuthorityFlow = new PriorAuthorityFlowFormData(ACTION_ADD);
     } else {
       priorAuthorityFlow.resetForNewType();
+      priorAuthorityFlow = new PriorAuthorityFlowFormData(ACTION_ADD);
     }
 
     model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
@@ -1613,7 +1614,8 @@ public class EditProceedingsAndCostsSectionController {
 
     populatePriorAuthorityDetailsLookupDropdowns(model, priorAuthorityDynamicForm);
 
-    preparePriorAuthorityFormModel(model, priorAuthorityFlow, priorAuthorityDynamicForm);
+    preparePriorAuthorityFormModel(
+        model, priorAuthorityFlow, priorAuthorityDynamicForm, priorAuthorityAction);
 
     return "application/prior-authority-details";
   }
@@ -1656,7 +1658,8 @@ public class EditProceedingsAndCostsSectionController {
     if (bindingResult.hasErrors()) {
       populatePriorAuthorityDetailsLookupDropdowns(model, priorAuthorityDynamicForm);
 
-      preparePriorAuthorityFormModel(model, priorAuthorityFlow, priorAuthorityDynamicForm);
+      preparePriorAuthorityFormModel(
+          model, priorAuthorityFlow, priorAuthorityDynamicForm, priorAuthorityAction);
       return "application/prior-authority-details";
     }
 
@@ -1670,16 +1673,25 @@ public class EditProceedingsAndCostsSectionController {
       applicationService.updatePriorAuthority(priorAuthority, user);
     }
 
+    priorAuthorityFlow.resetForNewType();
+
     return "redirect:/%s/proceedings-and-costs#prior-authority"
         .formatted(caseContext.getPathValue());
   }
 
   private void preparePriorAuthorityFormModel(
-      Model model, PriorAuthorityFlowFormData flow, PriorAuthorityTypeDetail dynamicForm) {
+      Model model,
+      PriorAuthorityFlowFormData flow,
+      PriorAuthorityTypeDetail dynamicForm,
+      String priorAuthorityAction) {
     String typeId = flow.getPriorAuthorityTypeFormData().getPriorAuthorityType();
 
-    proceedingAndCostsMapper.populatePriorAuthorityDetailsForm(
-        flow.getPriorAuthorityDetailsFormData(), dynamicForm);
+    if (ACTION_ADD.equals(priorAuthorityAction)) {
+      proceedingAndCostsMapper.populatePriorAuthorityDetailsForm(
+          flow.getPriorAuthorityDetailsFormData(), dynamicForm);
+
+      flow.setPriorAuthorityDetailsFormData(flow.getPriorAuthorityDetailsFormData());
+    }
 
     Map<String, DynamicOptionFormData> dynamicOptions =
         flow.getPriorAuthorityDetailsFormData().getDynamicOptions();
