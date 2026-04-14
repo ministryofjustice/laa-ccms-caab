@@ -12,7 +12,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.web.servlet.MockMvc;
 import uk.gov.laa.ccms.caab.bean.validators.application.CounselSearchValidator;
-import uk.gov.laa.ccms.caab.client.EbsApiClientErrorHandler;
 import uk.gov.laa.ccms.caab.mapper.CounselLookupMapper;
 import uk.gov.laa.ccms.caab.mapper.CounselLookupMapperImpl;
 import uk.gov.laa.ccms.caab.service.CounselService;
@@ -28,15 +27,11 @@ public class BaseCounselSearchControllerTest {
 
   protected CounselLookupMapper mapper = new CounselLookupMapperImpl();
 
-  protected EbsApiClientErrorHandler errorHandler = new EbsApiClientErrorHandler();
-
   protected MockMvc mockMvc;
 
   @BeforeEach
   public void setup() {
-    mockMvc =
-        standaloneSetup(new CounselSearchController(validator, service, mapper, errorHandler))
-            .build();
+    mockMvc = standaloneSetup(new CounselSearchController(validator, service, mapper)).build();
   }
 
   protected CounselLookupDetail getCounselLookupDetail(List<CounselLookupValueDetail> values) {
@@ -50,10 +45,10 @@ public class BaseCounselSearchControllerTest {
   protected List<CounselLookupValueDetail> getCounselLookupValueDetail() {
     return List.of(
         new CounselLookupValueDetail()
-            .name("SHAUN S DODDS")
-            .company("SHAUN S DODDS")
-            .legalAidSupplierNumber("1099V")
-            .category("Junior")
+            .name("TEST COUNSEL XYZ")
+            .company("TEST COUNSEL XYZ")
+            .legalAidSupplierNumber("1001T")
+            .category("TestCategory")
             .county(null));
   }
 }

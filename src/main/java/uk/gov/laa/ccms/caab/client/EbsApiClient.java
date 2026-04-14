@@ -973,8 +973,7 @@ public class EbsApiClient extends BaseApiClient {
         .bodyToMono(CounselLookupDetail.class)
         .onErrorResume(
             e ->
-                ebsApiClientErrorHandler.handleApiRetrieveError(
-                    e, "Counsel details", queryParams));
+                ebsApiClientErrorHandler.handleApiRetrieveError(e, "Counsel details", queryParams));
   }
 
   private static MultiValueMap<String, String> buildQueryParams(

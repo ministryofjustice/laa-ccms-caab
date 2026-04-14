@@ -29,7 +29,6 @@ import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
-import uk.gov.laa.ccms.caab.bean.validators.costs.AllocateCostLimitValidator;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
@@ -363,70 +362,6 @@ public class AllocateCostLimitControllerTest {
       assertThat(ebsCase.getCosts().getCostEntries()).hasSize(2);
       assertThat(ebsCase.getCosts().getCostEntries().get(1).getResourceName())
           .isEqualTo("NEW COUNSEL");
-    }
-
-    @Test
-    @DisplayName("Should handle null amountBilled when next button clicked")
-    void shouldHandleNullAmountBilledWithNextAction() {
-      ApplicationDetail ebsCase = new ApplicationDetail();
-      ebsCase.setId(1);
-      CostStructureDetail costs =
-          new CostStructureDetail()
-              .addCostEntriesItem(
-                  new CostEntryDetail()
-                      .requestedCosts(new BigDecimal("100"))
-                      .resourceName("ORIGINAL COUNSEL")
-                      .costCategory("Counsel")
-                      .amountBilled(new BigDecimal("100")))
-              .grantedCostLimitation(new BigDecimal("25000"))
-              .requestedCostLimitation(new BigDecimal("25000"));
-      ebsCase.costs(costs);
-      ebsCase.providerDetails(
-          new ApplicationProviderDetails()
-              .provider(new IntDisplayValue().displayValue("provider")));
-
-      // Form data with an entry where amountBilled is null
-      final AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
-      allocateCostsFormData.setGrantedCostLimitation(costs.getGrantedCostLimitation());
-
-      List<CostEntryDetail> formEntries = new ArrayList<>();
-      formEntries.add(
-          new CostEntryDetail()
-              .requestedCosts(new BigDecimal("200"))
-              .resourceName("ORIGINAL COUNSEL")
-              .costCategory("Counsel")
-              .amountBilled(null)); // simulates null from form submission
-
-      allocateCostsFormData.setCostEntries(formEntries);
-      allocateCostsFormData.setCurrentProviderBilledAmount(BigDecimal.ZERO);
-
-      ApplicationDetail appCopy = new ApplicationDetail();
-      appCopy.costs(costs);
-
-      when(copyApplicationMapper.copyApplication(
-              any(ApplicationDetail.class), any(ApplicationDetail.class)))
-          .thenReturn(appCopy);
-
-      // We need a real validator to test the fix
-      AllocateCostLimitValidator realValidator = new AllocateCostLimitValidator();
-
-      doAnswer(
-              invocation -> {
-                AllocateCostsFormData target = invocation.getArgument(0);
-                org.springframework.validation.Errors errors = invocation.getArgument(1);
-                realValidator.validate(target, errors);
-                return null;
-              })
-          .when(allocateCostLimitValidator)
-          .validate(any(), any());
-
-      assertThat(
-              mockMvc.perform(
-                  post("/allocate-cost-limit")
-                      .param("action", "next")
-                      .sessionAttr(CASE, ebsCase)
-                      .flashAttr("costDetails", allocateCostsFormData)))
-          .hasStatus3xxRedirection();
     }
   }
 

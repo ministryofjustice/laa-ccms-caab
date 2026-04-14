@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
-import static uk.gov.laa.ccms.caab.constants.CounselLookupConstants.ALL_PARAMS_EMPTY;
 import static uk.gov.laa.ccms.caab.constants.CounselLookupConstants.TOO_MANY_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COUNSEL_SEARCH_CRITERIA;
@@ -17,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -28,8 +26,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import uk.gov.laa.ccms.caab.bean.CounselSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.CounselSearchValidator;
-import uk.gov.laa.ccms.caab.client.EbsApiClientErrorHandler;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.CounselLookupMapper;
 import uk.gov.laa.ccms.caab.model.CategoryDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
@@ -49,8 +47,6 @@ public class CounselSearchController {
   private final CounselSearchValidator counselSearchValidator;
   private final CounselService counselService;
   private final CounselLookupMapper counselLookupMapper;
-  private final EbsApiClientErrorHandler ebsApiClientErrorHandler;
-
   private static final String SEARCH_URL = "SEARCH_URL";
   protected static final String CURRENT_URL = "currentUrl";
 
@@ -70,14 +66,12 @@ public class CounselSearchController {
    * GET method for showing the counsel search screen.
    *
    * @param searchCriteria Criteria for counsel search.
-   * @param allocateCostsFormData Cost details model attribute.
    * @param model Model (MVC) to pass data to view.
    * @return View name in terms of string value.
    */
   @GetMapping("/counsel/search")
   public String getCounsel(
       @ModelAttribute(COUNSEL_SEARCH_CRITERIA) final CounselSearchCriteria searchCriteria,
-      @ModelAttribute("costDetails") AllocateCostsFormData allocateCostsFormData,
       Model model) {
 
     model.addAttribute("counselSearchCriteria", getCounselSearchCriteria());
@@ -115,21 +109,9 @@ public class CounselSearchController {
     } catch (EbsApiClientException e) {
       if (e.getMessage().equals(TOO_MANY_RESULTS)) {
         return "application/counsel-search-too-many-results";
-      } else if (e.getMessage().equals(ALL_PARAMS_EMPTY)) {
-        return "application/counsel-search-all-param-empty";
-      } else {
-        ebsApiClientErrorHandler.handleApiRetrieveError(
-            e,
-            "Counsel Search",
-            new LinkedMultiValueMap<>() {
-              {
-                add("name", searchCriteria.getName());
-                add("company", searchCriteria.getCompany());
-                add("legal_aid_supplier_number", searchCriteria.getLaaCounselReference());
-                add("category", searchCriteria.getCategory());
-              }
-            });
       }
+      log.debug("Error performing counsel search.", e);
+      throw new CaabApplicationException("Unable to perform counsel search " + e);
     }
 
     redirectAttributes.addFlashAttribute(COUNSEL_SEARCH_RESULTS, searchResult.getContent());

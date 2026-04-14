@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en"
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
-      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html"
+      xmlns:govuk="http://www.thymeleaf.org">
 <head>
     <title th:text="|#{service.name} - #{caseCosts.title}|"></title>
 </head>
@@ -12,15 +13,21 @@
            th:text="#{caseCosts.allocateCostLimit.return}"></a>
     </div>
     <div id="main-content">
-        <th:block
-                th:replace="
-                    ~{application/partials/search-fragments :: searchCounselFormFragment(
-                            caption=#{counsel.search.caption},
-                            heading=#{counsel.search},
-                            action=${'/counsel/search'}
-                    )}
-                ">
-        </th:block>
+        <form th:action="@{/counsel/search}" th:object="${counselSearchCriteria}" method="post">
+            <div th:replace="~{partials/error-summary :: error-summary}"></div>
+            <span class="govuk-caption-l" th:text="#{counsel.search.caption}"/>
+            <h1 class="govuk-heading-l" th:text="#{counsel.search}"/>
+            <div class="govuk-body-l" th:text="#{counsel.search.details}"/>
+            <div class="govuk-grid-row">
+                <div class="govuk-grid-column-two-thirds">
+                    <div th:replace="~{partials/forms :: textInput('name', #{counsel.search.name}, 'govuk-input--width-20')}"/>
+                    <div th:replace="~{partials/forms :: textInput('company', #{counsel.search.company}, 'govuk-input--width-20')}"/>
+                    <div th:replace="~{partials/forms :: textInput('laaCounselReference', #{counsel.search.laaCounselRef}, 'govuk-input--width-20')}"/>
+                    <div th:replace="~{partials/forms :: dropdown('category', #{counsel.search.category}, ${categoryList}, 'code', 'description', false)}"/>
+                    <govuk:button th:text="#{site.search}"/>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 </body>
