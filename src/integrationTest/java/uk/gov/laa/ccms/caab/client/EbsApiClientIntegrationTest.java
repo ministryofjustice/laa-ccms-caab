@@ -190,7 +190,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   public void testCounselLookup_returnData() throws Exception {
 
     CounselSearchCriteria criteria = new CounselSearchCriteria();
-    criteria.setName("SHAUN S DODDS");
+    criteria.setName("TEST COUNSEL XYZ");
 
     String expectedJson = buildCounselLookupDetails();
 
@@ -230,10 +230,10 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
             .content(
                 List.of(
                     new CounselLookupValueDetail()
-                        .name("SHAUN S DODDS")
-                        .company("SHAUN S DODDS")
-                        .legalAidSupplierNumber("1099V")
-                        .category("Junior")
+                        .name("TEST COUNSEL XYZ")
+                        .company("TEST COUNSEL XYZ")
+                        .legalAidSupplierNumber("1001T")
+                        .category("TestCategory")
                         .county(null))));
   }
 
