@@ -50,49 +50,14 @@
                     </div>
                 </div>
 
-                <!-- ========================================== -->
-                <!-- COUNSEL -->
-                <!-- ========================================== -->
-                <th:block th:if="${priorAuthority.type.displayValue == 'Counsel'}">
-                    <th:block th:each="groupEntry : ${groupedItems}">
-                        <th:block th:if="${!#lists.isEmpty(groupEntry.value)}">
-                            <th:block th:replace="application/partials/summary-section :: section(
-                            ${groupEntry.key.label},
-                            ${groupEntry.value}
-                        )"></th:block>
-                        </th:block>
+                <th:block th:each="groupEntry : ${groupedItems}">
+                    <th:block th:if="${!#lists.isEmpty(groupEntry.value)}">
+                        <th:block th:replace="application/partials/summary-section :: section(
+                           ${groupEntry.key.label},
+                           ${groupEntry.value}
+                       )"></th:block>
                     </th:block>
                 </th:block>
-
-
-                <!-- ========================================== -->
-                <!-- EXPERT -->
-                <!-- ========================================== -->
-                <th:block th:if="${priorAuthority.type.displayValue == 'Expert'}">
-                    <th:block th:each="groupEntry : ${groupedItems}">
-                        <th:block th:if="${!#lists.isEmpty(groupEntry.value)}">
-                            <th:block th:replace="application/partials/summary-section :: section(
-                            ${groupEntry.key.label},
-                            ${groupEntry.value}
-                        )"></th:block>
-                        </th:block>
-                    </th:block>
-                </th:block>
-
-                <!-- ========================================== -->
-                <!-- Other -->
-                <!-- ========================================== -->
-                <th:block th:if="${priorAuthority.type.displayValue == 'Other'}">
-                    <th:block th:each="groupEntry : ${groupedItems}">
-                        <th:block th:if="${!#lists.isEmpty(groupEntry.value)}">
-                            <th:block th:replace="application/partials/summary-section :: section(
-                            ${groupEntry.key.label},
-                            ${groupEntry.value}
-                        )"></th:block>
-                        </th:block>
-                    </th:block>
-                </th:block>
-                </dl>
             </div>
         </div>
     </div>

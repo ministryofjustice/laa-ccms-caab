@@ -54,9 +54,19 @@ public class PriorAuthorityUtils {
   }
 
   private static boolean hasDisplayValue(ReferenceDataItemDetail item) {
-    return item.getValue() != null
-        && item.getValue().getDisplayValue() != null
-        && !item.getValue().getDisplayValue().isBlank();
+    if (item == null || item.getValue() == null) {
+      return false;
+    }
+
+    if (item.getValue().getDisplayValue() != null && !item.getValue().getDisplayValue().isBlank()) {
+      return true;
+    }
+
+    if (item.getValue().getId() != null && !item.getValue().getId().toString().isBlank()) {
+      return true;
+    }
+
+    return false;
   }
 
   private static PriorAuthorityGroup getGroupForCode(String codeId, String priorAuthorityType) {

@@ -1516,12 +1516,7 @@ public class EditProceedingsAndCostsSectionController {
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(required = false) PriorAuthorityFlowFormData priorAuthorityFlow) {
 
-    if (priorAuthorityFlow == null) {
-      priorAuthorityFlow = new PriorAuthorityFlowFormData(ACTION_ADD);
-    } else {
-      priorAuthorityFlow.resetForNewType();
-      priorAuthorityFlow = new PriorAuthorityFlowFormData(ACTION_ADD);
-    }
+    priorAuthorityFlow = new PriorAuthorityFlowFormData(ACTION_ADD);
 
     model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
     model.addAttribute(
@@ -1604,8 +1599,6 @@ public class EditProceedingsAndCostsSectionController {
         priorAuthorityFlow.setPriorAuthorityTypeFormData(new PriorAuthorityTypeFormData());
       }
       priorAuthorityFlow.getPriorAuthorityTypeFormData().setPriorAuthorityType(typeFromUrl);
-
-      priorAuthorityFlow.resetForNewType();
     }
 
     final PriorAuthorityTypeDetail priorAuthorityDynamicForm =
