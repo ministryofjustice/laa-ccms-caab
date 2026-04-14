@@ -18,11 +18,42 @@
             <span class="govuk-caption-l" th:text="#{counsel.search.caption}"/>
             <h1 class="govuk-heading-l" th:text="#{counsel.search}"/>
             <div class="govuk-body-l" th:text="#{counsel.search.details}"/>
+            <details class="govuk-details" data-module="govuk-details">
+                <summary class="govuk-details__summary">
+                    <span class="govuk-details__summary-text" th:text="#{counsel.search.help.summary}"/>
+                </summary>
+                <div class="govuk-details__text">
+                    <p class="govuk-body" th:text="#{counsel.search.help.intro}"></p>
+                    <ul class="govuk-list govuk-list--bullet">
+                        <li th:text="#{counsel.search.help.tip1}"></li>
+                        <li th:text="#{counsel.search.help.tip2}"></li>
+                    </ul>
+                </div>
+            </details>
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
+                    <div class="govuk-form-group"
+                         th:classappend="${#fields.hasErrors('laaCounselReference')} ? 'govuk-form-group--error' : ''">
+                        <label class="govuk-label" for="laaCounselReference">
+                            <span th:text="#{counsel.search.laaCounselRef}"/>
+                        </label>
+                        <div id="laaCounselReference-hint"
+                             class="govuk-hint"
+                             th:text="#{counsel.search.laaCounselRef.hint}"></div>
+                        <span th:if="${#fields.hasErrors('laaCounselReference')}"
+                              th:errors="*{laaCounselReference}"
+                              class="govuk-error-message"></span>
+                        <input class="govuk-input govuk-input--width-20"
+                               th:errorclass="govuk-input--error"
+                               id="laaCounselReference"
+                               name="laaCounselReference"
+                               type="text"
+                               data-module="govuk-input"
+                               aria-describedby="laaCounselReference-hint"
+                               th:field="*{laaCounselReference}">
+                    </div>
                     <div th:replace="~{partials/forms :: textInput('name', #{counsel.search.name}, 'govuk-input--width-20')}"/>
                     <div th:replace="~{partials/forms :: textInput('company', #{counsel.search.company}, 'govuk-input--width-20')}"/>
-                    <div th:replace="~{partials/forms :: textInput('laaCounselReference', #{counsel.search.laaCounselRef}, 'govuk-input--width-20')}"/>
                     <div th:replace="~{partials/forms :: dropdown('category', #{counsel.search.category}, ${categoryList}, 'code', 'description', false)}"/>
                     <govuk:button th:text="#{site.search}"/>
                 </div>
