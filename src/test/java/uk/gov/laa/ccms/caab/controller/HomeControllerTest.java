@@ -97,7 +97,7 @@ public class HomeControllerTest {
             .overdueActions(overdueActions);
 
     // Mock the SOA Gateway service to return the notification summary
-    when(notificationService.getNotificationsSummary(userDetails.getLoginId()))
+    when(notificationService.getNotificationsSummary(userDetails.getUserId()))
         .thenReturn(Mono.just(notificationSummary));
 
     this.mockMvc
@@ -115,7 +115,7 @@ public class HomeControllerTest {
   public void testHomeHandlesNullNotifications() throws Exception {
 
     // Mock the SOA Gateway service to return the notification summary
-    when(notificationService.getNotificationsSummary(userDetails.getLoginId()))
+    when(notificationService.getNotificationsSummary(userDetails.getUserId()))
         .thenReturn(Mono.empty());
 
     this.mockMvc

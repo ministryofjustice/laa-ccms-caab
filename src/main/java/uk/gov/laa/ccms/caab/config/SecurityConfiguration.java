@@ -159,7 +159,7 @@ public class SecurityConfiguration {
 
   private Collection<? extends GrantedAuthority> getUserFunctions(String principal) {
     return userService
-        .getUser(principal)
+        .getUserByLoginId(principal)
         .blockOptional()
         .orElseThrow(() -> new RuntimeException("Failed to retrieve user functions."))
         .getFunctions()

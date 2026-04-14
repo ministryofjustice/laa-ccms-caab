@@ -28,14 +28,16 @@ public class UserServiceTest {
   @Test
   void getUser_returnData() {
 
-    String loginId = "user1";
+    Integer userId = 12345;
+    String loginId = "foo";
 
     UserDetail mockUser = new UserDetail();
-    mockUser.setLoginId(loginId);
+    mockUser.setUserId(userId);
+    mockUser.setLoginId("foo");
 
-    when(ebsApiClient.getUser(loginId)).thenReturn(Mono.just(mockUser));
+    when(ebsApiClient.getUser(userId)).thenReturn(Mono.just(mockUser));
 
-    Mono<UserDetail> userDetailsMono = userService.getUser(loginId);
+    Mono<UserDetail> userDetailsMono = userService.getUser(userId);
 
     StepVerifier.create(userDetailsMono)
         .expectNextMatches(user -> user.getLoginId().equals(loginId))

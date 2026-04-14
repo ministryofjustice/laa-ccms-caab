@@ -50,11 +50,11 @@ public class NotificationService {
   /**
    * Retrieve the summary of notifications for a given user.
    *
-   * @param loginId The login identifier for the user.
+   * @param userId The user identifier for the user.
    * @return A Mono wrapping the NotificationSummary for the specified user.
    */
-  public Mono<NotificationSummary> getNotificationsSummary(String loginId) {
-    return ebsApiClient.getUserNotificationSummary(loginId);
+  public Mono<NotificationSummary> getNotificationsSummary(Integer userId) {
+    return ebsApiClient.getUserNotificationSummary(userId);
   }
 
   /**
