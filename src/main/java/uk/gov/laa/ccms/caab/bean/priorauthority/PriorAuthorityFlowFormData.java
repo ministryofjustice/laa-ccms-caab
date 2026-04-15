@@ -40,9 +40,5 @@ public class PriorAuthorityFlowFormData {
    */
   public void resetForNewType() {
     this.priorAuthorityDetailsFormData = new PriorAuthorityDetailsFormData();
-
-    if (this.priorAuthorityDetailsFormData.getDynamicOptions() != null) {
-      this.priorAuthorityDetailsFormData.setDynamicOptions(new HashMap<>());
-    }
   }
 }

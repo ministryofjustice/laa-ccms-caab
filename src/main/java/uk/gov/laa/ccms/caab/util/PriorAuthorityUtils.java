@@ -9,6 +9,7 @@ import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
 import uk.gov.laa.ccms.caab.constants.PriorAuthorityGroup;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ReferenceDataItemDetail;
+import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 
 /** Utility class that provides helper functions for prior authorities. */
 public class PriorAuthorityUtils {
@@ -58,12 +59,16 @@ public class PriorAuthorityUtils {
       return false;
     }
 
-    if (item.getValue().getDisplayValue() != null && !item.getValue().getDisplayValue().isBlank()) {
+    StringDisplayValue value = item.getValue();
+    if (value.getDisplayValue() != null && !value.getDisplayValue().isBlank()) {
       return true;
     }
 
-    if (item.getValue().getId() != null && !item.getValue().getId().toString().isBlank()) {
-      return true;
+    if (value.getId() != null) {
+      String idStr = value.getId().toString().trim();
+      if (!idStr.isBlank() && !"null".equalsIgnoreCase(idStr)) {
+        return true;
+      }
     }
 
     return false;
