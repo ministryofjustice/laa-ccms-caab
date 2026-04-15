@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.bean.priorauthority;
 
-import java.util.HashMap;
 import lombok.Data;
 
 /**
