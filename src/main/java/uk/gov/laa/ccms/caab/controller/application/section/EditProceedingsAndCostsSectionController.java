@@ -43,9 +43,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
 import uk.gov.laa.ccms.caab.bean.costs.CostsFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.priorauthority.PriorAuthorityFlowFormData;
@@ -67,6 +69,7 @@ import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDeta
 import uk.gov.laa.ccms.caab.bean.validators.scopelimitation.ScopeLimitationDetailsValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
+import uk.gov.laa.ccms.caab.constants.PriorAuthorityGroup;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -1509,10 +1512,11 @@ public class EditProceedingsAndCostsSectionController {
    */
   @GetMapping("/{caseContext}/prior-authorities/add/type")
   public String priorAuthorityType(
-      final Model model, @PathVariable("caseContext") final CaseContext caseContext) {
+      final Model model,
+      @PathVariable("caseContext") final CaseContext caseContext,
+      @SessionAttribute(required = false) PriorAuthorityFlowFormData priorAuthorityFlow) {
 
-    final PriorAuthorityFlowFormData priorAuthorityFlow =
-        new PriorAuthorityFlowFormData(ACTION_ADD);
+    priorAuthorityFlow = new PriorAuthorityFlowFormData(ACTION_ADD);
 
     model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
     model.addAttribute(
@@ -1563,10 +1567,14 @@ public class EditProceedingsAndCostsSectionController {
     }
 
     priorAuthorityFlow.setPriorAuthorityTypeFormData(priorAuthorityTypeDetails);
+    priorAuthorityFlow.resetForNewType();
+
     model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
 
-    return "redirect:/%s/prior-authorities/%s/details"
-        .formatted(caseContext.getPathValue(), priorAuthorityAction);
+    String typeId = priorAuthorityTypeDetails.getPriorAuthorityType();
+
+    return "redirect:/%s/prior-authorities/%s/details?type=%s"
+        .formatted(caseContext.getPathValue(), priorAuthorityAction, typeId);
   }
 
   /**
@@ -1581,12 +1589,17 @@ public class EditProceedingsAndCostsSectionController {
   public String priorAuthorityDetails(
       @PathVariable("caseContext") final CaseContext caseContext,
       @PathVariable("action") final String priorAuthorityAction,
+      @RequestParam(value = "type", required = false) String typeFromUrl,
       @SessionAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA)
           final PriorAuthorityFlowFormData priorAuthorityFlow,
       final Model model) {
 
-    final PriorAuthorityDetailsFormData priorAuthorityDetails =
-        priorAuthorityFlow.getPriorAuthorityDetailsFormData();
+    if (typeFromUrl != null && !typeFromUrl.isBlank()) {
+      if (priorAuthorityFlow.getPriorAuthorityTypeFormData() == null) {
+        priorAuthorityFlow.setPriorAuthorityTypeFormData(new PriorAuthorityTypeFormData());
+      }
+      priorAuthorityFlow.getPriorAuthorityTypeFormData().setPriorAuthorityType(typeFromUrl);
+    }
 
     final PriorAuthorityTypeDetail priorAuthorityDynamicForm =
         applicationService.getPriorAuthorityTypeDetail(
@@ -1594,19 +1607,8 @@ public class EditProceedingsAndCostsSectionController {
 
     populatePriorAuthorityDetailsLookupDropdowns(model, priorAuthorityDynamicForm);
 
-    if (ACTION_ADD.equals(priorAuthorityAction)) {
-      priorAuthorityDetails.setValueRequired(priorAuthorityDynamicForm.getValueRequired());
-
-      proceedingAndCostsMapper.populatePriorAuthorityDetailsForm(
-          priorAuthorityDetails, priorAuthorityDynamicForm);
-
-      priorAuthorityFlow.setPriorAuthorityDetailsFormData(priorAuthorityDetails);
-    }
-
-    model.addAttribute("priorAuthorityDynamicForm", priorAuthorityDynamicForm);
-    model.addAttribute("priorAuthorityDetails", priorAuthorityDetails);
-
-    model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
+    preparePriorAuthorityFormModel(
+        model, priorAuthorityFlow, priorAuthorityDynamicForm, priorAuthorityAction);
 
     return "application/prior-authority-details";
   }
@@ -1649,10 +1651,8 @@ public class EditProceedingsAndCostsSectionController {
     if (bindingResult.hasErrors()) {
       populatePriorAuthorityDetailsLookupDropdowns(model, priorAuthorityDynamicForm);
 
-      model.addAttribute("priorAuthorityDynamicForm", priorAuthorityDynamicForm);
-      model.addAttribute("priorAuthorityDetails", priorAuthorityDetails);
-
-      model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
+      preparePriorAuthorityFormModel(
+          model, priorAuthorityFlow, priorAuthorityDynamicForm, priorAuthorityAction);
       return "application/prior-authority-details";
     }
 
@@ -1666,8 +1666,45 @@ public class EditProceedingsAndCostsSectionController {
       applicationService.updatePriorAuthority(priorAuthority, user);
     }
 
+    priorAuthorityFlow.resetForNewType();
+
     return "redirect:/%s/proceedings-and-costs#prior-authority"
         .formatted(caseContext.getPathValue());
+  }
+
+  private void preparePriorAuthorityFormModel(
+      Model model,
+      PriorAuthorityFlowFormData flow,
+      PriorAuthorityTypeDetail dynamicForm,
+      String priorAuthorityAction) {
+    String typeId = flow.getPriorAuthorityTypeFormData().getPriorAuthorityType();
+
+    if (ACTION_ADD.equals(priorAuthorityAction)) {
+      proceedingAndCostsMapper.populatePriorAuthorityDetailsForm(
+          flow.getPriorAuthorityDetailsFormData(), dynamicForm);
+
+      flow.setPriorAuthorityDetailsFormData(flow.getPriorAuthorityDetailsFormData());
+    }
+
+    Map<String, DynamicOptionFormData> dynamicOptions =
+        flow.getPriorAuthorityDetailsFormData().getDynamicOptions();
+
+    if (dynamicOptions != null) {
+      dynamicOptions
+          .entrySet()
+          .removeIf(entry -> entry.getValue() == null || entry.getKey() == null);
+      dynamicOptions.forEach((code, opt) -> opt.setCode(code));
+    }
+
+    Map<PriorAuthorityGroup, List<DynamicOptionFormData>> grouped =
+        PriorAuthorityUtils.groupDynamicOptions(dynamicOptions, typeId);
+
+    flow.getPriorAuthorityDetailsFormData().setValueRequired(dynamicForm.getValueRequired());
+
+    model.addAttribute("groupedDynamicOptions", grouped);
+    model.addAttribute("priorAuthorityDynamicForm", dynamicForm);
+    model.addAttribute("priorAuthorityDetails", flow.getPriorAuthorityDetailsFormData());
+    model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, flow);
   }
 
   /**
@@ -1741,8 +1778,8 @@ public class EditProceedingsAndCostsSectionController {
     model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, priorAuthorityFlow);
 
     if (priorAuthority.getStatus().equals(STATUS_GRANTED)) {
-      Map<String, List<ReferenceDataItemDetail>> groupedPriorAuthorityItems =
-          PriorAuthorityUtils.groupPriorAuthorityItems(priorAuthority);
+      Map<PriorAuthorityGroup, List<ReferenceDataItemDetail>> groupedPriorAuthorityItems =
+          PriorAuthorityUtils.groupItems(priorAuthority);
       model.addAttribute("priorAuthority", priorAuthority);
       model.addAttribute("groupedItems", groupedPriorAuthorityItems);
       model.addAttribute(

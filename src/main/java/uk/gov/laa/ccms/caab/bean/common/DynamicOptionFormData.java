@@ -22,4 +22,6 @@ public class DynamicOptionFormData {
 
   /** Indicates if the field is mandatory, mapped from ReferenceDataItem's mandatory flag. */
   private boolean mandatory;
+
+  private String code;
 }

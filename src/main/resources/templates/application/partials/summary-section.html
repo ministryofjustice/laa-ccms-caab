@@ -7,9 +7,17 @@
             <div class="govuk-summary-list">
                 <th:block th:each="item : ${items}">
                     <div class="govuk-summary-list__row">
-                        <dt class="govuk-summary-list__key" th:text="${item.code.displayValue}"></dt>
-                        <dd class="govuk-summary-list__value"
-                            th:text="${item.type == 'AMT' ? #numbers.formatCurrency(item.value.displayValue) : item.value.displayValue}">
+
+                        <dt class="govuk-summary-list__key"
+                            th:text="${item.code.displayValue ?: item.code.id}"></dt>
+
+                        <dd class="govuk-summary-list__value">
+                            <span th:if="${item.type == 'AMT'}"
+                            th:text="${#numbers.formatCurrency(item.value.id ?: item.value.displayValue)}">
+                            </span>
+                            <span th:unless="${item.type == 'AMT'}"
+                            th:text="${item.value.displayValue ?: item.value.id}">
+                            </span>
                         </dd>
                     </div>
                 </th:block>
