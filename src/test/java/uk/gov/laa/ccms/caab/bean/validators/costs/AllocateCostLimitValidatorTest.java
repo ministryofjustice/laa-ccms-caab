@@ -120,6 +120,19 @@ public class AllocateCostLimitValidatorTest {
     }
 
     @Test
+    @DisplayName("Should treat null amount billed as zero")
+    void shouldTreatNullAmountBilledAsZero() {
+      allocateCostsFormData.getCostEntries().getFirst().setAmountBilled(null);
+      allocateCostsFormData.getCostEntries().getFirst().setRequestedCosts(new BigDecimal("200"));
+      allocateCostsFormData.setGrantedCostLimitation(new BigDecimal("25000"));
+      allocateCostsFormData.setCurrentProviderBilledAmount(BigDecimal.ZERO);
+
+      allocateCostLimitValidator.validate(allocateCostsFormData, errors);
+
+      assertFalse(errors.hasErrors());
+    }
+
+    @Test
     @DisplayName("Should accept number with 2 decimals places")
     void shouldValidateNumberAllowed2dp() {
       allocateCostsFormData

@@ -14,8 +14,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -26,6 +30,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.CounselSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
@@ -41,6 +46,8 @@ import uk.gov.laa.ccms.data.model.CaseSummary;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
+import uk.gov.laa.ccms.data.model.CounselLookupDetail;
+import uk.gov.laa.ccms.data.model.CounselLookupValueDetail;
 import uk.gov.laa.ccms.data.model.NotificationInfo;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.Notifications;
@@ -177,6 +184,57 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     final AmendmentTypeLookupDetail amendmentTypes = amendmentTypesMono.block();
 
     assertEquals(amendmentTypesJson, objectMapper.writeValueAsString(amendmentTypes));
+  }
+
+  @Test
+  public void testCounselLookup_returnData() throws Exception {
+
+    CounselSearchCriteria criteria = new CounselSearchCriteria();
+    criteria.setName("TEST COUNSEL XYZ");
+
+    String expectedJson = buildCounselLookupDetails();
+
+    MappingBuilder mb = get(urlPathEqualTo("/lookup/counsels"));
+
+    Map<String, String> queryParams =
+        new LinkedHashMap<>() {
+          {
+            put("name", criteria.getName());
+            put("company", criteria.getCompany());
+            put("legal_aid_supplier_number", criteria.getLaaCounselReference());
+            put("category", criteria.getCategory());
+          }
+        };
+
+    queryParams.entrySet().stream()
+        .filter(e -> e.getValue() != null)
+        .forEach(e -> mb.withQueryParam(e.getKey(), equalTo(e.getValue())));
+
+    wiremock.stubFor(mb.willReturn(okJson(expectedJson)));
+
+    Mono<CounselLookupDetail> counselLookupDetail = ebsApiClient.getCounselDetails(criteria);
+    CounselLookupDetail response = counselLookupDetail.block();
+
+    assertNotNull(response);
+    assertEquals(1, response.getContent().size());
+    assertEquals(expectedJson, objectMapper.writeValueAsString(response));
+  }
+
+  private String buildCounselLookupDetails() throws JsonProcessingException {
+    return objectMapper.writeValueAsString(
+        new CounselLookupDetail()
+            .number(0)
+            .size(10)
+            .totalPages(1)
+            .totalElements(1)
+            .content(
+                List.of(
+                    new CounselLookupValueDetail()
+                        .name("TEST COUNSEL XYZ")
+                        .company("TEST COUNSEL XYZ")
+                        .legalAidSupplierNumber("1001T")
+                        .category("TestCategory")
+                        .county(null))));
   }
 
   @Test

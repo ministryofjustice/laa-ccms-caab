@@ -55,7 +55,7 @@
                         </tr>
 
                         <tr class="govuk-table__row"
-                            th:each="costEntryDetail, idx : *{costEntries.stream().distinct().toList()}">
+                            th:each="costEntryDetail, idx : *{costEntries}">
 
                             <td class="govuk-table__cell" th:text="${costEntryDetail.resourceName}"/>
                             <td class="govuk-table__cell" style="text-transform: capitalize"
@@ -73,6 +73,11 @@
                                                step="any"
                                                th:id="'costEntries[__${idx.index}__].requestedCosts'"
                                                th:field="*{costEntries[__${idx.index}__].requestedCosts}">
+                                        <input type="hidden" th:field="*{costEntries[__${idx.index}__].resourceName}">
+                                        <input type="hidden" th:field="*{costEntries[__${idx.index}__].costCategory}">
+                                        <input type="hidden" th:field="*{costEntries[__${idx.index}__].amountBilled}">
+                                        <input type="hidden" th:field="*{costEntries[__${idx.index}__].lscResourceId}">
+                                        <input type="hidden" th:field="*{costEntries[__${idx.index}__].newEntry}">
                                     </div>
                                 </div>
                             </td>
@@ -83,8 +88,8 @@
                 </div>
             </div>
             <div class="govuk-button-group">
-                <button type="button" class="govuk-button govuk-button--secondary" data-module="govuk-button"
-                        th:text="#{caseCosts.counsel}"/>
+                <a class="govuk-button govuk-button--secondary" data-module="govuk-button"
+                   th:text="#{caseCosts.counsel}" th:href="@{/counsel/search}"></a>
                 <button type="submit" name="action" value="calculate" class="govuk-button govuk-button--secondary" data-module="govuk-button"
                         th:text="#{caseCosts.calculate}"/>
             </div>

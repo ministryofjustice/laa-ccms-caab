@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
@@ -57,6 +58,12 @@ public abstract class AbstractValidator implements Validator {
 
   protected static final String GENERIC_DECIMAL_PLACES =
       "Your input for '%s' cannot contain more than %s decimal places. Please amend your entry.";
+
+  protected static final String GENERIC_AT_LEAST_ONE_SEARCH_REQUIRED =
+      "You must provide at least one search criteria below. Please amend your entry.";
+
+  private static final String GENERIC_VALID_CHARACTER_INPUT_REQUIRED =
+      "Your input for '%s' contains an invalid character. Please amend your entry.";
 
   protected void validateRequiredField(
       final String field, final String fieldValue, final String displayValue, Errors errors) {
@@ -309,5 +316,31 @@ public abstract class AbstractValidator implements Validator {
     Pattern p = Pattern.compile(pattern);
     Matcher m = p.matcher(inputString);
     return m.find();
+  }
+
+  protected void validateAllFieldsAreEmpty(
+      final String field, Errors errors, final String... fieldValue) {
+
+    if (Stream.of(fieldValue).allMatch(StringUtils::isEmpty)) {
+      errors.rejectValue(
+          field, "at.least.one.search.required", GENERIC_AT_LEAST_ONE_SEARCH_REQUIRED);
+    }
+  }
+
+  protected void validateFieldPattern(
+      final String field,
+      final String fieldValue,
+      String pattern,
+      final String displayValue,
+      final Errors errors) {
+
+    if (!StringUtils.hasText(fieldValue)) {
+      if (fieldValue.matches(pattern)) {
+        errors.rejectValue(
+            field,
+            "invalid.input.character.pattern",
+            GENERIC_VALID_CHARACTER_INPUT_REQUIRED.formatted(fieldValue));
+      }
+    }
   }
 }
