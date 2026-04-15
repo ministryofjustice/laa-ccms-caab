@@ -8,3 +8,11 @@ Please ensure your commits are signed. See [Verifying commit signatures](https:/
 
 This repository uses MoJ devsecops pre-commit hooks for additional security. Please follow the
 setup steps [here](https://github.com/ministryofjustice/devsecops-hooks?tab=readme-ov-file#development-prerequisites).
+
+## Rebuilding static resources
+
+See [rebuilding static resources](./docs/static-resources.md).
+
+## Using feature flags
+
+See [feature flags](./docs/feature-flags.md).
