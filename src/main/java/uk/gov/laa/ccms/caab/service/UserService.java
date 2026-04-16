@@ -23,6 +23,16 @@ public class UserService {
   /**
    * Retrieves user details based on the login ID.
    *
+   * @param loginId The login ID of the user.
+   * @return A Mono containing the UserDetail or an error handler if an error occurs.
+   */
+  public Mono<UserDetail> getUserByLoginId(String loginId) {
+    return ebsApiClient.getUserByLoginId(loginId);
+  }
+
+  /**
+   * Retrieves user details based on the login ID.
+   *
    * @param userId The user ID of the user.
    * @return A Mono containing the UserDetail or an error handler if an error occurs.
    */
@@ -53,9 +63,5 @@ public class UserService {
     UserOptions userOptions =
         new UserOptions().providerFirmId(String.valueOf(providerId)).userLoginId(loginId);
     return soaApiClient.updateUserOptions(userOptions, loginId, userType);
-  }
-
-  public Mono<UserDetail> getUserByLoginId(String loginId) {
-    return null;
   }
 }

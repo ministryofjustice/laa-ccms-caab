@@ -87,6 +87,22 @@ public class EbsApiClient extends BaseApiClient {
   }
 
   /**
+   * Retrieves user details based on the login ID.
+   *
+   * @param loginId The login ID of the user.
+   * @return A Mono containing the UserDetail or an error handler if an error occurs.
+   */
+  public Mono<UserDetail> getUserByLoginId(final String loginId) {
+    return webClient
+        .get()
+        .uri(uriBuilder -> uriBuilder.path("/user-lookup").queryParam("login-id", loginId).build())
+        .retrieve()
+        .bodyToMono(UserDetail.class)
+        .onErrorResume(
+            e -> ebsApiClientErrorHandler.handleApiRetrieveError(e, "User", "login id", loginId));
+  }
+
+  /**
    * Retrieves a summary of notification counts for a user based on their login ID.
    *
    * @param userId the userId ID of the user whose notification summary is to be retrieved

@@ -147,19 +147,21 @@ public class SecurityConfiguration {
       } else {
         authorities.addAll(authentication.getAuthorities());
       }
+
+      // authentication.getPrincipal() is going to be email address here....
       String principal = authentication.getName();
       authorities.addAll(getUserFunctions(principal));
       return new Saml2AssertionAuthentication(
-          principal,
+          authentication, // Pass user details here
           authentication.getCredentials(),
           authorities,
           authentication.getRelyingPartyRegistrationId());
     };
   }
 
-  private Collection<? extends GrantedAuthority> getUserFunctions(String principal) {
+  private Collection<? extends GrantedAuthority> getUserFunctions(String loginId) {
     return userService
-        .getUserByLoginId(principal)
+        .getUserByLoginId(loginId)
         .blockOptional()
         .orElseThrow(() -> new RuntimeException("Failed to retrieve user functions."))
         .getFunctions()
