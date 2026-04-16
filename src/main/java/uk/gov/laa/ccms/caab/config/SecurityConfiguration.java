@@ -174,7 +174,7 @@ public class SecurityConfiguration {
       String principal = authentication.getName();
       authorities.addAll(getUserFunctions(principal));
       return new Saml2AssertionAuthentication(
-          principal,
+          authentication, // Pass user details here
           authentication.getCredentials(),
           authorities,
           authentication.getRelyingPartyRegistrationId());
