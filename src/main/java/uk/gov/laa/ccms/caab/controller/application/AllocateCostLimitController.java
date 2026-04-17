@@ -28,6 +28,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 
 /** Controller responsible for handling cost limit allocation. */
 @RequiredArgsConstructor

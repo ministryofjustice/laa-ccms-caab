@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"
-      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs}, userRoles=${user.functions}, pageRoles='VC')}"
       xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html"
       xmlns:govuk="http://www.thymeleaf.org">
 <head>
