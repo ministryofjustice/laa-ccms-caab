@@ -95,7 +95,7 @@ public class EbsApiClient extends BaseApiClient {
   public Mono<UserDetail> getUserByLoginId(final String loginId) {
     return webClient
         .get()
-        .uri(uriBuilder -> uriBuilder.path("/user-lookup").queryParam("login-id", loginId).build())
+        .uri(uriBuilder -> uriBuilder.path("/users/lookup").queryParam("login-id", loginId).build())
         .retrieve()
         .bodyToMono(UserDetail.class)
         .onErrorResume(
