@@ -130,7 +130,6 @@ public class CounselSearchController {
    *
    * @param page Default page 0 to show when not specified.
    * @param size Default size 10 to show page when not specified.
-   * @param lookupValueDetails The full un-paginated search results list.
    * @param model Model (MVC) to pass data to view.
    * @return View name in terms of string value.
    */
@@ -166,7 +165,6 @@ public class CounselSearchController {
    * GET method for selecting a counsel from the search results.
    *
    * @param index The index of the selected counsel in the search results.
-   * @param lookupValueDetails The full list of search results.
    * @param session The current HTTP session.
    * @return A redirect to the counsel confirmation screen.
    */
