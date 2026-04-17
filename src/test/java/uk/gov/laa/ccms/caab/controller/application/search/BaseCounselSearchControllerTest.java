@@ -32,9 +32,10 @@ public class BaseCounselSearchControllerTest {
 
   @BeforeEach
   public void setup() {
-    mockMvc = standaloneSetup(new CounselSearchController(validator, service, mapper))
-        .setControllerAdvice(new ActiveCaseModelAdvice())
-        .build();
+    mockMvc =
+        standaloneSetup(new CounselSearchController(validator, service, mapper))
+            .setControllerAdvice(new ActiveCaseModelAdvice())
+            .build();
   }
 
   protected CounselLookupDetail getCounselLookupDetail(List<CounselLookupValueDetail> values) {

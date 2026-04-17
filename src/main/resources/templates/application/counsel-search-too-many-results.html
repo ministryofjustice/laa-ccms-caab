@@ -14,9 +14,7 @@
             <span class="govuk-caption-l" th:text="#{counsel.search.caption}"/>
             <h1 class="govuk-heading-l" th:text="#{counsel.search.too_many_results}"></h1>
             <p class="govuk-body-l" th:text="#{site.tooManyResults(#{counsel.search})}"></p>
-            <p class="govuk-body-l">
-                <a th:href="@{/application/counsel}" class="govuk-link" th:text="#{counsel.search.results.refine}"></a>
-            </p>
+            <p class="govuk-body-l" th:text="#{counsel.search.results.refine}"></p>
         </th:block>
 
     </div>

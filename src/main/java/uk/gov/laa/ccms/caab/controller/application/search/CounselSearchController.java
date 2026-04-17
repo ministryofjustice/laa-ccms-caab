@@ -1,7 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
-import static uk.gov.laa.ccms.caab.constants.CounselLookupConstants.TOO_MANY_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.COUNSEL_COST_CATEGORY;
+import static uk.gov.laa.ccms.caab.constants.CounselLookupConstants.TOO_MANY_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COUNSEL_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COUNSEL_SEARCH_RESULTS;
@@ -9,7 +9,6 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COUNSEL;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +30,6 @@ import uk.gov.laa.ccms.caab.bean.CounselSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.CounselSearchValidator;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.CounselLookupMapper;
 import uk.gov.laa.ccms.caab.model.CategoryDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
@@ -44,11 +42,7 @@ import uk.gov.laa.ccms.data.model.CounselLookupValueDetail;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@SessionAttributes(
-    value = {
-      COUNSEL_SEARCH_CRITERIA,
-      COST_ALLOCATION_FORM_DATA
-    })
+@SessionAttributes(value = {COUNSEL_SEARCH_CRITERIA, COST_ALLOCATION_FORM_DATA})
 public class CounselSearchController {
 
   private final CounselSearchValidator counselSearchValidator;
@@ -116,7 +110,8 @@ public class CounselSearchController {
       }
 
     } catch (EbsApiClientException e) {
-      if (TOO_MANY_RESULTS.equals(e.getMessage())) {
+      if (e.getMessage().contains(TOO_MANY_RESULTS)
+          || (e.getCause() != null && e.getCause().getMessage().contains(TOO_MANY_RESULTS))) {
         return "application/counsel-search-too-many-results";
       }
       log.error("Error performing counsel search.", e);
@@ -176,9 +171,7 @@ public class CounselSearchController {
    * @return A redirect to the counsel confirmation screen.
    */
   @GetMapping("/counsel/select")
-  public String selectCounsel(
-      @RequestParam("index") int index,
-      HttpSession session) {
+  public String selectCounsel(@RequestParam("index") int index, HttpSession session) {
 
     @SuppressWarnings("unchecked")
     List<CounselLookupValueDetail> lookupValueDetails =

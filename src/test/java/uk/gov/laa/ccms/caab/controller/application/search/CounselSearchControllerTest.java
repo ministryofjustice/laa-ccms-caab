@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -12,13 +11,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static uk.gov.laa.ccms.caab.constants.CounselLookupConstants.TOO_MANY_RESULTS;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COUNSEL_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COUNSEL_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COUNSEL;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -164,15 +161,12 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
     criteria.setName("Jo");
 
     mockMvc
-        .perform(
-            post("/counsel/search")
-                .sessionAttr(COUNSEL_SEARCH_CRITERIA, criteria))
+        .perform(post("/counsel/search").sessionAttr(COUNSEL_SEARCH_CRITERIA, criteria))
         .andExpect(status().isOk())
         .andExpect(view().name("application/counsel-search"))
         .andExpect(
             model()
-                .attributeHasFieldErrorCode(
-                    COUNSEL_SEARCH_CRITERIA, "name", "length.below.min"));
+                .attributeHasFieldErrorCode(COUNSEL_SEARCH_CRITERIA, "name", "length.below.min"));
   }
 
   @Test
@@ -182,9 +176,7 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
     criteria.setCompany("AC");
 
     mockMvc
-        .perform(
-            post("/counsel/search")
-                .sessionAttr(COUNSEL_SEARCH_CRITERIA, criteria))
+        .perform(post("/counsel/search").sessionAttr(COUNSEL_SEARCH_CRITERIA, criteria))
         .andExpect(status().isOk())
         .andExpect(view().name("application/counsel-search"))
         .andExpect(
@@ -388,14 +380,14 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
 
     AllocateCostsFormData formData = new AllocateCostsFormData();
     List<CostEntryDetail> entries = new ArrayList<>();
-    
+
     // Simulating an existing counsel from EBS case costs
     CostEntryDetail existingEntry = new CostEntryDetail();
     existingEntry.setResourceName("SHAUN S DODDS");
     existingEntry.setLscResourceId("1099V");
     existingEntry.setNewEntry(false); // Not a new entry
     entries.add(existingEntry);
-    
+
     formData.setCostEntries(entries);
 
     mockMvc
@@ -411,17 +403,20 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
   }
 
   @Test
-  @DisplayName("WHEN -> counsel results are requested, THEN -> the current URL is correctly set and the results view is returned.")
+  @DisplayName(
+      "WHEN -> counsel results are requested, THEN -> the current URL is correctly set and the results view is returned.")
   void testCounselLookupGet() throws Exception {
-    List<CounselLookupValueDetail> valueDetails = List.of(
-        new CounselLookupValueDetail().name("COUNSEL 1"),
-        new CounselLookupValueDetail().name("COUNSEL 2")
-    );
+    List<CounselLookupValueDetail> valueDetails =
+        List.of(
+            new CounselLookupValueDetail().name("COUNSEL 1"),
+            new CounselLookupValueDetail().name("COUNSEL 2"));
 
-    mockMvc.perform(get("/counsel/results")
-            .sessionAttr(COUNSEL_SEARCH_RESULTS, valueDetails)
-            .param("page", "0")
-            .param("size", "10"))
+    mockMvc
+        .perform(
+            get("/counsel/results")
+                .sessionAttr(COUNSEL_SEARCH_RESULTS, valueDetails)
+                .param("page", "0")
+                .param("size", "10"))
         .andExpect(status().isOk())
         .andExpect(view().name("application/counsel-search-results"))
         .andExpect(model().attribute("currentUrl", "/counsel/results"))
