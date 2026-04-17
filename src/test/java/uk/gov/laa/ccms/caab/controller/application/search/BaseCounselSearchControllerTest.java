@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.web.servlet.MockMvc;
+import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.bean.validators.application.CounselSearchValidator;
 import uk.gov.laa.ccms.caab.mapper.CounselLookupMapper;
 import uk.gov.laa.ccms.caab.mapper.CounselLookupMapperImpl;
@@ -31,7 +32,9 @@ public class BaseCounselSearchControllerTest {
 
   @BeforeEach
   public void setup() {
-    mockMvc = standaloneSetup(new CounselSearchController(validator, service, mapper)).build();
+    mockMvc = standaloneSetup(new CounselSearchController(validator, service, mapper))
+        .setControllerAdvice(new ActiveCaseModelAdvice())
+        .build();
   }
 
   protected CounselLookupDetail getCounselLookupDetail(List<CounselLookupValueDetail> values) {

@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
 import static uk.gov.laa.ccms.caab.constants.CounselLookupConstants.TOO_MANY_RESULTS;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.COUNSEL_COST_CATEGORY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COUNSEL_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COUNSEL_SEARCH_RESULTS;
@@ -46,9 +47,7 @@ import uk.gov.laa.ccms.data.model.CounselLookupValueDetail;
 @SessionAttributes(
     value = {
       COUNSEL_SEARCH_CRITERIA,
-      COUNSEL_SEARCH_RESULTS,
-      COST_ALLOCATION_FORM_DATA,
-      SELECTED_COUNSEL
+      COST_ALLOCATION_FORM_DATA
     })
 public class CounselSearchController {
 
@@ -98,11 +97,13 @@ public class CounselSearchController {
   public String counselLookup(
       @ModelAttribute(COUNSEL_SEARCH_CRITERIA) final CounselSearchCriteria searchCriteria,
       BindingResult bindingResult,
-      final RedirectAttributes redirectAttributes) {
+      final HttpSession session,
+      Model model) {
 
     counselSearchValidator.validate(searchCriteria, bindingResult);
 
     if (bindingResult.hasErrors()) {
+      model.addAttribute("categoryList", populateCategoryList());
       return "application/counsel-search";
     }
 
@@ -115,14 +116,16 @@ public class CounselSearchController {
       }
 
     } catch (EbsApiClientException e) {
-      if (e.getMessage().equals(TOO_MANY_RESULTS)) {
+      if (TOO_MANY_RESULTS.equals(e.getMessage())) {
         return "application/counsel-search-too-many-results";
       }
-      log.debug("Error performing counsel search.", e);
-      throw new CaabApplicationException("Unable to perform counsel search " + e);
+      log.error("Error performing counsel search.", e);
+      bindingResult.reject("counsel.search.error");
+      model.addAttribute("categoryList", populateCategoryList());
+      return "application/counsel-search";
     }
 
-    redirectAttributes.addFlashAttribute(COUNSEL_SEARCH_RESULTS, searchResult.getContent());
+    session.setAttribute(COUNSEL_SEARCH_RESULTS, searchResult.getContent());
 
     return "redirect:/counsel/results";
   }
@@ -140,23 +143,23 @@ public class CounselSearchController {
   public String counselLookupGet(
       @RequestParam(value = "page", defaultValue = "0") final int page,
       @RequestParam(value = "size", defaultValue = "10") final int size,
-      @ModelAttribute(COUNSEL_SEARCH_RESULTS)
-          final List<@Valid CounselLookupValueDetail> lookupValueDetails,
       final HttpServletRequest request,
       final HttpSession httpSession,
       Model model) {
+
+    @SuppressWarnings("unchecked")
+    List<CounselLookupValueDetail> lookupValueDetails =
+        (List<CounselLookupValueDetail>) httpSession.getAttribute(COUNSEL_SEARCH_RESULTS);
+
+    if (lookupValueDetails == null) {
+      return "redirect:/counsel/search";
+    }
 
     final CounselLookupDetail counselLookupDetail =
         counselLookupMapper.toCounselLookupDetail(
             PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), lookupValueDetails));
 
-    String queryString = request.getQueryString();
-    String searchUrl = request.getRequestURL().toString();
-    if (queryString != null && !queryString.isBlank()) {
-      searchUrl += "?" + queryString;
-    }
-
-    httpSession.setAttribute(SEARCH_URL, searchUrl);
+    String searchUrl = "/counsel/results";
     model.addAttribute(CURRENT_URL, searchUrl);
 
     model.addAttribute(COUNSEL_RESULTS_PAGE, counselLookupDetail);
@@ -175,11 +178,15 @@ public class CounselSearchController {
   @GetMapping("/counsel/select")
   public String selectCounsel(
       @RequestParam("index") int index,
-      @ModelAttribute(COUNSEL_SEARCH_RESULTS) List<CounselLookupValueDetail> lookupValueDetails,
       HttpSession session) {
+
+    @SuppressWarnings("unchecked")
+    List<CounselLookupValueDetail> lookupValueDetails =
+        (List<CounselLookupValueDetail>) session.getAttribute(COUNSEL_SEARCH_RESULTS);
 
     if (lookupValueDetails != null && index >= 0 && index < lookupValueDetails.size()) {
       CounselLookupValueDetail selectedCounsel = lookupValueDetails.get(index);
+      log.debug("Selecting counsel: {}", selectedCounsel.getName());
       session.setAttribute(SELECTED_COUNSEL, selectedCounsel);
     }
 
@@ -238,10 +245,25 @@ public class CounselSearchController {
     }
 
     // Check for duplicate counsel
-    boolean duplicate = allocateCostsFormData.getCostEntries().stream()
-        .anyMatch(entry ->
-            Objects.equals(entry.getResourceName(), selectedCounsel.getName())
-                && Objects.equals(entry.getLscResourceId(), selectedCounsel.getLegalAidSupplierNumber()));
+    boolean duplicate =
+        allocateCostsFormData.getCostEntries().stream()
+            .anyMatch(
+                entry -> {
+                  boolean refMatch =
+                      Objects.equals(
+                          entry.getLscResourceId() != null ? entry.getLscResourceId().trim() : null,
+                          selectedCounsel.getLegalAidSupplierNumber() != null
+                              ? selectedCounsel.getLegalAidSupplierNumber().trim()
+                              : null);
+                  boolean nameMatch =
+                      entry.getResourceName() != null
+                          && selectedCounsel.getName() != null
+                          && entry
+                              .getResourceName()
+                              .trim()
+                              .equalsIgnoreCase(selectedCounsel.getName().trim());
+                  return refMatch || nameMatch;
+                });
 
     if (duplicate) {
       redirectAttributes.addAttribute("error", "duplicate");
@@ -251,7 +273,7 @@ public class CounselSearchController {
     CostEntryDetail newCostEntry = new CostEntryDetail();
     newCostEntry.setResourceName(selectedCounsel.getName());
     newCostEntry.setLscResourceId(selectedCounsel.getLegalAidSupplierNumber());
-    newCostEntry.setCostCategory(selectedCounsel.getCategory());
+    newCostEntry.setCostCategory(COUNSEL_COST_CATEGORY);
     newCostEntry.setAmountBilled(BigDecimal.ZERO);
     newCostEntry.setRequestedCosts(BigDecimal.ZERO);
     newCostEntry.setNewEntry(true);

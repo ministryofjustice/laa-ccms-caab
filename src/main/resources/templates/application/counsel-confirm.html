@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/lookup/counsels}" class="govuk-back-link" th:text="#{counsel.confirm.link}"></a>
+        <a th:href="@{/counsel/results}" class="govuk-back-link" th:text="#{counsel.confirm.link}"></a>
     </div>
     <div id="main-content">
         <div th:if="${error != null}" class="govuk-error-summary" aria-labelledby="error-summary-title" role="alert" data-module="govuk-error-summary">
@@ -49,7 +49,7 @@
         <form th:action="@{/application/counsel/confirm}" method="post">
             <div class="govuk-button-group">
                 <button type="submit" class="govuk-button" data-module="govuk-button" th:text="#{site.confirm}"></button>
-            </div>
+           </div>
         </form>
     </div>
 </div>

@@ -36,37 +36,37 @@ public class CounselSearchValidator extends AbstractValidator {
     String laaCounselRef = counselSearchCriteria.getLaaCounselReference();
     String category = counselSearchCriteria.getCategory();
 
-    validateAllFieldsAreEmpty("Name", errors, name, company, laaCounselRef, category);
+    validateAllFieldsAreEmpty("name", errors, name, company, laaCounselRef, category);
 
     if (!errors.hasErrors()) {
 
       // Is category is null, empty, or not selected?
       // Is input field name null, empty?
       if (StringUtils.hasText(name)) {
-        validateFieldPattern("Name", name, CHARACTER_SET_A, null, errors);
-        validateFieldMinLength("Name", name, 3, "name", errors);
-        validateFieldMaxLength("Name", name, 35, "name", errors);
+        validateFieldPattern("name", name, CHARACTER_SET_A, "Name", errors);
+        validateFieldMinLength("name", name, 3, "Name", errors);
+        validateFieldMaxLength("name", name, 35, "Name", errors);
       }
 
       // Is input field company null, empty?
       if (StringUtils.hasText(company)) {
-        validateFieldPattern("Company", company, CHARACTER_SET_A, null, errors);
-        validateFieldMinLength("company", company, 3, "company", errors);
-        validateFieldMaxLength("company", company, 35, "company", errors);
+        validateFieldPattern("company", company, CHARACTER_SET_A, "Company", errors);
+        validateFieldMinLength("company", company, 3, "Company", errors);
+        validateFieldMaxLength("company", company, 35, "Company", errors);
       }
 
       // Is input LAA council ref field null, empty?
       if (StringUtils.hasText(laaCounselRef)) {
         validateFieldPattern(
-            "LAA Counsel Reference",
+            "laaCounselReference",
             laaCounselRef,
             STANDARD_CHARACTER_SET,
             "LAA Counsel Reference",
             errors);
         validateFieldMinLength(
-            "LAA Counsel Reference", laaCounselRef, 3, "LAA Counsel Reference", errors);
+            "laaCounselReference", laaCounselRef, 3, "LAA Counsel Reference", errors);
         validateFieldMaxLength(
-            "LAA Counsel Reference", laaCounselRef, 15, "LAA Counsel Reference", errors);
+            "laaCounselReference", laaCounselRef, 15, "LAA Counsel Reference", errors);
       }
     }
   }

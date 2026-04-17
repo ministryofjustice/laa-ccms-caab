@@ -58,8 +58,8 @@
                             th:each="costEntryDetail, idx : *{costEntries}">
 
                             <td class="govuk-table__cell" th:text="${costEntryDetail.resourceName}"/>
-                            <td class="govuk-table__cell" style="text-transform: capitalize"
-                                th:text=" ${costEntryDetail.costCategory.toLowerCase()}"></td>
+                            <td class="govuk-table__cell"
+                                th:text="#{caseCosts.counsel.type}"></td>
                             <td class="govuk-table__cell" th:text="'£ ' + ${costEntryDetail.amountBilled}"></td>
                             <td class="govuk-table__cell">
                                 <div class="govuk-form-group"
@@ -90,12 +90,10 @@
             <div class="govuk-button-group">
                 <a class="govuk-button govuk-button--secondary" data-module="govuk-button"
                    th:text="#{caseCosts.counsel}" th:href="@{/counsel/search}"></a>
-                <button type="submit" name="action" value="calculate" class="govuk-button govuk-button--secondary" data-module="govuk-button"
-                        th:text="#{caseCosts.counsel}" th:onclick="|window.location.href='@{/application/counsel}'|"/>
                 <button type="submit" class="govuk-button govuk-button--secondary" data-module="govuk-button"
                         th:text="#{caseCosts.calculate}"/>
             </div>
-            <button type="submit" name="action" value="next" class="govuk-button" data-module="govuk-button" th:text="#{site.next}"/>
+            <button type="submit" name="action" value="next" class="govuk-button" data-module="govuk-button" th:text="#{site.confirm}"/>
         </form>
     </div>
 </div>
