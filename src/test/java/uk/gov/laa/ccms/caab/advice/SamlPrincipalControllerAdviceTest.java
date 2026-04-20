@@ -61,6 +61,7 @@ class SamlPrincipalControllerAdviceTest {
     when(authentication.getCredentials()).thenReturn(accessor);
     when(accessor.getAttributes()).thenReturn(attributes);
     when(userService.getUser(any())).thenReturn(Mono.just(userDetails));
+    when(userService.getUserByLoginId(any())).thenReturn(Mono.just(userDetails));
     when(authentication.getName()).thenReturn("test");
   }
 
@@ -107,7 +108,7 @@ class SamlPrincipalControllerAdviceTest {
 
       advice.addSamlPrincipalToModel(authentication, model, session, request);
 
-      verify(userService).getUser(any());
+      verify(userService).getUserByLoginId(any());
       verify(model).addAttribute("user", userDetails);
       verify(model).addAttribute("userAttributes", attributes);
       verify(session).setAttribute("user", userDetails);
@@ -138,7 +139,7 @@ class SamlPrincipalControllerAdviceTest {
 
       advice.addSamlPrincipalToModel(authentication, model, session, request);
 
-      verify(userService).getUser(any());
+      verify(userService).getUserByLoginId(any());
       verify(model).addAttribute("user", userDetails);
       verify(model).addAttribute("userAttributes", attributes);
       verify(session).setAttribute("user", userDetails);

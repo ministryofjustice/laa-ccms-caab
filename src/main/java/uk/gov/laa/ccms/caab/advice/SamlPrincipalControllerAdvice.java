@@ -54,7 +54,7 @@ public class SamlPrincipalControllerAdvice {
         }
 
       } else {
-        user = userService.getUser(user.getUserId()).block();
+        user = userService.getUserByLoginId(loginId).block();
       }
 
       model.addAttribute("user", user);
