@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/counsel/search}" class="govuk-back-link" th:text="#{site.returnToCounselSearch}"></a>
+        <a th:href="@{/allocate-cost-limit}" class="govuk-back-link" th:text="#{caseCosts.allocateCostLimit.cancel}"></a>
     </div>
     <div id="main-content">
 
@@ -15,6 +15,9 @@
             <h1 class="govuk-heading-l" th:text="#{counsel.search.too_many_results}"></h1>
             <p class="govuk-body-l" th:text="#{site.tooManyResults(#{counsel.search})}"></p>
             <p class="govuk-body-l" th:text="#{counsel.search.results.refine}"></p>
+            <div class="govuk-button-group">
+                <a th:href="@{/counsel/search}" class="govuk-button govuk-button--secondary" data-module="govuk-button" th:text="#{site.back}"></a>
+            </div>
         </th:block>
 
     </div>
