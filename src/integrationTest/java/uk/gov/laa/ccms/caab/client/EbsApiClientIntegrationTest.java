@@ -72,7 +72,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
   private final ObjectMapper objectMapper = new ObjectMapper();
 
-  private static final String USER_ERROR_MESSAGE = "Failed to retrieve User with login id: %s";
+  private static final String USER_ERROR_MESSAGE = "Failed to retrieve User with user id: %s";
   private static final String CASE_REFERENCE_MESSAGE = "Failed to retrieve case reference";
 
   @Test
@@ -81,9 +81,9 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     final String userJson = objectMapper.writeValueAsString(expectedUserDetail);
 
     wiremock.stubFor(
-        get("/users/%s".formatted(expectedUserDetail.getLoginId())).willReturn(okJson(userJson)));
+        get("/users/%s".formatted(expectedUserDetail.getUserId())).willReturn(okJson(userJson)));
 
-    final Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(expectedUserDetail.getLoginId());
+    final Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(expectedUserDetail.getUserId());
 
     final UserDetail userDetails = userDetailsMono.block();
 
@@ -92,12 +92,12 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
   @Test
   public void testGetUser_notFound() {
-    final String loginId = "user1";
-    final String expectedMessage = USER_ERROR_MESSAGE.formatted(loginId);
+    final Integer userId = 1;
+    final String expectedMessage = USER_ERROR_MESSAGE.formatted(userId);
 
-    wiremock.stubFor(get("/users/%s".formatted(loginId)).willReturn(notFound()));
+    wiremock.stubFor(get("/users/%s".formatted(userId)).willReturn(notFound()));
 
-    final Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(loginId);
+    final Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(userId);
 
     StepVerifier.create(userDetailsMono)
         .expectErrorMatches(
@@ -274,16 +274,17 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   @Test
   public void testGetUserNotificationSummary_returnData() throws Exception {
     final String loginId = "user1";
+    final Integer userId = 1;
     final NotificationSummary expectedNotificationsummary = buildUserNotificationSummary();
     final String notificationSummaryJson =
         objectMapper.writeValueAsString(expectedNotificationsummary);
 
     wiremock.stubFor(
-        get("/users/%s/notifications/summary".formatted(loginId))
+        get("/users/%s/notifications/summary".formatted(userId))
             .willReturn(okJson(notificationSummaryJson)));
 
     final Mono<NotificationSummary> userNotificationSummary =
-        ebsApiClient.getUserNotificationSummary(loginId);
+        ebsApiClient.getUserNotificationSummary(userId);
 
     final NotificationSummary userDetails = userNotificationSummary.block();
 
@@ -292,14 +293,15 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
   @Test
   public void testGetUserNotificationSummary_notFound() {
+    final Integer userId = 1;
     final String loginId = "user1";
-    final String expectedMessage = USER_ERROR_MESSAGE.formatted(loginId);
+    final String expectedMessage = USER_ERROR_MESSAGE.formatted(userId);
 
     wiremock.stubFor(
-        get("/users/%s/notifications/summary".formatted(loginId)).willReturn(notFound()));
+        get("/users/%s/notifications/summary".formatted(userId)).willReturn(notFound()));
 
     final Mono<NotificationSummary> notificationSummary =
-        ebsApiClient.getUserNotificationSummary(loginId);
+        ebsApiClient.getUserNotificationSummary(userId);
 
     StepVerifier.create(notificationSummary)
         .expectErrorMatches(
