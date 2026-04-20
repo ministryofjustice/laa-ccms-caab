@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import uk.gov.laa.ccms.caab.constants.PriorAuthorityGroup;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
@@ -15,6 +16,7 @@ import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 public class PriorAuthorityUtilTest {
 
   @Test
+  @DisplayName("returns empty map when priorAuthorityDetail is null")
   void returnsEmptyMapWhenPriorAuthorityDetailIsNull() {
     Map<PriorAuthorityGroup, List<ReferenceDataItemDetail>> result =
         PriorAuthorityUtils.groupItems(null);
@@ -24,6 +26,7 @@ public class PriorAuthorityUtilTest {
   }
 
   @Test
+  @DisplayName("unknown type puts all items in OTHER group")
   void unknownTypePutsAllItemsInOtherGroup() {
     PriorAuthorityDetail detail =
         createPriorAuthority(
@@ -42,6 +45,7 @@ public class PriorAuthorityUtilTest {
   }
 
   @Test
+  @DisplayName("COUNSEL type groups items correctly")
   void counselTypeGroupsCorrectly() {
     PriorAuthorityDetail detail =
         createPriorAuthority(
@@ -60,6 +64,7 @@ public class PriorAuthorityUtilTest {
   }
 
   @Test
+  @DisplayName("EXPERT type groups items correctly")
   void expertTypeGroupsCorrectly() {
     PriorAuthorityDetail detail =
         createPriorAuthority(
@@ -76,6 +81,7 @@ public class PriorAuthorityUtilTest {
   }
 
   @Test
+  @DisplayName("OTHER type groups items correctly")
   void otherTypeGroupsCorrectly() {
     PriorAuthorityDetail detail =
         createPriorAuthority(
