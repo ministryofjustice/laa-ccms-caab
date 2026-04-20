@@ -51,10 +51,18 @@ public class PriorAuthorityUtils {
       }
     }
 
+    orderReviewFormItems(grouped, typeId);
+
+    grouped.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+    return grouped;
+  }
+
+  private static void orderReviewFormItems(
+      Map<PriorAuthorityGroup, List<ReferenceDataItemDetail>> reviewFormItems, String typeId) {
     Map<PriorAuthorityGroup, List<String>> config =
         TYPE_GROUPS.getOrDefault(typeId.toUpperCase(), new LinkedHashMap<>());
 
-    grouped.forEach(
+    reviewFormItems.forEach(
         (group, list) -> {
           List<String> order = config.getOrDefault(group, List.of());
 
@@ -74,9 +82,6 @@ public class PriorAuthorityUtils {
                     return index >= 0 ? index : Integer.MAX_VALUE;
                   }));
         });
-
-    grouped.entrySet().removeIf(entry -> entry.getValue().isEmpty());
-    return grouped;
   }
 
   private static boolean hasDisplayValue(ReferenceDataItemDetail item) {
