@@ -50,11 +50,11 @@ public class SamlPrincipalControllerAdvice {
         user = (UserDetail) session.getAttribute("user");
 
         if (!user.getLoginId().equals(loginId)) {
-          user = userService.getUser(user.getLoginId()).block();
+          user = userService.getUser(user.getUserId()).block();
         }
 
       } else {
-        user = userService.getUser(user.getLoginId()).block();
+        user = userService.getUser(user.getUserId()).block();
       }
 
       model.addAttribute("user", user);

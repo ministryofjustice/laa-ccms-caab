@@ -147,6 +147,8 @@ public class SecurityConfiguration {
       } else {
         authorities.addAll(authentication.getAuthorities());
       }
+
+      // authentication.getPrincipal() is going to be email address here....
       String principal = authentication.getName();
       authorities.addAll(getUserFunctions(principal));
       return new Saml2AssertionAuthentication(
@@ -157,9 +159,9 @@ public class SecurityConfiguration {
     };
   }
 
-  private Collection<? extends GrantedAuthority> getUserFunctions(String principal) {
+  private Collection<? extends GrantedAuthority> getUserFunctions(String loginId) {
     return userService
-        .getUser(principal)
+        .getUserByLoginId(loginId)
         .blockOptional()
         .orElseThrow(() -> new RuntimeException("Failed to retrieve user functions."))
         .getFunctions()

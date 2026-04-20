@@ -26,16 +26,35 @@ public class UserServiceTest {
   @InjectMocks private UserService userService;
 
   @Test
-  void getUser_returnData() {
-
-    String loginId = "user1";
+  void getUserByLoginId_returnData() {
+    String loginId = "foo";
 
     UserDetail mockUser = new UserDetail();
+    mockUser.setUserId(12345);
     mockUser.setLoginId(loginId);
 
-    when(ebsApiClient.getUser(loginId)).thenReturn(Mono.just(mockUser));
+    when(ebsApiClient.getUserByLoginId(loginId)).thenReturn(Mono.just(mockUser));
 
-    Mono<UserDetail> userDetailsMono = userService.getUser(loginId);
+    Mono<UserDetail> userDetailsMono = userService.getUserByLoginId(loginId);
+
+    StepVerifier.create(userDetailsMono)
+        .expectNextMatches(user -> user.getLoginId().equals(loginId))
+        .verifyComplete();
+  }
+
+  @Test
+  void getUser_returnData() {
+
+    Integer userId = 12345;
+    String loginId = "foo";
+
+    UserDetail mockUser = new UserDetail();
+    mockUser.setUserId(userId);
+    mockUser.setLoginId("foo");
+
+    when(ebsApiClient.getUser(userId)).thenReturn(Mono.just(mockUser));
+
+    Mono<UserDetail> userDetailsMono = userService.getUser(userId);
 
     StepVerifier.create(userDetailsMono)
         .expectNextMatches(user -> user.getLoginId().equals(loginId))

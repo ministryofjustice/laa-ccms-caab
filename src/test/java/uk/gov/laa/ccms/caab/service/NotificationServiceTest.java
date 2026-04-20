@@ -59,14 +59,14 @@ class NotificationServiceTest {
   @Test
   void getNotificationsSummary_returnData() {
 
-    String loginId = "user1";
+    Integer userId = 12345;
 
     NotificationSummary mockSummary =
         new NotificationSummary().notifications(10).standardActions(5).overdueActions(2);
 
-    when(ebsApiClient.getUserNotificationSummary(loginId)).thenReturn(Mono.just(mockSummary));
+    when(ebsApiClient.getUserNotificationSummary(userId)).thenReturn(Mono.just(mockSummary));
 
-    Mono<NotificationSummary> summaryMono = notificationService.getNotificationsSummary(loginId);
+    Mono<NotificationSummary> summaryMono = notificationService.getNotificationsSummary(userId);
 
     StepVerifier.create(summaryMono)
         .expectNextMatches(

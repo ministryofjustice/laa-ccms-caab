@@ -71,13 +71,31 @@ public class EbsApiClient extends BaseApiClient {
   /**
    * Retrieves user details based on the login ID.
    *
+   * @param userId The user ID of the user.
+   * @return A Mono containing the UserDetail or an error handler if an error occurs.
+   */
+  public Mono<UserDetail> getUser(final Integer userId) {
+    return webClient
+        .get()
+        .uri("/users/{userId}", userId)
+        .retrieve()
+        .bodyToMono(UserDetail.class)
+        .onErrorResume(
+            e ->
+                ebsApiClientErrorHandler.handleApiRetrieveError(
+                    e, "User", "user id", userId.toString()));
+  }
+
+  /**
+   * Retrieves user details based on the login ID.
+   *
    * @param loginId The login ID of the user.
    * @return A Mono containing the UserDetail or an error handler if an error occurs.
    */
-  public Mono<UserDetail> getUser(final String loginId) {
+  public Mono<UserDetail> getUserByLoginId(final String loginId) {
     return webClient
         .get()
-        .uri("/users/{loginId}", loginId)
+        .uri(uriBuilder -> uriBuilder.path("/users/lookup").queryParam("login-id", loginId).build())
         .retrieve()
         .bodyToMono(UserDetail.class)
         .onErrorResume(
@@ -87,17 +105,19 @@ public class EbsApiClient extends BaseApiClient {
   /**
    * Retrieves a summary of notification counts for a user based on their login ID.
    *
-   * @param loginId the login ID of the user whose notification summary is to be retrieved
+   * @param userId the userId ID of the user whose notification summary is to be retrieved
    * @return a Mono emitting the NotificationSummary for the specified user
    */
-  public Mono<NotificationSummary> getUserNotificationSummary(final String loginId) {
+  public Mono<NotificationSummary> getUserNotificationSummary(final Integer userId) {
     return webClient
         .get()
-        .uri("/users/{loginId}/notifications/summary", loginId)
+        .uri("/users/{userId}/notifications/summary", userId)
         .retrieve()
         .bodyToMono(NotificationSummary.class)
         .onErrorResume(
-            e -> ebsApiClientErrorHandler.handleApiRetrieveError(e, "User", "login id", loginId));
+            e ->
+                ebsApiClientErrorHandler.handleApiRetrieveError(
+                    e, "User", "user id", userId.toString()));
   }
 
   /**

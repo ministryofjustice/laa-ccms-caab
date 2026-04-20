@@ -26,8 +26,18 @@ public class UserService {
    * @param loginId The login ID of the user.
    * @return A Mono containing the UserDetail or an error handler if an error occurs.
    */
-  public Mono<UserDetail> getUser(String loginId) {
-    return ebsApiClient.getUser(loginId);
+  public Mono<UserDetail> getUserByLoginId(String loginId) {
+    return ebsApiClient.getUserByLoginId(loginId);
+  }
+
+  /**
+   * Retrieves user details based on the login ID.
+   *
+   * @param userId The user ID of the user.
+   * @return A Mono containing the UserDetail or an error handler if an error occurs.
+   */
+  public Mono<UserDetail> getUser(Integer userId) {
+    return ebsApiClient.getUser(userId);
   }
 
   /**

@@ -84,18 +84,20 @@ public class EbsApiClientTest {
     @DisplayName("Should return data")
     void getUser_returnData() {
 
-      final String loginId = "user1";
-      final String expectedUri = "/users/{loginId}";
+      final Integer userId = 12345;
+      final String loginId = "foo";
+      final String expectedUri = "/users/{userId}";
 
       final UserDetail mockUser = new UserDetail();
+      mockUser.setUserId(userId);
       mockUser.setLoginId(loginId);
 
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-      when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
+      when(requestHeadersUriMock.uri(expectedUri, userId)).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
       when(responseMock.bodyToMono(UserDetail.class)).thenReturn(Mono.just(mockUser));
 
-      final Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(loginId);
+      final Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(userId);
 
       StepVerifier.create(userDetailsMono)
           .expectNextMatches(user -> user.getLoginId().equals(loginId))
@@ -105,11 +107,11 @@ public class EbsApiClientTest {
     @Test
     @DisplayName("Should return not found")
     void getUser_notFound() {
-      final String loginId = "user1";
-      final String expectedUri = "/users/{loginId}";
+      final Integer userId = 1;
+      final String expectedUri = "/users/{userId}";
 
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-      when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
+      when(requestHeadersUriMock.uri(expectedUri, userId)).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
       when(responseMock.bodyToMono(UserDetail.class))
           .thenReturn(
@@ -118,10 +120,10 @@ public class EbsApiClientTest {
                       HttpStatus.NOT_FOUND.value(), "", null, null, null)));
 
       when(apiClientErrorHandler.handleApiRetrieveError(
-              any(), eq("User"), eq("login id"), eq(loginId)))
+              any(), eq("User"), eq("user id"), eq(userId.toString())))
           .thenReturn(Mono.empty());
 
-      final Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(loginId);
+      final Mono<UserDetail> userDetailsMono = ebsApiClient.getUser(userId);
 
       StepVerifier.create(userDetailsMono).verifyComplete();
     }
@@ -134,8 +136,9 @@ public class EbsApiClientTest {
     @Test
     @DisplayName("Should return not found")
     void getUserNotificationSummary_returnsData() {
+      final Integer userId = 1;
       final String loginId = "user1";
-      final String expectedUri = "/users/{loginId}/notifications/summary";
+      final String expectedUri = "/users/{userId}/notifications/summary";
 
       final NotificationSummary mockNotificationSummary = new NotificationSummary();
       mockNotificationSummary.setNotifications(1);
@@ -143,13 +146,13 @@ public class EbsApiClientTest {
       mockNotificationSummary.setOverdueActions(2);
 
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-      when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
+      when(requestHeadersUriMock.uri(expectedUri, userId)).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
       when(responseMock.bodyToMono(NotificationSummary.class))
           .thenReturn(Mono.just(mockNotificationSummary));
 
       final Mono<NotificationSummary> notificationSummary =
-          ebsApiClient.getUserNotificationSummary(loginId);
+          ebsApiClient.getUserNotificationSummary(userId);
 
       StepVerifier.create(notificationSummary)
           .expectNextMatches(
@@ -163,8 +166,8 @@ public class EbsApiClientTest {
     @Test
     @DisplayName("Should return data")
     void getUserNotificationSummary_NotFound() {
-      final String loginId = "user1";
-      final String expectedUri = "/users/{loginId}/notifications/summary";
+      final Integer userId = 12345;
+      final String expectedUri = "/users/{userId}/notifications/summary";
 
       final NotificationSummary mockNotificationSummary = new NotificationSummary();
       mockNotificationSummary.setNotifications(1);
@@ -172,13 +175,13 @@ public class EbsApiClientTest {
       mockNotificationSummary.setOverdueActions(2);
 
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-      when(requestHeadersUriMock.uri(expectedUri, loginId)).thenReturn(requestHeadersMock);
+      when(requestHeadersUriMock.uri(expectedUri, userId)).thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
       when(responseMock.bodyToMono(NotificationSummary.class))
           .thenReturn(Mono.just(mockNotificationSummary));
 
       final Mono<NotificationSummary> notificationSummary =
-          ebsApiClient.getUserNotificationSummary(loginId);
+          ebsApiClient.getUserNotificationSummary(userId);
 
       StepVerifier.create(notificationSummary)
           .expectNextMatches(
