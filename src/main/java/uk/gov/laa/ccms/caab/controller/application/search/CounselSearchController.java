@@ -31,6 +31,7 @@ import uk.gov.laa.ccms.caab.bean.CounselSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.CounselSearchValidator;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.CounselLookupMapper;
 import uk.gov.laa.ccms.caab.model.CategoryDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
