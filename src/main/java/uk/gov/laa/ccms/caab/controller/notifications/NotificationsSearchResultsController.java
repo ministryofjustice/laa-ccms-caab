@@ -14,13 +14,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.NotificationService;
+import uk.gov.laa.ccms.caab.util.PaginationRequest;
+import uk.gov.laa.ccms.caab.util.PaginationRequestUtil;
 import uk.gov.laa.ccms.data.model.NotificationInfo;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -33,6 +38,8 @@ import uk.gov.laa.ccms.data.model.UserDetail;
     value = {NOTIFICATION_SEARCH_CRITERIA, USER_DETAILS, NOTIFICATIONS_SEARCH_RESULTS})
 public class NotificationsSearchResultsController {
 
+  private static final String DEFAULT_SORT = "dateAssigned,asc";
+
   private final NotificationService notificationService;
 
   /**
@@ -43,6 +50,11 @@ public class NotificationsSearchResultsController {
   @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA)
   public NotificationSearchCriteria notificationSearchCriteria() {
     return new NotificationSearchCriteria();
+  }
+
+  @InitBinder(NOTIFICATION_SEARCH_CRITERIA)
+  public void initNotificationCriteriaBinder(WebDataBinder binder) {
+    binder.setDisallowedFields("page", "size", "sort");
   }
 
   /**
@@ -59,25 +71,61 @@ public class NotificationsSearchResultsController {
    */
   @GetMapping("/notifications/search-results")
   public String notificationsSearchResults(
-      @RequestParam(value = "page", defaultValue = "0") int page,
-      @RequestParam(value = "size", defaultValue = "10") int size,
-      @RequestParam(value = "pageSort", defaultValue = "dateAssigned,asc") String pageSort,
+      @RequestParam(value = "page", required = false) Integer page,
+      @RequestParam(value = "size", required = false) Integer size,
+      @RequestParam(value = "pageSort", required = false) String pageSort,
       @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
       @ModelAttribute(USER_DETAILS) UserDetail user,
+      @SessionAttribute(value = NOTIFICATIONS_SEARCH_RESULTS, required = false)
+          Notifications cachedNotifications,
       HttpServletRequest request,
       Model model) {
+
+    // Use local variables to store original criteria state before any updates
+    Integer originalPage = criteria.getPage();
+    Integer originalSize = criteria.getSize();
+    String originalSort = criteria.getSort();
+
+    PaginationRequest paginationRequest =
+        PaginationRequestUtil.resolve(
+            request, page, size, pageSort, originalPage, originalSize, originalSort, DEFAULT_SORT);
+    boolean isNewPageRequest = paginationRequest.isNewPageRequest();
+
+    if (!isNewPageRequest && originalPage != null) {
+      return "redirect:/notifications/search-results?page="
+          + originalPage
+          + "&size="
+          + (originalSize != null ? originalSize : PaginationRequestUtil.DEFAULT_SIZE)
+          + "&pageSort="
+          + (StringUtils.hasText(originalSort) ? originalSort : DEFAULT_SORT);
+    }
+
+    int finalPage = paginationRequest.page();
+    int finalSize = paginationRequest.size();
+    String finalPageSort = paginationRequest.sort();
+
     if (!StringUtils.hasText(criteria.getAssignedToUserId())) {
       criteria.setAssignedToUserId(user.getLoginId());
     }
-    if (!pageSort.equals(criteria.getSort())) {
-      // redirect to first page when sort criteria changes
-      page = 0;
+
+    boolean isNewSort = paginationRequest.isNewSort();
+    boolean isNewPage = paginationRequest.isNewPage();
+    boolean isNewSize = paginationRequest.isNewSize();
+
+    // Check if we can use cached results
+    Notifications notificationsResponse;
+    if (cachedNotifications != null && isNewPageRequest && !isNewSort && !isNewPage && !isNewSize) {
+      notificationsResponse = cachedNotifications;
+    } else {
+      criteria.setSort(finalPageSort);
+      criteria.setPage(finalPage);
+      criteria.setSize(finalSize);
+      notificationsResponse =
+          notificationService
+              .getNotifications(criteria, user.getProvider().getId(), finalPage, finalSize)
+              .block();
     }
-    criteria.setSort(pageSort);
-    Notifications notificationsResponse =
-        notificationService
-            .getNotifications(criteria, user.getProvider().getId(), page, size)
-            .block();
+
     List<NotificationInfo> notifications =
         Optional.ofNullable(notificationsResponse)
             .map(Notifications::getContent)
@@ -88,7 +136,7 @@ public class NotificationsSearchResultsController {
 
     String currentUrl = request.getRequestURL().toString();
     model.addAttribute("currentUrl", currentUrl);
-    String[] sortCriteria = pageSort.split(",");
+    String[] sortCriteria = finalPageSort.split(",");
     model.addAttribute(SORT_FIELD, sortCriteria[0]);
     model.addAttribute(SORT_DIRECTION, sortCriteria[1]);
     model.addAttribute(NOTIFICATIONS_SEARCH_RESULTS, notificationsResponse);
