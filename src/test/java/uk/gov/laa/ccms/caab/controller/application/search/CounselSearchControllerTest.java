@@ -1,11 +1,14 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -20,9 +23,11 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.validation.BindingResult;
 import uk.gov.laa.ccms.caab.bean.CounselSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.data.model.CounselLookupDetail;
 import uk.gov.laa.ccms.data.model.CounselLookupValueDetail;
@@ -191,10 +196,10 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
   void testConfirmCounselGet() throws Exception {
     CounselLookupValueDetail selectedCounsel =
         new CounselLookupValueDetail()
-            .name("SHAUN S DODDS")
-            .company("SHAUN S DODDS")
-            .legalAidSupplierNumber("1099V")
-            .category("Junior");
+            .name("TEST COUNSEL XYZ")
+            .company("TEST COUNSEL XYZ")
+            .legalAidSupplierNumber("1001T")
+            .category("TestCategory");
 
     mockMvc
         .perform(get("/application/counsel/confirm").sessionAttr(SELECTED_COUNSEL, selectedCounsel))
@@ -207,10 +212,10 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
   void testConfirmCounselPost() throws Exception {
     CounselLookupValueDetail selectedCounsel =
         new CounselLookupValueDetail()
-            .name("SHAUN S DODDS")
-            .company("SHAUN S DODDS")
-            .legalAidSupplierNumber("1099V")
-            .category("Junior");
+            .name("TEST COUNSEL XYZ")
+            .company("TEST COUNSEL XYZ")
+            .legalAidSupplierNumber("1001T")
+            .category("TestCategory");
 
     AllocateCostsFormData formData = new AllocateCostsFormData();
     formData.setCostEntries(new ArrayList<>());
@@ -225,8 +230,8 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
 
     assertEquals(1, formData.getCostEntries().size());
     CostEntryDetail entry = formData.getCostEntries().get(0);
-    assertEquals("SHAUN S DODDS", entry.getResourceName());
-    assertEquals("1099V", entry.getLscResourceId());
+    assertEquals("TEST COUNSEL XYZ", entry.getResourceName());
+    assertEquals("1001T", entry.getLscResourceId());
     assertEquals("counsel", entry.getCostCategory());
   }
 
@@ -236,9 +241,9 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
   void testConfirmCounselPostMissingFormData() throws Exception {
     CounselLookupValueDetail selectedCounsel =
         new CounselLookupValueDetail()
-            .name("SHAUN S DODDS")
-            .legalAidSupplierNumber("1099V")
-            .category("Junior");
+            .name("TEST COUNSEL XYZ")
+            .legalAidSupplierNumber("1001T")
+            .category("TestCategory");
 
     mockMvc
         .perform(
@@ -253,16 +258,16 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
   void testConfirmCounselPostDuplicate() throws Exception {
     CounselLookupValueDetail selectedCounsel =
         new CounselLookupValueDetail()
-            .name("SHAUN S DODDS")
-            .company("SHAUN S DODDS")
-            .legalAidSupplierNumber("1099V")
-            .category("Junior");
+            .name("TEST COUNSEL XYZ")
+            .company("TEST COUNSEL XYZ")
+            .legalAidSupplierNumber("1001T")
+            .category("TestCategory");
 
     AllocateCostsFormData formData = new AllocateCostsFormData();
     List<CostEntryDetail> entries = new ArrayList<>();
     CostEntryDetail existingEntry = new CostEntryDetail();
-    existingEntry.setResourceName("SHAUN S DODDS");
-    existingEntry.setLscResourceId("1099V");
+    existingEntry.setResourceName("TEST COUNSEL XYZ");
+    existingEntry.setLscResourceId("1001T");
     entries.add(existingEntry);
     formData.setCostEntries(entries);
 
@@ -272,7 +277,16 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
                 .sessionAttr(SELECTED_COUNSEL, selectedCounsel)
                 .sessionAttr(COST_ALLOCATION_FORM_DATA, formData))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/counsel/confirm?error=duplicate"));
+        .andExpect(redirectedUrl("/application/counsel/confirm"))
+        .andExpect(flash().attributeExists(BindingResult.MODEL_KEY_PREFIX + "counsel"))
+        .andExpect(
+            result -> {
+              BindingResult bindingResult =
+                  (BindingResult)
+                      result.getFlashMap().get(BindingResult.MODEL_KEY_PREFIX + "counsel");
+              assertTrue(bindingResult.hasErrors());
+              assertEquals("counsel.confirm.duplicate", bindingResult.getGlobalError().getCode());
+            });
 
     // Size should still be 1
     assertEquals(1, formData.getCostEntries().size());
@@ -284,15 +298,15 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
   void testConfirmCounselPostDuplicateCaseInsensitive() throws Exception {
     CounselLookupValueDetail selectedCounsel =
         new CounselLookupValueDetail()
-            .name("shaun s dodds")
-            .legalAidSupplierNumber("1099V")
-            .category("Junior");
+            .name("TEST COUNSEL XYZ")
+            .legalAidSupplierNumber("1001T")
+            .category("TestCategory");
 
     AllocateCostsFormData formData = new AllocateCostsFormData();
     List<CostEntryDetail> entries = new ArrayList<>();
     CostEntryDetail existingEntry = new CostEntryDetail();
-    existingEntry.setResourceName("SHAUN S DODDS");
-    existingEntry.setLscResourceId("1099V");
+    existingEntry.setResourceName("TEST COUNSEL XYZ");
+    existingEntry.setLscResourceId("1001T");
     entries.add(existingEntry);
     formData.setCostEntries(entries);
 
@@ -302,7 +316,16 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
                 .sessionAttr(SELECTED_COUNSEL, selectedCounsel)
                 .sessionAttr(COST_ALLOCATION_FORM_DATA, formData))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/counsel/confirm?error=duplicate"));
+        .andExpect(redirectedUrl("/application/counsel/confirm"))
+        .andExpect(flash().attributeExists(BindingResult.MODEL_KEY_PREFIX + "counsel"))
+        .andExpect(
+            result -> {
+              BindingResult bindingResult =
+                  (BindingResult)
+                      result.getFlashMap().get(BindingResult.MODEL_KEY_PREFIX + "counsel");
+              assertTrue(bindingResult.hasErrors());
+              assertEquals("counsel.confirm.duplicate", bindingResult.getGlobalError().getCode());
+            });
 
     // Size should still be 1
     assertEquals(1, formData.getCostEntries().size());
@@ -321,7 +344,7 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
     AllocateCostsFormData formData = new AllocateCostsFormData();
     List<CostEntryDetail> entries = new ArrayList<>();
     CostEntryDetail existingEntry = new CostEntryDetail();
-    existingEntry.setResourceName("SHAUN S DODDS");
+    existingEntry.setResourceName("TEST COUNSEL XYZ");
     existingEntry.setLscResourceId("1099V");
     entries.add(existingEntry);
     formData.setCostEntries(entries);
@@ -332,7 +355,16 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
                 .sessionAttr(SELECTED_COUNSEL, selectedCounsel)
                 .sessionAttr(COST_ALLOCATION_FORM_DATA, formData))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/counsel/confirm?error=duplicate"));
+        .andExpect(redirectedUrl("/application/counsel/confirm"))
+        .andExpect(flash().attributeExists(BindingResult.MODEL_KEY_PREFIX + "counsel"))
+        .andExpect(
+            result -> {
+              BindingResult bindingResult =
+                  (BindingResult)
+                      result.getFlashMap().get(BindingResult.MODEL_KEY_PREFIX + "counsel");
+              assertTrue(bindingResult.hasErrors());
+              assertEquals("counsel.confirm.duplicate", bindingResult.getGlobalError().getCode());
+            });
 
     // Size should still be 1
     assertEquals(1, formData.getCostEntries().size());
@@ -344,14 +376,14 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
   void testConfirmCounselPostDuplicateByNameOnly() throws Exception {
     CounselLookupValueDetail selectedCounsel =
         new CounselLookupValueDetail()
-            .name("SHAUN S DODDS")
+            .name("TEST COUNSEL XYZ")
             .legalAidSupplierNumber("NEW_REF")
             .category("Junior");
 
     AllocateCostsFormData formData = new AllocateCostsFormData();
     List<CostEntryDetail> entries = new ArrayList<>();
     CostEntryDetail existingEntry = new CostEntryDetail();
-    existingEntry.setResourceName("SHAUN S DODDS");
+    existingEntry.setResourceName("TEST COUNSEL XYZ");
     existingEntry.setLscResourceId("1099V");
     entries.add(existingEntry);
     formData.setCostEntries(entries);
@@ -362,7 +394,16 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
                 .sessionAttr(SELECTED_COUNSEL, selectedCounsel)
                 .sessionAttr(COST_ALLOCATION_FORM_DATA, formData))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/counsel/confirm?error=duplicate"));
+        .andExpect(redirectedUrl("/application/counsel/confirm"))
+        .andExpect(flash().attributeExists(BindingResult.MODEL_KEY_PREFIX + "counsel"))
+        .andExpect(
+            result -> {
+              BindingResult bindingResult =
+                  (BindingResult)
+                      result.getFlashMap().get(BindingResult.MODEL_KEY_PREFIX + "counsel");
+              assertTrue(bindingResult.hasErrors());
+              assertEquals("counsel.confirm.duplicate", bindingResult.getGlobalError().getCode());
+            });
 
     // Size should still be 1
     assertEquals(1, formData.getCostEntries().size());
@@ -374,7 +415,7 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
   void testConfirmCounselPostDuplicateExistingInCase() throws Exception {
     CounselLookupValueDetail selectedCounsel =
         new CounselLookupValueDetail()
-            .name("SHAUN S DODDS")
+            .name("TEST COUNSEL XYZ")
             .legalAidSupplierNumber("1099V")
             .category("Junior");
 
@@ -383,7 +424,7 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
 
     // Simulating an existing counsel from EBS case costs
     CostEntryDetail existingEntry = new CostEntryDetail();
-    existingEntry.setResourceName("SHAUN S DODDS");
+    existingEntry.setResourceName("TEST COUNSEL XYZ");
     existingEntry.setLscResourceId("1099V");
     existingEntry.setNewEntry(false); // Not a new entry
     entries.add(existingEntry);
@@ -396,7 +437,16 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
                 .sessionAttr(SELECTED_COUNSEL, selectedCounsel)
                 .sessionAttr(COST_ALLOCATION_FORM_DATA, formData))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/counsel/confirm?error=duplicate"));
+        .andExpect(redirectedUrl("/application/counsel/confirm"))
+        .andExpect(flash().attributeExists(BindingResult.MODEL_KEY_PREFIX + "counsel"))
+        .andExpect(
+            result -> {
+              BindingResult bindingResult =
+                  (BindingResult)
+                      result.getFlashMap().get(BindingResult.MODEL_KEY_PREFIX + "counsel");
+              assertTrue(bindingResult.hasErrors());
+              assertEquals("counsel.confirm.duplicate", bindingResult.getGlobalError().getCode());
+            });
 
     // Size should still be 1
     assertEquals(1, formData.getCostEntries().size());
@@ -424,8 +474,8 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
   }
 
   @Test
-  @DisplayName("WHEN -> API call fails with generic error, THEN -> return to search with error.")
-  void shouldReturnSearchViewWhenApiError() throws Exception {
+  @DisplayName("WHEN -> API call fails with generic error, THEN -> throw CaabApplicationException.")
+  void shouldThrowExceptionWhenApiError() {
 
     CounselSearchCriteria criteria = new CounselSearchCriteria();
     criteria.setName("ERROR");
@@ -433,16 +483,18 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
     when(service.getCounselSearch(any(CounselSearchCriteria.class)))
         .thenThrow(new EbsApiClientException("Some API Error"));
 
-    mockMvc
-        .perform(
-            post("/counsel/search")
-                .sessionAttr(COUNSEL_SEARCH_CRITERIA, criteria)
-                .param("page", "0")
-                .param("size", "10")
-                .param("sort", "name,asc"))
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/counsel-search"))
-        .andExpect(model().hasErrors())
-        .andExpect(model().attributeHasErrors(COUNSEL_SEARCH_CRITERIA));
+    Exception exception =
+        assertThrows(
+            Exception.class,
+            () ->
+                mockMvc.perform(
+                    post("/counsel/search")
+                        .sessionAttr(COUNSEL_SEARCH_CRITERIA, criteria)
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("sort", "name,asc")));
+
+    assertTrue(exception.getCause() instanceof CaabApplicationException);
+    assertEquals("Error performing counsel search.", exception.getCause().getMessage());
   }
 }

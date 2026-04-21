@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs}, userRoles=${user.functions}, pageRoles='VC')}" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <title th:text="#{service.name} + ' - ' + #{counsel.confirm.title}"></title>
 </head>
@@ -9,15 +9,8 @@
         <a th:href="@{/allocate-cost-limit}" class="govuk-back-link" th:text="#{caseCosts.allocateCostLimit.cancel}"></a>
     </div>
     <div id="main-content">
-        <div th:if="${error != null}" class="govuk-error-summary" aria-labelledby="error-summary-title" role="alert" data-module="govuk-error-summary">
-            <h2 class="govuk-error-summary__title" id="error-summary-title" th:text="#{validation.heading}"></h2>
-            <div class="govuk-error-summary__body">
-                <ul class="govuk-list govuk-error-summary__list">
-                    <li>
-                        <a href="#main-content" th:if="${error == 'duplicate'}" th:text="#{counsel.confirm.duplicate}"></a>
-                    </li>
-                </ul>
-            </div>
+        <div th:object="${counsel}">
+            <div th:replace="~{partials/error-summary :: error-summary}"></div>
         </div>
 
         <h1 class="govuk-heading-l" th:text="#{counsel.confirm.heading}"></h1>

@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -30,6 +31,7 @@ import uk.gov.laa.ccms.caab.bean.CounselSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.CounselSearchValidator;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.CounselLookupMapper;
 import uk.gov.laa.ccms.caab.model.CategoryDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
@@ -114,10 +116,7 @@ public class CounselSearchController {
           || (e.getCause() != null && e.getCause().getMessage().contains(TOO_MANY_RESULTS))) {
         return "application/counsel-search-too-many-results";
       }
-      log.error("Error performing counsel search.", e);
-      bindingResult.reject("counsel.search.error");
-      model.addAttribute("categoryList", populateCategoryList());
-      return "application/counsel-search";
+      throw new CaabApplicationException("Error performing counsel search.", e);
     }
 
     session.setAttribute(COUNSEL_SEARCH_RESULTS, searchResult.getContent());
@@ -195,18 +194,15 @@ public class CounselSearchController {
   public String confirmCounselGet(
       @SessionAttribute(value = SELECTED_COUNSEL, required = false)
           final CounselLookupValueDetail selectedCounsel,
-      @RequestParam(value = "error", required = false) String error,
       Model model) {
 
     if (selectedCounsel == null) {
       return "redirect:/application/counsel";
     }
 
-    if (error != null) {
-      model.addAttribute("error", error);
+    if (!model.containsAttribute("counsel")) {
+      model.addAttribute("counsel", selectedCounsel);
     }
-
-    model.addAttribute("counsel", selectedCounsel);
     return "application/counsel-confirm";
   }
 
@@ -236,28 +232,12 @@ public class CounselSearchController {
     }
 
     // Check for duplicate counsel
-    boolean duplicate =
-        allocateCostsFormData.getCostEntries().stream()
-            .anyMatch(
-                entry -> {
-                  boolean refMatch =
-                      Objects.equals(
-                          entry.getLscResourceId() != null ? entry.getLscResourceId().trim() : null,
-                          selectedCounsel.getLegalAidSupplierNumber() != null
-                              ? selectedCounsel.getLegalAidSupplierNumber().trim()
-                              : null);
-                  boolean nameMatch =
-                      entry.getResourceName() != null
-                          && selectedCounsel.getName() != null
-                          && entry
-                              .getResourceName()
-                              .trim()
-                              .equalsIgnoreCase(selectedCounsel.getName().trim());
-                  return refMatch || nameMatch;
-                });
-
-    if (duplicate) {
-      redirectAttributes.addAttribute("error", "duplicate");
+    if (isDuplicateCounsel(allocateCostsFormData, selectedCounsel)) {
+      BindingResult bindingResult = new BeanPropertyBindingResult(selectedCounsel, "counsel");
+      bindingResult.reject("counsel.confirm.duplicate");
+      redirectAttributes.addFlashAttribute(
+          BindingResult.MODEL_KEY_PREFIX + "counsel", bindingResult);
+      redirectAttributes.addFlashAttribute("counsel", selectedCounsel);
       return "redirect:/application/counsel/confirm";
     }
 
@@ -278,6 +258,39 @@ public class CounselSearchController {
     session.removeAttribute(SELECTED_COUNSEL);
 
     return "redirect:/allocate-cost-limit";
+  }
+
+  /**
+   * Checks if the selected counsel is already present in the cost allocation.
+   *
+   * @param formData The current cost allocation form data.
+   * @param selectedCounsel The counsel to check for.
+   * @return true if the counsel is already present, false otherwise.
+   */
+  private boolean isDuplicateCounsel(
+      final AllocateCostsFormData formData, final CounselLookupValueDetail selectedCounsel) {
+    if (formData.getCostEntries() == null) {
+      return false;
+    }
+
+    return formData.getCostEntries().stream()
+        .anyMatch(
+            entry -> {
+              boolean refMatch =
+                  Objects.equals(
+                      entry.getLscResourceId() != null ? entry.getLscResourceId().trim() : null,
+                      selectedCounsel.getLegalAidSupplierNumber() != null
+                          ? selectedCounsel.getLegalAidSupplierNumber().trim()
+                          : null);
+              boolean nameMatch =
+                  entry.getResourceName() != null
+                      && selectedCounsel.getName() != null
+                      && entry
+                          .getResourceName()
+                          .trim()
+                          .equalsIgnoreCase(selectedCounsel.getName().trim());
+              return refMatch || nameMatch;
+            });
   }
 
   /**
