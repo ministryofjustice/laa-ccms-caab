@@ -98,7 +98,7 @@
             </thead>
             <tbody class="govuk-table__body">
             <tr class="govuk-table__row" th:if="${#lists.isEmpty(notificationAttachments)}">
-              <td class="govuk-table__cell" colspan="6" th:text="#{notifications.noAttachments}">None</td>
+              <td class="govuk-table__cell" colspan="6" th:text="#{notifications.noAttachments}"></td>
             </tr>
             <tr class="govuk-table__row" th:each="attachment : ${notificationAttachments}">
               <td class="govuk-table__cell" th:text="${attachment.number}"></td>

@@ -305,6 +305,24 @@ public class ActionsAndNotificationsController {
       Model model,
       HttpSession session) {
 
+    sortAttachedDocuments(notification);
+
+    Map<String, String> documentLinks =
+        notificationService.getDocumentLinks(notification.getAttachedDocuments());
+
+    model.addAttribute("notificationResponseFormData", notificationResponseFormData);
+    model.addAttribute("documentLinks", documentLinks);
+    model.addAttribute(NOTIFICATION, notification);
+    session.setAttribute(NOTIFICATION, notification);
+    return "notifications/notification";
+  }
+
+  /**
+   * Sorts the attached documents for a notification.
+   *
+   * @param notification the notification containing the documents to sort.
+   */
+  private void sortAttachedDocuments(Notification notification) {
     if (notification.getAttachedDocuments() != null) {
       List<uk.gov.laa.ccms.data.model.Document> attachedDocuments =
           new ArrayList<>(notification.getAttachedDocuments());
@@ -327,15 +345,6 @@ public class ActionsAndNotificationsController {
                   Comparator.nullsLast(Comparator.naturalOrder())));
       notification.setAttachedDocuments(attachedDocuments);
     }
-
-    Map<String, String> documentLinks =
-        notificationService.getDocumentLinks(notification.getAttachedDocuments());
-
-    model.addAttribute("notificationResponseFormData", notificationResponseFormData);
-    model.addAttribute("documentLinks", documentLinks);
-    model.addAttribute(NOTIFICATION, notification);
-    session.setAttribute(NOTIFICATION, notification);
-    return "notifications/notification";
   }
 
   /**

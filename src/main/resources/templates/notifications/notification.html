@@ -100,7 +100,7 @@
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
           <h2 class="govuk-heading-m" th:text="#{notifications.subHeading.attachments}"/>
-          <p class="govuk-body" th:if="${#lists.isEmpty(notification.attachedDocuments)}" th:text="#{notifications.noAttachments}">No files attached</p>
+          <p class="govuk-body" th:if="${#lists.isEmpty(notification.attachedDocuments)}" th:text="#{notifications.noAttachments}"></p>
           <table th:unless="${#lists.isEmpty(notification.attachedDocuments)}" class="govuk-table">
             <thead class="govuk-table__head">
             <tr class="govuk-table__row">
