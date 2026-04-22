@@ -90,8 +90,13 @@ public class NotificationsSearchResultsController {
         PaginationRequestUtil.resolve(
             request, page, size, pageSort, originalPage, originalSize, originalSort, DEFAULT_SORT);
     boolean isNewPageRequest = paginationRequest.isNewPageRequest();
+    boolean forceRefresh = Boolean.parseBoolean(request.getParameter("refresh"));
 
     if (!isNewPageRequest && originalPage != null) {
+      log.debug(
+          "No pagination parameters in request, redirecting to saved state: page={}, sort={}",
+          originalPage,
+          originalSort);
       return "redirect:/notifications/search-results?page="
           + originalPage
           + "&size="
@@ -114,7 +119,12 @@ public class NotificationsSearchResultsController {
 
     // Check if we can use cached results
     Notifications notificationsResponse;
-    if (cachedNotifications != null && isNewPageRequest && !isNewSort && !isNewPage && !isNewSize) {
+    if (cachedNotifications != null
+        && !forceRefresh
+        && isNewPageRequest
+        && !isNewSort
+        && !isNewPage
+        && !isNewSize) {
       notificationsResponse = cachedNotifications;
     } else {
       criteria.setSort(finalPageSort);

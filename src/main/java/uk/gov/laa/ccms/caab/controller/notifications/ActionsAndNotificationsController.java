@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -154,7 +155,7 @@ public class ActionsAndNotificationsController {
       criteria.setUserType(user.getUserType());
       criteria.setAssignedToUserId(user.getLoginId());
       model.addAttribute(NOTIFICATION_SEARCH_CRITERIA, criteria);
-      return "redirect:/notifications/search-results";
+      return "redirect:/notifications/search-results?page=0&refresh=true";
     }
 
     populateDropdowns(user, model, criteria);
@@ -182,7 +183,7 @@ public class ActionsAndNotificationsController {
       return "notifications/actions-and-notifications-search";
     }
 
-    return "redirect:/notifications/search-results";
+    return "redirect:/notifications/search-results?page=0&refresh=true";
   }
 
   /**
@@ -211,7 +212,7 @@ public class ActionsAndNotificationsController {
     criteria.setOriginatesFromCase(true);
     criteria.setCaseReference(ebsCase.getCaseReferenceNumber());
     model.addAttribute(NOTIFICATION_SEARCH_CRITERIA, criteria);
-    return "redirect:/notifications/search-results";
+    return "redirect:/notifications/search-results?page=0&refresh=true";
   }
 
   /**
@@ -668,12 +669,30 @@ public class ActionsAndNotificationsController {
     Mono<List<ContactDetail>> feeEarners =
         providerService
             .getProvider(user.getProvider().getId())
-            .map(providerService::getAllFeeEarners);
+            .map(providerService::getAllFeeEarners)
+            .onErrorResume(
+                e -> {
+                  log.error("Failed to retrieve fee earners", e);
+                  return Mono.just(Collections.emptyList());
+                });
     // get the notification types
     Mono<CommonLookupDetail> notificationTypes =
-        lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE);
+        lookupService
+            .getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE)
+            .onErrorResume(
+                e -> {
+                  log.error("Failed to retrieve notification types", e);
+                  return Mono.just(new CommonLookupDetail().content(Collections.emptyList()));
+                });
     // get the Users
-    Mono<UserDetails> users = userService.getUsers(user.getProvider().getId());
+    Mono<UserDetails> users =
+        userService
+            .getUsers(user.getProvider().getId())
+            .onErrorResume(
+                e -> {
+                  log.error("Failed to retrieve users", e);
+                  return Mono.just(new UserDetails().content(Collections.emptyList()));
+                });
 
     // Zip all Monos and populate the model once all results are available
     Mono.zip(feeEarners, notificationTypes, users)
