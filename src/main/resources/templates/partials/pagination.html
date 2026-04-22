@@ -52,16 +52,16 @@
 </nav>
 
 <th scope="col"
-    class="govuk-table__header govuk-!-font-size-17"
+    class="govuk-table__header"
     th:fragment="sorting(page, field, label)">
   <a class="govuk-link"
      th:href="@{${currentUrl}
                 + '?page=' + ${page.number} + '&size=' + ${page.size}
                 + '&pageSort=' + ${field} + ',' + ${sortField == field && sortDirection == 'asc' ? 'desc' : 'asc'}}">[[${label}]]<span th:if="${sortField == field}"
-          th:utext="${sortDirection == 'asc' || sortDirection == '' ? ' &#9650;' : ' &#9660;'}">
+          th:utext="${sortDirection == 'asc' || sortDirection == '' ? ' &#x25B2;' : ' &#x25BC;'}">
     </span>
     <span th:if="${sortField != field}"
-          th:utext="${' &#9656;'}">
+          th:utext="${' &#x25B8;'}">
     </span>
   </a>
 </th>
