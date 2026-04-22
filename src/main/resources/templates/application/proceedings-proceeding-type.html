@@ -42,14 +42,10 @@
                 th:errorclass="govuk-select--error"
                 id="proceedingType"
                 th:name="proceedingType"
-                th:attr="onchange=|document.getElementById('proceedingTypeDisplayValue').value =
-                            this.options[this.selectedIndex].text;
-                         document.getElementById('orderTypeRequired').value =
-                            this.options[this.selectedIndex].getAttribute('order-type-required');
-                          document.getElementById('proceedingDescription').value =
-                            this.options[this.selectedIndex].getAttribute('proceeding-description');
-                         document.getElementById('larScope').value =
-                            this.options[this.selectedIndex].getAttribute('lar-scope');|">
+                th:attr="data-display-value-id='proceedingTypeDisplayValue',
+                         data-order-type-id='orderTypeRequired',
+                         data-description-id='proceedingDescription',
+                         data-lar-scope-id='larScope'">
           <option value="" th:text="#{site.select}"></option>
           <option th:each="item : ${proceedingTypes}"
                   th:value="${item['code']}"

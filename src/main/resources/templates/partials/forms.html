@@ -72,7 +72,7 @@
           th:errorclass="govuk-select--error"
           th:id="${fieldId}"
           th:name="${fieldId}"
-          th:attr="onchange=|document.getElementById('${fieldId}DisplayValue').value = this.options[this.selectedIndex].text;|">
+          th:attr="data-display-value-id=${fieldId + 'DisplayValue'}">
     <option value="" th:text="#{site.select}"></option>
     <option th:each="item : ${list}"
             th:value="${item[itemValue]}"

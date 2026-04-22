@@ -164,16 +164,17 @@
 </div>
 </body>
 </html>
-<script>
-  var links = document.getElementsByClassName('ccms-download-link')
-  for(var i = 0; i < links.length; i++) {
-    var link = links[i];
-    link.onclick = function() {
-      ldr = this.closest('td').getElementsByClassName('loader-small')[0];
-      console.log("Link with ID: " + this.id + " activating spinner with ID: " + ldr.id);
-      if (ldr.style.visibility == "hidden") {
-        ldr.style.visibility = "visible"
-      }
-    };
-  }
+<script th:attr="nonce=${cspNonce}">
+  (function() {
+    var links = document.getElementsByClassName('ccms-download-link')
+    for(var i = 0; i < links.length; i++) {
+      var link = links[i];
+      link.addEventListener('click', function() {
+        var ldr = this.closest('td').getElementsByClassName('loader-small')[0];
+        if (ldr && ldr.style.visibility == "hidden") {
+          ldr.style.visibility = "visible";
+        }
+      });
+    }
+  })();
 </script>

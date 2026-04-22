@@ -23,7 +23,10 @@ import org.springframework.security.saml2.provider.service.authentication.Saml2A
 import org.springframework.security.saml2.provider.service.authentication.Saml2Authentication;
 import org.springframework.security.saml2.provider.service.authentication.Saml2ResponseAssertionAccessor;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.header.writers.ContentSecurityPolicyHeaderWriter;
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
+import uk.gov.laa.ccms.caab.security.CspNonceFilter;
 import uk.gov.laa.ccms.caab.service.UserService;
 
 /** Configuration class for customizing Spring Security settings. */
@@ -103,6 +106,25 @@ public class SecurityConfiguration {
                     .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode())
                     .anyRequest()
                     .authenticated())
+        .addFilterBefore(new CspNonceFilter(), BasicAuthenticationFilter.class)
+        .headers(headers -> headers
+            .contentSecurityPolicy(csp -> csp
+                .reportOnly()
+                .policyDirectives(
+                    "script-src 'nonce-{nonce}' 'strict-dynamic' 'self' "
+                        + "https://www.googletagmanager.com "
+                        + "https://opa.oraclecloud.com; "
+                        + "style-src 'nonce-{nonce}' 'self' "
+                        + "https://opa.oraclecloud.com; "
+                        + "img-src 'self' https://www.googletagmanager.com; "
+                        + "connect-src 'self' https://www.google-analytics.com; "
+                        + "font-src 'self' https://opa.oraclecloud.com; "
+                        + "frame-src 'self' https://opa.oraclecloud.com; "
+                        + "object-src 'none'; "
+                        + "base-uri 'self'; "
+                        + "form-action 'self';")
+            )
+        )
         .sessionManagement(
             sessionManagement ->
                 sessionManagement.invalidSessionStrategy(

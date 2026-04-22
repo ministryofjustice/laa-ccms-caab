@@ -61,7 +61,7 @@
                         th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
                         th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
                         th:errorclass="govuk-select--error"
-                        th:attr="onchange=|document.getElementById('dynamicOptions[${option.code}].fieldValueDisplayValue').value = this.options[this.selectedIndex].text;|">
+                        th:attr="data-display-value-id='dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'">
                   <option value="" th:text="#{site.select}"></option>
                   <option th:each="item : ${__${option.code}__}"
                           th:value="${item['code']}"
@@ -151,7 +151,8 @@
                 </td>
                 <td class="govuk-table__cell" th:text="${#dates.format(uploadedDoc.auditTrail.created, 'dd/MM/yyyy')}"></td>
                 <td class="govuk-table__cell">
-                  <button type="submit" name="action" value="document_delete" class="govuk-body ccms-button-as-link" th:onclick="|document.getElementById('documentIdToDelete').value='${uploadedDoc.id}'; this.form.submit();|"
+                  <button type="submit" name="action" value="document_delete" class="govuk-body ccms-button-as-link"
+                      th:attr="data-delete-id=${uploadedDoc.id}, data-delete-input-id='documentIdToDelete'"
                       th:text="#{site.remove}"></button>
                 </td>
               </tr>
