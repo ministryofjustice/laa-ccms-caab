@@ -10,7 +10,7 @@
     <div id="breadcrumbs">
     </div>
 
-    <div id="main-content" style="padding-top: 40px;">
+    <div id="main-content" class="ccms-padding-top-40">
         <span class="govuk-caption-l" th:text="#{caseCosts.review.caption}"/>
         <h1 class="govuk-heading-l" id="main-heading" th:text="#{caseCosts.review.heading}"></h1>
         <p class="govuk-body-l" th:text="#{caseCosts.review.leadParagraph}"></p>
@@ -48,7 +48,7 @@
                         <tr class="govuk-table__row"
                             th:each="costEntryDetail : *{costEntries.stream().distinct().toList()}">
                             <td class="govuk-table__cell" th:text="${costEntryDetail.resourceName}"/>
-                            <td class="govuk-table__cell" style="text-transform: capitalize"
+                            <td class="govuk-table__cell ccms-text-capitalize"
                                 th:text="${costEntryDetail.costCategory.toLowerCase()}"></td>
                             <td class="govuk-table__cell" th:text="'£ ' + ${costEntryDetail.amountBilled}"></td>
                             <td class="govuk-table__cell govuk-table__header"

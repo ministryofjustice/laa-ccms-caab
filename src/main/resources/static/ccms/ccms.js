@@ -5,7 +5,7 @@ function doBlurEvent(theElement) {
     var oDiv = document.createElement("DIV");
     oDiv.setAttribute("id", theElement.name + "_error");
     oDiv.setAttribute("class", "errorText");
-    oDiv.innerHTML = "Please complete this box";
+    oDiv.textContent = "Please complete this box";
     theParent.appendChild(oDiv);
   } else if (theElement.value != "" && document.getElementById(
       theElement.name + "_error") != null) {
@@ -66,12 +66,11 @@ function stopTyping(field, event, size) {
 function createPrintLink(parentElementId, linkText) {
   var parentElement = document.getElementById(parentElementId);
   var printLink = document.createElement("a");
-  // IE bug, it ignores the setAttribute onclick
-  if (printLink.attachEvent) {
-    printLink.attachEvent("onclick", printWindow);
-  }
-  printLink.setAttribute("href", "javascript: void(null)");
-  printLink.setAttribute("onclick", "javascript: window.print()");
+  printLink.addEventListener("click", function (event) {
+    event.preventDefault();
+    printWindow();
+  });
+  printLink.setAttribute("href", "#");
   printLink.appendChild(document.createTextNode(linkText));
   parentElement.appendChild(printLink);
 
@@ -140,21 +139,45 @@ function printWindow() {
     var textareas = document.getElementsByTagName("textarea");
     for (var index = 0; index < textareas.length; index++) {
       var textarea = textareas[index];
-      var counter = document.createElement("div");
-      counter.setAttribute("id", textarea.id + '_count');
-
-      var tmpFn = window.stopTyping;
-      window.stopTyping = function (a, b, size) {
-        return size;
-      };
-      var maxlength = textarea.onkeydown();
-      window.stopTyping = tmpFn;
+      var maxlength = getTextAreaMaxLength(textarea);
 
       if (maxlength > 4000) {
-        counter.appendChild(
-            document.createTextNode(textarea.value.length + ' / ' + maxlength));
-        insertAfter(textarea, counter);
+        var counter = document.getElementById(textarea.id + '_count');
+        if (counter == null) {
+          counter = document.createElement("div");
+          counter.setAttribute("id", textarea.id + '_count');
+          insertAfter(textarea, counter);
+        }
+        updateTextAreaCounter(textarea, counter, maxlength);
+        addEventListener(textarea, "input", function () {
+          updateTextAreaCounter(this, document.getElementById(this.id + '_count'),
+              getTextAreaMaxLength(this));
+        });
       }
+    }
+  }
+
+  function getTextAreaMaxLength(textarea) {
+    var maxlength = parseInt(textarea.getAttribute("maxlength"), 10);
+    if (!isNaN(maxlength)) {
+      return maxlength;
+    }
+
+    var parent = textarea.parentNode;
+    while (parent != null && parent.getAttribute != null) {
+      maxlength = parseInt(parent.getAttribute("data-maxlength"), 10);
+      if (!isNaN(maxlength)) {
+        return maxlength;
+      }
+      parent = parent.parentNode;
+    }
+
+    return 0;
+  }
+
+  function updateTextAreaCounter(textarea, counter, maxlength) {
+    if (counter != null) {
+      counter.textContent = textarea.value.length + ' / ' + maxlength;
     }
   }
 

@@ -14,6 +14,10 @@ submission:
 portal:
   logoutUrl: ${PORTAL_URL}/oam/server/logout?end_url=${PORTAL_URL}/LAALogin/pages/Logout.jsp
 
+csp:
+  report-only: ${CSP_REPORT_ONLY:true}
+  upgrade-insecure-requests: ${CSP_UPGRADE_INSECURE_REQUESTS:false}
+
 spring:
   application:
     name: laa-ccms-caab

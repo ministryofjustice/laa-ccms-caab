@@ -87,7 +87,7 @@
           th:name="${fieldId}"
           th:disabled="${disabled}"
           th:aria-describedby="${hint != null ? fieldId + '-hint' : null}"
-          th:attr="onchange=|document.getElementById('${fieldId}DisplayValue').value = this.options[this.selectedIndex].text;|">
+          th:attr="data-display-value-id=${fieldId + 'DisplayValue'}">
     <option value="" th:text="#{site.select}"></option>
     <option th:each="item : ${list}"
             th:value="${item[itemValue]}"
