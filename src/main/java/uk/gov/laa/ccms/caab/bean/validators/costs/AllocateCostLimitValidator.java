@@ -95,7 +95,6 @@ public class AllocateCostLimitValidator extends AbstractValidator {
             "costEntries[" + (index == -1 ? 0 : index) + "].requestedCosts",
             "costCostAllocation.requestedAmount.belowBilledAmount");
       }
-      allocateCostsFormData.getCostEntries().forEach(cd -> cd.setNewEntry(false));
     }
   }
 }

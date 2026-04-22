@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="#{service.name} + ' - ' + #{counsel.confirm.title}"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a th:href="@{/allocate-cost-limit}" class="govuk-back-link" th:text="#{caseCosts.allocateCostLimit.cancel}"></a>
+    </div>
+    <div id="main-content">
+        <div th:object="${counsel}">
+            <div th:replace="~{partials/error-summary :: error-summary}"></div>
+        </div>
+
+        <h1 class="govuk-heading-l" th:text="#{counsel.confirm.heading}"></h1>
+        <p class="govuk-body-l" th:utext="#{counsel.confirm.paragraph}"></p>
+
+        <dl class="govuk-summary-list">
+            <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key" th:text="#{counsel.search.name}"></dt>
+                <dd class="govuk-summary-list__value" th:text="${counsel.name}"></dd>
+            </div>
+            <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key" th:text="#{counsel.search.company}"></dt>
+                <dd class="govuk-summary-list__value" th:text="${counsel.company}"></dd>
+            </div>
+            <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key" th:text="#{counsel.search.laaCounselRef}"></dt>
+                <dd class="govuk-summary-list__value" th:text="${counsel.legalAidSupplierNumber}"></dd>
+            </div>
+            <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key" th:text="#{counsel.search.category}"></dt>
+                <dd class="govuk-summary-list__value" th:text="${counsel.category}"></dd>
+            </div>
+            <div class="govuk-summary-list__row">
+                <dt class="govuk-summary-list__key" th:text="#{counsel.search.county}"></dt>
+                <dd class="govuk-summary-list__value" th:text="${counsel.county}"></dd>
+            </div>
+        </dl>
+
+        <form th:action="@{/application/counsel/confirm}" method="post">
+            <div class="govuk-button-group">
+                <button type="submit" class="govuk-button" data-module="govuk-button" th:text="#{site.confirm}"></button>
+                <a th:href="@{/counsel/results}" class="govuk-button govuk-button--secondary" data-module="govuk-button" th:text="#{site.back}"></a>
+           </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

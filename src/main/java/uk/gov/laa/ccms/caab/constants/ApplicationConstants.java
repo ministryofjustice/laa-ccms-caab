@@ -132,4 +132,7 @@ public class ApplicationConstants {
 
   /** Status indicating the application section task is not available. */
   public static final String SECTION_STATUS_NOT_AVAILABLE = "Not available";
+
+  /** The cost category for counsel. */
+  public static final String COUNSEL_COST_CATEGORY = "counsel";
 }
