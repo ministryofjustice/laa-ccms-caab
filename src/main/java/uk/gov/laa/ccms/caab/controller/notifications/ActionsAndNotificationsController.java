@@ -66,7 +66,6 @@ import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.Notification;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.data.model.UserDetails;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
 
 /** Controller for handling requests for actions and notifications. */
@@ -670,46 +669,47 @@ public class ActionsAndNotificationsController {
         providerService
             .getProvider(user.getProvider().getId())
             .map(providerService::getAllFeeEarners)
+            .map(list -> Optional.ofNullable(list).orElse(Collections.emptyList()))
             .onErrorResume(
                 e -> {
                   log.error("Failed to retrieve fee earners", e);
                   return Mono.just(Collections.emptyList());
                 });
     // get the notification types
-    Mono<CommonLookupDetail> notificationTypes =
+    Mono<List<CommonLookupValueDetail>> notificationTypes =
         lookupService
             .getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE)
+            .map(detail -> Optional.ofNullable(detail.getContent()).orElse(Collections.emptyList()))
             .onErrorResume(
                 e -> {
                   log.error("Failed to retrieve notification types", e);
-                  return Mono.just(new CommonLookupDetail().content(Collections.emptyList()));
+                  return Mono.just(Collections.emptyList());
                 });
     // get the Users
-    Mono<UserDetails> users =
+    Mono<List<BaseUser>> users =
         userService
             .getUsers(user.getProvider().getId())
+            .map(
+                details ->
+                    Optional.ofNullable(details.getContent()).orElse(Collections.emptyList()))
             .onErrorResume(
                 e -> {
                   log.error("Failed to retrieve users", e);
-                  return Mono.just(new UserDetails().content(Collections.emptyList()));
+                  return Mono.just(Collections.emptyList());
                 });
 
     // Zip all Monos and populate the model once all results are available
     Mono.zip(feeEarners, notificationTypes, users)
         .doOnNext(
             tuple -> {
-              List<BaseUser> allUsers = new ArrayList<>(tuple.getT3().getContent());
-              boolean userInList =
-                  allUsers.stream()
-                      .anyMatch(u -> u.getLoginId().equalsIgnoreCase(user.getLoginId()));
-
-              if (!userInList) {
-                allUsers.add(new BaseUser().userId(user.getUserId()).loginId(user.getLoginId()));
-              }
-
               model.addAttribute("feeEarners", tuple.getT1());
-              model.addAttribute("notificationTypes", tuple.getT2().getContent());
-              model.addAttribute("users", allUsers);
+              model.addAttribute("feeEarnersUnavailable", tuple.getT1().isEmpty());
+
+              model.addAttribute("notificationTypes", tuple.getT2());
+              model.addAttribute("notificationTypesUnavailable", tuple.getT2().isEmpty());
+
+              model.addAttribute("users", tuple.getT3());
+              model.addAttribute("usersUnavailable", tuple.getT3().isEmpty());
             })
         .block();
     model.addAttribute("notificationSearchCriteria", criteria);

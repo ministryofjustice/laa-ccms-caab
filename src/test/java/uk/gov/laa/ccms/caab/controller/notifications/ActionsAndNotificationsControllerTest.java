@@ -222,7 +222,8 @@ class ActionsAndNotificationsControllerTest {
 
       UserDetails baseUsers =
           new UserDetails()
-              .addContentItem(new BaseUser().userId(123).userType("type1").loginId("login1"));
+              .addContentItem(
+                  new BaseUser().userId(123).userType("type1").loginId(userDetails.getLoginId()));
 
       when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE))
           .thenReturn(Mono.just(notificationTypes));
@@ -305,8 +306,11 @@ class ActionsAndNotificationsControllerTest {
           .hasViewName("notifications/actions-and-notifications-search")
           .model()
           .containsEntry("feeEarners", Collections.emptyList())
+          .containsEntry("feeEarnersUnavailable", true)
           .containsEntry("notificationTypes", Collections.emptyList())
-          .containsEntry("users", Collections.emptyList());
+          .containsEntry("notificationTypesUnavailable", true)
+          .containsEntry("users", Collections.emptyList())
+          .containsEntry("usersUnavailable", true);
     }
   }
 
