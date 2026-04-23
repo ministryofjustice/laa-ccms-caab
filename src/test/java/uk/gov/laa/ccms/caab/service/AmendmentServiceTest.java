@@ -232,6 +232,7 @@ class AmendmentServiceTest {
           new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
       when(applicationService.getCase(any(), anyLong(), any()))
           .thenReturn(buildFullApplicationDetail());
+      when(caabApiClient.createApplication(any(), any())).thenReturn(Mono.just("123"));
       when(soaApiClient.updateCase(any(), any(), any()))
           .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("12345")));
       // When
