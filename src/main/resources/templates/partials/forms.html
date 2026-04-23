@@ -81,8 +81,8 @@
   </select>
 </div>
 
-<div th:fragment="textInput(fieldId, label, inputClass)"
-     th:with="hideLabel=${hideLabel?:false}, maxlength=${maxlength}, hint=${hint}"
+<div th:fragment="textInput(fieldId, label, inputClass, maxlength)"
+     th:with="hideLabel=${hideLabel?:false}, hint=${hint}"
      class="govuk-form-group"
      th:classappend="${#fields.hasErrors(fieldId)} ? 'govuk-form-group--error' : ''">
   <label class="govuk-label" th:unless="${hideLabel}" th:for="${fieldId}" th:text="${label}"></label>
