@@ -56,13 +56,15 @@ public class CaseSubmissionController {
     final TransactionStatus caseStatus = applicationService.getCaseStatus(transactionId).block();
 
     if (caseStatus != null && StringUtils.hasText(caseStatus.getReferenceNumber())) {
+      session.removeAttribute(SUBMISSION_POLL_COUNT);
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
       return "redirect:/%s/%s/confirmed"
           .formatted(caseContext.getPathValue(), SUBMISSION_SUBMIT_CASE);
     }
 
-    return viewIncludingPollCount(session);
+    return viewIncludingPollCount(session, caseContext);
   }
+
 
   /**
    * Handles the confirmation of a case creation submission and updates the client session.
@@ -89,14 +91,15 @@ public class CaseSubmissionController {
    * @return the view name or a redirect to the failed submission page if the max poll count is
    *     exceeded
    */
-  protected String viewIncludingPollCount(final HttpSession session) {
+  protected String viewIncludingPollCount(final HttpSession session,
+      final CaseContext caseContext) {
     int submissionPollCount = 0;
 
     if (session.getAttribute(SUBMISSION_POLL_COUNT) != null) {
       submissionPollCount = (int) session.getAttribute(SUBMISSION_POLL_COUNT);
       if (submissionPollCount >= submissionConstants.getMaxPollCount()) {
-        return "redirect:/application/%s/failed"
-            .formatted(SubmissionConstants.SUBMISSION_SUBMIT_CASE);
+        return "redirect:/%s/%s/failed"
+            .formatted(caseContext.getPathValue(), SubmissionConstants.SUBMISSION_SUBMIT_CASE);
       }
     }
     submissionPollCount += 1;

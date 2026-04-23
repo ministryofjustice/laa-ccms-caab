@@ -18,6 +18,7 @@ import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
@@ -55,6 +56,7 @@ public class ClientSubmissionsInProgressController {
       session.setAttribute(CLIENT_REFERENCE, clientStatus.getReferenceNumber());
 
       // Do some session tidy up
+      session.removeAttribute(SUBMISSION_POLL_COUNT);
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
       session.removeAttribute(CLIENT_SEARCH_CRITERIA);
       session.removeAttribute(CLIENT_FLOW_FORM_DATA);
@@ -62,7 +64,7 @@ public class ClientSubmissionsInProgressController {
       return "redirect:/application/client-create/confirmed";
     }
 
-    return viewIncludingPollCount(session, SUBMISSION_CREATE_CLIENT);
+    return viewIncludingPollCount(session, CaseContext.APPLICATION, SUBMISSION_CREATE_CLIENT);
   }
 
   /**
@@ -87,6 +89,7 @@ public class ClientSubmissionsInProgressController {
       clientService.updateClientNames(clientStatus.getReferenceNumber(), user, baseClient).block();
 
       // Do some session tidy up
+      session.removeAttribute(SUBMISSION_POLL_COUNT);
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
       session.removeAttribute(CLIENT_FLOW_FORM_DATA);
       session.removeAttribute(APPLICATION_CLIENT_NAMES);
@@ -94,16 +97,61 @@ public class ClientSubmissionsInProgressController {
       return "redirect:/%s/client-update/confirmed".formatted(caseContext.getPathValue());
     }
 
-    return viewIncludingPollCount(session, SUBMISSION_UPDATE_CLIENT);
+    return viewIncludingPollCount(session, caseContext, SUBMISSION_UPDATE_CLIENT);
   }
 
-  private String viewIncludingPollCount(final HttpSession session, final String submissionType) {
+  /**
+   * Handles the POST request for a failed client submission, redirecting back to the appropriate
+   * summary page.
+   *
+   * @param caseContext the context for the case (e.g. application or amendments)
+   * @param submissionType the type of submission that failed
+   * @param session the HTTP session to be updated
+   * @return a redirect back to the summary page
+   */
+  @PostMapping("/{caseContext}/{submissionType}/failed")
+  public String submissionFailed(
+      @PathVariable("caseContext") CaseContext caseContext,
+      @PathVariable String submissionType,
+      final HttpSession session) {
+    session.removeAttribute(SUBMISSION_POLL_COUNT);
+    if (caseContext.isApplication()) {
+      if (SUBMISSION_CREATE_CLIENT.equals(submissionType)) {
+        return "redirect:/application/client/details";
+      } else if (SubmissionConstants.SUBMISSION_SUBMIT_CASE.equals(submissionType)) {
+        return "redirect:/application/case-details";
+      }
+      return "redirect:/application/sections";
+    } else {
+      return "redirect:/amendments/summary";
+    }
+  }
+
+  /**
+   * Handles the GET request for a failed submission screen.
+   *
+   * @param submissionType the type of submission that failed
+   * @param model the model to be updated with submission details
+   * @return the view name for a failed submission.
+   */
+  @GetMapping("/{caseContext}/{submissionType}/failed")
+  public String submissionsFailed(
+      @PathVariable String submissionType,
+      Model model) {
+
+    model.addAttribute("submissionType", submissionType);
+
+    return "submissions/submissionFailed";
+  }
+
+  private String viewIncludingPollCount(final HttpSession session, final CaseContext caseContext,
+      final String submissionType) {
     int submissionPollCount = 0;
 
     if (session.getAttribute(SUBMISSION_POLL_COUNT) != null) {
       submissionPollCount = (int) session.getAttribute(SUBMISSION_POLL_COUNT);
       if (submissionPollCount >= submissionConstants.getMaxPollCount()) {
-        return "redirect:/application/%s/failed".formatted(submissionType);
+        return "redirect:/%s/%s/failed".formatted(caseContext.getPathValue(), submissionType);
       }
     }
     submissionPollCount += 1;
