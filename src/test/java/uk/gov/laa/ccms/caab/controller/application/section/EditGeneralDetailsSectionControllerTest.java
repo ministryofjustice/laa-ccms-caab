@@ -234,7 +234,9 @@ class EditGeneralDetailsSectionControllerTest {
           .andDo(print())
           .andExpect(redirectedUrl("/amendments/%s".formatted(SUBMISSION_SUBMIT_CASE)));
 
-      verify(applicationService, times(1))
+      verify(amendmentService, times(1))
+          .submitQuickAmendmentCorrespondenceAddress(addressDetails, "123456789", user);
+      verify(applicationService, never())
           .updateCorrespondenceAddress(applicationId, addressDetails, user);
       verify(addressService, never()).getAddresses(any());
     }

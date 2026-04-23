@@ -81,6 +81,9 @@ public class AmendmentService {
         applicationService.getCase(
             caseReferenceNumber, userDetail.getProvider().getId(), userDetail.getLoginId());
 
+    // Set the amendment type
+    amendment.setAmendment(true);
+
     // Set application type based on previously entered answers prior to creating an amendment.
     ApplicationType amendmentType =
         new ApplicationTypeBuilder()
@@ -210,7 +213,7 @@ public class AmendmentService {
     AmendmentUtil.cleanAppForQuickAmendSubmit(amendment);
 
     // Create an application in TDS
-    // caabApiClient.createApplication(userDetail.getLoginId(), amendment);
+    caabApiClient.createApplication(userDetail.getLoginId(), amendment).block();
 
     Mono<CaseTransactionResponse> caseTransactionResponseMono =
         soaApiClient.updateCase(userDetail.getLoginId(), userDetail.getUserType(), amendment);
