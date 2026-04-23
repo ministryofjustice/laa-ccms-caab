@@ -31,8 +31,10 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.ui.Model;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -47,6 +49,8 @@ class CaseSubmissionControllerTest {
 
   @InjectMocks private CaseSubmissionController caseSubmissionController;
 
+  private ClientSubmissionsInProgressController clientSubmissionsInProgressController;
+
   @Mock private HttpSession session;
 
   private ActiveCase activeCase;
@@ -55,10 +59,13 @@ class CaseSubmissionControllerTest {
 
   @Mock private Model model;
 
+  @Mock private ClientService clientService;
+
   @BeforeEach
   void setUp() {
+    clientSubmissionsInProgressController = new ClientSubmissionsInProgressController(submissionConstants, clientService);
     mockMvc =
-        MockMvcBuilders.standaloneSetup(caseSubmissionController)
+        MockMvcBuilders.standaloneSetup(caseSubmissionController, clientSubmissionsInProgressController)
             .setConversionService(getConversionService())
             .build();
 
@@ -169,7 +176,7 @@ class CaseSubmissionControllerTest {
     when(session.getAttribute(SUBMISSION_POLL_COUNT)).thenReturn(1);
     when(submissionConstants.getMaxPollCount()).thenReturn(5);
 
-    final String view = caseSubmissionController.viewIncludingPollCount(session);
+    final String view = caseSubmissionController.viewIncludingPollCount(session, CaseContext.APPLICATION);
 
     assertEquals("submissions/submissionInProgress", view);
     verify(session, times(1)).setAttribute(SUBMISSION_POLL_COUNT, 2);
@@ -181,7 +188,7 @@ class CaseSubmissionControllerTest {
     when(session.getAttribute(SUBMISSION_POLL_COUNT)).thenReturn(5);
     when(submissionConstants.getMaxPollCount()).thenReturn(5);
 
-    final String view = caseSubmissionController.viewIncludingPollCount(session);
+    final String view = caseSubmissionController.viewIncludingPollCount(session, CaseContext.APPLICATION);
 
     assertEquals("redirect:/application/%s/failed".formatted(SUBMISSION_SUBMIT_CASE), view);
   }
@@ -191,9 +198,36 @@ class CaseSubmissionControllerTest {
   void testViewIncludingPollCount_StartFromZero() {
     when(session.getAttribute(SUBMISSION_POLL_COUNT)).thenReturn(null);
 
-    final String view = caseSubmissionController.viewIncludingPollCount(session);
+    final String view = caseSubmissionController.viewIncludingPollCount(session, CaseContext.APPLICATION);
 
     assertEquals("submissions/submissionInProgress", view);
     verify(session, times(1)).setAttribute(SUBMISSION_POLL_COUNT, 1);
+  }
+
+  @Test
+  @DisplayName("Test submissionFailed - Application context - Submit Case")
+  void testSubmissionFailed_Application_SubmitCase() throws Exception {
+    mockMvc
+        .perform(post("/application/submit-case/failed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/case-details"));
+  }
+
+  @Test
+  @DisplayName("Test submissionFailed - Amendment context")
+  void testSubmissionFailed_Amendment() throws Exception {
+    mockMvc
+        .perform(post("/amendments/submit-case/failed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/amendments/summary"));
+  }
+
+  @Test
+  @DisplayName("Test submissionsFailed GET")
+  void testSubmissionsFailed() throws Exception {
+    mockMvc
+        .perform(get("/application/submit-case/failed"))
+        .andExpect(status().isOk())
+        .andExpect(view().name("submissions/submissionFailed"));
   }
 }

@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
@@ -182,5 +183,37 @@ public class ClientSubmissionsInProgressControllerTest {
                 .sessionAttr(APPLICATION_CLIENT_NAMES, baseClient))
         .andExpect(status().isOk())
         .andExpect(view().name("submissions/submissionInProgress"));
+  }
+
+  @Test
+  void testSubmissionFailed_Application_ClientCreate() throws Exception {
+    mockMvc
+        .perform(post("/application/client-create/failed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/details"));
+  }
+
+  @Test
+  void testSubmissionFailed_Application_SubmitCase() throws Exception {
+    mockMvc
+        .perform(post("/application/submit-case/failed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/case-details"));
+  }
+
+  @Test
+  void testSubmissionFailed_Amendment() throws Exception {
+    mockMvc
+        .perform(post("/amendments/client-update/failed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/amendments/summary"));
+  }
+
+  @Test
+  void testSubmissionsFailed_GET() throws Exception {
+    mockMvc
+        .perform(get("/application/client-create/failed"))
+        .andExpect(status().isOk())
+        .andExpect(view().name("submissions/submissionFailed"));
   }
 }
