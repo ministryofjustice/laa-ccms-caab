@@ -26,15 +26,13 @@ public class AllocateCostLimitValidator extends AbstractValidator {
 
     BigDecimal total = new BigDecimal(0);
     final AllocateCostsFormData allocateCostsFormData = (AllocateCostsFormData) target;
-    final Integer size = allocateCostsFormData.getCostEntries().size();
+    final List<CostEntryDetail> costEntries = allocateCostsFormData.getCostEntries();
+
+    final Integer size = costEntries.size();
     final List<BigDecimal> requestedCosts =
-        allocateCostsFormData.getCostEntries().stream()
-            .map(CostEntryDetail::getRequestedCosts)
-            .collect(Collectors.toList());
+        costEntries.stream().map(CostEntryDetail::getRequestedCosts).collect(Collectors.toList());
     final List<BigDecimal> amountsBilled =
-        allocateCostsFormData.getCostEntries().stream()
-            .map(CostEntryDetail::getAmountBilled)
-            .collect(Collectors.toList());
+        costEntries.stream().map(CostEntryDetail::getAmountBilled).collect(Collectors.toList());
 
     for (int i = 0; i < size; i++) {
       BigDecimal requestedCost = requestedCosts.get(i);
