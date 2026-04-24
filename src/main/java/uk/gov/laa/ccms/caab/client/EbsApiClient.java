@@ -990,6 +990,16 @@ public class EbsApiClient extends BaseApiClient {
         .get()
         .uri(uriBuilder -> uriBuilder.path("/lookup/counsels").queryParams(queryParams).build())
         .retrieve()
+        .onStatus(
+            HttpStatusCode::is4xxClientError,
+            response ->
+                response
+                    .bodyToMono(String.class)
+                    .flatMap(
+                        body ->
+                            Mono.error(
+                                ebsApiClientErrorHandler.createException(
+                                    body, HttpStatus.resolve(response.statusCode().value())))))
         .bodyToMono(CounselLookupDetail.class)
         .onErrorResume(
             e ->

@@ -65,18 +65,18 @@
 
           <th:block th:unless="${notificationSearchCriteria.originatesFromCase}">
             <div
-                th:replace="~{partials/forms :: textInput('providerCaseReference', #{common.providerRef}, 'govuk-input--width-20')}"></div>
+                th:replace="~{partials/forms :: textInput(fieldId='providerCaseReference', label=#{common.providerRef}, inputClass='govuk-input--width-20', maxlengthParam=35)}"></div>
             <govuk:details
                 th:summaryText="#{notifications.search.caseInformation.laaApplicationCaseReferenceHelp.summaryText}"
                 th:text="#{notifications.search.caseInformation.laaApplicationCaseReferenceHelp.text}"/>
 
             <div
-                th:replace="~{partials/forms :: textInput('caseReference', #{common.laaRef}, 'govuk-input--width-20')}"/>
+                th:replace="~{partials/forms :: textInput(fieldId='caseReference', label=#{common.laaRef}, inputClass='govuk-input--width-20', maxlengthParam=35)}"/>
 
             <input type="hidden" th:field="*{originatesFromCase}"/>
 
             <div
-                th:replace="~{partials/forms :: textInput('clientSurname', #{common.clientSurname}, 'govuk-input--width-20')}"></div>
+                th:replace="~{partials/forms :: textInput(fieldId='clientSurname', label=#{common.clientSurname}, inputClass='govuk-input--width-20', maxlengthParam=35)}"></div>
           </th:block>
 
           <h2 class="govuk-heading-m"

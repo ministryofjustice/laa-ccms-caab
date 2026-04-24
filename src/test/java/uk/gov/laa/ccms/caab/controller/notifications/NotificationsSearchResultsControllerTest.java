@@ -10,9 +10,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.NotificationConstants.SORT_DIRECTION;
+import static uk.gov.laa.ccms.caab.constants.NotificationConstants.SORT_FIELD;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATION_SEARCH_CRITERIA;
 
 import java.util.ArrayList;
@@ -66,6 +71,9 @@ class NotificationsSearchResultsControllerTest {
         .perform(
             get("/notifications/search-results")
                 .sessionAttr("user", userDetails)
+                .queryParam("page", "0")
+                .queryParam("size", "10")
+                .queryParam("pageSort", "dateAssigned,asc")
                 .sessionAttr("notificationSearchCriteria", buildNotificationSearchCriteria()))
         .andDo(print())
         .andExpect(status().isOk())
@@ -83,6 +91,9 @@ class NotificationsSearchResultsControllerTest {
         .perform(
             get("/notifications/search-results")
                 .sessionAttr("user", userDetails)
+                .queryParam("page", "0")
+                .queryParam("size", "10")
+                .queryParam("pageSort", "dateAssigned,asc")
                 .sessionAttr("notificationSearchCriteria", buildNotificationSearchCriteria()))
         .andDo(print())
         .andExpect(status().isOk())
@@ -103,7 +114,13 @@ class NotificationsSearchResultsControllerTest {
     Exception exception =
         assertThrows(
             Exception.class,
-            () -> this.mockMvc.perform(get("/notifications/search-results").flashAttrs(flashMap)));
+            () ->
+                this.mockMvc.perform(
+                    get("/notifications/search-results")
+                        .queryParam("page", "0")
+                        .queryParam("size", "10")
+                        .queryParam("pageSort", "dateAssigned,asc")
+                        .flashAttrs(flashMap)));
 
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
     assertEquals("Error retrieving notifications", exception.getCause().getMessage());
@@ -160,6 +177,113 @@ class NotificationsSearchResultsControllerTest {
         .andExpect(view().name("notifications/actions-and-notifications"));
 
     verify(notificationService).getNotifications(any(), anyInt(), eq(0), eq(10));
+  }
+
+  @Test
+  void testGetSearchResults_UsesCachedResults_WhenParamsMissing_Redirects() throws Exception {
+    Notifications cachedNotifications = getNotificationsMock();
+    NotificationSearchCriteria criteria = buildNotificationSearchCriteria();
+    criteria.setPage(2);
+    criteria.setSize(10);
+    criteria.setSort("dateAssigned,asc");
+
+    this.mockMvc
+        .perform(
+            get("/notifications/search-results")
+                .sessionAttr("user", userDetails)
+                // No query parameters -> should redirect
+                .sessionAttr("notificationSearchCriteria", criteria)
+                .sessionAttr("notificationsSearchResults", cachedNotifications))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(
+            redirectedUrl(
+                "/notifications/search-results?page=2&size=10&pageSort=dateAssigned,asc"));
+  }
+
+  @Test
+  void testGetSearchResults_Redirects_WhenParamsMissing() throws Exception {
+    NotificationSearchCriteria criteria = buildNotificationSearchCriteria();
+    criteria.setPage(3);
+    criteria.setSize(20);
+    criteria.setSort("caseReference,desc");
+
+    this.mockMvc
+        .perform(
+            get("/notifications/search-results")
+                .sessionAttr("user", userDetails)
+                .sessionAttr("notificationSearchCriteria", criteria))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(
+            redirectedUrl(
+                "/notifications/search-results?page=3&size=20&pageSort=caseReference,desc"));
+  }
+
+  @Test
+  void testGetSearchResults_WithEmptySortParam_DoesNotThrowException() throws Exception {
+    Notifications cachedNotifications = getNotificationsMock();
+    NotificationSearchCriteria criteria = buildNotificationSearchCriteria();
+    criteria.setSort("otherField,asc"); // Different from default
+    criteria.setPage(0);
+    criteria.setSize(10);
+
+    // Default to dateAssigned,asc when empty
+    Notifications defaultSortNotifications = getNotificationsMock();
+    defaultSortNotifications.getContent().get(0).setNotificationId("default-sort-id");
+
+    when(notificationService.getNotifications(any(), anyInt(), any(), any()))
+        .thenReturn(Mono.just(defaultSortNotifications));
+
+    this.mockMvc
+        .perform(
+            get("/notifications/search-results")
+                .sessionAttr("user", userDetails)
+                .queryParam(
+                    "pageSort", "") // Invalid sort in request -> will default to dateAssigned,asc
+                .queryParam("page", "0")
+                .queryParam("size", "10")
+                .sessionAttr("notificationSearchCriteria", criteria))
+        .andExpect(status().isOk())
+        .andExpect(view().name("notifications/actions-and-notifications"))
+        .andExpect(model().attribute(SORT_FIELD, "dateAssigned"))
+        .andExpect(model().attribute(SORT_DIRECTION, "asc"))
+        .andExpect(model().attribute(NOTIFICATIONS_SEARCH_RESULTS, defaultSortNotifications));
+
+    verify(notificationService).getNotifications(any(), anyInt(), any(), any());
+  }
+
+  @Test
+  void testGetSearchResults_FetchesNewResults_WhenPageChanges() throws Exception {
+    Notifications cachedNotifications = getNotificationsMock();
+    NotificationSearchCriteria criteria = buildNotificationSearchCriteria();
+    criteria.setPage(0);
+    criteria.setSize(10);
+    criteria.setSort("dateAssigned,asc");
+
+    Notifications nextPageNotifications = getNotificationsMock();
+    nextPageNotifications.getContent().get(0).setNotificationId("next-page-id");
+
+    // Expect call for page 1
+    when(notificationService.getNotifications(any(), anyInt(), eq(1), eq(10)))
+        .thenReturn(Mono.just(nextPageNotifications));
+
+    // Clear session criteria to simulate fresh binding with new page 1
+    this.mockMvc
+        .perform(
+            get("/notifications/search-results")
+                .sessionAttr("user", userDetails)
+                .queryParam("page", "1") // Change page to 1
+                .queryParam("size", "10")
+                .queryParam("pageSort", "dateAssigned,asc")
+                // By providing a criteria with page 0, and a request with page 1,
+                // the controller should detect the change even if Spring binds page=1 into
+                // criteria.
+                .sessionAttr(NOTIFICATION_SEARCH_CRITERIA, criteria)
+                .sessionAttr("notificationsSearchResults", cachedNotifications))
+        .andExpect(status().isOk())
+        .andExpect(view().name("notifications/actions-and-notifications"))
+        .andExpect(model().attribute(NOTIFICATIONS_SEARCH_RESULTS, nextPageNotifications));
+
+    verify(notificationService).getNotifications(any(), anyInt(), eq(1), eq(10));
   }
 
   private static Notifications getNotificationsMock() {

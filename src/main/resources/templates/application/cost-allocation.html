@@ -58,8 +58,8 @@
                             th:each="costEntryDetail, idx : *{costEntries}">
 
                             <td class="govuk-table__cell" th:text="${costEntryDetail.resourceName}"/>
-                            <td class="govuk-table__cell" style="text-transform: capitalize"
-                                th:text=" ${costEntryDetail.costCategory.toLowerCase()}"></td>
+                            <td class="govuk-table__cell"
+                                th:text="#{caseCosts.counsel.type}"></td>
                             <td class="govuk-table__cell" th:text="'£ ' + ${costEntryDetail.amountBilled}"></td>
                             <td class="govuk-table__cell">
                                 <div class="govuk-form-group"

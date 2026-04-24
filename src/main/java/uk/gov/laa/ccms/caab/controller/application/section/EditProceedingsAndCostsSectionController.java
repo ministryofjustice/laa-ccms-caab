@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1677,30 +1678,42 @@ public class EditProceedingsAndCostsSectionController {
       PriorAuthorityFlowFormData flow,
       PriorAuthorityTypeDetail dynamicForm,
       String priorAuthorityAction) {
-    String typeId = flow.getPriorAuthorityTypeFormData().getPriorAuthorityType();
 
-    if (ACTION_ADD.equals(priorAuthorityAction)) {
-      proceedingAndCostsMapper.populatePriorAuthorityDetailsForm(
-          flow.getPriorAuthorityDetailsFormData(), dynamicForm);
-
-      flow.setPriorAuthorityDetailsFormData(flow.getPriorAuthorityDetailsFormData());
+    PriorAuthorityDetailsFormData details = flow.getPriorAuthorityDetailsFormData();
+    if (details == null) {
+      details = new PriorAuthorityDetailsFormData();
+      flow.setPriorAuthorityDetailsFormData(details);
     }
 
     Map<String, DynamicOptionFormData> dynamicOptions =
         flow.getPriorAuthorityDetailsFormData().getDynamicOptions();
 
-    if (dynamicOptions != null) {
-      dynamicOptions
-          .entrySet()
-          .removeIf(entry -> entry.getValue() == null || entry.getKey() == null);
-      dynamicOptions.forEach((code, opt) -> opt.setCode(code));
+    boolean isFreshAdd =
+        ACTION_ADD.equals(priorAuthorityAction)
+            && (dynamicOptions == null || dynamicOptions.isEmpty());
+
+    if (isFreshAdd) {
+      proceedingAndCostsMapper.populatePriorAuthorityDetailsForm(details, dynamicForm);
+
+      dynamicOptions = details.getDynamicOptions();
     }
+
+    if (dynamicOptions == null) {
+      dynamicOptions = new LinkedHashMap<>();
+      details.setDynamicOptions(dynamicOptions);
+    }
+
+    dynamicOptions.entrySet().removeIf(entry -> entry.getValue() == null || entry.getKey() == null);
+    dynamicOptions.forEach((code, opt) -> opt.setCode(code));
+
+    String typeId = flow.getPriorAuthorityTypeFormData().getPriorAuthorityType();
 
     Map<PriorAuthorityGroup, List<DynamicOptionFormData>> grouped =
         PriorAuthorityUtils.groupDynamicOptions(dynamicOptions, typeId);
 
-    flow.getPriorAuthorityDetailsFormData().setValueRequired(dynamicForm.getValueRequired());
+    details.setValueRequired(dynamicForm.getValueRequired());
 
+    model.addAttribute("priorAuthorityTypeFormData", flow.getPriorAuthorityTypeFormData());
     model.addAttribute("groupedDynamicOptions", grouped);
     model.addAttribute("priorAuthorityDynamicForm", dynamicForm);
     model.addAttribute("priorAuthorityDetails", flow.getPriorAuthorityDetailsFormData());

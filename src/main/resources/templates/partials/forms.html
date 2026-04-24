@@ -82,12 +82,14 @@
 </div>
 
 <div th:fragment="textInput(fieldId, label, inputClass)"
-     th:with="hideLabel=${hideLabel?:false}, maxlength=${maxlength}"
+     th:with="hideLabel=${hideLabel?:false}, hint=${hint}, maxlength=${maxlength ?: maxlengthParam}"
      class="govuk-form-group"
      th:classappend="${#fields.hasErrors(fieldId)} ? 'govuk-form-group--error' : ''">
   <label class="govuk-label" th:unless="${hideLabel}" th:for="${fieldId}" th:text="${label}"></label>
+  <div th:if="${hint}" th:id="${fieldId + '-hint'}" class="govuk-hint" th:text="${hint}"></div>
   <span th:if="${#fields.hasErrors(fieldId)}"
         th:errors="*{__${fieldId}__}"
+        th:id="${fieldId + '-error'}"
         class="govuk-error-message">
   </span>
   <input th:errorclass="govuk-input--error"
@@ -95,7 +97,9 @@
          th:id="${fieldId}"
          th:name="${fieldId}"
          type="text"
-         th:attr="aria-label=${hideLabel ? label : null}, maxlength=${maxlength}"
+         th:maxlength="${maxlength}"
+         th:attr="aria-label=${hideLabel ? label : null},
+                  aria-describedby=${(hint != null ? fieldId + '-hint ' : '') + (#fields.hasErrors(fieldId) ? fieldId + '-error' : '')}"
          data-module="govuk-input"
          th:field="*{__${fieldId}__}">
 </div>

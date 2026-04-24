@@ -1,7 +1,9 @@
 package uk.gov.laa.ccms.caab.controller.notifications;
 
+import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.HamcrestCondition.matching;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -232,6 +234,18 @@ class ActionsAndNotificationsControllerTest {
       assertThat(mockMvc.perform(get("/notifications/search").flashAttrs(flashMap)))
           .hasStatusOk()
           .hasViewName("notifications/actions-and-notifications-search");
+
+      @SuppressWarnings("unchecked")
+      List<BaseUser> users =
+          (List<BaseUser>)
+              mockMvc
+                  .perform(get("/notifications/search").flashAttrs(flashMap))
+                  .getMvcResult()
+                  .getModelAndView()
+                  .getModel()
+                  .get("users");
+
+      assertThat(users).extracting("loginId").contains(userDetails.getLoginId());
     }
 
     @Test
@@ -459,6 +473,49 @@ class ActionsAndNotificationsControllerTest {
           .model()
           .hasEntrySatisfying("documentLinks", matching(hasEntry("567", "doc-url")))
           .containsKey("notification");
+    }
+
+    @Test
+    @DisplayName("Should sort attached documents by ID then text")
+    void shouldSortAttachedDocuments() {
+      NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+      Notifications notificationsMock = getNotificationsMock();
+
+      // Create documents in unsorted order
+      Document doc1 = new Document().documentId("100").text("Z description");
+      Document doc2 = new Document().documentId("50").text("A description");
+      Document doc3 = new Document().documentId(null).text("M description");
+      Document doc4 = new Document().documentId(null).text("B description");
+
+      List<Document> attachedDocuments = new ArrayList<>(List.of(doc1, doc2, doc3, doc4));
+      Notification notification =
+          new Notification()
+              .user(new UserDetail().loginId("user1").userType("user1"))
+              .notificationId("234")
+              .attachedDocuments(attachedDocuments);
+
+      when(notificationService.getNotification(
+              "234", userDetails.getUserId(), userDetails.getProvider().getId()))
+          .thenReturn(Mono.just(notification));
+
+      Map<String, Object> flashMap = new HashMap<>();
+      flashMap.put("user", userDetails);
+      flashMap.put("notificationSearchCriteria", criteria);
+      flashMap.put("notificationsSearchResults", notificationsMock);
+
+      // We expect order:
+      // doc2 (ID 50)
+      // doc1 (ID 100)
+      // doc4 (ID null, text B)
+      // doc3 (ID null, text M)
+
+      assertThat(mockMvc.perform(get("/notifications/234").flashAttrs(flashMap)))
+          .hasStatusOk()
+          .model()
+          .extracting(m -> m.get("notification"), as(type(Notification.class)))
+          .extracting(Notification::getAttachedDocuments)
+          .asList()
+          .containsExactly(doc2, doc1, doc4, doc3);
     }
   }
 

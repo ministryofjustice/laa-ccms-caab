@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -111,7 +112,13 @@ public class AllocateCostLimitController {
       // Find matching cost in existing costs
       CostEntryDetail existingCost =
           costs.stream()
-              .filter(c -> c.getResourceName().equals(formCost.getResourceName()))
+              .filter(
+                  c -> {
+                    if (formCost.getLscResourceId() != null) {
+                      return Objects.equals(c.getLscResourceId(), formCost.getLscResourceId());
+                    }
+                    return Objects.equals(c.getResourceName(), formCost.getResourceName());
+                  })
               .findFirst()
               .orElse(null);
 

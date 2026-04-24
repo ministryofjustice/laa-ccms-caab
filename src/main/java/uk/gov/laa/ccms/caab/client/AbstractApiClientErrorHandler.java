@@ -165,6 +165,10 @@ public abstract class AbstractApiClientErrorHandler {
       final String resourceType,
       final MultiValueMap<String, String> queryParams) {
 
+    if (e instanceof ApiClientException) {
+      return Mono.error(e);
+    }
+
     final StringBuilder messageBuilder =
         new StringBuilder("Failed to retrieve %s".formatted(resourceType));
 

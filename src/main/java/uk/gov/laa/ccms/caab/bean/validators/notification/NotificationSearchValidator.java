@@ -152,6 +152,9 @@ public class NotificationSearchValidator extends AbstractValidator {
 
   private void validateCaseRef(final String caseRef, Errors errors) {
     if (StringUtils.hasText(caseRef)) {
+      validateFieldMaxLength(
+          "caseReference", caseRef, 35, "LAA application / case reference", errors);
+
       // check no double spaces
       if (!caseRef.matches(ALPHA_NUMERIC_SLASH_SPACE_STRING)) {
         errors.rejectValue(
@@ -172,6 +175,8 @@ public class NotificationSearchValidator extends AbstractValidator {
 
   private void validateClientSurname(String clientSurname, Errors errors) {
     if (StringUtils.hasText(clientSurname)) {
+      validateFieldMaxLength("clientSurname", clientSurname, 35, "Client's Surname", errors);
+
       if (!clientSurname.matches(FIRST_CHARACTER_MUST_BE_ALPHA)) {
         errors.rejectValue(
             "clientSurname",
@@ -195,6 +200,9 @@ public class NotificationSearchValidator extends AbstractValidator {
 
   private void validateProviderCaseRef(String providerCaseReference, Errors errors) {
     if (StringUtils.hasText(providerCaseReference)) {
+      validateFieldMaxLength(
+          "providerCaseReference", providerCaseReference, 35, "Provider case reference", errors);
+
       // check no double spaces
       if (providerCaseReference.matches(DOUBLE_SPACE)) {
         errors.rejectValue(
