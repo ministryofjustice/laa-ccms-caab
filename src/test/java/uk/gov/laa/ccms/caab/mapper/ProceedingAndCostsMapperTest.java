@@ -349,7 +349,8 @@ class ProceedingAndCostsMapperTest {
     assertEquals(
         costStructureDetail.getCurrentProviderBilledAmount(),
         result.getCurrentProviderBilledAmount());
-    assertNull(result.getCostEntries());
+    assertNotNull(result.getCostEntries());
+    assertTrue(result.getCostEntries().isEmpty());
   }
 
   @Test
@@ -391,6 +392,17 @@ class ProceedingAndCostsMapperTest {
     final AllocateCostsFormData result = mapper.toAllocateCostsForm(null);
 
     assertNull(result);
+  }
+
+  @Test
+  void testToAllocateCostsFormData_withNullCostEntries() {
+    final ApplicationDetail applicationDetail =
+        new ApplicationDetail().costs(new CostStructureDetail().costEntries(null));
+    final AllocateCostsFormData result = mapper.toAllocateCostsForm(applicationDetail);
+
+    assertNotNull(result);
+    assertNotNull(result.getCostEntries());
+    assertTrue(result.getCostEntries().isEmpty());
   }
 
   @Test

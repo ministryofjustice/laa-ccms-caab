@@ -12,9 +12,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -303,6 +305,8 @@ public class ActionsAndNotificationsController {
       Model model,
       HttpSession session) {
 
+    sortAttachedDocuments(notification);
+
     Map<String, String> documentLinks =
         notificationService.getDocumentLinks(notification.getAttachedDocuments());
 
@@ -311,6 +315,36 @@ public class ActionsAndNotificationsController {
     model.addAttribute(NOTIFICATION, notification);
     session.setAttribute(NOTIFICATION, notification);
     return "notifications/notification";
+  }
+
+  /**
+   * Sorts the attached documents for a notification.
+   *
+   * @param notification the notification containing the documents to sort.
+   */
+  private void sortAttachedDocuments(Notification notification) {
+    if (notification.getAttachedDocuments() != null) {
+      List<uk.gov.laa.ccms.data.model.Document> attachedDocuments =
+          new ArrayList<>(notification.getAttachedDocuments());
+      attachedDocuments.sort(
+          Comparator.comparing(
+                  (uk.gov.laa.ccms.data.model.Document doc) ->
+                      Optional.ofNullable(doc.getDocumentId())
+                          .map(
+                              id -> {
+                                try {
+                                  return Integer.parseInt(id);
+                                } catch (NumberFormatException e) {
+                                  return null;
+                                }
+                              })
+                          .orElse(null),
+                  Comparator.nullsLast(Comparator.naturalOrder()))
+              .thenComparing(
+                  uk.gov.laa.ccms.data.model.Document::getText,
+                  Comparator.nullsLast(Comparator.naturalOrder())));
+      notification.setAttachedDocuments(attachedDocuments);
+    }
   }
 
   /**

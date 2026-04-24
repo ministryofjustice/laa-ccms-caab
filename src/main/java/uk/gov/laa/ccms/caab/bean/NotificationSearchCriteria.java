@@ -33,6 +33,8 @@ public class NotificationSearchCriteria {
     this.loginId = criteria.getLoginId();
     this.userType = criteria.getUserType();
     this.sort = criteria.getSort();
+    this.page = criteria.getPage();
+    this.size = criteria.getSize();
   }
 
   /** Flag which indicates whether to allow the user to modify the case reference. */
@@ -77,6 +79,12 @@ public class NotificationSearchCriteria {
   /** the sort field and direction. */
   private String sort;
 
+  /** The current page number. */
+  private Integer page;
+
+  /** The page size. */
+  private Integer size;
+
   /**
    * Returns an ISO formatted date based on the day, month, and year values.
    *
@@ -108,6 +116,8 @@ public class NotificationSearchCriteria {
    */
   public static void reset(NotificationSearchCriteria criteria) {
     criteria.setSort("");
+    criteria.setPage(0);
+    criteria.setSize(10);
     criteria.setNotificationFromDate("");
     criteria.setNotificationToDate("");
     criteria.setNotificationType("");

@@ -16,22 +16,24 @@
   </div>
   <div id="main-content">
 
-    <h1 class="govuk-heading-l" th:text="#{notifications.heading}"/>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-two-thirds">
+        <h1 class="govuk-heading-l" th:text="#{notifications.heading}"/>
 
-    <p class="govuk-body"
-       th:text="#{notifications.search.results.leadParagraph(${notificationsSearchResults.totalElements})}"/>
+        <p class="govuk-body"
+           th:text="#{notifications.search.results.leadParagraph(${notificationsSearchResults.totalElements})}"/>
 
-    <a class="govuk-button govuk-button--secondary"
-       role="button"
-       id="refine-search-button"
-       th:href="@{/notifications/search}"
-       th:text="#{notifications.search.results.refineSearch}"
-       data-module="govuk-button"/>
+        <a class="govuk-button govuk-button--secondary"
+           role="button"
+           id="refine-search-button"
+           th:href="@{/notifications/search}"
+           th:text="#{notifications.search.results.refineSearch}"
+           data-module="govuk-button"/>
+      </div>
+    </div>
 
     <div class="moj-scrollable-pane">
-      <table class="govuk-table ccms-compact-table">
-        <caption class="govuk-table__caption govuk-table__caption--m"
-                 th:text="#{notifications.heading}"></caption>
+      <table class="govuk-table ccms-compact-table" data-module="moj-sortable-table">
         <thead class="govuk-table__head">
         <tr class="govuk-table__row">
           <th th:replace="~{partials/pagination :: sorting(${notificationsSearchResults},'dateAssigned',
