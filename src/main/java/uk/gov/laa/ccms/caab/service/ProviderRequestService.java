@@ -34,6 +34,7 @@ public class ProviderRequestService {
   public String submitProviderRequest(
       final ProviderRequestTypeFormData providerRequestTypeFormData,
       final ProviderRequestDetailsFormData providerRequestDetailsFormData,
+      String caseReferenceNumber,
       final UserDetail user) {
     log.info("POST /provider-requests");
 
@@ -42,6 +43,7 @@ public class ProviderRequestService {
             .user(user)
             .typeData(providerRequestTypeFormData)
             .detailsData(providerRequestDetailsFormData)
+            .caseReferenceNumber(caseReferenceNumber)
             .build();
 
     final ProviderRequestDetail providerRequestDetail =

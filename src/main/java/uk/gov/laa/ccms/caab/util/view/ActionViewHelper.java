@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.util.view;
 
 import java.util.LinkedList;
 import java.util.List;
+import software.amazon.awssdk.services.s3.endpoints.internal.Value;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.model.AvailableAction;
@@ -32,7 +33,7 @@ public class ActionViewHelper {
               FunctionConstants.SUBMIT_CASE_REQUEST,
               "action.submitCaseQuery.name",
               "action.submitCaseQuery.description",
-              "#"),
+              "/provider-requests/types"),
           new AvailableAction(
               FunctionConstants.VIEW_CASE,
               "action.viewCase.name",

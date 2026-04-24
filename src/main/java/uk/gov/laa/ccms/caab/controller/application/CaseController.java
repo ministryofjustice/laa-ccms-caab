@@ -37,6 +37,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import uk.gov.laa.ccms.caab.bean.proceeding.CaseProceedingDisplayStatus;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
+import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.PriorAuthorityGroup;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -102,7 +103,8 @@ public class CaseController {
     model.addAttribute("searchUrl", Objects.toString(session.getAttribute(SEARCH_URL), ""));
     model.addAttribute("case", ebsCase);
     model.addAttribute("isAmendment", isAmendment);
-    model.addAttribute("availableActions", getAvailableActions(ebsCase, isAmendment, amendments));
+    model.addAttribute("availableActions", getAvailableActions(
+        ebsCase, isAmendment, amendments, ebsCase.getCaseReferenceNumber()));
     model.addAttribute("hasEbsAmendments", hasEbsAmendments(ebsCase));
     model.addAttribute(
         "draftProceedings",
@@ -393,7 +395,10 @@ public class CaseController {
   }
 
   private static List<AvailableAction> getAvailableActions(
-      ApplicationDetail ebsCase, boolean amendment, ApplicationDetail amendments) {
+      ApplicationDetail ebsCase,
+      boolean amendment,
+      ApplicationDetail amendments,
+      @SessionAttribute(CASE_REFERENCE_NUMBER) String caseReferenceNumber) {
 
     if (ebsCase.getAvailableFunctions() == null || ebsCase.getAvailableFunctions().isEmpty()) {
       return Collections.emptyList();
@@ -404,7 +409,30 @@ public class CaseController {
 
     return ActionViewHelper.getAllAvailableActions(openAmendment).stream()
         .filter(availableAction -> caseAvailableFunctions.contains(availableAction.actionCode()))
+        .map(action -> enhanceActionUrl(action, caseReferenceNumber))
         .toList();
+  }
+
+  private static AvailableAction enhanceActionUrl(
+      AvailableAction action,
+      String caseReferenceNumber
+  ) {
+
+    if (!FunctionConstants.SUBMIT_CASE_REQUEST.equals(action.actionCode())) {
+      return action;
+    }
+
+    String url = "/provider-requests/types";
+
+    if (caseReferenceNumber != null) {
+      url += "?caseReferenceNumber=" + caseReferenceNumber;
+    }
+
+    return new AvailableAction(
+        action.actionCode(),
+        action.actionKey(),
+        action.descriptionKey(),
+        url);
   }
 
   private static boolean hasEbsAmendments(ApplicationDetail ebsCase) {
