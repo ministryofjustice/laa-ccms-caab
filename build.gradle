@@ -1,6 +1,6 @@
 plugins {
     id 'net.researchgate.release' version '3.1.0'
-    id 'uk.gov.laa.springboot.laa-spring-boot-gradle-plugin' version '2.2.3'
+    id 'uk.gov.laa.springboot.laa-spring-boot-gradle-plugin' version '2.2.6'
     id 'com.diffplug.spotless' version '8.4.0'
 }
 
@@ -49,16 +49,17 @@ dependencies {
 //			because('Fixes CVE-XXXX-XXXXX Parent: parent-group:parent-name')
 //		}
 
-        implementation('org.bouncycastle:bcprov-jdk18on:1.83') {
+        implementation('org.bouncycastle:bcprov-jdk18on:1.84') {
             because('Fixes multiple CVEs Parent: org.opensaml:opensaml-saml-api')
         }
 
-        implementation('org.bouncycastle:bcpkix-jdk18on:1.83') {
+        implementation('org.bouncycastle:bcpkix-jdk18on:1.84') {
             because('Fixes multiple CVEs Parent: org.opensaml:opensaml-saml-api')
         }
 
         implementation "org.opensaml:opensaml-saml-api:5.2.1"
         implementation "org.opensaml:opensaml-saml-impl:5.2.1"
+
     }
 
     // Fixes CVE-2025-48924 - remove this when bumped in parent library
