@@ -58,6 +58,7 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.NotificationService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.caab.service.UserService;
+import uk.gov.laa.ccms.data.model.BaseUser;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
@@ -678,9 +679,18 @@ public class ActionsAndNotificationsController {
     Mono.zip(feeEarners, notificationTypes, users)
         .doOnNext(
             tuple -> {
+              List<BaseUser> allUsers = new ArrayList<>(tuple.getT3().getContent());
+              boolean userInList =
+                  allUsers.stream()
+                      .anyMatch(u -> u.getLoginId().equalsIgnoreCase(user.getLoginId()));
+
+              if (!userInList) {
+                allUsers.add(new BaseUser().userId(user.getUserId()).loginId(user.getLoginId()));
+              }
+
               model.addAttribute("feeEarners", tuple.getT1());
               model.addAttribute("notificationTypes", tuple.getT2().getContent());
-              model.addAttribute("users", tuple.getT3().getContent());
+              model.addAttribute("users", allUsers);
             })
         .block();
     model.addAttribute("notificationSearchCriteria", criteria);

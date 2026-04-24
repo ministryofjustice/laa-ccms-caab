@@ -234,6 +234,18 @@ class ActionsAndNotificationsControllerTest {
       assertThat(mockMvc.perform(get("/notifications/search").flashAttrs(flashMap)))
           .hasStatusOk()
           .hasViewName("notifications/actions-and-notifications-search");
+
+      @SuppressWarnings("unchecked")
+      List<BaseUser> users =
+          (List<BaseUser>)
+              mockMvc
+                  .perform(get("/notifications/search").flashAttrs(flashMap))
+                  .getMvcResult()
+                  .getModelAndView()
+                  .getModel()
+                  .get("users");
+
+      assertThat(users).extracting("loginId").contains(userDetails.getLoginId());
     }
 
     @Test
