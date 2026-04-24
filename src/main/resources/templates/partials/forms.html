@@ -81,8 +81,8 @@
   </select>
 </div>
 
-<div th:fragment="textInput(fieldId, label, inputClass, maxlength)"
-     th:with="hideLabel=${hideLabel?:false}, hint=${hint}"
+<div th:fragment="textInput(fieldId, label, inputClass)"
+     th:with="hideLabel=${hideLabel?:false}, hint=${hint}, maxlength=${maxlength ?: maxlengthParam}"
      class="govuk-form-group"
      th:classappend="${#fields.hasErrors(fieldId)} ? 'govuk-form-group--error' : ''">
   <label class="govuk-label" th:unless="${hideLabel}" th:for="${fieldId}" th:text="${label}"></label>
@@ -97,8 +97,8 @@
          th:id="${fieldId}"
          th:name="${fieldId}"
          type="text"
+         th:maxlength="${maxlength}"
          th:attr="aria-label=${hideLabel ? label : null},
-                  maxlength=${maxlength},
                   aria-describedby=${(hint != null ? fieldId + '-hint ' : '') + (#fields.hasErrors(fieldId) ? fieldId + '-error' : '')}"
          data-module="govuk-input"
          th:field="*{__${fieldId}__}">
