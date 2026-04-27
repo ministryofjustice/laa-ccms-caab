@@ -1,5 +1,9 @@
 package uk.gov.laa.ccms.caab.client;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
@@ -37,11 +42,17 @@ public class SoaApiClient {
 
   private static final String SOA_GATEWAY_USER_LOGIN_ID = "SoaGateway-User-Login-Id";
   private static final String SOA_GATEWAY_USER_ROLE = "SoaGateway-User-Role";
-  private static final String CASE_REFERENCE_NUMBER = "case-reference-number";
+  private static final String APPLICATION_DETAILS_KEY = "application_details";
+  private static final String APPLICATION_DETAILS_CAMEL_KEY = "applicationDetails";
+  private static final String MEANS_AMENDED_KEY = "means_assessment_amended";
+  private static final String MERITS_AMENDED_KEY = "merits_assessment_amended";
+  private static final String MEANS_AMENDED_IND_KEY = "means_assessment_amended_ind";
+  private static final String MERITS_AMENDED_IND_KEY = "merits_assessment_amended_ind";
 
   private final WebClient soaApiWebClient;
 
   private final SoaApiClientErrorHandler soaApiClientErrorHandler;
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   /**
    * Fetches the contract details for the given criteria.
@@ -196,10 +207,94 @@ public class SoaApiClient {
         .onErrorResume(e -> soaApiClientErrorHandler.handleApiCreateError(e, "Cases"));
   }
 
+  /**
+   * Updates the case details in the SOA gateway.
+   *
+   * @param loginId the login ID of the user.
+   * @param userType the type of the user.
+   * @param caseDetail the details of the case to update.
+   * @param caseUpdateType the type of update being performed.
+   * @param meansAssessmentAmended whether the means assessment has been amended.
+   * @param meritsAssessmentAmended whether the merits assessment has been amended.
+   * @return a Mono containing the case transaction response.
+   */
   public Mono<CaseTransactionResponse> updateCase(
-      final String loginId, final String userType, final Object caseUpdate) {
-    // TODO: Complete when endpoint has been created from CCCMSPUI-692
-    return Mono.just(new CaseTransactionResponse().transactionId("123"));
+      final String loginId,
+      final String userType,
+      final CaseDetail caseDetail,
+      final String caseUpdateType,
+      final Boolean meansAssessmentAmended,
+      final Boolean meritsAssessmentAmended) {
+    if (caseDetail == null) {
+      return Mono.error(new IllegalArgumentException("caseDetail must not be null"));
+    }
+    if (!org.springframework.util.StringUtils.hasText(caseUpdateType)) {
+      return Mono.error(new IllegalArgumentException("caseUpdateType must not be blank"));
+    }
+
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    queryParams.add("case-update-type", caseUpdateType);
+
+    final Map<String, Object> casePayload =
+        OBJECT_MAPPER.convertValue(caseDetail, new TypeReference<Map<String, Object>>() {});
+
+    Object applicationDetails = casePayload.get(APPLICATION_DETAILS_KEY);
+    Map<String, Object> details = null;
+    if (applicationDetails instanceof Map<?, ?>) {
+      details = castDetails(applicationDetails);
+    } else {
+      Object camelDetails = casePayload.get(APPLICATION_DETAILS_CAMEL_KEY);
+      if (camelDetails instanceof Map<?, ?>) {
+        details = castDetails(camelDetails);
+        casePayload.remove(APPLICATION_DETAILS_CAMEL_KEY);
+        casePayload.put(APPLICATION_DETAILS_KEY, details);
+      }
+    }
+    if (details == null) {
+      details = new HashMap<>();
+      casePayload.put(APPLICATION_DETAILS_KEY, details);
+      casePayload.remove(APPLICATION_DETAILS_CAMEL_KEY);
+    }
+
+    boolean meansAmended = Boolean.TRUE.equals(meansAssessmentAmended);
+    boolean meritsAmended = Boolean.TRUE.equals(meritsAssessmentAmended);
+
+    details.put(MEANS_AMENDED_KEY, meansAmended);
+    details.put(MERITS_AMENDED_KEY, meritsAmended);
+    details.put(MEANS_AMENDED_IND_KEY, meansAmended);
+    details.put(MERITS_AMENDED_IND_KEY, meritsAmended);
+
+    log.debug(
+        "SOA updateCase flags: meansAssessmentAmended={}, meritsAssessmentAmended={}, keys={}",
+        details.get(MEANS_AMENDED_KEY),
+        details.get(MERITS_AMENDED_KEY),
+        details.keySet());
+
+    return soaApiWebClient
+        .put()
+        .uri(builder -> builder.path("/cases").queryParams(queryParams).build())
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(casePayload)
+        .retrieve()
+        .bodyToMono(CaseTransactionResponse.class)
+        .doOnError(
+            WebClientResponseException.class,
+            ex ->
+                log.error(
+                    "SOA updateCase failed with status {}. Response body: {}",
+                    ex.getStatusCode(),
+                    ex.getResponseBodyAsString()))
+        .onErrorResume(
+            e ->
+                soaApiClientErrorHandler.handleApiUpdateError(
+                    e, "Cases", "case-update-type", caseUpdateType));
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String, Object> castDetails(Object details) {
+    return (Map<String, Object>) details;
   }
 
   /**

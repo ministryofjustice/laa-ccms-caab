@@ -30,6 +30,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.springframework.data.domain.Page;
+import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
@@ -815,6 +816,24 @@ public interface SoaApplicationMapper {
   @Mapping(target = "highProfileCaseInd", ignore = true)
   @Mapping(target = "certificateType", ignore = true)
   SubmittedApplicationDetails toSubmittedApplicationDetails(CaseMappingContext context);
+
+  /**
+   * Applies the quick edit amendment type to the submitted application details.
+   *
+   * @param context the case mapping context.
+   * @param target the target submitted application details.
+   */
+  @AfterMapping
+  default void applyQuickEditAmendmentType(
+      CaseMappingContext context, @MappingTarget SubmittedApplicationDetails target) {
+    if (context == null || context.getTdsApplication() == null || target == null) {
+      return;
+    }
+    String quickEditType = context.getTdsApplication().getQuickEditType();
+    if (StringUtils.hasText(quickEditType)) {
+      target.setApplicationAmendmentType(quickEditType);
+    }
+  }
 
   /**
    * Maps and returns the devolved powers date from the provided application details. The date is

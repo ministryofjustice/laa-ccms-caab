@@ -29,7 +29,7 @@
 
       <main class="govuk-main-wrapper" id="main-content" role="main">
         <h1 class="govuk-heading-l" th:text="#{submission.progress}"></h1>
-        <p class="govuk-body-l" th:utext="#{submission.progress.description(${submissionType})}"></p>
+        <p class="govuk-body-l" th:utext="#{submission.progress.description(${caseContext.pathValue}, ${submissionType})}"></p>
         <div class="govuk-grid-row">
           <div class="govuk-grid-column-full">
             <div class="loader"></div>

@@ -27,7 +27,9 @@ import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
@@ -36,6 +38,7 @@ import uk.gov.laa.ccms.caab.model.sections.PriorAuthoritySectionDisplay;
 import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 
 @DisplayName("Amendment service test")
@@ -45,12 +48,14 @@ class AmendmentServiceTest {
   @Mock private ApplicationService applicationService;
   @Mock private CaabApiClient caabApiClient;
   @Mock private SoaApiClient soaApiClient;
+  @Mock private SoaApplicationMapper soaApplicationMapper;
 
   private AmendmentService amendmentService;
 
   @BeforeEach
   void beforeEach() {
-    amendmentService = new AmendmentService(applicationService, caabApiClient, soaApiClient);
+    amendmentService =
+        new AmendmentService(applicationService, caabApiClient, soaApiClient, soaApplicationMapper);
   }
 
   @Nested
@@ -232,8 +237,9 @@ class AmendmentServiceTest {
           new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
       when(applicationService.getCase(any(), anyLong(), any()))
           .thenReturn(buildFullApplicationDetail());
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
       when(caabApiClient.createApplication(any(), any())).thenReturn(Mono.just("123"));
-      when(soaApiClient.updateCase(any(), any(), any()))
+      when(soaApiClient.updateCase(any(), any(), any(), any(), any(), any()))
           .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("12345")));
       // When
       String transactionId =
@@ -241,7 +247,14 @@ class AmendmentServiceTest {
               addressFormData, caseRef, userDetails);
       // Then
       verify(caabApiClient, times(1)).createApplication(eq("123"), any(ApplicationDetail.class));
-      verify(soaApiClient, times(1)).updateCase(eq("123"), eq("Type"), any());
+      verify(soaApiClient, times(1))
+          .updateCase(
+              eq("123"),
+              eq("Type"),
+              any(),
+              eq(QuickEditTypeConstants.MESSAGE_TYPE_CASE_CORRESPONDENCE_PREFERENCE),
+              eq(false),
+              eq(false));
       assertThat(transactionId).isNotNull();
       assertThat(transactionId).isEqualTo("12345");
     }

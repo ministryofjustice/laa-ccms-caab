@@ -8,7 +8,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_CLIENT_NAMES;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_POLL_COUNT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -16,6 +19,7 @@ import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionServ
 
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -138,7 +142,9 @@ public class ClientSubmissionsInProgressControllerTest {
   }
 
   @Test
-  void testClientUpdateSubmission_withClientReferenceNumber() throws Exception {
+  @DisplayName(
+      "Test clientUpdateSubmission - Success, removes session attributes and redirects (Application context)")
+  void testClientUpdateSubmission_withClientReferenceNumber_Application() throws Exception {
     final UserDetail user = new UserDetail();
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
@@ -159,7 +165,52 @@ public class ClientSubmissionsInProgressControllerTest {
                 .sessionAttr(USER_DETAILS, user)
                 .sessionAttr(APPLICATION_CLIENT_NAMES, baseClient))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/client-update/confirmed"));
+        .andExpect(redirectedUrl("/application/client-update/confirmed"))
+        .andExpect(
+            result -> {
+              HttpSession session = result.getRequest().getSession();
+              assert session != null;
+              assert session.getAttribute(SUBMISSION_POLL_COUNT) == null;
+              assert session.getAttribute(SUBMISSION_TRANSACTION_ID) == null;
+              assert session.getAttribute(CLIENT_FLOW_FORM_DATA) == null;
+              assert session.getAttribute(APPLICATION_CLIENT_NAMES) == null;
+              assert session.getAttribute(CASE) == null;
+              assert session.getAttribute(ACTIVE_CASE) == null;
+            });
+  }
+
+  @DisplayName(
+      "Test clientUpdateSubmitted - Success, removes session attributes and redirects (Amendments context)")
+  void testClientUpdateSubmission_withClientReferenceNumber_Amendments() throws Exception {
+    final UserDetail user = new UserDetail();
+    user.setLoginId("testLogin");
+    user.setUserType("testUserType");
+
+    final BaseClientDetail baseClient =
+        new BaseClientDetail().firstName("testFirstName").surname("testSurname");
+
+    final TransactionStatus clientStatus = new TransactionStatus();
+    clientStatus.setReferenceNumber("123456");
+
+    when(clientService.getClientStatus(anyString())).thenReturn(Mono.just(clientStatus));
+    when(clientService.updateClientNames(anyString(), any(), any())).thenReturn(Mono.empty());
+
+    mockMvc
+        .perform(
+            get("/amendments/client-update")
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
+                .sessionAttr(USER_DETAILS, user)
+                .sessionAttr(CASE, new uk.gov.laa.ccms.caab.model.ApplicationDetail())
+                .sessionAttr(APPLICATION_CLIENT_NAMES, baseClient))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/amendments/client-update/confirmed"))
+        .andExpect(
+            result -> {
+              HttpSession session = result.getRequest().getSession();
+              assert session != null;
+              assert session.getAttribute(CASE) == null;
+              assert session.getAttribute(ACTIVE_CASE) == null;
+            });
   }
 
   @Test

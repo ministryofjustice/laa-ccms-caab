@@ -74,13 +74,27 @@ public class CaseController {
    */
   @GetMapping("/case/overview")
   public String caseOverview(
-      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(CASE) @Nullable ApplicationDetail ebsCase,
       @SessionAttribute(APPLICATION_SUMMARY) @Nullable final BaseApplicationDetail tdsApplication,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(NOTIFICATION_ID) @Nullable final String notificationId,
       Model model,
       HttpSession session,
       HttpServletRequest request) {
+
+    if (ebsCase == null) {
+      String caseReferenceNumber = (String) session.getAttribute(CASE_REFERENCE_NUMBER);
+      if (caseReferenceNumber != null) {
+        ebsCase =
+            applicationService.getCase(
+                caseReferenceNumber, user.getProvider().getId(), user.getLoginId());
+        session.setAttribute(CASE, ebsCase);
+      }
+    }
+
+    if (ebsCase == null) {
+      throw new CaabApplicationException("Failed to retrieve case details");
+    }
 
     setReturnDetails(model, notificationId, request);
 

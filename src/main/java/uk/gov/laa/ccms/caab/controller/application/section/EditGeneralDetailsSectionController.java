@@ -46,6 +46,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.CorrespondenceAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
@@ -63,6 +64,7 @@ import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.caab.util.PaginationUtil;
+import uk.gov.laa.ccms.caab.util.UserRoleUtil;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -173,7 +175,8 @@ public class EditGeneralDetailsSectionController {
       ResultsDisplay<AddressResultRowDisplay> addressSearchResults =
           addressService.getAddresses(addressDetails.getPostcode());
 
-      if (addressSearchResults.getContent() == null) {
+      if (addressSearchResults.getContent() == null
+          || addressSearchResults.getContent().isEmpty()) {
         bindingResult.reject(
             "address.none", "Your input for address details has not returned any results");
       } else {
@@ -195,12 +198,16 @@ public class EditGeneralDetailsSectionController {
 
     } else {
       if (caseContext.isAmendment()) {
+        if (!UserRoleUtil.hasRole(user, UserRole.SUBMIT_AMENDMENT)) {
+          throw new CaabApplicationException("User not authorized to submit amendments");
+        }
         // Submit the amendment, and redirect to polling endpoint
         String transactionId =
             amendmentService.submitQuickAmendmentCorrespondenceAddress(
                 addressDetails, ebsCase.getCaseReferenceNumber(), user);
         session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
 
+        session.removeAttribute("addressDetails");
         return "redirect:/amendments/%s".formatted(SUBMISSION_SUBMIT_CASE);
       }
       applicationService.updateCorrespondenceAddress(applicationId, addressDetails, user);

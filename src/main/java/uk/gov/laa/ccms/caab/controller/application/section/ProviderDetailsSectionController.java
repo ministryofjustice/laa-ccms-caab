@@ -59,7 +59,8 @@ public class ProviderDetailsSectionController {
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       @PathVariable final CaseContext caseContext,
-      Model model) {
+      Model model,
+      jakarta.servlet.http.HttpSession session) {
 
     if (caseContext.isAmendment()) {
       ApplicationFormData applicationFormData = new ApplicationFormData();
@@ -72,6 +73,7 @@ public class ProviderDetailsSectionController {
 
       applicationId =
           applicationService.createApplication(applicationFormData, clientDetail, user).block();
+      session.setAttribute(APPLICATION_ID, applicationId);
     }
 
     ApplicationFormData applicationFormData =

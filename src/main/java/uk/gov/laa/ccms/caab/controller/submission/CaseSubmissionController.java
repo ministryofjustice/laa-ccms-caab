@@ -1,6 +1,9 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_POLL_COUNT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -52,6 +55,7 @@ public class CaseSubmissionController {
       final Model model) {
 
     model.addAttribute("submissionType", SUBMISSION_SUBMIT_CASE);
+    model.addAttribute("caseContext", caseContext);
 
     final TransactionStatus caseStatus = applicationService.getCaseStatus(transactionId).block();
 
@@ -65,7 +69,6 @@ public class CaseSubmissionController {
     return viewIncludingPollCount(session, caseContext);
   }
 
-
   /**
    * Handles the confirmation of a case creation submission and updates the client session.
    *
@@ -76,6 +79,10 @@ public class CaseSubmissionController {
   public String clientUpdateSubmitted(
       @PathVariable("caseContext") CaseContext caseContext, final HttpSession session) {
     session.removeAttribute(ACTIVE_CASE);
+    session.removeAttribute(APPLICATION);
+    session.removeAttribute(APPLICATION_DETAILS);
+    session.removeAttribute(CASE);
+
     if (caseContext.isApplication()) {
       return "redirect:/home";
     } else {
@@ -91,8 +98,8 @@ public class CaseSubmissionController {
    * @return the view name or a redirect to the failed submission page if the max poll count is
    *     exceeded
    */
-  protected String viewIncludingPollCount(final HttpSession session,
-      final CaseContext caseContext) {
+  protected String viewIncludingPollCount(
+      final HttpSession session, final CaseContext caseContext) {
     int submissionPollCount = 0;
 
     if (session.getAttribute(SUBMISSION_POLL_COUNT) != null) {
