@@ -5,6 +5,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 
+import java.util.Collections;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,8 +17,10 @@ import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
-import uk.gov.laa.ccms.caab.constants.FunctionConstants;
+import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
@@ -26,6 +29,7 @@ import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.util.AmendmentUtil;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 
 /**
@@ -45,6 +49,7 @@ public class AmendmentService {
   private final ApplicationService applicationService;
   private final CaabApiClient caabApiClient;
   private final SoaApiClient soaApiClient;
+  private final SoaApplicationMapper soaApplicationMapper;
 
   /**
    * Creates and submits an amendment for an existing case using the provided application details
@@ -182,7 +187,9 @@ public class AmendmentService {
       final String caseReferenceNumber,
       final UserDetail userDetail) {
     ApplicationDetail amendment = createAmendmentObject(caseReferenceNumber, userDetail);
-    amendment.setQuickEditType(FunctionConstants.CASE_CORRESPONDENCE_PREFERENCE);
+    amendment.setQuickEditType(QuickEditTypeConstants.MESSAGE_TYPE_CASE_CORRESPONDENCE_PREFERENCE);
+    amendment.setMeansAssessmentAmended(Boolean.FALSE);
+    amendment.setMeritsAssessmentAmended(Boolean.FALSE);
 
     AddressDetail address = amendment.getCorrespondenceAddress();
     if (Objects.isNull(address)) {
@@ -215,8 +222,24 @@ public class AmendmentService {
     // Create an application in TDS
     caabApiClient.createApplication(userDetail.getLoginId(), amendment).block();
 
+    CaseMappingContext caseMappingContext =
+        CaseMappingContext.builder()
+            .tdsApplication(amendment)
+            .meansAssessment(null)
+            .meritsAssessment(null)
+            .caseDocs(Collections.emptyList())
+            .user(userDetail)
+            .build();
+    CaseDetail caseToSubmit = soaApplicationMapper.toCaseDetail(caseMappingContext);
+
     Mono<CaseTransactionResponse> caseTransactionResponseMono =
-        soaApiClient.updateCase(userDetail.getLoginId(), userDetail.getUserType(), amendment);
+        soaApiClient.updateCase(
+            userDetail.getLoginId(),
+            userDetail.getUserType(),
+            caseToSubmit,
+            amendment.getQuickEditType(),
+            amendment.getMeansAssessmentAmended(),
+            amendment.getMeritsAssessmentAmended());
 
     return Objects.requireNonNull(caseTransactionResponseMono.block()).getTransactionId();
   }

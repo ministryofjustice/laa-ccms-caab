@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_CLIENT_NAMES;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_REFERENCE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
@@ -93,6 +95,8 @@ public class ClientSubmissionsInProgressController {
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
       session.removeAttribute(CLIENT_FLOW_FORM_DATA);
       session.removeAttribute(APPLICATION_CLIENT_NAMES);
+      session.removeAttribute(ACTIVE_CASE);
+      session.removeAttribute(CASE);
 
       return "redirect:/%s/client-update/confirmed".formatted(caseContext.getPathValue());
     }
@@ -136,16 +140,18 @@ public class ClientSubmissionsInProgressController {
    */
   @GetMapping("/{caseContext}/{submissionType}/failed")
   public String submissionsFailed(
+      @PathVariable("caseContext") CaseContext caseContext,
       @PathVariable String submissionType,
       Model model) {
 
     model.addAttribute("submissionType", submissionType);
+    model.addAttribute("caseContext", caseContext);
 
     return "submissions/submissionFailed";
   }
 
-  private String viewIncludingPollCount(final HttpSession session, final CaseContext caseContext,
-      final String submissionType) {
+  private String viewIncludingPollCount(
+      final HttpSession session, final CaseContext caseContext, final String submissionType) {
     int submissionPollCount = 0;
 
     if (session.getAttribute(SUBMISSION_POLL_COUNT) != null) {

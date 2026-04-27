@@ -36,12 +36,17 @@ public class AddressService {
    *     postcode.Returns an empty ClientAddressResultsDisplay if no results are found.
    */
   public ResultsDisplay<AddressResultRowDisplay> getAddresses(final String postcode) {
-    final OrdinanceSurveyResponse response =
-        ordinanceSurveyApiClient.getAddresses(postcode).block();
+    try {
+      final OrdinanceSurveyResponse response =
+          ordinanceSurveyApiClient.getAddresses(postcode).block();
 
-    return response.getResults() != null
-        ? clientAddressResultDisplayMapper.toClientAddressResultsDisplay(response)
-        : new ResultsDisplay<AddressResultRowDisplay>();
+      return response != null && response.getResults() != null
+          ? clientAddressResultDisplayMapper.toClientAddressResultsDisplay(response)
+          : new ResultsDisplay<AddressResultRowDisplay>();
+    } catch (final Exception e) {
+      log.error("Error fetching addresses from Ordinance Survey API: {}", e.getMessage());
+      return new ResultsDisplay<AddressResultRowDisplay>();
+    }
   }
 
   /**
