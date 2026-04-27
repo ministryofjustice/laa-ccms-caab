@@ -7,7 +7,14 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/home}" class="govuk-back-link" th:text="#{site.cancelAndReturnToHome}"></a>
+      <a th:unless="${caseReference != null}"
+         th:href="@{/home}"
+         class="govuk-back-link"
+         th:text="#{site.cancelAndReturnToHome}"/>
+      <a th:if="${caseReference != null}"
+         th:href="@{/case/overview}"
+         class="govuk-back-link"
+         th:text="#{caseDetails.overview.return}"/>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/provider-requests/details}" th:object="${providerRequestDetails}" method="post" enctype="multipart/form-data">

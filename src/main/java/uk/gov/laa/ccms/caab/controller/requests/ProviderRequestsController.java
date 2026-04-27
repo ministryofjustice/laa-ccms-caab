@@ -106,6 +106,7 @@ public class ProviderRequestsController {
 
     if (caseReferenceNumber != null) {
       providerRequestFlow.setCaseReferenceNumber(caseReferenceNumber);
+      model.addAttribute("caseReference", caseReferenceNumber);
     }
 
     // reset the details data, so new document id and form details are created
@@ -136,14 +137,13 @@ public class ProviderRequestsController {
       @ModelAttribute("providerRequestTypeDetails")
           final ProviderRequestTypeFormData providerRequestTypeDetails,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
-      @RequestParam(required = false) String caseReferenceNumber,
       final Model model,
       final BindingResult bindingResult) {
 
     providerRequestTypeValidator.validate(providerRequestTypeDetails, bindingResult);
 
     if (bindingResult.hasErrors()) {
-      populateProviderRequestTypes(model, userDetail, caseReferenceNumber);
+      populateProviderRequestTypes(model, userDetail, providerRequestFlow.getCaseReferenceNumber());
       model.addAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow);
       model.addAttribute("providerRequestTypeDetails", providerRequestTypeDetails);
       return "requests/provider-request-type";
@@ -198,19 +198,13 @@ public class ProviderRequestsController {
    */
   @GetMapping("/provider-requests/details")
   public String getRequestDetail(
-      @RequestParam(required = false) final String caseReferenceNumber,
       @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
       final Model model) {
 
+    String caseReferenceNumber = providerRequestFlow.getCaseReferenceNumber();
     if (caseReferenceNumber != null && !caseReferenceNumber.isBlank()) {
-
-      if (!isValidCaseReference(caseReferenceNumber)) {
-        model.addAttribute("CaseReferenceError",
-            "Case reference must be in the correct format");
-      }
-
-      providerRequestFlow.setCaseReferenceNumber(caseReferenceNumber);
+      model.addAttribute("caseReference", caseReferenceNumber);
     }
 
     populateAddEvidenceModel(model);

@@ -19,6 +19,5 @@ public class ProviderRequestFlowFormData {
 
   public void resetRequestDetailsFormData() {
     this.requestDetailsFormData = new ProviderRequestDetailsFormData();
-    this.caseReferenceNumber = null;
   }
 }
