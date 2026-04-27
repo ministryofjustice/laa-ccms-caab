@@ -163,9 +163,7 @@ public class ProviderRequestsController {
    * @param userDetail Logged-in user details.
    */
   protected void populateProviderRequestTypes(
-      final Model model,
-      UserDetail userDetail,
-      String caseReferenceNumber) {
+      final Model model, UserDetail userDetail, String caseReferenceNumber) {
 
     List<String> functions =
         Optional.ofNullable(userDetail.getFunctions()).orElse(Collections.emptyList());
@@ -229,7 +227,6 @@ public class ProviderRequestsController {
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
-      @RequestParam(required = false) final String caseReferenceNumber,
       @RequestParam final String action,
       @ModelAttribute("providerRequestDetails")
           final ProviderRequestDetailsFormData providerRequestDetailsForm,
@@ -238,6 +235,11 @@ public class ProviderRequestsController {
 
     providerRequestsMapper.toProviderRequestDetailsFormData(
         providerRequestDetailsForm, providerRequestFlow);
+
+    String caseReferenceNumber = providerRequestFlow.getCaseReferenceNumber();
+    if (caseReferenceNumber != null && !caseReferenceNumber.isBlank()) {
+      model.addAttribute("caseReference", caseReferenceNumber);
+    }
 
     if ("document_upload".equals(action)) {
       providerRequestsDetails(providerRequestFlow, providerRequestDetailsForm, model);
@@ -278,8 +280,10 @@ public class ProviderRequestsController {
       // we need to pass the providerRequestFlow and user details into the service.
       final String notificationId =
           providerRequestService.submitProviderRequest(
-              providerRequestFlow.getRequestTypeFormData(), providerRequestDetailsForm,
-              caseReferenceNumber, userDetail);
+              providerRequestFlow.getRequestTypeFormData(),
+              providerRequestDetailsForm,
+              caseReferenceNumber,
+              userDetail);
 
       // check if we are not a claim upload enabled request,
       // if not then we might have documents
@@ -319,7 +323,7 @@ public class ProviderRequestsController {
   public String addDocumentsToRequest(
       @RequestParam(required = false) final String caseReferenceNumber,
       @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
-      final ProviderRequestFlowFormData providerRequestFlow,
+          final ProviderRequestFlowFormData providerRequestFlow,
       final Model model) {
 
     if (caseReferenceNumber != null) {

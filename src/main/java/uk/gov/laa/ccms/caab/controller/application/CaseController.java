@@ -103,8 +103,9 @@ public class CaseController {
     model.addAttribute("searchUrl", Objects.toString(session.getAttribute(SEARCH_URL), ""));
     model.addAttribute("case", ebsCase);
     model.addAttribute("isAmendment", isAmendment);
-    model.addAttribute("availableActions", getAvailableActions(
-        ebsCase, isAmendment, amendments, ebsCase.getCaseReferenceNumber()));
+    model.addAttribute(
+        "availableActions",
+        getAvailableActions(ebsCase, isAmendment, amendments, ebsCase.getCaseReferenceNumber()));
     model.addAttribute("hasEbsAmendments", hasEbsAmendments(ebsCase));
     model.addAttribute(
         "draftProceedings",
@@ -414,9 +415,7 @@ public class CaseController {
   }
 
   private static AvailableAction enhanceActionUrl(
-      AvailableAction action,
-      String caseReferenceNumber
-  ) {
+      AvailableAction action, String caseReferenceNumber) {
 
     if (!FunctionConstants.SUBMIT_CASE_REQUEST.equals(action.actionCode())) {
       return action;
@@ -429,10 +428,7 @@ public class CaseController {
     }
 
     return new AvailableAction(
-        action.actionCode(),
-        action.actionKey(),
-        action.descriptionKey(),
-        url);
+        action.actionCode(), action.actionKey(), action.descriptionKey(), url);
   }
 
   private static boolean hasEbsAmendments(ApplicationDetail ebsCase) {

@@ -19,7 +19,7 @@
   <div id="main-content">
     <form action="#" th:action="@{/provider-requests/details}" th:object="${providerRequestDetails}" method="post" enctype="multipart/form-data">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l" th:text="#{request.general}"></span>
+      <span th:unless="${caseReference != null}"  class="govuk-caption-l" th:text="#{request.general}"></span>
       <h1 class="govuk-heading-l" th:text="#{request.details}"></h1>
 
       <!--  For file upload, both true and false enable a different type of file upload. -->
