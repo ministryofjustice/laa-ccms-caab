@@ -26,10 +26,17 @@
 
           <h2 class="govuk-heading-m"
               th:text="#{notifications.search.responsibilityInformation.heading}"/>
-          <div
-              th:replace="~{partials/forms :: dropdown('assignedToUserId', #{common.assignedTo}, ${users}, 'loginId', 'loginId', false)}"></div>
-          <div
-              th:replace="~{partials/forms :: dropdown('feeEarnerId', #{common.feeEarner}, ${feeEarners}, 'id', 'name', false)}"></div>
+          <th:block
+              th:with="hint=${usersUnavailable} ? #{notifications.search.filterUnavailable} : null, disabled=${usersUnavailable}">
+            <div
+                th:replace="~{partials/forms :: dropdown('assignedToUserId', #{common.assignedTo}, ${users}, 'loginId', 'loginId', false)}"></div>
+          </th:block>
+
+          <th:block
+              th:with="hint=${feeEarnersUnavailable} ? #{notifications.search.filterUnavailable} : null, disabled=${feeEarnersUnavailable}">
+            <div
+                th:replace="~{partials/forms :: dropdown('feeEarnerId', #{common.feeEarner}, ${feeEarners}, 'id', 'name', false)}"></div>
+          </th:block>
 
           <h2 class="govuk-heading-m"
               th:text="#{notifications.search.notificationDates.heading}"/>
@@ -82,8 +89,11 @@
           <h2 class="govuk-heading-m"
               th:text="#{notifications.subHeading.notificationDetails}"/>
 
-          <div
-              th:replace="~{partials/forms :: dropdown('notificationType', #{notifications.search.notificationDetails.actionType.label}, ${notificationTypes}, 'code', 'description', false)}"></div>
+          <th:block
+              th:with="hint=${notificationTypesUnavailable} ? #{notifications.search.filterUnavailable} : null, disabled=${notificationTypesUnavailable}">
+            <div
+                th:replace="~{partials/forms :: dropdown('notificationType', #{notifications.search.notificationDetails.actionType.label}, ${notificationTypes}, 'code', 'description', false)}"></div>
+          </th:block>
           <div class="govuk-form-group">
             <fieldset class="govuk-fieldset">
               <legend class="govuk-fieldset__legend"
