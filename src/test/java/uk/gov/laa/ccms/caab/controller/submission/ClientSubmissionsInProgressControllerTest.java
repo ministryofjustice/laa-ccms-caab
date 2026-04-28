@@ -4,10 +4,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_CLIENT_NAMES;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_POLL_COUNT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -15,6 +19,7 @@ import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionServ
 
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -137,7 +142,9 @@ public class ClientSubmissionsInProgressControllerTest {
   }
 
   @Test
-  void testClientUpdateSubmission_withClientReferenceNumber() throws Exception {
+  @DisplayName(
+      "Test clientUpdateSubmission - Success, removes session attributes and redirects (Application context)")
+  void testClientUpdateSubmission_withClientReferenceNumber_Application() throws Exception {
     final UserDetail user = new UserDetail();
     user.setLoginId("testLogin");
     user.setUserType("testUserType");
@@ -158,7 +165,52 @@ public class ClientSubmissionsInProgressControllerTest {
                 .sessionAttr(USER_DETAILS, user)
                 .sessionAttr(APPLICATION_CLIENT_NAMES, baseClient))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/client-update/confirmed"));
+        .andExpect(redirectedUrl("/application/client-update/confirmed"))
+        .andExpect(
+            result -> {
+              HttpSession session = result.getRequest().getSession();
+              assert session != null;
+              assert session.getAttribute(SUBMISSION_POLL_COUNT) == null;
+              assert session.getAttribute(SUBMISSION_TRANSACTION_ID) == null;
+              assert session.getAttribute(CLIENT_FLOW_FORM_DATA) == null;
+              assert session.getAttribute(APPLICATION_CLIENT_NAMES) == null;
+              assert session.getAttribute(CASE) == null;
+              assert session.getAttribute(ACTIVE_CASE) == null;
+            });
+  }
+
+  @DisplayName(
+      "Test clientUpdateSubmitted - Success, removes session attributes and redirects (Amendments context)")
+  void testClientUpdateSubmission_withClientReferenceNumber_Amendments() throws Exception {
+    final UserDetail user = new UserDetail();
+    user.setLoginId("testLogin");
+    user.setUserType("testUserType");
+
+    final BaseClientDetail baseClient =
+        new BaseClientDetail().firstName("testFirstName").surname("testSurname");
+
+    final TransactionStatus clientStatus = new TransactionStatus();
+    clientStatus.setReferenceNumber("123456");
+
+    when(clientService.getClientStatus(anyString())).thenReturn(Mono.just(clientStatus));
+    when(clientService.updateClientNames(anyString(), any(), any())).thenReturn(Mono.empty());
+
+    mockMvc
+        .perform(
+            get("/amendments/client-update")
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
+                .sessionAttr(USER_DETAILS, user)
+                .sessionAttr(CASE, new uk.gov.laa.ccms.caab.model.ApplicationDetail())
+                .sessionAttr(APPLICATION_CLIENT_NAMES, baseClient))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/amendments/client-update/confirmed"))
+        .andExpect(
+            result -> {
+              HttpSession session = result.getRequest().getSession();
+              assert session != null;
+              assert session.getAttribute(CASE) == null;
+              assert session.getAttribute(ACTIVE_CASE) == null;
+            });
   }
 
   @Test
@@ -182,5 +234,37 @@ public class ClientSubmissionsInProgressControllerTest {
                 .sessionAttr(APPLICATION_CLIENT_NAMES, baseClient))
         .andExpect(status().isOk())
         .andExpect(view().name("submissions/submissionInProgress"));
+  }
+
+  @Test
+  void testSubmissionFailed_Application_ClientCreate() throws Exception {
+    mockMvc
+        .perform(post("/application/client-create/failed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/details"));
+  }
+
+  @Test
+  void testSubmissionFailed_Application_SubmitCase() throws Exception {
+    mockMvc
+        .perform(post("/application/submit-case/failed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/case-details"));
+  }
+
+  @Test
+  void testSubmissionFailed_Amendment() throws Exception {
+    mockMvc
+        .perform(post("/amendments/client-update/failed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/amendments/summary"));
+  }
+
+  @Test
+  void testSubmissionsFailed_GET() throws Exception {
+    mockMvc
+        .perform(get("/application/client-create/failed"))
+        .andExpect(status().isOk())
+        .andExpect(view().name("submissions/submissionFailed"));
   }
 }

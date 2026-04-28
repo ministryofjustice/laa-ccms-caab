@@ -18,6 +18,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_D
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
@@ -99,6 +100,53 @@ class CaseControllerTest {
   @Nested
   @DisplayName("/case/overview tests")
   class CaseOverview {
+
+    @Test
+    @DisplayName("Case overview refetches case when missing from session")
+    public void caseOverviewRefetchesCaseWhenMissingFromSession() {
+      final String selectedCaseRef = "2";
+      final Integer providerId = 1;
+      final String providerReference = "providerReference";
+      final String clientFirstname = "firstname";
+      final String clientSurname = "surname";
+      final String clientReference = "clientReference";
+
+      // EBS Case
+      ApplicationDetail applicationDetail =
+          getEbsCase(
+              selectedCaseRef,
+              providerId,
+              providerReference,
+              clientFirstname,
+              clientSurname,
+              clientReference,
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.AMEND_CASE));
+
+      when(applicationService.getCase(
+              selectedCaseRef, user.getProvider().getId(), user.getLoginId()))
+          .thenReturn(applicationDetail);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/overview")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE_REFERENCE_NUMBER, selectedCaseRef)))
+          .hasViewName("application/case-overview")
+          .satisfies(
+              response -> {
+                assertThat(response)
+                    .request()
+                    .sessionAttributes()
+                    .hasEntrySatisfying(
+                        CASE, value -> assertThat(value).isEqualTo(applicationDetail));
+              });
+
+      verify(applicationService)
+          .getCase(selectedCaseRef, user.getProvider().getId(), user.getLoginId());
+    }
 
     @Test
     @DisplayName("Case overview screen loads case details")

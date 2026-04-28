@@ -1,10 +1,13 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_POLL_COUNT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
-import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -13,8 +16,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
@@ -41,23 +46,27 @@ public class CaseSubmissionController {
    * @return the view name or a redirect to the confirmed submission page if the case status is
    *     valid
    */
-  @GetMapping("/application/case-create")
+  @GetMapping("/{caseContext}/submit-case")
   public String addCaseSubmission(
+      @PathVariable CaseContext caseContext,
       @SessionAttribute(SUBMISSION_TRANSACTION_ID) final String transactionId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final HttpSession session,
       final Model model) {
 
-    model.addAttribute("submissionType", SUBMISSION_CREATE_CASE);
+    model.addAttribute("submissionType", SUBMISSION_SUBMIT_CASE);
+    model.addAttribute("caseContext", caseContext);
 
     final TransactionStatus caseStatus = applicationService.getCaseStatus(transactionId).block();
 
     if (caseStatus != null && StringUtils.hasText(caseStatus.getReferenceNumber())) {
+      session.removeAttribute(SUBMISSION_POLL_COUNT);
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
-      return "redirect:/application/%s/confirmed".formatted(SUBMISSION_CREATE_CASE);
+      return "redirect:/%s/%s/confirmed"
+          .formatted(caseContext.getPathValue(), SUBMISSION_SUBMIT_CASE);
     }
 
-    return viewIncludingPollCount(session);
+    return viewIncludingPollCount(session, caseContext);
   }
 
   /**
@@ -66,10 +75,19 @@ public class CaseSubmissionController {
    * @param session the HTTP session to be updated
    * @return a redirect to the home page after removing the active case attribute
    */
-  @PostMapping("/application/case-create/confirmed")
-  public String clientUpdateSubmitted(final HttpSession session) {
+  @PostMapping("/{caseContext}/submit-case/confirmed")
+  public String clientUpdateSubmitted(
+      @PathVariable("caseContext") CaseContext caseContext, final HttpSession session) {
     session.removeAttribute(ACTIVE_CASE);
-    return "redirect:/home";
+    session.removeAttribute(APPLICATION);
+    session.removeAttribute(APPLICATION_DETAILS);
+    session.removeAttribute(CASE);
+
+    if (caseContext.isApplication()) {
+      return "redirect:/home";
+    } else {
+      return "redirect:/case/overview";
+    }
   }
 
   /**
@@ -80,14 +98,15 @@ public class CaseSubmissionController {
    * @return the view name or a redirect to the failed submission page if the max poll count is
    *     exceeded
    */
-  protected String viewIncludingPollCount(final HttpSession session) {
+  protected String viewIncludingPollCount(
+      final HttpSession session, final CaseContext caseContext) {
     int submissionPollCount = 0;
 
     if (session.getAttribute(SUBMISSION_POLL_COUNT) != null) {
       submissionPollCount = (int) session.getAttribute(SUBMISSION_POLL_COUNT);
       if (submissionPollCount >= submissionConstants.getMaxPollCount()) {
-        return "redirect:/application/%s/failed"
-            .formatted(SubmissionConstants.SUBMISSION_CREATE_CASE);
+        return "redirect:/%s/%s/failed"
+            .formatted(caseContext.getPathValue(), SubmissionConstants.SUBMISSION_SUBMIT_CASE);
       }
     }
     submissionPollCount += 1;
