@@ -422,6 +422,7 @@ class ProviderRequestsControllerTest {
     providerRequestType.setProviderRequestType("testType");
     providerRequestFlow.setRequestTypeFormData(providerRequestType);
     providerRequestFlow.setRequestDetailsFormData(providerRequestDetailsForm);
+    providerRequestFlow.setCaseReferenceNumber(null);
 
     final ProviderRequestTypeLookupValueDetail dynamicForm =
         new ProviderRequestTypeLookupValueDetail()
@@ -444,7 +445,7 @@ class ProviderRequestsControllerTest {
                 .param("action", "document_upload")
                 .flashAttr("providerRequestDetails", providerRequestDetailsForm))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/provider-requests/documents"));
+        .andExpect(redirectedUrl("/provider-requests/documents?caseReferenceNumber="));
 
     verify(mapper)
         .toProviderRequestDetailsFormData(providerRequestDetailsForm, providerRequestFlow);
@@ -592,6 +593,7 @@ class ProviderRequestsControllerTest {
   void testAddDocumentsToRequest() throws Exception {
     final String maxFileSize = String.valueOf(5L * 1024 * 1024);
     final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
+    final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
     commonLookupDetail.setContent(
         List.of(new CommonLookupValueDetail().code("DOC1").description("Document Type 1")));
     when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
@@ -602,7 +604,9 @@ class ProviderRequestsControllerTest {
     when(providerRequestDocumentUploadValidator.getMaxFileSize()).thenReturn(maxFileSize); // 5 MB
 
     mockMvc
-        .perform(get("/provider-requests/documents"))
+        .perform(
+            get("/provider-requests/documents")
+                .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow))
         .andExpect(status().isOk())
         .andExpect(view().name("requests/provider-request-doc-upload"))
         .andExpect(
@@ -649,7 +653,7 @@ class ProviderRequestsControllerTest {
                 .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow)
                 .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, evidenceUploadFormData))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/provider-requests/details"));
+        .andExpect(redirectedUrl("/provider-requests/details?caseReferenceNumber="));
 
     // Verify interactions
     verify(mapper).toProviderRequestDocumentDetail(evidenceUploadFormData);

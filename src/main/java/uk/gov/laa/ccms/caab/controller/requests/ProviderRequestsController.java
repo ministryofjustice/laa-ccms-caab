@@ -4,6 +4,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA
 import static uk.gov.laa.ccms.caab.constants.CcmsModule.REQUEST;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_UPLOAD_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRIOR_AUTHORITY_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROVIDER_REQUEST_FLOW_FORM_DATA;
@@ -46,6 +47,7 @@ import uk.gov.laa.ccms.caab.exception.AvScanException;
 import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProviderRequestsMapper;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.service.AvScanService;
@@ -100,8 +102,17 @@ public class ProviderRequestsController {
   public String getRequestType(
       @ModelAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
+      @RequestParam(required = false) final String caseReferenceNumber,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
+      @SessionAttribute(name = CASE, required = false) ApplicationDetail ebsCase,
       final Model model) {
+
+    String effectiveCaseRef = getEffectiveCaseReference(caseReferenceNumber);
+    providerRequestFlow.setCaseReferenceNumber(effectiveCaseRef);
+
+    if (isValidCaseReference(effectiveCaseRef)) {
+      model.addAttribute("caseReference", effectiveCaseRef);
+    }
 
     // reset the details data, so new document id and form details are created
     providerRequestFlow.resetRequestDetailsFormData();
@@ -109,7 +120,7 @@ public class ProviderRequestsController {
     model.addAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow);
     model.addAttribute("providerRequestTypeDetails", providerRequestFlow.getRequestTypeFormData());
 
-    populateProviderRequestTypes(model, userDetail);
+    populateProviderRequestTypes(model, userDetail, caseReferenceNumber);
 
     return "requests/provider-request-type";
   }
@@ -137,7 +148,11 @@ public class ProviderRequestsController {
     providerRequestTypeValidator.validate(providerRequestTypeDetails, bindingResult);
 
     if (bindingResult.hasErrors()) {
-      populateProviderRequestTypes(model, userDetail);
+      String caseRef = providerRequestFlow.getCaseReferenceNumber();
+      if (isValidCaseReference(caseRef)) {
+        model.addAttribute("caseReference", caseRef);
+      }
+      populateProviderRequestTypes(model, userDetail, caseRef);
       model.addAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow);
       model.addAttribute("providerRequestTypeDetails", providerRequestTypeDetails);
       return "requests/provider-request-type";
@@ -146,7 +161,12 @@ public class ProviderRequestsController {
     providerRequestFlow.setRequestTypeFormData(providerRequestTypeDetails);
     model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, providerRequestFlow);
 
-    return "redirect:/provider-requests/details";
+    String redirect = "/provider-requests/details";
+    String caseRefNo = providerRequestFlow.getCaseReferenceNumber();
+    if (isValidCaseReference(caseRefNo)) {
+      redirect += "?caseReferenceNumber=" + caseRefNo;
+    }
+    return "redirect:" + redirect;
   }
 
   /**
@@ -156,15 +176,18 @@ public class ProviderRequestsController {
    * @param model The model for the view.
    * @param userDetail Logged-in user details.
    */
-  protected void populateProviderRequestTypes(final Model model, UserDetail userDetail) {
+  protected void populateProviderRequestTypes(
+      final Model model, UserDetail userDetail, String caseReferenceNumber) {
 
     List<String> functions =
         Optional.ofNullable(userDetail.getFunctions()).orElse(Collections.emptyList());
 
+    boolean isCaseRelated = isValidCaseReference(caseReferenceNumber);
+
     final List<ProviderRequestTypeLookupValueDetail> providerRequestTypes =
         Optional.ofNullable(
                 lookupService
-                    .getProviderRequestTypes(false, null)
+                    .getProviderRequestTypes(isCaseRelated, null)
                     .map(ProviderRequestTypeLookupDetail::getContent)
                     .flatMapMany(Flux::fromIterable)
                     .filter(
@@ -187,9 +210,20 @@ public class ProviderRequestsController {
    */
   @GetMapping("/provider-requests/details")
   public String getRequestDetail(
+      @RequestParam(required = false) final String caseReferenceNumber,
       @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
+      @SessionAttribute(name = CASE, required = false) ApplicationDetail ebsCase,
       final Model model) {
+
+    if (caseReferenceNumber != null && !caseReferenceNumber.isBlank()) {
+      providerRequestFlow.setCaseReferenceNumber(caseReferenceNumber);
+    }
+
+    String caseRef = providerRequestFlow.getCaseReferenceNumber();
+    if (isValidCaseReference(caseRef)) {
+      model.addAttribute("caseReference", caseRef);
+    }
 
     populateAddEvidenceModel(model);
 
@@ -222,9 +256,14 @@ public class ProviderRequestsController {
     providerRequestsMapper.toProviderRequestDetailsFormData(
         providerRequestDetailsForm, providerRequestFlow);
 
+    String caseRef = providerRequestFlow.getCaseReferenceNumber();
+    if (isValidCaseReference(caseRef)) {
+      model.addAttribute("caseReference", caseRef);
+    }
+
     if ("document_upload".equals(action)) {
-      providerRequestsDetails(providerRequestFlow, providerRequestDetailsForm, model);
-      return "redirect:/provider-requests/documents";
+      return "redirect:/provider-requests/documents?caseReferenceNumber="
+          + (isValidCaseReference(caseRef) ? caseRef : "");
     } else if ("document_delete".equals(action)) {
 
       evidenceService.removeDocument(
@@ -261,7 +300,10 @@ public class ProviderRequestsController {
       // we need to pass the providerRequestFlow and user details into the service.
       final String notificationId =
           providerRequestService.submitProviderRequest(
-              providerRequestFlow.getRequestTypeFormData(), providerRequestDetailsForm, userDetail);
+              providerRequestFlow.getRequestTypeFormData(),
+              providerRequestDetailsForm,
+              caseRef,
+              userDetail);
 
       // check if we are not a claim upload enabled request,
       // if not then we might have documents
@@ -287,7 +329,11 @@ public class ProviderRequestsController {
                 documents, UNRELATED_CASE_REFERENCE, notificationId, userDetail)
             .block();
       }
-      return "redirect:/application/provider-request/confirmed";
+      String redirectUrl = "/application/provider-request/confirmed";
+      if (isValidCaseReference(caseRef)) {
+        redirectUrl += "?caseReferenceNumber=";
+      }
+      return "redirect:" + redirectUrl;
     }
   }
 
@@ -298,12 +344,23 @@ public class ProviderRequestsController {
    * @return the name of the view for uploading provider request documents
    */
   @GetMapping("/provider-requests/documents")
-  public String addDocumentsToRequest(final Model model) {
+  public String addDocumentsToRequest(
+      @RequestParam(required = false) final String caseReferenceNumber,
+      @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
+          final ProviderRequestFlowFormData providerRequestFlow,
+      final Model model) {
+
+    if (caseReferenceNumber != null && !caseReferenceNumber.isBlank()) {
+      providerRequestFlow.setCaseReferenceNumber(caseReferenceNumber);
+    }
+
+    String caseRef = providerRequestFlow.getCaseReferenceNumber();
+    if (isValidCaseReference(caseRef)) {
+      model.addAttribute("caseReference", caseRef);
+    }
 
     model.addAttribute(EVIDENCE_UPLOAD_FORM_DATA, new EvidenceUploadFormData());
-
     populateAddEvidenceModel(model);
-
     return "requests/provider-request-doc-upload";
   }
 
@@ -323,15 +380,19 @@ public class ProviderRequestsController {
           final ProviderRequestFlowFormData providerRequestFlow,
       @ModelAttribute(EVIDENCE_UPLOAD_FORM_DATA)
           final EvidenceUploadFormData evidenceUploadFormData,
+      @RequestParam(required = false) String caseReferenceNumber,
       final BindingResult bindingResult,
       final Model model) {
 
     final String documentSessionId =
         providerRequestFlow.getRequestDetailsFormData().getDocumentSessionId().toString();
 
+    final String caseRef = providerRequestFlow.getCaseReferenceNumber();
+
     // set the additional details for the evidence upload
     evidenceUploadFormData.setApplicationOrOutcomeId(documentSessionId);
-    evidenceUploadFormData.setCaseReferenceNumber(UNRELATED_CASE_REFERENCE);
+    evidenceUploadFormData.setCaseReferenceNumber(
+        isValidCaseReference(caseRef) ? caseReferenceNumber : UNRELATED_CASE_REFERENCE);
     evidenceUploadFormData.setProviderId(userDetail.getProvider().getId());
     evidenceUploadFormData.setDocumentSender(userDetail.getLoginId());
     evidenceUploadFormData.setCcmsModule(REQUEST);
@@ -340,6 +401,9 @@ public class ProviderRequestsController {
     providerRequestDocumentUploadValidator.validate(evidenceUploadFormData, bindingResult);
 
     if (bindingResult.hasErrors()) {
+      if (isValidCaseReference(caseRef)) {
+        model.addAttribute("caseReference", caseRef);
+      }
       populateAddEvidenceModel(model);
       return "requests/provider-request-doc-upload";
     }
@@ -355,7 +419,9 @@ public class ProviderRequestsController {
           evidenceUploadFormData.getFile().getInputStream());
     } catch (AvVirusFoundException | AvScanException | IOException e) {
       bindingResult.rejectValue("file", "scan.failure", e.getMessage());
-
+      if (isValidCaseReference(caseRef)) {
+        model.addAttribute("caseReference", caseRef);
+      }
       populateAddEvidenceModel(model);
       return "requests/provider-request-doc-upload";
     }
@@ -387,7 +453,8 @@ public class ProviderRequestsController {
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException("Failed to save document"));
 
-    return "redirect:/provider-requests/details";
+    return "redirect:/provider-requests/details?caseReferenceNumber="
+        + (isValidCaseReference(caseRef) ? caseRef : "");
   }
 
   /**
@@ -538,9 +605,37 @@ public class ProviderRequestsController {
     model.addAttribute("maxFileSize", providerRequestDocumentUploadValidator.getMaxFileSize());
   }
 
+  /**
+   * Handles the POST request for the submission page.
+   *
+   * @param providerRequestFlow session attribute containing flow form data.
+   * @param sessionStatus status of current session
+   * @return the view for either the home page or case overview page
+   */
   @PostMapping("/application/provider-request/confirmed")
-  public String clientUpdateSubmitted(final SessionStatus sessionStatus) {
+  public String clientUpdateSubmitted(
+      @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
+          final ProviderRequestFlowFormData providerRequestFlow,
+      final SessionStatus sessionStatus) {
+
     sessionStatus.setComplete();
+
+    String caseRef = providerRequestFlow.getCaseReferenceNumber();
+    if (isValidCaseReference(caseRef)) {
+      return "redirect:/case/overview";
+    }
     return "redirect:/home";
+  }
+
+  private String getEffectiveCaseReference(String caseReferenceNumber) {
+    return Optional.ofNullable(caseReferenceNumber)
+        .filter(this::isValidCaseReference)
+        .orElse(UNRELATED_CASE_REFERENCE);
+  }
+
+  private boolean isValidCaseReference(String caseReferenceNumber) {
+    return caseReferenceNumber != null
+        && caseReferenceNumber.matches("^\\d{12}$")
+        && !UNRELATED_CASE_REFERENCE.equals(caseReferenceNumber);
   }
 }

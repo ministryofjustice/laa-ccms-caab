@@ -6,12 +6,19 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/home}" class="govuk-back-link" th:text="#{site.cancelAndReturnToHome}"></a>
+    <a th:unless="${caseReference != null}"
+       th:href="@{/home}"
+       class="govuk-back-link"
+       th:text="#{site.cancelAndReturnToHome}"/>
+      <a th:if="${caseReference != null}"
+         th:href="@{/case/overview}"
+         class="govuk-back-link"
+         th:text="#{caseDetails.overview.return}"/>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/provider-requests/types}" th:object="${providerRequestTypeDetails}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
-      <span class="govuk-caption-l" th:text="#{request.general}"></span>
+      <span th:unless="${caseReference != null}" class="govuk-caption-l" th:text="#{request.general}"></span>
       <h1 class="govuk-heading-l" th:text="#{request.type}"></h1>
       <div class="govuk-body-l" th:text="#{request.select}"></div>
       <div class="govuk-grid-row">

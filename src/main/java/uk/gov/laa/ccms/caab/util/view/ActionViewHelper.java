@@ -32,7 +32,7 @@ public class ActionViewHelper {
               FunctionConstants.SUBMIT_CASE_REQUEST,
               "action.submitCaseQuery.name",
               "action.submitCaseQuery.description",
-              "#"),
+              "/provider-requests/types"),
           new AvailableAction(
               FunctionConstants.VIEW_CASE,
               "action.viewCase.name",
