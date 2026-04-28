@@ -151,7 +151,7 @@ public interface ProviderRequestsMapper {
   EvidenceDocumentDetail toProviderRequestDocumentDetail(final EvidenceUploadFormData formData);
 
   // todo amend mapping for case related requests (future story)
-  @Mapping(target = "caseReferenceNumber", ignore = true)
+  @Mapping(target = "caseReferenceNumber", source = "mappingContext.caseReferenceNumber")
   @Mapping(target = "username", source = "user.username")
   @Mapping(target = "requestType", source = "typeData.providerRequestType")
   @Mapping(
