@@ -5,6 +5,18 @@ ignore:
     - '*':
       reason: "temporary ignore while upgrade is scheduled"
       expires: "2026-06-01T00:00:00Z"
+  SNYK-UBUNTU2404-GLIBC-15804597:
+    - '*':
+      reason: "temporary ignore while base image is updated"
+      expires: "2026-06-01T00:00:00Z"
+  SNYK-UBUNTU2404-GLIBC-15804816:
+    - '*':
+      reason: "temporary ignore while base image is updated"
+      expires: "2026-06-01T00:00:00Z"
+  SNYK-UBUNTU2404-GLIBC-15884040:
+    - '*':
+      reason: "temporary ignore while base image is updated"
+      expires: "2026-06-01T00:00:00Z"
 patch: {}
 exclude:
   global:

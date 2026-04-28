@@ -204,6 +204,18 @@ public interface ProceedingAndCostsMapper {
   @Mapping(target = "totalRemaining", ignore = true)
   AllocateCostsFormData toAllocateCostsForm(ApplicationDetail applicationDetail);
 
+  /**
+   * Ensures costEntries is not null.
+   *
+   * @param target the target to update.
+   */
+  @AfterMapping
+  default void ensureCostEntriesNotNull(@MappingTarget AllocateCostsFormData target) {
+    if (target.getCostEntries() == null) {
+      target.setCostEntries(new ArrayList<>());
+    }
+  }
+
   @InheritConfiguration(name = "toAllocateCostsForm")
   @Mapping(target = "costEntries", ignore = true)
   void toAllocateCostsFormWithoutCostEntries(

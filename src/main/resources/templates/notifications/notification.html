@@ -7,7 +7,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/notifications/search-results}"
+    <a th:href="@{/notifications/search-results(page=${notificationSearchCriteria.page},size=${notificationSearchCriteria.size},pageSort=${notificationSearchCriteria.sort})}"
      class="govuk-back-link" th:text="#{notifications.search.goBack}"/>
   </div>
   <div id="main-content">
