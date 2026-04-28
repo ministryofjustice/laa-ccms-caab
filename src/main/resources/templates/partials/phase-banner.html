@@ -14,7 +14,7 @@
         </p>
       </div>
       <div th:class="${activeCase} ? 'govuk-grid-column-one-half' : 'govuk-grid-column-full'">
-        <p class="govuk-body govuk-!-font-size-14"
+        <p class="govuk-body govuk-!-font-size-16"
            style="margin-bottom: 0; white-space: nowrap">
           <span class="govuk-!-padding-left-2" th:text="|#{site.phase.loggedInAs}:|"/>
           <span class="govuk-!-font-weight-bold govuk-!-padding-right-2"
@@ -31,10 +31,7 @@
                               th:text="${user.provider.name}"/>
                     </span>
                 </span>
-            <a th:href="@{/logout}" class="govuk-link govuk-!-text-align-right govuk-!-padding-right-2
-               govuk-link--no-visited-state"
-               th:style="'float: right;' + (activeCase != false ? 'color: #003078;' : '')"
-               th:text="#{site.phase.logout}"/>
+
         </p>
       </div>
     </div>
