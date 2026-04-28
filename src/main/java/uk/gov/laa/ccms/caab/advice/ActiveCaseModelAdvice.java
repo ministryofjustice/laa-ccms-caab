@@ -63,7 +63,7 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
       CounselSearchController.class,
       EditProceedingsAndCostsSectionController.class,
       AllocateCostLimitController.class,
-        ProviderRequestsController.class
+      ProviderRequestsController.class
     })
 public class ActiveCaseModelAdvice {
 
