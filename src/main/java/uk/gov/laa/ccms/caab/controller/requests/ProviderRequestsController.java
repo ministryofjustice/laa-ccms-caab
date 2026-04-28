@@ -4,6 +4,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA
 import static uk.gov.laa.ccms.caab.constants.CcmsModule.REQUEST;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_UPLOAD_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRIOR_AUTHORITY_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROVIDER_REQUEST_FLOW_FORM_DATA;
@@ -46,6 +47,7 @@ import uk.gov.laa.ccms.caab.exception.AvScanException;
 import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProviderRequestsMapper;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.service.AvScanService;
@@ -102,6 +104,7 @@ public class ProviderRequestsController {
           final ProviderRequestFlowFormData providerRequestFlow,
       @RequestParam(required = false) final String caseReferenceNumber,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
+      @SessionAttribute(name = CASE, required = false) ApplicationDetail ebsCase,
       final Model model) {
 
     String effectiveCaseRef = getEffectiveCaseReference(caseReferenceNumber);
@@ -179,7 +182,7 @@ public class ProviderRequestsController {
     List<String> functions =
         Optional.ofNullable(userDetail.getFunctions()).orElse(Collections.emptyList());
 
-    boolean isCaseRelated = caseReferenceNumber != null;
+    boolean isCaseRelated = isValidCaseReference(caseReferenceNumber);
 
     final List<ProviderRequestTypeLookupValueDetail> providerRequestTypes =
         Optional.ofNullable(
@@ -210,6 +213,7 @@ public class ProviderRequestsController {
       @RequestParam(required = false) final String caseReferenceNumber,
       @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
+      @SessionAttribute(name = CASE, required = false) ApplicationDetail ebsCase,
       final Model model) {
 
     if (caseReferenceNumber != null && !caseReferenceNumber.isBlank()) {
@@ -218,7 +222,7 @@ public class ProviderRequestsController {
 
     String caseRef = providerRequestFlow.getCaseReferenceNumber();
     if (isValidCaseReference(caseRef)) {
-      model.addAttribute("caseReference", caseReferenceNumber);
+      model.addAttribute("caseReference", caseRef);
     }
 
     populateAddEvidenceModel(model);
@@ -258,7 +262,6 @@ public class ProviderRequestsController {
     }
 
     if ("document_upload".equals(action)) {
-      providerRequestsDetails(providerRequestFlow, providerRequestDetailsForm, model);
       return "redirect:/provider-requests/documents?caseReferenceNumber="
           + (isValidCaseReference(caseRef) ? caseRef : "");
     } else if ("document_delete".equals(action)) {
@@ -326,8 +329,11 @@ public class ProviderRequestsController {
                 documents, UNRELATED_CASE_REFERENCE, notificationId, userDetail)
             .block();
       }
-      return "redirect:/application/provider-request/confirmed?caseReferenceNumber="
-          + (isValidCaseReference(caseRef) ? caseRef : "");
+      String redirectUrl = "/application/provider-request/confirmed";
+      if (isValidCaseReference(caseRef)) {
+        redirectUrl += "?caseReferenceNumber=";
+      }
+      return "redirect:" + redirectUrl;
     }
   }
 
@@ -386,9 +392,7 @@ public class ProviderRequestsController {
     // set the additional details for the evidence upload
     evidenceUploadFormData.setApplicationOrOutcomeId(documentSessionId);
     evidenceUploadFormData.setCaseReferenceNumber(
-        Optional.ofNullable(providerRequestFlow.getCaseReferenceNumber())
-            .filter(ref -> !ref.isBlank())
-            .orElse(UNRELATED_CASE_REFERENCE));
+        isValidCaseReference(caseRef) ? caseReferenceNumber : UNRELATED_CASE_REFERENCE);
     evidenceUploadFormData.setProviderId(userDetail.getProvider().getId());
     evidenceUploadFormData.setDocumentSender(userDetail.getLoginId());
     evidenceUploadFormData.setCcmsModule(REQUEST);
