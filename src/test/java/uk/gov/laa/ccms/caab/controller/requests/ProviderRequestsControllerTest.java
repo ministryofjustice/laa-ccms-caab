@@ -432,11 +432,6 @@ class ProviderRequestsControllerTest {
     final ProviderRequestTypeLookupDetail lookupDetail = new ProviderRequestTypeLookupDetail();
     lookupDetail.setContent(List.of(dynamicForm));
 
-    when(lookupService.getProviderRequestTypes(null, "testType"))
-        .thenReturn(Mono.just(lookupDetail));
-    when(evidenceService.getEvidenceDocumentsForApplicationOrOutcome(any(), eq(CcmsModule.REQUEST)))
-        .thenReturn(Mono.just(new EvidenceDocumentDetails()));
-
     mockMvc
         .perform(
             post("/provider-requests/details")

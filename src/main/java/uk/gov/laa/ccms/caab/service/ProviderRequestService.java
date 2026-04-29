@@ -38,12 +38,17 @@ public class ProviderRequestService {
       final UserDetail user) {
     log.info("POST /provider-requests");
 
+    String caseRef = (caseReferenceNumber != null
+        && !caseReferenceNumber.isBlank()
+        && !"-1".equals(caseReferenceNumber))
+        ? caseReferenceNumber : null;
+
     final ProviderRequestMappingContext mappingContext =
         ProviderRequestMappingContext.builder()
             .user(user)
             .typeData(providerRequestTypeFormData)
             .detailsData(providerRequestDetailsFormData)
-            .caseReferenceNumber(caseReferenceNumber)
+            .caseReferenceNumber(caseRef)
             .build();
 
     final ProviderRequestDetail providerRequestDetail =
