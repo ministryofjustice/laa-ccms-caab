@@ -37,7 +37,7 @@ class ProviderRequestServiceTest {
     final ProviderRequestTypeFormData typeFormData = mock(ProviderRequestTypeFormData.class);
     final ProviderRequestDetailsFormData detailsFormData =
         mock(ProviderRequestDetailsFormData.class);
-    final String caseReferenceNumber = "";
+    final String caseReferenceNumber = "123456789012";
     final UserDetail userDetail = mock(UserDetail.class);
     final ProviderRequestMappingContext mappingContext =
         ProviderRequestMappingContext.builder()
@@ -74,7 +74,7 @@ class ProviderRequestServiceTest {
   void submitProviderRequest_ThrowsException() {
     final ProviderRequestTypeFormData typeFormData = new ProviderRequestTypeFormData();
     final ProviderRequestDetailsFormData detailsFormData = new ProviderRequestDetailsFormData();
-    final String caseReferenceNumber = "";
+    final String caseReferenceNumber = "123456789012";
     final UserDetail userDetail = new UserDetail();
     userDetail.setLoginId("testLoginId");
     userDetail.setUserType("testUserType");
