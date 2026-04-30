@@ -33,6 +33,13 @@ public class CspNonceFilter extends OncePerRequestFilter {
   private final boolean upgradeInsecureRequests;
   private final String opaSources;
 
+  /**
+   * Creates a CSP nonce filter with the configured rollout mode and external OPA source.
+   *
+   * @param reportOnly whether the policy should be sent as report-only instead of enforced
+   * @param upgradeInsecureRequests whether to add the upgrade-insecure-requests directive
+   * @param owdUrl configured Oracle Web Determinations URL used to derive the OPA origin
+   */
   public CspNonceFilter(boolean reportOnly, boolean upgradeInsecureRequests, String owdUrl) {
     this.reportOnly = reportOnly;
     this.upgradeInsecureRequests = upgradeInsecureRequests;

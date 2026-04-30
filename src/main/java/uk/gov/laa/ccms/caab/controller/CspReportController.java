@@ -23,6 +23,12 @@ public class CspReportController {
     this.objectMapper = objectMapper;
   }
 
+  /**
+   * Receives and logs a browser CSP violation report.
+   *
+   * @param reportBody raw CSP report body posted by the browser
+   * @return an empty 204 response once the report has been recorded
+   */
   @PostMapping("/csp/report")
   public ResponseEntity<Void> report(@RequestBody(required = false) String reportBody) {
     puiMetricService.incrementCspViolationReportsCount();
