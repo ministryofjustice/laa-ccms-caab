@@ -16,11 +16,10 @@ import uk.gov.laa.ccms.caab.model.csp.CspReport;
 public class CspReportController {
 
   private final PuiMetricService puiMetricService;
-  private final ObjectMapper objectMapper;
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
-  public CspReportController(PuiMetricService puiMetricService, ObjectMapper objectMapper) {
+  public CspReportController(PuiMetricService puiMetricService) {
     this.puiMetricService = puiMetricService;
-    this.objectMapper = objectMapper;
   }
 
   /**

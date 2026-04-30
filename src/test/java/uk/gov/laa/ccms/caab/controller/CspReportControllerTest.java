@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,7 +21,7 @@ class CspReportControllerTest {
 
   @BeforeEach
   void setUp() {
-    controller = new CspReportController(puiMetricService, new ObjectMapper());
+    controller = new CspReportController(puiMetricService);
   }
 
   @Test
