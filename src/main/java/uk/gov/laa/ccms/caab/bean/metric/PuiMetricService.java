@@ -30,6 +30,7 @@ public class PuiMetricService {
   private final Counter applicationsCopiedCounter;
   private final Counter applicationsSubmittedCounter;
   private final Counter applicationsAbandonedCounter;
+  private final Counter cspViolationReportsCounter;
 
   /**
    * Constructs an instance of PuiMetricService, initializing various metrics that track the
@@ -58,6 +59,11 @@ public class PuiMetricService {
             .name("pui_applications_abandoned")
             .help("Total number of applications abandoned")
             .register(meterRegistry);
+    this.cspViolationReportsCounter =
+        Counter.builder()
+            .name("pui_csp_violation_reports")
+            .help("Total number of Content Security Policy violation reports received")
+            .register(meterRegistry);
   }
 
   /** Increments the created applications counter by 1. */
@@ -83,5 +89,10 @@ public class PuiMetricService {
   public void incrementAbandonedCount(String caseReference) {
     log.info("Case reference {} abandoned", caseReference);
     applicationsAbandonedCounter.inc();
+  }
+
+  /** Increments the CSP violation report counter by 1. */
+  public void incrementCspViolationReportsCount() {
+    cspViolationReportsCounter.inc();
   }
 }
