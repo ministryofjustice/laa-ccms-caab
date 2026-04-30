@@ -1,4 +1,5 @@
 <div th:fragment="dropdown(fieldId, formLabel, list, itemValue, itemLabel, isSingleQuestion)"
+     th:with="hint=${hint}, disabled=${disabled?:false}"
      class="govuk-form-group"
      th:classappend="${#fields.hasErrors(fieldId)} ? 'govuk-form-group--error' : ''">
 
@@ -13,6 +14,8 @@
   <label class="govuk-label" th:unless="${isSingleQuestion}" th:for="${fieldId}" th:text="${formLabel}">
   </label>
 
+  <div th:if="${hint}" th:id="${fieldId + '-hint'}" class="govuk-hint" th:text="${hint}"></div>
+
   <span th:if="${#fields.hasErrors(fieldId)}" th:errors="*{__${fieldId}__}" class="govuk-error-message"></span>
 
   <select class="govuk-select"
@@ -20,7 +23,9 @@
           th:field="*{__${fieldId}__}"
           th:errorclass="govuk-select--error"
           th:id="${fieldId}"
-          th:name="${fieldId}">
+          th:name="${fieldId}"
+          th:disabled="${disabled}"
+          th:aria-describedby="${hint != null ? fieldId + '-hint' : null}">
     <option value="" th:text="#{site.select}"></option>
     <option th:each="item : ${list}"
             th:value="${item[itemValue]}"
@@ -33,11 +38,14 @@
   To display a dropdown for a list of strings that act as both value and display value.
 -->
 <div th:fragment="simpleDropdown(fieldId, formLabel, list)"
+     th:with="hint=${hint}, disabled=${disabled?:false}"
      class="govuk-form-group"
      th:classappend="${#fields.hasErrors(fieldId)} ? 'govuk-form-group--error' : ''">
 
   <label class="govuk-label" th:for="${fieldId}" th:text="${formLabel}">
   </label>
+
+  <div th:if="${hint}" th:id="${fieldId + '-hint'}" class="govuk-hint" th:text="${hint}"></div>
 
   <span th:if="${#fields.hasErrors(fieldId)}" th:errors="*{__${fieldId}__}" class="govuk-error-message"></span>
 
@@ -46,7 +54,9 @@
           th:field="*{__${fieldId}__}"
           th:errorclass="govuk-select--error"
           th:id="${fieldId}"
-          th:name="${fieldId}">
+          th:name="${fieldId}"
+          th:disabled="${disabled}"
+          th:aria-describedby="${hint != null ? fieldId + '-hint' : null}">
     <option value="" th:text="#{site.select}"></option>
     <option th:each="item : ${list}"
             th:value="${item}"
@@ -56,11 +66,14 @@
 </div>
 
 <div th:fragment="dropdownWithDisplayValue(fieldId, formLabel, list, itemValue, itemLabel)"
+           th:with="hint=${hint}, disabled=${disabled?:false}"
            class="govuk-form-group"
            th:classappend="${#fields.hasErrors(fieldId)} ? 'govuk-form-group--error' : ''">
 
   <label class="govuk-label" th:for="${fieldId}" th:text="${formLabel}">
   </label>
+
+  <div th:if="${hint}" th:id="${fieldId + '-hint'}" class="govuk-hint" th:text="${hint}"></div>
 
   <span th:if="${#fields.hasErrors(fieldId)}" th:errors="*{__${fieldId}__}" class="govuk-error-message"></span>
 
@@ -72,7 +85,9 @@
           th:errorclass="govuk-select--error"
           th:id="${fieldId}"
           th:name="${fieldId}"
-          th:attr="data-display-value-id=${fieldId + 'DisplayValue'}">
+          th:disabled="${disabled}"
+          th:aria-describedby="${hint != null ? fieldId + '-hint' : null}"
+          th:attr="onchange=|document.getElementById('${fieldId}DisplayValue').value = this.options[this.selectedIndex].text;|">
     <option value="" th:text="#{site.select}"></option>
     <option th:each="item : ${list}"
             th:value="${item[itemValue]}"
@@ -82,7 +97,7 @@
 </div>
 
 <div th:fragment="textInput(fieldId, label, inputClass)"
-     th:with="hideLabel=${hideLabel?:false}, maxlength=${maxlength}, hint=${hint}"
+     th:with="hideLabel=${hideLabel?:false}, hint=${hint}, maxlength=${maxlength ?: maxlengthParam}"
      class="govuk-form-group"
      th:classappend="${#fields.hasErrors(fieldId)} ? 'govuk-form-group--error' : ''">
   <label class="govuk-label" th:unless="${hideLabel}" th:for="${fieldId}" th:text="${label}"></label>
@@ -97,8 +112,8 @@
          th:id="${fieldId}"
          th:name="${fieldId}"
          type="text"
+         th:maxlength="${maxlength}"
          th:attr="aria-label=${hideLabel ? label : null},
-                  maxlength=${maxlength},
                   aria-describedby=${(hint != null ? fieldId + '-hint ' : '') + (#fields.hasErrors(fieldId) ? fieldId + '-error' : '')}"
          data-module="govuk-input"
          th:field="*{__${fieldId}__}">

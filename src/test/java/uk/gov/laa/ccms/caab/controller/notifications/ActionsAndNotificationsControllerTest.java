@@ -186,7 +186,7 @@ class ActionsAndNotificationsControllerTest {
               mockMvc.perform(
                   get("/notifications/search?notification_type=N").flashAttr("user", userDetails)))
           .hasStatus3xxRedirection()
-          .hasRedirectedUrl("/notifications/search-results");
+          .hasRedirectedUrl("/notifications/search-results?page=0&refresh=true");
     }
 
     @Test
@@ -201,7 +201,7 @@ class ActionsAndNotificationsControllerTest {
               mockMvc.perform(
                   get("/notifications/search?notification_type=all").flashAttrs(flashMap)))
           .hasStatus3xxRedirection()
-          .hasRedirectedUrl("/notifications/search-results");
+          .hasRedirectedUrl("/notifications/search-results?page=0&refresh=true");
     }
 
     @Test
@@ -222,7 +222,8 @@ class ActionsAndNotificationsControllerTest {
 
       UserDetails baseUsers =
           new UserDetails()
-              .addContentItem(new BaseUser().userId(123).userType("type1").loginId("login1"));
+              .addContentItem(
+                  new BaseUser().userId(123).userType("type1").loginId(userDetails.getLoginId()));
 
       when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE))
           .thenReturn(Mono.just(notificationTypes));
@@ -234,6 +235,18 @@ class ActionsAndNotificationsControllerTest {
       assertThat(mockMvc.perform(get("/notifications/search").flashAttrs(flashMap)))
           .hasStatusOk()
           .hasViewName("notifications/actions-and-notifications-search");
+
+      @SuppressWarnings("unchecked")
+      List<BaseUser> users =
+          (List<BaseUser>)
+              mockMvc
+                  .perform(get("/notifications/search").flashAttrs(flashMap))
+                  .getMvcResult()
+                  .getModelAndView()
+                  .getModel()
+                  .get("users");
+
+      assertThat(users).extracting("loginId").contains(userDetails.getLoginId());
     }
 
     @Test
@@ -271,6 +284,33 @@ class ActionsAndNotificationsControllerTest {
           .hasViewName("notifications/actions-and-notifications-search")
           .model()
           .containsEntry("notificationSearchCriteria", criteria);
+    }
+
+    @Test
+    @DisplayName("Should return expected view even when dropdown services fail")
+    void shouldReturnExpectedViewWhenDropdownServicesFail() {
+      NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+      Map<String, Object> flashMap = new HashMap<>();
+      flashMap.put("user", userDetails);
+      flashMap.put("notificationSearchCriteria", criteria);
+
+      when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE))
+          .thenReturn(Mono.error(new RuntimeException("Lookup service failed")));
+      when(providerService.getProvider(userDetails.getProvider().getId()))
+          .thenReturn(Mono.error(new RuntimeException("Provider service failed")));
+      when(userService.getUsers(any()))
+          .thenReturn(Mono.error(new RuntimeException("User service failed")));
+
+      assertThat(mockMvc.perform(get("/notifications/search").flashAttrs(flashMap)))
+          .hasStatusOk()
+          .hasViewName("notifications/actions-and-notifications-search")
+          .model()
+          .containsEntry("feeEarners", Collections.emptyList())
+          .containsEntry("feeEarnersUnavailable", true)
+          .containsEntry("notificationTypes", Collections.emptyList())
+          .containsEntry("notificationTypesUnavailable", true)
+          .containsEntry("users", Collections.emptyList())
+          .containsEntry("usersUnavailable", true);
     }
   }
 
@@ -342,7 +382,7 @@ class ActionsAndNotificationsControllerTest {
 
       assertThat(mockMvc.perform(post("/notifications/search").flashAttrs(flashMap)))
           .hasStatus3xxRedirection()
-          .hasRedirectedUrl("/notifications/search-results");
+          .hasRedirectedUrl("/notifications/search-results?page=0&refresh=true");
     }
   }
 
@@ -369,7 +409,7 @@ class ActionsAndNotificationsControllerTest {
                       .sessionAttr(CASE, ebsCase)
                       .flashAttrs(flashMap)))
           .hasStatus3xxRedirection()
-          .hasRedirectedUrl("/notifications/search-results")
+          .hasRedirectedUrl("/notifications/search-results?page=0&refresh=true")
           .debug();
       assertThat(criteria.isOriginatesFromCase()).isTrue();
       assertThat(criteria.getCaseReference()).isEqualTo(ebsCase.getCaseReferenceNumber());

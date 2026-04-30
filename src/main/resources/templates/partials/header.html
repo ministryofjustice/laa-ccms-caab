@@ -90,9 +90,18 @@
                                 Help
                             </a>
                         </li>
+                        <li class="govuk-service-navigation__item">
+                            <a th:href="@{/logout}" class="govuk-service-navigation__link" target="_blank"
+                               rel="noopener noreferrer"
+                               th:text="#{site.phase.logout}"/>
+                        </li>
                     </ul>
                 </nav>
             </div>
+
+
+
         </div>
     </div>
+    <div th:replace="~{partials/phase-banner :: phase-banner}"></div>
 </th:block>

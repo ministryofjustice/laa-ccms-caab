@@ -147,6 +147,39 @@ public class CaseSearchCriteriaValidatorTest {
   }
 
   @Test
+  void testCaseRefLengthValidation() {
+    searchCriteria.setCaseReference("123456789012345678901234567890123456!");
+    validator.validate(searchCriteria, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(2, errors.getErrorCount());
+    assertEquals("length.exceeds.max", errors.getFieldErrors("caseReference").get(0).getCode());
+    assertEquals("invalid.case-ref", errors.getFieldErrors("caseReference").get(1).getCode());
+  }
+
+  @Test
+  void testClientSurnameLengthValidation() {
+    searchCriteria.setClientSurname("A234567890123456789012345678901234  56");
+    validator.validate(searchCriteria, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(2, errors.getErrorCount());
+    assertEquals("length.exceeds.max", errors.getFieldErrors("clientSurname").get(0).getCode());
+    assertEquals("invalid.surname-char", errors.getFieldErrors("clientSurname").get(1).getCode());
+  }
+
+  @Test
+  void testProviderCaseRefLengthValidation() {
+    searchCriteria.setProviderCaseReference("123456789012345678901234567890123  456");
+    validator.validate(searchCriteria, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(2, errors.getErrorCount());
+    assertEquals(
+        "length.exceeds.max", errors.getFieldErrors("providerCaseReference").get(0).getCode());
+    assertEquals(
+        "invalid.providerCaseReference-char",
+        errors.getFieldErrors("providerCaseReference").get(1).getCode());
+  }
+
+  @Test
   void testProviderCaseRefDoubleSpaceValidation() {
     // Requires some text, otherwise value is disregarded for being blank
     searchCriteria.setProviderCaseReference("1  3");
