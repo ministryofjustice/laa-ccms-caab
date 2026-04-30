@@ -24,7 +24,6 @@ import org.springframework.security.saml2.provider.service.authentication.Saml2A
 import org.springframework.security.saml2.provider.service.authentication.Saml2ResponseAssertionAccessor;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
-import org.springframework.security.web.header.writers.ContentSecurityPolicyHeaderWriter;
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
 import uk.gov.laa.ccms.caab.security.CspNonceFilter;
 import uk.gov.laa.ccms.caab.service.UserService;
@@ -36,6 +35,15 @@ public class SecurityConfiguration {
 
   @Value("${portal.logoutUrl}")
   private String logoutUrl;
+
+  @Value("${csp.report-only:true}")
+  private boolean cspReportOnly;
+
+  @Value("${csp.upgrade-insecure-requests:false}")
+  private boolean cspUpgradeInsecureRequests;
+
+  @Value("${laa.ccms.oracle-web-determination-server.url:}")
+  private String owdUrl;
 
   private final UserService userService;
 
@@ -63,6 +71,8 @@ public class SecurityConfiguration {
                         "/actuator/info",
                         "/actuator/metrics")
                     .permitAll() // Ensure Actuator endpoints are excluded
+                    .requestMatchers(HttpMethod.POST, "/csp/report")
+                    .permitAll()
                     .requestMatchers(HttpMethod.GET, "/provider-requests/*")
                     .hasAuthority(UserRole.CREATE_PROVIDER_REQUEST.getCode())
                     .requestMatchers(
@@ -106,25 +116,10 @@ public class SecurityConfiguration {
                     .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode())
                     .anyRequest()
                     .authenticated())
-        .addFilterBefore(new CspNonceFilter(), BasicAuthenticationFilter.class)
-        .headers(headers -> headers
-            .contentSecurityPolicy(csp -> csp
-                .reportOnly()
-                .policyDirectives(
-                    "script-src 'nonce-{nonce}' 'strict-dynamic' 'self' "
-                        + "https://www.googletagmanager.com "
-                        + "https://opa.oraclecloud.com; "
-                        + "style-src 'nonce-{nonce}' 'self' "
-                        + "https://opa.oraclecloud.com; "
-                        + "img-src 'self' https://www.googletagmanager.com; "
-                        + "connect-src 'self' https://www.google-analytics.com; "
-                        + "font-src 'self' https://opa.oraclecloud.com; "
-                        + "frame-src 'self' https://opa.oraclecloud.com; "
-                        + "object-src 'none'; "
-                        + "base-uri 'self'; "
-                        + "form-action 'self';")
-            )
-        )
+        .csrf(csrf -> csrf.ignoringRequestMatchers("/csp/report"))
+        .addFilterBefore(
+            new CspNonceFilter(cspReportOnly, cspUpgradeInsecureRequests, owdUrl),
+            BasicAuthenticationFilter.class)
         .sessionManagement(
             sessionManagement ->
                 sessionManagement.invalidSessionStrategy(

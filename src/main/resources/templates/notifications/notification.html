@@ -126,7 +126,7 @@
                      th:text="#{site.retrieve}"
                      th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/retrieve(notification_id=${notification.getNotificationId},attachment_id=${attachment.getDocumentId})}"/>
                   <span sec:authorize="!hasAuthority(@roles.viewNotificationAttachment)"  th:text="#{site.retrieve}"/>
-                  <div style="visibility:hidden;display:inline-block" class="loader-small"></div>
+                  <div class="loader-small ccms-hidden-inline-loader"></div>
                 </th:block>
               </td>
             </tr>

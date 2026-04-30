@@ -15,15 +15,15 @@
         rel="stylesheet"/>
   <link th:href="@{/webjars/govuk-frontend/dist/govuk/govuk-frontend.min.css}" rel="stylesheet">
   <link th:href="@{/ccms/assessment-get.css}" rel="stylesheet">
-  <script th:src="@{/ccms/ccms.js}"></script>
+  <script th:src="@{/ccms/ccms.js}" th:attr="nonce=${cspNonce}"></script>
   <link th:href="${interviewsCSS}" rel="stylesheet" type="text/css"/>
   <link th:href="${fontsCSS}" rel="stylesheet" type="text/css"/>
-  <script th:src="${interviewsJS}"></script>
+  <script th:src="${interviewsJS}" th:attr="nonce=${cspNonce}"></script>
   <title th:text="${'LAA CCMS - ' + frameTitle}">LAA CCMS - Assessment</title>
 </head>
 
 <body class="govuk-template__body">
-<script>
+<script th:attr="nonce=${cspNonce}">
     document.body.className += ' js-enabled' + ('noModule' in HTMLScriptElement.prototype ? ' govuk-frontend-supported' : '');</script>
 
 <a href="#main-content" class="govuk-skip-link" data-module="govuk-skip-link">Skip to main content</a>
@@ -39,16 +39,16 @@
   </th:block>
 
 
-    <main class="govuk-main-wrapper" id="main-content" role="main" style="padding-top: 0;">
+    <main class="govuk-main-wrapper ccms-padding-top-0" id="main-content" role="main">
       <div class="formInputArea">
 
       <th:block th:if="${assessmentType == 'MEANS' || assessmentType == 'MERITS'}">
         <h1 class="govuk-heading-l" th:text="${frameTitle}"></h1>
       </th:block>
 
-      <div style="display: inline-block; width:100%;">
+      <div class="ccms-opa-shell">
         <div id="interview-wrapper"
-             style="width: 100%; display: block; margin-left: auto; margin-right: auto; float: left">
+             class="ccms-opa-interview-wrapper">
         </div>
       </div>
     </div>
@@ -58,7 +58,7 @@
 <footer th:replace="~{partials/footer :: footer}"></footer>
 
 <!--OPA SCRIPT-->
-<script th:inline="javascript">
+<script th:inline="javascript" th:attr="nonce=${cspNonce}">
     var returnUrl = [[${submitReturnUrl}]];
     var url = [[${submitReturnUrl}]];
     var el = document.getElementById("interview-wrapper");
@@ -105,13 +105,13 @@
     }
 </script>
 
-<script type="module" src="/civil/webjars/govuk-frontend/dist/govuk/govuk-frontend.min.js"></script>
-<script type="module">
+<script type="module" src="/civil/webjars/govuk-frontend/dist/govuk/govuk-frontend.min.js" th:attr="nonce=${cspNonce}"></script>
+<script type="module" th:attr="nonce=${cspNonce}">
   import {initAll} from '/civil/webjars/govuk-frontend/dist/govuk/govuk-frontend.min.js'
     initAll()
 </script>
-<script th:src="@{/webjars/ministryofjustice__frontend/moj/moj-frontend.min.js}"></script>
-<script>
+<script th:src="@{/webjars/ministryofjustice__frontend/moj/moj-frontend.min.js}" th:attr="nonce=${cspNonce}"></script>
+<script th:attr="nonce=${cspNonce}">
     window.MOJFrontend.initAll();
 </script>
 </body>

@@ -41,3 +41,45 @@
     cursor: pointer;
     margin-bottom: 0;
 }
+
+.ccms-padding-top-40 {
+    padding-top: 40px;
+}
+
+.ccms-padding-top-0 {
+    padding-top: 0;
+}
+
+.ccms-text-capitalize {
+    text-transform: capitalize;
+}
+
+.ccms-width-30 {
+    width: 30%;
+}
+
+.ccms-phase-banner-active {
+    background: #dee0e2;
+}
+
+.ccms-nowrap-no-margin {
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+
+.ccms-hidden-inline-loader {
+    visibility: hidden;
+    display: inline-block;
+}
+
+.ccms-footer-copyright-logo {
+    content: '';
+    width: 100%;
+    padding-top: 112px;
+    background-repeat: no-repeat;
+    background-position: 100% 0;
+    background-size: 125px 102px;
+    text-align: center;
+    white-space: nowrap;
+    background-image: url(/civil/webjars/govuk-frontend/dist/govuk/assets/rebrand/images/govuk-crest.svg);
+}
