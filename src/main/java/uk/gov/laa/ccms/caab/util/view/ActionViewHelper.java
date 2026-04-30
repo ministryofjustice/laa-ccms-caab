@@ -95,4 +95,29 @@ public class ActionViewHelper {
     availableActions.addFirst(amendmentAction);
     return availableActions;
   }
+
+  /**
+   * Enhances the url and appends the case reference number as an optional parameter where
+   * necessary.
+   *
+   * @param action The action
+   * @param caseReferenceNumber The case reference number
+   * @return Available action
+   */
+  public static AvailableAction enhanceActionUrl(
+      AvailableAction action, String caseReferenceNumber) {
+
+    if (!FunctionConstants.SUBMIT_CASE_REQUEST.equals(action.actionCode())) {
+      return action;
+    }
+
+    String url = "/provider-requests/types";
+
+    if (caseReferenceNumber != null) {
+      url += "?caseReferenceNumber=" + caseReferenceNumber;
+    }
+
+    return new AvailableAction(
+        action.actionCode(), action.actionKey(), action.descriptionKey(), url);
+  }
 }
