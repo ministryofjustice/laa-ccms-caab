@@ -29,12 +29,16 @@
           <tbody class="govuk-table__body">
           <tr class="govuk-table__row">
             <td class="govuk-table__cell" th:text="#{caseDetails.costs.limitation.default}"></td>
-            <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.defaultCostLimitation)}"></td>
+            <td class="govuk-table__cell"
+                th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.defaultCostLimitation)}"
+                id="costs-default-amount-value"></td>
             <td class="govuk-table__cell"></td>
           </tr>
           <tr class="govuk-table__row">
             <td class="govuk-table__cell" th:text="#{caseDetails.costs.limitation.granted}"></td>
-            <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)}"></td>
+            <td class="govuk-table__cell"
+                th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)}"
+                id="costs-granted-amount-value"></td>
             <td class="govuk-table__cell">
               <span th:if="${case.costs != null and case.costs.grantedCostLimitation != null and case.costs.costEntries != null and !#lists.isEmpty(case.costs.costEntries)}">
               <a class="govuk-link govuk-link--no-visited-state"
@@ -47,7 +51,9 @@
           </tr>
           <tr class="govuk-table__row">
             <td class="govuk-table__cell" th:text="#{caseDetails.costs.limitation.requested}"></td>
-            <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.requestedCostLimitation)}"></td>
+            <td class="govuk-table__cell"
+                th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.requestedCostLimitation)}"
+                id="costs-requested-amount-value"></td>
             <td class="govuk-table__cell"></td>
           </tr>
           </tbody>
