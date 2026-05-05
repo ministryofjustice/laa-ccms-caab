@@ -24,6 +24,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
+import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
@@ -34,6 +35,7 @@ import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
+import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
 
 @ExtendWith(MockitoExtension.class)
@@ -159,6 +161,40 @@ class SoaApiClientTest {
     verify(responseMock).bodyToMono(CaseDetail.class);
 
     assertEquals(expectedUri, actualUri.toString());
+  }
+
+  @Test
+  void updateCase_setsAssessmentAmendedFlagsOnCaseDetail() {
+    String loginId = "user1";
+    String userType = "userType";
+    String caseUpdateType = "SUBSTANTIVE";
+    CaseDetail caseDetail = new CaseDetail().applicationDetails(new SubmittedApplicationDetails());
+    CaseTransactionResponse response = new CaseTransactionResponse();
+
+    ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+    ArgumentCaptor<CaseDetail> caseDetailCaptor = ArgumentCaptor.forClass(CaseDetail.class);
+
+    when(soaApiWebClientMock.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(uriCaptor.capture())).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("SoaGateway-User-Role", userType)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(any(MediaType.class))).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(caseDetailCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CaseTransactionResponse.class)).thenReturn(Mono.just(response));
+
+    Mono<CaseTransactionResponse> result =
+        soaApiClient.updateCase(loginId, userType, caseDetail, caseUpdateType, true, false);
+
+    StepVerifier.create(result).expectNext(response).verifyComplete();
+
+    Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
+    URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
+    CaseDetail payload = caseDetailCaptor.getValue();
+
+    assertEquals("/cases?case-update-type=SUBSTANTIVE", actualUri.toString());
+    assertEquals(Boolean.TRUE, payload.getApplicationDetails().isMeansAssessmentAmended());
+    assertEquals(Boolean.FALSE, payload.getApplicationDetails().isMeritsAssessmentAmended());
   }
 
   @Test

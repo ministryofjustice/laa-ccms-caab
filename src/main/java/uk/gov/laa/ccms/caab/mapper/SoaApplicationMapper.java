@@ -295,7 +295,7 @@ public interface SoaApplicationMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "ebsId", source = "otherPartyId")
   @Mapping(target = ".", source = "person")
-  @Mapping(target = "courtOrderedMeansAssessment", source = "person.courtOrderedMeansAssesment")
+  @Mapping(target = "courtOrderedMeansAssessment", source = "person.courtOrderedMeansAssessment")
   @Mapping(target = "employerAddress", source = "person.organizationAddress")
   @Mapping(target = "employerName", source = "person.organizationName")
   @Mapping(target = ".", source = "person.name")
@@ -750,6 +750,7 @@ public interface SoaApplicationMapper {
   @Mapping(target = "preCertificateCosts", ignore = true)
   @Mapping(target = "legalHelpCosts", ignore = true)
   @Mapping(target = "undertakingAmount", ignore = true)
+  @Mapping(target = "undertakingMaximumAmount", ignore = true)
   @Mapping(target = "awards", ignore = true)
   @Mapping(target = "dischargeStatus", ignore = true)
   @Mapping(target = "caseStatus", ignore = true)
@@ -794,11 +795,11 @@ public interface SoaApplicationMapper {
   @Mapping(target = "larDetails.larScopeFlag", source = "tdsApplication.larScopeFlag")
   @Mapping(target = "otherParties", source = "tdsApplication.opponents")
   @Mapping(
-      target = "meansAssesments",
+      target = "meansAssessments",
       source = "meansAssessment",
       qualifiedByName = "mapMeansAssessment")
   @Mapping(
-      target = "meritsAssesments",
+      target = "meritsAssessments",
       source = "meritsAssessment",
       qualifiedByName = "mapMeritsAssessment")
   @Mapping(
@@ -815,6 +816,8 @@ public interface SoaApplicationMapper {
   @Mapping(target = "purposeOfHearing", ignore = true)
   @Mapping(target = "highProfileCaseInd", ignore = true)
   @Mapping(target = "certificateType", ignore = true)
+  @Mapping(target = "meansAssessmentAmended", ignore = true)
+  @Mapping(target = "meritsAssessmentAmended", ignore = true)
   SubmittedApplicationDetails toSubmittedApplicationDetails(CaseMappingContext context);
 
   /**
@@ -930,7 +933,7 @@ public interface SoaApplicationMapper {
   @Mapping(target = "relationToCase", source = "relationshipToCase")
   @Mapping(target = "niNumber", source = "nationalInsuranceNumber")
   @Mapping(target = "partyLegalAidedInd", source = "legalAided")
-  @Mapping(target = "courtOrderedMeansAssesment", source = "courtOrderedMeansAssessment")
+  @Mapping(target = "courtOrderedMeansAssessment", source = "courtOrderedMeansAssessment")
   @Mapping(target = "contactName", source = "contactNameRole")
   @Mapping(target = "employersName", source = "employerName")
   @Mapping(target = "organizationAddress", source = "employerAddress")

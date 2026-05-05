@@ -1,9 +1,5 @@
 package uk.gov.laa.ccms.caab.client;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +24,7 @@ import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ProviderRequestDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ProviderRequestResponse;
+import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
 
 /**
@@ -42,17 +39,10 @@ public class SoaApiClient {
 
   private static final String SOA_GATEWAY_USER_LOGIN_ID = "SoaGateway-User-Login-Id";
   private static final String SOA_GATEWAY_USER_ROLE = "SoaGateway-User-Role";
-  private static final String APPLICATION_DETAILS_KEY = "application_details";
-  private static final String APPLICATION_DETAILS_CAMEL_KEY = "applicationDetails";
-  private static final String MEANS_AMENDED_KEY = "means_assessment_amended";
-  private static final String MERITS_AMENDED_KEY = "merits_assessment_amended";
-  private static final String MEANS_AMENDED_IND_KEY = "means_assessment_amended_ind";
-  private static final String MERITS_AMENDED_IND_KEY = "merits_assessment_amended_ind";
 
   private final WebClient soaApiWebClient;
 
   private final SoaApiClientErrorHandler soaApiClientErrorHandler;
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   /**
    * Fetches the contract details for the given criteria.
@@ -235,40 +225,22 @@ public class SoaApiClient {
     final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
     queryParams.add("case-update-type", caseUpdateType);
 
-    final Map<String, Object> casePayload =
-        OBJECT_MAPPER.convertValue(caseDetail, new TypeReference<Map<String, Object>>() {});
-
-    Object applicationDetails = casePayload.get(APPLICATION_DETAILS_KEY);
-    Map<String, Object> details = null;
-    if (applicationDetails instanceof Map<?, ?>) {
-      details = castDetails(applicationDetails);
-    } else {
-      Object camelDetails = casePayload.get(APPLICATION_DETAILS_CAMEL_KEY);
-      if (camelDetails instanceof Map<?, ?>) {
-        details = castDetails(camelDetails);
-        casePayload.remove(APPLICATION_DETAILS_CAMEL_KEY);
-        casePayload.put(APPLICATION_DETAILS_KEY, details);
-      }
-    }
-    if (details == null) {
-      details = new HashMap<>();
-      casePayload.put(APPLICATION_DETAILS_KEY, details);
-      casePayload.remove(APPLICATION_DETAILS_CAMEL_KEY);
+    SubmittedApplicationDetails applicationDetails = caseDetail.getApplicationDetails();
+    if (applicationDetails == null) {
+      applicationDetails = new SubmittedApplicationDetails();
+      caseDetail.setApplicationDetails(applicationDetails);
     }
 
     boolean meansAmended = Boolean.TRUE.equals(meansAssessmentAmended);
     boolean meritsAmended = Boolean.TRUE.equals(meritsAssessmentAmended);
 
-    details.put(MEANS_AMENDED_KEY, meansAmended);
-    details.put(MERITS_AMENDED_KEY, meritsAmended);
-    details.put(MEANS_AMENDED_IND_KEY, meansAmended);
-    details.put(MERITS_AMENDED_IND_KEY, meritsAmended);
+    applicationDetails.setMeansAssessmentAmended(meansAmended);
+    applicationDetails.setMeritsAssessmentAmended(meritsAmended);
 
     log.debug(
-        "SOA updateCase flags: meansAssessmentAmended={}, meritsAssessmentAmended={}, keys={}",
-        details.get(MEANS_AMENDED_KEY),
-        details.get(MERITS_AMENDED_KEY),
-        details.keySet());
+        "SOA updateCase flags: meansAssessmentAmended={}, meritsAssessmentAmended={}",
+        applicationDetails.isMeansAssessmentAmended(),
+        applicationDetails.isMeritsAssessmentAmended());
 
     return soaApiWebClient
         .put()
@@ -276,7 +248,7 @@ public class SoaApiClient {
         .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
         .header(SOA_GATEWAY_USER_ROLE, userType)
         .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(casePayload)
+        .bodyValue(caseDetail)
         .retrieve()
         .bodyToMono(CaseTransactionResponse.class)
         .doOnError(
@@ -290,11 +262,6 @@ public class SoaApiClient {
             e ->
                 soaApiClientErrorHandler.handleApiUpdateError(
                     e, "Cases", "case-update-type", caseUpdateType));
-  }
-
-  @SuppressWarnings("unchecked")
-  private Map<String, Object> castDetails(Object details) {
-    return (Map<String, Object>) details;
   }
 
   /**
