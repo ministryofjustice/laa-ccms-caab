@@ -82,12 +82,7 @@ public class AmendmentService {
           "Application already exists for case reference: " + caseReferenceNumber);
     }
 
-    ApplicationDetail amendment =
-        applicationService.getCase(
-            caseReferenceNumber, userDetail.getProvider().getId(), userDetail.getLoginId());
-
-    // Set the amendment type
-    amendment.setAmendment(true);
+    ApplicationDetail amendment = createAmendmentObject(caseReferenceNumber, userDetail);
 
     // Set application type based on previously entered answers prior to creating an amendment.
     ApplicationType amendmentType =
