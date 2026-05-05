@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
@@ -167,16 +168,14 @@ public class ClientSubmissionsInProgressControllerTest {
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/client-update/confirmed"))
         .andExpect(
-            result -> {
-              HttpSession session = result.getRequest().getSession();
-              assert session != null;
-              assert session.getAttribute(SUBMISSION_POLL_COUNT) == null;
-              assert session.getAttribute(SUBMISSION_TRANSACTION_ID) == null;
-              assert session.getAttribute(CLIENT_FLOW_FORM_DATA) == null;
-              assert session.getAttribute(APPLICATION_CLIENT_NAMES) == null;
-              assert session.getAttribute(CASE) == null;
-              assert session.getAttribute(ACTIVE_CASE) == null;
-            });
+            request()
+                .sessionAttributeDoesNotExist(
+                    SUBMISSION_POLL_COUNT,
+                    SUBMISSION_TRANSACTION_ID,
+                    CLIENT_FLOW_FORM_DATA,
+                    APPLICATION_CLIENT_NAMES,
+                    CASE,
+                    ACTIVE_CASE));
   }
 
   @DisplayName(
@@ -204,13 +203,7 @@ public class ClientSubmissionsInProgressControllerTest {
                 .sessionAttr(APPLICATION_CLIENT_NAMES, baseClient))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/amendments/client-update/confirmed"))
-        .andExpect(
-            result -> {
-              HttpSession session = result.getRequest().getSession();
-              assert session != null;
-              assert session.getAttribute(CASE) == null;
-              assert session.getAttribute(ACTIVE_CASE) == null;
-            });
+        .andExpect(request().sessionAttributeDoesNotExist(CASE, ACTIVE_CASE));
   }
 
   @Test
