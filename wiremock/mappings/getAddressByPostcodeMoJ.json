@@ -1,0 +1,79 @@
+{
+  "priority": 1,
+  "request": {
+    "method": "GET",
+    "urlPath": "/search/places/v1/postcode",
+    "queryParameters": {
+      "key": {
+        "equalTo": "TEST_KEY"
+      },
+      "postcode": {
+        "equalTo": "SW1H 9AJ"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "transformers": [
+      "response-template"
+    ],
+    "jsonBody": {
+      "header": {
+        "uri": "https://api.os.uk/search/places/v1/postcode?postcode={{request.query.postcode}}",
+        "query": "postcode={{request.query.postcode}}",
+        "offset": 0,
+        "totalresults": 1,
+        "format": "JSON",
+        "dataset": "DPA",
+        "lr": "EN,CY",
+        "maxresults": 100,
+        "epoch": "126",
+        "lastupdate": "2026-05-05",
+        "output_srs": "EPSG:27700"
+      },
+      "results": [
+        {
+          "DPA": {
+            "UPRN": "10033648844",
+            "UDPRN": "51083189",
+            "ADDRESS": "MINISTRY OF JUSTICE, SEVENTH FLOOR, 102, PETTY FRANCE, LONDON, SW1H 9AJ",
+            "ORGANISATION_NAME": "MINISTRY OF JUSTICE",
+            "SUB_BUILDING_NAME": "SEVENTH FLOOR",
+            "BUILDING_NUMBER": "102",
+            "THOROUGHFARE_NAME": "PETTY FRANCE",
+            "POST_TOWN": "LONDON",
+            "POSTCODE": "SW1H 9AJ",
+            "RPC": "2",
+            "X_COORDINATE": 529576.0,
+            "Y_COORDINATE": 179549.0,
+            "STATUS": "APPROVED",
+            "LOGICAL_STATUS_CODE": "1",
+            "CLASSIFICATION_CODE": "CO01",
+            "CLASSIFICATION_CODE_DESCRIPTION": "Office / Work Studio",
+            "LOCAL_CUSTODIAN_CODE": 5990,
+            "LOCAL_CUSTODIAN_CODE_DESCRIPTION": "CITY OF WESTMINSTER",
+            "COUNTRY_CODE": "E",
+            "COUNTRY_CODE_DESCRIPTION": "This record is within England",
+            "POSTAL_ADDRESS_CODE": "D",
+            "POSTAL_ADDRESS_CODE_DESCRIPTION": "A record which is linked to PAF",
+            "BLPU_STATE_CODE": "2",
+            "BLPU_STATE_CODE_DESCRIPTION": "In use",
+            "TOPOGRAPHY_LAYER_TOID": "osgb1000001796535716",
+            "WARD_CODE": "E05013806",
+            "PARENT_UPRN": "10033604583",
+            "LAST_UPDATE_DATE": "06/07/2020",
+            "ENTRY_DATE": "15/06/2020",
+            "BLPU_STATE_DATE": "15/06/2020",
+            "LANGUAGE": "EN",
+            "MATCH": 1.0,
+            "MATCH_DESCRIPTION": "EXACT",
+            "DELIVERY_POINT_SUFFIX": "1A"
+          }
+        }
+      ]
+    }
+  }
+}
