@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.controller.application.section;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.util.Collections;
@@ -22,10 +23,13 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.ProviderDetailsValidator;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
+import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
+import uk.gov.laa.ccms.caab.util.UserRoleUtil;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -38,6 +42,8 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 public class ProviderDetailsSectionController {
 
   private final ApplicationService applicationService;
+
+  private final AmendmentService amendmentService;
 
   private final ProviderService providerService;
 
@@ -117,6 +123,20 @@ public class ProviderDetailsSectionController {
     }
 
     applicationService.updateProviderDetails(applicationId, applicationFormData, user);
+
+    if (caseContext.isAmendment()) {
+      if (!UserRoleUtil.hasRole(user, UserRole.SUBMIT_AMENDMENT)) {
+        return "redirect:/application/sections";
+      }
+
+      String transactionId =
+          amendmentService.submitQuickAmendmentProviderDetails(
+              applicationFormData, activeCase.getCaseReferenceNumber(), user);
+
+      model.asMap().put(SUBMISSION_TRANSACTION_ID, transactionId);
+
+      return "redirect:/%s/submit-case".formatted(caseContext.getPathValue());
+    }
 
     return "redirect:/application/sections";
   }

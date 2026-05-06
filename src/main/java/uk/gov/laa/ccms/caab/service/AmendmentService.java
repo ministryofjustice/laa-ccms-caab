@@ -26,6 +26,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
+import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.util.AmendmentUtil;
@@ -202,6 +203,41 @@ public class AmendmentService {
     address.setHouseNameOrNumber(editCorrespondenceAddress.getHouseNameNumber());
     address.setPostcode(editCorrespondenceAddress.getPostcode());
     address.setPreferredAddress(editCorrespondenceAddress.getPreferredAddress());
+
+    return updateCaseWithQuickAmendment(userDetail, amendment);
+  }
+
+  /**
+   * Submits a quick amendment to the provider details for a given case. This method creates a quick
+   * amendment application, applies the new provider details, and submits the amendment. Finally, a
+   * case is updated which returns the transaction ID associated with the submission.
+   *
+   * @param providerDetails the data representing the updated provider details
+   * @param caseReferenceNumber the unique reference number of the case to which the amendment
+   *     applies
+   * @param userDetail the details of the user initiating the amendment
+   * @return the transaction ID of the submitted amendment
+   */
+  public String submitQuickAmendmentProviderDetails(
+      final ApplicationFormData providerDetails,
+      final String caseReferenceNumber,
+      final UserDetail userDetail) {
+    ApplicationDetail amendment = createAmendmentObject(caseReferenceNumber, userDetail);
+    amendment.setQuickEditType(QuickEditTypeConstants.MESSAGE_TYPE_EDIT_PROVIDER);
+    amendment.setMeansAssessmentAmended(Boolean.FALSE);
+    amendment.setMeritsAssessmentAmended(Boolean.FALSE);
+
+    amendment
+        .getProviderDetails()
+        .setOffice(new IntDisplayValue().id(providerDetails.getOfficeId()));
+    amendment
+        .getProviderDetails()
+        .setFeeEarner(
+            new StringDisplayValue().id(String.valueOf(providerDetails.getFeeEarnerId())));
+    amendment
+        .getProviderDetails()
+        .setSupervisor(
+            new StringDisplayValue().id(String.valueOf(providerDetails.getSupervisorId())));
 
     return updateCaseWithQuickAmendment(userDetail, amendment);
   }

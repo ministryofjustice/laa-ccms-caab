@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -41,6 +42,8 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.ProviderDetailsValidator;
+import uk.gov.laa.ccms.caab.config.UserRole;
+import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.data.model.BaseProvider;
@@ -53,6 +56,8 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class ProviderDetailsSectionControllerTest {
 
   @Mock private ApplicationService applicationService;
+
+  @Mock private AmendmentService amendmentService;
 
   @Mock private ProviderService providerService;
 
@@ -178,6 +183,59 @@ public class ProviderDetailsSectionControllerTest {
     verify(providerDetailsValidator, times(1)).validate(any(), any());
     verify(applicationService, times(1)).updateProviderDetails(any(), any(), any());
     verifyNoInteractions(providerService);
+  }
+
+  @Test
+  public void testApplicationSummaryProviderDetailsPost_Amendment_Successful() throws Exception {
+    final String applicationId = "123";
+    final ActiveCase activeCase = ActiveCase.builder().caseReferenceNumber("CASE123").build();
+    final UserDetail user = new UserDetail();
+    user.setFunctions(Collections.singletonList(UserRole.SUBMIT_AMENDMENT.getCode()));
+
+    final ApplicationFormData applicationFormData = new ApplicationFormData();
+    applicationFormData.setFeeEarnerId(3);
+
+    when(amendmentService.submitQuickAmendmentProviderDetails(any(), any(), any()))
+        .thenReturn("TRANS123");
+
+    this.mockMvc
+        .perform(
+            post("/amendments/sections/provider-details")
+                .sessionAttr(APPLICATION_ID, applicationId)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(USER_DETAILS, user)
+                .flashAttr(APPLICATION_FORM_DATA, applicationFormData))
+        .andDo(print())
+        .andExpect(redirectedUrl("/amendments/submit-case"));
+
+    verify(providerDetailsValidator, times(1)).validate(any(), any());
+    verify(applicationService, times(1)).updateProviderDetails(any(), any(), any());
+    verify(amendmentService, times(1))
+        .submitQuickAmendmentProviderDetails(eq(applicationFormData), eq("CASE123"), eq(user));
+  }
+
+  @Test
+  public void testApplicationSummaryProviderDetailsPost_Amendment_NoRole() throws Exception {
+    final String applicationId = "123";
+    final ActiveCase activeCase = ActiveCase.builder().caseReferenceNumber("CASE123").build();
+    final UserDetail user = new UserDetail();
+    user.setFunctions(Collections.emptyList());
+
+    final ApplicationFormData applicationFormData = new ApplicationFormData();
+
+    this.mockMvc
+        .perform(
+            post("/amendments/sections/provider-details")
+                .sessionAttr(APPLICATION_ID, applicationId)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(USER_DETAILS, user)
+                .sessionAttr(APPLICATION_FORM_DATA, applicationFormData))
+        .andDo(print())
+        .andExpect(redirectedUrl("/application/sections"));
+
+    verify(providerDetailsValidator, times(1)).validate(any(), any());
+    verify(applicationService, times(1)).updateProviderDetails(any(), any(), any());
+    verifyNoInteractions(amendmentService);
   }
 
   @Test
