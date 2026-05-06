@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
@@ -165,14 +166,8 @@ class CaseSubmissionControllerTest {
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/home"))
         .andExpect(
-            result -> {
-              HttpSession session = result.getRequest().getSession();
-              assert session != null;
-              assert session.getAttribute(ACTIVE_CASE) == null;
-              assert session.getAttribute(CASE) == null;
-              assert session.getAttribute(APPLICATION) == null;
-              assert session.getAttribute(APPLICATION_DETAILS) == null;
-            });
+            request()
+                .sessionAttributeDoesNotExist(ACTIVE_CASE, CASE, APPLICATION, APPLICATION_DETAILS));
   }
 
   @Test
@@ -184,13 +179,7 @@ class CaseSubmissionControllerTest {
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/case/overview"))
         .andExpect(
-            result -> {
-              HttpSession session = result.getRequest().getSession();
-              assert session != null;
-              assert session.getAttribute(ACTIVE_CASE) == null;
-              assert session.getAttribute(APPLICATION) == null;
-              assert session.getAttribute(APPLICATION_DETAILS) == null;
-            });
+            request().sessionAttributeDoesNotExist(ACTIVE_CASE, APPLICATION, APPLICATION_DETAILS));
   }
 
   @Test
