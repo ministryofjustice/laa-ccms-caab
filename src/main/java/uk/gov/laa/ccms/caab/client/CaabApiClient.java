@@ -1,7 +1,5 @@
 package uk.gov.laa.ccms.caab.client;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -12,7 +10,6 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -43,7 +40,6 @@ public class CaabApiClient {
 
   private final WebClient caabApiWebClient;
   private final CaabApiClientErrorHandler caabApiClientErrorHandler;
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   public static final String RESOURCE_TYPE_APPLICATION = "applications";
   public static final String RESOURCE_TYPE_APPLICATION_TYPE = "application type";
@@ -68,13 +64,12 @@ public class CaabApiClient {
    * @return a Mono signaling the completion of the application creation
    */
   public Mono<String> createApplication(final String loginId, final ApplicationDetail application) {
-
     return caabApiWebClient
         .post()
         .uri("/applications")
         .header("Caab-User-Login-Id", loginId)
-        .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
-        .bodyValue(application) // Add the application details to the request body
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(application)
         .exchangeToMono(CaabApiClient::getIdResponse)
         .onErrorResume(
             e -> caabApiClientErrorHandler.handleApiCreateError(e, RESOURCE_TYPE_APPLICATION));
@@ -1181,6 +1176,10 @@ public class CaabApiClient {
   }
 
   private static Mono<String> getIdResponse(ClientResponse clientResponse) {
+    if (clientResponse.statusCode().isError()) {
+      return clientResponse.createException().flatMap(Mono::error);
+    }
+
     final HttpHeaders headers = clientResponse.headers().asHttpHeaders();
     final URI locationUri = headers.getLocation();
     if (locationUri != null) {
@@ -1188,43 +1187,6 @@ public class CaabApiClient {
       final String id = path.substring(path.lastIndexOf('/') + 1);
       return Mono.just(id);
     }
-    return clientResponse
-        .bodyToMono(String.class)
-        .map(CaabApiClient::extractIdFromBody)
-        .switchIfEmpty(Mono.error(new RuntimeException("Location header missing or URI invalid")));
-  }
-
-  private static String extractIdFromBody(String body) {
-    if (!StringUtils.hasText(body)) {
-      throw new RuntimeException("Location header missing or URI invalid");
-    }
-
-    String trimmed = body.trim();
-    if (trimmed.startsWith("{")) {
-      try {
-        JsonNode node = OBJECT_MAPPER.readTree(trimmed);
-        if (node.has("id")) {
-          return node.get("id").asText();
-        }
-        if (node.has("applicationId")) {
-          return node.get("applicationId").asText();
-        }
-        if (node.has("caseOutcomeId")) {
-          return node.get("caseOutcomeId").asText();
-        }
-      } catch (Exception ex) {
-        // Fall through to best-effort parsing below.
-      }
-    }
-
-    if (trimmed.startsWith("\"") && trimmed.endsWith("\"") && trimmed.length() > 1) {
-      trimmed = trimmed.substring(1, trimmed.length() - 1);
-    }
-
-    if (!StringUtils.hasText(trimmed)) {
-      throw new RuntimeException("Location header missing or URI invalid");
-    }
-
-    return trimmed;
+    return Mono.error(new RuntimeException("Location header missing or URI invalid"));
   }
 }

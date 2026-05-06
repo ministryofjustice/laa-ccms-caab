@@ -5,7 +5,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -70,11 +72,12 @@ class AmendmentServiceTest {
       applicationFormData.setApplicationTypeCategory(APP_TYPE_SUBSTANTIVE);
       applicationFormData.setDelegatedFunctions(true);
       applicationFormData.setDelegatedFunctionUsedDate("01/01/2025");
-      String caseRef = "12345";
       UserDetail userDetails = new UserDetail().loginId("123").provider(new BaseProvider().id(10));
       userDetails.setProvider(new BaseProvider().id(1001));
       userDetails.setLoginId("LoginID");
       ApplicationDetail amendment = buildFullApplicationDetail();
+      ApplicationDetail caseDetail = buildFullApplicationDetail();
+      caseDetail.setCaseReferenceNumber("12345");
 
       when(applicationService.getTdsApplications(any(), any(), any(), any()))
           .thenReturn(new ApplicationDetails().content(Collections.emptyList()));
@@ -83,7 +86,7 @@ class AmendmentServiceTest {
       // When
       ApplicationDetail result =
           amendmentService.createAndSubmitAmendmentForCase(
-              applicationFormData, caseRef, userDetails);
+              applicationFormData, caseDetail, userDetails);
       // Then
       assertNotNull(result);
       assertThat(result.getAmendment()).isTrue();
@@ -95,6 +98,41 @@ class AmendmentServiceTest {
     }
 
     @Test
+    @DisplayName("Should use session case category of law if fetched case category is missing")
+    void shouldUseSessionCaseCategoryOfLawIfFetchedCaseCategoryIsMissing() {
+      // Given
+      ApplicationFormData applicationFormData = new ApplicationFormData();
+      applicationFormData.setApplicationTypeCategory(APP_TYPE_SUBSTANTIVE);
+      ApplicationDetail caseDetail = buildFullApplicationDetail();
+      caseDetail.setCaseReferenceNumber("12345");
+      UserDetail userDetails =
+          new UserDetail().loginId("LoginID").provider(new BaseProvider().id(1001));
+      ApplicationDetail amendment = buildFullApplicationDetail();
+      amendment.setCategoryOfLaw(null);
+
+      when(applicationService.getTdsApplications(any(), any(), any(), any()))
+          .thenReturn(new ApplicationDetails().content(Collections.emptyList()));
+      when(applicationService.getCase(any(), anyLong(), any())).thenReturn(amendment);
+      when(caabApiClient.createApplication(any(), any())).thenReturn(Mono.just("123"));
+
+      // When
+      amendmentService.createAndSubmitAmendmentForCase(
+          applicationFormData, caseDetail, userDetails);
+
+      // Then
+      verify(caabApiClient)
+          .createApplication(
+              any(),
+              argThat(
+                  application ->
+                      application.getCategoryOfLaw() != null
+                          && caseDetail
+                              .getCategoryOfLaw()
+                              .getId()
+                              .equals(application.getCategoryOfLaw().getId())));
+    }
+
+    @Test
     @DisplayName("Should throw exception if application already exists for case reference")
     void shouldThrowExceptionIfApplicationAlreadyExistsForCaseReference() {
       // Given
@@ -102,7 +140,8 @@ class AmendmentServiceTest {
       applicationFormData.setApplicationTypeCategory(APP_TYPE_SUBSTANTIVE);
       applicationFormData.setDelegatedFunctions(true);
       applicationFormData.setDelegatedFunctionUsedDate("01/01/2025");
-      String caseRef = "12345";
+      ApplicationDetail caseDetail = buildFullApplicationDetail();
+      caseDetail.setCaseReferenceNumber("12345");
       UserDetail userDetails = new UserDetail().loginId("123").provider(new BaseProvider().id(10));
       userDetails.setProvider(new BaseProvider().id(1001));
       userDetails.setLoginId("LoginID");
@@ -115,7 +154,7 @@ class AmendmentServiceTest {
       assertThatThrownBy(
               () ->
                   amendmentService.createAndSubmitAmendmentForCase(
-                      applicationFormData, caseRef, userDetails))
+                      applicationFormData, caseDetail, userDetails))
           .isInstanceOf(CaabApplicationException.class)
           .hasMessageContaining("Application already exists for case reference: 12345");
     }
@@ -235,27 +274,71 @@ class AmendmentServiceTest {
 
       UserDetail userDetails =
           new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
-      when(applicationService.getCase(any(), anyLong(), any()))
-          .thenReturn(buildFullApplicationDetail());
+      ApplicationDetail caseDetail = buildFullApplicationDetail();
+      when(applicationService.getCase(any(), anyLong(), any())).thenReturn(caseDetail);
       when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
       when(caabApiClient.createApplication(any(), any())).thenReturn(Mono.just("123"));
-      when(soaApiClient.updateCase(any(), any(), any(), any(), any(), any()))
+      when(soaApiClient.updateCase(any(), any(), any(), any()))
           .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("12345")));
       // When
       String transactionId =
           amendmentService.submitQuickAmendmentCorrespondenceAddress(
               addressFormData, caseRef, userDetails);
       // Then
-      verify(caabApiClient, times(1)).createApplication(eq("123"), any(ApplicationDetail.class));
+      verify(caabApiClient, times(1))
+          .createApplication(
+              eq("123"),
+              argThat(
+                  application ->
+                      application.getCategoryOfLaw() != null
+                          && caseDetail
+                              .getCategoryOfLaw()
+                              .getId()
+                              .equals(application.getCategoryOfLaw().getId())));
       verify(soaApiClient, times(1))
           .updateCase(
               eq("123"),
               eq("Type"),
               any(),
-              eq(QuickEditTypeConstants.MESSAGE_TYPE_CASE_CORRESPONDENCE_PREFERENCE),
-              eq(false),
-              eq(false));
+              eq(QuickEditTypeConstants.MESSAGE_TYPE_CASE_CORRESPONDENCE_PREFERENCE));
       assertThat(transactionId).isNotNull();
+      assertThat(transactionId).isEqualTo("12345");
+    }
+
+    @Test
+    @DisplayName("Should not create quick amendment application when TDS application exists")
+    void shouldNotCreateQuickAmendmentApplicationWhenTdsApplicationExists() {
+      // Given
+      AddressFormData addressFormData = new AddressFormData();
+      addressFormData.setAddressLine1("Line 1");
+
+      String caseRef = "12345";
+
+      UserDetail userDetails =
+          new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
+      ApplicationDetail caseDetail = buildFullApplicationDetail();
+      caseDetail.setCaseReferenceNumber(caseRef);
+
+      when(applicationService.getCase(any(), anyLong(), any())).thenReturn(caseDetail);
+      when(applicationService.getTdsApplicationSummary(eq(caseRef), eq(userDetails)))
+          .thenReturn(new BaseApplicationDetail().caseReferenceNumber(caseRef));
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), any()))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("12345")));
+
+      // When
+      String transactionId =
+          amendmentService.submitQuickAmendmentCorrespondenceAddress(
+              addressFormData, caseRef, userDetails);
+
+      // Then
+      verify(caabApiClient, never()).createApplication(any(), any());
+      verify(soaApiClient, times(1))
+          .updateCase(
+              eq("123"),
+              eq("Type"),
+              any(),
+              eq(QuickEditTypeConstants.MESSAGE_TYPE_CASE_CORRESPONDENCE_PREFERENCE));
       assertThat(transactionId).isEqualTo("12345");
     }
   }

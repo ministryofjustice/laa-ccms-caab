@@ -164,7 +164,7 @@ class SoaApiClientTest {
   }
 
   @Test
-  void updateCase_setsAssessmentAmendedFlagsOnCaseDetail() {
+  void updateCase_sendsCaseDetail() {
     String loginId = "user1";
     String userType = "userType";
     String caseUpdateType = "SUBSTANTIVE";
@@ -184,7 +184,7 @@ class SoaApiClientTest {
     when(responseMock.bodyToMono(CaseTransactionResponse.class)).thenReturn(Mono.just(response));
 
     Mono<CaseTransactionResponse> result =
-        soaApiClient.updateCase(loginId, userType, caseDetail, caseUpdateType, true, false);
+        soaApiClient.updateCase(loginId, userType, caseDetail, caseUpdateType);
 
     StepVerifier.create(result).expectNext(response).verifyComplete();
 
@@ -193,8 +193,7 @@ class SoaApiClientTest {
     CaseDetail payload = caseDetailCaptor.getValue();
 
     assertEquals("/cases?case-update-type=SUBSTANTIVE", actualUri.toString());
-    assertEquals(Boolean.TRUE, payload.getApplicationDetails().isMeansAssessmentAmended());
-    assertEquals(Boolean.FALSE, payload.getApplicationDetails().isMeritsAssessmentAmended());
+    assertEquals(caseDetail, payload);
   }
 
   @Test

@@ -24,7 +24,6 @@ import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ProviderRequestDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ProviderRequestResponse;
-import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
 
 /**
@@ -204,17 +203,13 @@ public class SoaApiClient {
    * @param userType the type of the user.
    * @param caseDetail the details of the case to update.
    * @param caseUpdateType the type of update being performed.
-   * @param meansAssessmentAmended whether the means assessment has been amended.
-   * @param meritsAssessmentAmended whether the merits assessment has been amended.
    * @return a Mono containing the case transaction response.
    */
   public Mono<CaseTransactionResponse> updateCase(
       final String loginId,
       final String userType,
       final CaseDetail caseDetail,
-      final String caseUpdateType,
-      final Boolean meansAssessmentAmended,
-      final Boolean meritsAssessmentAmended) {
+      final String caseUpdateType) {
     if (caseDetail == null) {
       return Mono.error(new IllegalArgumentException("caseDetail must not be null"));
     }
@@ -224,23 +219,6 @@ public class SoaApiClient {
 
     final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
     queryParams.add("case-update-type", caseUpdateType);
-
-    SubmittedApplicationDetails applicationDetails = caseDetail.getApplicationDetails();
-    if (applicationDetails == null) {
-      applicationDetails = new SubmittedApplicationDetails();
-      caseDetail.setApplicationDetails(applicationDetails);
-    }
-
-    boolean meansAmended = Boolean.TRUE.equals(meansAssessmentAmended);
-    boolean meritsAmended = Boolean.TRUE.equals(meritsAssessmentAmended);
-
-    applicationDetails.setMeansAssessmentAmended(meansAmended);
-    applicationDetails.setMeritsAssessmentAmended(meritsAmended);
-
-    log.debug(
-        "SOA updateCase flags: meansAssessmentAmended={}, meritsAssessmentAmended={}",
-        applicationDetails.isMeansAssessmentAmended(),
-        applicationDetails.isMeritsAssessmentAmended());
 
     return soaApiWebClient
         .put()

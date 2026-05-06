@@ -63,8 +63,7 @@ public class AmendCaseController {
       @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
       @SessionAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       HttpSession httpSession) {
-    amendmentService.createAndSubmitAmendmentForCase(
-        applicationFormData, detail.getCaseReferenceNumber(), userDetails);
+    amendmentService.createAndSubmitAmendmentForCase(applicationFormData, detail, userDetails);
 
     CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     caseSearchCriteria.setCaseReference(detail.getCaseReferenceNumber());

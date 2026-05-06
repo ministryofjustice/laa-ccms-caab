@@ -816,8 +816,8 @@ public interface SoaApplicationMapper {
   @Mapping(target = "purposeOfHearing", ignore = true)
   @Mapping(target = "highProfileCaseInd", ignore = true)
   @Mapping(target = "certificateType", ignore = true)
-  @Mapping(target = "meansAssessmentAmended", ignore = true)
-  @Mapping(target = "meritsAssessmentAmended", ignore = true)
+  @Mapping(target = "meansAssessmentAmended", source = "tdsApplication.meansAssessmentAmended")
+  @Mapping(target = "meritsAssessmentAmended", source = "tdsApplication.meritsAssessmentAmended")
   SubmittedApplicationDetails toSubmittedApplicationDetails(CaseMappingContext context);
 
   /**

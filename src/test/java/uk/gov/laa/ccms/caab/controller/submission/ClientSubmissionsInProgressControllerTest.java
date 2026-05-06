@@ -178,6 +178,7 @@ public class ClientSubmissionsInProgressControllerTest {
                     ACTIVE_CASE));
   }
 
+  @Test
   @DisplayName(
       "Test clientUpdateSubmitted - Success, removes session attributes and redirects (Amendments context)")
   void testClientUpdateSubmission_withClientReferenceNumber_Amendments() throws Exception {
@@ -203,7 +204,15 @@ public class ClientSubmissionsInProgressControllerTest {
                 .sessionAttr(APPLICATION_CLIENT_NAMES, baseClient))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/amendments/client-update/confirmed"))
-        .andExpect(request().sessionAttributeDoesNotExist(CASE, ACTIVE_CASE));
+        .andExpect(
+            request()
+                .sessionAttributeDoesNotExist(
+                    SUBMISSION_POLL_COUNT,
+                    SUBMISSION_TRANSACTION_ID,
+                    CLIENT_FLOW_FORM_DATA,
+                    APPLICATION_CLIENT_NAMES,
+                    CASE,
+                    ACTIVE_CASE));
   }
 
   @Test

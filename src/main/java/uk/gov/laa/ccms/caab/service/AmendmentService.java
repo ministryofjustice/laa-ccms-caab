@@ -24,6 +24,7 @@ import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
+import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
@@ -57,16 +58,16 @@ public class AmendmentService {
    *
    * @param applicationFormData the data for the application form, including the application type
    *     and delegated function details
-   * @param caseReferenceNumber the reference number of the case for which the amendment will be
-   *     created
+   * @param caseDetail the case for which the amendment will be created
    * @param userDetail the details of the user submitting the amendment, including provider and
    *     login information
    * @return the detailed information of the created amendment application
    */
   public ApplicationDetail createAndSubmitAmendmentForCase(
       final ApplicationFormData applicationFormData,
-      final String caseReferenceNumber,
+      final ApplicationDetail caseDetail,
       final UserDetail userDetail) {
+    final String caseReferenceNumber = caseDetail.getCaseReferenceNumber();
 
     CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     caseSearchCriteria.setCaseReference(caseReferenceNumber);
@@ -83,6 +84,7 @@ public class AmendmentService {
     }
 
     ApplicationDetail amendment = createAmendmentObject(caseReferenceNumber, userDetail);
+    amendment.setCategoryOfLaw(caseDetail.getCategoryOfLaw());
 
     // Set application type based on previously entered answers prior to creating an amendment.
     ApplicationType amendmentType =
@@ -214,8 +216,13 @@ public class AmendmentService {
   private String updateCaseWithQuickAmendment(UserDetail userDetail, ApplicationDetail amendment) {
     AmendmentUtil.cleanAppForQuickAmendSubmit(amendment);
 
-    // Create an application in TDS
-    caabApiClient.createApplication(userDetail.getLoginId(), amendment).block();
+    BaseApplicationDetail existingApplication =
+        applicationService.getTdsApplicationSummary(amendment.getCaseReferenceNumber(), userDetail);
+
+    if (existingApplication == null) {
+      // Create an application in TDS
+      caabApiClient.createApplication(userDetail.getLoginId(), amendment).block();
+    }
 
     CaseMappingContext caseMappingContext =
         CaseMappingContext.builder()
@@ -232,9 +239,7 @@ public class AmendmentService {
             userDetail.getLoginId(),
             userDetail.getUserType(),
             caseToSubmit,
-            amendment.getQuickEditType(),
-            amendment.getMeansAssessmentAmended(),
-            amendment.getMeritsAssessmentAmended());
+            amendment.getQuickEditType());
 
     return Objects.requireNonNull(caseTransactionResponseMono.block()).getTransactionId();
   }

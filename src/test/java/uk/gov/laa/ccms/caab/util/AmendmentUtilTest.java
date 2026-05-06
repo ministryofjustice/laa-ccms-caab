@@ -43,7 +43,7 @@ class AmendmentUtilTest {
     AmendmentUtil.cleanAppForQuickAmendSubmit(amendmentDetail);
     // Then
     assertThat(amendmentDetail.getCorrespondenceAddress()).isNull();
-    assertThat(amendmentDetail.getCategoryOfLaw()).isNull();
+    assertThat(amendmentDetail.getCategoryOfLaw()).isNotNull();
     assertThat(amendmentDetail.getCosts()).isNull();
   }
 
@@ -60,7 +60,7 @@ class AmendmentUtilTest {
     assertThat(amendmentDetail.getProviderDetails().getSupervisor()).isNull();
     assertThat(amendmentDetail.getProviderDetails().getFeeEarner()).isNull();
     assertThat(amendmentDetail.getProviderDetails().getProviderContact()).isNull();
-    assertThat(amendmentDetail.getCategoryOfLaw()).isNull();
+    assertThat(amendmentDetail.getCategoryOfLaw()).isNotNull();
     assertThat(amendmentDetail.getCosts()).isNull();
   }
 
@@ -95,6 +95,6 @@ class AmendmentUtilTest {
     assertThat(amendmentDetail.getProviderDetails().getProviderContact()).isNull();
     assertThat(amendmentDetail.getCorrespondenceAddress()).isNull();
     assertThat(amendmentDetail.getCosts()).isNull();
-    assertThat(amendmentDetail.getCategoryOfLaw()).isNull();
+    assertThat(amendmentDetail.getCategoryOfLaw()).isNotNull();
   }
 }

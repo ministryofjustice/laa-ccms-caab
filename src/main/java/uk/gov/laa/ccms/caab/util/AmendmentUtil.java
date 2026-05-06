@@ -34,7 +34,6 @@ public final class AmendmentUtil {
     app.setLarScopeFlag(null);
     if (QuickEditTypeConstants.MESSAGE_TYPE_EDIT_PROVIDER.equals(app.getQuickEditType())) {
       app.setCorrespondenceAddress(null);
-      app.setCategoryOfLaw(null);
       app.setCosts(null);
     } else if (QuickEditTypeConstants.MESSAGE_TYPE_CASE_CORRESPONDENCE_PREFERENCE.equals(
         app.getQuickEditType())) {
@@ -42,7 +41,6 @@ public final class AmendmentUtil {
       app.getProviderDetails().setSupervisor(null);
       app.getProviderDetails().setFeeEarner(null);
       app.getProviderDetails().setProviderContact(null);
-      app.setCategoryOfLaw(null);
       app.setCosts(null);
     } else if (QuickEditTypeConstants.MESSAGE_TYPE_ALLOCATE_COST_LIMIT.equals(
         app.getQuickEditType())) {
@@ -61,7 +59,6 @@ public final class AmendmentUtil {
       app.getProviderDetails().setProviderContact(null);
       app.setCorrespondenceAddress(null);
       app.setCosts(null);
-      app.setCategoryOfLaw(null);
     }
   }
 }

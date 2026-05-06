@@ -1245,6 +1245,8 @@ class SoaApplicationMapperTest {
         new BaseEvidenceDocumentDetail().registeredDocumentId("DOC123");
     applicationDetail.setLinkedCases(Collections.singletonList(linkedCaseDetail));
     applicationDetail.setPriorAuthorities(Collections.singletonList(priorAuthorityDetail));
+    applicationDetail.setMeansAssessmentAmended(true);
+    applicationDetail.setMeritsAssessmentAmended(false);
 
     final CaseMappingContext context =
         CaseMappingContext.builder()
@@ -1266,6 +1268,8 @@ class SoaApplicationMapperTest {
     assertNotNull(result.getCaseDocs());
     assertEquals(1, result.getCaseDocs().size());
     assertEquals("DOC123", result.getCaseDocs().getFirst().getCcmsDocumentId());
+    assertEquals(Boolean.TRUE, result.getApplicationDetails().isMeansAssessmentAmended());
+    assertEquals(Boolean.FALSE, result.getApplicationDetails().isMeritsAssessmentAmended());
     assertNotNull(result.getRecordHistory());
   }
 

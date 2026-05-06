@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.client;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -20,7 +21,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -69,24 +73,90 @@ class CaabApiClientTest {
   @Test
   void createApplication_success() {
     final String loginId = "user1";
-    final ApplicationDetail application = new ApplicationDetail(); // Populate as needed
+    final ApplicationDetail application = new ApplicationDetail();
     final String expectedUri = "/applications";
-    final String locationId = "123"; // Replace with your expected location header
+    final String locationId = "123";
 
     when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
     when(requestBodyUriMock.uri(expectedUri)).thenReturn(requestBodyMock);
     when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
     when(requestBodyMock.contentType(any(MediaType.class))).thenReturn(requestBodyMock);
     when(requestBodyMock.bodyValue(any(ApplicationDetail.class))).thenReturn(requestHeadersMock);
-    when(requestHeadersMock.exchangeToMono(any(Function.class))).thenReturn(Mono.just(locationId));
+    when(requestHeadersMock.exchangeToMono(any(Function.class)))
+        .thenAnswer(
+            invocation -> {
+              Function<ClientResponse, Mono<String>> responseHandler = invocation.getArgument(0);
+              ClientResponse response =
+                  ClientResponse.create(HttpStatus.CREATED)
+                      .header(HttpHeaders.LOCATION, "/applications/" + locationId)
+                      .build();
+              return responseHandler.apply(response);
+            });
+
+    final Mono<String> result = caabApiClient.createApplication(loginId, application);
+
+    StepVerifier.create(result).expectNext(locationId).verifyComplete();
+
+    verify(requestHeadersMock, times(1)).exchangeToMono(any(Function.class));
+  }
+
+  @Test
+  void createApplication_missingLocationHeaderFails() {
+    final String loginId = "user1";
+    final ApplicationDetail application = new ApplicationDetail();
+
+    when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri("/applications")).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(any(MediaType.class))).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(any(ApplicationDetail.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.exchangeToMono(any(Function.class)))
+        .thenAnswer(
+            invocation -> {
+              Function<ClientResponse, Mono<String>> responseHandler = invocation.getArgument(0);
+              return responseHandler.apply(ClientResponse.create(HttpStatus.CREATED).build());
+            });
+    when(apiClientErrorHandler.handleApiCreateError(
+            any(), eq(CaabApiClient.RESOURCE_TYPE_APPLICATION)))
+        .thenAnswer(invocation -> Mono.error((Throwable) invocation.getArgument(0)));
 
     final Mono<String> result = caabApiClient.createApplication(loginId, application);
 
     StepVerifier.create(result)
-        .expectNext(locationId) // Expect the location header value
-        .verifyComplete();
+        .expectErrorMessage("Location header missing or URI invalid")
+        .verify();
+  }
 
-    verify(requestHeadersMock, times(1)).exchangeToMono(any(Function.class));
+  @Test
+  void createApplication_upstreamErrorFailsBeforeReadingLocationHeader() {
+    final String loginId = "user1";
+    final ApplicationDetail application = new ApplicationDetail();
+    final RuntimeException mappedException = new RuntimeException("Failed to create applications");
+
+    when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri("/applications")).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(any(MediaType.class))).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(any(ApplicationDetail.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.exchangeToMono(any(Function.class)))
+        .thenAnswer(
+            invocation -> {
+              Function<ClientResponse, Mono<String>> responseHandler = invocation.getArgument(0);
+              ClientResponse response =
+                  ClientResponse.create(HttpStatus.INTERNAL_SERVER_ERROR).body("error").build();
+              return responseHandler.apply(response);
+            });
+    when(apiClientErrorHandler.handleApiCreateError(
+            any(), eq(CaabApiClient.RESOURCE_TYPE_APPLICATION)))
+        .thenReturn(Mono.error(mappedException));
+
+    final Mono<String> result = caabApiClient.createApplication(loginId, application);
+
+    StepVerifier.create(result)
+        .expectErrorSatisfies(error -> assertEquals(mappedException, error))
+        .verify();
+    verify(apiClientErrorHandler)
+        .handleApiCreateError(any(), eq(CaabApiClient.RESOURCE_TYPE_APPLICATION));
   }
 
   @Test
