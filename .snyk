@@ -5,6 +5,18 @@ ignore:
     - '*':
       reason: "temporary ignore while upgrade is scheduled"
       expires: "2026-06-01T00:00:00Z"
+  SNYK-JAVA-IONETTY-16425695:
+    - '*':
+      reason: "temporary ignore while upgrade is scheduled"
+      expires: "2026-06-01T00:00:00Z"
+  SNYK-JAVA-COMMONSIO-8161190:
+    - '*':
+      reason: "temporary ignore while upgrade is scheduled"
+      expires: "2026-06-01T00:00:00Z"
+  "snyk:lic:maven:fi.solita.clamav:clamav-client:LGPL-2.1":
+    - '*':
+      reason: "temporary ignore while license remediation is reviewed"
+      expires: "2026-06-01T00:00:00Z"
   SNYK-UBUNTU2404-GLIBC-15804597:
     - '*':
       reason: "temporary ignore while base image is updated"
