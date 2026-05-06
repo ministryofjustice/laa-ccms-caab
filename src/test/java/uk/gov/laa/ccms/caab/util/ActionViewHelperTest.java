@@ -106,7 +106,7 @@ class ActionViewHelperTest {
                 FunctionConstants.SUBMIT_CASE_REQUEST,
                 "action.submitCaseQuery.name",
                 "action.submitCaseQuery.description",
-                "#"),
+                "/provider-requests/types"),
             new ExpectedAction(
                 FunctionConstants.VIEW_CASE,
                 "action.viewCase.name",

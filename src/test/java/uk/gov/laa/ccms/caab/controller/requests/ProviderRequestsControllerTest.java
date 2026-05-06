@@ -36,7 +36,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
@@ -55,6 +58,7 @@ import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.service.ProviderRequestService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ProviderRequestDataLookupValueDetail;
@@ -70,6 +74,8 @@ class ProviderRequestsControllerTest {
   @Mock private LookupService lookupService;
 
   @Mock private EvidenceService evidenceService;
+
+  @Mock private ProviderRequestService providerRequestService;
 
   @Mock private ProviderRequestTypesValidator providerRequestTypeValidator;
 
@@ -102,6 +108,12 @@ class ProviderRequestsControllerTest {
     providerRequestType.setProviderRequestType(requestType);
     providerRequestFlow.setRequestTypeFormData(providerRequestType);
     return providerRequestFlow;
+  }
+
+  private ProviderRequestFlowFormData createFlowWithCaseRef(String caseReferenceNumber) {
+    ProviderRequestFlowFormData flow = new ProviderRequestFlowFormData();
+    flow.setCaseReferenceNumber(caseReferenceNumber);
+    return flow;
   }
 
   /**
@@ -422,6 +434,7 @@ class ProviderRequestsControllerTest {
     providerRequestType.setProviderRequestType("testType");
     providerRequestFlow.setRequestTypeFormData(providerRequestType);
     providerRequestFlow.setRequestDetailsFormData(providerRequestDetailsForm);
+    providerRequestFlow.setCaseReferenceNumber(null);
 
     final ProviderRequestTypeLookupValueDetail dynamicForm =
         new ProviderRequestTypeLookupValueDetail()
@@ -431,11 +444,6 @@ class ProviderRequestsControllerTest {
     final ProviderRequestTypeLookupDetail lookupDetail = new ProviderRequestTypeLookupDetail();
     lookupDetail.setContent(List.of(dynamicForm));
 
-    when(lookupService.getProviderRequestTypes(null, "testType"))
-        .thenReturn(Mono.just(lookupDetail));
-    when(evidenceService.getEvidenceDocumentsForApplicationOrOutcome(any(), eq(CcmsModule.REQUEST)))
-        .thenReturn(Mono.just(new EvidenceDocumentDetails()));
-
     mockMvc
         .perform(
             post("/provider-requests/details")
@@ -444,7 +452,7 @@ class ProviderRequestsControllerTest {
                 .param("action", "document_upload")
                 .flashAttr("providerRequestDetails", providerRequestDetailsForm))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/provider-requests/documents"));
+        .andExpect(redirectedUrl("/provider-requests/documents?caseReferenceNumber="));
 
     verify(mapper)
         .toProviderRequestDetailsFormData(providerRequestDetailsForm, providerRequestFlow);
@@ -592,6 +600,7 @@ class ProviderRequestsControllerTest {
   void testAddDocumentsToRequest() throws Exception {
     final String maxFileSize = String.valueOf(5L * 1024 * 1024);
     final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
+    final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
     commonLookupDetail.setContent(
         List.of(new CommonLookupValueDetail().code("DOC1").description("Document Type 1")));
     when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
@@ -602,7 +611,9 @@ class ProviderRequestsControllerTest {
     when(providerRequestDocumentUploadValidator.getMaxFileSize()).thenReturn(maxFileSize); // 5 MB
 
     mockMvc
-        .perform(get("/provider-requests/documents"))
+        .perform(
+            get("/provider-requests/documents")
+                .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow))
         .andExpect(status().isOk())
         .andExpect(view().name("requests/provider-request-doc-upload"))
         .andExpect(
@@ -649,7 +660,7 @@ class ProviderRequestsControllerTest {
                 .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow)
                 .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, evidenceUploadFormData))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/provider-requests/details"));
+        .andExpect(redirectedUrl("/provider-requests/details?caseReferenceNumber="));
 
     // Verify interactions
     verify(mapper).toProviderRequestDocumentDetail(evidenceUploadFormData);
@@ -707,5 +718,123 @@ class ProviderRequestsControllerTest {
     verify(lookupService).getCommonValues(COMMON_VALUE_DOCUMENT_TYPES);
     verify(providerRequestDocumentUploadValidator).getValidExtensions();
     verify(providerRequestDocumentUploadValidator).getMaxFileSize();
+  }
+
+  @Test
+  @DisplayName("GET /provider-requests/types with caseReferenceNumber should set caseReference")
+  void testGetRequestType_withCaseReference_setsCaseReference() throws Exception {
+    when(lookupService.getProviderRequestTypes(eq(true), isNull()))
+        .thenReturn(Mono.just(new ProviderRequestTypeLookupDetail()));
+
+    mockMvc
+        .perform(
+            get("/provider-requests/types")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .param("caseReferenceNumber", "123456789012"))
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("caseReference", "123456789012"));
+  }
+
+  @Test
+  @DisplayName(
+      "POST /provider-requests/types should redirect to /details preserving caseReferenceNumber")
+  void testRequestTypePost_redirectsWithCaseReference() throws Exception {
+    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef("123456789012");
+    final ProviderRequestTypeFormData providerRequestTypeDetails =
+        new ProviderRequestTypeFormData();
+    providerRequestTypeDetails.setProviderRequestType("testType");
+
+    doAnswer(invocation -> null).when(providerRequestTypeValidator).validate(any(), any());
+
+    mockMvc
+        .perform(
+            post("/provider-requests/types")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow)
+                .flashAttr("providerRequestTypeDetails", providerRequestTypeDetails))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/provider-requests/details?caseReferenceNumber=123456789012"));
+  }
+
+  @Test
+  @DisplayName("Should include case ref number in redirect to doc upload if present")
+  void testDocUpload_redirectsWithCaseReference() throws Exception {
+    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef("123456789012");
+    final ProviderRequestDetailsFormData providerRequestDetailsForm =
+        new ProviderRequestDetailsFormData();
+    final ProviderRequestTypeFormData providerRequestType = new ProviderRequestTypeFormData();
+    providerRequestType.setProviderRequestType("testType");
+    providerRequestFlow.setRequestTypeFormData(providerRequestType);
+    providerRequestFlow.setRequestDetailsFormData(providerRequestDetailsForm);
+
+    final ProviderRequestTypeLookupValueDetail dynamicForm =
+        new ProviderRequestTypeLookupValueDetail()
+            .isClaimUploadEnabled(false)
+            .additionalInformationPrompt("Additional Info");
+
+    final ProviderRequestTypeLookupDetail lookupDetail = new ProviderRequestTypeLookupDetail();
+    lookupDetail.setContent(List.of(dynamicForm));
+
+    mockMvc
+        .perform(
+            post("/provider-requests/details")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow)
+                .param("action", "document_upload")
+                .flashAttr("providerRequestDetails", providerRequestDetailsForm))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/provider-requests/documents?caseReferenceNumber=123456789012"));
+
+    verify(mapper)
+        .toProviderRequestDetailsFormData(providerRequestDetailsForm, providerRequestFlow);
+  }
+
+  @Test
+  @DisplayName("Service should be called with caseReferenceNumber when provided")
+  void testSubmitProviderRequest_callsServiceWithCaseRef() throws Exception {
+    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef("123456789012");
+    providerRequestFlow.setRequestTypeFormData(new ProviderRequestTypeFormData());
+
+    ProviderRequestDetailsFormData details = new ProviderRequestDetailsFormData();
+    details.setClaimUploadEnabled(false);
+
+    UserDetail user = new UserDetail();
+    Model model = new ExtendedModelMap();
+    BindingResult binding = new BeanPropertyBindingResult(details, "details");
+
+    when(providerRequestService.submitProviderRequest(any(), any(), any(), any())).thenReturn("id");
+
+    when(evidenceService.getEvidenceDocumentsForApplicationOrOutcome(any(), any()))
+        .thenReturn(Mono.just(new EvidenceDocumentDetails().content(List.of())));
+
+    when(evidenceService.uploadAndUpdateDocuments(any(), any(), any(), any()))
+        .thenReturn(Mono.empty());
+
+    providerRequestsController.postRequestDetail(
+        user, providerRequestFlow, "submit", details, model, binding);
+
+    verify(providerRequestService)
+        .submitProviderRequest(
+            any(ProviderRequestTypeFormData.class),
+            any(ProviderRequestDetailsFormData.class),
+            eq("123456789012"),
+            any(UserDetail.class));
+  }
+
+  @Test
+  @DisplayName("GET /types without caseReferenceNumber should pass isCaseRelated=false to lookup")
+  void testInvalidCaseReference() throws Exception {
+    when(lookupService.getProviderRequestTypes(eq(false), isNull()))
+        .thenReturn(Mono.just(new ProviderRequestTypeLookupDetail()));
+
+    mockMvc
+        .perform(
+            get("/provider-requests/types")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .param("caseReferenceNumber", "123**"))
+        .andExpect(status().isOk())
+        .andExpect(model().attributeDoesNotExist("caseReference"));
+
+    verify(lookupService).getProviderRequestTypes(eq(false), isNull());
   }
 }

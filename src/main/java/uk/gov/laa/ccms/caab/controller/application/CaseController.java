@@ -12,6 +12,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUM
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
+import static uk.gov.laa.ccms.caab.util.view.ActionViewHelper.enhanceActionUrl;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -102,7 +103,9 @@ public class CaseController {
     model.addAttribute("searchUrl", Objects.toString(session.getAttribute(SEARCH_URL), ""));
     model.addAttribute("case", ebsCase);
     model.addAttribute("isAmendment", isAmendment);
-    model.addAttribute("availableActions", getAvailableActions(ebsCase, isAmendment, amendments));
+    model.addAttribute(
+        "availableActions",
+        getAvailableActions(ebsCase, isAmendment, amendments, ebsCase.getCaseReferenceNumber()));
     model.addAttribute("hasEbsAmendments", hasEbsAmendments(ebsCase));
     model.addAttribute(
         "draftProceedings",
@@ -393,7 +396,10 @@ public class CaseController {
   }
 
   private static List<AvailableAction> getAvailableActions(
-      ApplicationDetail ebsCase, boolean amendment, ApplicationDetail amendments) {
+      ApplicationDetail ebsCase,
+      boolean amendment,
+      ApplicationDetail amendments,
+      @SessionAttribute(CASE_REFERENCE_NUMBER) String caseReferenceNumber) {
 
     if (ebsCase.getAvailableFunctions() == null || ebsCase.getAvailableFunctions().isEmpty()) {
       return Collections.emptyList();
@@ -404,6 +410,7 @@ public class CaseController {
 
     return ActionViewHelper.getAllAvailableActions(openAmendment).stream()
         .filter(availableAction -> caseAvailableFunctions.contains(availableAction.actionCode()))
+        .map(action -> enhanceActionUrl(action, caseReferenceNumber))
         .toList();
   }
 
