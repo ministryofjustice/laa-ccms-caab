@@ -643,9 +643,7 @@ public class ProviderRequestsController {
 
   private void clearCaseIfInvalid(String caseReferenceNumber, HttpSession session, Model model) {
     if (!isValidCaseReference(caseReferenceNumber)) {
-      session.removeAttribute(CASE);
       session.removeAttribute(ACTIVE_CASE);
-      model.asMap().remove(CASE);
       model.asMap().remove(ACTIVE_CASE);
     }
   }
