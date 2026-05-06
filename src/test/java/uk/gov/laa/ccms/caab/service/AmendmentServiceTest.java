@@ -342,4 +342,49 @@ class AmendmentServiceTest {
       assertThat(transactionId).isEqualTo("12345");
     }
   }
+
+  @Nested
+  @DisplayName("submitQuickAmendmentProviderDetails() tests")
+  class SubmitQuickAmendmentProviderDetailsTests {
+
+    @Test
+    @DisplayName("Should submit quick amend provider details")
+    void shouldSubmitQuickAmendmentProviderDetails() {
+      // Given
+      ApplicationFormData providerDetails = new ApplicationFormData();
+      providerDetails.setOfficeId(2);
+      providerDetails.setFeeEarnerId(3);
+      providerDetails.setSupervisorId(4);
+
+      String caseRef = "12345";
+
+      UserDetail userDetails =
+          new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
+      ApplicationDetail caseDetail = buildFullApplicationDetail();
+      when(applicationService.getCase(any(), anyLong(), any())).thenReturn(caseDetail);
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(caabApiClient.createApplication(any(), any())).thenReturn(Mono.just("123"));
+      when(soaApiClient.updateCase(any(), any(), any(), any()))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("12345")));
+      // When
+      String transactionId =
+          amendmentService.submitQuickAmendmentProviderDetails(
+              providerDetails, caseRef, userDetails);
+      // Then
+      verify(caabApiClient, times(1))
+          .createApplication(
+              eq("123"),
+              argThat(
+                  application ->
+                      application.getProviderDetails() != null
+                          && application.getProviderDetails().getOffice().getId().equals(2)
+                          && application.getProviderDetails().getFeeEarner().getId().equals("3")
+                          && application.getProviderDetails().getSupervisor().getId().equals("4")));
+      verify(soaApiClient, times(1))
+          .updateCase(
+              eq("123"), eq("Type"), any(), eq(QuickEditTypeConstants.MESSAGE_TYPE_EDIT_PROVIDER));
+      assertThat(transactionId).isNotNull();
+      assertThat(transactionId).isEqualTo("12345");
+    }
+  }
 }
