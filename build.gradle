@@ -92,16 +92,16 @@ dependencies {
     implementation 'org.springframework.data:spring-data-commons'
 
 	// AWS S3 Integration
-	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.0.1')
+	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.0.0')
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
-	implementation 'software.amazon.awssdk:sts:2.43.0'
+	implementation 'software.amazon.awssdk:sts:2.42.29'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
     implementation 'org.json:json:20251224'
 
-    implementation 'io.swagger.core.v3:swagger-annotations:2.2.49'
+    implementation 'io.swagger.core.v3:swagger-annotations:2.2.46'
 
     //SAML security
     implementation 'org.springframework.boot:spring-boot-starter-security-saml2'
@@ -128,7 +128,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-    testImplementation 'io.projectreactor:reactor-test:3.8.5'
+    testImplementation 'io.projectreactor:reactor-test:3.8.4'
 
     integrationTestImplementation 'org.wiremock:wiremock-standalone:3.13.2'
 
