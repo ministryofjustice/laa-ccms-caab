@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
@@ -37,7 +38,6 @@ public class SoaApiClient {
 
   private static final String SOA_GATEWAY_USER_LOGIN_ID = "SoaGateway-User-Login-Id";
   private static final String SOA_GATEWAY_USER_ROLE = "SoaGateway-User-Role";
-  private static final String CASE_REFERENCE_NUMBER = "case-reference-number";
 
   private final WebClient soaApiWebClient;
 
@@ -197,6 +197,52 @@ public class SoaApiClient {
   }
 
   /**
+   * Updates the case details in the SOA gateway.
+   *
+   * @param loginId the login ID of the user.
+   * @param userType the type of the user.
+   * @param caseDetail the details of the case to update.
+   * @param caseUpdateType the type of update being performed.
+   * @return a Mono containing the case transaction response.
+   */
+  public Mono<CaseTransactionResponse> updateCase(
+      final String loginId,
+      final String userType,
+      final CaseDetail caseDetail,
+      final String caseUpdateType) {
+    if (caseDetail == null) {
+      return Mono.error(new IllegalArgumentException("caseDetail must not be null"));
+    }
+    if (!org.springframework.util.StringUtils.hasText(caseUpdateType)) {
+      return Mono.error(new IllegalArgumentException("caseUpdateType must not be blank"));
+    }
+
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    queryParams.add("case-update-type", caseUpdateType);
+
+    return soaApiWebClient
+        .put()
+        .uri(builder -> builder.path("/cases").queryParams(queryParams).build())
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(caseDetail)
+        .retrieve()
+        .bodyToMono(CaseTransactionResponse.class)
+        .doOnError(
+            WebClientResponseException.class,
+            ex ->
+                log.error(
+                    "SOA updateCase failed with status {}. Response body: {}",
+                    ex.getStatusCode(),
+                    ex.getResponseBodyAsString()))
+        .onErrorResume(
+            e ->
+                soaApiClientErrorHandler.handleApiUpdateError(
+                    e, "Cases", "case-update-type", caseUpdateType));
+  }
+
+  /**
    * Searches and retrieves organisation details based on provided search criteria.
    *
    * @param searchCriteria The search criteria to use when fetching organisations.
@@ -221,7 +267,6 @@ public class SoaApiClient {
         .ifPresent(postcode -> queryParams.add("postcode", postcode));
     Optional.ofNullable(page).ifPresent(param -> queryParams.add("page", String.valueOf(param)));
     Optional.ofNullable(size).ifPresent(param -> queryParams.add("size", String.valueOf(param)));
-
     return soaApiWebClient
         .get()
         .uri(builder -> builder.path("/organisations").queryParams(queryParams).build())

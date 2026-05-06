@@ -637,7 +637,7 @@ class SoaApplicationMapperTest {
     assertEquals(OPPONENT_TYPE_INDIVIDUAL, result.getType());
     assertEquals(soaOtherParty.getOtherPartyId(), result.getEbsId());
     assertEquals(
-        soaOtherParty.getPerson().isCourtOrderedMeansAssesment(),
+        soaOtherParty.getPerson().isCourtOrderedMeansAssessment(),
         result.getCourtOrderedMeansAssessment());
     assertEquals(soaOtherParty.getPerson().getOrganizationAddress(), result.getEmployerAddress());
     assertEquals(soaOtherParty.getPerson().getOrganizationName(), result.getEmployerName());
@@ -1158,8 +1158,8 @@ class SoaApplicationMapperTest {
         .devolvedPowers(Pair.of(devolvedPowers, devolvedPowersDate))
         .feeEarnerContact(new ContactDetail().id(100).name("feeEarnerName"))
         .supervisorContact(new ContactDetail().id(101).name("supName"))
-        .meansAssessment(soaCase.getApplicationDetails().getMeansAssesments().getFirst())
-        .meritsAssessment(soaCase.getApplicationDetails().getMeritsAssesments().getFirst())
+        .meansAssessment(soaCase.getApplicationDetails().getMeansAssessments().getFirst())
+        .meritsAssessment(soaCase.getApplicationDetails().getMeritsAssessments().getFirst())
         .priorAuthorities(
             Collections.singletonList(
                 buildPriorAuthorityMappingContext(soaCase.getPriorAuthorities().getFirst())))
@@ -1245,6 +1245,8 @@ class SoaApplicationMapperTest {
         new BaseEvidenceDocumentDetail().registeredDocumentId("DOC123");
     applicationDetail.setLinkedCases(Collections.singletonList(linkedCaseDetail));
     applicationDetail.setPriorAuthorities(Collections.singletonList(priorAuthorityDetail));
+    applicationDetail.setMeansAssessmentAmended(true);
+    applicationDetail.setMeritsAssessmentAmended(false);
 
     final CaseMappingContext context =
         CaseMappingContext.builder()
@@ -1266,6 +1268,8 @@ class SoaApplicationMapperTest {
     assertNotNull(result.getCaseDocs());
     assertEquals(1, result.getCaseDocs().size());
     assertEquals("DOC123", result.getCaseDocs().getFirst().getCcmsDocumentId());
+    assertEquals(Boolean.TRUE, result.getApplicationDetails().isMeansAssessmentAmended());
+    assertEquals(Boolean.FALSE, result.getApplicationDetails().isMeritsAssessmentAmended());
     assertNotNull(result.getRecordHistory());
   }
 
@@ -1729,7 +1733,7 @@ class SoaApplicationMapperTest {
     assertEquals(relationToCase, result.getRelationToCase());
     assertEquals(niNumber, result.getNiNumber());
     assertEquals(legalAided, result.isPartyLegalAidedInd());
-    assertEquals(courtOrderedMeansAssesment, result.isCourtOrderedMeansAssesment());
+    assertEquals(courtOrderedMeansAssesment, result.isCourtOrderedMeansAssessment());
     assertEquals(contactName, result.getContactName());
     assertEquals(employerName, result.getEmployersName());
     assertEquals(employerAddress, result.getOrganizationAddress());

@@ -30,6 +30,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.springframework.data.domain.Page;
+import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
@@ -294,7 +295,7 @@ public interface SoaApplicationMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "ebsId", source = "otherPartyId")
   @Mapping(target = ".", source = "person")
-  @Mapping(target = "courtOrderedMeansAssessment", source = "person.courtOrderedMeansAssesment")
+  @Mapping(target = "courtOrderedMeansAssessment", source = "person.courtOrderedMeansAssessment")
   @Mapping(target = "employerAddress", source = "person.organizationAddress")
   @Mapping(target = "employerName", source = "person.organizationName")
   @Mapping(target = ".", source = "person.name")
@@ -749,6 +750,7 @@ public interface SoaApplicationMapper {
   @Mapping(target = "preCertificateCosts", ignore = true)
   @Mapping(target = "legalHelpCosts", ignore = true)
   @Mapping(target = "undertakingAmount", ignore = true)
+  @Mapping(target = "undertakingMaximumAmount", ignore = true)
   @Mapping(target = "awards", ignore = true)
   @Mapping(target = "dischargeStatus", ignore = true)
   @Mapping(target = "caseStatus", ignore = true)
@@ -793,11 +795,11 @@ public interface SoaApplicationMapper {
   @Mapping(target = "larDetails.larScopeFlag", source = "tdsApplication.larScopeFlag")
   @Mapping(target = "otherParties", source = "tdsApplication.opponents")
   @Mapping(
-      target = "meansAssesments",
+      target = "meansAssessments",
       source = "meansAssessment",
       qualifiedByName = "mapMeansAssessment")
   @Mapping(
-      target = "meritsAssesments",
+      target = "meritsAssessments",
       source = "meritsAssessment",
       qualifiedByName = "mapMeritsAssessment")
   @Mapping(
@@ -814,7 +816,27 @@ public interface SoaApplicationMapper {
   @Mapping(target = "purposeOfHearing", ignore = true)
   @Mapping(target = "highProfileCaseInd", ignore = true)
   @Mapping(target = "certificateType", ignore = true)
+  @Mapping(target = "meansAssessmentAmended", source = "tdsApplication.meansAssessmentAmended")
+  @Mapping(target = "meritsAssessmentAmended", source = "tdsApplication.meritsAssessmentAmended")
   SubmittedApplicationDetails toSubmittedApplicationDetails(CaseMappingContext context);
+
+  /**
+   * Applies the quick edit amendment type to the submitted application details.
+   *
+   * @param context the case mapping context.
+   * @param target the target submitted application details.
+   */
+  @AfterMapping
+  default void applyQuickEditAmendmentType(
+      CaseMappingContext context, @MappingTarget SubmittedApplicationDetails target) {
+    if (context == null || context.getTdsApplication() == null || target == null) {
+      return;
+    }
+    String quickEditType = context.getTdsApplication().getQuickEditType();
+    if (StringUtils.hasText(quickEditType)) {
+      target.setApplicationAmendmentType(quickEditType);
+    }
+  }
 
   /**
    * Maps and returns the devolved powers date from the provided application details. The date is
@@ -911,7 +933,7 @@ public interface SoaApplicationMapper {
   @Mapping(target = "relationToCase", source = "relationshipToCase")
   @Mapping(target = "niNumber", source = "nationalInsuranceNumber")
   @Mapping(target = "partyLegalAidedInd", source = "legalAided")
-  @Mapping(target = "courtOrderedMeansAssesment", source = "courtOrderedMeansAssessment")
+  @Mapping(target = "courtOrderedMeansAssessment", source = "courtOrderedMeansAssessment")
   @Mapping(target = "contactName", source = "contactNameRole")
   @Mapping(target = "employersName", source = "employerName")
   @Mapping(target = "organizationAddress", source = "employerAddress")

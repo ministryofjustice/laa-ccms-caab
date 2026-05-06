@@ -82,7 +82,7 @@ class AmendCaseControllerTest {
           .hasRedirectedUrl("/amendments/summary");
 
       verify(amendmentService, times(1))
-          .createAndSubmitAmendmentForCase(applicationFormData, "123", userDetail);
+          .createAndSubmitAmendmentForCase(applicationFormData, ebsCase, userDetail);
     }
   }
 

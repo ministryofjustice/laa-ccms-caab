@@ -10,7 +10,9 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -18,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.NotImplementedException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
@@ -45,6 +46,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.CorrespondenceAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
@@ -57,10 +59,12 @@ import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
+import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.caab.util.PaginationUtil;
+import uk.gov.laa.ccms.caab.util.UserRoleUtil;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -74,6 +78,7 @@ public class EditGeneralDetailsSectionController {
 
   // services
   private final ApplicationService applicationService;
+  private final AmendmentService amendmentService;
   private final AddressService addressService;
   private final LookupService lookupService;
   private final ProviderService providerService;
@@ -146,6 +151,7 @@ public class EditGeneralDetailsSectionController {
   public String updateCorrespondenceDetails(
       @PathVariable final CaseContext caseContext,
       @RequestParam(required = false) final String action,
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(APPLICATION_ID) @Nullable final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @Validated @ModelAttribute("addressDetails") final AddressFormData addressDetails,
@@ -169,7 +175,8 @@ public class EditGeneralDetailsSectionController {
       ResultsDisplay<AddressResultRowDisplay> addressSearchResults =
           addressService.getAddresses(addressDetails.getPostcode());
 
-      if (addressSearchResults.getContent() == null) {
+      if (addressSearchResults.getContent() == null
+          || addressSearchResults.getContent().isEmpty()) {
         bindingResult.reject(
             "address.none", "Your input for address details has not returned any results");
       } else {
@@ -190,10 +197,18 @@ public class EditGeneralDetailsSectionController {
           .formatted(caseContext.getPathValue());
 
     } else {
-      // TODO: Submit address amendments: https://dsdmoj.atlassian.net/browse/CCMSPUI-527
       if (caseContext.isAmendment()) {
-        throw new NotImplementedException(
-            "Submission of correspondence address amendments is not yet implemented.");
+        if (!UserRoleUtil.hasRole(user, UserRole.SUBMIT_AMENDMENT)) {
+          throw new CaabApplicationException("User not authorized to submit amendments");
+        }
+        // Submit the amendment, and redirect to polling endpoint
+        String transactionId =
+            amendmentService.submitQuickAmendmentCorrespondenceAddress(
+                addressDetails, ebsCase.getCaseReferenceNumber(), user);
+        session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
+
+        session.removeAttribute("addressDetails");
+        return "redirect:/amendments/%s".formatted(SUBMISSION_SUBMIT_CASE);
       }
       applicationService.updateCorrespondenceAddress(applicationId, addressDetails, user);
       session.removeAttribute("addressDetails");

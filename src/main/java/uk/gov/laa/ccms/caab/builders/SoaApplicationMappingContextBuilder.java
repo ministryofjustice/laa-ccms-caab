@@ -209,10 +209,10 @@ public class SoaApplicationMappingContextBuilder {
 
     // Find the most recent Assessments
     final AssessmentResult meansAssessment =
-        getMostRecentAssessment(soaApplicationDetails.getMeansAssesments());
+        getMostRecentAssessment(soaApplicationDetails.getMeansAssessments());
 
     final AssessmentResult meritsAssessment =
-        getMostRecentAssessment(soaApplicationDetails.getMeritsAssesments());
+        getMostRecentAssessment(soaApplicationDetails.getMeritsAssessments());
 
     /*
      * Split the proceeding list based on status, and build a ProceedingMappingContext

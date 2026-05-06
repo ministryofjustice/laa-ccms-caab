@@ -64,13 +64,12 @@ public class CaabApiClient {
    * @return a Mono signaling the completion of the application creation
    */
   public Mono<String> createApplication(final String loginId, final ApplicationDetail application) {
-
     return caabApiWebClient
         .post()
         .uri("/applications")
         .header("Caab-User-Login-Id", loginId)
-        .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
-        .bodyValue(application) // Add the application details to the request body
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(application)
         .exchangeToMono(CaabApiClient::getIdResponse)
         .onErrorResume(
             e -> caabApiClientErrorHandler.handleApiCreateError(e, RESOURCE_TYPE_APPLICATION));
@@ -776,19 +775,7 @@ public class CaabApiClient {
         .header("Caab-User-Login-Id", loginId)
         .contentType(MediaType.APPLICATION_JSON) // Set the content type to JSON
         .bodyValue(caseOutcome) // Add the case outcome detail to the request body
-        .exchangeToMono(
-            clientResponse -> {
-              final HttpHeaders headers = clientResponse.headers().asHttpHeaders();
-              final URI locationUri = headers.getLocation();
-              if (locationUri != null) {
-                final String path = locationUri.getPath();
-                final String id = path.substring(path.lastIndexOf('/') + 1);
-                return Mono.just(id);
-              } else {
-                // Handle the case where the Location header is missing or the URI is invalid
-                return Mono.error(new RuntimeException("Location header missing or URI invalid"));
-              }
-            })
+        .exchangeToMono(CaabApiClient::getIdResponse)
         .onErrorResume(
             e -> caabApiClientErrorHandler.handleApiCreateError(e, RESOURCE_TYPE_CASE_OUTCOME));
   }
@@ -1189,15 +1176,17 @@ public class CaabApiClient {
   }
 
   private static Mono<String> getIdResponse(ClientResponse clientResponse) {
+    if (clientResponse.statusCode().isError()) {
+      return clientResponse.createException().flatMap(Mono::error);
+    }
+
     final HttpHeaders headers = clientResponse.headers().asHttpHeaders();
     final URI locationUri = headers.getLocation();
     if (locationUri != null) {
       final String path = locationUri.getPath();
       final String id = path.substring(path.lastIndexOf('/') + 1);
       return Mono.just(id);
-    } else {
-      // Handle the case where the Location header is missing or the URI is invalid
-      return Mono.error(new RuntimeException("Location header missing or URI invalid"));
     }
+    return Mono.error(new RuntimeException("Location header missing or URI invalid"));
   }
 }

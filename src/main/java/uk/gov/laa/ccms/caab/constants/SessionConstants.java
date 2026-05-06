@@ -83,6 +83,9 @@ public class SessionConstants {
   /** Session attribute used to keep track of the application. */
   public static final String APPLICATION = "caseApplication";
 
+  /** Session attribute used to keep track of the application details for submission. */
+  public static final String APPLICATION_DETAILS = "applicationDetails";
+
   /** Session attribute used to display a summary of the application. */
   public static final String APPLICATION_SUMMARY = "amendment";
 

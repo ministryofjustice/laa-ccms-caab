@@ -21,9 +21,11 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_C
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
 import static uk.gov.laa.ccms.caab.controller.application.section.EditGeneralDetailsSectionController.CASE_RESULTS_PAGE;
 import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
@@ -61,15 +63,18 @@ import uk.gov.laa.ccms.caab.bean.validators.application.LinkedCaseValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.CorrespondenceAddressValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.EbsApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
+import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
@@ -85,6 +90,8 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 class EditGeneralDetailsSectionControllerTest {
 
   @Mock private ApplicationService applicationService;
+
+  @Mock private AmendmentService amendmentService;
 
   @Mock private AddressService addressService;
 
@@ -187,6 +194,7 @@ class EditGeneralDetailsSectionControllerTest {
       final String applicationId = "123";
       final UserDetail user = new UserDetail();
       final AddressFormData addressDetails = new AddressFormData();
+      final ApplicationDetail ebsCase = new ApplicationDetail();
 
       mockMvc
           .perform(
@@ -194,6 +202,7 @@ class EditGeneralDetailsSectionControllerTest {
                   .param("action", "update")
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(USER_DETAILS, user)
+                  .sessionAttr(CASE, ebsCase)
                   .flashAttr("addressDetails", addressDetails))
           .andDo(print())
           .andExpect(redirectedUrl("/application/sections/linked-cases"));
@@ -201,6 +210,69 @@ class EditGeneralDetailsSectionControllerTest {
       verify(applicationService, times(1))
           .updateCorrespondenceAddress(applicationId, addressDetails, user);
       verify(addressService, never()).getAddresses(any());
+    }
+
+    @Test
+    @DisplayName("Should redirect to amendments submission")
+    void shouldRedirectToAmendmentsSubmission() throws Exception {
+      final String applicationId = "123";
+      final UserDetail user = new UserDetail();
+      user.setUserType("EXTERNAL");
+      user.setLoginId("test-user");
+      user.setFunctions(Collections.singletonList(UserRole.SUBMIT_AMENDMENT.getCode()));
+
+      final AddressFormData addressDetails = new AddressFormData();
+      final ApplicationDetail ebsCase = new ApplicationDetail();
+      ebsCase.setCaseReferenceNumber("123456789");
+      when(amendmentService.submitQuickAmendmentCorrespondenceAddress(
+              addressDetails, "123456789", user))
+          .thenReturn("12345");
+
+      mockMvc
+          .perform(
+              post("/amendments/sections/correspondence-address")
+                  .param("action", "update")
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(CASE, ebsCase)
+                  .sessionAttr(USER_DETAILS, user)
+                  .flashAttr("addressDetails", addressDetails))
+          .andDo(print())
+          .andExpect(status().is3xxRedirection())
+          .andExpect(redirectedUrl("/amendments/%s".formatted(SUBMISSION_SUBMIT_CASE)));
+
+      verify(amendmentService, times(1))
+          .submitQuickAmendmentCorrespondenceAddress(addressDetails, "123456789", user);
+      verify(applicationService, never())
+          .updateCorrespondenceAddress(applicationId, addressDetails, user);
+      verify(addressService, never()).getAddresses(any());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when unauthorized to submit amendments")
+    void shouldThrowExceptionWhenUnauthorizedToSubmitAmendments() throws Exception {
+      final String applicationId = "123";
+      final UserDetail user = new UserDetail();
+      user.setUserType("EXTERNAL");
+      user.setFunctions(Collections.emptyList());
+
+      final AddressFormData addressDetails = new AddressFormData();
+      final ApplicationDetail ebsCase = new ApplicationDetail();
+      ebsCase.setCaseReferenceNumber("123456789");
+
+      mockMvc
+          .perform(
+              post("/amendments/sections/correspondence-address")
+                  .param("action", "update")
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(CASE, ebsCase)
+                  .sessionAttr(USER_DETAILS, user)
+                  .flashAttr("addressDetails", addressDetails))
+          .andDo(print())
+          .andExpect(view().name("error"))
+          .andExpect(model().attributeExists("error"));
+
+      verify(amendmentService, never())
+          .submitQuickAmendmentCorrespondenceAddress(any(), any(), any());
     }
 
     @ParameterizedTest
@@ -211,6 +283,7 @@ class EditGeneralDetailsSectionControllerTest {
       final UserDetail user = new UserDetail();
       final AddressFormData addressDetails = new AddressFormData();
       final ResultsDisplay<AddressResultRowDisplay> addressSearchResults = new ResultsDisplay<>();
+      final ApplicationDetail ebsCase = new ApplicationDetail();
 
       addressSearchResults.setContent(Collections.singletonList(new AddressResultRowDisplay()));
 
@@ -223,6 +296,7 @@ class EditGeneralDetailsSectionControllerTest {
                   .param("action", "find_address")
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(USER_DETAILS, user)
+                  .sessionAttr(CASE, ebsCase)
                   .flashAttr("addressDetails", addressDetails))
           .andDo(print())
           .andExpect(
@@ -242,6 +316,7 @@ class EditGeneralDetailsSectionControllerTest {
       final UserDetail user = new UserDetail();
       final AddressFormData addressDetails = new AddressFormData();
       final ResultsDisplay<AddressResultRowDisplay> addressSearchResults = new ResultsDisplay<>();
+      final ApplicationDetail ebsCase = new ApplicationDetail();
 
       when(addressService.getAddresses(addressDetails.getPostcode()))
           .thenReturn(addressSearchResults);
@@ -256,6 +331,7 @@ class EditGeneralDetailsSectionControllerTest {
                   .param("action", "find_address")
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(USER_DETAILS, user)
+                  .sessionAttr(CASE, ebsCase)
                   .flashAttr("addressDetails", addressDetails))
           .andDo(print())
           .andExpect(view().name("application/sections/correspondence-address-details"));
@@ -273,6 +349,7 @@ class EditGeneralDetailsSectionControllerTest {
       final String applicationId = "123";
       final UserDetail user = new UserDetail();
       final AddressFormData addressDetails = new AddressFormData();
+      final ApplicationDetail ebsCase = new ApplicationDetail();
 
       when(lookupService.getCountries()).thenReturn(Mono.just(mockCommonLookupDetail));
       when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
@@ -296,6 +373,7 @@ class EditGeneralDetailsSectionControllerTest {
                   .param("action", "update")
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(USER_DETAILS, user)
+                  .sessionAttr(CASE, ebsCase)
                   .flashAttr("addressDetails", addressDetails))
           .andDo(print())
           .andExpect(view().name("application/sections/correspondence-address-details"));
@@ -310,6 +388,7 @@ class EditGeneralDetailsSectionControllerTest {
     void correspondenceAddressPostNoValidationErrorsMaxLengthsNotExceeded() throws Exception {
       final String applicationId = "123";
       final UserDetail user = new UserDetail();
+      final ApplicationDetail ebsCase = new ApplicationDetail();
       final AddressFormData addressDetails = new AddressFormData();
       addressDetails.setHouseNameNumber(RandomStringUtils.insecure().nextAlphabetic(35));
       addressDetails.setPostcode(RandomStringUtils.insecure().nextAlphabetic(15));
@@ -325,6 +404,7 @@ class EditGeneralDetailsSectionControllerTest {
                   .param("action", "update")
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(USER_DETAILS, user)
+                  .sessionAttr(CASE, ebsCase)
                   .flashAttr("addressDetails", addressDetails))
           .andDo(print())
           .andExpect(redirectedUrl("/application/sections/linked-cases"));
@@ -341,6 +421,7 @@ class EditGeneralDetailsSectionControllerTest {
         throws Exception {
       final String applicationId = "123";
       final UserDetail user = new UserDetail();
+      final ApplicationDetail ebsCase = new ApplicationDetail();
       final AddressFormData addressDetails = new AddressFormData();
       addressDetails.setHouseNameNumber(RandomStringUtils.insecure().nextAlphabetic(36));
       addressDetails.setPostcode(RandomStringUtils.insecure().nextAlphabetic(16));
@@ -360,6 +441,7 @@ class EditGeneralDetailsSectionControllerTest {
                   .param("action", "update")
                   .sessionAttr(APPLICATION_ID, applicationId)
                   .sessionAttr(USER_DETAILS, user)
+                  .sessionAttr(CASE, ebsCase)
                   .flashAttr("addressDetails", addressDetails))
           .andDo(print())
           .andExpect(view().name("application/sections/correspondence-address-details"))
