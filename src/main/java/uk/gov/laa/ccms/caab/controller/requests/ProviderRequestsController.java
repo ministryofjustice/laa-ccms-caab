@@ -4,6 +4,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA
 import static uk.gov.laa.ccms.caab.constants.CcmsModule.REQUEST;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_UPLOAD_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRIOR_AUTHORITY_FLOW_FORM_DATA;
@@ -12,6 +13,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 import static uk.gov.laa.ccms.caab.util.FileUtil.getFileExtension;
 
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -105,10 +107,13 @@ public class ProviderRequestsController {
       @RequestParam(required = false) final String caseReferenceNumber,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       @SessionAttribute(name = CASE, required = false) ApplicationDetail ebsCase,
-      final Model model) {
+      final Model model,
+      HttpSession session) {
 
     String effectiveCaseRef = getEffectiveCaseReference(caseReferenceNumber);
     providerRequestFlow.setCaseReferenceNumber(effectiveCaseRef);
+
+    clearCaseIfInvalid(caseReferenceNumber, session, model);
 
     if (!UNRELATED_CASE_REFERENCE.equals(effectiveCaseRef)) {
       model.addAttribute("caseReference", effectiveCaseRef);
@@ -212,13 +217,15 @@ public class ProviderRequestsController {
       @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
       @SessionAttribute(name = CASE, required = false) ApplicationDetail ebsCase,
-      final Model model) {
+      final Model model,
+      HttpSession session) {
 
     if (caseReferenceNumber != null && !caseReferenceNumber.isBlank()) {
       providerRequestFlow.setCaseReferenceNumber(caseReferenceNumber);
     }
 
     String caseRef = providerRequestFlow.getCaseReferenceNumber();
+    clearCaseIfInvalid(caseRef, session, model);
     addCaseReferenceIfValid(model, caseRef);
 
     populateAddEvidenceModel(model);
@@ -342,13 +349,15 @@ public class ProviderRequestsController {
       @RequestParam(required = false) final String caseReferenceNumber,
       @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
-      final Model model) {
+      final Model model,
+      HttpSession session) {
 
     if (caseReferenceNumber != null && !caseReferenceNumber.isBlank()) {
       providerRequestFlow.setCaseReferenceNumber(caseReferenceNumber);
     }
 
     String caseRef = providerRequestFlow.getCaseReferenceNumber();
+    clearCaseIfInvalid(caseRef, session, model);
     addCaseReferenceIfValid(model, caseRef);
 
     model.addAttribute(EVIDENCE_UPLOAD_FORM_DATA, new EvidenceUploadFormData());
@@ -629,6 +638,15 @@ public class ProviderRequestsController {
   private void addCaseReferenceIfValid(Model model, String caseRef) {
     if (isValidCaseReference(caseRef)) {
       model.addAttribute("caseReference", caseRef);
+    }
+  }
+
+  private void clearCaseIfInvalid(String caseReferenceNumber, HttpSession session, Model model) {
+    if (!isValidCaseReference(caseReferenceNumber)) {
+      session.removeAttribute(CASE);
+      session.removeAttribute(ACTIVE_CASE);
+      model.asMap().remove(CASE);
+      model.asMap().remove(ACTIVE_CASE);
     }
   }
 }
