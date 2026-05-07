@@ -37,12 +37,14 @@ class ProviderRequestServiceTest {
     final ProviderRequestTypeFormData typeFormData = mock(ProviderRequestTypeFormData.class);
     final ProviderRequestDetailsFormData detailsFormData =
         mock(ProviderRequestDetailsFormData.class);
+    final String caseReferenceNumber = "123456789012";
     final UserDetail userDetail = mock(UserDetail.class);
     final ProviderRequestMappingContext mappingContext =
         ProviderRequestMappingContext.builder()
             .user(userDetail)
             .typeData(typeFormData)
             .detailsData(detailsFormData)
+            .caseReferenceNumber(caseReferenceNumber)
             .build();
 
     final String notificationId = "12345";
@@ -57,7 +59,8 @@ class ProviderRequestServiceTest {
         .thenReturn(Mono.just(providerRequestResponse));
 
     final String result =
-        providerRequestService.submitProviderRequest(typeFormData, detailsFormData, userDetail);
+        providerRequestService.submitProviderRequest(
+            typeFormData, detailsFormData, caseReferenceNumber, userDetail);
 
     assertEquals(notificationId, result);
     verify(mapper).toProviderRequestDetail(mappingContext);
@@ -71,6 +74,7 @@ class ProviderRequestServiceTest {
   void submitProviderRequest_ThrowsException() {
     final ProviderRequestTypeFormData typeFormData = new ProviderRequestTypeFormData();
     final ProviderRequestDetailsFormData detailsFormData = new ProviderRequestDetailsFormData();
+    final String caseReferenceNumber = "123456789012";
     final UserDetail userDetail = new UserDetail();
     userDetail.setLoginId("testLoginId");
     userDetail.setUserType("testUserType");
@@ -82,6 +86,7 @@ class ProviderRequestServiceTest {
             .user(userDetail)
             .typeData(typeFormData)
             .detailsData(detailsFormData)
+            .caseReferenceNumber(caseReferenceNumber)
             .build();
 
     when(mapper.toProviderRequestDetail(eq(mappingContext))).thenReturn(providerRequestDetail);
@@ -93,7 +98,7 @@ class ProviderRequestServiceTest {
             CaabApplicationException.class,
             () ->
                 providerRequestService.submitProviderRequest(
-                    typeFormData, detailsFormData, userDetail));
+                    typeFormData, detailsFormData, caseReferenceNumber, userDetail));
 
     assertEquals("Failed to submit provider request", exception.getMessage());
     verify(mapper).toProviderRequestDetail(any(ProviderRequestMappingContext.class));

@@ -29,6 +29,7 @@ import uk.gov.laa.ccms.caab.controller.client.EditClientContactDetailsController
 import uk.gov.laa.ccms.caab.controller.client.EditClientDeceasedDetailsController;
 import uk.gov.laa.ccms.caab.controller.client.EditClientEqualOpportunitiesMonitoringDetailsController;
 import uk.gov.laa.ccms.caab.controller.client.EditClientSummaryController;
+import uk.gov.laa.ccms.caab.controller.requests.ProviderRequestsController;
 import uk.gov.laa.ccms.caab.controller.submission.CaseSubmissionController;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
@@ -63,7 +64,8 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
       AmendCaseController.class,
       CounselSearchController.class,
       EditProceedingsAndCostsSectionController.class,
-      AllocateCostLimitController.class
+      AllocateCostLimitController.class,
+      ProviderRequestsController.class
     })
 public class ActiveCaseModelAdvice {
 

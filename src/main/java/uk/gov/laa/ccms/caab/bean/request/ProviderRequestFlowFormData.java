@@ -10,6 +10,8 @@ public class ProviderRequestFlowFormData {
 
   private ProviderRequestDetailsFormData requestDetailsFormData;
 
+  private String caseReferenceNumber;
+
   public ProviderRequestFlowFormData() {
     this.requestTypeFormData = new ProviderRequestTypeFormData();
     this.requestDetailsFormData = new ProviderRequestDetailsFormData();

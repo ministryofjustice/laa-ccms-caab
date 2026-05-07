@@ -23,4 +23,7 @@ public class ProviderRequestMappingContext {
 
   /** The form data containing additional details of the provider request. */
   ProviderRequestDetailsFormData detailsData;
+
+  /** The case reference number. */
+  String caseReferenceNumber;
 }
