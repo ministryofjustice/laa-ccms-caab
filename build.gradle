@@ -38,6 +38,15 @@ repositories {
     githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-spring-boot-common')
 }
 
+configurations.configureEach {
+    resolutionStrategy.eachDependency { details ->
+        if (details.requested.group == "io.netty") {
+            details.useVersion "4.2.13.Final"
+            details.because "Override vulnerable transitive Netty versions"
+        }
+    }
+}
+
 dependencies {
 
     /**
