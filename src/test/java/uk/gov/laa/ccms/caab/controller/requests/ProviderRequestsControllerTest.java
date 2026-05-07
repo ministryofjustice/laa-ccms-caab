@@ -34,6 +34,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.ui.ExtendedModelMap;
@@ -377,6 +378,8 @@ class ProviderRequestsControllerTest {
     when(providerRequestDocumentUploadValidator.getValidExtensions())
         .thenReturn(List.of("pdf", "docx"));
     when(providerRequestDocumentUploadValidator.getMaxFileSize()).thenReturn(maxFileSize);
+    when(providerRequestDetailsValidator.getValidExtensions()).thenReturn(List.of("xml"));
+    when(providerRequestDetailsValidator.getMaxFileSize()).thenReturn(maxFileSize);
 
     mockMvc
         .perform(
@@ -384,6 +387,11 @@ class ProviderRequestsControllerTest {
                 .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow))
         .andExpect(status().isOk())
         .andExpect(view().name("requests/provider-request-detail"))
+        .andExpect(model().attributeExists("documentTypes"))
+        .andExpect(model().attributeExists("maxFileSize"))
+        .andExpect(model().attributeExists("validExtensions"))
+        .andExpect(model().attributeExists("claimMaxFileSize"))
+        .andExpect(model().attributeExists("claimValidExtensions"))
         .andExpect(model().attributeExists("providerRequestDynamicForm"))
         .andExpect(model().attribute("providerRequestDynamicForm", dynamicForm))
         .andExpect(model().attributeExists("providerRequestDetails"))
