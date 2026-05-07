@@ -552,7 +552,6 @@ class ProviderRequestsControllerTest {
     when(providerRequestDetailsValidator.getValidExtensions()).thenReturn(List.of("xml"));
     when(providerRequestDetailsValidator.getMaxFileSize()).thenReturn(MAX_FILE_SIZE);
 
-
     mockMvc
         .perform(
             post("/provider-requests/details")
