@@ -1,4 +1,5 @@
 {
+  "priority": 10,
   "request": {
     "method": "GET",
     "urlPath": "/search/places/v1/postcode",
@@ -16,7 +17,9 @@
     "headers": {
       "Content-Type": "application/json"
     },
-    "transformers": ["response-template"],
+    "transformers": [
+      "response-template"
+    ],
     "jsonBody": {
       "header": {
         "uri": "https://api.os.uk/search/places/v1/postcode?postcode={{request.query.postcode}}",
