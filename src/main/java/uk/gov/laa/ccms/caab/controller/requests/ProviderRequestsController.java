@@ -599,6 +599,10 @@ public class ProviderRequestsController {
         "validExtensions",
         getCommaDelimitedString(providerRequestDocumentUploadValidator.getValidExtensions()));
     model.addAttribute("maxFileSize", providerRequestDocumentUploadValidator.getMaxFileSize());
+    model.addAttribute(
+        "claimValidExtensions",
+        getCommaDelimitedString(providerRequestDetailsValidator.getValidExtensions()));
+    model.addAttribute("claimMaxFileSize", providerRequestDetailsValidator.getMaxFileSize());
   }
 
   /**
