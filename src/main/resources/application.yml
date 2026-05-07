@@ -124,7 +124,8 @@ laa:
         valid-extensions: >
           XML
         valid-mime-types: >
-          application/xml
+          application/xml,
+          text/xml
       opa:
         security:
           password:  ${OPA_SECURITY_PASSWORD}
