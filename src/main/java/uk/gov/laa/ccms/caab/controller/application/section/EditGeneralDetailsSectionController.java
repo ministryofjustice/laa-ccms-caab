@@ -118,8 +118,10 @@ public class EditGeneralDetailsSectionController {
 
     if (addressDetails == null) {
       if (caseContext.isAmendment()) {
+        final ApplicationDetail amendmentCase = requireEbsCase(ebsCase);
         addressDetails =
-            applicationService.getCorrespondenceAddressFormData(ebsCase.getCorrespondenceAddress());
+            applicationService.getCorrespondenceAddressFormData(
+                amendmentCase.getCorrespondenceAddress());
       } else {
         addressDetails = applicationService.getCorrespondenceAddressFormData(applicationId);
       }
@@ -151,7 +153,7 @@ public class EditGeneralDetailsSectionController {
   public String updateCorrespondenceDetails(
       @PathVariable final CaseContext caseContext,
       @RequestParam(required = false) final String action,
-      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(CASE) @Nullable final ApplicationDetail ebsCase,
       @SessionAttribute(APPLICATION_ID) @Nullable final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @Validated @ModelAttribute("addressDetails") final AddressFormData addressDetails,
@@ -198,13 +200,14 @@ public class EditGeneralDetailsSectionController {
 
     } else {
       if (caseContext.isAmendment()) {
+        final ApplicationDetail amendmentCase = requireEbsCase(ebsCase);
         if (!UserRoleUtil.hasRole(user, UserRole.SUBMIT_AMENDMENT)) {
           throw new CaabApplicationException("User not authorized to submit amendments");
         }
         // Submit the amendment, and redirect to polling endpoint
         String transactionId =
             amendmentService.submitQuickAmendmentCorrespondenceAddress(
-                addressDetails, ebsCase.getCaseReferenceNumber(), user);
+                addressDetails, amendmentCase.getCaseReferenceNumber(), user);
         session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
 
         session.removeAttribute("addressDetails");
@@ -215,6 +218,11 @@ public class EditGeneralDetailsSectionController {
 
       return "redirect:/application/sections/linked-cases";
     }
+  }
+
+  private ApplicationDetail requireEbsCase(@Nullable final ApplicationDetail ebsCase) {
+    return Optional.ofNullable(ebsCase)
+        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve EBS case"));
   }
 
   private void populateCorrespondenceAddressDropdowns(final Model model) {
