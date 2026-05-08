@@ -91,6 +91,8 @@ class ProviderRequestsControllerTest {
 
   @InjectMocks private ProviderRequestsController providerRequestsController;
 
+  private static final String MAX_FILE_SIZE = String.valueOf(5L * 1024 * 1024);
+
   @BeforeEach
   public void setup() {
     mockMvc = standaloneSetup(providerRequestsController).build();
@@ -353,7 +355,6 @@ class ProviderRequestsControllerTest {
     final ProviderRequestDetailsFormData providerRequestDetailsForm =
         new ProviderRequestDetailsFormData();
     final ProviderRequestTypeFormData providerRequestType = new ProviderRequestTypeFormData();
-    final String maxFileSize = String.valueOf(5L * 1024 * 1024);
     providerRequestType.setProviderRequestType("testType");
     providerRequestFlow.setRequestTypeFormData(providerRequestType);
     providerRequestFlow.setRequestDetailsFormData(providerRequestDetailsForm);
@@ -376,9 +377,9 @@ class ProviderRequestsControllerTest {
         .thenReturn(Mono.just(lookupDetail));
     when(providerRequestDocumentUploadValidator.getValidExtensions())
         .thenReturn(List.of("pdf", "docx"));
-    when(providerRequestDocumentUploadValidator.getMaxFileSize()).thenReturn(maxFileSize);
+    when(providerRequestDocumentUploadValidator.getMaxFileSize()).thenReturn(MAX_FILE_SIZE);
     when(providerRequestDetailsValidator.getValidExtensions()).thenReturn(List.of("xml"));
-    when(providerRequestDetailsValidator.getMaxFileSize()).thenReturn(maxFileSize);
+    when(providerRequestDetailsValidator.getMaxFileSize()).thenReturn(MAX_FILE_SIZE);
 
     mockMvc
         .perform(
@@ -535,10 +536,21 @@ class ProviderRequestsControllerTest {
     final ProviderRequestTypeLookupDetail lookupDetail = new ProviderRequestTypeLookupDetail();
     lookupDetail.setContent(List.of(dynamicForm));
 
+    final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
+    commonLookupDetail.setContent(
+        List.of(new CommonLookupValueDetail().code("DOC1").description("Document Type 1")));
+
     when(lookupService.getProviderRequestTypes(null, "testType"))
         .thenReturn(Mono.just(lookupDetail));
     when(evidenceService.getEvidenceDocumentsForApplicationOrOutcome(any(), eq(CcmsModule.REQUEST)))
         .thenReturn(Mono.just(new EvidenceDocumentDetails()));
+    when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+        .thenReturn(Mono.just(commonLookupDetail));
+    when(providerRequestDocumentUploadValidator.getValidExtensions())
+        .thenReturn(List.of("pdf", "docx"));
+    when(providerRequestDocumentUploadValidator.getMaxFileSize()).thenReturn(MAX_FILE_SIZE);
+    when(providerRequestDetailsValidator.getValidExtensions()).thenReturn(List.of("xml"));
+    when(providerRequestDetailsValidator.getMaxFileSize()).thenReturn(MAX_FILE_SIZE);
 
     mockMvc
         .perform(
@@ -549,6 +561,13 @@ class ProviderRequestsControllerTest {
                 .param("action", "submit"))
         .andExpect(status().isOk())
         .andExpect(view().name("requests/provider-request-detail"))
+        .andExpect(model().attributeExists("documentTypes"))
+        .andExpect(model().attributeExists("maxFileSize"))
+        .andExpect(model().attributeExists("validExtensions"))
+        .andExpect(model().attributeExists("claimMaxFileSize"))
+        .andExpect(model().attributeExists("claimValidExtensions"))
+        .andExpect(model().attributeExists("providerRequestDynamicForm"))
+        .andExpect(model().attribute("providerRequestDynamicForm", dynamicForm))
         .andExpect(
             model().attributeHasFieldErrors("providerRequestDetails", "additionalInformation"))
         .andExpect(model().attributeExists("providerRequestDetails"))
@@ -679,7 +698,6 @@ class ProviderRequestsControllerTest {
   void testPostDocuments_validationErrors() throws Exception {
     final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
     final EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
-    final String maxFileSize = String.valueOf(5L * 1024 * 1024);
 
     // Mock providerRequestDocumentUploadValidator behavior
     doAnswer(
@@ -699,7 +717,7 @@ class ProviderRequestsControllerTest {
 
     when(providerRequestDocumentUploadValidator.getValidExtensions())
         .thenReturn(List.of("pdf", "docx"));
-    when(providerRequestDocumentUploadValidator.getMaxFileSize()).thenReturn(maxFileSize);
+    when(providerRequestDocumentUploadValidator.getMaxFileSize()).thenReturn(MAX_FILE_SIZE);
 
     mockMvc
         .perform(
@@ -718,7 +736,7 @@ class ProviderRequestsControllerTest {
                     List.of(
                         new CommonLookupValueDetail().code("DOC1").description("Document Type 1"))))
         .andExpect(model().attribute("validExtensions", "pdf or docx"))
-        .andExpect(model().attribute("maxFileSize", maxFileSize));
+        .andExpect(model().attribute("maxFileSize", MAX_FILE_SIZE));
 
     // Verify interactions with mocked dependencies
     verify(providerRequestDocumentUploadValidator).validate(eq(evidenceUploadFormData), any());

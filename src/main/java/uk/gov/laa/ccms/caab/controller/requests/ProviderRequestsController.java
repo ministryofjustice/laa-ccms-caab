@@ -278,6 +278,7 @@ public class ProviderRequestsController {
       providerRequestDetailsValidator.validate(providerRequestDetailsForm, bindingResult);
 
       if (bindingResult.hasErrors()) {
+        populateAddEvidenceModel(model);
         return providerRequestsDetails(providerRequestFlow, providerRequestDetailsForm, model);
       }
 
