@@ -129,7 +129,7 @@ public class ClientSubmissionsInProgressController {
       }
       return "redirect:/application/sections";
     } else {
-      return "redirect:/amendments/summary";
+      return "redirect:/case/overview";
     }
   }
 
