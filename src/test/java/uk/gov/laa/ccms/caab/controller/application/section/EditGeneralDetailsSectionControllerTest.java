@@ -275,6 +275,33 @@ class EditGeneralDetailsSectionControllerTest {
           .submitQuickAmendmentCorrespondenceAddress(any(), any(), any());
     }
 
+    @Test
+    @DisplayName("Should throw exception when amendment EBS case is missing")
+    void shouldThrowExceptionWhenAmendmentEbsCaseIsMissing() throws Exception {
+      final String applicationId = "123";
+      final UserDetail user = new UserDetail();
+      user.setUserType("EXTERNAL");
+      user.setFunctions(Collections.singletonList(UserRole.SUBMIT_AMENDMENT.getCode()));
+
+      final AddressFormData addressDetails = new AddressFormData();
+
+      mockMvc
+          .perform(
+              post("/amendments/sections/correspondence-address")
+                  .param("action", "update")
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(USER_DETAILS, user)
+                  .flashAttr("addressDetails", addressDetails))
+          .andDo(print())
+          .andExpect(view().name("error"))
+          .andExpect(model().attribute("error", "Failed to retrieve EBS case"));
+
+      verify(amendmentService, never())
+          .submitQuickAmendmentCorrespondenceAddress(any(), any(), any());
+      verify(applicationService, never())
+          .updateCorrespondenceAddress(applicationId, addressDetails, user);
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"application", "amendments"})
     @DisplayName("Should redirect to find address screen")
