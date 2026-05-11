@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -134,7 +135,8 @@ class CaseSubmissionControllerTest {
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
                 .sessionAttr(USER_DETAILS, userDetail))
         .andExpect(status().isOk())
-        .andExpect(view().name("submissions/submissionInProgress"));
+        .andExpect(view().name("submissions/submissionInProgress"))
+        .andExpect(model().attribute("caseContext", CaseContext.APPLICATION));
 
     verify(applicationService, times(1)).getCaseStatus(anyString());
     verify(session, times(0)).removeAttribute(SUBMISSION_TRANSACTION_ID);
@@ -152,7 +154,8 @@ class CaseSubmissionControllerTest {
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
                 .sessionAttr(USER_DETAILS, userDetail))
         .andExpect(status().isOk())
-        .andExpect(view().name("submissions/submissionInProgress"));
+        .andExpect(view().name("submissions/submissionInProgress"))
+        .andExpect(model().attribute("caseContext", CaseContext.AMENDMENTS));
 
     verify(applicationService, times(1)).getCaseStatus(anyString());
     verify(session, times(0)).removeAttribute(SUBMISSION_TRANSACTION_ID);
@@ -189,10 +192,11 @@ class CaseSubmissionControllerTest {
     when(submissionConstants.getMaxPollCount()).thenReturn(5);
 
     final String view =
-        caseSubmissionController.viewIncludingPollCount(session, CaseContext.APPLICATION);
+        caseSubmissionController.viewIncludingPollCount(session, CaseContext.APPLICATION, model);
 
     assertEquals("submissions/submissionInProgress", view);
     verify(session, times(1)).setAttribute(SUBMISSION_POLL_COUNT, 2);
+    verify(model, times(1)).addAttribute("caseContext", CaseContext.APPLICATION);
   }
 
   @Test
@@ -202,7 +206,7 @@ class CaseSubmissionControllerTest {
     when(submissionConstants.getMaxPollCount()).thenReturn(5);
 
     final String view =
-        caseSubmissionController.viewIncludingPollCount(session, CaseContext.APPLICATION);
+        caseSubmissionController.viewIncludingPollCount(session, CaseContext.APPLICATION, model);
 
     assertEquals("redirect:/application/%s/failed".formatted(SUBMISSION_SUBMIT_CASE), view);
   }
@@ -213,10 +217,11 @@ class CaseSubmissionControllerTest {
     when(session.getAttribute(SUBMISSION_POLL_COUNT)).thenReturn(null);
 
     final String view =
-        caseSubmissionController.viewIncludingPollCount(session, CaseContext.APPLICATION);
+        caseSubmissionController.viewIncludingPollCount(session, CaseContext.APPLICATION, model);
 
     assertEquals("submissions/submissionInProgress", view);
     verify(session, times(1)).setAttribute(SUBMISSION_POLL_COUNT, 1);
+    verify(model, times(1)).addAttribute("caseContext", CaseContext.APPLICATION);
   }
 
   @Test
