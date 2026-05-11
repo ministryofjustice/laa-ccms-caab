@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -92,7 +93,10 @@ public class ClientSubmissionsInProgressControllerTest {
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
                 .sessionAttr(USER_DETAILS, user))
         .andExpect(status().isOk())
-        .andExpect(view().name("submissions/submissionInProgress"));
+        .andExpect(view().name("submissions/submissionInProgress"))
+        .andExpect(
+            model()
+                .attribute("caseContext", uk.gov.laa.ccms.caab.constants.CaseContext.APPLICATION));
   }
 
   @Test
@@ -116,7 +120,10 @@ public class ClientSubmissionsInProgressControllerTest {
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
                 .sessionAttr(USER_DETAILS, user)
                 .sessionAttr(SUBMISSION_POLL_COUNT, submissionPollCount))
-        .andExpect(view().name("submissions/submissionInProgress"));
+        .andExpect(view().name("submissions/submissionInProgress"))
+        .andExpect(
+            model()
+                .attribute("caseContext", uk.gov.laa.ccms.caab.constants.CaseContext.APPLICATION));
   }
 
   @Test
@@ -235,7 +242,10 @@ public class ClientSubmissionsInProgressControllerTest {
                 .sessionAttr(USER_DETAILS, user)
                 .sessionAttr(APPLICATION_CLIENT_NAMES, baseClient))
         .andExpect(status().isOk())
-        .andExpect(view().name("submissions/submissionInProgress"));
+        .andExpect(view().name("submissions/submissionInProgress"))
+        .andExpect(
+            model()
+                .attribute("caseContext", uk.gov.laa.ccms.caab.constants.CaseContext.APPLICATION));
   }
 
   @Test

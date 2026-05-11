@@ -51,6 +51,7 @@ public class ClientSubmissionsInProgressController {
       final Model model) {
 
     model.addAttribute("submissionType", SUBMISSION_CREATE_CLIENT);
+    model.addAttribute("caseContext", CaseContext.APPLICATION);
 
     final TransactionStatus clientStatus = clientService.getClientStatus(transactionId).block();
 
@@ -84,6 +85,7 @@ public class ClientSubmissionsInProgressController {
       final Model model) {
 
     model.addAttribute("submissionType", SUBMISSION_UPDATE_CLIENT);
+    model.addAttribute("caseContext", caseContext);
 
     final TransactionStatus clientStatus = clientService.getClientStatus(transactionId).block();
 

@@ -66,7 +66,7 @@ public class CaseSubmissionController {
           .formatted(caseContext.getPathValue(), SUBMISSION_SUBMIT_CASE);
     }
 
-    return viewIncludingPollCount(session, caseContext);
+    return viewIncludingPollCount(session, caseContext, model);
   }
 
   /**
@@ -95,11 +95,12 @@ public class CaseSubmissionController {
    * the maximum, redirects to the failed submission page.
    *
    * @param session the HTTP session containing the submission poll count
+   * @param model the model to be updated with submission details
    * @return the view name or a redirect to the failed submission page if the max poll count is
    *     exceeded
    */
   protected String viewIncludingPollCount(
-      final HttpSession session, final CaseContext caseContext) {
+      final HttpSession session, final CaseContext caseContext, final Model model) {
     int submissionPollCount = 0;
 
     if (session.getAttribute(SUBMISSION_POLL_COUNT) != null) {
@@ -111,6 +112,7 @@ public class CaseSubmissionController {
     }
     submissionPollCount += 1;
     session.setAttribute(SUBMISSION_POLL_COUNT, submissionPollCount);
+    model.addAttribute("caseContext", caseContext);
     return "submissions/submissionInProgress";
   }
 }
