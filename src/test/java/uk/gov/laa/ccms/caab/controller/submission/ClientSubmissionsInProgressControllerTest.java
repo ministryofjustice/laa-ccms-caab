@@ -269,7 +269,7 @@ public class ClientSubmissionsInProgressControllerTest {
     mockMvc
         .perform(post("/amendments/client-update/failed"))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/amendments/summary"));
+        .andExpect(redirectedUrl("/case/overview"));
   }
 
   @Test
