@@ -1,0 +1,11 @@
+#!/bin/sh
+# scripts/pre-commit
+
+echo "Running Spotless Apply..."
+
+# Run spotlessApply
+./gradlew spotlessApply
+
+# Re-add files that were changed by Spotless
+# This ensures that formatting changes are included in the current commit
+git add $(git diff --name-only --cached)
