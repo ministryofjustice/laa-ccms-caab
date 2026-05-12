@@ -104,7 +104,7 @@ dependencies {
 	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.0.2')
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
-	implementation 'software.amazon.awssdk:sts:2.44.2'
+	implementation 'software.amazon.awssdk:sts:2.44.4'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
