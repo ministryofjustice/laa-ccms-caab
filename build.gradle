@@ -181,3 +181,19 @@ spotless {
         googleJavaFormat('1.34.1')
     }
 }
+
+/**
+ * Automatically installs the git pre-commit hook to run spotlessApply.
+ */
+tasks.register('installGitHooks', Copy) {
+    from "scripts/pre-commit"
+    into "${rootProject.rootDir}/.git/hooks"
+
+    // Gradle 9.x replacement for fileMode
+    filePermissions {
+        unix(0755)
+    }
+}
+
+// Linked to compileJava so it installs on the first build
+compileJava.dependsOn installGitHooks
