@@ -39,10 +39,10 @@ public class SecurityConfiguration {
   @Value("${csp.report-enabled:true}")
   private boolean cspReportEnabled;
 
-  @Value("${csp.report-only:true}")
+  @Value("${csp.report-only:false}")
   private boolean cspReportOnly;
 
-  @Value("${csp.upgrade-insecure-requests:false}")
+  @Value("${csp.upgrade-insecure-requests:true}")
   private boolean cspUpgradeInsecureRequests;
 
   @Value("${laa.ccms.oracle-web-determination-server.url:}")
