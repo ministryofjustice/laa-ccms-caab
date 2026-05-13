@@ -1,10 +1,10 @@
 <div th:fragment="phase-banner" class="govuk-phase-banner"
-     th:style="${activeCase} ? 'background: #dee0e2;'" xmlns:sec="http://www.w3.org/1999/xhtml">
+     th:classappend="${activeCase} ? 'ccms-phase-banner-active'" xmlns:sec="http://www.w3.org/1999/xhtml">
   <div class="govuk-width-container">
 
     <div class="govuk-grid-row">
       <div th:if="${activeCase}" class="govuk-grid-column-one-half">
-        <p class="govuk-body govuk-!-font-size-16" style="margin-bottom: 0; white-space: nowrap">
+        <p class="govuk-body govuk-!-font-size-16 ccms-nowrap-no-margin">
           <img class="govuk-!-padding-left-2 govuk-!-padding-right-2"
                th:src="@{/assets/ccms/case-open.png}" alt="case"/>
           <span class="govuk-!-padding-right-2" th:text="${activeCase.client}"></span>
@@ -14,8 +14,7 @@
         </p>
       </div>
       <div th:class="${activeCase} ? 'govuk-grid-column-one-half' : 'govuk-grid-column-full'">
-        <p class="govuk-body govuk-!-font-size-16"
-           style="margin-bottom: 0; white-space: nowrap">
+        <p class="govuk-body govuk-!-font-size-16 ccms-nowrap-no-margin">
           <span class="govuk-!-padding-left-2" th:text="|#{site.phase.loggedInAs}:|"/>
           <span class="govuk-!-font-weight-bold govuk-!-padding-right-2"
                 sec:authentication="name"/>

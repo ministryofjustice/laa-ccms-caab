@@ -34,6 +34,7 @@ class PuiMetricServiceTest {
         .register(puiMetricService.getApplicationsSubmittedCounter());
     verify(prometheusRegistry, times(1))
         .register(puiMetricService.getApplicationsAbandonedCounter());
+    verify(prometheusRegistry, times(1)).register(puiMetricService.getCspViolationReportsCounter());
   }
 
   @Test
@@ -112,5 +113,14 @@ class PuiMetricServiceTest {
     puiMetricService.incrementAbandonedCount("123");
     // Then
     assertThat(puiMetricService.getApplicationsAbandonedCounter().get()).isEqualTo(2);
+  }
+
+  @Test
+  @DisplayName("Should increment CSP violation report counter")
+  void shouldIncrementCspViolationReportCounter() {
+    // When
+    puiMetricService.incrementCspViolationReportsCount();
+    // Then
+    assertThat(puiMetricService.getCspViolationReportsCounter().get()).isEqualTo(1);
   }
 }

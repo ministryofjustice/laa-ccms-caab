@@ -35,7 +35,9 @@ public class SamlPrincipalControllerAdvice {
   public void addSamlPrincipalToModel(
       Authentication authentication, Model model, HttpSession session, HttpServletRequest request) {
 
-    if (authentication instanceof Saml2AssertionAuthentication saml2Authentication) {
+    if (authentication instanceof Saml2AssertionAuthentication saml2Authentication
+        && !requestIsForController(
+            request, uk.gov.laa.ccms.caab.controller.CspReportController.class)) {
 
       String loginId = saml2Authentication.getName();
 
