@@ -43,7 +43,7 @@
     <input type="hidden" id="type" name="type" th:value="Organisation"/>
     <div th:replace="~{partials/forms :: textInput('organisationName', 'Organisation name', 'govuk-input--width-20')}"></div>
     <div th:replace="~{partials/forms :: dropdownWithDisplayValue('organisationType', 'Organisation type', ${organisationTypes}, 'code', 'description')}"></div>
-    <div th:replace="~{partials/forms :: radios('currentlyTrading', 'Currently trading (optional)', ${currentlyTradingOptions}, 'key', 'value', false)}"></div>
+    <div th:replace="~{partials/forms :: radios('currentlyTrading', 'Currently trading (optional)', ${currentlyTradingOptions}, 'first', 'second', false)}"></div>
     <div th:replace="~{partials/forms :: dropdown('relationshipToCase', 'Relationship to case', ${relationshipsToCase}, 'code', 'description', false)}"></div>
     <div th:replace="~{partials/forms :: dropdown('relationshipToClient', 'Relationship to client', ${relationshipsToClient}, 'code', 'description', false)}"></div>
     <div th:replace="~{partials/forms :: textInput('contactNameRole', 'Contact name and role (optional)', 'govuk-input--width-20')}"></div>
@@ -85,7 +85,7 @@
     <div th:replace="~{partials/forms :: textInput('telephoneMobile', 'Telephone - mobile (optional)', 'govuk-input--width-20')}"></div>
     <div th:replace="~{partials/forms :: textInput('faxNumber', 'Fax (optional)', 'govuk-input--width-20')}"></div>
     <div th:replace="~{partials/forms :: textInput('emailAddress', 'Email address (optional)', 'govuk-input--width-20')}"></div>
-    <div th:replace="~{partials/forms :: radios('legalAided', 'Party is legal aided? (optional)', ${legalAidedOptions}, 'key', 'value', false)}"></div>
+    <div th:replace="~{partials/forms :: radios('legalAided', 'Party is legal aided? (optional)', ${legalAidedOptions}, 'first', 'second', false)}"></div>
     <div th:replace="~{partials/forms :: textInput('certificateNumber', 'Certificate number (optional)', 'govuk-input--width-20')}"></div>
 
     <govuk:details classes="govuk-!-margin-top-2"
