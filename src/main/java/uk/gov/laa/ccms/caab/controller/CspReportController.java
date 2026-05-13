@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,6 +14,7 @@ import uk.gov.laa.ccms.caab.model.csp.CspReport;
 /** Receives browser Content Security Policy violation reports. */
 @RestController
 @Slf4j
+@ConditionalOnProperty(name = "csp.report-enabled", havingValue = "true", matchIfMissing = true)
 public class CspReportController {
 
   private final PuiMetricService puiMetricService;

@@ -29,6 +29,7 @@ public class CspNonceFilter extends OncePerRequestFilter {
   private static final String DEFAULT_OPA_ORIGIN = "https://opa.oraclecloud.com";
 
   private final SecureRandom secureRandom = new SecureRandom();
+  private final boolean reportEnabled;
   private final boolean reportOnly;
   private final boolean upgradeInsecureRequests;
   private final String opaSources;
@@ -36,11 +37,14 @@ public class CspNonceFilter extends OncePerRequestFilter {
   /**
    * Creates a CSP nonce filter with the configured rollout mode and external OPA source.
    *
+   * @param reportEnabled whether the browser should send CSP reports
    * @param reportOnly whether the policy should be sent as report-only instead of enforced
    * @param upgradeInsecureRequests whether to add the upgrade-insecure-requests directive
    * @param owdUrl configured Oracle Web Determinations URL used to derive the OPA origin
    */
-  public CspNonceFilter(boolean reportOnly, boolean upgradeInsecureRequests, String owdUrl) {
+  public CspNonceFilter(
+      boolean reportEnabled, boolean reportOnly, boolean upgradeInsecureRequests, String owdUrl) {
+    this.reportEnabled = reportEnabled;
     this.reportOnly = reportOnly;
     this.upgradeInsecureRequests = upgradeInsecureRequests;
     this.opaSources = buildOpaSources(owdUrl);
@@ -89,10 +93,8 @@ public class CspNonceFilter extends OncePerRequestFilter {
         + (upgradeInsecureRequests ? "upgrade-insecure-requests; " : "")
         + "object-src 'none'; "
         + "base-uri 'self'; "
-        + "form-action 'self'; "
-        + "report-uri "
-        + CSP_REPORT_URI
-        + ";";
+        + "form-action 'self';"
+        + (reportEnabled ? " report-uri " + CSP_REPORT_URI + ";" : "");
   }
 
   private String buildOpaSources(String owdUrl) {

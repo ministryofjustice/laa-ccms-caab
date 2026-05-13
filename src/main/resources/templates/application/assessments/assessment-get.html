@@ -15,15 +15,15 @@
         rel="stylesheet"/>
   <link th:href="@{/webjars/govuk-frontend/dist/govuk/govuk-frontend.min.css}" rel="stylesheet">
   <link th:href="@{/ccms/assessment-get.css}" rel="stylesheet">
-  <script th:src="@{/ccms/ccms.js}" th:attr="nonce=${cspNonce}"></script>
+  <script th:src="@{/ccms/ccms.js}" th:nonce="${cspNonce}"></script>
   <link th:href="${interviewsCSS}" rel="stylesheet" type="text/css"/>
   <link th:href="${fontsCSS}" rel="stylesheet" type="text/css"/>
-  <script th:src="${interviewsJS}" th:attr="nonce=${cspNonce}"></script>
+  <script th:src="${interviewsJS}" th:nonce="${cspNonce}"></script>
   <title th:text="${'LAA CCMS - ' + frameTitle}">LAA CCMS - Assessment</title>
 </head>
 
 <body class="govuk-template__body">
-<script th:attr="nonce=${cspNonce}">
+<script th:nonce="${cspNonce}">
     document.body.className += ' js-enabled' + ('noModule' in HTMLScriptElement.prototype ? ' govuk-frontend-supported' : '');</script>
 
 <a href="#main-content" class="govuk-skip-link" data-module="govuk-skip-link">Skip to main content</a>
@@ -39,7 +39,7 @@
   </th:block>
 
 
-    <main class="govuk-main-wrapper ccms-padding-top-0" id="main-content" role="main">
+    <main class="govuk-main-wrapper govuk-!-padding-top-0" id="main-content" role="main">
       <div class="formInputArea">
 
       <th:block th:if="${assessmentType == 'MEANS' || assessmentType == 'MERITS'}">
@@ -58,7 +58,7 @@
 <footer th:replace="~{partials/footer :: footer}"></footer>
 
 <!--OPA SCRIPT-->
-<script th:inline="javascript" th:attr="nonce=${cspNonce}">
+<script th:inline="javascript" th:nonce="${cspNonce}">
     var returnUrl = [[${submitReturnUrl}]];
     var url = [[${submitReturnUrl}]];
     var el = document.getElementById("interview-wrapper");
@@ -105,12 +105,12 @@
     }
 </script>
 
-<script th:src="@{/webjars/govuk-frontend/dist/govuk/all.bundle.js}" th:attr="nonce=${cspNonce}"></script>
-<script th:attr="nonce=${cspNonce}">
+<script th:src="@{/webjars/govuk-frontend/dist/govuk/all.bundle.js}" th:nonce="${cspNonce}"></script>
+<script th:nonce="${cspNonce}">
     window.GOVUKFrontend.initAll();
 </script>
-<script th:src="@{/webjars/ministryofjustice__frontend/moj/all.bundle.js}" th:attr="nonce=${cspNonce}"></script>
-<script th:attr="nonce=${cspNonce}">
+<script th:src="@{/webjars/ministryofjustice__frontend/moj/all.bundle.js}" th:nonce="${cspNonce}"></script>
+<script th:nonce="${cspNonce}">
     window.MOJFrontend.initAll();
 </script>
 </body>

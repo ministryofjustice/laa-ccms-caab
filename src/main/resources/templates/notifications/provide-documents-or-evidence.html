@@ -169,7 +169,7 @@
 
 </body>
 </html>
-<script th:attr="nonce=${cspNonce}">
+<script th:nonce="${cspNonce}">
   (function() {
     var links = document.getElementsByClassName('ccms-download-link')
     for (var i = 0; i < links.length; i++) {

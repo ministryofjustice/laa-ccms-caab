@@ -17,7 +17,7 @@
   </head>
 
   <body class="govuk-template__body">
-  <script th:attr="nonce=${cspNonce}">
+  <script th:nonce="${cspNonce}">
       document.body.className += ' js-enabled' + ('noModule' in HTMLScriptElement.prototype ? ' govuk-frontend-supported' : '');
   </script>
 
@@ -39,8 +39,8 @@
       </main>
     </div>
   <footer th:replace="~{partials/footer :: footer}"></footer>
-  <script th:src="@{/webjars/govuk-frontend/dist/govuk/all.bundle.js}" th:attr="nonce=${cspNonce}"></script>
-  <script th:attr="nonce=${cspNonce}">
+  <script th:src="@{/webjars/govuk-frontend/dist/govuk/all.bundle.js}" th:nonce="${cspNonce}"></script>
+  <script th:nonce="${cspNonce}">
     window.GOVUKFrontend.initAll();
   </script>
   </body>

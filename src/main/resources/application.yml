@@ -15,8 +15,9 @@ portal:
   logoutUrl: ${PORTAL_URL}/oam/server/logout?end_url=${PORTAL_URL}/LAALogin/pages/Logout.jsp
 
 csp:
-  report-only: ${CSP_REPORT_ONLY:true}
-  upgrade-insecure-requests: ${CSP_UPGRADE_INSECURE_REQUESTS:false}
+  report-enabled: ${CSP_REPORT_ENABLED:true}
+  report-only: ${CSP_REPORT_ONLY:false}
+  upgrade-insecure-requests: ${CSP_UPGRADE_INSECURE_REQUESTS:true}
 
 spring:
   application:

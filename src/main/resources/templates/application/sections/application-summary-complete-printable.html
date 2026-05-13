@@ -15,7 +15,7 @@
 </head>
 
 <body class="govuk-template__body">
-<script th:attr="nonce=${cspNonce}">
+<script th:nonce="${cspNonce}">
     document.body.className = ((document.body.className) ? document.body.className + ' js-enabled' : 'js-enabled');
 </script>
 <div class="govuk-width-container">
@@ -222,11 +222,11 @@
     </div>
   </main>
 </div>
-<script th:src="@{/webjars/govuk-frontend/dist/govuk/all.bundle.js}" th:attr="nonce=${cspNonce}"></script>
-<script th:attr="nonce=${cspNonce}">
+<script th:src="@{/webjars/govuk-frontend/dist/govuk/all.bundle.js}" th:nonce="${cspNonce}"></script>
+<script th:nonce="${cspNonce}">
     window.GOVUKFrontend.initAll();
 </script>
-<script th:attr="nonce=${cspNonce}">
+<script th:nonce="${cspNonce}">
     window.addEventListener('load', function() {
         window.print();
     });

@@ -36,6 +36,9 @@ public class SecurityConfiguration {
   @Value("${portal.logoutUrl}")
   private String logoutUrl;
 
+  @Value("${csp.report-enabled:true}")
+  private boolean cspReportEnabled;
+
   @Value("${csp.report-only:true}")
   private boolean cspReportOnly;
 
@@ -118,7 +121,7 @@ public class SecurityConfiguration {
                     .authenticated())
         .csrf(csrf -> csrf.ignoringRequestMatchers("/csp/report"))
         .addFilterBefore(
-            new CspNonceFilter(cspReportOnly, cspUpgradeInsecureRequests, owdUrl),
+            new CspNonceFilter(cspReportEnabled, cspReportOnly, cspUpgradeInsecureRequests, owdUrl),
             BasicAuthenticationFilter.class)
         .sessionManagement(
             sessionManagement ->

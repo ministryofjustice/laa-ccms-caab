@@ -10,7 +10,8 @@ class CspNonceFilterTest {
 
   @Test
   void shouldSetReportOnlyHeaderWithMatchingNonce() throws Exception {
-    CspNonceFilter filter = new CspNonceFilter(true, false, "https://opa.oraclecloud.com/opa");
+    CspNonceFilter filter =
+        new CspNonceFilter(true, true, false, "https://opa.oraclecloud.com/opa");
     MockHttpServletRequest request = new MockHttpServletRequest();
     MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -37,7 +38,8 @@ class CspNonceFilterTest {
 
   @Test
   void shouldSetEnforcementHeaderWhenReportOnlyDisabled() throws Exception {
-    CspNonceFilter filter = new CspNonceFilter(false, false, "https://opa.oraclecloud.com/opa");
+    CspNonceFilter filter =
+        new CspNonceFilter(true, false, false, "https://opa.oraclecloud.com/opa");
     MockHttpServletRequest request = new MockHttpServletRequest();
     MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -49,7 +51,8 @@ class CspNonceFilterTest {
 
   @Test
   void shouldGenerateNewNonceForEachRequest() throws Exception {
-    CspNonceFilter filter = new CspNonceFilter(true, false, "https://opa.oraclecloud.com/opa");
+    CspNonceFilter filter =
+        new CspNonceFilter(true, true, false, "https://opa.oraclecloud.com/opa");
     MockHttpServletRequest firstRequest = new MockHttpServletRequest();
     MockHttpServletRequest secondRequest = new MockHttpServletRequest();
 
@@ -63,7 +66,7 @@ class CspNonceFilterTest {
   @Test
   void shouldIncludeConfiguredOpaOriginWhenDifferentFromDefault() throws Exception {
     CspNonceFilter filter =
-        new CspNonceFilter(true, false, "http://localhost:8082/opa/web-determinations");
+        new CspNonceFilter(true, true, false, "http://localhost:8082/opa/web-determinations");
     MockHttpServletRequest request = new MockHttpServletRequest();
     MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -76,7 +79,7 @@ class CspNonceFilterTest {
 
   @Test
   void shouldIncludeUpgradeInsecureRequestsWhenEnabled() throws Exception {
-    CspNonceFilter filter = new CspNonceFilter(true, true, "https://opa.oraclecloud.com/opa");
+    CspNonceFilter filter = new CspNonceFilter(true, true, true, "https://opa.oraclecloud.com/opa");
     MockHttpServletRequest request = new MockHttpServletRequest();
     MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -84,5 +87,18 @@ class CspNonceFilterTest {
 
     assertThat(response.getHeader("Content-Security-Policy-Report-Only"))
         .contains("upgrade-insecure-requests");
+  }
+
+  @Test
+  void shouldNotIncludeReportUriWhenDisabled() throws Exception {
+    CspNonceFilter filter =
+        new CspNonceFilter(false, true, false, "https://opa.oraclecloud.com/opa");
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    filter.doFilter(request, response, (servletRequest, servletResponse) -> {});
+
+    assertThat(response.getHeader("Content-Security-Policy-Report-Only"))
+        .doesNotContain("report-uri");
   }
 }
