@@ -552,6 +552,8 @@ public class ApplicationSectionsBuilder {
       final List<CommonLookupValueDetail> relationshipsToClient) {
 
     return OpponentSectionDisplay.builder()
+        .id(opponentDetail.getId())
+        .ebsId(opponentDetail.getEbsId())
         .partyName(OpponentUtil.getPartyName(opponentDetail, contactTitles))
         .partyType(opponentDetail.getType())
         .relationshipToCase(

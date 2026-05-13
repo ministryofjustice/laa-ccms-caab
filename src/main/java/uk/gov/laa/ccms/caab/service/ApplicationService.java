@@ -1354,6 +1354,31 @@ public class ApplicationService {
   }
 
   /**
+   * Updates an existing opponent in the application.
+   *
+   * @param opponentId the unique identifier of the opponent to update.
+   * @param opponentFormData the data representing the updated opponent.
+   * @param userDetail the user details for the transaction.
+   */
+  public void updateOpponent(
+      final String applicationId,
+      final Integer opponentId,
+      final AbstractOpponentFormData opponentFormData,
+      final UserDetail userDetail) {
+
+    final OpponentDetail opponent = opponentMapper.toOpponent(opponentFormData);
+
+    final ApplicationDetail application =
+        Optional.ofNullable(this.getApplication(applicationId).block())
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve application"));
+
+    opponent.setAppMode(application.getAppMode());
+    opponent.setAmendment(application.getAmendment());
+
+    caabApiClient.updateOpponent(opponentId, opponent, userDetail.getLoginId()).block();
+  }
+
+  /**
    * Build an AbstractOpponentFormData for the provided OpponentDetail. Codes will be translated to
    * their display value depending on the type of opponent.
    *
