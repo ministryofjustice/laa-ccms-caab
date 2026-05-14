@@ -97,8 +97,11 @@ public class ClientSubmissionsInProgressController {
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
       session.removeAttribute(CLIENT_FLOW_FORM_DATA);
       session.removeAttribute(APPLICATION_CLIENT_NAMES);
-      session.removeAttribute(ACTIVE_CASE);
       session.removeAttribute(CASE);
+
+      if (caseContext.isApplication()) {
+        session.removeAttribute(ACTIVE_CASE);
+      }
 
       return "redirect:/%s/client-update/confirmed".formatted(caseContext.getPathValue());
     }

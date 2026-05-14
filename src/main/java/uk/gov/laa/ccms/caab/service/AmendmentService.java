@@ -238,6 +238,12 @@ public class AmendmentService {
         .getProviderDetails()
         .setSupervisor(
             new StringDisplayValue().id(String.valueOf(providerDetails.getSupervisorId())));
+    amendment
+        .getProviderDetails()
+        .setProviderCaseReference(providerDetails.getProviderCaseReference());
+    amendment
+        .getProviderDetails()
+        .setProviderContact(new StringDisplayValue().id(providerDetails.getContactNameId()));
 
     return updateCaseWithQuickAmendment(userDetail, amendment);
   }

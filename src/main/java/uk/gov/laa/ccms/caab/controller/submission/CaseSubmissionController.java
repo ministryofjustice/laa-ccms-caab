@@ -2,8 +2,13 @@ package uk.gov.laa.ccms.caab.controller.submission;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_POLL_COUNT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -60,6 +65,10 @@ public class CaseSubmissionController {
     final TransactionStatus caseStatus = applicationService.getCaseStatus(transactionId).block();
 
     if (caseStatus != null && StringUtils.hasText(caseStatus.getReferenceNumber())) {
+      if (caseContext.isAmendment()) {
+        refreshCaseSession(caseStatus.getReferenceNumber(), user, session);
+      }
+
       session.removeAttribute(SUBMISSION_POLL_COUNT);
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
       return "redirect:/%s/%s/confirmed"
@@ -69,8 +78,27 @@ public class CaseSubmissionController {
     return viewIncludingPollCount(session, caseContext, model);
   }
 
+  private void refreshCaseSession(
+      final String caseReferenceNumber, final UserDetail user, final HttpSession session) {
+    final var refreshedCase =
+        applicationService.getCase(
+            caseReferenceNumber, user.getProvider().getId(), user.getLoginId());
+
+    session.setAttribute(CASE, refreshedCase);
+    session.setAttribute(CASE_REFERENCE_NUMBER, refreshedCase.getCaseReferenceNumber());
+    session.removeAttribute(ACTIVE_CASE);
+
+    session.removeAttribute(APPLICATION_SUMMARY);
+    session.removeAttribute(APPLICATION);
+    session.removeAttribute(APPLICATION_DETAILS);
+    session.removeAttribute(APPLICATION_COSTS);
+    session.removeAttribute(APPLICATION_FORM_DATA);
+  }
+
   /**
-   * Handles the confirmation of a case creation submission and updates the client session.
+   * Handles the confirmation of a case creation submission and updates the client session. // ...
+   * existing code ... /** Handles the confirmation of a case creation submission and updates the
+   * client session.
    *
    * @param session the HTTP session to be updated
    * @return a redirect to the home page after removing the active case attribute
@@ -78,14 +106,20 @@ public class CaseSubmissionController {
   @PostMapping("/{caseContext}/submit-case/confirmed")
   public String clientUpdateSubmitted(
       @PathVariable("caseContext") CaseContext caseContext, final HttpSession session) {
-    session.removeAttribute(ACTIVE_CASE);
     session.removeAttribute(APPLICATION);
     session.removeAttribute(APPLICATION_DETAILS);
-    session.removeAttribute(CASE);
+    session.removeAttribute(APPLICATION_SUMMARY);
+    session.removeAttribute(APPLICATION_COSTS);
+    session.removeAttribute(APPLICATION_FORM_DATA);
 
     if (caseContext.isApplication()) {
+      session.removeAttribute(CASE);
+      session.removeAttribute(ACTIVE_CASE);
+      session.removeAttribute(APPLICATION_ID);
       return "redirect:/home";
     } else {
+      session.removeAttribute(CASE);
+      session.removeAttribute(ACTIVE_CASE);
       return "redirect:/case/overview";
     }
   }

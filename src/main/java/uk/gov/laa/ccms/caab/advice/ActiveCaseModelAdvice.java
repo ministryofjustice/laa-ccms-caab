@@ -31,6 +31,8 @@ import uk.gov.laa.ccms.caab.controller.client.EditClientEqualOpportunitiesMonito
 import uk.gov.laa.ccms.caab.controller.client.EditClientSummaryController;
 import uk.gov.laa.ccms.caab.controller.requests.ProviderRequestsController;
 import uk.gov.laa.ccms.caab.controller.submission.CaseSubmissionController;
+import uk.gov.laa.ccms.caab.controller.submission.ClientSubmissionsInProgressController;
+import uk.gov.laa.ccms.caab.controller.submission.SubmissionConfirmedController;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ClientDetail;
@@ -65,7 +67,9 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
       CounselSearchController.class,
       EditProceedingsAndCostsSectionController.class,
       AllocateCostLimitController.class,
-      ProviderRequestsController.class
+      ProviderRequestsController.class,
+      ClientSubmissionsInProgressController.class,
+      SubmissionConfirmedController.class
     })
 public class ActiveCaseModelAdvice {
 
