@@ -107,11 +107,15 @@
 
 <script th:src="@{/webjars/govuk-frontend/dist/govuk/all.bundle.js}" th:nonce="${cspNonce}"></script>
 <script th:nonce="${cspNonce}">
-    window.GOVUKFrontend.initAll();
+    if (window.GOVUKFrontend) {
+        window.GOVUKFrontend.initAll();
+    }
 </script>
 <script th:src="@{/webjars/ministryofjustice__frontend/moj/all.bundle.js}" th:nonce="${cspNonce}"></script>
 <script th:nonce="${cspNonce}">
-    window.MOJFrontend.initAll();
+    if (window.MOJFrontend) {
+        window.MOJFrontend.initAll();
+    }
 </script>
 </body>
 </html>
