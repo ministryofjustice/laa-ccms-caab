@@ -50,3 +50,9 @@ To run the default task, you can just run gulp without any additional parameters
 # Whilst in the project directory
 gulp
 ```
+
+Alternatively, you can run the Gradle task:
+
+```shell
+./gradlew buildFrontend
+```
