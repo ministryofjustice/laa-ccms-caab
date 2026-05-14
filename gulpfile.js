@@ -1,5 +1,5 @@
 const gulp = require("gulp");
-const {series, parallel} = require("gulp");
+const {parallel} = require("gulp");
 const sass = require("gulp-sass")(require("sass"));
 const plumber = require('gulp-plumber');
 const autoprefixer
@@ -83,8 +83,6 @@ function copyGovukJs() {
 
 // As a default task, it should just run all other tasks, so defined as a series
 // by each other tasks name.
-// Copying of GovUK assets must happen last to ensure correct font files are
-// used.
 gulp.task('default',
     parallel(compileCCMSStyleSheets, compileCCMSAssessmentStyleSheets,
       compileMOJStyleSheets, copyGovukAssets, copyMojAssets, copyMojJs,
