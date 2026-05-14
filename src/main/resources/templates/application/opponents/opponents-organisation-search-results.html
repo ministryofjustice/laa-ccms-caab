@@ -6,10 +6,10 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/application/opponents/organisation/search}" class="govuk-back-link">Return to organisation search</a>
+        <a th:href="${amendment} ? @{/amendments/sections/opponents/organisation/search} : @{/application/opponents/organisation/search}" class="govuk-back-link">Return to organisation search</a>
     </div>
     <div id="main-content">
-        <span class="govuk-caption-l">Search for an organisation</span>
+        <span class="govuk-caption-l" th:text="${amendment} ? 'Amend case' : 'Search for an organisation'">Search for an organisation</span>
         <h1 class="govuk-heading-l">
             Opponents and other parties - search results
         </h1>
@@ -37,7 +37,7 @@
                     <td class="govuk-table__cell" th:text="${org.city}"></td>
                     <td class="govuk-table__cell" th:text="${org.postcode}"></td>
                     <td class="govuk-table__cell">
-                        <a th:href="@{/application/opponents/organisation/{id}/select(id=${org.partyId})}" class="govuk-link">Use this record</a>
+                        <a th:href="${amendment} ? @{/amendments/sections/opponents/organisation/{id}/select(id=${org.partyId})} : @{/application/opponents/organisation/{id}/select(id=${org.partyId})}" class="govuk-link">Use this record</a>
                     </td>
                 </tr>
             </tbody>
@@ -45,7 +45,7 @@
         <nav th:replace="~{partials/pagination :: pagination(page=${organisationSearchResults})}"></nav>
         <a class="govuk-button govuk-button--secondary"
            data-module="govuk-button"
-           th:href="@{/application/opponents/organisation/create}">
+           th:href="${amendment} ? @{/amendments/sections/opponents/organisation/create} : @{/application/opponents/organisation/create}">
             Create new organisation
         </a>
     </div>

@@ -35,7 +35,7 @@
         <tr class="govuk-table__row" th:each="opponent : ${opponents}" th:unless="${opponents.isEmpty()}">
           <td class="govuk-table__cell">
             <a th:if="${opponent.editable}"
-               th:href="@{/amendments/sections/opponents/individual/{id}/edit(id=${opponent.id})}"
+               th:href="${opponent.partyType == 'Organisation'} ? @{/amendments/sections/opponents/organisation/{id}/edit(id=${opponent.id})} : @{/amendments/sections/opponents/individual/{id}/edit(id=${opponent.id})}"
                class="govuk-link"
                th:text="${opponent.partyName}"></a>
             <span th:unless="${opponent.editable}" th:text="${opponent.partyName}"></span>
@@ -44,7 +44,9 @@
           <td class="govuk-table__cell" th:text="${opponent.relationshipToCase}"></td>
           <td class="govuk-table__cell" th:text="${opponent.relationshipToClient}"></td>
           <td class="govuk-table__cell">
-              <!-- Placeholder for remove action if needed for amendments -->
+            <a th:if="${opponent.editable}"
+               th:href="@{/amendments/sections/opponents/{id}/remove(id=${opponent.id})}"
+               class="govuk-link">Remove</a>
           </td>
         </tr>
         <tr class="govuk-table__row" th:if="${opponents.isEmpty()}">
@@ -52,7 +54,11 @@
         </tr>
       </tbody>
     </table>
-    <!-- Add organisation not implemented yet for amendments -->
+    <a class="govuk-button govuk-button--secondary"
+       data-module="govuk-button"
+       th:href="@{/amendments/sections/opponents/organisation/search}">
+      Add organisation
+    </a>
     <a class="govuk-button govuk-button--secondary"
        data-module="govuk-button"
        th:href="@{/amendments/sections/opponents/individual/add}">
