@@ -66,8 +66,8 @@ dependencies {
             because('Fixes multiple CVEs Parent: org.opensaml:opensaml-saml-api')
         }
 
-        implementation "org.opensaml:opensaml-saml-api:5.2.1"
-        implementation "org.opensaml:opensaml-saml-impl:5.2.1"
+        implementation "org.opensaml:opensaml-saml-api:5.2.2"
+        implementation "org.opensaml:opensaml-saml-impl:5.2.2"
 
     }
 
@@ -104,7 +104,7 @@ dependencies {
 	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.0.2')
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
-	implementation 'software.amazon.awssdk:sts:2.44.4'
+	implementation 'software.amazon.awssdk:sts:2.44.5'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
