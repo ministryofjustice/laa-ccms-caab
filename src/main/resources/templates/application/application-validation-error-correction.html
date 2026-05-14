@@ -7,7 +7,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs"></div>
-  <div id="main-content" class="govuk-!-padding-top-8">
+  <div id="main-content" class="govuk-!-padding-top-7">
       <span class="govuk-caption-l" th:text="#{application.about}"></span>
       <h1 class="govuk-heading-l">
         Validation - error correction
@@ -37,7 +37,7 @@
                 <input type="hidden" th:field="*{providerCaseReference}"/>
                 <input type="hidden" th:field="*{contactNameId}"/>
                 <td class="govuk-table__cell">
-                  <button type="submit" class="govuk-body ccms-button-as-link">
+                  <button type="submit" class="govuk-body govuk-!-margin-bottom-0 ccms-button-as-link">
                     Provider details
                   </button>
                 </td>
@@ -56,7 +56,7 @@
                 <input type="hidden" th:field="*{county}"/>
                 <input type="hidden" name="action" value="save_correspondence_address"/>
                 <td class="govuk-table__cell">
-                  <button type="submit" class="govuk-body ccms-button-as-link">
+                  <button type="submit" class="govuk-body govuk-!-margin-bottom-0 ccms-button-as-link">
                     General details
                   </button>
                 </td>

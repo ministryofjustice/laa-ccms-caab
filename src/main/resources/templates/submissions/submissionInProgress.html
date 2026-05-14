@@ -41,7 +41,9 @@
   <footer th:replace="~{partials/footer :: footer}"></footer>
   <script th:src="@{/webjars/govuk-frontend/dist/govuk/all.bundle.js}" th:nonce="${cspNonce}"></script>
   <script th:nonce="${cspNonce}">
-    window.GOVUKFrontend.initAll();
+      if (window.GOVUKFrontend) {
+          window.GOVUKFrontend.initAll();
+      }
   </script>
   </body>
 </html>

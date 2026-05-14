@@ -39,7 +39,6 @@
     color: #1d70b8;
     text-decoration: underline;
     cursor: pointer;
-    margin-bottom: 0;
 }
 
 
@@ -52,8 +51,7 @@
     background: #dee0e2;
 }
 
-.ccms-nowrap-no-margin {
-    margin-bottom: 0;
+.ccms-nowrap {
     white-space: nowrap;
 }
 
@@ -71,5 +69,5 @@
     background-size: 125px 102px;
     text-align: center;
     white-space: nowrap;
-    background-image: url(/civil/webjars/govuk-frontend/dist/govuk/assets/rebrand/images/govuk-crest.svg);
+    background-image: url(/civil/webjars/govuk-frontend/dist/govuk/assets/images/govuk-crest.svg);
 }
