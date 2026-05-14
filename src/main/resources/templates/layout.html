@@ -24,15 +24,14 @@
 
 <footer th:replace="~{partials/footer :: footer}"></footer>
 
-<script th:src="@{/webjars/govuk-frontend/dist/govuk/all.bundle.js}" th:nonce="${cspNonce}"></script>
+<script th:src="@{/assets/govuk/all.bundle.js}" th:nonce="${cspNonce}"></script>
 <script th:nonce="${cspNonce}">
     if (window.GOVUKFrontend) {
         window.GOVUKFrontend.initAll();
     }
 </script>
 <script th:src="@{/ccms/caab.js}" th:nonce="${cspNonce}"></script>
-<!--TODO: Change when MoJ Frontend comes compiled with css-->
-<script th:src="@{/webjars/ministryofjustice__frontend/moj/all.bundle.js}" th:nonce="${cspNonce}"></script>
+<script th:src="@{/assets/moj/all.bundle.js}" th:nonce="${cspNonce}"></script>
 <script th:nonce="${cspNonce}">
     if (window.MOJFrontend) {
         window.MOJFrontend.initAll();

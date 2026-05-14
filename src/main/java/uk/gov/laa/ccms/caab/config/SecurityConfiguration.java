@@ -67,6 +67,8 @@ public class SecurityConfiguration {
     return http.authorizeHttpRequests(
             authorize ->
                 authorize
+                    .requestMatchers("/assets/**", "/ccms/**", "/favicon.ico")
+                    .permitAll()
                     .requestMatchers(
                         HttpMethod.GET,
                         "/actuator/prometheus",

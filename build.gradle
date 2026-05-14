@@ -127,13 +127,6 @@ dependencies {
     //ClamAV virus scan
     implementation 'fi.solita.clamav:clamav-client:1.0.1'
 
-    // Front end
-    // https://mvnrepository.com/artifact/org.webjars/webjars-locator-lite
-    implementation 'org.webjars:webjars-locator-lite'
-    // https://mvnrepository.com/artifact/org.webjars.npm/govuk-frontend
-    implementation 'org.webjars.npm:govuk-frontend:6.1.0'
-    implementation 'org.webjars.npm:ministryofjustice__frontend:9.0.0'
-
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
@@ -197,3 +190,26 @@ tasks.register('installGitHooks', Copy) {
 
 // Linked to compileJava so it installs on the first build
 compileJava.dependsOn installGitHooks
+
+tasks.register('npmInstallCi', Exec) {
+    commandLine 'npm', 'ci'
+    inputs.file('package-lock.json')
+    outputs.dir('node_modules')
+}
+
+tasks.register('buildFrontend', Exec) {
+    dependsOn 'npmInstallCi'
+    commandLine 'npm', 'run', 'build:frontend'
+
+    inputs.files(
+            'package.json',
+            'package-lock.json',
+            'gulpfile.js'
+    )
+    inputs.dir('src/main/resources/scss')
+    inputs.dir('node_modules/govuk-frontend')
+    inputs.dir('node_modules/@ministryofjustice/frontend')
+
+    outputs.dir('src/main/resources/static/assets')
+    outputs.dir('src/main/resources/static/ccms')
+}
