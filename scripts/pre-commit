@@ -7,7 +7,8 @@ if [ -n "$changed_java_files" ]; then
   echo "Running Spotless Apply..."
   ./gradlew spotlessApply
 
-  # stage ALL java files that may have been updated
+  # Re-add files that were changed by Spotless
+  # This ensures that formatting changes are included in the current commit
   git add $(git diff --name-only --cached)
 fi
 
