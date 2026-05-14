@@ -29,18 +29,6 @@ ignore:
     - '*':
       reason: "temporary ignore while base image is updated"
       expires: "2026-06-01T00:00:00Z"
-  SNYK-JAVA-ORGAPACHETOMCATEMBED-16643276:
-    - '*':
-      reason: "vulnerability fixed by upgrade to tomcat-embed-core:11.0.22"
-      expires: "2026-06-01T00:00:00Z"
-  SNYK-JAVA-ORGAPACHETOMCATEMBED-16643259:
-    - '*':
-      reason: "vulnerability fixed by upgrade to tomcat-embed-core:11.0.22"
-      expires: "2026-06-01T00:00:00Z"
-  SNYK-JAVA-ORGAPACHETOMCATEMBED-16643269:
-    - '*':
-      reason: "vulnerability fixed by upgrade to tomcat-embed-websocket:11.0.22"
-      expires: "2026-06-01T00:00:00Z"
   SNYK-JAVA-ORGCODEHAUSPLEXUS-15766699:
     - '*':
       reason: "No direct upgrade or patch available for plexus-utils@3.3.0 in checkstyle dependency"
