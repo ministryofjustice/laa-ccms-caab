@@ -68,7 +68,7 @@ public class ProviderDetailsSectionController {
       Model model,
       jakarta.servlet.http.HttpSession session) {
 
-    if (caseContext.isAmendment()) {
+    if (caseContext.isAmendment() && applicationId == null) {
       ApplicationFormData applicationFormData = new ApplicationFormData();
       applicationFormData.setCopyCaseReferenceNumber(activeCase.getCaseReferenceNumber());
       ClientDetail clientDetail =
@@ -87,6 +87,7 @@ public class ProviderDetailsSectionController {
 
     populateDropdowns(applicationFormData, user, model);
     model.addAttribute(ACTIVE_CASE, activeCase);
+    model.addAttribute("caseContext", caseContext);
 
     return "application/sections/provider-details-section";
   }
@@ -119,6 +120,7 @@ public class ProviderDetailsSectionController {
     if (bindingResult.hasErrors()) {
       populateDropdowns(applicationFormData, user, model);
       model.addAttribute(ACTIVE_CASE, activeCase);
+      model.addAttribute("caseContext", caseContext);
 
       return "application/sections/provider-details-section";
     }
@@ -127,7 +129,7 @@ public class ProviderDetailsSectionController {
 
     if (caseContext.isAmendment()) {
       if (!UserRoleUtil.hasRole(user, UserRole.SUBMIT_AMENDMENT)) {
-        return "redirect:/application/sections";
+        return "redirect:/case/overview";
       }
 
       String transactionId =

@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -14,8 +15,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_POLL_COUNT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -35,9 +41,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.ui.Model;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
@@ -74,6 +82,7 @@ class CaseSubmissionControllerTest {
         MockMvcBuilders.standaloneSetup(
                 caseSubmissionController, clientSubmissionsInProgressController)
             .setConversionService(getConversionService())
+            .setControllerAdvice(new ActiveCaseModelAdvice())
             .build();
 
     activeCase =
@@ -107,10 +116,14 @@ class CaseSubmissionControllerTest {
   @Test
   @DisplayName("Test addCaseSubmission - Amendment confirmed")
   void testAddCaseSubmission_AmendmentConfirmed() throws Exception {
-
+    final String refNumber = "ref123";
     final TransactionStatus mockStatus = new TransactionStatus();
-    mockStatus.setReferenceNumber("ref123");
+    mockStatus.setReferenceNumber(refNumber);
     when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
+
+    final ApplicationDetail mockCase = new ApplicationDetail();
+    mockCase.setCaseReferenceNumber(refNumber);
+    when(applicationService.getCase(anyString(), anyLong(), anyString())).thenReturn(mockCase);
 
     mockMvc
         .perform(
@@ -118,9 +131,18 @@ class CaseSubmissionControllerTest {
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
                 .sessionAttr(USER_DETAILS, userDetail))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/amendments/%s/confirmed".formatted(SUBMISSION_SUBMIT_CASE)));
+        .andExpect(redirectedUrl("/amendments/%s/confirmed".formatted(SUBMISSION_SUBMIT_CASE)))
+        .andExpect(request().sessionAttribute(CASE, mockCase))
+        .andExpect(request().sessionAttribute(CASE_REFERENCE_NUMBER, refNumber))
+        .andExpect(request().sessionAttributeDoesNotExist(ACTIVE_CASE))
+        .andExpect(request().sessionAttributeDoesNotExist(APPLICATION_SUMMARY))
+        .andExpect(request().sessionAttributeDoesNotExist(APPLICATION))
+        .andExpect(request().sessionAttributeDoesNotExist(APPLICATION_DETAILS))
+        .andExpect(request().sessionAttributeDoesNotExist(APPLICATION_COSTS))
+        .andExpect(request().sessionAttributeDoesNotExist(APPLICATION_FORM_DATA));
 
     verify(applicationService, times(1)).getCaseStatus(anyString());
+    verify(applicationService, times(1)).getCase(anyString(), anyLong(), anyString());
   }
 
   @Test
@@ -152,10 +174,12 @@ class CaseSubmissionControllerTest {
         .perform(
             get("/amendments/submit-case")
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
-                .sessionAttr(USER_DETAILS, userDetail))
+                .sessionAttr(USER_DETAILS, userDetail)
+                .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk())
         .andExpect(view().name("submissions/submissionInProgress"))
-        .andExpect(model().attribute("caseContext", CaseContext.AMENDMENTS));
+        .andExpect(model().attribute("caseContext", CaseContext.AMENDMENTS))
+        .andExpect(model().attribute(ACTIVE_CASE, activeCase));
 
     verify(applicationService, times(1)).getCaseStatus(anyString());
     verify(session, times(0)).removeAttribute(SUBMISSION_TRANSACTION_ID);
@@ -170,7 +194,15 @@ class CaseSubmissionControllerTest {
         .andExpect(redirectedUrl("/home"))
         .andExpect(
             request()
-                .sessionAttributeDoesNotExist(ACTIVE_CASE, CASE, APPLICATION, APPLICATION_DETAILS));
+                .sessionAttributeDoesNotExist(
+                    APPLICATION,
+                    APPLICATION_DETAILS,
+                    APPLICATION_SUMMARY,
+                    APPLICATION_COSTS,
+                    APPLICATION_FORM_DATA,
+                    CASE,
+                    ACTIVE_CASE,
+                    APPLICATION_ID));
   }
 
   @Test
@@ -182,7 +214,15 @@ class CaseSubmissionControllerTest {
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/case/overview"))
         .andExpect(
-            request().sessionAttributeDoesNotExist(ACTIVE_CASE, APPLICATION, APPLICATION_DETAILS));
+            request()
+                .sessionAttributeDoesNotExist(
+                    APPLICATION,
+                    APPLICATION_DETAILS,
+                    APPLICATION_SUMMARY,
+                    APPLICATION_COSTS,
+                    APPLICATION_FORM_DATA,
+                    ACTIVE_CASE,
+                    CASE));
   }
 
   @Test
