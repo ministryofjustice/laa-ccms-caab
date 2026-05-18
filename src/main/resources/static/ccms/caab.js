@@ -63,6 +63,7 @@ function toggleDiv() {
                 document.getElementById(larScopeId).value = this.options[this.selectedIndex].getAttribute('lar-scope') || '';
             }
         });
+        select.dataset.displayValueReady = 'true';
     });
 
     // Delete button handler
