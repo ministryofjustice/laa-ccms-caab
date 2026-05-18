@@ -118,8 +118,6 @@ public class CaseSubmissionController {
       session.removeAttribute(APPLICATION_ID);
       return "redirect:/home";
     } else {
-      session.removeAttribute(CASE);
-      session.removeAttribute(ACTIVE_CASE);
       return "redirect:/case/overview";
     }
   }

@@ -220,9 +220,8 @@ class CaseSubmissionControllerTest {
                     APPLICATION_DETAILS,
                     APPLICATION_SUMMARY,
                     APPLICATION_COSTS,
-                    APPLICATION_FORM_DATA,
-                    ACTIVE_CASE,
-                    CASE));
+                    APPLICATION_FORM_DATA))
+        .andExpect(request().sessionAttribute(ACTIVE_CASE, activeCase));
   }
 
   @Test
