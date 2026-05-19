@@ -97,6 +97,7 @@ public class EditGeneralDetailsSectionController {
   private static final String ACTION_FIND_ADDRESS = "find_address";
   protected static final String CURRENT_URL = "currentUrl";
   protected static final String CASE_RESULTS_PAGE = "caseResultsPage";
+  private static final String ADDRESS_DETAILS = "addressDetails";
 
   /**
    * Handles the GET request for editing an application's correspondence address.
@@ -114,21 +115,22 @@ public class EditGeneralDetailsSectionController {
       final Model model,
       final HttpSession session) {
 
-    AddressFormData addressDetails = (AddressFormData) session.getAttribute("addressDetails");
+    final AddressFormData addressDetails;
 
-    if (addressDetails == null) {
-      if (caseContext.isAmendment()) {
-        final ApplicationDetail amendmentCase = requireEbsCase(ebsCase);
-        addressDetails =
-            applicationService.getCorrespondenceAddressFormData(
-                amendmentCase.getCorrespondenceAddress());
-      } else {
-        addressDetails = applicationService.getCorrespondenceAddressFormData(applicationId);
-      }
-      session.setAttribute("addressDetails", addressDetails);
+    if (caseContext.isAmendment()) {
+      final ApplicationDetail amendmentCase = requireEbsCase(ebsCase);
+      addressDetails =
+          applicationService.getCorrespondenceAddressFormData(
+              amendmentCase.getCorrespondenceAddress());
+    } else if (ebsCase != null && ebsCase.getCorrespondenceAddress() != null) {
+      addressDetails =
+          applicationService.getCorrespondenceAddressFormData(ebsCase.getCorrespondenceAddress());
+    } else {
+      addressDetails = applicationService.getCorrespondenceAddressFormData(applicationId);
     }
 
-    model.addAttribute("addressDetails", addressDetails);
+    session.setAttribute(ADDRESS_DETAILS, addressDetails);
+    model.addAttribute(ADDRESS_DETAILS, addressDetails);
 
     populateCorrespondenceAddressDropdowns(model);
 
@@ -156,7 +158,7 @@ public class EditGeneralDetailsSectionController {
       @SessionAttribute(CASE) @Nullable final ApplicationDetail ebsCase,
       @SessionAttribute(APPLICATION_ID) @Nullable final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @Validated @ModelAttribute("addressDetails") final AddressFormData addressDetails,
+      @Validated @ModelAttribute(ADDRESS_DETAILS) final AddressFormData addressDetails,
       final BindingResult bindingResult,
       final Model model,
       final HttpSession session) {
@@ -169,7 +171,7 @@ public class EditGeneralDetailsSectionController {
 
     if (bindingResult.hasErrors()) {
       populateCorrespondenceAddressDropdowns(model);
-      session.setAttribute("addressDetails", addressDetails);
+      session.setAttribute(ADDRESS_DETAILS, addressDetails);
       return "application/sections/correspondence-address-details";
     }
 
@@ -190,11 +192,11 @@ public class EditGeneralDetailsSectionController {
 
       if (bindingResult.hasErrors()) {
         populateCorrespondenceAddressDropdowns(model);
-        session.setAttribute("addressDetails", addressDetails);
+        session.setAttribute(ADDRESS_DETAILS, addressDetails);
         return "application/sections/correspondence-address-details";
       }
 
-      session.setAttribute("addressDetails", addressDetails);
+      session.setAttribute(ADDRESS_DETAILS, addressDetails);
       return "redirect:/%s/sections/correspondence-address/search"
           .formatted(caseContext.getPathValue());
 
@@ -210,11 +212,11 @@ public class EditGeneralDetailsSectionController {
                 addressDetails, amendmentCase.getCaseReferenceNumber(), user);
         session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
 
-        session.removeAttribute("addressDetails");
+        session.removeAttribute(ADDRESS_DETAILS);
         return "redirect:/amendments/%s".formatted(SUBMISSION_SUBMIT_CASE);
       }
       applicationService.updateCorrespondenceAddress(applicationId, addressDetails, user);
-      session.removeAttribute("addressDetails");
+      session.removeAttribute(ADDRESS_DETAILS);
 
       return "redirect:/application/sections/linked-cases";
     }
@@ -274,7 +276,7 @@ public class EditGeneralDetailsSectionController {
       @PathVariable final CaseContext caseContext,
       @SessionAttribute(ADDRESS_SEARCH_RESULTS)
           final ResultsDisplay<AddressResultRowDisplay> addressResultsDisplay,
-      @SessionAttribute("addressDetails") final AddressFormData addressDetails,
+      @SessionAttribute(ADDRESS_DETAILS) final AddressFormData addressDetails,
       @ModelAttribute("addressSearch") final AddressSearchFormData addressSearch,
       final Model model,
       final BindingResult bindingResult,

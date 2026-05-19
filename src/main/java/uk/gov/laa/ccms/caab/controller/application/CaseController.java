@@ -189,8 +189,6 @@ public class CaseController {
         Optional.ofNullable(applicationService.getCaseDetailsDisplay(ebsCase))
             .orElseThrow(() -> new CaabApplicationException("Failed to retrieve case details"));
 
-    // Store the expensive object in the session for reuse
-    session.setAttribute("applicationSectionDisplay", applicationSectionDisplay);
     model.addAttribute("summary", applicationSectionDisplay);
     session.setAttribute(AMEND_CLIENT_ORIGIN, AmendClientOrigin.VIEW_CASE_DETAILS);
 
@@ -206,10 +204,11 @@ public class CaseController {
    */
   @GetMapping("/case/details/costs")
   public String caseCostDetails(
-      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
-      @SessionAttribute("applicationSectionDisplay")
-          final ApplicationSectionDisplay applicationSectionDisplay,
-      final Model model) {
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase, final Model model) {
+
+    final ApplicationSectionDisplay applicationSectionDisplay =
+        Optional.ofNullable(applicationService.getCaseDetailsDisplay(ebsCase))
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve case details"));
 
     model.addAttribute("summary", applicationSectionDisplay);
     model.addAttribute("case", ebsCase);
@@ -237,10 +236,11 @@ public class CaseController {
    */
   @GetMapping("/case/details/costs/allocation")
   public String caseCostAllocation(
-      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
-      @SessionAttribute("applicationSectionDisplay")
-          final ApplicationSectionDisplay applicationSectionDisplay,
-      final Model model) {
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase, final Model model) {
+
+    final ApplicationSectionDisplay applicationSectionDisplay =
+        Optional.ofNullable(applicationService.getCaseDetailsDisplay(ebsCase))
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve case details"));
 
     final BigDecimal mainProviderAllocation =
         applicationService.calculateMainProviderAllocation(ebsCase);

@@ -169,18 +169,19 @@ class EditGeneralDetailsSectionControllerTest {
       when(lookupService.getCountries()).thenReturn(Mono.just(mockCommonLookupDetail));
       when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
           .thenReturn(Mono.just(mockCommonLookupDetail));
+      when(applicationService.getCorrespondenceAddressFormData(applicationId))
+          .thenReturn(addressFormData);
 
       mockMvc
           .perform(
               get("/application/sections/correspondence-address")
-                  .sessionAttr(APPLICATION_ID, applicationId)
-                  .sessionAttr("addressDetails", addressFormData))
+                  .sessionAttr(APPLICATION_ID, applicationId))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/correspondence-address-details"))
           .andExpect(model().attribute("addressDetails", addressFormData));
 
-      verify(applicationService, never()).getCorrespondenceAddressFormData(applicationId);
+      verify(applicationService, times(1)).getCorrespondenceAddressFormData(applicationId);
     }
   }
 
