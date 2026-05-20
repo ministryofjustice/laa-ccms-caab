@@ -1827,6 +1827,30 @@ class ApplicationServiceTest {
   }
 
   @Test
+  void hasSharedOrganisationOpponent_returnsTrueWhenEbsIdMatches() {
+    String applicationId = "12345";
+    String partyId = "ORG-123";
+    OpponentDetail opponent =
+        new OpponentDetail().type(OPPONENT_TYPE_ORGANISATION).sharedInd(true).ebsId(partyId);
+
+    when(caabApiClient.getOpponents(applicationId)).thenReturn(Mono.just(List.of(opponent)));
+
+    assertTrue(applicationService.hasSharedOrganisationOpponent(applicationId, partyId));
+  }
+
+  @Test
+  void hasSharedOrganisationOpponent_returnsFalseWhenOrganisationIsNotShared() {
+    String applicationId = "12345";
+    String partyId = "ORG-123";
+    OpponentDetail opponent =
+        new OpponentDetail().type(OPPONENT_TYPE_ORGANISATION).sharedInd(false).ebsId(partyId);
+
+    when(caabApiClient.getOpponents(applicationId)).thenReturn(Mono.just(List.of(opponent)));
+
+    assertFalse(applicationService.hasSharedOrganisationOpponent(applicationId, partyId));
+  }
+
+  @Test
   void testGetCaseStatus() {
     // Given
     String transactionId = "12345";

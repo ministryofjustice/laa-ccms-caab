@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -49,10 +50,12 @@ import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.opponent.IndividualOpponentValidator;
 import uk.gov.laa.ccms.caab.bean.validators.opponent.OrganisationOpponentValidator;
 import uk.gov.laa.ccms.caab.bean.validators.opponent.OrganisationSearchCriteriaValidator;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.model.OrganisationResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
+import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.OpponentService;
@@ -68,6 +71,8 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 class OpponentsSectionControllerTest {
 
   @Mock private ApplicationService applicationService;
+
+  @Mock private AmendmentService amendmentService;
 
   @Mock private OpponentService opponentService;
 
@@ -129,7 +134,7 @@ class OpponentsSectionControllerTest {
             post("/application/opponents/organisation/search")
                 .flashAttr(ORGANISATION_SEARCH_CRITERIA, new OrganisationSearchCriteria()))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/opponents/organisation/search/results"));
+        .andExpect(redirectedUrl("/application/sections/opponents/organisation/search/results"));
   }
 
   @Test
@@ -171,7 +176,7 @@ class OpponentsSectionControllerTest {
             post("/application/opponents/organisation/search")
                 .flashAttr(ORGANISATION_SEARCH_CRITERIA, testOrganisationSearchCriteria))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/opponents/organisation/search/results"));
+        .andExpect(redirectedUrl("/application/sections/opponents/organisation/search/results"));
   }
 
   @Test
@@ -355,6 +360,47 @@ class OpponentsSectionControllerTest {
   }
 
   @Test
+  void selectSharedOrganisationPost_duplicateOrganisation_returnsToConfirmScreen()
+      throws Exception {
+    String applicationId = "123";
+    String partyId = "ORG-123";
+    OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
+    opponentFormData.setPartyId(partyId);
+    opponentFormData.setShared(true);
+
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(new RelationshipToCaseLookupValueDetail());
+    when(lookupService.getOrganisationToCaseRelationships())
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
+
+    CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
+
+    when(applicationService.hasSharedOrganisationOpponent(applicationId, partyId)).thenReturn(true);
+
+    mockMvc
+        .perform(
+            post("/application/opponents/organisation/shared/create")
+                .sessionAttr(CURRENT_OPPONENT, opponentFormData)
+                .sessionAttr(APPLICATION_ID, applicationId)
+                .sessionAttr(USER_DETAILS, user))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(model().attributeHasErrors(CURRENT_OPPONENT))
+        .andExpect(
+            model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
+        .andExpect(
+            model()
+                .attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
+        .andExpect(view().name("application/opponents/opponents-organisation-shared-create"));
+
+    verify(applicationService, never()).addOpponent(any(), any(), any());
+  }
+
+  @Test
   void selectSharedOrganisationPost_validationErrors_returnsToConfirmScreen() throws Exception {
     String applicationId = "123";
     OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
@@ -431,6 +477,35 @@ class OpponentsSectionControllerTest {
             model()
                 .attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
         .andExpect(model().attribute("countries", countriesLookupDetail.getContent()))
+        .andExpect(view().name("application/opponents/opponents-organisation-create"));
+  }
+
+  @Test
+  void organisationCreateGet_amendmentUrlSetsAmendmentContext() throws Exception {
+    CommonLookupDetail orgTypes =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES))
+        .thenReturn(Mono.just(orgTypes));
+
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(new RelationshipToCaseLookupValueDetail());
+    when(lookupService.getOrganisationToCaseRelationships())
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
+
+    CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
+
+    CommonLookupDetail countriesLookupDetail = new CommonLookupDetail();
+    when(lookupService.getCountries()).thenReturn(Mono.just(countriesLookupDetail));
+
+    mockMvc
+        .perform(get("/amendments/sections/opponents/organisation/create"))
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("caseContext", CaseContext.AMENDMENTS))
+        .andExpect(model().attribute("amendment", true))
         .andExpect(view().name("application/opponents/opponents-organisation-create"));
   }
 
@@ -540,6 +615,36 @@ class OpponentsSectionControllerTest {
                 .attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
         .andExpect(model().attribute("countries", countries.getContent()))
         .andExpect(model().attributeExists("legalAidedOptions"))
+        .andExpect(view().name("application/opponents/opponents-individual-create"));
+  }
+
+  @Test
+  void individualCreateGet_amendmentUrlSetsAmendmentContext() throws Exception {
+    CommonLookupDetail contactTitles =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+        .thenReturn(Mono.just(contactTitles));
+
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(new RelationshipToCaseLookupValueDetail());
+    when(lookupService.getPersonToCaseRelationships())
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
+
+    CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
+
+    CommonLookupDetail countries =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCountries()).thenReturn(Mono.just(countries));
+
+    mockMvc
+        .perform(get("/amendments/sections/opponents/individual/add"))
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("caseContext", CaseContext.AMENDMENTS))
+        .andExpect(model().attribute("amendment", true))
         .andExpect(view().name("application/opponents/opponents-individual-create"));
   }
 
@@ -868,13 +973,14 @@ class OpponentsSectionControllerTest {
         .perform(
             post("/application/opponents/{id}/edit", selectedOpponentId)
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
+                .sessionAttr(APPLICATION_ID, "456")
                 .sessionAttr(USER_DETAILS, user))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/sections/opponents"));
 
     verify(opponentService)
-        .updateOpponent(Integer.valueOf(selectedOpponentId), opponentFormData, user);
+        .updateOpponent("456", Integer.valueOf(selectedOpponentId), opponentFormData, user);
   }
 
   @Test

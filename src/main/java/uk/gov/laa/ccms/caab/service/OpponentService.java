@@ -16,6 +16,8 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.mapper.OpponentMapper;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.OrganisationResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -114,20 +116,30 @@ public class OpponentService {
   }
 
   /**
-   * Update an opponent based on the supplied form data.
+   * Updates an opponent and preserves the application mode and amendment flags from the
+   * application.
    *
-   * @param opponentFormData - the opponent form data.
-   * @param userDetail - the user related user.
+   * @param applicationId the id of the application containing the opponent.
+   * @param opponentId the unique identifier of the opponent to update.
+   * @param opponentFormData the data representing the updated opponent.
+   * @param userDetail the user details for the transaction.
    */
   public void updateOpponent(
+      final String applicationId,
       final Integer opponentId,
       final AbstractOpponentFormData opponentFormData,
       final UserDetail userDetail) {
 
-    caabApiClient
-        .updateOpponent(
-            opponentId, opponentMapper.toOpponent(opponentFormData), userDetail.getLoginId())
-        .block();
+    final OpponentDetail opponent = opponentMapper.toOpponent(opponentFormData);
+
+    final ApplicationDetail application =
+        Optional.ofNullable(caabApiClient.getApplication(applicationId).block())
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve application"));
+
+    opponent.setAppMode(application.getAppMode());
+    opponent.setAmendment(application.getAmendment());
+
+    caabApiClient.updateOpponent(opponentId, opponent, userDetail.getLoginId()).block();
   }
 
   /**
