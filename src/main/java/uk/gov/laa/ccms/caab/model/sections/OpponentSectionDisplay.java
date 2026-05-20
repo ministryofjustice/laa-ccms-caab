@@ -7,6 +7,12 @@ import lombok.Data;
 @Data
 @Builder
 public class OpponentSectionDisplay {
+  /** The id of the opponent. */
+  private Integer id;
+
+  /** The EBS id of the opponent. */
+  private String ebsId;
+
   /** This opponent's name (individual or organisation name). */
   private String partyName;
 
@@ -18,4 +24,7 @@ public class OpponentSectionDisplay {
 
   /** The opponents relationship to the client. */
   private String relationshipToClient;
+
+  /** Flag to indicate that the opponent is editable. */
+  private boolean editable;
 }
