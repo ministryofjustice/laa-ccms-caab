@@ -7,14 +7,14 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:if="${amendment}" th:href="@{/amendments/sections/opponents}" class="govuk-back-link">Cancel and return to opponents and other parties</a>
-        <a th:unless="${amendment}" th:href="@{/application/sections/opponents}" class="govuk-back-link">Cancel and return to opponents and other parties</a>
+        <a th:if="${amendment}" th:href="@{/amendments/sections/opponents}" class="govuk-back-link" th:text="#{site.cancelAndReturnToOpponents}"></a>
+        <a th:unless="${amendment}" th:href="@{/application/sections/opponents}" class="govuk-back-link" th:text="#{site.cancelAndReturnToOpponents}"></a>
     </div>
     <div id="main-content">
         <form action="#" th:action="${amendment} ? @{/amendments/sections/opponents/individual/add} : @{/application/opponents/individual/create}" th:object="${opponent}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
-            <span th:if="${amendment}" class="govuk-caption-l">Amend case</span>
-            <span th:unless="${amendment}" class="govuk-caption-l">Create application</span>
+            <span th:if="${amendment}" class="govuk-caption-l" th:text="#{application.amendment}"></span>
+            <span th:unless="${amendment}" class="govuk-caption-l" th:text="#{application.create}"></span>
             <h1 class="govuk-heading-l">
                 Opponents and other parties
             </h1>

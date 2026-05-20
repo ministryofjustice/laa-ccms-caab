@@ -7,21 +7,19 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="${amendment} ? @{/amendments/sections/opponents} : @{/application/sections/opponents}" class="govuk-back-link">Cancel and return to opponents and other parties</a>
+        <a th:href="${amendment} ? @{/amendments/sections/opponents} : @{/application/sections/opponents}" class="govuk-back-link" th:text="#{site.cancelAndReturnToOpponents}"></a>
     </div>
     <div id="main-content">
         <form action="#" th:action="${amendment} ? @{/amendments/sections/opponents/organisation/create} : @{/application/opponents/organisation/create}" th:object="${opponent}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
-            <span class="govuk-caption-l" th:text="${amendment} ? 'Amend case' : 'Create application'">Create application</span>
+            <span class="govuk-caption-l" th:text="${amendment} ? #{application.amendment} : #{application.create}"></span>
             <h1 class="govuk-heading-l">
                 Opponents and other parties
             </h1>
             <p class="govuk-body-l">
                 Please enter the details for any opponents and other parties involved in this application/amendment.
             </p>
-            <h1 class="govuk-heading-m">
-                Create new organisation
-            </h1>
+            <h1 class="govuk-heading-m" th:text="#{application.opponents.createNewOrganisation}"></h1>
             <div th:replace="~{application/partials/opponent-fragments :: createOrganisation}"></div>
             <div class="govuk-button-group">
                 <govuk:button type="submit" th:text="#{site.confirm}"/>

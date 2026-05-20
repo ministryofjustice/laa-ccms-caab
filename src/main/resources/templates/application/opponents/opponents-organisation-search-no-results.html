@@ -6,10 +6,10 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="${amendment} ? @{/amendments/sections/opponents/organisation/search} : @{/application/opponents/organisation/search}" class="govuk-back-link">Return to organisation search</a>
+        <a th:href="${amendment} ? @{/amendments/sections/opponents/organisation/search} : @{/application/opponents/organisation/search}" class="govuk-back-link" th:text="#{site.returnToOrganisationSearch}"></a>
     </div>
     <div id="main-content">
-        <span class="govuk-caption-l" th:text="${amendment} ? 'Amend case' : 'Search for an organisation'">Search for an organisation</span>
+        <span class="govuk-caption-l" th:text="${amendment} ? #{application.amendment} : #{application.opponents.organisationSearch.caption}"></span>
         <h1 class="govuk-heading-l">
             Organisation search - no results
         </h1>
@@ -20,7 +20,7 @@
         <a class="govuk-button govuk-button--secondary"
            data-module="govuk-button"
            th:href="${amendment} ? @{/amendments/sections/opponents/organisation/create} : @{/application/opponents/organisation/create}">
-            Create new organisation
+            <span th:text="#{application.opponents.createNewOrganisation}"></span>
         </a>
     </div>
 </div>
