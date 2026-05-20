@@ -176,8 +176,9 @@ public interface ProviderRequestsMapper {
   default String formatDynamicOption(final DynamicOptionFormData dynamicOption) {
     if (DATE_DYNAMIC_OPTION.equals(dynamicOption.getFieldType())
         && dynamicOption.getFieldValue() != null) {
+
       try {
-        final DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        final DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("d/M/yyyy");
         final DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         final LocalDate date = LocalDate.parse(dynamicOption.getFieldValue(), inputFormatter);
         return date.format(outputFormatter);
