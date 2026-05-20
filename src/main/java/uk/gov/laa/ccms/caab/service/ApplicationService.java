@@ -1354,28 +1354,29 @@ public class ApplicationService {
   }
 
   /**
-   * Updates an existing opponent in the application.
+   * Checks whether a shared organisation opponent is already attached to the application.
    *
-   * @param opponentId the unique identifier of the opponent to update.
-   * @param opponentFormData the data representing the updated opponent.
-   * @param userDetail the user details for the transaction.
+   * @param applicationId the application id.
+   * @param partyId the external organisation party id.
+   * @return true when the organisation is already an opponent.
    */
-  public void updateOpponent(
-      final String applicationId,
-      final Integer opponentId,
-      final AbstractOpponentFormData opponentFormData,
-      final UserDetail userDetail) {
+  public boolean hasSharedOrganisationOpponent(final String applicationId, final String partyId) {
+    if (!StringUtils.hasText(applicationId) || !StringUtils.hasText(partyId)) {
+      return false;
+    }
 
-    final OpponentDetail opponent = opponentMapper.toOpponent(opponentFormData);
+    final List<OpponentDetail> opponentList =
+        caabApiClient
+            .getOpponents(applicationId)
+            .blockOptional()
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve opponents"));
 
-    final ApplicationDetail application =
-        Optional.ofNullable(this.getApplication(applicationId).block())
-            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve application"));
-
-    opponent.setAppMode(application.getAppMode());
-    opponent.setAmendment(application.getAmendment());
-
-    caabApiClient.updateOpponent(opponentId, opponent, userDetail.getLoginId()).block();
+    return opponentList.stream()
+        .filter(OpponentUtil::isOrganisation)
+        .filter(opponent -> Boolean.TRUE.equals(opponent.getSharedInd()))
+        .anyMatch(
+            opponent ->
+                partyId.equals(opponent.getPartyId()) || partyId.equals(opponent.getEbsId()));
   }
 
   /**

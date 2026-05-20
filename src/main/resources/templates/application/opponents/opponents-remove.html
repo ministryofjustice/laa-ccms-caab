@@ -2,15 +2,16 @@
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
-  <title th:text="#{service.name} + ' - ' + #{application.start}"></title>
+  <title th:if="${caseContext.isApplication()}" th:text="#{service.name} + ' - ' + #{application.start}"></title>
+  <title th:if="${caseContext.isAmendment()}" th:text="#{service.name} + ' - ' + #{application.amendment}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="${amendment} ? @{/amendments/sections/opponents} : @{/application/sections/opponents}" class="govuk-back-link" th:text="#{site.cancelAndReturnToOpponents}"></a>
+    <a th:href="@{/{caseContext}/sections/opponents(caseContext=${caseContext.pathValue})}" class="govuk-back-link" th:text="#{site.cancelAndReturnToOpponents}"></a>
   </div>
   <div id="main-content">
-    <form action="#" th:action="${amendment} ? @{/amendments/sections/opponents/{opponentId}/remove(opponentId=${opponent.id})} : @{/application/opponents/{opponentId}/remove(opponentId=${opponent.id})}" method="post">
+    <form action="#" th:action="@{/{caseContext}/sections/opponents/{opponentId}/remove(caseContext=${caseContext.pathValue},opponentId=${opponent.id})}" method="post">
       <h1 class="govuk-heading-l">
         Remove opponent - <span th:text="${opponent.partyName}"></span>
       </h1>

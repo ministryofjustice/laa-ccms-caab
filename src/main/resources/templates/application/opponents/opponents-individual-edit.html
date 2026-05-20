@@ -2,19 +2,19 @@
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
-    <title th:text="#{service.name} + ' - ' + #{application.start}"></title>
+    <title th:if="${caseContext.isApplication()}" th:text="#{service.name} + ' - ' + #{application.start}"></title>
+    <title th:if="${caseContext.isAmendment()}" th:text="#{service.name} + ' - ' + #{application.amendment}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:if="${amendment}" th:href="@{/amendments/sections/opponents}" class="govuk-back-link" th:text="#{site.cancelAndReturnToOpponents}"></a>
-        <a th:unless="${amendment}" th:href="@{/application/sections/opponents}" class="govuk-back-link" th:text="#{site.cancelAndReturnToOpponents}"></a>
+        <a th:href="@{/{caseContext}/sections/opponents(caseContext=${caseContext.pathValue})}" class="govuk-back-link" th:text="#{site.cancelAndReturnToOpponents}"></a>
     </div>
     <div id="main-content">
-        <form action="#" th:action="${amendment} ? @{/amendments/sections/opponents/individual/{id}/edit(id=${opponent.id})} : @{/application/opponents/{id}/edit(id=${opponent.id})}" th:object="${opponent}" method="post">
+        <form action="#" th:action="@{/{caseContext}/sections/opponents/{id}/edit(caseContext=${caseContext.pathValue},id=${opponent.id})}" th:object="${opponent}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
-            <span th:if="${amendment}" class="govuk-caption-l" th:text="#{application.amendment}"></span>
-            <span th:unless="${amendment}" class="govuk-caption-l" th:text="#{application.create}"></span>
+            <span th:if="${caseContext.isApplication()}" class="govuk-caption-l" th:text="#{application.create}"></span>
+            <span th:if="${caseContext.isAmendment()}" class="govuk-caption-l" th:text="#{application.amendment}"></span>
             <h1 class="govuk-heading-l">
                 Opponents and other parties
             </h1>
