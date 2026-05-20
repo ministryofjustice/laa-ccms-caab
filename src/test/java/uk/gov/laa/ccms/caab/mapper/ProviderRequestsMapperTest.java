@@ -437,4 +437,16 @@ class ProviderRequestsMapperTest {
     assertNull(
         mapper.fileToProviderRequestAttribute(null), "Result should be null when input is null");
   }
+
+  @Test
+  @DisplayName("Should correctly parse date from datepicker (no leading zeroes")
+  void shouldParseDateWithoutLeadingZeroes() {
+    DynamicOptionFormData optionFormData = new DynamicOptionFormData();
+    optionFormData.setFieldType("DAT");
+    optionFormData.setFieldValue("7/5/2026");
+
+    String result = mapper.formatDynamicOption(optionFormData);
+
+    assertEquals("2026-05-07", result);
+  }
 }

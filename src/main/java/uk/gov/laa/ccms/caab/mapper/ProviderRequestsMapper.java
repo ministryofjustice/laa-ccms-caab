@@ -177,12 +177,10 @@ public interface ProviderRequestsMapper {
     if (DATE_DYNAMIC_OPTION.equals(dynamicOption.getFieldType())
         && dynamicOption.getFieldValue() != null) {
 
-      String value = normaliseDate(dynamicOption.getFieldValue());
-
       try {
-        final DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        final DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("d/M/yyyy");
         final DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        final LocalDate date = LocalDate.parse(value, inputFormatter);
+        final LocalDate date = LocalDate.parse(dynamicOption.getFieldValue(), inputFormatter);
         return date.format(outputFormatter);
       } catch (final DateTimeParseException e) {
         // Handle the exception or return the original value
@@ -245,26 +243,5 @@ public interface ProviderRequestsMapper {
     }
 
     return attributes;
-  }
-
-  private String normaliseDate(String input) {
-    if (input == null || input.isBlank()) {
-      return input;
-    }
-
-    String[] parts = input.trim().split("/");
-    if (parts.length != 3) {
-      return input;
-    }
-
-    try {
-      String day = "%02d".formatted(Integer.parseInt(parts[0].trim()));
-      String month = "%02d".formatted(Integer.parseInt(parts[1].trim()));
-      String year = parts[2].trim();
-
-      return day + '/' + month + '/' + year;
-    } catch (Exception e) {
-      return input;
-    }
   }
 }
