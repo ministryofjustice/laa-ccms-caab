@@ -28,6 +28,33 @@ public class AddressService {
   private final AddressFormDataMapper addressFormDataMapper;
 
   /**
+   * Updates the ClientFormDataAddressDetails object with information from the
+   * AddressResultRowDisplay object.
+   *
+   * @param addressDetails Target address details object to update.
+   * @param addressResultRowDisplay Source object containing the address details.
+   */
+  public void updateClientFormDataAddressDetails(
+      final ClientFormDataAddressDetails addressDetails,
+      final AddressResultRowDisplay addressResultRowDisplay) {
+    clientAddressResultDisplayMapper.updateClientFormDataAddressDetails(
+        addressDetails, addressResultRowDisplay);
+    addressDetails.setAddressSearch(new AddressSearchFormData());
+  }
+
+  /**
+   * Updates the AddressFormData object with information from the AddressResultRowDisplay object.
+   *
+   * @param addressFormData Target address details object to update.
+   * @param addressResultRowDisplay Source object containing the address details.
+   */
+  public void updateAddressFormData(
+      final AddressFormData addressFormData,
+      final AddressResultRowDisplay addressResultRowDisplay) {
+    addressFormDataMapper.updateAddressFormData(addressFormData, addressResultRowDisplay);
+  }
+
+  /**
    * Fetches addresses based on the given postcode by using the Ordinance Survey API. Maps the API
    * response to ClientAddressResultsDisplay format.
    *
@@ -96,6 +123,24 @@ public class AddressService {
         addressDetails, clientAddress);
 
     addressDetails.setAddressSearch(new AddressSearchFormData());
+  }
+
+  /**
+   * Retrieves the address associated with the given UPRN from the results.
+   *
+   * @param uprn The Unique Property Reference Number (UPRN) for the address.
+   * @param results The list of addresses to search the UPRN from.
+   * @return The matching AddressResultRowDisplay or null.
+   */
+  public AddressResultRowDisplay getSelectedAddress(
+      final String uprn, final ResultsDisplay<AddressResultRowDisplay> results) {
+
+    return results != null
+        ? results.getContent().stream()
+            .filter(result -> uprn.equals(result.getUprn()))
+            .findFirst()
+            .orElse(null)
+        : null;
   }
 
   /**

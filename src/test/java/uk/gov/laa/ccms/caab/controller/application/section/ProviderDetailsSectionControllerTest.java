@@ -19,6 +19,7 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
@@ -45,6 +46,9 @@ import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.ProviderDetailsValidator;
 import uk.gov.laa.ccms.caab.config.UserRole;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
+import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
@@ -52,6 +56,7 @@ import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
+/** Tests for {@link ProviderDetailsSectionController}. */
 @ExtendWith(MockitoExtension.class)
 @ContextConfiguration
 @WebAppConfiguration
@@ -71,6 +76,7 @@ public class ProviderDetailsSectionControllerTest {
 
   @Autowired private WebApplicationContext webApplicationContext;
 
+  /** Sets up the controller under test. */
   @BeforeEach
   public void setup() {
     mockMvc =
@@ -102,6 +108,36 @@ public class ProviderDetailsSectionControllerTest {
         .andExpect(model().attribute(ACTIVE_CASE, activeCase));
 
     verify(applicationService, times(1)).getProviderDetailsFormData(applicationId);
+    verifyNoInteractions(providerService);
+  }
+
+  @Test
+  public void testApplicationSummaryProviderDetailsGet_AmendmentUsesEbsCase() throws Exception {
+    final ActiveCase activeCase = ActiveCase.builder().caseReferenceNumber("CASE123").build();
+    final UserDetail user = new UserDetail();
+    final ApplicationProviderDetails providerDetails =
+        new ApplicationProviderDetails()
+            .office(new IntDisplayValue().id(321).displayValue("Office"));
+    final ApplicationDetail ebsCase =
+        new ApplicationDetail().caseReferenceNumber("CASE123").providerDetails(providerDetails);
+    final ApplicationFormData applicationFormData = new ApplicationFormData();
+
+    when(applicationService.getProviderDetailsFormData(providerDetails))
+        .thenReturn(applicationFormData);
+
+    this.mockMvc
+        .perform(
+            get("/amendments/sections/provider-details")
+                .sessionAttr(CASE, ebsCase)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(USER_DETAILS, user))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/sections/provider-details-section"))
+        .andExpect(model().attribute(APPLICATION_FORM_DATA, applicationFormData))
+        .andExpect(model().attribute(ACTIVE_CASE, activeCase));
+
+    verify(applicationService, times(1)).getProviderDetailsFormData(providerDetails);
     verifyNoInteractions(providerService);
   }
 
@@ -144,6 +180,7 @@ public class ProviderDetailsSectionControllerTest {
     verifyNoInteractions(applicationService);
   }
 
+  /** Verifies provider details save for valid application values. */
   @ParameterizedTest
   @CsvSource(
       value = {
@@ -212,9 +249,9 @@ public class ProviderDetailsSectionControllerTest {
         .andExpect(request().sessionAttribute(SUBMISSION_TRANSACTION_ID, "TRANS123"));
 
     verify(providerDetailsValidator, times(1)).validate(any(), any());
-    verify(applicationService, times(1)).updateProviderDetails(any(), any(), any());
     verify(amendmentService, times(1))
         .submitQuickAmendmentProviderDetails(eq(applicationFormData), eq("CASE123"), eq(user));
+    verifyNoInteractions(applicationService);
   }
 
   @Test
@@ -237,7 +274,7 @@ public class ProviderDetailsSectionControllerTest {
         .andExpect(redirectedUrl("/case/overview"));
 
     verify(providerDetailsValidator, times(1)).validate(any(), any());
-    verify(applicationService, times(1)).updateProviderDetails(any(), any(), any());
+    verifyNoInteractions(applicationService);
     verifyNoInteractions(amendmentService);
   }
 

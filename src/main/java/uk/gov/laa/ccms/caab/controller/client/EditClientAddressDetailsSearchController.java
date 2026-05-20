@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.client;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.EDIT_CLIENT_ADDRESS_FLOW;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -15,12 +16,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import uk.gov.laa.ccms.caab.bean.AddressLookupFlowData;
 import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
-import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
 
 /**
@@ -44,7 +46,8 @@ public class EditClientAddressDetailsSearchController {
   /**
    * Handles the GET request for edit client address search page.
    *
-   * @param clientAddressSearchResults the address results from ordinance survey api.
+   * @param caseContext The context for the application (e.g. application or amendments).
+   * @param addressFlow the address lookup flow data.
    * @param addressSearch The address search model containing the uprn.
    * @param model The model for the view.
    * @return The view name for the client basic details page
@@ -52,12 +55,12 @@ public class EditClientAddressDetailsSearchController {
   @GetMapping("/{caseContext}/sections/client/details/address/search")
   public String clientDetailsAddressSearch(
       @PathVariable("caseContext") final CaseContext caseContext,
-      @SessionAttribute(ADDRESS_SEARCH_RESULTS)
-          final ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults,
+      @SessionAttribute(EDIT_CLIENT_ADDRESS_FLOW)
+          final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow,
       @ModelAttribute("addressSearch") final AddressSearchFormData addressSearch,
       final Model model) {
 
-    model.addAttribute(ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
+    model.addAttribute(ADDRESS_SEARCH_RESULTS, addressFlow.getSearchResults());
 
     return "application/sections/client-address-search-results";
   }
@@ -65,7 +68,8 @@ public class EditClientAddressDetailsSearchController {
   /**
    * Handles the client address results submission.
    *
-   * @param clientAddressSearchResults the address results from ordinance survey api.
+   * @param caseContext The context for the application (e.g. application or amendments).
+   * @param addressFlow the address lookup flow data.
    * @param clientFlowFormData The data for create client flow.
    * @param addressSearch The address search model containing the uprn.
    * @param model The model for the view.
@@ -76,8 +80,8 @@ public class EditClientAddressDetailsSearchController {
   @PostMapping("/{caseContext}/sections/client/details/address/search")
   public String clientDetailsAddressSearch(
       @PathVariable("caseContext") final CaseContext caseContext,
-      @SessionAttribute(ADDRESS_SEARCH_RESULTS)
-          final ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults,
+      @SessionAttribute(EDIT_CLIENT_ADDRESS_FLOW)
+          final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
       @ModelAttribute("addressSearch") final AddressSearchFormData addressSearch,
       final Model model,
@@ -87,18 +91,18 @@ public class EditClientAddressDetailsSearchController {
     // validate if an address is selected
     addressSearchValidator.validate(addressSearch, bindingResult);
     if (bindingResult.hasErrors()) {
-      model.addAttribute(ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
+      model.addAttribute(ADDRESS_SEARCH_RESULTS, addressFlow.getSearchResults());
       return "application/sections/client-address-search-results";
     }
 
     // Add the address to the client session flow data
-    addressService.addAddressToClientDetails(
-        addressSearch.getUprn(),
-        clientAddressSearchResults,
-        clientFlowFormData.getAddressDetails());
+    final AddressResultRowDisplay selectedAddress =
+        addressService.getSelectedAddress(addressSearch.getUprn(), addressFlow.getSearchResults());
+    addressFlow.setSelectedAddress(selectedAddress);
 
     // Cleanup
-    session.removeAttribute(ADDRESS_SEARCH_RESULTS);
+    addressFlow.setSearchResults(null);
+    session.setAttribute(EDIT_CLIENT_ADDRESS_FLOW, addressFlow);
 
     return "redirect:/%s/sections/client/details/address".formatted(caseContext.getPathValue());
   }

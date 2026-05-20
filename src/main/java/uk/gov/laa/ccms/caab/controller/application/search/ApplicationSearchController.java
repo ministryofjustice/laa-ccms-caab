@@ -6,6 +6,11 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMAR
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_CONTEXT;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CORRESPONDENCE_ADDRESS_FLOW;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CREATE_CLIENT_ADDRESS_FLOW;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.EDIT_CLIENT_ADDRESS_FLOW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
 
@@ -200,7 +205,7 @@ public class ApplicationSearchController {
       @PathVariable("case-reference-number") final String caseReferenceNumber,
       HttpSession session) {
 
-    session.removeAttribute(ACTIVE_CASE);
+    clearCaseScopedSession(session);
 
     ApplicationDetail ebsCase = null;
     try {
@@ -246,6 +251,15 @@ public class ApplicationSearchController {
     session.setAttribute(NOTIFICATION_ID, notificationId);
 
     return "redirect:/case/overview";
+  }
+
+  private void clearCaseScopedSession(final HttpSession session) {
+    session.removeAttribute(ACTIVE_CASE);
+    session.removeAttribute(CLIENT_FLOW_CONTEXT);
+    session.removeAttribute(CLIENT_FLOW_FORM_DATA);
+    session.removeAttribute(CORRESPONDENCE_ADDRESS_FLOW);
+    session.removeAttribute(CREATE_CLIENT_ADDRESS_FLOW);
+    session.removeAttribute(EDIT_CLIENT_ADDRESS_FLOW);
   }
 
   private void populateDropdowns(UserDetail user, Model model) {
