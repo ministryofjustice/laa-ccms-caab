@@ -218,8 +218,7 @@ public class ClientSubmissionsInProgressControllerTest {
                     SUBMISSION_TRANSACTION_ID,
                     CLIENT_FLOW_FORM_DATA,
                     APPLICATION_CLIENT_NAMES,
-                    CASE,
-                    ACTIVE_CASE));
+                    CASE));
   }
 
   @Test

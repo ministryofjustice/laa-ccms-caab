@@ -355,6 +355,8 @@ class AmendmentServiceTest {
       providerDetails.setOfficeId(2);
       providerDetails.setFeeEarnerId(3);
       providerDetails.setSupervisorId(4);
+      providerDetails.setProviderCaseReference("caseRef");
+      providerDetails.setContactNameId("contactId");
 
       String caseRef = "12345";
 
@@ -379,7 +381,16 @@ class AmendmentServiceTest {
                       application.getProviderDetails() != null
                           && application.getProviderDetails().getOffice().getId().equals(2)
                           && application.getProviderDetails().getFeeEarner().getId().equals("3")
-                          && application.getProviderDetails().getSupervisor().getId().equals("4")));
+                          && application.getProviderDetails().getSupervisor().getId().equals("4")
+                          && application
+                              .getProviderDetails()
+                              .getProviderCaseReference()
+                              .equals("caseRef")
+                          && application
+                              .getProviderDetails()
+                              .getProviderContact()
+                              .getId()
+                              .equals("contactId")));
       verify(soaApiClient, times(1))
           .updateCase(
               eq("123"), eq("Type"), any(), eq(QuickEditTypeConstants.MESSAGE_TYPE_EDIT_PROVIDER));

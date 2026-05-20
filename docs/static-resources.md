@@ -18,7 +18,7 @@ With `npm` installed on your machine, you will need to ensure you have `gulp` in
 system globally rather than at project level.
 
 ```sh
-npm install -g gulp
+npm install -g gulp-cli
 ```
 
 Check this has installed by checking the version.
@@ -42,8 +42,17 @@ There is just one task defined in `gulpfile.js` called `default`. When that task
 it will re-compile all the `.scss` files within the project into minified stylesheets, which are
 then stored in `src/main/resources/static/ccms`.
 
+This is also applied for GovUK and MoJ assets to ensure assets are correctly referenced using
+the application context root `/civil`.
+
 To run the default task, you can just run gulp without any additional parameters:
 ```shell
 # Whilst in the project directory
 gulp
+```
+
+Alternatively, you can run the Gradle task:
+
+```shell
+./gradlew buildFrontend
 ```

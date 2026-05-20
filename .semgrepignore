@@ -1,2 +1,8 @@
 # Insecure cryptographic implementation, required by legacy integrations
 src/main/java/uk/gov/laa/ccms/caab/opa/security/Encryptor.java
+
+# Compiled assets
+src/main/resources/static/assets/govuk/all.bundle.js
+src/main/resources/static/assets/govuk/all.bundle.js.map
+src/main/resources/static/assets/moj/all.bundle.js
+src/main/resources/static/assets/moj/all.bundle.js.map

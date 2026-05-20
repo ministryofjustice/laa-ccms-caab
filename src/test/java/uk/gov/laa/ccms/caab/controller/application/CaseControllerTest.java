@@ -38,7 +38,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.bind.ServletRequestBindingException;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
@@ -834,11 +833,9 @@ class CaseControllerTest {
       ApplicationDetail ebsCase = new ApplicationDetail();
       ApplicationSectionDisplay display = ApplicationSectionDisplay.builder().build();
 
-      assertThat(
-              mockMvc.perform(
-                  get("/case/details/costs")
-                      .sessionAttr(CASE, ebsCase)
-                      .sessionAttr("applicationSectionDisplay", display)))
+      when(applicationService.getCaseDetailsDisplay(ebsCase)).thenReturn(display);
+
+      assertThat(mockMvc.perform(get("/case/details/costs").sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/case-cost-details")
           .model()
@@ -850,10 +847,12 @@ class CaseControllerTest {
     void caseCostDetailsThrowsExceptionWhenCaseDetailsMissing() {
       ApplicationDetail ebsCase = new ApplicationDetail();
 
+      when(applicationService.getCaseDetailsDisplay(ebsCase)).thenReturn(null);
+
       assertThat(mockMvc.perform(get("/case/details/costs").sessionAttr(CASE, ebsCase)))
           .failure()
-          .isInstanceOf(ServletRequestBindingException.class)
-          .hasMessageContaining("applicationSectionDisplay");
+          .hasCauseInstanceOf(CaabApplicationException.class)
+          .hasMessageContaining("Failed to retrieve case details");
     }
 
     @Test
@@ -1224,17 +1223,14 @@ class CaseControllerTest {
       final ApplicationSectionDisplay applicationSectionDisplay =
           ApplicationSectionDisplay.builder().build();
 
+      when(applicationService.getCaseDetailsDisplay(ebsCase)).thenReturn(applicationSectionDisplay);
       when(applicationService.calculateMainProviderAllocation(ebsCase))
           .thenReturn(mainProviderAllocation);
       when(applicationService.getCurrentProviderBilledAmount(ebsCase))
           .thenReturn(currentProviderBilled);
 
       // When/Then
-      assertThat(
-              mockMvc.perform(
-                  get("/case/details/costs/allocation")
-                      .sessionAttr(CASE, ebsCase)
-                      .sessionAttr("applicationSectionDisplay", applicationSectionDisplay)))
+      assertThat(mockMvc.perform(get("/case/details/costs/allocation").sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/cost-limit-allocation")
           .model()
@@ -1262,16 +1258,13 @@ class CaseControllerTest {
           ApplicationSectionDisplay.builder().build();
       final java.math.BigDecimal mainProviderAllocation = new java.math.BigDecimal("1000.00");
 
+      when(applicationService.getCaseDetailsDisplay(ebsCase)).thenReturn(applicationSectionDisplay);
       when(applicationService.calculateMainProviderAllocation(ebsCase))
           .thenReturn(mainProviderAllocation);
       when(applicationService.getCurrentProviderBilledAmount(ebsCase)).thenReturn(null);
 
       // When/Then
-      assertThat(
-              mockMvc.perform(
-                  get("/case/details/costs/allocation")
-                      .sessionAttr(CASE, ebsCase)
-                      .sessionAttr("applicationSectionDisplay", applicationSectionDisplay)))
+      assertThat(mockMvc.perform(get("/case/details/costs/allocation").sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/cost-limit-allocation")
           .model()
@@ -1292,11 +1285,13 @@ class CaseControllerTest {
       final CostStructureDetail costs = new CostStructureDetail();
       ebsCase.setCosts(costs);
 
+      when(applicationService.getCaseDetailsDisplay(ebsCase)).thenReturn(null);
+
       // When/Then
       assertThat(mockMvc.perform(get("/case/details/costs/allocation").sessionAttr(CASE, ebsCase)))
           .failure()
-          .isInstanceOf(ServletRequestBindingException.class)
-          .hasMessageContaining("applicationSectionDisplay");
+          .hasCauseInstanceOf(CaabApplicationException.class)
+          .hasMessageContaining("Failed to retrieve case details");
     }
   }
 }

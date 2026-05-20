@@ -234,7 +234,7 @@ public class ProviderDetailsSectionControllerTest {
                 .sessionAttr(USER_DETAILS, user)
                 .sessionAttr(APPLICATION_FORM_DATA, applicationFormData))
         .andDo(print())
-        .andExpect(redirectedUrl("/application/sections"));
+        .andExpect(redirectedUrl("/case/overview"));
 
     verify(providerDetailsValidator, times(1)).validate(any(), any());
     verify(applicationService, times(1)).updateProviderDetails(any(), any(), any());
