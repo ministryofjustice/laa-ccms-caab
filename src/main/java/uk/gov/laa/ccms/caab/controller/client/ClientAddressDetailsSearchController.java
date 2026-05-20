@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.client;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CREATE_CLIENT_ADDRESS_FLOW;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -14,11 +15,12 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import uk.gov.laa.ccms.caab.bean.AddressLookupFlowData;
 import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
-import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
 
 /** Controller for handling address client details selection during the new application process. */
@@ -47,12 +49,12 @@ public class ClientAddressDetailsSearchController {
    */
   @GetMapping("/application/client/details/address/search")
   public String clientDetailsAddressSearch(
-      @SessionAttribute(ADDRESS_SEARCH_RESULTS)
-          final ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults,
+      @SessionAttribute(CREATE_CLIENT_ADDRESS_FLOW)
+          final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow,
       @ModelAttribute("addressSearch") final AddressSearchFormData addressSearch,
       final Model model) {
 
-    model.addAttribute(ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
+    model.addAttribute(ADDRESS_SEARCH_RESULTS, addressFlow.getSearchResults());
 
     return "application/client/address-client-search-results";
   }
@@ -70,8 +72,8 @@ public class ClientAddressDetailsSearchController {
    */
   @PostMapping("/application/client/details/address/search")
   public String clientDetailsAddressSearch(
-      @SessionAttribute(ADDRESS_SEARCH_RESULTS)
-          ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults,
+      @SessionAttribute(CREATE_CLIENT_ADDRESS_FLOW)
+          AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       @ModelAttribute("addressSearch") AddressSearchFormData addressSearch,
       Model model,
@@ -81,18 +83,18 @@ public class ClientAddressDetailsSearchController {
     // validate if an address is selected
     addressSearchValidator.validate(addressSearch, bindingResult);
     if (bindingResult.hasErrors()) {
-      model.addAttribute(ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
+      model.addAttribute(ADDRESS_SEARCH_RESULTS, addressFlow.getSearchResults());
       return "application/client/address-client-search-results";
     }
 
     // Add the address to the client session flow data
-    addressService.addAddressToClientDetails(
-        addressSearch.getUprn(),
-        clientAddressSearchResults,
-        clientFlowFormData.getAddressDetails());
+    final AddressResultRowDisplay selectedAddress =
+        addressService.getSelectedAddress(addressSearch.getUprn(), addressFlow.getSearchResults());
+    addressFlow.setSelectedAddress(selectedAddress);
 
     // Cleanup
-    session.removeAttribute(ADDRESS_SEARCH_RESULTS);
+    addressFlow.setSearchResults(null);
+    session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
 
     return "redirect:/application/client/details/address";
   }

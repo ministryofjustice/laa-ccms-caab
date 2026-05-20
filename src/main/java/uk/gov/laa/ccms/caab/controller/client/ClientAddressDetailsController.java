@@ -1,7 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.client;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CREATE_CLIENT_ADDRESS_FLOW;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import uk.gov.laa.ccms.caab.bean.AddressLookupFlowData;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
@@ -59,13 +60,30 @@ public class ClientAddressDetailsController {
    */
   @GetMapping("/application/client/details/address")
   public String clientDetailsAddress(
-      @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
-      @ModelAttribute("addressDetails") ClientFormDataAddressDetails addressDetails,
-      Model model) {
+      @SessionAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
+      @ModelAttribute("addressDetails") final ClientFormDataAddressDetails addressDetails,
+      final Model model,
+      final HttpSession session) {
 
     populateDropdowns(model);
-    addressDetails.setVulnerableClient(clientFlowFormData.getBasicDetails().getVulnerableClient());
-    addressDetails.setClientFlowFormAction(clientFlowFormData.getAction());
+
+    final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+        getOrCreateCreateClientAddressFlow(session);
+    final AddressResultRowDisplay selectedAddress = addressFlow.getSelectedAddress();
+    final ClientFormDataAddressDetails currentAddressDetails =
+        selectedAddress != null && clientFlowFormData.getAddressDetails() != null
+            ? clientFlowFormData.getAddressDetails()
+            : addressDetails;
+    currentAddressDetails.setVulnerableClient(
+        clientFlowFormData.getBasicDetails().getVulnerableClient());
+    currentAddressDetails.setClientFlowFormAction(clientFlowFormData.getAction());
+
+    if (selectedAddress != null) {
+      addressService.updateClientFormDataAddressDetails(currentAddressDetails, selectedAddress);
+      clientFlowFormData.setAddressDetails(currentAddressDetails);
+      addressFlow.setSelectedAddress(null);
+      session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
+    }
 
     if (clientFlowFormData.getAddressDetails() != null) {
       model.addAttribute("addressDetails", clientFlowFormData.getAddressDetails());
@@ -122,7 +140,10 @@ public class ClientAddressDetailsController {
             addressService.filterByHouseNumber(
                 clientFlowFormData.getAddressDetails().getHouseNameNumber(),
                 clientAddressSearchResults);
-        session.setAttribute(ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
+        final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+            getOrCreateCreateClientAddressFlow(session);
+        addressFlow.setSearchResults(clientAddressSearchResults);
+        session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
       }
 
       if (bindingResult.hasErrors()) {
@@ -138,5 +159,15 @@ public class ClientAddressDetailsController {
 
   private void populateDropdowns(Model model) {
     new DropdownBuilder(model).addDropdown("countries", lookupService.getCountries()).build();
+  }
+
+  @SuppressWarnings("unchecked")
+  private AddressLookupFlowData<ClientFormDataAddressDetails> getOrCreateCreateClientAddressFlow(
+      final HttpSession session) {
+    final Object sessionValue = session.getAttribute(CREATE_CLIENT_ADDRESS_FLOW);
+    if (sessionValue instanceof AddressLookupFlowData<?> addressFlow) {
+      return (AddressLookupFlowData<ClientFormDataAddressDetails>) addressFlow;
+    }
+    return new AddressLookupFlowData<>("create-client");
   }
 }
