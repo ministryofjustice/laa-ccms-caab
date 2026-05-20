@@ -6,6 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.util.ApplicationUtil.requireEbsCase;
 
 import jakarta.servlet.http.HttpSession;
 import java.util.Collections;
@@ -138,11 +139,6 @@ public class ProviderDetailsSectionController {
           requireEbsCase(ebsCase).getProviderDetails());
     }
     return applicationService.getProviderDetailsFormData(requireApplicationId(applicationId));
-  }
-
-  private ApplicationDetail requireEbsCase(final ApplicationDetail ebsCase) {
-    return Optional.ofNullable(ebsCase)
-        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve EBS case"));
   }
 
   private String requireApplicationId(final String applicationId) {

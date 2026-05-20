@@ -14,6 +14,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CORRESPONDENCE_ADD
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
+import static uk.gov.laa.ccms.caab.util.ApplicationUtil.requireEbsCase;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -273,11 +274,6 @@ public class EditGeneralDetailsSectionController {
 
       return "redirect:/application/sections/linked-cases";
     }
-  }
-
-  private ApplicationDetail requireEbsCase(@Nullable final ApplicationDetail ebsCase) {
-    return Optional.ofNullable(ebsCase)
-        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve EBS case"));
   }
 
   private void populateCorrespondenceAddressDropdowns(final Model model) {

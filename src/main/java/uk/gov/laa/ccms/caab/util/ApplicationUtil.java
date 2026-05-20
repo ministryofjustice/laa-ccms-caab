@@ -4,6 +4,9 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEP
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
 
 import java.util.Date;
+import java.util.Optional;
+import org.springframework.lang.Nullable;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
@@ -115,6 +118,17 @@ public final class ApplicationUtil {
       }
     }
     return latestKeyChange;
+  }
+
+  /**
+   * Requires the EBS case to be available from session-backed state.
+   *
+   * @param ebsCase the EBS case from session state
+   * @return the EBS case
+   */
+  public static ApplicationDetail requireEbsCase(@Nullable final ApplicationDetail ebsCase) {
+    return Optional.ofNullable(ebsCase)
+        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve EBS case"));
   }
 
   private ApplicationUtil() {}
