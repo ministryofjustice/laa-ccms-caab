@@ -46,7 +46,8 @@ public class EditClientAddressDetailsSearchController {
   /**
    * Handles the GET request for edit client address search page.
    *
-   * @param clientAddressSearchResults the address results from ordinance survey api.
+   * @param caseContext The context for the application (e.g. application or amendments).
+   * @param addressFlow the address lookup flow data.
    * @param addressSearch The address search model containing the uprn.
    * @param model The model for the view.
    * @return The view name for the client basic details page
@@ -67,7 +68,8 @@ public class EditClientAddressDetailsSearchController {
   /**
    * Handles the client address results submission.
    *
-   * @param clientAddressSearchResults the address results from ordinance survey api.
+   * @param caseContext The context for the application (e.g. application or amendments).
+   * @param addressFlow the address lookup flow data.
    * @param clientFlowFormData The data for create client flow.
    * @param addressSearch The address search model containing the uprn.
    * @param model The model for the view.

@@ -42,7 +42,7 @@ public class ClientAddressDetailsSearchController {
   /**
    * Handles the GET request for client address details page.
    *
-   * @param clientAddressSearchResults the address results from ordinance survey api.
+   * @param addressFlow the address lookup flow data.
    * @param addressSearch The address search model containing the uprn.
    * @param model The model for the view.
    * @return The view name for the client basic details page
@@ -62,7 +62,7 @@ public class ClientAddressDetailsSearchController {
   /**
    * Handles the client address results submission.
    *
-   * @param clientAddressSearchResults the address results from ordinance survey api.
+   * @param addressFlow the address lookup flow data.
    * @param clientFlowFormData The data for create client flow.
    * @param addressSearch The address search model containing the uprn.
    * @param model The model for the view.

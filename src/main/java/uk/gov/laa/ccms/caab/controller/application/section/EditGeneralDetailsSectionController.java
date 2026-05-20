@@ -292,7 +292,9 @@ public class EditGeneralDetailsSectionController {
    * Handles the GET request for edit correspondence address search page.
    *
    * @param caseContext the context for the application (e.g. application or amendments)
-   * @param addressResultsDisplay the address results from ordinance survey api.
+   * @param addressFlow the correspondence address lookup flow data.
+   * @param ebsCase the EBS case details.
+   * @param applicationId the application ID.
    * @param addressSearch The address search model containing the uprn.
    * @param model The model for the view.
    * @return The view name for the client basic details page
@@ -326,7 +328,9 @@ public class EditGeneralDetailsSectionController {
    * Handles the correspondence address results submission.
    *
    * @param caseContext the context for the application (e.g. application or amendments)
-   * @param addressResultsDisplay the address results from ordinance survey api.
+   * @param addressFlow the correspondence address lookup flow data.
+   * @param ebsCase the EBS case details.
+   * @param applicationId the application ID.
    * @param addressSearch The address search model containing the uprn.
    * @param model The model for the view.
    * @param bindingResult Validation result.
