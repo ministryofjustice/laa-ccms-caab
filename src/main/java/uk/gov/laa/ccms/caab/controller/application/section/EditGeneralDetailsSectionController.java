@@ -10,9 +10,11 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CORRESPONDENCE_ADDRESS_FLOW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
+import static uk.gov.laa.ccms.caab.util.ApplicationUtil.requireEbsCase;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -38,6 +40,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
+import uk.gov.laa.ccms.caab.bean.AddressLookupFlowData;
 import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
@@ -97,7 +100,7 @@ public class EditGeneralDetailsSectionController {
   private static final String ACTION_FIND_ADDRESS = "find_address";
   protected static final String CURRENT_URL = "currentUrl";
   protected static final String CASE_RESULTS_PAGE = "caseResultsPage";
-  private static final String ADDRESS_DETAILS = "addressDetails";
+  private static final String ADDRESS_DETAILS_MODEL_ATTRIBUTE = "addressDetails";
 
   /**
    * Handles the GET request for editing an application's correspondence address.
@@ -115,26 +118,69 @@ public class EditGeneralDetailsSectionController {
       final Model model,
       final HttpSession session) {
 
-    final AddressFormData addressDetails;
+    final String addressContext = correspondenceAddressContext(caseContext, ebsCase, applicationId);
+    final AddressLookupFlowData<AddressFormData> addressFlow =
+        getOrCreateCorrespondenceAddressFlow(session, addressContext);
 
-    if (caseContext.isAmendment()) {
-      final ApplicationDetail amendmentCase = requireEbsCase(ebsCase);
-      addressDetails =
-          applicationService.getCorrespondenceAddressFormData(
-              amendmentCase.getCorrespondenceAddress());
-    } else if (ebsCase != null && ebsCase.getCorrespondenceAddress() != null) {
-      addressDetails =
-          applicationService.getCorrespondenceAddressFormData(ebsCase.getCorrespondenceAddress());
-    } else {
-      addressDetails = applicationService.getCorrespondenceAddressFormData(applicationId);
+    AddressFormData addressDetails =
+        addressFlow.getSelectedAddress() != null ? addressFlow.getAddressDetails() : null;
+    if (addressDetails == null) {
+      addressDetails = getCorrespondenceAddressFormData(caseContext, ebsCase, applicationId);
     }
 
-    session.setAttribute(ADDRESS_DETAILS, addressDetails);
-    model.addAttribute(ADDRESS_DETAILS, addressDetails);
+    if (addressFlow.getSelectedAddress() != null) {
+      addressService.updateAddressFormData(addressDetails, addressFlow.getSelectedAddress());
+      addressFlow.setSelectedAddress(null);
+    }
+
+    addressFlow.setAddressDetails(addressDetails);
+    session.setAttribute(CORRESPONDENCE_ADDRESS_FLOW, addressFlow);
+    model.addAttribute(ADDRESS_DETAILS_MODEL_ATTRIBUTE, addressDetails);
 
     populateCorrespondenceAddressDropdowns(model);
 
     return "application/sections/correspondence-address-details";
+  }
+
+  private AddressFormData getCorrespondenceAddressFormData(
+      final CaseContext caseContext,
+      @Nullable final ApplicationDetail ebsCase,
+      @Nullable final String applicationId) {
+    if (caseContext.isAmendment()) {
+      final ApplicationDetail amendmentCase = requireEbsCase(ebsCase);
+      return applicationService.getCorrespondenceAddressFormData(
+          amendmentCase.getCorrespondenceAddress());
+    } else if (ebsCase != null && ebsCase.getCorrespondenceAddress() != null) {
+      return applicationService.getCorrespondenceAddressFormData(
+          ebsCase.getCorrespondenceAddress());
+    }
+    return applicationService.getCorrespondenceAddressFormData(applicationId);
+  }
+
+  private String correspondenceAddressContext(
+      final CaseContext caseContext,
+      @Nullable final ApplicationDetail ebsCase,
+      @Nullable final String applicationId) {
+    if (caseContext.isAmendment()) {
+      return "%s:%s"
+          .formatted(caseContext.getPathValue(), requireEbsCase(ebsCase).getCaseReferenceNumber());
+    }
+    return "%s:%s".formatted(caseContext.getPathValue(), applicationId);
+  }
+
+  private void clearCorrespondenceAddressSession(final HttpSession session) {
+    session.removeAttribute(CORRESPONDENCE_ADDRESS_FLOW);
+  }
+
+  @SuppressWarnings("unchecked")
+  private AddressLookupFlowData<AddressFormData> getOrCreateCorrespondenceAddressFlow(
+      final HttpSession session, final String addressContext) {
+    final Object sessionValue = session.getAttribute(CORRESPONDENCE_ADDRESS_FLOW);
+    if (sessionValue instanceof AddressLookupFlowData<?> addressFlow
+        && addressContext.equals(addressFlow.getContext())) {
+      return (AddressLookupFlowData<AddressFormData>) addressFlow;
+    }
+    return new AddressLookupFlowData<>(addressContext);
   }
 
   /**
@@ -158,10 +204,15 @@ public class EditGeneralDetailsSectionController {
       @SessionAttribute(CASE) @Nullable final ApplicationDetail ebsCase,
       @SessionAttribute(APPLICATION_ID) @Nullable final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @Validated @ModelAttribute(ADDRESS_DETAILS) final AddressFormData addressDetails,
+      @Validated @ModelAttribute(ADDRESS_DETAILS_MODEL_ATTRIBUTE)
+          final AddressFormData addressDetails,
       final BindingResult bindingResult,
       final Model model,
       final HttpSession session) {
+
+    final String addressContext = correspondenceAddressContext(caseContext, ebsCase, applicationId);
+    final AddressLookupFlowData<AddressFormData> addressFlow =
+        getOrCreateCorrespondenceAddressFlow(session, addressContext);
 
     if (ACTION_FIND_ADDRESS.equals(action)) {
       findAddressValidator.validate(addressDetails, bindingResult);
@@ -171,7 +222,8 @@ public class EditGeneralDetailsSectionController {
 
     if (bindingResult.hasErrors()) {
       populateCorrespondenceAddressDropdowns(model);
-      session.setAttribute(ADDRESS_DETAILS, addressDetails);
+      addressFlow.setAddressDetails(addressDetails);
+      session.setAttribute(CORRESPONDENCE_ADDRESS_FLOW, addressFlow);
       return "application/sections/correspondence-address-details";
     }
 
@@ -187,16 +239,18 @@ public class EditGeneralDetailsSectionController {
         addressSearchResults =
             addressService.filterByHouseNumber(
                 addressDetails.getHouseNameNumber(), addressSearchResults);
-        session.setAttribute(ADDRESS_SEARCH_RESULTS, addressSearchResults);
+        addressFlow.setSearchResults(addressSearchResults);
       }
 
       if (bindingResult.hasErrors()) {
         populateCorrespondenceAddressDropdowns(model);
-        session.setAttribute(ADDRESS_DETAILS, addressDetails);
+        addressFlow.setAddressDetails(addressDetails);
+        session.setAttribute(CORRESPONDENCE_ADDRESS_FLOW, addressFlow);
         return "application/sections/correspondence-address-details";
       }
 
-      session.setAttribute(ADDRESS_DETAILS, addressDetails);
+      addressFlow.setAddressDetails(addressDetails);
+      session.setAttribute(CORRESPONDENCE_ADDRESS_FLOW, addressFlow);
       return "redirect:/%s/sections/correspondence-address/search"
           .formatted(caseContext.getPathValue());
 
@@ -212,19 +266,14 @@ public class EditGeneralDetailsSectionController {
                 addressDetails, amendmentCase.getCaseReferenceNumber(), user);
         session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
 
-        session.removeAttribute(ADDRESS_DETAILS);
+        clearCorrespondenceAddressSession(session);
         return "redirect:/amendments/%s".formatted(SUBMISSION_SUBMIT_CASE);
       }
       applicationService.updateCorrespondenceAddress(applicationId, addressDetails, user);
-      session.removeAttribute(ADDRESS_DETAILS);
+      clearCorrespondenceAddressSession(session);
 
       return "redirect:/application/sections/linked-cases";
     }
-  }
-
-  private ApplicationDetail requireEbsCase(@Nullable final ApplicationDetail ebsCase) {
-    return Optional.ofNullable(ebsCase)
-        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve EBS case"));
   }
 
   private void populateCorrespondenceAddressDropdowns(final Model model) {
@@ -239,7 +288,9 @@ public class EditGeneralDetailsSectionController {
    * Handles the GET request for edit correspondence address search page.
    *
    * @param caseContext the context for the application (e.g. application or amendments)
-   * @param addressResultsDisplay the address results from ordinance survey api.
+   * @param addressFlow the correspondence address lookup flow data.
+   * @param ebsCase the EBS case details.
+   * @param applicationId the application ID.
    * @param addressSearch The address search model containing the uprn.
    * @param model The model for the view.
    * @return The view name for the client basic details page
@@ -247,12 +298,21 @@ public class EditGeneralDetailsSectionController {
   @GetMapping("/{caseContext}/sections/correspondence-address/search")
   public String correspondenceAddressGet(
       @PathVariable final CaseContext caseContext,
-      @SessionAttribute(ADDRESS_SEARCH_RESULTS)
-          final ResultsDisplay<AddressResultRowDisplay> addressResultsDisplay,
+      @SessionAttribute(name = CORRESPONDENCE_ADDRESS_FLOW, required = false)
+          final AddressLookupFlowData<AddressFormData> addressFlow,
+      @SessionAttribute(CASE) @Nullable final ApplicationDetail ebsCase,
+      @SessionAttribute(APPLICATION_ID) @Nullable final String applicationId,
       @ModelAttribute("addressSearch") final AddressSearchFormData addressSearch,
+      final HttpSession session,
       final Model model) {
 
-    model.addAttribute(ADDRESS_SEARCH_RESULTS, addressResultsDisplay);
+    if (!isCurrentCorrespondenceAddressFlow(caseContext, ebsCase, applicationId, addressFlow)
+        || addressFlow.getSearchResults() == null) {
+      clearCorrespondenceAddressSession(session);
+      return "redirect:/%s/sections/correspondence-address".formatted(caseContext.getPathValue());
+    }
+
+    model.addAttribute(ADDRESS_SEARCH_RESULTS, addressFlow.getSearchResults());
     model.addAttribute(
         "formAction",
         "%s/sections/correspondence-address/search".formatted(caseContext.getPathValue()));
@@ -264,7 +324,9 @@ public class EditGeneralDetailsSectionController {
    * Handles the correspondence address results submission.
    *
    * @param caseContext the context for the application (e.g. application or amendments)
-   * @param addressResultsDisplay the address results from ordinance survey api.
+   * @param addressFlow the correspondence address lookup flow data.
+   * @param ebsCase the EBS case details.
+   * @param applicationId the application ID.
    * @param addressSearch The address search model containing the uprn.
    * @param model The model for the view.
    * @param bindingResult Validation result.
@@ -274,31 +336,49 @@ public class EditGeneralDetailsSectionController {
   @PostMapping("/{caseContext}/sections/correspondence-address/search")
   public String correspondenceAddressSearchPost(
       @PathVariable final CaseContext caseContext,
-      @SessionAttribute(ADDRESS_SEARCH_RESULTS)
-          final ResultsDisplay<AddressResultRowDisplay> addressResultsDisplay,
-      @SessionAttribute(ADDRESS_DETAILS) final AddressFormData addressDetails,
+      @SessionAttribute(name = CORRESPONDENCE_ADDRESS_FLOW, required = false)
+          final AddressLookupFlowData<AddressFormData> addressFlow,
+      @SessionAttribute(CASE) @Nullable final ApplicationDetail ebsCase,
+      @SessionAttribute(APPLICATION_ID) @Nullable final String applicationId,
       @ModelAttribute("addressSearch") final AddressSearchFormData addressSearch,
       final Model model,
       final BindingResult bindingResult,
       final HttpSession session) {
 
+    if (!isCurrentCorrespondenceAddressFlow(caseContext, ebsCase, applicationId, addressFlow)
+        || addressFlow.getSearchResults() == null
+        || addressFlow.getAddressDetails() == null) {
+      clearCorrespondenceAddressSession(session);
+      return "redirect:/%s/sections/correspondence-address".formatted(caseContext.getPathValue());
+    }
+
     // validate if an address is selected
     addressSearchValidator.validate(addressSearch, bindingResult);
     if (bindingResult.hasErrors()) {
-      model.addAttribute(ADDRESS_SEARCH_RESULTS, addressResultsDisplay);
+      model.addAttribute(ADDRESS_SEARCH_RESULTS, addressFlow.getSearchResults());
       model.addAttribute(
           "formAction",
           "%s/sections/correspondence-address/search".formatted(caseContext.getPathValue()));
       return "application/sections/address-search-results";
     }
 
-    // Cleanup
-    session.removeAttribute(ADDRESS_SEARCH_RESULTS);
-
-    addressService.filterAndUpdateAddressFormData(
-        addressSearch.getUprn(), addressResultsDisplay, addressDetails);
+    final AddressResultRowDisplay selectedAddress =
+        addressService.getSelectedAddress(addressSearch.getUprn(), addressFlow.getSearchResults());
+    addressFlow.setSelectedAddress(selectedAddress);
+    addressFlow.setSearchResults(null);
+    session.setAttribute(CORRESPONDENCE_ADDRESS_FLOW, addressFlow);
 
     return "redirect:/%s/sections/correspondence-address".formatted(caseContext.getPathValue());
+  }
+
+  private boolean isCurrentCorrespondenceAddressFlow(
+      final CaseContext caseContext,
+      @Nullable final ApplicationDetail ebsCase,
+      @Nullable final String applicationId,
+      @Nullable final AddressLookupFlowData<AddressFormData> addressFlow) {
+    return addressFlow != null
+        && correspondenceAddressContext(caseContext, ebsCase, applicationId)
+            .equals(addressFlow.getContext());
   }
 
   /**
