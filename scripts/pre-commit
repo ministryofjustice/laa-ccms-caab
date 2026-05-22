@@ -1,0 +1,28 @@
+#!/bin/sh
+# scripts/pre-commit
+
+# Run spotlessApply
+changed_java_files=$(git diff --cached --name-only -- 'src/*/java/**/*.java')
+if [ -n "$changed_java_files" ]; then
+  echo "Running Spotless Apply..."
+  ./gradlew spotlessApply
+
+  # Re-add files that were changed by Spotless
+  # This ensures that formatting changes are included in the current commit
+  git add $(git diff --name-only --cached)
+fi
+
+# Update frontend assets
+changed_package_files=$(git diff --cached --name-only -- package.json package-lock.json)
+if [ -n "$changed_package_files" ]; then
+  echo "package.json/package-lock.json changed; rebuilding frontend assets..."
+
+  ./gradlew buildFrontend
+
+  git add \
+    src/main/resources/static/assets/fonts \
+    src/main/resources/static/assets/images \
+    src/main/resources/static/assets/govuk \
+    src/main/resources/static/assets/moj \
+    src/main/resources/static/ccms/*.css
+fi

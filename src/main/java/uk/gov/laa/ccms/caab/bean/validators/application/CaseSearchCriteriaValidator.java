@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.bean.validators.application;
 
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.ALPHA_NUMERIC_SLASH_SPACE_STRING;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CHARACTER_SET_C;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CHARACTER_SET_F;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.DOUBLE_SPACE;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.FIRST_CHARACTER_MUST_BE_ALPHA;
 
@@ -128,6 +129,12 @@ public class CaseSearchCriteriaValidator extends AbstractValidator {
             "invalid.providerCaseReference-char",
             "Your input for 'Provider case reference'"
                 + " contains double spaces. Please amend your entry.");
+      } else if (!providerCaseReference.matches(CHARACTER_SET_F)) {
+        errors.rejectValue(
+            "providerCaseReference",
+            "invalid.surname-char",
+            "Your input for 'Provider case reference' contains an invalid character. "
+                + "Please amend your entry.");
       }
     }
   }

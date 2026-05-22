@@ -869,6 +869,19 @@ public class ApplicationService {
   }
 
   /**
+   * Maps provider details already held in session into provider details form data.
+   *
+   * @param providerDetails The provider details held on the active case.
+   * @return An ApplicationFormData object containing the provider details form data.
+   */
+  public ApplicationFormData getProviderDetailsFormData(
+      final ApplicationProviderDetails providerDetails) {
+    return Optional.ofNullable(
+            applicationFormDataMapper.toApplicationProviderDetailsFormData(providerDetails))
+        .orElseGet(ApplicationFormData::new);
+  }
+
+  /**
    * Retrieves the provider details form data for a given provider ID as a Mono.
    *
    * @param id The ID of the provider.

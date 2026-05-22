@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.client;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
@@ -13,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_EDIT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.EDIT_CLIENT_ADDRESS_FLOW;
 import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 
 import java.util.ArrayList;
@@ -24,9 +27,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.AddressLookupFlowData;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
@@ -99,6 +104,68 @@ class EditClientAddressDetailsControllerTest {
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/client-address-details"))
           .andExpect(model().attributeExists("countries"));
+    }
+
+    @Test
+    void testEditClientDetailsAddressSelectedAddressIsDraftOnly() throws Exception {
+      addressDetails.setAddressLine1("Original address");
+      final AddressResultRowDisplay selectedAddress = new AddressResultRowDisplay();
+      final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+          new AddressLookupFlowData<>("edit-client");
+      addressFlow.setSelectedAddress(selectedAddress);
+      final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
+      session.setAttribute(EDIT_CLIENT_ADDRESS_FLOW, addressFlow);
+
+      doAnswer(
+              invocation -> {
+                ClientFormDataAddressDetails target = invocation.getArgument(0);
+                target.setAddressLine1("Selected address");
+                return null;
+              })
+          .when(addressService)
+          .updateClientFormDataAddressDetails(any(), any());
+      when(lookupService.getCountries()).thenReturn(Mono.just(countryLookupDetail));
+
+      mockMvc
+          .perform(get("/application/sections/client/details/address").session(session))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/client-address-details"));
+
+      assertEquals("Original address", clientFlowFormData.getAddressDetails().getAddressLine1());
+      assertEquals(
+          "Selected address",
+          ((AddressLookupFlowData<ClientFormDataAddressDetails>)
+                  session.getAttribute(EDIT_CLIENT_ADDRESS_FLOW))
+              .getAddressDetails()
+              .getAddressLine1());
+      assertNull(
+          ((AddressLookupFlowData<ClientFormDataAddressDetails>)
+                  session.getAttribute(EDIT_CLIENT_ADDRESS_FLOW))
+              .getSelectedAddress());
+    }
+
+    @Test
+    void testEditClientDetailsAddressPostNextCommitsDraft() throws Exception {
+      final ClientFormDataAddressDetails draftAddressDetails = new ClientFormDataAddressDetails();
+      draftAddressDetails.setAddressLine1("Selected address");
+      final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+          new AddressLookupFlowData<>("edit-client");
+      addressFlow.setAddressDetails(draftAddressDetails);
+
+      mockMvc
+          .perform(
+              post("/application/sections/client/details/address")
+                  .param("action", "next")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .sessionAttr(EDIT_CLIENT_ADDRESS_FLOW, addressFlow)
+                  .flashAttr("addressDetails", draftAddressDetails))
+          .andDo(print())
+          .andExpect(status().is3xxRedirection())
+          .andExpect(redirectedUrl("/application/sections/client/details/summary"));
+
+      assertEquals("Selected address", clientFlowFormData.getAddressDetails().getAddressLine1());
     }
 
     @Test

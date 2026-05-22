@@ -39,5 +39,23 @@
     color: #1d70b8;
     text-decoration: underline;
     cursor: pointer;
-    margin-bottom: 0;
+}
+
+
+.ccms-text-capitalize {
+    text-transform: capitalize;
+}
+
+
+.ccms-phase-banner-active {
+    background: #dee0e2;
+}
+
+.ccms-nowrap {
+    white-space: nowrap;
+}
+
+.ccms-hidden-inline-loader {
+    visibility: hidden;
+    display: inline-block;
 }

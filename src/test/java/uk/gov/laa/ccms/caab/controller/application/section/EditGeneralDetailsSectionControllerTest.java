@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -19,11 +21,11 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_A
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_ADDRESS_OPTION;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_LINK_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CORRESPONDENCE_ADDRESS_FLOW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
 import static uk.gov.laa.ccms.caab.controller.application.section.EditGeneralDetailsSectionController.CASE_RESULTS_PAGE;
@@ -46,6 +48,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -57,6 +60,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
+import uk.gov.laa.ccms.caab.bean.AddressLookupFlowData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.bean.validators.application.LinkedCaseValidator;
@@ -140,11 +144,107 @@ class EditGeneralDetailsSectionControllerTest {
     void shouldReturnExpectedResult() throws Exception {
       final String applicationId = "123";
       final AddressFormData addressFormData = new AddressFormData();
+      addressFormData.setAddressLine1("Current address");
+      final AddressFormData staleAddressFormData = new AddressFormData();
+      staleAddressFormData.setAddressLine1("Stale address");
 
       when(lookupService.getCountries()).thenReturn(Mono.just(mockCommonLookupDetail));
       when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
           .thenReturn(Mono.just(mockCommonLookupDetail));
 
+      when(applicationService.getCorrespondenceAddressFormData(applicationId))
+          .thenReturn(addressFormData);
+
+      mockMvc
+          .perform(
+              get("/application/sections/correspondence-address")
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr("addressDetails", staleAddressFormData))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/correspondence-address-details"))
+          .andExpect(model().attribute("addressDetails", addressFormData));
+
+      verify(applicationService, times(1)).getCorrespondenceAddressFormData(applicationId);
+    }
+
+    @Test
+    @DisplayName("Should apply selected address from search result")
+    void shouldApplySelectedAddressFromSearchResult() throws Exception {
+      final String applicationId = "123";
+      final AddressFormData addressFormData = new AddressFormData();
+      final AddressResultRowDisplay selectedAddress = new AddressResultRowDisplay();
+      final AddressLookupFlowData<AddressFormData> addressFlow =
+          new AddressLookupFlowData<>("application:%s".formatted(applicationId));
+      addressFlow.setAddressDetails(addressFormData);
+      addressFlow.setSelectedAddress(selectedAddress);
+      final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(APPLICATION_ID, applicationId);
+      session.setAttribute(CORRESPONDENCE_ADDRESS_FLOW, addressFlow);
+
+      when(lookupService.getCountries()).thenReturn(Mono.just(mockCommonLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
+          .thenReturn(Mono.just(mockCommonLookupDetail));
+
+      mockMvc
+          .perform(get("/application/sections/correspondence-address").session(session))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/correspondence-address-details"))
+          .andExpect(model().attribute("addressDetails", addressFormData));
+
+      verify(addressService, times(1)).updateAddressFormData(addressFormData, selectedAddress);
+      verify(applicationService, never()).getCorrespondenceAddressFormData(anyString());
+      assertNull(
+          ((AddressLookupFlowData<AddressFormData>)
+                  session.getAttribute(CORRESPONDENCE_ADDRESS_FLOW))
+              .getSelectedAddress());
+    }
+
+    @Test
+    @DisplayName("Should ignore selected address from different context")
+    void shouldIgnoreSelectedAddressFromDifferentContext() throws Exception {
+      final String applicationId = "123";
+      final AddressFormData addressFormData = new AddressFormData();
+      final AddressFormData staleAddressFormData = new AddressFormData();
+      final AddressResultRowDisplay selectedAddress = new AddressResultRowDisplay();
+      final AddressLookupFlowData<AddressFormData> addressFlow =
+          new AddressLookupFlowData<>("application:old");
+      addressFlow.setAddressDetails(staleAddressFormData);
+      addressFlow.setSelectedAddress(selectedAddress);
+      final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(APPLICATION_ID, applicationId);
+      session.setAttribute(CORRESPONDENCE_ADDRESS_FLOW, addressFlow);
+
+      when(lookupService.getCountries()).thenReturn(Mono.just(mockCommonLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
+          .thenReturn(Mono.just(mockCommonLookupDetail));
+      when(applicationService.getCorrespondenceAddressFormData(applicationId))
+          .thenReturn(addressFormData);
+
+      mockMvc
+          .perform(get("/application/sections/correspondence-address").session(session))
+          .andDo(print())
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/correspondence-address-details"))
+          .andExpect(model().attribute("addressDetails", addressFormData));
+
+      verify(addressService, never()).updateAddressFormData(any(), any());
+      assertNull(
+          ((AddressLookupFlowData<AddressFormData>)
+                  session.getAttribute(CORRESPONDENCE_ADDRESS_FLOW))
+              .getSelectedAddress());
+    }
+
+    @Test
+    @DisplayName("Should populate session data")
+    void shouldPopulateSessionData() throws Exception {
+      final String applicationId = "123";
+      final AddressFormData addressFormData = new AddressFormData();
+
+      when(lookupService.getCountries()).thenReturn(Mono.just(mockCommonLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
+          .thenReturn(Mono.just(mockCommonLookupDetail));
       when(applicationService.getCorrespondenceAddressFormData(applicationId))
           .thenReturn(addressFormData);
 
@@ -158,29 +258,6 @@ class EditGeneralDetailsSectionControllerTest {
           .andExpect(model().attribute("addressDetails", addressFormData));
 
       verify(applicationService, times(1)).getCorrespondenceAddressFormData(applicationId);
-    }
-
-    @Test
-    @DisplayName("Should populate session data")
-    void shouldPopulateSessionData() throws Exception {
-      final String applicationId = "123";
-      final AddressFormData addressFormData = new AddressFormData();
-
-      when(lookupService.getCountries()).thenReturn(Mono.just(mockCommonLookupDetail));
-      when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
-          .thenReturn(Mono.just(mockCommonLookupDetail));
-
-      mockMvc
-          .perform(
-              get("/application/sections/correspondence-address")
-                  .sessionAttr(APPLICATION_ID, applicationId)
-                  .sessionAttr("addressDetails", addressFormData))
-          .andDo(print())
-          .andExpect(status().isOk())
-          .andExpect(view().name("application/sections/correspondence-address-details"))
-          .andExpect(model().attribute("addressDetails", addressFormData));
-
-      verify(applicationService, never()).getCorrespondenceAddressFormData(applicationId);
     }
   }
 
@@ -495,11 +572,23 @@ class EditGeneralDetailsSectionControllerTest {
     @DisplayName("Should return expected result")
     void shouldReturnExpectedResult(String caseContext) throws Exception {
       final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
+      final String applicationId = "123";
+      final ApplicationDetail ebsCase = new ApplicationDetail();
+      ebsCase.setCaseReferenceNumber("case-ref");
+      final String addressContext =
+          "amendments".equals(caseContext)
+              ? "amendments:%s".formatted(ebsCase.getCaseReferenceNumber())
+              : "application:%s".formatted(applicationId);
+      final AddressLookupFlowData<AddressFormData> addressFlow =
+          new AddressLookupFlowData<>(addressContext);
+      addressFlow.setSearchResults(results);
 
       mockMvc
           .perform(
               get("/%s/sections/correspondence-address/search".formatted(caseContext))
-                  .sessionAttr(ADDRESS_SEARCH_RESULTS, results))
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(CASE, ebsCase)
+                  .sessionAttr(CORRESPONDENCE_ADDRESS_FLOW, addressFlow))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/address-search-results"))
@@ -521,17 +610,45 @@ class EditGeneralDetailsSectionControllerTest {
     @DisplayName("Should return expected result")
     void shouldReturnExpectedResult(String caseContext) throws Exception {
       final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
+      final AddressResultRowDisplay selectedAddress = new AddressResultRowDisplay();
+      final String applicationId = "123";
+      final ApplicationDetail ebsCase = new ApplicationDetail();
+      ebsCase.setCaseReferenceNumber("case-ref");
+      final String addressContext =
+          "amendments".equals(caseContext)
+              ? "amendments:%s".formatted(ebsCase.getCaseReferenceNumber())
+              : "application:%s".formatted(applicationId);
+      final AddressLookupFlowData<AddressFormData> addressFlow =
+          new AddressLookupFlowData<>(addressContext);
+      addressFlow.setSearchResults(results);
+      addressFlow.setAddressDetails(new AddressFormData());
+      final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(APPLICATION_ID, applicationId);
+      session.setAttribute(CASE, ebsCase);
+      session.setAttribute(CORRESPONDENCE_ADDRESS_FLOW, addressFlow);
+
+      when(addressService.getSelectedAddress("selected-uprn", results)).thenReturn(selectedAddress);
 
       mockMvc
           .perform(
               post("/%s/sections/correspondence-address/search".formatted(caseContext))
-                  .sessionAttr(ADDRESS_SEARCH_RESULTS, results)
-                  .sessionAttr("addressDetails", new AddressFormData()))
+                  .param("uprn", "selected-uprn")
+                  .session(session))
           .andDo(print())
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/%s/sections/correspondence-address".formatted(caseContext)));
 
-      verify(addressService, times(1)).filterAndUpdateAddressFormData(any(), any(), any());
+      verify(addressService, times(1)).getSelectedAddress("selected-uprn", results);
+      verify(addressService, never()).filterAndUpdateAddressFormData(any(), any(), any());
+      assertSame(
+          selectedAddress,
+          ((AddressLookupFlowData<AddressFormData>)
+                  session.getAttribute(CORRESPONDENCE_ADDRESS_FLOW))
+              .getSelectedAddress());
+      assertNull(
+          ((AddressLookupFlowData<AddressFormData>)
+                  session.getAttribute(CORRESPONDENCE_ADDRESS_FLOW))
+              .getSearchResults());
     }
 
     @ParameterizedTest
@@ -539,6 +656,17 @@ class EditGeneralDetailsSectionControllerTest {
     @DisplayName("Should have validation errors")
     void shouldHaveValidationErrors(String caseContext) throws Exception {
       final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
+      final String applicationId = "123";
+      final ApplicationDetail ebsCase = new ApplicationDetail();
+      ebsCase.setCaseReferenceNumber("case-ref");
+      final String addressContext =
+          "amendments".equals(caseContext)
+              ? "amendments:%s".formatted(ebsCase.getCaseReferenceNumber())
+              : "application:%s".formatted(applicationId);
+      final AddressLookupFlowData<AddressFormData> addressFlow =
+          new AddressLookupFlowData<>(addressContext);
+      addressFlow.setSearchResults(results);
+      addressFlow.setAddressDetails(new AddressFormData());
 
       doAnswer(
               invocation -> {
@@ -552,8 +680,9 @@ class EditGeneralDetailsSectionControllerTest {
       mockMvc
           .perform(
               post("/%s/sections/correspondence-address/search".formatted(caseContext))
-                  .sessionAttr(ADDRESS_SEARCH_RESULTS, results)
-                  .sessionAttr("addressDetails", new AddressFormData()))
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(CASE, ebsCase)
+                  .sessionAttr(CORRESPONDENCE_ADDRESS_FLOW, addressFlow))
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/address-search-results"))

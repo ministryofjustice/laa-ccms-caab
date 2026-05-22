@@ -187,4 +187,12 @@ public class CaseSearchCriteriaValidatorTest {
     assertTrue(errors.hasErrors());
     assertEquals(1, errors.getErrorCount());
   }
+
+  @Test
+  void validateInvalidProviderCaseRef() {
+    searchCriteria.setProviderCaseReference("invalidProviderCaseRef <");
+    validator.validate(searchCriteria, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+  }
 }

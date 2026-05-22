@@ -23,7 +23,9 @@ import org.springframework.security.saml2.provider.service.authentication.Saml2A
 import org.springframework.security.saml2.provider.service.authentication.Saml2Authentication;
 import org.springframework.security.saml2.provider.service.authentication.Saml2ResponseAssertionAccessor;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
+import uk.gov.laa.ccms.caab.security.CspNonceFilter;
 import uk.gov.laa.ccms.caab.service.UserService;
 
 /** Configuration class for customizing Spring Security settings. */
@@ -33,6 +35,18 @@ public class SecurityConfiguration {
 
   @Value("${portal.logoutUrl}")
   private String logoutUrl;
+
+  @Value("${csp.report-enabled:true}")
+  private boolean cspReportEnabled;
+
+  @Value("${csp.report-only:false}")
+  private boolean cspReportOnly;
+
+  @Value("${csp.upgrade-insecure-requests:true}")
+  private boolean cspUpgradeInsecureRequests;
+
+  @Value("${laa.ccms.oracle-web-determination-server.url:}")
+  private String owdUrl;
 
   private final UserService userService;
 
@@ -53,6 +67,8 @@ public class SecurityConfiguration {
     return http.authorizeHttpRequests(
             authorize ->
                 authorize
+                    .requestMatchers("/assets/**", "/ccms/**", "/favicon.ico")
+                    .permitAll()
                     .requestMatchers(
                         HttpMethod.GET,
                         "/actuator/prometheus",
@@ -60,6 +76,8 @@ public class SecurityConfiguration {
                         "/actuator/info",
                         "/actuator/metrics")
                     .permitAll() // Ensure Actuator endpoints are excluded
+                    .requestMatchers(HttpMethod.POST, "/csp/report")
+                    .permitAll()
                     .requestMatchers(HttpMethod.GET, "/provider-requests/*")
                     .hasAuthority(UserRole.CREATE_PROVIDER_REQUEST.getCode())
                     .requestMatchers(
@@ -103,6 +121,10 @@ public class SecurityConfiguration {
                     .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode())
                     .anyRequest()
                     .authenticated())
+        .csrf(csrf -> csrf.ignoringRequestMatchers("/csp/report"))
+        .addFilterBefore(
+            new CspNonceFilter(cspReportEnabled, cspReportOnly, cspUpgradeInsecureRequests, owdUrl),
+            BasicAuthenticationFilter.class)
         .sessionManagement(
             sessionManagement ->
                 sessionManagement.invalidSessionStrategy(

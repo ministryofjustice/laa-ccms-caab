@@ -4,7 +4,9 @@ import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_EDIT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.AMEND_CLIENT_ORIGIN;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_CLIENT_NAMES;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_CONTEXT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.EDIT_CLIENT_ADDRESS_FLOW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_UPDATE_CLIENT;
@@ -61,10 +63,13 @@ public class EditClientSummaryController extends AbstractClientSummaryController
       final HttpSession session) {
 
     final ClientFlowFormData clientFlowFormData;
+    final String clientFlowContext = clientFlowContext(caseContext, activeCase);
 
-    if (session.getAttribute(CLIENT_FLOW_FORM_DATA) != null) {
+    if (clientFlowContext.equals(session.getAttribute(CLIENT_FLOW_CONTEXT))
+        && session.getAttribute(CLIENT_FLOW_FORM_DATA) != null) {
       clientFlowFormData = (ClientFlowFormData) session.getAttribute(CLIENT_FLOW_FORM_DATA);
     } else {
+      clearEditClientFlowSession(session);
       // if session contains clientDetails
       final ClientDetail clientInformation =
           clientService
@@ -76,13 +81,33 @@ public class EditClientSummaryController extends AbstractClientSummaryController
       // map data to the view
       clientFlowFormData = clientDetailsMapper.toClientFlowFormData(clientInformation.getDetails());
       clientFlowFormData.setAction(ACTION_EDIT);
+      session.setAttribute(CLIENT_FLOW_CONTEXT, clientFlowContext);
       session.setAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
     }
 
+    clearEditClientAddressSession(session);
     populateSummaryListLookups(clientFlowFormData, model).block();
     model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
 
     return "application/sections/client-summary-details";
+  }
+
+  private String clientFlowContext(final CaseContext caseContext, final ActiveCase activeCase) {
+    return "%s:%s:%s"
+        .formatted(
+            caseContext.getPathValue(),
+            activeCase.getCaseReferenceNumber(),
+            activeCase.getClientReferenceNumber());
+  }
+
+  private void clearEditClientFlowSession(final HttpSession session) {
+    session.removeAttribute(CLIENT_FLOW_CONTEXT);
+    session.removeAttribute(CLIENT_FLOW_FORM_DATA);
+    clearEditClientAddressSession(session);
+  }
+
+  private void clearEditClientAddressSession(final HttpSession session) {
+    session.removeAttribute(EDIT_CLIENT_ADDRESS_FLOW);
   }
 
   /**
@@ -109,6 +134,7 @@ public class EditClientSummaryController extends AbstractClientSummaryController
 
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
     session.setAttribute(APPLICATION_CLIENT_NAMES, applicationClientNames);
+    clearEditClientFlowSession(session);
 
     return "redirect:/%s/%s".formatted(caseContext.getPathValue(), SUBMISSION_UPDATE_CLIENT);
   }
