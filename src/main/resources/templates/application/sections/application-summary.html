@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections}" class="govuk-back-link">Return to create application</a>
+    <a th:href="@{/application/sections}" class="govuk-back-link" th:text="#{site.returnToApplication}"></a>
   </div>
   <div id="main-content">
     <span class="govuk-caption-l">Create application</span>
@@ -124,7 +124,7 @@
             </thead>
             <tbody class="govuk-table__body">
               <tr class="govuk-table__row">
-                <td class="govuk-table__cell" colspan="4">None</td>
+                <td class="govuk-table__cell" colspan="4" th:text="#{site.none}"></td>
               </tr>
             </tbody>
           </table>
@@ -172,7 +172,7 @@
               <td class="govuk-table__cell" th:text="${priorAuthority.status}"/>
             </tr>
             <tr class="govuk-table__row" th:if="${summary.priorAuthorities.isEmpty()}">
-              <td class="govuk-table__cell" colspan="4">None</td>
+              <td class="govuk-table__cell" colspan="4" th:text="#{site.none}"></td>
             </tr>
           </tbody>
         </table>
@@ -198,7 +198,7 @@
               <td class="govuk-table__cell" th:text="${opponent.relationshipToCase}"/>
             </tr>
             <tr class="govuk-table__row" th:if="${summary.opponentsAndOtherParties.opponents.isEmpty()}">
-              <td class="govuk-table__cell" colspan="4">None</td>
+              <td class="govuk-table__cell" colspan="4" th:text="#{site.none}"></td>
             </tr>
           </tbody>
         </table>
@@ -265,5 +265,3 @@
 </div>
 </body>
 </html>
-
-

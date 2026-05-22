@@ -49,7 +49,8 @@
                     <td class="govuk-table__cell" th:text="${case.status.displayValue}"></td>
                     <td class="govuk-table__cell">
                         <a th:href="@{/{caseContext}/sections/linked-cases/{id}/add(caseContext=${caseContext.getPathValue()},id=${case.caseReferenceNumber})}"
-                           class="govuk-link">Link case</a>
+                           class="govuk-link"
+                           th:text="#{application.generalDetails.linkCase.title}"></a>
                     </td>
                 </tr>
             </tbody>

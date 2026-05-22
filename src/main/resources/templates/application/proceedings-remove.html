@@ -8,7 +8,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/{caseContext}/proceedings-and-costs(caseContext=${caseContext.pathValue})}" class="govuk-back-link">Cancel and return to proceedings and costs</a>
+    <a th:href="@{/{caseContext}/proceedings-and-costs(caseContext=${caseContext.pathValue})}" class="govuk-back-link" th:text="#{proceedings.cancelAndGoBack}"></a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/{caseContext}/proceedings/{proceedingId}/remove(proceedingId=${proceedingId}, caseContext=${caseContext.pathValue})}" method="post">
