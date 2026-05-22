@@ -24,6 +24,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_OPPONENT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ORGANISATION_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ORGANISATION_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -95,6 +96,7 @@ class OpponentsSectionControllerTest {
     mockMvc =
         MockMvcBuilders.standaloneSetup(controller)
             .setControllerAdvice(new GlobalExceptionHandler())
+            .setConversionService(getConversionService())
             .build();
   }
 

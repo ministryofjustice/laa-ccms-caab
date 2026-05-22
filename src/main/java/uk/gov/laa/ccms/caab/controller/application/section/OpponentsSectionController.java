@@ -108,11 +108,7 @@ public class OpponentsSectionController {
    * @param model The Model object to add attributes to for the view.
    * @return The name of the view to be rendered.
    */
-  @GetMapping({
-    "/{caseContext}/sections/opponents",
-    "/application/sections/opponents",
-    "/amendments/sections/opponents"
-  })
+  @GetMapping("/{caseContext}/sections/opponents")
   public String opponents(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
       @SessionAttribute(value = APPLICATION_ID, required = false) final String applicationId,
@@ -151,8 +147,7 @@ public class OpponentsSectionController {
    */
   @GetMapping({
     "/{caseContext}/sections/opponents/organisation/search",
-    "/application/opponents/organisation/search",
-    "/amendments/sections/opponents/organisation/search"
+    "/{caseContext}/opponents/organisation/search"
   })
   public String organisationSearch(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
@@ -176,8 +171,7 @@ public class OpponentsSectionController {
    */
   @PostMapping({
     "/{caseContext}/sections/opponents/organisation/search",
-    "/application/opponents/organisation/search",
-    "/amendments/sections/opponents/organisation/search"
+    "/{caseContext}/opponents/organisation/search"
   })
   public String organisationSearch(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
@@ -213,8 +207,7 @@ public class OpponentsSectionController {
    */
   @GetMapping({
     "/{caseContext}/sections/opponents/organisation/search/results",
-    "/application/opponents/organisation/search/results",
-    "/amendments/sections/opponents/organisation/search/results"
+    "/{caseContext}/opponents/organisation/search/results"
   })
   public String organisationSearchResults(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
@@ -260,8 +253,7 @@ public class OpponentsSectionController {
    */
   @GetMapping({
     "/{caseContext}/sections/opponents/organisation/{id}/select",
-    "/application/opponents/organisation/{id}/select",
-    "/amendments/sections/opponents/organisation/{id}/select"
+    "/{caseContext}/opponents/organisation/{id}/select"
   })
   public String selectSharedOrganisation(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
@@ -307,8 +299,7 @@ public class OpponentsSectionController {
    */
   @PostMapping({
     "/{caseContext}/sections/opponents/organisation/shared/create",
-    "/application/opponents/organisation/shared/create",
-    "/amendments/sections/opponents/organisation/shared/create"
+    "/{caseContext}/opponents/organisation/shared/create"
   })
   public String createSharedOrganisation(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
@@ -354,8 +345,7 @@ public class OpponentsSectionController {
    */
   @GetMapping({
     "/{caseContext}/sections/opponents/organisation/create",
-    "/application/opponents/organisation/create",
-    "/amendments/sections/opponents/organisation/create"
+    "/{caseContext}/opponents/organisation/create"
   })
   public String createNewOrganisation(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
@@ -382,8 +372,7 @@ public class OpponentsSectionController {
    */
   @PostMapping({
     "/{caseContext}/sections/opponents/organisation/create",
-    "/application/opponents/organisation/create",
-    "/amendments/sections/opponents/organisation/create"
+    "/{caseContext}/opponents/organisation/create"
   })
   public String createNewOrganisation(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
@@ -416,8 +405,8 @@ public class OpponentsSectionController {
    */
   @GetMapping({
     "/{caseContext}/sections/opponents/individual/create",
-    "/application/opponents/individual/create",
-    "/amendments/sections/opponents/individual/add"
+    "/{caseContext}/opponents/individual/create",
+    "/{caseContext}/sections/opponents/individual/add"
   })
   public String createNewIndividual(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
@@ -444,8 +433,8 @@ public class OpponentsSectionController {
    */
   @PostMapping({
     "/{caseContext}/sections/opponents/individual/create",
-    "/application/opponents/individual/create",
-    "/amendments/sections/opponents/individual/add"
+    "/{caseContext}/opponents/individual/create",
+    "/{caseContext}/sections/opponents/individual/add"
   })
   public String createNewIndividual(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
@@ -503,9 +492,9 @@ public class OpponentsSectionController {
    */
   @GetMapping({
     "/{caseContext}/sections/opponents/{opponent-id}/edit",
-    "/application/opponents/{opponent-id}/edit",
-    "/amendments/sections/opponents/individual/{opponent-id}/edit",
-    "/amendments/sections/opponents/organisation/{opponent-id}/edit"
+    "/{caseContext}/opponents/{opponent-id}/edit",
+    "/{caseContext}/sections/opponents/individual/{opponent-id}/edit",
+    "/{caseContext}/sections/opponents/organisation/{opponent-id}/edit"
   })
   public String editOpponent(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
@@ -556,9 +545,9 @@ public class OpponentsSectionController {
    */
   @PostMapping({
     "/{caseContext}/sections/opponents/{opponent-id}/edit",
-    "/application/opponents/{opponent-id}/edit",
-    "/amendments/sections/opponents/individual/{opponent-id}/edit",
-    "/amendments/sections/opponents/organisation/{opponent-id}/edit"
+    "/{caseContext}/opponents/{opponent-id}/edit",
+    "/{caseContext}/sections/opponents/individual/{opponent-id}/edit",
+    "/{caseContext}/sections/opponents/organisation/{opponent-id}/edit"
   })
   public String editOpponent(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
@@ -611,8 +600,7 @@ public class OpponentsSectionController {
    */
   @GetMapping({
     "/{caseContext}/sections/opponents/{opponent-id}/remove",
-    "/application/opponents/{opponent-id}/remove",
-    "/amendments/sections/opponents/{opponent-id}/remove"
+    "/{caseContext}/opponents/{opponent-id}/remove"
   })
   public String removeOpponent(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
@@ -648,8 +636,7 @@ public class OpponentsSectionController {
    */
   @PostMapping({
     "/{caseContext}/sections/opponents/{opponent-id}/remove",
-    "/application/opponents/{opponent-id}/remove",
-    "/amendments/sections/opponents/{opponent-id}/remove"
+    "/{caseContext}/opponents/{opponent-id}/remove"
   })
   public String removeOpponentPost(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
