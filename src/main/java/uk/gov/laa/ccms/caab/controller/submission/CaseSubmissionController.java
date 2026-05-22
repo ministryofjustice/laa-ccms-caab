@@ -10,6 +10,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMAR
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_POLL_COUNT;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
@@ -40,6 +41,9 @@ public class CaseSubmissionController {
 
   private final ApplicationService applicationService;
 
+  private static final String SUBMISSION_CONFIRMED = "confirmed";
+  private static final String SUBMISSION_FAILED = "failed";
+
   /**
    * Handles the creation of a case submission and updates the model and session with relevant
    * details. If the case status is confirmed, redirects to the submission confirmation page.
@@ -54,13 +58,20 @@ public class CaseSubmissionController {
   @GetMapping("/{caseContext}/submit-case")
   public String addCaseSubmission(
       @PathVariable CaseContext caseContext,
-      @SessionAttribute(SUBMISSION_TRANSACTION_ID) final String transactionId,
-      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @SessionAttribute(value = SUBMISSION_TRANSACTION_ID, required = false)
+          final String transactionId,
+      @SessionAttribute(value = USER_DETAILS) final UserDetail user,
       final HttpSession session,
       final Model model) {
 
     model.addAttribute("submissionType", SUBMISSION_SUBMIT_CASE);
     model.addAttribute("caseContext", caseContext);
+
+    if (!StringUtils.hasText(transactionId)) {
+      return redirectToSubmissionResult(session, caseContext);
+    }
+
+    requireSessionAttribute(user, USER_DETAILS);
 
     final TransactionStatus caseStatus = applicationService.getCaseStatus(transactionId).block();
 
@@ -71,6 +82,7 @@ public class CaseSubmissionController {
 
       session.removeAttribute(SUBMISSION_POLL_COUNT);
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
+      session.setAttribute(SUBMISSION_RESULT, SUBMISSION_CONFIRMED);
       return "redirect:/%s/%s/confirmed"
           .formatted(caseContext.getPathValue(), SUBMISSION_SUBMIT_CASE);
     }
@@ -138,6 +150,9 @@ public class CaseSubmissionController {
     if (session.getAttribute(SUBMISSION_POLL_COUNT) != null) {
       submissionPollCount = (int) session.getAttribute(SUBMISSION_POLL_COUNT);
       if (submissionPollCount >= submissionConstants.getMaxPollCount()) {
+        session.removeAttribute(SUBMISSION_POLL_COUNT);
+        session.removeAttribute(SUBMISSION_TRANSACTION_ID);
+        session.setAttribute(SUBMISSION_RESULT, SUBMISSION_FAILED);
         return "redirect:/%s/%s/failed"
             .formatted(caseContext.getPathValue(), SubmissionConstants.SUBMISSION_SUBMIT_CASE);
       }
@@ -146,5 +161,20 @@ public class CaseSubmissionController {
     session.setAttribute(SUBMISSION_POLL_COUNT, submissionPollCount);
     model.addAttribute("caseContext", caseContext);
     return "submissions/submissionInProgress";
+  }
+
+  private void requireSessionAttribute(final Object attribute, final String attributeName) {
+    if (attribute == null) {
+      throw new IllegalStateException("Missing session attribute '%s'".formatted(attributeName));
+    }
+  }
+
+  private String redirectToSubmissionResult(
+      final HttpSession session, final CaseContext caseContext) {
+    final String submissionResult = (String) session.getAttribute(SUBMISSION_RESULT);
+    final String resultPath =
+        SUBMISSION_CONFIRMED.equals(submissionResult) ? SUBMISSION_CONFIRMED : SUBMISSION_FAILED;
+    return "redirect:/%s/%s/%s"
+        .formatted(caseContext.getPathValue(), SUBMISSION_SUBMIT_CASE, resultPath);
   }
 }

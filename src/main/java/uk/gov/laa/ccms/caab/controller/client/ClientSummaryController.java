@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.client;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_CLIENT;
@@ -64,6 +65,7 @@ public class ClientSummaryController extends AbstractClientSummaryController {
     final ClientTransactionResponse response =
         clientService.createClient(clientFlowFormData, user).block();
 
+    session.removeAttribute(SUBMISSION_RESULT);
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
 
     return "redirect:/application/%s".formatted(SUBMISSION_CREATE_CLIENT);
