@@ -1,7 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.client;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.EDIT_CLIENT_ADDRESS_FLOW;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import uk.gov.laa.ccms.caab.bean.AddressLookupFlowData;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
@@ -62,13 +63,25 @@ public class EditClientAddressDetailsController {
   public String getEditClientDetailsAddress(
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
-      final Model model) {
+      final Model model,
+      final HttpSession session) {
 
     populateDropdowns(model);
 
-    final ClientFormDataAddressDetails addressDetails = clientFlowFormData.getAddressDetails();
+    final ClientFormDataAddressDetails addressDetails =
+        getDraftAddressDetails(clientFlowFormData, session);
     addressDetails.setClientFlowFormAction(clientFlowFormData.getAction());
 
+    final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+        getOrCreateEditClientAddressFlow(session);
+    final AddressResultRowDisplay selectedAddress = addressFlow.getSelectedAddress();
+    if (selectedAddress != null) {
+      addressService.updateClientFormDataAddressDetails(addressDetails, selectedAddress);
+      addressFlow.setSelectedAddress(null);
+    }
+
+    addressFlow.setAddressDetails(addressDetails);
+    session.setAttribute(EDIT_CLIENT_ADDRESS_FLOW, addressFlow);
     model.addAttribute("addressDetails", addressDetails);
 
     return "application/sections/client-address-details";
@@ -103,16 +116,17 @@ public class EditClientAddressDetailsController {
 
     if (bindingResult.hasErrors()) {
       populateDropdowns(model);
+      setDraftAddressDetails(session, addressDetails);
       return "application/sections/client-address-details";
     }
 
-    clientFlowFormData.setAddressDetails(addressDetails);
-    model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
-
     if (ACTION_FIND_ADDRESS.equals(action)) {
+      final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+          getOrCreateEditClientAddressFlow(session);
+      addressFlow.setAddressDetails(addressDetails);
       // Search for addresses
       ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults =
-          addressService.getAddresses(clientFlowFormData.getAddressDetails().getPostcode());
+          addressService.getAddresses(addressDetails.getPostcode());
 
       if (clientAddressSearchResults.getContent() == null) {
         bindingResult.reject(
@@ -120,15 +134,20 @@ public class EditClientAddressDetailsController {
       } else {
         clientAddressSearchResults =
             addressService.filterByHouseNumber(
-                clientFlowFormData.getAddressDetails().getHouseNameNumber(),
-                clientAddressSearchResults);
-        session.setAttribute(ADDRESS_SEARCH_RESULTS, clientAddressSearchResults);
+                addressDetails.getHouseNameNumber(), clientAddressSearchResults);
+        addressFlow.setSearchResults(clientAddressSearchResults);
       }
 
       if (bindingResult.hasErrors()) {
         populateDropdowns(model);
+        session.setAttribute(EDIT_CLIENT_ADDRESS_FLOW, addressFlow);
         return "application/sections/client-address-details";
       }
+      session.setAttribute(EDIT_CLIENT_ADDRESS_FLOW, addressFlow);
+    } else {
+      clientFlowFormData.setAddressDetails(addressDetails);
+      model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
+      clearDraftAddressSession(session);
     }
 
     return ACTION_FIND_ADDRESS.equals(action)
@@ -139,5 +158,56 @@ public class EditClientAddressDetailsController {
 
   private void populateDropdowns(final Model model) {
     new DropdownBuilder(model).addDropdown("countries", lookupService.getCountries()).build();
+  }
+
+  private ClientFormDataAddressDetails getDraftAddressDetails(
+      final ClientFlowFormData clientFlowFormData, final HttpSession session) {
+    final ClientFormDataAddressDetails draftAddressDetails =
+        getOrCreateEditClientAddressFlow(session).getAddressDetails();
+    return draftAddressDetails != null
+        ? draftAddressDetails
+        : copyAddressDetails(clientFlowFormData.getAddressDetails());
+  }
+
+  private void setDraftAddressDetails(
+      final HttpSession session, final ClientFormDataAddressDetails addressDetails) {
+    final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+        getOrCreateEditClientAddressFlow(session);
+    addressFlow.setAddressDetails(addressDetails);
+    session.setAttribute(EDIT_CLIENT_ADDRESS_FLOW, addressFlow);
+  }
+
+  private ClientFormDataAddressDetails copyAddressDetails(
+      final ClientFormDataAddressDetails source) {
+    final ClientFormDataAddressDetails copy = new ClientFormDataAddressDetails();
+    if (source == null) {
+      return copy;
+    }
+    copy.setVulnerableClient(source.getVulnerableClient());
+    copy.setClientFlowFormAction(source.getClientFlowFormAction());
+    copy.setNoFixedAbode(source.getNoFixedAbode());
+    copy.setCountry(source.getCountry());
+    copy.setHouseNameNumber(source.getHouseNameNumber());
+    copy.setPostcode(source.getPostcode());
+    copy.setAddressLine1(source.getAddressLine1());
+    copy.setAddressLine2(source.getAddressLine2());
+    copy.setCityTown(source.getCityTown());
+    copy.setCounty(source.getCounty());
+    copy.setAddressSearch(source.getAddressSearch());
+    return copy;
+  }
+
+  private void clearDraftAddressSession(final HttpSession session) {
+    session.removeAttribute(EDIT_CLIENT_ADDRESS_FLOW);
+  }
+
+  @SuppressWarnings("unchecked")
+  private AddressLookupFlowData<ClientFormDataAddressDetails> getOrCreateEditClientAddressFlow(
+      final HttpSession session) {
+    final Object sessionValue = session.getAttribute(EDIT_CLIENT_ADDRESS_FLOW);
+    if (sessionValue instanceof AddressLookupFlowData<?> addressFlow) {
+      return (AddressLookupFlowData<ClientFormDataAddressDetails>) addressFlow;
+    }
+    return new AddressLookupFlowData<>("edit-client");
   }
 }

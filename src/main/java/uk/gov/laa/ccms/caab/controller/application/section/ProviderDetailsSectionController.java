@@ -3,9 +3,12 @@ package uk.gov.laa.ccms.caab.controller.application.section;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.util.ApplicationUtil.requireEbsCase;
 
+import jakarta.servlet.http.HttpSession;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -25,15 +28,15 @@ import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.ProviderDetailsValidator;
 import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
-import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.caab.util.UserRoleUtil;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 /** Controller for the application's provider details section. */
 @Controller
@@ -49,8 +52,6 @@ public class ProviderDetailsSectionController {
 
   private final ProviderDetailsValidator providerDetailsValidator;
 
-  private final ClientService clientService;
-
   /**
    * Handles the GET request for the application type section of the application summary.
    *
@@ -62,31 +63,18 @@ public class ProviderDetailsSectionController {
   @GetMapping("/{caseContext}/sections/provider-details")
   public String applicationSummaryProviderDetails(
       @SessionAttribute(value = APPLICATION_ID, required = false) String applicationId,
+      @SessionAttribute(value = CASE, required = false) final ApplicationDetail ebsCase,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       @PathVariable final CaseContext caseContext,
-      Model model,
-      jakarta.servlet.http.HttpSession session) {
+      Model model) {
 
-    if (caseContext.isAmendment()) {
-      ApplicationFormData applicationFormData = new ApplicationFormData();
-      applicationFormData.setCopyCaseReferenceNumber(activeCase.getCaseReferenceNumber());
-      ClientDetail clientDetail =
-          clientService
-              .getClient(
-                  activeCase.getClientReferenceNumber(), user.getLoginId(), user.getUserType())
-              .block();
-
-      applicationId =
-          applicationService.createApplication(applicationFormData, clientDetail, user).block();
-      session.setAttribute(APPLICATION_ID, applicationId);
-    }
-
-    ApplicationFormData applicationFormData =
-        applicationService.getProviderDetailsFormData(applicationId);
+    final ApplicationFormData applicationFormData =
+        getProviderDetailsFormData(caseContext, applicationId, ebsCase);
 
     populateDropdowns(applicationFormData, user, model);
     model.addAttribute(ACTIVE_CASE, activeCase);
+    model.addAttribute("caseContext", caseContext);
 
     return "application/sections/provider-details-section";
   }
@@ -106,28 +94,27 @@ public class ProviderDetailsSectionController {
   @PostMapping("/{caseContext}/sections/provider-details")
   public String applicationSummaryProviderDetails(
       @PathVariable final CaseContext caseContext,
-      @SessionAttribute(APPLICATION_ID) final String applicationId,
+      @SessionAttribute(value = APPLICATION_ID, required = false) final String applicationId,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       @Validated @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       BindingResult bindingResult,
       Model model,
-      jakarta.servlet.http.HttpSession session) {
+      HttpSession session) {
 
     providerDetailsValidator.validate(applicationFormData, bindingResult);
 
     if (bindingResult.hasErrors()) {
       populateDropdowns(applicationFormData, user, model);
       model.addAttribute(ACTIVE_CASE, activeCase);
+      model.addAttribute("caseContext", caseContext);
 
       return "application/sections/provider-details-section";
     }
 
-    applicationService.updateProviderDetails(applicationId, applicationFormData, user);
-
     if (caseContext.isAmendment()) {
       if (!UserRoleUtil.hasRole(user, UserRole.SUBMIT_AMENDMENT)) {
-        return "redirect:/application/sections";
+        return "redirect:/case/overview";
       }
 
       String transactionId =
@@ -139,7 +126,24 @@ public class ProviderDetailsSectionController {
       return "redirect:/%s/submit-case".formatted(caseContext.getPathValue());
     }
 
+    applicationService.updateProviderDetails(
+        requireApplicationId(applicationId), applicationFormData, user);
+
     return "redirect:/application/sections";
+  }
+
+  private ApplicationFormData getProviderDetailsFormData(
+      final CaseContext caseContext, final String applicationId, final ApplicationDetail ebsCase) {
+    if (caseContext.isAmendment()) {
+      return applicationService.getProviderDetailsFormData(
+          requireEbsCase(ebsCase).getProviderDetails());
+    }
+    return applicationService.getProviderDetailsFormData(requireApplicationId(applicationId));
+  }
+
+  private String requireApplicationId(final String applicationId) {
+    return Optional.ofNullable(applicationId)
+        .orElseThrow(() -> new CaabApplicationException("Failed to retrieve application id"));
   }
 
   /**

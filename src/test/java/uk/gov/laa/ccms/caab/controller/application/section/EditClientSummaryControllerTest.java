@@ -21,6 +21,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_E
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_CONTEXT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
@@ -148,6 +149,7 @@ class EditClientSummaryControllerTest {
             get("/application/sections/client/details/summary")
                 .sessionAttr(USER_DETAILS, userDetails)
                 .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(CLIENT_FLOW_CONTEXT, "application:null:null")
                 .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
         .andExpect(status().isOk())
         .andExpect(view().name("application/sections/client-summary-details"));

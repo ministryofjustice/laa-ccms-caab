@@ -1,11 +1,16 @@
 // Setting asset path as per guidance on MoJ Design System:
 //  https://design-patterns.service.justice.gov.uk/production/installing-with-npm/
-$moj-assets-path: '/civil/assets/';
+@use "govuk" as * with (
+  $govuk-assets-path: "/civil/assets/"
+);
 
-@import "../../../../node_modules/govuk-frontend/dist/govuk/base";
-@import "../../../../node_modules/@ministryofjustice/frontend/moj/settings/all";
-@import "../../../../node_modules/@ministryofjustice/frontend/moj/helpers/all";
-@import "../../../../node_modules/@ministryofjustice/frontend/moj/objects/all";
+@forward "moj/settings/all" with (
+  $moj-assets-path: $govuk-assets-path
+);
 
-@import "../../../../node_modules/@ministryofjustice/frontend/moj/components/date-picker/date-picker.scss";
-@import "../../../../node_modules/@ministryofjustice/frontend/moj/components/page-header-actions/page-header-actions.scss";
+@use "moj/helpers/all" as *;
+@use "moj/objects/all" as *;
+
+@use "moj/components/header/header" as *;
+@use "moj/components/date-picker/date-picker" as *;
+@use "moj/components/page-header-actions/page-header-actions" as *;

@@ -26,6 +26,7 @@ public class SubmissionConfirmedController {
       Model model) {
 
     model.addAttribute("submissionType", submissionType);
+    model.addAttribute("caseContext", caseContext);
 
     return "submissions/submissionConfirmed";
   }

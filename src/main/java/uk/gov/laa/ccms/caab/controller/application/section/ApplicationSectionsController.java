@@ -2,7 +2,11 @@ package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_CONTEXT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CORRESPONDENCE_ADDRESS_FLOW;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CREATE_CLIENT_ADDRESS_FLOW;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.EDIT_CLIENT_ADDRESS_FLOW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SECTIONS_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
@@ -78,6 +82,10 @@ public class ApplicationSectionsController {
     model.addAttribute(ACTIVE_CASE, activeCase);
     session.setAttribute(ACTIVE_CASE, activeCase);
     session.removeAttribute(CLIENT_FLOW_FORM_DATA);
+    session.removeAttribute(CLIENT_FLOW_CONTEXT);
+    session.removeAttribute(CORRESPONDENCE_ADDRESS_FLOW);
+    session.removeAttribute(CREATE_CLIENT_ADDRESS_FLOW);
+    session.removeAttribute(EDIT_CLIENT_ADDRESS_FLOW);
     session.setAttribute(SECTIONS_DATA, sections);
 
     // create a new base object to store the form data

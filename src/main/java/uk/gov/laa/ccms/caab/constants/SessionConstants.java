@@ -39,6 +39,9 @@ public class SessionConstants {
    */
   public static final String CLIENT_FLOW_FORM_DATA = "clientFlowFormData";
 
+  /** Session attribute used to keep track of the active case for client flow form data. */
+  public static final String CLIENT_FLOW_CONTEXT = "clientFlowContext";
+
   /**
    * Session attribute used to keep track of client reference during the creation of a new
    * application.
@@ -57,6 +60,15 @@ public class SessionConstants {
    * search results.
    */
   public static final String ADDRESS_SEARCH_RESULTS = "addressSearchResults";
+
+  /** Session attribute used to keep track of the correspondence address lookup flow. */
+  public static final String CORRESPONDENCE_ADDRESS_FLOW = "correspondenceAddressFlow";
+
+  /** Session attribute used to keep track of the create client address lookup flow. */
+  public static final String CREATE_CLIENT_ADDRESS_FLOW = "createClientAddressFlow";
+
+  /** Session attribute used to keep track of the edit client address lookup flow. */
+  public static final String EDIT_CLIENT_ADDRESS_FLOW = "editClientAddressFlow";
 
   /** Session attribute used to keep track of submission transactions. */
   public static final String SUBMISSION_TRANSACTION_ID = "submissionTransactionId";

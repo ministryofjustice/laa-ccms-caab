@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDRESS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CREATE_CLIENT_ADDRESS_FLOW;
 
 import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,8 +24,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
+import uk.gov.laa.ccms.caab.bean.AddressLookupFlowData;
 import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
@@ -43,6 +46,7 @@ public class ClientAddressDetailsSearchControllerTest {
 
   private AddressSearchFormData addressSearch;
   private ResultsDisplay<AddressResultRowDisplay> searchResults;
+  private AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow;
   private ClientFlowFormData clientFlowFormData;
 
   @BeforeEach
@@ -52,6 +56,8 @@ public class ClientAddressDetailsSearchControllerTest {
     addressSearch = new AddressSearchFormData();
     searchResults = new ResultsDisplay<>();
     searchResults.setContent(new ArrayList<>());
+    addressFlow = new AddressLookupFlowData<>("create-client");
+    addressFlow.setSearchResults(searchResults);
     clientFlowFormData = new ClientFlowFormData(ACTION_CREATE);
   }
 
@@ -61,7 +67,7 @@ public class ClientAddressDetailsSearchControllerTest {
     mockMvc
         .perform(
             get("/application/client/details/address/search")
-                .sessionAttr(ADDRESS_SEARCH_RESULTS, searchResults)
+                .sessionAttr(CREATE_CLIENT_ADDRESS_FLOW, addressFlow)
                 .flashAttr("addressSearch", addressSearch))
         .andDo(print())
         .andExpect(status().isOk())
@@ -76,7 +82,7 @@ public class ClientAddressDetailsSearchControllerTest {
         .perform(
             post("/application/client/details/address/search")
                 .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-                .sessionAttr(ADDRESS_SEARCH_RESULTS, searchResults)
+                .sessionAttr(CREATE_CLIENT_ADDRESS_FLOW, addressFlow)
                 .flashAttr("addressSearch", addressSearch))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
@@ -99,7 +105,7 @@ public class ClientAddressDetailsSearchControllerTest {
         .perform(
             post("/application/client/details/address/search")
                 .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
-                .sessionAttr(ADDRESS_SEARCH_RESULTS, searchResults)
+                .sessionAttr(CREATE_CLIENT_ADDRESS_FLOW, addressFlow)
                 .flashAttr("addressSearch", addressSearch))
         .andDo(print())
         .andExpect(status().isOk())
