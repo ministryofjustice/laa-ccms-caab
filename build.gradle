@@ -1,7 +1,7 @@
 plugins {
     id 'net.researchgate.release' version '3.1.0'
-    id 'uk.gov.laa.springboot.laa-spring-boot-gradle-plugin' version '2.2.6'
-    id 'com.diffplug.spotless' version '8.4.0'
+    id 'uk.gov.laa.springboot.laa-spring-boot-gradle-plugin' version '2.2.8'
+    id 'com.diffplug.spotless' version '8.5.1'
 }
 
 subprojects {
@@ -110,11 +110,11 @@ dependencies {
 	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.0.2')
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
-	implementation 'software.amazon.awssdk:sts:2.44.5'
+	implementation 'software.amazon.awssdk:sts:2.44.12'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
-    implementation 'org.json:json:20251224'
+    implementation 'org.json:json:20260522'
 
     implementation 'io.swagger.core.v3:swagger-annotations:2.2.50'
 
