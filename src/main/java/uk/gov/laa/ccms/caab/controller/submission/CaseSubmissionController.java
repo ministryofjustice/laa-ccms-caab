@@ -14,6 +14,8 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
+import static uk.gov.laa.ccms.caab.util.SubmissionUtil.redirectToSubmissionResult;
+import static uk.gov.laa.ccms.caab.util.SubmissionUtil.requireSessionAttribute;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -68,7 +70,11 @@ public class CaseSubmissionController {
     model.addAttribute("caseContext", caseContext);
 
     if (!StringUtils.hasText(transactionId)) {
-      return redirectToSubmissionResult(session, caseContext);
+      final String submissionResult = (String) session.getAttribute(SUBMISSION_RESULT);
+      if (StringUtils.hasText(submissionResult)) {
+        return redirectToSubmissionResult(session, caseContext, SUBMISSION_SUBMIT_CASE);
+      }
+      return viewIncludingPollCount(session, caseContext, model);
     }
 
     requireSessionAttribute(user, USER_DETAILS);
@@ -161,20 +167,5 @@ public class CaseSubmissionController {
     session.setAttribute(SUBMISSION_POLL_COUNT, submissionPollCount);
     model.addAttribute("caseContext", caseContext);
     return "submissions/submissionInProgress";
-  }
-
-  private void requireSessionAttribute(final Object attribute, final String attributeName) {
-    if (attribute == null) {
-      throw new IllegalStateException("Missing session attribute '%s'".formatted(attributeName));
-    }
-  }
-
-  private String redirectToSubmissionResult(
-      final HttpSession session, final CaseContext caseContext) {
-    final String submissionResult = (String) session.getAttribute(SUBMISSION_RESULT);
-    final String resultPath =
-        SUBMISSION_CONFIRMED.equals(submissionResult) ? SUBMISSION_CONFIRMED : SUBMISSION_FAILED;
-    return "redirect:/%s/%s/%s"
-        .formatted(caseContext.getPathValue(), SUBMISSION_SUBMIT_CASE, resultPath);
   }
 }

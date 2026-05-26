@@ -12,6 +12,8 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSAC
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_CLIENT;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_UPDATE_CLIENT;
+import static uk.gov.laa.ccms.caab.util.SubmissionUtil.redirectToSubmissionResult;
+import static uk.gov.laa.ccms.caab.util.SubmissionUtil.requireSessionAttribute;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -193,19 +195,5 @@ public class ClientSubmissionsInProgressController {
     submissionPollCount += 1;
     session.setAttribute(SUBMISSION_POLL_COUNT, submissionPollCount);
     return "submissions/submissionInProgress";
-  }
-
-  private void requireSessionAttribute(final Object attribute, final String attributeName) {
-    if (attribute == null) {
-      throw new IllegalStateException("Missing session attribute '%s'".formatted(attributeName));
-    }
-  }
-
-  private String redirectToSubmissionResult(
-      final HttpSession session, final CaseContext caseContext, final String submissionType) {
-    final String submissionResult = (String) session.getAttribute(SUBMISSION_RESULT);
-    final String resultPath =
-        SUBMISSION_CONFIRMED.equals(submissionResult) ? SUBMISSION_CONFIRMED : SUBMISSION_FAILED;
-    return "redirect:/%s/%s/%s".formatted(caseContext.getPathValue(), submissionType, resultPath);
   }
 }

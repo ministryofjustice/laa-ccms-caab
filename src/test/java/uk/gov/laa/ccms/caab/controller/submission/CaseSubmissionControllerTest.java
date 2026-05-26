@@ -150,12 +150,13 @@ class CaseSubmissionControllerTest {
   }
 
   @Test
-  @DisplayName("Test addCaseSubmission - Missing transaction defaults to failed")
-  void testAddCaseSubmission_MissingTransactionDefaultsToFailed() throws Exception {
+  @DisplayName("Test addCaseSubmission - Missing transaction continues polling")
+  void testAddCaseSubmission_MissingTransactionContinuesPolling() throws Exception {
     mockMvc
         .perform(get("/amendments/submit-case").sessionAttr(USER_DETAILS, userDetail))
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/amendments/%s/failed".formatted(SUBMISSION_SUBMIT_CASE)));
+        .andExpect(status().isOk())
+        .andExpect(view().name("submissions/submissionInProgress"))
+        .andExpect(model().attribute("caseContext", CaseContext.AMENDMENTS));
 
     verify(applicationService, never()).getCaseStatus(anyString());
   }
