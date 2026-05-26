@@ -293,6 +293,13 @@ public class AmendmentService {
     return Objects.requireNonNull(caseTransactionResponseMono.block()).getTransactionId();
   }
 
+  /**
+   * Retrieves the opponents associated with an amendment.
+   *
+   * @param applicationId The ID of the application.
+   * @param user The user details.
+   * @return A list of opponent form data objects.
+   */
   public List<AbstractOpponentFormData> getAmendmentOpponents(
       final String applicationId, final UserDetail user) {
     final ApplicationDetail application = applicationService.getApplication(applicationId).block();
