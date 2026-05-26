@@ -7,7 +7,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/{caseContext}/proceedings/{action}/confirm(action=${proceedingFlow.action}, caseContext=${caseContext.pathValue})}" class="govuk-back-link">Cancel and return to proceeding details</a>
+    <a th:href="@{/{caseContext}/proceedings/{action}/confirm(action=${proceedingFlow.action}, caseContext=${caseContext.pathValue})}" class="govuk-back-link" th:text="#{proceedings.scopeLimitationDetails.cancelAndGoBack}"></a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/{caseContext}/proceedings/scope-limitations/{scopeLimitationId}/remove(scopeLimitationId=${scopeLimitationId}, caseContext=${caseContext.pathValue})}" method="post">

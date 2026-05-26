@@ -6,10 +6,11 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/application/opponents/organisation/search}" class="govuk-back-link">Return to organisation search</a>
+        <a th:href="@{/{caseContext}/sections/opponents/organisation/search(caseContext=${caseContext.pathValue})}" class="govuk-back-link" th:text="#{site.returnToOrganisationSearch}"></a>
     </div>
     <div id="main-content">
-        <span class="govuk-caption-l">Search for an organisation</span>
+        <span th:if="${caseContext.isApplication()}" class="govuk-caption-l" th:text="#{application.opponents.organisationSearch.caption}"></span>
+        <span th:if="${caseContext.isAmendment()}" class="govuk-caption-l" th:text="#{application.amendment}"></span>
         <h1 class="govuk-heading-l">
             Organisation search - too many results
         </h1>

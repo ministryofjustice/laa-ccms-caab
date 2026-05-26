@@ -1367,6 +1367,32 @@ public class ApplicationService {
   }
 
   /**
+   * Checks whether a shared organisation opponent is already attached to the application.
+   *
+   * @param applicationId the application id.
+   * @param partyId the external organisation party id.
+   * @return true when the organisation is already an opponent.
+   */
+  public boolean hasSharedOrganisationOpponent(final String applicationId, final String partyId) {
+    if (!StringUtils.hasText(applicationId) || !StringUtils.hasText(partyId)) {
+      return false;
+    }
+
+    final List<OpponentDetail> opponentList =
+        caabApiClient
+            .getOpponents(applicationId)
+            .blockOptional()
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve opponents"));
+
+    return opponentList.stream()
+        .filter(OpponentUtil::isOrganisation)
+        .filter(opponent -> Boolean.TRUE.equals(opponent.getSharedInd()))
+        .anyMatch(
+            opponent ->
+                partyId.equals(opponent.getPartyId()) || partyId.equals(opponent.getEbsId()));
+  }
+
+  /**
    * Build an AbstractOpponentFormData for the provided OpponentDetail. Codes will be translated to
    * their display value depending on the type of opponent.
    *

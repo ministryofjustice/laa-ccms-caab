@@ -1,17 +1,19 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title th:text="#{service.name} + ' - ' + #{application.start}"></title>
+    <title th:if="${caseContext.isApplication()}" th:text="#{service.name} + ' - ' + #{application.start}"></title>
+    <title th:if="${caseContext.isAmendment()}" th:text="#{service.name} + ' - ' + #{application.amendment}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/application/sections/opponents}" class="govuk-back-link">Cancel and return to opponents and other parties</a>
+        <a th:href="@{/{caseContext}/sections/opponents(caseContext=${caseContext.pathValue})}" class="govuk-back-link" th:text="#{site.cancelAndReturnToOpponents}"></a>
     </div>
     <div id="main-content">
-        <form action="#" th:action="@{/application/opponents/organisation/search}" th:object="${organisationSearchCriteria}" method="post">
+        <form action="#" th:action="@{/{caseContext}/sections/opponents/organisation/search(caseContext=${caseContext.pathValue})}" th:object="${organisationSearchCriteria}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
-            <span class="govuk-caption-l">Create application</span>
+            <span th:if="${caseContext.isApplication()}" class="govuk-caption-l" th:text="#{application.create}"></span>
+            <span th:if="${caseContext.isAmendment()}" class="govuk-caption-l" th:text="#{application.amendment}"></span>
             <h1 class="govuk-heading-l">
                 Opponents and other parties
             </h1>
@@ -33,8 +35,8 @@
                     </button>
                     <a class="govuk-button govuk-button--secondary"
                        data-module="govuk-button"
-                       th:href="@{/application/opponents/organisation/create}">
-                        Create new organisation
+                       th:href="@{/{caseContext}/sections/opponents/organisation/create(caseContext=${caseContext.pathValue})}">
+                        <span th:text="#{application.opponents.createNewOrganisation}"></span>
                     </a>
                 </div>
             </div>
