@@ -397,5 +397,42 @@ class AmendmentServiceTest {
       assertThat(transactionId).isNotNull();
       assertThat(transactionId).isEqualTo("12345");
     }
+
+    @Test
+    @DisplayName("Should submit quick amend provider details with null fee earner and supervisor")
+    void shouldSubmitQuickAmendmentProviderDetailsWithNulls() {
+      // Given
+      ApplicationFormData providerDetails = new ApplicationFormData();
+      providerDetails.setOfficeId(2);
+      providerDetails.setFeeEarnerId(null);
+      providerDetails.setSupervisorId(null);
+      providerDetails.setProviderCaseReference("caseRef");
+      providerDetails.setContactNameId("contactId");
+
+      String caseRef = "12345";
+
+      UserDetail userDetails =
+          new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
+      ApplicationDetail caseDetail = buildFullApplicationDetail();
+      when(applicationService.getCase(any(), anyLong(), any())).thenReturn(caseDetail);
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(caabApiClient.createApplication(any(), any())).thenReturn(Mono.just("123"));
+      when(soaApiClient.updateCase(any(), any(), any(), any()))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("12345")));
+      // When
+      String transactionId =
+          amendmentService.submitQuickAmendmentProviderDetails(
+              providerDetails, caseRef, userDetails);
+      // Then
+      verify(caabApiClient, times(1))
+          .createApplication(
+              eq("123"),
+              argThat(
+                  application ->
+                      application.getProviderDetails() != null
+                          && application.getProviderDetails().getFeeEarner() == null
+                          && application.getProviderDetails().getSupervisor() == null));
+      assertThat(transactionId).isEqualTo("12345");
+    }
   }
 }

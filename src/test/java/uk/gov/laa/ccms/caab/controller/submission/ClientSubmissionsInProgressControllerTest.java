@@ -2,6 +2,8 @@ package uk.gov.laa.ccms.caab.controller.submission;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -15,6 +17,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_CLIENT
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_POLL_COUNT;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
@@ -74,7 +77,8 @@ public class ClientSubmissionsInProgressControllerTest {
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "123")
                 .sessionAttr(USER_DETAILS, user))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/client-create/confirmed"));
+        .andExpect(redirectedUrl("/application/client-create/confirmed"))
+        .andExpect(request().sessionAttribute(SUBMISSION_RESULT, "confirmed"));
   }
 
   @Test
@@ -97,6 +101,26 @@ public class ClientSubmissionsInProgressControllerTest {
         .andExpect(
             model()
                 .attribute("caseContext", uk.gov.laa.ccms.caab.constants.CaseContext.APPLICATION));
+  }
+
+  @Test
+  void testClientCreateSubmission_missingTransactionDefaultsToFailed() throws Exception {
+    mockMvc
+        .perform(get("/application/client-create"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client-create/failed"));
+
+    verify(clientService, never()).getClientStatus(anyString());
+  }
+
+  @Test
+  void testClientCreateSubmission_missingTransactionUsesFinalSubmissionResult() throws Exception {
+    mockMvc
+        .perform(get("/application/client-create").sessionAttr(SUBMISSION_RESULT, "confirmed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client-create/confirmed"));
+
+    verify(clientService, never()).getClientStatus(anyString());
   }
 
   @Test
@@ -146,7 +170,9 @@ public class ClientSubmissionsInProgressControllerTest {
                 .sessionAttr(USER_DETAILS, user)
                 .sessionAttr("submissionPollCount", submissionPollCount))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/client-create/failed"));
+        .andExpect(redirectedUrl("/application/client-create/failed"))
+        .andExpect(request().sessionAttribute(SUBMISSION_RESULT, "failed"))
+        .andExpect(request().sessionAttributeDoesNotExist(SUBMISSION_TRANSACTION_ID));
   }
 
   @Test
@@ -174,6 +200,7 @@ public class ClientSubmissionsInProgressControllerTest {
                 .sessionAttr(APPLICATION_CLIENT_NAMES, baseClient))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/client-update/confirmed"))
+        .andExpect(request().sessionAttribute(SUBMISSION_RESULT, "confirmed"))
         .andExpect(
             request()
                 .sessionAttributeDoesNotExist(
@@ -211,6 +238,7 @@ public class ClientSubmissionsInProgressControllerTest {
                 .sessionAttr(APPLICATION_CLIENT_NAMES, baseClient))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/amendments/client-update/confirmed"))
+        .andExpect(request().sessionAttribute(SUBMISSION_RESULT, "confirmed"))
         .andExpect(
             request()
                 .sessionAttributeDoesNotExist(
@@ -219,6 +247,26 @@ public class ClientSubmissionsInProgressControllerTest {
                     CLIENT_FLOW_FORM_DATA,
                     APPLICATION_CLIENT_NAMES,
                     CASE));
+  }
+
+  @Test
+  void testClientUpdateSubmission_missingTransactionDefaultsToFailed() throws Exception {
+    mockMvc
+        .perform(get("/amendments/client-update"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/amendments/client-update/failed"));
+
+    verify(clientService, never()).getClientStatus(anyString());
+  }
+
+  @Test
+  void testClientUpdateSubmission_missingTransactionUsesFinalSubmissionResult() throws Exception {
+    mockMvc
+        .perform(get("/amendments/client-update").sessionAttr(SUBMISSION_RESULT, "confirmed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/amendments/client-update/confirmed"));
+
+    verify(clientService, never()).getClientStatus(anyString());
   }
 
   @Test

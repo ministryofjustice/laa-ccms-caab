@@ -7,10 +7,13 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_D
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_REFERENCE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_POLL_COUNT;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_CLIENT;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_UPDATE_CLIENT;
+import static uk.gov.laa.ccms.caab.util.SubmissionUtil.redirectToSubmissionResult;
+import static uk.gov.laa.ccms.caab.util.SubmissionUtil.requireSessionAttribute;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +42,9 @@ public class ClientSubmissionsInProgressController {
 
   private final ClientService clientService;
 
+  private static final String SUBMISSION_CONFIRMED = "confirmed";
+  private static final String SUBMISSION_FAILED = "failed";
+
   /**
    * Handles the GET request for the client creation submission in progress screen.
    *
@@ -46,12 +52,17 @@ public class ClientSubmissionsInProgressController {
    */
   @GetMapping("/application/client-create")
   public String clientCreateSubmission(
-      @SessionAttribute(SUBMISSION_TRANSACTION_ID) final String transactionId,
+      @SessionAttribute(value = SUBMISSION_TRANSACTION_ID, required = false)
+          final String transactionId,
       final HttpSession session,
       final Model model) {
 
     model.addAttribute("submissionType", SUBMISSION_CREATE_CLIENT);
     model.addAttribute("caseContext", CaseContext.APPLICATION);
+
+    if (!StringUtils.hasText(transactionId)) {
+      return redirectToSubmissionResult(session, CaseContext.APPLICATION, SUBMISSION_CREATE_CLIENT);
+    }
 
     final TransactionStatus clientStatus = clientService.getClientStatus(transactionId).block();
 
@@ -61,6 +72,7 @@ public class ClientSubmissionsInProgressController {
       // Do some session tidy up
       session.removeAttribute(SUBMISSION_POLL_COUNT);
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
+      session.setAttribute(SUBMISSION_RESULT, SUBMISSION_CONFIRMED);
       session.removeAttribute(CLIENT_SEARCH_CRITERIA);
       session.removeAttribute(CLIENT_FLOW_FORM_DATA);
 
@@ -78,14 +90,23 @@ public class ClientSubmissionsInProgressController {
   @GetMapping("/{caseContext}/client-update")
   public String clientUpdateSubmission(
       @PathVariable("caseContext") final CaseContext caseContext,
-      @SessionAttribute(SUBMISSION_TRANSACTION_ID) final String transactionId,
-      @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @SessionAttribute(APPLICATION_CLIENT_NAMES) final BaseClientDetail baseClient,
+      @SessionAttribute(value = SUBMISSION_TRANSACTION_ID, required = false)
+          final String transactionId,
+      @SessionAttribute(value = USER_DETAILS, required = false) final UserDetail user,
+      @SessionAttribute(value = APPLICATION_CLIENT_NAMES, required = false)
+          final BaseClientDetail baseClient,
       final HttpSession session,
       final Model model) {
 
     model.addAttribute("submissionType", SUBMISSION_UPDATE_CLIENT);
     model.addAttribute("caseContext", caseContext);
+
+    if (!StringUtils.hasText(transactionId)) {
+      return redirectToSubmissionResult(session, caseContext, SUBMISSION_UPDATE_CLIENT);
+    }
+
+    requireSessionAttribute(user, USER_DETAILS);
+    requireSessionAttribute(baseClient, APPLICATION_CLIENT_NAMES);
 
     final TransactionStatus clientStatus = clientService.getClientStatus(transactionId).block();
 
@@ -95,6 +116,7 @@ public class ClientSubmissionsInProgressController {
       // Do some session tidy up
       session.removeAttribute(SUBMISSION_POLL_COUNT);
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
+      session.setAttribute(SUBMISSION_RESULT, SUBMISSION_CONFIRMED);
       session.removeAttribute(CLIENT_FLOW_FORM_DATA);
       session.removeAttribute(APPLICATION_CLIENT_NAMES);
       session.removeAttribute(CASE);
@@ -124,6 +146,8 @@ public class ClientSubmissionsInProgressController {
       @PathVariable String submissionType,
       final HttpSession session) {
     session.removeAttribute(SUBMISSION_POLL_COUNT);
+    session.removeAttribute(SUBMISSION_TRANSACTION_ID);
+    session.setAttribute(SUBMISSION_RESULT, SUBMISSION_FAILED);
     if (caseContext.isApplication()) {
       if (SUBMISSION_CREATE_CLIENT.equals(submissionType)) {
         return "redirect:/application/client/details";
@@ -162,6 +186,9 @@ public class ClientSubmissionsInProgressController {
     if (session.getAttribute(SUBMISSION_POLL_COUNT) != null) {
       submissionPollCount = (int) session.getAttribute(SUBMISSION_POLL_COUNT);
       if (submissionPollCount >= submissionConstants.getMaxPollCount()) {
+        session.removeAttribute(SUBMISSION_POLL_COUNT);
+        session.removeAttribute(SUBMISSION_TRANSACTION_ID);
+        session.setAttribute(SUBMISSION_RESULT, SUBMISSION_FAILED);
         return "redirect:/%s/%s/failed".formatted(caseContext.getPathValue(), submissionType);
       }
     }
