@@ -134,10 +134,7 @@ public class OpponentsSectionController {
    * @param model The Model object to add attributes to for the view.
    * @return The name of the view to be rendered.
    */
-  @GetMapping({
-    "/{caseContext}/sections/opponents/organisation/search",
-    "/{caseContext}/opponents/organisation/search"
-  })
+  @GetMapping("/{caseContext}/sections/opponents/organisation/search")
   public String organisationSearch(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
       @ModelAttribute(ORGANISATION_SEARCH_CRITERIA) final OrganisationSearchCriteria searchCriteria,
@@ -158,10 +155,7 @@ public class OpponentsSectionController {
    * @param model The model used to pass data to the view.
    * @return Either redirects to the search results or reloads the form with validation errors.
    */
-  @PostMapping({
-    "/{caseContext}/sections/opponents/organisation/search",
-    "/{caseContext}/opponents/organisation/search"
-  })
+  @PostMapping("/{caseContext}/sections/opponents/organisation/search")
   public String organisationSearch(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
       @Validated @ModelAttribute(ORGANISATION_SEARCH_CRITERIA)
@@ -194,10 +188,7 @@ public class OpponentsSectionController {
    * @param model Model to pass data to the view.
    * @return The view name for organisation search results or the appropriate error view.
    */
-  @GetMapping({
-    "/{caseContext}/sections/opponents/organisation/search/results",
-    "/{caseContext}/opponents/organisation/search/results"
-  })
+  @GetMapping("/{caseContext}/sections/opponents/organisation/search/results")
   public String organisationSearchResults(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
       @ModelAttribute(ORGANISATION_SEARCH_CRITERIA) OrganisationSearchCriteria searchCriteria,
@@ -240,10 +231,7 @@ public class OpponentsSectionController {
    * @param model The model.
    * @return The view name for shared organisation confirmation screen.
    */
-  @GetMapping({
-    "/{caseContext}/sections/opponents/organisation/{id}/select",
-    "/{caseContext}/opponents/organisation/{id}/select"
-  })
+  @GetMapping("/{caseContext}/sections/opponents/organisation/{id}/select")
   public String selectSharedOrganisation(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
       @PathVariable("id") final String organisationId,
@@ -286,10 +274,7 @@ public class OpponentsSectionController {
    * @param model - the model.
    * @return The view name for shared organisation confirmation screen.
    */
-  @PostMapping({
-    "/{caseContext}/sections/opponents/organisation/shared/create",
-    "/{caseContext}/opponents/organisation/shared/create"
-  })
+  @PostMapping("/{caseContext}/sections/opponents/organisation/shared/create")
   public String createSharedOrganisation(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
       @ModelAttribute(CURRENT_OPPONENT) final AbstractOpponentFormData opponentFormData,
@@ -329,10 +314,7 @@ public class OpponentsSectionController {
    * @param model - the model
    * @return The view name for the organisation creation screen.
    */
-  @GetMapping({
-    "/{caseContext}/sections/opponents/organisation/create",
-    "/{caseContext}/opponents/organisation/create"
-  })
+  @GetMapping("/{caseContext}/sections/opponents/organisation/create")
   public String createNewOrganisation(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
       final HttpServletRequest request,
@@ -356,10 +338,7 @@ public class OpponentsSectionController {
    * @param model The model used to pass data to the view.
    * @return Either redirects to the opponent list or reloads the form with validation errors.
    */
-  @PostMapping({
-    "/{caseContext}/sections/opponents/organisation/create",
-    "/{caseContext}/opponents/organisation/create"
-  })
+  @PostMapping("/{caseContext}/sections/opponents/organisation/create")
   public String createNewOrganisation(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
       @SessionAttribute(value = APPLICATION_ID, required = false) final String applicationId,
@@ -389,11 +368,7 @@ public class OpponentsSectionController {
    * @param model - the model
    * @return The view name for the individual opponent creation screen.
    */
-  @GetMapping({
-    "/{caseContext}/sections/opponents/individual/create",
-    "/{caseContext}/opponents/individual/create",
-    "/{caseContext}/sections/opponents/individual/add"
-  })
+  @GetMapping("/{caseContext}/sections/opponents/individual/create")
   public String createNewIndividual(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
       final HttpServletRequest request,
@@ -417,11 +392,7 @@ public class OpponentsSectionController {
    * @param model The model used to pass data to the view.
    * @return Either redirects to the opponent list or reloads the form with validation errors.
    */
-  @PostMapping({
-    "/{caseContext}/sections/opponents/individual/create",
-    "/{caseContext}/opponents/individual/create",
-    "/{caseContext}/sections/opponents/individual/add"
-  })
+  @PostMapping("/{caseContext}/sections/opponents/individual/create")
   public String createNewIndividual(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
       @SessionAttribute(APPLICATION_ID) final String applicationId,
@@ -476,12 +447,7 @@ public class OpponentsSectionController {
    * @param model - the model
    * @return The view name for the appropriate opponent edit screen.
    */
-  @GetMapping({
-    "/{caseContext}/sections/opponents/{opponent-id}/edit",
-    "/{caseContext}/opponents/{opponent-id}/edit",
-    "/{caseContext}/sections/opponents/individual/{opponent-id}/edit",
-    "/{caseContext}/sections/opponents/organisation/{opponent-id}/edit"
-  })
+  @GetMapping("/{caseContext}/sections/opponents/{opponent-id}/edit")
   public String editOpponent(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
       @PathVariable("opponent-id") final Integer opponentId,
@@ -529,12 +495,7 @@ public class OpponentsSectionController {
    * @param model The model used to pass data to the view.
    * @return Either redirects to the opponent list or reloads the form with validation errors.
    */
-  @PostMapping({
-    "/{caseContext}/sections/opponents/{opponent-id}/edit",
-    "/{caseContext}/opponents/{opponent-id}/edit",
-    "/{caseContext}/sections/opponents/individual/{opponent-id}/edit",
-    "/{caseContext}/sections/opponents/organisation/{opponent-id}/edit"
-  })
+  @PostMapping("/{caseContext}/sections/opponents/{opponent-id}/edit")
   public String editOpponent(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
       @PathVariable("opponent-id") final Integer opponentId,
@@ -584,10 +545,7 @@ public class OpponentsSectionController {
    * @param model - the model.
    * @return The view name for the remove confirmation screen
    */
-  @GetMapping({
-    "/{caseContext}/sections/opponents/{opponent-id}/remove",
-    "/{caseContext}/opponents/{opponent-id}/remove"
-  })
+  @GetMapping("/{caseContext}/sections/opponents/{opponent-id}/remove")
   public String removeOpponent(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
       @PathVariable("opponent-id") final Integer opponentId,
@@ -620,10 +578,7 @@ public class OpponentsSectionController {
    * @param user - the user details.
    * @return a redirect to the opponent summary view.
    */
-  @PostMapping({
-    "/{caseContext}/sections/opponents/{opponent-id}/remove",
-    "/{caseContext}/opponents/{opponent-id}/remove"
-  })
+  @PostMapping("/{caseContext}/sections/opponents/{opponent-id}/remove")
   public String removeOpponentPost(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
       @PathVariable("opponent-id") final Integer opponentId,

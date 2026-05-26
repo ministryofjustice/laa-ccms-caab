@@ -121,7 +121,7 @@ class OpponentsSectionControllerTest {
         .thenReturn(Mono.just(orgTypes));
 
     mockMvc
-        .perform(get("/application/opponents/organisation/search"))
+        .perform(get("/application/sections/opponents/organisation/search"))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(model().attribute("organisationTypes", orgTypes.getContent()))
@@ -133,7 +133,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            post("/application/opponents/organisation/search")
+            post("/application/sections/opponents/organisation/search")
                 .flashAttr(ORGANISATION_SEARCH_CRITERIA, new OrganisationSearchCriteria()))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/sections/opponents/organisation/search/results"));
@@ -157,7 +157,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            post("/application/opponents/organisation/search")
+            post("/application/sections/opponents/organisation/search")
                 .flashAttr(ORGANISATION_SEARCH_CRITERIA, new OrganisationSearchCriteria()))
         .andDo(print())
         .andExpect(model().attribute("organisationTypes", orgTypes.getContent()))
@@ -175,7 +175,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            post("/application/opponents/organisation/search")
+            post("/application/sections/opponents/organisation/search")
                 .flashAttr(ORGANISATION_SEARCH_CRITERIA, testOrganisationSearchCriteria))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/sections/opponents/organisation/search/results"));
@@ -197,7 +197,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            post("/application/opponents/organisation/search")
+            post("/application/sections/opponents/organisation/search")
                 .flashAttr(ORGANISATION_SEARCH_CRITERIA, testOrganisationSearchCriteria))
         .andDo(print())
         .andExpect(status().isOk())
@@ -222,7 +222,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            get("/application/opponents/organisation/search/results")
+            get("/application/sections/opponents/organisation/search/results")
                 .flashAttr(ORGANISATION_SEARCH_CRITERIA, searchCriteria)
                 .sessionAttr(USER_DETAILS, user)
                 .param("page", String.valueOf(page))
@@ -244,7 +244,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            get("/application/opponents/organisation/search/results")
+            get("/application/sections/opponents/organisation/search/results")
                 .flashAttr(ORGANISATION_SEARCH_CRITERIA, searchCriteria)
                 .sessionAttr(USER_DETAILS, user)
                 .param("page", String.valueOf(page))
@@ -270,7 +270,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            get("/application/opponents/organisation/search/results")
+            get("/application/sections/opponents/organisation/search/results")
                 .flashAttr(ORGANISATION_SEARCH_CRITERIA, searchCriteria)
                 .sessionAttr(USER_DETAILS, user)
                 .param("page", String.valueOf(page))
@@ -309,7 +309,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            get("/application/opponents/organisation/{id}/select", selectedOrgId)
+            get("/application/sections/opponents/organisation/{id}/select", selectedOrgId)
                 .sessionAttr(ORGANISATION_SEARCH_RESULTS, resultsDisplay)
                 .sessionAttr(USER_DETAILS, user))
         .andDo(print())
@@ -334,7 +334,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            get("/application/opponents/organisation/{id}/select", selectedOrgId)
+            get("/application/sections/opponents/organisation/{id}/select", selectedOrgId)
                 .sessionAttr(ORGANISATION_SEARCH_RESULTS, resultsDisplay)
                 .sessionAttr(USER_DETAILS, user))
         .andDo(print())
@@ -350,7 +350,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            post("/application/opponents/organisation/shared/create")
+            post("/application/sections/opponents/organisation/shared/create")
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(APPLICATION_ID, applicationId)
                 .sessionAttr(USER_DETAILS, user))
@@ -385,7 +385,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            post("/application/opponents/organisation/shared/create")
+            post("/application/sections/opponents/organisation/shared/create")
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(APPLICATION_ID, applicationId)
                 .sessionAttr(USER_DETAILS, user))
@@ -432,7 +432,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            post("/application/opponents/organisation/shared/create")
+            post("/application/sections/opponents/organisation/shared/create")
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(APPLICATION_ID, applicationId)
                 .sessionAttr(USER_DETAILS, user))
@@ -469,7 +469,7 @@ class OpponentsSectionControllerTest {
     when(lookupService.getCountries()).thenReturn(Mono.just(countriesLookupDetail));
 
     mockMvc
-        .perform(get("/application/opponents/organisation/create"))
+        .perform(get("/application/sections/opponents/organisation/create"))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(model().attribute("organisationTypes", orgTypes.getContent()))
@@ -518,7 +518,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            post("/application/opponents/organisation/create")
+            post("/application/sections/opponents/organisation/create")
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(APPLICATION_ID, applicationId)
                 .sessionAttr(USER_DETAILS, user))
@@ -566,7 +566,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            post("/application/opponents/organisation/create")
+            post("/application/sections/opponents/organisation/create")
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(APPLICATION_ID, applicationId)
                 .sessionAttr(USER_DETAILS, user))
@@ -606,7 +606,7 @@ class OpponentsSectionControllerTest {
     when(lookupService.getCountries()).thenReturn(Mono.just(countries));
 
     mockMvc
-        .perform(get("/application/opponents/individual/create"))
+        .perform(get("/application/sections/opponents/individual/create"))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(model().attribute("contactTitles", contactTitles.getContent()))
@@ -643,7 +643,7 @@ class OpponentsSectionControllerTest {
     when(lookupService.getCountries()).thenReturn(Mono.just(countries));
 
     mockMvc
-        .perform(get("/amendments/sections/opponents/individual/add"))
+        .perform(get("/amendments/sections/opponents/individual/create"))
         .andExpect(status().isOk())
         .andExpect(model().attribute("caseContext", CaseContext.AMENDMENTS))
         .andExpect(model().attribute("amendment", true))
@@ -684,7 +684,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            post("/application/opponents/individual/create")
+            post("/application/sections/opponents/individual/create")
                 .sessionAttr(CURRENT_OPPONENT, new IndividualOpponentFormData())
                 .sessionAttr(APPLICATION_ID, "123")
                 .sessionAttr(USER_DETAILS, user))
@@ -714,7 +714,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            post("/application/opponents/individual/create")
+            post("/application/sections/opponents/individual/create")
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(APPLICATION_ID, applicationId)
                 .sessionAttr(USER_DETAILS, user))
@@ -759,7 +759,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            post("/application/opponents/individual/create")
+            post("/application/sections/opponents/individual/create")
                 .sessionAttr(CURRENT_OPPONENT, testIndividualOpponentFormData)
                 .sessionAttr(APPLICATION_ID, "123")
                 .sessionAttr(USER_DETAILS, user))
@@ -787,7 +787,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            post("/application/opponents/individual/create")
+            post("/application/sections/opponents/individual/create")
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(APPLICATION_ID, applicationId)
                 .sessionAttr(USER_DETAILS, user))
@@ -825,7 +825,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            get("/application/opponents/{id}/edit", selectedOpponentId)
+            get("/application/sections/opponents/{id}/edit", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents)
                 .sessionAttr(USER_DETAILS, user))
         .andDo(print())
@@ -855,7 +855,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            get("/application/opponents/{id}/edit", selectedOpponentId)
+            get("/application/sections/opponents/{id}/edit", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents)
                 .sessionAttr(USER_DETAILS, user))
         .andDo(print())
@@ -899,7 +899,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            get("/application/opponents/{id}/edit", selectedOpponentId)
+            get("/application/sections/opponents/{id}/edit", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents))
         .andDo(print())
         .andExpect(status().isOk())
@@ -950,7 +950,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            get("/application/opponents/{id}/edit", selectedOpponentId)
+            get("/application/sections/opponents/{id}/edit", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents))
         .andDo(print())
         .andExpect(status().isOk())
@@ -973,7 +973,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            post("/application/opponents/{id}/edit", selectedOpponentId)
+            post("/application/sections/opponents/{id}/edit", selectedOpponentId)
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(APPLICATION_ID, "456")
                 .sessionAttr(USER_DETAILS, user))
@@ -1016,7 +1016,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            post("/application/opponents/{id}/edit", selectedOpponentId)
+            post("/application/sections/opponents/{id}/edit", selectedOpponentId)
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(USER_DETAILS, user))
         .andDo(print())
@@ -1070,7 +1070,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            post("/application/opponents/{id}/edit", selectedOpponentId)
+            post("/application/sections/opponents/{id}/edit", selectedOpponentId)
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(USER_DETAILS, user))
         .andDo(print())
@@ -1123,7 +1123,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            post("/application/opponents/{id}/edit", selectedOpponentId)
+            post("/application/sections/opponents/{id}/edit", selectedOpponentId)
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(USER_DETAILS, user))
         .andDo(print())
@@ -1156,7 +1156,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            get("/application/opponents/{id}/remove", selectedOpponentId)
+            get("/application/sections/opponents/{id}/remove", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents)
                 .sessionAttr(USER_DETAILS, user))
         .andDo(print())
@@ -1181,7 +1181,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            get("/application/opponents/{id}/remove", selectedOpponentId)
+            get("/application/sections/opponents/{id}/remove", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents)
                 .sessionAttr(USER_DETAILS, user))
         .andDo(print())
@@ -1206,7 +1206,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            get("/application/opponents/{id}/remove", selectedOpponentId)
+            get("/application/sections/opponents/{id}/remove", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents)
                 .sessionAttr(USER_DETAILS, user))
         .andDo(print())
@@ -1231,7 +1231,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            post("/application/opponents/{id}/remove", selectedOpponentId)
+            post("/application/sections/opponents/{id}/remove", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents)
                 .sessionAttr(USER_DETAILS, user))
         .andDo(print())
@@ -1257,7 +1257,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            get("/application/opponents/{id}/remove", selectedOpponentId)
+            get("/application/sections/opponents/{id}/remove", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents)
                 .sessionAttr(USER_DETAILS, user))
         .andDo(print())
@@ -1283,7 +1283,7 @@ class OpponentsSectionControllerTest {
 
     mockMvc
         .perform(
-            get("/application/opponents/{id}/remove", selectedOpponentId)
+            get("/application/sections/opponents/{id}/remove", selectedOpponentId)
                 .sessionAttr(APPLICATION_OPPONENTS, applicationOpponents)
                 .sessionAttr(USER_DETAILS, user))
         .andDo(print())
