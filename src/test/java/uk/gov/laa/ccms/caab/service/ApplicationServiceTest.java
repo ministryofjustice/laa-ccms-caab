@@ -1738,6 +1738,49 @@ class ApplicationServiceTest {
   }
 
   @Test
+  void updateProviderDetails_handlesNullFeeEarnerAndSupervisor() {
+    String id = "12345";
+    UserDetail user = buildUserDetail();
+    ApplicationFormData applicationFormData = new ApplicationFormData();
+    applicationFormData.setOfficeId(2);
+    applicationFormData.setOfficeName("Office Name");
+    applicationFormData.setFeeEarnerId(null);
+    applicationFormData.setSupervisorId(null);
+    applicationFormData.setContactNameId("401");
+    applicationFormData.setProviderCaseReference("CaseRef123");
+
+    ProviderDetail providerDetail =
+        new ProviderDetail()
+            .id(1)
+            .name("Provider Name")
+            .contactNames(List.of(new ContactDetail().id(401).name("Contact Name")));
+
+    when(providerService.getProvider(user.getProvider().getId()))
+        .thenReturn(Mono.just(providerDetail));
+    when(providerService.getFeeEarnerByOfficeAndId(
+            eq(providerDetail), eq(applicationFormData.getOfficeId()), isNull()))
+        .thenReturn(null);
+
+    when(caabApiClient.putApplication(eq(id), eq(user.getLoginId()), any(), eq("provider-details")))
+        .thenReturn(Mono.empty());
+
+    applicationService.updateProviderDetails(id, applicationFormData, user);
+
+    ArgumentCaptor<ApplicationProviderDetails> providerDetailsCaptor =
+        ArgumentCaptor.forClass(ApplicationProviderDetails.class);
+
+    verify(caabApiClient)
+        .putApplication(
+            eq(id), eq(user.getLoginId()), providerDetailsCaptor.capture(), eq("provider-details"));
+
+    ApplicationProviderDetails capturedProviderDetails = providerDetailsCaptor.getValue();
+
+    assertNotNull(capturedProviderDetails);
+    assertNull(capturedProviderDetails.getFeeEarner());
+    assertNull(capturedProviderDetails.getSupervisor());
+  }
+
+  @Test
   void prepareProceedingSummary_updatesCostsCorrectly() {
     String id = "12345";
     UserDetail user = new UserDetail().loginId("userLoginId");
