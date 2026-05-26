@@ -73,6 +73,9 @@ public class SessionConstants {
   /** Session attribute used to keep track of submission transactions. */
   public static final String SUBMISSION_TRANSACTION_ID = "submissionTransactionId";
 
+  /** Session attribute used to keep track of the final submission result. */
+  public static final String SUBMISSION_RESULT = "submissionResult";
+
   /**
    * Session attribute used for maintaining current search criteria during a notifications search.
    */

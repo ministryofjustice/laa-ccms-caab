@@ -7,6 +7,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_CLIENT
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_CONTEXT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EDIT_CLIENT_ADDRESS_FLOW;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_UPDATE_CLIENT;
@@ -132,6 +133,7 @@ public class EditClientSummaryController extends AbstractClientSummaryController
     final BaseClientDetail applicationClientNames =
         clientDetailsMapper.toBaseClient(clientFlowFormData);
 
+    session.removeAttribute(SUBMISSION_RESULT);
     session.setAttribute(SUBMISSION_TRANSACTION_ID, response.getTransactionId());
     session.setAttribute(APPLICATION_CLIENT_NAMES, applicationClientNames);
     clearEditClientFlowSession(session);
