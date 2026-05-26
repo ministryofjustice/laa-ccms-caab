@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails;
+import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 
 @ExtendWith(MockitoExtension.class)
 class ScopeLimitationDetailsValidatorTest {
@@ -53,5 +54,35 @@ class ScopeLimitationDetailsValidatorTest {
     scopeLimitationDetails.setScopeLimitation("Valid Scope Limitation");
     scopeLimitationDetailsValidator.validate(scopeLimitationDetails, errors);
     assertFalse(errors.hasErrors());
+  }
+
+  @Test
+  public void validateScopeLimitationWording_WithMaxLengthExceeded_HasErrors() {
+    final ScopeLimitationDetail scopeLimitation =
+        new ScopeLimitationDetail().scopeLimitationWording("A".repeat(951));
+    final Errors scopeLimitationErrors =
+        new BeanPropertyBindingResult(scopeLimitation, "scopeLimitation");
+
+    scopeLimitationDetailsValidator.validateScopeLimitationWording(
+        scopeLimitation, scopeLimitationErrors);
+
+    assertTrue(scopeLimitationErrors.hasErrors());
+    assertNotNull(scopeLimitationErrors.getFieldError("scopeLimitationWording"));
+    assertEquals(
+        "length.exceeds.max",
+        scopeLimitationErrors.getFieldError("scopeLimitationWording").getCode());
+  }
+
+  @Test
+  public void validateScopeLimitationWording_WithMaxLength_NoErrors() {
+    final ScopeLimitationDetail scopeLimitation =
+        new ScopeLimitationDetail().scopeLimitationWording("A".repeat(950));
+    final Errors scopeLimitationErrors =
+        new BeanPropertyBindingResult(scopeLimitation, "scopeLimitation");
+
+    scopeLimitationDetailsValidator.validateScopeLimitationWording(
+        scopeLimitation, scopeLimitationErrors);
+
+    assertFalse(scopeLimitationErrors.hasErrors());
   }
 }
