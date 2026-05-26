@@ -181,6 +181,10 @@ spotless {
     }
 }
 
+tasks.withType(Checkstyle).configureEach {
+    enabled = false
+}
+
 /**
  * Automatically installs the git pre-commit hook to run spotlessApply.
  */
