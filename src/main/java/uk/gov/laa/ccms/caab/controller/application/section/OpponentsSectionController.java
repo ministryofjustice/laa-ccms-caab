@@ -305,16 +305,13 @@ public class OpponentsSectionController {
     // Validate the complete opponent form data
     organisationOpponentValidator.validate(opponentFormData, bindingResult);
 
-    if (bindingResult.hasErrors()) {
-      addCaseContext(model, resolvedCaseContext);
-      populateConfirmSharedOrganisationDropdowns(model);
-      return "application/opponents/opponents-organisation-shared-create";
-    }
-
     if (isDuplicateSharedOrganisation(applicationId, applicationOpponents, opponentFormData)) {
       bindingResult.reject(
           "opponent.organisation.duplicate",
           "This organisation has already been added as an opponent.");
+    }
+
+    if (bindingResult.hasErrors()) {
       addCaseContext(model, resolvedCaseContext);
       populateConfirmSharedOrganisationDropdowns(model);
       return "application/opponents/opponents-organisation-shared-create";
