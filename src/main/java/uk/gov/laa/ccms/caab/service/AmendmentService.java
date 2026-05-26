@@ -233,11 +233,15 @@ public class AmendmentService {
     amendment
         .getProviderDetails()
         .setFeeEarner(
-            new StringDisplayValue().id(String.valueOf(providerDetails.getFeeEarnerId())));
+            providerDetails.getFeeEarnerId() != null
+                ? new StringDisplayValue().id(String.valueOf(providerDetails.getFeeEarnerId()))
+                : null);
     amendment
         .getProviderDetails()
         .setSupervisor(
-            new StringDisplayValue().id(String.valueOf(providerDetails.getSupervisorId())));
+            providerDetails.getSupervisorId() != null
+                ? new StringDisplayValue().id(String.valueOf(providerDetails.getSupervisorId()))
+                : null);
     amendment
         .getProviderDetails()
         .setProviderCaseReference(providerDetails.getProviderCaseReference());

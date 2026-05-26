@@ -11,6 +11,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CORRESPONDENCE_ADDRESS_FLOW;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
@@ -264,6 +265,7 @@ public class EditGeneralDetailsSectionController {
         String transactionId =
             amendmentService.submitQuickAmendmentCorrespondenceAddress(
                 addressDetails, amendmentCase.getCaseReferenceNumber(), user);
+        session.removeAttribute(SUBMISSION_RESULT);
         session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
 
         clearCorrespondenceAddressSession(session);
