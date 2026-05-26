@@ -40,11 +40,8 @@ import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
-import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.OrganisationResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
-import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
-import uk.gov.laa.ccms.caab.model.sections.OpponentSectionDisplay;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -119,21 +116,13 @@ public class OpponentsSectionController {
     CaseContext resolvedCaseContext = resolveCaseContext(caseContext, request);
     addCaseContext(model, resolvedCaseContext);
 
+    List<AbstractOpponentFormData> opponents;
     if (resolvedCaseContext.isAmendment()) {
-      ApplicationDetail application = applicationService.getApplication(applicationId).block();
-      ApplicationSectionDisplay amendmentSections =
-          amendmentService.getAmendmentSections(application, user);
-
-      List<OpponentSectionDisplay> opponents =
-          amendmentSections.getOpponentsAndOtherParties().getOpponents();
-
-      opponents.forEach(opponent -> opponent.setEditable(opponent.getEbsId() == null));
-      model.addAttribute(APPLICATION_OPPONENTS, opponents);
+      opponents = amendmentService.getAmendmentOpponents(applicationId, user);
     } else {
-      final List<AbstractOpponentFormData> opponents =
-          applicationService.getOpponents(applicationId);
-      model.addAttribute(APPLICATION_OPPONENTS, opponents);
+      opponents = applicationService.getOpponents(applicationId);
     }
+    model.addAttribute(APPLICATION_OPPONENTS, opponents);
 
     return "application/sections/opponents-section";
   }

@@ -34,11 +34,11 @@
                th:text="${opponent.partyName}"></a>
           </td>
           <td class="govuk-table__cell" th:unless="${opponent.editable}" th:text="${opponent.partyName}"></td>
-          <td class="govuk-table__cell" th:text="${caseContext.isAmendment() ? opponent.partyType : opponent.type}"></td>
-          <td class="govuk-table__cell" th:text="${caseContext.isAmendment() ? opponent.relationshipToCase : opponent.relationshipToCaseDisplayValue}"></td>
-          <td class="govuk-table__cell" th:text="${caseContext.isAmendment() ? opponent.relationshipToClient : opponent.relationshipToClientDisplayValue}"></td>
+          <td class="govuk-table__cell" th:text="${opponent.type}"></td>
+          <td class="govuk-table__cell" th:text="${opponent.relationshipToCaseDisplayValue}"></td>
+          <td class="govuk-table__cell" th:text="${opponent.relationshipToClientDisplayValue}"></td>
           <td class="govuk-table__cell">
-            <a th:if="${caseContext.isAmendment() ? opponent.editable : opponent.deletable}"
+            <a th:if="${opponent.deletable}"
                th:href="@{/{caseContext}/sections/opponents/{id}/remove(caseContext=${caseContext.getPathValue()},id=${opponent.id})}"
                class="govuk-link"
                th:text="#{site.remove}"></a>

@@ -6,6 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMI
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
@@ -30,6 +32,7 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.util.AmendmentUtil;
+import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
@@ -288,6 +291,24 @@ public class AmendmentService {
             amendment.getQuickEditType());
 
     return Objects.requireNonNull(caseTransactionResponseMono.block()).getTransactionId();
+  }
+
+  public List<AbstractOpponentFormData> getAmendmentOpponents(
+      final String applicationId, final UserDetail user) {
+    final ApplicationDetail application = applicationService.getApplication(applicationId).block();
+    final ApplicationSectionDisplay amendmentSections = getAmendmentSections(application, user);
+
+    return amendmentSections.getOpponentsAndOtherParties().getOpponents().stream()
+        .map(
+            opponent -> {
+              AbstractOpponentFormData formData =
+                  applicationService.buildOpponentFormData(
+                      OpponentUtil.getOpponentById(application, opponent.getId()));
+              formData.setEditable(opponent.getEbsId() == null);
+              formData.setDeletable(opponent.getEbsId() == null);
+              return formData;
+            })
+        .toList();
   }
 
   /**
