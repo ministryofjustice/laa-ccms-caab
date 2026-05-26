@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.controller.submission;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,6 +24,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMAR
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_POLL_COUNT;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
@@ -108,7 +110,8 @@ class CaseSubmissionControllerTest {
                 .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
                 .sessionAttr(USER_DETAILS, userDetail))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/%s/confirmed".formatted(SUBMISSION_SUBMIT_CASE)));
+        .andExpect(redirectedUrl("/application/%s/confirmed".formatted(SUBMISSION_SUBMIT_CASE)))
+        .andExpect(request().sessionAttribute(SUBMISSION_RESULT, "confirmed"));
 
     verify(applicationService, times(1)).getCaseStatus(anyString());
   }
@@ -134,6 +137,7 @@ class CaseSubmissionControllerTest {
         .andExpect(redirectedUrl("/amendments/%s/confirmed".formatted(SUBMISSION_SUBMIT_CASE)))
         .andExpect(request().sessionAttribute(CASE, mockCase))
         .andExpect(request().sessionAttribute(CASE_REFERENCE_NUMBER, refNumber))
+        .andExpect(request().sessionAttribute(SUBMISSION_RESULT, "confirmed"))
         .andExpect(request().sessionAttributeDoesNotExist(ACTIVE_CASE))
         .andExpect(request().sessionAttributeDoesNotExist(APPLICATION_SUMMARY))
         .andExpect(request().sessionAttributeDoesNotExist(APPLICATION))
@@ -143,6 +147,32 @@ class CaseSubmissionControllerTest {
 
     verify(applicationService, times(1)).getCaseStatus(anyString());
     verify(applicationService, times(1)).getCase(anyString(), anyLong(), anyString());
+  }
+
+  @Test
+  @DisplayName("Test addCaseSubmission - Missing transaction continues polling")
+  void testAddCaseSubmission_MissingTransactionContinuesPolling() throws Exception {
+    mockMvc
+        .perform(get("/amendments/submit-case").sessionAttr(USER_DETAILS, userDetail))
+        .andExpect(status().isOk())
+        .andExpect(view().name("submissions/submissionInProgress"))
+        .andExpect(model().attribute("caseContext", CaseContext.AMENDMENTS));
+
+    verify(applicationService, never()).getCaseStatus(anyString());
+  }
+
+  @Test
+  @DisplayName("Test addCaseSubmission - Missing transaction uses final submission result")
+  void testAddCaseSubmission_MissingTransactionUsesFinalSubmissionResult() throws Exception {
+    mockMvc
+        .perform(
+            get("/amendments/submit-case")
+                .sessionAttr(USER_DETAILS, userDetail)
+                .sessionAttr(SUBMISSION_RESULT, "confirmed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/amendments/%s/confirmed".formatted(SUBMISSION_SUBMIT_CASE)));
+
+    verify(applicationService, never()).getCaseStatus(anyString());
   }
 
   @Test
@@ -248,6 +278,9 @@ class CaseSubmissionControllerTest {
         caseSubmissionController.viewIncludingPollCount(session, CaseContext.APPLICATION, model);
 
     assertEquals("redirect:/application/%s/failed".formatted(SUBMISSION_SUBMIT_CASE), view);
+    verify(session, times(1)).removeAttribute(SUBMISSION_POLL_COUNT);
+    verify(session, times(1)).removeAttribute(SUBMISSION_TRANSACTION_ID);
+    verify(session, times(1)).setAttribute(SUBMISSION_RESULT, "failed");
   }
 
   @Test

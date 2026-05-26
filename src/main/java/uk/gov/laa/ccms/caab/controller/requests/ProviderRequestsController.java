@@ -263,6 +263,8 @@ public class ProviderRequestsController {
     addCaseReferenceIfValid(model, caseRef);
 
     if ("document_upload".equals(action)) {
+      providerRequestFlow.setRequestDetailsFormData(providerRequestDetailsForm);
+
       return "redirect:/provider-requests/documents?caseReferenceNumber="
           + (isValidCaseReference(caseRef) ? caseRef : "");
     } else if ("document_delete".equals(action)) {
