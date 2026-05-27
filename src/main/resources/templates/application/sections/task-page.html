@@ -89,7 +89,7 @@
               </th:block>
               <th:block th:unless="${summary.documentUpload.enabled}">
                 <td class="govuk-table__cell" th:text="#{application.section.documents}"></td>
-                <td class="govuk-table__cell"><strong class="govuk-tag govuk-tag--grey">Not available</strong></td>
+                <td class="govuk-table__cell"><strong class="govuk-tag govuk-tag--grey" th:text="#{site.notAvailable}"></strong></td>
               </th:block>
               <td class="govuk-table__cell"></td>
               <td class="govuk-table__cell"></td>
@@ -122,5 +122,4 @@
 </div>
 </body>
 </html>
-
 

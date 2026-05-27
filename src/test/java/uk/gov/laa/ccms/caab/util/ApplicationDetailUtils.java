@@ -166,6 +166,7 @@ public final class ApplicationDetailUtils {
                 .opponents(
                     List.of(
                         OpponentSectionDisplay.builder()
+                            .id(1)
                             .partyName("Mr John Smith")
                             .partyType("INDIVIDUAL")
                             .relationshipToCase("REL1")

@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS;
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EMERGENCY_APPLICATION_TYPE_CODES;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.REFERENCE_DATA_ITEM_TYPE_LOV;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROCEEDING_ORDER_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
@@ -11,7 +10,6 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PRIOR_
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_PROCEEDINGS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_PROCEEDING;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_SCOPE_LIMITATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EDIT_PROCEEDINGS_ALLOWED;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.IS_ORIGINAL_PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ORIGINAL_PROCEEDING_LOOKUP;
@@ -19,20 +17,17 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRIOR_AUTHORITY_FL
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_FLOW_FORM_DATA_OLD;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_SCOPE_LIMITATIONS;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.SCOPE_LIMITATION_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.Nullable;
@@ -59,15 +54,12 @@ import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataMatterTypeDetails;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFormDataProceedingDetails;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ProceedingScopeLimitationsDelegatedFunctionsApplyFormData;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationDelegatedFunctionApplyFormData;
-import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFlowFormData;
-import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails;
 import uk.gov.laa.ccms.caab.bean.validators.costs.CostDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.priorauthority.PriorAuthorityDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.priorauthority.PriorAuthorityTypeDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingFurtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDetailsValidator;
-import uk.gov.laa.ccms.caab.bean.validators.scopelimitation.ScopeLimitationDetailsValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.PriorAuthorityGroup;
@@ -113,8 +105,6 @@ import uk.gov.laa.ccms.data.model.UserDetail;
       PROCEEDING_FLOW_FORM_DATA,
       PROCEEDING_FLOW_FORM_DATA_OLD,
       PROCEEDING_SCOPE_LIMITATIONS,
-      SCOPE_LIMITATION_FLOW_FORM_DATA,
-      CURRENT_SCOPE_LIMITATION,
       PRIOR_AUTHORITY_FLOW_FORM_DATA,
       ORIGINAL_PROCEEDING_LOOKUP,
       EDIT_PROCEEDINGS_ALLOWED,
@@ -135,7 +125,6 @@ public class EditProceedingsAndCostsSectionController {
   private final ProceedingMatterTypeDetailsValidator matterTypeValidator;
   private final ProceedingDetailsValidator proceedingTypeValidator;
   private final ProceedingFurtherDetailsValidator furtherDetailsValidator;
-  private final ScopeLimitationDetailsValidator scopeLimitationDetailsValidator;
   private final CostDetailsValidator costDetailsValidator;
   private final PriorAuthorityTypeDetailsValidator priorAuthorityTypeValidator;
   private final PriorAuthorityDetailsValidator priorAuthorityDetailsValidator;
@@ -854,7 +843,7 @@ public class EditProceedingsAndCostsSectionController {
 
       // refresh the scope limitations
       final List<ScopeLimitationDetail> scopeLimitations =
-          applicationService.getScopeLimitations(proceeding.getId());
+          applicationService.getScopeLimitations(application, proceeding);
       proceeding.setScopeLimitations(scopeLimitations);
       model.addAttribute(CURRENT_PROCEEDING, proceeding);
 
@@ -1042,402 +1031,6 @@ public class EditProceedingsAndCostsSectionController {
     }
 
     return "redirect:/%s/proceedings-and-costs".formatted(caseContext.getPathValue());
-  }
-
-  /**
-   * Handles the GET request to edit a specific scope limitation of a proceeding.
-   *
-   * @param caseContext The case context.
-   * @param scopeLimitationId The ID of the scope limitation to be edited, obtained from the path
-   *     variable.
-   * @param proceedingFlow The ProceedingFlowFormData object, obtained from the session.
-   * @param model The Model object to add attributes to for the view.
-   * @param session The HttpSession object representing the current session.
-   * @return A redirect instruction to the scope limitation details view.
-   */
-  @GetMapping("/{caseContext}/proceedings/scope-limitations/{scope-limitation-id}/edit")
-  public String scopeLimitationEdit(
-      @PathVariable("caseContext") final CaseContext caseContext,
-      @PathVariable("scope-limitation-id") final Integer scopeLimitationId,
-      @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
-      final Model model,
-      final HttpSession session) {
-
-    // we need to different logic based off if the proceeding has just been created in memory or is
-    // being edited
-    if (ACTION_ADD.equals(proceedingFlow.getAction())) {
-      // we need to get the scope limitations from the session
-      final List<ScopeLimitationDetail> scopeLimitations =
-          (List<ScopeLimitationDetail>) session.getAttribute(PROCEEDING_SCOPE_LIMITATIONS);
-
-      final ScopeLimitationDetail scopeLimitation = scopeLimitations.get(scopeLimitationId);
-      model.addAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
-
-      final ScopeLimitationFlowFormData scopeLimitationFlow =
-          proceedingAndCostsMapper.toScopeLimitationFlow(scopeLimitation);
-      scopeLimitationFlow.setScopeLimitationIndex(scopeLimitationId);
-
-      model.addAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
-    } else {
-      // we need to get the scope limitations from the stored proceeding
-      final ProceedingDetail proceeding =
-          (ProceedingDetail) session.getAttribute(CURRENT_PROCEEDING);
-      final ScopeLimitationDetail scopeLimitation =
-          proceeding.getScopeLimitations().stream()
-              .filter(sl -> sl.getId().equals(scopeLimitationId))
-              .findFirst()
-              .orElseThrow();
-
-      model.addAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
-
-      final ScopeLimitationFlowFormData scopeLimitationFlow =
-          proceedingAndCostsMapper.toScopeLimitationFlow(scopeLimitation);
-
-      model.addAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
-    }
-
-    return "redirect:/%s/proceedings/scope-limitations/confirm"
-        .formatted(caseContext.getPathValue());
-  }
-
-  /**
-   * Handles the request for viewing the details of scope limitations based on a specific action.
-   *
-   * @param caseContext The case context.
-   * @param scopeLimitationAction the action related to scope limitations, extracted from the URL
-   *     path.
-   * @param application the application details, retrieved from the session.
-   * @param proceedingFlow the proceeding flow data, retrieved from the session.
-   * @param model the {@link Model} object for passing attributes to the view.
-   * @param session the {@link HttpSession} object for accessing session attributes.
-   * @return the name of the view to render.
-   */
-  @GetMapping("/{caseContext}/proceedings/scope-limitations/{action}/details")
-  public String scopeLimitationDetails(
-      @PathVariable("caseContext") final CaseContext caseContext,
-      @PathVariable("action") final String scopeLimitationAction,
-      @SessionAttribute(APPLICATION) final ApplicationDetail application,
-      @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
-      final Model model,
-      final HttpSession session) {
-
-    ScopeLimitationFlowFormData scopeLimitationFlow =
-        new ScopeLimitationFlowFormData(scopeLimitationAction);
-
-    if (ACTION_EDIT.equals(scopeLimitationAction)) {
-      scopeLimitationFlow =
-          (ScopeLimitationFlowFormData) session.getAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA);
-    }
-
-    model.addAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
-    model.addAttribute("scopeLimitationDetails", scopeLimitationFlow.getScopeLimitationDetails());
-
-    populateScopeLimitationDropdown(model, application, proceedingFlow);
-
-    // used for determining the action
-    model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
-
-    return "application/proceedings-scope-limitations-details";
-  }
-
-  /**
-   * Processes the submission of scope limitation details.
-   *
-   * @param caseContext The case context.
-   * @param application the application details, retrieved from the session.
-   * @param proceedingFlow the proceeding flow data, retrieved from the session.
-   * @param scopeLimitationFlow the scope limitation flow data, retrieved from the session.
-   * @param scopeLimitationDetails the submitted details of the scope limitation.
-   * @param model the {@link Model} object for passing attributes to the view.
-   * @param bindingResult the result of the validation process.
-   * @return the name of the view to render or a redirect path.
-   */
-  @PostMapping("/{caseContext}/proceedings/scope-limitations/{action}/details")
-  public String scopeLimitationDetailsPost(
-      @PathVariable("caseContext") final CaseContext caseContext,
-      @SessionAttribute(APPLICATION) final ApplicationDetail application,
-      @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
-      @SessionAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA)
-          final ScopeLimitationFlowFormData scopeLimitationFlow,
-      @ModelAttribute("scopeLimitationDetails")
-          final ScopeLimitationFormDataDetails scopeLimitationDetails,
-      final Model model,
-      final BindingResult bindingResult) {
-
-    scopeLimitationDetailsValidator.validate(scopeLimitationDetails, bindingResult);
-
-    if (bindingResult.hasErrors()) {
-      populateScopeLimitationDropdown(model, application, proceedingFlow);
-      model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
-      model.addAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
-      return "application/proceedings-scope-limitations-details";
-    }
-
-    scopeLimitationFlow.setScopeLimitationDetails(scopeLimitationDetails);
-    populateScopeLimitationDetails(model, application, proceedingFlow, scopeLimitationFlow);
-
-    return "redirect:/%s/proceedings/scope-limitations/confirm"
-        .formatted(caseContext.getPathValue());
-  }
-
-  /**
-   * Populates the dropdown for scope limitations in the model.
-   *
-   * <p>Utilizes application and proceeding flow data to determine the criteria for filtering scope
-   * limitations. Adjusts criteria for emergency applications and retrieves a sorted list of scope
-   * limitation details for dropdown population.
-   *
-   * @param model the {@link Model} object for passing attributes to the view.
-   * @param application the application details, used to set criteria.
-   * @param proceedingFlow the proceeding flow data, used to set criteria.
-   */
-  private void populateScopeLimitationDropdown(
-      final Model model,
-      final ApplicationDetail application,
-      final ProceedingFlowFormData proceedingFlow) {
-
-    final uk.gov.laa.ccms.data.model.ScopeLimitationDetail criteria =
-        createScopeLimitationCriteria(application, proceedingFlow);
-
-    final List<uk.gov.laa.ccms.data.model.ScopeLimitationDetail> scopeLimitationTypes =
-        Optional.ofNullable(lookupService.getScopeLimitationDetails(criteria).block())
-            .map(
-                result ->
-                    result.getContent() != null
-                        ? result.getContent().stream()
-                            .sorted(
-                                Comparator.comparing(
-                                    uk.gov.laa.ccms.data.model.ScopeLimitationDetail
-                                        ::getDescription))
-                            .toList()
-                        : null)
-            .orElse(Collections.emptyList());
-
-    model.addAttribute("scopeLimitationTypes", scopeLimitationTypes);
-  }
-
-  /**
-   * Populates the model with detailed scope limitation information for the current application and
-   * proceeding flow.
-   *
-   * <p>Builds criteria based on application details, proceeding flow, and selected scope
-   * limitations to retrieve a specific scope limitation detail. Handles emergency application
-   * criteria separately. Maps the retrieved detail to a scope limitation object and updates the
-   * model for view rendering.
-   *
-   * @param model the {@link Model} object for passing attributes to the view.
-   * @param application the application details, used to set criteria.
-   * @param proceedingFlow the proceeding flow data, used to set criteria.
-   * @param scopeLimitationFlow the selected scope limitation data.
-   */
-  private void populateScopeLimitationDetails(
-      final Model model,
-      final ApplicationDetail application,
-      final ProceedingFlowFormData proceedingFlow,
-      final ScopeLimitationFlowFormData scopeLimitationFlow) {
-
-    final uk.gov.laa.ccms.data.model.ScopeLimitationDetail criteria =
-        createScopeLimitationCriteria(application, proceedingFlow);
-    criteria.scopeLimitations(scopeLimitationFlow.getScopeLimitationDetails().getScopeLimitation());
-
-    final uk.gov.laa.ccms.data.model.ScopeLimitationDetail scopeLimitationDetail =
-        Optional.ofNullable(lookupService.getScopeLimitationDetails(criteria).block())
-            .map(
-                result ->
-                    result.getContent() != null
-                        ? result.getContent().stream().findFirst().orElse(null)
-                        : null)
-            .orElseThrow(() -> new CaabApplicationException("No ScopeLimitationDetail found"));
-
-    final ScopeLimitationDetail scopeLimitation =
-        proceedingAndCostsMapper.toScopeLimitation(scopeLimitationDetail);
-    scopeLimitation.setId(scopeLimitationFlow.getScopeLimitationId());
-
-    model.addAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
-  }
-
-  private uk.gov.laa.ccms.data.model.ScopeLimitationDetail createScopeLimitationCriteria(
-      final ApplicationDetail application, final ProceedingFlowFormData proceedingFlow) {
-
-    final uk.gov.laa.ccms.data.model.ScopeLimitationDetail criteria =
-        new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
-            .categoryOfLaw(application.getCategoryOfLaw().getId())
-            .matterType(proceedingFlow.getMatterTypeDetails().getMatterType())
-            .proceedingCode(proceedingFlow.getProceedingDetails().getProceedingType())
-            .levelOfService(proceedingFlow.getFurtherDetails().getLevelOfService());
-
-    if (EMERGENCY_APPLICATION_TYPE_CODES.contains(application.getApplicationType().getId())) {
-      criteria.emergency(true);
-    }
-
-    return criteria;
-  }
-
-  /**
-   * Displays the confirmation page for scope limitations with the currently selected scope
-   * limitation and its details.
-   *
-   * @param caseContext The case context.
-   * @param scopeLimitation the current scope limitation, retrieved from the session.
-   * @param scopeLimitationFlow the scope limitation flow data, retrieved from the session.
-   * @param model the {@link Model} object for passing attributes to the view.
-   * @return the name of the view to render.
-   */
-  @GetMapping("/{caseContext}/proceedings/scope-limitations/confirm")
-  public String scopeLimitationConfirm(
-      @PathVariable("caseContext") final CaseContext caseContext,
-      @SessionAttribute(CURRENT_SCOPE_LIMITATION) final ScopeLimitationDetail scopeLimitation,
-      @SessionAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA)
-          final ScopeLimitationFlowFormData scopeLimitationFlow,
-      final Model model) {
-
-    model.addAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
-    model.addAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
-
-    return "application/proceedings-scope-limitations-confirm";
-  }
-
-  /**
-   * Processes the confirmation of scope limitations, adding or updating them based on the action
-   * specified in the proceeding flow. Handles both new additions and updates to existing scope
-   * limitations within a session or proceeding.
-   *
-   * @param caseContext The case context.
-   * @param scopeLimitation the scope limitation to be confirmed, retrieved from the session.
-   * @param proceedingFlow the proceeding flow data, indicating the current action.
-   * @param scopeLimitationFlow the scope limitation flow data, containing index information for
-   *     updates.
-   * @param user the current user's details, for updating proceedings.
-   * @param model the {@link Model} object for passing attributes to the view.
-   * @param session the {@link HttpSession} object for accessing session attributes.
-   * @return the redirect URL for the proceeding confirmation page.
-   */
-  @PostMapping("/{caseContext}/proceedings/scope-limitations/confirm")
-  public String scopeLimitationConfirmPost(
-      @PathVariable("caseContext") final CaseContext caseContext,
-      @SessionAttribute(CURRENT_SCOPE_LIMITATION) final ScopeLimitationDetail scopeLimitation,
-      @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
-      @SessionAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA)
-          final ScopeLimitationFlowFormData scopeLimitationFlow,
-      @SessionAttribute(USER_DETAILS) final UserDetail user,
-      final Model model,
-      final HttpSession session) {
-
-    if (ACTION_ADD.equals(proceedingFlow.getAction())) {
-      final List<ScopeLimitationDetail> scopeLimitations =
-          (List<ScopeLimitationDetail>) session.getAttribute(PROCEEDING_SCOPE_LIMITATIONS);
-
-      model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
-
-      if (scopeLimitationFlow.getScopeLimitationIndex() == null) {
-        scopeLimitations.add(scopeLimitation);
-      } else {
-        final int index = scopeLimitationFlow.getScopeLimitationIndex();
-        if (index >= 0 && index < scopeLimitations.size()) {
-          scopeLimitations.set(index, scopeLimitation);
-        } else {
-          throw new CaabApplicationException("No scope limitation found at index: " + index);
-        }
-      }
-
-    } else {
-      // when we are adding a scope limitation to an existing proceeding
-      final ProceedingDetail proceeding =
-          (ProceedingDetail) session.getAttribute(CURRENT_PROCEEDING);
-
-      if (scopeLimitation.getId() == null) {
-        proceeding.getScopeLimitations().add(scopeLimitation);
-      } else {
-        // replace the scope limitation in the list with the one that matched the id
-        final List<ScopeLimitationDetail> scopeLimitations = proceeding.getScopeLimitations();
-        IntStream.range(0, scopeLimitations.size())
-            .filter(i -> scopeLimitations.get(i).getId().equals(scopeLimitation.getId()))
-            .findFirst()
-            .ifPresent(i -> scopeLimitations.set(i, scopeLimitation));
-      }
-
-      applicationService.updateProceeding(proceeding, user);
-
-      // need to refresh current proceeding for new scope limitation id
-      final List<ScopeLimitationDetail> scopeLimitations =
-          applicationService.getScopeLimitations(proceeding.getId());
-      proceeding.setScopeLimitations(scopeLimitations);
-
-      model.addAttribute(CURRENT_PROCEEDING, proceeding);
-    }
-
-    return "redirect:/%s/proceedings/%s/confirm"
-        .formatted(caseContext.getPathValue(), proceedingFlow.getAction());
-  }
-
-  /**
-   * Displays the page for removing a scope limitation with an option to confirm or cancel.
-   *
-   * @param caseContext The case context.
-   * @param scopeLimitationId the ID of the scope limitation to be removed.
-   * @param proceedingFlow the proceeding flow data, retrieved from the session.
-   * @param model the {@link Model} object for passing attributes to the view.
-   * @return the name of the view to render.
-   */
-  @GetMapping("/{caseContext}/proceedings/scope-limitations/{scope-limitation-id}/remove")
-  public String scopeLimitationRemove(
-      @PathVariable("caseContext") final CaseContext caseContext,
-      @PathVariable("scope-limitation-id") final int scopeLimitationId,
-      @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
-      final Model model) {
-
-    model.addAttribute("scopeLimitationId", scopeLimitationId);
-    model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
-
-    return "application/proceedings-scope-limitations-remove";
-  }
-
-  /**
-   * Processes the removal of a scope limitation, either from the session or by updating the
-   * database, based on the proceeding action.
-   *
-   * @param caseContext The case context.
-   * @param scopeLimitationId the ID of the scope limitation to remove.
-   * @param proceedingFlow the proceeding flow data, indicating the current action.
-   * @param user the current user's details, for updating proceedings.
-   * @param model the {@link Model} object for passing attributes to the view.
-   * @param session the {@link HttpSession} object for accessing session attributes.
-   * @return the redirect URL for the proceeding confirmation page.
-   */
-  @PostMapping("/{caseContext}/proceedings/scope-limitations/{scope-limitation-id}/remove")
-  public String scopeLimitationRemovePost(
-      @PathVariable("caseContext") final CaseContext caseContext,
-      @PathVariable("scope-limitation-id") final int scopeLimitationId,
-      @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
-      @SessionAttribute(USER_DETAILS) final UserDetail user,
-      final Model model,
-      final HttpSession session) {
-
-    // remove the scope limitation from the session list
-    if (ACTION_ADD.equals(proceedingFlow.getAction())) {
-      final List<ScopeLimitationDetail> scopeLimitations =
-          (List<ScopeLimitationDetail>) session.getAttribute(PROCEEDING_SCOPE_LIMITATIONS);
-
-      scopeLimitations.remove(scopeLimitationId);
-
-      model.addAttribute(PROCEEDING_SCOPE_LIMITATIONS, scopeLimitations);
-
-    } else {
-      // remove the scope limitation from the proceeding and update the db
-      final ProceedingDetail proceeding =
-          (ProceedingDetail) session.getAttribute(CURRENT_PROCEEDING);
-      final List<ScopeLimitationDetail> scopeLimitations = proceeding.getScopeLimitations();
-
-      scopeLimitations.removeIf(
-          scopeLimitation -> scopeLimitation.getId().equals(scopeLimitationId));
-
-      applicationService.updateProceeding(proceeding, user);
-
-      model.addAttribute(CURRENT_PROCEEDING, proceeding);
-    }
-
-    return "redirect:/%s/proceedings/%s/confirm"
-        .formatted(caseContext.getPathValue(), proceedingFlow.getAction());
   }
 
   /**
