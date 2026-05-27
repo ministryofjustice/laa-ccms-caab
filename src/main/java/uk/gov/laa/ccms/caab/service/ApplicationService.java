@@ -1763,6 +1763,58 @@ public class ApplicationService {
   }
 
   /**
+   * Retrieves scope limitations for a specified proceeding and patches EBS reference-only fields.
+   *
+   * @param application the application containing category and application type context
+   * @param proceeding the proceeding containing matter type, proceeding type and level of service
+   * @return List of scope limitations associated with the proceeding
+   */
+  public List<ScopeLimitationDetail> getScopeLimitations(
+      final ApplicationDetail application, final ProceedingDetail proceeding) {
+    final List<ScopeLimitationDetail> scopeLimitations = getScopeLimitations(proceeding.getId());
+    patchScopeLimitationNonDefaultWordingRequirement(application, proceeding, scopeLimitations);
+    return scopeLimitations;
+  }
+
+  private void patchScopeLimitationNonDefaultWordingRequirement(
+      final ApplicationDetail application,
+      final ProceedingDetail proceeding,
+      final List<ScopeLimitationDetail> scopeLimitations) {
+    Optional.ofNullable(scopeLimitations).orElseGet(Collections::emptyList).stream()
+        .filter(scopeLimitation -> scopeLimitation.getScopeLimitation() != null)
+        .filter(scopeLimitation -> scopeLimitation.getScopeLimitation().getId() != null)
+        .forEach(
+            scopeLimitation ->
+                scopeLimitation.setNonDefaultWordingReqd(
+                    getNonDefaultWordingRequired(application, proceeding, scopeLimitation)));
+  }
+
+  private Boolean getNonDefaultWordingRequired(
+      final ApplicationDetail application,
+      final ProceedingDetail proceeding,
+      final ScopeLimitationDetail scopeLimitation) {
+    final uk.gov.laa.ccms.data.model.ScopeLimitationDetail criteria =
+        new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+            .categoryOfLaw(application.getCategoryOfLaw().getId())
+            .matterType(proceeding.getMatterType().getId())
+            .proceedingCode(proceeding.getProceedingType().getId())
+            .levelOfService(proceeding.getLevelOfService().getId())
+            .scopeLimitations(scopeLimitation.getScopeLimitation().getId());
+
+    if (EMERGENCY_APPLICATION_TYPE_CODES.contains(application.getApplicationType().getId())) {
+      criteria.emergency(true);
+    }
+
+    return Optional.ofNullable(lookupService.getScopeLimitationDetails(criteria).block())
+        .map(ScopeLimitationDetails::getContent)
+        .orElseGet(Collections::emptyList)
+        .stream()
+        .findFirst()
+        .map(uk.gov.laa.ccms.data.model.ScopeLimitationDetail::getNonStandardWordingRequired)
+        .orElse(Boolean.FALSE);
+  }
+
+  /**
    * Updates the cost structure for a specified application.
    *
    * @param applicationId the ID of the application to update

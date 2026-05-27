@@ -1427,6 +1427,49 @@ class EditProceedingsAndCostsSectionControllerTest {
           .andExpect(model().attribute(CURRENT_SCOPE_LIMITATION, scopeLimitation))
           .andExpect(model().attribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow));
     }
+
+    @Test
+    @DisplayName("Should patch non-default wording requirement from EBS lookup")
+    void shouldPatchNonDefaultWordingRequirementFromEbsLookup() throws Exception {
+      final String action = "edit";
+      final ScopeLimitationDetail scopeLimitation =
+          new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL1"));
+      final ScopeLimitationFlowFormData scopeLimitationFlow =
+          new ScopeLimitationFlowFormData(action);
+      final ApplicationDetail application =
+          new ApplicationDetail()
+              .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
+              .applicationType(new ApplicationType().id("applicationTypeId"));
+      final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
+      proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
+      proceedingFlow.getProceedingDetails().setProceedingType("proceedingType");
+      proceedingFlow.getFurtherDetails().setLevelOfService("levelOfService");
+      final ScopeLimitationDetails scopeLimitationDetails =
+          new ScopeLimitationDetails()
+              .addContentItem(
+                  new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+                      .nonStandardWordingRequired(Boolean.TRUE));
+
+      when(lookupService.getScopeLimitationDetails(
+              any(uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
+          .thenReturn(Mono.just(scopeLimitationDetails));
+
+      final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
+      session.setAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
+      session.setAttribute(APPLICATION, application);
+      session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+
+      mockMvc
+          .perform(get("/application/proceedings/scope-limitations/confirm").session(session))
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/proceedings-scope-limitations-confirm"))
+          .andExpect(
+              model()
+                  .attribute(
+                      CURRENT_SCOPE_LIMITATION,
+                      hasProperty("nonDefaultWordingReqd", is(Boolean.TRUE))));
+    }
   }
 
   @Nested
@@ -1461,6 +1504,75 @@ class EditProceedingsAndCostsSectionControllerTest {
                   .session(session))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/%s/proceedings/%s/confirm".formatted(caseContext, action)));
+    }
+
+    @Test
+    @DisplayName("Should update scope limitation wording when non-default wording is required")
+    void shouldUpdateScopeLimitationWordingWhenNonDefaultWordingIsRequired() throws Exception {
+      final String action = "add";
+      final String caseContext = "application";
+      final String updatedWording = "Updated non-default scope limitation wording";
+      final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
+
+      final ScopeLimitationDetail scopeLimitation =
+          new ScopeLimitationDetail()
+              .scopeLimitationWording("Default wording")
+              .nonDefaultWordingReqd(Boolean.TRUE);
+      final ScopeLimitationFlowFormData scopeLimitationFlow =
+          new ScopeLimitationFlowFormData(action);
+      final List<ScopeLimitationDetail> scopeLimitations = new ArrayList<>();
+
+      final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
+      session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+      session.setAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
+      session.setAttribute(PROCEEDING_SCOPE_LIMITATIONS, scopeLimitations);
+      session.setAttribute(USER_DETAILS, new UserDetail());
+
+      mockMvc
+          .perform(
+              post("/{caseContext}/proceedings/scope-limitations/confirm", caseContext)
+                  .session(session)
+                  .param("scopeLimitationWording", updatedWording))
+          .andExpect(status().is3xxRedirection())
+          .andExpect(redirectedUrl("/application/proceedings/add/confirm"));
+
+      assertEquals(updatedWording, scopeLimitations.get(0).getScopeLimitationWording());
+    }
+
+    @Test
+    @DisplayName(
+        "Should ignore posted scope limitation wording when non-default wording is not required")
+    void shouldIgnoreScopeLimitationWordingWhenNonDefaultWordingIsNotRequired() throws Exception {
+      final String action = "add";
+      final String caseContext = "application";
+      final String originalWording = "Original default wording";
+      final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
+
+      final ScopeLimitationDetail scopeLimitation =
+          new ScopeLimitationDetail()
+              .scopeLimitationWording(originalWording)
+              .nonDefaultWordingReqd(Boolean.FALSE);
+      final ScopeLimitationFlowFormData scopeLimitationFlow =
+          new ScopeLimitationFlowFormData(action);
+      final List<ScopeLimitationDetail> scopeLimitations = new ArrayList<>();
+
+      final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
+      session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+      session.setAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
+      session.setAttribute(PROCEEDING_SCOPE_LIMITATIONS, scopeLimitations);
+      session.setAttribute(USER_DETAILS, new UserDetail());
+
+      mockMvc
+          .perform(
+              post("/{caseContext}/proceedings/scope-limitations/confirm", caseContext)
+                  .session(session)
+                  .param("scopeLimitationWording", "Attempted update"))
+          .andExpect(status().is3xxRedirection())
+          .andExpect(redirectedUrl("/application/proceedings/add/confirm"));
+
+      assertEquals(originalWording, scopeLimitations.get(0).getScopeLimitationWording());
     }
 
     @ParameterizedTest

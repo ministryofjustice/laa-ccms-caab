@@ -1681,6 +1681,49 @@ class ApplicationServiceTest {
   }
 
   @Test
+  void getScopeLimitations_patchesNonDefaultWordingRequirementFromEbsLookup() {
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .categoryOfLaw(new StringDisplayValue().id("FAM"))
+            .applicationType(new ApplicationType().id(APP_TYPE_SUBSTANTIVE));
+    final ProceedingDetail proceeding =
+        new ProceedingDetail()
+            .id(123)
+            .matterType(new StringDisplayValue().id("MAT"))
+            .proceedingType(new StringDisplayValue().id("PROC"))
+            .levelOfService(new StringDisplayValue().id("LOS"));
+    final List<ScopeLimitationDetail> caabScopeLimitations =
+        List.of(
+            new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL1")),
+            new ScopeLimitationDetail().scopeLimitation(new StringDisplayValue().id("SL2")));
+    final ScopeLimitationDetails ebsEditableScopeLimitation =
+        new ScopeLimitationDetails()
+            .addContentItem(
+                new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+                    .nonStandardWordingRequired(Boolean.TRUE));
+    final ScopeLimitationDetails ebsReadOnlyScopeLimitation =
+        new ScopeLimitationDetails()
+            .addContentItem(
+                new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+                    .nonStandardWordingRequired(Boolean.FALSE));
+
+    when(caabApiClient.getScopeLimitations(proceeding.getId()))
+        .thenReturn(Mono.just(caabScopeLimitations));
+    when(lookupService.getScopeLimitationDetails(
+            any(uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class)))
+        .thenReturn(Mono.just(ebsEditableScopeLimitation), Mono.just(ebsReadOnlyScopeLimitation));
+
+    final List<ScopeLimitationDetail> result =
+        applicationService.getScopeLimitations(application, proceeding);
+
+    assertTrue(result.get(0).getNonDefaultWordingReqd());
+    assertFalse(result.get(1).getNonDefaultWordingReqd());
+    verify(caabApiClient).getScopeLimitations(proceeding.getId());
+    verify(lookupService, times(2))
+        .getScopeLimitationDetails(any(uk.gov.laa.ccms.data.model.ScopeLimitationDetail.class));
+  }
+
+  @Test
   void updateProviderDetails_updatesProviderDetailsSuccessfully() {
     String id = "12345";
     UserDetail user = buildUserDetail();

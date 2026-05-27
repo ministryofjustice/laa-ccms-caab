@@ -854,7 +854,7 @@ public class EditProceedingsAndCostsSectionController {
 
       // refresh the scope limitations
       final List<ScopeLimitationDetail> scopeLimitations =
-          applicationService.getScopeLimitations(proceeding.getId());
+          applicationService.getScopeLimitations(application, proceeding);
       proceeding.setScopeLimitations(scopeLimitations);
       model.addAttribute(CURRENT_PROCEEDING, proceeding);
 
@@ -1287,14 +1287,48 @@ public class EditProceedingsAndCostsSectionController {
   public String scopeLimitationConfirm(
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(CURRENT_SCOPE_LIMITATION) final ScopeLimitationDetail scopeLimitation,
+      @SessionAttribute(value = APPLICATION, required = false) @Nullable
+          final ApplicationDetail application,
+      @SessionAttribute(value = PROCEEDING_FLOW_FORM_DATA, required = false) @Nullable
+          final ProceedingFlowFormData proceedingFlow,
       @SessionAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA)
           final ScopeLimitationFlowFormData scopeLimitationFlow,
       final Model model) {
+
+    patchCurrentScopeLimitationNonDefaultWordingRequirement(
+        application, proceedingFlow, scopeLimitation);
 
     model.addAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
     model.addAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
 
     return "application/proceedings-scope-limitations-confirm";
+  }
+
+  private void patchCurrentScopeLimitationNonDefaultWordingRequirement(
+      final ApplicationDetail application,
+      final ProceedingFlowFormData proceedingFlow,
+      final ScopeLimitationDetail scopeLimitation) {
+    if (application == null
+        || proceedingFlow == null
+        || scopeLimitation.getScopeLimitation() == null
+        || scopeLimitation.getScopeLimitation().getId() == null) {
+      return;
+    }
+
+    final uk.gov.laa.ccms.data.model.ScopeLimitationDetail criteria =
+        createScopeLimitationCriteria(application, proceedingFlow);
+    criteria.scopeLimitations(scopeLimitation.getScopeLimitation().getId());
+
+    final Boolean nonDefaultWordingReqd =
+        Optional.ofNullable(lookupService.getScopeLimitationDetails(criteria).block())
+            .map(ScopeLimitationDetails::getContent)
+            .orElseGet(Collections::emptyList)
+            .stream()
+            .findFirst()
+            .map(uk.gov.laa.ccms.data.model.ScopeLimitationDetail::getNonStandardWordingRequired)
+            .orElse(Boolean.FALSE);
+
+    scopeLimitation.setNonDefaultWordingReqd(nonDefaultWordingReqd);
   }
 
   /**
@@ -1316,12 +1350,18 @@ public class EditProceedingsAndCostsSectionController {
   public String scopeLimitationConfirmPost(
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(CURRENT_SCOPE_LIMITATION) final ScopeLimitationDetail scopeLimitation,
+      @SessionAttribute(value = APPLICATION, required = false) @Nullable
+          final ApplicationDetail application,
       @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
       @SessionAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA)
           final ScopeLimitationFlowFormData scopeLimitationFlow,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @RequestParam(value = "scopeLimitationWording", required = false)
+          final String scopeLimitationWording,
       final Model model,
       final HttpSession session) {
+
+    applyNonDefaultScopeLimitationWording(scopeLimitation, scopeLimitationWording);
 
     if (ACTION_ADD.equals(proceedingFlow.getAction())) {
       final List<ScopeLimitationDetail> scopeLimitations =
@@ -1360,7 +1400,7 @@ public class EditProceedingsAndCostsSectionController {
 
       // need to refresh current proceeding for new scope limitation id
       final List<ScopeLimitationDetail> scopeLimitations =
-          applicationService.getScopeLimitations(proceeding.getId());
+          applicationService.getScopeLimitations(application, proceeding);
       proceeding.setScopeLimitations(scopeLimitations);
 
       model.addAttribute(CURRENT_PROCEEDING, proceeding);
@@ -1368,6 +1408,14 @@ public class EditProceedingsAndCostsSectionController {
 
     return "redirect:/%s/proceedings/%s/confirm"
         .formatted(caseContext.getPathValue(), proceedingFlow.getAction());
+  }
+
+  private void applyNonDefaultScopeLimitationWording(
+      final ScopeLimitationDetail scopeLimitation, final String scopeLimitationWording) {
+    if (Boolean.TRUE.equals(scopeLimitation.getNonDefaultWordingReqd())
+        && scopeLimitationWording != null) {
+      scopeLimitation.setScopeLimitationWording(scopeLimitationWording);
+    }
   }
 
   /**
