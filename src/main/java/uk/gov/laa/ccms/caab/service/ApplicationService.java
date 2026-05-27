@@ -1367,6 +1367,32 @@ public class ApplicationService {
   }
 
   /**
+   * Checks whether a shared organisation opponent is already attached to the application.
+   *
+   * @param applicationId the application id.
+   * @param partyId the external organisation party id.
+   * @return true when the organisation is already an opponent.
+   */
+  public boolean hasSharedOrganisationOpponent(final String applicationId, final String partyId) {
+    if (!StringUtils.hasText(applicationId) || !StringUtils.hasText(partyId)) {
+      return false;
+    }
+
+    final List<OpponentDetail> opponentList =
+        caabApiClient
+            .getOpponents(applicationId)
+            .blockOptional()
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve opponents"));
+
+    return opponentList.stream()
+        .filter(OpponentUtil::isOrganisation)
+        .filter(opponent -> Boolean.TRUE.equals(opponent.getSharedInd()))
+        .anyMatch(
+            opponent ->
+                partyId.equals(opponent.getPartyId()) || partyId.equals(opponent.getEbsId()));
+  }
+
+  /**
    * Build an AbstractOpponentFormData for the provided OpponentDetail. Codes will be translated to
    * their display value depending on the type of opponent.
    *
@@ -1734,6 +1760,58 @@ public class ApplicationService {
    */
   public List<ScopeLimitationDetail> getScopeLimitations(final Integer proceedingId) {
     return caabApiClient.getScopeLimitations(proceedingId).block();
+  }
+
+  /**
+   * Retrieves scope limitations for a specified proceeding and patches EBS reference-only fields.
+   *
+   * @param application the application containing category and application type context
+   * @param proceeding the proceeding containing matter type, proceeding type and level of service
+   * @return List of scope limitations associated with the proceeding
+   */
+  public List<ScopeLimitationDetail> getScopeLimitations(
+      final ApplicationDetail application, final ProceedingDetail proceeding) {
+    final List<ScopeLimitationDetail> scopeLimitations = getScopeLimitations(proceeding.getId());
+    patchScopeLimitationNonDefaultWordingRequirement(application, proceeding, scopeLimitations);
+    return scopeLimitations;
+  }
+
+  private void patchScopeLimitationNonDefaultWordingRequirement(
+      final ApplicationDetail application,
+      final ProceedingDetail proceeding,
+      final List<ScopeLimitationDetail> scopeLimitations) {
+    Optional.ofNullable(scopeLimitations).orElseGet(Collections::emptyList).stream()
+        .filter(scopeLimitation -> scopeLimitation.getScopeLimitation() != null)
+        .filter(scopeLimitation -> scopeLimitation.getScopeLimitation().getId() != null)
+        .forEach(
+            scopeLimitation ->
+                scopeLimitation.setNonDefaultWordingReqd(
+                    getNonDefaultWordingRequired(application, proceeding, scopeLimitation)));
+  }
+
+  private Boolean getNonDefaultWordingRequired(
+      final ApplicationDetail application,
+      final ProceedingDetail proceeding,
+      final ScopeLimitationDetail scopeLimitation) {
+    final uk.gov.laa.ccms.data.model.ScopeLimitationDetail criteria =
+        new uk.gov.laa.ccms.data.model.ScopeLimitationDetail()
+            .categoryOfLaw(application.getCategoryOfLaw().getId())
+            .matterType(proceeding.getMatterType().getId())
+            .proceedingCode(proceeding.getProceedingType().getId())
+            .levelOfService(proceeding.getLevelOfService().getId())
+            .scopeLimitations(scopeLimitation.getScopeLimitation().getId());
+
+    if (EMERGENCY_APPLICATION_TYPE_CODES.contains(application.getApplicationType().getId())) {
+      criteria.emergency(true);
+    }
+
+    return Optional.ofNullable(lookupService.getScopeLimitationDetails(criteria).block())
+        .map(ScopeLimitationDetails::getContent)
+        .orElseGet(Collections::emptyList)
+        .stream()
+        .findFirst()
+        .map(uk.gov.laa.ccms.data.model.ScopeLimitationDetail::getNonStandardWordingRequired)
+        .orElse(Boolean.FALSE);
   }
 
   /**

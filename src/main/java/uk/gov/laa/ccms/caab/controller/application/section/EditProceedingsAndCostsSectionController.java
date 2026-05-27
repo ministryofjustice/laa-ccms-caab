@@ -843,7 +843,7 @@ public class EditProceedingsAndCostsSectionController {
 
       // refresh the scope limitations
       final List<ScopeLimitationDetail> scopeLimitations =
-          applicationService.getScopeLimitations(proceeding.getId());
+          applicationService.getScopeLimitations(application, proceeding);
       proceeding.setScopeLimitations(scopeLimitations);
       model.addAttribute(CURRENT_PROCEEDING, proceeding);
 

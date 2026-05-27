@@ -7,12 +7,13 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/application/sections/opponents}" class="govuk-back-link">Cancel and return to opponents and other parties</a>
+        <a th:href="@{/{caseContext}/sections/opponents(caseContext=${caseContext.pathValue})}" class="govuk-back-link" th:text="#{site.cancelAndReturnToOpponents}"></a>
     </div>
     <div id="main-content">
-        <form action="#" th:action="@{/application/opponents/{id}/edit(id=${opponent.id})}" th:object="${opponent}" method="post">
+        <form action="#" th:action="@{/{caseContext}/sections/opponents/{id}/edit(caseContext=${caseContext.pathValue},id=${opponent.id})}" th:object="${opponent}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
-            <span class="govuk-caption-l">Create application</span>
+            <span th:if="${caseContext.isApplication()}" class="govuk-caption-l" th:text="#{application.create}"></span>
+            <span th:if="${caseContext.isAmendment()}" class="govuk-caption-l" th:text="#{application.amendment}"></span>
             <h1 class="govuk-heading-l">
                 Opponents and other parties
             </h1>
