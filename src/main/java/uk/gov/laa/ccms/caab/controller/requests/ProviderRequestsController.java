@@ -515,9 +515,6 @@ public class ProviderRequestsController {
       providerRequestDetailsForm.setDynamicOptions(new HashMap<>());
     }
 
-    providerRequestsMapper.populateProviderRequestDetailsForm(
-        providerRequestDetailsForm, dynamicForm);
-
     populateProviderRequestDetailsLookupDropdowns(model, dynamicForm);
 
     providerRequestDetailsForm.setClaimUploadEnabled(
