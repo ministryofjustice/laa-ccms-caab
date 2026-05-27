@@ -17,6 +17,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -507,6 +508,15 @@ public class ProviderRequestsController {
     if (dynamicForm == null) {
       return "error";
     }
+
+    if (providerRequestDetailsForm.getDynamicOptions() != null) {
+      providerRequestDetailsForm.getDynamicOptions().clear();
+    } else {
+      providerRequestDetailsForm.setDynamicOptions(new HashMap<>());
+    }
+
+    providerRequestsMapper.populateProviderRequestDetailsForm(
+        providerRequestDetailsForm, dynamicForm);
 
     populateProviderRequestDetailsLookupDropdowns(model, dynamicForm);
 
