@@ -4,10 +4,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.scopelimitation.ScopeLimitationFormDataDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
+import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 
 /** Validates the scope limitation details provided by scope limitation flow forms. */
 @Component
 public class ScopeLimitationDetailsValidator extends AbstractValidator {
+
+  private static final int SCOPE_LIMITATION_WORDING_MAX_LENGTH = 950;
 
   /**
    * Determines if the Validator supports the provided class.
@@ -36,5 +39,23 @@ public class ScopeLimitationDetailsValidator extends AbstractValidator {
 
     validateRequiredField(
         "scopeLimitation", scopeLimitationDetails.getScopeLimitation(), "Scope limitation", errors);
+  }
+
+  /**
+   * Validates editable scope limitation wording.
+   *
+   * @param scopeLimitation the scope limitation containing the submitted wording.
+   * @param errors The Errors object to store validation errors.
+   */
+  public void validateScopeLimitationWording(
+      final ScopeLimitationDetail scopeLimitation, final Errors errors) {
+    if (scopeLimitation.getScopeLimitationWording() != null) {
+      validateFieldMaxLength(
+          "scopeLimitationWording",
+          scopeLimitation.getScopeLimitationWording(),
+          SCOPE_LIMITATION_WORDING_MAX_LENGTH,
+          "Scope limitation wording",
+          errors);
+    }
   }
 }

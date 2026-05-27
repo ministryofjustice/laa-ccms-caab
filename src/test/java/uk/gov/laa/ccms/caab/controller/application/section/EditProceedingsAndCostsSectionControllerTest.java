@@ -145,6 +145,7 @@ class EditProceedingsAndCostsSectionControllerTest {
   @Mock private Model model;
 
   @InjectMocks private EditProceedingsAndCostsSectionController controller;
+  @InjectMocks private ScopeLimitationController scopeLimitationController;
 
   private MockMvc mockMvc;
 
@@ -153,7 +154,7 @@ class EditProceedingsAndCostsSectionControllerTest {
   @BeforeEach
   void setUp() {
     mockMvc =
-        MockMvcBuilders.standaloneSetup(controller)
+        MockMvcBuilders.standaloneSetup(controller, scopeLimitationController)
             .setConversionService(getConversionService())
             .build();
   }
@@ -1501,9 +1502,12 @@ class EditProceedingsAndCostsSectionControllerTest {
       mockMvc
           .perform(
               post("/{caseContext}/proceedings/scope-limitations/confirm", caseContext)
-                  .session(session))
+                  .session(session)
+                  .param("scopeLimitationWording", "Updated wording"))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/%s/proceedings/%s/confirm".formatted(caseContext, action)));
+
+      assertEquals("Updated wording", scopeLimitations.get(0).getScopeLimitationWording());
     }
 
     @Test
@@ -1617,6 +1621,46 @@ class EditProceedingsAndCostsSectionControllerTest {
                   .session(session))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/%s/proceedings/%s/confirm".formatted(caseContext, action)));
+    }
+
+    @ParameterizedTest
+    @DisplayName("Should have validation errors when scope limitation wording exceeds max length")
+    @ValueSource(strings = {"application", "amendments"})
+    void shouldHaveValidationErrorsWhenScopeLimitationWordingExceedsMaxLength(String caseContext)
+        throws Exception {
+      final String action = "add";
+      final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
+      final ScopeLimitationDetail scopeLimitation = new ScopeLimitationDetail();
+      final ScopeLimitationFlowFormData scopeLimitationFlow =
+          new ScopeLimitationFlowFormData(action);
+
+      doAnswer(
+              invocation -> {
+                final BindingResult errors = invocation.getArgument(1);
+                errors.rejectValue(
+                    "scopeLimitationWording",
+                    "length.exceeds.max",
+                    "Please enter a maximum of 950 characters for 'Scope limitation wording'.");
+                return null;
+              })
+          .when(scopeLimitationDetailsValidator)
+          .validateScopeLimitationWording(eq(scopeLimitation), any(BindingResult.class));
+
+      final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
+      session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+      session.setAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
+      session.setAttribute(PROCEEDING_SCOPE_LIMITATIONS, new ArrayList<ScopeLimitationDetail>());
+      session.setAttribute(USER_DETAILS, new UserDetail());
+
+      mockMvc
+          .perform(
+              post("/{caseContext}/proceedings/scope-limitations/confirm", caseContext)
+                  .session(session)
+                  .param("scopeLimitationWording", "A".repeat(951)))
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/proceedings-scope-limitations-confirm"))
+          .andExpect(model().attributeHasFieldErrors("scopeLimitation", "scopeLimitationWording"));
     }
   }
 

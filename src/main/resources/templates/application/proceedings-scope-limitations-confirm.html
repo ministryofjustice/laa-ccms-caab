@@ -14,6 +14,7 @@
   </div>
   <div id="main-content">
     <form th:action="@{/{caseContext}/proceedings/scope-limitations/confirm(caseContext=${caseContext})}" th:object="${scopeLimitation}" method="post">
+      <th:block th:replace="~{partials/error-summary :: error-summary}"/>
       <span class="govuk-caption-l" th:text="#{proceedings.scopeLimitationDetails.caption}"/>
       <h1 class="govuk-heading-l"
         th:text="#{proceedings.scopeLimitationDetails.heading}"/>
@@ -22,15 +23,9 @@
       <dl class="govuk-body">
         <th:block th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{proceedings.scopeLimitations.scopeLimitation},
           ${scopeLimitation.scopeLimitation.displayValue})}"/>
-        <th:block th:unless="${scopeLimitation.nonDefaultWordingReqd == true}">
-          <th:block th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{proceedings.scopeLimitations.scopeLimitationWording},
-            ${scopeLimitation.scopeLimitationWording})}"/>
-        </th:block>
       </dl>
-      <th:block th:if="${scopeLimitation.nonDefaultWordingReqd == true}">
-        <div th:replace="~{partials/forms :: largeTextInput('scopeLimitationWording',
-          #{proceedings.scopeLimitations.scopeLimitationWording}, 8000)}"></div>
-      </th:block>
+      <th:block th:replace="~{partials/forms :: largeTextInput('scopeLimitationWording',
+        #{proceedings.scopeLimitations.scopeLimitationWording}, 950)}"/>
       <div class="govuk-button-group">
         <govuk:button type="submit" th:text="#{site.confirm}"/>
       </div>
