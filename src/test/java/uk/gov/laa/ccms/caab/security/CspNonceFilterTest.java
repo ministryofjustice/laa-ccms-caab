@@ -9,10 +9,11 @@ import org.springframework.mock.web.MockHttpServletResponse;
 class CspNonceFilterTest {
 
   @Test
-  void shouldIncludeUnsafeInlineInStyleSrcForAssessmentPath() throws Exception {
+  void shouldIncludeUnsafeInlineInStyleSrcForGetAssessmentPath() throws Exception {
     CspNonceFilter filter =
         new CspNonceFilter(true, true, false, "https://opa.oraclecloud.com/opa");
     MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setMethod("GET");
     request.setRequestURI("/application/assessments");
     MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -25,11 +26,29 @@ class CspNonceFilterTest {
   }
 
   @Test
-  void shouldIncludeNonceInStyleSrcForNonAssessmentPath() throws Exception {
+  void shouldIncludeNonceInStyleSrcForPostAssessmentPath() throws Exception {
     CspNonceFilter filter =
         new CspNonceFilter(true, true, false, "https://opa.oraclecloud.com/opa");
     MockHttpServletRequest request = new MockHttpServletRequest();
-    request.setRequestURI("/application/sections");
+    request.setMethod("POST");
+    request.setRequestURI("/application/assessments");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    filter.doFilter(request, response, (servletRequest, servletResponse) -> {});
+
+    String nonce = (String) request.getAttribute(CspNonceFilter.CSP_NONCE_ATTRIBUTE);
+    assertThat(response.getHeader("Content-Security-Policy-Report-Only"))
+        .contains("style-src 'nonce-" + nonce + "' 'self' https://opa.oraclecloud.com")
+        .doesNotContain("'unsafe-inline'");
+  }
+
+  @Test
+  void shouldIncludeNonceInStyleSrcForAssessmentConfirmPath() throws Exception {
+    CspNonceFilter filter =
+        new CspNonceFilter(true, true, false, "https://opa.oraclecloud.com/opa");
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setMethod("GET");
+    request.setRequestURI("/application/assessments/confirm");
     MockHttpServletResponse response = new MockHttpServletResponse();
 
     filter.doFilter(request, response, (servletRequest, servletResponse) -> {});

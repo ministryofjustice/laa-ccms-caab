@@ -62,13 +62,14 @@ public class CspNonceFilter extends OncePerRequestFilter {
     request.setAttribute(CSP_NONCE_ATTRIBUTE, nonce);
     response.setHeader(
         reportOnly ? CSP_REPORT_ONLY_HEADER : CSP_ENFORCE_HEADER,
-        buildPolicy(nonce, request.getRequestURI()));
+        buildPolicy(nonce, request.getMethod(), request.getRequestURI()));
 
     filterChain.doFilter(request, response);
   }
 
-  private String buildPolicy(String nonce, String requestUri) {
-    boolean isAssessmentPath = requestUri != null && requestUri.contains("/assessments");
+  private String buildPolicy(String nonce, String method, String requestUri) {
+    boolean isAssessmentPath =
+        "GET".equalsIgnoreCase(method) && requestUri != null && requestUri.endsWith("/assessments");
 
     StringBuilder policy = new StringBuilder();
     policy.append("default-src 'self'; ");
