@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
+import static uk.gov.laa.ccms.caab.constants.CcmsModule.AMENDMENT;
 import static uk.gov.laa.ccms.caab.constants.CcmsModule.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
@@ -11,9 +12,15 @@ import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 import static uk.gov.laa.ccms.caab.util.FileUtil.getFileExtension;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -33,11 +40,13 @@ import uk.gov.laa.ccms.caab.bean.evidence.EvidenceRequired;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.validators.evidence.EvidenceUploadValidator;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
+import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.exception.AvScanException;
 import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.EvidenceMapper;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
@@ -87,7 +96,7 @@ public class EvidenceSectionController {
     // Retrieve the list of previously uploaded documents.
     final Mono<EvidenceDocumentDetails> evidenceUploadedMono =
         evidenceService.getEvidenceDocumentsForCase(
-            activeCase.getCaseReferenceNumber(), APPLICATION);
+            activeCase.getCaseReferenceNumber(), resolveCcmsModule(context));
 
     Tuple2<List<EvidenceDocumentTypeLookupValueDetail>, EvidenceDocumentDetails> combinedResult =
         Mono.zip(evidenceRequiredMono, evidenceUploadedMono)
@@ -130,7 +139,7 @@ public class EvidenceSectionController {
     evidenceUploadFormData.setCaseReferenceNumber(activeCase.getCaseReferenceNumber());
     evidenceUploadFormData.setProviderId(activeCase.getProviderId());
     evidenceUploadFormData.setDocumentSender(userDetail.getLoginId());
-    evidenceUploadFormData.setCcmsModule(APPLICATION);
+    evidenceUploadFormData.setCcmsModule(resolveCcmsModule(context));
 
     model.addAttribute(EVIDENCE_UPLOAD_FORM_DATA, evidenceUploadFormData);
     model.addAttribute(CASE_CONTEXT, context);
@@ -208,6 +217,9 @@ public class EvidenceSectionController {
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException("Failed to save document"));
 
+    if (context.isAmendment()) {
+      return "redirect:/amendments/summary";
+    }
     return "redirect:/%s/sections/evidence".formatted(context.getPathValue());
   }
 
@@ -260,10 +272,101 @@ public class EvidenceSectionController {
     evidenceService.removeDocument(
         String.valueOf(activeCase.getApplicationId()),
         evidenceDocumentId,
-        APPLICATION,
+        resolveCcmsModule(context),
         userDetail.getLoginId());
 
+    if (context.isAmendment()) {
+      return "redirect:/amendments/summary";
+    }
     return "redirect:/%s/sections/evidence".formatted(context.getPathValue());
+  }
+
+  /**
+   * Handles the GET request to view an uploaded evidence document. The document content is fetched
+   * from the TDS so it can be opened inline in the browser before submission. The document must
+   * belong to the active case and the module resolved from the case context - the id alone is not
+   * trusted, to prevent enumerating ids and accessing other cases' documents.
+   *
+   * @param context The case context (application or amendment).
+   * @param evidenceDocumentId The id of the evidence document to view.
+   * @param activeCase The active case from the session.
+   * @return the document content as an inline HTTP response.
+   */
+  @GetMapping("/{caseContext}/evidence/{evidence-document-id}/view")
+  public ResponseEntity<byte[]> viewEvidenceDocument(
+      @PathVariable(CASE_CONTEXT) final CaseContext context,
+      @PathVariable("evidence-document-id") final Integer evidenceDocumentId,
+      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase) {
+
+    final boolean documentBelongsToActiveCase =
+        evidenceService
+            .getEvidenceDocumentsForCase(
+                activeCase.getCaseReferenceNumber(), resolveCcmsModule(context))
+            .map(EvidenceDocumentDetails::getContent)
+            .map(
+                docs ->
+                    docs != null
+                        && docs.stream().anyMatch(doc -> evidenceDocumentId.equals(doc.getId())))
+            .blockOptional()
+            .orElse(false);
+
+    if (!documentBelongsToActiveCase) {
+      throw new CaabApplicationException("Invalid document id: %s".formatted(evidenceDocumentId));
+    }
+
+    final EvidenceDocumentDetail document =
+        evidenceService
+            .getEvidenceDocument(evidenceDocumentId)
+            .blockOptional()
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve document"));
+
+    final byte[] fileData = Base64.getDecoder().decode(document.getFileData());
+
+    final String contentDisposition =
+        ContentDisposition.inline()
+            .filename(document.getFileName(), StandardCharsets.UTF_8)
+            .build()
+            .toString();
+
+    return ResponseEntity.ok()
+        .contentType(resolveMediaType(document.getFileExtension()))
+        .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
+        .body(fileData);
+  }
+
+  /**
+   * Resolve the {@link MediaType} to serve a document with, based on its file extension. Falls back
+   * to {@code application/octet-stream} for anything unrecognised.
+   *
+   * @param fileExtension the file extension of the document.
+   * @return the resolved media type.
+   */
+  private MediaType resolveMediaType(final String fileExtension) {
+    if (fileExtension == null) {
+      return MediaType.APPLICATION_OCTET_STREAM;
+    }
+    return switch (fileExtension.toLowerCase()) {
+      case "pdf" -> MediaType.APPLICATION_PDF;
+      case "tif", "tiff" -> MediaType.valueOf("image/tiff");
+      case "rtf" -> MediaType.valueOf("application/rtf");
+      case "docx" ->
+          MediaType.valueOf(
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      default -> MediaType.APPLICATION_OCTET_STREAM;
+    };
+  }
+
+  /**
+   * Resolve the {@link CcmsModule} that evidence documents should be keyed against for the given
+   * case context. Amendment-stage documents are kept separate from create-application documents on
+   * the same case reference, matching the legacy provider UI (module "M" for amendments, "A" for
+   * applications).
+   *
+   * @param context the current case context.
+   * @return the CCMS module to use for evidence document operations.
+   */
+  private static CcmsModule resolveCcmsModule(final CaseContext context) {
+    return context.isAmendment() ? AMENDMENT : APPLICATION;
   }
 
   private void populateAddEvidenceModel(List<EvidenceRequired> evidenceRequired, Model model) {
