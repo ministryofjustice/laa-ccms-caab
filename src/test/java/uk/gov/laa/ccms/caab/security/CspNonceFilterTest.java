@@ -32,6 +32,7 @@ class CspNonceFilterTest {
             "object-src 'none'",
             "base-uri 'self'",
             "form-action 'self'",
+            "font-src 'self' data: https://opa.oraclecloud.com",
             "report-uri /civil/csp/report")
         .doesNotContain("{nonce}", "*", "upgrade-insecure-requests");
   }
