@@ -76,10 +76,12 @@ public class CspNonceFilter extends OncePerRequestFilter {
         + "; "
         + "style-src 'nonce-"
         + nonce
-        + "' 'self' "
+        + "' 'self' 'unsafe-inline' "
         + opaSources
         + "; "
-        + "img-src 'self' https://www.googletagmanager.com; "
+        + "img-src 'self' data: https://www.googletagmanager.com "
+        + opaSources
+        + "; "
         + "connect-src 'self' https://www.google-analytics.com "
         + opaSources
         + "; "

@@ -29,6 +29,8 @@ class CspNonceFilterTest {
             "https://opa.oraclecloud.com",
             "https://www.google-analytics.com",
             "frame-ancestors 'self'",
+            "style-src 'nonce-" + nonce + "' 'self' 'unsafe-inline' https://opa.oraclecloud.com",
+            "img-src 'self' data: https://www.googletagmanager.com https://opa.oraclecloud.com",
             "object-src 'none'",
             "base-uri 'self'",
             "form-action 'self'",
