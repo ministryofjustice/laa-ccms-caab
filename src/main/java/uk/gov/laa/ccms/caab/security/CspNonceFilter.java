@@ -83,7 +83,7 @@ public class CspNonceFilter extends OncePerRequestFilter {
         + "connect-src 'self' https://www.google-analytics.com "
         + opaSources
         + "; "
-        + "font-src 'self' "
+        + "font-src 'self' data: "
         + opaSources
         + "; "
         + "frame-src 'self' "
