@@ -9,6 +9,38 @@ import org.springframework.mock.web.MockHttpServletResponse;
 class CspNonceFilterTest {
 
   @Test
+  void shouldIncludeUnsafeInlineInStyleSrcForAssessmentPath() throws Exception {
+    CspNonceFilter filter =
+        new CspNonceFilter(true, true, false, "https://opa.oraclecloud.com/opa");
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setRequestURI("/application/assessments");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    filter.doFilter(request, response, (servletRequest, servletResponse) -> {});
+
+    String nonce = (String) request.getAttribute(CspNonceFilter.CSP_NONCE_ATTRIBUTE);
+    assertThat(response.getHeader("Content-Security-Policy-Report-Only"))
+        .contains("style-src 'self' 'unsafe-inline' https://opa.oraclecloud.com")
+        .doesNotContain("style-src 'nonce-" + nonce + "'");
+  }
+
+  @Test
+  void shouldIncludeNonceInStyleSrcForNonAssessmentPath() throws Exception {
+    CspNonceFilter filter =
+        new CspNonceFilter(true, true, false, "https://opa.oraclecloud.com/opa");
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setRequestURI("/application/sections");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    filter.doFilter(request, response, (servletRequest, servletResponse) -> {});
+
+    String nonce = (String) request.getAttribute(CspNonceFilter.CSP_NONCE_ATTRIBUTE);
+    assertThat(response.getHeader("Content-Security-Policy-Report-Only"))
+        .contains("style-src 'nonce-" + nonce + "' 'self' https://opa.oraclecloud.com")
+        .doesNotContain("'unsafe-inline'");
+  }
+
+  @Test
   void shouldSetReportOnlyHeaderWithMatchingNonce() throws Exception {
     CspNonceFilter filter =
         new CspNonceFilter(true, true, false, "https://opa.oraclecloud.com/opa");
@@ -29,7 +61,7 @@ class CspNonceFilterTest {
             "https://opa.oraclecloud.com",
             "https://www.google-analytics.com",
             "frame-ancestors 'self'",
-            "style-src 'nonce-" + nonce + "' 'self' 'unsafe-inline' https://opa.oraclecloud.com",
+            "style-src 'nonce-" + nonce + "' 'self' https://opa.oraclecloud.com",
             "img-src 'self' data: https://www.googletagmanager.com https://opa.oraclecloud.com",
             "object-src 'none'",
             "base-uri 'self'",
