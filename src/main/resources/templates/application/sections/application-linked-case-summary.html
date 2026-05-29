@@ -13,7 +13,7 @@
            th:text="#{application.evidence.returnToAmendmentsSummary}"/>
     </div>
     <div id="main-content">
-        <span class="govuk-caption-l" th:text="#{application.create}"/>
+        <span class="govuk-caption-l" th:if="${caseContext.isApplication()}" th:text="#{application.create}"/>
         <h1 class="govuk-heading-l" th:text="#{application.generalDetails.linkCase.summary.title}"/>
         <p class="govuk-body-l" th:text="#{application.generalDetails.linkCase.summary.line1}"/>
         <div class="govuk-inset-text" th:if="${#lists.isEmpty(linkedCases.content)}"
