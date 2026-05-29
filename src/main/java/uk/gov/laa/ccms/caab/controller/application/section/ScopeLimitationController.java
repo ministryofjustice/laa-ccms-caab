@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingFlowFormData;
@@ -215,10 +216,15 @@ public class ScopeLimitationController {
   @GetMapping("/{caseContext}/proceedings/scope-limitations/confirm")
   public String scopeLimitationConfirm(
       @PathVariable("caseContext") final CaseContext caseContext,
+      @SessionAttribute(value = APPLICATION, required = false) final ApplicationDetail application,
+      @SessionAttribute(value = PROCEEDING_FLOW_FORM_DATA, required = false)
+          final ProceedingFlowFormData proceedingFlow,
       @SessionAttribute(CURRENT_SCOPE_LIMITATION) final ScopeLimitationDetail scopeLimitation,
       @SessionAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA)
           final ScopeLimitationFlowFormData scopeLimitationFlow,
       final Model model) {
+
+    patchScopeLimitationNonDefaultWordingRequirement(application, proceedingFlow, scopeLimitation);
 
     model.addAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
     model.addAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
@@ -247,14 +253,22 @@ public class ScopeLimitationController {
   @PostMapping("/{caseContext}/proceedings/scope-limitations/confirm")
   public String scopeLimitationConfirmPost(
       @PathVariable("caseContext") final CaseContext caseContext,
-      @ModelAttribute(CURRENT_SCOPE_LIMITATION) final ScopeLimitationDetail scopeLimitation,
+      @ModelAttribute(value = CURRENT_SCOPE_LIMITATION, binding = false)
+          final ScopeLimitationDetail scopeLimitation,
       final BindingResult bindingResult,
+      @RequestParam(value = "scopeLimitationWording", required = false)
+          final String scopeLimitationWording,
       @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
       @SessionAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA)
           final ScopeLimitationFlowFormData scopeLimitationFlow,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final Model model,
       final HttpSession session) {
+
+    if (!Boolean.FALSE.equals(scopeLimitation.getNonDefaultWordingReqd())
+        && scopeLimitationWording != null) {
+      scopeLimitation.setScopeLimitationWording(scopeLimitationWording);
+    }
 
     scopeLimitationDetailsValidator.validateScopeLimitationWording(scopeLimitation, bindingResult);
 
@@ -444,6 +458,33 @@ public class ScopeLimitationController {
     scopeLimitation.setId(scopeLimitationFlow.getScopeLimitationId());
 
     model.addAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
+  }
+
+  private void patchScopeLimitationNonDefaultWordingRequirement(
+      final ApplicationDetail application,
+      final ProceedingFlowFormData proceedingFlow,
+      final ScopeLimitationDetail scopeLimitation) {
+    if (application == null
+        || proceedingFlow == null
+        || scopeLimitation.getScopeLimitation() == null
+        || scopeLimitation.getScopeLimitation().getId() == null) {
+      return;
+    }
+
+    final uk.gov.laa.ccms.data.model.ScopeLimitationDetail criteria =
+        createScopeLimitationCriteria(application, proceedingFlow);
+    criteria.scopeLimitations(scopeLimitation.getScopeLimitation().getId());
+
+    final Boolean nonDefaultWordingRequired =
+        Optional.ofNullable(lookupService.getScopeLimitationDetails(criteria).block())
+            .map(uk.gov.laa.ccms.data.model.ScopeLimitationDetails::getContent)
+            .orElseGet(Collections::emptyList)
+            .stream()
+            .findFirst()
+            .map(uk.gov.laa.ccms.data.model.ScopeLimitationDetail::getNonStandardWordingRequired)
+            .orElse(Boolean.FALSE);
+
+    scopeLimitation.setNonDefaultWordingReqd(nonDefaultWordingRequired);
   }
 
   /**

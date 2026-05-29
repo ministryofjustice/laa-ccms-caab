@@ -61,40 +61,59 @@ public class CspNonceFilter extends OncePerRequestFilter {
 
     request.setAttribute(CSP_NONCE_ATTRIBUTE, nonce);
     response.setHeader(
-        reportOnly ? CSP_REPORT_ONLY_HEADER : CSP_ENFORCE_HEADER, buildPolicy(nonce));
+        reportOnly ? CSP_REPORT_ONLY_HEADER : CSP_ENFORCE_HEADER,
+        buildPolicy(nonce, request.getMethod(), request.getRequestURI()));
 
     filterChain.doFilter(request, response);
   }
 
-  private String buildPolicy(String nonce) {
-    return "default-src 'self'; "
-        + "script-src 'nonce-"
-        + nonce
-        + "' 'strict-dynamic' 'self' "
-        + "https://www.googletagmanager.com "
-        + opaSources
-        + "; "
-        + "style-src 'nonce-"
-        + nonce
-        + "' 'self' "
-        + opaSources
-        + "; "
-        + "img-src 'self' https://www.googletagmanager.com; "
-        + "connect-src 'self' https://www.google-analytics.com "
-        + opaSources
-        + "; "
-        + "font-src 'self' "
-        + opaSources
-        + "; "
-        + "frame-src 'self' "
-        + opaSources
-        + "; "
-        + "frame-ancestors 'self'; "
-        + (upgradeInsecureRequests ? "upgrade-insecure-requests; " : "")
-        + "object-src 'none'; "
-        + "base-uri 'self'; "
-        + "form-action 'self';"
-        + (reportEnabled ? " report-uri " + CSP_REPORT_URI + ";" : "");
+  private String buildPolicy(String nonce, String method, String requestUri) {
+    boolean isAssessmentPath =
+        "GET".equalsIgnoreCase(method) && requestUri != null && requestUri.endsWith("/assessments");
+
+    StringBuilder policy = new StringBuilder();
+    policy.append("default-src 'self'; ");
+    policy
+        .append("script-src 'nonce-")
+        .append(nonce)
+        .append("' 'strict-dynamic' 'self' ")
+        .append("https://www.googletagmanager.com ")
+        .append(opaSources)
+        .append("; ");
+
+    policy.append("style-src ");
+    if (isAssessmentPath) {
+      policy.append("'self' 'unsafe-inline' ").append(opaSources);
+    } else {
+      policy.append("'nonce-").append(nonce).append("' 'self' ").append(opaSources);
+    }
+    policy.append("; ");
+
+    policy
+        .append("img-src 'self' data: https://www.googletagmanager.com ")
+        .append(opaSources)
+        .append("; ");
+    policy
+        .append("connect-src 'self' https://www.google-analytics.com ")
+        .append(opaSources)
+        .append("; ");
+    policy.append("font-src 'self' data: ").append(opaSources).append("; ");
+    policy.append("frame-src 'self' ").append(opaSources).append("; ");
+    policy.append("frame-ancestors 'self'; ");
+
+    if (upgradeInsecureRequests) {
+      policy.append("upgrade-insecure-requests; ");
+    }
+
+    policy.append("object-src 'none'; ");
+    policy.append("base-uri 'self'; ");
+    policy.append("form-action 'self';");
+
+    if (reportEnabled) {
+      policy.append(" report-uri ").append(CSP_REPORT_URI).append(";");
+    }
+
+    return policy.toString();
   }
 
   private String buildOpaSources(String owdUrl) {
