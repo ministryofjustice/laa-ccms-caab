@@ -15,6 +15,9 @@ public class LinkedCaseResultRowDisplay {
   /** Relation of this case to the primary case. */
   private String relationToCase;
 
+  /** Display value of the relation of this case to the primary case. */
+  private String relationToCaseDisplayValue;
+
   /** First name of the client associated with the case. */
   private String clientFirstName;
 

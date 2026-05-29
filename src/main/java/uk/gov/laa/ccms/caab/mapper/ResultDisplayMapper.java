@@ -38,8 +38,9 @@ public interface ResultDisplayMapper {
   @Mapping(target = "clientFirstName", source = "client.firstName")
   @Mapping(target = "clientSurname", source = "client.surname")
   @Mapping(target = "clientReferenceNumber", source = "client.reference")
+  @Mapping(target = "relationToCase", source = "relationToCase")
   @Mapping(
-      target = "relationToCase",
+      target = "relationToCaseDisplayValue",
       expression =
           """
           java(ResultDisplayMapper
