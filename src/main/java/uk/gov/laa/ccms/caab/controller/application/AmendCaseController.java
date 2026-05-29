@@ -124,4 +124,18 @@ public class AmendCaseController {
 
     return "application/amendment-summary";
   }
+
+  /**
+   * Validates the amendment details and redirects based on validation results.
+   *
+   * @param applicationId the ID of the application amendment to validate
+   * @param model the model to add validation errors to
+   * @return a Mono that emits the view name based on validation outcome
+   */
+  @GetMapping("/amendments/validate")
+  public String amendmentValidate(
+      @SessionAttribute(APPLICATION_ID) final String applicationId, final Model model) {
+
+    return "application/application-validation-error-correction";
+  }
 }

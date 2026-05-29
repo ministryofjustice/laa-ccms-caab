@@ -455,8 +455,9 @@
 
         <!--Submit button-->
         <div class="govuk-grid-column-full">
-          <button class="govuk-button" type="submit"
-            th:text="#{amendment.case.submitAmendments}"/>
+          <button class="govuk-button" type="submit" id="submit-amendments"
+            th:text="#{amendment.case.submitAmendments}"
+            th:href="@{/amendments/validate}"/>
         </div>
       </div>
     </form>
