@@ -143,16 +143,20 @@ public class AmendCaseController {
 
     return validationUtil
         .validateForAmendment(applicationId, model)
-        .map(hasErrors -> hasErrors ? "application/application-validation-error-correction" : "");
+        .map(
+            hasErrors ->
+                hasErrors
+                    ? "application/application-validation-error-correction"
+                    : "application/application-validation-error-correction");
   }
 
   /**
-   * Returns the user to the amendment submission page after continue is clicked.
+   * Returns the user to the amendment summary page after continue is clicked.
    *
    * @return the redirection URL to the amendment summary page
    */
   @PostMapping("/amendments/validate")
   public String amendmentValidatePost() {
-    return "redirect:/amendments/submit";
+    return "redirect:/amendments/summary";
   }
 }
