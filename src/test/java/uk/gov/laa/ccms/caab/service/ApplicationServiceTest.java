@@ -1867,6 +1867,7 @@ class ApplicationServiceTest {
 
     assertEquals(application.getAppMode(), opponent.getAppMode());
     assertEquals(application.getAmendment(), opponent.getAmendment());
+    assertTrue(opponent.getDeleteInd());
   }
 
   @Test

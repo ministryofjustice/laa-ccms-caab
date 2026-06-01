@@ -33,6 +33,7 @@ public interface OpponentMapper {
   @Mapping(target = "faxNumber", source = "organisation.contactDetails.fax")
   @Mapping(target = "emailAddress", source = "organisation.contactDetails.emailAddress")
   @Mapping(target = "shared", constant = "true")
+  @Mapping(target = "deletable", constant = "true")
   @Mapping(target = "type", ignore = true)
   OrganisationOpponentFormData toOrganisationOpponentFormData(
       OrganisationDetail organisation, CommonLookupValueDetail orgTypeLookup);

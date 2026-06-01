@@ -1362,6 +1362,7 @@ public class ApplicationService {
 
     opponent.setAppMode(application.getAppMode());
     opponent.setAmendment(application.getAmendment());
+    opponent.setDeleteInd(true);
 
     caabApiClient.addOpponent(applicationId, opponent, userDetail.getLoginId()).block();
   }
