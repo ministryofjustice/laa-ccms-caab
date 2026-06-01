@@ -101,6 +101,7 @@ import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.util.ValidationUtil;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
@@ -143,6 +144,8 @@ class ApplicationSubmissionControllerTest {
   @Mock private PriorAuthorityDetailsValidator priorAuthorityDetailsValidator;
   @Mock private OrganisationOpponentValidator organisationOpponentValidator;
   @Mock private IndividualOpponentValidator individualOpponentValidator;
+
+  @Mock private ValidationUtil validationUtil;
 
   @InjectMocks private ApplicationSubmissionController applicationSubmissionController;
 
@@ -542,8 +545,7 @@ class ApplicationSubmissionControllerTest {
     final List<ProceedingDetail> proceedings = List.of(proceedingDetail);
 
     final boolean result =
-        Boolean.TRUE.equals(
-            applicationSubmissionController.validateProceedings(proceedings, model).block());
+        Boolean.TRUE.equals(validationUtil.validateProceedings(proceedings, model).block());
 
     assertTrue(result);
   }
@@ -554,8 +556,7 @@ class ApplicationSubmissionControllerTest {
     final List<ProceedingDetail> proceedings = List.of();
 
     final boolean result =
-        Boolean.TRUE.equals(
-            applicationSubmissionController.validateProceedings(proceedings, model).block());
+        Boolean.TRUE.equals(validationUtil.validateProceedings(proceedings, model).block());
 
     assertFalse(result);
   }
@@ -564,8 +565,7 @@ class ApplicationSubmissionControllerTest {
   @DisplayName("Test validateProceedings with null proceedings returns false")
   void testValidateProceedings_WithNullProceedings() {
     final boolean result =
-        Boolean.TRUE.equals(
-            applicationSubmissionController.validateProceedings(null, model).block());
+        Boolean.TRUE.equals(validationUtil.validateProceedings(null, model).block());
 
     assertFalse(result);
   }
@@ -613,8 +613,7 @@ class ApplicationSubmissionControllerTest {
 
     final List<PriorAuthorityDetail> priorAuthorities = List.of(priorAuthorityDetail);
 
-    final boolean result =
-        applicationSubmissionController.validatePriorAuthorities(priorAuthorities, model);
+    final boolean result = validationUtil.validatePriorAuthorities(priorAuthorities, model);
 
     assertTrue(result);
   }
@@ -624,8 +623,7 @@ class ApplicationSubmissionControllerTest {
   void testValidatePriorAuthorities_WithNoPriorAuthorities() {
     final List<PriorAuthorityDetail> priorAuthorities = List.of();
 
-    boolean result =
-        applicationSubmissionController.validatePriorAuthorities(priorAuthorities, model);
+    boolean result = validationUtil.validatePriorAuthorities(priorAuthorities, model);
 
     assertFalse(result);
   }
@@ -633,7 +631,7 @@ class ApplicationSubmissionControllerTest {
   @Test
   @DisplayName("Test validatePriorAuthorities with null PriorAuthorities returns false")
   void testValidatePriorAuthorities_WithNullPriorAuthorities() {
-    final boolean result = applicationSubmissionController.validatePriorAuthorities(null, model);
+    final boolean result = validationUtil.validatePriorAuthorities(null, model);
 
     assertFalse(result);
   }
@@ -656,7 +654,7 @@ class ApplicationSubmissionControllerTest {
     when(model.containsAttribute("individualOpponent")).thenReturn(true);
     when(model.getAttribute("individualOpponent")).thenReturn(List.of("Error 1"));
 
-    final boolean result = applicationSubmissionController.validateOpponents(opponents, model);
+    final boolean result = validationUtil.validateOpponents(opponents, model);
 
     assertTrue(result);
   }
@@ -680,7 +678,7 @@ class ApplicationSubmissionControllerTest {
     when(model.containsAttribute("organisationOpponent")).thenReturn(true);
     when(model.getAttribute("organisationOpponent")).thenReturn(List.of("Error 1"));
 
-    final boolean result = applicationSubmissionController.validateOpponents(opponents, model);
+    final boolean result = validationUtil.validateOpponents(opponents, model);
 
     assertTrue(result);
   }
@@ -690,7 +688,7 @@ class ApplicationSubmissionControllerTest {
   void testValidateOpponents_WithNoOpponents() {
     final List<AbstractOpponentFormData> opponents = List.of();
 
-    final boolean result = applicationSubmissionController.validateOpponents(opponents, model);
+    final boolean result = validationUtil.validateOpponents(opponents, model);
 
     assertFalse(result);
   }
@@ -698,7 +696,7 @@ class ApplicationSubmissionControllerTest {
   @Test
   @DisplayName("Test validateOpponents with null opponents returns false")
   void testValidateOpponents_WithNullOpponents() {
-    final boolean result = applicationSubmissionController.validateOpponents(null, model);
+    final boolean result = validationUtil.validateOpponents(null, model);
 
     assertFalse(result);
   }
@@ -711,8 +709,7 @@ class ApplicationSubmissionControllerTest {
     when(model.containsAttribute(ERROR_ATTRIBUTE)).thenReturn(true);
     when(model.getAttribute(ERROR_ATTRIBUTE)).thenReturn(expectedErrors);
 
-    final List<String> actualErrors =
-        applicationSubmissionController.getErrorsFromModel(model, ERROR_ATTRIBUTE);
+    final List<String> actualErrors = validationUtil.getErrorsFromModel(model, ERROR_ATTRIBUTE);
 
     assertEquals(expectedErrors, actualErrors);
   }
@@ -722,8 +719,7 @@ class ApplicationSubmissionControllerTest {
   void testGetErrorsFromModel_WithoutAttributePresent() {
     when(model.containsAttribute(ERROR_ATTRIBUTE)).thenReturn(false);
 
-    final List<String> actualErrors =
-        applicationSubmissionController.getErrorsFromModel(model, ERROR_ATTRIBUTE);
+    final List<String> actualErrors = validationUtil.getErrorsFromModel(model, ERROR_ATTRIBUTE);
 
     assertEquals(Collections.emptyList(), actualErrors);
   }

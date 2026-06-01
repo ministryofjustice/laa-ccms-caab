@@ -16,8 +16,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
@@ -28,6 +30,7 @@ import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.util.ValidationUtil;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -43,6 +46,8 @@ public class AmendCaseController {
 
   private final ApplicationService applicationService;
   private final AmendmentService amendmentService;
+
+  private final ValidationUtil validationUtil;
 
   /**
    * Initiates the amendment creation and submission process for a specific case. This method
@@ -126,16 +131,28 @@ public class AmendCaseController {
   }
 
   /**
-   * Validates the amendment details and redirects based on validation results.
+   * Submits and validates amendments.
    *
    * @param applicationId the ID of the application amendment to validate
    * @param model the model to add validation errors to
    * @return a Mono that emits the view name based on validation outcome
    */
-  @GetMapping("/amendments/validate")
-  public String amendmentValidate(
+  @GetMapping("/amendments/submit")
+  public Mono<String> submitAmendments(
       @SessionAttribute(APPLICATION_ID) final String applicationId, final Model model) {
 
-    return "application/application-validation-error-correction";
+    return validationUtil
+        .validateForAmendment(applicationId, model)
+        .map(hasErrors -> hasErrors ? "application/application-validation-error-correction" : "");
+  }
+
+  /**
+   * Returns the user to the amendment submission page after continue is clicked.
+   *
+   * @return the redirection URL to the amendment summary page
+   */
+  @PostMapping("/amendments/validate")
+  public String amendmentValidatePost() {
+    return "redirect:/amendments/submit";
   }
 }
