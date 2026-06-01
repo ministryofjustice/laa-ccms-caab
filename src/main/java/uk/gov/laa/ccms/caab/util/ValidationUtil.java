@@ -50,9 +50,9 @@ public class ValidationUtil {
 
   private final ProviderDetailsValidator providerDetailsValidator;
   private final CorrespondenceAddressValidator correspondenceAddressValidator;
-  private final ProceedingMatterTypeDetailsValidator matterTypeValidator;
+  public final ProceedingMatterTypeDetailsValidator matterTypeValidator;
   private final ProceedingDetailsValidator proceedingTypeValidator;
-  private final ProceedingFurtherDetailsValidator furtherDetailsValidator;
+  public final ProceedingFurtherDetailsValidator furtherDetailsValidator;
   private final PriorAuthorityTypeDetailsValidator priorAuthorityTypeValidator;
   private final PriorAuthorityDetailsValidator priorAuthorityDetailsValidator;
   private final OrganisationOpponentValidator organisationOpponentValidator;

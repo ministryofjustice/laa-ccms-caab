@@ -29,7 +29,9 @@
             </thead>
             <tbody class="govuk-table__body">
             <tr class="govuk-table__row" th:if="${providerDetailsErrors != null and !providerDetailsErrors.isEmpty()}">
-              <form action="#" th:action="@{/application/sections/provider-details}" th:object="${providerDetailsFormData}" method="post">
+              <form action="#" th:action="${isAmendmentFlow}
+                ? @{/amendments/sections/provider-details}
+                : @{/application/sections/provider-details}" th:object="${providerDetailsFormData}" method="post">
                 <input type="hidden" th:field="*{officeId}"/>
                 <input type="hidden" th:field="*{officeName}"/>
                 <input type="hidden" th:field="*{feeEarnerId}"/>
@@ -45,7 +47,9 @@
               </form>
             </tr>
             <tr class="govuk-table__row" th:if="${generalDetailsErrors != null and !generalDetailsErrors.isEmpty()}">
-              <form action="#" th:action="@{/application/sections/correspondence-address}" th:object="${generalDetailsFormData}" method="post">
+              <form action="#" th:action="${isAmendmentFlow}
+                ? @{/amendments/sections/correspondence-address}
+                : @{/application/sections/correspondence-address}" th:object="${generalDetailsFormData}" method="post">
                 <input type="hidden" th:field="*{preferredAddress}"/>
                 <input type="hidden" th:field="*{country}"/>
                 <input type="hidden" th:field="*{houseNameNumber}"/>
@@ -65,25 +69,33 @@
             </tr>
             <tr class="govuk-table__row" th:if="${proceedingsErrors != null and !proceedingsErrors.isEmpty()}">
               <td class="govuk-table__cell">
-                <a th:href="@{/application/proceedings-and-costs}" class="govuk-link">Proceeding details</a>
+                <a th:href="${isAmendmentFlow}
+                ? @{/amendments/proceedings-and-costs}
+                : @{/application/proceedings-and-costs}" class="govuk-link">Proceeding details</a>
               </td>
               <td class="govuk-table__cell" th:utext="${#strings.listJoin(proceedingsErrors, '<br/>')}"></td>
             </tr>
             <tr class="govuk-table__row" th:if="${priorAuthorityErrors != null and !priorAuthorityErrors.isEmpty()}">
               <td class="govuk-table__cell">
-                <a th:href="@{/application/proceedings-and-costs#prior-authority}" class="govuk-link">Prior authority details</a>
+                <a th:href="${isAmendmentFlow}
+                ? @{/amendments/proceedings-and-costs#prior-authority}
+                : @{/application/proceedings-and-costs#prior-authority}" class="govuk-link">Prior authority details</a>
               </td>
               <td class="govuk-table__cell" th:utext="${#strings.listJoin(priorAuthorityErrors, '<br/>')}"></td>
             </tr>
             <tr class="govuk-table__row" th:if="${opponentErrors != null and !opponentErrors.isEmpty()}">
               <td class="govuk-table__cell">
-                <a th:href="@{/application/sections/opponents}" class="govuk-link">Opponent details</a>
+                <a th:href="${isAmendmentFlow}
+                ? @{/amendments/sections/opponents}
+                : @{/application/sections/opponents}" class="govuk-link">Opponent details</a>
               </td>
               <td class="govuk-table__cell" th:utext="${#strings.listJoin(opponentErrors, '<br/>')}"></td>
             </tr>
             </tbody>
           </table>
-          <form action="#" th:action="@{/application/validate}" method="post">
+          <form action="#" th:action="${isAmendmentFlow}
+                ? @{/amendments/validate}
+                : @{/application/validate}" method="post">
           <div class="govuk-button-group">
             <govuk:button type="submit" th:text="#{site.continue}"/>
           </div>
