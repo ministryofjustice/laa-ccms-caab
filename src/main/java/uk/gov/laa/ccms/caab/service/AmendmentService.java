@@ -313,7 +313,7 @@ public class AmendmentService {
                   OpponentUtil.getOpponentById(application, opponent.getId());
               AbstractOpponentFormData formData =
                   applicationService.buildOpponentFormData(opponentDetail);
-              formData.setEditable(Boolean.TRUE.equals(opponentDetail.getDeleteInd()));
+              formData.setEditable(true);
               formData.setDeletable(Boolean.TRUE.equals(opponentDetail.getDeleteInd()));
               return formData;
             })
