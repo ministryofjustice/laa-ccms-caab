@@ -114,6 +114,7 @@
                                  th:errorclass="govuk-select--error">
                       </th:block>
                   </div>
+                  <!--  Some date fields have been set up as a non DAT type, so to ensure consistent validation and no errors with the backend, an additional type has been created for this condition.  -->
                   <th:block th:if="${option.type == 'DAT' or isDateField}">
                       <moj:datepicker
                               th:id="'dynamicOptions[__${option.code}__].fieldValue'"
