@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.service;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
@@ -58,11 +59,14 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentRelationshipDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.assessment.model.PatchAssessmentDetail;
 import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
+import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRelationship;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
@@ -99,6 +103,7 @@ public class AssessmentService {
 
   private final AssessmentApiClient assessmentApiClient;
   private final CaabApiClient caabApiClient;
+  private final SoaApiClient soaApiClient;
   private final AssessmentMapper assessmentMapper;
   private final LookupService lookupService;
 
@@ -201,10 +206,39 @@ public class AssessmentService {
     }
 
     log.info("Calculating means assessment status");
-    calculateAssessmentStatus(meansAssessment, application, user);
+    calculateAssessmentStatus(MEANS, meansAssessment, application, user);
 
     log.info("Calculating merits assessment status");
-    calculateAssessmentStatus(meritsAssessment, application, user);
+    calculateAssessmentStatus(MERITS, meritsAssessment, application, user);
+
+    // If a proceeding was removed, we should set reassessment required for both.
+    if (Boolean.TRUE.equals(application.getMeritsReassessmentRequired())) {
+      setReassessmentRequired(application, meansAssessment, user);
+      setReassessmentRequired(application, meritsAssessment, user);
+    }
+  }
+
+  /**
+   * Sets the status of the provided assessment to REQUIRED and updates it in the database and on
+   * the application.
+   *
+   * @param application the application related to the assessment
+   * @param assessment the assessment to update
+   * @param user the user performing the update operation
+   */
+  private void setReassessmentRequired(
+      final ApplicationDetail application,
+      final AssessmentDetail assessment,
+      final UserDetail user) {
+    if (assessment != null) {
+      assessmentApiClient
+          .patchAssessment(
+              assessment.getId(),
+              user.getLoginId(),
+              new PatchAssessmentDetail().status(REQUIRED.getStatus()))
+          .block();
+      setAssessmentStatusOnApplication(application, assessment, REQUIRED);
+    }
   }
 
   /**
@@ -217,6 +251,7 @@ public class AssessmentService {
    * @param user the user performing the update operation
    */
   private void calculateAssessmentStatus(
+      final AssessmentName assessmentName,
       final AssessmentDetail currentAssessment,
       final ApplicationDetail application,
       final UserDetail user) {
@@ -225,17 +260,17 @@ public class AssessmentService {
     AssessmentStatus assessmentStatus = getStatus(currentAssessment);
 
     if (!application.getAmendment()
-        || (isApplicationsAssessmentAmended(application, currentAssessment))) {
+        || (isApplicationsAssessmentAmended(application, assessmentName))) {
 
       if (COMPLETE == assessmentStatus || ERROR == assessmentStatus) {
 
-        if (isReassessmentRequired(application, currentAssessment)) {
+        if (isReassessmentRequired(application, assessmentName, currentAssessment, user)) {
           assessmentStatus = REQUIRED;
           statusChanged = true;
         }
       }
     } else {
-      if (isReassessmentRequired(application, currentAssessment)) {
+      if (isReassessmentRequired(application, assessmentName, currentAssessment, user)) {
         assessmentStatus = REQUIRED;
       } else {
         assessmentStatus = UNCHANGED;
@@ -253,7 +288,12 @@ public class AssessmentService {
           .block();
     }
 
-    setAssessmentStatusOnApplication(application, currentAssessment, assessmentStatus);
+    if (currentAssessment != null
+        || (Boolean.TRUE.equals(application.getAmendment())
+            && StringUtils.hasText(application.getCaseReferenceNumber()))) {
+      setAssessmentStatusOnApplication(
+          application, assessmentName, currentAssessment, assessmentStatus);
+    }
   }
 
   /**
@@ -269,8 +309,29 @@ public class AssessmentService {
       final ApplicationDetail application,
       final AssessmentDetail assessment,
       final AssessmentStatus assessmentStatus) {
+    if (assessment != null) {
+      final AssessmentName assessmentName =
+          MEANS.getName().equalsIgnoreCase(assessment.getName()) ? MEANS : MERITS;
+      setAssessmentStatusOnApplication(application, assessmentName, assessment, assessmentStatus);
+    }
+  }
 
-    if (assessment != null && assessmentStatus != null) {
+  /**
+   * Sets the status of an assessment on the application object using the assessment name when an
+   * assessment does not yet exist.
+   *
+   * @param application the application to update with the new assessment status
+   * @param assessmentName the assessment name being updated
+   * @param assessment the assessment whose status is being updated, if it exists
+   * @param assessmentStatus the AssessmentStatus to set on the application
+   */
+  private void setAssessmentStatusOnApplication(
+      final ApplicationDetail application,
+      final AssessmentName assessmentName,
+      final AssessmentDetail assessment,
+      final AssessmentStatus assessmentStatus) {
+
+    if (assessmentName != null && assessmentStatus != null) {
       final String statusValue =
           lookupService
               .getCommonValue(COMMON_VALUE_PROGRESS_STATUS_TYPES, assessmentStatus.getStatus())
@@ -284,9 +345,9 @@ public class AssessmentService {
               .blockOptional()
               .orElse(assessmentStatus.getStatus());
 
-      if (MEANS.getName().equalsIgnoreCase(assessment.getName())) {
+      if (MEANS == assessmentName) {
         application.setMeansAssessmentStatus(statusValue);
-      } else if (MERITS.getName().equalsIgnoreCase(assessment.getName())) {
+      } else if (MERITS == assessmentName) {
         application.setMeritsAssessmentStatus(statusValue);
       }
     }
@@ -305,10 +366,27 @@ public class AssessmentService {
 
     if (assessment != null) {
       if (MEANS.getName().equalsIgnoreCase(assessment.getName())) {
-        return application.getMeansAssessmentAmended();
+        return Boolean.TRUE.equals(application.getMeansAssessmentAmended());
       } else if (MERITS.getName().equalsIgnoreCase(assessment.getName())) {
-        return application.getMeritsAssessmentAmended();
+        return Boolean.TRUE.equals(application.getMeritsAssessmentAmended());
       }
+    }
+    return false;
+  }
+
+  /**
+   * Determines if the named assessment of an application has been amended.
+   *
+   * @param application the application to check for amendments
+   * @param assessmentName the assessment name
+   * @return true if the specified assessment type has been amended; false otherwise
+   */
+  private boolean isApplicationsAssessmentAmended(
+      final ApplicationDetail application, final AssessmentName assessmentName) {
+    if (MEANS == assessmentName) {
+      return Boolean.TRUE.equals(application.getMeansAssessmentAmended());
+    } else if (MERITS == assessmentName) {
+      return Boolean.TRUE.equals(application.getMeritsAssessmentAmended());
     }
     return false;
   }
@@ -319,10 +397,35 @@ public class AssessmentService {
    *
    * @param application the application details to compare against the assessment
    * @param assessment the assessment details to compare against the application
+   * @param user the user performing the update operation
    * @return true if a reassessment is necessary; false otherwise
    */
   protected boolean isReassessmentRequired(
-      final ApplicationDetail application, final AssessmentDetail assessment) {
+      final ApplicationDetail application,
+      final AssessmentDetail assessment,
+      final UserDetail user) {
+    final AssessmentName assessmentName =
+        assessment != null && MEANS.getName().equalsIgnoreCase(assessment.getName())
+            ? MEANS
+            : MERITS;
+    return isReassessmentRequired(application, assessmentName, assessment, user);
+  }
+
+  /**
+   * Determines if a reassessment is required based on changes between an application and its latest
+   * assessment.
+   *
+   * @param application the application details to compare against the assessment
+   * @param assessmentName the assessment name to evaluate
+   * @param assessment the assessment details to compare against the application, if one exists
+   * @param user the user performing the update operation
+   * @return true if a reassessment is necessary; false otherwise
+   */
+  protected boolean isReassessmentRequired(
+      final ApplicationDetail application,
+      final AssessmentName assessmentName,
+      final AssessmentDetail assessment,
+      final UserDetail user) {
 
     if (!application.getAmendment()) {
       if (assessment != null) {
@@ -392,7 +495,7 @@ public class AssessmentService {
         }
 
         // only check when it's a merits assessment
-        if (assessment.getName().equalsIgnoreCase(MERITS.getName())) {
+        if (MERITS == assessmentName) {
           final boolean meritReassessmentRequired =
               Optional.ofNullable(application.getCostLimit())
                   .map(CostLimitDetail::getLimitAtTimeOfMerits)
@@ -414,18 +517,148 @@ public class AssessmentService {
         }
       }
     } else {
-      // TODO CCMSPUI-738 - Amend case ~ need an EBS Case to workout if its required
-      // if (application.getAmendment()){
-      //  if (meansAssessment == null && !ebsCase.hasEbsAmendments()
-      //    && application.getApplicationType().getId().equals("SUBSTANTIVE")
-      //    && ebsCase.getCertificateType().getId().equals("EMERGENCY")
-      //  ){
-      //    return true;
-      //  }
-      // }
+      if (MEANS == assessmentName) {
+        return isMeansReassessmentRequiredForAmendment(application, assessment, user);
+      } else if (MERITS == assessmentName) {
+        return isMeritsReassessmentRequiredForAmendment(application, assessment, user);
+      }
     }
 
     return false;
+  }
+
+  /**
+   * Determines whether a means reassessment is required during amendment processing.
+   *
+   * @param application the application details
+   * @param assessment the latest means assessment, if one exists
+   * @param user the user performing the operation
+   * @return true if a means reassessment is required
+   */
+  private boolean isMeansReassessmentRequiredForAmendment(
+      final ApplicationDetail application,
+      final AssessmentDetail assessment,
+      final UserDetail user) {
+    final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase = getEbsCase(application, user);
+
+    return assessment == null
+        && !hasEbsAmendments(ebsCase)
+        && isMeansReassessmentApplicationType(application);
+  }
+
+  /**
+   * Determines whether a merits reassessment is required during amendment processing.
+   *
+   * @param application the application details
+   * @param assessment the latest merits assessment, if one exists
+   * @param user the user performing the operation
+   * @return true if a merits reassessment is required
+   */
+  private boolean isMeritsReassessmentRequiredForAmendment(
+      final ApplicationDetail application,
+      final AssessmentDetail assessment,
+      final UserDetail user) {
+    final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase = getEbsCase(application, user);
+
+    if ((assessment == null || assessment.getCheckpoint() == null)
+        && !hasEbsAmendments(ebsCase)
+        && APP_TYPE_SUBSTANTIVE.equals(getApplicationTypeId(application))
+        && ebsCase != null
+        && APP_TYPE_EMERGENCY.equals(ebsCase.getCertificateType())) {
+      return true;
+    }
+
+    final Date latestKeyChange = getDateOfLatestKeyChange(application);
+    if (latestKeyChange == null) {
+      return false;
+    }
+
+    final Date meritsCreated = getMeritsComparisonDate(application, assessment);
+    if (meritsCreated == null) {
+      return false;
+    }
+
+    if (differenceGreaterThanTenSecs(latestKeyChange, meritsCreated)) {
+      return true;
+    }
+
+    if (Boolean.TRUE.equals(application.getMeritsReassessmentRequired())) {
+      return true;
+    }
+
+    return assessment != null && isMeritsReassessmentRequiredForAssessment(application, assessment);
+  }
+
+  private uk.gov.laa.ccms.soa.gateway.model.CaseDetail getEbsCase(
+      final ApplicationDetail application, final UserDetail user) {
+    final Mono<uk.gov.laa.ccms.soa.gateway.model.CaseDetail> ebsCaseMono =
+        soaApiClient.getCase(
+            application.getCaseReferenceNumber(), user.getLoginId(), user.getUserType());
+    return ebsCaseMono == null ? null : ebsCaseMono.block();
+  }
+
+  private boolean hasEbsAmendments(final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase) {
+    return ebsCase != null
+        && ebsCase.getApplicationDetails() != null
+        && ebsCase.getApplicationDetails().getProceedings() != null
+        && ebsCase.getApplicationDetails().getProceedings().stream()
+            .anyMatch(p -> "DRAFT".equalsIgnoreCase(p.getStatus()));
+  }
+
+  private boolean isMeansReassessmentApplicationType(final ApplicationDetail application) {
+    return APP_TYPE_EXCEPTIONAL_CASE_FUNDING.equals(getApplicationTypeId(application));
+  }
+
+  private String getApplicationTypeId(final ApplicationDetail application) {
+    return Optional.ofNullable(application)
+        .map(ApplicationDetail::getApplicationType)
+        .map(ApplicationType::getId)
+        .orElse(null);
+  }
+
+  private Date getMeritsComparisonDate(
+      final ApplicationDetail application, final AssessmentDetail assessment) {
+    if (Boolean.TRUE.equals(application.getAmendment())
+        && !Boolean.TRUE.equals(application.getMeritsAssessmentAmended())) {
+      return Optional.ofNullable(application.getAuditTrail())
+          .map(uk.gov.laa.ccms.caab.model.AuditDetail::getCreated)
+          .map(created -> Date.from(created.toInstant().plusSeconds(2)))
+          .orElse(null);
+    }
+
+    return Optional.ofNullable(assessment)
+        .map(AssessmentDetail::getAuditDetail)
+        .map(AuditDetail::getCreated)
+        .orElse(null);
+  }
+
+  private boolean isMeritsReassessmentRequiredForAssessment(
+      final ApplicationDetail application, final AssessmentDetail assessment) {
+    final boolean meritReassessmentRequired =
+        Optional.ofNullable(application.getCostLimit())
+            .map(CostLimitDetail::getLimitAtTimeOfMerits)
+            .map(
+                limitAtTimeOfMerits ->
+                    limitAtTimeOfMerits.compareTo(
+                            application.getCosts().getRequestedCostLimitation())
+                        < 0)
+            .orElse(true);
+
+    if (meritReassessmentRequired) {
+      return true;
+    }
+
+    final AssessmentEntityTypeDetail proceedingEntityType =
+        getAssessmentEntityType(assessment, PROCEEDING);
+    if (checkAssessmentForProceedingKeyChange(application, proceedingEntityType)) {
+      return true;
+    }
+
+    final AssessmentEntityTypeDetail opponentEntityType =
+        getAssessmentEntityType(assessment, OPPONENT);
+    return (application.getOpponents() != null)
+        && (opponentEntityType != null)
+        && application.getOpponents().size() < opponentEntityType.getEntities().size();
   }
 
   /**
