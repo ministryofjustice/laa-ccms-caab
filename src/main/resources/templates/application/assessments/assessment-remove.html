@@ -7,10 +7,10 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections}" class="govuk-back-link" th:text="#{site.cancelAndReturnToApplication}"></a>
+    <a th:href="${caseContext.isAmendment()} ? @{/amendments/summary} : @{/application/sections}" class="govuk-back-link" th:text="${caseContext.isAmendment()} ? #{site.returnToAmendmentSummary} : #{site.returnToApplication}"></a>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/assessments/{assessment}/remove(assessment=${assessment})}" method="post">
+    <form action="#" th:action="@{/{caseContext}/assessments/{assessment}/remove(caseContext=${caseContext.pathValue}, assessment=${assessment})}" method="post">
       <h1 class="govuk-heading-l">
         Delete assessment
       </h1>

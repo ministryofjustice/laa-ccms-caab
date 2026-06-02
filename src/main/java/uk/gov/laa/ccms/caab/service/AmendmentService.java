@@ -11,6 +11,7 @@ import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
@@ -19,6 +20,8 @@ import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.constants.ApplicationConstants;
+import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
@@ -90,6 +93,7 @@ public class AmendmentService {
 
     ApplicationDetail amendment = createAmendmentObject(caseReferenceNumber, userDetail);
     amendment.setCategoryOfLaw(caseDetail.getCategoryOfLaw());
+    amendment.setAvailableFunctions(caseDetail.getAvailableFunctions());
 
     // Set application type based on previously entered answers prior to creating an amendment.
     ApplicationType amendmentType =
@@ -341,6 +345,23 @@ public class AmendmentService {
     final ApplicationSectionDisplay sectionDisplay =
         applicationService.getApplicationSections(application, user);
 
+    // Old PUI shows the Means amendment section when the case has the MNLA function.
+    final boolean meansLegalAmendmentAvailable =
+        application.getAvailableFunctions() != null
+            && application
+                .getAvailableFunctions()
+                .contains(FunctionConstants.MEANS_ASSESSMENT_LEGAL_AMENDMENT);
+
+    if (sectionDisplay.getMeansAssessment() != null) {
+      sectionDisplay.getMeansAssessment().setEnabled(meansLegalAmendmentAvailable);
+      if (meansLegalAmendmentAvailable
+          && !StringUtils.hasText(sectionDisplay.getMeansAssessment().getStatus())) {
+        sectionDisplay
+            .getMeansAssessment()
+            .setStatus(ApplicationConstants.SECTION_STATUS_NOT_STARTED);
+      }
+    }
+
     // Enable document link if either prior authority added or assessment completed
     boolean isPriorAuthorityAdded =
         sectionDisplay.getPriorAuthorities().stream()
@@ -348,6 +369,10 @@ public class AmendmentService {
     boolean assessmentComplete =
         application.getMeansAssessmentAmended() || application.getMeritsAssessmentAmended();
     sectionDisplay.getDocumentUpload().setEnabled(isPriorAuthorityAdded || assessmentComplete);
+
+    if (sectionDisplay.getDocumentUpload().isEnabled()) {
+      sectionDisplay.getDocumentUpload().setStatus("Available");
+    }
 
     return sectionDisplay;
   }

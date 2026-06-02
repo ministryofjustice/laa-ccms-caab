@@ -101,6 +101,10 @@ public class AmendCaseController {
 
     final ApplicationDetail amendment =
         applicationService.getApplication(String.valueOf(tdsApplication.getId())).block();
+    final ApplicationDetail activeCaseDetail = (ApplicationDetail) httpSession.getAttribute(CASE);
+    if (activeCaseDetail != null) {
+      amendment.setAvailableFunctions(activeCaseDetail.getAvailableFunctions());
+    }
     final ApplicationSectionDisplay applicationSectionDisplay =
         Optional.ofNullable(amendmentService.getAmendmentSections(amendment, user))
             .orElseThrow(

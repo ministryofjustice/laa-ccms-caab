@@ -6,11 +6,13 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +25,7 @@ import reactor.util.function.Tuple3;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -50,6 +53,7 @@ public class AssessmentController {
   private final LookupService lookupService;
   private final ClientService clientService;
   private final SecurityUtils contextSecurityUtil;
+  private final MessageSource messageSource;
 
   @Value("${laa.ccms.oracle-web-determination-server.url}")
   protected String owdUrl;
@@ -63,9 +67,9 @@ public class AssessmentController {
   @Value("${laa.ccms.oracle-web-determination-server.resources.interview-javascript}")
   protected String interviewJavascript;
 
-  private static final String RETURN_URL = "/civil/assessments/confirm?val=%s";
-  private static final String CANCEL_LINK_TEXT = "Return to create application";
-  private static final String CANCEL_LINK_URL = "/civil/application/sections";
+  private static final String RETURN_URL = "/civil/%s/assessments/confirm?val=%s";
+  private static final String CANCEL_LINK_URL = "/civil/%s/sections";
+  private static final String AMENDMENT_CANCEL_LINK_URL = "/civil/amendments/summary";
 
   private static final String CHECKPOINT_START = "START";
   private static final String CHECKPOINT_RESUME = "RESUME";
@@ -76,14 +80,18 @@ public class AssessmentController {
   /**
    * Displays the page to confirm the removal of an assessment.
    *
+   * @param caseContext the context for the application (e.g. application or amendments)
    * @param assessment the assessment to remove.
    * @param model the model to populate with data for the view.
    * @return the name of the view to render for removing a prior authority.
    */
-  @GetMapping("/assessments/{assessment}/remove")
+  @GetMapping("/{caseContext}/assessments/{assessment}/remove")
   public String assessmentRemove(
-      @PathVariable("assessment") final String assessment, final Model model) {
+      @PathVariable("caseContext") final CaseContext caseContext,
+      @PathVariable("assessment") final String assessment,
+      final Model model) {
 
+    model.addAttribute("caseContext", caseContext);
     model.addAttribute("assessment", assessment);
 
     return "application/assessments/assessment-remove";
@@ -92,13 +100,15 @@ public class AssessmentController {
   /**
    * Handles the removal of an assessment.
    *
+   * @param caseContext the context for the application (e.g. application or amendments)
    * @param assessment the assessment to remove.
    * @param user the user making the request.
    * @param activeCase the active case for which the assessment is being removed.
    * @return the name of the view to render after the assessment has been removed.
    */
-  @PostMapping("/assessments/{assessment}/remove")
+  @PostMapping("/{caseContext}/assessments/{assessment}/remove")
   public String assessmentRemovePost(
+      @PathVariable("caseContext") final CaseContext caseContext,
       @PathVariable("assessment") final String assessment,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase) {
@@ -114,7 +124,9 @@ public class AssessmentController {
           .block();
     }
 
-    return "redirect:/application/sections";
+    String redirectPath =
+        caseContext.isAmendment() ? "/amendments/summary" : "/application/sections";
+    return "redirect:" + redirectPath;
   }
 
   /**
@@ -126,8 +138,9 @@ public class AssessmentController {
    * @param session the session in which the request is being made.
    * @return the view that displays the OPA assessment.
    */
-  @GetMapping("/assessments")
+  @GetMapping("/{caseContext}/assessments")
   public String assessmentGet(
+      @PathVariable("caseContext") final CaseContext caseContext,
       @RequestParam(value = "assessment") final String assessment,
       @RequestParam("invoked-from") final String invokedFrom,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
@@ -235,7 +248,8 @@ public class AssessmentController {
               .orElseThrow(
                   () -> new CaabApplicationException("Failed to retrieve assessment details"));
 
-      populateOpaModel(contextToken, prepopAssessment, user, assessmentRulebase, model);
+      populateOpaModel(
+          caseContext, contextToken, prepopAssessment, user, assessmentRulebase, model);
 
     } else if ("billing".equalsIgnoreCase(assessment)) {
       // todo - later implementation
@@ -250,6 +264,7 @@ public class AssessmentController {
   /**
    * Populates the OPA model with assessment and user details.
    *
+   * @param caseContext the context for the application (e.g. application or amendments)
    * @param contextToken a unique token representing the session context
    * @param prepopAssessment the assessment details for prepopulation
    * @param user the user details
@@ -257,22 +272,36 @@ public class AssessmentController {
    * @param model the model to populate
    */
   private void populateOpaModel(
+      final CaseContext caseContext,
       final String contextToken,
       final AssessmentDetail prepopAssessment,
       final UserDetail user,
       final AssessmentRulebase assessmentRulebase,
       final Model model) {
 
-    final String submitReturnUrl = RETURN_URL.formatted(contextToken);
+    final String submitReturnUrl = RETURN_URL.formatted(caseContext.getPathValue(), contextToken);
 
     model.addAttribute(
         "checkpoint",
         prepopAssessment.getCheckpoint() != null ? CHECKPOINT_RESUME : CHECKPOINT_START);
 
-    model.addAttribute("cancelUrl", CANCEL_LINK_URL);
+    final String cancelUrl =
+        caseContext.isAmendment()
+            ? AMENDMENT_CANCEL_LINK_URL
+            : CANCEL_LINK_URL.formatted(caseContext.getPathValue());
+
+    final String returnLinkText =
+        messageSource.getMessage(
+            caseContext.isAmendment()
+                ? "site.returnToAmendmentSummary"
+                : "site.returnToApplication",
+            null,
+            Locale.getDefault());
+
+    model.addAttribute("cancelUrl", cancelUrl);
     model.addAttribute("owdUrl", owdUrl);
     model.addAttribute("frameTitle", "");
-    model.addAttribute("returnLinkText", CANCEL_LINK_TEXT);
+    model.addAttribute("returnLinkText", returnLinkText);
     model.addAttribute("deploymentName", assessmentRulebase.getDeploymentName());
     model.addAttribute("interviewsCSS", interviewStyling);
     model.addAttribute("fontsCSS", fontStyling);
@@ -287,12 +316,17 @@ public class AssessmentController {
   /**
    * Confirms the assessment.
    *
+   * @param caseContext the context for the application (e.g. application or amendments)
+   * @param token the context token
+   * @param model the model to populate
    * @return the view that displays the confirmation of the assessment, listing the answers to the
    *     questions the user has provided.
    */
-  @GetMapping("/assessments/confirm")
+  @GetMapping("/{caseContext}/assessments/confirm")
   public String assessmentConfirm(
-      @RequestParam(value = "val") final String token, final Model model) {
+      @PathVariable("caseContext") final CaseContext caseContext,
+      @RequestParam(value = "val") final String token,
+      final Model model) {
     final ContextToken contextToken = contextSecurityUtil.createContextToken(token);
     final Long rulebaseId = contextToken.getRulebaseId();
     final String providerId = contextToken.getProviderId();
@@ -342,6 +376,7 @@ public class AssessmentController {
         assessmentService.getAssessmentSummaryToDisplay(
             assessment, parentSummaryLookups, childSummaryLookups);
 
+    model.addAttribute("caseContext", caseContext);
     model.addAttribute("summary", assessmentSummaryToDisplay);
 
     return "application/assessments/assessment-confirm";

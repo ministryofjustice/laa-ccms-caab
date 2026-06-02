@@ -476,7 +476,8 @@ public class ApplicationSectionsBuilder {
       final boolean opponentCreated) {
     boolean assessmentsEnabled = true;
 
-    if (application.getProceedings().isEmpty() || !opponentCreated) {
+    if ((application.getProceedings().isEmpty() || !opponentCreated)
+        && !Boolean.TRUE.equals(application.getAmendment())) {
       assessmentStatusDisplay.setStatus(SECTION_STATUS_NOT_AVAILABLE);
       assessmentsEnabled = false;
 

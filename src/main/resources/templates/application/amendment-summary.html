@@ -335,6 +335,45 @@
             </div>
           </div>
         </div>
+        <!--Means-->
+        <div class="govuk-grid-column-full" th:if="${summary.meansAssessment.enabled}">
+          <div class="govuk-summary-card">
+            <div class="govuk-summary-card__title-wrapper" th:with="heading=#{amendment.case.means}">
+              <h2 class="govuk-summary-card__title"
+                  th:text="${heading}"/>
+              <ul class="govuk-summary-card__actions">
+                <li class="govuk-summary-card__action">
+                  <a class="govuk-link govuk-link--no-visited-state"
+                     th:href="@{/amendments/assessments(assessment=means,invoked-from=CCMS_AC01)}"
+                     id="edit-means-link"
+                     th:text="#{amendment.case.meansAssessment}"/>
+                </li>
+                <li class="govuk-summary-card__action" th:if="${summary.meansAssessment.status == 'In Progress'}">
+                  <a class="govuk-link govuk-link--no-visited-state"
+                     th:href="@{/amendments/assessments/means/remove}"
+                     id="delete-means-link"
+                     th:text="#{site.delete}"/>
+                </li>
+              </ul>
+            </div>
+            <div class="govuk-summary-card__content">
+              <dl class="govuk-summary-list">
+                <div class="govuk-summary-list__row">
+                  <dt class="govuk-summary-list__key"
+                      th:text="#{common.status}"/>
+                  <dd class="govuk-summary-list__value"
+                      id="means-status-value">
+                    <th:block th:with="status=${summary.meansAssessment.status}">
+                      <th:block th:if="${status == 'Not started'}" th:text="#{amendment.case.means.noAssessmentPerformed}"/>
+                      <th:block th:unless="${status == 'Not started'}" th:text="${status}"/>
+                    </th:block>
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </div>
+
         <!--Merits-->
         <div class="govuk-grid-column-full">
           <div class="govuk-summary-card">
@@ -343,9 +382,17 @@
                   th:text="${heading}"/>
               <ul class="govuk-summary-card__actions">
                 <li class="govuk-summary-card__action">
-                  <a class="govuk-link govuk-link--no-visited-state" href="#"
+                  <a class="govuk-link govuk-link--no-visited-state"
+                     th:href="@{/amendments/assessments(assessment=merits,invoked-from=CCMS_AC01)}"
                      id="edit-merits-link"
                      th:text="#{amendment.case.meritsAssessment}"/>
+                </li>
+                <li class="govuk-summary-card__action"
+                    th:if="${summary.meritsAssessment.enabled and summary.meritsAssessment.status == 'In Progress'}">
+                  <a class="govuk-link govuk-link--no-visited-state"
+                     th:href="@{/amendments/assessments/merits/remove}"
+                     id="delete-merits-link"
+                     th:text="#{site.delete}"/>
                 </li>
               </ul>
             </div>
@@ -394,7 +441,10 @@
                       th:text="#{common.status}"/>
                   <dd class="govuk-summary-list__value"
                       id="documents-status-value">
-                    <th:block th:if="${summary.documentUpload.enabled}" th:text="${summary.documentUpload.status}"/>
+                    <th:block th:if="${summary.documentUpload.enabled}">
+                      <th:block th:if="${summary.documentUpload.status == 'Available'}" th:text="#{amendment.case.documents.available}"/>
+                      <th:block th:unless="${summary.documentUpload.status == 'Available'}" th:text="${summary.documentUpload.status}"/>
+                    </th:block>
                     <th:block th:unless="${summary.documentUpload.enabled}" th:text="#{amendment.case.documents.notRequired}"/>
                   </dd>
                 </div>

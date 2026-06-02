@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -14,6 +15,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -28,6 +30,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
+import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
@@ -101,22 +104,35 @@ class AmendCaseControllerTest {
                   new CostEntryDetail().costCategory("Test cat").requestedCosts(BigDecimal.ONE));
       ApplicationDetail amendment =
           new ApplicationDetail().id(123).caseReferenceNumber("123").costs(costs);
+      ApplicationDetail activeCase =
+          new ApplicationDetail()
+              .availableFunctions(
+                  Collections.singletonList(FunctionConstants.MEANS_ASSESSMENT_LEGAL_AMENDMENT));
       ApplicationSectionDisplay applicationSectionDisplay =
           ApplicationSectionDisplay.builder().build();
 
       when(applicationService.getApplication(any())).thenReturn(Mono.just(amendment));
-      when(amendmentService.getAmendmentSections(amendment, userDetail))
+      when(amendmentService.getAmendmentSections(any(), eq(userDetail)))
           .thenReturn(applicationSectionDisplay);
       assertThat(
               mockMvc.perform(
                   get("/amendments/summary")
                       .sessionAttr(APPLICATION_SUMMARY, tdsApplication)
                       .sessionAttr(ACTIVE_CASE, ActiveCase.builder().build())
+                      .sessionAttr(CASE, activeCase)
                       .sessionAttr(USER_DETAILS, userDetail)))
           .hasStatusOk()
           .hasViewName("application/amendment-summary")
           .model()
           .containsEntry("summary", applicationSectionDisplay);
+      verify(amendmentService)
+          .getAmendmentSections(
+              argThat(
+                  application ->
+                      application
+                          .getAvailableFunctions()
+                          .contains(FunctionConstants.MEANS_ASSESSMENT_LEGAL_AMENDMENT)),
+              eq(userDetail));
     }
   }
 }

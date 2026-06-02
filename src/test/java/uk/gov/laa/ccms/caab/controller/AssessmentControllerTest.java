@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -26,6 +27,7 @@ import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,15 +37,20 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.format.support.FormattingConversionService;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.opa.context.ContextToken;
 import uk.gov.laa.ccms.caab.opa.util.SecurityUtils;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
@@ -69,6 +76,7 @@ public class AssessmentControllerTest {
   @Mock private ClientService clientService;
 
   @Mock private SecurityUtils contextSecurityUtil;
+  @Mock private MessageSource messageSource;
 
   @InjectMocks private AssessmentController assessmentController;
 
@@ -83,7 +91,11 @@ public class AssessmentControllerTest {
     assessmentController.fontStyling = "font-styling.css";
     assessmentController.interviewJavascript = "interview-javascript.js";
 
-    this.mockMvc = standaloneSetup(assessmentController).build();
+    final FormattingConversionService conversionService = new FormattingConversionService();
+    conversionService.addConverter(String.class, CaseContext.class, CaseContext::fromPathValue);
+
+    this.mockMvc =
+        standaloneSetup(assessmentController).setConversionService(conversionService).build();
   }
 
   private static final UserDetail userDetails = buildUserDetail();
@@ -94,7 +106,7 @@ public class AssessmentControllerTest {
   @Test
   public void assessmentRemoveDisplaysCorrectView() throws Exception {
     this.mockMvc
-        .perform(get("/assessments/testCategory/remove"))
+        .perform(get("/application/assessments/testCategory/remove"))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/assessments/assessment-remove"))
@@ -109,7 +121,7 @@ public class AssessmentControllerTest {
 
     this.mockMvc
         .perform(
-            post("/assessments/%s/remove".formatted(category))
+            post("/application/assessments/%s/remove".formatted(category))
                 .sessionAttr(USER_DETAILS, userDetails)
                 .sessionAttr(ACTIVE_CASE, activeCase))
         .andDo(print())
@@ -132,9 +144,11 @@ public class AssessmentControllerTest {
 
     when(assessmentService.getAssessments(any(), anyString(), anyString()))
         .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessmentDetail)));
+    when(messageSource.getMessage(anyString(), any(), any(Locale.class)))
+        .thenReturn("returnLinkText");
 
     final MockHttpServletRequestBuilder request =
-        get("/assessments")
+        get("/application/assessments")
             .param("assessment", "means")
             .param("invoked-from", "summary")
             .sessionAttr(USER_DETAILS, userDetails)
@@ -167,7 +181,7 @@ public class AssessmentControllerTest {
     when(applicationService.getApplication(anyString())).thenReturn(Mono.empty());
 
     final MockHttpServletRequestBuilder request =
-        get("/assessments")
+        get("/application/assessments")
             .param("assessment", "means")
             .param("invoked-from", "summary")
             .sessionAttr(USER_DETAILS, userDetails)
@@ -186,7 +200,7 @@ public class AssessmentControllerTest {
         .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
 
     final MockHttpServletRequestBuilder request =
-        get("/assessments")
+        get("/application/assessments")
             .param("assessment", "unknown")
             .param("invoked-from", "summary")
             .sessionAttr(USER_DETAILS, userDetails)
@@ -208,7 +222,7 @@ public class AssessmentControllerTest {
     when(clientService.getClient(anyString(), anyString(), anyString())).thenReturn(Mono.empty());
 
     final MockHttpServletRequestBuilder request =
-        get("/assessments")
+        get("/application/assessments")
             .param("assessment", "means")
             .param("invoked-from", "summary")
             .sessionAttr(USER_DETAILS, userDetails)
@@ -234,7 +248,7 @@ public class AssessmentControllerTest {
         .thenReturn(Mono.empty());
 
     final MockHttpServletRequestBuilder request =
-        get("/assessments")
+        get("/application/assessments")
             .param("assessment", "means")
             .param("invoked-from", "summary")
             .sessionAttr(USER_DETAILS, userDetails)
@@ -245,6 +259,43 @@ public class AssessmentControllerTest {
 
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
     assertEquals("Failed to retrieve assessment details", exception.getCause().getMessage());
+  }
+
+  @Test
+  public void assessmentGet_cleansAndSavesPrepopAssessmentWhenCheckpointResetRequired()
+      throws Exception {
+    final ApplicationDetail applicationDetail = buildApplicationDetail(1, true, new Date());
+    final AssessmentDetail assessmentDetail = buildAssessmentDetail(new Date());
+    assessmentDetail.setId(123L);
+    assessmentDetail.setCheckpoint(new AssessmentCheckpointDetail());
+
+    when(applicationService.getApplication(anyString())).thenReturn(Mono.just(applicationDetail));
+    when(contextSecurityUtil.createHubContext(
+            anyString(), anyLong(), anyString(), anyLong(), anyString(), anyString(), anyString()))
+        .thenReturn("contextToken");
+    when(clientService.getClient(anyString(), anyString(), anyString()))
+        .thenReturn(Mono.just(new ClientDetail()));
+    when(assessmentService.getAssessments(any(), anyString(), anyString()))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessmentDetail)));
+    when(assessmentService.isAssessmentCheckpointToBeDeleted(any(), any())).thenReturn(true);
+    when(assessmentService.saveAssessment(any(), any())).thenReturn(Mono.empty());
+    when(messageSource.getMessage(anyString(), any(), any(Locale.class)))
+        .thenReturn("returnLinkText");
+
+    this.mockMvc
+        .perform(
+            get("/application/assessments")
+                .param("assessment", "merits")
+                .param("invoked-from", "summary")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(APPLICATION_ID, "applicationId")
+                .sessionAttr(ACTIVE_CASE, activeCase))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/assessments/assessment-get"));
+
+    verify(assessmentService).cleanupData(assessmentDetail, applicationDetail);
+    verify(assessmentService).saveAssessment(userDetails, assessmentDetail);
   }
 
   @Test
@@ -260,7 +311,7 @@ public class AssessmentControllerTest {
         .thenReturn(Mono.just(new AssessmentDetails()));
 
     final MockHttpServletRequestBuilder request =
-        get("/assessments")
+        get("/application/assessments")
             .param("assessment", "means")
             .param("invoked-from", "summary")
             .sessionAttr(USER_DETAILS, userDetails)
@@ -331,7 +382,7 @@ public class AssessmentControllerTest {
         .thenReturn(new ArrayList<>());
 
     final MockHttpServletRequestBuilder request =
-        get("/assessments/confirm")
+        get("/application/assessments/confirm")
             .param("val", token)
             .sessionAttr(USER_DETAILS, userDetails)
             .sessionAttr(APPLICATION_ID, "applicationId")
@@ -400,7 +451,7 @@ public class AssessmentControllerTest {
         .thenReturn(Mono.empty());
 
     final MockHttpServletRequestBuilder request =
-        get("/assessments/confirm")
+        get("/application/assessments/confirm")
             .param("val", token)
             .sessionAttr(USER_DETAILS, userDetails)
             .sessionAttr(APPLICATION_ID, "applicationId")
@@ -410,6 +461,60 @@ public class AssessmentControllerTest {
 
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
     assertEquals("Failed to retrieve assessment data", exception.getCause().getMessage());
+  }
+
+  @Test
+  public void assessmentRemovePostRedirectsToAmendmentsSummaryWhenInAmendmentsContext()
+      throws Exception {
+    when(assessmentService.deleteAssessments(any(), any(), any(), any())).thenReturn(Mono.empty());
+
+    this.mockMvc
+        .perform(
+            post("/amendments/assessments/means/remove")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(ACTIVE_CASE, activeCase))
+        .andDo(print())
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/amendments/summary"));
+  }
+
+  @Test
+  public void assessmentGetPopulatesCorrectModelForAmendments() throws Exception {
+    final String assessment = "means";
+    final String invokedFrom = "summary";
+    final String contextToken = "someContextToken";
+    final String submitReturnUrl = "/civil/amendments/assessments/confirm?val=" + contextToken;
+    final String cancelUrl = "/civil/amendments/summary";
+    final String returnLinkText = "Return to amendment summary";
+
+    final ApplicationDetail applicationDetail = buildApplicationDetail(1, true, new Date());
+    final AssessmentDetail assessmentDetail = buildAssessmentDetail(new Date());
+    assessmentDetail.setId(123L);
+    assessmentDetail.setCheckpoint(new AssessmentCheckpointDetail());
+
+    when(applicationService.getApplication(anyString())).thenReturn(Mono.just(applicationDetail));
+    when(clientService.getClient(anyString(), anyString(), anyString()))
+        .thenReturn(Mono.just(new ClientDetail()));
+    when(contextSecurityUtil.createHubContext(
+            anyString(), anyLong(), anyString(), anyLong(), anyString(), anyString(), anyString()))
+        .thenReturn(contextToken);
+    when(assessmentService.getAssessments(anyList(), anyString(), anyString()))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessmentDetail)));
+    when(messageSource.getMessage(anyString(), any(), any(Locale.class)))
+        .thenReturn(returnLinkText);
+
+    this.mockMvc
+        .perform(
+            get("/amendments/assessments")
+                .param("assessment", assessment)
+                .param("invoked-from", invokedFrom)
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(APPLICATION_ID, "applicationId"))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("submitReturnUrl", submitReturnUrl))
+        .andExpect(model().attribute("cancelUrl", cancelUrl))
+        .andExpect(model().attribute("returnLinkText", returnLinkText));
   }
 
   @Test
@@ -467,7 +572,7 @@ public class AssessmentControllerTest {
         .thenReturn(Mono.just(new AssessmentDetails())); // Empty AssessmentDetails
 
     final MockHttpServletRequestBuilder request =
-        get("/assessments/confirm")
+        get("/application/assessments/confirm")
             .param("val", token)
             .sessionAttr(USER_DETAILS, userDetails)
             .sessionAttr(APPLICATION_ID, "applicationId")
