@@ -136,7 +136,8 @@ class ResultDisplayMapperTest {
     assertEquals("Brown", result.getClientSurname());
     assertEquals(1, result.getId());
     assertEquals("LSC123", result.getLscCaseReference());
-    assertEquals("Linked Legal Issue", result.getRelationToCase());
+    assertEquals("LEGAL", result.getRelationToCase());
+    assertEquals("Linked Legal Issue", result.getRelationToCaseDisplayValue());
     assertEquals("PC123", result.getProviderCaseReference());
     assertEquals("Family Law", result.getCategoryOfLaw());
     assertEquals("John Doe", result.getFeeEarner());
