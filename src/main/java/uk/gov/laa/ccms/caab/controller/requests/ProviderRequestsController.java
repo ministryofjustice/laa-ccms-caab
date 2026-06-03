@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -509,11 +511,22 @@ public class ProviderRequestsController {
       return "error";
     }
 
-    if (providerRequestDetailsForm.getDynamicOptions() != null) {
-      providerRequestDetailsForm.getDynamicOptions().clear();
-    } else {
+    if (providerRequestDetailsForm.getDynamicOptions() == null) {
       providerRequestDetailsForm.setDynamicOptions(new HashMap<>());
+    } else {
+      final Set<String> currentCodes =
+          dynamicForm.getDataItems().stream()
+              .map(ProviderRequestDataLookupValueDetail::getCode)
+              .collect(Collectors.toSet());
+
+      providerRequestDetailsForm
+          .getDynamicOptions()
+          .keySet()
+          .removeIf(code -> !currentCodes.contains(code));
     }
+
+    providerRequestsMapper.populateProviderRequestDetailsForm(
+        providerRequestDetailsForm, dynamicForm);
 
     populateProviderRequestDetailsLookupDropdowns(model, dynamicForm);
 
