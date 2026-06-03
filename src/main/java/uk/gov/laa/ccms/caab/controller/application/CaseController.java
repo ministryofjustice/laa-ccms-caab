@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.AMEND_CLIENT_ORIGIN;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
@@ -402,7 +404,10 @@ public class CaseController {
     log.info("Editing general details for case id {}", tdsApplication.getId());
     Assert.notNull(tdsApplication.getApplicationType(), "TDS Application type must not be null");
 
-    if (APP_TYPE_EMERGENCY.equals(tdsApplication.getApplicationType().getId())) {
+    if (APP_TYPE_EMERGENCY.equals(tdsApplication.getApplicationType().getId())
+        || APP_TYPE_EMERGENCY_DEVOLVED_POWERS.equals(tdsApplication.getApplicationType().getId())
+        || APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS.equals(
+            tdsApplication.getApplicationType().getId())) {
       return "redirect:/amendments/edit-delegated-functions";
     }
 

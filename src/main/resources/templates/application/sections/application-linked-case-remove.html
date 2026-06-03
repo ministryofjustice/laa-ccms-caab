@@ -9,7 +9,7 @@
     <div id="main-content" class="govuk-!-padding-top-7">
         <form action="#"
               th:action="@{/{caseContext}/sections/linked-cases/{id}/remove(caseContext=${caseContext.getPathValue()},id=${linkedCase.id})}" method="post">
-        <span class="govuk-caption-l" th:text="#{application.create}"/>
+        <span class="govuk-caption-l" th:if="${caseContext.isApplication()}" th:text="#{application.create}"/>
         <h1 class="govuk-heading-l"
             th:text="#{application.generalDetails.linkCase.remove.title(${linkedCase.lscCaseReference})}"/>
         <p class="govuk-body-l"
