@@ -29,6 +29,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.util.AmendmentUtil;
@@ -308,11 +309,12 @@ public class AmendmentService {
     return amendmentSections.getOpponentsAndOtherParties().getOpponents().stream()
         .map(
             opponent -> {
+              OpponentDetail opponentDetail =
+                  OpponentUtil.getOpponentById(application, opponent.getId());
               AbstractOpponentFormData formData =
-                  applicationService.buildOpponentFormData(
-                      OpponentUtil.getOpponentById(application, opponent.getId()));
-              formData.setEditable(opponent.getEbsId() == null);
-              formData.setDeletable(opponent.getEbsId() == null);
+                  applicationService.buildOpponentFormData(opponentDetail);
+              formData.setEditable(true);
+              formData.setDeletable(Boolean.TRUE.equals(opponentDetail.getDeleteInd()));
               return formData;
             })
         .toList();

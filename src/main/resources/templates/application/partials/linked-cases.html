@@ -9,7 +9,7 @@
     <input type="hidden" id="categoryOfLaw" name="categoryOfLaw" th:value="*{categoryOfLaw}">
     <input type="hidden" id="feeEarner" name="feeEarner" th:value="*{feeEarner}">
     <input type="hidden" id="status" name="status" th:value="*{status}">
-    <span class="govuk-caption-l" th:text="#{application.generalDetails.linkCase.caption}"/>
+    <span class="govuk-caption-l" th:if="${caseContext.isApplication()}" th:text="#{application.generalDetails.linkCase.caption}"/>
     <h1 class="govuk-heading-l" th:text="#{application.generalDetails.linkCase.title}"/>
 
     <p class="govuk-body-l" th:text="#{application.generalDetails.linkCase.line1}"/>

@@ -433,6 +433,7 @@ public class EditGeneralDetailsSectionController {
                 .findFirst()
                 .orElse(null);
 
+    model.addAttribute("caseContext", caseContext);
     model.addAttribute("linkedCase", linkedCase);
 
     return "application/sections/application-linked-case-remove";
@@ -483,6 +484,7 @@ public class EditGeneralDetailsSectionController {
                 .findFirst()
                 .orElse(null);
 
+    model.addAttribute("caseContext", caseContext);
     model.addAttribute("currentLinkedCase", linkedCase);
     model.addAttribute("linkedCaseId", linkedCaseId);
 
@@ -683,6 +685,9 @@ public class EditGeneralDetailsSectionController {
     final LinkedCaseResultRowDisplay linkedCase =
         resultDisplayMapper.toLinkedCaseResultRowDisplay(baseApplication);
 
+    linkedCase.setRelationToCase(null);
+
+    model.addAttribute("caseContext", caseContext);
     model.addAttribute("currentLinkedCase", linkedCase);
     populateLinkedCasesConfirmDropdowns(model);
 
@@ -717,6 +722,7 @@ public class EditGeneralDetailsSectionController {
     linkedCaseValidator.validate(linkedCase, bindingResult);
 
     if (bindingResult.hasErrors()) {
+      model.addAttribute("caseContext", caseContext);
       model.addAttribute("currentLinkedCase", linkedCase);
       populateLinkedCasesConfirmDropdowns(model);
       return "application/sections/application-linked-case-add";
