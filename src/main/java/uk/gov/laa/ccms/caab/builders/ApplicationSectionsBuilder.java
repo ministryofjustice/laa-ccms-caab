@@ -487,6 +487,8 @@ public class ApplicationSectionsBuilder {
         assessmentStatusDisplay.setStatus(assessmentStatus);
         assessmentStatusDisplay.setLastSaved(assessment.getAuditDetail().getLastSaved());
         assessmentStatusDisplay.setLastSavedBy(assessment.getAuditDetail().getLastSavedBy());
+      } else if (assessmentStatus != null) {
+        assessmentStatusDisplay.setStatus(assessmentStatus);
       } else {
         assessmentStatusDisplay.setStatus(SECTION_STATUS_NOT_STARTED);
       }

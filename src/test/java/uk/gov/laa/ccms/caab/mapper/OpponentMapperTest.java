@@ -47,6 +47,7 @@ public class OpponentMapperTest {
     assertEquals(orgTypeLookup.getDescription(), result.getOrganisationTypeDisplayValue());
     assertEquals(organisationDetail.getOtherInformation(), result.getOtherInformation());
     assertEquals(organisationDetail.getPartyId(), result.getPartyId());
+    org.junit.jupiter.api.Assertions.assertTrue(result.getDeletable());
   }
 
   @Test

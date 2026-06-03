@@ -6,11 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static reactor.core.publisher.Mono.just;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROGRESS_STATUS_TYPES;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.OPPONENT;
@@ -34,6 +39,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,6 +58,9 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
+import uk.gov.laa.ccms.caab.client.CaabApiClient;
+import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.mapper.AssessmentMapper;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
@@ -66,6 +75,7 @@ import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryAttributeDisplay;
 import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryEntityDisplay;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryAttributeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
+import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -73,16 +83,43 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class AssessmentServiceTest {
 
   @Mock private AssessmentApiClient assessmentApiClient;
-
+  @Mock private SoaApiClient soaApiClient;
   @Mock private LookupService lookupService;
-
+  @Mock private AssessmentMapper assessmentMapper;
+  @Mock private CaabApiClient caabApiClient;
   @InjectMocks private AssessmentService assessmentService;
+
+  private final UserDetail user = buildUserDetail();
+
+  @BeforeEach
+  void setUp() {
+    user.setLoginId("test-user");
+    user.setUserType("test-role");
+    BaseProvider provider = new BaseProvider();
+    provider.setId(123);
+    user.setProvider(provider);
+  }
 
   private static final String PROGRESS_STATUS_CODE = "TEST";
   private static final String PROGRESS_STATUS_DESC = "Test";
   private static final Long ASSESSMENT_ID = 1234567L;
 
   private final Date auditDate = new Date(System.currentTimeMillis());
+
+  private void stubProgressStatusDescriptions() {
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROGRESS_STATUS_TYPES), anyString()))
+        .thenAnswer(
+            invocation -> {
+              final String status = invocation.getArgument(1);
+              final String description =
+                  switch (status) {
+                    case "REQUIRED" -> "Re-assessment Required";
+                    case "UNCHANGED" -> "Unchanged";
+                    default -> status;
+                  };
+              return Mono.just(Optional.of(new CommonLookupValueDetail().description(description)));
+            });
+  }
 
   @Test
   public void testSaveAssessment_createAssessment() {
@@ -422,22 +459,172 @@ public class AssessmentServiceTest {
     assertEquals(application.getMeritsAssessmentStatus(), PROGRESS_STATUS_DESC);
   }
 
-  // todo - test to be amended when amendment scenarios are added
   @Test
-  void testIsReassessmentRequired_isAmendment() {
-    final ApplicationDetail application = new ApplicationDetail().amendment(true);
+  void testCalculateAssessmentStatuses_withMeritsReassessmentRequiredTrue() {
+    final ApplicationDetail application = new ApplicationDetail();
+    application.setAmendment(false);
+    application.setMeritsReassessmentRequired(true);
+
+    final AssessmentDetail meansAssessment = new AssessmentDetail();
+    meansAssessment.setId(101L);
+    meansAssessment.setName(MEANS.getName());
+    meansAssessment.setStatus("COMPLETE");
+
+    final AssessmentDetail meritsAssessment = new AssessmentDetail();
+    meritsAssessment.setId(102L);
+    meritsAssessment.setName(MERITS.getName());
+    meritsAssessment.setStatus("COMPLETE");
+
+    when(assessmentApiClient.patchAssessment(anyLong(), anyString(), any()))
+        .thenReturn(Mono.empty());
+    when(lookupService.getCommonValue(anyString(), anyString()))
+        .thenReturn(
+            Mono.just(
+                Optional.of(new CommonLookupValueDetail().description("Re-assessment Required"))));
+
+    assessmentService.calculateAssessmentStatuses(
+        application, meansAssessment, meritsAssessment, user);
+
+    verify(assessmentApiClient, times(2)).patchAssessment(eq(101L), anyString(), any());
+    verify(assessmentApiClient, times(2)).patchAssessment(eq(102L), anyString(), any());
+    assertEquals("Re-assessment Required", application.getMeansAssessmentStatus());
+    assertEquals("Re-assessment Required", application.getMeritsAssessmentStatus());
+  }
+
+  @Test
+  void
+      testIsReassessmentRequired_amendment_noCheckpoint_noEbsAmendments_substantiveApp_emergencyCert_returnsTrue() {
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(true)
+            .caseReferenceNumber("CASE-123")
+            .applicationType(
+                new uk.gov.laa.ccms.caab.model.ApplicationType().id(APP_TYPE_SUBSTANTIVE));
 
     final AssessmentDetail assessment = new AssessmentDetail();
-    final boolean result = assessmentService.isReassessmentRequired(application, assessment);
+    assessment.setName(MERITS.getName());
+    assessment.setCheckpoint(null);
+
+    final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase =
+        new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()
+            .applicationDetails(
+                new uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails()
+                    .proceedings(Collections.emptyList()))
+            .certificateType(APP_TYPE_EMERGENCY);
+
+    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
+        .thenReturn(Mono.just(ebsCase));
+
+    final boolean result = assessmentService.isReassessmentRequired(application, assessment, user);
+
+    assertTrue(result);
+  }
+
+  @Test
+  void testIsReassessmentRequired_amendment_hasCheckpoint_returnsFalse() {
+    final ApplicationDetail application =
+        new ApplicationDetail().amendment(true).caseReferenceNumber("CASE-123");
+
+    final AssessmentDetail assessment = new AssessmentDetail();
+    assessment.setName(MERITS.getName());
+    assessment.setCheckpoint(
+        new uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail());
+
+    final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase =
+        new uk.gov.laa.ccms.soa.gateway.model.CaseDetail().certificateType(APP_TYPE_EMERGENCY);
+
+    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
+        .thenReturn(Mono.just(ebsCase));
+
+    final boolean result = assessmentService.isReassessmentRequired(application, assessment, user);
 
     assertFalse(result);
+  }
+
+  @Test
+  void testCalculateAssessmentStatuses_amendmentNoMeansAssessment_ecfCase_setsMeansRequired() {
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(true)
+            .caseReferenceNumber("CASE-123")
+            .applicationType(new ApplicationType().id(APP_TYPE_EXCEPTIONAL_CASE_FUNDING));
+
+    final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase =
+        new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()
+            .applicationDetails(
+                new uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails()
+                    .proceedings(Collections.emptyList()));
+
+    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
+        .thenReturn(Mono.just(ebsCase));
+    stubProgressStatusDescriptions();
+
+    assessmentService.calculateAssessmentStatuses(application, null, null, user);
+
+    assertEquals("Re-assessment Required", application.getMeansAssessmentStatus());
+    assertEquals("Unchanged", application.getMeritsAssessmentStatus());
+  }
+
+  @Test
+  void
+      testCalculateAssessmentStatuses_amendmentNoMeritsAssessment_substantiveEmergency_setsMeritsRequired() {
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(true)
+            .caseReferenceNumber("CASE-123")
+            .applicationType(new ApplicationType().id(APP_TYPE_SUBSTANTIVE));
+
+    final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase =
+        new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()
+            .applicationDetails(
+                new uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails()
+                    .proceedings(Collections.emptyList()))
+            .certificateType(APP_TYPE_EMERGENCY);
+
+    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
+        .thenReturn(Mono.just(ebsCase));
+    stubProgressStatusDescriptions();
+
+    assessmentService.calculateAssessmentStatuses(application, null, null, user);
+
+    assertEquals("Unchanged", application.getMeansAssessmentStatus());
+    assertEquals("Re-assessment Required", application.getMeritsAssessmentStatus());
+  }
+
+  @Test
+  void testIsReassessmentRequired_amendmentMeritsKeyChangeAfterAmendmentCreated_returnsTrue() {
+    final Date amendmentCreated = new Date(System.currentTimeMillis() - 60_000);
+    final Date proceedingChanged = new Date();
+
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(true)
+            .caseReferenceNumber("CASE-123")
+            .meritsAssessmentAmended(false)
+            .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().created(amendmentCreated))
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .auditTrail(
+                        new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(proceedingChanged)));
+
+    final AssessmentDetail assessment = new AssessmentDetail();
+    assessment.setName(MERITS.getName());
+    assessment.setCheckpoint(
+        new uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail());
+
+    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
+        .thenReturn(Mono.just(new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()));
+
+    final boolean result = assessmentService.isReassessmentRequired(application, assessment, user);
+
+    assertTrue(result);
   }
 
   @Test
   void testIsReassessmentRequired_assessmentNull_assertsFalse() {
     final ApplicationDetail application = new ApplicationDetail().amendment(false);
 
-    final boolean result = assessmentService.isReassessmentRequired(application, null);
+    final boolean result = assessmentService.isReassessmentRequired(application, null, user);
 
     assertFalse(result);
   }
@@ -466,7 +653,7 @@ public class AssessmentServiceTest {
 
     final AssessmentDetail assessment = buildAssessmentDetailMultipleProceedings();
 
-    final boolean result = assessmentService.isReassessmentRequired(application, assessment);
+    final boolean result = assessmentService.isReassessmentRequired(application, assessment, user);
 
     assertTrue(result);
   }
@@ -496,7 +683,7 @@ public class AssessmentServiceTest {
 
     final AssessmentDetail assessment = buildAssessmentDetail(auditDate);
 
-    final boolean result = assessmentService.isReassessmentRequired(application, assessment);
+    final boolean result = assessmentService.isReassessmentRequired(application, assessment, user);
 
     assertTrue(result);
   }
@@ -536,7 +723,7 @@ public class AssessmentServiceTest {
 
     final AssessmentDetail assessment = buildAssessmentDetail(lastSaved);
 
-    final boolean result = assessmentService.isReassessmentRequired(application, assessment);
+    final boolean result = assessmentService.isReassessmentRequired(application, assessment, user);
 
     assertTrue(result);
   }
@@ -570,7 +757,7 @@ public class AssessmentServiceTest {
 
     final AssessmentDetail assessment = buildAssessmentDetailMultipleOpponents(auditDate);
 
-    final boolean result = assessmentService.isReassessmentRequired(application, assessment);
+    final boolean result = assessmentService.isReassessmentRequired(application, assessment, user);
 
     assertTrue(result);
   }
@@ -608,7 +795,7 @@ public class AssessmentServiceTest {
     final AssessmentDetail assessment = buildAssessmentDetail(auditDate);
     assessment.setName(assessmentName);
 
-    final boolean result = assessmentService.isReassessmentRequired(application, assessment);
+    final boolean result = assessmentService.isReassessmentRequired(application, assessment, user);
 
     assertEquals(expectedResult, result);
   }
