@@ -525,9 +525,6 @@ public class ProviderRequestsController {
           .removeIf(code -> !currentCodes.contains(code));
     }
 
-    providerRequestsMapper.populateProviderRequestDetailsForm(
-        providerRequestDetailsForm, dynamicForm);
-
     populateProviderRequestDetailsLookupDropdowns(model, dynamicForm);
 
     providerRequestDetailsForm.setClaimUploadEnabled(
