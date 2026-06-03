@@ -43,7 +43,7 @@ jobs:
 
   scan-image:
     needs: [ get-branch-ref ]
-    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@v2
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@fix/sarif-upload-private-repositories
     permissions:
       contents: read
       id-token: write
