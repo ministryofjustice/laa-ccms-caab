@@ -92,29 +92,34 @@ public final class ApplicationUtil {
   public static Date getDateOfLatestKeyChange(final ApplicationDetail application) {
     Date latestKeyChange = null;
 
-    for (final ProceedingDetail proceeding : application.getProceedings()) {
-      if (proceeding.getAuditTrail() != null
-          && (latestKeyChange == null
-              || latestKeyChange.before(proceeding.getAuditTrail().getLastSaved()))) {
-        latestKeyChange = proceeding.getAuditTrail().getLastSaved();
-      }
+    if (application.getProceedings() != null) {
+      for (final ProceedingDetail proceeding : application.getProceedings()) {
+        if (proceeding.getAuditTrail() != null
+            && (latestKeyChange == null
+                || latestKeyChange.before(proceeding.getAuditTrail().getLastSaved()))) {
+          latestKeyChange = proceeding.getAuditTrail().getLastSaved();
+        }
 
-      if (proceeding.getScopeLimitations() != null && !proceeding.getScopeLimitations().isEmpty()) {
-        for (final ScopeLimitationDetail scopeLimitation : proceeding.getScopeLimitations()) {
-          if (scopeLimitation.getAuditTrail() != null
-              && (latestKeyChange == null
-                  || latestKeyChange.before(scopeLimitation.getAuditTrail().getLastSaved()))) {
-            latestKeyChange = scopeLimitation.getAuditTrail().getLastSaved();
+        if (proceeding.getScopeLimitations() != null
+            && !proceeding.getScopeLimitations().isEmpty()) {
+          for (final ScopeLimitationDetail scopeLimitation : proceeding.getScopeLimitations()) {
+            if (scopeLimitation.getAuditTrail() != null
+                && (latestKeyChange == null
+                    || latestKeyChange.before(scopeLimitation.getAuditTrail().getLastSaved()))) {
+              latestKeyChange = scopeLimitation.getAuditTrail().getLastSaved();
+            }
           }
         }
       }
     }
 
-    for (final OpponentDetail opponent : application.getOpponents()) {
-      if (opponent.getAuditTrail() != null
-          && (latestKeyChange == null
-              || latestKeyChange.before(opponent.getAuditTrail().getLastSaved()))) {
-        latestKeyChange = opponent.getAuditTrail().getLastSaved();
+    if (application.getOpponents() != null) {
+      for (final OpponentDetail opponent : application.getOpponents()) {
+        if (opponent.getAuditTrail() != null
+            && (latestKeyChange == null
+                || latestKeyChange.before(opponent.getAuditTrail().getLastSaved()))) {
+          latestKeyChange = opponent.getAuditTrail().getLastSaved();
+        }
       }
     }
     return latestKeyChange;
