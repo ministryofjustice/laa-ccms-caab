@@ -11,6 +11,7 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
 import uk.gov.laa.ccms.caab.bean.request.ProviderRequestDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.validators.file.FileUploadValidator;
+import uk.gov.laa.ccms.caab.constants.ProviderRequestDateFields;
 
 /**
  * Validator component responsible for validating {@link
@@ -73,12 +74,24 @@ public class ProviderRequestDetailsValidator extends FileUploadValidator {
               }
 
               if (StringUtils.hasText(value.getFieldValue())) {
-                validateFieldByType(fieldPath, value, errors);
+                validateFieldByType(key, fieldPath, value, errors);
               }
             });
   }
 
-  private void validateFieldByType(String fieldPath, DynamicOptionFormData value, Errors errors) {
+  private void validateFieldByType(
+      String fieldCode, String fieldPath, DynamicOptionFormData value, Errors errors) {
+
+    boolean isDateField =
+        FIELD_TYPE_DATE.equals(value.getFieldType())
+            || ProviderRequestDateFields.isDateField(fieldCode);
+
+    if (isDateField) {
+      validateValidDateField(
+          value.getFieldValue(), fieldPath, value.getFieldDescription(), DATE_FORMAT, errors);
+      return;
+    }
+
     switch (value.getFieldType()) {
       case FIELD_TYPE_AMT -> {
         validateCurrencyField(
@@ -91,9 +104,6 @@ public class ProviderRequestDetailsValidator extends FileUploadValidator {
             fieldPath, value.getFieldValue(), 30, value.getFieldDescription(), errors);
         validateNumericField(fieldPath, value.getFieldValue(), value.getFieldDescription(), errors);
       }
-      case FIELD_TYPE_DATE ->
-          validateValidDateField(
-              value.getFieldValue(), fieldPath, value.getFieldDescription(), DATE_FORMAT, errors);
       case FIELD_TYPE_FTS ->
           validateFieldMaxLength(
               fieldPath, value.getFieldValue(), 30, value.getFieldDescription(), errors);

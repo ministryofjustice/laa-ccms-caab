@@ -46,82 +46,86 @@
           </div>
 
           <th:block th:each="option : ${providerRequestDynamicForm.dataItems}">
-            <div class="govuk-form-group"
-                 th:unless="${option.type == 'DAT'}"
-                 th:classappend="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue')} ? 'govuk-form-group--error' : ''">
 
-              <label class="govuk-label"
-                     th:for="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                     th:text="(${option.mandatoryFlag} ? ${option.label} : #{site.optional(${option.label})})">
-              </label>
+              <th:block th:with="isDateField=${T(uk.gov.laa.ccms.caab.constants.ProviderRequestDateFields).isDateField(option.code)}">
+                  <div class="govuk-form-group"
+                       th:unless="${option.type == 'DAT' or isDateField}"
+                       th:classappend="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue')} ? 'govuk-form-group--error' : ''">
 
-              <span th:if="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue')}"
-                    th:errors="*{dynamicOptions[__${option.code}__].fieldValue}" class="govuk-error-message">
+                      <label class="govuk-label"
+                             th:for="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                             th:text="(${option.mandatoryFlag} ? ${option.label} : #{site.optional(${option.label})})">
+                      </label>
+
+                      <span th:if="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue')}"
+                            th:errors="*{dynamicOptions[__${option.code}__].fieldValue}" class="govuk-error-message">
               </span>
 
-              <th:block  th:if="${option.type == 'LOV'}">
-                <input type="hidden" th:id="'dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'"
-                       th:name="'dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'"
-                       th:value="*{dynamicOptions[__${option.code}__].fieldValueDisplayValue}">
-                <select class="govuk-select"
-                        data-module="govuk-select"
-                        th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                        th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
-                        th:errorclass="govuk-select--error"
-                        th:attr="data-display-value-id='dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'">
-                  <option value="" th:text="#{site.select}"></option>
-                  <option th:each="item : ${__${option.code}__}"
-                          th:value="${item['code']}"
-                          th:text="${item['description']}">
-                  </option>
-                </select>
+                      <th:block  th:if="${option.type == 'LOV'}">
+                          <input type="hidden" th:id="'dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'"
+                                 th:name="'dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'"
+                                 th:value="*{dynamicOptions[__${option.code}__].fieldValueDisplayValue}">
+                          <select class="govuk-select"
+                                  data-module="govuk-select"
+                                  th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                                  th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
+                                  th:errorclass="govuk-select--error"
+                                  th:attr="data-display-value-id='dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'">
+                              <option value="" th:text="#{site.select}"></option>
+                              <option th:each="item : ${__${option.code}__}"
+                                      th:value="${item['code']}"
+                                      th:text="${item['description']}">
+                              </option>
+                          </select>
+                      </th:block>
+                      <th:block th:if="${option.type == 'FTS'}">
+                          <input class="govuk-input govuk-input--width-20"
+                                 type="text"
+                                 data-module="govuk-input"
+                                 th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                                 th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
+                                 th:errorclass="govuk-select--error">
+                      </th:block>
+                      <th:block th:if="${option.type == 'FTL'}">
+                          <input class="govuk-input"
+                                 th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                                 th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
+                                 type="text"
+                                 data-module="govuk-input"
+                                 th:errorclass="govuk-select--error">
+                      </th:block>
+                      <th:block th:if="${option.type == 'AMT'}">
+                          <div class="govuk-input__wrapper">
+                              <div class="govuk-input__prefix" aria-hidden="true">£</div>
+                              <input class="govuk-input govuk-input--width-10"
+                                     th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                                     th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
+                                     type="text" spellcheck="false"
+                                     th:errorclass="govuk-select--error">
+                          </div>
+                      </th:block>
+                      <th:block th:if="${option.type == 'INT'}">
+                          <input class="govuk-input govuk-date-input__input govuk-input--width-10"
+                                 th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
+                                 th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
+                                 type="text"
+                                 inputmode="numeric"
+                                 maxlength="10"
+                                 th:errorclass="govuk-select--error">
+                      </th:block>
+                  </div>
+                  <!--  Some date fields have been set up as a non DAT type, so to ensure consistent validation and no errors with the backend, an additional type has been created for this condition.  -->
+                  <th:block th:if="${option.type == 'DAT' or isDateField}">
+                      <moj:datepicker
+                              th:id="'dynamicOptions[__${option.code}__].fieldValue'"
+                              th:name="'dynamicOptions[__${option.code}__].fieldValue'"
+                              th:label="${option.mandatoryFlag} ? ${option.label} : #{site.optional(${option.label})}"
+                              th:hint="#{site.dateHint}"
+                              th:value="*{dynamicOptions[__${option.code}__].fieldValue}"
+                              th:errorMessage="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue') ? #fields.errors('dynamicOptions[__${option.code}__].fieldValue').getFirst() : ''}">
+                      </moj:datepicker>
+                  </th:block>
               </th:block>
-              <th:block th:if="${option.type == 'FTS'}">
-                <input class="govuk-input govuk-input--width-20"
-                       type="text"
-                       data-module="govuk-input"
-                       th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                       th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
-                       th:errorclass="govuk-select--error">
-              </th:block>
-              <th:block th:if="${option.type == 'FTL'}">
-                <input class="govuk-input"
-                       th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                       th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
-                       type="text"
-                       data-module="govuk-input"
-                       th:errorclass="govuk-select--error">
-              </th:block>
-              <th:block th:if="${option.type == 'AMT'}">
-                <div class="govuk-input__wrapper">
-                  <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                  <input class="govuk-input govuk-input--width-10"
-                         th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                         th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
-                         type="text" spellcheck="false"
-                         th:errorclass="govuk-select--error">
-                </div>
-              </th:block>
-              <th:block th:if="${option.type == 'INT'}">
-                <input class="govuk-input govuk-date-input__input govuk-input--width-10"
-                       th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                       th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
-                       type="text"
-                       inputmode="numeric"
-                       maxlength="10"
-                       th:errorclass="govuk-select--error">
-              </th:block>
-            </div>
-            <th:block th:if="${option.type == 'DAT'}">
-              <moj:datepicker
-                  th:id="'dynamicOptions[__${option.code}__].fieldValue'"
-                  th:name="'dynamicOptions[__${option.code}__].fieldValue'"
-                  th:label="${option.mandatoryFlag} ? ${option.label} : #{site.optional(${option.label})}"
-                  th:hint="#{site.dateHint}"
-                  th:value="*{dynamicOptions[__${option.code}__].fieldValue}"
-                  th:errorMessage="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue') ? #fields.errors('dynamicOptions[__${option.code}__].fieldValue').getFirst() : ''}">
-              </moj:datepicker>
-            </th:block>
           </th:block>
 
           <div th:replace="~{partials/forms :: largeTextInput('additionalInformation', (*{isAdditionalInformationPromptRequired} ? *{additionalInformationLabel} : #{site.optional(*{additionalInformationLabel})}), 8000)}">

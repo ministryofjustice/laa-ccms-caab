@@ -15,6 +15,7 @@ import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.request.ProviderRequestDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.request.ProviderRequestFlowFormData;
+import uk.gov.laa.ccms.caab.constants.ProviderRequestDateFields;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.context.ProviderRequestMappingContext;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
@@ -174,8 +175,12 @@ public interface ProviderRequestsMapper {
    *     fails
    */
   default String formatDynamicOption(final DynamicOptionFormData dynamicOption) {
-    if (DATE_DYNAMIC_OPTION.equals(dynamicOption.getFieldType())
-        && dynamicOption.getFieldValue() != null) {
+
+    boolean isDateField =
+        DATE_DYNAMIC_OPTION.equals(dynamicOption.getFieldType())
+            || ProviderRequestDateFields.isDateField(dynamicOption.getCode());
+
+    if (isDateField && dynamicOption.getFieldValue() != null) {
 
       try {
         final DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("d/M/yyyy");

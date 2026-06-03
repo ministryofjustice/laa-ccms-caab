@@ -439,11 +439,24 @@ class ProviderRequestsMapperTest {
   }
 
   @Test
-  @DisplayName("Should correctly parse date from datepicker (no leading zeroes")
+  @DisplayName("Should correctly parse date from datepicker (no leading zeroes)")
   void shouldParseDateWithoutLeadingZeroes() {
     DynamicOptionFormData optionFormData = new DynamicOptionFormData();
     optionFormData.setFieldType("DAT");
     optionFormData.setFieldValue("7/5/2026");
+
+    String result = mapper.formatDynamicOption(optionFormData);
+
+    assertEquals("2026-05-07", result);
+  }
+
+  @Test
+  @DisplayName("Should format FTS date field correctly")
+  void shouldFormatFtsDateFieldInOverrideList() {
+    DynamicOptionFormData optionFormData = new DynamicOptionFormData();
+    optionFormData.setFieldType("FTS");
+    optionFormData.setFieldValue("7/5/2026");
+    optionFormData.setCode("PCASEBALS3");
 
     String result = mapper.formatDynamicOption(optionFormData);
 

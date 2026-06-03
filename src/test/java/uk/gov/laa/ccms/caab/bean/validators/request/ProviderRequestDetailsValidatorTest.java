@@ -259,4 +259,48 @@ class ProviderRequestDetailsValidatorTest {
     assertNotNull(errors.getFieldError("file"));
     assertEquals("validation.error.invalidMagicBytes", errors.getFieldError("file").getCode());
   }
+
+  @Test
+  @DisplayName("validate - FTS field in date list with valid date should pass")
+  void validate_FtsDateField_ValidDate_NoErrors() {
+    final DynamicOptionFormData dateOption = new DynamicOptionFormData();
+    dateOption.setMandatory(true);
+    dateOption.setFieldValue("03/06/2026");
+    dateOption.setFieldDescription("Special Date Field");
+    dateOption.setFieldType("FTS");
+
+    final Map<String, DynamicOptionFormData> dynamicOptions = new HashMap<>();
+    dynamicOptions.put("PCASEBALS3", dateOption);
+
+    formData.setDynamicOptions(dynamicOptions);
+
+    formData.setIsAdditionalInformationPromptRequired(false);
+    formData.setAdditionalInformation("N/A");
+
+    providerRequestDetailsValidator.validate(formData, errors);
+
+    assertFalse(errors.hasErrors());
+  }
+
+  @Test
+  @DisplayName("validate - FTS field in date list with invalid date should fail")
+  void validate_FtsDateField_InvalidDate_HasErrors() {
+    final DynamicOptionFormData dateOption = new DynamicOptionFormData();
+    dateOption.setMandatory(true);
+    dateOption.setFieldValue("03-06-2026");
+    dateOption.setFieldDescription("Special Date Field");
+    dateOption.setFieldType("FTS");
+
+    final Map<String, DynamicOptionFormData> dynamicOptions = new HashMap<>();
+    dynamicOptions.put("PCASEBALS3", dateOption);
+
+    formData.setDynamicOptions(dynamicOptions);
+    providerRequestDetailsValidator.validate(formData, errors);
+
+    formData.setIsAdditionalInformationPromptRequired(false);
+    formData.setAdditionalInformation("N/A");
+
+    assertTrue(errors.hasErrors());
+    assertNotNull(errors.getFieldError("dynamicOptions[PCASEBALS3].fieldValue"));
+  }
 }
