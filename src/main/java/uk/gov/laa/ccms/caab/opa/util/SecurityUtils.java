@@ -52,12 +52,45 @@ public class SecurityUtils {
       final String puiUserSessionId,
       final String invokedForm,
       final String ezgovId) {
+    return createHubContext(
+        lscCaseReference,
+        ruleBaseId,
+        userId,
+        providerId,
+        puiUserSessionId,
+        invokedForm,
+        ezgovId,
+        returnUrl);
+  }
+
+  /**
+   * Create a URL encoded and encrypted OPA context token using a journey-specific return URL.
+   *
+   * @param lscCaseReference the CCMS case reference
+   * @param ruleBaseId the OPA rulebase id
+   * @param userId the invoking user id
+   * @param providerId the provider id
+   * @param puiUserSessionId the user session id
+   * @param invokedForm the invoking form/screen code
+   * @param ezgovId the EZGov id
+   * @param hubReturnUrl the URL OPA should redirect back to on submit
+   * @return encrypted and URL-safe context token
+   */
+  public String createHubContext(
+      final String lscCaseReference,
+      final Long ruleBaseId,
+      final String userId,
+      final Long providerId,
+      final String puiUserSessionId,
+      final String invokedForm,
+      final String ezgovId,
+      final String hubReturnUrl) {
     final ContextToken contextToken = new ContextToken();
     log.debug(
         "createHubContext() based on supplied details caseId:[{}], ruleBaseName:[{}]",
         lscCaseReference,
         ruleBaseId);
-    log.debug("returnURL: {}", returnUrl);
+    log.debug("returnURL: {}", hubReturnUrl);
 
     // Establish ContextToken POJO
     contextToken.setCaseId(lscCaseReference);
@@ -67,7 +100,7 @@ public class SecurityUtils {
     contextToken.setUserId(userId);
     contextToken.setUserSessionId(puiUserSessionId);
     contextToken.setInvokedForm(invokedForm);
-    contextToken.setReturnUrl(returnUrl);
+    contextToken.setReturnUrl(hubReturnUrl);
     contextToken.setEzgovId(ezgovId);
 
     // create a String with the Json structure for connector context

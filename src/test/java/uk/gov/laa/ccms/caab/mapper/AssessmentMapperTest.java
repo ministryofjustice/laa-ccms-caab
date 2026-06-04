@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
+import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildProceeding;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildClientDetail;
 
@@ -13,18 +14,21 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentRelationshipDetail;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -130,10 +134,14 @@ class AssessmentMapperTest {
 
   private void assertGlobalAttributes(final List<AssessmentAttributeDetail> attributes) {
 
-    assertEquals(30, attributes.size());
+    assertEquals(51, attributes.size());
     assertContainsAttribute(attributes, AssessmentAttribute.APPLICATION_CASE_REF, "1234567890");
+    assertContainsAttribute(attributes, AssessmentAttribute.RNON_MAND_EVIDENCE_AMD_CORR, "false");
+    assertContainsAttribute(
+        attributes, AssessmentAttribute.PDECLARATION_WILL_BE_SIGNED_EM, "false");
     assertContainsAttribute(attributes, AssessmentAttribute.APP_AMEND_TYPE, "type1234567890");
     assertContainsAttribute(attributes, AssessmentAttribute.CATEGORY_OF_LAW, "1234567890cat1");
+    assertContainsAttribute(attributes, AssessmentAttribute.CERTIFICATE_TYPE, "type1234567890");
     assertContainsAttribute(attributes, AssessmentAttribute.CLIENT_VULNERABLE, "false");
     assertContainsAttribute(attributes, AssessmentAttribute.COST_LIMIT_CHANGED_FLAG, "true");
     assertContainsAttribute(attributes, AssessmentAttribute.COUNTRY, "clientthecountry");
@@ -166,8 +174,9 @@ class AssessmentMapperTest {
   }
 
   private void assertProceedingAttributes(final List<AssessmentAttributeDetail> attributes) {
-    assertEquals(10, attributes.size());
+    assertEquals(11, attributes.size());
     assertContainsAttribute(attributes, AssessmentAttribute.CLIENT_INVOLVEMENT_TYPE, "clientInv");
+    assertContainsAttribute(attributes, AssessmentAttribute.PROC_OUTCOME_STATUS, "true");
     assertContainsAttribute(attributes, AssessmentAttribute.LEAD_PROCEEDING, "true");
     assertContainsAttribute(attributes, AssessmentAttribute.LEVEL_OF_SERVICE, "los");
     assertContainsAttribute(attributes, AssessmentAttribute.MATTER_TYPE, "mat");
@@ -241,6 +250,57 @@ class AssessmentMapperTest {
   }
 
   @Test
+  void toAssessmentDetail_applicationAndAmendmentUseConsistentEntityAndRelationshipShape() {
+    final Date date = new Date();
+    final AssessmentMappingContext applicationContext = buildAssessmentMappingContext(false, date);
+    final AssessmentMappingContext amendmentContext = buildAssessmentMappingContext(true, date);
+    final AssessmentDetail applicationAssessment = new AssessmentDetail();
+    final AssessmentDetail amendmentAssessment = new AssessmentDetail();
+
+    assessmentMapper.toAssessmentDetail(applicationAssessment, applicationContext);
+    assessmentMapper.toAssessmentDetail(amendmentAssessment, amendmentContext);
+
+    assertEquals(
+        getEntityTypeNames(applicationAssessment), getEntityTypeNames(amendmentAssessment));
+    assertEquals(
+        getGlobalRelationshipNames(applicationAssessment),
+        getGlobalRelationshipNames(amendmentAssessment));
+    assertEquals(
+        Set.of("opponentotherparties", "proceeding"),
+        getGlobalRelationshipNames(applicationAssessment));
+  }
+
+  @Test
+  void toAssessmentDetail_includesAmendmentDraftProceedings() {
+    final Date date = new Date();
+    final ProceedingDetail liveProceeding =
+        buildProceeding(date, java.math.BigDecimal.ONE)
+            .ebsId("LIVE_EBS_ID")
+            .proceedingType(new StringDisplayValue().id("LIVE_TYPE").displayValue("Live type"));
+    final ProceedingDetail draftProceeding =
+        buildProceeding(date, java.math.BigDecimal.TEN)
+            .id(777)
+            .ebsId(null)
+            .proceedingType(new StringDisplayValue().id("DRAFT_TYPE").displayValue("Draft type"));
+    final ApplicationDetail application = buildApplicationDetail(1234567890, true, date);
+    application.setProceedings(List.of(liveProceeding));
+    application.setAmendmentProceedingsInEbs(List.of(draftProceeding));
+    final AssessmentDetail assessment = new AssessmentDetail();
+
+    assessmentMapper.toAssessmentDetail(
+        assessment,
+        AssessmentMappingContext.builder()
+            .application(application)
+            .client(buildClientDetail())
+            .user(buildUserDetail())
+            .opponentContext(context.getOpponentContext())
+            .build());
+
+    assertEquals(Set.of("LIVE_EBS_ID", "P_777"), getProceedingEntityNames(assessment));
+    assertEquals(Set.of("LIVE_EBS_ID", "P_777"), getProceedingRelationshipTargetIds(assessment));
+  }
+
+  @Test
   void toAssessmentDetail_whenContextIsNull() {
     final AssessmentDetail assessment = new AssessmentDetail();
 
@@ -290,5 +350,59 @@ class AssessmentMapperTest {
     assertEquals("ebsid", result.getName());
     assertEquals(6, result.getAttributes().size());
     assertTrue(result.getPrepopulated());
+  }
+
+  private AssessmentMappingContext buildAssessmentMappingContext(
+      final boolean amendment, final Date date) {
+    final AssessmentOpponentMappingContext opponentMappingContext =
+        AssessmentOpponentMappingContext.builder()
+            .opponent(buildOpponent(date))
+            .titleCommonLookupValue(new CommonLookupValueDetail().code("MR").description("Mr"))
+            .build();
+
+    final ApplicationDetail application = buildApplicationDetail(1234567890, amendment, date);
+    final ClientDetail client = buildClientDetail();
+    final UserDetail user = buildUserDetail();
+
+    return AssessmentMappingContext.builder()
+        .application(application)
+        .user(user)
+        .client(client)
+        .opponentContext(List.of(opponentMappingContext))
+        .build();
+  }
+
+  private Set<String> getEntityTypeNames(final AssessmentDetail assessment) {
+    return assessment.getEntityTypes().stream()
+        .map(AssessmentEntityTypeDetail::getName)
+        .collect(java.util.stream.Collectors.toSet());
+  }
+
+  private Set<String> getGlobalRelationshipNames(final AssessmentDetail assessment) {
+    return assessment.getEntityTypes().stream()
+        .filter(entityType -> "global".equals(entityType.getName()))
+        .flatMap(entityType -> entityType.getEntities().stream())
+        .flatMap(entity -> entity.getRelations().stream())
+        .map(AssessmentRelationshipDetail::getName)
+        .collect(java.util.stream.Collectors.toSet());
+  }
+
+  private Set<String> getProceedingEntityNames(final AssessmentDetail assessment) {
+    return assessment.getEntityTypes().stream()
+        .filter(entityType -> "PROCEEDING".equals(entityType.getName()))
+        .flatMap(entityType -> entityType.getEntities().stream())
+        .map(AssessmentEntityDetail::getName)
+        .collect(java.util.stream.Collectors.toSet());
+  }
+
+  private Set<String> getProceedingRelationshipTargetIds(final AssessmentDetail assessment) {
+    return assessment.getEntityTypes().stream()
+        .filter(entityType -> "global".equals(entityType.getName()))
+        .flatMap(entityType -> entityType.getEntities().stream())
+        .flatMap(entity -> entity.getRelations().stream())
+        .filter(relationship -> "proceeding".equals(relationship.getName()))
+        .flatMap(relationship -> relationship.getRelationshipTargets().stream())
+        .map(target -> target.getTargetEntityId())
+        .collect(java.util.stream.Collectors.toSet());
   }
 }

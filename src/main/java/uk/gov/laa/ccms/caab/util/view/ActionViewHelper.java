@@ -67,7 +67,7 @@ public class ActionViewHelper {
               FunctionConstants.MEANS_REASSESSMENT,
               "action.completeMeansReassessment.name",
               "action.completeMeansReassessment.description",
-              "#"));
+              "/means-reassessment"));
 
   /**
    * Retrieves a list of available actions, including an amendment action based on the amendment

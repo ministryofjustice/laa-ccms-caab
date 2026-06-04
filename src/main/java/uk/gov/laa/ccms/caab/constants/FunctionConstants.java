@@ -44,4 +44,7 @@ public final class FunctionConstants {
 
   /** The Means assessment legal amendment function key, available on a case. */
   public static final String MEANS_ASSESSMENT_LEGAL_AMENDMENT = "MNLA";
+
+  /** The submit means reassessment function key, available on a case. */
+  public static final String SUBMIT_MEANS_REASSESSMENT = "MNSB";
 }

@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.mapper;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.APPLICATION_CASE_REF;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.APP_AMEND_TYPE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.CATEGORY_OF_LAW;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.CERTIFICATE_TYPE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.CLIENT_INVOLVEMENT_TYPE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.CLIENT_VULNERABLE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.COST_LIMIT_CHANGED_FLAG;
@@ -35,6 +36,7 @@ import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.POST
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.PROCEEDING_ID;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.PROCEEDING_NAME;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.PROCEEDING_ORDER_TYPE;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.PROC_OUTCOME_STATUS;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.PROVIDER_CASE_REFERENCE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.PROVIDER_HAS_CONTRACT;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.RELATIONSHIP_TO_CASE;
@@ -60,6 +62,7 @@ import static uk.gov.laa.ccms.caab.util.OpponentUtil.getPartyName;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -157,8 +160,11 @@ public interface AssessmentMapper {
               .prepopulated(true);
 
       // proceeding relationships
+      final List<ProceedingDetail> assessmentProceedings =
+          getAssessmentProceedings(context.getApplication());
+
       final List<AssessmentRelationshipTargetDetail> proceedingRelationshipTargets =
-          context.getApplication().getProceedings().stream()
+          assessmentProceedings.stream()
               .map(
                   proceeding ->
                       new AssessmentRelationshipTargetDetail()
@@ -198,7 +204,7 @@ public interface AssessmentMapper {
       return null;
     }
 
-    final List<ProceedingDetail> proceedings = context.getApplication().getProceedings();
+    final List<ProceedingDetail> proceedings = getAssessmentProceedings(context.getApplication());
 
     final AssessmentEntityTypeDetail existingEntityType =
         getAssessmentEntityType(context.getAssessment(), PROCEEDING);
@@ -256,6 +262,46 @@ public interface AssessmentMapper {
       final List<ProceedingDetail> proceedings);
 
   /**
+   * Returns the proceedings to include in non-financial assessment prepopulation.
+   *
+   * <p>Old PUI added draft amendment proceedings into the OPA session before starting Merits/Means,
+   * but only where a proceeding of the same type was not already live.
+   *
+   * @param application the application being assessed
+   * @return live proceedings plus any new amendment draft proceedings
+   */
+  default List<ProceedingDetail> getAssessmentProceedings(final ApplicationDetail application) {
+    final List<ProceedingDetail> assessmentProceedings =
+        new ArrayList<>(
+            application.getProceedings() != null ? application.getProceedings() : List.of());
+
+    if (!Boolean.TRUE.equals(application.getAmendment())
+        || application.getAmendmentProceedingsInEbs() == null) {
+      return assessmentProceedings;
+    }
+
+    application.getAmendmentProceedingsInEbs().stream()
+        .filter(Objects::nonNull)
+        .filter(
+            draftProceeding ->
+                assessmentProceedings.stream()
+                    .noneMatch(
+                        proceeding ->
+                            Objects.equals(
+                                getProceedingTypeId(proceeding),
+                                getProceedingTypeId(draftProceeding))))
+        .forEach(assessmentProceedings::add);
+
+    return assessmentProceedings;
+  }
+
+  private String getProceedingTypeId(final ProceedingDetail proceeding) {
+    return proceeding != null && proceeding.getProceedingType() != null
+        ? proceeding.getProceedingType().getId()
+        : null;
+  }
+
+  /**
    * Converts proceeding data to a list of {@link AssessmentAttributeDetail} objects.
    *
    * @param proceeding the proceeding detail containing various attributes
@@ -273,6 +319,7 @@ public interface AssessmentMapper {
         toProceedingIdAttribute(proceeding, PROCEEDING_ID),
         toProceedingNameAttribute(proceeding, PROCEEDING_NAME),
         toProceedingOrderTypeAttribute(proceeding, PROCEEDING_ORDER_TYPE),
+        toProcOutcomeStatusAttribute(proceeding, PROC_OUTCOME_STATUS),
         toRequestedScopeAttribute(proceeding, REQUESTED_SCOPE),
         toScopeLimitIsDefaultAttribute(proceeding, SCOPE_LIMIT_IS_DEFAULT));
   }
@@ -342,6 +389,21 @@ public interface AssessmentMapper {
   @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toProceedingOrderTypeAttribute(
       ProceedingDetail proceeding, AssessmentAttribute attribute);
+
+  // PROC_OUTCOME_STATUS is a merits rulebase OnStart input; the merits preseed rejects existing
+  // proceedings without it ("proceedings are missing data"). It is a boolean indicating whether
+  // the proceeding has an outcome recorded (false for a live proceeding being amended).
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "proceeding", qualifiedByName = "mapProcOutcomeStatus")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "inferencingType", ignore = true)
+  AssessmentAttributeDetail toProcOutcomeStatusAttribute(
+      ProceedingDetail proceeding, AssessmentAttribute attribute);
+
+  @Named("mapProcOutcomeStatus")
+  default String mapProcOutcomeStatus(final ProceedingDetail proceeding) {
+    return String.valueOf(proceeding.getOutcome() != null);
+  }
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "proceeding", qualifiedByName = "mapRequestedScopeAttribute")
@@ -525,6 +587,7 @@ public interface AssessmentMapper {
         toApplicationCaseRefAttribute(application, APPLICATION_CASE_REF),
         toAppAmendTypeAttribute(application, APP_AMEND_TYPE),
         toCategoryOfLawAttribute(application, CATEGORY_OF_LAW),
+        toCertificateTypeAttribute(application, CERTIFICATE_TYPE),
         toClientVulnerableAttribute(client, CLIENT_VULNERABLE),
         toCostLimitChangedFlagAttribute(application, COST_LIMIT_CHANGED_FLAG),
         toCountryAttribute(client, COUNTRY),
@@ -551,8 +614,38 @@ public interface AssessmentMapper {
         toSurnameAttribute(client, SURNAME),
         toSurnameAtBirthAttribute(client, SURNAME_AT_BIRTH),
         toUserProviderFirmIdAttribute(user, USER_PROVIDER_FIRM_ID),
-        toUserTypeAttribute(user, USER_TYPE));
+        toUserTypeAttribute(user, USER_TYPE),
+        // merits "required non-mandatory evidence" / declaration flags, prepopulated false
+        toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_AMD_CORR),
+        toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_AMD_COUNSEL),
+        toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_AMD_CT_ORDE),
+        toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_AMD_EXPERT),
+        toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_AMD_PLEAD),
+        toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_AMD_SOL_RPT),
+        toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_CORR_ADR),
+        toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_CORR_SETTLE),
+        toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_COUNSEL_OP),
+        toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_CTORDER),
+        toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_EXPER_EXIST),
+        toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_EXPERT_RPT),
+        toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_ICA_LETTER),
+        toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_LTTR_ACTION),
+        toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_OMBUD_RPT),
+        toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_PLEADINGS),
+        toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_PREACT_DISC),
+        toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_SEP_STATE),
+        toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_WARN_LTTR),
+        toFalseDefaultAttribute(AssessmentAttribute.PDECLARATION_WILL_BE_SIGNED_EM));
   }
+
+  // Shared mapping for attributes prepopulated with a constant "false" (e.g. the merits
+  // required-non-mandatory-evidence and declaration flags), mirroring old PUI's prepop.
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", constant = "false")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
+  AssessmentAttributeDetail toFalseDefaultAttribute(AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application.caseReferenceNumber")
@@ -581,6 +674,18 @@ public interface AssessmentMapper {
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toCategoryOfLawAttribute(
+      ApplicationDetail application, AssessmentAttribute attribute);
+
+  // The merits rulebase requires CERTIFICATE_TYPE (loaded OnStart). It is the application type
+  // LOV code (e.g. "ECF", "SUB") - matching old PUI, which sources it from the application
+  // amendment type, not the (often null) certificate_type field. Note APP_AMEND_TYPE applies a
+  // separate ECF->SUB transform (see getAppAmendTypeAssessmentInput); CERTIFICATE_TYPE does not.
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "application.applicationType.id")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
+  AssessmentAttributeDetail toCertificateTypeAttribute(
       ApplicationDetail application, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)

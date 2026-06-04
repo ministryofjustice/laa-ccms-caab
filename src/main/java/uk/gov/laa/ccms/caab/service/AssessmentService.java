@@ -41,6 +41,7 @@ import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getRequestedScopeForAsses
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -77,8 +78,12 @@ import uk.gov.laa.ccms.caab.mapper.context.AssessmentMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
+import uk.gov.laa.ccms.caab.model.AssessmentResult;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
 import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
+import uk.gov.laa.ccms.caab.model.OpaAttribute;
+import uk.gov.laa.ccms.caab.model.OpaEntity;
+import uk.gov.laa.ccms.caab.model.OpaInstance;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryAttributeDisplay;
@@ -100,6 +105,9 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 @RequiredArgsConstructor
 @Slf4j
 public class AssessmentService {
+
+  private static final DateTimeFormatter ASSESSMENT_DATE_FORMATTER =
+      DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
   private final AssessmentApiClient assessmentApiClient;
   private final CaabApiClient caabApiClient;
@@ -718,15 +726,15 @@ public class AssessmentService {
 
       if (delegatedFunctionsAttribute != null) {
         final Optional<LocalDate> attributeDate =
-            Optional.ofNullable(delegatedFunctionsAttribute.getValue())
-                .map(
-                    dateStr -> LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+            parseAssessmentDate(delegatedFunctionsAttribute.getValue());
 
         if (attributeDate.isPresent()) {
           if (!applicationDateUsed.isPresent()
               || !applicationDateUsed.get().isEqual(attributeDate.get())) {
             return true;
           }
+        } else if (applicationDateUsed.isPresent()) {
+          return true;
         }
       } else if (applicationDateUsed.isPresent()) {
         return true;
@@ -734,6 +742,19 @@ public class AssessmentService {
     }
 
     return false;
+  }
+
+  private Optional<LocalDate> parseAssessmentDate(final String date) {
+    if (!StringUtils.hasText(date)) {
+      return Optional.empty();
+    }
+
+    try {
+      return Optional.of(LocalDate.parse(date, ASSESSMENT_DATE_FORMATTER));
+    } catch (DateTimeParseException exception) {
+      log.debug("Ignoring unparsable assessment date value [{}]", date);
+      return Optional.empty();
+    }
   }
 
   /**
@@ -1119,7 +1140,7 @@ public class AssessmentService {
     final String referenceId = application.getCaseReferenceNumber();
     final String providerId = user.getProvider().getId().toString();
 
-    final boolean prepopulateFromEbs = application.getAmendment();
+    final boolean prepopulateFromEbs = Boolean.TRUE.equals(application.getAmendment());
 
     final List<AssessmentEntityType> opaEntitiesRetrievedFromEbs = null;
 
@@ -1157,7 +1178,10 @@ public class AssessmentService {
     updateCostLimitIfMeritsAssessment(assessmentRulebase, application, user);
 
     if (prepopulateFromEbs) {
-      // todo - later implementation in future story
+      if (createdNewPrepopAssessment) {
+        prepopulateAssessmentFromEbs(application, assessmentRulebase, prepopAssessment);
+      }
+      prepopulateAssessmentFromEbs(application, assessmentRulebase, assessment);
     }
 
     // if means and merits:
@@ -1176,6 +1200,124 @@ public class AssessmentService {
     } else {
       // todo - later implementation in future story
     }
+  }
+
+  void prepopulateAssessmentFromEbs(
+      final ApplicationDetail application,
+      final AssessmentRulebase assessmentRulebase,
+      final AssessmentDetail assessment) {
+    final AssessmentResult assessmentResult =
+        getEbsAssessmentResult(application, assessmentRulebase);
+
+    if (assessmentResult == null || assessmentResult.getAssessmentDetails() == null) {
+      return;
+    }
+
+    assessmentResult.getAssessmentDetails().stream()
+        .filter(Objects::nonNull)
+        .filter(screen -> screen.getEntity() != null)
+        .flatMap(screen -> screen.getEntity().stream())
+        .filter(Objects::nonNull)
+        .forEach(opaEntity -> mergeOpaEntityIntoAssessment(assessment, opaEntity));
+  }
+
+  private AssessmentResult getEbsAssessmentResult(
+      final ApplicationDetail application, final AssessmentRulebase assessmentRulebase) {
+    if (AssessmentRulebase.MEANS.equals(assessmentRulebase)) {
+      return application.getMeansAssessment();
+    }
+
+    if (AssessmentRulebase.MERITS.equals(assessmentRulebase)) {
+      return application.getMeritsAssessment();
+    }
+
+    return null;
+  }
+
+  private void mergeOpaEntityIntoAssessment(
+      final AssessmentDetail assessment, final OpaEntity opaEntity) {
+    if (opaEntity.getEntityName() == null || opaEntity.getInstances() == null) {
+      return;
+    }
+
+    final AssessmentEntityTypeDetail entityType =
+        findEntityType(assessment, opaEntity.getEntityName());
+
+    if (entityType == null) {
+      return;
+    }
+
+    opaEntity.getInstances().stream()
+        .filter(Objects::nonNull)
+        .forEach(opaInstance -> mergeOpaInstanceIntoEntityType(entityType, opaInstance));
+  }
+
+  private AssessmentEntityTypeDetail findEntityType(
+      final AssessmentDetail assessment, final String entityTypeName) {
+    return Optional.ofNullable(assessment.getEntityTypes()).orElseGet(List::of).stream()
+        .filter(entityType -> entityTypeName.equalsIgnoreCase(entityType.getName()))
+        .findFirst()
+        .orElse(null);
+  }
+
+  private void mergeOpaInstanceIntoEntityType(
+      final AssessmentEntityTypeDetail entityType, final OpaInstance opaInstance) {
+    if (opaInstance.getInstanceLabel() == null || opaInstance.getAttributes() == null) {
+      return;
+    }
+
+    final AssessmentEntityDetail entity = findEntity(entityType, opaInstance);
+
+    if (entity == null) {
+      return;
+    }
+
+    opaInstance.getAttributes().stream()
+        .filter(Objects::nonNull)
+        .forEach(opaAttribute -> mergeOpaAttributeIntoEntity(entity, opaAttribute));
+  }
+
+  private AssessmentEntityDetail findEntity(
+      final AssessmentEntityTypeDetail entityType, final OpaInstance opaInstance) {
+    return Optional.ofNullable(entityType.getEntities()).orElseGet(List::of).stream()
+        .filter(entity -> opaInstance.getInstanceLabel().equalsIgnoreCase(entity.getName()))
+        .findFirst()
+        .orElse(null);
+  }
+
+  private void mergeOpaAttributeIntoEntity(
+      final AssessmentEntityDetail entity, final OpaAttribute opaAttribute) {
+    if (opaAttribute.getAttribute() == null || getOpaAttributeValue(opaAttribute) == null) {
+      return;
+    }
+
+    if (entity.getAttributes() == null) {
+      entity.setAttributes(new ArrayList<>());
+    }
+
+    entity.getAttributes().stream()
+        .filter(attribute -> opaAttribute.getAttribute().equalsIgnoreCase(attribute.getName()))
+        .findFirst()
+        .ifPresentOrElse(
+            existingAttribute -> {
+              if (existingAttribute.getValue() == null) {
+                existingAttribute.setValue(getOpaAttributeValue(opaAttribute));
+                existingAttribute.setPrepopulated(true);
+              }
+            },
+            () ->
+                entity.addAttributesItem(
+                    new AssessmentAttributeDetail()
+                        .name(opaAttribute.getAttribute())
+                        .type(opaAttribute.getResponseType())
+                        .value(getOpaAttributeValue(opaAttribute))
+                        .prepopulated(true)));
+  }
+
+  private String getOpaAttributeValue(final OpaAttribute opaAttribute) {
+    return opaAttribute.getResponseValue() != null
+        ? opaAttribute.getResponseValue()
+        : opaAttribute.getResponseText();
   }
 
   /**

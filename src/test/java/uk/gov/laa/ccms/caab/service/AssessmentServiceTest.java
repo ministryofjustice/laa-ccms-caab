@@ -60,13 +60,19 @@ import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.mapper.AssessmentMapper;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
+import uk.gov.laa.ccms.caab.model.AssessmentResult;
+import uk.gov.laa.ccms.caab.model.AssessmentScreen;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
+import uk.gov.laa.ccms.caab.model.OpaAttribute;
+import uk.gov.laa.ccms.caab.model.OpaEntity;
+import uk.gov.laa.ccms.caab.model.OpaInstance;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
@@ -932,6 +938,98 @@ public class AssessmentServiceTest {
   }
 
   @Test
+  void prepopulateAssessmentFromEbsAddsMissingAssessmentData() {
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .meansAssessment(
+                buildEbsAssessmentResult("global", "CASE-123", "EBS_ATTRIBUTE", "EBS_VALUE"));
+    final AssessmentDetail assessment =
+        new AssessmentDetail()
+            .entityTypes(
+                List.of(
+                    new AssessmentEntityTypeDetail()
+                        .name("global")
+                        .entities(
+                            List.of(
+                                new AssessmentEntityDetail()
+                                    .name("CASE-123")
+                                    .attributes(new ArrayList<>())))));
+
+    assessmentService.prepopulateAssessmentFromEbs(
+        application, AssessmentRulebase.MEANS, assessment);
+
+    final AssessmentEntityTypeDetail entityType = assessment.getEntityTypes().getFirst();
+    final AssessmentEntityDetail entity = entityType.getEntities().getFirst();
+    final AssessmentAttributeDetail attribute = entity.getAttributes().getFirst();
+
+    assertEquals("global", entityType.getName());
+    assertEquals("CASE-123", entity.getName());
+    assertEquals("EBS_ATTRIBUTE", attribute.getName());
+    assertEquals("EBS_VALUE", attribute.getValue());
+    assertTrue(attribute.getPrepopulated());
+  }
+
+  @Test
+  void prepopulateAssessmentFromEbsDoesNotOverwriteExistingAssessmentValues() {
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .meansAssessment(
+                buildEbsAssessmentResult("global", "CASE-123", "EXISTING_ATTRIBUTE", "EBS_VALUE"));
+    final AssessmentAttributeDetail existingAttribute =
+        new AssessmentAttributeDetail().name("EXISTING_ATTRIBUTE").value("CURRENT_VALUE");
+    final AssessmentDetail assessment =
+        new AssessmentDetail()
+            .entityTypes(
+                List.of(
+                    new AssessmentEntityTypeDetail()
+                        .name("global")
+                        .entities(
+                            List.of(
+                                new AssessmentEntityDetail()
+                                    .name("CASE-123")
+                                    .attributes(new ArrayList<>(List.of(existingAttribute)))))));
+
+    assessmentService.prepopulateAssessmentFromEbs(
+        application, AssessmentRulebase.MEANS, assessment);
+
+    final AssessmentAttributeDetail attribute =
+        assessment.getEntityTypes().getFirst().getEntities().getFirst().getAttributes().getFirst();
+
+    assertEquals("CURRENT_VALUE", attribute.getValue());
+  }
+
+  @Test
+  void prepopulateAssessmentFromEbsDoesNotCreateUnmatchedProceedingEntities() {
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .meritsAssessment(
+                buildEbsAssessmentResult(
+                    "proceeding", "STALE_PROCEEDING", "EBS_ATTRIBUTE", "EBS_VALUE"));
+    final AssessmentDetail assessment =
+        new AssessmentDetail()
+            .entityTypes(
+                List.of(
+                    new AssessmentEntityTypeDetail()
+                        .name("PROCEEDING")
+                        .entities(
+                            new ArrayList<>(
+                                List.of(
+                                    new AssessmentEntityDetail()
+                                        .name("P_123")
+                                        .attributes(new ArrayList<>()))))));
+
+    assessmentService.prepopulateAssessmentFromEbs(
+        application, AssessmentRulebase.MERITS, assessment);
+
+    final List<AssessmentEntityDetail> proceedingEntities =
+        assessment.getEntityTypes().getFirst().getEntities();
+
+    assertEquals(1, proceedingEntities.size());
+    assertEquals("P_123", proceedingEntities.getFirst().getName());
+    assertTrue(proceedingEntities.getFirst().getAttributes().isEmpty());
+  }
+
+  @Test
   void testIsAssessmentCheckpointToBeDeleted_dateOfLastChangeAfterLastSaved() {
     final Date lastSaved = new Date(System.currentTimeMillis() - 10000); // 10 seconds ago
     final Date dateOfLastChange = new Date(System.currentTimeMillis() - 5000); // 5 seconds ago
@@ -1364,5 +1462,65 @@ public class AssessmentServiceTest {
     final boolean result = assessmentService.applicationTypeMatches(application, assessment);
 
     assertEquals(expected, result);
+  }
+
+  @ParameterizedTest
+  @CsvSource({"SUBDP, true", "SUB, false"})
+  @DisplayName("applicationTypeMatches handles legacy placeholder delegated date values")
+  void applicationTypeMatchesHandlesPlaceholderDelegatedDate(
+      final String applicationTypeCode, final boolean expected) throws Exception {
+
+    final ApplicationDetail application = new ApplicationDetail();
+    final var applicationType = new ApplicationType();
+    applicationType.setId(applicationTypeCode);
+
+    if ("SUBDP".equals(applicationTypeCode)) {
+      final var devolvedPowers = new DevolvedPowersDetail();
+      devolvedPowers.setDateUsed(new SimpleDateFormat("dd-MM-yyyy").parse("15-03-2020"));
+      applicationType.setDevolvedPowers(devolvedPowers);
+    }
+
+    application.setApplicationType(applicationType);
+
+    final List<AssessmentAttributeDetail> attributes =
+        new ArrayList<>(
+            List.of(
+                new AssessmentAttributeDetail().name("APP_AMEND_TYPE").value(applicationTypeCode),
+                new AssessmentAttributeDetail().name("DELEGATED_FUNCTIONS_DATE").value("~\t~")));
+
+    final AssessmentEntityDetail globalEntity =
+        new AssessmentEntityDetail().name("GLOBAL").attributes(attributes);
+    final AssessmentEntityTypeDetail globalType =
+        new AssessmentEntityTypeDetail().name("GLOBAL").entities(List.of(globalEntity));
+    final AssessmentDetail assessment = new AssessmentDetail().entityTypes(List.of(globalType));
+
+    final boolean result = assessmentService.applicationTypeMatches(application, assessment);
+
+    assertEquals(expected, result);
+  }
+
+  private AssessmentResult buildEbsAssessmentResult(
+      final String entityName,
+      final String instanceLabel,
+      final String attributeName,
+      final String attributeValue) {
+    return new AssessmentResult()
+        .assessmentDetails(
+            List.of(
+                new AssessmentScreen()
+                    .entity(
+                        List.of(
+                            new OpaEntity()
+                                .entityName(entityName)
+                                .instances(
+                                    List.of(
+                                        new OpaInstance()
+                                            .instanceLabel(instanceLabel)
+                                            .attributes(
+                                                List.of(
+                                                    new OpaAttribute()
+                                                        .attribute(attributeName)
+                                                        .responseType("text")
+                                                        .responseValue(attributeValue)))))))));
   }
 }
