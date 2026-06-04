@@ -21,7 +21,8 @@
               th:action="@{${actionUrl}}"
               th:object="${applicationFormData}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
-            <span class="govuk-caption-l" th:text="#{application.about}"></span>
+            <span class="govuk-caption-l" th:if="${caseContext.isApplication()}" th:text="#{application.about}"></span>
+            <span class="govuk-caption-l" th:if="${caseContext.isAmendment()}" th:text="#{amendment.about}"></span>
             <div th:replace="~{application/partials/delegated-functions}"></div>
         </form>
     </div>
