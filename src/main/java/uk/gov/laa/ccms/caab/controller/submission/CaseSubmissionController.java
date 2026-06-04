@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
@@ -63,6 +64,7 @@ public class CaseSubmissionController {
       @SessionAttribute(value = SUBMISSION_TRANSACTION_ID, required = false)
           final String transactionId,
       @SessionAttribute(value = USER_DETAILS) final UserDetail user,
+      @SessionAttribute(value = ACTIVE_CASE, required = false) final ActiveCase activeCase,
       final HttpSession session,
       final Model model) {
 
@@ -82,18 +84,61 @@ public class CaseSubmissionController {
     final TransactionStatus caseStatus = applicationService.getCaseStatus(transactionId).block();
 
     if (caseStatus != null && StringUtils.hasText(caseStatus.getReferenceNumber())) {
-      if (caseContext.isAmendment()) {
-        refreshCaseSession(caseStatus.getReferenceNumber(), user, session);
-      }
+      return handleConfirmedSubmission(caseContext, user, session, caseStatus.getReferenceNumber());
+    }
 
-      session.removeAttribute(SUBMISSION_POLL_COUNT);
-      session.removeAttribute(SUBMISSION_TRANSACTION_ID);
-      session.setAttribute(SUBMISSION_RESULT, SUBMISSION_CONFIRMED);
-      return "redirect:/%s/%s/confirmed"
-          .formatted(caseContext.getPathValue(), SUBMISSION_SUBMIT_CASE);
+    // Fallback: if polling reached its limit for a new application, check whether the case is now
+    // available in EBS to avoid a false "failed" submission.
+    if (caseContext.isApplication()
+        && pollCountExceeded(session)
+        && isCaseAvailableInEbs(activeCase, user)) {
+      final String caseReference = activeCase.getCaseReferenceNumber();
+      return handleConfirmedSubmission(caseContext, user, session, caseReference);
     }
 
     return viewIncludingPollCount(session, caseContext, model);
+  }
+
+  private String handleConfirmedSubmission(
+      final CaseContext caseContext,
+      final UserDetail user,
+      final HttpSession session,
+      final String caseReferenceNumber) {
+    if (caseContext.isAmendment()) {
+      refreshCaseSession(caseReferenceNumber, user, session);
+    }
+
+    session.removeAttribute(SUBMISSION_POLL_COUNT);
+    session.removeAttribute(SUBMISSION_TRANSACTION_ID);
+    session.setAttribute(SUBMISSION_RESULT, SUBMISSION_CONFIRMED);
+    return "redirect:/%s/%s/confirmed"
+        .formatted(caseContext.getPathValue(), SUBMISSION_SUBMIT_CASE);
+  }
+
+  private boolean pollCountExceeded(final HttpSession session) {
+    if (session.getAttribute(SUBMISSION_POLL_COUNT) == null) {
+      return false;
+    }
+    final int submissionPollCount = (int) session.getAttribute(SUBMISSION_POLL_COUNT);
+    return submissionPollCount >= submissionConstants.getMaxPollCount();
+  }
+
+  private boolean isCaseAvailableInEbs(final ActiveCase activeCase, final UserDetail user) {
+    if (activeCase == null || !StringUtils.hasText(activeCase.getCaseReferenceNumber())) {
+      return false;
+    }
+
+    try {
+      return applicationService.getCase(
+              activeCase.getCaseReferenceNumber(), user.getProvider().getId(), user.getLoginId())
+          != null;
+    } catch (RuntimeException ex) {
+      log.debug(
+          "Unable to resolve case {} during submit polling fallback.",
+          activeCase.getCaseReferenceNumber(),
+          ex);
+      return false;
+    }
   }
 
   private void refreshCaseSession(
