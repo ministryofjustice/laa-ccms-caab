@@ -41,4 +41,7 @@ public final class FunctionConstants {
 
   /** The Case Correspondence Preference function key, available on a case. */
   public static final String MEANS_REASSESSMENT = "MNR";
+
+  /** The Means assessment legal amendment function key, available on a case. */
+  public static final String MEANS_ASSESSMENT_LEGAL_AMENDMENT = "MNLA";
 }

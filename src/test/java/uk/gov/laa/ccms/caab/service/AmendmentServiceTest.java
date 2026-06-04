@@ -11,6 +11,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.util.ApplicationDetailUtils.buildFullApplicationDetail;
@@ -29,6 +30,7 @@ import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
@@ -78,6 +80,8 @@ class AmendmentServiceTest {
       ApplicationDetail amendment = buildFullApplicationDetail();
       ApplicationDetail caseDetail = buildFullApplicationDetail();
       caseDetail.setCaseReferenceNumber("12345");
+      caseDetail.setAvailableFunctions(
+          Collections.singletonList(FunctionConstants.MEANS_ASSESSMENT_LEGAL_AMENDMENT));
 
       when(applicationService.getTdsApplications(any(), any(), any(), any()))
           .thenReturn(new ApplicationDetails().content(Collections.emptyList()));
@@ -95,6 +99,8 @@ class AmendmentServiceTest {
       assertThat(result.getApplicationType().getDevolvedPowers().getUsed()).isTrue();
       assertThat(result.getApplicationType().getDevolvedPowers().getDateUsed())
           .isEqualTo(DateUtils.convertToDate("01/01/2025"));
+      assertThat(result.getAvailableFunctions())
+          .containsExactly(FunctionConstants.MEANS_ASSESSMENT_LEGAL_AMENDMENT);
     }
 
     @Test
@@ -248,6 +254,109 @@ class AmendmentServiceTest {
       assertThat(result).isNotNull();
       assertThat(result.getDocumentUpload()).isNotNull();
       assertThat(result.getDocumentUpload().isEnabled()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Should enable means assessment when MNLA function is available")
+    void shouldEnableMeansAssessmentWhenMnlaFunctionIsAvailable() {
+      // Given
+      ApplicationDetail amendment = buildFullApplicationDetail();
+      amendment.getApplicationType().setId(APP_TYPE_EXCEPTIONAL_CASE_FUNDING);
+      amendment.setAvailableFunctions(
+          Collections.singletonList(FunctionConstants.MEANS_ASSESSMENT_LEGAL_AMENDMENT));
+
+      UserDetail userDetails = new UserDetail().loginId("123");
+      ApplicationSectionDisplay originalDisplay = expectedApplicationSectionDisplay();
+      originalDisplay.getMeansAssessment().setEnabled(false);
+
+      when(applicationService.getApplicationSections(amendment, userDetails))
+          .thenReturn(originalDisplay);
+
+      // When
+      ApplicationSectionDisplay result =
+          amendmentService.getAmendmentSections(amendment, userDetails);
+
+      // Then
+      assertThat(result).isNotNull();
+      assertThat(result.getMeansAssessment().isEnabled()).isTrue();
+      assertThat(result.getMeansAssessment().getStatus()).isEqualTo("Not started");
+    }
+
+    @Test
+    @DisplayName(
+        "Should set means assessment status to Not started when enabled and status is empty")
+    void shouldSetMeansAssessmentStatusToNotStartedWhenEnabledAndStatusIsEmpty() {
+      // Given
+      ApplicationDetail amendment = buildFullApplicationDetail();
+      amendment.getApplicationType().setId(APP_TYPE_EXCEPTIONAL_CASE_FUNDING);
+      amendment.setAvailableFunctions(
+          Collections.singletonList(FunctionConstants.MEANS_ASSESSMENT_LEGAL_AMENDMENT));
+
+      UserDetail userDetails = new UserDetail().loginId("123");
+      ApplicationSectionDisplay originalDisplay = expectedApplicationSectionDisplay();
+      originalDisplay.getMeansAssessment().setEnabled(false);
+      originalDisplay.getMeansAssessment().setStatus("");
+
+      when(applicationService.getApplicationSections(amendment, userDetails))
+          .thenReturn(originalDisplay);
+
+      // When
+      ApplicationSectionDisplay result =
+          amendmentService.getAmendmentSections(amendment, userDetails);
+
+      // Then
+      assertThat(result).isNotNull();
+      assertThat(result.getMeansAssessment().isEnabled()).isTrue();
+      assertThat(result.getMeansAssessment().getStatus()).isEqualTo("Not started");
+    }
+
+    @Test
+    @DisplayName("Should disable means assessment for non-ECF cases")
+    void shouldDisableMeansAssessmentForNonEcfCases() {
+      // Given
+      ApplicationDetail amendment = buildFullApplicationDetail();
+      amendment.getApplicationType().setId(APP_TYPE_SUBSTANTIVE);
+
+      UserDetail userDetails = new UserDetail().loginId("123");
+      ApplicationSectionDisplay originalDisplay = expectedApplicationSectionDisplay();
+      originalDisplay.getMeansAssessment().setEnabled(true);
+
+      when(applicationService.getApplicationSections(amendment, userDetails))
+          .thenReturn(originalDisplay);
+
+      // When
+      ApplicationSectionDisplay result =
+          amendmentService.getAmendmentSections(amendment, userDetails);
+
+      // Then
+      assertThat(result).isNotNull();
+      assertThat(result.getMeansAssessment().isEnabled()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Should disable means assessment when MNLA function is unavailable")
+    void shouldDisableMeansAssessmentWhenMnlaFunctionUnavailable() {
+      // Given
+      ApplicationDetail amendment = buildFullApplicationDetail();
+      amendment.getApplicationType().setId(APP_TYPE_EXCEPTIONAL_CASE_FUNDING);
+      amendment.setQuickEditType(
+          QuickEditTypeConstants.MESSAGE_TYPE_MEANS_ASSESSMENT_LEGAL_AMENDMENT);
+      amendment.setAvailableFunctions(Collections.emptyList());
+
+      UserDetail userDetails = new UserDetail().loginId("123");
+      ApplicationSectionDisplay originalDisplay = expectedApplicationSectionDisplay();
+      originalDisplay.getMeansAssessment().setEnabled(false);
+
+      when(applicationService.getApplicationSections(amendment, userDetails))
+          .thenReturn(originalDisplay);
+
+      // When
+      ApplicationSectionDisplay result =
+          amendmentService.getAmendmentSections(amendment, userDetails);
+
+      // Then
+      assertThat(result).isNotNull();
+      assertThat(result.getMeansAssessment().isEnabled()).isFalse();
     }
   }
 

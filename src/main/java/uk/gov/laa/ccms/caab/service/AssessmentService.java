@@ -270,12 +270,14 @@ public class AssessmentService {
         }
       }
     } else {
-      if (isReassessmentRequired(application, assessmentName, currentAssessment, user)) {
-        assessmentStatus = REQUIRED;
-      } else {
-        assessmentStatus = UNCHANGED;
+      if (application.getAmendment()) {
+        if (isReassessmentRequired(application, assessmentName, currentAssessment, user)) {
+          assessmentStatus = REQUIRED;
+        } else {
+          assessmentStatus = UNCHANGED;
+        }
+        statusChanged = true;
       }
-      statusChanged = true;
     }
 
     // update the assessment status if it has changed
@@ -517,6 +519,7 @@ public class AssessmentService {
         }
       }
     } else {
+      // Amend case logic
       if (MEANS == assessmentName) {
         return isMeansReassessmentRequiredForAmendment(application, assessment, user);
       } else if (MERITS == assessmentName) {

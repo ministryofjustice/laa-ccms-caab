@@ -69,6 +69,12 @@
     var val = [[${params}]];
     var user = [[${username}]];
 
+    console.log("OPA Debug - owdUrl: " + [[${owdUrl}]]);
+    console.log("OPA Debug - deploymentName: " + [[${deploymentName}]]);
+    console.log("OPA Debug - checkpoint: " + checkpoint);
+    console.log("OPA Debug - resumeId: " + resumeId);
+    console.log("OPA Debug - user: " + user);
+
     var paramData = {
         "val": val,
         "user": user,
@@ -79,8 +85,8 @@
     var deploymentName = [[${deploymentName}]];
 
     function doExit(url) {
-        console.log("exiting to url: " + returnUrl);
-        window.location = returnUrl;
+        console.log("exiting to url: " + url);
+        window.location = url;
     }
 
     if (checkpoint === 'START') {
@@ -88,7 +94,7 @@
         OraclePolicyAutomationEmbedded.StartInterview(el,
             owdUrl,
             deploymentName,
-            undefined,
+            "en-GB",
             undefined,
             paramData,
             undefined,
