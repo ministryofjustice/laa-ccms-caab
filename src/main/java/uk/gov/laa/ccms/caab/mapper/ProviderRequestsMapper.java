@@ -130,6 +130,7 @@ public interface ProviderRequestsMapper {
                       .getDynamicOptions()
                       .get(key)
                       .setFieldType(value.getFieldType());
+                  providerRequestDetails.getDynamicOptions().get(key).setCode(value.getCode());
                 }
               });
     }
