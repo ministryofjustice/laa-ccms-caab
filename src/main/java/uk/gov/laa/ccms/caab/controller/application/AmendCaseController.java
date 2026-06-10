@@ -139,12 +139,14 @@ public class AmendCaseController {
    */
   @GetMapping("/amendments/submit")
   public Mono<String> submitAmendments(
-      @SessionAttribute(APPLICATION_ID) final String applicationId, final Model model) {
+      @SessionAttribute(APPLICATION_ID) final String applicationId,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final Model model) {
 
     model.addAttribute("isAmendmentFlow", true);
 
     return validationUtil
-        .validateForAmendment(applicationId, model)
+        .validateForAmendment(applicationId, user, model)
         .map(hasErrors -> hasErrors ? "application/application-validation-error-correction" : "#");
   }
 

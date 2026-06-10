@@ -8,7 +8,7 @@
 <div class="govuk-width-container">
   <div id="breadcrumbs"></div>
   <div id="main-content" class="govuk-!-padding-top-7">
-      <span class="govuk-caption-l" th:text="#{application.about}"></span>
+      <span class="govuk-caption-l" th:text="${isAmendmentFlow} ? #{amendment.about} : #{application.about}"></span>
       <h1 class="govuk-heading-l">
         Validation - error correction
       </h1>
@@ -90,6 +90,14 @@
                 : @{/application/sections/opponents}" class="govuk-link">Opponent details</a>
               </td>
               <td class="govuk-table__cell" th:utext="${#strings.listJoin(opponentErrors, '<br/>')}"></td>
+            </tr>
+            <tr class="govuk-table__row" th:if="${meritsReassessmentErrors != null and !meritsReassessmentErrors.isEmpty()}">
+                <td class="govuk-table__cell">
+                    <a th:href="${isAmendmentFlow}
+                ? @{/amendments/assessments(assessment=merits,invoked-from=CCMS_AC01)}
+                : @{/application/assessments(assessment=merits,invoked-from=CCMS_CA01)}" class="govuk-link">Merits Assessment</a>
+                </td>
+                <td class="govuk-table__cell" th:utext="#{amendment.case.merits.reassessmentRequired}"></td>
             </tr>
             </tbody>
           </table>

@@ -557,7 +557,7 @@ public class AssessmentService {
    * @param user the user performing the operation
    * @return true if a merits reassessment is required
    */
-  private boolean isMeritsReassessmentRequiredForAmendment(
+  public boolean isMeritsReassessmentRequiredForAmendment(
       final ApplicationDetail application,
       final AssessmentDetail assessment,
       final UserDetail user) {

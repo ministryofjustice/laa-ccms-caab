@@ -16,6 +16,7 @@ import org.springframework.validation.Validator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
@@ -31,13 +32,16 @@ import uk.gov.laa.ccms.caab.bean.validators.priorauthority.PriorAuthorityTypeDet
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingFurtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDetailsValidator;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 @Component
 @RequiredArgsConstructor
@@ -45,6 +49,7 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 public class ValidationUtil {
 
   private final ApplicationService applicationService;
+  private final AssessmentService assessmentService;
   private final ProceedingAndCostsMapper proceedingAndCostsMapper;
   private final LookupService lookupService;
 
@@ -58,7 +63,7 @@ public class ValidationUtil {
   private final OrganisationOpponentValidator organisationOpponentValidator;
   private final IndividualOpponentValidator individualOpponentValidator;
 
-  public Mono<Boolean> validateForAmendment(String applicationId, Model model) {
+  public Mono<Boolean> validateForAmendment(String applicationId, UserDetail user, Model model) {
     return Mono.zip(
             applicationService.getMonoProviderDetailsFormData(applicationId),
             applicationService.getMonoCorrespondenceAddressFormData(applicationId),
@@ -72,11 +77,43 @@ public class ValidationUtil {
               ApplicationDetail amendment = tuple.getT3();
               List<AbstractOpponentFormData> opponents = tuple.getT4();
 
-              boolean hasErrors =
+              boolean hasFormErrors =
                   processValidations(providerDetails, generalDetails, amendment, opponents, model);
+
+              boolean meritsReassessmentRequired =
+                  checkMeritsReassessmentRequired(amendment, user, model);
+
+              boolean hasErrors = hasFormErrors || meritsReassessmentRequired;
 
               return Mono.just(hasErrors);
             });
+  }
+
+  /** */
+  private boolean checkMeritsReassessmentRequired(
+      ApplicationDetail amendment, UserDetail user, Model model) {
+    final AssessmentDetail meritsAssessment =
+        assessmentService
+            .getAssessments(
+                List.of(AssessmentName.MERITS.getName()),
+                user.getProvider().getId().toString(),
+                amendment.getCaseReferenceNumber())
+            .map(details -> AssessmentUtil.getMostRecentAssessmentDetail(details.getContent()))
+            .blockOptional()
+            .orElse(null);
+
+    boolean reassessmentRequired =
+        assessmentService.isMeritsReassessmentRequiredForAmendment(
+            amendment, meritsAssessment, user);
+
+    if (reassessmentRequired) {
+      model.addAttribute(
+          "meritsReassessmentErrors",
+          List.of("Merits reassessment is required before this amendment can be submitted."));
+      return true;
+    }
+
+    return false;
   }
 
   /**
@@ -311,7 +348,6 @@ public class ValidationUtil {
    * @param attributeName the name of the attribute to retrieve errors from
    * @return a list of error messages, or an empty list if the attribute is not present
    */
-  @SuppressWarnings("unchecked")
   public List<String> getErrorsFromModel(final Model model, final String attributeName) {
     return model.containsAttribute(attributeName)
         ? (List<String>) model.getAttribute(attributeName)
