@@ -724,16 +724,14 @@ public class AssessmentService {
       final AssessmentAttributeDetail delegatedFunctionsAttribute =
           getAssessmentAttribute(globalEntity, DELEGATED_FUNCTIONS_DATE);
 
-      if (delegatedFunctionsAttribute != null) {
-        final Optional<LocalDate> attributeDate =
-            parseAssessmentDate(delegatedFunctionsAttribute.getValue());
+      final Optional<LocalDate> attributeDate =
+          delegatedFunctionsAttribute != null
+              ? parseAssessmentDate(delegatedFunctionsAttribute.getValue())
+              : Optional.empty();
 
-        if (attributeDate.isPresent()) {
-          if (!applicationDateUsed.isPresent()
-              || !applicationDateUsed.get().isEqual(attributeDate.get())) {
-            return true;
-          }
-        } else if (applicationDateUsed.isPresent()) {
+      if (attributeDate.isPresent()) {
+        if (applicationDateUsed.isEmpty()
+            || !applicationDateUsed.get().isEqual(attributeDate.get())) {
           return true;
         }
       } else if (applicationDateUsed.isPresent()) {
