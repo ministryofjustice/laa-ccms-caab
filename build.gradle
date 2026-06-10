@@ -1,7 +1,7 @@
 plugins {
     id 'net.researchgate.release' version '3.1.0'
-    id 'uk.gov.laa.springboot.laa-spring-boot-gradle-plugin' version '2.2.6'
-    id 'com.diffplug.spotless' version '8.4.0'
+    id 'uk.gov.laa.springboot.laa-spring-boot-gradle-plugin' version '2.2.10'
+    id 'com.diffplug.spotless' version '8.6.0'
 }
 
 subprojects {
@@ -94,7 +94,7 @@ dependencies {
     implementation 'org.mapstruct:mapstruct:1.6.3'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 
-    implementation 'org.apache.tika:tika-core:3.3.0'
+    implementation 'org.apache.tika:tika-core:3.3.1'
 
     // Starters
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
@@ -110,11 +110,11 @@ dependencies {
 	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.0.2')
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
-	implementation 'software.amazon.awssdk:sts:2.44.5'
+	implementation 'software.amazon.awssdk:sts:2.46.6'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
-    implementation 'org.json:json:20251224'
+    implementation 'org.json:json:20260522'
 
     implementation 'io.swagger.core.v3:swagger-annotations:2.2.50'
 
@@ -136,7 +136,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-    testImplementation 'io.projectreactor:reactor-test:3.8.5'
+    testImplementation 'io.projectreactor:reactor-test:3.8.6'
 
     integrationTestImplementation 'org.wiremock:wiremock-standalone:3.13.2'
 
