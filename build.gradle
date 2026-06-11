@@ -1,6 +1,6 @@
 plugins {
     id 'net.researchgate.release' version '3.1.0'
-    id 'uk.gov.laa.springboot.laa-spring-boot-gradle-plugin' version '2.2.10'
+    id 'uk.gov.laa.springboot.laa-spring-boot-gradle-plugin' version '2.2.12'
     id 'com.diffplug.spotless' version '8.6.0'
 }
 
@@ -39,12 +39,6 @@ repositories {
 }
 
 configurations.configureEach {
-    resolutionStrategy.eachDependency { details ->
-        if (details.requested.group == "io.netty") {
-            details.useVersion "4.2.13.Final"
-            details.because "Override vulnerable transitive Netty versions"
-        }
-    }
     resolutionStrategy.eachDependency { details ->
         if (details.requested.group == 'org.apache.tomcat.embed') {
             details.useVersion '11.0.22'
