@@ -122,6 +122,7 @@ public class SecurityConfiguration {
                     .anyRequest()
                     .authenticated())
         .csrf(csrf -> csrf.ignoringRequestMatchers("/csp/report"))
+        .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))
         .addFilterBefore(
             new CspNonceFilter(cspReportEnabled, cspReportOnly, cspUpgradeInsecureRequests, owdUrl),
             BasicAuthenticationFilter.class)

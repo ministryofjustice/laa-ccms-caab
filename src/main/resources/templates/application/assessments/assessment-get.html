@@ -16,11 +16,8 @@
   <link rel="apple-touch-icon"
         th:href="@{/assets/images/govuk-icon-180.png}">
   <link th:href="@{/ccms/moj.css}" rel="stylesheet">
-  <link th:href="@{/ccms/assessment-get.css}" rel="stylesheet">
+  <link th:href="@{/ccms/ccms.css}" rel="stylesheet">
   <script th:src="@{/ccms/ccms.js}" th:nonce="${cspNonce}"></script>
-  <link th:href="${interviewsCSS}" rel="stylesheet" type="text/css"/>
-  <link th:href="${fontsCSS}" rel="stylesheet" type="text/css"/>
-  <script th:src="${interviewsJS}" th:nonce="${cspNonce}"></script>
   <title th:text="${'LAA CCMS - ' + frameTitle}">LAA CCMS - Assessment</title>
 </head>
 
@@ -48,69 +45,34 @@
         <h1 class="govuk-heading-l" th:text="${frameTitle}"></h1>
       </th:block>
 
-      <div class="ccms-opa-shell">
-        <div id="interview-wrapper"
-             class="ccms-opa-interview-wrapper">
-        </div>
-      </div>
+      <iframe
+          id="opa-assessment-frame"
+          class="ccms-opa-frame"
+          th:src="@{${opaFrameUrl}}"
+          title="Assessment interview"></iframe>
     </div>
   </main>
 </div>
 
 <footer th:replace="~{partials/footer :: footer}"></footer>
 
-<!--OPA SCRIPT-->
-<script th:inline="javascript" th:nonce="${cspNonce}">
-    var returnUrl = [[${submitReturnUrl}]];
-    var url = [[${submitReturnUrl}]];
-    var el = document.getElementById("interview-wrapper");
-    var resumeId = [[${resumeId}]];
-    var checkpoint = [[${checkpoint}]];
-    var val = [[${params}]];
-    var user = [[${username}]];
+<script th:nonce="${cspNonce}">
+    var opaAssessmentFrame = document.getElementById("opa-assessment-frame");
 
-    console.log("OPA Debug - owdUrl: " + [[${owdUrl}]]);
-    console.log("OPA Debug - deploymentName: " + [[${deploymentName}]]);
-    console.log("OPA Debug - checkpoint: " + checkpoint);
-    console.log("OPA Debug - resumeId: " + resumeId);
-    console.log("OPA Debug - user: " + user);
+    window.addEventListener("message", function (event) {
+        if (!opaAssessmentFrame || event.source !== opaAssessmentFrame.contentWindow) {
+            return;
+        }
 
-    var paramData = {
-        "val": val,
-        "user": user,
-        "resume-id": resumeId
-    };
+        if (!event.data || event.data.type !== "opa-assessment-frame-height") {
+            return;
+        }
 
-    var owdUrl = [[${owdUrl}]];
-    var deploymentName = [[${deploymentName}]];
-
-    function doExit(url) {
-        console.log("exiting to url: " + url);
-        window.location = url;
-    }
-
-    if (checkpoint === 'START') {
-        console.log("Starting interview");
-        OraclePolicyAutomationEmbedded.StartInterview(el,
-            owdUrl,
-            deploymentName,
-            "en-GB",
-            undefined,
-            paramData,
-            undefined,
-            undefined,
-            doExit);
-    } else {
-        console.log("Resuming interview");
-        OraclePolicyAutomationEmbedded.ResumeInterview(el,
-            owdUrl,
-            deploymentName,
-            "en-GB",
-            undefined,
-            paramData,
-            undefined,
-            doExit);
-    }
+        var height = Number(event.data.height);
+        if (Number.isFinite(height) && height > 0) {
+            opaAssessmentFrame.style.height = Math.ceil(height) + "px";
+        }
+    });
 </script>
 
 <script th:src="@{/assets/govuk/all.bundle.js}" th:nonce="${cspNonce}"></script>

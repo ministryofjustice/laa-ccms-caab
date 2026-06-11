@@ -5,8 +5,10 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -67,12 +69,20 @@ public class AssessmentController {
   @Value("${laa.ccms.oracle-web-determination-server.resources.interview-javascript}")
   protected String interviewJavascript;
 
-  private static final String RETURN_URL = "/civil/%s/assessments/confirm?val=%s";
+  @Value("${laa.ccms.oracle-web-determination-server.redirect.url}")
+  protected String owdRedirectUrl;
+
+  private static final String RETURN_URL = "/civil/%s/assessments/confirm";
   private static final String CANCEL_LINK_URL = "/civil/%s/sections";
   private static final String AMENDMENT_CANCEL_LINK_URL = "/civil/amendments/summary";
+  private static final String MEANS_REASSESSMENT_INVOKED_FROM = "CCMS_MNA05";
+  private static final String MEANS_REASSESSMENT_RETURN_LINK_TEXT = "Return to means reassessment";
+  private static final String MEANS_REASSESSMENT_RETURN_URL = "/civil/means-reassessment/summary";
 
   private static final String CHECKPOINT_START = "START";
   private static final String CHECKPOINT_RESUME = "RESUME";
+  private static final String OPA_FRAME_MODEL = "OPA_FRAME_MODEL";
+  private static final String CSP_NONCE_MODEL_ATTRIBUTE = "cspNonce";
 
   private static final String PARENT_LOOKUP = "PARENT";
   private static final String CHILD_LOOKUP = "CHILD";
@@ -220,17 +230,6 @@ public class AssessmentController {
       // Required for the connector
       final String ezgovId = UUID.randomUUID().toString();
 
-      // Create context token
-      final String contextToken =
-          contextSecurityUtil.createHubContext(
-              application.getCaseReferenceNumber(),
-              assessmentRulebase.getId(),
-              user.getUsername(),
-              user.getProvider().getId().longValue(),
-              session.getId(),
-              invokedFrom,
-              ezgovId);
-
       // start opa assessment
       assessmentService.startAssessment(application, assessmentRulebase, client, user);
 
@@ -248,8 +247,28 @@ public class AssessmentController {
               .orElseThrow(
                   () -> new CaabApplicationException("Failed to retrieve assessment details"));
 
+      final String submitReturnUrl = buildSubmitReturnUrl(caseContext);
+      final String contextToken =
+          contextSecurityUtil.createHubContext(
+              application.getCaseReferenceNumber(),
+              assessmentRulebase.getId(),
+              user.getUsername(),
+              user.getProvider().getId().longValue(),
+              session.getId(),
+              invokedFrom,
+              ezgovId,
+              submitReturnUrl);
+
       populateOpaModel(
-          caseContext, contextToken, prepopAssessment, user, assessmentRulebase, model);
+          caseContext,
+          contextToken,
+          submitReturnUrl,
+          invokedFrom,
+          prepopAssessment,
+          user,
+          assessmentRulebase,
+          model);
+      session.setAttribute(OPA_FRAME_MODEL, new LinkedHashMap<>(model.asMap()));
 
     } else if ("billing".equalsIgnoreCase(assessment)) {
       // todo - later implementation
@@ -259,6 +278,32 @@ public class AssessmentController {
     }
 
     return "application/assessments/assessment-get";
+  }
+
+  /**
+   * Displays the isolated OPA interview frame. The parent assessment page owns CAAB/GOV.UK chrome;
+   * this frame owns Oracle CSS and JavaScript so OPA styles cannot bleed into the parent page.
+   *
+   * @param session the current HTTP session containing prepared OPA model details
+   * @param model the model to populate
+   * @return the view that renders the embedded OPA interview
+   */
+  @GetMapping("/{caseContext}/assessments/frame")
+  public String assessmentFrame(final HttpSession session, final Model model) {
+    final Object frameModel = session.getAttribute(OPA_FRAME_MODEL);
+
+    if (!(frameModel instanceof Map<?, ?> frameModelMap)) {
+      throw new CaabApplicationException("Failed to retrieve OPA frame details");
+    }
+
+    frameModelMap.forEach(
+        (key, value) -> {
+          final String attributeName = String.valueOf(key);
+          if (!CSP_NONCE_MODEL_ATTRIBUTE.equals(attributeName)) {
+            model.addAttribute(attributeName, value);
+          }
+        });
+    return "application/assessments/assessment-frame";
   }
 
   /**
@@ -274,43 +319,61 @@ public class AssessmentController {
   private void populateOpaModel(
       final CaseContext caseContext,
       final String contextToken,
+      final String submitReturnUrl,
+      final String invokedFrom,
       final AssessmentDetail prepopAssessment,
       final UserDetail user,
       final AssessmentRulebase assessmentRulebase,
       final Model model) {
 
-    final String submitReturnUrl = RETURN_URL.formatted(caseContext.getPathValue(), contextToken);
-
     model.addAttribute(
         "checkpoint",
         prepopAssessment.getCheckpoint() != null ? CHECKPOINT_RESUME : CHECKPOINT_START);
 
-    final String cancelUrl =
-        caseContext.isAmendment()
-            ? AMENDMENT_CANCEL_LINK_URL
-            : CANCEL_LINK_URL.formatted(caseContext.getPathValue());
-
-    final String returnLinkText =
-        messageSource.getMessage(
-            caseContext.isAmendment()
-                ? "site.returnToAmendmentSummary"
-                : "site.returnToApplication",
-            null,
-            Locale.getDefault());
-
-    model.addAttribute("cancelUrl", cancelUrl);
+    model.addAttribute("cancelUrl", getCancelLinkUrl(caseContext, invokedFrom));
+    model.addAttribute(
+        "opaFrameUrl", "/%s/assessments/frame".formatted(caseContext.getPathValue()));
     model.addAttribute("owdUrl", owdUrl);
     model.addAttribute("frameTitle", "");
-    model.addAttribute("returnLinkText", returnLinkText);
+    model.addAttribute("returnLinkText", getReturnLinkText(caseContext, invokedFrom));
     model.addAttribute("deploymentName", assessmentRulebase.getDeploymentName());
     model.addAttribute("interviewsCSS", interviewStyling);
     model.addAttribute("fontsCSS", fontStyling);
     model.addAttribute("interviewsJS", interviewJavascript);
     model.addAttribute("params", contextToken);
-    model.addAttribute("submitReturnUrl", submitReturnUrl);
+    model.addAttribute("submitReturnUrl", "%s?val=%s".formatted(submitReturnUrl, contextToken));
     model.addAttribute("username", user.getUsername());
     model.addAttribute("resumeId", prepopAssessment.getId().toString());
     model.addAttribute("assessmentType", assessmentRulebase.getType());
+  }
+
+  private String buildSubmitReturnUrl(final CaseContext caseContext) {
+    final String returnPath = RETURN_URL.formatted(caseContext.getPathValue());
+    if (owdRedirectUrl.endsWith("/")) {
+      return owdRedirectUrl.substring(0, owdRedirectUrl.length() - 1) + returnPath;
+    }
+    return owdRedirectUrl + returnPath;
+  }
+
+  private String getCancelLinkUrl(final CaseContext caseContext, final String invokedFrom) {
+    if (MEANS_REASSESSMENT_INVOKED_FROM.equals(invokedFrom)) {
+      return MEANS_REASSESSMENT_RETURN_URL;
+    }
+
+    return caseContext.isAmendment()
+        ? AMENDMENT_CANCEL_LINK_URL
+        : CANCEL_LINK_URL.formatted(caseContext.getPathValue());
+  }
+
+  private String getReturnLinkText(final CaseContext caseContext, final String invokedFrom) {
+    if (MEANS_REASSESSMENT_INVOKED_FROM.equals(invokedFrom)) {
+      return MEANS_REASSESSMENT_RETURN_LINK_TEXT;
+    }
+
+    return messageSource.getMessage(
+        caseContext.isAmendment() ? "site.returnToAmendmentSummary" : "site.returnToApplication",
+        null,
+        Locale.getDefault());
   }
 
   /**
@@ -322,7 +385,18 @@ public class AssessmentController {
    * @return the view that displays the confirmation of the assessment, listing the answers to the
    *     questions the user has provided.
    */
-  @GetMapping("/{caseContext}/assessments/confirm")
+  // The OPA "submit & redirect" button appends "/caseSummary.do" to the
+  // _SYSTEM_PUI_URL (the context token returnUrl, see buildSubmitReturnUrl /
+  // RETURN_URL). That suffix is baked into the deployed rulebase (it is the old
+  // PUI return endpoint), so OPA returns the browser to
+  // /{caseContext}/assessments/confirm/caseSummary.do.
+  // Both paths are mapped during transition: once live, the rulebase return URL
+  // can be switched to the clean "/confirm" path and the "/caseSummary.do"
+  // mapping removed.
+  @GetMapping({
+    "/{caseContext}/assessments/confirm",
+    "/{caseContext}/assessments/confirm/caseSummary.do"
+  })
   public String assessmentConfirm(
       @PathVariable("caseContext") final CaseContext caseContext,
       @RequestParam(value = "val") final String token,
@@ -378,6 +452,16 @@ public class AssessmentController {
 
     model.addAttribute("caseContext", caseContext);
     model.addAttribute("summary", assessmentSummaryToDisplay);
+    model.addAttribute(
+        "returnUrl",
+        MEANS_REASSESSMENT_INVOKED_FROM.equals(contextToken.getInvokedForm())
+            ? MEANS_REASSESSMENT_RETURN_URL
+            : getCancelLinkUrl(caseContext, contextToken.getInvokedForm()));
+    model.addAttribute(
+        "returnLinkText",
+        MEANS_REASSESSMENT_INVOKED_FROM.equals(contextToken.getInvokedForm())
+            ? MEANS_REASSESSMENT_RETURN_LINK_TEXT
+            : getReturnLinkText(caseContext, contextToken.getInvokedForm()));
 
     return "application/assessments/assessment-confirm";
   }

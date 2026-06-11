@@ -13,6 +13,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.laa.ccms.caab.opa.context.ContextToken;
 import uk.gov.laa.ccms.caab.opa.security.Encryptor;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,5 +54,26 @@ public class SecurityUtilsTest {
   void testCreateJsonToken_success() {
     String jsonToken = securityUtils.createJsonToken(USERNAME, PROVIDER_NAME);
     assertNotNull(jsonToken);
+  }
+
+  @Test
+  void createHubContextUsesExplicitReturnUrlWhenProvided() {
+    final String expectedReturnUrl = "http://localhost:8010/civil/amendments/assessments/confirm";
+
+    final String token =
+        securityUtils.createHubContext(
+            "300001673257",
+            1L,
+            "user",
+            123L,
+            "session-id",
+            "CCMS_MNA05",
+            "ezgov-id",
+            expectedReturnUrl);
+
+    final ContextToken contextToken = securityUtils.createContextToken(token);
+
+    assertEquals(expectedReturnUrl, contextToken.getReturnUrl());
+    assertEquals("CCMS_MNA05", contextToken.getInvokedForm());
   }
 }
