@@ -40,12 +40,6 @@ repositories {
 
 configurations.configureEach {
     resolutionStrategy.eachDependency { details ->
-        if (details.requested.group == "io.netty") {
-            details.useVersion "4.2.13.Final"
-            details.because "Override vulnerable transitive Netty versions"
-        }
-    }
-    resolutionStrategy.eachDependency { details ->
         if (details.requested.group == 'org.apache.tomcat.embed') {
             details.useVersion '11.0.22'
             details.because 'Temporary Snyk override until upgraded in Spring Boot'
