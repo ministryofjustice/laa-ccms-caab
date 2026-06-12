@@ -66,7 +66,7 @@ class ActionViewHelperTest {
         .isEqualTo("action.completeMeansReassessment.name");
     assertThat(meansReassessmentAction.descriptionKey())
         .isEqualTo("action.completeMeansReassessment.description");
-    assertThat(meansReassessmentAction.link()).isEqualTo("#");
+    assertThat(meansReassessmentAction.link()).isEqualTo("/means-reassessment");
   }
 
   private record ExpectedAction(
@@ -141,7 +141,7 @@ class ActionViewHelperTest {
                 FunctionConstants.MEANS_REASSESSMENT,
                 "action.completeMeansReassessment.name",
                 "action.completeMeansReassessment.description",
-                "#"));
+                "/means-reassessment"));
 
     assertSoftly(
         softly -> {

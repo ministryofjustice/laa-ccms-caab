@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
@@ -112,6 +113,40 @@ public class AmendmentService {
     Mono<String> application = caabApiClient.createApplication(userDetail.getLoginId(), amendment);
     log.info("Application created: {}", application.block());
     return amendment;
+  }
+
+  /**
+   * Creates a draft TDS amendment for the standalone means reassessment quick amendment journey.
+   *
+   * @param caseDetail the existing case to reassess
+   * @param userDetail the user creating the reassessment
+   * @return the created amendment application id
+   */
+  public String createMeansReassessmentForCase(
+      final ApplicationDetail caseDetail, final UserDetail userDetail) {
+    final String caseReferenceNumber = caseDetail.getCaseReferenceNumber();
+
+    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    caseSearchCriteria.setCaseReference(caseReferenceNumber);
+    boolean applicationExists =
+        applicationService
+            .getTdsApplications(caseSearchCriteria, userDetail, 0, 1)
+            .getContent()
+            .stream()
+            .findFirst()
+            .isPresent();
+    if (applicationExists) {
+      throw new CaabApplicationException(
+          "Application already exists for case reference: " + caseReferenceNumber);
+    }
+
+    ApplicationDetail amendment = createAmendmentObject(caseReferenceNumber, userDetail);
+    amendment.setCategoryOfLaw(caseDetail.getCategoryOfLaw());
+    amendment.setQuickEditType(QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT);
+    amendment.setMeansAssessmentAmended(Boolean.FALSE);
+    amendment.setMeritsAssessmentAmended(Boolean.FALSE);
+
+    return caabApiClient.createApplication(userDetail.getLoginId(), amendment).block();
   }
 
   private ApplicationDetail createAmendmentObject(
@@ -261,6 +296,25 @@ public class AmendmentService {
   }
 
   /**
+   * Submits a completed means reassessment as a legacy quick amendment.
+   *
+   * @param userDetail user submitting the reassessment
+   * @param amendment draft reassessment amendment
+   * @param meansAssessment completed means assessment to submit
+   * @return the transaction id for the case update
+   */
+  public String submitMeansReassessment(
+      final UserDetail userDetail,
+      final ApplicationDetail amendment,
+      final AssessmentDetail meansAssessment) {
+    amendment.setQuickEditType(QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT);
+    amendment.setMeansAssessmentAmended(Boolean.TRUE);
+    amendment.setMeritsAssessmentAmended(Boolean.FALSE);
+
+    return updateCaseWithQuickAmendment(userDetail, amendment, meansAssessment, null);
+  }
+
+  /**
    * Common update case logic for quick amendments.
    *
    * @param userDetail User updating the case.
@@ -268,6 +322,14 @@ public class AmendmentService {
    * @return Transaction ID of the updated case.
    */
   private String updateCaseWithQuickAmendment(UserDetail userDetail, ApplicationDetail amendment) {
+    return updateCaseWithQuickAmendment(userDetail, amendment, null, null);
+  }
+
+  private String updateCaseWithQuickAmendment(
+      UserDetail userDetail,
+      ApplicationDetail amendment,
+      AssessmentDetail meansAssessment,
+      AssessmentDetail meritsAssessment) {
     AmendmentUtil.cleanAppForQuickAmendSubmit(amendment);
 
     BaseApplicationDetail existingApplication =
@@ -281,8 +343,8 @@ public class AmendmentService {
     CaseMappingContext caseMappingContext =
         CaseMappingContext.builder()
             .tdsApplication(amendment)
-            .meansAssessment(null)
-            .meritsAssessment(null)
+            .meansAssessment(meansAssessment)
+            .meritsAssessment(meritsAssessment)
             .caseDocs(Collections.emptyList())
             .user(userDetail)
             .build();

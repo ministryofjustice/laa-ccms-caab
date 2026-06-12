@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -90,6 +92,7 @@ public class AssessmentControllerTest {
     assessmentController.interviewStyling = "interview-styling.css";
     assessmentController.fontStyling = "font-styling.css";
     assessmentController.interviewJavascript = "interview-javascript.js";
+    assessmentController.owdRedirectUrl = "http://localhost:8010";
 
     final FormattingConversionService conversionService = new FormattingConversionService();
     conversionService.addConverter(String.class, CaseContext.class, CaseContext::fromPathValue);
@@ -134,7 +137,14 @@ public class AssessmentControllerTest {
     when(applicationService.getApplication(anyString()))
         .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
     when(contextSecurityUtil.createHubContext(
-            anyString(), anyLong(), anyString(), anyLong(), anyString(), anyString(), anyString()))
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyString()))
         .thenReturn("contextToken");
     when(clientService.getClient(anyString(), anyString(), anyString()))
         .thenReturn(Mono.just(new ClientDetail()));
@@ -173,7 +183,44 @@ public class AssessmentControllerTest {
         .andExpect(model().attributeExists("submitReturnUrl"))
         .andExpect(model().attributeExists("username"))
         .andExpect(model().attributeExists("resumeId"))
+        .andExpect(model().attribute("opaFrameUrl", "/application/assessments/frame"))
         .andExpect(model().attributeExists("assessmentType"));
+  }
+
+  @Test
+  public void assessmentFrameDisplaysCorrectView() throws Exception {
+    this.mockMvc
+        .perform(
+            get("/application/assessments/frame")
+                .sessionAttr(
+                    "OPA_FRAME_MODEL",
+                    Map.of(
+                        "owdUrl", "http://example.com",
+                        "deploymentName", "deployment",
+                        "interviewsCSS", "interview-styling.css",
+                        "fontsCSS", "font-styling.css",
+                        "interviewsJS", "interview-javascript.js",
+                        "params", "contextToken",
+                        "username", "user",
+                        "resumeId", "1",
+                        "checkpoint", "START",
+                        "cspNonce", "stale-session-nonce")))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/assessments/assessment-frame"))
+        .andExpect(model().attribute("owdUrl", "http://example.com"))
+        .andExpect(model().attributeDoesNotExist("cspNonce"))
+        .andExpect(model().attribute("checkpoint", "START"));
+  }
+
+  @Test
+  public void assessmentFrameThrowsExceptionWhenFrameModelMissing() {
+    final Exception exception =
+        assertThrows(
+            Exception.class, () -> this.mockMvc.perform(get("/application/assessments/frame")));
+
+    assertInstanceOf(CaabApplicationException.class, exception.getCause());
+    assertEquals("Failed to retrieve OPA frame details", exception.getCause().getMessage());
   }
 
   @Test
@@ -239,9 +286,6 @@ public class AssessmentControllerTest {
   public void assessmentGet_assessmentDetailsNotFound() {
     when(applicationService.getApplication(anyString()))
         .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
-    when(contextSecurityUtil.createHubContext(
-            anyString(), anyLong(), anyString(), anyLong(), anyString(), anyString(), anyString()))
-        .thenReturn("contextToken");
     when(clientService.getClient(anyString(), anyString(), anyString()))
         .thenReturn(Mono.just(new ClientDetail()));
     when(assessmentService.getAssessments(any(), anyString(), anyString()))
@@ -271,7 +315,14 @@ public class AssessmentControllerTest {
 
     when(applicationService.getApplication(anyString())).thenReturn(Mono.just(applicationDetail));
     when(contextSecurityUtil.createHubContext(
-            anyString(), anyLong(), anyString(), anyLong(), anyString(), anyString(), anyString()))
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyString()))
         .thenReturn("contextToken");
     when(clientService.getClient(anyString(), anyString(), anyString()))
         .thenReturn(Mono.just(new ClientDetail()));
@@ -302,9 +353,6 @@ public class AssessmentControllerTest {
   public void assessmentGet_prepopAssessmentNotFound() {
     when(applicationService.getApplication(anyString()))
         .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
-    when(contextSecurityUtil.createHubContext(
-            anyString(), anyLong(), anyString(), anyLong(), anyString(), anyString(), anyString()))
-        .thenReturn("contextToken");
     when(clientService.getClient(anyString(), anyString(), anyString()))
         .thenReturn(Mono.just(new ClientDetail()));
     when(assessmentService.getAssessments(any(), anyString(), anyString()))
@@ -382,7 +430,7 @@ public class AssessmentControllerTest {
         .thenReturn(new ArrayList<>());
 
     final MockHttpServletRequestBuilder request =
-        get("/application/assessments/confirm")
+        get("/application/assessments/confirm/caseSummary.do")
             .param("val", token)
             .sessionAttr(USER_DETAILS, userDetails)
             .sessionAttr(APPLICATION_ID, "applicationId")
@@ -451,7 +499,7 @@ public class AssessmentControllerTest {
         .thenReturn(Mono.empty());
 
     final MockHttpServletRequestBuilder request =
-        get("/application/assessments/confirm")
+        get("/application/assessments/confirm/caseSummary.do")
             .param("val", token)
             .sessionAttr(USER_DETAILS, userDetails)
             .sessionAttr(APPLICATION_ID, "applicationId")
@@ -483,7 +531,8 @@ public class AssessmentControllerTest {
     final String assessment = "means";
     final String invokedFrom = "summary";
     final String contextToken = "someContextToken";
-    final String submitReturnUrl = "/civil/amendments/assessments/confirm?val=" + contextToken;
+    final String submitReturnUrl =
+        "http://localhost:8010/civil/amendments/assessments/confirm?val=" + contextToken;
     final String cancelUrl = "/civil/amendments/summary";
     final String returnLinkText = "Return to amendment summary";
 
@@ -496,7 +545,14 @@ public class AssessmentControllerTest {
     when(clientService.getClient(anyString(), anyString(), anyString()))
         .thenReturn(Mono.just(new ClientDetail()));
     when(contextSecurityUtil.createHubContext(
-            anyString(), anyLong(), anyString(), anyLong(), anyString(), anyString(), anyString()))
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyString()))
         .thenReturn(contextToken);
     when(assessmentService.getAssessments(anyList(), anyString(), anyString()))
         .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessmentDetail)));
@@ -515,6 +571,17 @@ public class AssessmentControllerTest {
         .andExpect(model().attribute("submitReturnUrl", submitReturnUrl))
         .andExpect(model().attribute("cancelUrl", cancelUrl))
         .andExpect(model().attribute("returnLinkText", returnLinkText));
+
+    verify(contextSecurityUtil)
+        .createHubContext(
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyString(),
+            anyString(),
+            eq("http://localhost:8010/civil/amendments/assessments/confirm"));
   }
 
   @Test
@@ -572,7 +639,7 @@ public class AssessmentControllerTest {
         .thenReturn(Mono.just(new AssessmentDetails())); // Empty AssessmentDetails
 
     final MockHttpServletRequestBuilder request =
-        get("/application/assessments/confirm")
+        get("/application/assessments/confirm/caseSummary.do")
             .param("val", token)
             .sessionAttr(USER_DETAILS, userDetails)
             .sessionAttr(APPLICATION_ID, "applicationId")

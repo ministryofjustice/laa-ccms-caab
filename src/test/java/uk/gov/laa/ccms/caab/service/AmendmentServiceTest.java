@@ -23,9 +23,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
@@ -34,6 +36,7 @@ import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
@@ -542,6 +545,51 @@ class AmendmentServiceTest {
                           && application.getProviderDetails().getFeeEarner() == null
                           && application.getProviderDetails().getSupervisor() == null));
       assertThat(transactionId).isEqualTo("12345");
+    }
+  }
+
+  @Nested
+  @DisplayName("submitMeansReassessment() tests")
+  class SubmitMeansReassessmentTests {
+
+    @Test
+    @DisplayName("Should submit means reassessment with completed means assessment")
+    void shouldSubmitMeansReassessmentWithCompletedMeansAssessment() {
+      // Given
+      UserDetail userDetails =
+          new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
+      ApplicationDetail amendment = buildFullApplicationDetail();
+      amendment.setCaseReferenceNumber("12345");
+      AssessmentDetail meansAssessment = new AssessmentDetail().status("COMPLETE");
+
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(caabApiClient.createApplication(any(), any())).thenReturn(Mono.just("123"));
+      when(soaApiClient.updateCase(any(), any(), any(), any()))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TRANS123")));
+
+      // When
+      String transactionId =
+          amendmentService.submitMeansReassessment(userDetails, amendment, meansAssessment);
+
+      // Then
+      ArgumentCaptor<CaseMappingContext> mappingContextCaptor =
+          ArgumentCaptor.forClass(CaseMappingContext.class);
+      verify(soaApplicationMapper).toCaseDetail(mappingContextCaptor.capture());
+      CaseMappingContext mappingContext = mappingContextCaptor.getValue();
+
+      assertThat(mappingContext.getMeansAssessment()).isSameAs(meansAssessment);
+      assertThat(mappingContext.getMeritsAssessment()).isNull();
+      assertThat(mappingContext.getTdsApplication().getQuickEditType())
+          .isEqualTo(QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT);
+      assertThat(mappingContext.getTdsApplication().getMeansAssessmentAmended()).isTrue();
+      assertThat(mappingContext.getTdsApplication().getMeritsAssessmentAmended()).isFalse();
+      verify(soaApiClient)
+          .updateCase(
+              eq("123"),
+              eq("Type"),
+              any(),
+              eq(QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT));
+      assertThat(transactionId).isEqualTo("TRANS123");
     }
   }
 }

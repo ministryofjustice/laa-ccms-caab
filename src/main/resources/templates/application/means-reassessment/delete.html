@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="#{service.name} + ' - Delete means reassessment'"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/means-reassessment/summary}" class="govuk-back-link">Back</a>
+  </div>
+  <div id="main-content">
+    <form th:action="@{/means-reassessment/delete}" method="post">
+      <h1 class="govuk-heading-l">Delete means reassessment</h1>
+      <p class="govuk-body">Are you sure you want to delete this means reassessment?</p>
+      <div class="govuk-button-group">
+        <button class="govuk-button govuk-button--warning" data-module="govuk-button">
+          Delete
+        </button>
+        <a class="govuk-link" th:href="@{/means-reassessment/summary}">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

@@ -1,38 +1,6 @@
 # Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
 version: v1.25.1
-ignore:
-  SNYK-JAVA-TOOLSJACKSONCORE-15907550:
-    - '*':
-      reason: "temporary ignore while upgrade is scheduled"
-      expires: "2026-06-01T00:00:00Z"
-  SNYK-JAVA-IONETTY-16425695:
-    - '*':
-      reason: "temporary ignore while upgrade is scheduled"
-      expires: "2026-06-01T00:00:00Z"
-  SNYK-JAVA-COMMONSIO-8161190:
-    - '*':
-      reason: "temporary ignore while upgrade is scheduled"
-      expires: "2026-06-01T00:00:00Z"
-  "snyk:lic:maven:fi.solita.clamav:clamav-client:LGPL-2.1":
-    - '*':
-      reason: "temporary ignore while license remediation is reviewed"
-      expires: "2026-06-01T00:00:00Z"
-  SNYK-UBUNTU2404-GLIBC-15804597:
-    - '*':
-      reason: "temporary ignore while base image is updated"
-      expires: "2026-06-01T00:00:00Z"
-  SNYK-UBUNTU2404-GLIBC-15804816:
-    - '*':
-      reason: "temporary ignore while base image is updated"
-      expires: "2026-06-01T00:00:00Z"
-  SNYK-UBUNTU2404-GLIBC-15884040:
-    - '*':
-      reason: "temporary ignore while base image is updated"
-      expires: "2026-06-01T00:00:00Z"
-  SNYK-JAVA-ORGCODEHAUSPLEXUS-15766699:
-    - '*':
-      reason: "No direct upgrade or patch available for plexus-utils@3.3.0 in checkstyle dependency"
-      expires: "2026-06-01T00:00:00Z"
+ignore: {}
 patch: {}
 exclude:
   global:
