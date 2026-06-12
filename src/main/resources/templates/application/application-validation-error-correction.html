@@ -8,7 +8,7 @@
 <div class="govuk-width-container">
   <div id="breadcrumbs"></div>
   <div id="main-content" class="govuk-!-padding-top-7">
-      <span class="govuk-caption-l" th:text="#{application.about}"></span>
+      <span class="govuk-caption-l" th:text="${caseContext.isAmendment()} ? #{amendment.about} : #{application.about}"></span>
       <h1 class="govuk-heading-l">
         Validation - error correction
       </h1>
@@ -81,9 +81,15 @@
               </td>
               <td class="govuk-table__cell" th:utext="${#strings.listJoin(opponentErrors, '<br/>')}"></td>
             </tr>
+            <tr class="govuk-table__row" th:if="${meritsReassessmentErrors != null and !meritsReassessmentErrors.isEmpty()}">
+                <td class="govuk-table__cell">
+                    <a th:href="@{/amendments/assessments(assessment=merits,invoked-from=CCMS_AC01)}" class="govuk-link">Merits Assessment</a>
+                </td>
+                <td class="govuk-table__cell" th:utext="${#strings.listJoin(meritsReassessmentErrors, '<br/>')}"></td>
+            </tr>
             </tbody>
           </table>
-          <form action="#" th:action="@{/application/validate}" method="post">
+          <form action="#" th:action="@{/{caseContext}/validate(caseContext=${caseContext.pathValue})}" method="post">
           <div class="govuk-button-group">
             <govuk:button type="submit" th:text="#{site.continue}"/>
           </div>

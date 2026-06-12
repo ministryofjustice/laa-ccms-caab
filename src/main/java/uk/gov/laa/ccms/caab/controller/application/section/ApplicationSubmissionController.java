@@ -29,6 +29,7 @@ import org.springframework.validation.ObjectError;
 import org.springframework.validation.Validator;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import reactor.core.publisher.Flux;
@@ -59,7 +60,9 @@ import uk.gov.laa.ccms.caab.bean.validators.priorauthority.PriorAuthorityTypeDet
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingFurtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDetailsValidator;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
@@ -85,6 +88,7 @@ import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.util.AssessmentUtil;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -171,9 +175,12 @@ public class ApplicationSubmissionController {
    * @param model the model to add validation errors to
    * @return a Mono that emits the view name based on validation outcome
    */
-  @GetMapping("/application/validate")
+  @GetMapping("/{caseContext}/validate")
   public Mono<String> applicationValidate(
-      @SessionAttribute(APPLICATION_ID) final String applicationId, final Model model) {
+      @SessionAttribute(APPLICATION_ID) final String applicationId,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @PathVariable("caseContext") final CaseContext caseContext,
+      final Model model) {
     return Mono.zip(
             applicationService.getMonoProviderDetailsFormData(applicationId),
             applicationService.getMonoCorrespondenceAddressFormData(applicationId),
@@ -187,16 +194,28 @@ public class ApplicationSubmissionController {
               ApplicationDetail application = tuple.getT3();
               List<AbstractOpponentFormData> opponents = tuple.getT4();
 
-              boolean hasErrors =
+              boolean hasFormErrors =
                   processValidations(
                       providerDetails, generalDetails, application, opponents, model);
 
               return validateProceedings(application.getProceedings(), model)
-                  .map(
-                      proceedingsFailed ->
-                          hasErrors || proceedingsFailed
-                              ? "application/application-validation-error-correction"
-                              : "redirect:/application/summary");
+                  .flatMap(
+                      proceedingsFailed -> {
+                        boolean hasErrors = hasFormErrors || proceedingsFailed;
+
+                        if (caseContext.isAmendment()) {
+                          hasErrors |= checkMeritsReassessmentRequired(application, user, model);
+                        }
+
+                        if (hasErrors) {
+                          model.addAttribute("caseContext", caseContext);
+                          return Mono.just("application/application-validation-error-correction");
+                        } else {
+                          String redirectPath =
+                              caseContext.isAmendment() ? "#" : "/application/summary";
+                          return Mono.just("redirect:" + redirectPath);
+                        }
+                      });
             });
   }
 
@@ -434,9 +453,12 @@ public class ApplicationSubmissionController {
    *
    * @return the redirection URL to the application summary page
    */
-  @PostMapping("/application/validate")
-  public String applicationValidatePost() {
-    return "redirect:/application/sections";
+  @PostMapping("/{caseContext}/validate")
+  public String applicationValidatePost(
+      @PathVariable("caseContext") final CaseContext caseContext) {
+
+    String redirectPath = caseContext.isAmendment() ? "/case/overview" : "/application/sections";
+    return "redirect:" + redirectPath;
   }
 
   /**
@@ -786,5 +808,37 @@ public class ApplicationSubmissionController {
     summarySubmissionFormData.setDeclarationOptions(declarationOptions);
     model.addAttribute("summarySubmissionFormData", summarySubmissionFormData);
     return "application/sections/application-submit-declaration";
+  }
+
+  private boolean checkMeritsReassessmentRequired(
+      ApplicationDetail amendment, UserDetail user, Model model) {
+
+    if (amendment == null || user == null) {
+      return false;
+    }
+
+    final AssessmentDetail meritsAssessment =
+        assessmentService
+            .getAssessments(
+                List.of(AssessmentName.MERITS.getName()),
+                user.getProvider().getId().toString(),
+                amendment.getCaseReferenceNumber())
+            .map(details -> AssessmentUtil.getMostRecentAssessmentDetail(details.getContent()))
+            .blockOptional()
+            .orElse(null);
+
+    boolean reassessmentRequired =
+        assessmentService.isMeritsReassessmentRequiredForAmendment(
+            amendment, meritsAssessment, user);
+
+    if (reassessmentRequired) {
+      model.addAttribute(
+          "meritsReassessmentErrors",
+          List.of(
+              "Due to changed data in your application a re-assessment of the merits is required."));
+      return true;
+    }
+
+    return false;
   }
 }

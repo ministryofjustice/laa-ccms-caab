@@ -39,6 +39,7 @@ import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,6 +48,7 @@ class AmendCaseControllerTest {
 
   @Mock private ApplicationService applicationService;
   @Mock private AmendmentService amendmentService;
+  @Mock private AssessmentService assessmentService;
 
   @InjectMocks AmendCaseController amendCaseController;
 

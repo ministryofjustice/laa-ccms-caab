@@ -16,11 +16,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationSectionValidator;
 import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -43,6 +45,7 @@ public class AmendCaseController {
 
   private final ApplicationService applicationService;
   private final AmendmentService amendmentService;
+  private final ApplicationSectionValidator applicationSectionValidator;
 
   /**
    * Initiates the amendment creation and submission process for a specific case. This method
@@ -123,5 +126,10 @@ public class AmendCaseController {
     model.addAttribute("summary", applicationSectionDisplay);
 
     return "application/amendment-summary";
+  }
+
+  @PostMapping("/amendments/summary")
+  public String completeAmendment() {
+    return "redirect:/amendments/validate";
   }
 }
