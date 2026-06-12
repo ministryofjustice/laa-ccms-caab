@@ -79,6 +79,7 @@ import uk.gov.laa.ccms.caab.bean.validators.priorauthority.PriorAuthorityTypeDet
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingFurtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDetailsValidator;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
@@ -390,6 +391,10 @@ class ApplicationSubmissionControllerTest {
   @Test
   @DisplayName("Test /application/validate - success and validation failure")
   void testApplicationValidate() throws Exception {
+
+    // Mock user session attributes
+    final UserDetail mockUser = buildUserDetail();
+
     final String applicationId = "12345";
 
     // Mocking the data returned by the service methods
@@ -464,7 +469,10 @@ class ApplicationSubmissionControllerTest {
 
     final MvcResult mvcResult =
         mockMvc
-            .perform(get("/application/validate").sessionAttr(APPLICATION_ID, applicationId))
+            .perform(
+                get("/{caseContext}/validate", CaseContext.APPLICATION)
+                    .sessionAttr(APPLICATION_ID, applicationId)
+                    .sessionAttr(USER_DETAILS, mockUser))
             .andExpect(request().asyncStarted())
             .andReturn();
 
@@ -732,8 +740,17 @@ class ApplicationSubmissionControllerTest {
   @DisplayName("Test POST /application/validate redirects to /application/sections")
   void testApplicationValidatePost_RedirectsToApplicationSections() throws Exception {
     mockMvc
-        .perform(post("/application/validate"))
+        .perform(post("/{caseContext}/validate", CaseContext.APPLICATION))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/sections"));
+  }
+
+  @Test
+  @DisplayName("Test POST /amendments/validate redirects to /case/overview")
+  void testAmendmentValidatePost_RedirectsToCaseOverview() throws Exception {
+    mockMvc
+        .perform(post("/{caseContext}/validate", CaseContext.AMENDMENTS))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/case/overview"));
   }
 }
