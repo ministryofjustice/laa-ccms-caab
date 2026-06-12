@@ -1,16 +1,16 @@
 {
   "devDependencies": {
     "@ministryofjustice/frontend": "^9.0.0",
-    "govuk-frontend": "^6.1.0",
+    "govuk-frontend": "^6.2.0",
     "gulp": "^5.0.0",
     "gulp-autoprefixer": "^10.0.0",
-    "gulp-minify": "^3.0.0",
+    "gulp-minify": "^3.1.0",
     "gulp-plumber": "^1.2.1",
     "gulp-rename": "^2.0.0",
     "gulp-replace": "^1.1.4",
     "gulp-sass": "^6.0.0",
     "gulp-uglify": "^3.0.2",
-    "sass": "^1.83.0"
+    "sass": "^1.101.0"
   },
   "scripts": {
     "build:frontend": "gulp",
