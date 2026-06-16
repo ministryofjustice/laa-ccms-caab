@@ -34,8 +34,6 @@ import static uk.gov.laa.ccms.caab.util.AssessmentUtil.isAssessmentReferenceCons
 import static uk.gov.laa.ccms.caab.util.OpponentUtil.getOpponentByEbsId;
 import static uk.gov.laa.ccms.caab.util.OpponentUtil.getOpponentById;
 import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getAssessmentMappingId;
-import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getProceedingByEbsId;
-import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getProceedingById;
 import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getRequestedScopeForAssessmentInput;
 
 import java.time.LocalDate;
@@ -846,7 +844,9 @@ public class AssessmentService {
   }
 
   /**
-   * Cleans up data by deleting redundant opponents and proceedings from the assessment.
+   * Cleans up data by deleting redundant opponents and proceedings from the assessment, i.e. those
+   * no longer present in the application. For amendments the retained proceedings include any draft
+   * amendment proceedings from EBS, matching the set the assessment is built from.
    *
    * @param assessment the assessment detail to clean up
    * @param application the application detail for reference
@@ -856,10 +856,6 @@ public class AssessmentService {
     if (assessment != null) {
       deleteRedundantOpponents(assessment, application);
       deleteRedundantProceedings(assessment, application);
-
-      if (application != null && application.getAmendment()) {
-        // todo - future implementation for amendments
-      }
     }
   }
 
@@ -1019,10 +1015,14 @@ public class AssessmentService {
       final String entityName,
       final ApplicationDetail application) {
 
+    // Use the same amendment-inclusive proceeding set the mapper builds the assessment from
+    // (live proceedings plus any draft amendment proceedings from EBS). Otherwise draft
+    // amendment proceedings - which are present in the assessment but not in
+    // application.getProceedings() - would be wrongly treated as redundant and removed.
     addRedundantEntity(
         proceedingsToDelete,
         entityName,
-        application.getProceedings(),
+        ProceedingUtil.getAssessmentProceedings(application),
         proceeding ->
             (proceeding.getEbsId() != null && entityName.equalsIgnoreCase(proceeding.getEbsId()))
                 || (proceeding.getId() != null
@@ -1145,10 +1145,24 @@ public class AssessmentService {
     // find or Create
     final AssessmentDetail assessment =
         findOrCreate(providerId, referenceId, assessmentRulebase.getName());
-    final AssessmentDetail prepopAssessment =
+    AssessmentDetail prepopAssessment =
         findOrCreate(providerId, referenceId, assessmentRulebase.getPrePopAssessmentName());
 
-    // find or create an opa session
+    // If a persisted prepop has gone stale (its source application data has changed since it was
+    // built) regenerate it from scratch so newly added opponents/proceedings - e.g. a child party
+    // required by a new proceeding - reach the OPA interview. The mapper rebuilds the whole entity
+    // graph, which the assessment-api cannot apply as an update to an existing prepop, so the
+    // stale one is deleted and rebuilt as a fresh insert. An unchanged prepop is left untouched so
+    // its checkpoint continues to drive OPA RESUME.
+    if (prepopAssessment.getId() != null
+        && isAssessmentCheckpointToBeDeleted(application, prepopAssessment)) {
+      deleteAssessments(
+              user, List.of(assessmentRulebase.getPrePopAssessmentName()), referenceId, null)
+          .block();
+      prepopAssessment =
+          findOrCreate(providerId, referenceId, assessmentRulebase.getPrePopAssessmentName());
+    }
+
     final boolean createdNewPrepopAssessment = prepopAssessment.getId() == null;
 
     // used to populate the lookups for title for the opponent
@@ -1164,13 +1178,12 @@ public class AssessmentService {
             .user(user)
             .build();
 
-    // if we create a new prepop assessment, we need to map the context to it,
-    // otherwise we will just use the existing one
+    // Only map the prepop when it is (re)created here - an existing prepop keeps its persisted
+    // entity graph (and ids) so it can be saved as an update. The main assessment is always new
+    // (deleted in startAssessment) so it is always mapped fresh.
     if (createdNewPrepopAssessment) {
       assessmentMapper.toAssessmentDetail(prepopAssessment, assessmentContext);
     }
-
-    // always map to the assessment as it should always be new here.
     assessmentMapper.toAssessmentDetail(assessment, assessmentContext);
 
     updateCostLimitIfMeritsAssessment(assessmentRulebase, application, user);
@@ -1415,7 +1428,11 @@ public class AssessmentService {
     final List<AssessmentEntityDetail> proceedingEntities =
         getAssessmentEntitiesForEntityType(assessment, PROCEEDING);
 
-    return application.getProceedings().size() != proceedingEntities.size()
+    // For amendments the assessment is built from the live proceedings plus any draft amendment
+    // proceedings from EBS, so compare against that same set rather than the live proceedings
+    // alone. Otherwise an unchanged amendment always looks like a mismatch and its OPA checkpoint
+    // is needlessly deleted on every relaunch.
+    return ProceedingUtil.getAssessmentProceedings(application).size() != proceedingEntities.size()
         || isAssessmentProceedingsMatchingApplication(application, assessment);
   }
 
@@ -1436,14 +1453,18 @@ public class AssessmentService {
     final List<AssessmentEntityDetail> proceedingEntities =
         getAssessmentEntitiesForEntityType(assessment, PROCEEDING);
 
-    for (final AssessmentEntityDetail proceedingEntity : proceedingEntities) {
-      final String proceedingId =
-          proceedingEntity.getName().replaceFirst(InstanceMappingPrefix.PROCEEDING.getPrefix(), "");
+    // Resolve assessment proceeding entities against the amendment-inclusive set (live plus draft
+    // amendment proceedings), matching on the OPA instance mapping id used to build each entity, so
+    // a draft amendment proceeding is not mistaken for one that has been removed.
+    final List<ProceedingDetail> expectedProceedings =
+        ProceedingUtil.getAssessmentProceedings(application);
 
-      // Check if proceedingEntity with the given name or proceedingId exists in the application
+    for (final AssessmentEntityDetail proceedingEntity : proceedingEntities) {
       final boolean proceedingExists =
-          getProceedingByEbsId(application, proceedingEntity.getName()) != null
-              || getProceedingById(application, Integer.parseInt(proceedingId)) != null;
+          expectedProceedings.stream()
+              .anyMatch(
+                  proceeding ->
+                      proceedingEntity.getName().equals(getAssessmentMappingId(proceeding)));
 
       if (!proceedingExists) {
         // If no proceeding exists, set isMatching to true
