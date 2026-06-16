@@ -1403,14 +1403,15 @@ public class AssessmentService {
    */
   public boolean isAssessmentCheckpointToBeDeleted(
       final ApplicationDetail application, final AssessmentDetail assessment) {
-    boolean isMatching = false;
+    boolean mismatch = false;
     final Date dateOfLastChange = getDateOfLatestKeyChange(application);
 
     if (dateOfLastChange != null) {
-      isMatching = dateOfLastChange.after(assessment.getAuditDetail().getLastSaved());
+      // The application changed after the assessment was last saved -> mismatch.
+      mismatch = dateOfLastChange.after(assessment.getAuditDetail().getLastSaved());
     }
 
-    return isMatching || isProceedingsCountMismatch(application, assessment);
+    return mismatch || isProceedingsCountMismatch(application, assessment);
   }
 
   /**
@@ -1448,7 +1449,7 @@ public class AssessmentService {
   protected boolean isAssessmentProceedingsMatchingApplication(
       final ApplicationDetail application, final AssessmentDetail assessment) {
 
-    boolean isMatching = false;
+    boolean mismatch = false;
 
     final List<AssessmentEntityDetail> proceedingEntities =
         getAssessmentEntitiesForEntityType(assessment, PROCEEDING);
@@ -1467,11 +1468,11 @@ public class AssessmentService {
                       proceedingEntity.getName().equals(getAssessmentMappingId(proceeding)));
 
       if (!proceedingExists) {
-        // If no proceeding exists, set isMatching to true
-        isMatching = true;
+        // A proceeding entity in the assessment no longer exists in the application -> mismatch.
+        mismatch = true;
       }
     }
-    return isMatching || isApplicationProceedingsMatchingAssessment(application, assessment);
+    return mismatch || isApplicationProceedingsMatchingAssessment(application, assessment);
   }
 
   /**
@@ -1486,7 +1487,7 @@ public class AssessmentService {
   protected boolean isApplicationProceedingsMatchingAssessment(
       final ApplicationDetail application, final AssessmentDetail assessment) {
 
-    boolean isMatching = false;
+    boolean mismatch = false;
     for (final ProceedingDetail proceeding : application.getProceedings()) {
       log.debug(
           "App proceedings ID - " + proceeding.getId() + ", EBS-ID - " + proceeding.getEbsId());
@@ -1507,15 +1508,17 @@ public class AssessmentService {
 
         final String scopeInAssessment = getRequestedScopeForAssessmentInput(proceeding);
         if (scopeInAssessment != null && !scopeInAssessment.equalsIgnoreCase(attributeValue)) {
+          // The proceeding's requested scope has changed -> mismatch.
           log.debug("Looks like scope is change, hence return true");
-          isMatching = true;
+          mismatch = true;
         }
       } else {
+        // An application proceeding has no matching assessment entity -> mismatch.
         log.debug("APP PROCEEDINGS DOESN'T EXIST IN OPASESSION OBJECT");
-        isMatching = true;
+        mismatch = true;
       }
     }
-    return isMatching || isOpponentCountMatchingAssessments(application, assessment);
+    return mismatch || isOpponentCountMatchingAssessments(application, assessment);
   }
 
   /**
@@ -1548,7 +1551,7 @@ public class AssessmentService {
   protected boolean isAssessmentOpponentsMatchingApplication(
       final ApplicationDetail application, final AssessmentDetail assessment) {
 
-    boolean isMatching = false;
+    boolean mismatch = false;
 
     final List<AssessmentEntityDetail> opponentEntities =
         getAssessmentEntitiesForEntityType(assessment, OPPONENT);
@@ -1564,11 +1567,12 @@ public class AssessmentService {
               || getOpponentById(application, Integer.parseInt(opponentId)) != null;
 
       if (!opponentExists) {
+        // An opponent entity in the assessment no longer exists in the application -> mismatch.
         log.debug("OPA SESSION OPPONENT DOESN'T EXIST IN APPLICATION OBJECT");
-        isMatching = true;
+        mismatch = true;
       }
     }
-    return isMatching || isApplicationOpponentsMatchingAssessments(application, assessment);
+    return mismatch || isApplicationOpponentsMatchingAssessments(application, assessment);
   }
 
   /**
@@ -1582,7 +1586,7 @@ public class AssessmentService {
   protected boolean isApplicationOpponentsMatchingAssessments(
       final ApplicationDetail application, final AssessmentDetail assessment) {
 
-    boolean isMatching = false;
+    boolean mismatch = false;
 
     for (final OpponentDetail opponent : application.getOpponents()) {
       log.debug("App opponent ID - " + opponent.getId() + ", EBS-ID - " + opponent.getEbsId());
@@ -1598,11 +1602,12 @@ public class AssessmentService {
           getAssessmentEntity(opponentEntityType, opponentId);
 
       if (opponentEntity == null) {
+        // An application opponent has no matching assessment entity -> mismatch.
         log.debug("APP OPPONENTS DOESN'T EXIST IN OPASESSION OBJECT");
-        isMatching = true;
+        mismatch = true;
       }
     }
-    return isMatching || applicationTypeMatches(application, assessment);
+    return mismatch || applicationTypeMatches(application, assessment);
   }
 
   /**
