@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -856,6 +857,38 @@ public class AssessmentServiceTest {
   }
 
   @Test
+  @DisplayName(
+      "cleanupData retains draft amendment proceedings that are only present in EBS, not in the "
+          + "live application proceedings")
+  void cleanupDataRetainsDraftAmendmentProceedings() {
+    // Assessment contains proceeding P_123 (and opponent OPPONENT_234).
+    final AssessmentDetail assessment = buildAssessmentDetail(new Date());
+
+    // The proceeding only exists as a draft amendment proceeding in EBS - it is NOT in the
+    // live application proceedings. Without amendment-aware cleanup it would be deleted.
+    final ProceedingDetail draftProceeding = new ProceedingDetail().ebsId("P_123");
+
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(true)
+            .proceedings(new ArrayList<>())
+            .opponents(new ArrayList<>())
+            .amendmentProceedingsInEbs(new ArrayList<>(List.of(draftProceeding)));
+
+    assessmentService.cleanupData(assessment, application);
+
+    final List<AssessmentEntityDetail> proceedingEntities =
+        getAssessmentEntitiesForEntityType(assessment, PROCEEDING);
+    final List<AssessmentEntityDetail> opponentEntities =
+        getAssessmentEntitiesForEntityType(assessment, OPPONENT);
+
+    // Draft amendment proceeding retained; opponent with no application match removed.
+    assertEquals(1, proceedingEntities.size());
+    assertEquals("P_123", proceedingEntities.getFirst().getName());
+    assertEquals(0, opponentEntities.size());
+  }
+
+  @Test
   void testGetAssessmentOpponentMappingContexts() {
     final ApplicationDetail application = new ApplicationDetail();
     final OpponentDetail opponent1 = new OpponentDetail().title("MR");
@@ -1030,6 +1063,101 @@ public class AssessmentServiceTest {
   }
 
   @Test
+  @DisplayName(
+      "startNewAssessment leaves an unchanged existing prepop untouched so it is saved as an "
+          + "update (preserving its OPA checkpoint), not re-mapped")
+  void startNewAssessmentDoesNotRemapUnchangedExistingPrepop() {
+    final String caseRef = "CASE-123";
+    final String providerId = String.valueOf(user.getProvider().getId());
+
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .id(1)
+            .caseReferenceNumber(caseRef)
+            .amendment(false)
+            .proceedings(new ArrayList<>())
+            .opponents(new ArrayList<>());
+
+    // Main assessment does not exist yet -> created fresh.
+    when(assessmentApiClient.getAssessments(List.of(MEANS.getName()), providerId, caseRef))
+        .thenReturn(just(new AssessmentDetails().content(new ArrayList<>())));
+
+    // Prepop already exists and the application has not changed, so it must NOT be re-mapped
+    // (re-mapping a persisted prepop would rebuild its entity graph and break the update).
+    final AssessmentDetail existingPrepop =
+        new AssessmentDetail()
+            .id(99L)
+            .name(AssessmentRulebase.MEANS.getPrePopAssessmentName())
+            .caseReferenceNumber(caseRef)
+            .entityTypes(new ArrayList<>())
+            .auditDetail(new AuditDetail().lastSaved(auditDate));
+    when(assessmentApiClient.getAssessments(
+            List.of(AssessmentRulebase.MEANS.getPrePopAssessmentName()), providerId, caseRef))
+        .thenReturn(
+            just(new AssessmentDetails().content(new ArrayList<>(List.of(existingPrepop)))));
+
+    when(assessmentApiClient.createAssessment(any(), eq(user.getLoginId())))
+        .thenReturn(Mono.empty());
+    when(assessmentApiClient.updateAssessment(any(), any(), eq(user.getLoginId())))
+        .thenReturn(Mono.empty());
+
+    assessmentService.startNewAssessment(AssessmentRulebase.MEANS, application, null, user);
+
+    // Only the working assessment is mapped; the unchanged prepop is left as-is.
+    verify(assessmentMapper, never()).toAssessmentDetail(eq(existingPrepop), any());
+    verify(assessmentMapper, times(1)).toAssessmentDetail(any(), any());
+  }
+
+  @Test
+  @DisplayName(
+      "startNewAssessment deletes and regenerates a stale existing prepop so newly added "
+          + "proceedings/opponents reach OPA")
+  void startNewAssessmentRegeneratesStalePrepop() {
+    final String caseRef = "CASE-123";
+    final String providerId = String.valueOf(user.getProvider().getId());
+    final String prepopName = AssessmentRulebase.MEANS.getPrePopAssessmentName();
+
+    // Application has a proceeding that the persisted prepop does not -> the prepop is stale.
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .id(1)
+            .caseReferenceNumber(caseRef)
+            .amendment(false)
+            .proceedings(new ArrayList<>(List.of(new ProceedingDetail().id(123))))
+            .opponents(new ArrayList<>());
+
+    when(assessmentApiClient.getAssessments(List.of(MEANS.getName()), providerId, caseRef))
+        .thenReturn(just(new AssessmentDetails().content(new ArrayList<>())));
+
+    final AssessmentDetail stalePrepop =
+        new AssessmentDetail()
+            .id(99L)
+            .name(prepopName)
+            .caseReferenceNumber(caseRef)
+            .entityTypes(new ArrayList<>())
+            .auditDetail(new AuditDetail().lastSaved(auditDate));
+    // First lookup returns the stale prepop; after it is deleted the second returns none.
+    when(assessmentApiClient.getAssessments(List.of(prepopName), providerId, caseRef))
+        .thenReturn(just(new AssessmentDetails().content(new ArrayList<>(List.of(stalePrepop)))))
+        .thenReturn(just(new AssessmentDetails().content(new ArrayList<>())));
+
+    when(assessmentApiClient.deleteAssessments(
+            eq(List.of(prepopName)), eq(providerId), eq(caseRef), any(), eq(user.getLoginId())))
+        .thenReturn(Mono.empty());
+    when(assessmentApiClient.createAssessment(any(), eq(user.getLoginId())))
+        .thenReturn(Mono.empty());
+
+    assessmentService.startNewAssessment(AssessmentRulebase.MEANS, application, null, user);
+
+    // The stale prepop is deleted and the regenerated (fresh) prepop is mapped along with the
+    // working assessment.
+    verify(assessmentApiClient)
+        .deleteAssessments(
+            eq(List.of(prepopName)), eq(providerId), eq(caseRef), any(), eq(user.getLoginId()));
+    verify(assessmentMapper, times(2)).toAssessmentDetail(any(), any());
+  }
+
+  @Test
   void testIsAssessmentCheckpointToBeDeleted_dateOfLastChangeAfterLastSaved() {
     final Date lastSaved = new Date(System.currentTimeMillis() - 10000); // 10 seconds ago
     final Date dateOfLastChange = new Date(System.currentTimeMillis() - 5000); // 5 seconds ago
@@ -1099,6 +1227,46 @@ public class AssessmentServiceTest {
 
     // assert true, as the number of proceedings in the application and assessment do not match
     assertTrue(result);
+  }
+
+  @Test
+  @DisplayName(
+      "isProceedingsCountMismatch treats draft amendment proceedings as expected, so an unchanged "
+          + "amendment is not flagged as a mismatch (preserving the OPA checkpoint)")
+  void testIsProceedingsCountMismatch_amendmentWithDraftProceeding_noMismatch() {
+    // Live proceeding P_123 plus a draft amendment proceeding P_456 that only exists in EBS.
+    // Distinct proceeding types so the draft is not deduped against the live proceeding.
+    final ProceedingDetail liveProceeding =
+        new ProceedingDetail().id(123).proceedingType(new StringDisplayValue().id("PROC_A"));
+    final ProceedingDetail draftProceeding =
+        new ProceedingDetail().ebsId("P_456").proceedingType(new StringDisplayValue().id("PROC_B"));
+
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(true)
+            .proceedings(new ArrayList<>(List.of(liveProceeding)))
+            .opponents(new ArrayList<>())
+            .amendmentProceedingsInEbs(new ArrayList<>(List.of(draftProceeding)));
+
+    // Assessment was built from both proceedings (live + draft).
+    final AssessmentEntityDetail liveEntity =
+        new AssessmentEntityDetail()
+            .name("P_123")
+            .addAttributesItem(
+                new AssessmentAttributeDetail().name("REQUESTED_SCOPE").value("TEST"));
+    final AssessmentEntityDetail draftEntity = new AssessmentEntityDetail().name("P_456");
+    final AssessmentDetail assessment =
+        new AssessmentDetail()
+            .entityTypes(
+                List.of(
+                    new AssessmentEntityTypeDetail()
+                        .name(PROCEEDING.getType())
+                        .entities(List.of(liveEntity, draftEntity))));
+
+    final boolean result = assessmentService.isProceedingsCountMismatch(application, assessment);
+
+    // No mismatch - the draft amendment proceeding is part of the expected set.
+    assertFalse(result);
   }
 
   @Test

@@ -62,7 +62,6 @@ import static uk.gov.laa.ccms.caab.util.OpponentUtil.getPartyName;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -271,34 +270,7 @@ public interface AssessmentMapper {
    * @return live proceedings plus any new amendment draft proceedings
    */
   default List<ProceedingDetail> getAssessmentProceedings(final ApplicationDetail application) {
-    final List<ProceedingDetail> assessmentProceedings =
-        new ArrayList<>(
-            application.getProceedings() != null ? application.getProceedings() : List.of());
-
-    if (!Boolean.TRUE.equals(application.getAmendment())
-        || application.getAmendmentProceedingsInEbs() == null) {
-      return assessmentProceedings;
-    }
-
-    application.getAmendmentProceedingsInEbs().stream()
-        .filter(Objects::nonNull)
-        .filter(
-            draftProceeding ->
-                assessmentProceedings.stream()
-                    .noneMatch(
-                        proceeding ->
-                            Objects.equals(
-                                getProceedingTypeId(proceeding),
-                                getProceedingTypeId(draftProceeding))))
-        .forEach(assessmentProceedings::add);
-
-    return assessmentProceedings;
-  }
-
-  private String getProceedingTypeId(final ProceedingDetail proceeding) {
-    return proceeding != null && proceeding.getProceedingType() != null
-        ? proceeding.getProceedingType().getId()
-        : null;
+    return ProceedingUtil.getAssessmentProceedings(application);
   }
 
   /**

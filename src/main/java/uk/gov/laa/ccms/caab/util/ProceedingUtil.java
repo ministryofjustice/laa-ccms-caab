@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.util;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import uk.gov.laa.ccms.caab.constants.assessment.InstanceMappingPrefix;
@@ -24,6 +26,48 @@ public final class ProceedingUtil {
       return InstanceMappingPrefix.PROCEEDING.getPrefix() + proceeding.getId();
     }
     return proceeding.getEbsId();
+  }
+
+  /**
+   * Returns the proceedings to include in non-financial assessment prepopulation.
+   *
+   * <p>Old PUI added draft amendment proceedings into the OPA session before starting Merits/Means,
+   * but only where a proceeding of the same type was not already live. The same set must be used
+   * when cleaning up redundant assessment entities so draft amendment proceedings are retained.
+   *
+   * @param application the application being assessed
+   * @return live proceedings plus any new amendment draft proceedings
+   */
+  public static List<ProceedingDetail> getAssessmentProceedings(
+      final ApplicationDetail application) {
+    final List<ProceedingDetail> assessmentProceedings =
+        new ArrayList<>(
+            application.getProceedings() != null ? application.getProceedings() : List.of());
+
+    if (!Boolean.TRUE.equals(application.getAmendment())
+        || application.getAmendmentProceedingsInEbs() == null) {
+      return assessmentProceedings;
+    }
+
+    application.getAmendmentProceedingsInEbs().stream()
+        .filter(Objects::nonNull)
+        .filter(
+            draftProceeding ->
+                assessmentProceedings.stream()
+                    .noneMatch(
+                        proceeding ->
+                            Objects.equals(
+                                getProceedingTypeId(proceeding),
+                                getProceedingTypeId(draftProceeding))))
+        .forEach(assessmentProceedings::add);
+
+    return assessmentProceedings;
+  }
+
+  private static String getProceedingTypeId(final ProceedingDetail proceeding) {
+    return proceeding != null && proceeding.getProceedingType() != null
+        ? proceeding.getProceedingType().getId()
+        : null;
   }
 
   /**
