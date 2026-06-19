@@ -219,14 +219,13 @@ class AmendmentServiceTest {
 
     @Test
     @DisplayName(
-        "Should return amendment sections with document upload enabled when merits " + "modified")
-    void shouldReturnAmendmentSectionsWithDocumentUploadEnabledWhenMeritsModified() {
+        "Should return amendment sections with document upload enabled when merits complete")
+    void shouldReturnAmendmentSectionsWithDocumentUploadEnabledWhenMeritsComplete() {
       // Given
       ApplicationDetail amendment = buildFullApplicationDetail();
       UserDetail userDetails = new UserDetail().loginId("123");
       ApplicationSectionDisplay originalDisplay = expectedApplicationSectionDisplay();
-      amendment.setMeritsAssessmentAmended(true);
-      amendment.setMeansAssessmentAmended(false);
+      originalDisplay.getMeritsAssessment().setStatus("Complete");
       when(applicationService.getApplicationSections(amendment, userDetails))
           .thenReturn(originalDisplay);
       // When
@@ -240,14 +239,13 @@ class AmendmentServiceTest {
 
     @Test
     @DisplayName(
-        "Should return amendment sections with document upload enabled when means " + "modified")
-    void shouldReturnAmendmentSectionsWithDocumentUploadEnabledWhenMeansModified() {
+        "Should return amendment sections with document upload enabled when means complete")
+    void shouldReturnAmendmentSectionsWithDocumentUploadEnabledWhenMeansComplete() {
       // Given
       ApplicationDetail amendment = buildFullApplicationDetail();
       UserDetail userDetails = new UserDetail().loginId("123");
       ApplicationSectionDisplay originalDisplay = expectedApplicationSectionDisplay();
-      amendment.setMeritsAssessmentAmended(false);
-      amendment.setMeansAssessmentAmended(true);
+      originalDisplay.getMeansAssessment().setStatus("Complete");
       when(applicationService.getApplicationSections(amendment, userDetails))
           .thenReturn(originalDisplay);
       // When

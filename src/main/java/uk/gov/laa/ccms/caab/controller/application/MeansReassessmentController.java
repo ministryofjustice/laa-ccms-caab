@@ -85,10 +85,14 @@ public class MeansReassessmentController {
 
     AssessmentDetail meansAssessment = getLatestMeansAssessment(activeCase, user);
     boolean assessmentComplete = isComplete(meansAssessment);
+    boolean hasSubmitPermission = hasSubmitPermission(ebsCase);
 
     model.addAttribute("assessmentStatus", displayStatus(meansAssessment));
     model.addAttribute("assessmentComplete", assessmentComplete);
-    model.addAttribute("canSubmit", assessmentComplete && hasSubmitPermission(ebsCase));
+    model.addAttribute("canSubmit", assessmentComplete && hasSubmitPermission);
+    // Mirror old PUI (PUI_ContentID_1069): a user who has completed the means assessment but lacks
+    // the MNSB submit function is told why they cannot submit.
+    model.addAttribute("noSubmitPermission", assessmentComplete && !hasSubmitPermission);
 
     return "application/means-reassessment/summary";
   }

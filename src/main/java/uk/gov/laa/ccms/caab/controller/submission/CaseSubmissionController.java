@@ -105,6 +105,9 @@ public class CaseSubmissionController {
       final HttpSession session,
       final String caseReferenceNumber) {
     if (caseContext.isAmendment()) {
+      // The amendment is now confirmed in EBS, so remove the spent TDS draft (mirrors old PUI's
+      // post-submission cleanup) - otherwise a subsequent amendment would reuse the stale draft.
+      applicationService.removeSubmittedAmendment(caseReferenceNumber, user);
       refreshCaseSession(caseReferenceNumber, user, session);
     }
 

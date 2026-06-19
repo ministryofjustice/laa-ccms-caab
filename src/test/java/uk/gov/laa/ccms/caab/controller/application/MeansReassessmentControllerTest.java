@@ -130,7 +130,8 @@ class MeansReassessmentControllerTest {
         .andExpect(view().name("application/means-reassessment/summary"))
         .andExpect(model().attribute("assessmentStatus", "Complete"))
         .andExpect(model().attribute("assessmentComplete", true))
-        .andExpect(model().attribute("canSubmit", true));
+        .andExpect(model().attribute("canSubmit", true))
+        .andExpect(model().attribute("noSubmitPermission", false));
   }
 
   @Test
@@ -150,7 +151,9 @@ class MeansReassessmentControllerTest {
                 .sessionAttr(USER_DETAILS, user))
         .andExpect(status().isOk())
         .andExpect(model().attribute("assessmentComplete", true))
-        .andExpect(model().attribute("canSubmit", false));
+        .andExpect(model().attribute("canSubmit", false))
+        // Completed assessment but no MNSB -> show the no-permission message (mirrors old PUI).
+        .andExpect(model().attribute("noSubmitPermission", true));
   }
 
   @Test

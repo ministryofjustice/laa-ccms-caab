@@ -15,6 +15,14 @@
     <span class="govuk-caption-l" th:text="#{case.overview}"></span>
     <h1 class="govuk-heading-l" th:text="#{action.completeMeansReassessment.name}"></h1>
 
+    <div class="govuk-warning-text" th:if="${noSubmitPermission}" id="no-submit-permission">
+      <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+      <strong class="govuk-warning-text__text">
+        <span class="govuk-visually-hidden" th:text="#{site.warning}"></span>
+        <span th:text="#{means.reassessment.noSubmitPermission}"></span>
+      </strong>
+    </div>
+
     <div class="govuk-summary-card">
       <div class="govuk-summary-card__title-wrapper">
         <h2 class="govuk-summary-card__title" th:text="#{application.section.means}"></h2>
@@ -24,7 +32,7 @@
                th:href="@{/amendments/assessments(assessment='means', invoked-from='CCMS_MNA05')}"
                th:text="${assessmentComplete ? #messages.msg('site.edit') : #messages.msg('application.section.means')}"></a>
           </li>
-          <li class="govuk-summary-card__action">
+          <li class="govuk-summary-card__action" th:if="${!assessmentComplete}">
             <a class="govuk-link govuk-link--no-visited-state"
                th:href="@{/means-reassessment/delete}"
                th:text="#{site.delete}"></a>
