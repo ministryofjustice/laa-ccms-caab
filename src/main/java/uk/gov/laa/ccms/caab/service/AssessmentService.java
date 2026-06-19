@@ -43,7 +43,9 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -203,6 +205,11 @@ public class AssessmentService {
       final UserDetail user) {
     log.info("Calculating assessment statuses");
 
+    // Progress-status descriptions are resolved via a (blocking) lookup; memoise per invocation so
+    // the same status code is not looked up again by both the amended-flag comparison and the
+    // status-setting path.
+    final Map<String, String> statusDisplayCache = new HashMap<>();
+
     // The stored *AssessmentStatus holds the progress-status display description (e.g. "In
     // progress"), so the assessment's raw status (e.g. "INCOMPLETE") is resolved to its description
     // before comparing - otherwise the values would never match and the assessment would be flagged
@@ -214,7 +221,7 @@ public class AssessmentService {
         }
       } else if (!application
           .getMeansAssessmentStatus()
-          .equals(getProgressStatusDisplay(meansAssessment.getStatus()))) {
+          .equals(getProgressStatusDisplay(meansAssessment.getStatus(), statusDisplayCache))) {
         application.setMeansAssessmentAmended(true);
       }
     }
@@ -230,21 +237,21 @@ public class AssessmentService {
         }
       } else if (!application
           .getMeritsAssessmentStatus()
-          .equals(getProgressStatusDisplay(meritsAssessment.getStatus()))) {
+          .equals(getProgressStatusDisplay(meritsAssessment.getStatus(), statusDisplayCache))) {
         application.setMeritsAssessmentAmended(true);
       }
     }
 
     log.info("Calculating means assessment status");
-    calculateAssessmentStatus(MEANS, meansAssessment, application, user);
+    calculateAssessmentStatus(MEANS, meansAssessment, application, user, statusDisplayCache);
 
     log.info("Calculating merits assessment status");
-    calculateAssessmentStatus(MERITS, meritsAssessment, application, user);
+    calculateAssessmentStatus(MERITS, meritsAssessment, application, user, statusDisplayCache);
 
     // If a proceeding was removed, we should set reassessment required for both.
     if (Boolean.TRUE.equals(application.getMeritsReassessmentRequired())) {
-      setReassessmentRequired(application, meansAssessment, user);
-      setReassessmentRequired(application, meritsAssessment, user);
+      setReassessmentRequired(application, meansAssessment, user, statusDisplayCache);
+      setReassessmentRequired(application, meritsAssessment, user, statusDisplayCache);
     }
   }
 
@@ -259,7 +266,8 @@ public class AssessmentService {
   private void setReassessmentRequired(
       final ApplicationDetail application,
       final AssessmentDetail assessment,
-      final UserDetail user) {
+      final UserDetail user,
+      final Map<String, String> statusDisplayCache) {
     if (assessment != null) {
       assessmentApiClient
           .patchAssessment(
@@ -267,7 +275,7 @@ public class AssessmentService {
               user.getLoginId(),
               new PatchAssessmentDetail().status(REQUIRED.getStatus()))
           .block();
-      setAssessmentStatusOnApplication(application, assessment, REQUIRED);
+      setAssessmentStatusOnApplication(application, assessment, REQUIRED, statusDisplayCache);
     }
   }
 
@@ -284,7 +292,8 @@ public class AssessmentService {
       final AssessmentName assessmentName,
       final AssessmentDetail currentAssessment,
       final ApplicationDetail application,
-      final UserDetail user) {
+      final UserDetail user,
+      final Map<String, String> statusDisplayCache) {
 
     boolean statusChanged = false;
     AssessmentStatus assessmentStatus = getStatus(currentAssessment);
@@ -324,7 +333,7 @@ public class AssessmentService {
         || (Boolean.TRUE.equals(application.getAmendment())
             && StringUtils.hasText(application.getCaseReferenceNumber()))) {
       setAssessmentStatusOnApplication(
-          application, assessmentName, currentAssessment, assessmentStatus);
+          application, assessmentName, currentAssessment, assessmentStatus, statusDisplayCache);
     }
   }
 
@@ -340,11 +349,13 @@ public class AssessmentService {
   private void setAssessmentStatusOnApplication(
       final ApplicationDetail application,
       final AssessmentDetail assessment,
-      final AssessmentStatus assessmentStatus) {
+      final AssessmentStatus assessmentStatus,
+      final Map<String, String> statusDisplayCache) {
     if (assessment != null) {
       final AssessmentName assessmentName =
           MEANS.getName().equalsIgnoreCase(assessment.getName()) ? MEANS : MERITS;
-      setAssessmentStatusOnApplication(application, assessmentName, assessment, assessmentStatus);
+      setAssessmentStatusOnApplication(
+          application, assessmentName, assessment, assessmentStatus, statusDisplayCache);
     }
   }
 
@@ -361,10 +372,12 @@ public class AssessmentService {
       final ApplicationDetail application,
       final AssessmentName assessmentName,
       final AssessmentDetail assessment,
-      final AssessmentStatus assessmentStatus) {
+      final AssessmentStatus assessmentStatus,
+      final Map<String, String> statusDisplayCache) {
 
     if (assessmentName != null && assessmentStatus != null) {
-      final String statusValue = getProgressStatusDisplay(assessmentStatus.getStatus());
+      final String statusValue =
+          getProgressStatusDisplay(assessmentStatus.getStatus(), statusDisplayCache);
 
       if (MEANS == assessmentName) {
         application.setMeansAssessmentStatus(statusValue);
@@ -380,9 +393,19 @@ public class AssessmentService {
    * code when no mapping exists.
    *
    * @param statusCode the raw assessment status code
+   * @param statusDisplayCache per-invocation cache of already-resolved status codes, so the same
+   *     code is not looked up again by both the amended-flag comparison and the status-setting path
    * @return the display description, or the raw status code if not found
    */
-  private String getProgressStatusDisplay(final String statusCode) {
+  private String getProgressStatusDisplay(
+      final String statusCode, final Map<String, String> statusDisplayCache) {
+    if (statusCode == null) {
+      return null;
+    }
+    return statusDisplayCache.computeIfAbsent(statusCode, this::lookupProgressStatusDisplay);
+  }
+
+  private String lookupProgressStatusDisplay(final String statusCode) {
     return lookupService
         .getCommonValue(COMMON_VALUE_PROGRESS_STATUS_TYPES, statusCode)
         .flatMap(
@@ -718,19 +741,24 @@ public class AssessmentService {
 
   /**
    * Determines whether the cost limit at the time of the merits assessment is below the application
-   * current requested (or default) cost limit, mirroring old PUI. A null limit-at-time-of-merits
-   * also forces a reassessment.
+   * current requested (or default) cost limit, mirroring old PUI. An unknown
+   * limit-at-time-of-merits or an unknown current limit is treated as reassessment-required.
    *
    * @param application the application to check
    * @return true if a cost-limit driven merits reassessment is required
    */
   private boolean isCostLimitReassessmentRequired(final ApplicationDetail application) {
-    return Optional.ofNullable(application.getCostLimit())
-        .map(CostLimitDetail::getLimitAtTimeOfMerits)
-        .map(
-            limitAtTimeOfMerits ->
-                limitAtTimeOfMerits.compareTo(getRequestedOrDefaultCostLimitation(application)) < 0)
-        .orElse(true);
+    final BigDecimal limitAtTimeOfMerits =
+        Optional.ofNullable(application.getCostLimit())
+            .map(CostLimitDetail::getLimitAtTimeOfMerits)
+            .orElse(null);
+    final BigDecimal requestedOrDefault = getRequestedOrDefaultCostLimitation(application);
+
+    if (limitAtTimeOfMerits == null || requestedOrDefault == null) {
+      return true;
+    }
+
+    return limitAtTimeOfMerits.compareTo(requestedOrDefault) < 0;
   }
 
   private BigDecimal getRequestedOrDefaultCostLimitation(final ApplicationDetail application) {

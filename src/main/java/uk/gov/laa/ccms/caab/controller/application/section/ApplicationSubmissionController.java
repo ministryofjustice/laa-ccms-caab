@@ -18,12 +18,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -226,21 +226,29 @@ public class ApplicationSubmissionController {
               return validateProceedings(application.getProceedings(), model)
                   .flatMap(
                       proceedingsFailed -> {
-                        boolean hasErrors = hasFormErrors || proceedingsFailed;
+                        final boolean baseErrors = hasFormErrors || proceedingsFailed;
 
-                        if (caseContext.isAmendment()) {
-                          hasErrors |=
-                              validateAmendmentAssessments(application, caseDetail, user, model);
-                        }
+                        // Amendment assessment validation performs blocking assessment lookups, so
+                        // run it on the bounded-elastic scheduler rather than the event-loop
+                        // thread.
+                        final Mono<Boolean> amendmentErrors =
+                            caseContext.isAmendment()
+                                ? Mono.fromCallable(
+                                        () ->
+                                            validateAmendmentAssessments(
+                                                application, caseDetail, user, model))
+                                    .subscribeOn(Schedulers.boundedElastic())
+                                : Mono.just(false);
 
-                        if (hasErrors) {
-                          model.addAttribute("caseContext", caseContext);
-                          return Mono.just("application/application-validation-error-correction");
-                        } else {
-                          String redirectPath =
-                              caseContext.isAmendment() ? "#" : "/application/summary";
-                          return Mono.just("redirect:" + redirectPath);
-                        }
+                        return amendmentErrors.map(
+                            hasAmendmentErrors -> {
+                              if (baseErrors || hasAmendmentErrors) {
+                                model.addAttribute("caseContext", caseContext);
+                                return "application/application-validation-error-correction";
+                              }
+                              return "redirect:"
+                                  + (caseContext.isAmendment() ? "#" : "/application/summary");
+                            });
                       });
             });
   }
@@ -973,6 +981,6 @@ public class ApplicationSubmissionController {
   }
 
   private String resolveMessage(final String key) {
-    return messageSource.getMessage(key, null, Locale.getDefault());
+    return messageSource.getMessage(key, null, LocaleContextHolder.getLocale());
   }
 }

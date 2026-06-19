@@ -356,8 +356,7 @@ public class AssessmentServiceTest {
   @Test
   void testCalculateAssessmentStatuses_amendment_statusUnchanged_doesNotFlagMeritsAmended() {
     // The stored merits status holds the lookup DESCRIPTION; the assessment's raw status resolves
-    // to
-    // the same description, so nothing has changed and the merits must NOT be re-flagged as
+    // to the same description, so nothing has changed and the merits must NOT be re-flagged as
     // amended.
     final ApplicationDetail application =
         new ApplicationDetail().amendment(true).meritsAssessmentStatus(PROGRESS_STATUS_DESC);
@@ -603,6 +602,36 @@ public class AssessmentServiceTest {
 
     // Cost limit increased since the merits cost limit was recorded => reassessment required even
     // though no merits assessment has been performed yet (old PUI checks this at the top level).
+    final boolean result =
+        assessmentService.isReassessmentRequired(application, MERITS, null, user);
+
+    assertTrue(result);
+  }
+
+  @Test
+  void testIsReassessmentRequired_amendment_noRequestedOrDefaultCostLimit_returnsTrueWithoutNpe() {
+    final Date amendmentCreated = new Date(System.currentTimeMillis() - 60_000);
+
+    // limitAtTimeOfMerits is set but neither requested nor default cost limit is known. This must
+    // be
+    // treated as reassessment-required rather than throwing on BigDecimal.compareTo(null).
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(true)
+            .caseReferenceNumber("CASE-123")
+            .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().created(amendmentCreated))
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .auditTrail(
+                        new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(amendmentCreated)))
+            .costLimit(
+                new uk.gov.laa.ccms.caab.model.CostLimitDetail()
+                    .limitAtTimeOfMerits(new java.math.BigDecimal("1000")))
+            .costs(new uk.gov.laa.ccms.caab.model.CostStructureDetail());
+
+    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
+        .thenReturn(Mono.just(new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()));
+
     final boolean result =
         assessmentService.isReassessmentRequired(application, MERITS, null, user);
 
