@@ -18,10 +18,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -133,6 +135,8 @@ public class ApplicationSubmissionController {
 
   private final SearchConstants searchConstants;
 
+  private final MessageSource messageSource;
+
   protected static final String PARENT_LOOKUP = "PARENT";
   protected static final String CHILD_LOOKUP = "CHILD";
 
@@ -140,21 +144,18 @@ public class ApplicationSubmissionController {
   protected static final String MEANS_ASSESSMENT_ERRORS = "meansAssessmentErrors";
   protected static final String MERITS_ASSESSMENT_ERRORS = "meritsAssessmentErrors";
 
-  // Submit-validation messages mirroring old PUI's errors.Means/MeritsAssessment.* keys.
-  protected static final String MEANS_REASSESSMENT_REQUIRED_MESSAGE =
-      "Due to changed data in your application a re-assessment of the means is required.";
-  protected static final String MEANS_ASSESSMENT_INCOMPLETE_MESSAGE =
-      "The means assessment was not finished.";
-  protected static final String MEANS_ASSESSMENT_ERROR_MESSAGE =
-      "The means assessment was unable to reach a conclusion. "
-          + "You need a complete means assessment to submit.";
-  protected static final String MERITS_REASSESSMENT_REQUIRED_MESSAGE =
-      "Due to changed data in your application a re-assessment of the merits is required.";
-  protected static final String MERITS_ASSESSMENT_INCOMPLETE_MESSAGE =
-      "The merits assessment was not finished.";
-  protected static final String MERITS_ASSESSMENT_ERROR_MESSAGE =
-      "The merits assessment was unable to reach a conclusion. "
-          + "You need a complete merits assessment to submit.";
+  // Submit-validation message keys (resolved via MessageSource against messages.properties),
+  // mirroring old PUI's errors.Means/MeritsAssessment.* keys.
+  protected static final String MEANS_REASSESSMENT_REQUIRED_KEY =
+      "amendment.validation.means.reassessmentRequired";
+  protected static final String MEANS_ASSESSMENT_INCOMPLETE_KEY =
+      "amendment.validation.means.incomplete";
+  protected static final String MEANS_ASSESSMENT_ERROR_KEY = "amendment.validation.means.error";
+  protected static final String MERITS_REASSESSMENT_REQUIRED_KEY =
+      "amendment.validation.merits.reassessmentRequired";
+  protected static final String MERITS_ASSESSMENT_INCOMPLETE_KEY =
+      "amendment.validation.merits.incomplete";
+  protected static final String MERITS_ASSESSMENT_ERROR_KEY = "amendment.validation.merits.error";
 
   /**
    * Handles the GET request for the abandon application confirmation page.
@@ -886,7 +887,8 @@ public class ApplicationSubmissionController {
     if (notIncompleteOrNotStarted(status)
         && assessmentService.isMeansReassessmentRequiredForAmendment(
             amendment, meansAssessment, user)) {
-      model.addAttribute(MEANS_ASSESSMENT_ERRORS, List.of(MEANS_REASSESSMENT_REQUIRED_MESSAGE));
+      model.addAttribute(
+          MEANS_ASSESSMENT_ERRORS, List.of(resolveMessage(MEANS_REASSESSMENT_REQUIRED_KEY)));
       return true;
     }
 
@@ -899,9 +901,10 @@ public class ApplicationSubmissionController {
       model.addAttribute(
           MEANS_ASSESSMENT_ERRORS,
           List.of(
-              AssessmentStatus.ERROR.getStatus().equalsIgnoreCase(status)
-                  ? MEANS_ASSESSMENT_ERROR_MESSAGE
-                  : MEANS_ASSESSMENT_INCOMPLETE_MESSAGE));
+              resolveMessage(
+                  AssessmentStatus.ERROR.getStatus().equalsIgnoreCase(status)
+                      ? MEANS_ASSESSMENT_ERROR_KEY
+                      : MEANS_ASSESSMENT_INCOMPLETE_KEY)));
       return true;
     }
 
@@ -919,7 +922,8 @@ public class ApplicationSubmissionController {
     if (notIncompleteOrNotStarted(status)
         && assessmentService.isMeritsReassessmentRequiredForAmendment(
             amendment, meritsAssessment, user)) {
-      model.addAttribute(MERITS_ASSESSMENT_ERRORS, List.of(MERITS_REASSESSMENT_REQUIRED_MESSAGE));
+      model.addAttribute(
+          MERITS_ASSESSMENT_ERRORS, List.of(resolveMessage(MERITS_REASSESSMENT_REQUIRED_KEY)));
       return true;
     }
 
@@ -930,9 +934,10 @@ public class ApplicationSubmissionController {
       model.addAttribute(
           MERITS_ASSESSMENT_ERRORS,
           List.of(
-              AssessmentStatus.ERROR.getStatus().equalsIgnoreCase(status)
-                  ? MERITS_ASSESSMENT_ERROR_MESSAGE
-                  : MERITS_ASSESSMENT_INCOMPLETE_MESSAGE));
+              resolveMessage(
+                  AssessmentStatus.ERROR.getStatus().equalsIgnoreCase(status)
+                      ? MERITS_ASSESSMENT_ERROR_KEY
+                      : MERITS_ASSESSMENT_INCOMPLETE_KEY)));
       return true;
     }
 
@@ -965,5 +970,9 @@ public class ApplicationSubmissionController {
   private boolean notIncompleteOrNotStarted(final String status) {
     return !AssessmentStatus.INCOMPLETE.getStatus().equalsIgnoreCase(status)
         && !AssessmentStatus.NOT_STARTED.getStatus().equalsIgnoreCase(status);
+  }
+
+  private String resolveMessage(final String key) {
+    return messageSource.getMessage(key, null, Locale.getDefault());
   }
 }

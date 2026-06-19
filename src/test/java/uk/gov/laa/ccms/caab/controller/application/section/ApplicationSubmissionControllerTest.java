@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -46,6 +47,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.MessageSource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -146,6 +148,8 @@ class ApplicationSubmissionControllerTest {
   @Mock private PriorAuthorityDetailsValidator priorAuthorityDetailsValidator;
   @Mock private OrganisationOpponentValidator organisationOpponentValidator;
   @Mock private IndividualOpponentValidator individualOpponentValidator;
+
+  @Mock private MessageSource messageSource;
 
   @InjectMocks private ApplicationSubmissionController applicationSubmissionController;
 
@@ -621,6 +625,11 @@ class ApplicationSubmissionControllerTest {
         .thenReturn(Mono.just(new AddressFormData()));
     when(applicationService.getApplication("1")).thenReturn(Mono.just(amendment));
     when(applicationService.getOpponents(any())).thenReturn(List.of());
+    // Validation error messages are resolved via MessageSource; only the error-producing scenarios
+    // hit this, so it is stubbed leniently.
+    lenient()
+        .when(messageSource.getMessage(anyString(), any(), any()))
+        .thenReturn("Validation error");
   }
 
   private void stubAssessments(final String meansStatus, final String meritsStatus) {

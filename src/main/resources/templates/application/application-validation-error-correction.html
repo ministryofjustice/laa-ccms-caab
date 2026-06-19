@@ -83,13 +83,13 @@
             </tr>
             <tr class="govuk-table__row" th:if="${meansAssessmentErrors != null and !meansAssessmentErrors.isEmpty()}">
                 <td class="govuk-table__cell">
-                    <a th:href="@{/amendments/assessments(assessment=means,invoked-from=CCMS_AC01)}" class="govuk-link">Means Assessment</a>
+                    <a th:href="@{/amendments/assessments(assessment='means',invoked-from='CCMS_AC01')}" class="govuk-link">Means Assessment</a>
                 </td>
                 <td class="govuk-table__cell" th:utext="${#strings.listJoin(meansAssessmentErrors, '<br/>')}"></td>
             </tr>
             <tr class="govuk-table__row" th:if="${meritsAssessmentErrors != null and !meritsAssessmentErrors.isEmpty()}">
                 <td class="govuk-table__cell">
-                    <a th:href="@{/amendments/assessments(assessment=merits,invoked-from=CCMS_AC01)}" class="govuk-link">Merits Assessment</a>
+                    <a th:href="@{/amendments/assessments(assessment='merits',invoked-from='CCMS_AC01')}" class="govuk-link">Merits Assessment</a>
                 </td>
                 <td class="govuk-table__cell" th:utext="${#strings.listJoin(meritsAssessmentErrors, '<br/>')}"></td>
             </tr>
