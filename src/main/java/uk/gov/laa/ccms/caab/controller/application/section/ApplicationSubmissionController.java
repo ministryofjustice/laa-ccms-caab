@@ -4,6 +4,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.DECLARATION_AP
 import static uk.gov.laa.ccms.caab.constants.CcmsModule.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
@@ -61,9 +62,11 @@ import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidat
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingFurtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDetailsValidator;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
+import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
@@ -133,6 +136,26 @@ public class ApplicationSubmissionController {
   protected static final String PARENT_LOOKUP = "PARENT";
   protected static final String CHILD_LOOKUP = "CHILD";
 
+  // Model attributes carrying amendment means/merits submit-validation errors.
+  protected static final String MEANS_ASSESSMENT_ERRORS = "meansAssessmentErrors";
+  protected static final String MERITS_ASSESSMENT_ERRORS = "meritsAssessmentErrors";
+
+  // Submit-validation messages mirroring old PUI's errors.Means/MeritsAssessment.* keys.
+  protected static final String MEANS_REASSESSMENT_REQUIRED_MESSAGE =
+      "Due to changed data in your application a re-assessment of the means is required.";
+  protected static final String MEANS_ASSESSMENT_INCOMPLETE_MESSAGE =
+      "The means assessment was not finished.";
+  protected static final String MEANS_ASSESSMENT_ERROR_MESSAGE =
+      "The means assessment was unable to reach a conclusion. "
+          + "You need a complete means assessment to submit.";
+  protected static final String MERITS_REASSESSMENT_REQUIRED_MESSAGE =
+      "Due to changed data in your application a re-assessment of the merits is required.";
+  protected static final String MERITS_ASSESSMENT_INCOMPLETE_MESSAGE =
+      "The merits assessment was not finished.";
+  protected static final String MERITS_ASSESSMENT_ERROR_MESSAGE =
+      "The merits assessment was unable to reach a conclusion. "
+          + "You need a complete merits assessment to submit.";
+
   /**
    * Handles the GET request for the abandon application confirmation page.
    *
@@ -179,6 +202,7 @@ public class ApplicationSubmissionController {
   public Mono<String> applicationValidate(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @SessionAttribute(value = CASE, required = false) final ApplicationDetail caseDetail,
       @PathVariable("caseContext") final CaseContext caseContext,
       final Model model) {
     return Mono.zip(
@@ -204,7 +228,8 @@ public class ApplicationSubmissionController {
                         boolean hasErrors = hasFormErrors || proceedingsFailed;
 
                         if (caseContext.isAmendment()) {
-                          hasErrors |= checkMeritsReassessmentRequired(application, user, model);
+                          hasErrors |=
+                              validateAmendmentAssessments(application, caseDetail, user, model);
                         }
 
                         if (hasErrors) {
@@ -810,35 +835,135 @@ public class ApplicationSubmissionController {
     return "application/sections/application-submit-declaration";
   }
 
-  private boolean checkMeritsReassessmentRequired(
-      ApplicationDetail amendment, UserDetail user, Model model) {
+  /**
+   * Validates the means and merits assessments when submitting a case amendment. This mirrors old
+   * PUI's {@code PerformFinalValForApplication.checkAssessmentCompleted}: each assessment has a
+   * reassessment-required gate and a completeness gate, the means completeness gate only applying
+   * when the means legal amendment (MNLA) function is available (i.e. ECF cases).
+   *
+   * @param amendment the amendment application being submitted
+   * @param caseDetail the original case (used to resolve the available functions when the amendment
+   *     does not carry them)
+   * @param user the user submitting the amendment
+   * @param model the model to populate with any validation errors
+   * @return {@code true} if either assessment failed validation
+   */
+  private boolean validateAmendmentAssessments(
+      final ApplicationDetail amendment,
+      final ApplicationDetail caseDetail,
+      final UserDetail user,
+      final Model model) {
 
     if (amendment == null || user == null) {
       return false;
     }
 
-    final AssessmentDetail meritsAssessment =
-        assessmentService
-            .getAssessments(
-                List.of(AssessmentName.MERITS.getName()),
-                user.getProvider().getId().toString(),
-                amendment.getCaseReferenceNumber())
-            .map(details -> AssessmentUtil.getMostRecentAssessmentDetail(details.getContent()))
-            .blockOptional()
-            .orElse(null);
+    final List<String> availableFunctions =
+        amendment.getAvailableFunctions() == null || amendment.getAvailableFunctions().isEmpty()
+            ? (caseDetail != null ? caseDetail.getAvailableFunctions() : null)
+            : amendment.getAvailableFunctions();
+    final boolean meansLegalAmendmentAvailable =
+        availableFunctions != null
+            && availableFunctions.contains(FunctionConstants.MEANS_ASSESSMENT_LEGAL_AMENDMENT);
 
-    boolean reassessmentRequired =
-        assessmentService.isMeritsReassessmentRequiredForAmendment(
-            amendment, meritsAssessment, user);
+    boolean hasErrors =
+        validateMeansAssessment(amendment, user, meansLegalAmendmentAvailable, model);
+    hasErrors |= validateMeritsAssessment(amendment, user, model);
+    return hasErrors;
+  }
 
-    if (reassessmentRequired) {
+  private boolean validateMeansAssessment(
+      final ApplicationDetail amendment,
+      final UserDetail user,
+      final boolean meansLegalAmendmentAvailable,
+      final Model model) {
+
+    final AssessmentDetail meansAssessment =
+        getLatestAmendmentAssessment(AssessmentName.MEANS, amendment, user);
+    final String status = assessmentStatus(meansAssessment);
+
+    // Gate A: a reassessment is required (only meaningful when not already incomplete/not started).
+    if (notIncompleteOrNotStarted(status)
+        && assessmentService.isMeansReassessmentRequiredForAmendment(
+            amendment, meansAssessment, user)) {
+      model.addAttribute(MEANS_ASSESSMENT_ERRORS, List.of(MEANS_REASSESSMENT_REQUIRED_MESSAGE));
+      return true;
+    }
+
+    // Gate B: completeness. Means completeness is only enforced when the MNLA (ECF) function is
+    // available - otherwise the means assessment is not part of this amendment.
+    if ((!Boolean.TRUE.equals(amendment.getAmendment())
+            || Boolean.TRUE.equals(amendment.getMeansAssessmentAmended()))
+        && meansLegalAmendmentAvailable
+        && !AssessmentStatus.COMPLETE.getStatus().equalsIgnoreCase(status)) {
       model.addAttribute(
-          "meritsReassessmentErrors",
+          MEANS_ASSESSMENT_ERRORS,
           List.of(
-              "Due to changed data in your application a re-assessment of the merits is required."));
+              AssessmentStatus.ERROR.getStatus().equalsIgnoreCase(status)
+                  ? MEANS_ASSESSMENT_ERROR_MESSAGE
+                  : MEANS_ASSESSMENT_INCOMPLETE_MESSAGE));
       return true;
     }
 
     return false;
+  }
+
+  private boolean validateMeritsAssessment(
+      final ApplicationDetail amendment, final UserDetail user, final Model model) {
+
+    final AssessmentDetail meritsAssessment =
+        getLatestAmendmentAssessment(AssessmentName.MERITS, amendment, user);
+    final String status = assessmentStatus(meritsAssessment);
+
+    // Gate A: a reassessment is required.
+    if (notIncompleteOrNotStarted(status)
+        && assessmentService.isMeritsReassessmentRequiredForAmendment(
+            amendment, meritsAssessment, user)) {
+      model.addAttribute(MERITS_ASSESSMENT_ERRORS, List.of(MERITS_REASSESSMENT_REQUIRED_MESSAGE));
+      return true;
+    }
+
+    // Gate B: completeness. Merits completeness is always enforced when amended.
+    if ((!Boolean.TRUE.equals(amendment.getAmendment())
+            || Boolean.TRUE.equals(amendment.getMeritsAssessmentAmended()))
+        && !AssessmentStatus.COMPLETE.getStatus().equalsIgnoreCase(status)) {
+      model.addAttribute(
+          MERITS_ASSESSMENT_ERRORS,
+          List.of(
+              AssessmentStatus.ERROR.getStatus().equalsIgnoreCase(status)
+                  ? MERITS_ASSESSMENT_ERROR_MESSAGE
+                  : MERITS_ASSESSMENT_INCOMPLETE_MESSAGE));
+      return true;
+    }
+
+    return false;
+  }
+
+  private AssessmentDetail getLatestAmendmentAssessment(
+      final AssessmentName assessmentName,
+      final ApplicationDetail amendment,
+      final UserDetail user) {
+    return assessmentService
+        .getAssessments(
+            List.of(assessmentName.getName()),
+            user.getProvider().getId().toString(),
+            amendment.getCaseReferenceNumber())
+        .mapNotNull(details -> AssessmentUtil.getMostRecentAssessmentDetail(details.getContent()))
+        .blockOptional()
+        .orElse(null);
+  }
+
+  /**
+   * Returns the raw status of the assessment, or {@code null} when there is no assessment. A null
+   * status (no assessment yet) is treated as "neither incomplete nor not started", matching old
+   * PUI's {@code getStatusAsString}.
+   */
+  private String assessmentStatus(final AssessmentDetail assessment) {
+    return assessment != null ? assessment.getStatus() : null;
+  }
+
+  private boolean notIncompleteOrNotStarted(final String status) {
+    return !AssessmentStatus.INCOMPLETE.getStatus().equalsIgnoreCase(status)
+        && !AssessmentStatus.NOT_STARTED.getStatus().equalsIgnoreCase(status);
   }
 }

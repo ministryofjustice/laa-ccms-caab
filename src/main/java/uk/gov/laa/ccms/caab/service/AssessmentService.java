@@ -544,7 +544,7 @@ public class AssessmentService {
    * @param user the user performing the operation
    * @return true if a means reassessment is required
    */
-  private boolean isMeansReassessmentRequiredForAmendment(
+  public boolean isMeansReassessmentRequiredForAmendment(
       final ApplicationDetail application,
       final AssessmentDetail assessment,
       final UserDetail user) {

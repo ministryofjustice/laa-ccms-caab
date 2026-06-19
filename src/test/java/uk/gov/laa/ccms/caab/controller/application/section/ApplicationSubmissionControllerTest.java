@@ -54,6 +54,7 @@ import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
+import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
@@ -80,6 +81,7 @@ import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidat
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingFurtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDetailsValidator;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
@@ -493,6 +495,151 @@ class ApplicationSubmissionControllerTest {
     verify(providerDetailsValidator).validate(any(), any());
     verify(correspondenceAddressValidator).validate(any(), any());
     verify(matterTypeValidator).validate(any(), any());
+  }
+
+  @Test
+  @DisplayName("Amendment validate - ECF means in progress blocks submit")
+  void testAmendmentValidate_meansIncompleteBlocks() throws Exception {
+    final ApplicationDetail amendment = amendmentApplication(true, true, false);
+    stubAmendmentValidationCommon(amendment);
+    stubAssessments("INCOMPLETE", "COMPLETE");
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+        .thenReturn(false);
+
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(
+                get("/{caseContext}/validate", CaseContext.AMENDMENTS)
+                    .sessionAttr(APPLICATION_ID, "1")
+                    .sessionAttr(USER_DETAILS, buildUserDetail()))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+
+    mockMvc
+        .perform(asyncDispatch(mvcResult))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-validation-error-correction"))
+        .andExpect(model().attributeExists("meansAssessmentErrors"))
+        .andExpect(model().attributeDoesNotExist("meritsAssessmentErrors"));
+  }
+
+  @Test
+  @DisplayName("Amendment validate - ECF no means assessment requires reassessment")
+  void testAmendmentValidate_meansReassessmentRequired() throws Exception {
+    final ApplicationDetail amendment = amendmentApplication(true, false, false);
+    stubAmendmentValidationCommon(amendment);
+    stubAssessments(null, "COMPLETE");
+    when(assessmentService.isMeansReassessmentRequiredForAmendment(any(), any(), any()))
+        .thenReturn(true);
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+        .thenReturn(false);
+
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(
+                get("/{caseContext}/validate", CaseContext.AMENDMENTS)
+                    .sessionAttr(APPLICATION_ID, "1")
+                    .sessionAttr(USER_DETAILS, buildUserDetail()))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+
+    mockMvc
+        .perform(asyncDispatch(mvcResult))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-validation-error-correction"))
+        .andExpect(model().attributeExists("meansAssessmentErrors"));
+  }
+
+  @Test
+  @DisplayName("Amendment validate - merits in progress blocks submit (non-ECF means ignored)")
+  void testAmendmentValidate_meritsIncompleteBlocks() throws Exception {
+    final ApplicationDetail amendment = amendmentApplication(false, false, true);
+    stubAmendmentValidationCommon(amendment);
+    stubAssessments("COMPLETE", "INCOMPLETE");
+    when(assessmentService.isMeansReassessmentRequiredForAmendment(any(), any(), any()))
+        .thenReturn(false);
+
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(
+                get("/{caseContext}/validate", CaseContext.AMENDMENTS)
+                    .sessionAttr(APPLICATION_ID, "1")
+                    .sessionAttr(USER_DETAILS, buildUserDetail()))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+
+    mockMvc
+        .perform(asyncDispatch(mvcResult))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-validation-error-correction"))
+        .andExpect(model().attributeExists("meritsAssessmentErrors"))
+        .andExpect(model().attributeDoesNotExist("meansAssessmentErrors"));
+  }
+
+  @Test
+  @DisplayName("Amendment validate - ECF means and merits complete passes")
+  void testAmendmentValidate_assessmentsCompletePass() throws Exception {
+    final ApplicationDetail amendment = amendmentApplication(true, true, true);
+    stubAmendmentValidationCommon(amendment);
+    stubAssessments("COMPLETE", "COMPLETE");
+    when(assessmentService.isMeansReassessmentRequiredForAmendment(any(), any(), any()))
+        .thenReturn(false);
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+        .thenReturn(false);
+
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(
+                get("/{caseContext}/validate", CaseContext.AMENDMENTS)
+                    .sessionAttr(APPLICATION_ID, "1")
+                    .sessionAttr(USER_DETAILS, buildUserDetail()))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+
+    mockMvc.perform(asyncDispatch(mvcResult)).andExpect(redirectedUrl("#"));
+  }
+
+  private ApplicationDetail amendmentApplication(
+      final boolean meansLegalAmendment, final boolean meansAmended, final boolean meritsAmended) {
+    final ApplicationDetail amendment = new ApplicationDetail();
+    amendment.setCaseReferenceNumber("abc123");
+    amendment.setAmendment(true);
+    amendment.setMeansAssessmentAmended(meansAmended);
+    amendment.setMeritsAssessmentAmended(meritsAmended);
+    amendment.setProceedings(List.of());
+    amendment.setPriorAuthorities(List.of());
+    if (meansLegalAmendment) {
+      amendment.setAvailableFunctions(List.of("MNLA"));
+    }
+    return amendment;
+  }
+
+  private void stubAmendmentValidationCommon(final ApplicationDetail amendment) {
+    when(applicationService.getMonoProviderDetailsFormData(any()))
+        .thenReturn(Mono.just(new ApplicationFormData()));
+    when(applicationService.getMonoCorrespondenceAddressFormData(any()))
+        .thenReturn(Mono.just(new AddressFormData()));
+    when(applicationService.getApplication("1")).thenReturn(Mono.just(amendment));
+    when(applicationService.getOpponents(any())).thenReturn(List.of());
+  }
+
+  private void stubAssessments(final String meansStatus, final String meritsStatus) {
+    when(assessmentService.getAssessments(anyList(), anyString(), anyString()))
+        .thenAnswer(
+            invocation -> {
+              final List<String> names = invocation.getArgument(0);
+              final boolean isMeans = names.contains(AssessmentName.MEANS.getName());
+              final String status = isMeans ? meansStatus : meritsStatus;
+              if (status == null) {
+                return Mono.just(new AssessmentDetails().content(List.of()));
+              }
+              final AssessmentDetail assessment = new AssessmentDetail();
+              assessment.setName(
+                  isMeans ? AssessmentName.MEANS.getName() : AssessmentName.MERITS.getName());
+              assessment.setStatus(status);
+              assessment.setAuditDetail(new AuditDetail());
+              return Mono.just(new AssessmentDetails().content(List.of(assessment)));
+            });
   }
 
   @Test
