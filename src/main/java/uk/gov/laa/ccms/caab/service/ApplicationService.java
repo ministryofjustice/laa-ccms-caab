@@ -226,13 +226,28 @@ public class ApplicationService {
             ebsCase ->
                 tdsApplications.stream()
                     .anyMatch(
-                        amendment ->
-                            amendment
+                        tdsApplication ->
+                            tdsApplication
                                 .getCaseReferenceNumber()
                                 .equals(ebsCase.getCaseReferenceNumber())))
         .forEach(
             ebsCase -> {
-              ebsCase.setAmendment(true);
+              final Optional<BaseApplicationDetail> matchingTds =
+                  tdsApplications.stream()
+                      .filter(
+                          tdsApplication ->
+                              tdsApplication
+                                  .getCaseReferenceNumber()
+                                  .equals(ebsCase.getCaseReferenceNumber()))
+                      .findFirst();
+
+              // Duplicate EBS/TDS case references only indicate an amendment when the TDS record
+              // is explicitly flagged as an amendment.
+              if (matchingTds.isPresent()
+                  && Boolean.TRUE.equals(matchingTds.get().getAmendment())) {
+                ebsCase.setAmendment(true);
+              }
+
               tdsApplications.removeIf(
                   app -> app.getCaseReferenceNumber().equals(ebsCase.getCaseReferenceNumber()));
             });
@@ -1928,7 +1943,9 @@ public class ApplicationService {
   }
 
   public boolean isAmendment(ApplicationDetail ebsCase, BaseApplicationDetail tdsApplication) {
-    return (ebsCase != null) && (tdsApplication != null);
+    return (ebsCase != null)
+        && (tdsApplication != null)
+        && Boolean.TRUE.equals(tdsApplication.getAmendment());
   }
 
   /**

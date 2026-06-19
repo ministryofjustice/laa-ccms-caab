@@ -195,6 +195,33 @@ class CaseSubmissionControllerTest {
   }
 
   @Test
+  @DisplayName(
+      "Test addCaseSubmission - Application poll max reached but case exists, marks confirmed")
+  void testAddCaseSubmission_PollMaxReachedButCaseExists() throws Exception {
+    final TransactionStatus mockStatus = new TransactionStatus();
+    when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
+    when(submissionConstants.getMaxPollCount()).thenReturn(5);
+
+    final ApplicationDetail createdCase = new ApplicationDetail();
+    createdCase.setCaseReferenceNumber(activeCase.getCaseReferenceNumber());
+    when(applicationService.getCase(anyString(), anyLong(), anyString())).thenReturn(createdCase);
+
+    mockMvc
+        .perform(
+            get("/application/submit-case")
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
+                .sessionAttr(SUBMISSION_POLL_COUNT, 5)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(USER_DETAILS, userDetail))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/%s/confirmed".formatted(SUBMISSION_SUBMIT_CASE)))
+        .andExpect(request().sessionAttribute(SUBMISSION_RESULT, "confirmed"));
+
+    verify(applicationService, times(1)).getCaseStatus(anyString());
+    verify(applicationService, times(1)).getCase(anyString(), anyLong(), anyString());
+  }
+
+  @Test
   @DisplayName("Test addCaseSubmission - Amendment not confirmed, poll continues")
   void testAddCaseSubmission_AmendmentNotConfirmed() throws Exception {
     final TransactionStatus mockStatus = new TransactionStatus(); // No reference number set

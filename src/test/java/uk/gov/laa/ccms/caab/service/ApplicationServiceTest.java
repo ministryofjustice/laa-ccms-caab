@@ -201,6 +201,30 @@ class ApplicationServiceTest {
   }
 
   @Test
+  void isAmendment_ReturnsTrue_WhenEbsCaseExistsAndTdsRecordFlaggedAsAmendment() {
+    final ApplicationDetail ebsCase = new ApplicationDetail();
+    final BaseApplicationDetail tdsApplication = new BaseApplicationDetail().amendment(true);
+
+    assertTrue(applicationService.isAmendment(ebsCase, tdsApplication));
+  }
+
+  @Test
+  void isAmendment_ReturnsFalse_WhenTdsRecordIsNotFlaggedAsAmendment() {
+    final ApplicationDetail ebsCase = new ApplicationDetail();
+    final BaseApplicationDetail tdsApplication = new BaseApplicationDetail().amendment(false);
+
+    assertFalse(applicationService.isAmendment(ebsCase, tdsApplication));
+  }
+
+  @Test
+  void isAmendment_ReturnsFalse_WhenTdsAmendmentFlagIsNull() {
+    final ApplicationDetail ebsCase = new ApplicationDetail();
+    final BaseApplicationDetail tdsApplication = new BaseApplicationDetail();
+
+    assertFalse(applicationService.isAmendment(ebsCase, tdsApplication));
+  }
+
+  @Test
   void getCases_UnSubmittedStatusDoesNotQuerySOA() {
     final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
     caseSearchCriteria.setCaseReference("123");
@@ -345,6 +369,59 @@ class ApplicationServiceTest {
 
     assertNotNull(result);
     assertEquals(expectedResult, result);
+    assertNull(mockEbsApplication.getAmendment());
+  }
+
+  @Test
+  void getCases_RemovesDuplicatesAndMarksAmendment_WhenTdsRecordIsAmendment() {
+    final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    caseSearchCriteria.setCaseReference("123");
+    caseSearchCriteria.setProviderCaseReference("456");
+    caseSearchCriteria.setFeeEarnerId(789);
+    caseSearchCriteria.setOfficeId(999);
+    caseSearchCriteria.setClientSurname("asurname");
+    caseSearchCriteria.setStatus(STATUS_DRAFT);
+
+    final UserDetail userDetail = buildUserDetail();
+    final int page = 0;
+    final int size = 10;
+
+    final CaseSummary soaCaseSummary =
+        new CaseSummary().caseReferenceNumber("1").caseStatusDisplay("the soa one");
+
+    final BaseApplicationDetail mockEbsApplication =
+        new BaseApplicationDetail()
+            .caseReferenceNumber(soaCaseSummary.getCaseReferenceNumber())
+            .status(new StringDisplayValue().displayValue(soaCaseSummary.getCaseStatusDisplay()));
+
+    final BaseApplicationDetail mockTdsApplication =
+        new BaseApplicationDetail()
+            .caseReferenceNumber("1")
+            .amendment(true)
+            .status(new StringDisplayValue().displayValue("the tds one"));
+
+    final CaseDetails mockCaseDetails =
+        new CaseDetails().totalElements(1).size(1).addContentItem(soaCaseSummary);
+
+    final ApplicationDetails mockTdsApplicationDetails =
+        new ApplicationDetails().totalElements(1).size(1).addContentItem(mockTdsApplication);
+
+    when(ebsApiClient.getCases(caseSearchCriteria, userDetail.getProvider().getId(), page, size))
+        .thenReturn(Mono.just(mockCaseDetails));
+    when(soaApplicationMapper.toBaseApplication(mockCaseDetails.getContent().getFirst()))
+        .thenReturn(mockEbsApplication);
+    when(caabApiClient.getApplications(
+            caseSearchCriteria, userDetail.getProvider().getId(), page, size))
+        .thenReturn(Mono.just(mockTdsApplicationDetails));
+    when(searchConstants.getMaxSearchResultsCases()).thenReturn(size);
+
+    final List<BaseApplicationDetail> result =
+        applicationService.getCases(caseSearchCriteria, userDetail);
+
+    assertNotNull(result);
+    assertEquals(1, result.size());
+    assertEquals(mockEbsApplication, result.getFirst());
+    assertTrue(Boolean.TRUE.equals(mockEbsApplication.getAmendment()));
   }
 
   @Test
