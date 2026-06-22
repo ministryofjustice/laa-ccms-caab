@@ -11,7 +11,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_SUMMARY
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
-import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessment;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentSafe;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getMostRecentAssessmentDetail;
 
 import jakarta.servlet.http.HttpSession;
@@ -94,7 +94,6 @@ import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
-import uk.gov.laa.ccms.caab.util.AssessmentUtil;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -236,6 +235,8 @@ public class ApplicationSubmissionController {
                         if (baseErrors) {
                           model.addAttribute("caseContext", caseContext);
                           return Mono.just("application/application-validation-error-correction");
+                        } else {
+                          return Mono.just("redirect:/{caseContext}/submit/summary");
                         }
 
                         // Amendment assessment validation performs blocking assessment lookups, so
@@ -514,10 +515,11 @@ public class ApplicationSubmissionController {
    * @param model The model
    * @return The view name for the application summary page.
    */
-  @GetMapping("/application/summary")
+  @GetMapping("/{caseContext}/submit/summary")
   public String applicationSummary(
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
+      @PathVariable("caseContext") final CaseContext caseContext,
       final HttpSession session,
       final Model model) {
 
@@ -586,10 +588,10 @@ public class ApplicationSubmissionController {
                     () -> new CaabApplicationException("Failed to pre-process summary data"));
 
     final AssessmentDetail meansAssessmentDetail =
-        getAssessment(preprocessingData.getT1(), AssessmentRulebase.MEANS);
+        getAssessmentSafe(preprocessingData.getT1(), AssessmentRulebase.MEANS);
 
     final AssessmentDetail meritsAssessmentDetail =
-        getAssessment(preprocessingData.getT1(), AssessmentRulebase.MERITS);
+        getAssessmentSafe(preprocessingData.getT1(), AssessmentRulebase.MERITS);
 
     final List<AssessmentSummaryEntityLookupValueDetail> parentSummaryLookups =
         preprocessingData.getT2();
@@ -689,6 +691,7 @@ public class ApplicationSubmissionController {
     session.setAttribute(SUBMISSION_SUMMARY, submissionSummary);
     model.addAttribute("submissionSummary", submissionSummary);
     model.addAttribute("summarySubmissionFormData", new SummarySubmissionFormData());
+    model.addAttribute("caseContext", caseContext);
 
     return "application/sections/application-summary-complete";
   }
@@ -718,20 +721,30 @@ public class ApplicationSubmissionController {
    * @param model the model to hold attributes for rendering views
    * @return the view to render or a redirect to the declaration page
    */
-  @PostMapping("/application/summary")
+  @PostMapping("/{caseContext}/submit/summary")
   public String applicationSummaryPost(
       @SessionAttribute(SUBMISSION_SUMMARY) final SubmissionSummaryDisplay submissionSummary,
+      @PathVariable("caseContext") final CaseContext caseContext,
       @ModelAttribute("summarySubmissionFormData")
           final SummarySubmissionFormData summarySubmissionFormData,
       final BindingResult bindingResult,
-      final Model model) {
+      final Model model,
+      final HttpSession session) {
+
+    model.addAttribute("caseContext", caseContext);
+    model.addAttribute("submissionSummary", submissionSummary);
 
     if (bindingResult.hasErrors()) {
-      model.addAttribute("submissionSummary", submissionSummary);
       return "application/sections/application-summary-complete";
     }
 
-    return "redirect:/application/declaration";
+    if (caseContext.isAmendment()) {
+      session.removeAttribute(SUBMISSION_RESULT);
+    }
+
+    return caseContext.isAmendment()
+        ? "redirect:/amendments/submitConfirmed"
+        : "redirect:/application/declaration";
   }
 
   /**
@@ -873,7 +886,7 @@ public class ApplicationSubmissionController {
       final UserDetail user,
       final Model model) {
 
-    if (amendment == null || user == null) {
+    if (amendment == null || user == null || user.getProvider() == null) {
       return false;
     }
 

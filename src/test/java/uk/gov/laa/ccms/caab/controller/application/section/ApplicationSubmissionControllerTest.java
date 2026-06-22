@@ -251,7 +251,7 @@ class ApplicationSubmissionControllerTest {
 
     mockMvc
         .perform(
-            get("/application/summary")
+            get("/{caseContext}/submit/summary", CaseContext.APPLICATION)
                 .sessionAttr(USER_DETAILS, userDetail)
                 .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk())
@@ -296,7 +296,7 @@ class ApplicationSubmissionControllerTest {
 
     mockMvc
         .perform(
-            post("/application/summary")
+            post("/{caseContext}/submit/summary", CaseContext.APPLICATION)
                 .flashAttr("summarySubmissionFormData", formData)
                 .sessionAttr(SUBMISSION_SUMMARY, submissionSummary))
         .andExpect(status().is3xxRedirection())

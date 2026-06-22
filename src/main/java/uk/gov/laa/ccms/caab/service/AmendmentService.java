@@ -446,4 +446,25 @@ public class AmendmentService {
     return section != null
         && ApplicationConstants.SECTION_STATUS_COMPLETE.equals(section.getStatus());
   }
+
+  public String submitAmendment(final ApplicationDetail amendment, final UserDetail userDetail) {
+    CaseMappingContext caseMappingContext =
+        CaseMappingContext.builder()
+            .tdsApplication(amendment)
+            .meansAssessment(null)
+            .meritsAssessment(null)
+            .caseDocs(Collections.emptyList())
+            .user(userDetail)
+            .build();
+    CaseDetail caseToSubmit = soaApplicationMapper.toCaseDetail(caseMappingContext);
+
+    Mono<CaseTransactionResponse> caseTransactionResponseMono =
+        soaApiClient.updateCase(
+            userDetail.getLoginId(),
+            userDetail.getUserType(),
+            caseToSubmit,
+            amendment.getApplicationType().getId().toString());
+
+    return Objects.requireNonNull(caseTransactionResponseMono.block()).getTransactionId();
+  }
 }
