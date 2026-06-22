@@ -1433,7 +1433,7 @@ class ApplicationServiceTest {
         List.of(MEANS.getName(), MEANS_PREPOP.getName(), MERITS.getName(), MERITS_PREPOP.getName());
 
     final ApplicationDetails tdsApplications =
-        new ApplicationDetails().addContentItem(new BaseApplicationDetail().id(42));
+        new ApplicationDetails().addContentItem(new BaseApplicationDetail().id(42).amendment(true));
     when(caabApiClient.getApplications(any(), eq(user.getProvider().getId()), eq(0), eq(1)))
         .thenReturn(Mono.just(tdsApplications));
     when(caabApiClient.deleteApplication("42", user.getLoginId())).thenReturn(Mono.empty());
@@ -1449,6 +1449,21 @@ class ApplicationServiceTest {
     // Submitted (not abandoned): no evidence-doc removal and no abandonment metric.
     verify(evidenceService, never()).removeDocuments(any(), any());
     verify(puiMetricService, never()).incrementAbandonedCount(any());
+  }
+
+  @Test
+  void removeSubmittedAmendment_nonAmendmentDraft_isNoOp() {
+    final UserDetail user = buildUserDetail();
+    final ApplicationDetails tdsApplications =
+        new ApplicationDetails()
+            .addContentItem(new BaseApplicationDetail().id(42).amendment(false));
+    when(caabApiClient.getApplications(any(), eq(user.getProvider().getId()), eq(0), eq(1)))
+        .thenReturn(Mono.just(tdsApplications));
+
+    applicationService.removeSubmittedAmendment("CASE-123", user);
+
+    verify(caabApiClient, never()).deleteApplication(any(), any());
+    verify(assessmentService, never()).deleteAssessments(any(), any(), any(), any());
   }
 
   @Test

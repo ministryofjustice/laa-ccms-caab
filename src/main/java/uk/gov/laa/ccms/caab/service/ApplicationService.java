@@ -640,7 +640,7 @@ public class ApplicationService {
             .flatMap(content -> content.stream().findFirst())
             .orElse(null);
 
-    if (tdsApplication == null) {
+    if (tdsApplication == null || !Boolean.TRUE.equals(tdsApplication.getAmendment())) {
       return;
     }
 

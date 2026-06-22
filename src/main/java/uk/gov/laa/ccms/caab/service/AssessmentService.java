@@ -637,6 +637,14 @@ public class AssessmentService {
       return true;
     }
 
+    // Cost limit at the time of merits is below the current requested/default limit. Old PUI checks
+    // this regardless of whether a merits assessment exists, so an increased cost limit triggers a
+    // reassessment even when no merits assessment has been performed yet. This must run before the
+    // latestKeyChange / meritsCreated early returns below, which would otherwise suppress it.
+    if (isCostLimitReassessmentRequired(application)) {
+      return true;
+    }
+
     final Date latestKeyChange = getDateOfLatestKeyChange(application);
     if (latestKeyChange == null) {
       return false;
@@ -652,13 +660,6 @@ public class AssessmentService {
     }
 
     if (Boolean.TRUE.equals(application.getMeritsReassessmentRequired())) {
-      return true;
-    }
-
-    // Cost limit at the time of merits is below the current requested/default limit. Old PUI checks
-    // this regardless of whether a merits assessment exists, so an increased cost limit triggers a
-    // reassessment even when no merits assessment has been performed yet.
-    if (isCostLimitReassessmentRequired(application)) {
       return true;
     }
 
