@@ -101,7 +101,7 @@
       </div>
     </div>
 
-    <div th:if="${isAmendment}"
+    <div th:if="${isAmendment || hasEbsAmendments}"
          class="govuk-grid-row">
       <div class="govuk-grid-column-full">
         <h2 class="govuk-heading-m" th:text="#{case.overview.amendmentSummary.title}"/>
@@ -166,6 +166,8 @@
         </table>
       </div>
     </div>
+
+
 
       <div class="govuk-grid-row">
           <div class="govuk-grid-column-full">

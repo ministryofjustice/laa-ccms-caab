@@ -63,12 +63,13 @@ class AmendmentServiceTest {
   @Mock private EvidenceService evidenceService;
 
   private AmendmentService amendmentService;
+  private AssessmentService assessmentService;
 
   @BeforeEach
   void beforeEach() {
     amendmentService =
         new AmendmentService(
-            applicationService, caabApiClient, soaApiClient, soaApplicationMapper, evidenceService);
+            applicationService, caabApiClient, soaApiClient, soaApplicationMapper, assessmentService, evidenceService);
 
     // Default: no amendment documents uploaded, so quick amendments submit with no case docs.
     lenient()

@@ -6,14 +6,13 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/application/sections}" class="govuk-back-link" th:text="#{site.returnToApplication}"></a>
+    <a th:if="${caseContext.isApplication()}" th:href="@{/application/sections}" class="govuk-back-link" th:text="#{site.returnToApplication}"></a>
+      <a th:if="${caseContext.isAmendment()}" th:href="@{/amendments/summary}" class="govuk-back-link" th:text="#{site.returnToAmendmentSummary}"></a>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/application/summary}" th:object="${summarySubmissionFormData}" method="post">
-      <span class="govuk-caption-l">Create application</span>
-      <h1 class="govuk-heading-l">
-        Application summary
-      </h1>
+    <form action="#" th:action="@{/{caseContext}/submit/summary(caseContext=${caseContext.pathValue})}" th:object="${summarySubmissionFormData}" method="post">
+        <span class="govuk-caption-l" th:text="${caseContext.isAmendment()} ? #{amendment.case} : #{application.create}"></span>
+      <h1 class="govuk-heading-l" th:text="${caseContext.isAmendment()} ? #{amendment.case.submit.title} : #{application.summary}"></h1>
       <p class="govuk-body-l">
         The information you have entered in your Application is listed below. In order to print the overview please click on the 'Print this page' button.
       </p>

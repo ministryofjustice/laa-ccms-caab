@@ -11,7 +11,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_SUMMARY
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
-import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessment;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentSafe;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getMostRecentAssessmentDetail;
 
 import jakarta.servlet.http.HttpSession;
@@ -94,7 +94,7 @@ import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
-import uk.gov.laa.ccms.caab.util.AssessmentUtil;
+import uk.gov.laa.ccms.caab.util.AmendmentUtil;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -144,6 +144,10 @@ public class ApplicationSubmissionController {
   // Model attributes carrying amendment means/merits submit-validation errors.
   protected static final String MEANS_ASSESSMENT_ERRORS = "meansAssessmentErrors";
   protected static final String MERITS_ASSESSMENT_ERRORS = "meritsAssessmentErrors";
+
+  // Model attribute / message key for the "amendment has no changes" submit guard (CCMSPUI-932).
+  protected static final String AMENDMENT_NO_CHANGES_ERRORS = "amendmentNoChangesErrors";
+  protected static final String AMENDMENT_NO_CHANGES_KEY = "amendment.validation.noChanges";
 
   // Submit-validation message keys (resolved via MessageSource against messages.properties),
   // mirroring old PUI's errors.Means/MeritsAssessment.* keys.
@@ -256,8 +260,8 @@ public class ApplicationSubmissionController {
                                 model.addAttribute("caseContext", caseContext);
                                 return "application/application-validation-error-correction";
                               }
-                              return "redirect:"
-                                  + (caseContext.isAmendment() ? "#" : "/application/summary");
+                              return "redirect:/%s/submit/summary"
+                                  .formatted(caseContext.getPathValue());
                             });
                       });
             });
@@ -514,10 +518,11 @@ public class ApplicationSubmissionController {
    * @param model The model
    * @return The view name for the application summary page.
    */
-  @GetMapping("/application/summary")
+  @GetMapping("/{caseContext}/submit/summary")
   public String applicationSummary(
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
+      @PathVariable("caseContext") final CaseContext caseContext,
       final HttpSession session,
       final Model model) {
 
@@ -586,10 +591,10 @@ public class ApplicationSubmissionController {
                     () -> new CaabApplicationException("Failed to pre-process summary data"));
 
     final AssessmentDetail meansAssessmentDetail =
-        getAssessment(preprocessingData.getT1(), AssessmentRulebase.MEANS);
+        getAssessmentSafe(preprocessingData.getT1(), AssessmentRulebase.MEANS);
 
     final AssessmentDetail meritsAssessmentDetail =
-        getAssessment(preprocessingData.getT1(), AssessmentRulebase.MERITS);
+        getAssessmentSafe(preprocessingData.getT1(), AssessmentRulebase.MERITS);
 
     final List<AssessmentSummaryEntityLookupValueDetail> parentSummaryLookups =
         preprocessingData.getT2();
@@ -689,6 +694,7 @@ public class ApplicationSubmissionController {
     session.setAttribute(SUBMISSION_SUMMARY, submissionSummary);
     model.addAttribute("submissionSummary", submissionSummary);
     model.addAttribute("summarySubmissionFormData", new SummarySubmissionFormData());
+    model.addAttribute("caseContext", caseContext);
 
     return "application/sections/application-summary-complete";
   }
@@ -718,20 +724,30 @@ public class ApplicationSubmissionController {
    * @param model the model to hold attributes for rendering views
    * @return the view to render or a redirect to the declaration page
    */
-  @PostMapping("/application/summary")
+  @PostMapping("/{caseContext}/submit/summary")
   public String applicationSummaryPost(
       @SessionAttribute(SUBMISSION_SUMMARY) final SubmissionSummaryDisplay submissionSummary,
+      @PathVariable("caseContext") final CaseContext caseContext,
       @ModelAttribute("summarySubmissionFormData")
           final SummarySubmissionFormData summarySubmissionFormData,
       final BindingResult bindingResult,
-      final Model model) {
+      final Model model,
+      final HttpSession session) {
+
+    model.addAttribute("caseContext", caseContext);
+    model.addAttribute("submissionSummary", submissionSummary);
 
     if (bindingResult.hasErrors()) {
-      model.addAttribute("submissionSummary", submissionSummary);
       return "application/sections/application-summary-complete";
     }
 
-    return "redirect:/application/declaration";
+    if (caseContext.isAmendment()) {
+      session.removeAttribute(SUBMISSION_RESULT);
+    }
+
+    return caseContext.isAmendment()
+        ? "redirect:/amendments/submitConfirmed"
+        : "redirect:/application/declaration";
   }
 
   /**
@@ -873,7 +889,7 @@ public class ApplicationSubmissionController {
       final UserDetail user,
       final Model model) {
 
-    if (amendment == null || user == null) {
+    if (amendment == null || user == null || user.getProvider() == null) {
       return false;
     }
 
@@ -885,10 +901,33 @@ public class ApplicationSubmissionController {
         availableFunctions != null
             && availableFunctions.contains(FunctionConstants.MEANS_ASSESSMENT_LEGAL_AMENDMENT);
 
-    boolean hasErrors =
-        validateMeansAssessment(amendment, user, meansLegalAmendmentAvailable, model);
+    // Recompute the assessment amended flags/statuses on the freshly-fetched amendment before the
+    // gates run. They are recomputed-but-not-persisted (so they are unset here), and the
+    // reassessment-required check (getMeritsComparisonDate) compares the latest key change against
+    // the amendment draft's creation date unless the amended flag is set - which would keep
+    // demanding a reassessment even after a completed one. This mirrors the amend-case screen load.
+    final AssessmentDetail means =
+        getLatestAmendmentAssessment(AssessmentName.MEANS, amendment, user);
+    final AssessmentDetail merits =
+        getLatestAmendmentAssessment(AssessmentName.MERITS, amendment, user);
+    assessmentService.calculateAssessmentStatuses(amendment, means, merits, user);
+
+    // Block an amendment that has not actually changed anything (CCMSPUI-932, scenario 5). Old PUI
+    // permits an empty amendment; the new PUI surfaces a validation error instead.
+    boolean hasErrors = validateAmendmentHasChanges(amendment, caseDetail, model);
+    hasErrors |= validateMeansAssessment(amendment, user, meansLegalAmendmentAvailable, model);
     hasErrors |= validateMeritsAssessment(amendment, user, model);
     return hasErrors;
+  }
+
+  private boolean validateAmendmentHasChanges(
+      final ApplicationDetail amendment, final ApplicationDetail caseDetail, final Model model) {
+    if (AmendmentUtil.hasChanges(amendment, caseDetail)) {
+      return false;
+    }
+    model.addAttribute(
+        AMENDMENT_NO_CHANGES_ERRORS, List.of(resolveMessage(AMENDMENT_NO_CHANGES_KEY)));
+    return true;
   }
 
   private boolean validateMeansAssessment(
@@ -993,7 +1032,7 @@ public class ApplicationSubmissionController {
             List.of(assessmentName.getName()),
             user.getProvider().getId().toString(),
             amendment.getCaseReferenceNumber())
-        .mapNotNull(details -> AssessmentUtil.getMostRecentAssessmentDetail(details.getContent()))
+        .mapNotNull(details -> getMostRecentAssessmentDetail(details.getContent()))
         .blockOptional()
         .orElse(null);
   }

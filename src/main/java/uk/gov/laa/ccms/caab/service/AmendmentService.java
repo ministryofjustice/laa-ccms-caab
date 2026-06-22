@@ -25,6 +25,7 @@ import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.ApplicationConstants;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
@@ -41,6 +42,7 @@ import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionStatusDisplay;
 import uk.gov.laa.ccms.caab.util.AmendmentUtil;
+import uk.gov.laa.ccms.caab.util.AssessmentUtil;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
@@ -64,6 +66,7 @@ public class AmendmentService {
   private final CaabApiClient caabApiClient;
   private final SoaApiClient soaApiClient;
   private final SoaApplicationMapper soaApplicationMapper;
+  private final AssessmentService assessmentService;
   private final EvidenceService evidenceService;
 
   /**
@@ -494,5 +497,64 @@ public class AmendmentService {
   private boolean isAssessmentSectionComplete(final ApplicationSectionStatusDisplay section) {
     return section != null
         && ApplicationConstants.SECTION_STATUS_COMPLETE.equals(section.getStatus());
+  }
+
+  public String submitAmendment(final ApplicationDetail amendment, final UserDetail userDetail) {
+
+    final String caseUpdateType = "LegalAmendment";
+
+    final AssessmentDetail meansAssessment =
+        getMostRecentAmendmentAssessment(AssessmentRulebase.MEANS, amendment, userDetail);
+    final AssessmentDetail meritsAssessment =
+        getMostRecentAmendmentAssessment(AssessmentRulebase.MERITS, amendment, userDetail);
+
+    assessmentService.calculateAssessmentStatuses(
+        amendment, meansAssessment, meritsAssessment, userDetail);
+
+    CaseMappingContext caseMappingContext =
+        CaseMappingContext.builder()
+            .tdsApplication(amendment)
+            .meansAssessment(meansAssessment)
+            .meritsAssessment(meritsAssessment)
+            .caseDocs(Collections.emptyList())
+            .user(userDetail)
+            .build();
+    CaseDetail caseToSubmit = soaApplicationMapper.toCaseDetail(caseMappingContext);
+
+    Mono<CaseTransactionResponse> caseTransactionResponseMono =
+        soaApiClient.updateCase(
+            userDetail.getLoginId(), userDetail.getUserType(), caseToSubmit, caseUpdateType);
+
+    CaseTransactionResponse response = Objects.requireNonNull(caseTransactionResponseMono.block());
+
+    updateTdsAmendmentStatusToSubmitted(amendment, userDetail);
+
+    return response.getTransactionId();
+  }
+
+  private void updateTdsAmendmentStatusToSubmitted(ApplicationDetail amendment, UserDetail user) {
+    try {
+      final ApplicationDetail status_patch = new ApplicationDetail();
+      status_patch.setStatus(
+          new StringDisplayValue().id(ApplicationConstants.PROCEEDING_STATUS_SUBMITTED_DISPLAY));
+
+      applicationService.patchApplication(String.valueOf(amendment.getId()), status_patch, user);
+    } catch (Exception e) {
+      log.warn("Failed to update the TDS amendment status to Submitted");
+    }
+  }
+
+  private AssessmentDetail getMostRecentAmendmentAssessment(
+      final AssessmentRulebase rulebase,
+      final ApplicationDetail amendment,
+      final UserDetail userDetail) {
+    return assessmentService
+        .getAssessments(
+            List.of(rulebase.getName()),
+            userDetail.getProvider().getId().toString(),
+            amendment.getCaseReferenceNumber())
+        .mapNotNull(details -> AssessmentUtil.getMostRecentAssessmentDetail(details.getContent()))
+        .blockOptional()
+        .orElse(null);
   }
 }

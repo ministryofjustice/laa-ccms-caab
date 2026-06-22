@@ -8,8 +8,11 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_D
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_REQUIRED;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
 
 import jakarta.servlet.http.HttpSession;
 import java.util.Collections;
@@ -171,5 +174,21 @@ public class AmendCaseController {
   @PostMapping("/amendments/summary")
   public String completeAmendment() {
     return "redirect:/amendments/validate";
+  }
+
+  @GetMapping("/amendments/submitConfirmed")
+  public String submitAmendmentConfirmed(
+      @SessionAttribute(APPLICATION_ID) final String applicationId,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
+      HttpSession session) {
+    ApplicationDetail amendment = applicationService.getApplication(applicationId).block();
+
+    final String response = amendmentService.submitAmendment(amendment, user);
+
+    session.setAttribute(SUBMISSION_TRANSACTION_ID, response);
+    session.removeAttribute(SUBMISSION_RESULT);
+
+    return "redirect:/amendments/%s".formatted(SUBMISSION_SUBMIT_CASE);
   }
 }
