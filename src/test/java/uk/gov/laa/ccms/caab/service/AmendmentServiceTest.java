@@ -18,6 +18,7 @@ import static uk.gov.laa.ccms.caab.util.ApplicationDetailUtils.buildFullApplicat
 import static uk.gov.laa.ccms.caab.util.ApplicationDetailUtils.expectedApplicationSectionDisplay;
 
 import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -28,12 +29,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
@@ -56,13 +59,19 @@ class AmendmentServiceTest {
   @Mock private CaabApiClient caabApiClient;
   @Mock private SoaApiClient soaApiClient;
   @Mock private SoaApplicationMapper soaApplicationMapper;
+  @Mock private AssessmentService assessmentService;
 
   private AmendmentService amendmentService;
 
   @BeforeEach
   void beforeEach() {
     amendmentService =
-        new AmendmentService(applicationService, caabApiClient, soaApiClient, soaApplicationMapper);
+        new AmendmentService(
+            applicationService,
+            caabApiClient,
+            soaApiClient,
+            soaApplicationMapper,
+            assessmentService);
   }
 
   @Nested
@@ -587,6 +596,64 @@ class AmendmentServiceTest {
               eq("Type"),
               any(),
               eq(QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT));
+      assertThat(transactionId).isEqualTo("TRANS123");
+    }
+  }
+
+  @Nested
+  @DisplayName("submitAmendment() tests")
+  class SubmitAmendmentTests {
+
+    @Test
+    @DisplayName("Should submit a full amendment under the legal amendment type with assessments")
+    void shouldSubmitFullAmendment() {
+      // Given
+      UserDetail userDetails =
+          new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
+      ApplicationDetail amendment = buildFullApplicationDetail();
+      amendment.setCaseReferenceNumber("12345");
+
+      AssessmentDetail means =
+          new AssessmentDetail().name(AssessmentRulebase.MEANS.getName()).status("COMPLETE");
+      AssessmentDetail merits =
+          new AssessmentDetail().name(AssessmentRulebase.MERITS.getName()).status("COMPLETE");
+
+      when(assessmentService.getAssessments(any(), eq("10"), eq("12345")))
+          .thenAnswer(
+              invocation -> {
+                List<String> names = invocation.getArgument(0);
+                AssessmentDetail assessment =
+                    names.contains(AssessmentRulebase.MEANS.getName()) ? means : merits;
+                return Mono.just(new AssessmentDetails().addContentItem(assessment));
+              });
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), any()))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TRANS123")));
+
+      // When
+      String transactionId = amendmentService.submitAmendment(amendment, userDetails);
+
+      // Then
+      ArgumentCaptor<CaseMappingContext> mappingContextCaptor =
+          ArgumentCaptor.forClass(CaseMappingContext.class);
+      verify(soaApplicationMapper).toCaseDetail(mappingContextCaptor.capture());
+      CaseMappingContext mappingContext = mappingContextCaptor.getValue();
+
+      // The full amendment must NOT be cleaned, so proceedings/opponents are preserved.
+      assertThat(mappingContext.getTdsApplication().getProceedings()).isNotEmpty();
+      assertThat(mappingContext.getTdsApplication().getQuickEditType())
+          .isEqualTo(QuickEditTypeConstants.MESSAGE_TYPE_MEANS_ASSESSMENT_LEGAL_AMENDMENT);
+      assertThat(mappingContext.getMeansAssessment()).isSameAs(means);
+      assertThat(mappingContext.getMeritsAssessment()).isSameAs(merits);
+      assertThat(mappingContext.getCaseDocs()).isEmpty();
+
+      verify(assessmentService).calculateAssessmentStatuses(amendment, means, merits, userDetails);
+      verify(soaApiClient)
+          .updateCase(
+              eq("123"),
+              eq("Type"),
+              any(),
+              eq(QuickEditTypeConstants.MESSAGE_TYPE_MEANS_ASSESSMENT_LEGAL_AMENDMENT));
       assertThat(transactionId).isEqualTo("TRANS123");
     }
   }

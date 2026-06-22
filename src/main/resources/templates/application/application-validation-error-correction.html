@@ -28,6 +28,12 @@
             </tr>
             </thead>
             <tbody class="govuk-table__body">
+            <tr class="govuk-table__row" th:if="${amendmentNoChangesErrors != null and !amendmentNoChangesErrors.isEmpty()}">
+              <td class="govuk-table__cell">
+                <a th:href="@{/amendments/summary}" class="govuk-link">Amend case</a>
+              </td>
+              <td class="govuk-table__cell" th:utext="${#strings.listJoin(amendmentNoChangesErrors, '<br/>')}"></td>
+            </tr>
             <tr class="govuk-table__row" th:if="${providerDetailsErrors != null and !providerDetailsErrors.isEmpty()}">
               <form action="#" th:action="@{/application/sections/provider-details}" th:object="${providerDetailsFormData}" method="post">
                 <input type="hidden" th:field="*{officeId}"/>

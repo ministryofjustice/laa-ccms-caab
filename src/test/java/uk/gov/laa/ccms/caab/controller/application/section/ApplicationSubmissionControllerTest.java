@@ -93,6 +93,7 @@ import uk.gov.laa.ccms.caab.mapper.context.submission.GeneralDetailsSubmissionSu
 import uk.gov.laa.ccms.caab.mapper.context.submission.OpponentSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.submission.ProceedingSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CostLimitDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
@@ -634,7 +635,9 @@ class ApplicationSubmissionControllerTest {
             .andExpect(request().asyncStarted())
             .andReturn();
 
-    mockMvc.perform(asyncDispatch(mvcResult)).andExpect(redirectedUrl("#"));
+    mockMvc
+        .perform(asyncDispatch(mvcResult))
+        .andExpect(redirectedUrl("/amendments/submit/summary"));
   }
 
   @Test
@@ -688,7 +691,9 @@ class ApplicationSubmissionControllerTest {
             .andExpect(request().asyncStarted())
             .andReturn();
 
-    mockMvc.perform(asyncDispatch(mvcResult)).andExpect(redirectedUrl("#"));
+    mockMvc
+        .perform(asyncDispatch(mvcResult))
+        .andExpect(redirectedUrl("/amendments/submit/summary"));
   }
 
   @Test
@@ -711,7 +716,35 @@ class ApplicationSubmissionControllerTest {
             .andExpect(request().asyncStarted())
             .andReturn();
 
-    mockMvc.perform(asyncDispatch(mvcResult)).andExpect(redirectedUrl("#"));
+    mockMvc
+        .perform(asyncDispatch(mvcResult))
+        .andExpect(redirectedUrl("/amendments/submit/summary"));
+  }
+
+  @Test
+  @DisplayName("Amendment validate - amendment with no changes is blocked")
+  void testAmendmentValidate_emptyAmendmentBlocks() throws Exception {
+    // No cost change, no amended assessments, no proceedings/opponents and no audit edit: the
+    // amendment is empty, so submission must be blocked with a no-changes error (CCMSPUI-932).
+    final ApplicationDetail amendment = amendmentApplication(false, false, false);
+    amendment.setCostLimit(new CostLimitDetail().changed(false));
+    stubAmendmentValidationCommon(amendment);
+    stubAssessments("COMPLETE", "COMPLETE");
+
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(
+                get("/{caseContext}/validate", CaseContext.AMENDMENTS)
+                    .sessionAttr(APPLICATION_ID, "1")
+                    .sessionAttr(USER_DETAILS, buildUserDetail()))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+
+    mockMvc
+        .perform(asyncDispatch(mvcResult))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-validation-error-correction"))
+        .andExpect(model().attributeExists("amendmentNoChangesErrors"));
   }
 
   @Test
@@ -763,6 +796,9 @@ class ApplicationSubmissionControllerTest {
     amendment.setMeritsAssessmentAmended(meritsAmended);
     amendment.setProceedings(List.of());
     amendment.setPriorAuthorities(List.of());
+    // Represent a non-empty amendment so the "no changes" submit guard does not block these
+    // assessment-gate focused scenarios.
+    amendment.setCostLimit(new CostLimitDetail().changed(true));
     if (meansLegalAmendment) {
       amendment.setAvailableFunctions(List.of("MNLA"));
     }

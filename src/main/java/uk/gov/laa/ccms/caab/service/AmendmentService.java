@@ -24,6 +24,7 @@ import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.ApplicationConstants;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
@@ -38,6 +39,7 @@ import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionStatusDisplay;
 import uk.gov.laa.ccms.caab.util.AmendmentUtil;
+import uk.gov.laa.ccms.caab.util.AssessmentUtil;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
@@ -61,6 +63,7 @@ public class AmendmentService {
   private final CaabApiClient caabApiClient;
   private final SoaApiClient soaApiClient;
   private final SoaApplicationMapper soaApplicationMapper;
+  private final AssessmentService assessmentService;
 
   /**
    * Creates and submits an amendment for an existing case using the provided application details
@@ -447,12 +450,36 @@ public class AmendmentService {
         && ApplicationConstants.SECTION_STATUS_COMPLETE.equals(section.getStatus());
   }
 
+  /**
+   * Submits a full case amendment to EBS. Unlike the quick-amendment submissions this does NOT
+   * clean the application (proceedings and opponents are preserved) and it submits under the legal
+   * amendment quick-edit type. The current means and merits assessments are attached so any
+   * reassessment performed during the amendment journey is transferred to EBS, and the amended
+   * flags are recalculated so EBS knows which assessments changed.
+   *
+   * @param amendment the TDS amendment application to submit
+   * @param userDetail the user submitting the amendment
+   * @return the transaction id for the case update
+   */
   public String submitAmendment(final ApplicationDetail amendment, final UserDetail userDetail) {
+    amendment.setQuickEditType(
+        QuickEditTypeConstants.MESSAGE_TYPE_MEANS_ASSESSMENT_LEGAL_AMENDMENT);
+
+    final AssessmentDetail meansAssessment =
+        getMostRecentAmendmentAssessment(AssessmentRulebase.MEANS, amendment, userDetail);
+    final AssessmentDetail meritsAssessment =
+        getMostRecentAmendmentAssessment(AssessmentRulebase.MERITS, amendment, userDetail);
+
+    // Recompute the amended flags (not persisted) so the case update tells EBS which assessments
+    // changed, mirroring the legacy provider UI amendment submission.
+    assessmentService.calculateAssessmentStatuses(
+        amendment, meansAssessment, meritsAssessment, userDetail);
+
     CaseMappingContext caseMappingContext =
         CaseMappingContext.builder()
             .tdsApplication(amendment)
-            .meansAssessment(null)
-            .meritsAssessment(null)
+            .meansAssessment(meansAssessment)
+            .meritsAssessment(meritsAssessment)
             .caseDocs(Collections.emptyList())
             .user(userDetail)
             .build();
@@ -463,8 +490,22 @@ public class AmendmentService {
             userDetail.getLoginId(),
             userDetail.getUserType(),
             caseToSubmit,
-            amendment.getApplicationType().getId().toString());
+            amendment.getQuickEditType());
 
     return Objects.requireNonNull(caseTransactionResponseMono.block()).getTransactionId();
+  }
+
+  private AssessmentDetail getMostRecentAmendmentAssessment(
+      final AssessmentRulebase rulebase,
+      final ApplicationDetail amendment,
+      final UserDetail userDetail) {
+    return assessmentService
+        .getAssessments(
+            List.of(rulebase.getName()),
+            userDetail.getProvider().getId().toString(),
+            amendment.getCaseReferenceNumber())
+        .mapNotNull(details -> AssessmentUtil.getMostRecentAssessmentDetail(details.getContent()))
+        .blockOptional()
+        .orElse(null);
   }
 }

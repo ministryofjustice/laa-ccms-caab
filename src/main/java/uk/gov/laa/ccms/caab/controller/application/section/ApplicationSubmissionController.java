@@ -94,6 +94,7 @@ import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.util.AmendmentUtil;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -143,6 +144,10 @@ public class ApplicationSubmissionController {
   // Model attributes carrying amendment means/merits submit-validation errors.
   protected static final String MEANS_ASSESSMENT_ERRORS = "meansAssessmentErrors";
   protected static final String MERITS_ASSESSMENT_ERRORS = "meritsAssessmentErrors";
+
+  // Model attribute / message key for the "amendment has no changes" submit guard (CCMSPUI-932).
+  protected static final String AMENDMENT_NO_CHANGES_ERRORS = "amendmentNoChangesErrors";
+  protected static final String AMENDMENT_NO_CHANGES_KEY = "amendment.validation.noChanges";
 
   // Submit-validation message keys (resolved via MessageSource against messages.properties),
   // mirroring old PUI's errors.Means/MeritsAssessment.* keys.
@@ -235,8 +240,6 @@ public class ApplicationSubmissionController {
                         if (baseErrors) {
                           model.addAttribute("caseContext", caseContext);
                           return Mono.just("application/application-validation-error-correction");
-                        } else {
-                          return Mono.just("redirect:/{caseContext}/submit/summary");
                         }
 
                         // Amendment assessment validation performs blocking assessment lookups, so
@@ -257,8 +260,9 @@ public class ApplicationSubmissionController {
                                 model.addAttribute("caseContext", caseContext);
                                 return "application/application-validation-error-correction";
                               }
-                              return "redirect:"
-                                  + (caseContext.isAmendment() ? "#" : "/application/summary");
+                              // Validation passed - go to the printable review summary (Step 2).
+                              return "redirect:/%s/submit/summary"
+                                  .formatted(caseContext.getPathValue());
                             });
                       });
             });
@@ -898,10 +902,43 @@ public class ApplicationSubmissionController {
         availableFunctions != null
             && availableFunctions.contains(FunctionConstants.MEANS_ASSESSMENT_LEGAL_AMENDMENT);
 
-    boolean hasErrors =
-        validateMeansAssessment(amendment, user, meansLegalAmendmentAvailable, model);
+    // Recompute the assessment amended flags/statuses on the freshly-fetched amendment before the
+    // gates run. They are recomputed-but-not-persisted (so they are unset here), and the
+    // reassessment-required check (getMeritsComparisonDate) compares the latest key change against
+    // the amendment draft's creation date unless the amended flag is set - which would keep
+    // demanding a reassessment even after a completed one. This mirrors the amend-case screen load.
+    final AssessmentDetail means =
+        getLatestAmendmentAssessment(AssessmentName.MEANS, amendment, user);
+    final AssessmentDetail merits =
+        getLatestAmendmentAssessment(AssessmentName.MERITS, amendment, user);
+    assessmentService.calculateAssessmentStatuses(amendment, means, merits, user);
+
+    // Block an amendment that has not actually changed anything (CCMSPUI-932, scenario 5). Old PUI
+    // permits an empty amendment; the new PUI surfaces a validation error instead.
+    boolean hasErrors = validateAmendmentHasChanges(amendment, caseDetail, model);
+    hasErrors |= validateMeansAssessment(amendment, user, meansLegalAmendmentAvailable, model);
     hasErrors |= validateMeritsAssessment(amendment, user, model);
     return hasErrors;
+  }
+
+  /**
+   * Validates that the amendment actually changes something. Mirrors the ticket's improvement over
+   * old PUI (which permits an empty amendment): when nothing has changed a validation error is
+   * added and submission is blocked.
+   *
+   * @param amendment the amendment being submitted (with amended flags already recomputed)
+   * @param caseDetail the original EBS case the amendment is based on (may be {@code null})
+   * @param model the model to populate with the error
+   * @return {@code true} if the amendment has no changes
+   */
+  private boolean validateAmendmentHasChanges(
+      final ApplicationDetail amendment, final ApplicationDetail caseDetail, final Model model) {
+    if (AmendmentUtil.hasChanges(amendment, caseDetail)) {
+      return false;
+    }
+    model.addAttribute(
+        AMENDMENT_NO_CHANGES_ERRORS, List.of(resolveMessage(AMENDMENT_NO_CHANGES_KEY)));
+    return true;
   }
 
   private boolean validateMeansAssessment(
@@ -1006,7 +1043,7 @@ public class ApplicationSubmissionController {
             List.of(assessmentName.getName()),
             user.getProvider().getId().toString(),
             amendment.getCaseReferenceNumber())
-        .mapNotNull(details -> AssessmentUtil.getMostRecentAssessmentDetail(details.getContent()))
+        .mapNotNull(details -> getMostRecentAssessmentDetail(details.getContent()))
         .blockOptional()
         .orElse(null);
   }
