@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.DECLARATION_APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.CcmsModule.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
@@ -228,6 +229,15 @@ public class ApplicationSubmissionController {
                       proceedingsFailed -> {
                         final boolean baseErrors = hasFormErrors || proceedingsFailed;
 
+                        // If base form/proceedings validation already failed, surface those errors
+                        // immediately and skip the (blocking, SOA-touching) amendment assessment
+                        // validation - it would only add latency and could fail the request for
+                        // reasons unrelated to the errors actually shown to the user.
+                        if (baseErrors) {
+                          model.addAttribute("caseContext", caseContext);
+                          return Mono.just("application/application-validation-error-correction");
+                        }
+
                         // Amendment assessment validation performs blocking assessment lookups, so
                         // run it on the bounded-elastic scheduler rather than the event-loop
                         // thread.
@@ -242,7 +252,7 @@ public class ApplicationSubmissionController {
 
                         return amendmentErrors.map(
                             hasAmendmentErrors -> {
-                              if (baseErrors || hasAmendmentErrors) {
+                              if (hasAmendmentErrors) {
                                 model.addAttribute("caseContext", caseContext);
                                 return "application/application-validation-error-correction";
                               }
@@ -887,6 +897,17 @@ public class ApplicationSubmissionController {
       final boolean meansLegalAmendmentAvailable,
       final Model model) {
 
+    // Means validation only has an effect for ECF means amendments: the completeness gate (Gate B)
+    // requires the MNLA function, and the reassessment gate (Gate A) only fires for the ECF
+    // application type (see AssessmentService#isMeansReassessmentRequiredForAmendment). When
+    // neither
+    // holds the means assessment is not part of this amendment, so skip the (blocking,
+    // SOA-touching)
+    // assessment lookups entirely rather than fetching them for nothing.
+    if (!meansLegalAmendmentAvailable && !isEcfApplicationType(amendment)) {
+      return false;
+    }
+
     final AssessmentDetail meansAssessment =
         getLatestAmendmentAssessment(AssessmentName.MEANS, amendment, user);
     final String status = assessmentStatus(meansAssessment);
@@ -901,9 +922,13 @@ public class ApplicationSubmissionController {
     }
 
     // Gate B: completeness. Means completeness is only enforced when the MNLA (ECF) function is
-    // available - otherwise the means assessment is not part of this amendment.
+    // available - otherwise the means assessment is not part of this amendment. As with merits, the
+    // in-scope check derives from a started status (present, non-"not started") as well as the
+    // amended flag, since standard amendments created via AmendmentService do not initialise that
+    // flag and nothing recomputes it before submit-validation.
     if ((!Boolean.TRUE.equals(amendment.getAmendment())
-            || Boolean.TRUE.equals(amendment.getMeansAssessmentAmended()))
+            || Boolean.TRUE.equals(amendment.getMeansAssessmentAmended())
+            || hasBeenStarted(status))
         && meansLegalAmendmentAvailable
         && !AssessmentStatus.COMPLETE.getStatus().equalsIgnoreCase(status)) {
       model.addAttribute(
@@ -935,9 +960,16 @@ public class ApplicationSubmissionController {
       return true;
     }
 
-    // Gate B: completeness. Merits completeness is always enforced when amended.
+    // Gate B: completeness. Merits completeness is enforced when the assessment is in scope for
+    // this
+    // submission: a non-amendment, an amendment whose merits was flagged amended, or - because the
+    // amended flag is not reliably persisted before submit-validation - any amendment whose merits
+    // assessment has actually been started (a present, non-"not started" status). In old PUI a
+    // started assessment always has its amended flag set, so deriving scope from the status only
+    // blocks states old PUI also blocks, while closing the gap where the flag is missing.
     if ((!Boolean.TRUE.equals(amendment.getAmendment())
-            || Boolean.TRUE.equals(amendment.getMeritsAssessmentAmended()))
+            || Boolean.TRUE.equals(amendment.getMeritsAssessmentAmended())
+            || hasBeenStarted(status))
         && !AssessmentStatus.COMPLETE.getStatus().equalsIgnoreCase(status)) {
       model.addAttribute(
           MERITS_ASSESSMENT_ERRORS,
@@ -978,6 +1010,22 @@ public class ApplicationSubmissionController {
   private boolean notIncompleteOrNotStarted(final String status) {
     return !AssessmentStatus.INCOMPLETE.getStatus().equalsIgnoreCase(status)
         && !AssessmentStatus.NOT_STARTED.getStatus().equalsIgnoreCase(status);
+  }
+
+  /**
+   * Returns whether an assessment has actually been started, i.e. it exists and is not in the "not
+   * started" state. Used to enforce completeness independently of the (not always populated)
+   * amended flag.
+   */
+  private boolean hasBeenStarted(final String status) {
+    return status != null && !AssessmentStatus.NOT_STARTED.getStatus().equalsIgnoreCase(status);
+  }
+
+  private boolean isEcfApplicationType(final ApplicationDetail application) {
+    return application != null
+        && application.getApplicationType() != null
+        && APP_TYPE_EXCEPTIONAL_CASE_FUNDING.equalsIgnoreCase(
+            application.getApplicationType().getId());
   }
 
   private String resolveMessage(final String key) {

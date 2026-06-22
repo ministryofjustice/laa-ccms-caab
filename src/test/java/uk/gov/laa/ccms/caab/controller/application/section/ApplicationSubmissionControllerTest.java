@@ -11,6 +11,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -560,8 +561,8 @@ class ApplicationSubmissionControllerTest {
     final ApplicationDetail amendment = amendmentApplication(false, false, true);
     stubAmendmentValidationCommon(amendment);
     stubAssessments("COMPLETE", "INCOMPLETE");
-    when(assessmentService.isMeansReassessmentRequiredForAmendment(any(), any(), any()))
-        .thenReturn(false);
+    // Non-ECF, non-MNLA amendment: means validation is skipped entirely, so the means reassessment
+    // check is never consulted.
 
     final MvcResult mvcResult =
         mockMvc
@@ -578,6 +579,116 @@ class ApplicationSubmissionControllerTest {
         .andExpect(view().name("application/application-validation-error-correction"))
         .andExpect(model().attributeExists("meritsAssessmentErrors"))
         .andExpect(model().attributeDoesNotExist("meansAssessmentErrors"));
+    // Means validation short-circuits before any assessment lookup for non-ECF/non-MNLA amendments.
+    verify(assessmentService, never()).isMeansReassessmentRequiredForAmendment(any(), any(), any());
+  }
+
+  @Test
+  @DisplayName(
+      "Amendment validate - ECF started means blocks submit even when amended flag is unset")
+  void testAmendmentValidate_meansStartedButFlagUnsetBlocks() throws Exception {
+    // MNLA available, means assessment started (INCOMPLETE) but meansAmended flag is false. The
+    // completeness gate must still fire because the amended flag is not reliably populated for
+    // standard amendments before submit-validation.
+    final ApplicationDetail amendment = amendmentApplication(true, false, false);
+    stubAmendmentValidationCommon(amendment);
+    stubAssessments("INCOMPLETE", "COMPLETE");
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+        .thenReturn(false);
+    // Means status is INCOMPLETE so the reassessment gate (Gate A) is skipped and
+    // isMeansReassessmentRequiredForAmendment is never consulted - completeness (Gate B) blocks it.
+
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(
+                get("/{caseContext}/validate", CaseContext.AMENDMENTS)
+                    .sessionAttr(APPLICATION_ID, "1")
+                    .sessionAttr(USER_DETAILS, buildUserDetail()))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+
+    mockMvc
+        .perform(asyncDispatch(mvcResult))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-validation-error-correction"))
+        .andExpect(model().attributeExists("meansAssessmentErrors"));
+  }
+
+  @Test
+  @DisplayName("Amendment validate - non-ECF started means does not block submit")
+  void testAmendmentValidate_meansStartedNonEcfDoesNotBlock() throws Exception {
+    // Without MNLA the means assessment is not part of the amendment, so even a started/INCOMPLETE
+    // means status must not block submission.
+    final ApplicationDetail amendment = amendmentApplication(false, false, false);
+    stubAmendmentValidationCommon(amendment);
+    stubAssessments("INCOMPLETE", "COMPLETE");
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+        .thenReturn(false);
+
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(
+                get("/{caseContext}/validate", CaseContext.AMENDMENTS)
+                    .sessionAttr(APPLICATION_ID, "1")
+                    .sessionAttr(USER_DETAILS, buildUserDetail()))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+
+    mockMvc.perform(asyncDispatch(mvcResult)).andExpect(redirectedUrl("#"));
+  }
+
+  @Test
+  @DisplayName("Amendment validate - started merits blocks submit even when amended flag is unset")
+  void testAmendmentValidate_meritsStartedButFlagUnsetBlocks() throws Exception {
+    // meritsAmended is false, but the merits assessment has actually been started (INCOMPLETE).
+    // The completeness gate must still fire because the amended flag is not reliably persisted
+    // before submit-validation.
+    final ApplicationDetail amendment = amendmentApplication(false, false, false);
+    stubAmendmentValidationCommon(amendment);
+    stubAssessments("COMPLETE", "INCOMPLETE");
+    // Non-ECF, non-MNLA amendment: means validation is skipped. Merits status is INCOMPLETE so the
+    // merits reassessment gate (Gate A) is also skipped - completeness (Gate B) blocks it.
+
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(
+                get("/{caseContext}/validate", CaseContext.AMENDMENTS)
+                    .sessionAttr(APPLICATION_ID, "1")
+                    .sessionAttr(USER_DETAILS, buildUserDetail()))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+
+    mockMvc
+        .perform(asyncDispatch(mvcResult))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-validation-error-correction"))
+        .andExpect(model().attributeExists("meritsAssessmentErrors"));
+  }
+
+  @Test
+  @DisplayName("Amendment validate - untouched merits (not started) does not block submit")
+  void testAmendmentValidate_meritsNotStartedDoesNotBlock() throws Exception {
+    // No merits assessment for this amendment (null/NOT_STARTED) and not amended: merits must not
+    // be forced complete, matching old PUI where an untouched assessment is out of scope.
+    final ApplicationDetail amendment = amendmentApplication(false, false, false);
+    stubAmendmentValidationCommon(amendment);
+    stubAssessments("COMPLETE", null);
+    // Non-ECF, non-MNLA amendment: means validation is skipped. Merits has no assessment yet, so
+    // the
+    // merits reassessment gate is consulted and returns false.
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+        .thenReturn(false);
+
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(
+                get("/{caseContext}/validate", CaseContext.AMENDMENTS)
+                    .sessionAttr(APPLICATION_ID, "1")
+                    .sessionAttr(USER_DETAILS, buildUserDetail()))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+
+    mockMvc.perform(asyncDispatch(mvcResult)).andExpect(redirectedUrl("#"));
   }
 
   @Test
@@ -601,6 +712,46 @@ class ApplicationSubmissionControllerTest {
             .andReturn();
 
     mockMvc.perform(asyncDispatch(mvcResult)).andExpect(redirectedUrl("#"));
+  }
+
+  @Test
+  @DisplayName(
+      "Amendment validate - base form errors short-circuit amendment assessment validation")
+  void testAmendmentValidate_baseErrorsSkipAssessmentValidation() throws Exception {
+    final ApplicationDetail amendment = amendmentApplication(true, true, true);
+    stubAmendmentValidationCommon(amendment);
+    // Inject a base (provider details) validation error so baseErrors is true before assessment
+    // validation would run.
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.reject("provider.required", "Provider details validation failed.");
+              return null;
+            })
+        .when(providerDetailsValidator)
+        .validate(any(), any());
+
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(
+                get("/{caseContext}/validate", CaseContext.AMENDMENTS)
+                    .sessionAttr(APPLICATION_ID, "1")
+                    .sessionAttr(USER_DETAILS, buildUserDetail()))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+
+    mockMvc
+        .perform(asyncDispatch(mvcResult))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-validation-error-correction"))
+        .andExpect(model().attributeExists("providerDetailsErrors"))
+        .andExpect(model().attributeDoesNotExist("meansAssessmentErrors"))
+        .andExpect(model().attributeDoesNotExist("meritsAssessmentErrors"));
+    // The (blocking, SOA-touching) amendment assessment validation must be skipped entirely.
+    verify(assessmentService, never()).getAssessments(any(), any(), any());
+    verify(assessmentService, never()).isMeansReassessmentRequiredForAmendment(any(), any(), any());
+    verify(assessmentService, never())
+        .isMeritsReassessmentRequiredForAmendment(any(), any(), any());
   }
 
   private ApplicationDetail amendmentApplication(
