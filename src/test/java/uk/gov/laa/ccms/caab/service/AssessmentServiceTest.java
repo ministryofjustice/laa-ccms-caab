@@ -330,6 +330,57 @@ public class AssessmentServiceTest {
   }
 
   @Test
+  void testCalculateAssessmentStatuses_amendment_flagsMeritsAssessmentAmended() {
+    // Amendment where the merits-amended flag has NOT been set up-front (the Bug A scenario).
+    final ApplicationDetail application = new ApplicationDetail().amendment(true);
+
+    final AssessmentDetail meritsAssessment =
+        new AssessmentDetail().id(ASSESSMENT_ID).name(MERITS.getName()).status("INCOMPLETE");
+
+    final UserDetail user = buildUserDetail();
+
+    final CommonLookupValueDetail progressStatusTypes =
+        new CommonLookupValueDetail().code(PROGRESS_STATUS_CODE).description(PROGRESS_STATUS_DESC);
+
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROGRESS_STATUS_TYPES), any()))
+        .thenReturn(Mono.just(Optional.of(progressStatusTypes)));
+
+    assessmentService.calculateAssessmentStatuses(application, null, meritsAssessment, user);
+
+    // The merits-amended tracking block flags the merits as amended so its status is taken from the
+    // assessment rather than being forced to "Unchanged"/"Required".
+    assertTrue(application.getMeritsAssessmentAmended());
+    assertEquals(PROGRESS_STATUS_DESC, application.getMeritsAssessmentStatus());
+  }
+
+  @Test
+  void testCalculateAssessmentStatuses_amendment_statusUnchanged_doesNotFlagMeritsAmended() {
+    // The stored merits status holds the lookup DESCRIPTION; the assessment's raw status resolves
+    // to the same description, so nothing has changed and the merits must NOT be re-flagged as
+    // amended.
+    final ApplicationDetail application =
+        new ApplicationDetail().amendment(true).meritsAssessmentStatus(PROGRESS_STATUS_DESC);
+
+    final AssessmentDetail meritsAssessment =
+        new AssessmentDetail().id(ASSESSMENT_ID).name(MERITS.getName()).status("INCOMPLETE");
+
+    final UserDetail user = buildUserDetail();
+
+    final CommonLookupValueDetail progressStatusTypes =
+        new CommonLookupValueDetail().code(PROGRESS_STATUS_CODE).description(PROGRESS_STATUS_DESC);
+
+    when(lookupService.getCommonValue(eq(COMMON_VALUE_PROGRESS_STATUS_TYPES), any()))
+        .thenReturn(Mono.just(Optional.of(progressStatusTypes)));
+
+    when(assessmentApiClient.patchAssessment(eq(ASSESSMENT_ID), eq(user.getLoginId()), any()))
+        .thenReturn(Mono.empty());
+
+    assessmentService.calculateAssessmentStatuses(application, null, meritsAssessment, user);
+
+    assertNull(application.getMeritsAssessmentAmended());
+  }
+
+  @Test
   void testCheckAssessmentForProceedingKeyChange_entityTypeNull_assertsTrue() {
     final ApplicationDetail application = new ApplicationDetail();
 
@@ -500,17 +551,13 @@ public class AssessmentServiceTest {
 
   @Test
   void
-      testIsReassessmentRequired_amendment_noCheckpoint_noEbsAmendments_substantiveApp_emergencyCert_returnsTrue() {
+      testIsReassessmentRequired_amendment_noMeritsAssessment_substantiveApp_emergencyCert_returnsTrue() {
     final ApplicationDetail application =
         new ApplicationDetail()
             .amendment(true)
             .caseReferenceNumber("CASE-123")
             .applicationType(
                 new uk.gov.laa.ccms.caab.model.ApplicationType().id(APP_TYPE_SUBSTANTIVE));
-
-    final AssessmentDetail assessment = new AssessmentDetail();
-    assessment.setName(MERITS.getName());
-    assessment.setCheckpoint(null);
 
     final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase =
         new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()
@@ -522,7 +569,71 @@ public class AssessmentServiceTest {
     when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
         .thenReturn(Mono.just(ebsCase));
 
-    final boolean result = assessmentService.isReassessmentRequired(application, assessment, user);
+    // No merits assessment + substantive amendment of an emergency certificate => reassessment
+    // required (old PUI keys this off assessment == null, not the checkpoint).
+    final boolean result =
+        assessmentService.isReassessmentRequired(application, MERITS, null, user);
+
+    assertTrue(result);
+  }
+
+  @Test
+  void testIsReassessmentRequired_amendment_noMeritsAssessment_costLimitIncreased_returnsTrue() {
+    final Date amendmentCreated = new Date(System.currentTimeMillis() - 60_000);
+
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(true)
+            .caseReferenceNumber("CASE-123")
+            .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().created(amendmentCreated))
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .auditTrail(
+                        new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(amendmentCreated)))
+            .costLimit(
+                new uk.gov.laa.ccms.caab.model.CostLimitDetail()
+                    .limitAtTimeOfMerits(new java.math.BigDecimal("1000")))
+            .costs(
+                new uk.gov.laa.ccms.caab.model.CostStructureDetail()
+                    .requestedCostLimitation(new java.math.BigDecimal("2000")));
+
+    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
+        .thenReturn(Mono.just(new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()));
+
+    // Cost limit increased since the merits cost limit was recorded => reassessment required even
+    // though no merits assessment has been performed yet (old PUI checks this at the top level).
+    final boolean result =
+        assessmentService.isReassessmentRequired(application, MERITS, null, user);
+
+    assertTrue(result);
+  }
+
+  @Test
+  void testIsReassessmentRequired_amendment_noRequestedOrDefaultCostLimit_returnsTrueWithoutNpe() {
+    final Date amendmentCreated = new Date(System.currentTimeMillis() - 60_000);
+
+    // limitAtTimeOfMerits is set but neither requested nor default cost limit is known. This must
+    // be
+    // treated as reassessment-required rather than throwing on BigDecimal.compareTo(null).
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(true)
+            .caseReferenceNumber("CASE-123")
+            .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().created(amendmentCreated))
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .auditTrail(
+                        new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(amendmentCreated)))
+            .costLimit(
+                new uk.gov.laa.ccms.caab.model.CostLimitDetail()
+                    .limitAtTimeOfMerits(new java.math.BigDecimal("1000")))
+            .costs(new uk.gov.laa.ccms.caab.model.CostStructureDetail());
+
+    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
+        .thenReturn(Mono.just(new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()));
+
+    final boolean result =
+        assessmentService.isReassessmentRequired(application, MERITS, null, user);
 
     assertTrue(result);
   }

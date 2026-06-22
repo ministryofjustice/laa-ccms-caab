@@ -344,7 +344,7 @@
               <ul class="govuk-summary-card__actions">
                 <li class="govuk-summary-card__action">
                   <a class="govuk-link govuk-link--no-visited-state"
-                     th:href="@{/amendments/assessments(assessment=means,invoked-from=CCMS_AC01)}"
+                     th:href="@{/amendments/assessments(assessment='means',invoked-from='CCMS_AC01')}"
                      id="edit-means-link"
                      th:text="#{amendment.case.meansAssessment}"/>
                 </li>
@@ -383,7 +383,7 @@
               <ul class="govuk-summary-card__actions">
                 <li class="govuk-summary-card__action">
                   <a class="govuk-link govuk-link--no-visited-state"
-                     th:href="@{/amendments/assessments(assessment=merits,invoked-from=CCMS_AC01)}"
+                     th:href="@{/amendments/assessments(assessment='merits',invoked-from='CCMS_AC01')}"
                      id="edit-merits-link"
                      th:text="#{amendment.case.meritsAssessment}"/>
                 </li>
@@ -431,9 +431,9 @@
               </ul>
             </div>
             <div class="govuk-summary-card__content">
-              <!--<div class="govuk-inset-text" th:text="#{amendCase.documents.guidance}"/>-->
-              <govuk:details th:if="${summary.documentUpload.enabled}"
-                             th:summaryText="#{amendment.case.documents.guidance.title}"
+              <!-- Shown in both states (incl. greyed-out/disabled), mirroring old PUI's document
+                   upload help text. -->
+              <govuk:details th:summaryText="#{amendment.case.documents.guidance.title}"
                              th:text="#{amendment.case.documents.guidance}"/>
               <dl class="govuk-summary-list">
                 <div class="govuk-summary-list__row">

@@ -80,6 +80,23 @@ public class AssessmentUtilTest {
     assertEquals(expected, result);
   }
 
+  @ParameterizedTest
+  @CsvSource({
+    // OPA date attributes (e.g. opponent DOB) are stored as dd-MM-yyyy by AssessmentMapper.
+    "09-06-2026, DATE, 09/06/2026",
+    "31-12-2024, DATE, 31/12/2024",
+    // ISO yyyy-MM-dd values must still be supported (fallback parse).
+    "2023-07-15, DATE, 15/07/2023",
+  })
+  void testGetFormattedAttributeValue_dateFormats(
+      final String value, final String type, final String expected) {
+    final AssessmentAttributeDetail attribute = new AssessmentAttributeDetail();
+    attribute.setValue(value);
+    attribute.setType(type);
+
+    assertEquals(expected, AssessmentUtil.getFormattedAttributeValue(attribute));
+  }
+
   @Test
   void testGetNonFinancialAssessmentNamesIncludingPrepop_returnsCorrectNames() {
     final List<String> expectedAssessmentNames =

@@ -36,6 +36,7 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
+import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionStatusDisplay;
 import uk.gov.laa.ccms.caab.util.AmendmentUtil;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -424,12 +425,14 @@ public class AmendmentService {
       }
     }
 
-    // Enable document link if either prior authority added or assessment completed
+    // Old PUI (PrepareAmendment.validateAndEnableDocUploadLink) enables the document upload link
+    // when a draft prior authority exists, or when the means OR merits assessment is complete.
     boolean isPriorAuthorityAdded =
         sectionDisplay.getPriorAuthorities().stream()
             .anyMatch(x -> "Draft".equalsIgnoreCase(x.getStatus()));
     boolean assessmentComplete =
-        application.getMeansAssessmentAmended() || application.getMeritsAssessmentAmended();
+        isAssessmentSectionComplete(sectionDisplay.getMeansAssessment())
+            || isAssessmentSectionComplete(sectionDisplay.getMeritsAssessment());
     sectionDisplay.getDocumentUpload().setEnabled(isPriorAuthorityAdded || assessmentComplete);
 
     if (sectionDisplay.getDocumentUpload().isEnabled()) {
@@ -437,5 +440,10 @@ public class AmendmentService {
     }
 
     return sectionDisplay;
+  }
+
+  private boolean isAssessmentSectionComplete(final ApplicationSectionStatusDisplay section) {
+    return section != null
+        && ApplicationConstants.SECTION_STATUS_COMPLETE.equals(section.getStatus());
   }
 }

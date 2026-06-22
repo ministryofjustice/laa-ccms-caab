@@ -9,7 +9,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -300,17 +299,7 @@ public final class AssessmentUtil {
 
     String formattedValue;
     if ("DATE".equalsIgnoreCase(attribute.getType()) && attribute.getValue() != null) {
-      try {
-        // Parse the date string and format it to the desired display format
-        final Date storedDate = new SimpleDateFormat("yyyy-MM-dd").parse(attribute.getValue());
-        formattedValue = new SimpleDateFormat("dd/MM/yyyy").format(storedDate);
-      } catch (final ParseException e) {
-        log.debug(
-            "Unable to parse stored date according to format, "
-                + "will use the un-formatted date on the overview screen",
-            e);
-        formattedValue = attribute.getValue();
-      }
+      formattedValue = formatStoredDate(attribute.getValue());
     } else if ("CURRENCY".equalsIgnoreCase(attribute.getType()) && attribute.getValue() != null) {
       try {
         // Convert the value to a number and format it as currency
@@ -356,6 +345,33 @@ public final class AssessmentUtil {
       }
     }
     return formattedValue;
+  }
+
+  /**
+   * Formats a stored OPA date attribute for display as {@code dd/MM/yyyy}. OPA date attributes are
+   * stored as {@code dd-MM-yyyy} (see {@code AssessmentMapper}), so that is tried first
+   * (non-lenient, so an ISO {@code yyyy-MM-dd} value - whose 4-digit first field is an invalid day
+   * - is rejected and falls through to the {@code yyyy-MM-dd} parse rather than silently rolling
+   * over to a garbage date).
+   *
+   * @param value the stored date string
+   * @return the date formatted as {@code dd/MM/yyyy}, or the original value if it cannot be parsed
+   */
+  private static String formatStoredDate(final String value) {
+    for (final String pattern : new String[] {"dd-MM-yyyy", "yyyy-MM-dd"}) {
+      final SimpleDateFormat parser = new SimpleDateFormat(pattern);
+      parser.setLenient(false);
+      try {
+        return new SimpleDateFormat("dd/MM/yyyy").format(parser.parse(value));
+      } catch (final ParseException e) {
+        // Not this pattern - try the next supported stored format.
+      }
+    }
+    log.debug(
+        "Unable to parse stored date [{}] as dd-MM-yyyy or yyyy-MM-dd, "
+            + "will use the un-formatted date on the overview screen",
+        value);
+    return value;
   }
 
   /**

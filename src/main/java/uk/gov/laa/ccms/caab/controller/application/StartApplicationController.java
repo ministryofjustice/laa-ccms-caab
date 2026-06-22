@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,9 +11,11 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 
 /**
  * Controller responsible for handling the initiation of a new application process. Manages
@@ -47,15 +51,32 @@ public class StartApplicationController {
    */
   @GetMapping("/{caseContext}/new")
   public String startNewApplication(
-      Model model, @PathVariable("caseContext") final CaseContext caseContext) {
+      Model model,
+      @SessionAttribute(value = CASE, required = false) final ApplicationDetail caseDetail,
+      @PathVariable("caseContext") final CaseContext caseContext) {
     log.info("Starting application");
 
-    model.addAttribute(APPLICATION_FORM_DATA, getApplicationDetails());
+    final ApplicationFormData applicationFormData = getApplicationDetails();
+    model.addAttribute(APPLICATION_FORM_DATA, applicationFormData);
 
     if (caseContext.isAmendment()) {
+      // An ECF certificate is always substantive, so (as in old PUI) an ECF amendment never shows
+      // the application-type or delegated-functions screens; inherit ECF and go straight to create.
+      if (isExceptionalCaseFunding(caseDetail)) {
+        applicationFormData.setApplicationTypeCategory(APP_TYPE_EXCEPTIONAL_CASE_FUNDING);
+        applicationFormData.setDelegatedFunctions(false);
+        return "redirect:/amendments/create";
+      }
       return "redirect:/amendments/application-type";
-    } else {
-      return "redirect:/application/office";
     }
+
+    return "redirect:/application/office";
+  }
+
+  private boolean isExceptionalCaseFunding(final ApplicationDetail caseDetail) {
+    return caseDetail != null
+        && caseDetail.getApplicationType() != null
+        && APP_TYPE_EXCEPTIONAL_CASE_FUNDING.equalsIgnoreCase(
+            caseDetail.getApplicationType().getId());
   }
 }

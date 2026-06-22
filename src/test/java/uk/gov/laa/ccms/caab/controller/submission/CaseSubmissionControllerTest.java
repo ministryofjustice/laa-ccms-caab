@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -114,6 +115,8 @@ class CaseSubmissionControllerTest {
         .andExpect(request().sessionAttribute(SUBMISSION_RESULT, "confirmed"));
 
     verify(applicationService, times(1)).getCaseStatus(anyString());
+    // New (non-amendment) case submission must not remove an amendment draft.
+    verify(applicationService, never()).removeSubmittedAmendment(anyString(), any());
   }
 
   @Test
@@ -147,6 +150,8 @@ class CaseSubmissionControllerTest {
 
     verify(applicationService, times(1)).getCaseStatus(anyString());
     verify(applicationService, times(1)).getCase(anyString(), anyLong(), anyString());
+    // The confirmed amendment's spent TDS draft must be removed (mirrors old PUI cleanup).
+    verify(applicationService, times(1)).removeSubmittedAmendment(refNumber, userDetail);
   }
 
   @Test

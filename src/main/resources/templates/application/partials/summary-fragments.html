@@ -51,7 +51,7 @@
 
 <tr th:fragment="meritsAssessmentFragment" class="govuk-table__row">
   <td class="govuk-table__cell" th:if="${summary.meritsAssessment.enabled}">
-    <a th:href="@{/application/assessments(assessment=merits,invoked-from=CCMS_CA01)}" class="govuk-link" th:text="#{application.section.merits}"></a>
+    <a th:href="@{/application/assessments(assessment='merits',invoked-from='CCMS_CA01')}" class="govuk-link" th:text="#{application.section.merits}"></a>
   </td>
   <td class="govuk-table__cell" th:unless="${summary.meritsAssessment.enabled}" th:text="#{application.section.merits}">
   </td>
@@ -70,7 +70,7 @@
 
 <tr th:fragment="meansAssessmentFragment" class="govuk-table__row">
   <td class="govuk-table__cell" th:if="${summary.meansAssessment.enabled}">
-    <a th:href="@{/application/assessments(assessment=means,invoked-from=CCMS_CA01)}" class="govuk-link" th:text="#{application.section.means}"></a>
+    <a th:href="@{/application/assessments(assessment='means',invoked-from='CCMS_CA01')}" class="govuk-link" th:text="#{application.section.means}"></a>
   </td>
   <td class="govuk-table__cell" th:unless="${summary.meansAssessment.enabled}" th:text="#{application.section.means}"></td>
   <td class="govuk-table__cell" id="means-status" th:insert="~{application/partials/status-tag :: statusTag(${summary.meansAssessment.status})}"></td>

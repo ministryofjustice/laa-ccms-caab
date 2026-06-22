@@ -36,13 +36,16 @@ import static uk.gov.laa.ccms.caab.util.OpponentUtil.getOpponentById;
 import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getAssessmentMappingId;
 import static uk.gov.laa.ccms.caab.util.ProceedingUtil.getRequestedScopeForAssessmentInput;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -78,6 +81,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.AssessmentResult;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 import uk.gov.laa.ccms.caab.model.OpaAttribute;
 import uk.gov.laa.ccms.caab.model.OpaEntity;
@@ -201,26 +205,53 @@ public class AssessmentService {
       final UserDetail user) {
     log.info("Calculating assessment statuses");
 
+    // Progress-status descriptions are resolved via a (blocking) lookup; memoise per invocation so
+    // the same status code is not looked up again by both the amended-flag comparison and the
+    // status-setting path.
+    final Map<String, String> statusDisplayCache = new HashMap<>();
+
+    // The stored *AssessmentStatus holds the progress-status display description (e.g. "In
+    // progress"), so the assessment's raw status (e.g. "INCOMPLETE") is resolved to its description
+    // before comparing - otherwise the values would never match and the assessment would be flagged
+    // as amended on every load. Recomputed each load, so it does not need persisting.
     if (meansAssessment != null) {
       if (application.getMeansAssessmentStatus() == null) {
         if (!NOT_STARTED.getStatus().equals(meansAssessment.getStatus())) {
           application.setMeansAssessmentAmended(true);
         }
-      } else if (!application.getMeansAssessmentStatus().equals(meansAssessment.getStatus())) {
+      } else if (!application
+          .getMeansAssessmentStatus()
+          .equals(getProgressStatusDisplay(meansAssessment.getStatus(), statusDisplayCache))) {
         application.setMeansAssessmentAmended(true);
       }
     }
 
+    // Symmetric merits tracking (mirrors the means block above and old PUI's
+    // StartOpaAssessment.setAssessmentAmended). Without this meritsAssessmentAmended is never set,
+    // so an amended merits assessment is routed through the "unchanged" branch and never reaches
+    // COMPLETE.
+    if (meritsAssessment != null) {
+      if (application.getMeritsAssessmentStatus() == null) {
+        if (!NOT_STARTED.getStatus().equals(meritsAssessment.getStatus())) {
+          application.setMeritsAssessmentAmended(true);
+        }
+      } else if (!application
+          .getMeritsAssessmentStatus()
+          .equals(getProgressStatusDisplay(meritsAssessment.getStatus(), statusDisplayCache))) {
+        application.setMeritsAssessmentAmended(true);
+      }
+    }
+
     log.info("Calculating means assessment status");
-    calculateAssessmentStatus(MEANS, meansAssessment, application, user);
+    calculateAssessmentStatus(MEANS, meansAssessment, application, user, statusDisplayCache);
 
     log.info("Calculating merits assessment status");
-    calculateAssessmentStatus(MERITS, meritsAssessment, application, user);
+    calculateAssessmentStatus(MERITS, meritsAssessment, application, user, statusDisplayCache);
 
     // If a proceeding was removed, we should set reassessment required for both.
     if (Boolean.TRUE.equals(application.getMeritsReassessmentRequired())) {
-      setReassessmentRequired(application, meansAssessment, user);
-      setReassessmentRequired(application, meritsAssessment, user);
+      setReassessmentRequired(application, meansAssessment, user, statusDisplayCache);
+      setReassessmentRequired(application, meritsAssessment, user, statusDisplayCache);
     }
   }
 
@@ -235,7 +266,8 @@ public class AssessmentService {
   private void setReassessmentRequired(
       final ApplicationDetail application,
       final AssessmentDetail assessment,
-      final UserDetail user) {
+      final UserDetail user,
+      final Map<String, String> statusDisplayCache) {
     if (assessment != null) {
       assessmentApiClient
           .patchAssessment(
@@ -243,7 +275,7 @@ public class AssessmentService {
               user.getLoginId(),
               new PatchAssessmentDetail().status(REQUIRED.getStatus()))
           .block();
-      setAssessmentStatusOnApplication(application, assessment, REQUIRED);
+      setAssessmentStatusOnApplication(application, assessment, REQUIRED, statusDisplayCache);
     }
   }
 
@@ -260,7 +292,8 @@ public class AssessmentService {
       final AssessmentName assessmentName,
       final AssessmentDetail currentAssessment,
       final ApplicationDetail application,
-      final UserDetail user) {
+      final UserDetail user,
+      final Map<String, String> statusDisplayCache) {
 
     boolean statusChanged = false;
     AssessmentStatus assessmentStatus = getStatus(currentAssessment);
@@ -300,7 +333,7 @@ public class AssessmentService {
         || (Boolean.TRUE.equals(application.getAmendment())
             && StringUtils.hasText(application.getCaseReferenceNumber()))) {
       setAssessmentStatusOnApplication(
-          application, assessmentName, currentAssessment, assessmentStatus);
+          application, assessmentName, currentAssessment, assessmentStatus, statusDisplayCache);
     }
   }
 
@@ -316,11 +349,13 @@ public class AssessmentService {
   private void setAssessmentStatusOnApplication(
       final ApplicationDetail application,
       final AssessmentDetail assessment,
-      final AssessmentStatus assessmentStatus) {
+      final AssessmentStatus assessmentStatus,
+      final Map<String, String> statusDisplayCache) {
     if (assessment != null) {
       final AssessmentName assessmentName =
           MEANS.getName().equalsIgnoreCase(assessment.getName()) ? MEANS : MERITS;
-      setAssessmentStatusOnApplication(application, assessmentName, assessment, assessmentStatus);
+      setAssessmentStatusOnApplication(
+          application, assessmentName, assessment, assessmentStatus, statusDisplayCache);
     }
   }
 
@@ -337,21 +372,12 @@ public class AssessmentService {
       final ApplicationDetail application,
       final AssessmentName assessmentName,
       final AssessmentDetail assessment,
-      final AssessmentStatus assessmentStatus) {
+      final AssessmentStatus assessmentStatus,
+      final Map<String, String> statusDisplayCache) {
 
     if (assessmentName != null && assessmentStatus != null) {
       final String statusValue =
-          lookupService
-              .getCommonValue(COMMON_VALUE_PROGRESS_STATUS_TYPES, assessmentStatus.getStatus())
-              .flatMap(
-                  commonLookupValueDetailOptional ->
-                      commonLookupValueDetailOptional
-                          .map(
-                              commonLookupValueDetail ->
-                                  Mono.just(commonLookupValueDetail.getDescription()))
-                          .orElseGet(Mono::empty))
-              .blockOptional()
-              .orElse(assessmentStatus.getStatus());
+          getProgressStatusDisplay(assessmentStatus.getStatus(), statusDisplayCache);
 
       if (MEANS == assessmentName) {
         application.setMeansAssessmentStatus(statusValue);
@@ -359,6 +385,38 @@ public class AssessmentService {
         application.setMeritsAssessmentStatus(statusValue);
       }
     }
+  }
+
+  /**
+   * Resolves an assessment status code to its display description from the OPA progress-status
+   * lookup (e.g. {@code "INCOMPLETE"} to {@code "In progress"}), falling back to the raw status
+   * code when no mapping exists.
+   *
+   * @param statusCode the raw assessment status code
+   * @param statusDisplayCache per-invocation cache of already-resolved status codes, so the same
+   *     code is not looked up again by both the amended-flag comparison and the status-setting path
+   * @return the display description, or the raw status code if not found
+   */
+  private String getProgressStatusDisplay(
+      final String statusCode, final Map<String, String> statusDisplayCache) {
+    if (statusCode == null) {
+      return null;
+    }
+    return statusDisplayCache.computeIfAbsent(statusCode, this::lookupProgressStatusDisplay);
+  }
+
+  private String lookupProgressStatusDisplay(final String statusCode) {
+    return lookupService
+        .getCommonValue(COMMON_VALUE_PROGRESS_STATUS_TYPES, statusCode)
+        .flatMap(
+            commonLookupValueDetailOptional ->
+                commonLookupValueDetailOptional
+                    .map(
+                        commonLookupValueDetail ->
+                            Mono.just(commonLookupValueDetail.getDescription()))
+                    .orElseGet(Mono::empty))
+        .blockOptional()
+        .orElse(statusCode);
   }
 
   /**
@@ -544,7 +602,7 @@ public class AssessmentService {
    * @param user the user performing the operation
    * @return true if a means reassessment is required
    */
-  private boolean isMeansReassessmentRequiredForAmendment(
+  public boolean isMeansReassessmentRequiredForAmendment(
       final ApplicationDetail application,
       final AssessmentDetail assessment,
       final UserDetail user) {
@@ -569,7 +627,9 @@ public class AssessmentService {
       final UserDetail user) {
     final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase = getEbsCase(application, user);
 
-    if ((assessment == null || assessment.getCheckpoint() == null)
+    // Old PUI only forces reassessment here when there is NO merits assessment at all (a
+    // substantive amendment of an emergency certificate); once one exists it must not re-trigger.
+    if (assessment == null
         && !hasEbsAmendments(ebsCase)
         && APP_TYPE_SUBSTANTIVE.equals(getApplicationTypeId(application))
         && ebsCase != null
@@ -595,6 +655,16 @@ public class AssessmentService {
       return true;
     }
 
+    // Cost limit at the time of merits is below the current requested/default limit. This mirrors
+    // old PUI (AssessmentHelper.isMeritsReassessmentRequired), where the cost-limit check sits
+    // below
+    // the dateOfLatestKeyChange == null and merits-assessment == null early returns above - it is
+    // deliberately NOT evaluated when those timestamps are unavailable.
+    if (isCostLimitReassessmentRequired(application)) {
+      return true;
+    }
+
+    // The remaining checks compare the application against an existing assessment's recorded data.
     return assessment != null && isMeritsReassessmentRequiredForAssessment(application, assessment);
   }
 
@@ -643,19 +713,6 @@ public class AssessmentService {
 
   private boolean isMeritsReassessmentRequiredForAssessment(
       final ApplicationDetail application, final AssessmentDetail assessment) {
-    final boolean meritReassessmentRequired =
-        Optional.ofNullable(application.getCostLimit())
-            .map(CostLimitDetail::getLimitAtTimeOfMerits)
-            .map(
-                limitAtTimeOfMerits ->
-                    limitAtTimeOfMerits.compareTo(
-                            application.getCosts().getRequestedCostLimitation())
-                        < 0)
-            .orElse(true);
-
-    if (meritReassessmentRequired) {
-      return true;
-    }
 
     final AssessmentEntityTypeDetail proceedingEntityType =
         getAssessmentEntityType(assessment, PROCEEDING);
@@ -663,11 +720,57 @@ public class AssessmentService {
       return true;
     }
 
+    // An individual opponent was updated after the merits assessment was created (old PUI).
+    if (application.getOpponents() != null) {
+      for (final OpponentDetail opponent : application.getOpponents()) {
+        if (OPPONENT_TYPE_INDIVIDUAL.equalsIgnoreCase(opponent.getType())
+            && opponent.getAuditTrail() != null
+            && differenceGreaterThanTenSecs(
+                opponent.getAuditTrail().getLastSaved(),
+                assessment.getAuditDetail().getCreated())) {
+          return true;
+        }
+      }
+    }
+
+    // An individual or organisation opponent was deleted since the assessment was created.
     final AssessmentEntityTypeDetail opponentEntityType =
         getAssessmentEntityType(assessment, OPPONENT);
     return (application.getOpponents() != null)
         && (opponentEntityType != null)
         && application.getOpponents().size() < opponentEntityType.getEntities().size();
+  }
+
+  /**
+   * Determines whether the cost limit at the time of the merits assessment is below the application
+   * current requested (or default) cost limit, mirroring old PUI. An unknown
+   * limit-at-time-of-merits or an unknown current limit is treated as reassessment-required.
+   *
+   * @param application the application to check
+   * @return true if a cost-limit driven merits reassessment is required
+   */
+  private boolean isCostLimitReassessmentRequired(final ApplicationDetail application) {
+    final BigDecimal limitAtTimeOfMerits =
+        Optional.ofNullable(application.getCostLimit())
+            .map(CostLimitDetail::getLimitAtTimeOfMerits)
+            .orElse(null);
+    final BigDecimal requestedOrDefault = getRequestedOrDefaultCostLimitation(application);
+
+    if (limitAtTimeOfMerits == null || requestedOrDefault == null) {
+      return true;
+    }
+
+    return limitAtTimeOfMerits.compareTo(requestedOrDefault) < 0;
+  }
+
+  private BigDecimal getRequestedOrDefaultCostLimitation(final ApplicationDetail application) {
+    final CostStructureDetail costs = application.getCosts();
+    if (costs == null) {
+      return null;
+    }
+    return costs.getRequestedCostLimitation() != null
+        ? costs.getRequestedCostLimitation()
+        : costs.getDefaultCostLimitation();
   }
 
   /**

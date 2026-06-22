@@ -9,7 +9,9 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,6 +48,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.MessageSource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -54,6 +57,7 @@ import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
+import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
@@ -80,6 +84,7 @@ import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingDetailsValidat
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingFurtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDetailsValidator;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
@@ -144,6 +149,8 @@ class ApplicationSubmissionControllerTest {
   @Mock private PriorAuthorityDetailsValidator priorAuthorityDetailsValidator;
   @Mock private OrganisationOpponentValidator organisationOpponentValidator;
   @Mock private IndividualOpponentValidator individualOpponentValidator;
+
+  @Mock private MessageSource messageSource;
 
   @InjectMocks private ApplicationSubmissionController applicationSubmissionController;
 
@@ -493,6 +500,306 @@ class ApplicationSubmissionControllerTest {
     verify(providerDetailsValidator).validate(any(), any());
     verify(correspondenceAddressValidator).validate(any(), any());
     verify(matterTypeValidator).validate(any(), any());
+  }
+
+  @Test
+  @DisplayName("Amendment validate - ECF means in progress blocks submit")
+  void testAmendmentValidate_meansIncompleteBlocks() throws Exception {
+    final ApplicationDetail amendment = amendmentApplication(true, true, false);
+    stubAmendmentValidationCommon(amendment);
+    stubAssessments("INCOMPLETE", "COMPLETE");
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+        .thenReturn(false);
+
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(
+                get("/{caseContext}/validate", CaseContext.AMENDMENTS)
+                    .sessionAttr(APPLICATION_ID, "1")
+                    .sessionAttr(USER_DETAILS, buildUserDetail()))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+
+    mockMvc
+        .perform(asyncDispatch(mvcResult))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-validation-error-correction"))
+        .andExpect(model().attributeExists("meansAssessmentErrors"))
+        .andExpect(model().attributeDoesNotExist("meritsAssessmentErrors"));
+  }
+
+  @Test
+  @DisplayName("Amendment validate - ECF no means assessment requires reassessment")
+  void testAmendmentValidate_meansReassessmentRequired() throws Exception {
+    final ApplicationDetail amendment = amendmentApplication(true, false, false);
+    stubAmendmentValidationCommon(amendment);
+    stubAssessments(null, "COMPLETE");
+    when(assessmentService.isMeansReassessmentRequiredForAmendment(any(), any(), any()))
+        .thenReturn(true);
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+        .thenReturn(false);
+
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(
+                get("/{caseContext}/validate", CaseContext.AMENDMENTS)
+                    .sessionAttr(APPLICATION_ID, "1")
+                    .sessionAttr(USER_DETAILS, buildUserDetail()))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+
+    mockMvc
+        .perform(asyncDispatch(mvcResult))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-validation-error-correction"))
+        .andExpect(model().attributeExists("meansAssessmentErrors"));
+  }
+
+  @Test
+  @DisplayName("Amendment validate - merits in progress blocks submit (non-ECF means ignored)")
+  void testAmendmentValidate_meritsIncompleteBlocks() throws Exception {
+    final ApplicationDetail amendment = amendmentApplication(false, false, true);
+    stubAmendmentValidationCommon(amendment);
+    stubAssessments("COMPLETE", "INCOMPLETE");
+    // Non-ECF, non-MNLA amendment: means validation is skipped entirely, so the means reassessment
+    // check is never consulted.
+
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(
+                get("/{caseContext}/validate", CaseContext.AMENDMENTS)
+                    .sessionAttr(APPLICATION_ID, "1")
+                    .sessionAttr(USER_DETAILS, buildUserDetail()))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+
+    mockMvc
+        .perform(asyncDispatch(mvcResult))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-validation-error-correction"))
+        .andExpect(model().attributeExists("meritsAssessmentErrors"))
+        .andExpect(model().attributeDoesNotExist("meansAssessmentErrors"));
+    // Means validation short-circuits before any assessment lookup for non-ECF/non-MNLA amendments.
+    verify(assessmentService, never()).isMeansReassessmentRequiredForAmendment(any(), any(), any());
+  }
+
+  @Test
+  @DisplayName(
+      "Amendment validate - ECF started means blocks submit even when amended flag is unset")
+  void testAmendmentValidate_meansStartedButFlagUnsetBlocks() throws Exception {
+    // MNLA available, means assessment started (INCOMPLETE) but meansAmended flag is false. The
+    // completeness gate must still fire because the amended flag is not reliably populated for
+    // standard amendments before submit-validation.
+    final ApplicationDetail amendment = amendmentApplication(true, false, false);
+    stubAmendmentValidationCommon(amendment);
+    stubAssessments("INCOMPLETE", "COMPLETE");
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+        .thenReturn(false);
+    // Means status is INCOMPLETE so the reassessment gate (Gate A) is skipped and
+    // isMeansReassessmentRequiredForAmendment is never consulted - completeness (Gate B) blocks it.
+
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(
+                get("/{caseContext}/validate", CaseContext.AMENDMENTS)
+                    .sessionAttr(APPLICATION_ID, "1")
+                    .sessionAttr(USER_DETAILS, buildUserDetail()))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+
+    mockMvc
+        .perform(asyncDispatch(mvcResult))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-validation-error-correction"))
+        .andExpect(model().attributeExists("meansAssessmentErrors"));
+  }
+
+  @Test
+  @DisplayName("Amendment validate - non-ECF started means does not block submit")
+  void testAmendmentValidate_meansStartedNonEcfDoesNotBlock() throws Exception {
+    // Without MNLA the means assessment is not part of the amendment, so even a started/INCOMPLETE
+    // means status must not block submission.
+    final ApplicationDetail amendment = amendmentApplication(false, false, false);
+    stubAmendmentValidationCommon(amendment);
+    stubAssessments("INCOMPLETE", "COMPLETE");
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+        .thenReturn(false);
+
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(
+                get("/{caseContext}/validate", CaseContext.AMENDMENTS)
+                    .sessionAttr(APPLICATION_ID, "1")
+                    .sessionAttr(USER_DETAILS, buildUserDetail()))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+
+    mockMvc.perform(asyncDispatch(mvcResult)).andExpect(redirectedUrl("#"));
+  }
+
+  @Test
+  @DisplayName("Amendment validate - started merits blocks submit even when amended flag is unset")
+  void testAmendmentValidate_meritsStartedButFlagUnsetBlocks() throws Exception {
+    // meritsAmended is false, but the merits assessment has actually been started (INCOMPLETE).
+    // The completeness gate must still fire because the amended flag is not reliably persisted
+    // before submit-validation.
+    final ApplicationDetail amendment = amendmentApplication(false, false, false);
+    stubAmendmentValidationCommon(amendment);
+    stubAssessments("COMPLETE", "INCOMPLETE");
+    // Non-ECF, non-MNLA amendment: means validation is skipped. Merits status is INCOMPLETE so the
+    // merits reassessment gate (Gate A) is also skipped - completeness (Gate B) blocks it.
+
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(
+                get("/{caseContext}/validate", CaseContext.AMENDMENTS)
+                    .sessionAttr(APPLICATION_ID, "1")
+                    .sessionAttr(USER_DETAILS, buildUserDetail()))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+
+    mockMvc
+        .perform(asyncDispatch(mvcResult))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-validation-error-correction"))
+        .andExpect(model().attributeExists("meritsAssessmentErrors"));
+  }
+
+  @Test
+  @DisplayName("Amendment validate - untouched merits (not started) does not block submit")
+  void testAmendmentValidate_meritsNotStartedDoesNotBlock() throws Exception {
+    // No merits assessment for this amendment (null/NOT_STARTED) and not amended: merits must not
+    // be forced complete, matching old PUI where an untouched assessment is out of scope.
+    final ApplicationDetail amendment = amendmentApplication(false, false, false);
+    stubAmendmentValidationCommon(amendment);
+    stubAssessments("COMPLETE", null);
+    // Non-ECF, non-MNLA amendment: means validation is skipped. Merits has no assessment yet, so
+    // the
+    // merits reassessment gate is consulted and returns false.
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+        .thenReturn(false);
+
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(
+                get("/{caseContext}/validate", CaseContext.AMENDMENTS)
+                    .sessionAttr(APPLICATION_ID, "1")
+                    .sessionAttr(USER_DETAILS, buildUserDetail()))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+
+    mockMvc.perform(asyncDispatch(mvcResult)).andExpect(redirectedUrl("#"));
+  }
+
+  @Test
+  @DisplayName("Amendment validate - ECF means and merits complete passes")
+  void testAmendmentValidate_assessmentsCompletePass() throws Exception {
+    final ApplicationDetail amendment = amendmentApplication(true, true, true);
+    stubAmendmentValidationCommon(amendment);
+    stubAssessments("COMPLETE", "COMPLETE");
+    when(assessmentService.isMeansReassessmentRequiredForAmendment(any(), any(), any()))
+        .thenReturn(false);
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+        .thenReturn(false);
+
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(
+                get("/{caseContext}/validate", CaseContext.AMENDMENTS)
+                    .sessionAttr(APPLICATION_ID, "1")
+                    .sessionAttr(USER_DETAILS, buildUserDetail()))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+
+    mockMvc.perform(asyncDispatch(mvcResult)).andExpect(redirectedUrl("#"));
+  }
+
+  @Test
+  @DisplayName(
+      "Amendment validate - base form errors short-circuit amendment assessment validation")
+  void testAmendmentValidate_baseErrorsSkipAssessmentValidation() throws Exception {
+    final ApplicationDetail amendment = amendmentApplication(true, true, true);
+    stubAmendmentValidationCommon(amendment);
+    // Inject a base (provider details) validation error so baseErrors is true before assessment
+    // validation would run.
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.reject("provider.required", "Provider details validation failed.");
+              return null;
+            })
+        .when(providerDetailsValidator)
+        .validate(any(), any());
+
+    final MvcResult mvcResult =
+        mockMvc
+            .perform(
+                get("/{caseContext}/validate", CaseContext.AMENDMENTS)
+                    .sessionAttr(APPLICATION_ID, "1")
+                    .sessionAttr(USER_DETAILS, buildUserDetail()))
+            .andExpect(request().asyncStarted())
+            .andReturn();
+
+    mockMvc
+        .perform(asyncDispatch(mvcResult))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-validation-error-correction"))
+        .andExpect(model().attributeExists("providerDetailsErrors"))
+        .andExpect(model().attributeDoesNotExist("meansAssessmentErrors"))
+        .andExpect(model().attributeDoesNotExist("meritsAssessmentErrors"));
+    // The (blocking, SOA-touching) amendment assessment validation must be skipped entirely.
+    verify(assessmentService, never()).getAssessments(any(), any(), any());
+    verify(assessmentService, never()).isMeansReassessmentRequiredForAmendment(any(), any(), any());
+    verify(assessmentService, never())
+        .isMeritsReassessmentRequiredForAmendment(any(), any(), any());
+  }
+
+  private ApplicationDetail amendmentApplication(
+      final boolean meansLegalAmendment, final boolean meansAmended, final boolean meritsAmended) {
+    final ApplicationDetail amendment = new ApplicationDetail();
+    amendment.setCaseReferenceNumber("abc123");
+    amendment.setAmendment(true);
+    amendment.setMeansAssessmentAmended(meansAmended);
+    amendment.setMeritsAssessmentAmended(meritsAmended);
+    amendment.setProceedings(List.of());
+    amendment.setPriorAuthorities(List.of());
+    if (meansLegalAmendment) {
+      amendment.setAvailableFunctions(List.of("MNLA"));
+    }
+    return amendment;
+  }
+
+  private void stubAmendmentValidationCommon(final ApplicationDetail amendment) {
+    when(applicationService.getMonoProviderDetailsFormData(any()))
+        .thenReturn(Mono.just(new ApplicationFormData()));
+    when(applicationService.getMonoCorrespondenceAddressFormData(any()))
+        .thenReturn(Mono.just(new AddressFormData()));
+    when(applicationService.getApplication("1")).thenReturn(Mono.just(amendment));
+    when(applicationService.getOpponents(any())).thenReturn(List.of());
+    // Validation error messages are resolved via MessageSource; only the error-producing scenarios
+    // hit this, so it is stubbed leniently.
+    lenient()
+        .when(messageSource.getMessage(anyString(), any(), any()))
+        .thenReturn("Validation error");
+  }
+
+  private void stubAssessments(final String meansStatus, final String meritsStatus) {
+    when(assessmentService.getAssessments(anyList(), anyString(), anyString()))
+        .thenAnswer(
+            invocation -> {
+              final List<String> names = invocation.getArgument(0);
+              final boolean isMeans = names.contains(AssessmentName.MEANS.getName());
+              final String status = isMeans ? meansStatus : meritsStatus;
+              if (status == null) {
+                return Mono.just(new AssessmentDetails().content(List.of()));
+              }
+              final AssessmentDetail assessment = new AssessmentDetail();
+              assessment.setName(
+                  isMeans ? AssessmentName.MEANS.getName() : AssessmentName.MERITS.getName());
+              assessment.setStatus(status);
+              assessment.setAuditDetail(new AuditDetail());
+              return Mono.just(new AssessmentDetails().content(List.of(assessment)));
+            });
   }
 
   @Test

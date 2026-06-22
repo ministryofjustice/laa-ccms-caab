@@ -16,6 +16,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -1422,6 +1423,59 @@ class ApplicationServiceTest {
             user, expectedAssessmentNames, application.getCaseReferenceNumber(), null);
 
     verify(puiMetricService).incrementAbandonedCount(application.getCaseReferenceNumber());
+  }
+
+  @Test
+  void removeSubmittedAmendment_deletesDraftAndAssessments() {
+    final UserDetail user = buildUserDetail();
+    final String caseReferenceNumber = "CASE-123";
+    final List<String> expectedAssessmentNames =
+        List.of(MEANS.getName(), MEANS_PREPOP.getName(), MERITS.getName(), MERITS_PREPOP.getName());
+
+    final ApplicationDetails tdsApplications =
+        new ApplicationDetails().addContentItem(new BaseApplicationDetail().id(42).amendment(true));
+    when(caabApiClient.getApplications(any(), eq(user.getProvider().getId()), eq(0), eq(1)))
+        .thenReturn(Mono.just(tdsApplications));
+    when(caabApiClient.deleteApplication("42", user.getLoginId())).thenReturn(Mono.empty());
+    when(assessmentService.deleteAssessments(
+            user, expectedAssessmentNames, caseReferenceNumber, null))
+        .thenReturn(Mono.empty());
+
+    applicationService.removeSubmittedAmendment(caseReferenceNumber, user);
+
+    verify(caabApiClient).deleteApplication("42", user.getLoginId());
+    verify(assessmentService)
+        .deleteAssessments(user, expectedAssessmentNames, caseReferenceNumber, null);
+    // Submitted (not abandoned): no evidence-doc removal and no abandonment metric.
+    verify(evidenceService, never()).removeDocuments(any(), any());
+    verify(puiMetricService, never()).incrementAbandonedCount(any());
+  }
+
+  @Test
+  void removeSubmittedAmendment_nonAmendmentDraft_isNoOp() {
+    final UserDetail user = buildUserDetail();
+    final ApplicationDetails tdsApplications =
+        new ApplicationDetails()
+            .addContentItem(new BaseApplicationDetail().id(42).amendment(false));
+    when(caabApiClient.getApplications(any(), eq(user.getProvider().getId()), eq(0), eq(1)))
+        .thenReturn(Mono.just(tdsApplications));
+
+    applicationService.removeSubmittedAmendment("CASE-123", user);
+
+    verify(caabApiClient, never()).deleteApplication(any(), any());
+    verify(assessmentService, never()).deleteAssessments(any(), any(), any(), any());
+  }
+
+  @Test
+  void removeSubmittedAmendment_noDraft_isNoOp() {
+    final UserDetail user = buildUserDetail();
+    when(caabApiClient.getApplications(any(), eq(user.getProvider().getId()), eq(0), eq(1)))
+        .thenReturn(Mono.just(new ApplicationDetails()));
+
+    applicationService.removeSubmittedAmendment("CASE-123", user);
+
+    verify(caabApiClient, never()).deleteApplication(any(), any());
+    verify(assessmentService, never()).deleteAssessments(any(), any(), any(), any());
   }
 
   @Test
