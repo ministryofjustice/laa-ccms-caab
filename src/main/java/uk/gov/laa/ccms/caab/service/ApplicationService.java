@@ -1709,7 +1709,9 @@ public class ApplicationService {
         currentDefault != null
             && currentRequested != null
             && currentDefault.compareTo(currentRequested) != 0;
-    for (final ProceedingDetail proceeding : application.getProceedings()) {
+    final List<ProceedingDetail> proceedings =
+        application.getProceedings() != null ? application.getProceedings() : List.of();
+    for (final ProceedingDetail proceeding : proceedings) {
       if (proceeding.getCostLimitation() != null
           && defaultCostLimitation.compareTo(proceeding.getCostLimitation()) < 0) {
         defaultCostLimitation = proceeding.getCostLimitation();
@@ -1742,10 +1744,8 @@ public class ApplicationService {
   }
 
   /**
-   * Computes and applies the cost limitations (including the default cost limitation, derived from
-   * the proceedings) onto the application's costs. Exposed so the OPA assessment prepop can ensure
-   * {@code defaultCostLimitation} is populated: the TDS draft does not carry it, and the merits
-   * rulebase needs it to resolve its completion goal (ASSESS_COMPLETE).
+   * Computes and applies the default cost limitation (derived from the proceedings) onto the
+   * application's costs, so the OPA prepop has it when the TDS draft does not.
    *
    * @param application the application to update
    */
@@ -1756,10 +1756,9 @@ public class ApplicationService {
   }
 
   /**
-   * For an amendment, the TDS draft application does not carry the original case's devolved-powers
-   * (delegated functions) details. The merits OPA prepop maps these into {@code
-   * DELEGATED_FUNCTIONS_DATE} / {@code DEVOLVED_POWERS_CONTRACT_FLAG}, which the rulebase needs to
-   * resolve its completion goal (ASSESS_COMPLETE). Enrich them from the EBS case when missing.
+   * Enriches an amendment draft's devolved-powers details that the TDS draft does not carry - the
+   * delegated-functions date from the EBS case and the contract flag from the provider's contracts
+   * - so the merits prepop has them.
    *
    * @param application the (draft) application to enrich
    * @param user the user, used for the EBS case lookup
@@ -1776,27 +1775,28 @@ public class ApplicationService {
     }
     final ApplicationType appType = application.getApplicationType();
 
-    // The delegated-functions date (DELEGATED_FUNCTIONS_DATE) genuinely belongs to the original
-    // case, so copy the EBS case's devolved-powers details when the draft does not carry them.
-    if (appType.getDevolvedPowers() == null
-        || appType.getDevolvedPowers().getDateUsed() == null
-        || !StringUtils.hasText(appType.getDevolvedPowers().getContractFlag())) {
+    // Copy only the delegated-functions date from EBS when the draft lacks it (preserving any
+    // existing draft value); the contract flag is set from provider details below.
+    if (appType.getDevolvedPowers() == null || appType.getDevolvedPowers().getDateUsed() == null) {
       final ApplicationDetail ebsCase =
           getCase(
               application.getCaseReferenceNumber(),
               user.getProvider().getId().longValue(),
               user.getLoginId());
-      if (ebsCase != null
-          && ebsCase.getApplicationType() != null
-          && ebsCase.getApplicationType().getDevolvedPowers() != null) {
-        appType.setDevolvedPowers(ebsCase.getApplicationType().getDevolvedPowers());
+      final DevolvedPowersDetail ebsDevolvedPowers =
+          ebsCase != null && ebsCase.getApplicationType() != null
+              ? ebsCase.getApplicationType().getDevolvedPowers()
+              : null;
+      if (ebsDevolvedPowers != null && ebsDevolvedPowers.getDateUsed() != null) {
+        if (appType.getDevolvedPowers() == null) {
+          appType.setDevolvedPowers(new DevolvedPowersDetail());
+        }
+        appType.getDevolvedPowers().setDateUsed(ebsDevolvedPowers.getDateUsed());
       }
     }
 
-    // The devolved-powers contract flag is provider/firm contract reference data, not case data, so
-    // a case that never used delegated functions still has a value. The merits rulebase needs it
-    // known to resolve ASSESS_COMPLETE, and the EBS case does not supply it for a no-delegated-
-    // functions amendment, so source it from the provider's contract details.
+    // The contract flag is provider contract data (not case data); the rulebase needs it known even
+    // for a no-delegated-functions case, so source it from the provider's contract details.
     if (appType.getDevolvedPowers() == null) {
       appType.setDevolvedPowers(new DevolvedPowersDetail());
     }

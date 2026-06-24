@@ -26,6 +26,7 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
@@ -74,6 +75,45 @@ class AssessmentMapperTest {
     final List<AssessmentEntityTypeDetail> result =
         assessmentMapper.toAssessmentEntityTypeList(context);
     assertEquals(4, result.size());
+  }
+
+  @Test
+  void toAssessmentEntityTypeList_buildsLinkedCaseEntityAndRelationship() {
+    final LinkedCaseDetail linkedCase = new LinkedCaseDetail();
+    linkedCase.setLscCaseReference("LINK-1");
+    context.getApplication().setLinkedCases(List.of(linkedCase));
+
+    final List<AssessmentEntityTypeDetail> result =
+        assessmentMapper.toAssessmentEntityTypeList(context);
+
+    // the LINKED_CASES entity type carries an instance per linked case, keyed by its case reference
+    final AssessmentEntityTypeDetail linkedCaseType =
+        result.stream()
+            .filter(entityType -> "LINKED_CASES".equals(entityType.getName()))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(1, linkedCaseType.getEntities().size());
+    final AssessmentEntityDetail linkedCaseEntity = linkedCaseType.getEntities().get(0);
+    assertEquals("LINK-1", linkedCaseEntity.getName());
+    assertContainsAttribute(
+        linkedCaseEntity.getAttributes(), AssessmentAttribute.LINKED_CASE_ID, "LINK-1");
+
+    // the global entity declares the linkedcases containment relationship to it
+    final AssessmentEntityDetail globalEntity =
+        result.stream()
+            .filter(entityType -> "global".equals(entityType.getName()))
+            .findFirst()
+            .orElseThrow()
+            .getEntities()
+            .get(0);
+    final AssessmentRelationshipDetail linkedCaseRelationship =
+        globalEntity.getRelations().stream()
+            .filter(relationship -> "linkedcases".equals(relationship.getName()))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(1, linkedCaseRelationship.getRelationshipTargets().size());
+    assertEquals(
+        "LINK-1", linkedCaseRelationship.getRelationshipTargets().get(0).getTargetEntityId());
   }
 
   @Test
@@ -143,6 +183,10 @@ class AssessmentMapperTest {
     assertContainsAttribute(attributes, AssessmentAttribute.CATEGORY_OF_LAW, "1234567890cat1");
     assertContainsAttribute(attributes, AssessmentAttribute.CERTIFICATE_TYPE, "type1234567890");
     assertContainsAttribute(attributes, AssessmentAttribute.CLIENT_VULNERABLE, "false");
+    assertContainsAttribute(attributes, AssessmentAttribute.ACTION_CLIENTS_UK_STATUS, "false");
+    assertContainsAttribute(
+        attributes, AssessmentAttribute.CLIENT_IMM_ASY_CLAIM_DETENTION, "false");
+    assertContainsAttribute(attributes, AssessmentAttribute.HRA_ISSUES_SIGNIFICANT, "false");
     assertContainsAttribute(attributes, AssessmentAttribute.COST_LIMIT_CHANGED_FLAG, "true");
     assertContainsAttribute(attributes, AssessmentAttribute.COUNTRY, "clientthecountry");
     assertContainsAttribute(attributes, AssessmentAttribute.COUNTY, "clientthecounty");

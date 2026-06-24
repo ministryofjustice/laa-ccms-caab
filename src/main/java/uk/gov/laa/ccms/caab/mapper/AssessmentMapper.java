@@ -978,7 +978,7 @@ public interface AssessmentMapper {
                             List.of(
                                 new AssessmentAttributeDetail()
                                     .name(LINKED_CASE_ID.name())
-                                    .value(linkedCase.getLscCaseReference())
+                                    .value(getLinkedCaseOpaInstanceMappingId(linkedCase))
                                     .type(LINKED_CASE_ID.getType()))))
             .collect(Collectors.toList());
 

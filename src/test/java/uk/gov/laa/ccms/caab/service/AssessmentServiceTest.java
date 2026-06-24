@@ -463,7 +463,10 @@ public class AssessmentServiceTest {
     "123, TEST, TEST, OTHER, TEST",
 
     // scope limitation difference
-    "123, TEST, TEST, TEST, OTHER"
+    "123, TEST, TEST, TEST, OTHER",
+
+    // cant find proceeding with matching id
+    "789, TEST, TEST, TEST, TEST"
   })
   void testCheckAssessmentForProceedingKeyChange_assertsTrue(
       final Integer proceedingId,
@@ -491,29 +494,6 @@ public class AssessmentServiceTest {
             application, proceedingsEntityTypeDetail);
 
     assertTrue(result);
-  }
-
-  @Test
-  void testCheckAssessmentForProceedingKeyChange_proceedingNotInAssessment_assertsFalse() {
-    // A proceeding present in the application but absent from the assessment is skipped, not
-    // treated as a key change.
-    final ApplicationDetail application =
-        new ApplicationDetail()
-            .addProceedingsItem(
-                new ProceedingDetail()
-                    .id(789)
-                    .matterType(new StringDisplayValue().id("TEST"))
-                    .proceedingType(new StringDisplayValue().id("TEST"))
-                    .clientInvolvement(new StringDisplayValue().id("TEST"))
-                    .addScopeLimitationsItem(
-                        new ScopeLimitationDetail()
-                            .scopeLimitation(new StringDisplayValue().id("TEST"))));
-
-    final boolean result =
-        assessmentService.checkAssessmentForProceedingKeyChange(
-            application, buildProceedingsEntityTypeDetail());
-
-    assertFalse(result);
   }
 
   @Test

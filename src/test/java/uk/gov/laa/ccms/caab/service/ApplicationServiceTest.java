@@ -13,6 +13,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -115,6 +116,7 @@ import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ClientDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
@@ -574,6 +576,105 @@ class ApplicationServiceTest {
     verify(ebsApiClient).getAmendmentTypes(any());
     verify(caabApiClient).createApplication(anyString(), any());
     verify(puiMetricService, times(1)).incrementCreatedApplicationsCount("REF123");
+  }
+
+  @Test
+  void applyCostLimitations_setsDefaultCostLimitationFromMaxProceedingCostLimit() {
+    final ApplicationDetail application = buildApplicationDetail(1, true, new Date());
+    application.getProceedings().get(0).setCostLimitation(new BigDecimal("3000"));
+    application.getProceedings().get(1).setCostLimitation(new BigDecimal("5000"));
+    // simulate the draft amendment not carrying a default cost limitation
+    application.getCosts().setDefaultCostLimitation(null);
+
+    applicationService.applyCostLimitations(application);
+
+    // the highest proceeding cost limitation becomes the default
+    assertEquals(
+        0, new BigDecimal("5000.00").compareTo(application.getCosts().getDefaultCostLimitation()));
+  }
+
+  @Test
+  void applyCostLimitations_withNullProceedings_derivesDefaultFromRequestedWithoutNpe() {
+    final ApplicationDetail application = buildApplicationDetail(1, true, new Date());
+    application.setProceedings(null);
+    application.getCosts().setDefaultCostLimitation(null);
+    application.getCosts().setGrantedCostLimitation(BigDecimal.ZERO);
+    application.getCosts().setRequestedCostLimitation(new BigDecimal("5000"));
+
+    applicationService.applyCostLimitations(application);
+
+    // with no proceedings the default falls back to the requested cost limitation
+    assertEquals(
+        0, new BigDecimal("5000.00").compareTo(application.getCosts().getDefaultCostLimitation()));
+  }
+
+  @Test
+  void enrichDevolvedPowersFromEbs_sourcesContractFlagFromProviderWhenDraftAndEbsLackIt() {
+    final ApplicationDetail application = buildApplicationDetail(1, true, new Date());
+    // draft amendment that does not carry devolved powers (a no-delegated-functions case)
+    application.getApplicationType().setDevolvedPowers(null);
+    application.setCaseReferenceNumber("300000123");
+    application.setCategoryOfLaw(new StringDisplayValue().id("COM"));
+
+    final UserDetail user = buildUserDetail();
+
+    // the EBS case has no devolved powers to copy
+    final ApplicationDetail ebsCase =
+        new ApplicationDetail().applicationType(new ApplicationType());
+    when(ebsApiClient.getCase(eq("300000123"), anyLong(), anyString()))
+        .thenReturn(Mono.just(new CaseDetail()));
+    when(ebsApplicationMappingContextBuilder.buildApplicationMappingContext(any(CaseDetail.class)))
+        .thenReturn(EbsApplicationMappingContext.builder().build());
+    when(ebsApplicationMapper.toApplicationDetail(any(EbsApplicationMappingContext.class)))
+        .thenReturn(ebsCase);
+
+    // the provider's contract authorises devolved powers for this category of law
+    final ContractDetails contractDetails =
+        new ContractDetails()
+            .addContractsItem(
+                new ContractDetail()
+                    .categoryofLaw("COM")
+                    .contractualDevolvedPowers("Yes - Excluding JR Proceedings"));
+    when(soaApiClient.getContractDetails(anyInt(), anyInt(), anyString(), anyString()))
+        .thenReturn(Mono.just(contractDetails));
+
+    applicationService.enrichDevolvedPowersFromEbs(application, user);
+
+    assertEquals(
+        "Yes - Excluding JR Proceedings",
+        application.getApplicationType().getDevolvedPowers().getContractFlag());
+  }
+
+  @Test
+  void enrichDevolvedPowersFromEbs_preservesDraftDateUsedAndDoesNotHitEbsWhenDatePresent() {
+    final ApplicationDetail application = buildApplicationDetail(1, true, new Date());
+    final Date draftDate = new Date(123456789L);
+    // draft already carries the delegated-functions date but no contract flag
+    application
+        .getApplicationType()
+        .setDevolvedPowers(new DevolvedPowersDetail().used(true).dateUsed(draftDate));
+    application.setCaseReferenceNumber("300000123");
+    application.setCategoryOfLaw(new StringDisplayValue().id("COM"));
+
+    final UserDetail user = buildUserDetail();
+
+    final ContractDetails contractDetails =
+        new ContractDetails()
+            .addContractsItem(
+                new ContractDetail()
+                    .categoryofLaw("COM")
+                    .contractualDevolvedPowers("Yes - Excluding JR Proceedings"));
+    when(soaApiClient.getContractDetails(anyInt(), anyInt(), anyString(), anyString()))
+        .thenReturn(Mono.just(contractDetails));
+
+    applicationService.enrichDevolvedPowersFromEbs(application, user);
+
+    // the draft date is preserved and EBS is not consulted (the date is already present)
+    assertEquals(draftDate, application.getApplicationType().getDevolvedPowers().getDateUsed());
+    assertEquals(
+        "Yes - Excluding JR Proceedings",
+        application.getApplicationType().getDevolvedPowers().getContractFlag());
+    verify(ebsApiClient, never()).getCase(anyString(), anyLong(), anyString());
   }
 
   @Test
