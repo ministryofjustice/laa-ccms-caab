@@ -144,7 +144,9 @@ public class AmendCaseController {
                 String.valueOf(amendment.getId()),
                 activeCase.getCaseReferenceNumber(),
                 activeCase.getProviderId())
-            .block();
+            .blockOptional()
+            .orElseThrow(
+                () -> new CaabApplicationException("Failed to retrieve required evidence data"));
 
     final List<EvidenceRequired> evidenceRequired =
         evidenceMapper.toEvidenceRequiredList(evidenceRequiredLookups, uploadedDocuments);
