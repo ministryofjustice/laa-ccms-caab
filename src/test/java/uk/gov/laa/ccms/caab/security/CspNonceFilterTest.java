@@ -26,23 +26,6 @@ class CspNonceFilterTest {
   }
 
   @Test
-  void shouldIncludeUnsafeInlineInStyleSrcForGetAssessmentFramePath() throws Exception {
-    CspNonceFilter filter =
-        new CspNonceFilter(true, true, false, "https://opa.oraclecloud.com/opa");
-    MockHttpServletRequest request = new MockHttpServletRequest();
-    request.setMethod("GET");
-    request.setRequestURI("/application/assessments/frame");
-    MockHttpServletResponse response = new MockHttpServletResponse();
-
-    filter.doFilter(request, response, (servletRequest, servletResponse) -> {});
-
-    String nonce = (String) request.getAttribute(CspNonceFilter.CSP_NONCE_ATTRIBUTE);
-    assertThat(response.getHeader("Content-Security-Policy-Report-Only"))
-        .contains("style-src 'self' 'unsafe-inline' https://opa.oraclecloud.com")
-        .doesNotContain("style-src 'nonce-" + nonce + "'");
-  }
-
-  @Test
   void shouldIncludeNonceInStyleSrcForPostAssessmentPath() throws Exception {
     CspNonceFilter filter =
         new CspNonceFilter(true, true, false, "https://opa.oraclecloud.com/opa");

@@ -60,9 +60,19 @@
     display: inline-block;
 }
 
-.ccms-opa-frame {
-    border: 0;
-    display: block;
-    height: 650px;
-    width: 100%;
+// Chrome guard for the embedded OPA assessment page.
+// OPA's rulebase stylesheet (GDS.css, injected at runtime by interviews.js)
+// contains a page-global `body > div { max-width: 960px; margin: 0 auto }`
+// rule — written when OPA owned the whole page in the old PUI. With the
+// interview embedded directly (no isolating iframe) that rule hijacks caab's
+// full-bleed chrome divs (nav, phase banner, footer) and shrinks them to a
+// centred 960px column. These overrides out-specify `body > div` (and survive
+// regardless of stylesheet load order) so the chrome stays full width; each
+// element's own inner container keeps its content centred.
+body.ccms-opa-page > .govuk-service-navigation,
+body.ccms-opa-page > .govuk-phase-banner,
+body.ccms-opa-page > .govuk-footer {
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
 }
