@@ -74,6 +74,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
@@ -108,6 +109,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 
 /** Service class to handle Applications. */
@@ -1737,6 +1739,108 @@ public class ApplicationService {
     } else if (application.getCosts().getRequestedCostLimitation() == null) {
       application.getCosts().setRequestedCostLimitation(defaultCostLimitation);
     }
+  }
+
+  /**
+   * Computes and applies the cost limitations (including the default cost limitation, derived from
+   * the proceedings) onto the application's costs. Exposed so the OPA assessment prepop can ensure
+   * {@code defaultCostLimitation} is populated: the TDS draft does not carry it, and the merits
+   * rulebase needs it to resolve its completion goal (ASSESS_COMPLETE).
+   *
+   * @param application the application to update
+   */
+  public void applyCostLimitations(final ApplicationDetail application) {
+    if (application != null && application.getCosts() != null) {
+      setCostLimitations(application, Boolean.TRUE.equals(application.getAmendment()));
+    }
+  }
+
+  /**
+   * For an amendment, the TDS draft application does not carry the original case's devolved-powers
+   * (delegated functions) details. The merits OPA prepop maps these into {@code
+   * DELEGATED_FUNCTIONS_DATE} / {@code DEVOLVED_POWERS_CONTRACT_FLAG}, which the rulebase needs to
+   * resolve its completion goal (ASSESS_COMPLETE). Enrich them from the EBS case when missing.
+   *
+   * @param application the (draft) application to enrich
+   * @param user the user, used for the EBS case lookup
+   */
+  public void enrichDevolvedPowersFromEbs(
+      final ApplicationDetail application, final UserDetail user) {
+    if (application == null
+        || application.getApplicationType() == null
+        || application.getCaseReferenceNumber() == null
+        || user == null
+        || user.getProvider() == null
+        || user.getProvider().getId() == null) {
+      return;
+    }
+    final ApplicationType appType = application.getApplicationType();
+
+    // The delegated-functions date (DELEGATED_FUNCTIONS_DATE) genuinely belongs to the original
+    // case, so copy the EBS case's devolved-powers details when the draft does not carry them.
+    if (appType.getDevolvedPowers() == null
+        || appType.getDevolvedPowers().getDateUsed() == null
+        || !StringUtils.hasText(appType.getDevolvedPowers().getContractFlag())) {
+      final ApplicationDetail ebsCase =
+          getCase(
+              application.getCaseReferenceNumber(),
+              user.getProvider().getId().longValue(),
+              user.getLoginId());
+      if (ebsCase != null
+          && ebsCase.getApplicationType() != null
+          && ebsCase.getApplicationType().getDevolvedPowers() != null) {
+        appType.setDevolvedPowers(ebsCase.getApplicationType().getDevolvedPowers());
+      }
+    }
+
+    // The devolved-powers contract flag is provider/firm contract reference data, not case data, so
+    // a case that never used delegated functions still has a value. The merits rulebase needs it
+    // known to resolve ASSESS_COMPLETE, and the EBS case does not supply it for a no-delegated-
+    // functions amendment, so source it from the provider's contract details.
+    if (appType.getDevolvedPowers() == null) {
+      appType.setDevolvedPowers(new DevolvedPowersDetail());
+    }
+    if (!StringUtils.hasText(appType.getDevolvedPowers().getContractFlag())) {
+      appType.getDevolvedPowers().setContractFlag(getContractualDevolvedPowers(application, user));
+    }
+  }
+
+  /**
+   * Resolves the provider's contractual devolved-powers flag for the application's category of law
+   * from the provider contract details. Defaults to {@code "No"} when no matching contract (or no
+   * contract data) is found, so the value is always known for the merits rulebase.
+   *
+   * @param application the application (provides category of law + office)
+   * @param user the user (provides login id and user type)
+   * @return the contractual devolved-powers flag, never blank
+   */
+  private String getContractualDevolvedPowers(
+      final ApplicationDetail application, final UserDetail user) {
+    final String categoryOfLawId =
+        application.getCategoryOfLaw() != null ? application.getCategoryOfLaw().getId() : null;
+    final ApplicationProviderDetails providerDetails = application.getProviderDetails();
+    if (categoryOfLawId == null
+        || providerDetails == null
+        || providerDetails.getProvider() == null
+        || providerDetails.getOffice() == null) {
+      return "No";
+    }
+    return soaApiClient
+        .getContractDetails(
+            providerDetails.getProvider().getId(),
+            providerDetails.getOffice().getId(),
+            user.getLoginId(),
+            user.getUserType())
+        .blockOptional()
+        .map(ContractDetails::getContracts)
+        .map(
+            contracts ->
+                contracts.stream()
+                    .filter(contract -> categoryOfLawId.equals(contract.getCategoryofLaw()))
+                    .map(ContractDetail::getContractualDevolvedPowers)
+                    .findFirst()
+                    .orElse("No"))
+        .orElse("No");
   }
 
   /**

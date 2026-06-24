@@ -73,7 +73,7 @@ class AssessmentMapperTest {
   void testToAssessmentEntityTypeList_whenContextIsNotNull() {
     final List<AssessmentEntityTypeDetail> result =
         assessmentMapper.toAssessmentEntityTypeList(context);
-    assertEquals(3, result.size());
+    assertEquals(4, result.size());
   }
 
   @Test
@@ -134,7 +134,7 @@ class AssessmentMapperTest {
 
   private void assertGlobalAttributes(final List<AssessmentAttributeDetail> attributes) {
 
-    assertEquals(51, attributes.size());
+    assertEquals(54, attributes.size());
     assertContainsAttribute(attributes, AssessmentAttribute.APPLICATION_CASE_REF, "1234567890");
     assertContainsAttribute(attributes, AssessmentAttribute.RNON_MAND_EVIDENCE_AMD_CORR, "false");
     assertContainsAttribute(
@@ -235,7 +235,7 @@ class AssessmentMapperTest {
     assessmentMapper.toAssessmentDetail(assessment, context);
 
     assertNotNull(assessment.getEntityTypes());
-    assertEquals(3, assessment.getEntityTypes().size());
+    assertEquals(4, assessment.getEntityTypes().size());
   }
 
   @Test
@@ -246,7 +246,7 @@ class AssessmentMapperTest {
     assessmentMapper.toAssessmentDetail(assessment, context);
 
     assertNotNull(assessment.getEntityTypes());
-    assertEquals(3, assessment.getEntityTypes().size());
+    assertEquals(4, assessment.getEntityTypes().size());
   }
 
   @Test
@@ -266,7 +266,7 @@ class AssessmentMapperTest {
         getGlobalRelationshipNames(applicationAssessment),
         getGlobalRelationshipNames(amendmentAssessment));
     assertEquals(
-        Set.of("opponentotherparties", "proceeding"),
+        Set.of("linkedcases", "opponentotherparties", "proceeding"),
         getGlobalRelationshipNames(applicationAssessment));
   }
 

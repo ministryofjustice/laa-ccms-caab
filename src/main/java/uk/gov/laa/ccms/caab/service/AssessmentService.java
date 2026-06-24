@@ -884,7 +884,9 @@ public class AssessmentService {
           getAssessmentEntity(proceedingEntityType, entityId);
 
       if (proceedingEntity == null) {
-        return true;
+        // A key change is only flagged when the proceeding exists in the assessment and an
+        // attribute differs; a proceeding missing from the assessment is skipped, not a change.
+        continue;
       }
 
       final AssessmentAttributeDetail matterTypeAttribute =
