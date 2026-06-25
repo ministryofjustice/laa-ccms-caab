@@ -32,6 +32,11 @@ public enum AssessmentAttribute {
   RELATIONSHIP_TO_CASE("text", true, true),
   RELATIONSHIP_TO_CLIENT("text", true, true),
 
+  // linked cases (drives case-routing legally-linked-to-<team> rules; the entity must be fed even
+  // when empty so the rulebase knows InstanceCount(linked cases) = 0)
+  LINKED_CASE_ID("text", true, true),
+  LINKED_CASE_OWNER("text", true, true),
+
   // global
   APPLICATION_CASE_REF("text", true, true),
   APP_AMEND_TYPE("text", true, true),
@@ -39,8 +44,12 @@ public enum AssessmentAttribute {
   CERTIFICATE_TYPE("text", true, true),
   CLIENT_VULNERABLE("boolean", true, true),
 
+  // case-routing immigration / human-rights flags
+  ACTION_CLIENTS_UK_STATUS("boolean", true, true),
+  CLIENT_IMM_ASY_CLAIM_DETENTION("boolean", true, true),
+  HRA_ISSUES_SIGNIFICANT("boolean", true, true),
+
   // merits "required non-mandatory evidence" / declaration flags - prepopulated false at start
-  // (mirroring old PUI); the merits rules recompute the real evidence picture during the interview.
   RNON_MAND_EVIDENCE_AMD_CORR("boolean", true, true),
   RNON_MAND_EVIDENCE_AMD_COUNSEL("boolean", true, true),
   RNON_MAND_EVIDENCE_AMD_CT_ORDE("boolean", true, true),

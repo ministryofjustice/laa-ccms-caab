@@ -172,6 +172,20 @@ public class AssessmentController {
       // map case into application object
     }
 
+    // The TDS draft application does not carry a computed default cost limitation, which the OPA
+    // prepop maps into DEFAULT_COST_LIMITATION and the merits rulebase needs to resolve its
+    // completion goal (ASSESS_COMPLETE). Compute it here before building the prepop.
+    if (application != null) {
+      applicationService.applyCostLimitations(application);
+    }
+
+    // For amendments, the TDS draft also does not carry the original case's devolved-powers
+    // (delegated functions) details, which the merits prepop maps into DELEGATED_FUNCTIONS_DATE /
+    // DEVOLVED_POWERS_CONTRACT_FLAG. Enrich them from the EBS case before building the prepop.
+    if (application != null && Boolean.TRUE.equals(application.getAmendment())) {
+      applicationService.enrichDevolvedPowersFromEbs(application, user);
+    }
+
     // get rulebase from the assessment passed as the parameter
     final AssessmentRulebase assessmentRulebase = AssessmentRulebase.findByType(assessment);
 

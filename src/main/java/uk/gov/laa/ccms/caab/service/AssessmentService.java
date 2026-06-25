@@ -884,6 +884,8 @@ public class AssessmentService {
           getAssessmentEntity(proceedingEntityType, entityId);
 
       if (proceedingEntity == null) {
+        // A proceeding present in the application but missing from the assessment (e.g. added after
+        // the assessment was created) is a discrepancy that requires reassessment.
         return true;
       }
 

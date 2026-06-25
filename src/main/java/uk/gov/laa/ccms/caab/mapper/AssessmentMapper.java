@@ -22,6 +22,7 @@ import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.LAR_
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.LEAD_PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.LEAD_PROCEEDING_CHANGED;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.LEVEL_OF_SERVICE;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.LINKED_CASE_ID;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.MARITIAL_STATUS;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.MATTER_TYPE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.NEW_APPL_OR_AMENDMENT;
@@ -49,6 +50,7 @@ import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.SURN
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.USER_PROVIDER_FIRM_ID;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.USER_TYPE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.GLOBAL;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.LINKED_CASE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.OPPONENT;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.PROCEEDING;
 import static uk.gov.laa.ccms.caab.util.ApplicationUtil.getAppAmendTypeAssessmentInput;
@@ -77,6 +79,7 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
@@ -119,7 +122,8 @@ public interface AssessmentMapper {
     return List.of(
         toAssessmentEntityTypeDetailGlobal(context),
         toAssessmentEntityTypeDetailProceeding(context),
-        toAssessmentEntityTypeDetailOpponent(context));
+        toAssessmentEntityTypeDetailOpponent(context),
+        toAssessmentEntityTypeDetailLinkedCase(context));
   }
 
   /**
@@ -176,13 +180,32 @@ public interface AssessmentMapper {
               .relationshipTargets(proceedingRelationshipTargets)
               .prepopulated(true);
 
+      // linked case relationships - declared even when empty, so the rulebase knows
+      // InstanceCount(the linked cases) = 0 rather than unknown.
+      final List<LinkedCaseDetail> linkedCases = getAssessmentLinkedCases(context.getApplication());
+
+      final List<AssessmentRelationshipTargetDetail> linkedCaseRelationshipTargets =
+          linkedCases.stream()
+              .map(
+                  linkedCase ->
+                      new AssessmentRelationshipTargetDetail()
+                          .targetEntityId(getLinkedCaseOpaInstanceMappingId(linkedCase)))
+              .collect(Collectors.toList());
+
+      final AssessmentRelationshipDetail linkedCaseRelationship =
+          new AssessmentRelationshipDetail()
+              .name(LINKED_CASE.getType().toLowerCase().replace("_", ""))
+              .relationshipTargets(linkedCaseRelationshipTargets)
+              .prepopulated(true);
+
       // global entities
       final List<AssessmentEntityDetail> globalEntityList =
           List.of(
               new AssessmentEntityDetail()
                   .name(context.getApplication().getCaseReferenceNumber())
                   .attributes(globalToAttributeList(context))
-                  .relations(List.of(opponentRelationship, proceedingRelationship))
+                  .relations(
+                      List.of(opponentRelationship, proceedingRelationship, linkedCaseRelationship))
                   .prepopulated(false));
 
       return new AssessmentEntityTypeDetail().name(GLOBAL.getType()).entities(globalEntityList);
@@ -607,7 +630,12 @@ public interface AssessmentMapper {
         toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_PREACT_DISC),
         toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_SEP_STATE),
         toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_WARN_LTTR),
-        toFalseDefaultAttribute(AssessmentAttribute.PDECLARATION_WILL_BE_SIGNED_EM));
+        toFalseDefaultAttribute(AssessmentAttribute.PDECLARATION_WILL_BE_SIGNED_EM),
+        // case-routing immigration / human-rights flags, prepopulated false (see
+        // AssessmentAttribute)
+        toFalseDefaultAttribute(AssessmentAttribute.ACTION_CLIENTS_UK_STATUS),
+        toFalseDefaultAttribute(AssessmentAttribute.CLIENT_IMM_ASY_CLAIM_DETENTION),
+        toFalseDefaultAttribute(AssessmentAttribute.HRA_ISSUES_SIGNIFICANT));
   }
 
   // Shared mapping for attributes prepopulated with a constant "false" (e.g. the merits
@@ -916,5 +944,71 @@ public interface AssessmentMapper {
   @Named("getProceedingOpaInstanceMappingId")
   default String getProceedingOpaInstanceMappingId(final ProceedingDetail proceeding) {
     return ProceedingUtil.getAssessmentMappingId(proceeding);
+  }
+
+  /**
+   * Builds the LINKED_CASES entity type for the merits prepop. The entity (and its global
+   * containment relationship) is always emitted - even with no linked cases - so the rulebase can
+   * resolve {@code InstanceCount(the linked cases)} for the case-routing legally-linked rules.
+   *
+   * @param context the assessment mapping context
+   * @return the assessment entity type detail for linked cases
+   */
+  default AssessmentEntityTypeDetail toAssessmentEntityTypeDetailLinkedCase(
+      final AssessmentMappingContext context) {
+    if (context == null) {
+      return null;
+    }
+
+    final AssessmentEntityTypeDetail existingEntityType =
+        getAssessmentEntityType(context.getAssessment(), LINKED_CASE);
+
+    if (existingEntityType != null) {
+      return existingEntityType;
+    }
+
+    final List<AssessmentEntityDetail> linkedCaseEntities =
+        getAssessmentLinkedCases(context.getApplication()).stream()
+            .map(
+                linkedCase ->
+                    new AssessmentEntityDetail()
+                        .name(getLinkedCaseOpaInstanceMappingId(linkedCase))
+                        .prepopulated(true)
+                        .attributes(
+                            List.of(
+                                new AssessmentAttributeDetail()
+                                    .name(LINKED_CASE_ID.name())
+                                    .value(getLinkedCaseOpaInstanceMappingId(linkedCase))
+                                    .type(LINKED_CASE_ID.getType()))))
+            .collect(Collectors.toList());
+
+    return new AssessmentEntityTypeDetail()
+        .name(LINKED_CASE.getType())
+        .entities(linkedCaseEntities);
+  }
+
+  /**
+   * Returns the application's linked cases, never null.
+   *
+   * @param application the application
+   * @return the linked cases (empty when none)
+   */
+  default List<LinkedCaseDetail> getAssessmentLinkedCases(final ApplicationDetail application) {
+    if (application == null || application.getLinkedCases() == null) {
+      return List.of();
+    }
+    return application.getLinkedCases();
+  }
+
+  /**
+   * Builds the OPA instance id for a linked case (its LSC case reference, falling back to its id).
+   *
+   * @param linkedCase the linked case
+   * @return the OPA instance id
+   */
+  default String getLinkedCaseOpaInstanceMappingId(final LinkedCaseDetail linkedCase) {
+    return linkedCase.getLscCaseReference() != null
+        ? linkedCase.getLscCaseReference()
+        : "LC_" + linkedCase.getId();
   }
 }

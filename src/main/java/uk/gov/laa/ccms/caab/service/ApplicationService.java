@@ -74,6 +74,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
@@ -108,6 +109,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 
 /** Service class to handle Applications. */
@@ -1707,7 +1709,9 @@ public class ApplicationService {
         currentDefault != null
             && currentRequested != null
             && currentDefault.compareTo(currentRequested) != 0;
-    for (final ProceedingDetail proceeding : application.getProceedings()) {
+    final List<ProceedingDetail> proceedings =
+        application.getProceedings() != null ? application.getProceedings() : List.of();
+    for (final ProceedingDetail proceeding : proceedings) {
       if (proceeding.getCostLimitation() != null
           && defaultCostLimitation.compareTo(proceeding.getCostLimitation()) < 0) {
         defaultCostLimitation = proceeding.getCostLimitation();
@@ -1737,6 +1741,106 @@ public class ApplicationService {
     } else if (application.getCosts().getRequestedCostLimitation() == null) {
       application.getCosts().setRequestedCostLimitation(defaultCostLimitation);
     }
+  }
+
+  /**
+   * Computes and applies the default cost limitation (derived from the proceedings) onto the
+   * application's costs, so the OPA prepop has it when the TDS draft does not.
+   *
+   * @param application the application to update
+   */
+  public void applyCostLimitations(final ApplicationDetail application) {
+    if (application != null && application.getCosts() != null) {
+      setCostLimitations(application, Boolean.TRUE.equals(application.getAmendment()));
+    }
+  }
+
+  /**
+   * Enriches an amendment draft's devolved-powers details that the TDS draft does not carry - the
+   * delegated-functions date from the EBS case and the contract flag from the provider's contracts
+   * - so the merits prepop has them.
+   *
+   * @param application the (draft) application to enrich
+   * @param user the user, used for the EBS case lookup
+   */
+  public void enrichDevolvedPowersFromEbs(
+      final ApplicationDetail application, final UserDetail user) {
+    if (application == null
+        || application.getApplicationType() == null
+        || application.getCaseReferenceNumber() == null
+        || user == null
+        || user.getProvider() == null
+        || user.getProvider().getId() == null) {
+      return;
+    }
+    final ApplicationType appType = application.getApplicationType();
+
+    // Copy only the delegated-functions date from EBS when the draft lacks it (preserving any
+    // existing draft value); the contract flag is set from provider details below.
+    if (appType.getDevolvedPowers() == null || appType.getDevolvedPowers().getDateUsed() == null) {
+      final ApplicationDetail ebsCase =
+          getCase(
+              application.getCaseReferenceNumber(),
+              user.getProvider().getId().longValue(),
+              user.getLoginId());
+      final DevolvedPowersDetail ebsDevolvedPowers =
+          ebsCase != null && ebsCase.getApplicationType() != null
+              ? ebsCase.getApplicationType().getDevolvedPowers()
+              : null;
+      if (ebsDevolvedPowers != null && ebsDevolvedPowers.getDateUsed() != null) {
+        if (appType.getDevolvedPowers() == null) {
+          appType.setDevolvedPowers(new DevolvedPowersDetail());
+        }
+        appType.getDevolvedPowers().setDateUsed(ebsDevolvedPowers.getDateUsed());
+      }
+    }
+
+    // The contract flag is provider contract data (not case data); the rulebase needs it known even
+    // for a no-delegated-functions case, so source it from the provider's contract details.
+    if (appType.getDevolvedPowers() == null) {
+      appType.setDevolvedPowers(new DevolvedPowersDetail());
+    }
+    if (!StringUtils.hasText(appType.getDevolvedPowers().getContractFlag())) {
+      appType.getDevolvedPowers().setContractFlag(getContractualDevolvedPowers(application, user));
+    }
+  }
+
+  /**
+   * Resolves the provider's contractual devolved-powers flag for the application's category of law
+   * from the provider contract details. Defaults to {@code "No"} when no matching contract (or no
+   * contract data) is found, so the value is always known for the merits rulebase.
+   *
+   * @param application the application (provides category of law + office)
+   * @param user the user (provides login id and user type)
+   * @return the contractual devolved-powers flag, never blank
+   */
+  private String getContractualDevolvedPowers(
+      final ApplicationDetail application, final UserDetail user) {
+    final String categoryOfLawId =
+        application.getCategoryOfLaw() != null ? application.getCategoryOfLaw().getId() : null;
+    final ApplicationProviderDetails providerDetails = application.getProviderDetails();
+    if (categoryOfLawId == null
+        || providerDetails == null
+        || providerDetails.getProvider() == null
+        || providerDetails.getOffice() == null) {
+      return "No";
+    }
+    return soaApiClient
+        .getContractDetails(
+            providerDetails.getProvider().getId(),
+            providerDetails.getOffice().getId(),
+            user.getLoginId(),
+            user.getUserType())
+        .blockOptional()
+        .map(ContractDetails::getContracts)
+        .map(
+            contracts ->
+                contracts.stream()
+                    .filter(contract -> categoryOfLawId.equals(contract.getCategoryofLaw()))
+                    .map(ContractDetail::getContractualDevolvedPowers)
+                    .findFirst()
+                    .orElse("No"))
+        .orElse("No");
   }
 
   /**
