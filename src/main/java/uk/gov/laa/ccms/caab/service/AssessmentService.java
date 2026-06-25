@@ -319,6 +319,13 @@ public class AssessmentService {
       }
     }
 
+    log.info(
+        "Status decision [{}]: raw={}, amended={}, final={}",
+        assessmentName,
+        getStatus(currentAssessment),
+        isApplicationsAssessmentAmended(application, assessmentName),
+        assessmentStatus);
+
     // update the assessment status if it has changed
     if (statusChanged && currentAssessment != null) {
       assessmentApiClient
@@ -884,9 +891,9 @@ public class AssessmentService {
           getAssessmentEntity(proceedingEntityType, entityId);
 
       if (proceedingEntity == null) {
-        // A proceeding present in the application but missing from the assessment (e.g. added after
-        // the assessment was created) is a discrepancy that requires reassessment.
-        return true;
+        // Unmatched proceeding: skip. Id matching is unreliable in the amendment/prepop flow;
+        // add/remove is detected by the proceeding count checks in the callers.
+        continue;
       }
 
       final AssessmentAttributeDetail matterTypeAttribute =
