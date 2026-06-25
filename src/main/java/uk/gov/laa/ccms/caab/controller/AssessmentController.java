@@ -67,6 +67,9 @@ public class AssessmentController {
   @Value("${laa.ccms.oracle-web-determination-server.resources.interview-javascript}")
   protected String interviewJavascript;
 
+  @Value("${laa.ccms.oracle-web-determination-server.resources.interview-jquery}")
+  protected String interviewJquery;
+
   @Value("${laa.ccms.oracle-web-determination-server.redirect.url}")
   protected String owdRedirectUrl;
 
@@ -321,6 +324,7 @@ public class AssessmentController {
     model.addAttribute("interviewsCSS", interviewStyling);
     model.addAttribute("fontsCSS", fontStyling);
     model.addAttribute("interviewsJS", interviewJavascript);
+    model.addAttribute("interviewsJQuery", interviewJquery);
     model.addAttribute("params", contextToken);
     model.addAttribute("submitReturnUrl", "%s?val=%s".formatted(submitReturnUrl, contextToken));
     model.addAttribute("username", user.getUsername());

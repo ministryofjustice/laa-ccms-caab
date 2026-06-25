@@ -25,9 +25,10 @@
        and so needs a global jQuery to already exist. The rulebase ships its own
        jquery-3.6.3.min.js, but when the interview is embedded directly that copy
        can lose the load-order race against script.js (ReferenceError: jQuery is
-       not defined). Providing jQuery on the page up front — as the legacy PUI did
-       — guarantees it is defined before any OPA screen script runs. -->
-  <script th:src="@{/ccms/jquery-3.6.3.min.js}" th:nonce="${cspNonce}"></script>
+       not defined). Loading OPA's own jQuery (served by OWD, like the other
+       interview resources) up front guarantees it is defined before any OPA
+       screen script runs — without vendoring jQuery into this codebase. -->
+  <script th:src="${interviewsJQuery}" th:nonce="${cspNonce}"></script>
   <script th:src="${interviewsJS}" th:nonce="${cspNonce}"></script>
   <title th:text="${'LAA CCMS - ' + frameTitle}">LAA CCMS - Assessment</title>
 </head>

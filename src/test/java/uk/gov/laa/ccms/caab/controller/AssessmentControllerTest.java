@@ -91,6 +91,7 @@ public class AssessmentControllerTest {
     assessmentController.interviewStyling = "interview-styling.css";
     assessmentController.fontStyling = "font-styling.css";
     assessmentController.interviewJavascript = "interview-javascript.js";
+    assessmentController.interviewJquery = "jquery-3.6.3.min.js";
     assessmentController.owdRedirectUrl = "http://localhost:8010";
 
     final FormattingConversionService conversionService = new FormattingConversionService();
@@ -178,6 +179,7 @@ public class AssessmentControllerTest {
         .andExpect(model().attributeExists("interviewsCSS"))
         .andExpect(model().attributeExists("fontsCSS"))
         .andExpect(model().attributeExists("interviewsJS"))
+        .andExpect(model().attributeExists("interviewsJQuery"))
         .andExpect(model().attributeExists("params"))
         .andExpect(model().attributeExists("submitReturnUrl"))
         .andExpect(model().attributeExists("username"))
