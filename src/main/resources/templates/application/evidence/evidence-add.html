@@ -8,8 +8,10 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/{caseContext}/sections/evidence(caseContext=${caseContext.getPathValue()})}" class="govuk-back-link"
+        <a th:if="${caseContext.isApplication()}" th:href="@{/{caseContext}/sections/evidence(caseContext=${caseContext.getPathValue()})}" class="govuk-back-link"
            th:text="#{application.evidence.add.returnToDocumentSummary}"></a>
+        <a th:if="${caseContext.isAmendment()}" th:href="@{/amendments/summary}" class="govuk-back-link"
+           th:text="#{application.evidence.add.returnToAmendments}"></a>
     </div>
     <div id="main-content">
         <h1 class="govuk-heading-l" th:text="#{application.evidence.add.uploadADocument}"></h1>
@@ -22,7 +24,7 @@
                  th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
                 <label class="govuk-label" for="file" th:text="#{application.evidence.add.chooseFile}"></label>
                 <div id="file-upload-hint" class="govuk-hint">
-                    <span th:text="#{application.evidence.add.uploadWarning(${validExtensions}, ${maxFileSize})}"></span></br>
+                    <span th:text="#{application.evidence.add.uploadWarning(${validExtensions}, ${maxFileSize})}"></span><br/>
                     <span th:text="#{request.noSpaces}"></span>
                 </div>
                 <input class="govuk-file-upload" id="file" name="file" type="file">

@@ -8,9 +8,12 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_D
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_REQUIRED;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -22,14 +25,21 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.evidence.EvidenceRequired;
 import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationSectionValidator;
 import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
+import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.mapper.EvidenceMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
+import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.EvidenceService;
+import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -46,6 +56,8 @@ public class AmendCaseController {
   private final ApplicationService applicationService;
   private final AmendmentService amendmentService;
   private final ApplicationSectionValidator applicationSectionValidator;
+  private final EvidenceService evidenceService;
+  private final EvidenceMapper evidenceMapper;
 
   /**
    * Initiates the amendment creation and submission process for a specific case. This method
@@ -113,6 +125,32 @@ public class AmendCaseController {
             .orElseThrow(
                 () -> new CaabApplicationException("Failed to retrieve application summary"));
 
+    final EvidenceDocumentDetails evidenceUploaded =
+        evidenceService
+            .getEvidenceDocumentsForCase(activeCase.getCaseReferenceNumber(), CcmsModule.AMENDMENT)
+            .block();
+
+    final List<BaseEvidenceDocumentDetail> uploadedDocuments =
+        evidenceUploaded != null && evidenceUploaded.getContent() != null
+            ? evidenceUploaded.getContent()
+            : Collections.emptyList();
+
+    // Populate the required evidence list in the session so the document upload screen can be
+    // reached directly from the amend case summary (without first visiting the evidence section
+    // page) and still display which evidence each uploaded file can cover.
+    final List<EvidenceDocumentTypeLookupValueDetail> evidenceRequiredLookups =
+        evidenceService
+            .getDocumentsRequired(
+                String.valueOf(amendment.getId()),
+                activeCase.getCaseReferenceNumber(),
+                activeCase.getProviderId())
+            .blockOptional()
+            .orElseThrow(
+                () -> new CaabApplicationException("Failed to retrieve required evidence data"));
+
+    final List<EvidenceRequired> evidenceRequired =
+        evidenceMapper.toEvidenceRequiredList(evidenceRequiredLookups, uploadedDocuments);
+
     activeCase.setApplicationId(amendment.getId());
 
     httpSession.setAttribute(AMEND_CLIENT_ORIGIN, AmendClientOrigin.AMEND_CASE);
@@ -120,10 +158,12 @@ public class AmendCaseController {
     httpSession.setAttribute(APPLICATION_ID, amendment.getId());
     httpSession.setAttribute(ACTIVE_CASE, activeCase);
     httpSession.setAttribute(APPLICATION_COSTS, amendment.getCosts());
+    httpSession.setAttribute(EVIDENCE_REQUIRED, evidenceRequired);
 
     model.addAttribute(APPLICATION_ID, amendment.getId());
 
     model.addAttribute("summary", applicationSectionDisplay);
+    model.addAttribute("evidenceUploaded", uploadedDocuments);
 
     return "application/amendment-summary";
   }

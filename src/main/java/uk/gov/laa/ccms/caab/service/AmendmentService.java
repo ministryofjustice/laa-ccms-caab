@@ -4,6 +4,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.PROCEEDING_STA
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
+import static uk.gov.laa.ccms.caab.constants.CcmsModule.AMENDMENT;
 
 import java.util.Collections;
 import java.util.List;
@@ -31,7 +32,9 @@ import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
+import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
@@ -61,6 +64,7 @@ public class AmendmentService {
   private final CaabApiClient caabApiClient;
   private final SoaApiClient soaApiClient;
   private final SoaApplicationMapper soaApplicationMapper;
+  private final EvidenceService evidenceService;
 
   /**
    * Creates and submits an amendment for an existing case using the provided application details
@@ -341,12 +345,17 @@ public class AmendmentService {
       caabApiClient.createApplication(userDetail.getLoginId(), amendment).block();
     }
 
+    // Register and transfer any documents uploaded against this amendment so they are attached to
+    // the case update, matching the legacy provider UI amendment submission behaviour.
+    final List<BaseEvidenceDocumentDetail> caseDocs =
+        registerAndUploadAmendmentDocuments(amendment.getCaseReferenceNumber(), userDetail);
+
     CaseMappingContext caseMappingContext =
         CaseMappingContext.builder()
             .tdsApplication(amendment)
             .meansAssessment(meansAssessment)
             .meritsAssessment(meritsAssessment)
-            .caseDocs(Collections.emptyList())
+            .caseDocs(caseDocs)
             .user(userDetail)
             .build();
     CaseDetail caseToSubmit = soaApplicationMapper.toCaseDetail(caseMappingContext);
@@ -359,6 +368,46 @@ public class AmendmentService {
             amendment.getQuickEditType());
 
     return Objects.requireNonNull(caseTransactionResponseMono.block()).getTransactionId();
+  }
+
+  /**
+   * Register and upload any documents that were uploaded against this amendment (CCMS module "M")
+   * so they are transferred to EBS and can be attached to the case update. This mirrors the legacy
+   * provider UI, which on amendment submission registers previously uploaded documents, uploads
+   * their content, and includes them as case documents on the case update request.
+   *
+   * @param caseReferenceNumber the case reference the documents belong to.
+   * @param userDetail the user submitting the amendment.
+   * @return the amendment evidence documents to attach to the case update, carrying their EBS
+   *     registered document ids; an empty list when no documents were uploaded.
+   */
+  private List<BaseEvidenceDocumentDetail> registerAndUploadAmendmentDocuments(
+      final String caseReferenceNumber, final UserDetail userDetail) {
+
+    final EvidenceDocumentDetails evidenceDocuments =
+        evidenceService.getEvidenceDocumentsForCase(caseReferenceNumber, AMENDMENT).block();
+
+    if (evidenceDocuments == null
+        || evidenceDocuments.getContent() == null
+        || evidenceDocuments.getContent().isEmpty()) {
+      return Collections.emptyList();
+    }
+
+    // Register any not-yet-registered documents in EBS and patch the TDS with the returned ids.
+    evidenceService.registerPreviouslyUploadedDocuments(evidenceDocuments, userDetail);
+
+    // Upload the document content to EBS and update each document's transfer status.
+    evidenceService
+        .uploadAndUpdateDocuments(evidenceDocuments, caseReferenceNumber, null, userDetail)
+        .block();
+
+    // Re-fetch so the attached case documents carry the registered document ids.
+    final EvidenceDocumentDetails updatedDocuments =
+        evidenceService.getEvidenceDocumentsForCase(caseReferenceNumber, AMENDMENT).block();
+
+    return updatedDocuments != null && updatedDocuments.getContent() != null
+        ? updatedDocuments.getContent()
+        : Collections.emptyList();
   }
 
   /**

@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasProperty;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -9,10 +11,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static uk.gov.laa.ccms.caab.constants.CcmsModule.AMENDMENT;
 import static uk.gov.laa.ccms.caab.constants.CcmsModule.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
@@ -23,6 +28,8 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +39,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -47,6 +57,7 @@ import uk.gov.laa.ccms.caab.bean.validators.evidence.EvidenceUploadValidator;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.exception.AvScanException;
 import uk.gov.laa.ccms.caab.mapper.EvidenceMapper;
+import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.service.AvScanService;
@@ -99,7 +110,7 @@ class EvidenceSectionControllerTest {
         .thenReturn(Mono.just(Collections.emptyList()));
 
     when(evidenceService.getEvidenceDocumentsForCase(
-            activeCase.getCaseReferenceNumber(), APPLICATION))
+            activeCase.getCaseReferenceNumber(), expectedModule(caseContext)))
         .thenReturn(Mono.just(new EvidenceDocumentDetails()));
 
     when(evidenceMapper.toEvidenceRequiredList(any(List.class), any(List.class)))
@@ -119,7 +130,8 @@ class EvidenceSectionControllerTest {
             activeCase.getProviderId());
 
     verify(evidenceService)
-        .getEvidenceDocumentsForCase(activeCase.getCaseReferenceNumber(), APPLICATION);
+        .getEvidenceDocumentsForCase(
+            activeCase.getCaseReferenceNumber(), expectedModule(caseContext));
 
     verify(evidenceMapper).toEvidenceRequiredList(any(List.class), any(List.class));
   }
@@ -144,6 +156,11 @@ class EvidenceSectionControllerTest {
                 .sessionAttr(USER_DETAILS, user))
         .andExpect(status().isOk())
         .andExpect(model().attributeExists(EVIDENCE_UPLOAD_FORM_DATA))
+        .andExpect(
+            model()
+                .attribute(
+                    EVIDENCE_UPLOAD_FORM_DATA,
+                    hasProperty("ccmsModule", equalTo(expectedModule(caseContext)))))
         .andExpect(model().attribute(EVIDENCE_REQUIRED, evidenceRequired))
         .andExpect(model().attribute("evidenceTypes", documentTypesLookup.getContent()))
         .andExpect(view().name("application/evidence/evidence-add"));
@@ -286,7 +303,7 @@ class EvidenceSectionControllerTest {
                 .sessionAttr(EVIDENCE_REQUIRED, evidenceRequired)
                 .sessionAttr(USER_DETAILS, user))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/%s/sections/evidence".formatted(caseContext)));
+        .andExpect(redirectedUrl(expectedRedirect(caseContext)));
 
     // Update the formData now, for comparison purposes
     formData.setRegisteredDocumentId(registeredDocumentId);
@@ -307,11 +324,86 @@ class EvidenceSectionControllerTest {
                 .sessionAttr(ACTIVE_CASE, activeCase)
                 .sessionAttr(USER_DETAILS, user))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/%s/sections/evidence".formatted(caseContext)));
+        .andExpect(redirectedUrl(expectedRedirect(caseContext)));
 
     verify(evidenceService)
         .removeDocument(
-            String.valueOf(activeCase.getApplicationId()), tdsId, APPLICATION, user.getLoginId());
+            String.valueOf(activeCase.getApplicationId()),
+            tdsId,
+            expectedModule(caseContext),
+            user.getLoginId());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"application", "amendments"})
+  void viewEvidenceDocumentStreamsContentInline(String caseContext) throws Exception {
+    final Integer tdsId = 123;
+    final ActiveCase activeCase = buildActiveCase();
+    final EvidenceDocumentDetail document =
+        new EvidenceDocumentDetail()
+            .fileName("originalName.pdf")
+            .fileExtension("pdf")
+            .fileData(
+                Base64.getEncoder()
+                    .encodeToString("the file data".getBytes(StandardCharsets.UTF_8)));
+
+    // The document belongs to the active case, so it is authorised.
+    when(evidenceService.getEvidenceDocumentsForCase(
+            activeCase.getCaseReferenceNumber(), expectedModule(caseContext)))
+        .thenReturn(
+            Mono.just(
+                new EvidenceDocumentDetails()
+                    .addContentItem(new BaseEvidenceDocumentDetail().id(tdsId))));
+    when(evidenceService.getEvidenceDocument(tdsId)).thenReturn(Mono.just(document));
+
+    final String expectedDisposition =
+        ContentDisposition.inline()
+            .filename("originalName.pdf", StandardCharsets.UTF_8)
+            .build()
+            .toString();
+
+    mockMvc
+        .perform(
+            get("/%s/evidence/{evidence-document-id}/view".formatted(caseContext), tdsId)
+                .sessionAttr(ACTIVE_CASE, activeCase))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_PDF))
+        .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, expectedDisposition))
+        .andExpect(content().bytes("the file data".getBytes(StandardCharsets.UTF_8)));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"application", "amendments"})
+  void viewEvidenceDocumentRejectsDocumentNotInActiveCase(String caseContext) throws Exception {
+    final Integer tdsId = 123;
+    final ActiveCase activeCase = buildActiveCase();
+
+    // The active case only contains a different document id, so the requested id must be rejected
+    // before the file content is ever fetched.
+    when(evidenceService.getEvidenceDocumentsForCase(
+            activeCase.getCaseReferenceNumber(), expectedModule(caseContext)))
+        .thenReturn(
+            Mono.just(
+                new EvidenceDocumentDetails()
+                    .addContentItem(new BaseEvidenceDocumentDetail().id(999))));
+
+    mockMvc
+        .perform(
+            get("/%s/evidence/{evidence-document-id}/view".formatted(caseContext), tdsId)
+                .sessionAttr(ACTIVE_CASE, activeCase))
+        .andExpect(view().name("error"));
+
+    verify(evidenceService, never()).getEvidenceDocument(any());
+  }
+
+  private String expectedRedirect(String caseContext) {
+    return "amendments".equals(caseContext)
+        ? "/amendments/summary"
+        : "/%s/sections/evidence".formatted(caseContext);
+  }
+
+  private CcmsModule expectedModule(String caseContext) {
+    return "amendments".equals(caseContext) ? AMENDMENT : APPLICATION;
   }
 
   private ActiveCase buildActiveCase() {

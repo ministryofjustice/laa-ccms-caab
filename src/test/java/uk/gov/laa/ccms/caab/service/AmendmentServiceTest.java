@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -32,6 +33,7 @@ import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -40,6 +42,8 @@ import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
+import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.PriorAuthoritySectionDisplay;
 import uk.gov.laa.ccms.caab.util.DateUtils;
@@ -56,13 +60,20 @@ class AmendmentServiceTest {
   @Mock private CaabApiClient caabApiClient;
   @Mock private SoaApiClient soaApiClient;
   @Mock private SoaApplicationMapper soaApplicationMapper;
+  @Mock private EvidenceService evidenceService;
 
   private AmendmentService amendmentService;
 
   @BeforeEach
   void beforeEach() {
     amendmentService =
-        new AmendmentService(applicationService, caabApiClient, soaApiClient, soaApplicationMapper);
+        new AmendmentService(
+            applicationService, caabApiClient, soaApiClient, soaApplicationMapper, evidenceService);
+
+    // Default: no amendment documents uploaded, so quick amendments submit with no case docs.
+    lenient()
+        .when(evidenceService.getEvidenceDocumentsForCase(any(), any()))
+        .thenReturn(Mono.just(new EvidenceDocumentDetails()));
   }
 
   @Nested
@@ -450,6 +461,49 @@ class AmendmentServiceTest {
               any(),
               eq(QuickEditTypeConstants.MESSAGE_TYPE_CASE_CORRESPONDENCE_PREFERENCE));
       assertThat(transactionId).isEqualTo("12345");
+    }
+
+    @Test
+    @DisplayName("Should register, upload and attach amendment documents on submit")
+    void shouldRegisterUploadAndAttachAmendmentDocuments() {
+      // Given
+      AddressFormData addressFormData = new AddressFormData();
+      addressFormData.setAddressLine1("Line 1");
+
+      String caseRef = "12345";
+
+      UserDetail userDetails =
+          new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
+      ApplicationDetail caseDetail = buildFullApplicationDetail();
+      caseDetail.setCaseReferenceNumber(caseRef);
+
+      EvidenceDocumentDetails amendmentDocuments =
+          new EvidenceDocumentDetails().addContentItem(new BaseEvidenceDocumentDetail().id(55));
+
+      when(applicationService.getCase(any(), anyLong(), any())).thenReturn(caseDetail);
+      when(applicationService.getTdsApplicationSummary(eq(caseRef), eq(userDetails)))
+          .thenReturn(new BaseApplicationDetail().caseReferenceNumber(caseRef));
+      when(evidenceService.getEvidenceDocumentsForCase(eq(caseRef), eq(CcmsModule.AMENDMENT)))
+          .thenReturn(Mono.just(amendmentDocuments));
+      when(evidenceService.uploadAndUpdateDocuments(any(), eq(caseRef), eq(null), eq(userDetails)))
+          .thenReturn(Mono.empty());
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), any()))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("12345")));
+
+      // When
+      amendmentService.submitQuickAmendmentCorrespondenceAddress(
+          addressFormData, caseRef, userDetails);
+
+      // Then
+      verify(evidenceService).registerPreviouslyUploadedDocuments(amendmentDocuments, userDetails);
+      verify(evidenceService)
+          .uploadAndUpdateDocuments(amendmentDocuments, caseRef, null, userDetails);
+
+      ArgumentCaptor<CaseMappingContext> contextCaptor =
+          ArgumentCaptor.forClass(CaseMappingContext.class);
+      verify(soaApplicationMapper).toCaseDetail(contextCaptor.capture());
+      assertThat(contextCaptor.getValue().getCaseDocs()).isEqualTo(amendmentDocuments.getContent());
     }
   }
 
