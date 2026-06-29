@@ -17,11 +17,23 @@
         th:href="@{/assets/images/govuk-icon-180.png}">
   <link th:href="@{/ccms/moj.css}" rel="stylesheet">
   <link th:href="@{/ccms/ccms.css}" rel="stylesheet">
+  <link th:href="@{/ccms/assessment-get.css}" rel="stylesheet">
+  <link th:href="${interviewsCSS}" rel="stylesheet" type="text/css"/>
+  <link th:href="${fontsCSS}" rel="stylesheet" type="text/css"/>
   <script th:src="@{/ccms/ccms.js}" th:nonce="${cspNonce}"></script>
+  <!-- The OPA rulebase's screen script (script.js) calls jQuery.noConflict(true)
+       and so needs a global jQuery to already exist. The rulebase ships its own
+       jquery-3.6.3.min.js, but when the interview is embedded directly that copy
+       can lose the load-order race against script.js (ReferenceError: jQuery is
+       not defined). Loading OPA's own jQuery (served by OWD, like the other
+       interview resources) up front guarantees it is defined before any OPA
+       screen script runs — without vendoring jQuery into this codebase. -->
+  <script th:src="${interviewsJQuery}" th:nonce="${cspNonce}"></script>
+  <script th:src="${interviewsJS}" th:nonce="${cspNonce}"></script>
   <title th:text="${'LAA CCMS - ' + frameTitle}">LAA CCMS - Assessment</title>
 </head>
 
-<body class="govuk-template__body">
+<body class="govuk-template__body ccms-opa-page">
 <script th:nonce="${cspNonce}">
     document.body.className += ' js-enabled' + ('noModule' in HTMLScriptElement.prototype ? ' govuk-frontend-supported' : '');</script>
 
@@ -45,34 +57,59 @@
         <h1 class="govuk-heading-l" th:text="${frameTitle}"></h1>
       </th:block>
 
-      <iframe
-          id="opa-assessment-frame"
-          class="ccms-opa-frame"
-          th:src="@{${opaFrameUrl}}"
-          title="Assessment interview"></iframe>
+      <div class="ccms-opa-shell">
+        <div id="interview-wrapper" class="ccms-opa-interview-wrapper"></div>
+      </div>
     </div>
   </main>
 </div>
 
 <footer th:replace="~{partials/footer :: footer}"></footer>
 
-<script th:nonce="${cspNonce}">
-    var opaAssessmentFrame = document.getElementById("opa-assessment-frame");
+<script th:inline="javascript" th:nonce="${cspNonce}">
+    // OPA interview is embedded directly into this page (no isolating iframe),
+    // so it grows with the page flow exactly as the legacy PUI did. The OPA
+    // stylesheet is scoped under .ccms-opa-interview-wrapper (assessment-get.css)
+    // so it cannot bleed into the surrounding GOV.UK chrome.
+    var el = document.getElementById("interview-wrapper");
+    var resumeId = [[${resumeId}]];
+    var checkpoint = [[${checkpoint}]];
+    var val = [[${params}]];
+    var user = [[${username}]];
 
-    window.addEventListener("message", function (event) {
-        if (!opaAssessmentFrame || event.source !== opaAssessmentFrame.contentWindow) {
-            return;
-        }
+    var paramData = {
+        "val": val,
+        "user": user,
+        "resume-id": resumeId
+    };
 
-        if (!event.data || event.data.type !== "opa-assessment-frame-height") {
-            return;
-        }
+    var owdUrl = [[${owdUrl}]];
+    var deploymentName = [[${deploymentName}]];
 
-        var height = Number(event.data.height);
-        if (Number.isFinite(height) && height > 0) {
-            opaAssessmentFrame.style.height = Math.ceil(height) + "px";
-        }
-    });
+    function doExit(url) {
+        window.location = url;
+    }
+
+    if (checkpoint === 'START') {
+        OraclePolicyAutomationEmbedded.StartInterview(el,
+            owdUrl,
+            deploymentName,
+            "en-GB",
+            undefined,
+            paramData,
+            undefined,
+            undefined,
+            doExit);
+    } else {
+        OraclePolicyAutomationEmbedded.ResumeInterview(el,
+            owdUrl,
+            deploymentName,
+            "en-GB",
+            undefined,
+            paramData,
+            undefined,
+            doExit);
+    }
 </script>
 
 <script th:src="@{/assets/govuk/all.bundle.js}" th:nonce="${cspNonce}"></script>

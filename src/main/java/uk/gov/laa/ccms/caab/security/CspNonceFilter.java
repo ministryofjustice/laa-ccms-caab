@@ -69,9 +69,7 @@ public class CspNonceFilter extends OncePerRequestFilter {
 
   private String buildPolicy(String nonce, String method, String requestUri) {
     boolean isAssessmentPath =
-        "GET".equalsIgnoreCase(method)
-            && requestUri != null
-            && (requestUri.endsWith("/assessments") || requestUri.endsWith("/assessments/frame"));
+        "GET".equalsIgnoreCase(method) && requestUri != null && requestUri.endsWith("/assessments");
 
     StringBuilder policy = new StringBuilder();
     policy.append("default-src 'self'; ");

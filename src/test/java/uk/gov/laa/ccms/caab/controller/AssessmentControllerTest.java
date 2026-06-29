@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -92,6 +91,7 @@ public class AssessmentControllerTest {
     assessmentController.interviewStyling = "interview-styling.css";
     assessmentController.fontStyling = "font-styling.css";
     assessmentController.interviewJavascript = "interview-javascript.js";
+    assessmentController.interviewJquery = "jquery-3.6.3.min.js";
     assessmentController.owdRedirectUrl = "http://localhost:8010";
 
     final FormattingConversionService conversionService = new FormattingConversionService();
@@ -179,48 +179,12 @@ public class AssessmentControllerTest {
         .andExpect(model().attributeExists("interviewsCSS"))
         .andExpect(model().attributeExists("fontsCSS"))
         .andExpect(model().attributeExists("interviewsJS"))
+        .andExpect(model().attributeExists("interviewsJQuery"))
         .andExpect(model().attributeExists("params"))
         .andExpect(model().attributeExists("submitReturnUrl"))
         .andExpect(model().attributeExists("username"))
         .andExpect(model().attributeExists("resumeId"))
-        .andExpect(model().attribute("opaFrameUrl", "/application/assessments/frame"))
         .andExpect(model().attributeExists("assessmentType"));
-  }
-
-  @Test
-  public void assessmentFrameDisplaysCorrectView() throws Exception {
-    this.mockMvc
-        .perform(
-            get("/application/assessments/frame")
-                .sessionAttr(
-                    "OPA_FRAME_MODEL",
-                    Map.of(
-                        "owdUrl", "http://example.com",
-                        "deploymentName", "deployment",
-                        "interviewsCSS", "interview-styling.css",
-                        "fontsCSS", "font-styling.css",
-                        "interviewsJS", "interview-javascript.js",
-                        "params", "contextToken",
-                        "username", "user",
-                        "resumeId", "1",
-                        "checkpoint", "START",
-                        "cspNonce", "stale-session-nonce")))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/assessments/assessment-frame"))
-        .andExpect(model().attribute("owdUrl", "http://example.com"))
-        .andExpect(model().attributeDoesNotExist("cspNonce"))
-        .andExpect(model().attribute("checkpoint", "START"));
-  }
-
-  @Test
-  public void assessmentFrameThrowsExceptionWhenFrameModelMissing() {
-    final Exception exception =
-        assertThrows(
-            Exception.class, () -> this.mockMvc.perform(get("/application/assessments/frame")));
-
-    assertInstanceOf(CaabApplicationException.class, exception.getCause());
-    assertEquals("Failed to retrieve OPA frame details", exception.getCause().getMessage());
   }
 
   @Test

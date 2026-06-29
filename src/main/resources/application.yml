@@ -108,6 +108,7 @@ laa:
         interview-styling: ${laa.ccms.oracle-web-determination-server.url}/staticresource/interviews.css
         font-styling: ${laa.ccms.oracle-web-determination-server.url}/staticresource/fonts/fonts.css
         interview-javascript: ${laa.ccms.oracle-web-determination-server.url}/staticresource/interviews.js
+        interview-jquery: ${laa.ccms.oracle-web-determination-server.url}/staticresource/jquery-3.6.3.min.js
       redirect:
         hostname: ${OWD_REDIRECT_URL}
         url: ${laa.ccms.oracle-web-determination-server.redirect.hostname}

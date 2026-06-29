@@ -5,10 +5,8 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -69,6 +67,9 @@ public class AssessmentController {
   @Value("${laa.ccms.oracle-web-determination-server.resources.interview-javascript}")
   protected String interviewJavascript;
 
+  @Value("${laa.ccms.oracle-web-determination-server.resources.interview-jquery}")
+  protected String interviewJquery;
+
   @Value("${laa.ccms.oracle-web-determination-server.redirect.url}")
   protected String owdRedirectUrl;
 
@@ -81,8 +82,6 @@ public class AssessmentController {
 
   private static final String CHECKPOINT_START = "START";
   private static final String CHECKPOINT_RESUME = "RESUME";
-  private static final String OPA_FRAME_MODEL = "OPA_FRAME_MODEL";
-  private static final String CSP_NONCE_MODEL_ATTRIBUTE = "cspNonce";
 
   private static final String PARENT_LOOKUP = "PARENT";
   private static final String CHILD_LOOKUP = "CHILD";
@@ -282,7 +281,6 @@ public class AssessmentController {
           user,
           assessmentRulebase,
           model);
-      session.setAttribute(OPA_FRAME_MODEL, new LinkedHashMap<>(model.asMap()));
 
     } else if ("billing".equalsIgnoreCase(assessment)) {
       // todo - later implementation
@@ -292,32 +290,6 @@ public class AssessmentController {
     }
 
     return "application/assessments/assessment-get";
-  }
-
-  /**
-   * Displays the isolated OPA interview frame. The parent assessment page owns CAAB/GOV.UK chrome;
-   * this frame owns Oracle CSS and JavaScript so OPA styles cannot bleed into the parent page.
-   *
-   * @param session the current HTTP session containing prepared OPA model details
-   * @param model the model to populate
-   * @return the view that renders the embedded OPA interview
-   */
-  @GetMapping("/{caseContext}/assessments/frame")
-  public String assessmentFrame(final HttpSession session, final Model model) {
-    final Object frameModel = session.getAttribute(OPA_FRAME_MODEL);
-
-    if (!(frameModel instanceof Map<?, ?> frameModelMap)) {
-      throw new CaabApplicationException("Failed to retrieve OPA frame details");
-    }
-
-    frameModelMap.forEach(
-        (key, value) -> {
-          final String attributeName = String.valueOf(key);
-          if (!CSP_NONCE_MODEL_ATTRIBUTE.equals(attributeName)) {
-            model.addAttribute(attributeName, value);
-          }
-        });
-    return "application/assessments/assessment-frame";
   }
 
   /**
@@ -345,8 +317,6 @@ public class AssessmentController {
         prepopAssessment.getCheckpoint() != null ? CHECKPOINT_RESUME : CHECKPOINT_START);
 
     model.addAttribute("cancelUrl", getCancelLinkUrl(caseContext, invokedFrom));
-    model.addAttribute(
-        "opaFrameUrl", "/%s/assessments/frame".formatted(caseContext.getPathValue()));
     model.addAttribute("owdUrl", owdUrl);
     model.addAttribute("frameTitle", "");
     model.addAttribute("returnLinkText", getReturnLinkText(caseContext, invokedFrom));
@@ -354,6 +324,7 @@ public class AssessmentController {
     model.addAttribute("interviewsCSS", interviewStyling);
     model.addAttribute("fontsCSS", fontStyling);
     model.addAttribute("interviewsJS", interviewJavascript);
+    model.addAttribute("interviewsJQuery", interviewJquery);
     model.addAttribute("params", contextToken);
     model.addAttribute("submitReturnUrl", "%s?val=%s".formatted(submitReturnUrl, contextToken));
     model.addAttribute("username", user.getUsername());
