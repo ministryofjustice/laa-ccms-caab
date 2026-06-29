@@ -938,6 +938,79 @@ public class AssessmentServiceTest {
     assertEquals(expectedResult, result);
   }
 
+  @Test
+  @DisplayName(
+      "Any change to the requested cost limit (even below the limit at the time of merits) requires "
+          + "a merits reassessment")
+  void testIsReassessmentRequired_costLimitChangedBelowLimitAtTimeOfMerits_assertsTrue() {
+    final String matterType = "TEST";
+    final String proceedingType = "TEST";
+    final String clientInvolvement = "TEST";
+    final String scopeLimitation = "TEST";
+
+    // Requested limit (1000) is BELOW the limit captured at the time of merits (2000). The old
+    // "increase only" check (compareTo < 0) ignored this; any change must now trigger a merits
+    // reassessment.
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(false)
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .id(123)
+                    .matterType(new StringDisplayValue().id(matterType))
+                    .proceedingType(new StringDisplayValue().id(proceedingType))
+                    .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
+                    .addScopeLimitationsItem(
+                        new ScopeLimitationDetail()
+                            .scopeLimitation(new StringDisplayValue().id(scopeLimitation))))
+            .addOpponentsItem(
+                new OpponentDetail()
+                    .id(234)
+                    .type("Individual")
+                    .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(auditDate)))
+            .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(2000.00)))
+            .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
+
+    final AssessmentDetail assessment = buildAssessmentDetail(auditDate);
+    assessment.setName(MERITS.getName());
+
+    assertTrue(assessmentService.isReassessmentRequired(application, assessment, user));
+  }
+
+  @Test
+  @DisplayName("An unchanged requested cost limit does not by itself require a merits reassessment")
+  void testIsReassessmentRequired_costLimitUnchanged_assertsFalse() {
+    final String matterType = "TEST";
+    final String proceedingType = "TEST";
+    final String clientInvolvement = "TEST";
+    final String scopeLimitation = "TEST";
+
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(false)
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .id(123)
+                    .matterType(new StringDisplayValue().id(matterType))
+                    .proceedingType(new StringDisplayValue().id(proceedingType))
+                    .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
+                    .addScopeLimitationsItem(
+                        new ScopeLimitationDetail()
+                            .scopeLimitation(new StringDisplayValue().id(scopeLimitation))))
+            .addOpponentsItem(
+                new OpponentDetail()
+                    .id(234)
+                    .type("Individual")
+                    .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(auditDate)))
+            .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
+            .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
+
+    final AssessmentDetail assessment = buildAssessmentDetail(auditDate);
+    assessment.setName(MERITS.getName());
+
+    assertFalse(assessmentService.isReassessmentRequired(application, assessment, user));
+  }
+
   @ParameterizedTest
   @CsvSource({"proceeding1,,opponent1,,0,0", "P_123,,OPPONENT_234,,1,1", ",123,,234,1,1"})
   void testCleanupData(
@@ -1237,6 +1310,59 @@ public class AssessmentServiceTest {
     // Only the working assessment is mapped; the unchanged prepop is left as-is.
     verify(assessmentMapper, never()).toAssessmentDetail(eq(existingPrepop), any());
     verify(assessmentMapper, times(1)).toAssessmentDetail(any(), any());
+  }
+
+  @Test
+  @DisplayName(
+      "startAssessment preserves a COMPLETE assessment on re-entry (data unchanged) instead of "
+          + "deleting and rebuilding it")
+  void startAssessmentPreservesCompleteAssessmentOnReentry() {
+    final String caseRef = "CASE-123";
+    final String providerId = String.valueOf(user.getProvider().getId());
+    final String prepopName = AssessmentRulebase.MEANS.getPrePopAssessmentName();
+
+    // Application has no proceedings/opponents and nothing has changed -> not stale.
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .id(1)
+            .caseReferenceNumber(caseRef)
+            .amendment(false)
+            .proceedings(new ArrayList<>())
+            .opponents(new ArrayList<>());
+
+    // The working assessment is already COMPLETE.
+    final AssessmentDetail completeAssessment =
+        new AssessmentDetail()
+            .id(50L)
+            .name(AssessmentRulebase.MEANS.getName())
+            .caseReferenceNumber(caseRef)
+            .status("COMPLETE")
+            .entityTypes(new ArrayList<>())
+            .auditDetail(new AuditDetail().lastSaved(auditDate));
+    when(assessmentApiClient.getAssessments(
+            List.of(AssessmentRulebase.MEANS.getName()), providerId, caseRef))
+        .thenReturn(
+            just(new AssessmentDetails().content(new ArrayList<>(List.of(completeAssessment)))));
+
+    // An unchanged prepop exists (drives OPA RESUME).
+    final AssessmentDetail existingPrepop =
+        new AssessmentDetail()
+            .id(99L)
+            .name(prepopName)
+            .caseReferenceNumber(caseRef)
+            .entityTypes(new ArrayList<>())
+            .auditDetail(new AuditDetail().lastSaved(auditDate));
+    when(assessmentApiClient.getAssessments(List.of(prepopName), providerId, caseRef))
+        .thenReturn(
+            just(new AssessmentDetails().content(new ArrayList<>(List.of(existingPrepop)))));
+
+    assessmentService.startAssessment(application, AssessmentRulebase.MEANS, null, user);
+
+    // The COMPLETE assessment is preserved: nothing is deleted, re-mapped or saved.
+    verify(assessmentApiClient, never())
+        .deleteAssessments(
+            eq(List.of(AssessmentRulebase.MEANS.getName())), any(), any(), any(), any());
+    verify(assessmentMapper, never()).toAssessmentDetail(any(), any());
   }
 
   @Test

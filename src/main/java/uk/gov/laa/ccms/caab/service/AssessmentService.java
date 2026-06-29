@@ -567,26 +567,15 @@ public class AssessmentService {
           }
         }
 
-        // only check when it's a merits assessment
-        if (MERITS == assessmentName) {
-          final boolean meritReassessmentRequired =
-              Optional.ofNullable(application.getCostLimit())
-                  .map(CostLimitDetail::getLimitAtTimeOfMerits)
-                  .map(
-                      limitAtTimeOfMerits ->
-                          limitAtTimeOfMerits.compareTo(
-                                  application.getCosts().getRequestedCostLimitation())
-                              < 0)
-                  .orElse(true);
-
-          if (meritReassessmentRequired) {
-            log.info(
-                "Merit Reassessment Required for {} as app.getCostLimitAtTimeOfMerits() == null "
-                    + "|| app.getCostLimitAtTimeOfMerits().compareTo(app.getCosts()"
-                    + ".getRequestedOrDefaultCostLimitation()) < 0 IS TRUE",
-                application.getCaseReferenceNumber());
-            return true;
-          }
+        // only check when it's a merits assessment - any change to the cost limit since the merits
+        // assessment was run requires a reassessment (the provider must justify the new costs), not
+        // only an increase above the previous figure.
+        if (MERITS == assessmentName && isCostLimitReassessmentRequired(application)) {
+          log.info(
+              "Merit Reassessment Required for {} as the requested (or default) cost limit differs "
+                  + "from the limit at the time of the merits assessment (or either is unknown)",
+              application.getCaseReferenceNumber());
+          return true;
         }
       }
     } else {
@@ -749,9 +738,11 @@ public class AssessmentService {
   }
 
   /**
-   * Determines whether the cost limit at the time of the merits assessment is below the application
-   * current requested (or default) cost limit, mirroring old PUI. An unknown
-   * limit-at-time-of-merits or an unknown current limit is treated as reassessment-required.
+   * Determines whether the application's current requested (or default) cost limit differs from the
+   * cost limit captured at the time of the merits assessment. Any change - increase or decrease -
+   * requires a merits reassessment, as the provider must supply a full breakdown of costs to date
+   * and justification for the predicted costs. An unknown limit-at-time-of-merits or an unknown
+   * current limit is treated as reassessment-required.
    *
    * @param application the application to check
    * @return true if a cost-limit driven merits reassessment is required
@@ -767,7 +758,7 @@ public class AssessmentService {
       return true;
     }
 
-    return limitAtTimeOfMerits.compareTo(requestedOrDefault) < 0;
+    return limitAtTimeOfMerits.compareTo(requestedOrDefault) != 0;
   }
 
   private BigDecimal getRequestedOrDefaultCostLimitation(final ApplicationDetail application) {
@@ -1223,6 +1214,37 @@ public class AssessmentService {
       final AssessmentRulebase assessmentRulebase,
       final ClientDetail client,
       final UserDetail user) {
+
+    final String providerId = user.getProvider().getId().toString();
+    final String referenceId = application.getCaseReferenceNumber();
+
+    // Preserve a finished assessment on mere re-entry. Re-opening the assessment page would
+    // otherwise delete the COMPLETE assessment and rebuild an empty INCOMPLETE shell, discarding
+    // the
+    // completed result - including the evidence outputs the document-upload checklist reads back.
+    // Only wipe and rebuild when the assessment is not yet complete, or when the application data
+    // has
+    // changed since it was built (a genuine reassessment, detected by the same staleness check used
+    // for the prepop checkpoint). When preserved, the existing prepop's checkpoint still drives the
+    // OPA RESUME so the interview can be viewed or re-submitted.
+    final AssessmentDetail existingAssessment =
+        findOrCreate(providerId, referenceId, assessmentRulebase.getName());
+    // Fetch the prepop only when the assessment is COMPLETE - it is only needed to decide
+    // preservation, so skipping it on the common path avoids an extra assessment-api call.
+    if (existingAssessment.getId() != null
+        && COMPLETE.getStatus().equalsIgnoreCase(existingAssessment.getStatus())) {
+      final AssessmentDetail existingPrepop =
+          findOrCreate(providerId, referenceId, assessmentRulebase.getPrePopAssessmentName());
+      if (existingPrepop.getId() != null
+          && !isAssessmentCheckpointToBeDeleted(application, existingPrepop)) {
+        log.info(
+            "Preserving COMPLETE assessment [{}] for case [{}] on re-entry - application data "
+                + "unchanged, so the completed result is kept rather than wiped and rebuilt.",
+            assessmentRulebase.getName(),
+            referenceId);
+        return;
+      }
+    }
 
     // remove previous assessment
     deleteAssessments(
