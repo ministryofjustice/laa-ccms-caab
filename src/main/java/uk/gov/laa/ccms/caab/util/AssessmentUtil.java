@@ -419,7 +419,8 @@ public final class AssessmentUtil {
     return assessmentDetails.getContent().stream()
         .filter(
             assessmentDetail ->
-                assessmentDetail.getName().equalsIgnoreCase(assessmentRulebase.getName()))
+                assessmentRulebase != null
+                    && assessmentRulebase.getName().equalsIgnoreCase(assessmentDetail.getName()))
         .findFirst()
         .orElse(null);
   }
