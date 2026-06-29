@@ -69,7 +69,12 @@ class AmendmentServiceTest {
   void beforeEach() {
     amendmentService =
         new AmendmentService(
-            applicationService, caabApiClient, soaApiClient, soaApplicationMapper, assessmentService, evidenceService);
+            applicationService,
+            caabApiClient,
+            soaApiClient,
+            soaApplicationMapper,
+            assessmentService,
+            evidenceService);
 
     // Default: no amendment documents uploaded, so quick amendments submit with no case docs.
     lenient()
