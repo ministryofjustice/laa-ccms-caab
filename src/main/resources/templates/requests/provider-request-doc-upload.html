@@ -7,11 +7,13 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/provider-requests/details}" class="govuk-back-link" th:text="#{request.return}"></a>
+    <a th:href="@{${providerRequestDetailsUrl}}" class="govuk-back-link" th:text="#{request.return}"></a>
   </div>
   <div id="main-content">
     <h1 class="govuk-heading-l" th:text="#{request.upload}"></h1>
     <form action="#" th:action="@{/provider-requests/documents}" method="post" th:object="${evidenceUploadForm}" enctype="multipart/form-data">
+      <input type="hidden" name="caseReferenceNumber" th:value="${caseReference}"/>
+      <input type="hidden" name="providerRequestType" th:value="${providerRequestType}"/>
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
@@ -28,7 +30,7 @@
 
           <div class="govuk-button-group">
             <button class="govuk-button" data-module="govuk-button" th:text="#{site.upload}"></button>
-            <a th:href="@{/provider-requests/details}" class="govuk-link" th:text="#{site.back}"></a>
+            <a th:href="@{${providerRequestDetailsUrl}}" class="govuk-link" th:text="#{site.back}"></a>
           </div>
         </div>
       </div>

@@ -17,6 +17,7 @@
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/provider-requests/types}" th:object="${providerRequestTypeDetails}" method="post">
+      <input type="hidden" name="caseReferenceNumber" th:value="${caseReference}"/>
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <span th:unless="${caseReference != null}" class="govuk-caption-l" th:text="#{request.general}"></span>
       <h1 class="govuk-heading-l" th:text="#{request.type}"></h1>

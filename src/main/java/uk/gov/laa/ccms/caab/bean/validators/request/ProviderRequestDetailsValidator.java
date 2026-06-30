@@ -92,6 +92,14 @@ public class ProviderRequestDetailsValidator extends FileUploadValidator {
       return;
     }
 
+    if (value.getFieldType() == null) {
+      // The form only submits the field value; the field type is merged back from the session. A
+      // null here means no type metadata was available, so skip type-specific validation rather
+      // than failing with a NullPointerException on the switch below.
+      log.warn("Missing field type for dynamic option: {}", fieldCode);
+      return;
+    }
+
     switch (value.getFieldType()) {
       case FIELD_TYPE_AMT -> {
         validateCurrencyField(

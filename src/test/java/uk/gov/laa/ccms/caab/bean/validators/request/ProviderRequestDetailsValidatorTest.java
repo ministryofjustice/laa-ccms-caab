@@ -100,6 +100,24 @@ class ProviderRequestDetailsValidatorTest {
   }
 
   @Test
+  @DisplayName("validate - Null field type with a value does not throw and skips type validation")
+  void validate_NullFieldTypeWithValue_NoException() {
+    final DynamicOptionFormData option = new DynamicOptionFormData();
+    option.setFieldValue("some value");
+    option.setFieldDescription("Field with no type metadata");
+    // fieldType deliberately left null (e.g. not merged back from the session)
+
+    final Map<String, DynamicOptionFormData> dynamicOptions = new HashMap<>();
+    dynamicOptions.put("option1", option);
+    formData.setDynamicOptions(dynamicOptions);
+    formData.setAdditionalInformation("");
+
+    providerRequestDetailsValidator.validate(formData, errors);
+
+    assertFalse(errors.hasErrors());
+  }
+
+  @Test
   @DisplayName("validate - No errors for valid dynamic options")
   void validate_ValidDynamicOptions_NoErrors() {
     final DynamicOptionFormData validOption = new DynamicOptionFormData();
