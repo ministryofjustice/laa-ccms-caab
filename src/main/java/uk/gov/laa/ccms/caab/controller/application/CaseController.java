@@ -108,7 +108,12 @@ public class CaseController {
 
     ApplicationDetail amendments = resolveAmendments(ebsCase, resolvedTds);
 
-    final boolean isAmendment = amendments != null;
+    boolean isAmendment = amendments != null;
+
+    if (!isAmendment) {
+      amendments = getRecentlySubmittedAmendment(ebsCase, user);
+      isAmendment = amendments != null;
+    }
 
     if (!isAmendment) {
       clearAmendmentSession(session);
@@ -520,5 +525,25 @@ public class CaseController {
         .findFirst()
         .map(ProceedingDetail::getOutcome)
         .orElse(null);
+  }
+
+  private ApplicationDetail getRecentlySubmittedAmendment(
+      ApplicationDetail ebsCase, UserDetail user) {
+    if (ebsCase == null) {
+      return null;
+    }
+
+    try {
+      BaseApplicationDetail tdsSummary =
+          applicationService.getTdsApplicationSummary(ebsCase.getCaseReferenceNumber(), user);
+
+      if (tdsSummary != null) {
+        return applicationService.getApplication(tdsSummary.getId().toString()).block();
+      }
+    } catch (Exception e) {
+      log.debug(
+          "No recent submitted amendment found for case {}", ebsCase.getCaseReferenceNumber());
+    }
+    return null;
   }
 }

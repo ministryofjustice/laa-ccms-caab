@@ -409,5 +409,21 @@ public final class AssessmentUtil {
         .orElseThrow(() -> new CaabApplicationException("Failed to retrieve assessment"));
   }
 
+  public static AssessmentDetail getAssessmentSafe(
+      final AssessmentDetails assessmentDetails, final AssessmentRulebase assessmentRulebase) {
+
+    if (assessmentDetails == null || assessmentDetails.getContent() == null) {
+      return null;
+    }
+
+    return assessmentDetails.getContent().stream()
+        .filter(
+            assessmentDetail ->
+                assessmentRulebase != null
+                    && assessmentRulebase.getName().equalsIgnoreCase(assessmentDetail.getName()))
+        .findFirst()
+        .orElse(null);
+  }
+
   private AssessmentUtil() {}
 }
