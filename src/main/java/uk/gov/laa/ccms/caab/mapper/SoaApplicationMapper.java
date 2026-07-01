@@ -883,7 +883,10 @@ public interface SoaApplicationMapper {
   @Mapping(target = "requestedAmount", source = "costs", qualifiedByName = "mapRequestedAmount")
   @Mapping(target = "grantedAmount", ignore = true)
   @Mapping(target = "totalPaidToDate", ignore = true)
-  @Mapping(target = "costLimitations", ignore = true)
+  @Mapping(
+      target = "costLimitations",
+      source = "costs.costEntries",
+      qualifiedByName = "mapCostEntriesToLimitations")
   CategoryOfLaw toSoaCategoryOfLaw(ApplicationDetail applicationDetail);
 
   @Mapping(target = "addressId", source = "id")
@@ -964,6 +967,25 @@ public interface SoaApplicationMapper {
         ? value.setScale(2, RoundingMode.HALF_UP)
         : BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
   }
+
+  @Named("mapCostEntriesToLimitations")
+  default List<CostLimitation> mapCostEntriesToLimitations(
+      final List<CostEntryDetail> costEntries) {
+    if (costEntries == null || costEntries.isEmpty()) {
+      return null;
+    }
+
+    return costEntries.stream()
+        .map(this::toCostLimitation)
+        .collect(java.util.stream.Collectors.toList());
+  }
+
+  @Mapping(target = "costLimitId", source = "ebsId")
+  @Mapping(target = "billingProviderId", source = "lscResourceId")
+  @Mapping(target = "billingProviderName", source = "resourceName")
+  @Mapping(target = "paidToDate", source = "amountBilled")
+  @Mapping(target = "amount", source = "requestedCosts")
+  CostLimitation toCostLimitation(CostEntryDetail costEntryDetail);
 
   @Mapping(target = "relationToClient", source = "relationshipToClient")
   @Mapping(target = "relationToCase", source = "relationshipToCase")

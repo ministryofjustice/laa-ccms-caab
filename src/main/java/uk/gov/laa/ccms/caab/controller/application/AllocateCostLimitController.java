@@ -1,7 +1,10 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
@@ -20,12 +23,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.bean.validators.costs.AllocateCostLimitValidator;
 import uk.gov.laa.ccms.caab.mapper.CopyApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
+import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -38,6 +43,7 @@ public class AllocateCostLimitController {
   private final CopyApplicationMapper copyApplicationMapper;
   private final AllocateCostLimitValidator allocateCostLimitValidator;
   private final ApplicationService applicationService;
+  private final AmendmentService amendmentService;
 
   /**
    * Displays the cost limitation allocation screen.
@@ -190,15 +196,22 @@ public class AllocateCostLimitController {
   public String submitCaseCosts(
       @ModelAttribute("costDetails") AllocateCostsFormData allocateCostsFormData,
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       final HttpSession session) {
 
     // TODO: Add API call to finalize the cost allocations
     log.info("Submitting case costs for case: {}", ebsCase.getCaseReferenceNumber());
 
+    String transactionId =
+        amendmentService.submitQuickAmendmentCaseCosts(
+            allocateCostsFormData, activeCase.getCaseReferenceNumber(), userDetail);
+
+    session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
+    session.removeAttribute(SUBMISSION_RESULT);
     session.removeAttribute(COST_ALLOCATION_FORM_DATA);
 
-    // TODO: Redirect to the next workflow step or show success message
-    return "redirect:/case/overview";
+    return "redirect:/amendments/submit-case";
   }
 
   /** Calculates the total requests costs by the granted cost limitation. */
