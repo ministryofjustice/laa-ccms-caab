@@ -1,7 +1,7 @@
 plugins {
     id 'net.researchgate.release' version '3.1.0'
-    id 'uk.gov.laa.springboot.laa-spring-boot-gradle-plugin' version '2.3.0'
-    id 'com.diffplug.spotless' version '8.6.0'
+    id 'uk.gov.laa.springboot.laa-spring-boot-gradle-plugin' version '2.3.4'
+    id 'com.diffplug.spotless' version '8.8.0'
 }
 
 subprojects {
@@ -66,8 +66,8 @@ dependencies {
             because('Fixes multiple CVEs Parent: org.opensaml:opensaml-saml-api')
         }
 
-        implementation "org.opensaml:opensaml-saml-api:5.2.2"
-        implementation "org.opensaml:opensaml-saml-impl:5.2.2"
+        implementation "org.opensaml:opensaml-saml-api:5.2.3"
+        implementation "org.opensaml:opensaml-saml-impl:5.2.3"
 
     }
 
@@ -104,13 +104,13 @@ dependencies {
 	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.0.2')
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
-	implementation 'software.amazon.awssdk:sts:2.46.8'
+	implementation 'software.amazon.awssdk:sts:2.46.19'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
     implementation 'org.json:json:20260522'
 
-    implementation 'io.swagger.core.v3:swagger-annotations:2.2.50'
+    implementation 'io.swagger.core.v3:swagger-annotations:2.2.52'
 
     //SAML security
     implementation 'org.springframework.boot:spring-boot-starter-security-saml2'
