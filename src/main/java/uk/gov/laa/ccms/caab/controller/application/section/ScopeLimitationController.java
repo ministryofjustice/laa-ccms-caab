@@ -265,8 +265,9 @@ public class ScopeLimitationController {
       final Model model,
       final HttpSession session) {
 
-    if (!Boolean.FALSE.equals(scopeLimitation.getNonDefaultWordingReqd())
-        && scopeLimitationWording != null) {
+    // When editable, take the submitted value unconditionally so required validation can't be
+    // bypassed by omitting the parameter; read-only keeps the default wording.
+    if (Boolean.TRUE.equals(scopeLimitation.getNonDefaultWordingReqd())) {
       scopeLimitation.setScopeLimitationWording(scopeLimitationWording);
     }
 

@@ -59,7 +59,9 @@ class ScopeLimitationDetailsValidatorTest {
   @Test
   public void validateScopeLimitationWording_WithMaxLengthExceeded_HasErrors() {
     final ScopeLimitationDetail scopeLimitation =
-        new ScopeLimitationDetail().scopeLimitationWording("A".repeat(951));
+        new ScopeLimitationDetail()
+            .nonDefaultWordingReqd(true)
+            .scopeLimitationWording("A".repeat(951));
     final Errors scopeLimitationErrors =
         new BeanPropertyBindingResult(scopeLimitation, "scopeLimitation");
 
@@ -76,7 +78,59 @@ class ScopeLimitationDetailsValidatorTest {
   @Test
   public void validateScopeLimitationWording_WithMaxLength_NoErrors() {
     final ScopeLimitationDetail scopeLimitation =
-        new ScopeLimitationDetail().scopeLimitationWording("A".repeat(950));
+        new ScopeLimitationDetail()
+            .nonDefaultWordingReqd(true)
+            .scopeLimitationWording("A".repeat(950));
+    final Errors scopeLimitationErrors =
+        new BeanPropertyBindingResult(scopeLimitation, "scopeLimitation");
+
+    scopeLimitationDetailsValidator.validateScopeLimitationWording(
+        scopeLimitation, scopeLimitationErrors);
+
+    assertFalse(scopeLimitationErrors.hasErrors());
+  }
+
+  @Test
+  public void validateScopeLimitationWording_WhenRequiredAndBlank_HasRequiredError() {
+    final ScopeLimitationDetail scopeLimitation =
+        new ScopeLimitationDetail().nonDefaultWordingReqd(true).scopeLimitationWording("  ");
+    final Errors scopeLimitationErrors =
+        new BeanPropertyBindingResult(scopeLimitation, "scopeLimitation");
+
+    scopeLimitationDetailsValidator.validateScopeLimitationWording(
+        scopeLimitation, scopeLimitationErrors);
+
+    assertTrue(scopeLimitationErrors.hasErrors());
+    assertEquals(
+        "required.scopeLimitationWording",
+        scopeLimitationErrors.getFieldError("scopeLimitationWording").getCode());
+  }
+
+  @Test
+  public void validateScopeLimitationWording_WhenRequiredAndInvalidCharacter_HasFormatError() {
+    final ScopeLimitationDetail scopeLimitation =
+        new ScopeLimitationDetail()
+            .nonDefaultWordingReqd(true)
+            .scopeLimitationWording("Invalid wording ☃");
+    final Errors scopeLimitationErrors =
+        new BeanPropertyBindingResult(scopeLimitation, "scopeLimitation");
+
+    scopeLimitationDetailsValidator.validateScopeLimitationWording(
+        scopeLimitation, scopeLimitationErrors);
+
+    assertTrue(scopeLimitationErrors.hasErrors());
+    assertEquals(
+        "invalid.format", scopeLimitationErrors.getFieldError("scopeLimitationWording").getCode());
+  }
+
+  @Test
+  public void validateScopeLimitationWording_WhenNotEditable_SkipsValidation() {
+    // Read-only wording (nonDefaultWordingReqd not true) must not be validated even when blank or
+    // over length, because the user cannot change it.
+    final ScopeLimitationDetail scopeLimitation =
+        new ScopeLimitationDetail()
+            .nonDefaultWordingReqd(false)
+            .scopeLimitationWording("A".repeat(951));
     final Errors scopeLimitationErrors =
         new BeanPropertyBindingResult(scopeLimitation, "scopeLimitation");
 
