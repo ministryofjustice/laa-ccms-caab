@@ -117,6 +117,31 @@ class AssessmentMapperTest {
   }
 
   @Test
+  void linkedCaseWithoutLscRef_usesNumericIdForLinkedCaseIdValue() {
+    // LINKED_CASE_ID is numeric in the rulebase, so with no LSC reference its value falls back to
+    // the bare numeric id, not the "LC_<id>" instance identifier.
+    final LinkedCaseDetail linkedCase = new LinkedCaseDetail();
+    linkedCase.setId(42);
+    context.getApplication().setLinkedCases(List.of(linkedCase));
+
+    final List<AssessmentEntityTypeDetail> result =
+        assessmentMapper.toAssessmentEntityTypeList(context);
+
+    final AssessmentEntityDetail linkedCaseEntity =
+        result.stream()
+            .filter(entityType -> "LINKED_CASES".equals(entityType.getName()))
+            .findFirst()
+            .orElseThrow()
+            .getEntities()
+            .get(0);
+    // Entity instance name keeps the "LC_<id>" identifier.
+    assertEquals("LC_42", linkedCaseEntity.getName());
+    // But the numeric LINKED_CASE_ID attribute value is the bare id, not "LC_42".
+    assertContainsAttribute(
+        linkedCaseEntity.getAttributes(), AssessmentAttribute.LINKED_CASE_ID, "42");
+  }
+
+  @Test
   public void shouldConvertProceedingToAttributeList() {
     // Given
     final ProceedingDetail proceeding = context.getApplication().getProceedings().getFirst();

@@ -34,12 +34,9 @@ public final class AmendmentUtil {
    *     properties.
    */
   public static void cleanAppForQuickAmendSubmit(ApplicationDetail app) {
-    // Old PUI includes proceedings and opponents in the means reassessment case update and relies
-    // on
-    // the "MeansReassessment" message type for EBS to apply only the means assessment. Stripping
-    // them
-    // sends an empty-proceedings update that EBS rejects, so keep them for that journey; the other
-    // quick amends still strip them (unchanged behaviour).
+    // Means reassessment keeps proceedings and opponents: EBS applies only the means via the
+    // "MeansReassessment" message type, and an empty-proceedings update is rejected. Other quick
+    // amends still strip them.
     if (!QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT.equals(app.getQuickEditType())) {
       app.setProceedings(new ArrayList<ProceedingDetail>());
       app.setOpponents(new ArrayList<OpponentDetail>());

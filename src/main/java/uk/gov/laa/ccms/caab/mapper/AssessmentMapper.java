@@ -978,7 +978,7 @@ public interface AssessmentMapper {
                             List.of(
                                 new AssessmentAttributeDetail()
                                     .name(LINKED_CASE_ID.name())
-                                    .value(getLinkedCaseOpaInstanceMappingId(linkedCase))
+                                    .value(getLinkedCaseIdValue(linkedCase))
                                     .type(LINKED_CASE_ID.getType()))))
             .collect(Collectors.toList());
 
@@ -1010,5 +1010,19 @@ public interface AssessmentMapper {
     return linkedCase.getLscCaseReference() != null
         ? linkedCase.getLscCaseReference()
         : "LC_" + linkedCase.getId();
+  }
+
+  /**
+   * Returns the numeric LINKED_CASE_ID attribute value. The rulebase declares LINKED_CASE_ID as a
+   * number, so this must stay numeric - the LSC case reference, falling back to the numeric linked
+   * case id (unlike the OPA instance id, which may be the non-numeric "LC_&lt;id&gt;").
+   *
+   * @param linkedCase the linked case
+   * @return the numeric LINKED_CASE_ID value
+   */
+  default String getLinkedCaseIdValue(final LinkedCaseDetail linkedCase) {
+    return linkedCase.getLscCaseReference() != null
+        ? linkedCase.getLscCaseReference()
+        : String.valueOf(linkedCase.getId());
   }
 }

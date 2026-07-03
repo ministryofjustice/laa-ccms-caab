@@ -690,23 +690,39 @@ public class ApplicationService {
       final BaseApplicationDetail tdsApplication,
       final String caseReferenceNumber,
       final UserDetail user) {
-    final Mono<ApplicationDetail> amendmentMono =
-        getApplication(String.valueOf(tdsApplication.getId()));
-    final ApplicationDetail amendment = amendmentMono == null ? null : amendmentMono.block();
-    // If the draft can't be loaded or isn't a means reassessment, fall back to the default cleanup
-    // (remove the whole draft).
+    final ApplicationDetail amendment;
+    try {
+      final Mono<ApplicationDetail> amendmentMono =
+          getApplication(String.valueOf(tdsApplication.getId()));
+      amendment = amendmentMono == null ? null : amendmentMono.block();
+    } catch (final Exception e) {
+      // Unloadable draft: fall back to removing the whole draft.
+      log.warn(
+          "Could not load submitted means reassessment {}; falling back to full draft cleanup",
+          tdsApplication.getId(),
+          e);
+      return false;
+    }
+    // Unloadable draft or non-means reassessment: fall back to removing the whole draft.
     if (amendment == null
         || !QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT.equals(
             amendment.getQuickEditType())) {
       return false;
     }
-    // Ignore the means/merits reassessment flags - the means assessment was just submitted, so only
-    // structural amend-case changes (proceedings, opponents, prior authorities, linked cases, cost
-    // limit, general/opponent edits) should keep the draft alive.
+    // Means already submitted; only structural amend-case changes keep the draft alive.
     amendment.setMeansAssessmentAmended(false);
     amendment.setMeritsAssessmentAmended(false);
-    final ApplicationDetail baseCase =
-        getCase(caseReferenceNumber, user.getProvider().getId(), user.getLoginId());
+    ApplicationDetail baseCase;
+    try {
+      baseCase = getCase(caseReferenceNumber, user.getProvider().getId(), user.getLoginId());
+    } catch (final Exception e) {
+      // EBS case unavailable: compare against amendment-internal markers rather than aborting.
+      log.warn(
+          "Could not load EBS case {} for amend-case comparison; using amendment-internal markers",
+          caseReferenceNumber,
+          e);
+      baseCase = null;
+    }
     return AmendmentUtil.hasChanges(amendment, baseCase);
   }
 
