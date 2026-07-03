@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -203,15 +204,66 @@ public class AllocateCostLimitController {
     // TODO: Add API call to finalize the cost allocations
     log.info("Submitting case costs for case: {}", ebsCase.getCaseReferenceNumber());
 
-    String transactionId =
-        amendmentService.submitQuickAmendmentCaseCosts(
-            allocateCostsFormData, activeCase.getCaseReferenceNumber(), userDetail);
+    try {
+      List<uk.gov.laa.ccms.soa.gateway.model.CostLimitation> costLimitation =
+          convertToCostLimitation(allocateCostsFormData);
 
-    session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
-    session.removeAttribute(SUBMISSION_RESULT);
-    session.removeAttribute(COST_ALLOCATION_FORM_DATA);
+      String transactionId =
+          amendmentService.submitQuickAmendmentCaseCosts(
+              costLimitation, activeCase.getCaseReferenceNumber(), userDetail);
 
-    return "redirect:/amendments/submit-case";
+      ApplicationDetail updatedCase =
+          applicationService.getCase(
+              ebsCase.getCaseReferenceNumber(),
+              userDetail.getProvider().getId(),
+              userDetail.getUsername());
+
+      ebsCase.setCosts(updatedCase.getCosts());
+      ebsCase.setCostLimit(updatedCase.getCostLimit());
+
+      session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
+      session.removeAttribute(SUBMISSION_RESULT);
+      session.removeAttribute(COST_ALLOCATION_FORM_DATA);
+
+      return "redirect:/amendments/submit-case";
+    } catch (Exception e) {
+      log.error(
+          "Error submitting case costs for case: {}. Error: {}",
+          ebsCase.getCaseReferenceNumber(),
+          e.getMessage(),
+          e);
+      session.setAttribute(SUBMISSION_RESULT, "error");
+      return "redirect:/allocate-cost-limit/review";
+    }
+  }
+
+  /**
+   * Converts the AllocateCostsFormData to a CostLimitation object.
+   *
+   * @param allocateCostsFormData allocatecostsformdata
+   * @return CostLimitation object
+   */
+  private List<uk.gov.laa.ccms.soa.gateway.model.CostLimitation> convertToCostLimitation(
+      AllocateCostsFormData allocateCostsFormData) {
+    if (allocateCostsFormData.getCostEntries() == null) {
+      return Collections.EMPTY_LIST;
+    }
+
+    return allocateCostsFormData.getCostEntries().stream()
+        .filter(Objects::nonNull)
+        .map(
+            entry -> {
+              uk.gov.laa.ccms.soa.gateway.model.CostLimitation costLimitation =
+                  new uk.gov.laa.ccms.soa.gateway.model.CostLimitation();
+              costLimitation.setCostLimitId(entry.getEbsId());
+              costLimitation.setBillingProviderId(entry.getLscResourceId());
+              costLimitation.setBillingProviderName(entry.getResourceName());
+              costLimitation.setCostCategory(entry.getCostCategory());
+              costLimitation.setPaidToDate(entry.getAmountBilled());
+              costLimitation.setAmount(entry.getRequestedCosts());
+              return costLimitation;
+            })
+        .collect(Collectors.toList());
   }
 
   /** Calculates the total requests costs by the granted cost limitation. */

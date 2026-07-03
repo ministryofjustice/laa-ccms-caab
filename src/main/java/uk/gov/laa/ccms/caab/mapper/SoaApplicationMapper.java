@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.BeanMapping;
@@ -33,6 +34,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
+import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.SoaApplicationMappingContext;
@@ -788,7 +790,10 @@ public interface SoaApplicationMapper {
       target = "preferredAddress",
       source = "tdsApplication.correspondenceAddress.preferredAddress")
   @Mapping(target = "providerDetails", source = "tdsApplication.providerDetails")
-  @Mapping(target = "categoryOfLaw", source = "tdsApplication")
+  @Mapping(
+      target = "categoryOfLaw",
+      source = "tdsApplication",
+      qualifiedByName = "mapCategoryOfLawForQuickAmend")
   @Mapping(target = "applicationAmendmentType", source = "tdsApplication.applicationType.id")
   @Mapping(target = "correspondenceAddress", source = "tdsApplication.correspondenceAddress")
   @Mapping(target = "proceedings", source = "tdsApplication.proceedings")
@@ -832,6 +837,44 @@ public interface SoaApplicationMapper {
     if (context == null || context.getTdsApplication() == null || target == null) {
       return;
     }
+    String quickEditType = context.getTdsApplication().getQuickEditType();
+    if (StringUtils.hasText(quickEditType)) {
+      target.setApplicationAmendmentType(quickEditType);
+    }
+  }
+
+  /**
+   * Applies the quick edit amendment type to the submitted application details.
+   *
+   * @param context the case mapping context.
+   * @param target the target submitted application details.
+   */
+  @AfterMapping
+  default void ensureCostDataForQuickAmend(
+      CaseMappingContext context, @MappingTarget SubmittedApplicationDetails target) {
+
+    if (context == null || context.getTdsApplication() == null || target == null) {
+      return;
+    }
+
+    if (QuickEditTypeConstants.MESSAGE_TYPE_ALLOCATE_COST_LIMIT.equals(
+        context.getTdsApplication().getQuickEditType())) {
+      ApplicationDetail applicationDetail = context.getTdsApplication();
+
+      if (applicationDetail.getCosts() != null
+          && applicationDetail.getCosts().getCostEntries() != null) {
+        CategoryOfLaw categoryOfLaw = target.getCategoryOfLaw();
+        if (categoryOfLaw == null) {
+          categoryOfLaw = new CategoryOfLaw();
+          target.setCategoryOfLaw(categoryOfLaw);
+        }
+
+        List<CostLimitation> limitations =
+            mapCostEntriesToLimitations(applicationDetail.getCosts().getCostEntries());
+        categoryOfLaw.setCostLimitations(limitations);
+      }
+    }
+
     String quickEditType = context.getTdsApplication().getQuickEditType();
     if (StringUtils.hasText(quickEditType)) {
       target.setApplicationAmendmentType(quickEditType);
@@ -975,9 +1018,7 @@ public interface SoaApplicationMapper {
       return null;
     }
 
-    return costEntries.stream()
-        .map(this::toCostLimitation)
-        .collect(java.util.stream.Collectors.toList());
+    return costEntries.stream().map(this::toCostLimitation).collect(Collectors.toList());
   }
 
   @Mapping(target = "costLimitId", source = "ebsId")

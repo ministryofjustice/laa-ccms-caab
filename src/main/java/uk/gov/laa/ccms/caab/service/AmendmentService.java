@@ -6,10 +6,10 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMI
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 import static uk.gov.laa.ccms.caab.constants.CcmsModule.AMENDMENT;
 
-import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,7 +19,6 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
@@ -51,6 +50,7 @@ import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
+import uk.gov.laa.ccms.soa.gateway.model.CostLimitation;
 
 /**
  * Service class responsible for handling amendments to existing legal aid cases.
@@ -319,41 +319,32 @@ public class AmendmentService {
    * @return the transaction ID of the submitted amendment
    */
   public String submitQuickAmendmentCaseCosts(
-      final AllocateCostsFormData allocateCostsFormData,
+      final List<CostLimitation> costLimitations,
       final String caseReferenceNumber,
       final UserDetail userDetail) {
-    ApplicationDetail costAmendment = createAmendmentObject(caseReferenceNumber, userDetail);
-    costAmendment.setQuickEditType(QuickEditTypeConstants.MESSAGE_TYPE_ALLOCATE_COST_LIMIT);
-    costAmendment.setMeansAssessmentAmended(Boolean.FALSE);
-    costAmendment.setMeritsAssessmentAmended(Boolean.FALSE);
+    ApplicationDetail amendment = createAmendmentObject(caseReferenceNumber, userDetail);
+    amendment.setQuickEditType(QuickEditTypeConstants.MESSAGE_TYPE_ALLOCATE_COST_LIMIT);
+    amendment.setMeansAssessmentAmended(Boolean.FALSE);
+    amendment.setMeritsAssessmentAmended(Boolean.FALSE);
 
-    CostLimitDetail costLimit =
-        costAmendment.getCostLimit() != null ? costAmendment.getCostLimit() : new CostLimitDetail();
-
-    costLimit.setChanged(true);
-
-    CostStructureDetail costs =
-        costAmendment.getCosts() != null ? costAmendment.getCosts() : new CostStructureDetail();
-
-    if (allocateCostsFormData.getRequestedCostLimitation() != null) {
-      costs.setRequestedCostLimitation(allocateCostsFormData.getRequestedCostLimitation());
+    CostStructureDetail costs = amendment.getCosts();
+    if (costs == null) {
+      costs = new CostStructureDetail();
+      amendment.setCosts(costs);
     }
 
-    // Initialize numeric fields with defaults to prevent ORA-06502 errors when mapping to XML
-    if (costs.getCurrentProviderBilledAmount() == null) {
-      costs.setCurrentProviderBilledAmount(BigDecimal.ZERO);
+    List<CostEntryDetail> entries =
+        costLimitations.stream().map(this::toCostEntryDetail).collect(Collectors.toList());
+    costs.setCostEntries(entries);
+
+    CostLimitDetail costLimitDetail = amendment.getCostLimit();
+    if (costLimitDetail == null) {
+      costLimitDetail = new CostLimitDetail();
+      amendment.setCostLimit(costLimitDetail);
     }
-    if (costs.getGrantedCostLimitation() == null) {
-      costs.setGrantedCostLimitation(BigDecimal.ZERO);
-    }
+    costLimitDetail.setChanged(true);
 
-    costAmendment.setCosts(costs);
-    costAmendment.setCostLimit(costLimit);
-
-    // Populate cost entries from the existing SOA case
-    populateCostEntriesFromExistingCase(costAmendment, userDetail);
-
-    return updateCaseWithQuickAmendment(userDetail, costAmendment);
+    return updateCaseWithQuickAmendment(userDetail, amendment);
   }
 
   /**
@@ -426,48 +417,7 @@ public class AmendmentService {
     return Objects.requireNonNull(caseTransactionResponseMono.block()).getTransactionId();
   }
 
-  /**
-   * Populates cost entries from the existing SOA case into the amendment application. This ensures
-   * that the cost limitation details are retained when submitting a cost amendment.
-   *
-   * @param amendment the amendment application to populate
-   * @param userDetail the user details for fetching the SOA case
-   */
-  private void populateCostEntriesFromExistingCase(
-      final ApplicationDetail amendment, final UserDetail userDetail) {
-    try {
-      final uk.gov.laa.ccms.soa.gateway.model.CaseDetail existingCase =
-          soaApiClient
-              .getCase(
-                  amendment.getCaseReferenceNumber(),
-                  userDetail.getLoginId(),
-                  userDetail.getUserType())
-              .block();
-
-      if (existingCase != null
-          && existingCase.getApplicationDetails() != null
-          && existingCase.getApplicationDetails().getCategoryOfLaw() != null
-          && existingCase.getApplicationDetails().getCategoryOfLaw().getCostLimitations() != null) {
-
-        // Map the existing SOA cost limitations to CostEntryDetail
-        final List<CostEntryDetail> costEntries =
-            existingCase.getApplicationDetails().getCategoryOfLaw().getCostLimitations().stream()
-                .map(this::mapCostLimitationToCostEntry)
-                .collect(java.util.stream.Collectors.toList());
-
-        if (!costEntries.isEmpty()) {
-          amendment.getCosts().setCostEntries(costEntries);
-        }
-      }
-    } catch (Exception e) {
-      log.warn(
-          "Unable to fetch cost details from existing SOA case {}: {}",
-          amendment.getCaseReferenceNumber(),
-          e.getMessage());
-    }
-  }
-
-  private CostEntryDetail mapCostLimitationToCostEntry(
+  private CostEntryDetail toCostEntryDetail(
       final uk.gov.laa.ccms.soa.gateway.model.CostLimitation costLimitation) {
     return new CostEntryDetail()
         .ebsId(costLimitation.getCostLimitId())
@@ -475,9 +425,7 @@ public class AmendmentService {
         .resourceName(costLimitation.getBillingProviderName())
         .amountBilled(costLimitation.getPaidToDate())
         .requestedCosts(costLimitation.getAmount())
-        .costCategory(costLimitation.getCostCategory())
-        .newEntry(false)
-        .submitted(true);
+        .newEntry(true);
   }
 
   /**
