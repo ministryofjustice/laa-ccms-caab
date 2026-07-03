@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -1487,7 +1488,9 @@ class EditProceedingsAndCostsSectionControllerTest {
       proceedingFlow.getProceedingDetails().setProceedingType("proceedingType");
       proceedingFlow.getFurtherDetails().setLevelOfService("levelOfService");
 
-      final ScopeLimitationDetail scopeLimitation = new ScopeLimitationDetail();
+      // Editable wording requires the non-default wording indicator to be set.
+      final ScopeLimitationDetail scopeLimitation =
+          new ScopeLimitationDetail().nonDefaultWordingReqd(Boolean.TRUE);
       final ScopeLimitationFlowFormData scopeLimitationFlow =
           new ScopeLimitationFlowFormData(action);
       final List<ScopeLimitationDetail> scopeLimitations = new ArrayList<>();
@@ -1577,6 +1580,42 @@ class EditProceedingsAndCostsSectionControllerTest {
           .andExpect(redirectedUrl("/application/proceedings/add/confirm"));
 
       assertEquals(originalWording, scopeLimitations.get(0).getScopeLimitationWording());
+    }
+
+    @Test
+    @DisplayName(
+        "Should clear editable wording when the parameter is absent so required validation cannot be"
+            + " bypassed")
+    void shouldClearEditableWordingWhenParameterAbsent() throws Exception {
+      final String action = "add";
+      final String caseContext = "application";
+      final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
+
+      // Editable scope limitation pre-populated with the default wording.
+      final ScopeLimitationDetail scopeLimitation =
+          new ScopeLimitationDetail()
+              .scopeLimitationWording("Prepopulated default wording")
+              .nonDefaultWordingReqd(Boolean.TRUE);
+      final ScopeLimitationFlowFormData scopeLimitationFlow =
+          new ScopeLimitationFlowFormData(action);
+      final List<ScopeLimitationDetail> scopeLimitations = new ArrayList<>();
+
+      final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(CURRENT_SCOPE_LIMITATION, scopeLimitation);
+      session.setAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
+      session.setAttribute(SCOPE_LIMITATION_FLOW_FORM_DATA, scopeLimitationFlow);
+      session.setAttribute(PROCEEDING_SCOPE_LIMITATIONS, scopeLimitations);
+      session.setAttribute(USER_DETAILS, new UserDetail());
+
+      // Post WITHOUT the scopeLimitationWording parameter (e.g. client-side tampering).
+      mockMvc
+          .perform(
+              post("/{caseContext}/proceedings/scope-limitations/confirm", caseContext)
+                  .session(session))
+          .andExpect(status().is3xxRedirection());
+
+      // The stale default must not survive; wording is nulled so the validator enforces required.
+      assertNull(scopeLimitation.getScopeLimitationWording());
     }
 
     @ParameterizedTest
