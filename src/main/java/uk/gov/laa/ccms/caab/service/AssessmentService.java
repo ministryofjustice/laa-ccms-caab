@@ -623,6 +623,22 @@ public class AssessmentService {
       final UserDetail user) {
     final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase = getEbsCase(application, user);
 
+    // TODO TEMP DIAGNOSTIC (remove after dev investigation) - grep "DIAG-MERITS-REASSESS".
+    final String diagRef = application.getCaseReferenceNumber();
+    log.info(
+        "DIAG-MERITS-REASSESS {} INPUTS amendment={} meritsAssessmentAmended={}"
+            + " meritsReassessmentRequiredFlag={} assessmentPresent={} ebsCasePresent={}"
+            + " ebsCertificateType={} hasEbsAmendments={} appTypeId={}",
+        diagRef,
+        application.getAmendment(),
+        application.getMeritsAssessmentAmended(),
+        application.getMeritsReassessmentRequired(),
+        assessment != null,
+        ebsCase != null,
+        ebsCase == null ? null : ebsCase.getCertificateType(),
+        hasEbsAmendments(ebsCase),
+        getApplicationTypeId(application));
+
     // Old PUI only forces reassessment here when there is NO merits assessment at all (a
     // substantive amendment of an emergency certificate); once one exists it must not re-trigger.
     if (assessment == null
@@ -630,24 +646,48 @@ public class AssessmentService {
         && APP_TYPE_SUBSTANTIVE.equals(getApplicationTypeId(application))
         && ebsCase != null
         && APP_TYPE_EMERGENCY.equals(ebsCase.getCertificateType())) {
+      log.info(
+          "DIAG-MERITS-REASSESS {} RESULT=true VIA=emergency-substantive-no-assessment", diagRef);
       return true;
     }
 
     final Date latestKeyChange = getDateOfLatestKeyChange(application);
     if (latestKeyChange == null) {
+      log.info("DIAG-MERITS-REASSESS {} RESULT=false VIA=latestKeyChange-null", diagRef);
       return false;
     }
 
     final Date meritsCreated = getMeritsComparisonDate(application, assessment);
+    // TODO TEMP DIAGNOSTIC: reveal which comparison-date branch getMeritsComparisonDate took.
+    final boolean usedDraftCreatedBaseline =
+        Boolean.TRUE.equals(application.getAmendment())
+            && !Boolean.TRUE.equals(application.getMeritsAssessmentAmended());
+    log.info(
+        "DIAG-MERITS-REASSESS {} DATES latestKeyChange={} meritsCreated={} comparisonBaseline={}"
+            + " appAuditCreated={} assessmentAuditCreated={}",
+        diagRef,
+        latestKeyChange,
+        meritsCreated,
+        usedDraftCreatedBaseline ? "draftCreated+2s" : "assessmentCreated",
+        application.getAuditTrail() == null ? null : application.getAuditTrail().getCreated(),
+        assessment == null || assessment.getAuditDetail() == null
+            ? null
+            : assessment.getAuditDetail().getCreated());
     if (meritsCreated == null) {
+      log.info("DIAG-MERITS-REASSESS {} RESULT=false VIA=meritsCreated-null", diagRef);
       return false;
     }
 
     if (differenceGreaterThanTenSecs(latestKeyChange, meritsCreated)) {
+      log.info(
+          "DIAG-MERITS-REASSESS {} RESULT=true VIA=differenceGreaterThanTenSecs"
+              + " (latestKeyChange later than meritsCreated by >10s)",
+          diagRef);
       return true;
     }
 
     if (Boolean.TRUE.equals(application.getMeritsReassessmentRequired())) {
+      log.info("DIAG-MERITS-REASSESS {} RESULT=true VIA=meritsReassessmentRequiredFlag", diagRef);
       return true;
     }
 
@@ -656,12 +696,32 @@ public class AssessmentService {
     // below
     // the dateOfLatestKeyChange == null and merits-assessment == null early returns above - it is
     // deliberately NOT evaluated when those timestamps are unavailable.
-    if (isCostLimitReassessmentRequired(application)) {
+    final BigDecimal diagLimitAtTimeOfMerits =
+        Optional.ofNullable(application.getCostLimit())
+            .map(CostLimitDetail::getLimitAtTimeOfMerits)
+            .orElse(null);
+    final BigDecimal diagRequestedOrDefault = getRequestedOrDefaultCostLimitation(application);
+    final boolean costLimitReassessment = isCostLimitReassessmentRequired(application);
+    log.info(
+        "DIAG-MERITS-REASSESS {} COST limitAtTimeOfMerits={} requestedOrDefault={}"
+            + " isCostLimitReassessmentRequired={}",
+        diagRef,
+        diagLimitAtTimeOfMerits,
+        diagRequestedOrDefault,
+        costLimitReassessment);
+    if (costLimitReassessment) {
+      log.info("DIAG-MERITS-REASSESS {} RESULT=true VIA=isCostLimitReassessmentRequired", diagRef);
       return true;
     }
 
     // The remaining checks compare the application against an existing assessment's recorded data.
-    return assessment != null && isMeritsReassessmentRequiredForAssessment(application, assessment);
+    final boolean assessmentDataReassessment =
+        assessment != null && isMeritsReassessmentRequiredForAssessment(application, assessment);
+    log.info(
+        "DIAG-MERITS-REASSESS {} RESULT={} VIA=isMeritsReassessmentRequiredForAssessment",
+        diagRef,
+        assessmentDataReassessment);
+    return assessmentDataReassessment;
   }
 
   private uk.gov.laa.ccms.soa.gateway.model.CaseDetail getEbsCase(
