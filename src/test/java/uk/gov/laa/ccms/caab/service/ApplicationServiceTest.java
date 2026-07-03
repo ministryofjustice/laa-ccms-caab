@@ -92,6 +92,7 @@ import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
+import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -115,6 +116,7 @@ import uk.gov.laa.ccms.caab.model.AuditDetail;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ClientDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
+import uk.gov.laa.ccms.caab.model.CostLimitDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
@@ -1550,6 +1552,80 @@ class ApplicationServiceTest {
     // Submitted (not abandoned): no evidence-doc removal and no abandonment metric.
     verify(evidenceService, never()).removeDocuments(any(), any());
     verify(puiMetricService, never()).incrementAbandonedCount(any());
+  }
+
+  @Test
+  void removeSubmittedAmendment_meansReassessmentWithAmendChanges_preservesDraft() {
+    final UserDetail user = buildUserDetail();
+    final String caseReferenceNumber = "CASE-123";
+    final List<String> meansOnly = List.of(MEANS.getName(), MEANS_PREPOP.getName());
+
+    final ApplicationDetails tdsApplications =
+        new ApplicationDetails().addContentItem(new BaseApplicationDetail().id(42).amendment(true));
+    when(caabApiClient.getApplications(any(), eq(user.getProvider().getId()), eq(0), eq(1)))
+        .thenReturn(Mono.just(tdsApplications));
+
+    // The draft is a means reassessment that also carries an amend-case change (an added opponent).
+    final ApplicationDetail amendment =
+        new ApplicationDetail()
+            .id(42)
+            .quickEditType(QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT)
+            .opponents(List.of(new OpponentDetail()));
+    when(caabApiClient.getApplication("42")).thenReturn(Mono.just(amendment));
+
+    // The EBS base case has no opponents, so hasChanges detects the added opponent.
+    final ApplicationDetail baseCase = new ApplicationDetail().opponents(List.of());
+    when(ebsApiClient.getCase(eq(caseReferenceNumber), anyLong(), anyString()))
+        .thenReturn(Mono.just(new CaseDetail()));
+    when(ebsApplicationMappingContextBuilder.buildApplicationMappingContext(any(CaseDetail.class)))
+        .thenReturn(EbsApplicationMappingContext.builder().build());
+    when(ebsApplicationMapper.toApplicationDetail(any(EbsApplicationMappingContext.class)))
+        .thenReturn(baseCase);
+
+    when(assessmentService.deleteAssessments(user, meansOnly, caseReferenceNumber, null))
+        .thenReturn(Mono.empty());
+
+    applicationService.removeSubmittedAmendment(caseReferenceNumber, user);
+
+    // The amend case is preserved: the draft application is NOT deleted, only the means assessment.
+    verify(caabApiClient, never()).deleteApplication(any(), any());
+    verify(assessmentService).deleteAssessments(user, meansOnly, caseReferenceNumber, null);
+  }
+
+  @Test
+  void removeSubmittedAmendment_meansReassessment_ebsCaseLoadFails_preservesDraft() {
+    final UserDetail user = buildUserDetail();
+    final String caseReferenceNumber = "CASE-123";
+    final List<String> meansOnly = List.of(MEANS.getName(), MEANS_PREPOP.getName());
+
+    final ApplicationDetails tdsApplications =
+        new ApplicationDetails().addContentItem(new BaseApplicationDetail().id(42).amendment(true));
+    when(caabApiClient.getApplications(any(), eq(user.getProvider().getId()), eq(0), eq(1)))
+        .thenReturn(Mono.just(tdsApplications));
+
+    // Means reassessment whose amend-case change is detectable from an internal marker (cost limit
+    // changed), so it survives even when the EBS base case cannot be loaded.
+    final ApplicationDetail amendment =
+        new ApplicationDetail()
+            .id(42)
+            .quickEditType(QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT)
+            .costLimit(new CostLimitDetail().changed(true));
+    when(caabApiClient.getApplication("42")).thenReturn(Mono.just(amendment));
+
+    // The EBS case load fails: getCase throws and the helper must fall back to a null base case
+    // rather than aborting the whole cleanup.
+    when(ebsApiClient.getCase(eq(caseReferenceNumber), anyLong(), anyString()))
+        .thenReturn(Mono.error(new RuntimeException("EBS unavailable")));
+
+    when(assessmentService.deleteAssessments(user, meansOnly, caseReferenceNumber, null))
+        .thenReturn(Mono.empty());
+
+    applicationService.removeSubmittedAmendment(caseReferenceNumber, user);
+
+    // Draft preserved despite the EBS failure: the application is NOT deleted, only the means
+    // assessment is removed.
+    verify(caabApiClient, never()).deleteApplication(any(), any());
+    verify(assessmentService).deleteAssessments(user, meansOnly, caseReferenceNumber, null);
   }
 
   @Test

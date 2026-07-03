@@ -52,6 +52,7 @@ import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
+import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -88,6 +89,7 @@ import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
+import uk.gov.laa.ccms.caab.util.AmendmentUtil;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.caab.util.ReflectionUtils;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
@@ -646,6 +648,25 @@ public class ApplicationService {
       return;
     }
 
+    // A means reassessment submits ONLY the means assessment (EBS applies means via the
+    // "MeansReassessment" message type). If the same shared draft also carries amend-case changes
+    // that were NOT submitted - e.g. an opponent added via Amend Case - preserve them: remove only
+    // the submitted means assessment and keep the draft so the amendment can still be continued. A
+    // pure means reassessment (no other changes) still removes the whole draft, so no stale
+    // "continue amendment" is left behind.
+    if (shouldPreserveAmendCaseAfterMeansSubmit(tdsApplication, caseReferenceNumber, user)) {
+      assessmentService
+          .deleteAssessments(
+              user,
+              List.of(
+                  AssessmentRulebase.MEANS.getName(),
+                  AssessmentRulebase.MEANS.getPrePopAssessmentName()),
+              caseReferenceNumber,
+              null)
+          .block();
+      return;
+    }
+
     final Mono<Void> deleteAppMono =
         caabApiClient.deleteApplication(String.valueOf(tdsApplication.getId()), user.getLoginId());
     final Mono<Void> deleteAssessmentsMono =
@@ -653,6 +674,56 @@ public class ApplicationService {
             user, getNonFinancialAssessmentNamesIncludingPrepop(), caseReferenceNumber, null);
 
     Mono.when(deleteAppMono, deleteAssessmentsMono).block();
+  }
+
+  /**
+   * Determines whether a submitted means-reassessment draft also carries amend-case changes beyond
+   * the means/merits reassessment itself (e.g. an added opponent), which were not part of the means
+   * submission and so must be preserved rather than discarded.
+   *
+   * @param tdsApplication the submitted means-reassessment draft
+   * @param caseReferenceNumber the case reference
+   * @param user the submitting user
+   * @return {@code true} if the draft has amend-case changes to preserve
+   */
+  private boolean shouldPreserveAmendCaseAfterMeansSubmit(
+      final BaseApplicationDetail tdsApplication,
+      final String caseReferenceNumber,
+      final UserDetail user) {
+    final ApplicationDetail amendment;
+    try {
+      final Mono<ApplicationDetail> amendmentMono =
+          getApplication(String.valueOf(tdsApplication.getId()));
+      amendment = amendmentMono == null ? null : amendmentMono.block();
+    } catch (final Exception e) {
+      // Unloadable draft: fall back to removing the whole draft.
+      log.warn(
+          "Could not load submitted means reassessment {}; falling back to full draft cleanup",
+          tdsApplication.getId(),
+          e);
+      return false;
+    }
+    // Unloadable draft or non-means reassessment: fall back to removing the whole draft.
+    if (amendment == null
+        || !QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT.equals(
+            amendment.getQuickEditType())) {
+      return false;
+    }
+    // Means already submitted; only structural amend-case changes keep the draft alive.
+    amendment.setMeansAssessmentAmended(false);
+    amendment.setMeritsAssessmentAmended(false);
+    ApplicationDetail baseCase;
+    try {
+      baseCase = getCase(caseReferenceNumber, user.getProvider().getId(), user.getLoginId());
+    } catch (final Exception e) {
+      // EBS case unavailable: compare against amendment-internal markers rather than aborting.
+      log.warn(
+          "Could not load EBS case {} for amend-case comparison; using amendment-internal markers",
+          caseReferenceNumber,
+          e);
+      baseCase = null;
+    }
+    return AmendmentUtil.hasChanges(amendment, baseCase);
   }
 
   /**

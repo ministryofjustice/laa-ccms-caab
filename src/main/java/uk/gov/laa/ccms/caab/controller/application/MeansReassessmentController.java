@@ -105,7 +105,6 @@ public class MeansReassessmentController {
   @PostMapping("/means-reassessment/delete")
   public String deleteMeansReassessment(
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
-      @SessionAttribute(APPLICATION) final ApplicationDetail amendment,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final HttpSession session) {
 
@@ -118,7 +117,12 @@ public class MeansReassessmentController {
             activeCase.getCaseReferenceNumber(),
             null)
         .block();
-    applicationService.abandonApplication(amendment, user);
+
+    // Deleting a means reassessment clears only its means assessment data, mirroring old PUI's
+    // DeleteAssessmentController (means-only OPA session removal). The underlying application draft
+    // is deliberately preserved so the user does not lose amendment work (e.g. added opponents)
+    // when
+    // the means reassessment journey has reused an in-progress general case amendment draft.
     clearReassessmentSession(session);
 
     return "redirect:/case/overview";

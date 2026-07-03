@@ -41,8 +41,12 @@ repositories {
 configurations.configureEach {
     resolutionStrategy.eachDependency { details ->
         if (details.requested.group == 'org.apache.tomcat.embed') {
-            details.useVersion '11.0.22'
+            details.useVersion '11.0.23'
             details.because 'Temporary Snyk override until upgraded in Spring Boot'
+        }
+        if (details.requested.group == 'ch.qos.logback') {
+            details.useVersion '1.5.36'
+            details.because 'Temporary Snyk override (SNYK-JAVA-CHQOSLOGBACK-17675439) until upgraded in Spring Boot'
         }
     }
 }

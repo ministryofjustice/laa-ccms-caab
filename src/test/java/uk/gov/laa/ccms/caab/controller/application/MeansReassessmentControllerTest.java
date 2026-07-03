@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -157,7 +158,7 @@ class MeansReassessmentControllerTest {
   }
 
   @Test
-  void deleteMeansReassessmentDeletesAssessmentsAndDraft() throws Exception {
+  void deleteMeansReassessmentClearsAssessmentButPreservesDraft() throws Exception {
     when(assessmentService.deleteAssessments(eq(user), anyList(), eq("CASE123"), eq(null)))
         .thenReturn(Mono.empty());
 
@@ -175,7 +176,12 @@ class MeansReassessmentControllerTest {
         .andExpect(request().sessionAttributeDoesNotExist(APPLICATION))
         .andExpect(request().sessionAttributeDoesNotExist(ACTIVE_CASE));
 
-    verify(applicationService).abandonApplication(amendment, user);
+    // Only the means assessment data is removed (mirrors old PUI DeleteAssessmentController).
+    verify(assessmentService).deleteAssessments(eq(user), anyList(), eq("CASE123"), eq(null));
+    // The application draft is preserved so a reused general amendment (e.g. added opponents) is
+    // not
+    // lost.
+    verify(applicationService, never()).abandonApplication(any(), any());
   }
 
   @Test

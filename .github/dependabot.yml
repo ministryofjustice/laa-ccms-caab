@@ -41,6 +41,8 @@ updates:
       - soa-api-github-packages
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     groups:
       external-dependencies:
         exclude-patterns:
@@ -52,6 +54,8 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     groups:
       npm-dependencies:
         patterns:
@@ -60,6 +64,8 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     groups:
       github-actions-dependencies:
         patterns:
