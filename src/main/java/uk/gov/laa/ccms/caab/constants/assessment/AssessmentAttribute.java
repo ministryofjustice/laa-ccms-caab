@@ -34,7 +34,7 @@ public enum AssessmentAttribute {
 
   // linked cases (drives case-routing legally-linked-to-<team> rules; the entity must be fed even
   // when empty so the rulebase knows InstanceCount(linked cases) = 0)
-  LINKED_CASE_ID("text", true, true),
+  LINKED_CASE_ID("number", true, true),
   LINKED_CASE_OWNER("text", true, true),
 
   // global

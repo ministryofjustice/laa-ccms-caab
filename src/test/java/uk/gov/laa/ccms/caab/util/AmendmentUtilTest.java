@@ -80,7 +80,8 @@ class AmendmentUtilTest {
   }
 
   @Test
-  @DisplayName("Should clean when edit type is means reassessment")
+  @DisplayName(
+      "Should clean when edit type is means reassessment but keep proceedings and opponents")
   void shouldCleanWhenEditTypeMeansReassessment() {
     // Given
     ApplicationDetail amendmentDetail = ApplicationDetailUtils.buildFullApplicationDetail();
@@ -88,6 +89,11 @@ class AmendmentUtilTest {
     // When
     AmendmentUtil.cleanAppForQuickAmendSubmit(amendmentDetail);
     // Then
+    // Proceedings and opponents are preserved for parity with old PUI (EBS applies only the means
+    // assessment via the "MeansReassessment" message type; an empty-proceedings update is
+    // rejected).
+    assertThat(amendmentDetail.getProceedings()).isNotEmpty();
+    assertThat(amendmentDetail.getOpponents()).isNotEmpty();
     assertThat(amendmentDetail.getMeansAssessmentAmended()).isTrue();
     assertThat(amendmentDetail.getMeritsAssessmentAmended()).isFalse();
     assertThat(amendmentDetail.getProviderDetails().getSupervisor()).isNull();
