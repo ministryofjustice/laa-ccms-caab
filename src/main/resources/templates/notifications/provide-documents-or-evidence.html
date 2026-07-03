@@ -159,8 +159,12 @@
 
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
-          <div th:replace="~{partials/actions :: restrictedSubmitButton(#{site.submit},
-              ${user.functions}, 'SUBDOC')}"></div>
+          <div class="govuk-button-group">
+            <div th:replace="~{partials/actions :: restrictedSubmitButton(#{site.submit},
+                ${user.functions}, 'SUBDOC')}"></div>
+            <a th:href="@{/notifications/{notification_id}(notification_id=${notificationId})}"
+               class="govuk-back-link" th:text="#{site.back}"></a>
+          </div>
         </div>
       </div>
     </form>

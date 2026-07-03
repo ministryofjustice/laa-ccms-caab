@@ -18,6 +18,7 @@
       <div th:replace="~{application/partials/client-fragments :: clientMonitoringFragment}"></div>
       <div class="govuk-button-group">
         <govuk:button type="submit" th:text="#{site.next}"/>
+        <a th:href="@{/application/client/details/address}" class="govuk-back-link" th:text="#{site.back}"></a>
       </div>
     </form>
   </div>

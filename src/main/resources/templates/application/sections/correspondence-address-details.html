@@ -77,6 +77,10 @@
                           id="next-button"
                           value="next"
                           th:text="#{site.confirm}"/>
+            <a th:if="${caseContext.isApplication()}" th:href="@{/application/sections}"
+               class="govuk-back-link" th:text="#{site.back}"></a>
+            <a th:if="${caseContext.isAmendment()}" th:href="@{/case/overview}"
+               class="govuk-back-link" th:text="#{site.back}"></a>
           </div>
         </div>
       </div>
