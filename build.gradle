@@ -14,6 +14,11 @@ release {
 
 repositories {
 
+    // TODO: temporary bridge for the Case Statement of Account feature — resolves the
+    // locally-published soa-gateway-api SNAPSHOT (laa-ccms-soa-gateway-api PR #280).
+    // Remove once soa-gateway-api is released with the caseStatementOfAccount model.
+    mavenLocal()
+
     mavenCentral()
 
     // Latest version of saml requires this
@@ -106,7 +111,7 @@ dependencies {
 
     implementation 'uk.gov.laa.ccms.data:data-api:0.0.106'
 
-    implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.96'
+    implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.102-SNAPSHOT'
 
     implementation 'uk.gov.laa.ccms.caab:caab-api:0.0.88'
 
