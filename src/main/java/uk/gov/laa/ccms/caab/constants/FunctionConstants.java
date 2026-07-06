@@ -30,6 +30,15 @@ public final class FunctionConstants {
   /** The billing function key, available on a case. */
   public static final String BILLING = "CB";
 
+  /** The enter undertaking function key, available on the billing screen. */
+  public static final String ENTER_UNDERTAKING = "UND";
+
+  /** The create/update bill function key, available on the billing screen. */
+  public static final String ADD_UPDATE_BILL = "BILL";
+
+  /** The create/update payment on account function key, available on the billing screen. */
+  public static final String ADD_UPDATE_POA = "POA";
+
   /** The editing Provider Details function key, available on a case. */
   public static final String EDIT_PROVIDER = "PD";
 
