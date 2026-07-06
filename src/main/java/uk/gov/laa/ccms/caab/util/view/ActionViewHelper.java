@@ -17,7 +17,10 @@ public class ActionViewHelper {
               "action.amendClient.description",
               "/" + CaseContext.AMENDMENTS.getPathValue() + "/sections/client/details/summary"),
           new AvailableAction(
-              FunctionConstants.BILLING, "action.billing.name", "action.billing.description", "#"),
+              FunctionConstants.BILLING,
+              "action.billing.name",
+              "action.billing.description",
+              "/case/billing"),
           new AvailableAction(
               FunctionConstants.OUTCOME_WITH_DISCHARGE,
               "action.recordOutcome.name",
