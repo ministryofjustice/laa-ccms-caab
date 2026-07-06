@@ -6,6 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMI
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 import static uk.gov.laa.ccms.caab.constants.CcmsModule.AMENDMENT;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -19,6 +20,7 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
@@ -50,7 +52,6 @@ import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
-import uk.gov.laa.ccms.soa.gateway.model.CostLimitation;
 
 /**
  * Service class responsible for handling amendments to existing legal aid cases.
@@ -318,8 +319,8 @@ public class AmendmentService {
    * @param userDetail the details of the user initiating the amendment
    * @return the transaction ID of the submitted amendment
    */
-  public String submitQuickAmendmentCaseCosts(
-      final List<CostLimitation> costLimitations,
+  public String submitQuickAmendmentCostAllocation(
+      final AllocateCostsFormData allocateCostsFormData,
       final String caseReferenceNumber,
       final UserDetail userDetail) {
     ApplicationDetail amendment = createAmendmentObject(caseReferenceNumber, userDetail);
@@ -327,22 +328,35 @@ public class AmendmentService {
     amendment.setMeansAssessmentAmended(Boolean.FALSE);
     amendment.setMeritsAssessmentAmended(Boolean.FALSE);
 
+    if (amendment.getCosts() == null) {
+      amendment.setCosts(new CostStructureDetail());
+    }
+
     CostStructureDetail costs = amendment.getCosts();
-    if (costs == null) {
-      costs = new CostStructureDetail();
-      amendment.setCosts(costs);
+
+    costs.setRequestedCostLimitation(allocateCostsFormData.getRequestedCostLimitation());
+
+    if (allocateCostsFormData.getCostEntries() != null) {
+      costs.setCostEntries(
+          allocateCostsFormData.getCostEntries().stream()
+              .map(
+                  entry -> {
+                    if (entry.getRequestedCosts() == null) {
+                      entry.setRequestedCosts(BigDecimal.ZERO);
+                    } else {
+                      entry.setRequestedCosts(entry.getRequestedCosts());
+                    }
+                    return entry;
+                  })
+              .collect(Collectors.toList()));
+    } else {
+      costs.setCostEntries(Collections.emptyList());
     }
 
-    List<CostEntryDetail> entries =
-        costLimitations.stream().map(this::toCostEntryDetail).collect(Collectors.toList());
-    costs.setCostEntries(entries);
-
-    CostLimitDetail costLimitDetail = amendment.getCostLimit();
-    if (costLimitDetail == null) {
-      costLimitDetail = new CostLimitDetail();
-      amendment.setCostLimit(costLimitDetail);
+    if (amendment.getCostLimit() == null) {
+      amendment.setCostLimit(new CostLimitDetail());
     }
-    costLimitDetail.setChanged(true);
+    amendment.getCostLimit().setChanged(true);
 
     return updateCaseWithQuickAmendment(userDetail, amendment);
   }

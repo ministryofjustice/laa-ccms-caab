@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -28,6 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
+import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -35,6 +37,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
+import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -56,6 +59,8 @@ public class AllocateCostLimitControllerTest {
   @Mock private uk.gov.laa.ccms.caab.mapper.CopyApplicationMapper copyApplicationMapper;
 
   @Mock private ApplicationService applicationService;
+
+  @Mock private AmendmentService amendmentService;
 
   @BeforeEach
   void setUp() {
@@ -412,9 +417,13 @@ public class AllocateCostLimitControllerTest {
   class PostSubmitCaseCostsTests {
 
     @Test
-    @DisplayName("Should redirect to case overview after successful submission")
-    void shouldRedirectToCaseOverviewAfterSubmission() {
+    @DisplayName("Should redirect to submission after successful submission")
+    void shouldRedirectToSubmissionPageAfterSubmitting() {
       ApplicationDetail ebsCase = new ApplicationDetail();
+      UserDetail user = new UserDetail();
+      user.setProvider(new BaseProvider());
+      user.getProvider().setId(123);
+      ActiveCase activeCase = ActiveCase.builder().caseReferenceNumber("CASE123").build();
       ebsCase.caseReferenceNumber("123456");
       CostStructureDetail costs =
           new CostStructureDetail()
@@ -427,14 +436,21 @@ public class AllocateCostLimitControllerTest {
                       .requestedCosts(new BigDecimal("604.63")))
               .grantedCostLimitation(new BigDecimal("25000"))
               .requestedCostLimitation(new BigDecimal("25000"));
-      ebsCase.costs(costs);
-      ebsCase.providerDetails(
+      ebsCase.setCosts(costs);
+      ebsCase.setProviderDetails(
           new ApplicationProviderDetails()
               .provider(new IntDisplayValue().displayValue("provider")));
+      when(amendmentService.submitQuickAmendmentCostAllocation(any(), anyString(), any()))
+          .thenReturn("transactionId");
 
-      assertThat(mockMvc.perform(post("/allocate-cost-limit/review").sessionAttr(CASE, ebsCase)))
-          .hasStatus3xxRedirection()
-          .hasRedirectedUrl("/case/overview");
+      assertThat(
+              mockMvc.perform(
+                  post("/allocate-cost-limit/review")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(ACTIVE_CASE, activeCase)
+                      .flashAttr("costDetails", new AllocateCostsFormData())))
+          .hasRedirectedUrl("/amendments/submit-case");
     }
   }
 }
