@@ -196,6 +196,8 @@
 
           <div class="govuk-button-group">
             <button type="submit" name="action" value="submit" class="govuk-button" data-module="govuk-button" th:text="#{site.submit}"></button>
+            <a th:with="backUrl=${caseReference != null ? '/provider-requests/types?caseReferenceNumber=' + caseReference : '/provider-requests/types'}"
+               th:href="@{${backUrl}}" class="govuk-back-link" th:text="#{site.back}"></a>
           </div>
         </div>
       </div>

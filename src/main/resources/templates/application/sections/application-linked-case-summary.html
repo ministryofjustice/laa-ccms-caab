@@ -84,6 +84,11 @@
                           th:text="#{site.confirm}"/>
             <govuk:button th:if="${caseContext.isAmendment()}" th:href="@{/amendments/summary}"
                           th:text="#{site.confirm}"/>
+            <a th:if="${caseContext.isApplication()}"
+               th:href="@{/application/sections/correspondence-address}"
+               class="govuk-back-link" th:text="#{site.back}"></a>
+            <a th:if="${caseContext.isAmendment()}" th:href="@{/amendments/summary}"
+               class="govuk-back-link" th:text="#{site.back}"></a>
         </div>
     </div>
 </div>

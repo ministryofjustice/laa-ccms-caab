@@ -154,10 +154,12 @@
           </div>
         </div>
       </div>
-      <div sec:authorize="hasAuthority(@roles.submitNotification)" class="govuk-button-group">
-        <div th:if="${notification.notificationOpenIndicator}">
+      <div class="govuk-button-group">
+        <div sec:authorize="hasAuthority(@roles.submitNotification)" th:if="${notification.notificationOpenIndicator}">
           <govuk:button type="submit" th:text="#{site.submit}"/>
         </div>
+        <a th:href="@{/notifications/search-results(page=${notificationSearchCriteria.page},size=${notificationSearchCriteria.size},pageSort=${notificationSearchCriteria.sort})}"
+           class="govuk-back-link" th:text="#{site.back}"></a>
       </div>
     </form>
   </div>
