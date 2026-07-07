@@ -341,11 +341,8 @@ public class AmendmentService {
           allocateCostsFormData.getCostEntries().stream()
               .map(
                   entry -> {
-                    if (entry.getRequestedCosts() == null) {
-                      entry.setRequestedCosts(BigDecimal.ZERO);
-                    } else {
-                      entry.setRequestedCosts(entry.getRequestedCosts());
-                    }
+                    entry.setRequestedCosts(
+                        entry.getRequestedCosts() == null ? BigDecimal.ZERO : entry.getRequestedCosts());
                     return entry;
                   })
               .collect(Collectors.toList()));
