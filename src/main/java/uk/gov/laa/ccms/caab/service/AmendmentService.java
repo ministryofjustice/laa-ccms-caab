@@ -312,7 +312,7 @@ public class AmendmentService {
    * amendment application, applies the new case costs, and submits the amendment. Finally, a case
    * is updated which returns the transaction ID associated with the submission.
    *
-   * @param allocateCostsFormData the data representing the updated provider details
+   * @param allocateCostsFormData the data representing the updated cost allocations
    * @param caseReferenceNumber the unique reference number of the case to which the amendment
    *     applies
    * @param userDetail the details of the user initiating the amendment
