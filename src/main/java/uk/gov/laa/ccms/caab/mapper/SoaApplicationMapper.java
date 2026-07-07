@@ -1224,11 +1224,10 @@ public interface SoaApplicationMapper {
   }
 
   /**
-   * Maps the requested amount from the provided cost structure details. If the requested cost
-   * limitation is not available, the default cost limitation is returned.
+   * Maps cost entries to SOA cost limitations.
    *
-   * @param costEntries the cost structure details
-   * @return the requested or default cost limitation, or {@code null} if the cost structure is null
+   * @param costEntries the cost entries to map
+   * @return mapped cost limitations (empty when no entries are present)
    */
   @Named("mapToSoaCostLimitations")
   default List<CostLimitation> mapToSoaCostLimitations(List<CostEntryDetail> costEntries) {
