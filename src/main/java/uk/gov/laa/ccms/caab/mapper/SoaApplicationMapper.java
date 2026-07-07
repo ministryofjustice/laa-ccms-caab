@@ -976,13 +976,6 @@ public interface SoaApplicationMapper {
         : BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
   }
 
-  @Mapping(target = "costLimitId", source = "ebsId")
-  @Mapping(target = "billingProviderId", source = "lscResourceId")
-  @Mapping(target = "billingProviderName", source = "resourceName")
-  @Mapping(target = "paidToDate", source = "amountBilled")
-  @Mapping(target = "amount", source = "requestedCosts")
-  CostLimitation toCostLimitation(CostEntryDetail costEntryDetail);
-
   @Mapping(target = "relationToClient", source = "relationshipToClient")
   @Mapping(target = "relationToCase", source = "relationshipToCase")
   @Mapping(target = "organizationName", source = "organisationName")

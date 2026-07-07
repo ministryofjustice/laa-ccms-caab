@@ -37,7 +37,6 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
-import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
@@ -342,7 +341,9 @@ public class AmendmentService {
               .map(
                   entry -> {
                     entry.setRequestedCosts(
-                        entry.getRequestedCosts() == null ? BigDecimal.ZERO : entry.getRequestedCosts());
+                        entry.getRequestedCosts() == null
+                            ? BigDecimal.ZERO
+                            : entry.getRequestedCosts());
                     return entry;
                   })
               .collect(Collectors.toList()));
@@ -426,17 +427,6 @@ public class AmendmentService {
             amendment.getQuickEditType());
 
     return Objects.requireNonNull(caseTransactionResponseMono.block()).getTransactionId();
-  }
-
-  private CostEntryDetail toCostEntryDetail(
-      final uk.gov.laa.ccms.soa.gateway.model.CostLimitation costLimitation) {
-    return new CostEntryDetail()
-        .ebsId(costLimitation.getCostLimitId())
-        .lscResourceId(costLimitation.getBillingProviderId())
-        .resourceName(costLimitation.getBillingProviderName())
-        .amountBilled(costLimitation.getPaidToDate())
-        .requestedCosts(costLimitation.getAmount())
-        .newEntry(true);
   }
 
   /**
