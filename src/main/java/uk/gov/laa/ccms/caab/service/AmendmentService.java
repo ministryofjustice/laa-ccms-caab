@@ -7,6 +7,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMI
 import static uk.gov.laa.ccms.caab.constants.CcmsModule.AMENDMENT;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -37,6 +38,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
+import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
@@ -322,38 +324,63 @@ public class AmendmentService {
       final AllocateCostsFormData allocateCostsFormData,
       final String caseReferenceNumber,
       final UserDetail userDetail) {
+
+    if (allocateCostsFormData == null) {
+      throw new CaabApplicationException(
+          "AllocateCostsFormData is required for cost allocation amendment");
+    }
+
     ApplicationDetail amendment = createAmendmentObject(caseReferenceNumber, userDetail);
     amendment.setQuickEditType(QuickEditTypeConstants.MESSAGE_TYPE_ALLOCATE_COST_LIMIT);
     amendment.setMeansAssessmentAmended(Boolean.FALSE);
     amendment.setMeritsAssessmentAmended(Boolean.FALSE);
 
+    CostStructureDetail costs = amendment.getCosts();
     if (amendment.getCosts() == null) {
       amendment.setCosts(new CostStructureDetail());
+      amendment.setCosts(costs);
     }
-
-    CostStructureDetail costs = amendment.getCosts();
 
     costs.setRequestedCostLimitation(allocateCostsFormData.getRequestedCostLimitation());
 
     if (allocateCostsFormData.getCostEntries() != null) {
-      costs.setCostEntries(
+      List<CostEntryDetail> cleaned =
           allocateCostsFormData.getCostEntries().stream()
               .map(
                   entry -> {
-                    entry.setRequestedCosts(
-                        entry.getRequestedCosts() == null
-                            ? BigDecimal.ZERO
-                            : entry.getRequestedCosts());
-                    return entry;
+                    CostEntryDetail e = entry != null ? entry : new CostEntryDetail();
+
+                    if (e.getRequestedCosts() == null) {
+                      e.setRequestedCosts(BigDecimal.ZERO);
+                    } else {
+                      e.setRequestedCosts(e.getRequestedCosts().setScale(2, RoundingMode.HALF_UP));
+                    }
+
+                    if (e.getAmountBilled() == null) {
+                      e.setAmountBilled(BigDecimal.ZERO);
+                    }
+
+                    if (e.getCostCategory() != null) {
+                      e.setCostCategory(e.getCostCategory().toUpperCase());
+                    } else {
+                      e.setCostCategory("COUNSEL");
+                    }
+
+                    if (e.getLscResourceId() == null) {
+                      e.setLscResourceId("0");
+                    }
+
+                    if (e.getResourceName() == null || e.getResourceName().trim().isEmpty()) {
+                      e.setResourceName("NEW COUNSEL");
+                    }
+                    return e;
                   })
-              .collect(Collectors.toList()));
+              .collect(Collectors.toList());
+      costs.setCostEntries(cleaned);
     } else {
       costs.setCostEntries(Collections.emptyList());
     }
 
-    if (amendment.getCostLimit() == null) {
-      amendment.setCostLimit(new CostLimitDetail());
-    }
     amendment.getCostLimit().setChanged(true);
 
     return updateCaseWithQuickAmendment(userDetail, amendment);

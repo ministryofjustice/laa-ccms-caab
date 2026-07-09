@@ -244,7 +244,7 @@ public class CounselSearchController {
     CostEntryDetail newCostEntry = new CostEntryDetail();
     newCostEntry.setResourceName(selectedCounsel.getName());
     newCostEntry.setLscResourceId(selectedCounsel.getLegalAidSupplierNumber());
-    newCostEntry.setCostCategory(COUNSEL_COST_CATEGORY);
+    newCostEntry.setCostCategory(COUNSEL_COST_CATEGORY.toUpperCase());
     newCostEntry.setAmountBilled(BigDecimal.ZERO);
     newCostEntry.setRequestedCosts(BigDecimal.ZERO);
     newCostEntry.setNewEntry(true);

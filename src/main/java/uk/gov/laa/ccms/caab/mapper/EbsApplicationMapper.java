@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.BeanMapping;
@@ -872,8 +873,18 @@ public interface EbsApplicationMapper {
   @Mapping(target = "requestedAmount", source = "costs", qualifiedByName = "mapRequestedAmount")
   @Mapping(target = "grantedAmount", ignore = true)
   @Mapping(target = "totalPaidToDate", ignore = true)
-  @Mapping(target = "costLimitations", ignore = true)
+  @Mapping(
+      target = "costLimitations",
+      source = "costs.costEntries",
+      qualifiedByName = "mapToEbsCostLimitations")
   CategoryOfLaw toEbsCategoryOfLaw(ApplicationDetail applicationDetail);
+
+  @Mapping(target = "billingProviderId", source = "lscResourceId")
+  @Mapping(target = "billingProviderName", source = "resourceName")
+  @Mapping(target = "amount", source = "requestedCosts")
+  @Mapping(target = "paidToDate", source = "amountBilled")
+  @Mapping(target = "costLimitId", source = "ebsId")
+  CostLimitation toEbsCostLimitation(CostEntryDetail entry);
 
   @Mapping(target = "addressId", source = "id")
   @Mapping(target = "house", source = "houseNameOrNumber")
@@ -1190,6 +1201,14 @@ public interface EbsApplicationMapper {
     return costs.getRequestedCostLimitation() != null
         ? costs.getRequestedCostLimitation()
         : costs.getDefaultCostLimitation();
+  }
+
+  @Named("mapToEbsCostLimitations")
+  default List<CostLimitation> mapToEbsCostLimitations(List<CostEntryDetail> costEntries) {
+    if (costEntries == null || costEntries.isEmpty()) {
+      return Collections.emptyList();
+    }
+    return costEntries.stream().map(this::toEbsCostLimitation).collect(Collectors.toList());
   }
 
   /**

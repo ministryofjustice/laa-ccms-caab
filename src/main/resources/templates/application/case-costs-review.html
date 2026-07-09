@@ -47,7 +47,7 @@
                         </tr>
 
                         <tr class="govuk-table__row"
-                            th:each="costEntryDetail, stat : *{costEntries}">
+                            th:each="costEntryDetail, stat : *{costEntries.stream().distinct().toList()}">
                             <td class="govuk-table__cell" th:text="${costEntryDetail.resourceName}"/>
                             <td class="govuk-table__cell ccms-text-capitalize"
                                 th:text="${costEntryDetail.costCategory.toLowerCase()}"></td>

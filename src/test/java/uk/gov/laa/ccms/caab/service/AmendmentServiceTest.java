@@ -18,7 +18,10 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBST
 import static uk.gov.laa.ccms.caab.util.ApplicationDetailUtils.buildFullApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.ApplicationDetailUtils.expectedApplicationSectionDisplay;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -31,6 +34,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
+import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
@@ -43,6 +47,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
+import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.PriorAuthoritySectionDisplay;
@@ -648,6 +653,61 @@ class AmendmentServiceTest {
               any(),
               eq(QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT));
       assertThat(transactionId).isEqualTo("TRANS123");
+    }
+  }
+
+  @Nested
+  @DisplayName("submitQuickAmendmentCostAllocation() tests")
+  class SubmitQuickAmendmentCostAllocationTests {
+
+    @Test
+    @DisplayName("Should submit quick amend cost allocation")
+    void shouldSubmitQuickAmendmentCostAllocation() {
+      // Given
+      String caseRef = "12345";
+      UserDetail userDetails =
+          new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
+
+      AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
+      allocateCostsFormData.setRequestedCostLimitation(new BigDecimal("15000"));
+
+      List<CostEntryDetail> entries = new ArrayList<>();
+      entries.add(
+          new CostEntryDetail()
+              .resourceName("Some Resource")
+              .requestedCosts(new BigDecimal("5000"))
+              .lscResourceId("123"));
+      allocateCostsFormData.setCostEntries(entries);
+
+      ApplicationDetail caseDetail = buildFullApplicationDetail();
+      caseDetail.setCaseReferenceNumber(caseRef);
+
+      when(applicationService.getCase(any(), anyLong(), any())).thenReturn(caseDetail);
+      when(caabApiClient.createApplication(any(), any())).thenReturn(Mono.just("123"));
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), any()))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("12345")));
+
+      // When
+      String transactionId =
+          amendmentService.submitQuickAmendmentCostAllocation(
+              allocateCostsFormData, caseRef, userDetails);
+
+      // Then
+      assertThat(transactionId).isEqualTo("12345");
+
+      ArgumentCaptor<CaseDetail> caseDetailCaptor = ArgumentCaptor.forClass(CaseDetail.class);
+      verify(soaApiClient)
+          .updateCase(
+              any(),
+              any(),
+              caseDetailCaptor.capture(),
+              eq(QuickEditTypeConstants.MESSAGE_TYPE_ALLOCATE_COST_LIMIT));
+
+      verify(applicationService).getCase(eq(caseRef), anyLong(), any());
+
+      CaseDetail sent = caseDetailCaptor.getValue();
+      assertThat(sent).isNotNull();
     }
   }
 }

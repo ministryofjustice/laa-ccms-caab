@@ -137,6 +137,16 @@ public class AllocateCostLimitController {
       } else {
         // This is a new entry (e.g. added counsel)
         formCost.setNewEntry(true);
+        if (formCost.getRequestedCosts() == null) {
+          formCost.setRequestedCosts(BigDecimal.ZERO);
+        }
+        if (formCost.getAmountBilled() == null) {
+          formCost.setAmountBilled(BigDecimal.ZERO);
+        }
+        if (formCost.getCostCategory() == null) {
+          formCost.setCostCategory("COUNSEL");
+        }
+
         updatedCosts.add(formCost);
       }
     }
@@ -201,12 +211,19 @@ public class AllocateCostLimitController {
       final HttpSession session) {
 
     // TODO: Add API call to finalize the cost allocations
-    AllocateCostsFormData formData =
-        (AllocateCostsFormData) session.getAttribute(COST_ALLOCATION_FORM_DATA);
+
+    AllocateCostsFormData formDataToUse = allocateCostsFormData;
+
+    if (formDataToUse == null
+        || formDataToUse.getCostEntries() == null
+        || formDataToUse.getCostEntries().isEmpty()) {
+      log.warn("Form binidng failed - failling back to session");
+      formDataToUse = (AllocateCostsFormData) session.getAttribute(COST_ALLOCATION_FORM_DATA);
+    }
 
     String transactionId =
         amendmentService.submitQuickAmendmentCostAllocation(
-            formData, activeCase.getCaseReferenceNumber(), userDetail);
+            formDataToUse, activeCase.getCaseReferenceNumber(), userDetail);
 
     session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
     session.removeAttribute(SUBMISSION_RESULT);

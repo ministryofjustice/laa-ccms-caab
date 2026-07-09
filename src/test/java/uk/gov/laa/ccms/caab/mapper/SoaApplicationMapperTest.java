@@ -43,11 +43,13 @@ import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildTimeRelatedAward;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -1859,5 +1861,61 @@ class SoaApplicationMapperTest {
   @DisplayName("Test toSoaRecordHistory with null context")
   void testToSoaRecordHistory_NullContext() {
     assertNull(applicationMapper.toSoaRecordHistory(null));
+  }
+
+  @Nested
+  @DisplayName("Cost Allocation Mapping Tests")
+  class CostAllocationMappingTests {
+
+    @Test
+    @DisplayName("Should map CostAllocationDetail to SoaCategoryOfLaw correctly")
+    void shouldMapCostEntriesToSoaCategoryOfLaw() {
+      // Given
+      ApplicationDetail applicationDetail = new ApplicationDetail();
+      applicationDetail.setCategoryOfLaw(
+          new StringDisplayValue().id("HOU").displayValue("Housing"));
+
+      CostStructureDetail costStructureDetail = new CostStructureDetail();
+      costStructureDetail.setRequestedCostLimitation(new BigDecimal("15000.00"));
+
+      List<CostEntryDetail> costEntries = new ArrayList<>();
+      costEntries.add(
+          new CostEntryDetail()
+              .lscResourceId("123")
+              .resourceName("Some name")
+              .requestedCosts(new BigDecimal("1500.00"))
+              .amountBilled(new BigDecimal("1000.00"))
+              .ebsId("ebs123"));
+
+      costEntries.add(
+          new CostEntryDetail()
+              .lscResourceId("456")
+              .resourceName("Another name")
+              .requestedCosts(new BigDecimal("2500.00"))
+              .amountBilled(new BigDecimal("2000.00"))
+              .ebsId("ebs456"));
+
+      costStructureDetail.setCostEntries(costEntries);
+      applicationDetail.setCosts(costStructureDetail);
+
+      // When
+      CategoryOfLaw result = applicationMapper.toSoaCategoryOfLaw(applicationDetail);
+
+      // Then
+      assertNotNull(result);
+      assertEquals("HOU", result.getCategoryOfLawCode());
+      assertEquals("Housing", result.getCategoryOfLawDescription());
+      assertEquals(new BigDecimal("15000.00"), result.getRequestedAmount());
+
+      assertNotNull(result.getCostLimitations());
+      assertEquals(2, result.getCostLimitations().size());
+
+      CostLimitation costLimitation1 = result.getCostLimitations().get(0);
+      assertEquals("123", costLimitation1.getBillingProviderId());
+      assertEquals("Some name", costLimitation1.getBillingProviderName());
+      assertEquals(new BigDecimal("1500.00"), costLimitation1.getAmount());
+      assertEquals(new BigDecimal("1000.00"), costLimitation1.getPaidToDate());
+      assertEquals("ebs123", costLimitation1.getCostLimitId());
+    }
   }
 }
