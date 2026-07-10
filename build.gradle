@@ -48,6 +48,12 @@ configurations.configureEach {
             details.useVersion '1.5.36'
             details.because 'Temporary Snyk override (SNYK-JAVA-CHQOSLOGBACK-17675439) until upgraded in Spring Boot'
         }
+        // Not jackson-annotations: it only publishes '2.21' for this minor line, no patch versions.
+        if (details.requested.group == 'com.fasterxml.jackson.core'
+                && details.requested.name in ['jackson-databind', 'jackson-core']) {
+            details.useVersion '2.21.5'
+            details.because 'Temporary Snyk override (SNYK-JAVA-COMFASTERXMLJACKSONCORE-17457695) until upgraded in Spring Boot'
+        }
     }
 }
 
