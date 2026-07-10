@@ -1,6 +1,13 @@
 # Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
 version: v1.25.1
-ignore: {}
+ignore:
+  'snyk:lic:maven:fi.solita.clamav:clamav-client:LGPL-2.1':
+    - '*':
+        reason: >-
+          LGPL-2.1 obligations attach on distribution. clamav-client is used
+          unmodified as a linked library in a deployed service that is not
+          distributed. 1.0.1 is the latest release; no upgrade path exists.
+        expires: 2027-01-10T00:00:00.000Z
 patch: {}
 exclude:
   global:
