@@ -118,7 +118,7 @@
         <govuk:button type="submit"
                       th:text="${proceedingFlow.editingScopeLimitations} ? #{site.next} : #{site.confirm}"/>
         <a th:href="@{/{caseContext}/proceedings/{action}/further-details(action=${proceedingFlow.action}, caseContext=${caseContext.pathValue})}"
-           class="govuk-back-link" th:text="#{site.back}"></a>
+           class="govuk-link" th:text="#{site.back}"></a>
       </div>
     </form>
   </div>
