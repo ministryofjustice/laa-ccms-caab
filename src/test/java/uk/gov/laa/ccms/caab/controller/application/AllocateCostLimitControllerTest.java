@@ -26,6 +26,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
@@ -368,6 +369,176 @@ public class AllocateCostLimitControllerTest {
       assertThat(ebsCase.getCosts().getCostEntries().get(1).getResourceName())
           .isEqualTo("NEW COUNSEL");
     }
+
+    @Test
+    @DisplayName("Should ask for confirmation before removing a counsel, keeping typed amounts")
+    void shouldRedirectToRemoveConfirmation() {
+      ApplicationDetail ebsCase = caseWithOriginalCounsel();
+      AllocateCostsFormData formData =
+          formDataWith(originalCounsel(), newlyAddedCounsel("NEW COUNSEL"));
+
+      MockHttpSession session = new MockHttpSession();
+
+      assertThat(
+              mockMvc.perform(
+                  post("/allocate-cost-limit")
+                      .param("removeCounsel", "1")
+                      .sessionAttr(CASE, ebsCase)
+                      .session(session)
+                      .flashAttr("costDetails", formData)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/allocate-cost-limit/counsel/1/remove");
+
+      // Nothing is removed yet, and the amounts typed so far are saved so they survive the trip
+      // through the confirmation screen.
+      AllocateCostsFormData stored =
+          (AllocateCostsFormData) session.getAttribute(COST_ALLOCATION_FORM_DATA);
+      assertThat(stored.getCostEntries()).hasSize(2);
+    }
+
+    private ApplicationDetail caseWithOriginalCounsel() {
+      ApplicationDetail ebsCase = new ApplicationDetail();
+      ebsCase.setId(1);
+      ebsCase.costs(
+          new CostStructureDetail()
+              .addCostEntriesItem(originalCounsel())
+              .grantedCostLimitation(new BigDecimal("25000"))
+              .requestedCostLimitation(new BigDecimal("25000")));
+      ebsCase.providerDetails(
+          new ApplicationProviderDetails()
+              .provider(new IntDisplayValue().displayValue("provider")));
+
+      ApplicationDetail appCopy = new ApplicationDetail();
+      appCopy.costs(ebsCase.getCosts());
+      when(copyApplicationMapper.copyApplication(
+              any(ApplicationDetail.class), any(ApplicationDetail.class)))
+          .thenReturn(appCopy);
+
+      return ebsCase;
+    }
+  }
+
+  @Nested
+  @DisplayName("GET/POST: /allocate-cost-limit/counsel/{index}/remove")
+  class RemoveCounselTests {
+
+    @Test
+    @DisplayName("Should show the confirmation screen for a counsel added during this amendment")
+    void shouldShowConfirmationForNewlyAddedCounsel() {
+      CostEntryDetail newCounsel = newlyAddedCounsel("NEW COUNSEL");
+      AllocateCostsFormData formData = formDataWith(originalCounsel(), newCounsel);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/allocate-cost-limit/counsel/1/remove")
+                      .sessionAttr(COST_ALLOCATION_FORM_DATA, formData)))
+          .hasStatusOk()
+          .hasViewName("application/counsel-remove")
+          .model()
+          .containsEntry("counsel", newCounsel)
+          .containsEntry("counselIndex", 1);
+    }
+
+    @Test
+    @DisplayName("Should not offer to remove a counsel already held on the case")
+    void shouldNotConfirmRemovalOfExistingCounsel() {
+      AllocateCostsFormData formData =
+          formDataWith(originalCounsel(), newlyAddedCounsel("NEW COUNSEL"));
+
+      // Index 0 came from EBS, so the confirmation screen is refused outright.
+      assertThat(
+              mockMvc.perform(
+                  get("/allocate-cost-limit/counsel/0/remove")
+                      .sessionAttr(COST_ALLOCATION_FORM_DATA, formData)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/allocate-cost-limit");
+    }
+
+    @Test
+    @DisplayName("Should remove the counsel once confirmed")
+    void shouldRemoveCounselOnConfirm() {
+      AllocateCostsFormData formData =
+          formDataWith(originalCounsel(), newlyAddedCounsel("NEW COUNSEL"));
+      MockHttpSession session = new MockHttpSession();
+
+      assertThat(
+              mockMvc.perform(
+                  post("/allocate-cost-limit/counsel/1/remove")
+                      .session(session)
+                      .sessionAttr(COST_ALLOCATION_FORM_DATA, formData)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/allocate-cost-limit");
+
+      AllocateCostsFormData stored =
+          (AllocateCostsFormData) session.getAttribute(COST_ALLOCATION_FORM_DATA);
+      assertThat(stored.getCostEntries()).hasSize(1);
+      assertThat(stored.getCostEntries().getFirst().getResourceName())
+          .isEqualTo("ORIGINAL COUNSEL");
+    }
+
+    @Test
+    @DisplayName("Should refuse to remove a counsel already held on the case")
+    void shouldRefuseToRemoveExistingCounselOnConfirm() {
+      AllocateCostsFormData formData =
+          formDataWith(originalCounsel(), newlyAddedCounsel("NEW COUNSEL"));
+      MockHttpSession session = new MockHttpSession();
+
+      // A hand-crafted post naming an EBS counsel is refused, not just hidden in the view.
+      assertThat(
+              mockMvc.perform(
+                  post("/allocate-cost-limit/counsel/0/remove")
+                      .session(session)
+                      .sessionAttr(COST_ALLOCATION_FORM_DATA, formData)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/allocate-cost-limit");
+
+      assertThat(formData.getCostEntries()).hasSize(2);
+      assertThat(formData.getCostEntries().getFirst().getResourceName())
+          .isEqualTo("ORIGINAL COUNSEL");
+    }
+
+    @Test
+    @DisplayName("Should ignore an out of range counsel index")
+    void shouldIgnoreOutOfRangeIndex() {
+      AllocateCostsFormData formData = formDataWith(originalCounsel());
+
+      assertThat(
+              mockMvc.perform(
+                  post("/allocate-cost-limit/counsel/9/remove")
+                      .sessionAttr(COST_ALLOCATION_FORM_DATA, formData)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/allocate-cost-limit");
+
+      assertThat(formData.getCostEntries()).hasSize(1);
+    }
+  }
+
+  private static CostEntryDetail originalCounsel() {
+    return new CostEntryDetail()
+        .requestedCosts(new BigDecimal("100"))
+        .resourceName("ORIGINAL COUNSEL")
+        .costCategory("COUNSEL")
+        .lscResourceId("11")
+        .ebsId("ebs123")
+        .amountBilled(new BigDecimal("100"))
+        .newEntry(false);
+  }
+
+  private static CostEntryDetail newlyAddedCounsel(final String name) {
+    return new CostEntryDetail()
+        .requestedCosts(new BigDecimal("500"))
+        .resourceName(name)
+        .costCategory("COUNSEL")
+        .lscResourceId("22")
+        .amountBilled(BigDecimal.ZERO)
+        .newEntry(true);
+  }
+
+  private static AllocateCostsFormData formDataWith(final CostEntryDetail... entries) {
+    AllocateCostsFormData formData = new AllocateCostsFormData();
+    formData.setGrantedCostLimitation(new BigDecimal("25000"));
+    formData.setCostEntries(new ArrayList<>(List.of(entries)));
+    return formData;
   }
 
   @Nested
@@ -440,6 +611,12 @@ public class AllocateCostLimitControllerTest {
       ebsCase.setProviderDetails(
           new ApplicationProviderDetails()
               .provider(new IntDisplayValue().displayValue("provider")));
+
+      AllocateCostsFormData formData = new AllocateCostsFormData();
+      formData.setRequestedCostLimitation(new BigDecimal("25000"));
+      formData.setGrantedCostLimitation(new BigDecimal("25000"));
+      formData.setCostEntries(costs.getCostEntries());
+
       when(amendmentService.submitQuickAmendmentCostAllocation(any(), anyString(), any()))
           .thenReturn("transactionId");
 
@@ -449,8 +626,12 @@ public class AllocateCostLimitControllerTest {
                       .sessionAttr(CASE, ebsCase)
                       .sessionAttr(USER_DETAILS, user)
                       .sessionAttr(ACTIVE_CASE, activeCase)
-                      .flashAttr("costDetails", new AllocateCostsFormData())))
+                      .sessionAttr(COST_ALLOCATION_FORM_DATA, formData)))
           .hasRedirectedUrl("/amendments/submit-case");
+
+      // The costs held in session are submitted as-is, so the requested cost limitation and each
+      // entry's EBS id survive the review step.
+      verify(amendmentService).submitQuickAmendmentCostAllocation(formData, "CASE123", user);
     }
   }
 }

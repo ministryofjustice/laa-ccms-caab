@@ -336,54 +336,63 @@ public class AmendmentService {
     amendment.setMeritsAssessmentAmended(Boolean.FALSE);
 
     CostStructureDetail costs = amendment.getCosts();
-    if (amendment.getCosts() == null) {
-      amendment.setCosts(new CostStructureDetail());
+    if (costs == null) {
+      costs = new CostStructureDetail();
       amendment.setCosts(costs);
     }
 
-    costs.setRequestedCostLimitation(allocateCostsFormData.getRequestedCostLimitation());
-
-    if (allocateCostsFormData.getCostEntries() != null) {
-      List<CostEntryDetail> cleaned =
-          allocateCostsFormData.getCostEntries().stream()
-              .map(
-                  entry -> {
-                    CostEntryDetail e = entry != null ? entry : new CostEntryDetail();
-
-                    if (e.getRequestedCosts() == null) {
-                      e.setRequestedCosts(BigDecimal.ZERO);
-                    } else {
-                      e.setRequestedCosts(e.getRequestedCosts().setScale(2, RoundingMode.HALF_UP));
-                    }
-
-                    if (e.getAmountBilled() == null) {
-                      e.setAmountBilled(BigDecimal.ZERO);
-                    }
-
-                    if (e.getCostCategory() != null) {
-                      e.setCostCategory(e.getCostCategory().toUpperCase());
-                    } else {
-                      e.setCostCategory("COUNSEL");
-                    }
-
-                    if (e.getLscResourceId() == null) {
-                      e.setLscResourceId("0");
-                    }
-
-                    if (e.getResourceName() == null || e.getResourceName().trim().isEmpty()) {
-                      e.setResourceName("NEW COUNSEL");
-                    }
-                    return e;
-                  })
-              .collect(Collectors.toList());
-      costs.setCostEntries(cleaned);
-    } else {
-      costs.setCostEntries(Collections.emptyList());
+    // Allocating the cost limit redistributes the granted limit between the provider and counsel;
+    // it does not change the requested limit. Keep the case's existing value unless the form
+    // carries one, otherwise the case would be submitted with its default limit instead.
+    if (allocateCostsFormData.getRequestedCostLimitation() != null) {
+      costs.setRequestedCostLimitation(allocateCostsFormData.getRequestedCostLimitation());
     }
+
+    costs.setCostEntries(toSubmittableCostEntries(allocateCostsFormData.getCostEntries()));
 
     amendment.getCostLimit().setChanged(true);
 
     return updateCaseWithQuickAmendment(userDetail, amendment);
+  }
+
+  /**
+   * Normalises the cost entries bound from the review screen so they can be submitted to EBS.
+   *
+   * <p>A newly added counsel has no EBS id. Its cost limit id must be absent rather than blank, as
+   * EBS decides whether to insert or update a cost limitation on the presence of that id.
+   *
+   * @param costEntries the cost entries bound from the review form
+   * @return the cost entries to submit, empty when none were supplied
+   */
+  private List<CostEntryDetail> toSubmittableCostEntries(final List<CostEntryDetail> costEntries) {
+    if (costEntries == null) {
+      return Collections.emptyList();
+    }
+
+    return costEntries.stream()
+        .filter(Objects::nonNull)
+        .map(
+            entry -> {
+              entry.setRequestedCosts(
+                  entry.getRequestedCosts() == null
+                      ? BigDecimal.ZERO
+                      : entry.getRequestedCosts().setScale(2, RoundingMode.HALF_UP));
+
+              if (entry.getAmountBilled() == null) {
+                entry.setAmountBilled(BigDecimal.ZERO);
+              }
+
+              if (entry.getCostCategory() != null) {
+                entry.setCostCategory(entry.getCostCategory().toUpperCase());
+              }
+
+              if (entry.getEbsId() != null && entry.getEbsId().isBlank()) {
+                entry.setEbsId(null);
+              }
+
+              return entry;
+            })
+        .collect(Collectors.toList());
   }
 
   /**

@@ -21,7 +21,9 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
@@ -90,6 +92,7 @@ public class AllocateCostLimitController {
    * @param allocateCostsFormData the submitted form data for costs.
    * @param ebsCase The case cost details from session.
    * @param action the button action (calculate or next).
+   * @param removeCounsel the index of a counsel to remove, when the remove action was used.
    * @param model the Model object used to pass attributes to the view.
    * @return The cost limitation allocation view or redirect to review.
    */
@@ -97,8 +100,8 @@ public class AllocateCostLimitController {
   public String calculateCost(
       @ModelAttribute("costDetails") AllocateCostsFormData allocateCostsFormData,
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
-      @org.springframework.web.bind.annotation.RequestParam(value = "action", required = false)
-          String action,
+      @RequestParam(value = "action", required = false) final String action,
+      @RequestParam(value = "removeCounsel", required = false) final Integer removeCounsel,
       final Model model,
       final BindingResult bindingResult,
       final HttpSession session) {
@@ -129,9 +132,8 @@ public class AllocateCostLimitController {
               .orElse(null);
 
       if (existingCost != null) {
-        if (!existingCost.getRequestedCosts().equals(formCost.getRequestedCosts())) {
-          existingCost.setNewEntry(true);
-        }
+        // Re-allocating an amount does not make the entry new: newEntry marks counsel added during
+        // this amendment, which are the only ones that may be removed again.
         existingCost.setRequestedCosts(formCost.getRequestedCosts());
         updatedCosts.add(existingCost);
       } else {
@@ -152,6 +154,13 @@ public class AllocateCostLimitController {
     }
 
     allocateCostsFormData.setCostEntries(updatedCosts);
+
+    if (removeCounsel != null) {
+      allocateCostsFormData.setTotalRemaining(getTotalRemaining(allocateCostsFormData));
+      session.setAttribute(COST_ALLOCATION_FORM_DATA, allocateCostsFormData);
+      return "redirect:/allocate-cost-limit/counsel/%d/remove".formatted(removeCounsel);
+    }
+
     allocateCostsFormData.setTotalRemaining(getTotalRemaining(allocateCostsFormData));
     session.setAttribute(COST_ALLOCATION_FORM_DATA, allocateCostsFormData);
 
@@ -198,38 +207,112 @@ public class AllocateCostLimitController {
   /**
    * Handles submission of the review case costs form.
    *
-   * @param allocateCostsFormData the submitted form data for costs.
-   * @param ebsCase The case cost details from session.
-   * @return Redirect to the next step in the workflow.
+   * <p>The review screen only confirms what the user already allocated, so the costs held in
+   * session are submitted as-is. Re-binding them from the form would drop the values it does not
+   * render, such as the requested cost limitation and a cost entry's EBS id.
+   *
+   * @param activeCase The case currently being amended.
+   * @param userDetail The details of the currently authenticated user.
+   * @param allocateCostsFormData The cost allocations captured earlier in the journey.
+   * @return Redirect to the submission in progress screen.
    */
   @PostMapping("/allocate-cost-limit/review")
   public String submitCaseCosts(
-      @ModelAttribute("costDetails") AllocateCostsFormData allocateCostsFormData,
-      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
+      @SessionAttribute(COST_ALLOCATION_FORM_DATA)
+          final AllocateCostsFormData allocateCostsFormData,
       final HttpSession session) {
 
-    // TODO: Add API call to finalize the cost allocations
-
-    AllocateCostsFormData formDataToUse = allocateCostsFormData;
-
-    if (formDataToUse == null
-        || formDataToUse.getCostEntries() == null
-        || formDataToUse.getCostEntries().isEmpty()) {
-      log.warn("Form binidng failed - failling back to session");
-      formDataToUse = (AllocateCostsFormData) session.getAttribute(COST_ALLOCATION_FORM_DATA);
-    }
-
-    String transactionId =
+    final String transactionId =
         amendmentService.submitQuickAmendmentCostAllocation(
-            formDataToUse, activeCase.getCaseReferenceNumber(), userDetail);
+            allocateCostsFormData, activeCase.getCaseReferenceNumber(), userDetail);
 
     session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
     session.removeAttribute(SUBMISSION_RESULT);
     session.removeAttribute(COST_ALLOCATION_FORM_DATA);
 
     return "redirect:/amendments/submit-case";
+  }
+
+  /**
+   * Asks the user to confirm removal of a counsel added during this amendment.
+   *
+   * @param index the position of the counsel in the cost entries.
+   * @param allocateCostsFormData The cost allocations captured so far.
+   * @param model the Model object used to pass attributes to the view.
+   * @return The remove counsel confirmation view.
+   */
+  @GetMapping("/allocate-cost-limit/counsel/{index}/remove")
+  public String removeCounselConfirm(
+      @PathVariable final int index,
+      @SessionAttribute(COST_ALLOCATION_FORM_DATA)
+          final AllocateCostsFormData allocateCostsFormData,
+      final Model model) {
+
+    final CostEntryDetail counsel = getRemovableCounsel(index, allocateCostsFormData);
+
+    if (counsel == null) {
+      return "redirect:/allocate-cost-limit";
+    }
+
+    model.addAttribute("counsel", counsel);
+    model.addAttribute("counselIndex", index);
+    return "application/counsel-remove";
+  }
+
+  /**
+   * Removes a counsel added during this amendment.
+   *
+   * @param index the position of the counsel in the cost entries.
+   * @param allocateCostsFormData The cost allocations to remove the counsel from.
+   * @return Redirect back to the cost limitation allocation screen.
+   */
+  @PostMapping("/allocate-cost-limit/counsel/{index}/remove")
+  public String removeCounsel(
+      @PathVariable final int index,
+      @SessionAttribute(COST_ALLOCATION_FORM_DATA)
+          final AllocateCostsFormData allocateCostsFormData,
+      final HttpSession session) {
+
+    if (getRemovableCounsel(index, allocateCostsFormData) != null) {
+      allocateCostsFormData.getCostEntries().remove(index);
+      allocateCostsFormData.setTotalRemaining(getTotalRemaining(allocateCostsFormData));
+      session.setAttribute(COST_ALLOCATION_FORM_DATA, allocateCostsFormData);
+    }
+
+    return "redirect:/allocate-cost-limit";
+  }
+
+  /**
+   * Returns the counsel at the given position when it may be removed.
+   *
+   * <p>Only counsel added during this amendment can be removed; those already held against the case
+   * in EBS cannot. The rule is enforced here rather than relying on the remove link being hidden
+   * for them.
+   *
+   * @param index the position of the counsel in the cost entries.
+   * @param allocateCostsFormData the cost allocations to look in.
+   * @return the counsel to remove, or null when it cannot be removed.
+   */
+  private CostEntryDetail getRemovableCounsel(
+      final int index, final AllocateCostsFormData allocateCostsFormData) {
+
+    final List<CostEntryDetail> costEntries = allocateCostsFormData.getCostEntries();
+
+    if (index < 0 || index >= costEntries.size()) {
+      log.warn("Ignoring request to remove counsel at out of range index {}", index);
+      return null;
+    }
+
+    final CostEntryDetail costEntry = costEntries.get(index);
+
+    if (!Boolean.TRUE.equals(costEntry.getNewEntry())) {
+      log.warn("Ignoring request to remove counsel {} which is already held on the case", index);
+      return null;
+    }
+
+    return costEntry;
   }
 
   /** Calculates the total requests costs by the granted cost limitation. */

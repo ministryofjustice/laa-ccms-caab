@@ -16,7 +16,6 @@
         <p class="govuk-body-l" th:text="#{caseCosts.review.leadParagraph}"></p>
 
         <form th:action="@{/allocate-cost-limit/review}" th:object="${costDetails}" method="post">
-            <input type="hidden" name="_costEntries" value="on" />
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-full">
                     <table class="govuk-table">
@@ -54,14 +53,6 @@
                             <td class="govuk-table__cell" th:text="'£ ' + ${costEntryDetail.amountBilled}"></td>
                             <td class="govuk-table__cell govuk-table__header"
                                 th:text="'£ ' + ${#numbers.formatDecimal(costEntryDetail.requestedCosts, 1, 2)}">
-
-                                <input type="hidden" th:name="'costEntries[' + ${stat.index} + '].resourceName'" th:value="${costEntryDetail.resourceName}" />
-                                <input type="hidden" th:name="'costEntries[' + ${stat.index} + '].lscResourceId'" th:value="${costEntryDetail.lscResourceId}" />
-                                <input type="hidden" th:name="'costEntries[' + ${stat.index} + '].ebsId'" th:value="${costEntryDetail.ebsId}" />
-                                <input type="hidden" th:name="'costEntries[' + ${stat.index} + '].costCategory'" th:value="${costEntryDetail.costCategory}" />
-                                <input type="hidden" th:name="'costEntries[' + ${stat.index} + '].amountBilled'" th:value="${costEntryDetail.amountBilled}" />
-                                <input type="hidden" th:name="'costEntries[' + ${stat.index} + '].requestedCosts'" th:value="${costEntryDetail.requestedCosts}" />
-                                <input type="hidden" th:name="'costEntries[' + ${stat.index} + '].newEntry'" th:value="${costEntryDetail.newEntry}" />
                             </td>
                         </tr>
                         </tbody>

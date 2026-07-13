@@ -81,7 +81,15 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="govuk-table__cell"></td>
+                            <td class="govuk-table__cell">
+                                <!-- Counsel already held on the case in EBS cannot be removed. -->
+                                <button th:if="${costEntryDetail.newEntry}"
+                                        type="submit" name="removeCounsel" formnovalidate
+                                        th:value="${idx.index}"
+                                        th:id="'removeCounsel' + ${idx.index}"
+                                        class="govuk-body govuk-!-margin-bottom-0 ccms-button-as-link"
+                                        th:text="#{site.remove}"></button>
+                            </td>
                         </tr>
                         </tbody>
                     </table>

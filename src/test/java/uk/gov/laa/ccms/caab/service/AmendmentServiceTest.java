@@ -48,6 +48,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.PriorAuthoritySectionDisplay;
@@ -708,6 +709,91 @@ class AmendmentServiceTest {
 
       CaseDetail sent = caseDetailCaptor.getValue();
       assertThat(sent).isNotNull();
+    }
+
+    @Test
+    @DisplayName(
+        "Should keep the case's requested cost limitation when the form does not carry one")
+    void shouldKeepCaseRequestedCostLimitationWhenFormHasNone() {
+      // Given the review screen does not render the requested cost limitation, so it binds as null.
+      AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
+      allocateCostsFormData.setRequestedCostLimitation(null);
+      allocateCostsFormData.setCostEntries(
+          new ArrayList<>(List.of(new CostEntryDetail().requestedCosts(new BigDecimal("5000")))));
+
+      // When
+      CostStructureDetail submittedCosts = submitAndCaptureCosts(allocateCostsFormData);
+
+      // Then the case's own requested limit survives, rather than falling back to the default of
+      // 2000.00, which would submit the wrong requested amount to EBS.
+      assertThat(submittedCosts.getRequestedCostLimitation())
+          .isEqualByComparingTo(new BigDecimal("1500.00"));
+    }
+
+    @Test
+    @DisplayName("Should omit the cost limit id for a newly added counsel")
+    void shouldOmitCostLimitIdForNewCounsel() {
+      // Given a newly added counsel, whose EBS id binds from the form as a blank string.
+      AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
+      allocateCostsFormData.setCostEntries(
+          new ArrayList<>(
+              List.of(
+                  new CostEntryDetail()
+                      .ebsId("")
+                      .resourceName("NEW COUNSEL LTD")
+                      .lscResourceId("11")
+                      .costCategory("COUNSEL")
+                      .requestedCosts(new BigDecimal("2500")))));
+
+      // When
+      CostStructureDetail submittedCosts = submitAndCaptureCosts(allocateCostsFormData);
+
+      // Then the id is absent, not blank: EBS inserts a cost limitation only when it has no id.
+      assertThat(submittedCosts.getCostEntries().getFirst().getEbsId()).isNull();
+      assertThat(submittedCosts.getCostEntries().getFirst().getLscResourceId()).isEqualTo("11");
+    }
+
+    @Test
+    @DisplayName("Should not fabricate a resource id or name for an incomplete cost entry")
+    void shouldNotFabricateCostEntryIdentifiers() {
+      // Given a cost entry missing its identifiers.
+      AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
+      allocateCostsFormData.setCostEntries(
+          new ArrayList<>(List.of(new CostEntryDetail().requestedCosts(new BigDecimal("100")))));
+
+      // When
+      CostStructureDetail submittedCosts = submitAndCaptureCosts(allocateCostsFormData);
+
+      // Then placeholders are not invented, which would silently submit a bogus billing provider.
+      CostEntryDetail submitted = submittedCosts.getCostEntries().getFirst();
+      assertThat(submitted.getLscResourceId()).isNull();
+      assertThat(submitted.getResourceName()).isNull();
+      assertThat(submitted.getCostCategory()).isNull();
+      assertThat(submitted.getAmountBilled()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    /** Submits the given costs and returns the cost structure that was mapped for EBS. */
+    private CostStructureDetail submitAndCaptureCosts(final AllocateCostsFormData formData) {
+      String caseRef = "12345";
+      UserDetail userDetails =
+          new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
+
+      ApplicationDetail caseDetail = buildFullApplicationDetail();
+      caseDetail.setCaseReferenceNumber(caseRef);
+
+      when(applicationService.getCase(any(), anyLong(), any())).thenReturn(caseDetail);
+      when(caabApiClient.createApplication(any(), any())).thenReturn(Mono.just("123"));
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), any()))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("12345")));
+
+      amendmentService.submitQuickAmendmentCostAllocation(formData, caseRef, userDetails);
+
+      ArgumentCaptor<CaseMappingContext> contextCaptor =
+          ArgumentCaptor.forClass(CaseMappingContext.class);
+      verify(soaApplicationMapper).toCaseDetail(contextCaptor.capture());
+
+      return contextCaptor.getValue().getTdsApplication().getCosts();
     }
   }
 }

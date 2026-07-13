@@ -1917,5 +1917,57 @@ class SoaApplicationMapperTest {
       assertEquals(new BigDecimal("1000.00"), costLimitation1.getPaidToDate());
       assertEquals("ebs123", costLimitation1.getCostLimitId());
     }
+
+    @Test
+    @DisplayName("Should submit a newly added counsel with no cost limit id")
+    void shouldMapNewCounselWithoutCostLimitId() {
+      // Given a case whose existing cost limitation is joined by a newly added counsel.
+      ApplicationDetail applicationDetail = new ApplicationDetail();
+      applicationDetail.setCategoryOfLaw(
+          new StringDisplayValue().id("HOU").displayValue("Housing"));
+
+      CostStructureDetail costStructureDetail = new CostStructureDetail();
+      costStructureDetail.setRequestedCostLimitation(new BigDecimal("15000.00"));
+      costStructureDetail.setDefaultCostLimitation(new BigDecimal("2000.00"));
+      costStructureDetail.setCostEntries(
+          new ArrayList<>(
+              List.of(
+                  new CostEntryDetail()
+                      .lscResourceId("123")
+                      .resourceName("Existing Counsel")
+                      .requestedCosts(new BigDecimal("1500.00"))
+                      .amountBilled(new BigDecimal("1000.00"))
+                      .costCategory("COUNSEL")
+                      .ebsId("ebs123"),
+                  new CostEntryDetail()
+                      .lscResourceId("11")
+                      .resourceName("D. Davidson")
+                      .requestedCosts(new BigDecimal("2500.00"))
+                      .amountBilled(BigDecimal.ZERO)
+                      .costCategory("COUNSEL")
+                      .ebsId(null))));
+      applicationDetail.setCosts(costStructureDetail);
+
+      // When
+      CategoryOfLaw result = applicationMapper.toSoaCategoryOfLaw(applicationDetail);
+
+      // Then the requested amount is the case's own limit, not its default.
+      assertEquals(new BigDecimal("15000.00"), result.getRequestedAmount());
+      assertEquals(2, result.getCostLimitations().size());
+
+      // The existing cost limitation carries its id, so EBS updates it.
+      CostLimitation existing = result.getCostLimitations().get(0);
+      assertEquals("ebs123", existing.getCostLimitId());
+      assertEquals("123", existing.getBillingProviderId());
+
+      // The new counsel has no id, so EBS inserts it, and is billed against their COUNSEL_ID.
+      CostLimitation newCounsel = result.getCostLimitations().get(1);
+      assertNull(newCounsel.getCostLimitId());
+      assertEquals("11", newCounsel.getBillingProviderId());
+      assertEquals("D. Davidson", newCounsel.getBillingProviderName());
+      assertEquals("COUNSEL", newCounsel.getCostCategory());
+      assertEquals(new BigDecimal("2500.00"), newCounsel.getAmount());
+      assertEquals(BigDecimal.ZERO, newCounsel.getPaidToDate());
+    }
   }
 }
