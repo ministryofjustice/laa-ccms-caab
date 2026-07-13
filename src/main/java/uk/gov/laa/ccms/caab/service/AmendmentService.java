@@ -373,14 +373,8 @@ public class AmendmentService {
         .filter(Objects::nonNull)
         .map(
             entry -> {
-              entry.setRequestedCosts(
-                  entry.getRequestedCosts() == null
-                      ? BigDecimal.ZERO
-                      : entry.getRequestedCosts().setScale(2, RoundingMode.HALF_UP));
-
-              if (entry.getAmountBilled() == null) {
-                entry.setAmountBilled(BigDecimal.ZERO);
-              }
+              entry.setRequestedCosts(toSubmittableAmount(entry.getRequestedCosts()));
+              entry.setAmountBilled(toSubmittableAmount(entry.getAmountBilled()));
 
               if (entry.getCostCategory() != null) {
                 entry.setCostCategory(entry.getCostCategory().toUpperCase());
@@ -393,6 +387,18 @@ public class AmendmentService {
               return entry;
             })
         .collect(Collectors.toList());
+  }
+
+  /**
+   * Normalises a monetary amount for submission to EBS, defaulting a missing value to zero.
+   *
+   * @param amount the amount bound from the review form, possibly null
+   * @return the amount scaled to 2 decimal places
+   */
+  private BigDecimal toSubmittableAmount(final BigDecimal amount) {
+    return amount == null
+        ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
+        : amount.setScale(2, RoundingMode.HALF_UP);
   }
 
   /**

@@ -772,6 +772,32 @@ class AmendmentServiceTest {
       assertThat(submitted.getAmountBilled()).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
+    @Test
+    @DisplayName("Should normalise monetary amounts to 2 decimal places, including defaulted zeros")
+    void shouldNormaliseMonetaryAmountScale() {
+      // Given entries with unscaled, over-scaled and missing amounts.
+      AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
+      allocateCostsFormData.setCostEntries(
+          new ArrayList<>(
+              List.of(
+                  new CostEntryDetail()
+                      .requestedCosts(new BigDecimal("100"))
+                      .amountBilled(new BigDecimal("50.125")),
+                  new CostEntryDetail())));
+
+      // When
+      CostStructureDetail submittedCosts = submitAndCaptureCosts(allocateCostsFormData);
+
+      // Then EBS receives 2dp values rather than a mix of 0 and 0.00.
+      CostEntryDetail scaled = submittedCosts.getCostEntries().getFirst();
+      assertThat(scaled.getRequestedCosts()).isEqualTo(new BigDecimal("100.00"));
+      assertThat(scaled.getAmountBilled()).isEqualTo(new BigDecimal("50.13"));
+
+      CostEntryDetail defaulted = submittedCosts.getCostEntries().getLast();
+      assertThat(defaulted.getRequestedCosts()).isEqualTo(new BigDecimal("0.00"));
+      assertThat(defaulted.getAmountBilled()).isEqualTo(new BigDecimal("0.00"));
+    }
+
     /** Submits the given costs and returns the cost structure that was mapped for EBS. */
     private CostStructureDetail submitAndCaptureCosts(final AllocateCostsFormData formData) {
       String caseRef = "12345";

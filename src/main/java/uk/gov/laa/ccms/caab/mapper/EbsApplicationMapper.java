@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.BeanMapping;
@@ -1208,7 +1207,7 @@ public interface EbsApplicationMapper {
     if (costEntries == null || costEntries.isEmpty()) {
       return Collections.emptyList();
     }
-    return costEntries.stream().map(this::toEbsCostLimitation).collect(Collectors.toList());
+    return costEntries.stream().map(this::toEbsCostLimitation).toList();
   }
 
   /**

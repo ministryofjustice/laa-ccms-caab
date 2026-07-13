@@ -87,6 +87,7 @@
                                         type="submit" name="removeCounsel" formnovalidate
                                         th:value="${idx.index}"
                                         th:id="'removeCounsel' + ${idx.index}"
+                                        th:attr="aria-label=#{caseCosts.counsel.remove.ariaLabel(${costEntryDetail.resourceName})}"
                                         class="govuk-body govuk-!-margin-bottom-0 ccms-button-as-link"
                                         th:text="#{site.remove}"></button>
                             </td>
