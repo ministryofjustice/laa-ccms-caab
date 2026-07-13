@@ -27,7 +27,7 @@ jobs:
       integration_test_task: "integrationTest"
       publish_package: 'false'
     secrets:
-      gh_token: ${{ secrets.GITHUB_TOKEN }}
+      gh_token: ${{ secrets.MF_PAT_TOKEN }}
       aws_region: 'eu-west-2'
 
   get-branch-ref:
