@@ -48,7 +48,7 @@ jobs:
       publish_package: 'false'
       override_version: ${{ needs.define-feature-version.outputs.feature_version }}
     secrets:
-      gh_token: ${{ secrets.GITHUB_TOKEN }}
+      gh_token: ${{ secrets.MF_PAT_TOKEN }}
       aws_region: 'eu-west-2'
 
   ecr-publish-image:
@@ -63,7 +63,7 @@ jobs:
       java_distribution: 'corretto'
       image_version: ${{ format('{0}-{1}', vars.IMAGE_PREFIX, needs.build.outputs.published_artifact_version) }}
     secrets:
-      gh_token: ${{ secrets.GITHUB_TOKEN }}
+      gh_token: ${{ secrets.MF_PAT_TOKEN }}
       ecr_repository: ${{ vars.ECR_REPOSITORY }}
       ecr_region: ${{ vars.ECR_REGION }}
       ecr_role_to_assume: ${{ secrets.ECR_ROLE_TO_ASSUME }}

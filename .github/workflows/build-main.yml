@@ -26,7 +26,7 @@ jobs:
       create_tag: 'true'
       github_bot_username: 'laa-ccms-caab-service'
     secrets:
-      gh_token: ${{ secrets.GITHUB_TOKEN }}
+      gh_token: ${{ secrets.MF_PAT_TOKEN }}
       aws_region: 'eu-west-2'
       github_app_id: ${{ vars.LAA_CCMS_CAAB_SERVICE_APP_ID }}
       github_app_private_key: ${{ secrets.LAA_CCMS_CAAB_SERVICE_KEY }}

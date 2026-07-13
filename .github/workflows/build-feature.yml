@@ -54,7 +54,7 @@ jobs:
       image_version: ${{ format('{0}-{1}', vars.IMAGE_PREFIX, needs.get-branch-ref.outputs.version) }}
       publish: false
     secrets:
-      gh_token: ${{ secrets.GITHUB_TOKEN }}
+      gh_token: ${{ secrets.MF_PAT_TOKEN }}
       ecr_repository: ${{ vars.ECR_REPOSITORY }}
       ecr_region: ${{ vars.ECR_REGION }}
       ecr_role_to_assume: ${{ secrets.ECR_ROLE_TO_ASSUME }}
