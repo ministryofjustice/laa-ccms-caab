@@ -58,6 +58,7 @@ public interface ResultDisplayMapper {
   @Mapping(target = "status", source = "status.displayValue")
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "relationToCase", ignore = true)
+  @Mapping(target = "relationToCaseDisplayValue", ignore = true)
   LinkedCaseResultRowDisplay toLinkedCaseResultRowDisplay(BaseApplicationDetail baseApplication);
 
   @Mapping(target = "auditTrail", ignore = true)

@@ -31,7 +31,7 @@ jobs:
       checkstyle_report: 'false'
       jacoco_coverage_report: 'false'
     secrets:
-      gh_token: ${{ secrets.GITHUB_TOKEN }}
+      gh_token: ${{ secrets.MF_PAT_TOKEN }}
 
   ecr-publish-image:
     needs: [ assemble ]
@@ -45,7 +45,7 @@ jobs:
       java_distribution: 'corretto'
       image_version: ${{ format('{0}-{1}', vars.IMAGE_PREFIX, needs.assemble.outputs.published_artifact_version) }}
     secrets:
-      gh_token: ${{ secrets.GITHUB_TOKEN }}
+      gh_token: ${{ secrets.MF_PAT_TOKEN }}
       ecr_repository: ${{ vars.ECR_REPOSITORY }}
       ecr_region: ${{ vars.ECR_REGION }}
       ecr_role_to_assume: ${{ secrets.ECR_ROLE_TO_ASSUME }}

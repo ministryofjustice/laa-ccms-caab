@@ -8,6 +8,26 @@ ignore:
           unmodified as a linked library in a deployed service that is not
           distributed. 1.0.1 is the latest release; no upgrade path exists.
         expires: 2027-01-10T00:00:00.000Z
+  SNYK-UBUNTU2404-GLIBC-15804597:
+    - '*':
+        reason: "Temporary ignore pending upstream Ubuntu package update."
+        expires: "2027-08-13T00:00:00.000Z"
+  SNYK-UBUNTU2404-GLIBC-15804816:
+    - '*':
+        reason: "Temporary ignore pending upstream Ubuntu package update."
+        expires: "2027-08-13T00:00:00.000Z"
+  SNYK-UBUNTU2404-GLIBC-15884040:
+    - '*':
+        reason: "Temporary ignore pending upstream Ubuntu package update."
+        expires: "2027-08-13T00:00:00.000Z"
+  SNYK-UBUNTU2404-GLIBC-16338129:
+    - '*':
+        reason: "Temporary ignore pending upstream Ubuntu package update."
+        expires: "2027-08-13T00:00:00.000Z"
+  SNYK-UBUNTU2404-GLIBC-16338217:
+    - '*':
+        reason: "Temporary ignore pending upstream Ubuntu package update."
+        expires: "2027-08-13T00:00:00.000Z"
 patch: {}
 exclude:
   global:
