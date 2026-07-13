@@ -54,6 +54,14 @@ configurations.configureEach {
             details.useVersion '2.21.5'
             details.because 'Temporary Snyk override (SNYK-JAVA-COMFASTERXMLJACKSONCORE-17457695) until upgraded in Spring Boot'
         }
+        if (details.requested.group == 'org.apache.logging.log4j') {
+            details.useVersion '2.25.5'
+            details.because 'Temporary override'
+        }
+        if (details.requested.group == 'org.apache.httpcomponents.core5') {
+            details.useVersion '5.4.3'
+            details.because 'Temporary override'
+        }
     }
 }
 
@@ -74,18 +82,6 @@ dependencies {
 
         implementation('org.bouncycastle:bcpkix-jdk18on:1.84') {
             because('Fixes multiple CVEs Parent: org.opensaml:opensaml-saml-api')
-        }
-
-        implementation('com.fasterxml.jackson.core:jackson-databind:2.21.5') {
-            because('Fixes CVE')
-        }
-
-        implementation('org.apache.httpcomponents.core5:httpcore5-h2:5.4.3') {
-            because('Fixes CVE')
-        }
-
-        implementation('org.apache.logging.log4j:log4j-api:2.25.5') {
-            because('Fixes CVE')
         }
 
         implementation "org.opensaml:opensaml-saml-api:5.2.2"
