@@ -76,6 +76,18 @@ dependencies {
             because('Fixes multiple CVEs Parent: org.opensaml:opensaml-saml-api')
         }
 
+        implementation('com.fasterxml.jackson.core:jackson-databind:2.21.5') {
+            because('Fixes CVE')
+        }
+
+        implementation('org.apache.httpcomponents.core5:httpcore5-h2:5.4.3') {
+            because('Fixes CVE')
+        }
+
+        implementation('org.apache.logging.log4j:log4j-api:2.25.5') {
+            because('Fixes CVE')
+        }
+
         implementation "org.opensaml:opensaml-saml-api:5.2.2"
         implementation "org.opensaml:opensaml-saml-impl:5.2.2"
 
