@@ -6,6 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_QUICK_EDIT_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -32,6 +33,7 @@ import uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox;
 import uk.gov.laa.ccms.caab.bean.validators.declaration.DeclarationSubmissionValidator;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
+import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -118,11 +120,11 @@ public class MeansReassessmentController {
             null)
         .block();
 
-    // Deleting a means reassessment clears only its means assessment data, mirroring old PUI's
-    // DeleteAssessmentController (means-only OPA session removal). The underlying application draft
-    // is deliberately preserved so the user does not lose amendment work (e.g. added opponents)
-    // when
-    // the means reassessment journey has reused an in-progress general case amendment draft.
+    // Old PUI holds the application in memory until submit, so deleting a means reassessment leaves
+    // no draft behind. caab creates the draft up front, so remove it here - unless it also carries
+    // amend-case work (the two journeys share one draft per case), which must not be discarded.
+    applicationService.removeMeansReassessmentDraft(activeCase.getCaseReferenceNumber(), user);
+
     clearReassessmentSession(session);
 
     return "redirect:/case/overview";
@@ -172,6 +174,10 @@ public class MeansReassessmentController {
 
     session.removeAttribute(SUBMISSION_RESULT);
     session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
+    // The quick edit type is not persisted against the TDS draft, so the post-submission cleanup
+    // takes it from the session to know that only the means was submitted.
+    session.setAttribute(
+        SUBMISSION_QUICK_EDIT_TYPE, QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT);
 
     return "redirect:/%s/%s"
         .formatted(CaseContext.AMENDMENTS.getPathValue(), SUBMISSION_SUBMIT_CASE);

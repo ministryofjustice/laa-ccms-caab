@@ -633,18 +633,16 @@ public class ApplicationService {
    *
    * @param caseReferenceNumber the case whose submitted draft should be removed
    * @param user the user that submitted the amendment
+   * @param quickEditType the quick edit type that was submitted, or {@code null} for a full case
+   *     amendment. The type is not persisted against the TDS draft, so it must be supplied by the
+   *     journey that performed the submission.
    */
-  public void removeSubmittedAmendment(final String caseReferenceNumber, final UserDetail user) {
+  public void removeSubmittedAmendment(
+      final String caseReferenceNumber, final UserDetail user, final String quickEditType) {
 
-    final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
-    caseSearchCriteria.setCaseReference(caseReferenceNumber);
+    final BaseApplicationDetail tdsApplication = getTdsAmendment(caseReferenceNumber, user);
 
-    final BaseApplicationDetail tdsApplication =
-        Optional.ofNullable(getTdsApplications(caseSearchCriteria, user, 0, 1).getContent())
-            .flatMap(content -> content.stream().findFirst())
-            .orElse(null);
-
-    if (tdsApplication == null || !Boolean.TRUE.equals(tdsApplication.getAmendment())) {
+    if (tdsApplication == null) {
       return;
     }
 
@@ -654,7 +652,14 @@ public class ApplicationService {
     // the submitted means assessment and keep the draft so the amendment can still be continued. A
     // pure means reassessment (no other changes) still removes the whole draft, so no stale
     // "continue amendment" is left behind.
-    if (shouldPreserveAmendCaseAfterMeansSubmit(tdsApplication, caseReferenceNumber, user)) {
+    // A means reassessment submits ONLY the means assessment (EBS applies means via the
+    // "MeansReassessment" message type). If the same shared draft also carries amend-case changes
+    // that were NOT submitted - e.g. an opponent added via Amend Case - preserve them: remove only
+    // the submitted means assessment and keep the draft so the amendment can still be continued. A
+    // pure means reassessment (no other changes) still removes the whole draft, so no stale
+    // "continue amendment" is left behind.
+    if (QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT.equals(quickEditType)
+        && hasAmendCaseChanges(loadAmendment(tdsApplication), caseReferenceNumber, user)) {
       assessmentService
           .deleteAssessments(
               user,
@@ -677,39 +682,103 @@ public class ApplicationService {
   }
 
   /**
-   * Determines whether a submitted means-reassessment draft also carries amend-case changes beyond
-   * the means/merits reassessment itself (e.g. an added opponent), which were not part of the means
-   * submission and so must be preserved rather than discarded.
+   * Removes the TDS draft created by the standalone means reassessment journey once that
+   * reassessment has been deleted, so that no draft is left behind.
    *
-   * @param tdsApplication the submitted means-reassessment draft
-   * @param caseReferenceNumber the case reference
-   * @param user the submitting user
-   * @return {@code true} if the draft has amend-case changes to preserve
+   * <p>Old PUI never persists an application when the means reassessment is opened ({@code
+   * CcmsHelper.prepareAmendment} builds it in memory only, writing it at submit time), so a deleted
+   * reassessment leaves no trace. caab creates the draft up front, and the case overview treats any
+   * draft as an open amendment - without this cleanup the case would offer "continue amendment" for
+   * an amendment the user never started.
+   *
+   * <p>Only a draft created by the means reassessment journey is removed. The two journeys share a
+   * single draft per case, so a draft created by Amend Case - identified by its quick edit type,
+   * which is set when the draft is created - is left untouched, along with the case's open
+   * amendment. A means-reassessment draft that has since acquired amend-case changes (e.g. an added
+   * opponent) is likewise kept, so that work is not discarded.
+   *
+   * @param caseReferenceNumber the case whose means reassessment was deleted
+   * @param user the user deleting the reassessment
    */
-  private boolean shouldPreserveAmendCaseAfterMeansSubmit(
-      final BaseApplicationDetail tdsApplication,
-      final String caseReferenceNumber,
-      final UserDetail user) {
-    final ApplicationDetail amendment;
+  public void removeMeansReassessmentDraft(
+      final String caseReferenceNumber, final UserDetail user) {
+
+    final BaseApplicationDetail tdsApplication = getTdsAmendment(caseReferenceNumber, user);
+
+    if (tdsApplication == null) {
+      return;
+    }
+
+    final ApplicationDetail amendment = loadAmendment(tdsApplication);
+
+    if (amendment == null
+        || !QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT.equals(
+            amendment.getQuickEditType())
+        || hasAmendCaseChanges(amendment, caseReferenceNumber, user)) {
+      return;
+    }
+
+    caabApiClient
+        .deleteApplication(String.valueOf(tdsApplication.getId()), user.getLoginId())
+        .block();
+  }
+
+  /**
+   * Retrieves the amendment draft held in the TDS for a case, if any.
+   *
+   * @param caseReferenceNumber the case reference
+   * @param user the current user
+   * @return the draft amendment, or {@code null} if the case has no amendment draft
+   */
+  private BaseApplicationDetail getTdsAmendment(
+      final String caseReferenceNumber, final UserDetail user) {
+
+    final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    caseSearchCriteria.setCaseReference(caseReferenceNumber);
+
+    final BaseApplicationDetail tdsApplication =
+        Optional.ofNullable(getTdsApplications(caseSearchCriteria, user, 0, 1).getContent())
+            .flatMap(content -> content.stream().findFirst())
+            .orElse(null);
+
+    return tdsApplication != null && Boolean.TRUE.equals(tdsApplication.getAmendment())
+        ? tdsApplication
+        : null;
+  }
+
+  /**
+   * Loads the full draft amendment behind a TDS summary.
+   *
+   * @param tdsApplication the draft amendment summary
+   * @return the draft amendment, or {@code null} if it could not be loaded
+   */
+  private ApplicationDetail loadAmendment(final BaseApplicationDetail tdsApplication) {
     try {
       final Mono<ApplicationDetail> amendmentMono =
           getApplication(String.valueOf(tdsApplication.getId()));
-      amendment = amendmentMono == null ? null : amendmentMono.block();
+      return amendmentMono == null ? null : amendmentMono.block();
     } catch (final Exception e) {
-      // Unloadable draft: fall back to removing the whole draft.
-      log.warn(
-          "Could not load submitted means reassessment {}; falling back to full draft cleanup",
-          tdsApplication.getId(),
-          e);
+      log.warn("Could not load amendment draft {}", tdsApplication.getId(), e);
+      return null;
+    }
+  }
+
+  /**
+   * Determines whether a draft carries amend-case changes beyond a means/merits reassessment (e.g.
+   * an added opponent), which the means reassessment journey neither submits nor deletes, and so
+   * must preserve.
+   *
+   * @param amendment the draft amendment, possibly {@code null} if it could not be loaded
+   * @param caseReferenceNumber the case reference
+   * @param user the current user
+   * @return {@code true} if the draft has amend-case changes to preserve
+   */
+  private boolean hasAmendCaseChanges(
+      final ApplicationDetail amendment, final String caseReferenceNumber, final UserDetail user) {
+    if (amendment == null) {
       return false;
     }
-    // Unloadable draft or non-means reassessment: fall back to removing the whole draft.
-    if (amendment == null
-        || !QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT.equals(
-            amendment.getQuickEditType())) {
-      return false;
-    }
-    // Means already submitted; only structural amend-case changes keep the draft alive.
+    // The reassessment itself is not an amend-case change: only structural changes keep the draft.
     amendment.setMeansAssessmentAmended(false);
     amendment.setMeritsAssessmentAmended(false);
     ApplicationDetail baseCase;

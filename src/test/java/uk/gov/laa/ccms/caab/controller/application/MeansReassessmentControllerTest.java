@@ -20,6 +20,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_QUICK_EDIT_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildAssessmentDetail;
@@ -43,6 +44,7 @@ import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.SummarySubmissionFormData;
 import uk.gov.laa.ccms.caab.bean.validators.declaration.DeclarationSubmissionValidator;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
+import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.mapper.SubmissionSummaryDisplayMapper;
@@ -158,7 +160,7 @@ class MeansReassessmentControllerTest {
   }
 
   @Test
-  void deleteMeansReassessmentClearsAssessmentButPreservesDraft() throws Exception {
+  void deleteMeansReassessmentClearsAssessmentAndRemovesDraft() throws Exception {
     when(assessmentService.deleteAssessments(eq(user), anyList(), eq("CASE123"), eq(null)))
         .thenReturn(Mono.empty());
 
@@ -176,11 +178,12 @@ class MeansReassessmentControllerTest {
         .andExpect(request().sessionAttributeDoesNotExist(APPLICATION))
         .andExpect(request().sessionAttributeDoesNotExist(ACTIVE_CASE));
 
-    // Only the means assessment data is removed (mirrors old PUI DeleteAssessmentController).
+    // The means assessment data is removed (mirrors old PUI DeleteAssessmentController).
     verify(assessmentService).deleteAssessments(eq(user), anyList(), eq("CASE123"), eq(null));
-    // The application draft is preserved so a reused general amendment (e.g. added opponents) is
-    // not
-    // lost.
+    // The draft this journey created is removed too, so the case overview does not go on offering
+    // "continue amendment" (old PUI never persists a draft here). Any amend-case work it carries is
+    // preserved by the service, so this is not an abandonment.
+    verify(applicationService).removeMeansReassessmentDraft("CASE123", user);
     verify(applicationService, never()).abandonApplication(any(), any());
   }
 
@@ -207,7 +210,14 @@ class MeansReassessmentControllerTest {
                 .sessionAttr(USER_DETAILS, user))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/amendments/submit-case"))
-        .andExpect(request().sessionAttribute(SUBMISSION_TRANSACTION_ID, "TRANS123"));
+        .andExpect(request().sessionAttribute(SUBMISSION_TRANSACTION_ID, "TRANS123"))
+        // The post-submission cleanup can only learn that this was a means reassessment from the
+        // session: the quick edit type is never persisted against the TDS draft.
+        .andExpect(
+            request()
+                .sessionAttribute(
+                    SUBMISSION_QUICK_EDIT_TYPE,
+                    QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT));
   }
 
   @Test
