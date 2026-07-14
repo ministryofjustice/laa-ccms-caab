@@ -18,7 +18,10 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBST
 import static uk.gov.laa.ccms.caab.util.ApplicationDetailUtils.buildFullApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.ApplicationDetailUtils.expectedApplicationSectionDisplay;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -31,6 +34,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
+import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
@@ -43,6 +47,8 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
+import uk.gov.laa.ccms.caab.model.CostEntryDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.PriorAuthoritySectionDisplay;
@@ -648,6 +654,172 @@ class AmendmentServiceTest {
               any(),
               eq(QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT));
       assertThat(transactionId).isEqualTo("TRANS123");
+    }
+  }
+
+  @Nested
+  @DisplayName("submitQuickAmendmentCostAllocation() tests")
+  class SubmitQuickAmendmentCostAllocationTests {
+
+    @Test
+    @DisplayName("Should submit quick amend cost allocation")
+    void shouldSubmitQuickAmendmentCostAllocation() {
+      // Given
+      String caseRef = "12345";
+      UserDetail userDetails =
+          new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
+
+      AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
+      allocateCostsFormData.setRequestedCostLimitation(new BigDecimal("15000"));
+
+      List<CostEntryDetail> entries = new ArrayList<>();
+      entries.add(
+          new CostEntryDetail()
+              .resourceName("Some Resource")
+              .requestedCosts(new BigDecimal("5000"))
+              .lscResourceId("123"));
+      allocateCostsFormData.setCostEntries(entries);
+
+      ApplicationDetail caseDetail = buildFullApplicationDetail();
+      caseDetail.setCaseReferenceNumber(caseRef);
+
+      when(applicationService.getCase(any(), anyLong(), any())).thenReturn(caseDetail);
+      when(caabApiClient.createApplication(any(), any())).thenReturn(Mono.just("123"));
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), any()))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("12345")));
+
+      // When
+      String transactionId =
+          amendmentService.submitQuickAmendmentCostAllocation(
+              allocateCostsFormData, caseRef, userDetails);
+
+      // Then
+      assertThat(transactionId).isEqualTo("12345");
+
+      ArgumentCaptor<CaseDetail> caseDetailCaptor = ArgumentCaptor.forClass(CaseDetail.class);
+      verify(soaApiClient)
+          .updateCase(
+              any(),
+              any(),
+              caseDetailCaptor.capture(),
+              eq(QuickEditTypeConstants.MESSAGE_TYPE_ALLOCATE_COST_LIMIT));
+
+      verify(applicationService).getCase(eq(caseRef), anyLong(), any());
+
+      CaseDetail sent = caseDetailCaptor.getValue();
+      assertThat(sent).isNotNull();
+    }
+
+    @Test
+    @DisplayName(
+        "Should keep the case's requested cost limitation when the form does not carry one")
+    void shouldKeepCaseRequestedCostLimitationWhenFormHasNone() {
+      // Given the review screen does not render the requested cost limitation, so it binds as null.
+      AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
+      allocateCostsFormData.setRequestedCostLimitation(null);
+      allocateCostsFormData.setCostEntries(
+          new ArrayList<>(List.of(new CostEntryDetail().requestedCosts(new BigDecimal("5000")))));
+
+      // When
+      CostStructureDetail submittedCosts = submitAndCaptureCosts(allocateCostsFormData);
+
+      // Then the case's own requested limit survives, rather than falling back to the default of
+      // 2000.00, which would submit the wrong requested amount to EBS.
+      assertThat(submittedCosts.getRequestedCostLimitation())
+          .isEqualByComparingTo(new BigDecimal("1500.00"));
+    }
+
+    @Test
+    @DisplayName("Should omit the cost limit id for a newly added counsel")
+    void shouldOmitCostLimitIdForNewCounsel() {
+      // Given a newly added counsel, whose EBS id binds from the form as a blank string.
+      AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
+      allocateCostsFormData.setCostEntries(
+          new ArrayList<>(
+              List.of(
+                  new CostEntryDetail()
+                      .ebsId("")
+                      .resourceName("NEW COUNSEL LTD")
+                      .lscResourceId("11")
+                      .costCategory("COUNSEL")
+                      .requestedCosts(new BigDecimal("2500")))));
+
+      // When
+      CostStructureDetail submittedCosts = submitAndCaptureCosts(allocateCostsFormData);
+
+      // Then the id is absent, not blank: EBS inserts a cost limitation only when it has no id.
+      assertThat(submittedCosts.getCostEntries().getFirst().getEbsId()).isNull();
+      assertThat(submittedCosts.getCostEntries().getFirst().getLscResourceId()).isEqualTo("11");
+    }
+
+    @Test
+    @DisplayName("Should not fabricate a resource id or name for an incomplete cost entry")
+    void shouldNotFabricateCostEntryIdentifiers() {
+      // Given a cost entry missing its identifiers.
+      AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
+      allocateCostsFormData.setCostEntries(
+          new ArrayList<>(List.of(new CostEntryDetail().requestedCosts(new BigDecimal("100")))));
+
+      // When
+      CostStructureDetail submittedCosts = submitAndCaptureCosts(allocateCostsFormData);
+
+      // Then placeholders are not invented, which would silently submit a bogus billing provider.
+      CostEntryDetail submitted = submittedCosts.getCostEntries().getFirst();
+      assertThat(submitted.getLscResourceId()).isNull();
+      assertThat(submitted.getResourceName()).isNull();
+      assertThat(submitted.getCostCategory()).isNull();
+      assertThat(submitted.getAmountBilled()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    @DisplayName("Should normalise monetary amounts to 2 decimal places, including defaulted zeros")
+    void shouldNormaliseMonetaryAmountScale() {
+      // Given entries with unscaled, over-scaled and missing amounts.
+      AllocateCostsFormData allocateCostsFormData = new AllocateCostsFormData();
+      allocateCostsFormData.setCostEntries(
+          new ArrayList<>(
+              List.of(
+                  new CostEntryDetail()
+                      .requestedCosts(new BigDecimal("100"))
+                      .amountBilled(new BigDecimal("50.125")),
+                  new CostEntryDetail())));
+
+      // When
+      CostStructureDetail submittedCosts = submitAndCaptureCosts(allocateCostsFormData);
+
+      // Then EBS receives 2dp values rather than a mix of 0 and 0.00.
+      CostEntryDetail scaled = submittedCosts.getCostEntries().getFirst();
+      assertThat(scaled.getRequestedCosts()).isEqualTo(new BigDecimal("100.00"));
+      assertThat(scaled.getAmountBilled()).isEqualTo(new BigDecimal("50.13"));
+
+      CostEntryDetail defaulted = submittedCosts.getCostEntries().getLast();
+      assertThat(defaulted.getRequestedCosts()).isEqualTo(new BigDecimal("0.00"));
+      assertThat(defaulted.getAmountBilled()).isEqualTo(new BigDecimal("0.00"));
+    }
+
+    /** Submits the given costs and returns the cost structure that was mapped for EBS. */
+    private CostStructureDetail submitAndCaptureCosts(final AllocateCostsFormData formData) {
+      String caseRef = "12345";
+      UserDetail userDetails =
+          new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
+
+      ApplicationDetail caseDetail = buildFullApplicationDetail();
+      caseDetail.setCaseReferenceNumber(caseRef);
+
+      when(applicationService.getCase(any(), anyLong(), any())).thenReturn(caseDetail);
+      when(caabApiClient.createApplication(any(), any())).thenReturn(Mono.just("123"));
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), any()))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("12345")));
+
+      amendmentService.submitQuickAmendmentCostAllocation(formData, caseRef, userDetails);
+
+      ArgumentCaptor<CaseMappingContext> contextCaptor =
+          ArgumentCaptor.forClass(CaseMappingContext.class);
+      verify(soaApplicationMapper).toCaseDetail(contextCaptor.capture());
+
+      return contextCaptor.getValue().getTdsApplication().getCosts();
     }
   }
 }

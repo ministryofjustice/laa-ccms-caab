@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.BeanMapping;
@@ -783,6 +784,13 @@ public interface SoaApplicationMapper {
   @Mapping(target = "linkType", source = "relationToCase")
   LinkedCase toSoaLinkedCase(LinkedCaseDetail linkedCase);
 
+  @Mapping(target = "billingProviderId", source = "lscResourceId")
+  @Mapping(target = "billingProviderName", source = "resourceName")
+  @Mapping(target = "amount", source = "requestedCosts")
+  @Mapping(target = "paidToDate", source = "amountBilled")
+  @Mapping(target = "costLimitId", source = "ebsId")
+  CostLimitation toSoaCostLimitation(CostEntryDetail entry);
+
   @Mapping(target = "client", source = "tdsApplication.client")
   @Mapping(
       target = "preferredAddress",
@@ -883,7 +891,10 @@ public interface SoaApplicationMapper {
   @Mapping(target = "requestedAmount", source = "costs", qualifiedByName = "mapRequestedAmount")
   @Mapping(target = "grantedAmount", ignore = true)
   @Mapping(target = "totalPaidToDate", ignore = true)
-  @Mapping(target = "costLimitations", ignore = true)
+  @Mapping(
+      target = "costLimitations",
+      source = "costs.costEntries",
+      qualifiedByName = "mapToSoaCostLimitations")
   CategoryOfLaw toSoaCategoryOfLaw(ApplicationDetail applicationDetail);
 
   @Mapping(target = "addressId", source = "id")
@@ -1203,6 +1214,20 @@ public interface SoaApplicationMapper {
     return costs.getRequestedCostLimitation() != null
         ? costs.getRequestedCostLimitation()
         : costs.getDefaultCostLimitation();
+  }
+
+  /**
+   * Maps cost entries to SOA cost limitations.
+   *
+   * @param costEntries the cost entries to map
+   * @return mapped cost limitations (empty when no entries are present)
+   */
+  @Named("mapToSoaCostLimitations")
+  default List<CostLimitation> mapToSoaCostLimitations(List<CostEntryDetail> costEntries) {
+    if (costEntries == null || costEntries.isEmpty()) {
+      return Collections.emptyList();
+    }
+    return costEntries.stream().map(this::toSoaCostLimitation).collect(Collectors.toList());
   }
 
   /**

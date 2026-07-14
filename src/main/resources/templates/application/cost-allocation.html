@@ -81,17 +81,26 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="govuk-table__cell"></td>
+                            <td class="govuk-table__cell">
+                                <!-- Counsel already held on the case in EBS cannot be removed. -->
+                                <button th:if="${costEntryDetail.newEntry}"
+                                        type="submit" name="removeCounsel" formnovalidate
+                                        th:value="${idx.index}"
+                                        th:id="'removeCounsel' + ${idx.index}"
+                                        th:attr="aria-label=#{caseCosts.counsel.remove.ariaLabel(${costEntryDetail.resourceName})}"
+                                        class="govuk-body govuk-!-margin-bottom-0 ccms-button-as-link"
+                                        th:text="#{site.remove}"></button>
+                            </td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
             <div class="govuk-button-group">
-                <a class="govuk-button govuk-button--secondary" data-module="govuk-button"
+                <a class="govuk-button govuk-button--secondary" id="counselSearch" data-module="govuk-button"
                    th:text="#{caseCosts.counsel}" th:href="@{/counsel/search}"></a>
                 <button type="submit" name="action" value="calculate" class="govuk-button govuk-button--secondary" data-module="govuk-button"
-                        th:text="#{caseCosts.calculate}"/>
+                       id="calculateButton" th:text="#{caseCosts.calculate}"/>
             </div>
             <button type="submit" name="action" value="next" class="govuk-button" data-module="govuk-button" th:text="#{site.next}"/>
         </form>

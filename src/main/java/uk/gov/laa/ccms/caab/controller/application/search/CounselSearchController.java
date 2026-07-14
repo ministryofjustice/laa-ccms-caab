@@ -243,8 +243,8 @@ public class CounselSearchController {
 
     CostEntryDetail newCostEntry = new CostEntryDetail();
     newCostEntry.setResourceName(selectedCounsel.getName());
-    newCostEntry.setLscResourceId(selectedCounsel.getLegalAidSupplierNumber());
-    newCostEntry.setCostCategory(COUNSEL_COST_CATEGORY);
+    newCostEntry.setLscResourceId(selectedCounsel.getCounselId());
+    newCostEntry.setCostCategory(COUNSEL_COST_CATEGORY.toUpperCase());
     newCostEntry.setAmountBilled(BigDecimal.ZERO);
     newCostEntry.setRequestedCosts(BigDecimal.ZERO);
     newCostEntry.setNewEntry(true);
@@ -279,8 +279,8 @@ public class CounselSearchController {
               boolean refMatch =
                   Objects.equals(
                       entry.getLscResourceId() != null ? entry.getLscResourceId().trim() : null,
-                      selectedCounsel.getLegalAidSupplierNumber() != null
-                          ? selectedCounsel.getLegalAidSupplierNumber().trim()
+                      selectedCounsel.getCounselId() != null
+                          ? selectedCounsel.getCounselId().trim()
                           : null);
               boolean nameMatch =
                   entry.getResourceName() != null

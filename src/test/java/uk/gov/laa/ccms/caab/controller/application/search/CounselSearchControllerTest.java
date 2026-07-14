@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -212,6 +213,7 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
   void testConfirmCounselPost() throws Exception {
     CounselLookupValueDetail selectedCounsel =
         new CounselLookupValueDetail()
+            .counselId("11")
             .name("TEST COUNSEL XYZ")
             .company("TEST COUNSEL XYZ")
             .legalAidSupplierNumber("1001T")
@@ -231,8 +233,10 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
     assertEquals(1, formData.getCostEntries().size());
     CostEntryDetail entry = formData.getCostEntries().get(0);
     assertEquals("TEST COUNSEL XYZ", entry.getResourceName());
-    assertEquals("1001T", entry.getLscResourceId());
-    assertEquals("counsel", entry.getCostCategory());
+    // EBS bills against the counsel's COUNSEL_ID, not their legal aid supplier number.
+    assertEquals("11", entry.getLscResourceId());
+    assertEquals("COUNSEL", entry.getCostCategory());
+    assertNull(entry.getEbsId());
   }
 
   @Test
@@ -337,15 +341,18 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
   void testConfirmCounselPostDuplicateByReference() throws Exception {
     CounselLookupValueDetail selectedCounsel =
         new CounselLookupValueDetail()
+            .counselId("99")
             .name("DIFFERENT NAME")
             .legalAidSupplierNumber("1099V")
             .category("Junior");
 
+    // An existing entry carries the counsel's COUNSEL_ID in lscResourceId, mapped from the EBS
+    // billing provider id, so the duplicate check compares against that.
     AllocateCostsFormData formData = new AllocateCostsFormData();
     List<CostEntryDetail> entries = new ArrayList<>();
     CostEntryDetail existingEntry = new CostEntryDetail();
     existingEntry.setResourceName("TEST COUNSEL XYZ");
-    existingEntry.setLscResourceId("1099V");
+    existingEntry.setLscResourceId("99");
     entries.add(existingEntry);
     formData.setCostEntries(entries);
 

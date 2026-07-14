@@ -6,9 +6,12 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMI
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE_DISPLAY;
 import static uk.gov.laa.ccms.caab.constants.CcmsModule.AMENDMENT;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,6 +21,7 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
@@ -34,7 +38,9 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
+import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostLimitDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
@@ -301,6 +307,98 @@ public class AmendmentService {
         .setProviderContact(new StringDisplayValue().id(providerDetails.getContactNameId()));
 
     return updateCaseWithQuickAmendment(userDetail, amendment);
+  }
+
+  /**
+   * Submits a quick amendment to the case cost for a given case. This method creates a quick
+   * amendment application, applies the new case costs, and submits the amendment. Finally, a case
+   * is updated which returns the transaction ID associated with the submission.
+   *
+   * @param allocateCostsFormData the data representing the updated cost allocations
+   * @param caseReferenceNumber the unique reference number of the case to which the amendment
+   *     applies
+   * @param userDetail the details of the user initiating the amendment
+   * @return the transaction ID of the submitted amendment
+   */
+  public String submitQuickAmendmentCostAllocation(
+      final AllocateCostsFormData allocateCostsFormData,
+      final String caseReferenceNumber,
+      final UserDetail userDetail) {
+
+    if (allocateCostsFormData == null) {
+      throw new CaabApplicationException(
+          "AllocateCostsFormData is required for cost allocation amendment");
+    }
+
+    ApplicationDetail amendment = createAmendmentObject(caseReferenceNumber, userDetail);
+    amendment.setQuickEditType(QuickEditTypeConstants.MESSAGE_TYPE_ALLOCATE_COST_LIMIT);
+    amendment.setMeansAssessmentAmended(Boolean.FALSE);
+    amendment.setMeritsAssessmentAmended(Boolean.FALSE);
+
+    CostStructureDetail costs = amendment.getCosts();
+    if (costs == null) {
+      costs = new CostStructureDetail();
+      amendment.setCosts(costs);
+    }
+
+    // Allocating the cost limit redistributes the granted limit between the provider and counsel;
+    // it does not change the requested limit. Keep the case's existing value unless the form
+    // carries one, otherwise the case would be submitted with its default limit instead.
+    if (allocateCostsFormData.getRequestedCostLimitation() != null) {
+      costs.setRequestedCostLimitation(allocateCostsFormData.getRequestedCostLimitation());
+    }
+
+    costs.setCostEntries(toSubmittableCostEntries(allocateCostsFormData.getCostEntries()));
+
+    amendment.getCostLimit().setChanged(true);
+
+    return updateCaseWithQuickAmendment(userDetail, amendment);
+  }
+
+  /**
+   * Normalises the cost entries bound from the review screen so they can be submitted to EBS.
+   *
+   * <p>A newly added counsel has no EBS id. Its cost limit id must be absent rather than blank, as
+   * EBS decides whether to insert or update a cost limitation on the presence of that id.
+   *
+   * @param costEntries the cost entries bound from the review form
+   * @return the cost entries to submit, empty when none were supplied
+   */
+  private List<CostEntryDetail> toSubmittableCostEntries(final List<CostEntryDetail> costEntries) {
+    if (costEntries == null) {
+      return Collections.emptyList();
+    }
+
+    return costEntries.stream()
+        .filter(Objects::nonNull)
+        .map(
+            entry -> {
+              entry.setRequestedCosts(toSubmittableAmount(entry.getRequestedCosts()));
+              entry.setAmountBilled(toSubmittableAmount(entry.getAmountBilled()));
+
+              if (entry.getCostCategory() != null) {
+                entry.setCostCategory(entry.getCostCategory().toUpperCase());
+              }
+
+              if (entry.getEbsId() != null && entry.getEbsId().isBlank()) {
+                entry.setEbsId(null);
+              }
+
+              return entry;
+            })
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * Normalises a monetary amount for submission to EBS, defaulting a missing value to zero.
+   *
+   * @param amount the amount bound from the review form, possibly null
+   * @return the amount scaled to 2 decimal places
+   */
+  private BigDecimal toSubmittableAmount(final BigDecimal amount) {
+    return amount == null
+        ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
+        : amount.setScale(2, RoundingMode.HALF_UP);
   }
 
   /**
