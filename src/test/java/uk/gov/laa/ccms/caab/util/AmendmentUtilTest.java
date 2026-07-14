@@ -89,11 +89,10 @@ class AmendmentUtilTest {
     // When
     AmendmentUtil.cleanAppForQuickAmendSubmit(amendmentDetail);
     // Then
-    // Proceedings and opponents are preserved for parity with old PUI (EBS applies only the means
-    // assessment via the "MeansReassessment" message type; an empty-proceedings update is
-    // rejected).
-    assertThat(amendmentDetail.getProceedings()).isNotEmpty();
-    assertThat(amendmentDetail.getOpponents()).isNotEmpty();
+    // Proceedings and opponents are stripped, as for every other quick amendment: old PUI's
+    // CcmsHelper.cleanAppForQuickAmendSubmit empties them before the case update is converted.
+    assertThat(amendmentDetail.getProceedings()).isEmpty();
+    assertThat(amendmentDetail.getOpponents()).isEmpty();
     assertThat(amendmentDetail.getMeansAssessmentAmended()).isTrue();
     assertThat(amendmentDetail.getMeritsAssessmentAmended()).isFalse();
     assertThat(amendmentDetail.getProviderDetails().getSupervisor()).isNull();
