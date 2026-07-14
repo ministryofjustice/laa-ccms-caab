@@ -509,7 +509,7 @@ class ApplicationSubmissionControllerTest {
     final ApplicationDetail amendment = amendmentApplication(true, true, false);
     stubAmendmentValidationCommon(amendment);
     stubAssessments("INCOMPLETE", "COMPLETE");
-    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any()))
         .thenReturn(false);
 
     final MvcResult mvcResult =
@@ -537,7 +537,7 @@ class ApplicationSubmissionControllerTest {
     stubAssessments(null, "COMPLETE");
     when(assessmentService.isMeansReassessmentRequiredForAmendment(any(), any(), any()))
         .thenReturn(true);
-    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any()))
         .thenReturn(false);
 
     final MvcResult mvcResult =
@@ -562,8 +562,6 @@ class ApplicationSubmissionControllerTest {
     final ApplicationDetail amendment = amendmentApplication(false, false, true);
     stubAmendmentValidationCommon(amendment);
     stubAssessments("COMPLETE", "INCOMPLETE");
-    // Non-ECF, non-MNLA amendment: means validation is skipped entirely, so the means reassessment
-    // check is never consulted.
 
     final MvcResult mvcResult =
         mockMvc
@@ -574,14 +572,13 @@ class ApplicationSubmissionControllerTest {
             .andExpect(request().asyncStarted())
             .andReturn();
 
+    // A complete means assessment with no reassessment required does not block; only merits does.
     mockMvc
         .perform(asyncDispatch(mvcResult))
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-validation-error-correction"))
         .andExpect(model().attributeExists("meritsAssessmentErrors"))
         .andExpect(model().attributeDoesNotExist("meansAssessmentErrors"));
-    // Means validation short-circuits before any assessment lookup for non-ECF/non-MNLA amendments.
-    verify(assessmentService, never()).isMeansReassessmentRequiredForAmendment(any(), any(), any());
   }
 
   @Test
@@ -594,7 +591,7 @@ class ApplicationSubmissionControllerTest {
     final ApplicationDetail amendment = amendmentApplication(true, false, false);
     stubAmendmentValidationCommon(amendment);
     stubAssessments("INCOMPLETE", "COMPLETE");
-    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any()))
         .thenReturn(false);
     // Means status is INCOMPLETE so the reassessment gate (Gate A) is skipped and
     // isMeansReassessmentRequiredForAmendment is never consulted - completeness (Gate B) blocks it.
@@ -623,7 +620,7 @@ class ApplicationSubmissionControllerTest {
     final ApplicationDetail amendment = amendmentApplication(false, false, false);
     stubAmendmentValidationCommon(amendment);
     stubAssessments("INCOMPLETE", "COMPLETE");
-    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any()))
         .thenReturn(false);
 
     final MvcResult mvcResult =
@@ -679,7 +676,7 @@ class ApplicationSubmissionControllerTest {
     // Non-ECF, non-MNLA amendment: means validation is skipped. Merits has no assessment yet, so
     // the
     // merits reassessment gate is consulted and returns false.
-    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any()))
         .thenReturn(false);
 
     final MvcResult mvcResult =
@@ -704,7 +701,7 @@ class ApplicationSubmissionControllerTest {
     stubAssessments("COMPLETE", "COMPLETE");
     when(assessmentService.isMeansReassessmentRequiredForAmendment(any(), any(), any()))
         .thenReturn(false);
-    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any()))
         .thenReturn(false);
 
     final MvcResult mvcResult =
@@ -758,7 +755,7 @@ class ApplicationSubmissionControllerTest {
     verify(assessmentService, never()).getAssessments(any(), any(), any());
     verify(assessmentService, never()).isMeansReassessmentRequiredForAmendment(any(), any(), any());
     verify(assessmentService, never())
-        .isMeritsReassessmentRequiredForAmendment(any(), any(), any());
+        .isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any());
   }
 
   private ApplicationDetail amendmentApplication(

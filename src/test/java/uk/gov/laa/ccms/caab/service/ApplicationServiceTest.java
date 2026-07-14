@@ -1532,8 +1532,8 @@ class ApplicationServiceTest {
   void removeSubmittedAmendment_deletesDraftAndAssessments() {
     final UserDetail user = buildUserDetail();
     final String caseReferenceNumber = "CASE-123";
-    final List<String> expectedAssessmentNames =
-        List.of(MEANS.getName(), MEANS_PREPOP.getName(), MERITS.getName(), MERITS_PREPOP.getName());
+    // The prepop survives a submission (old PUI removeNonFinancialOpaSessionsExcludingPrepop).
+    final List<String> expectedAssessmentNames = List.of(MEANS.getName(), MERITS.getName());
 
     final ApplicationDetails tdsApplications =
         new ApplicationDetails().addContentItem(new BaseApplicationDetail().id(42).amendment(true));
@@ -1558,7 +1558,7 @@ class ApplicationServiceTest {
   void removeSubmittedAmendment_meansReassessmentWithAmendChanges_preservesDraft() {
     final UserDetail user = buildUserDetail();
     final String caseReferenceNumber = "CASE-123";
-    final List<String> meansOnly = List.of(MEANS.getName(), MEANS_PREPOP.getName());
+    final List<String> meansOnly = List.of(MEANS.getName());
 
     final ApplicationDetails tdsApplications =
         new ApplicationDetails().addContentItem(new BaseApplicationDetail().id(42).amendment(true));
@@ -1596,8 +1596,8 @@ class ApplicationServiceTest {
   void removeSubmittedAmendment_fullAmendmentWithChanges_deletesDraft() {
     final UserDetail user = buildUserDetail();
     final String caseReferenceNumber = "CASE-123";
-    final List<String> expectedAssessmentNames =
-        List.of(MEANS.getName(), MEANS_PREPOP.getName(), MERITS.getName(), MERITS_PREPOP.getName());
+    // The prepop survives a submission (old PUI removeNonFinancialOpaSessionsExcludingPrepop).
+    final List<String> expectedAssessmentNames = List.of(MEANS.getName(), MERITS.getName());
 
     final ApplicationDetails tdsApplications =
         new ApplicationDetails().addContentItem(new BaseApplicationDetail().id(42).amendment(true));
@@ -1620,7 +1620,7 @@ class ApplicationServiceTest {
   void removeSubmittedAmendment_meansReassessment_ebsCaseLoadFails_preservesDraft() {
     final UserDetail user = buildUserDetail();
     final String caseReferenceNumber = "CASE-123";
-    final List<String> meansOnly = List.of(MEANS.getName(), MEANS_PREPOP.getName());
+    final List<String> meansOnly = List.of(MEANS.getName());
 
     final ApplicationDetails tdsApplications =
         new ApplicationDetails().addContentItem(new BaseApplicationDetail().id(42).amendment(true));

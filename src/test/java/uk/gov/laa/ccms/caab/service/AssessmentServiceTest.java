@@ -19,6 +19,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEP
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROGRESS_STATUS_TYPES;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.GLOBAL;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.OPPONENT;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS;
@@ -494,9 +495,9 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testCheckAssessmentForProceedingKeyChange_proceedingNotInAssessment_assertsFalse() {
-    // Unmatched proceeding is skipped, not a key change (count checks in callers handle
-    // add/remove).
+  void testCheckAssessmentForProceedingKeyChange_proceedingNotInAssessment_assertsTrue() {
+    // A proceeding missing from the assessment was added after it was run, so the assessment must
+    // be redone (old PUI AssessmentHelper.isMeritsReassessmentRequired).
     final ApplicationDetail application =
         new ApplicationDetail()
             .addProceedingsItem(
@@ -513,7 +514,7 @@ public class AssessmentServiceTest {
         assessmentService.checkAssessmentForProceedingKeyChange(
             application, buildProceedingsEntityTypeDetail());
 
-    assertFalse(result);
+    assertTrue(result);
   }
 
   @Test
@@ -592,7 +593,7 @@ public class AssessmentServiceTest {
     // No merits assessment + substantive amendment of an emergency certificate => reassessment
     // required (old PUI keys this off assessment == null, not the checkpoint).
     final boolean result =
-        assessmentService.isReassessmentRequired(application, MERITS, null, user);
+        assessmentService.isReassessmentRequired(application, MERITS, null, null, user);
 
     assertTrue(result);
   }
@@ -623,7 +624,7 @@ public class AssessmentServiceTest {
     // Cost limit increased since the merits cost limit was recorded => reassessment required even
     // though no merits assessment has been performed yet (old PUI checks this at the top level).
     final boolean result =
-        assessmentService.isReassessmentRequired(application, MERITS, null, user);
+        assessmentService.isReassessmentRequired(application, MERITS, null, null, user);
 
     assertTrue(result);
   }
@@ -653,7 +654,7 @@ public class AssessmentServiceTest {
         .thenReturn(Mono.just(new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()));
 
     final boolean result =
-        assessmentService.isReassessmentRequired(application, MERITS, null, user);
+        assessmentService.isReassessmentRequired(application, MERITS, null, null, user);
 
     assertTrue(result);
   }
@@ -680,7 +681,9 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testCalculateAssessmentStatuses_amendmentNoMeansAssessment_ecfCase_setsMeansRequired() {
+  void testCalculateAssessmentStatuses_amendmentNoMeansAssessment_ecfCase_leavesMeansUnchanged() {
+    // Old PUI has no ECF means rule: on an amendment, means only requires reassessment for a
+    // substantive amendment of an emergency certificate (AssessmentHelper, LSC-1783).
     final ApplicationDetail application =
         new ApplicationDetail()
             .amendment(true)
@@ -699,13 +702,13 @@ public class AssessmentServiceTest {
 
     assessmentService.calculateAssessmentStatuses(application, null, null, user);
 
-    assertEquals("Re-assessment Required", application.getMeansAssessmentStatus());
+    assertEquals("Unchanged", application.getMeansAssessmentStatus());
     assertEquals("Unchanged", application.getMeritsAssessmentStatus());
   }
 
   @Test
   void
-      testCalculateAssessmentStatuses_amendmentNoMeritsAssessment_substantiveEmergency_setsMeritsRequired() {
+      testCalculateAssessmentStatuses_amendmentSubstantiveEmergency_setsBothMeansAndMeritsRequired() {
     final ApplicationDetail application =
         new ApplicationDetail()
             .amendment(true)
@@ -725,7 +728,9 @@ public class AssessmentServiceTest {
 
     assessmentService.calculateAssessmentStatuses(application, null, null, user);
 
-    assertEquals("Unchanged", application.getMeansAssessmentStatus());
+    // Both assessments require reassessment: a substantive amendment of an emergency certificate
+    // with no assessment is old PUI's single amendment rule for means as well as merits.
+    assertEquals("Re-assessment Required", application.getMeansAssessmentStatus());
     assertEquals("Re-assessment Required", application.getMeritsAssessmentStatus());
   }
 
@@ -940,17 +945,17 @@ public class AssessmentServiceTest {
 
   @Test
   @DisplayName(
-      "Any change to the requested cost limit (even below the limit at the time of merits) requires "
-          + "a merits reassessment")
-  void testIsReassessmentRequired_costLimitChangedBelowLimitAtTimeOfMerits_assertsTrue() {
+      "A requested cost limit below the limit at the time of merits does not require a merits "
+          + "reassessment")
+  void testIsReassessmentRequired_costLimitBelowLimitAtTimeOfMerits_assertsFalse() {
     final String matterType = "TEST";
     final String proceedingType = "TEST";
     final String clientInvolvement = "TEST";
     final String scopeLimitation = "TEST";
 
-    // Requested limit (1000) is BELOW the limit captured at the time of merits (2000). The old
-    // "increase only" check (compareTo < 0) ignored this; any change must now trigger a merits
-    // reassessment.
+    // Requested limit (1000) is BELOW the limit captured at the time of merits (2000). Old PUI only
+    // reassesses when the limit RISES above it (AssessmentHelper: compareTo(...) < 0), because the
+    // provider only has to justify higher costs.
     final ApplicationDetail application =
         new ApplicationDetail()
             .amendment(false)
@@ -970,6 +975,44 @@ public class AssessmentServiceTest {
                     .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(auditDate)))
             .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(2000.00)))
             .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
+
+    final AssessmentDetail assessment = buildAssessmentDetail(auditDate);
+    assessment.setName(MERITS.getName());
+
+    assertFalse(assessmentService.isReassessmentRequired(application, assessment, user));
+  }
+
+  @Test
+  @DisplayName(
+      "A requested cost limit above the limit at the time of merits requires a merits "
+          + "reassessment")
+  void testIsReassessmentRequired_costLimitAboveLimitAtTimeOfMerits_assertsTrue() {
+    final String matterType = "TEST";
+    final String proceedingType = "TEST";
+    final String clientInvolvement = "TEST";
+    final String scopeLimitation = "TEST";
+
+    // Requested limit (3000) is ABOVE the limit captured at the time of merits (2000): the provider
+    // must justify the higher costs, so the merits assessment must be redone.
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(false)
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .id(123)
+                    .matterType(new StringDisplayValue().id(matterType))
+                    .proceedingType(new StringDisplayValue().id(proceedingType))
+                    .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
+                    .addScopeLimitationsItem(
+                        new ScopeLimitationDetail()
+                            .scopeLimitation(new StringDisplayValue().id(scopeLimitation))))
+            .addOpponentsItem(
+                new OpponentDetail()
+                    .id(234)
+                    .type("Individual")
+                    .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(auditDate)))
+            .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(2000.00)))
+            .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(3000.00)));
 
     final AssessmentDetail assessment = buildAssessmentDetail(auditDate);
     assessment.setName(MERITS.getName());
@@ -1947,5 +1990,88 @@ public class AssessmentServiceTest {
                                                         .attribute(attributeName)
                                                         .responseType("text")
                                                         .responseValue(attributeValue)))))))));
+  }
+
+  private static AssessmentDetail buildAssessmentWithAttributes(
+      final String entityTypeName, final String entityName, final String... attributeNames) {
+    final AssessmentEntityDetail entity = new AssessmentEntityDetail().name(entityName);
+    for (final String attributeName : attributeNames) {
+      entity.addAttributesItem(new AssessmentAttributeDetail().name(attributeName).value("true"));
+    }
+
+    return new AssessmentDetail()
+        .addEntityTypesItem(
+            new AssessmentEntityTypeDetail().name(entityTypeName).addEntitiesItem(entity));
+  }
+
+  private static List<String> attributeNames(
+      final AssessmentDetail assessment, final int entityTypeIndex) {
+    return assessment
+        .getEntityTypes()
+        .get(entityTypeIndex)
+        .getEntities()
+        .getFirst()
+        .getAttributes()
+        .stream()
+        .map(AssessmentAttributeDetail::getName)
+        .toList();
+  }
+
+  @Test
+  @DisplayName("removeNonReusableAttributes strips the merits do-not-reuse attributes only")
+  void removeNonReusableAttributes_meritsStripsEvidenceKeepsRest() {
+    final AssessmentDetail assessment =
+        buildAssessmentWithAttributes(
+            GLOBAL.getType(),
+            GLOBAL.getType(),
+            "MERITS_EVIDENCE_REQD",
+            "ADDITIONAL_EVIDENCE_COLLECTED",
+            "APPLICATION_CASE_REF");
+
+    assessmentService.removeNonReusableAttributes(assessment, AssessmentRulebase.MERITS);
+
+    // The evidence answers must be re-asked on an amendment; the case reference is reusable.
+    assertEquals(List.of("APPLICATION_CASE_REF"), attributeNames(assessment, 0));
+  }
+
+  @Test
+  @DisplayName("removeNonReusableAttributes strips across every entity type")
+  void removeNonReusableAttributes_stripsAllEntityTypes() {
+    final AssessmentDetail assessment =
+        buildAssessmentWithAttributes(GLOBAL.getType(), GLOBAL.getType(), "MEANS_EVIDENCE_REQD");
+    assessment.addEntityTypesItem(
+        new AssessmentEntityTypeDetail()
+            .name(PROCEEDING.getType())
+            .addEntitiesItem(
+                new AssessmentEntityDetail()
+                    .name("P_1")
+                    .addAttributesItem(
+                        new AssessmentAttributeDetail().name("BANKACC_SMOD_FLAG").value("true"))
+                    .addAttributesItem(
+                        new AssessmentAttributeDetail().name("MATTER_TYPE").value("TEST"))));
+
+    assessmentService.removeNonReusableAttributes(assessment, AssessmentRulebase.MEANS);
+
+    assertTrue(attributeNames(assessment, 0).isEmpty());
+    assertEquals(List.of("MATTER_TYPE"), attributeNames(assessment, 1));
+  }
+
+  @Test
+  @DisplayName("removeNonReusableAttributes does not strip the other rulebase's attributes")
+  void removeNonReusableAttributes_doesNotStripAcrossRulebases() {
+    final AssessmentDetail assessment =
+        buildAssessmentWithAttributes(GLOBAL.getType(), GLOBAL.getType(), "MERITS_EVIDENCE_REQD");
+
+    assessmentService.removeNonReusableAttributes(assessment, AssessmentRulebase.MEANS);
+
+    assertEquals(List.of("MERITS_EVIDENCE_REQD"), attributeNames(assessment, 0));
+  }
+
+  @Test
+  @DisplayName("removeNonReusableAttributes tolerates missing data")
+  void removeNonReusableAttributes_toleratesMissingData() {
+    assessmentService.removeNonReusableAttributes(null, AssessmentRulebase.MERITS);
+    assessmentService.removeNonReusableAttributes(
+        new AssessmentDetail(), AssessmentRulebase.MERITS);
   }
 }

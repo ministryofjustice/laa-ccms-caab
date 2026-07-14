@@ -11,6 +11,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_C
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getMostRecentAssessmentDetail;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getNonFinancialAssessmentNamesExcludingPrepop;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getNonFinancialAssessmentNamesIncludingPrepop;
 import static uk.gov.laa.ccms.caab.util.OpponentUtil.getPartyName;
 
@@ -652,22 +653,16 @@ public class ApplicationService {
     // the submitted means assessment and keep the draft so the amendment can still be continued. A
     // pure means reassessment (no other changes) still removes the whole draft, so no stale
     // "continue amendment" is left behind.
-    // A means reassessment submits ONLY the means assessment (EBS applies means via the
-    // "MeansReassessment" message type). If the same shared draft also carries amend-case changes
-    // that were NOT submitted - e.g. an opponent added via Amend Case - preserve them: remove only
-    // the submitted means assessment and keep the draft so the amendment can still be continued. A
-    // pure means reassessment (no other changes) still removes the whole draft, so no stale
-    // "continue amendment" is left behind.
+    // The prepop is deliberately kept in both branches: old PUI's post-submission cleanup removes
+    // the live means/merits sessions but not their prepop
+    // (OpaDao.removeNonFinancialOpaSessionsExcludingPrepop), so a later assessment can reuse the
+    // answers it holds. The attributes an amendment must not reuse are cleared when the next
+    // interview starts (AssessmentService.removeNonReusableAttributes).
     if (QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT.equals(quickEditType)
         && hasAmendCaseChanges(loadAmendment(tdsApplication), caseReferenceNumber, user)) {
       assessmentService
           .deleteAssessments(
-              user,
-              List.of(
-                  AssessmentRulebase.MEANS.getName(),
-                  AssessmentRulebase.MEANS.getPrePopAssessmentName()),
-              caseReferenceNumber,
-              null)
+              user, List.of(AssessmentRulebase.MEANS.getName()), caseReferenceNumber, null)
           .block();
       return;
     }
@@ -676,7 +671,7 @@ public class ApplicationService {
         caabApiClient.deleteApplication(String.valueOf(tdsApplication.getId()), user.getLoginId());
     final Mono<Void> deleteAssessmentsMono =
         assessmentService.deleteAssessments(
-            user, getNonFinancialAssessmentNamesIncludingPrepop(), caseReferenceNumber, null);
+            user, getNonFinancialAssessmentNamesExcludingPrepop(), caseReferenceNumber, null);
 
     Mono.when(deleteAppMono, deleteAssessmentsMono).block();
   }

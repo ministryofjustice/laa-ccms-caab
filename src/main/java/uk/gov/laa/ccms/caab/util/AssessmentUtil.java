@@ -287,6 +287,20 @@ public final class AssessmentUtil {
   }
 
   /**
+   * Get a list of assessment names for non-financial assessments, excluding the prepopulated
+   * assessments. Old PUI keeps the prepop after a submission ({@code
+   * OpaDao.removeNonFinancialOpaSessionsExcludingPrepop}) so a later assessment can reuse the
+   * answers it holds.
+   *
+   * @return List of non-financial assessment names, without their prepop.
+   */
+  public static List<String> getNonFinancialAssessmentNamesExcludingPrepop() {
+    return AssessmentRulebase.getNonFinancialRulebases().stream()
+        .map(AssessmentRulebase::getName)
+        .toList();
+  }
+
+  /**
    * Formats the value of an AssessmentAttributeDetail based on its type.
    *
    * @param attribute the AssessmentAttributeDetail containing the value and type to be formatted

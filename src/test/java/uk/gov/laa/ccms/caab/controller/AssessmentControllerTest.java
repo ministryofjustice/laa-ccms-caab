@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -52,6 +53,7 @@ import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.opa.context.ContextToken;
 import uk.gov.laa.ccms.caab.opa.util.SecurityUtils;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
@@ -185,6 +187,49 @@ public class AssessmentControllerTest {
         .andExpect(model().attributeExists("username"))
         .andExpect(model().attributeExists("resumeId"))
         .andExpect(model().attributeExists("assessmentType"));
+  }
+
+  @Test
+  public void assessmentGet_meansReassessment_assessesApplicationAsSubstantive() throws Exception {
+    // The draft is an emergency application; a reassessment must still be assessed as substantive
+    // (old PUI StartOpaReassessment, CR217).
+    final ApplicationDetail application = buildApplicationDetail(1, true, new Date());
+    application.setApplicationType(new ApplicationType().id("EMER").displayValue("Emergency"));
+
+    when(applicationService.getApplication(anyString())).thenReturn(Mono.just(application));
+    when(contextSecurityUtil.createHubContext(
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyString()))
+        .thenReturn("contextToken");
+    when(clientService.getClient(anyString(), anyString(), anyString()))
+        .thenReturn(Mono.just(new ClientDetail()));
+
+    final AssessmentDetail assessmentDetail = buildAssessmentDetail(new Date());
+    assessmentDetail.setId(1L);
+    when(assessmentService.getAssessments(any(), anyString(), anyString()))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessmentDetail)));
+
+    mockMvc
+        .perform(
+            get("/amendments/assessments")
+                .param("assessment", "means")
+                .param("invoked-from", "CCMS_MNA05")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(APPLICATION_ID, "applicationId")
+                .sessionAttr(ACTIVE_CASE, activeCase))
+        .andExpect(status().isOk());
+
+    // The application the prepop is built from is re-typed as substantive.
+    final ArgumentCaptor<ApplicationDetail> captor =
+        ArgumentCaptor.forClass(ApplicationDetail.class);
+    verify(assessmentService).startAssessment(captor.capture(), any(), any(), any());
+    assertEquals("SUB", captor.getValue().getApplicationType().getId());
   }
 
   @Test

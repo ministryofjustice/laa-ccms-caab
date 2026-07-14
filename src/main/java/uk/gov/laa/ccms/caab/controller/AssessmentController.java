@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.controller;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DISPLAY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -30,6 +32,7 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryEntityDisplay;
 import uk.gov.laa.ccms.caab.opa.context.ContextToken;
 import uk.gov.laa.ccms.caab.opa.util.SecurityUtils;
@@ -156,33 +159,35 @@ public class AssessmentController {
       final HttpSession session,
       final Model model) {
 
-    final ApplicationDetail application;
-
-    // get the assessment or case data, check if application id is in the session if is then we get
-    // the application, otherwise it's a case
-    if (session.getAttribute(APPLICATION_ID) != null) {
-      final String applicationId = String.valueOf(session.getAttribute(APPLICATION_ID));
-      application =
-          Optional.ofNullable(applicationService.getApplication(applicationId).block())
-              .orElseThrow(() -> new CaabApplicationException("Failed to retrieve application"));
-    } else {
-      application = null;
-      // todo - get case details (not part of application process)
-      // map case into application object
+    // Every assessment is run against an application: the interview cannot be prepopulated without
+    // one, so fail here rather than further down.
+    if (session.getAttribute(APPLICATION_ID) == null) {
+      throw new CaabApplicationException("Failed to retrieve application");
     }
+
+    final String applicationId = String.valueOf(session.getAttribute(APPLICATION_ID));
+    final ApplicationDetail application =
+        Optional.ofNullable(applicationService.getApplication(applicationId).block())
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve application"));
 
     // The TDS draft application does not carry a computed default cost limitation, which the OPA
     // prepop maps into DEFAULT_COST_LIMITATION and the merits rulebase needs to resolve its
     // completion goal (ASSESS_COMPLETE). Compute it here before building the prepop.
-    if (application != null) {
-      applicationService.applyCostLimitations(application);
-    }
+    applicationService.applyCostLimitations(application);
 
     // For amendments, the TDS draft also does not carry the original case's devolved-powers
     // (delegated functions) details, which the merits prepop maps into DELEGATED_FUNCTIONS_DATE /
     // DEVOLVED_POWERS_CONTRACT_FLAG. Enrich them from the EBS case before building the prepop.
-    if (application != null && Boolean.TRUE.equals(application.getAmendment())) {
+    if (Boolean.TRUE.equals(application.getAmendment())) {
       applicationService.enrichDevolvedPowersFromEbs(application, user);
+    }
+
+    // A reassessment is always assessed as substantive, whatever the application type on the draft
+    // (old PUI StartOpaReassessment, CR217). The type feeds APP_AMEND_TYPE / ECF_FLAG into the
+    // rulebase, so it must be set before the prepop is built. In-memory only - the draft is not
+    // re-typed.
+    if (MEANS_REASSESSMENT_INVOKED_FROM.equals(invokedFrom)) {
+      applyReassessmentApplicationType(application);
     }
 
     // get rulebase from the assessment passed as the parameter
@@ -338,6 +343,20 @@ public class AssessmentController {
       return owdRedirectUrl.substring(0, owdRedirectUrl.length() - 1) + returnPath;
     }
     return owdRedirectUrl + returnPath;
+  }
+
+  /**
+   * Types the application as substantive for a reassessment, so the rulebase assesses it as one.
+   *
+   * @param application the application the assessment will be prepopulated from
+   */
+  private void applyReassessmentApplicationType(final ApplicationDetail application) {
+    if (application.getApplicationType() == null) {
+      application.setApplicationType(new ApplicationType());
+    }
+
+    application.getApplicationType().setId(APP_TYPE_SUBSTANTIVE);
+    application.getApplicationType().setDisplayValue(APP_TYPE_SUBSTANTIVE_DISPLAY);
   }
 
   private String getCancelLinkUrl(final CaseContext caseContext, final String invokedFrom) {

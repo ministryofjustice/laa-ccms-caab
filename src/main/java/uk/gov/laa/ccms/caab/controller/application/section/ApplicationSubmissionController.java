@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.DECLARATION_APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.CcmsModule.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
@@ -916,7 +915,7 @@ public class ApplicationSubmissionController {
     // permits an empty amendment; the new PUI surfaces a validation error instead.
     boolean hasErrors = validateAmendmentHasChanges(amendment, caseDetail, model);
     hasErrors |= validateMeansAssessment(amendment, user, meansLegalAmendmentAvailable, model);
-    hasErrors |= validateMeritsAssessment(amendment, user, model);
+    hasErrors |= validateMeritsAssessment(amendment, means, user, model);
     return hasErrors;
   }
 
@@ -935,17 +934,6 @@ public class ApplicationSubmissionController {
       final UserDetail user,
       final boolean meansLegalAmendmentAvailable,
       final Model model) {
-
-    // Means validation only has an effect for ECF means amendments: the completeness gate (Gate B)
-    // requires the MNLA function, and the reassessment gate (Gate A) only fires for the ECF
-    // application type (see AssessmentService#isMeansReassessmentRequiredForAmendment). When
-    // neither
-    // holds the means assessment is not part of this amendment, so skip the (blocking,
-    // SOA-touching)
-    // assessment lookups entirely rather than fetching them for nothing.
-    if (!meansLegalAmendmentAvailable && !isEcfApplicationType(amendment)) {
-      return false;
-    }
 
     final AssessmentDetail meansAssessment =
         getLatestAmendmentAssessment(AssessmentName.MEANS, amendment, user);
@@ -984,16 +972,20 @@ public class ApplicationSubmissionController {
   }
 
   private boolean validateMeritsAssessment(
-      final ApplicationDetail amendment, final UserDetail user, final Model model) {
+      final ApplicationDetail amendment,
+      final AssessmentDetail meansAssessment,
+      final UserDetail user,
+      final Model model) {
 
     final AssessmentDetail meritsAssessment =
         getLatestAmendmentAssessment(AssessmentName.MERITS, amendment, user);
     final String status = assessmentStatus(meritsAssessment);
 
-    // Gate A: a reassessment is required.
+    // Gate A: a reassessment is required. The means assessment is passed so that a means-only
+    // change does not demand a merits reassessment (old PUI's !meansLast guard).
     if (notIncompleteOrNotStarted(status)
         && assessmentService.isMeritsReassessmentRequiredForAmendment(
-            amendment, meritsAssessment, user)) {
+            amendment, meansAssessment, meritsAssessment, user)) {
       model.addAttribute(
           MERITS_ASSESSMENT_ERRORS, List.of(resolveMessage(MERITS_REASSESSMENT_REQUIRED_KEY)));
       return true;
@@ -1058,13 +1050,6 @@ public class ApplicationSubmissionController {
    */
   private boolean hasBeenStarted(final String status) {
     return status != null && !AssessmentStatus.NOT_STARTED.getStatus().equalsIgnoreCase(status);
-  }
-
-  private boolean isEcfApplicationType(final ApplicationDetail application) {
-    return application != null
-        && application.getApplicationType() != null
-        && APP_TYPE_EXCEPTIONAL_CASE_FUNDING.equalsIgnoreCase(
-            application.getApplicationType().getId());
   }
 
   private String resolveMessage(final String key) {
