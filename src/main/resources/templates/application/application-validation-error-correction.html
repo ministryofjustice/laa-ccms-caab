@@ -11,7 +11,7 @@
        class="govuk-back-link"
        th:text="${caseContext.isAmendment()} ? #{site.returnToAmendmentSummary} : #{site.returnToApplicationSummary}"></a>
   </div>
-  <div id="main-content" class="govuk-!-padding-top-7">
+  <div id="main-content">
       <span class="govuk-caption-l" th:text="${caseContext.isAmendment()} ? #{amendment.about} : #{application.about}"></span>
       <h1 class="govuk-heading-l" th:text="#{submission.errorCorrection.title}"></h1>
       <p class="govuk-body-l">
