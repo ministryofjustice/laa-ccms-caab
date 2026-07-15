@@ -2,21 +2,22 @@
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
-  <title>LAA CCMS - Application summary</title>
+  <title th:text="#{service.name} + ' - ' + #{submission.errorCorrection.title}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
-  <div id="breadcrumbs"></div>
+  <div id="breadcrumbs">
+    <a th:href="${caseContext.isAmendment()} ? @{/amendments/summary} : @{/application/sections}"
+       class="govuk-back-link"
+       th:text="${caseContext.isAmendment()} ? #{site.returnToAmendmentSummary} : #{site.returnToApplicationSummary}"></a>
+  </div>
   <div id="main-content" class="govuk-!-padding-top-7">
       <span class="govuk-caption-l" th:text="${caseContext.isAmendment()} ? #{amendment.about} : #{application.about}"></span>
-      <h1 class="govuk-heading-l">
-        Validation - error correction
-      </h1>
+      <h1 class="govuk-heading-l" th:text="#{submission.errorCorrection.title}"></h1>
       <p class="govuk-body-l">
-        There are errors within the information you have entered. You cannot submit the information
-        until you have corrected it.
+        <span th:text="#{submission.errorCorrection.guidance}"></span>
         <br><br>
-        To correct your error(s) now, follow the link in the section column.
+        <span th:text="#{submission.errorCorrection.guidanceAction}"></span>
       </p>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
@@ -71,19 +72,19 @@
             </tr>
             <tr class="govuk-table__row" th:if="${proceedingsErrors != null and !proceedingsErrors.isEmpty()}">
               <td class="govuk-table__cell">
-                <a th:href="@{/application/proceedings-and-costs}" class="govuk-link">Proceeding details</a>
+                <a th:href="@{/{caseContext}/proceedings-and-costs(caseContext=${caseContext.pathValue})}" class="govuk-link">Proceeding details</a>
               </td>
               <td class="govuk-table__cell" th:utext="${#strings.listJoin(proceedingsErrors, '<br/>')}"></td>
             </tr>
             <tr class="govuk-table__row" th:if="${priorAuthorityErrors != null and !priorAuthorityErrors.isEmpty()}">
               <td class="govuk-table__cell">
-                <a th:href="@{/application/proceedings-and-costs#prior-authority}" class="govuk-link">Prior authority details</a>
+                <a th:href="@{/{caseContext}/proceedings-and-costs(caseContext=${caseContext.pathValue})} + '#prior-authority'" class="govuk-link">Prior authority details</a>
               </td>
               <td class="govuk-table__cell" th:utext="${#strings.listJoin(priorAuthorityErrors, '<br/>')}"></td>
             </tr>
             <tr class="govuk-table__row" th:if="${opponentErrors != null and !opponentErrors.isEmpty()}">
               <td class="govuk-table__cell">
-                <a th:href="@{/application/sections/opponents}" class="govuk-link">Opponent details</a>
+                <a th:href="@{/{caseContext}/sections/opponents(caseContext=${caseContext.pathValue})}" class="govuk-link">Opponent details</a>
               </td>
               <td class="govuk-table__cell" th:utext="${#strings.listJoin(opponentErrors, '<br/>')}"></td>
             </tr>
@@ -101,11 +102,6 @@
             </tr>
             </tbody>
           </table>
-          <form action="#" th:action="@{/{caseContext}/validate(caseContext=${caseContext.pathValue})}" method="post">
-          <div class="govuk-button-group">
-            <govuk:button type="submit" th:text="#{site.continue}"/>
-          </div>
-          </form>
         </div>
       </div>
   </div>

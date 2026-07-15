@@ -1049,24 +1049,6 @@ class ApplicationSubmissionControllerTest {
   }
 
   @Test
-  @DisplayName("Test POST /application/validate redirects to /application/sections")
-  void testApplicationValidatePost_RedirectsToApplicationSections() throws Exception {
-    mockMvc
-        .perform(post("/{caseContext}/validate", CaseContext.APPLICATION))
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/sections"));
-  }
-
-  @Test
-  @DisplayName("Test POST /amendments/validate redirects to /case/overview")
-  void testAmendmentValidatePost_RedirectsToCaseOverview() throws Exception {
-    mockMvc
-        .perform(post("/{caseContext}/validate", CaseContext.AMENDMENTS))
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/case/overview"));
-  }
-
-  @Test
   @DisplayName("Amendment validate - amendment with no changes is blocked")
   void testAmendmentValidate_emptyAmendmentBlocks() throws Exception {
     // No cost change, no amended assessments, no proceedings/opponents and no audit edit: the

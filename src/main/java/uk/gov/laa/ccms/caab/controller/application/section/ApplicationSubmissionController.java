@@ -496,19 +496,6 @@ public class ApplicationSubmissionController {
   }
 
   /**
-   * Returns the user to the application section task page after continue is clicked.
-   *
-   * @return the redirection URL to the application summary page
-   */
-  @PostMapping("/{caseContext}/validate")
-  public String applicationValidatePost(
-      @PathVariable("caseContext") final CaseContext caseContext) {
-
-    String redirectPath = caseContext.isAmendment() ? "/case/overview" : "/application/sections";
-    return "redirect:" + redirectPath;
-  }
-
-  /**
    * Handles the GET request for the application summary page.
    *
    * @param user The user requesting the summary.
