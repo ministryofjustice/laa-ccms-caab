@@ -28,6 +28,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.validation.Validator;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -225,7 +226,12 @@ public class ApplicationSubmissionController {
 
               boolean hasFormErrors =
                   processValidations(
-                      providerDetails, generalDetails, application, opponents, model);
+                      providerDetails,
+                      generalDetails,
+                      application,
+                      opponents,
+                      model,
+                      caseContext.isAmendment());
 
               return validateProceedings(application.getProceedings(), model)
                   .flatMap(
@@ -271,7 +277,8 @@ public class ApplicationSubmissionController {
       AddressFormData generalDetails,
       ApplicationDetail application,
       List<AbstractOpponentFormData> opponents,
-      Model model) {
+      Model model,
+      boolean isAmendment) {
     boolean hasErrors = false;
 
     if (validateAndAddErrors(
@@ -284,8 +291,8 @@ public class ApplicationSubmissionController {
       model.addAttribute("generalDetailsFormData", generalDetails);
       hasErrors = true;
     }
-    hasErrors |= validateOpponents(opponents, model);
-    hasErrors |= validatePriorAuthorities(application.getPriorAuthorities(), model);
+    hasErrors |= validateOpponents(opponents, model, isAmendment);
+    hasErrors |= validatePriorAuthorities(application.getPriorAuthorities(), model, isAmendment);
 
     return hasErrors;
   }
@@ -304,17 +311,47 @@ public class ApplicationSubmissionController {
       final Validator validator,
       final Model model,
       final String errorAttribute) {
+    return validateAndAddErrors(formData, validator, model, errorAttribute, Collections.emptySet());
+  }
+
+  /**
+   * Validates the form data and adds any validation errors to the model, ignoring errors on the
+   * given fields.
+   *
+   * @param formData the form data object to validate
+   * @param validator the validator to apply
+   * @param model the model to hold the collected error messages
+   * @param errorAttribute the model attribute key under which the errors will be added
+   * @param suppressedFields field names whose errors are dropped (used to skip fields old PUI does
+   *     not enforce on an amendment)
+   * @return {@code true} if there are validation errors, {@code false} otherwise
+   */
+  protected boolean validateAndAddErrors(
+      final Object formData,
+      final Validator validator,
+      final Model model,
+      final String errorAttribute,
+      final Set<String> suppressedFields) {
     final BindingResult bindingResult =
         new BeanPropertyBindingResult(formData, formData.getClass().getSimpleName());
     validator.validate(formData, bindingResult);
 
-    if (bindingResult.hasErrors()) {
-      final List<String> errors =
-          bindingResult.getAllErrors().stream().map(ObjectError::getDefaultMessage).toList();
+    final List<String> errors =
+        bindingResult.getAllErrors().stream()
+            .filter(error -> !isSuppressedField(error, suppressedFields))
+            .map(ObjectError::getDefaultMessage)
+            .toList();
+
+    if (!errors.isEmpty()) {
       model.addAttribute(errorAttribute, errors);
       return true;
     }
     return false;
+  }
+
+  private boolean isSuppressedField(final ObjectError error, final Set<String> suppressedFields) {
+    return error instanceof FieldError fieldError
+        && suppressedFields.contains(fieldError.getField());
   }
 
   /**
@@ -412,10 +449,18 @@ public class ApplicationSubmissionController {
    * @return {@code true} if there are validation errors, {@code false} otherwise
    */
   protected boolean validatePriorAuthorities(
-      final List<PriorAuthorityDetail> priorAuthorities, final Model model) {
+      final List<PriorAuthorityDetail> priorAuthorities,
+      final Model model,
+      final boolean isAmendment) {
     if (priorAuthorities == null || priorAuthorities.isEmpty()) {
       return false;
     }
+
+    // Old PUI does not enforce the prior authority justification on an amendment
+    // (opponentTitleErrorFilter covers PriorAuthority.justification), so existing data with an
+    // empty justification does not block the submission.
+    final Set<String> suppressedFields =
+        isAmendment ? Set.of("justification") : Collections.emptySet();
 
     final Set<String> priorAuthorityErrors = new HashSet<>();
     for (final PriorAuthorityDetail priorAuthority : priorAuthorities) {
@@ -434,7 +479,8 @@ public class ApplicationSubmissionController {
           priorAuthorityFlow.getPriorAuthorityDetailsFormData(),
           priorAuthorityDetailsValidator,
           model,
-          "priorAuthorityDetails")) {
+          "priorAuthorityDetails",
+          suppressedFields)) {
         priorAuthorityErrors.addAll(getErrorsFromModel(model, "priorAuthorityDetails"));
       }
     }
@@ -454,16 +500,22 @@ public class ApplicationSubmissionController {
    * @return {@code true} if there are validation errors, {@code false} otherwise
    */
   protected boolean validateOpponents(
-      final List<AbstractOpponentFormData> opponents, final Model model) {
+      final List<AbstractOpponentFormData> opponents,
+      final Model model,
+      final boolean isAmendment) {
     if (opponents == null || opponents.isEmpty()) {
       return false;
     }
+
+    // Old PUI does not enforce the opponent title on an amendment (opponentTitleErrorFilter covers
+    // Opponent.title), so existing data with an empty title does not block the submission.
+    final Set<String> suppressedFields = isAmendment ? Set.of("title") : Collections.emptySet();
 
     final Set<String> opponentErrors = new HashSet<>();
     for (final AbstractOpponentFormData opponent : opponents) {
       if (opponent instanceof IndividualOpponentFormData) {
         if (validateAndAddErrors(
-            opponent, individualOpponentValidator, model, "individualOpponent")) {
+            opponent, individualOpponentValidator, model, "individualOpponent", suppressedFields)) {
           opponentErrors.addAll(getErrorsFromModel(model, "individualOpponent"));
         }
       } else if (opponent instanceof OrganisationOpponentFormData) {
