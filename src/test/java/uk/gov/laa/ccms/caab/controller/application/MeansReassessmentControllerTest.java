@@ -160,7 +160,7 @@ class MeansReassessmentControllerTest {
   }
 
   @Test
-  void deleteMeansReassessmentClearsAssessmentAndRemovesDraft() throws Exception {
+  void deleteMeansReassessmentClearsAssessmentOnly() throws Exception {
     when(assessmentService.deleteAssessments(eq(user), anyList(), eq("CASE123"), eq(null)))
         .thenReturn(Mono.empty());
 
@@ -178,12 +178,9 @@ class MeansReassessmentControllerTest {
         .andExpect(request().sessionAttributeDoesNotExist(APPLICATION))
         .andExpect(request().sessionAttributeDoesNotExist(ACTIVE_CASE));
 
-    // The means assessment data is removed (mirrors old PUI DeleteAssessmentController).
+    // Only the means assessment data is removed, mirroring old PUI's DeleteAssessmentController -
+    // the shared draft is left untouched (the case overview ignores a means-reassessment draft).
     verify(assessmentService).deleteAssessments(eq(user), anyList(), eq("CASE123"), eq(null));
-    // The draft this journey created is removed too, so the case overview does not go on offering
-    // "continue amendment" (old PUI never persists a draft here). Any amend-case work it carries is
-    // preserved by the service, so this is not an abandonment.
-    verify(applicationService).removeMeansReassessmentDraft("CASE123", user);
     verify(applicationService, never()).abandonApplication(any(), any());
   }
 

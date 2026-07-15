@@ -110,6 +110,10 @@ public class MeansReassessmentController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final HttpSession session) {
 
+    // Delete only the means assessment data, matching old PUI's DeleteAssessmentController (which
+    // removes the means* OPA sessions and never touches the application). The shared draft is left
+    // alone; the case overview ignores a means-reassessment draft, so it does not surface as an
+    // open amendment.
     assessmentService
         .deleteAssessments(
             user,
@@ -119,11 +123,6 @@ public class MeansReassessmentController {
             activeCase.getCaseReferenceNumber(),
             null)
         .block();
-
-    // Old PUI holds the application in memory until submit, so deleting a means reassessment leaves
-    // no draft behind. caab creates the draft up front, so remove it here - unless it also carries
-    // amend-case work (the two journeys share one draft per case), which must not be discarded.
-    applicationService.removeMeansReassessmentDraft(activeCase.getCaseReferenceNumber(), user);
 
     clearReassessmentSession(session);
 

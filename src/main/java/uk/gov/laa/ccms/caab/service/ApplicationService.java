@@ -677,48 +677,6 @@ public class ApplicationService {
   }
 
   /**
-   * Removes the TDS draft created by the standalone means reassessment journey once that
-   * reassessment has been deleted, so that no draft is left behind.
-   *
-   * <p>Old PUI never persists an application when the means reassessment is opened ({@code
-   * CcmsHelper.prepareAmendment} builds it in memory only, writing it at submit time), so a deleted
-   * reassessment leaves no trace. caab creates the draft up front, and the case overview treats any
-   * draft as an open amendment - without this cleanup the case would offer "continue amendment" for
-   * an amendment the user never started.
-   *
-   * <p>Only a draft created by the means reassessment journey is removed. The two journeys share a
-   * single draft per case, so a draft created by Amend Case - identified by its quick edit type,
-   * which is set when the draft is created - is left untouched, along with the case's open
-   * amendment. A means-reassessment draft that has since acquired amend-case changes (e.g. an added
-   * opponent) is likewise kept, so that work is not discarded.
-   *
-   * @param caseReferenceNumber the case whose means reassessment was deleted
-   * @param user the user deleting the reassessment
-   */
-  public void removeMeansReassessmentDraft(
-      final String caseReferenceNumber, final UserDetail user) {
-
-    final BaseApplicationDetail tdsApplication = getTdsAmendment(caseReferenceNumber, user);
-
-    if (tdsApplication == null) {
-      return;
-    }
-
-    final ApplicationDetail amendment = loadAmendment(tdsApplication);
-
-    if (amendment == null
-        || !QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT.equals(
-            amendment.getQuickEditType())
-        || hasAmendCaseChanges(amendment, caseReferenceNumber, user)) {
-      return;
-    }
-
-    caabApiClient
-        .deleteApplication(String.valueOf(tdsApplication.getId()), user.getLoginId())
-        .block();
-  }
-
-  /**
    * Retrieves the amendment draft held in the TDS for a case, if any.
    *
    * @param caseReferenceNumber the case reference
