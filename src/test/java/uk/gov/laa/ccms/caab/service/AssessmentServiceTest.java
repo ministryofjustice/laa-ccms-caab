@@ -2018,6 +2018,32 @@ public class AssessmentServiceTest {
   }
 
   @Test
+  @DisplayName("removeNonReusableAttributes handles an immutable attribute list")
+  void removeNonReusableAttributes_immutableAttributeList() {
+    // The mapper can produce immutable attribute lists, so removal must not mutate in place.
+    final AssessmentDetail assessment =
+        new AssessmentDetail()
+            .addEntityTypesItem(
+                new AssessmentEntityTypeDetail()
+                    .name(GLOBAL.getType())
+                    .addEntitiesItem(
+                        new AssessmentEntityDetail()
+                            .name(GLOBAL.getType())
+                            .attributes(
+                                List.of(
+                                    new AssessmentAttributeDetail()
+                                        .name("MERITS_EVIDENCE_REQD")
+                                        .value("true"),
+                                    new AssessmentAttributeDetail()
+                                        .name("APPLICATION_CASE_REF")
+                                        .value("300001")))));
+
+    assessmentService.removeNonReusableAttributes(assessment, AssessmentRulebase.MERITS);
+
+    assertEquals(List.of("APPLICATION_CASE_REF"), attributeNames(assessment, 0));
+  }
+
+  @Test
   @DisplayName("removeNonReusableAttributes strips the merits do-not-reuse attributes only")
   void removeNonReusableAttributes_meritsStripsEvidenceKeepsRest() {
     final AssessmentDetail assessment =

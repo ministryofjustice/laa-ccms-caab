@@ -51,6 +51,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -1437,15 +1438,17 @@ public class AssessmentService {
       return;
     }
 
+    // The attribute lists are not necessarily mutable, so replace rather than remove in place.
     assessment.getEntityTypes().stream()
         .filter(entityType -> entityType.getEntities() != null)
         .flatMap(entityType -> entityType.getEntities().stream())
         .filter(entity -> entity.getAttributes() != null)
         .forEach(
             entity ->
-                entity
-                    .getAttributes()
-                    .removeIf(attribute -> nonReusableAttributes.contains(attribute.getName())));
+                entity.setAttributes(
+                    entity.getAttributes().stream()
+                        .filter(attribute -> !nonReusableAttributes.contains(attribute.getName()))
+                        .collect(Collectors.toCollection(ArrayList::new))));
   }
 
   void prepopulateAssessmentFromEbs(
