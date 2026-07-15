@@ -35,7 +35,7 @@ public class IndividualOpponentValidator extends AbstractOpponentValidator {
   public void validate(final Object target, final Errors errors) {
     final IndividualOpponentFormData opponentFormData = (IndividualOpponentFormData) target;
 
-    validateRequiredField("title", opponentFormData.getTitle(), "Title", errors);
+    // Title (salutation) is optional
     validateNameComponent(
         "surname", opponentFormData.getSurname(), "Surname", true, CHARACTER_SET_E, errors);
     validateNameComponent(
