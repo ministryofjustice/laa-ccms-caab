@@ -225,10 +225,12 @@ public class AssessmentControllerTest {
                 .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk());
 
-    // The application the prepop is built from is re-typed as substantive.
+    // The application the prepop is built from is re-typed as substantive, and the reassessment
+    // flag is passed true so the "do not reuse" strip is skipped (matching old PUI's
+    // StartOpaReassessment).
     final ArgumentCaptor<ApplicationDetail> captor =
         ArgumentCaptor.forClass(ApplicationDetail.class);
-    verify(assessmentService).startAssessment(captor.capture(), any(), any(), any());
+    verify(assessmentService).startAssessment(captor.capture(), any(), any(), any(), eq(true));
     assertEquals("SUB", captor.getValue().getApplicationType().getId());
   }
 

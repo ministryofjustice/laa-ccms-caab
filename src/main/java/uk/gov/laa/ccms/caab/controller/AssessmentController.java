@@ -248,8 +248,15 @@ public class AssessmentController {
       // Required for the connector
       final String ezgovId = UUID.randomUUID().toString();
 
-      // start opa assessment
-      assessmentService.startAssessment(application, assessmentRulebase, client, user);
+      // start opa assessment. The standalone means reassessment (CCMS_MNA05) reuses the prior
+      // assessment data, so it must not have the "do not reuse" attributes stripped (old PUI's
+      // StartOpaReassessment applies no such strip, unlike the amend-case StartOpaAssessment).
+      assessmentService.startAssessment(
+          application,
+          assessmentRulebase,
+          client,
+          user,
+          MEANS_REASSESSMENT_INVOKED_FROM.equals(invokedFrom));
 
       final AssessmentDetail prepopAssessment =
           Optional.ofNullable(

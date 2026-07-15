@@ -1272,12 +1272,16 @@ public class AssessmentService {
    * @param assessmentRulebase the rulebase for the assessment
    * @param client the client detail for the assessment
    * @param user the user detail initiating the assessment
+   * @param isReassessment whether this is the standalone means reassessment journey, which reuses
+   *     the prior assessment's data rather than stripping the "do not reuse" attributes (old PUI's
+   *     StartOpaReassessment, unlike the amend-case StartOpaAssessment, applies no such strip)
    */
   public void startAssessment(
       final ApplicationDetail application,
       final AssessmentRulebase assessmentRulebase,
       final ClientDetail client,
-      final UserDetail user) {
+      final UserDetail user,
+      final boolean isReassessment) {
 
     final String providerId = user.getProvider().getId().toString();
     final String referenceId = application.getCaseReferenceNumber();
@@ -1316,7 +1320,7 @@ public class AssessmentService {
         .block();
 
     // start new assessment
-    startNewAssessment(assessmentRulebase, application, client, user);
+    startNewAssessment(assessmentRulebase, application, client, user, isReassessment);
   }
 
   /**
@@ -1326,12 +1330,14 @@ public class AssessmentService {
    * @param application the application details
    * @param client the client details
    * @param user the user details
+   * @param isReassessment whether this is the standalone means reassessment journey
    */
   protected void startNewAssessment(
       final AssessmentRulebase assessmentRulebase,
       final ApplicationDetail application,
       final ClientDetail client,
-      final UserDetail user) {
+      final UserDetail user,
+      final boolean isReassessment) {
     log.debug("Name - {}, AssessmentType - {}", user.getUsername(), assessmentRulebase.getType());
     final String referenceId = application.getCaseReferenceNumber();
     final String providerId = user.getProvider().getId().toString();
@@ -1393,11 +1399,15 @@ public class AssessmentService {
       prepopulateAssessmentFromEbs(application, assessmentRulebase, assessment);
     }
 
-    // An amendment must not reuse the answers the rulebase marks "Do Not Reuse" / "Short Term
-    // Reuse" - the evidence families among them. Old PUI clears them from both sessions on every
-    // amendment interview start (IframeHelper.removeAttributes), so the provider is asked again
-    // instead of inheriting the original application's answers.
-    if (prepopulateFromEbs && !assessmentRulebase.isFinancialAssessment()) {
+    // An amend-case assessment must not reuse the answers the rulebase marks "Do Not Reuse"
+    // (merits)
+    // / "Short Term Reuse" (means) - the evidence families among them. Old PUI's amend-case path
+    // (StartOpaAssessment) clears them from both sessions so the provider is asked again. The
+    // standalone means reassessment (StartOpaReassessment) applies no such strip - it reuses the
+    // prior EBS data - so the strip is skipped here for the reassessment journey, otherwise the
+    // EBS-seeded means inputs would be removed and the means goal (CLIENT_PROV_LA) could not
+    // resolve.
+    if (prepopulateFromEbs && !assessmentRulebase.isFinancialAssessment() && !isReassessment) {
       removeNonReusableAttributes(prepopAssessment, assessmentRulebase);
       removeNonReusableAttributes(assessment, assessmentRulebase);
     }

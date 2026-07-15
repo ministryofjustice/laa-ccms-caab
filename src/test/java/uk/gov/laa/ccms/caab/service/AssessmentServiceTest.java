@@ -1348,7 +1348,7 @@ public class AssessmentServiceTest {
     when(assessmentApiClient.updateAssessment(any(), any(), eq(user.getLoginId())))
         .thenReturn(Mono.empty());
 
-    assessmentService.startNewAssessment(AssessmentRulebase.MEANS, application, null, user);
+    assessmentService.startNewAssessment(AssessmentRulebase.MEANS, application, null, user, false);
 
     // Only the working assessment is mapped; the unchanged prepop is left as-is.
     verify(assessmentMapper, never()).toAssessmentDetail(eq(existingPrepop), any());
@@ -1399,7 +1399,7 @@ public class AssessmentServiceTest {
         .thenReturn(
             just(new AssessmentDetails().content(new ArrayList<>(List.of(existingPrepop)))));
 
-    assessmentService.startAssessment(application, AssessmentRulebase.MEANS, null, user);
+    assessmentService.startAssessment(application, AssessmentRulebase.MEANS, null, user, false);
 
     // The COMPLETE assessment is preserved: nothing is deleted, re-mapped or saved.
     verify(assessmentApiClient, never())
@@ -1447,7 +1447,7 @@ public class AssessmentServiceTest {
     when(assessmentApiClient.createAssessment(any(), eq(user.getLoginId())))
         .thenReturn(Mono.empty());
 
-    assessmentService.startNewAssessment(AssessmentRulebase.MEANS, application, null, user);
+    assessmentService.startNewAssessment(AssessmentRulebase.MEANS, application, null, user, false);
 
     // The stale prepop is deleted and the regenerated (fresh) prepop is mapped along with the
     // working assessment.
