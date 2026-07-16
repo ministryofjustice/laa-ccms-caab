@@ -10,6 +10,7 @@ import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.APP_
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.DELEGATED_FUNCTIONS_DATE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.REQUESTED_SCOPE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.GLOBAL;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.LINKED_CASE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.OPPONENT;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS;
@@ -44,6 +45,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -67,6 +69,7 @@ import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.assessment.model.PatchAssessmentDetail;
 import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
+import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
@@ -96,6 +99,8 @@ import uk.gov.laa.ccms.caab.util.AssessmentReuseUtil;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.caab.util.ProceedingUtil;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CaseAssessmentDetail;
+import uk.gov.laa.ccms.data.model.CaseAssessmentDetails;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -117,6 +122,7 @@ public class AssessmentService {
   private final AssessmentApiClient assessmentApiClient;
   private final CaabApiClient caabApiClient;
   private final SoaApiClient soaApiClient;
+  private final EbsApiClient ebsApiClient;
   private final AssessmentMapper assessmentMapper;
   private final LookupService lookupService;
 
@@ -1393,10 +1399,17 @@ public class AssessmentService {
     updateCostLimitIfMeritsAssessment(assessmentRulebase, application, user);
 
     if (prepopulateFromEbs) {
+      // The interview loads the prepop, so seed the reused EBS data there: user-entered answers on
+      // first creation only (edits persist on re-entry), EBS-sourced values every start. The
+      // working assessment gets both.
+      final List<CaseAssessmentDetail> ebsAssessmentData =
+          fetchEbsAssessmentData(referenceId, assessmentRulebase);
       if (createdNewPrepopAssessment) {
-        prepopulateAssessmentFromEbs(application, assessmentRulebase, prepopAssessment);
+        mergeEbsAssessmentData(prepopAssessment, ebsAssessmentData, true);
       }
-      prepopulateAssessmentFromEbs(application, assessmentRulebase, assessment);
+      mergeEbsAssessmentData(prepopAssessment, ebsAssessmentData, false);
+      mergeEbsAssessmentData(assessment, ebsAssessmentData, true);
+      mergeEbsAssessmentData(assessment, ebsAssessmentData, false);
     }
 
     // An amend-case assessment must not reuse the answers the rulebase marks "Do Not Reuse"
@@ -1480,6 +1493,85 @@ public class AssessmentService {
         .forEach(opaEntity -> mergeOpaEntityIntoAssessment(assessment, opaEntity));
   }
 
+  /**
+   * Fetches the stored OPA assessment attributes for a case from EBS. Unlike the getCase payload
+   * (which does not carry assessment data), this is the prior assessment prepopulation graph that a
+   * reassessment or amendment reuses.
+   *
+   * @param caseReferenceNumber the case being assessed
+   * @param assessmentRulebase the rulebase being run (drives the assessment type)
+   * @return the flat EBS assessment rows, or an empty list when none are available
+   */
+  private List<CaseAssessmentDetail> fetchEbsAssessmentData(
+      final String caseReferenceNumber, final AssessmentRulebase assessmentRulebase) {
+    return Optional.ofNullable(
+            ebsApiClient
+                .getCaseAssessment(caseReferenceNumber, assessmentRulebase.getType())
+                .block())
+        .map(CaseAssessmentDetails::getAssessmentDetails)
+        .orElseGet(List::of);
+  }
+
+  /**
+   * Merges one side of the user-defined split of EBS assessment attributes into an assessment.
+   *
+   * @param assessment the assessment to merge into
+   * @param rows the flat EBS assessment rows
+   * @param userEntered {@code true} to merge the provider's previously entered answers, {@code
+   *     false} to merge the EBS/system-sourced attributes
+   */
+  void mergeEbsAssessmentData(
+      final AssessmentDetail assessment,
+      final List<CaseAssessmentDetail> rows,
+      final boolean userEntered) {
+    toOpaEntities(rows, userEntered)
+        .forEach(opaEntity -> mergeOpaEntityIntoAssessment(assessment, opaEntity));
+  }
+
+  /**
+   * Groups the flat EBS assessment rows for one side of the user-defined split into the OPA entity
+   * graph the merge consumes.
+   *
+   * @param rows the flat EBS assessment rows
+   * @param userEntered {@code true} to keep user-entered attributes, {@code false} to keep
+   *     EBS/system-sourced attributes
+   * @return the grouped OPA entities
+   */
+  private List<OpaEntity> toOpaEntities(
+      final List<CaseAssessmentDetail> rows, final boolean userEntered) {
+    final Map<String, OpaEntity> entitiesByName = new LinkedHashMap<>();
+    final Map<String, OpaInstance> instancesByKey = new LinkedHashMap<>();
+
+    for (final CaseAssessmentDetail row : rows) {
+      if (row.getEntityName() == null
+          || row.getInstanceLabel() == null
+          || row.getAttributeName() == null
+          || Boolean.TRUE.equals(row.getAttributeUserDefinedIndicator()) != userEntered) {
+        continue;
+      }
+
+      final OpaEntity entity =
+          entitiesByName.computeIfAbsent(
+              row.getEntityName(), name -> new OpaEntity().entityName(name));
+      final OpaInstance instance =
+          instancesByKey.computeIfAbsent(
+              row.getEntityName() + "::" + row.getInstanceLabel(),
+              key -> {
+                final OpaInstance newInstance =
+                    new OpaInstance().instanceLabel(row.getInstanceLabel());
+                entity.addInstancesItem(newInstance);
+                return newInstance;
+              });
+      instance.addAttributesItem(
+          new OpaAttribute()
+              .attribute(row.getAttributeName())
+              .responseType(row.getAttributeType())
+              .responseValue(row.getAttributeValue()));
+    }
+
+    return new ArrayList<>(entitiesByName.values());
+  }
+
   private AssessmentResult getEbsAssessmentResult(
       final ApplicationDetail application, final AssessmentRulebase assessmentRulebase) {
     if (AssessmentRulebase.MEANS.equals(assessmentRulebase)) {
@@ -1531,6 +1623,12 @@ public class AssessmentService {
       return;
     }
 
+    // The mapper-built attribute list may be immutable; make it mutable before merging.
+    entity.setAttributes(
+        entity.getAttributes() == null
+            ? new ArrayList<>()
+            : new ArrayList<>(entity.getAttributes()));
+
     opaInstance.getAttributes().stream()
         .filter(Objects::nonNull)
         .forEach(opaAttribute -> mergeOpaAttributeIntoEntity(entity, opaAttribute));
@@ -1538,10 +1636,25 @@ public class AssessmentService {
 
   private AssessmentEntityDetail findEntity(
       final AssessmentEntityTypeDetail entityType, final OpaInstance opaInstance) {
-    return Optional.ofNullable(entityType.getEntities()).orElseGet(List::of).stream()
-        .filter(entity -> opaInstance.getInstanceLabel().equalsIgnoreCase(entity.getName()))
-        .findFirst()
-        .orElse(null);
+    final List<AssessmentEntityDetail> entities =
+        Optional.ofNullable(entityType.getEntities()).orElseGet(List::of);
+
+    final AssessmentEntityDetail labelMatch =
+        entities.stream()
+            .filter(entity -> opaInstance.getInstanceLabel().equalsIgnoreCase(entity.getName()))
+            .findFirst()
+            .orElse(null);
+    if (labelMatch != null) {
+      return labelMatch;
+    }
+
+    // caab labels a linked case by LSC reference, EBS by a different internal id, so labels never
+    // match. Reconcile a single linked case by position (multiple are left unmatched, not guessed).
+    if (LINKED_CASE.getType().equalsIgnoreCase(entityType.getName()) && entities.size() == 1) {
+      return entities.getFirst();
+    }
+
+    return null;
   }
 
   private void mergeOpaAttributeIntoEntity(

@@ -32,6 +32,7 @@ import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.BaseUser;
+import uk.gov.laa.ccms.data.model.CaseAssessmentDetails;
 import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
@@ -1766,5 +1767,30 @@ public class EbsApiClientTest {
 
       StepVerifier.create(transactionStatusMono).verifyComplete();
     }
+  }
+
+  @Test
+  @DisplayName("getCaseAssessment() builds the correct URI and returns the assessment data")
+  void getCaseAssessment_returnsData() {
+    final CaseAssessmentDetails assessmentData = new CaseAssessmentDetails();
+
+    final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor =
+        ArgumentCaptor.forClass(Function.class);
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CaseAssessmentDetails.class))
+        .thenReturn(Mono.just(assessmentData));
+
+    final Mono<CaseAssessmentDetails> result =
+        ebsApiClient.getCaseAssessment("300001513022", "MEANS");
+
+    StepVerifier.create(result).expectNext(assessmentData).verifyComplete();
+
+    final URI actualUri = uriCaptor.getValue().apply(UriComponentsBuilder.newInstance());
+    assertEquals(
+        "/cases/assessments?case-reference-number=300001513022&assessment-type=MEANS",
+        actualUri.toString());
   }
 }

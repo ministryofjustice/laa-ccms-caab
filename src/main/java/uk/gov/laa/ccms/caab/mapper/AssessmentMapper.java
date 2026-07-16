@@ -757,10 +757,13 @@ public interface AssessmentMapper {
       ApplicationDetail application, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
+  // No delegated functions date (e.g. a substantive reassessment) -> the OPA uncertain marker so
+  // the rulebase treats it as known-empty; null would read as unanswered and block the means goal.
   @Mapping(
       target = "value",
       source = "application.applicationType.devolvedPowers.dateUsed",
-      dateFormat = "dd-MM-yyyy")
+      dateFormat = "dd-MM-yyyy",
+      defaultValue = "~\t~")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)

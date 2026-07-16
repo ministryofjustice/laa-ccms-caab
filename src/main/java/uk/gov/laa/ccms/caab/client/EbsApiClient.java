@@ -20,6 +20,7 @@ import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.CaseAssessmentDetails;
 import uk.gov.laa.ccms.data.model.CaseDetail;
 import uk.gov.laa.ccms.data.model.CaseDetails;
 import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
@@ -951,6 +952,30 @@ public class EbsApiClient extends BaseApiClient {
             e ->
                 ebsApiClientErrorHandler.handleApiRetrieveError(
                     e, "Case detail", "case reference", caseReferenceNumber));
+  }
+
+  /**
+   * Retrieves the stored OPA assessment attributes for a case from EBS. This is the prior
+   * assessment prepopulation data (the graph of entities, instances and attributes) that a
+   * reassessment or amendment reuses - it is not carried on the {@code getCase} payload.
+   *
+   * @param caseReferenceNumber the case to fetch the assessment data for
+   * @param assessmentType the assessment type, e.g. {@code MEANS} or {@code MERITS}
+   * @return a {@link Mono} wrapping the {@link CaseAssessmentDetails}
+   */
+  public Mono<CaseAssessmentDetails> getCaseAssessment(
+      final String caseReferenceNumber, final String assessmentType) {
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    queryParams.add("case-reference-number", caseReferenceNumber);
+    queryParams.add("assessment-type", assessmentType);
+    return ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/cases/assessments").queryParams(queryParams).build())
+        .retrieve()
+        .bodyToMono(CaseAssessmentDetails.class)
+        .onErrorResume(
+            e ->
+                ebsApiClientErrorHandler.handleApiRetrieveError(e, "Case assessment", queryParams));
   }
 
   /**

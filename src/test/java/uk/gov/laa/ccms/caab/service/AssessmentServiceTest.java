@@ -61,6 +61,7 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
+import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.mapper.AssessmentMapper;
@@ -84,6 +85,7 @@ import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryEntityDisplay;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryAttributeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.BaseProvider;
+import uk.gov.laa.ccms.data.model.CaseAssessmentDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -91,6 +93,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class AssessmentServiceTest {
 
   @Mock private AssessmentApiClient assessmentApiClient;
+  @Mock private EbsApiClient ebsApiClient;
   @Mock private SoaApiClient soaApiClient;
   @Mock private LookupService lookupService;
   @Mock private AssessmentMapper assessmentMapper;
@@ -1307,6 +1310,142 @@ public class AssessmentServiceTest {
     assertEquals(1, proceedingEntities.size());
     assertEquals("P_123", proceedingEntities.getFirst().getName());
     assertTrue(proceedingEntities.getFirst().getAttributes().isEmpty());
+  }
+
+  private CaseAssessmentDetail ebsRow(
+      final String entity,
+      final String instance,
+      final String attribute,
+      final String value,
+      final boolean userDefined) {
+    return new CaseAssessmentDetail()
+        .entityName(entity)
+        .instanceLabel(instance)
+        .attributeName(attribute)
+        .attributeValue(value)
+        .attributeType("text")
+        .attributeUserDefinedIndicator(userDefined);
+  }
+
+  private AssessmentDetail globalAssessment(final String caseRef) {
+    return new AssessmentDetail()
+        .entityTypes(
+            new ArrayList<>(
+                List.of(
+                    new AssessmentEntityTypeDetail()
+                        .name("global")
+                        .entities(
+                            new ArrayList<>(
+                                List.of(
+                                    new AssessmentEntityDetail()
+                                        .name(caseRef)
+                                        .attributes(new ArrayList<>())))))));
+  }
+
+  @Test
+  @DisplayName("mergeEbsAssessmentData adds EBS-sourced attributes when not selecting user-entered")
+  void mergeEbsAssessmentDataAddsEbsSourcedAttributes() {
+    final AssessmentDetail assessment = globalAssessment("CASE-123");
+    final List<CaseAssessmentDetail> rows =
+        List.of(
+            ebsRow("global", "CASE-123", "GB_DECL_B_38WP3_13A_PREV", "~\t~", false),
+            ebsRow("global", "CASE-123", "USER_ANSWER", "yes", true));
+
+    assessmentService.mergeEbsAssessmentData(assessment, rows, false);
+
+    final List<AssessmentAttributeDetail> attributes =
+        assessment.getEntityTypes().getFirst().getEntities().getFirst().getAttributes();
+    assertEquals(1, attributes.size());
+    assertEquals("GB_DECL_B_38WP3_13A_PREV", attributes.getFirst().getName());
+    assertEquals("~\t~", attributes.getFirst().getValue());
+    assertTrue(attributes.getFirst().getPrepopulated());
+  }
+
+  @Test
+  @DisplayName("mergeEbsAssessmentData selects only user-entered attributes when requested")
+  void mergeEbsAssessmentDataSelectsUserEnteredAttributes() {
+    final AssessmentDetail assessment = globalAssessment("CASE-123");
+    final List<CaseAssessmentDetail> rows =
+        List.of(
+            ebsRow("global", "CASE-123", "EBS_SOURCED", "x", false),
+            ebsRow("global", "CASE-123", "USER_ANSWER", "yes", true));
+
+    assessmentService.mergeEbsAssessmentData(assessment, rows, true);
+
+    final List<AssessmentAttributeDetail> attributes =
+        assessment.getEntityTypes().getFirst().getEntities().getFirst().getAttributes();
+    assertEquals(1, attributes.size());
+    assertEquals("USER_ANSWER", attributes.getFirst().getName());
+  }
+
+  @Test
+  @DisplayName("mergeEbsAssessmentData skips a row whose instance is not in the assessment")
+  void mergeEbsAssessmentDataSkipsUnmatchedInstance() {
+    final AssessmentDetail assessment = globalAssessment("CASE-123");
+    final List<CaseAssessmentDetail> rows =
+        List.of(ebsRow("LINKED_CASES", "OTHER-INSTANCE", "LINKED_CASE_OWNER", "SCA", false));
+
+    assessmentService.mergeEbsAssessmentData(assessment, rows, false);
+
+    // No LINKED_CASES entity in the assessment -> nothing merged, global untouched.
+    assertTrue(
+        assessment.getEntityTypes().getFirst().getEntities().getFirst().getAttributes().isEmpty());
+  }
+
+  @Test
+  @DisplayName("mergeEbsAssessmentData tolerates an entity whose attribute list is immutable")
+  void mergeEbsAssessmentDataHandlesImmutableAttributeList() {
+    final AssessmentDetail assessment =
+        new AssessmentDetail()
+            .entityTypes(
+                List.of(
+                    new AssessmentEntityTypeDetail()
+                        .name("global")
+                        .entities(
+                            List.of(
+                                new AssessmentEntityDetail()
+                                    .name("CASE-123")
+                                    .attributes(List.of())))));
+    final List<CaseAssessmentDetail> rows =
+        List.of(ebsRow("global", "CASE-123", "EBS_SOURCED", "x", false));
+
+    assessmentService.mergeEbsAssessmentData(assessment, rows, false);
+
+    final List<AssessmentAttributeDetail> attributes =
+        assessment.getEntityTypes().getFirst().getEntities().getFirst().getAttributes();
+    assertEquals(1, attributes.size());
+    assertEquals("EBS_SOURCED", attributes.getFirst().getName());
+  }
+
+  @Test
+  @DisplayName(
+      "mergeEbsAssessmentData reconciles a single LINKED_CASES instance despite an id mismatch")
+  void mergeEbsAssessmentDataReconcilesSingleLinkedCaseByPosition() {
+    // caab labels its linked-case instance with the LSC case reference; EBS uses a different id.
+    final AssessmentDetail assessment =
+        new AssessmentDetail()
+            .entityTypes(
+                new ArrayList<>(
+                    List.of(
+                        new AssessmentEntityTypeDetail()
+                            .name("LINKED_CASES")
+                            .entities(
+                                new ArrayList<>(
+                                    List.of(
+                                        new AssessmentEntityDetail()
+                                            .name("300001513050")
+                                            .attributes(new ArrayList<>())))))));
+    final List<CaseAssessmentDetail> rows =
+        List.of(ebsRow("LINKED_CASES", "60749650", "LINKED_CASE_OWNER", "SCA", false));
+
+    assessmentService.mergeEbsAssessmentData(assessment, rows, false);
+
+    final AssessmentEntityDetail linkedCase =
+        assessment.getEntityTypes().getFirst().getEntities().getFirst();
+    assertEquals("300001513050", linkedCase.getName());
+    assertEquals(1, linkedCase.getAttributes().size());
+    assertEquals("LINKED_CASE_OWNER", linkedCase.getAttributes().getFirst().getName());
+    assertEquals("SCA", linkedCase.getAttributes().getFirst().getValue());
   }
 
   @Test
