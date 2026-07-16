@@ -45,7 +45,6 @@ import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
-import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
@@ -601,58 +600,6 @@ class CaseControllerTest {
                                 .asInstanceOf(InstanceOfAssertFactories.BOOLEAN)
                                 .isTrue());
               });
-    }
-
-    @Test
-    @DisplayName("Case overview ignores a means reassessment draft (not an open amendment)")
-    public void caseOverviewIgnoresMeansReassessmentDraft() {
-      final String selectedCaseRef = "8";
-
-      ApplicationDetail ebsCase =
-          getEbsCase(
-              selectedCaseRef,
-              1,
-              "providerReference",
-              "firstname",
-              "surname",
-              "clientReference",
-              false,
-              null,
-              null,
-              List.of(FunctionConstants.AMEND_CASE));
-
-      BaseApplicationDetail tdsApplication =
-          new BaseApplicationDetail()
-              .id(100)
-              .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
-              .caseReferenceNumber(selectedCaseRef);
-
-      // The draft is a standalone means reassessment - old PUI never shows it as an open amendment.
-      ApplicationDetail amendments =
-          new ApplicationDetail()
-              .quickEditType(QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT);
-
-      when(applicationService.getTdsApplicationSummary(any(), any())).thenReturn(tdsApplication);
-      when(applicationService.getApplication(any())).thenReturn(Mono.just(amendments));
-      when(applicationService.isAmendment(any(), any())).thenReturn(Boolean.TRUE);
-
-      assertThat(
-              mockMvc.perform(
-                  get("/case/overview", selectedCaseRef)
-                      .sessionAttr(USER_DETAILS, user)
-                      .sessionAttr(CASE, ebsCase)
-                      .sessionAttr(SEARCH_URL, returnUrl)))
-          .hasViewName("application/case-overview")
-          .satisfies(
-              response ->
-                  assertThat(response)
-                      .model()
-                      .hasEntrySatisfying(
-                          "isAmendment",
-                          value ->
-                              assertThat(value)
-                                  .asInstanceOf(InstanceOfAssertFactories.BOOLEAN)
-                                  .isFalse()));
     }
 
     @Test

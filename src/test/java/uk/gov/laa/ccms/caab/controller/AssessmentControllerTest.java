@@ -4,10 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -19,7 +21,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildAssessmentDetail;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
@@ -190,13 +194,16 @@ public class AssessmentControllerTest {
   }
 
   @Test
-  public void assessmentGet_meansReassessment_assessesApplicationAsSubstantive() throws Exception {
-    // The draft is an emergency application; a reassessment must still be assessed as substantive
-    // (old PUI StartOpaReassessment, CR217).
+  public void assessmentGet_meansReassessment_usesInMemorySessionApplication() throws Exception {
+    // The means reassessment holds its application in memory (no persisted draft / no id), so the
+    // assessment uses the session application. The emergency application is re-typed as substantive
+    // and the reassessment flag is passed true (old PUI StartOpaReassessment, CR217).
     final ApplicationDetail application = buildApplicationDetail(1, true, new Date());
+    application.setCaseReferenceNumber("CASE123");
     application.setApplicationType(new ApplicationType().id("EMER").displayValue("Emergency"));
 
-    when(applicationService.getApplication(anyString())).thenReturn(Mono.just(application));
+    final ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("CASE123");
+
     when(contextSecurityUtil.createHubContext(
             anyString(),
             anyLong(),
@@ -221,17 +228,42 @@ public class AssessmentControllerTest {
                 .param("assessment", "means")
                 .param("invoked-from", "CCMS_MNA05")
                 .sessionAttr(USER_DETAILS, userDetails)
-                .sessionAttr(APPLICATION_ID, "applicationId")
+                .sessionAttr(APPLICATION, application)
+                .sessionAttr(CASE, ebsCase)
                 .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk());
 
-    // The application the prepop is built from is re-typed as substantive, and the reassessment
-    // flag is passed true so the "do not reuse" strip is skipped (matching old PUI's
-    // StartOpaReassessment).
+    // The in-memory application is used (no getApplication call), re-typed as substantive, and the
+    // reassessment flag is passed true so the "do not reuse" strip is skipped.
     final ArgumentCaptor<ApplicationDetail> captor =
         ArgumentCaptor.forClass(ApplicationDetail.class);
     verify(assessmentService).startAssessment(captor.capture(), any(), any(), any(), eq(true));
     assertEquals("SUB", captor.getValue().getApplicationType().getId());
+    verify(applicationService, never()).getApplication(anyString());
+  }
+
+  @Test
+  public void assessmentGet_meansReassessment_rejectsStaleSessionApplication() {
+    // A session application left over from a different case must not be used.
+    final ApplicationDetail application =
+        buildApplicationDetail(1, true, new Date()).caseReferenceNumber("OTHER-CASE");
+    final ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("CASE123");
+
+    final MockHttpServletRequestBuilder request =
+        get("/amendments/assessments")
+            .param("assessment", "means")
+            .param("invoked-from", "CCMS_MNA05")
+            .sessionAttr(USER_DETAILS, userDetails)
+            .sessionAttr(APPLICATION, application)
+            .sessionAttr(CASE, ebsCase)
+            .sessionAttr(ACTIVE_CASE, activeCase);
+
+    final Exception exception = assertThrows(Exception.class, () -> this.mockMvc.perform(request));
+
+    assertInstanceOf(CaabApplicationException.class, exception.getCause());
+    assertEquals(
+        "Session application does not match the current case", exception.getCause().getMessage());
+    verify(assessmentService, never()).startAssessment(any(), any(), any(), any(), anyBoolean());
   }
 
   @Test

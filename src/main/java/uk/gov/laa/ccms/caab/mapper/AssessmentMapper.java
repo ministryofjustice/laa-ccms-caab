@@ -64,6 +64,7 @@ import static uk.gov.laa.ccms.caab.util.OpponentUtil.getPartyName;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -149,7 +150,7 @@ public interface AssessmentMapper {
 
       // opponent relationships
       final List<AssessmentRelationshipTargetDetail> opponentRelationshipTargets =
-          context.getApplication().getOpponents().stream()
+          Optional.ofNullable(context.getApplication().getOpponents()).orElseGet(List::of).stream()
               .map(
                   opponent ->
                       new AssessmentRelationshipTargetDetail()

@@ -3,12 +3,15 @@ package uk.gov.laa.ccms.caab.controller;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DISPLAY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -159,16 +162,10 @@ public class AssessmentController {
       final HttpSession session,
       final Model model) {
 
-    // Every assessment is run against an application: the interview cannot be prepopulated without
-    // one, so fail here rather than further down.
-    if (session.getAttribute(APPLICATION_ID) == null) {
-      throw new CaabApplicationException("Failed to retrieve application");
-    }
-
-    final String applicationId = String.valueOf(session.getAttribute(APPLICATION_ID));
-    final ApplicationDetail application =
-        Optional.ofNullable(applicationService.getApplication(applicationId).block())
-            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve application"));
+    // Amend-case persists a draft and loads it by id; the standalone means reassessment holds its
+    // application in memory (no draft until submit), so use the session application when there is
+    // no persisted id.
+    final ApplicationDetail application = resolveAssessmentApplication(session);
 
     // The TDS draft application does not carry a computed default cost limitation, which the OPA
     // prepop maps into DEFAULT_COST_LIMITATION and the merits rulebase needs to resolve its
@@ -364,6 +361,37 @@ public class AssessmentController {
 
     application.getApplicationType().setId(APP_TYPE_SUBSTANTIVE);
     application.getApplicationType().setDisplayValue(APP_TYPE_SUBSTANTIVE_DISPLAY);
+  }
+
+  /**
+   * Resolves the application the assessment is run against. The amend-case journey persists a draft
+   * and loads it fresh by id; the standalone means reassessment holds its (unpersisted) application
+   * in the session.
+   *
+   * @param session the HTTP session
+   * @return the application to prepopulate the assessment from
+   */
+  private ApplicationDetail resolveAssessmentApplication(final HttpSession session) {
+    if (session.getAttribute(APPLICATION_ID) != null) {
+      final String applicationId = String.valueOf(session.getAttribute(APPLICATION_ID));
+      return Optional.ofNullable(applicationService.getApplication(applicationId).block())
+          .orElseThrow(() -> new CaabApplicationException("Failed to retrieve application"));
+    }
+
+    final ApplicationDetail application =
+        Optional.ofNullable((ApplicationDetail) session.getAttribute(APPLICATION))
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve application"));
+
+    // The in-memory reassessment application must belong to the case being viewed - guard against a
+    // stale session application left over from another case the user switched away from.
+    final ApplicationDetail currentCase = (ApplicationDetail) session.getAttribute(CASE);
+    if (currentCase == null
+        || !Objects.equals(
+            currentCase.getCaseReferenceNumber(), application.getCaseReferenceNumber())) {
+      throw new CaabApplicationException("Session application does not match the current case");
+    }
+
+    return application;
   }
 
   private String getCancelLinkUrl(final CaseContext caseContext, final String invokedFrom) {

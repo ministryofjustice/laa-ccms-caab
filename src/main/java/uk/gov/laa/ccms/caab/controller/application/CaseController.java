@@ -41,7 +41,6 @@ import uk.gov.laa.ccms.caab.bean.proceeding.CaseProceedingDisplayStatus;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
 import uk.gov.laa.ccms.caab.constants.PriorAuthorityGroup;
-import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.AvailableAction;
@@ -116,13 +115,6 @@ public class CaseController {
       isAmendment = amendments != null;
     }
 
-    // A standalone means reassessment draft is not an open amendment on the overview (old PUI
-    // parity), whichever path resolved it.
-    if (isAmendment && isMeansReassessmentDraft(amendments)) {
-      amendments = null;
-      isAmendment = false;
-    }
-
     if (!isAmendment) {
       clearAmendmentSession(session);
     }
@@ -165,22 +157,6 @@ public class CaseController {
     }
 
     return resolveAmendment(tdsApplication);
-  }
-
-  /**
-   * A standalone means reassessment persists a draft, but old PUI never shows it as an open
-   * amendment (it holds the application in memory). So a draft whose quick edit type is
-   * MeansReassessment is not treated as an open amendment on the case overview - the case offers
-   * "Amend case", not "Continue amendment". A means reassessment that reused an Amend Case draft
-   * keeps that draft's (null) quick edit type, so a genuine amendment is still detected.
-   *
-   * @param amendment the resolved amendment, may be {@code null}
-   * @return {@code true} if the amendment is a standalone means reassessment draft
-   */
-  private static boolean isMeansReassessmentDraft(@Nullable ApplicationDetail amendment) {
-    return amendment != null
-        && QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT.equals(
-            amendment.getQuickEditType());
   }
 
   private ApplicationDetail resolveAmendment(BaseApplicationDetail tdsApplication) {

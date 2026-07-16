@@ -7,7 +7,7 @@ import java.util.Optional;
 import uk.gov.laa.ccms.caab.constants.assessment.InstanceMappingPrefix;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
-import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
+import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 
 /** Utility class for handling proceeding-related operations. */
 public final class ProceedingUtil {
@@ -79,7 +79,7 @@ public final class ProceedingUtil {
   public static String getNewOrExisting(final ProceedingDetail proceeding) {
     if (proceeding.getEbsId() == null) {
       return NEW_PROCEEDING;
-    } else if (proceeding.getEdited()) {
+    } else if (Boolean.TRUE.equals(proceeding.getEdited())) {
       return CHANGED_PROCEEDING;
     } else {
       return UNCHANGED_PROCEEDING;
@@ -100,7 +100,9 @@ public final class ProceedingUtil {
             scopeLimitations ->
                 scopeLimitations.size() > 1
                     ? "MULTIPLE"
-                    : scopeLimitations.getFirst().getScopeLimitation().getId())
+                    : Optional.ofNullable(scopeLimitations.getFirst().getScopeLimitation())
+                        .map(StringDisplayValue::getId)
+                        .orElse(null))
         .orElse(null);
   }
 
@@ -118,7 +120,8 @@ public final class ProceedingUtil {
             scopeLimitationList ->
                 scopeLimitationList.stream()
                     .filter(Objects::nonNull)
-                    .anyMatch(ScopeLimitationDetail::getDefaultInd))
+                    .anyMatch(
+                        scopeLimitation -> Boolean.TRUE.equals(scopeLimitation.getDefaultInd())))
         .isPresent();
   }
 

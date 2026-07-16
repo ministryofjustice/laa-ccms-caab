@@ -99,7 +99,7 @@ public final class OpponentUtil {
     final StringBuilder builder = new StringBuilder();
 
     if (StringUtils.hasText(opponent.getTitle())) {
-      final String displayTitle = titleLookup.getDescription();
+      final String displayTitle = titleLookup == null ? null : titleLookup.getDescription();
       if (displayTitle != null) {
         builder.append(displayTitle);
       } else {

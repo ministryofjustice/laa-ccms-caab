@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -49,8 +51,6 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.mapper.SubmissionSummaryDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.model.ApplicationDetails;
-import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
@@ -94,25 +94,23 @@ class MeansReassessmentControllerTest {
   }
 
   @Test
-  void startMeansReassessmentCreatesDraftWhenNoneExists() throws Exception {
-    BaseApplicationDetail createdSummary = new BaseApplicationDetail().id(456);
-
-    when(applicationService.getTdsApplications(any(), eq(user), eq(0), eq(1)))
-        .thenReturn(new ApplicationDetails().content(Collections.emptyList()))
-        .thenReturn(new ApplicationDetails().content(List.of(createdSummary)));
-    when(amendmentService.createMeansReassessmentForCase(ebsCase, user)).thenReturn("456");
-    when(applicationService.getApplication("456")).thenReturn(Mono.just(amendment));
+  void startMeansReassessmentBuildsInMemoryApplicationWithoutPersisting() throws Exception {
+    when(amendmentService.buildMeansReassessment(ebsCase, user)).thenReturn(amendment);
 
     mockMvc
         .perform(
             get("/means-reassessment").sessionAttr(CASE, ebsCase).sessionAttr(USER_DETAILS, user))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/means-reassessment/summary"))
-        .andExpect(request().sessionAttribute(APPLICATION_SUMMARY, createdSummary))
+        // The application is held in the session but not persisted, so there is no id/summary and
+        // the case overview never sees a draft (old PUI parity).
         .andExpect(request().sessionAttribute(APPLICATION, amendment))
-        .andExpect(request().sessionAttribute(APPLICATION_ID, "456"));
+        .andExpect(request().sessionAttribute(ACTIVE_CASE, notNullValue()))
+        .andExpect(request().sessionAttributeDoesNotExist(APPLICATION_ID))
+        .andExpect(request().sessionAttributeDoesNotExist(APPLICATION_SUMMARY));
 
-    verify(amendmentService).createMeansReassessmentForCase(ebsCase, user);
+    verify(amendmentService).buildMeansReassessment(ebsCase, user);
+    verify(applicationService, never()).getTdsApplications(any(), any(), anyInt(), anyInt());
   }
 
   @Test
