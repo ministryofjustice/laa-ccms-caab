@@ -51,6 +51,7 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.mapper.SubmissionSummaryDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
@@ -111,6 +112,27 @@ class MeansReassessmentControllerTest {
 
     verify(amendmentService).buildMeansReassessment(ebsCase, user);
     verify(applicationService, never()).getTdsApplications(any(), any(), anyInt(), anyInt());
+  }
+
+  @Test
+  void startMeansReassessmentClearsAStaleDraftFromAnEarlierJourney() throws Exception {
+    when(amendmentService.buildMeansReassessment(ebsCase, user)).thenReturn(amendment);
+
+    mockMvc
+        .perform(
+            get("/means-reassessment")
+                .sessionAttr(CASE, ebsCase)
+                .sessionAttr(USER_DETAILS, user)
+                // An Amend Case draft the user started earlier in this session.
+                .sessionAttr(APPLICATION_ID, "999")
+                .sessionAttr(APPLICATION_SUMMARY, new BaseApplicationDetail().id(999)))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/means-reassessment/summary"))
+        // The assessment resolves by APPLICATION_ID ahead of the session application, so a stale id
+        // left behind would run the reassessment against that draft instead of this application.
+        .andExpect(request().sessionAttributeDoesNotExist(APPLICATION_ID))
+        .andExpect(request().sessionAttributeDoesNotExist(APPLICATION_SUMMARY))
+        .andExpect(request().sessionAttribute(APPLICATION, amendment));
   }
 
   @Test

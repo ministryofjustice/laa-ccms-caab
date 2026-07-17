@@ -192,7 +192,11 @@ public class MeansReassessmentController {
 
     // The reassessment application is not persisted, so there is no APPLICATION_ID / summary to
     // store - the in-memory application is held in the session and used to build the prepop and to
-    // submit.
+    // submit. Clear any left over from an earlier journey (e.g. Amend Case): the assessment loads
+    // by APPLICATION_ID in preference to the session application, so a stale id would silently run
+    // the reassessment against that draft instead of this application.
+    session.removeAttribute(APPLICATION_ID);
+    session.removeAttribute(APPLICATION_SUMMARY);
     session.setAttribute(APPLICATION, amendment);
     session.setAttribute(ACTIVE_CASE, activeCase);
   }

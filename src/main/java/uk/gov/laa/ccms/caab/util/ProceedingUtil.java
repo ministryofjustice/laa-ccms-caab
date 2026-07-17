@@ -122,7 +122,7 @@ public final class ProceedingUtil {
                     .filter(Objects::nonNull)
                     .anyMatch(
                         scopeLimitation -> Boolean.TRUE.equals(scopeLimitation.getDefaultInd())))
-        .isPresent();
+        .orElse(false);
   }
 
   /**
