@@ -1400,8 +1400,9 @@ public class AssessmentService {
 
     if (prepopulateFromEbs) {
       // The interview loads the prepop, so seed the reused EBS data there: user-entered answers on
-      // first creation only (edits persist on re-entry), EBS-sourced values every start. The
-      // working assessment gets both.
+      // first creation only (edits persist on re-entry), EBS-sourced values on every start. The
+      // merge only fills gaps - an attribute already holding a value is left alone - so a later
+      // start tops up blanks rather than refreshing. The working assessment gets both.
       final List<CaseAssessmentDetail> ebsAssessmentData =
           fetchEbsAssessmentData(referenceId, assessmentRulebase);
       if (createdNewPrepopAssessment) {
@@ -1500,7 +1501,8 @@ public class AssessmentService {
    *
    * @param caseReferenceNumber the case being assessed
    * @param assessmentRulebase the rulebase being run (drives the assessment type)
-   * @return the flat EBS assessment rows, or an empty list when none are available
+   * @return the flat EBS assessment rows, or an empty list when the case has none stored. API
+   *     errors are not swallowed here - they propagate to the caller.
    */
   private List<CaseAssessmentDetail> fetchEbsAssessmentData(
       final String caseReferenceNumber, final AssessmentRulebase assessmentRulebase) {

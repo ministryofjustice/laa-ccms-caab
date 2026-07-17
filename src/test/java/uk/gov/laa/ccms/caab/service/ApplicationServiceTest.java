@@ -1593,6 +1593,49 @@ class ApplicationServiceTest {
   }
 
   @Test
+  void removeSubmittedAmendment_pureMeansReassessment_deletesDraftAndNonFinancialAssessments() {
+    final UserDetail user = buildUserDetail();
+    final String caseReferenceNumber = "CASE-123";
+    // The prepop survives a submission (old PUI removeNonFinancialOpaSessionsExcludingPrepop).
+    final List<String> expectedAssessmentNames = List.of(MEANS.getName(), MERITS.getName());
+
+    final ApplicationDetails tdsApplications =
+        new ApplicationDetails().addContentItem(new BaseApplicationDetail().id(42).amendment(true));
+    when(caabApiClient.getApplications(any(), eq(user.getProvider().getId()), eq(0), eq(1)))
+        .thenReturn(Mono.just(tdsApplications));
+
+    // The draft carries no amend-case change: it matches the EBS base case, and the reassessment
+    // itself does not count (hasAmendCaseChanges clears the amended flags before comparing).
+    final ApplicationDetail amendment = new ApplicationDetail().id(42).opponents(List.of());
+    when(caabApiClient.getApplication("42")).thenReturn(Mono.just(amendment));
+
+    final ApplicationDetail baseCase = new ApplicationDetail().opponents(List.of());
+    when(ebsApiClient.getCase(eq(caseReferenceNumber), anyLong(), anyString()))
+        .thenReturn(Mono.just(new CaseDetail()));
+    when(ebsApplicationMappingContextBuilder.buildApplicationMappingContext(any(CaseDetail.class)))
+        .thenReturn(EbsApplicationMappingContext.builder().build());
+    when(ebsApplicationMapper.toApplicationDetail(any(EbsApplicationMappingContext.class)))
+        .thenReturn(baseCase);
+
+    when(caabApiClient.deleteApplication("42", user.getLoginId())).thenReturn(Mono.empty());
+    when(assessmentService.deleteAssessments(
+            user, expectedAssessmentNames, caseReferenceNumber, null))
+        .thenReturn(Mono.empty());
+
+    applicationService.removeSubmittedAmendment(
+        caseReferenceNumber, user, QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT);
+
+    // Nothing is left to continue, so the whole draft goes - not just the means assessment - and
+    // merits is removed alongside it.
+    verify(caabApiClient).deleteApplication("42", user.getLoginId());
+    verify(assessmentService)
+        .deleteAssessments(user, expectedAssessmentNames, caseReferenceNumber, null);
+    // Submitted (not abandoned): no evidence-doc removal and no abandonment metric.
+    verify(evidenceService, never()).removeDocuments(any(), any());
+    verify(puiMetricService, never()).incrementAbandonedCount(any());
+  }
+
+  @Test
   void removeSubmittedAmendment_fullAmendmentWithChanges_deletesDraft() {
     final UserDetail user = buildUserDetail();
     final String caseReferenceNumber = "CASE-123";

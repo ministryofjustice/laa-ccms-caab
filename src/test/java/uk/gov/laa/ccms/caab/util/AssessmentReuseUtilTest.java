@@ -15,7 +15,10 @@ class AssessmentReuseUtilTest {
     final Set<String> attributes =
         AssessmentReuseUtil.getNonReusableAttributes(AssessmentRulebase.MERITS);
 
-    // Extracted from old PUI's MeritsDoNotReuseAttributes (BR100, "Do Not Reuse").
+    // Extracted from old PUI's MeritsDoNotReuseAttributes (BR100, "Do Not Reuse"). The exact size
+    // is a checksum over that transcription: lines silently lost from the resource would leave the
+    // attributes reused on an amendment (the provider is never re-asked) with nothing failing at
+    // runtime. Update it only when the BR100 list itself changes - that is a behaviour change.
     assertThat(attributes).hasSize(565);
     assertThat(attributes)
         .contains(
@@ -31,7 +34,8 @@ class AssessmentReuseUtilTest {
     final Set<String> attributes =
         AssessmentReuseUtil.getNonReusableAttributes(AssessmentRulebase.MEANS);
 
-    // Extracted from old PUI's MeansShortTermReuseAttributes (BR100, "Short Term Reuse").
+    // Extracted from old PUI's MeansShortTermReuseAttributes (BR100, "Short Term Reuse"). The exact
+    // size is a checksum over that transcription - see the merits test above.
     assertThat(attributes).hasSize(890);
     assertThat(attributes).contains("MEANS_EVIDENCE_REQD", "BANKACC_SMOD_FLAG", "CLIENT_PRISONER");
   }

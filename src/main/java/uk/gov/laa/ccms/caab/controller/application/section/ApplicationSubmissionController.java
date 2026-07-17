@@ -950,11 +950,25 @@ public class ApplicationSubmissionController {
         getLatestAmendmentAssessment(AssessmentName.MERITS, amendment, user);
     assessmentService.calculateAssessmentStatuses(amendment, means, merits, user);
 
+    // calculateAssessmentStatuses may persist a new status (REQUIRED/UNCHANGED) via the assessment
+    // API without updating the objects above, which therefore still hold the pre-patch status. The
+    // gates must see what was written, so re-read both here: this is a read-after-write, not a
+    // redundant fetch, and passing `means`/`merits` in instead would let a blocked amendment
+    // through. Read once and share, so a single pass cannot see two different means statuses.
+    final AssessmentDetail meansAfterStatusUpdate =
+        getLatestAmendmentAssessment(AssessmentName.MEANS, amendment, user);
+    final AssessmentDetail meritsAfterStatusUpdate =
+        getLatestAmendmentAssessment(AssessmentName.MERITS, amendment, user);
+
     // Block an amendment that has not actually changed anything (CCMSPUI-932, scenario 5). Old PUI
     // permits an empty amendment; the new PUI surfaces a validation error instead.
     boolean hasErrors = validateAmendmentHasChanges(amendment, caseDetail, model);
-    hasErrors |= validateMeansAssessment(amendment, user, meansLegalAmendmentAvailable, model);
-    hasErrors |= validateMeritsAssessment(amendment, means, user, model);
+    hasErrors |=
+        validateMeansAssessment(
+            amendment, meansAfterStatusUpdate, user, meansLegalAmendmentAvailable, model);
+    hasErrors |=
+        validateMeritsAssessment(
+            amendment, meansAfterStatusUpdate, meritsAfterStatusUpdate, user, model);
     return hasErrors;
   }
 
@@ -970,12 +984,11 @@ public class ApplicationSubmissionController {
 
   private boolean validateMeansAssessment(
       final ApplicationDetail amendment,
+      final AssessmentDetail meansAssessment,
       final UserDetail user,
       final boolean meansLegalAmendmentAvailable,
       final Model model) {
 
-    final AssessmentDetail meansAssessment =
-        getLatestAmendmentAssessment(AssessmentName.MEANS, amendment, user);
     final String status = assessmentStatus(meansAssessment);
 
     // Gate A: a reassessment is required (only meaningful when not already incomplete/not started).
@@ -1013,11 +1026,10 @@ public class ApplicationSubmissionController {
   private boolean validateMeritsAssessment(
       final ApplicationDetail amendment,
       final AssessmentDetail meansAssessment,
+      final AssessmentDetail meritsAssessment,
       final UserDetail user,
       final Model model) {
 
-    final AssessmentDetail meritsAssessment =
-        getLatestAmendmentAssessment(AssessmentName.MERITS, amendment, user);
     final String status = assessmentStatus(meritsAssessment);
 
     // Gate A: a reassessment is required. The means assessment is passed so that a means-only
