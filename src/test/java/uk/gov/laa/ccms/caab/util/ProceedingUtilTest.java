@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -10,6 +12,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
+import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 
 /** Tests for {@link ProceedingUtil}. */
 class ProceedingUtilTest {
@@ -78,5 +81,43 @@ class ProceedingUtilTest {
     proceeding.setScopeLimitations(scopeLimitations);
 
     assertTrue(ProceedingUtil.isScopeLimitDefault(proceeding));
+  }
+
+  private static ScopeLimitationDetail scopeLimitationWithId(final String id) {
+    final ScopeLimitationDetail scopeLimitation = new ScopeLimitationDetail();
+    scopeLimitation.setScopeLimitation(new StringDisplayValue().id(id));
+    return scopeLimitation;
+  }
+
+  @Test
+  @DisplayName("Requested scope returns the single scope limitation's id")
+  void getRequestedScope_returnsSingleId() {
+    assertEquals(
+        "FM001",
+        ProceedingUtil.getRequestedScopeForAssessmentInput(
+            proceedingWith(scopeLimitationWithId("FM001"))));
+  }
+
+  @Test
+  @DisplayName("Requested scope returns MULTIPLE when more than one exists")
+  void getRequestedScope_returnsMultiple() {
+    assertEquals(
+        "MULTIPLE",
+        ProceedingUtil.getRequestedScopeForAssessmentInput(
+            proceedingWith(scopeLimitationWithId("FM001"), scopeLimitationWithId("FM002"))));
+  }
+
+  @Test
+  @DisplayName("Requested scope returns null for no scope limitations")
+  void getRequestedScope_nullWhenEmpty() {
+    assertNull(ProceedingUtil.getRequestedScopeForAssessmentInput(proceedingWith()));
+  }
+
+  @Test
+  @DisplayName("Requested scope tolerates a single null entry without throwing")
+  void getRequestedScope_nullWhenSingleNullEntry() {
+    assertNull(
+        ProceedingUtil.getRequestedScopeForAssessmentInput(
+            proceedingWith((ScopeLimitationDetail) null)));
   }
 }

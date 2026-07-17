@@ -100,7 +100,8 @@ public final class ProceedingUtil {
             scopeLimitations ->
                 scopeLimitations.size() > 1
                     ? "MULTIPLE"
-                    : Optional.ofNullable(scopeLimitations.getFirst().getScopeLimitation())
+                    : Optional.ofNullable(scopeLimitations.getFirst())
+                        .map(scopeLimitation -> scopeLimitation.getScopeLimitation())
                         .map(StringDisplayValue::getId)
                         .orElse(null))
         .orElse(null);
