@@ -977,8 +977,7 @@ class ApplicationSubmissionControllerTest {
     when(model.containsAttribute("individualOpponent")).thenReturn(true);
     when(model.getAttribute("individualOpponent")).thenReturn(List.of("Error 1"));
 
-    final boolean result =
-        applicationSubmissionController.validateOpponents(opponents, model, false);
+    final boolean result = applicationSubmissionController.validateOpponents(opponents, model);
 
     assertTrue(result);
   }
@@ -1002,8 +1001,7 @@ class ApplicationSubmissionControllerTest {
     when(model.containsAttribute("organisationOpponent")).thenReturn(true);
     when(model.getAttribute("organisationOpponent")).thenReturn(List.of("Error 1"));
 
-    final boolean result =
-        applicationSubmissionController.validateOpponents(opponents, model, false);
+    final boolean result = applicationSubmissionController.validateOpponents(opponents, model);
 
     assertTrue(result);
   }
@@ -1013,8 +1011,7 @@ class ApplicationSubmissionControllerTest {
   void testValidateOpponents_WithNoOpponents() {
     final List<AbstractOpponentFormData> opponents = List.of();
 
-    final boolean result =
-        applicationSubmissionController.validateOpponents(opponents, model, false);
+    final boolean result = applicationSubmissionController.validateOpponents(opponents, model);
 
     assertFalse(result);
   }
@@ -1022,51 +1019,9 @@ class ApplicationSubmissionControllerTest {
   @Test
   @DisplayName("Test validateOpponents with null opponents returns false")
   void testValidateOpponents_WithNullOpponents() {
-    final boolean result = applicationSubmissionController.validateOpponents(null, model, false);
+    final boolean result = applicationSubmissionController.validateOpponents(null, model);
 
     assertFalse(result);
-  }
-
-  @Test
-  @DisplayName(
-      "validateOpponents - amendment suppresses a missing opponent title, application does not")
-  void testValidateOpponents_amendmentSuppressesTitle() {
-    final List<AbstractOpponentFormData> opponents = List.of(new IndividualOpponentFormData());
-    doAnswer(
-            invocation -> {
-              final Errors errors = invocation.getArgument(1);
-              errors.rejectValue("title", "required", "Enter a title.");
-              return null;
-            })
-        .when(individualOpponentValidator)
-        .validate(any(), any());
-
-    // Application: the title error blocks (no suppression).
-    lenient().when(model.containsAttribute("individualOpponent")).thenReturn(true);
-    lenient().when(model.getAttribute("individualOpponent")).thenReturn(List.of("Enter a title."));
-    assertTrue(applicationSubmissionController.validateOpponents(opponents, model, false));
-
-    // Amendment: the title error is suppressed, so it does not block - matching old PUI.
-    assertFalse(applicationSubmissionController.validateOpponents(opponents, model, true));
-  }
-
-  @Test
-  @DisplayName("validateOpponents - amendment still blocks a non-title opponent error")
-  void testValidateOpponents_amendmentKeepsNonTitleError() {
-    final List<AbstractOpponentFormData> opponents = List.of(new IndividualOpponentFormData());
-    doAnswer(
-            invocation -> {
-              final Errors errors = invocation.getArgument(1);
-              errors.rejectValue("otherInformation", "invalid.format", "Bad format.");
-              return null;
-            })
-        .when(individualOpponentValidator)
-        .validate(any(), any());
-
-    lenient().when(model.containsAttribute("individualOpponent")).thenReturn(true);
-    lenient().when(model.getAttribute("individualOpponent")).thenReturn(List.of("Bad format."));
-
-    assertTrue(applicationSubmissionController.validateOpponents(opponents, model, true));
   }
 
   @Test

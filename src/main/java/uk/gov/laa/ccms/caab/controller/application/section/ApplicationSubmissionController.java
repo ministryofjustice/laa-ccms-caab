@@ -291,7 +291,7 @@ public class ApplicationSubmissionController {
       model.addAttribute("generalDetailsFormData", generalDetails);
       hasErrors = true;
     }
-    hasErrors |= validateOpponents(opponents, model, isAmendment);
+    hasErrors |= validateOpponents(opponents, model);
     hasErrors |= validatePriorAuthorities(application.getPriorAuthorities(), model, isAmendment);
 
     return hasErrors;
@@ -500,22 +500,16 @@ public class ApplicationSubmissionController {
    * @return {@code true} if there are validation errors, {@code false} otherwise
    */
   protected boolean validateOpponents(
-      final List<AbstractOpponentFormData> opponents,
-      final Model model,
-      final boolean isAmendment) {
+      final List<AbstractOpponentFormData> opponents, final Model model) {
     if (opponents == null || opponents.isEmpty()) {
       return false;
     }
-
-    // Old PUI does not enforce the opponent title on an amendment (opponentTitleErrorFilter covers
-    // Opponent.title), so existing data with an empty title does not block the submission.
-    final Set<String> suppressedFields = isAmendment ? Set.of("title") : Collections.emptySet();
 
     final Set<String> opponentErrors = new HashSet<>();
     for (final AbstractOpponentFormData opponent : opponents) {
       if (opponent instanceof IndividualOpponentFormData) {
         if (validateAndAddErrors(
-            opponent, individualOpponentValidator, model, "individualOpponent", suppressedFields)) {
+            opponent, individualOpponentValidator, model, "individualOpponent")) {
           opponentErrors.addAll(getErrorsFromModel(model, "individualOpponent"));
         }
       } else if (opponent instanceof OrganisationOpponentFormData) {

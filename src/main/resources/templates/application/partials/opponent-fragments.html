@@ -65,7 +65,7 @@
      class="govuk-grid-row">
   <div class="govuk-grid-column-two-thirds">
     <input type="hidden" id="type" name="type" th:value="Individual"/>
-    <div th:replace="~{partials/forms :: dropdown('title', #{site.optional(#{person.title})}, ${contactTitles}, 'code', 'description', false)}"></div>
+    <div th:replace="~{partials/forms :: dropdown('title', #{person.title}, ${contactTitles}, 'code', 'description', false)}"></div>
     <div th:replace="~{partials/forms :: textInput('surname', #{person.surname}, 'govuk-input--width-20')}"></div>
     <div th:replace="~{partials/forms :: textInput('firstName', 'First name', 'govuk-input--width-20')}"></div>
     <div th:replace="~{partials/forms :: textInput('middleNames', #{site.optional(#{person.middleName})}, 'govuk-input--width-20')}"></div>

@@ -56,19 +56,6 @@ class IndividualOpponentValidatorTest {
   }
 
   @Test
-  public void validate_titleOptional_noErrorsWhenBlank() {
-    // Title (salutation) is not mandatory, matching old PUI.
-    opponentFormData.setTitle(null);
-    opponentFormData.setFirstName("first");
-    opponentFormData.setSurname("surname");
-    opponentFormData.setRelationshipToCase("rel2case");
-    opponentFormData.setRelationshipToClient("rel2client");
-
-    validator.validate(opponentFormData, errors);
-    assertFalse(errors.hasErrors());
-  }
-
-  @Test
   public void validate_dateOfBirthMandatory() {
     opponentFormData.setTitle("title");
     opponentFormData.setFirstName("first");
