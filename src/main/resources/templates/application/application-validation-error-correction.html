@@ -2,110 +2,108 @@
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
 <head>
-  <title>LAA CCMS - Application summary</title>
+  <title th:text="#{service.name} + ' - ' + #{submission.errorCorrection.title}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
-  <div id="breadcrumbs"></div>
-  <div id="main-content" class="govuk-!-padding-top-7">
+  <div id="breadcrumbs">
+    <a th:href="${caseContext.isAmendment()} ? @{/amendments/summary} : @{/application/sections}"
+       class="govuk-back-link"
+       th:text="${caseContext.isAmendment()} ? #{site.returnToAmendmentSummary} : #{site.returnToApplicationSummary}"></a>
+  </div>
+  <div id="main-content">
       <span class="govuk-caption-l" th:text="${caseContext.isAmendment()} ? #{amendment.about} : #{application.about}"></span>
-      <h1 class="govuk-heading-l">
-        Validation - error correction
-      </h1>
+      <h1 class="govuk-heading-l" th:text="#{submission.errorCorrection.title}"></h1>
       <p class="govuk-body-l">
-        There are errors within the information you have entered. You cannot submit the information
-        until you have corrected it.
+        <span th:text="#{submission.errorCorrection.guidance}"></span>
         <br><br>
-        To correct your error(s) now, follow the link in the section column.
+        <span th:text="#{submission.errorCorrection.guidanceAction}"></span>
       </p>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
           <table class="govuk-table">
             <thead class="govuk-table__head">
             <tr class="govuk-table__row">
-              <th scope="col" class="govuk-table__header">Section</th>
-              <th scope="col" class="govuk-table__header">Error description</th>
+              <th scope="col" class="govuk-table__header" th:text="#{submission.errorCorrection.column.section}">Section</th>
+              <th scope="col" class="govuk-table__header" th:text="#{submission.errorCorrection.column.errorDescription}">Error description</th>
             </tr>
             </thead>
             <tbody class="govuk-table__body">
             <tr class="govuk-table__row" th:if="${amendmentNoChangesErrors != null and !amendmentNoChangesErrors.isEmpty()}">
                 <td class="govuk-table__cell">
-                    <a th:href="@{/amendments/summary}" class="govuk-link">Amend case</a>
+                    <a th:href="@{/amendments/summary}" class="govuk-link" th:text="#{submission.errorCorrection.section.amendCase}">Amend case</a>
                 </td>
                 <td class="govuk-table__cell" th:utext="${#strings.listJoin(amendmentNoChangesErrors, '<br/>')}"></td>
             </tr>
             <tr class="govuk-table__row" th:if="${providerDetailsErrors != null and !providerDetailsErrors.isEmpty()}">
-              <form action="#" th:action="@{/application/sections/provider-details}" th:object="${providerDetailsFormData}" method="post">
-                <input type="hidden" th:field="*{officeId}"/>
-                <input type="hidden" th:field="*{officeName}"/>
-                <input type="hidden" th:field="*{feeEarnerId}"/>
-                <input type="hidden" th:field="*{supervisorId}"/>
-                <input type="hidden" th:field="*{providerCaseReference}"/>
-                <input type="hidden" th:field="*{contactNameId}"/>
-                <td class="govuk-table__cell">
-                  <button type="submit" class="govuk-body govuk-!-margin-bottom-0 ccms-button-as-link">
+              <td class="govuk-table__cell">
+                <form action="#" th:action="@{/application/sections/provider-details}" th:object="${providerDetailsFormData}" method="post">
+                  <input type="hidden" th:field="*{officeId}"/>
+                  <input type="hidden" th:field="*{officeName}"/>
+                  <input type="hidden" th:field="*{feeEarnerId}"/>
+                  <input type="hidden" th:field="*{supervisorId}"/>
+                  <input type="hidden" th:field="*{providerCaseReference}"/>
+                  <input type="hidden" th:field="*{contactNameId}"/>
+                  <button type="submit" class="govuk-body govuk-!-margin-bottom-0 ccms-button-as-link"
+                          th:text="#{submission.errorCorrection.section.providerDetails}">
                     Provider details
                   </button>
-                </td>
-                <td class="govuk-table__cell" th:utext="${#strings.listJoin(providerDetailsErrors, '<br/>')}"></td>
-              </form>
+                </form>
+              </td>
+              <td class="govuk-table__cell" th:utext="${#strings.listJoin(providerDetailsErrors, '<br/>')}"></td>
             </tr>
             <tr class="govuk-table__row" th:if="${generalDetailsErrors != null and !generalDetailsErrors.isEmpty()}">
-              <form action="#" th:action="@{/application/sections/correspondence-address}" th:object="${generalDetailsFormData}" method="post">
-                <input type="hidden" th:field="*{preferredAddress}"/>
-                <input type="hidden" th:field="*{country}"/>
-                <input type="hidden" th:field="*{houseNameNumber}"/>
-                <input type="hidden" th:field="*{postcode}"/>
-                <input type="hidden" th:field="*{addressLine1}"/>
-                <input type="hidden" th:field="*{addressLine2}"/>
-                <input type="hidden" th:field="*{cityTown}"/>
-                <input type="hidden" th:field="*{county}"/>
-                <input type="hidden" name="action" value="save_correspondence_address"/>
-                <td class="govuk-table__cell">
-                  <button type="submit" class="govuk-body govuk-!-margin-bottom-0 ccms-button-as-link">
+              <td class="govuk-table__cell">
+                <form action="#" th:action="@{/application/sections/correspondence-address}" th:object="${generalDetailsFormData}" method="post">
+                  <input type="hidden" th:field="*{preferredAddress}"/>
+                  <input type="hidden" th:field="*{country}"/>
+                  <input type="hidden" th:field="*{houseNameNumber}"/>
+                  <input type="hidden" th:field="*{postcode}"/>
+                  <input type="hidden" th:field="*{addressLine1}"/>
+                  <input type="hidden" th:field="*{addressLine2}"/>
+                  <input type="hidden" th:field="*{cityTown}"/>
+                  <input type="hidden" th:field="*{county}"/>
+                  <input type="hidden" name="action" value="save_correspondence_address"/>
+                  <button type="submit" class="govuk-body govuk-!-margin-bottom-0 ccms-button-as-link"
+                          th:text="#{submission.errorCorrection.section.generalDetails}">
                     General details
                   </button>
-                </td>
-                <td class="govuk-table__cell" th:utext="${#strings.listJoin(generalDetailsErrors, '<br/>')}"></td>
-              </form>
+                </form>
+              </td>
+              <td class="govuk-table__cell" th:utext="${#strings.listJoin(generalDetailsErrors, '<br/>')}"></td>
             </tr>
             <tr class="govuk-table__row" th:if="${proceedingsErrors != null and !proceedingsErrors.isEmpty()}">
               <td class="govuk-table__cell">
-                <a th:href="@{/application/proceedings-and-costs}" class="govuk-link">Proceeding details</a>
+                <a th:href="@{/{caseContext}/proceedings-and-costs(caseContext=${caseContext.pathValue})}" class="govuk-link" th:text="#{submission.errorCorrection.section.proceedingDetails}">Proceeding details</a>
               </td>
               <td class="govuk-table__cell" th:utext="${#strings.listJoin(proceedingsErrors, '<br/>')}"></td>
             </tr>
             <tr class="govuk-table__row" th:if="${priorAuthorityErrors != null and !priorAuthorityErrors.isEmpty()}">
               <td class="govuk-table__cell">
-                <a th:href="@{/application/proceedings-and-costs#prior-authority}" class="govuk-link">Prior authority details</a>
+                <a th:href="@{/{caseContext}/proceedings-and-costs#prior-authority(caseContext=${caseContext.pathValue})}" class="govuk-link" th:text="#{submission.errorCorrection.section.priorAuthorityDetails}">Prior authority details</a>
               </td>
               <td class="govuk-table__cell" th:utext="${#strings.listJoin(priorAuthorityErrors, '<br/>')}"></td>
             </tr>
             <tr class="govuk-table__row" th:if="${opponentErrors != null and !opponentErrors.isEmpty()}">
               <td class="govuk-table__cell">
-                <a th:href="@{/application/sections/opponents}" class="govuk-link">Opponent details</a>
+                <a th:href="@{/{caseContext}/sections/opponents(caseContext=${caseContext.pathValue})}" class="govuk-link" th:text="#{submission.errorCorrection.section.opponentDetails}">Opponent details</a>
               </td>
               <td class="govuk-table__cell" th:utext="${#strings.listJoin(opponentErrors, '<br/>')}"></td>
             </tr>
             <tr class="govuk-table__row" th:if="${meansAssessmentErrors != null and !meansAssessmentErrors.isEmpty()}">
                 <td class="govuk-table__cell">
-                    <a th:href="@{/amendments/assessments(assessment='means',invoked-from='CCMS_AC01')}" class="govuk-link">Means Assessment</a>
+                    <a th:href="@{/amendments/assessments(assessment='means',invoked-from='CCMS_AC01')}" class="govuk-link" th:text="#{submission.errorCorrection.section.meansAssessment}">Means Assessment</a>
                 </td>
                 <td class="govuk-table__cell" th:utext="${#strings.listJoin(meansAssessmentErrors, '<br/>')}"></td>
             </tr>
             <tr class="govuk-table__row" th:if="${meritsAssessmentErrors != null and !meritsAssessmentErrors.isEmpty()}">
                 <td class="govuk-table__cell">
-                    <a th:href="@{/amendments/assessments(assessment='merits',invoked-from='CCMS_AC01')}" class="govuk-link">Merits Assessment</a>
+                    <a th:href="@{/amendments/assessments(assessment='merits',invoked-from='CCMS_AC01')}" class="govuk-link" th:text="#{submission.errorCorrection.section.meritsAssessment}">Merits Assessment</a>
                 </td>
                 <td class="govuk-table__cell" th:utext="${#strings.listJoin(meritsAssessmentErrors, '<br/>')}"></td>
             </tr>
             </tbody>
           </table>
-          <form action="#" th:action="@{/{caseContext}/validate(caseContext=${caseContext.pathValue})}" method="post">
-          <div class="govuk-button-group">
-            <govuk:button type="submit" th:text="#{site.continue}"/>
-          </div>
-          </form>
         </div>
       </div>
   </div>

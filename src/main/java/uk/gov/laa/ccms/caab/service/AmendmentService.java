@@ -130,37 +130,25 @@ public class AmendmentService {
   }
 
   /**
-   * Creates a draft TDS amendment for the standalone means reassessment quick amendment journey.
+   * Builds the means reassessment amendment in memory, without persisting it, so it never creates a
+   * draft the case overview would treat as an open amendment. It is persisted only at submit (see
+   * {@code updateCaseWithQuickAmendment}, which creates it if absent).
    *
    * @param caseDetail the existing case to reassess
-   * @param userDetail the user creating the reassessment
-   * @return the created amendment application id
+   * @param userDetail the user starting the reassessment
+   * @return the in-memory means reassessment amendment
    */
-  public String createMeansReassessmentForCase(
+  public ApplicationDetail buildMeansReassessment(
       final ApplicationDetail caseDetail, final UserDetail userDetail) {
-    final String caseReferenceNumber = caseDetail.getCaseReferenceNumber();
-
-    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
-    caseSearchCriteria.setCaseReference(caseReferenceNumber);
-    boolean applicationExists =
-        applicationService
-            .getTdsApplications(caseSearchCriteria, userDetail, 0, 1)
-            .getContent()
-            .stream()
-            .findFirst()
-            .isPresent();
-    if (applicationExists) {
-      throw new CaabApplicationException(
-          "Application already exists for case reference: " + caseReferenceNumber);
-    }
-
-    ApplicationDetail amendment = createAmendmentObject(caseReferenceNumber, userDetail);
+    final ApplicationDetail amendment =
+        createAmendmentObject(caseDetail.getCaseReferenceNumber(), userDetail);
     amendment.setCategoryOfLaw(caseDetail.getCategoryOfLaw());
+    amendment.setAvailableFunctions(caseDetail.getAvailableFunctions());
     amendment.setQuickEditType(QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT);
     amendment.setMeansAssessmentAmended(Boolean.FALSE);
     amendment.setMeritsAssessmentAmended(Boolean.FALSE);
 
-    return caabApiClient.createApplication(userDetail.getLoginId(), amendment).block();
+    return amendment;
   }
 
   private ApplicationDetail createAmendmentObject(

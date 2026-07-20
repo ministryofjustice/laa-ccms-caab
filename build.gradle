@@ -54,9 +54,21 @@ configurations.configureEach {
             details.useVersion '2.21.5'
             details.because 'Temporary Snyk override (SNYK-JAVA-COMFASTERXMLJACKSONCORE-17457695) until upgraded in Spring Boot'
         }
+        // Jackson 3 (Spring Boot 4). Not jackson-annotations: it has no 3.x release at all.
+        if (details.requested.group == 'tools.jackson.core'
+                && details.requested.name in ['jackson-databind', 'jackson-core']) {
+            details.useVersion '3.1.5'
+            details.because 'Temporary Snyk override (SNYK-JAVA-TOOLSJACKSONCORE-17972609) until upgraded in Spring Boot'
+        }
         if (details.requested.group == 'org.apache.logging.log4j') {
             details.useVersion '2.25.5'
             details.because 'Temporary override'
+        }
+        // Build-time only: reaches us via checkstyle's doxia transitives, never the app classpath.
+        if (details.requested.group == 'org.codehaus.plexus'
+                && details.requested.name == 'plexus-utils') {
+            details.useVersion '3.6.1'
+            details.because 'Snyk override (SNYK-JAVA-ORGCODEHAUSPLEXUS-15766699); checkstyle pins the vulnerable 3.3.0'
         }
         if (details.requested.group == 'org.apache.httpcomponents.core5') {
             details.useVersion '5.4.3'

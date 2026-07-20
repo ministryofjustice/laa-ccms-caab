@@ -10,6 +10,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMAR
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_POLL_COUNT;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_QUICK_EDIT_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -107,12 +108,16 @@ public class CaseSubmissionController {
     if (caseContext.isAmendment()) {
       // The amendment is now confirmed in EBS, so remove the spent TDS draft (mirrors old PUI's
       // post-submission cleanup) - otherwise a subsequent amendment would reuse the stale draft.
-      applicationService.removeSubmittedAmendment(caseReferenceNumber, user);
+      // The submitting journey records its quick edit type in the session: it is not persisted
+      // against the draft, so it cannot be read back from the TDS.
+      applicationService.removeSubmittedAmendment(
+          caseReferenceNumber, user, (String) session.getAttribute(SUBMISSION_QUICK_EDIT_TYPE));
       refreshCaseSession(caseReferenceNumber, user, session);
     }
 
     session.removeAttribute(SUBMISSION_POLL_COUNT);
     session.removeAttribute(SUBMISSION_TRANSACTION_ID);
+    session.removeAttribute(SUBMISSION_QUICK_EDIT_TYPE);
     session.setAttribute(SUBMISSION_RESULT, SUBMISSION_CONFIRMED);
     return "redirect:/%s/%s/confirmed"
         .formatted(caseContext.getPathValue(), SUBMISSION_SUBMIT_CASE);
@@ -206,6 +211,7 @@ public class CaseSubmissionController {
       if (submissionPollCount >= submissionConstants.getMaxPollCount()) {
         session.removeAttribute(SUBMISSION_POLL_COUNT);
         session.removeAttribute(SUBMISSION_TRANSACTION_ID);
+        session.removeAttribute(SUBMISSION_QUICK_EDIT_TYPE);
         session.setAttribute(SUBMISSION_RESULT, SUBMISSION_FAILED);
         return "redirect:/%s/%s/failed"
             .formatted(caseContext.getPathValue(), SubmissionConstants.SUBMISSION_SUBMIT_CASE);

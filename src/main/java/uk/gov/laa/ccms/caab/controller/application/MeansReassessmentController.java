@@ -6,6 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_QUICK_EDIT_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -14,7 +15,6 @@ import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getMostRecentAssessmentDe
 
 import jakarta.servlet.http.HttpSession;
 import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -26,19 +26,16 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
-import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.SummarySubmissionFormData;
 import uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox;
 import uk.gov.laa.ccms.caab.bean.validators.declaration.DeclarationSubmissionValidator;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
+import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.SubmissionSummaryDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.model.ApplicationDetails;
-import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
@@ -64,14 +61,11 @@ public class MeansReassessmentController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final HttpSession session) {
 
-    BaseApplicationDetail tdsApplication = getOrCreateMeansReassessment(ebsCase, user);
-    ApplicationDetail amendment =
-        Optional.ofNullable(
-                applicationService.getApplication(String.valueOf(tdsApplication.getId())).block())
-            .orElseThrow(
-                () -> new CaabApplicationException("Failed to retrieve means reassessment"));
+    // Hold the reassessment application in the session and persist only at submit, so it never
+    // leaves a draft the case overview would treat as an open amendment.
+    final ApplicationDetail amendment = amendmentService.buildMeansReassessment(ebsCase, user);
 
-    setReassessmentSession(session, amendment, tdsApplication);
+    setReassessmentSession(session, amendment);
 
     return "redirect:/means-reassessment/summary";
   }
@@ -108,6 +102,10 @@ public class MeansReassessmentController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final HttpSession session) {
 
+    // Delete only the means assessment data, matching old PUI's DeleteAssessmentController (which
+    // removes the means* OPA sessions and never touches the application). The shared draft is left
+    // alone; the case overview ignores a means-reassessment draft, so it does not surface as an
+    // open amendment.
     assessmentService
         .deleteAssessments(
             user,
@@ -118,11 +116,6 @@ public class MeansReassessmentController {
             null)
         .block();
 
-    // Deleting a means reassessment clears only its means assessment data, mirroring old PUI's
-    // DeleteAssessmentController (means-only OPA session removal). The underlying application draft
-    // is deliberately preserved so the user does not lose amendment work (e.g. added opponents)
-    // when
-    // the means reassessment journey has reused an in-progress general case amendment draft.
     clearReassessmentSession(session);
 
     return "redirect:/case/overview";
@@ -160,6 +153,12 @@ public class MeansReassessmentController {
       return "redirect:/means-reassessment/summary";
     }
 
+    // The reassessment application is held in memory, so guard against submitting a stale session
+    // application left over from another case the user switched away from.
+    if (!ebsCase.getCaseReferenceNumber().equals(amendment.getCaseReferenceNumber())) {
+      return "redirect:/case/overview";
+    }
+
     declarationSubmissionValidator.validate(summarySubmissionFormData, bindingResult);
 
     if (bindingResult.hasErrors()) {
@@ -172,56 +171,33 @@ public class MeansReassessmentController {
 
     session.removeAttribute(SUBMISSION_RESULT);
     session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
+    // The quick edit type is not persisted against the TDS draft, so the post-submission cleanup
+    // takes it from the session to know that only the means was submitted.
+    session.setAttribute(
+        SUBMISSION_QUICK_EDIT_TYPE, QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT);
 
     return "redirect:/%s/%s"
         .formatted(CaseContext.AMENDMENTS.getPathValue(), SUBMISSION_SUBMIT_CASE);
   }
 
-  private BaseApplicationDetail getOrCreateMeansReassessment(
-      final ApplicationDetail ebsCase, final UserDetail user) {
-    BaseApplicationDetail existingApplication = getTdsApplication(ebsCase, user);
-
-    if (existingApplication != null) {
-      return existingApplication;
-    }
-
-    amendmentService.createMeansReassessmentForCase(ebsCase, user);
-
-    return Optional.ofNullable(getTdsApplication(ebsCase, user))
-        .orElseThrow(() -> new CaabApplicationException("Failed to create means reassessment"));
-  }
-
-  private BaseApplicationDetail getTdsApplication(
-      final ApplicationDetail ebsCase, final UserDetail user) {
-    CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
-    caseSearchCriteria.setCaseReference(ebsCase.getCaseReferenceNumber());
-
-    ApplicationDetails applications =
-        applicationService.getTdsApplications(caseSearchCriteria, user, 0, 1);
-
-    if (applications == null || applications.getContent() == null) {
-      return null;
-    }
-
-    return applications.getContent().stream().findFirst().orElse(null);
-  }
-
   private void setReassessmentSession(
-      final HttpSession session,
-      final ApplicationDetail amendment,
-      final BaseApplicationDetail tdsApplication) {
+      final HttpSession session, final ApplicationDetail amendment) {
     ActiveCase activeCase =
         ActiveCase.builder()
-            .applicationId(amendment.getId())
             .caseReferenceNumber(amendment.getCaseReferenceNumber())
             .providerId(amendment.getProviderDetails().getProvider().getId())
             .clientReferenceNumber(amendment.getClient().getReference())
             .providerCaseReferenceNumber(amendment.getProviderDetails().getProviderCaseReference())
             .build();
 
-    session.setAttribute(APPLICATION_SUMMARY, tdsApplication);
+    // The reassessment application is not persisted, so there is no APPLICATION_ID / summary to
+    // store - the in-memory application is held in the session and used to build the prepop and to
+    // submit. Clear any left over from an earlier journey (e.g. Amend Case): the assessment loads
+    // by APPLICATION_ID in preference to the session application, so a stale id would silently run
+    // the reassessment against that draft instead of this application.
+    session.removeAttribute(APPLICATION_ID);
+    session.removeAttribute(APPLICATION_SUMMARY);
     session.setAttribute(APPLICATION, amendment);
-    session.setAttribute(APPLICATION_ID, String.valueOf(amendment.getId()));
     session.setAttribute(ACTIVE_CASE, activeCase);
   }
 

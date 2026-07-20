@@ -11,6 +11,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_C
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getMostRecentAssessmentDetail;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getNonFinancialAssessmentNamesExcludingPrepop;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getNonFinancialAssessmentNamesIncludingPrepop;
 import static uk.gov.laa.ccms.caab.util.OpponentUtil.getPartyName;
 
@@ -633,18 +634,16 @@ public class ApplicationService {
    *
    * @param caseReferenceNumber the case whose submitted draft should be removed
    * @param user the user that submitted the amendment
+   * @param quickEditType the quick edit type that was submitted, or {@code null} for a full case
+   *     amendment. The type is not persisted against the TDS draft, so it must be supplied by the
+   *     journey that performed the submission.
    */
-  public void removeSubmittedAmendment(final String caseReferenceNumber, final UserDetail user) {
+  public void removeSubmittedAmendment(
+      final String caseReferenceNumber, final UserDetail user, final String quickEditType) {
 
-    final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
-    caseSearchCriteria.setCaseReference(caseReferenceNumber);
+    final BaseApplicationDetail tdsApplication = getTdsAmendment(caseReferenceNumber, user);
 
-    final BaseApplicationDetail tdsApplication =
-        Optional.ofNullable(getTdsApplications(caseSearchCriteria, user, 0, 1).getContent())
-            .flatMap(content -> content.stream().findFirst())
-            .orElse(null);
-
-    if (tdsApplication == null || !Boolean.TRUE.equals(tdsApplication.getAmendment())) {
+    if (tdsApplication == null) {
       return;
     }
 
@@ -654,15 +653,16 @@ public class ApplicationService {
     // the submitted means assessment and keep the draft so the amendment can still be continued. A
     // pure means reassessment (no other changes) still removes the whole draft, so no stale
     // "continue amendment" is left behind.
-    if (shouldPreserveAmendCaseAfterMeansSubmit(tdsApplication, caseReferenceNumber, user)) {
+    // The prepop is deliberately kept in both branches: old PUI's post-submission cleanup removes
+    // the live means/merits sessions but not their prepop
+    // (OpaDao.removeNonFinancialOpaSessionsExcludingPrepop), so a later assessment can reuse the
+    // answers it holds. The attributes an amendment must not reuse are cleared when the next
+    // interview starts (AssessmentService.removeNonReusableAttributes).
+    if (QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT.equals(quickEditType)
+        && hasAmendCaseChanges(loadAmendment(tdsApplication), caseReferenceNumber, user)) {
       assessmentService
           .deleteAssessments(
-              user,
-              List.of(
-                  AssessmentRulebase.MEANS.getName(),
-                  AssessmentRulebase.MEANS.getPrePopAssessmentName()),
-              caseReferenceNumber,
-              null)
+              user, List.of(AssessmentRulebase.MEANS.getName()), caseReferenceNumber, null)
           .block();
       return;
     }
@@ -671,45 +671,67 @@ public class ApplicationService {
         caabApiClient.deleteApplication(String.valueOf(tdsApplication.getId()), user.getLoginId());
     final Mono<Void> deleteAssessmentsMono =
         assessmentService.deleteAssessments(
-            user, getNonFinancialAssessmentNamesIncludingPrepop(), caseReferenceNumber, null);
+            user, getNonFinancialAssessmentNamesExcludingPrepop(), caseReferenceNumber, null);
 
     Mono.when(deleteAppMono, deleteAssessmentsMono).block();
   }
 
   /**
-   * Determines whether a submitted means-reassessment draft also carries amend-case changes beyond
-   * the means/merits reassessment itself (e.g. an added opponent), which were not part of the means
-   * submission and so must be preserved rather than discarded.
+   * Retrieves the amendment draft held in the TDS for a case, if any.
    *
-   * @param tdsApplication the submitted means-reassessment draft
    * @param caseReferenceNumber the case reference
-   * @param user the submitting user
-   * @return {@code true} if the draft has amend-case changes to preserve
+   * @param user the current user
+   * @return the draft amendment, or {@code null} if the case has no amendment draft
    */
-  private boolean shouldPreserveAmendCaseAfterMeansSubmit(
-      final BaseApplicationDetail tdsApplication,
-      final String caseReferenceNumber,
-      final UserDetail user) {
-    final ApplicationDetail amendment;
+  private BaseApplicationDetail getTdsAmendment(
+      final String caseReferenceNumber, final UserDetail user) {
+
+    final CaseSearchCriteria caseSearchCriteria = new CaseSearchCriteria();
+    caseSearchCriteria.setCaseReference(caseReferenceNumber);
+
+    final BaseApplicationDetail tdsApplication =
+        Optional.ofNullable(getTdsApplications(caseSearchCriteria, user, 0, 1).getContent())
+            .flatMap(content -> content.stream().findFirst())
+            .orElse(null);
+
+    return tdsApplication != null && Boolean.TRUE.equals(tdsApplication.getAmendment())
+        ? tdsApplication
+        : null;
+  }
+
+  /**
+   * Loads the full draft amendment behind a TDS summary.
+   *
+   * @param tdsApplication the draft amendment summary
+   * @return the draft amendment, or {@code null} if it could not be loaded
+   */
+  private ApplicationDetail loadAmendment(final BaseApplicationDetail tdsApplication) {
     try {
       final Mono<ApplicationDetail> amendmentMono =
           getApplication(String.valueOf(tdsApplication.getId()));
-      amendment = amendmentMono == null ? null : amendmentMono.block();
+      return amendmentMono == null ? null : amendmentMono.block();
     } catch (final Exception e) {
-      // Unloadable draft: fall back to removing the whole draft.
-      log.warn(
-          "Could not load submitted means reassessment {}; falling back to full draft cleanup",
-          tdsApplication.getId(),
-          e);
+      log.warn("Could not load amendment draft {}", tdsApplication.getId(), e);
+      return null;
+    }
+  }
+
+  /**
+   * Determines whether a draft carries amend-case changes beyond a means/merits reassessment (e.g.
+   * an added opponent), which the means reassessment journey neither submits nor deletes, and so
+   * must preserve.
+   *
+   * @param amendment the draft amendment, possibly {@code null} if it could not be loaded
+   * @param caseReferenceNumber the case reference
+   * @param user the current user
+   * @return {@code true} if the draft has amend-case changes to preserve
+   */
+  private boolean hasAmendCaseChanges(
+      final ApplicationDetail amendment, final String caseReferenceNumber, final UserDetail user) {
+    if (amendment == null) {
       return false;
     }
-    // Unloadable draft or non-means reassessment: fall back to removing the whole draft.
-    if (amendment == null
-        || !QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT.equals(
-            amendment.getQuickEditType())) {
-      return false;
-    }
-    // Means already submitted; only structural amend-case changes keep the draft alive.
+    // The reassessment itself is not an amend-case change: only structural changes keep the draft.
     amendment.setMeansAssessmentAmended(false);
     amendment.setMeritsAssessmentAmended(false);
     ApplicationDetail baseCase;

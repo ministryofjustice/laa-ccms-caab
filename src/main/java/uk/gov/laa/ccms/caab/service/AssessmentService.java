@@ -10,6 +10,7 @@ import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.APP_
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.DELEGATED_FUNCTIONS_DATE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.REQUESTED_SCOPE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.GLOBAL;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.LINKED_CASE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.OPPONENT;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS;
@@ -44,12 +45,15 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -65,6 +69,7 @@ import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.assessment.model.PatchAssessmentDetail;
 import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
+import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
@@ -90,9 +95,12 @@ import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryAttributeDisplay;
 import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryEntityDisplay;
+import uk.gov.laa.ccms.caab.util.AssessmentReuseUtil;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.caab.util.ProceedingUtil;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
+import uk.gov.laa.ccms.data.model.CaseAssessmentDetail;
+import uk.gov.laa.ccms.data.model.CaseAssessmentDetails;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -114,6 +122,7 @@ public class AssessmentService {
   private final AssessmentApiClient assessmentApiClient;
   private final CaabApiClient caabApiClient;
   private final SoaApiClient soaApiClient;
+  private final EbsApiClient ebsApiClient;
   private final AssessmentMapper assessmentMapper;
   private final LookupService lookupService;
 
@@ -243,10 +252,12 @@ public class AssessmentService {
     }
 
     log.info("Calculating means assessment status");
-    calculateAssessmentStatus(MEANS, meansAssessment, application, user, statusDisplayCache);
+    calculateAssessmentStatus(
+        MEANS, meansAssessment, meritsAssessment, application, user, statusDisplayCache);
 
     log.info("Calculating merits assessment status");
-    calculateAssessmentStatus(MERITS, meritsAssessment, application, user, statusDisplayCache);
+    calculateAssessmentStatus(
+        MERITS, meritsAssessment, meansAssessment, application, user, statusDisplayCache);
 
     // If a proceeding was removed, we should set reassessment required for both.
     if (Boolean.TRUE.equals(application.getMeritsReassessmentRequired())) {
@@ -291,6 +302,7 @@ public class AssessmentService {
   private void calculateAssessmentStatus(
       final AssessmentName assessmentName,
       final AssessmentDetail currentAssessment,
+      final AssessmentDetail otherAssessment,
       final ApplicationDetail application,
       final UserDetail user,
       final Map<String, String> statusDisplayCache) {
@@ -303,14 +315,16 @@ public class AssessmentService {
 
       if (COMPLETE == assessmentStatus || ERROR == assessmentStatus) {
 
-        if (isReassessmentRequired(application, assessmentName, currentAssessment, user)) {
+        if (isReassessmentRequired(
+            application, assessmentName, currentAssessment, otherAssessment, user)) {
           assessmentStatus = REQUIRED;
           statusChanged = true;
         }
       }
     } else {
       if (application.getAmendment()) {
-        if (isReassessmentRequired(application, assessmentName, currentAssessment, user)) {
+        if (isReassessmentRequired(
+            application, assessmentName, currentAssessment, otherAssessment, user)) {
           assessmentStatus = REQUIRED;
         } else {
           assessmentStatus = UNCHANGED;
@@ -318,13 +332,6 @@ public class AssessmentService {
         statusChanged = true;
       }
     }
-
-    log.info(
-        "Status decision [{}]: raw={}, amended={}, final={}",
-        assessmentName,
-        getStatus(currentAssessment),
-        isApplicationsAssessmentAmended(application, assessmentName),
-        assessmentStatus);
 
     // update the assessment status if it has changed
     if (statusChanged && currentAssessment != null) {
@@ -481,7 +488,7 @@ public class AssessmentService {
         assessment != null && MEANS.getName().equalsIgnoreCase(assessment.getName())
             ? MEANS
             : MERITS;
-    return isReassessmentRequired(application, assessmentName, assessment, user);
+    return isReassessmentRequired(application, assessmentName, assessment, null, user);
   }
 
   /**
@@ -491,6 +498,7 @@ public class AssessmentService {
    * @param application the application details to compare against the assessment
    * @param assessmentName the assessment name to evaluate
    * @param assessment the assessment details to compare against the application, if one exists
+   * @param otherAssessment the other of the means/merits pair, if one exists
    * @param user the user performing the update operation
    * @return true if a reassessment is necessary; false otherwise
    */
@@ -498,6 +506,7 @@ public class AssessmentService {
       final ApplicationDetail application,
       final AssessmentName assessmentName,
       final AssessmentDetail assessment,
+      final AssessmentDetail otherAssessment,
       final UserDetail user) {
 
     if (!application.getAmendment()) {
@@ -512,7 +521,9 @@ public class AssessmentService {
         }
 
         // check if proceeding is deleted
-        if (application.getProceedings() != null) {
+        if (application.getProceedings() != null
+            && proceedingEntityType != null
+            && proceedingEntityType.getEntities() != null) {
           log.debug(
               "app.getProceedings().size(): {} - opaListEntity.getOpaEntities().size(): {}",
               application.getProceedings().size(),
@@ -583,7 +594,8 @@ public class AssessmentService {
       if (MEANS == assessmentName) {
         return isMeansReassessmentRequiredForAmendment(application, assessment, user);
       } else if (MERITS == assessmentName) {
-        return isMeritsReassessmentRequiredForAmendment(application, assessment, user);
+        return isMeritsReassessmentRequiredForAmendment(
+            application, otherAssessment, assessment, user);
       }
     }
 
@@ -604,9 +616,21 @@ public class AssessmentService {
       final UserDetail user) {
     final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase = getEbsCase(application, user);
 
+    // Old PUI's only means rule on an amendment (AssessmentHelper.isMeansReassessmentRequired,
+    // LSC-1783): a substantive amendment of an emergency certificate, and only while no means
+    // assessment exists. Once one exists it must not re-trigger.
+    return isSubstantiveAmendmentOfEmergencyCertificate(application, assessment, ebsCase);
+  }
+
+  private boolean isSubstantiveAmendmentOfEmergencyCertificate(
+      final ApplicationDetail application,
+      final AssessmentDetail assessment,
+      final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase) {
     return assessment == null
         && !hasEbsAmendments(ebsCase)
-        && isMeansReassessmentApplicationType(application);
+        && APP_TYPE_SUBSTANTIVE.equals(getApplicationTypeId(application))
+        && ebsCase != null
+        && APP_TYPE_EMERGENCY.equals(ebsCase.getCertificateType());
   }
 
   /**
@@ -621,73 +645,52 @@ public class AssessmentService {
       final ApplicationDetail application,
       final AssessmentDetail assessment,
       final UserDetail user) {
-    final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase = getEbsCase(application, user);
+    return isMeritsReassessmentRequiredForAmendment(application, null, assessment, user);
+  }
 
-    // TODO TEMP DIAGNOSTIC (remove after dev investigation) - grep "DIAG-MERITS-REASSESS".
-    final String diagRef = application.getCaseReferenceNumber();
-    log.info(
-        "DIAG-MERITS-REASSESS {} INPUTS amendment={} meritsAssessmentAmended={}"
-            + " meritsReassessmentRequiredFlag={} assessmentPresent={} ebsCasePresent={}"
-            + " ebsCertificateType={} hasEbsAmendments={} appTypeId={}",
-        diagRef,
-        application.getAmendment(),
-        application.getMeritsAssessmentAmended(),
-        application.getMeritsReassessmentRequired(),
-        assessment != null,
-        ebsCase != null,
-        ebsCase == null ? null : ebsCase.getCertificateType(),
-        hasEbsAmendments(ebsCase),
-        getApplicationTypeId(application));
+  /**
+   * Determines whether a merits reassessment is required during amendment processing.
+   *
+   * @param application the application details
+   * @param meansAssessment the latest means assessment, if one exists. Used to establish whether
+   *     the means assessment was the last one run: a change to the means must not, on its own,
+   *     demand a merits reassessment (old PUI guards its date check with {@code !meansLast}).
+   * @param assessment the latest merits assessment, if one exists
+   * @param user the user performing the operation
+   * @return true if a merits reassessment is required
+   */
+  public boolean isMeritsReassessmentRequiredForAmendment(
+      final ApplicationDetail application,
+      final AssessmentDetail meansAssessment,
+      final AssessmentDetail assessment,
+      final UserDetail user) {
+    final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase = getEbsCase(application, user);
 
     // Old PUI only forces reassessment here when there is NO merits assessment at all (a
     // substantive amendment of an emergency certificate); once one exists it must not re-trigger.
-    if (assessment == null
-        && !hasEbsAmendments(ebsCase)
-        && APP_TYPE_SUBSTANTIVE.equals(getApplicationTypeId(application))
-        && ebsCase != null
-        && APP_TYPE_EMERGENCY.equals(ebsCase.getCertificateType())) {
-      log.info(
-          "DIAG-MERITS-REASSESS {} RESULT=true VIA=emergency-substantive-no-assessment", diagRef);
+    if (isSubstantiveAmendmentOfEmergencyCertificate(application, assessment, ebsCase)) {
       return true;
     }
 
     final Date latestKeyChange = getDateOfLatestKeyChange(application);
     if (latestKeyChange == null) {
-      log.info("DIAG-MERITS-REASSESS {} RESULT=false VIA=latestKeyChange-null", diagRef);
       return false;
     }
 
     final Date meritsCreated = getMeritsComparisonDate(application, assessment);
-    // TODO TEMP DIAGNOSTIC: reveal which comparison-date branch getMeritsComparisonDate took.
-    final boolean usedDraftCreatedBaseline =
-        Boolean.TRUE.equals(application.getAmendment())
-            && !Boolean.TRUE.equals(application.getMeritsAssessmentAmended());
-    log.info(
-        "DIAG-MERITS-REASSESS {} DATES latestKeyChange={} meritsCreated={} comparisonBaseline={}"
-            + " appAuditCreated={} assessmentAuditCreated={}",
-        diagRef,
-        latestKeyChange,
-        meritsCreated,
-        usedDraftCreatedBaseline ? "draftCreated+2s" : "assessmentCreated",
-        application.getAuditTrail() == null ? null : application.getAuditTrail().getCreated(),
-        assessment == null || assessment.getAuditDetail() == null
-            ? null
-            : assessment.getAuditDetail().getCreated());
     if (meritsCreated == null) {
-      log.info("DIAG-MERITS-REASSESS {} RESULT=false VIA=meritsCreated-null", diagRef);
       return false;
     }
 
-    if (differenceGreaterThanTenSecs(latestKeyChange, meritsCreated)) {
-      log.info(
-          "DIAG-MERITS-REASSESS {} RESULT=true VIA=differenceGreaterThanTenSecs"
-              + " (latestKeyChange later than meritsCreated by >10s)",
-          diagRef);
+    // Skipped when the means assessment was the last one run: the key change that the merits
+    // assessment predates is then the means assessment's own, and a means change must not flip
+    // merits to reassessment-required (old PUI AssessmentHelper.isMeritsReassessmentRequired).
+    if (!isMeansLast(meansAssessment, assessment)
+        && differenceGreaterThanTenSecs(latestKeyChange, meritsCreated)) {
       return true;
     }
 
     if (Boolean.TRUE.equals(application.getMeritsReassessmentRequired())) {
-      log.info("DIAG-MERITS-REASSESS {} RESULT=true VIA=meritsReassessmentRequiredFlag", diagRef);
       return true;
     }
 
@@ -696,32 +699,38 @@ public class AssessmentService {
     // below
     // the dateOfLatestKeyChange == null and merits-assessment == null early returns above - it is
     // deliberately NOT evaluated when those timestamps are unavailable.
-    final BigDecimal diagLimitAtTimeOfMerits =
-        Optional.ofNullable(application.getCostLimit())
-            .map(CostLimitDetail::getLimitAtTimeOfMerits)
-            .orElse(null);
-    final BigDecimal diagRequestedOrDefault = getRequestedOrDefaultCostLimitation(application);
-    final boolean costLimitReassessment = isCostLimitReassessmentRequired(application);
-    log.info(
-        "DIAG-MERITS-REASSESS {} COST limitAtTimeOfMerits={} requestedOrDefault={}"
-            + " isCostLimitReassessmentRequired={}",
-        diagRef,
-        diagLimitAtTimeOfMerits,
-        diagRequestedOrDefault,
-        costLimitReassessment);
-    if (costLimitReassessment) {
-      log.info("DIAG-MERITS-REASSESS {} RESULT=true VIA=isCostLimitReassessmentRequired", diagRef);
+    if (isCostLimitReassessmentRequired(application)) {
       return true;
     }
 
     // The remaining checks compare the application against an existing assessment's recorded data.
-    final boolean assessmentDataReassessment =
-        assessment != null && isMeritsReassessmentRequiredForAssessment(application, assessment);
-    log.info(
-        "DIAG-MERITS-REASSESS {} RESULT={} VIA=isMeritsReassessmentRequiredForAssessment",
-        diagRef,
-        assessmentDataReassessment);
-    return assessmentDataReassessment;
+    return assessment != null && isMeritsReassessmentRequiredForAssessment(application, assessment);
+  }
+
+  /**
+   * Determines whether the means assessment was the last of the two to be saved.
+   *
+   * @param meansAssessment the latest means assessment, may be {@code null}
+   * @param meritsAssessment the latest merits assessment, may be {@code null}
+   * @return true if the means assessment was saved no earlier than the merits assessment
+   */
+  private boolean isMeansLast(
+      final AssessmentDetail meansAssessment, final AssessmentDetail meritsAssessment) {
+    final Date meansSaved = getLastSaved(meansAssessment);
+    final Date meritsSaved = getLastSaved(meritsAssessment);
+
+    if (meansSaved == null || meritsSaved == null) {
+      return false;
+    }
+
+    return !meansSaved.before(meritsSaved);
+  }
+
+  private Date getLastSaved(final AssessmentDetail assessment) {
+    return Optional.ofNullable(assessment)
+        .map(AssessmentDetail::getAuditDetail)
+        .map(AuditDetail::getLastSaved)
+        .orElse(null);
   }
 
   private uk.gov.laa.ccms.soa.gateway.model.CaseDetail getEbsCase(
@@ -798,11 +807,12 @@ public class AssessmentService {
   }
 
   /**
-   * Determines whether the application's current requested (or default) cost limit differs from the
-   * cost limit captured at the time of the merits assessment. Any change - increase or decrease -
-   * requires a merits reassessment, as the provider must supply a full breakdown of costs to date
-   * and justification for the predicted costs. An unknown limit-at-time-of-merits or an unknown
-   * current limit is treated as reassessment-required.
+   * Determines whether the application's requested (or default) cost limit has RISEN above the cost
+   * limit captured at the time of the merits assessment, which requires a merits reassessment - the
+   * provider must justify the higher costs. A reduced limit does not, matching old PUI ({@code
+   * AssessmentHelper.isMeritsReassessmentRequired}, which tests {@code compareTo(...) < 0}). An
+   * unknown limit-at-time-of-merits or an unknown current limit is treated as
+   * reassessment-required.
    *
    * @param application the application to check
    * @return true if a cost-limit driven merits reassessment is required
@@ -818,7 +828,7 @@ public class AssessmentService {
       return true;
     }
 
-    return limitAtTimeOfMerits.compareTo(requestedOrDefault) != 0;
+    return limitAtTimeOfMerits.compareTo(requestedOrDefault) < 0;
   }
 
   private BigDecimal getRequestedOrDefaultCostLimitation(final ApplicationDetail application) {
@@ -942,9 +952,9 @@ public class AssessmentService {
           getAssessmentEntity(proceedingEntityType, entityId);
 
       if (proceedingEntity == null) {
-        // Unmatched proceeding: skip. Id matching is unreliable in the amendment/prepop flow;
-        // add/remove is detected by the proceeding count checks in the callers.
-        continue;
+        // The proceeding is not in the assessment, so it was added after the assessment was run and
+        // the assessment must be redone (old PUI AssessmentHelper.isMeritsReassessmentRequired).
+        return true;
       }
 
       final AssessmentAttributeDetail matterTypeAttribute =
@@ -1268,12 +1278,16 @@ public class AssessmentService {
    * @param assessmentRulebase the rulebase for the assessment
    * @param client the client detail for the assessment
    * @param user the user detail initiating the assessment
+   * @param isReassessment whether this is the standalone means reassessment journey, which reuses
+   *     the prior assessment's data rather than stripping the "do not reuse" attributes (old PUI's
+   *     StartOpaReassessment, unlike the amend-case StartOpaAssessment, applies no such strip)
    */
   public void startAssessment(
       final ApplicationDetail application,
       final AssessmentRulebase assessmentRulebase,
       final ClientDetail client,
-      final UserDetail user) {
+      final UserDetail user,
+      final boolean isReassessment) {
 
     final String providerId = user.getProvider().getId().toString();
     final String referenceId = application.getCaseReferenceNumber();
@@ -1312,7 +1326,7 @@ public class AssessmentService {
         .block();
 
     // start new assessment
-    startNewAssessment(assessmentRulebase, application, client, user);
+    startNewAssessment(assessmentRulebase, application, client, user, isReassessment);
   }
 
   /**
@@ -1322,12 +1336,14 @@ public class AssessmentService {
    * @param application the application details
    * @param client the client details
    * @param user the user details
+   * @param isReassessment whether this is the standalone means reassessment journey
    */
   protected void startNewAssessment(
       final AssessmentRulebase assessmentRulebase,
       final ApplicationDetail application,
       final ClientDetail client,
-      final UserDetail user) {
+      final UserDetail user,
+      final boolean isReassessment) {
     log.debug("Name - {}, AssessmentType - {}", user.getUsername(), assessmentRulebase.getType());
     final String referenceId = application.getCaseReferenceNumber();
     final String providerId = user.getProvider().getId().toString();
@@ -1383,10 +1399,31 @@ public class AssessmentService {
     updateCostLimitIfMeritsAssessment(assessmentRulebase, application, user);
 
     if (prepopulateFromEbs) {
+      // The interview loads the prepop, so seed the reused EBS data there: user-entered answers on
+      // first creation only (edits persist on re-entry), EBS-sourced values on every start. The
+      // merge only fills gaps - an attribute already holding a value is left alone - so a later
+      // start tops up blanks rather than refreshing. The working assessment gets both.
+      final List<CaseAssessmentDetail> ebsAssessmentData =
+          fetchEbsAssessmentData(referenceId, assessmentRulebase);
       if (createdNewPrepopAssessment) {
-        prepopulateAssessmentFromEbs(application, assessmentRulebase, prepopAssessment);
+        mergeEbsAssessmentData(prepopAssessment, ebsAssessmentData, true);
       }
-      prepopulateAssessmentFromEbs(application, assessmentRulebase, assessment);
+      mergeEbsAssessmentData(prepopAssessment, ebsAssessmentData, false);
+      mergeEbsAssessmentData(assessment, ebsAssessmentData, true);
+      mergeEbsAssessmentData(assessment, ebsAssessmentData, false);
+    }
+
+    // An amend-case assessment must not reuse the answers the rulebase marks "Do Not Reuse"
+    // (merits)
+    // / "Short Term Reuse" (means) - the evidence families among them. Old PUI's amend-case path
+    // (StartOpaAssessment) clears them from both sessions so the provider is asked again. The
+    // standalone means reassessment (StartOpaReassessment) applies no such strip - it reuses the
+    // prior EBS data - so the strip is skipped here for the reassessment journey, otherwise the
+    // EBS-seeded means inputs would be removed and the means goal (CLIENT_PROV_LA) could not
+    // resolve.
+    if (prepopulateFromEbs && !assessmentRulebase.isFinancialAssessment() && !isReassessment) {
+      removeNonReusableAttributes(prepopAssessment, assessmentRulebase);
+      removeNonReusableAttributes(assessment, assessmentRulebase);
     }
 
     // if means and merits:
@@ -1407,6 +1444,37 @@ public class AssessmentService {
     }
   }
 
+  /**
+   * Clears the attributes that must not be reused on an amendment from an assessment's entities.
+   *
+   * @param assessment the assessment being started, may be {@code null}
+   * @param assessmentRulebase the rulebase being run
+   */
+  void removeNonReusableAttributes(
+      final AssessmentDetail assessment, final AssessmentRulebase assessmentRulebase) {
+
+    final Set<String> nonReusableAttributes =
+        AssessmentReuseUtil.getNonReusableAttributes(assessmentRulebase);
+
+    if (assessment == null
+        || assessment.getEntityTypes() == null
+        || nonReusableAttributes.isEmpty()) {
+      return;
+    }
+
+    // The attribute lists are not necessarily mutable, so replace rather than remove in place.
+    assessment.getEntityTypes().stream()
+        .filter(entityType -> entityType.getEntities() != null)
+        .flatMap(entityType -> entityType.getEntities().stream())
+        .filter(entity -> entity.getAttributes() != null)
+        .forEach(
+            entity ->
+                entity.setAttributes(
+                    entity.getAttributes().stream()
+                        .filter(attribute -> !nonReusableAttributes.contains(attribute.getName()))
+                        .collect(Collectors.toCollection(ArrayList::new))));
+  }
+
   void prepopulateAssessmentFromEbs(
       final ApplicationDetail application,
       final AssessmentRulebase assessmentRulebase,
@@ -1424,6 +1492,86 @@ public class AssessmentService {
         .flatMap(screen -> screen.getEntity().stream())
         .filter(Objects::nonNull)
         .forEach(opaEntity -> mergeOpaEntityIntoAssessment(assessment, opaEntity));
+  }
+
+  /**
+   * Fetches the stored OPA assessment attributes for a case from EBS. Unlike the getCase payload
+   * (which does not carry assessment data), this is the prior assessment prepopulation graph that a
+   * reassessment or amendment reuses.
+   *
+   * @param caseReferenceNumber the case being assessed
+   * @param assessmentRulebase the rulebase being run (drives the assessment type)
+   * @return the flat EBS assessment rows, or an empty list when the case has none stored. API
+   *     errors are not swallowed here - they propagate to the caller.
+   */
+  private List<CaseAssessmentDetail> fetchEbsAssessmentData(
+      final String caseReferenceNumber, final AssessmentRulebase assessmentRulebase) {
+    return Optional.ofNullable(
+            ebsApiClient
+                .getCaseAssessment(caseReferenceNumber, assessmentRulebase.getType())
+                .block())
+        .map(CaseAssessmentDetails::getAssessmentDetails)
+        .orElseGet(List::of);
+  }
+
+  /**
+   * Merges one side of the user-defined split of EBS assessment attributes into an assessment.
+   *
+   * @param assessment the assessment to merge into
+   * @param rows the flat EBS assessment rows
+   * @param userEntered {@code true} to merge the provider's previously entered answers, {@code
+   *     false} to merge the EBS/system-sourced attributes
+   */
+  void mergeEbsAssessmentData(
+      final AssessmentDetail assessment,
+      final List<CaseAssessmentDetail> rows,
+      final boolean userEntered) {
+    toOpaEntities(rows, userEntered)
+        .forEach(opaEntity -> mergeOpaEntityIntoAssessment(assessment, opaEntity));
+  }
+
+  /**
+   * Groups the flat EBS assessment rows for one side of the user-defined split into the OPA entity
+   * graph the merge consumes.
+   *
+   * @param rows the flat EBS assessment rows
+   * @param userEntered {@code true} to keep user-entered attributes, {@code false} to keep
+   *     EBS/system-sourced attributes
+   * @return the grouped OPA entities
+   */
+  private List<OpaEntity> toOpaEntities(
+      final List<CaseAssessmentDetail> rows, final boolean userEntered) {
+    final Map<String, OpaEntity> entitiesByName = new LinkedHashMap<>();
+    final Map<String, OpaInstance> instancesByKey = new LinkedHashMap<>();
+
+    for (final CaseAssessmentDetail row : rows) {
+      if (row.getEntityName() == null
+          || row.getInstanceLabel() == null
+          || row.getAttributeName() == null
+          || Boolean.TRUE.equals(row.getAttributeUserDefinedIndicator()) != userEntered) {
+        continue;
+      }
+
+      final OpaEntity entity =
+          entitiesByName.computeIfAbsent(
+              row.getEntityName(), name -> new OpaEntity().entityName(name));
+      final OpaInstance instance =
+          instancesByKey.computeIfAbsent(
+              row.getEntityName() + "::" + row.getInstanceLabel(),
+              key -> {
+                final OpaInstance newInstance =
+                    new OpaInstance().instanceLabel(row.getInstanceLabel());
+                entity.addInstancesItem(newInstance);
+                return newInstance;
+              });
+      instance.addAttributesItem(
+          new OpaAttribute()
+              .attribute(row.getAttributeName())
+              .responseType(row.getAttributeType())
+              .responseValue(row.getAttributeValue()));
+    }
+
+    return new ArrayList<>(entitiesByName.values());
   }
 
   private AssessmentResult getEbsAssessmentResult(
@@ -1477,6 +1625,12 @@ public class AssessmentService {
       return;
     }
 
+    // The mapper-built attribute list may be immutable; make it mutable before merging.
+    entity.setAttributes(
+        entity.getAttributes() == null
+            ? new ArrayList<>()
+            : new ArrayList<>(entity.getAttributes()));
+
     opaInstance.getAttributes().stream()
         .filter(Objects::nonNull)
         .forEach(opaAttribute -> mergeOpaAttributeIntoEntity(entity, opaAttribute));
@@ -1484,10 +1638,25 @@ public class AssessmentService {
 
   private AssessmentEntityDetail findEntity(
       final AssessmentEntityTypeDetail entityType, final OpaInstance opaInstance) {
-    return Optional.ofNullable(entityType.getEntities()).orElseGet(List::of).stream()
-        .filter(entity -> opaInstance.getInstanceLabel().equalsIgnoreCase(entity.getName()))
-        .findFirst()
-        .orElse(null);
+    final List<AssessmentEntityDetail> entities =
+        Optional.ofNullable(entityType.getEntities()).orElseGet(List::of);
+
+    final AssessmentEntityDetail labelMatch =
+        entities.stream()
+            .filter(entity -> opaInstance.getInstanceLabel().equalsIgnoreCase(entity.getName()))
+            .findFirst()
+            .orElse(null);
+    if (labelMatch != null) {
+      return labelMatch;
+    }
+
+    // caab labels a linked case by LSC reference, EBS by a different internal id, so labels never
+    // match. Reconcile a single linked case by position (multiple are left unmatched, not guessed).
+    if (LINKED_CASE.getType().equalsIgnoreCase(entityType.getName()) && entities.size() == 1) {
+      return entities.getFirst();
+    }
+
+    return null;
   }
 
   private void mergeOpaAttributeIntoEntity(

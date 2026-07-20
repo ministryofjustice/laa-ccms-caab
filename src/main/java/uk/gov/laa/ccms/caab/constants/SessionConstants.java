@@ -77,6 +77,13 @@ public class SessionConstants {
   public static final String SUBMISSION_RESULT = "submissionResult";
 
   /**
+   * Session attribute used to keep track of the quick edit type being submitted. The type is not
+   * persisted against the TDS draft, so the post-submission cleanup relies on this to know which
+   * quick amendment was submitted.
+   */
+  public static final String SUBMISSION_QUICK_EDIT_TYPE = "submissionQuickEditType";
+
+  /**
    * Session attribute used for maintaining current search criteria during a notifications search.
    */
   public static final String NOTIFICATION_SEARCH_CRITERIA = "notificationSearchCriteria";

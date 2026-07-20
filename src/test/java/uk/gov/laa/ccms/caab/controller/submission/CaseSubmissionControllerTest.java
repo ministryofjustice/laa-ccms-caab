@@ -25,6 +25,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMAR
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_POLL_COUNT;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_QUICK_EDIT_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -47,6 +48,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
+import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
@@ -116,7 +118,7 @@ class CaseSubmissionControllerTest {
 
     verify(applicationService, times(1)).getCaseStatus(anyString());
     // New (non-amendment) case submission must not remove an amendment draft.
-    verify(applicationService, never()).removeSubmittedAmendment(anyString(), any());
+    verify(applicationService, never()).removeSubmittedAmendment(anyString(), any(), any());
   }
 
   @Test
@@ -150,8 +152,39 @@ class CaseSubmissionControllerTest {
 
     verify(applicationService, times(1)).getCaseStatus(anyString());
     verify(applicationService, times(1)).getCase(anyString(), anyLong(), anyString());
-    // The confirmed amendment's spent TDS draft must be removed (mirrors old PUI cleanup).
-    verify(applicationService, times(1)).removeSubmittedAmendment(refNumber, userDetail);
+    // The confirmed amendment's spent TDS draft must be removed (mirrors old PUI cleanup). A full
+    // case amendment has no quick edit type.
+    verify(applicationService, times(1)).removeSubmittedAmendment(refNumber, userDetail, null);
+  }
+
+  @Test
+  @DisplayName("Test addCaseSubmission - Means reassessment confirmed passes its quick edit type")
+  void testAddCaseSubmission_MeansReassessmentConfirmed() throws Exception {
+    final String refNumber = "ref123";
+    final TransactionStatus mockStatus = new TransactionStatus();
+    mockStatus.setReferenceNumber(refNumber);
+    when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
+
+    final ApplicationDetail mockCase = new ApplicationDetail();
+    mockCase.setCaseReferenceNumber(refNumber);
+    when(applicationService.getCase(anyString(), anyLong(), anyString())).thenReturn(mockCase);
+
+    mockMvc
+        .perform(
+            get("/amendments/submit-case")
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
+                .sessionAttr(
+                    SUBMISSION_QUICK_EDIT_TYPE,
+                    QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT)
+                .sessionAttr(USER_DETAILS, userDetail))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(request().sessionAttributeDoesNotExist(SUBMISSION_QUICK_EDIT_TYPE));
+
+    // The cleanup must know a means reassessment was submitted: the type is not persisted against
+    // the TDS draft, so it can only come from the session.
+    verify(applicationService, times(1))
+        .removeSubmittedAmendment(
+            refNumber, userDetail, QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT);
   }
 
   @Test

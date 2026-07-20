@@ -509,7 +509,7 @@ class ApplicationSubmissionControllerTest {
     final ApplicationDetail amendment = amendmentApplication(true, true, false);
     stubAmendmentValidationCommon(amendment);
     stubAssessments("INCOMPLETE", "COMPLETE");
-    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any()))
         .thenReturn(false);
 
     final MvcResult mvcResult =
@@ -537,7 +537,7 @@ class ApplicationSubmissionControllerTest {
     stubAssessments(null, "COMPLETE");
     when(assessmentService.isMeansReassessmentRequiredForAmendment(any(), any(), any()))
         .thenReturn(true);
-    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any()))
         .thenReturn(false);
 
     final MvcResult mvcResult =
@@ -562,8 +562,6 @@ class ApplicationSubmissionControllerTest {
     final ApplicationDetail amendment = amendmentApplication(false, false, true);
     stubAmendmentValidationCommon(amendment);
     stubAssessments("COMPLETE", "INCOMPLETE");
-    // Non-ECF, non-MNLA amendment: means validation is skipped entirely, so the means reassessment
-    // check is never consulted.
 
     final MvcResult mvcResult =
         mockMvc
@@ -574,14 +572,13 @@ class ApplicationSubmissionControllerTest {
             .andExpect(request().asyncStarted())
             .andReturn();
 
+    // A complete means assessment with no reassessment required does not block; only merits does.
     mockMvc
         .perform(asyncDispatch(mvcResult))
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-validation-error-correction"))
         .andExpect(model().attributeExists("meritsAssessmentErrors"))
         .andExpect(model().attributeDoesNotExist("meansAssessmentErrors"));
-    // Means validation short-circuits before any assessment lookup for non-ECF/non-MNLA amendments.
-    verify(assessmentService, never()).isMeansReassessmentRequiredForAmendment(any(), any(), any());
   }
 
   @Test
@@ -594,7 +591,7 @@ class ApplicationSubmissionControllerTest {
     final ApplicationDetail amendment = amendmentApplication(true, false, false);
     stubAmendmentValidationCommon(amendment);
     stubAssessments("INCOMPLETE", "COMPLETE");
-    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any()))
         .thenReturn(false);
     // Means status is INCOMPLETE so the reassessment gate (Gate A) is skipped and
     // isMeansReassessmentRequiredForAmendment is never consulted - completeness (Gate B) blocks it.
@@ -623,7 +620,7 @@ class ApplicationSubmissionControllerTest {
     final ApplicationDetail amendment = amendmentApplication(false, false, false);
     stubAmendmentValidationCommon(amendment);
     stubAssessments("INCOMPLETE", "COMPLETE");
-    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any()))
         .thenReturn(false);
 
     final MvcResult mvcResult =
@@ -679,7 +676,7 @@ class ApplicationSubmissionControllerTest {
     // Non-ECF, non-MNLA amendment: means validation is skipped. Merits has no assessment yet, so
     // the
     // merits reassessment gate is consulted and returns false.
-    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any()))
         .thenReturn(false);
 
     final MvcResult mvcResult =
@@ -704,7 +701,7 @@ class ApplicationSubmissionControllerTest {
     stubAssessments("COMPLETE", "COMPLETE");
     when(assessmentService.isMeansReassessmentRequiredForAmendment(any(), any(), any()))
         .thenReturn(false);
-    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any()))
+    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any()))
         .thenReturn(false);
 
     final MvcResult mvcResult =
@@ -758,7 +755,7 @@ class ApplicationSubmissionControllerTest {
     verify(assessmentService, never()).getAssessments(any(), any(), any());
     verify(assessmentService, never()).isMeansReassessmentRequiredForAmendment(any(), any(), any());
     verify(assessmentService, never())
-        .isMeritsReassessmentRequiredForAmendment(any(), any(), any());
+        .isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any());
   }
 
   private ApplicationDetail amendmentApplication(
@@ -937,7 +934,7 @@ class ApplicationSubmissionControllerTest {
     final List<PriorAuthorityDetail> priorAuthorities = List.of(priorAuthorityDetail);
 
     final boolean result =
-        applicationSubmissionController.validatePriorAuthorities(priorAuthorities, model);
+        applicationSubmissionController.validatePriorAuthorities(priorAuthorities, model, false);
 
     assertTrue(result);
   }
@@ -948,7 +945,7 @@ class ApplicationSubmissionControllerTest {
     final List<PriorAuthorityDetail> priorAuthorities = List.of();
 
     boolean result =
-        applicationSubmissionController.validatePriorAuthorities(priorAuthorities, model);
+        applicationSubmissionController.validatePriorAuthorities(priorAuthorities, model, false);
 
     assertFalse(result);
   }
@@ -956,7 +953,8 @@ class ApplicationSubmissionControllerTest {
   @Test
   @DisplayName("Test validatePriorAuthorities with null PriorAuthorities returns false")
   void testValidatePriorAuthorities_WithNullPriorAuthorities() {
-    final boolean result = applicationSubmissionController.validatePriorAuthorities(null, model);
+    final boolean result =
+        applicationSubmissionController.validatePriorAuthorities(null, model, false);
 
     assertFalse(result);
   }
@@ -1027,6 +1025,37 @@ class ApplicationSubmissionControllerTest {
   }
 
   @Test
+  @DisplayName("validatePriorAuthorities - amendment suppresses a missing justification")
+  void testValidatePriorAuthorities_amendmentSuppressesJustification() {
+    final PriorAuthorityFlowFormData flow = new PriorAuthorityFlowFormData("edit");
+    flow.setPriorAuthorityTypeFormData(new PriorAuthorityTypeFormData());
+    flow.setPriorAuthorityDetailsFormData(new PriorAuthorityDetailsFormData());
+    when(proceedingAndCostsMapper.toPriorAuthorityFlowFormData(any())).thenReturn(flow);
+
+    doNothing().when(priorAuthorityTypeValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.rejectValue("justification", "required", "Enter a justification.");
+              return null;
+            })
+        .when(priorAuthorityDetailsValidator)
+        .validate(any(), any());
+
+    final List<PriorAuthorityDetail> priorAuthorities = List.of(new PriorAuthorityDetail());
+
+    // Application blocks; amendment suppresses.
+    lenient().when(model.containsAttribute("priorAuthorityDetails")).thenReturn(true);
+    lenient()
+        .when(model.getAttribute("priorAuthorityDetails"))
+        .thenReturn(List.of("Enter a justification."));
+    assertTrue(
+        applicationSubmissionController.validatePriorAuthorities(priorAuthorities, model, false));
+    assertFalse(
+        applicationSubmissionController.validatePriorAuthorities(priorAuthorities, model, true));
+  }
+
+  @Test
   @DisplayName("Test getErrorsFromModel returns errors when attribute is present")
   void testGetErrorsFromModel_WithAttributePresent() {
     final List<String> expectedErrors = List.of("Error 1", "Error 2");
@@ -1049,24 +1078,6 @@ class ApplicationSubmissionControllerTest {
         applicationSubmissionController.getErrorsFromModel(model, ERROR_ATTRIBUTE);
 
     assertEquals(Collections.emptyList(), actualErrors);
-  }
-
-  @Test
-  @DisplayName("Test POST /application/validate redirects to /application/sections")
-  void testApplicationValidatePost_RedirectsToApplicationSections() throws Exception {
-    mockMvc
-        .perform(post("/{caseContext}/validate", CaseContext.APPLICATION))
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/sections"));
-  }
-
-  @Test
-  @DisplayName("Test POST /amendments/validate redirects to /case/overview")
-  void testAmendmentValidatePost_RedirectsToCaseOverview() throws Exception {
-    mockMvc
-        .perform(post("/{caseContext}/validate", CaseContext.AMENDMENTS))
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/case/overview"));
   }
 
   @Test

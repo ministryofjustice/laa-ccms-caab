@@ -4,10 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -19,7 +21,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildAssessmentDetail;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
@@ -34,6 +38,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -52,6 +57,7 @@ import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.opa.context.ContextToken;
 import uk.gov.laa.ccms.caab.opa.util.SecurityUtils;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
@@ -185,6 +191,79 @@ public class AssessmentControllerTest {
         .andExpect(model().attributeExists("username"))
         .andExpect(model().attributeExists("resumeId"))
         .andExpect(model().attributeExists("assessmentType"));
+  }
+
+  @Test
+  public void assessmentGet_meansReassessment_usesInMemorySessionApplication() throws Exception {
+    // The means reassessment holds its application in memory (no persisted draft / no id), so the
+    // assessment uses the session application. The emergency application is re-typed as substantive
+    // and the reassessment flag is passed true (old PUI StartOpaReassessment, CR217).
+    final ApplicationDetail application = buildApplicationDetail(1, true, new Date());
+    application.setCaseReferenceNumber("CASE123");
+    application.setApplicationType(new ApplicationType().id("EMER").displayValue("Emergency"));
+
+    final ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("CASE123");
+
+    when(contextSecurityUtil.createHubContext(
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyString()))
+        .thenReturn("contextToken");
+    when(clientService.getClient(anyString(), anyString(), anyString()))
+        .thenReturn(Mono.just(new ClientDetail()));
+
+    final AssessmentDetail assessmentDetail = buildAssessmentDetail(new Date());
+    assessmentDetail.setId(1L);
+    when(assessmentService.getAssessments(any(), anyString(), anyString()))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessmentDetail)));
+
+    mockMvc
+        .perform(
+            get("/amendments/assessments")
+                .param("assessment", "means")
+                .param("invoked-from", "CCMS_MNA05")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(APPLICATION, application)
+                .sessionAttr(CASE, ebsCase)
+                .sessionAttr(ACTIVE_CASE, activeCase))
+        .andExpect(status().isOk());
+
+    // The in-memory application is used (no getApplication call), re-typed as substantive, and the
+    // reassessment flag is passed true so the "do not reuse" strip is skipped.
+    final ArgumentCaptor<ApplicationDetail> captor =
+        ArgumentCaptor.forClass(ApplicationDetail.class);
+    verify(assessmentService).startAssessment(captor.capture(), any(), any(), any(), eq(true));
+    assertEquals("SUB", captor.getValue().getApplicationType().getId());
+    verify(applicationService, never()).getApplication(anyString());
+  }
+
+  @Test
+  public void assessmentGet_meansReassessment_rejectsStaleSessionApplication() {
+    // A session application left over from a different case must not be used.
+    final ApplicationDetail application =
+        buildApplicationDetail(1, true, new Date()).caseReferenceNumber("OTHER-CASE");
+    final ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("CASE123");
+
+    final MockHttpServletRequestBuilder request =
+        get("/amendments/assessments")
+            .param("assessment", "means")
+            .param("invoked-from", "CCMS_MNA05")
+            .sessionAttr(USER_DETAILS, userDetails)
+            .sessionAttr(APPLICATION, application)
+            .sessionAttr(CASE, ebsCase)
+            .sessionAttr(ACTIVE_CASE, activeCase);
+
+    final Exception exception = assertThrows(Exception.class, () -> this.mockMvc.perform(request));
+
+    assertInstanceOf(CaabApplicationException.class, exception.getCause());
+    assertEquals(
+        "Session application does not match the current case", exception.getCause().getMessage());
+    verify(assessmentService, never()).startAssessment(any(), any(), any(), any(), anyBoolean());
   }
 
   @Test

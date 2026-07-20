@@ -64,6 +64,7 @@ import static uk.gov.laa.ccms.caab.util.OpponentUtil.getPartyName;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -149,7 +150,7 @@ public interface AssessmentMapper {
 
       // opponent relationships
       final List<AssessmentRelationshipTargetDetail> opponentRelationshipTargets =
-          context.getApplication().getOpponents().stream()
+          Optional.ofNullable(context.getApplication().getOpponents()).orElseGet(List::of).stream()
               .map(
                   opponent ->
                       new AssessmentRelationshipTargetDetail()
@@ -756,10 +757,13 @@ public interface AssessmentMapper {
       ApplicationDetail application, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
+  // No delegated functions date (e.g. a substantive reassessment) -> the OPA uncertain marker so
+  // the rulebase treats it as known-empty; null would read as unanswered and block the means goal.
   @Mapping(
       target = "value",
       source = "application.applicationType.devolvedPowers.dateUsed",
-      dateFormat = "dd-MM-yyyy")
+      dateFormat = "dd-MM-yyyy",
+      defaultValue = "~\t~")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)

@@ -19,6 +19,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEP
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_PROGRESS_STATUS_TYPES;
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.GLOBAL;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.OPPONENT;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.PROCEEDING;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentName.MEANS;
@@ -60,6 +61,7 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
+import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.mapper.AssessmentMapper;
@@ -83,6 +85,7 @@ import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryEntityDisplay;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryAttributeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.BaseProvider;
+import uk.gov.laa.ccms.data.model.CaseAssessmentDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -90,6 +93,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class AssessmentServiceTest {
 
   @Mock private AssessmentApiClient assessmentApiClient;
+  @Mock private EbsApiClient ebsApiClient;
   @Mock private SoaApiClient soaApiClient;
   @Mock private LookupService lookupService;
   @Mock private AssessmentMapper assessmentMapper;
@@ -494,9 +498,9 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testCheckAssessmentForProceedingKeyChange_proceedingNotInAssessment_assertsFalse() {
-    // Unmatched proceeding is skipped, not a key change (count checks in callers handle
-    // add/remove).
+  void testCheckAssessmentForProceedingKeyChange_proceedingNotInAssessment_assertsTrue() {
+    // A proceeding missing from the assessment was added after it was run, so the assessment must
+    // be redone (old PUI AssessmentHelper.isMeritsReassessmentRequired).
     final ApplicationDetail application =
         new ApplicationDetail()
             .addProceedingsItem(
@@ -513,7 +517,7 @@ public class AssessmentServiceTest {
         assessmentService.checkAssessmentForProceedingKeyChange(
             application, buildProceedingsEntityTypeDetail());
 
-    assertFalse(result);
+    assertTrue(result);
   }
 
   @Test
@@ -592,7 +596,7 @@ public class AssessmentServiceTest {
     // No merits assessment + substantive amendment of an emergency certificate => reassessment
     // required (old PUI keys this off assessment == null, not the checkpoint).
     final boolean result =
-        assessmentService.isReassessmentRequired(application, MERITS, null, user);
+        assessmentService.isReassessmentRequired(application, MERITS, null, null, user);
 
     assertTrue(result);
   }
@@ -623,7 +627,7 @@ public class AssessmentServiceTest {
     // Cost limit increased since the merits cost limit was recorded => reassessment required even
     // though no merits assessment has been performed yet (old PUI checks this at the top level).
     final boolean result =
-        assessmentService.isReassessmentRequired(application, MERITS, null, user);
+        assessmentService.isReassessmentRequired(application, MERITS, null, null, user);
 
     assertTrue(result);
   }
@@ -653,7 +657,7 @@ public class AssessmentServiceTest {
         .thenReturn(Mono.just(new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()));
 
     final boolean result =
-        assessmentService.isReassessmentRequired(application, MERITS, null, user);
+        assessmentService.isReassessmentRequired(application, MERITS, null, null, user);
 
     assertTrue(result);
   }
@@ -680,7 +684,9 @@ public class AssessmentServiceTest {
   }
 
   @Test
-  void testCalculateAssessmentStatuses_amendmentNoMeansAssessment_ecfCase_setsMeansRequired() {
+  void testCalculateAssessmentStatuses_amendmentNoMeansAssessment_ecfCase_leavesMeansUnchanged() {
+    // Old PUI has no ECF means rule: on an amendment, means only requires reassessment for a
+    // substantive amendment of an emergency certificate (AssessmentHelper, LSC-1783).
     final ApplicationDetail application =
         new ApplicationDetail()
             .amendment(true)
@@ -699,13 +705,13 @@ public class AssessmentServiceTest {
 
     assessmentService.calculateAssessmentStatuses(application, null, null, user);
 
-    assertEquals("Re-assessment Required", application.getMeansAssessmentStatus());
+    assertEquals("Unchanged", application.getMeansAssessmentStatus());
     assertEquals("Unchanged", application.getMeritsAssessmentStatus());
   }
 
   @Test
   void
-      testCalculateAssessmentStatuses_amendmentNoMeritsAssessment_substantiveEmergency_setsMeritsRequired() {
+      testCalculateAssessmentStatuses_amendmentSubstantiveEmergency_setsBothMeansAndMeritsRequired() {
     final ApplicationDetail application =
         new ApplicationDetail()
             .amendment(true)
@@ -725,7 +731,9 @@ public class AssessmentServiceTest {
 
     assessmentService.calculateAssessmentStatuses(application, null, null, user);
 
-    assertEquals("Unchanged", application.getMeansAssessmentStatus());
+    // Both assessments require reassessment: a substantive amendment of an emergency certificate
+    // with no assessment is old PUI's single amendment rule for means as well as merits.
+    assertEquals("Re-assessment Required", application.getMeansAssessmentStatus());
     assertEquals("Re-assessment Required", application.getMeritsAssessmentStatus());
   }
 
@@ -940,17 +948,17 @@ public class AssessmentServiceTest {
 
   @Test
   @DisplayName(
-      "Any change to the requested cost limit (even below the limit at the time of merits) requires "
-          + "a merits reassessment")
-  void testIsReassessmentRequired_costLimitChangedBelowLimitAtTimeOfMerits_assertsTrue() {
+      "A requested cost limit below the limit at the time of merits does not require a merits "
+          + "reassessment")
+  void testIsReassessmentRequired_costLimitBelowLimitAtTimeOfMerits_assertsFalse() {
     final String matterType = "TEST";
     final String proceedingType = "TEST";
     final String clientInvolvement = "TEST";
     final String scopeLimitation = "TEST";
 
-    // Requested limit (1000) is BELOW the limit captured at the time of merits (2000). The old
-    // "increase only" check (compareTo < 0) ignored this; any change must now trigger a merits
-    // reassessment.
+    // Requested limit (1000) is BELOW the limit captured at the time of merits (2000). Old PUI only
+    // reassesses when the limit RISES above it (AssessmentHelper: compareTo(...) < 0), because the
+    // provider only has to justify higher costs.
     final ApplicationDetail application =
         new ApplicationDetail()
             .amendment(false)
@@ -970,6 +978,44 @@ public class AssessmentServiceTest {
                     .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(auditDate)))
             .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(2000.00)))
             .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
+
+    final AssessmentDetail assessment = buildAssessmentDetail(auditDate);
+    assessment.setName(MERITS.getName());
+
+    assertFalse(assessmentService.isReassessmentRequired(application, assessment, user));
+  }
+
+  @Test
+  @DisplayName(
+      "A requested cost limit above the limit at the time of merits requires a merits "
+          + "reassessment")
+  void testIsReassessmentRequired_costLimitAboveLimitAtTimeOfMerits_assertsTrue() {
+    final String matterType = "TEST";
+    final String proceedingType = "TEST";
+    final String clientInvolvement = "TEST";
+    final String scopeLimitation = "TEST";
+
+    // Requested limit (3000) is ABOVE the limit captured at the time of merits (2000): the provider
+    // must justify the higher costs, so the merits assessment must be redone.
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(false)
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .id(123)
+                    .matterType(new StringDisplayValue().id(matterType))
+                    .proceedingType(new StringDisplayValue().id(proceedingType))
+                    .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
+                    .addScopeLimitationsItem(
+                        new ScopeLimitationDetail()
+                            .scopeLimitation(new StringDisplayValue().id(scopeLimitation))))
+            .addOpponentsItem(
+                new OpponentDetail()
+                    .id(234)
+                    .type("Individual")
+                    .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(auditDate)))
+            .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(2000.00)))
+            .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(3000.00)));
 
     final AssessmentDetail assessment = buildAssessmentDetail(auditDate);
     assessment.setName(MERITS.getName());
@@ -1266,6 +1312,142 @@ public class AssessmentServiceTest {
     assertTrue(proceedingEntities.getFirst().getAttributes().isEmpty());
   }
 
+  private CaseAssessmentDetail ebsRow(
+      final String entity,
+      final String instance,
+      final String attribute,
+      final String value,
+      final boolean userDefined) {
+    return new CaseAssessmentDetail()
+        .entityName(entity)
+        .instanceLabel(instance)
+        .attributeName(attribute)
+        .attributeValue(value)
+        .attributeType("text")
+        .attributeUserDefinedIndicator(userDefined);
+  }
+
+  private AssessmentDetail globalAssessment(final String caseRef) {
+    return new AssessmentDetail()
+        .entityTypes(
+            new ArrayList<>(
+                List.of(
+                    new AssessmentEntityTypeDetail()
+                        .name("global")
+                        .entities(
+                            new ArrayList<>(
+                                List.of(
+                                    new AssessmentEntityDetail()
+                                        .name(caseRef)
+                                        .attributes(new ArrayList<>())))))));
+  }
+
+  @Test
+  @DisplayName("mergeEbsAssessmentData adds EBS-sourced attributes when not selecting user-entered")
+  void mergeEbsAssessmentDataAddsEbsSourcedAttributes() {
+    final AssessmentDetail assessment = globalAssessment("CASE-123");
+    final List<CaseAssessmentDetail> rows =
+        List.of(
+            ebsRow("global", "CASE-123", "GB_DECL_B_38WP3_13A_PREV", "~\t~", false),
+            ebsRow("global", "CASE-123", "USER_ANSWER", "yes", true));
+
+    assessmentService.mergeEbsAssessmentData(assessment, rows, false);
+
+    final List<AssessmentAttributeDetail> attributes =
+        assessment.getEntityTypes().getFirst().getEntities().getFirst().getAttributes();
+    assertEquals(1, attributes.size());
+    assertEquals("GB_DECL_B_38WP3_13A_PREV", attributes.getFirst().getName());
+    assertEquals("~\t~", attributes.getFirst().getValue());
+    assertTrue(attributes.getFirst().getPrepopulated());
+  }
+
+  @Test
+  @DisplayName("mergeEbsAssessmentData selects only user-entered attributes when requested")
+  void mergeEbsAssessmentDataSelectsUserEnteredAttributes() {
+    final AssessmentDetail assessment = globalAssessment("CASE-123");
+    final List<CaseAssessmentDetail> rows =
+        List.of(
+            ebsRow("global", "CASE-123", "EBS_SOURCED", "x", false),
+            ebsRow("global", "CASE-123", "USER_ANSWER", "yes", true));
+
+    assessmentService.mergeEbsAssessmentData(assessment, rows, true);
+
+    final List<AssessmentAttributeDetail> attributes =
+        assessment.getEntityTypes().getFirst().getEntities().getFirst().getAttributes();
+    assertEquals(1, attributes.size());
+    assertEquals("USER_ANSWER", attributes.getFirst().getName());
+  }
+
+  @Test
+  @DisplayName("mergeEbsAssessmentData skips a row whose instance is not in the assessment")
+  void mergeEbsAssessmentDataSkipsUnmatchedInstance() {
+    final AssessmentDetail assessment = globalAssessment("CASE-123");
+    final List<CaseAssessmentDetail> rows =
+        List.of(ebsRow("LINKED_CASES", "OTHER-INSTANCE", "LINKED_CASE_OWNER", "SCA", false));
+
+    assessmentService.mergeEbsAssessmentData(assessment, rows, false);
+
+    // No LINKED_CASES entity in the assessment -> nothing merged, global untouched.
+    assertTrue(
+        assessment.getEntityTypes().getFirst().getEntities().getFirst().getAttributes().isEmpty());
+  }
+
+  @Test
+  @DisplayName("mergeEbsAssessmentData tolerates an entity whose attribute list is immutable")
+  void mergeEbsAssessmentDataHandlesImmutableAttributeList() {
+    final AssessmentDetail assessment =
+        new AssessmentDetail()
+            .entityTypes(
+                List.of(
+                    new AssessmentEntityTypeDetail()
+                        .name("global")
+                        .entities(
+                            List.of(
+                                new AssessmentEntityDetail()
+                                    .name("CASE-123")
+                                    .attributes(List.of())))));
+    final List<CaseAssessmentDetail> rows =
+        List.of(ebsRow("global", "CASE-123", "EBS_SOURCED", "x", false));
+
+    assessmentService.mergeEbsAssessmentData(assessment, rows, false);
+
+    final List<AssessmentAttributeDetail> attributes =
+        assessment.getEntityTypes().getFirst().getEntities().getFirst().getAttributes();
+    assertEquals(1, attributes.size());
+    assertEquals("EBS_SOURCED", attributes.getFirst().getName());
+  }
+
+  @Test
+  @DisplayName(
+      "mergeEbsAssessmentData reconciles a single LINKED_CASES instance despite an id mismatch")
+  void mergeEbsAssessmentDataReconcilesSingleLinkedCaseByPosition() {
+    // caab labels its linked-case instance with the LSC case reference; EBS uses a different id.
+    final AssessmentDetail assessment =
+        new AssessmentDetail()
+            .entityTypes(
+                new ArrayList<>(
+                    List.of(
+                        new AssessmentEntityTypeDetail()
+                            .name("LINKED_CASES")
+                            .entities(
+                                new ArrayList<>(
+                                    List.of(
+                                        new AssessmentEntityDetail()
+                                            .name("300001513050")
+                                            .attributes(new ArrayList<>())))))));
+    final List<CaseAssessmentDetail> rows =
+        List.of(ebsRow("LINKED_CASES", "60749650", "LINKED_CASE_OWNER", "SCA", false));
+
+    assessmentService.mergeEbsAssessmentData(assessment, rows, false);
+
+    final AssessmentEntityDetail linkedCase =
+        assessment.getEntityTypes().getFirst().getEntities().getFirst();
+    assertEquals("300001513050", linkedCase.getName());
+    assertEquals(1, linkedCase.getAttributes().size());
+    assertEquals("LINKED_CASE_OWNER", linkedCase.getAttributes().getFirst().getName());
+    assertEquals("SCA", linkedCase.getAttributes().getFirst().getValue());
+  }
+
   @Test
   @DisplayName(
       "startNewAssessment leaves an unchanged existing prepop untouched so it is saved as an "
@@ -1305,7 +1487,7 @@ public class AssessmentServiceTest {
     when(assessmentApiClient.updateAssessment(any(), any(), eq(user.getLoginId())))
         .thenReturn(Mono.empty());
 
-    assessmentService.startNewAssessment(AssessmentRulebase.MEANS, application, null, user);
+    assessmentService.startNewAssessment(AssessmentRulebase.MEANS, application, null, user, false);
 
     // Only the working assessment is mapped; the unchanged prepop is left as-is.
     verify(assessmentMapper, never()).toAssessmentDetail(eq(existingPrepop), any());
@@ -1356,7 +1538,7 @@ public class AssessmentServiceTest {
         .thenReturn(
             just(new AssessmentDetails().content(new ArrayList<>(List.of(existingPrepop)))));
 
-    assessmentService.startAssessment(application, AssessmentRulebase.MEANS, null, user);
+    assessmentService.startAssessment(application, AssessmentRulebase.MEANS, null, user, false);
 
     // The COMPLETE assessment is preserved: nothing is deleted, re-mapped or saved.
     verify(assessmentApiClient, never())
@@ -1404,7 +1586,7 @@ public class AssessmentServiceTest {
     when(assessmentApiClient.createAssessment(any(), eq(user.getLoginId())))
         .thenReturn(Mono.empty());
 
-    assessmentService.startNewAssessment(AssessmentRulebase.MEANS, application, null, user);
+    assessmentService.startNewAssessment(AssessmentRulebase.MEANS, application, null, user, false);
 
     // The stale prepop is deleted and the regenerated (fresh) prepop is mapped along with the
     // working assessment.
@@ -1947,5 +2129,114 @@ public class AssessmentServiceTest {
                                                         .attribute(attributeName)
                                                         .responseType("text")
                                                         .responseValue(attributeValue)))))))));
+  }
+
+  private static AssessmentDetail buildAssessmentWithAttributes(
+      final String entityTypeName, final String entityName, final String... attributeNames) {
+    final AssessmentEntityDetail entity = new AssessmentEntityDetail().name(entityName);
+    for (final String attributeName : attributeNames) {
+      entity.addAttributesItem(new AssessmentAttributeDetail().name(attributeName).value("true"));
+    }
+
+    return new AssessmentDetail()
+        .addEntityTypesItem(
+            new AssessmentEntityTypeDetail().name(entityTypeName).addEntitiesItem(entity));
+  }
+
+  private static List<String> attributeNames(
+      final AssessmentDetail assessment, final int entityTypeIndex) {
+    return assessment
+        .getEntityTypes()
+        .get(entityTypeIndex)
+        .getEntities()
+        .getFirst()
+        .getAttributes()
+        .stream()
+        .map(AssessmentAttributeDetail::getName)
+        .toList();
+  }
+
+  @Test
+  @DisplayName("removeNonReusableAttributes handles an immutable attribute list")
+  void removeNonReusableAttributes_immutableAttributeList() {
+    // The mapper can produce immutable attribute lists, so removal must not mutate in place.
+    final AssessmentDetail assessment =
+        new AssessmentDetail()
+            .addEntityTypesItem(
+                new AssessmentEntityTypeDetail()
+                    .name(GLOBAL.getType())
+                    .addEntitiesItem(
+                        new AssessmentEntityDetail()
+                            .name(GLOBAL.getType())
+                            .attributes(
+                                List.of(
+                                    new AssessmentAttributeDetail()
+                                        .name("MERITS_EVIDENCE_REQD")
+                                        .value("true"),
+                                    new AssessmentAttributeDetail()
+                                        .name("APPLICATION_CASE_REF")
+                                        .value("300001")))));
+
+    assessmentService.removeNonReusableAttributes(assessment, AssessmentRulebase.MERITS);
+
+    assertEquals(List.of("APPLICATION_CASE_REF"), attributeNames(assessment, 0));
+  }
+
+  @Test
+  @DisplayName("removeNonReusableAttributes strips the merits do-not-reuse attributes only")
+  void removeNonReusableAttributes_meritsStripsEvidenceKeepsRest() {
+    final AssessmentDetail assessment =
+        buildAssessmentWithAttributes(
+            GLOBAL.getType(),
+            GLOBAL.getType(),
+            "MERITS_EVIDENCE_REQD",
+            "ADDITIONAL_EVIDENCE_COLLECTED",
+            "APPLICATION_CASE_REF");
+
+    assessmentService.removeNonReusableAttributes(assessment, AssessmentRulebase.MERITS);
+
+    // The evidence answers must be re-asked on an amendment; the case reference is reusable.
+    assertEquals(List.of("APPLICATION_CASE_REF"), attributeNames(assessment, 0));
+  }
+
+  @Test
+  @DisplayName("removeNonReusableAttributes strips across every entity type")
+  void removeNonReusableAttributes_stripsAllEntityTypes() {
+    final AssessmentDetail assessment =
+        buildAssessmentWithAttributes(GLOBAL.getType(), GLOBAL.getType(), "MEANS_EVIDENCE_REQD");
+    assessment.addEntityTypesItem(
+        new AssessmentEntityTypeDetail()
+            .name(PROCEEDING.getType())
+            .addEntitiesItem(
+                new AssessmentEntityDetail()
+                    .name("P_1")
+                    .addAttributesItem(
+                        new AssessmentAttributeDetail().name("BANKACC_SMOD_FLAG").value("true"))
+                    .addAttributesItem(
+                        new AssessmentAttributeDetail().name("MATTER_TYPE").value("TEST"))));
+
+    assessmentService.removeNonReusableAttributes(assessment, AssessmentRulebase.MEANS);
+
+    assertTrue(attributeNames(assessment, 0).isEmpty());
+    assertEquals(List.of("MATTER_TYPE"), attributeNames(assessment, 1));
+  }
+
+  @Test
+  @DisplayName("removeNonReusableAttributes does not strip the other rulebase's attributes")
+  void removeNonReusableAttributes_doesNotStripAcrossRulebases() {
+    final AssessmentDetail assessment =
+        buildAssessmentWithAttributes(GLOBAL.getType(), GLOBAL.getType(), "MERITS_EVIDENCE_REQD");
+
+    assessmentService.removeNonReusableAttributes(assessment, AssessmentRulebase.MEANS);
+
+    assertEquals(List.of("MERITS_EVIDENCE_REQD"), attributeNames(assessment, 0));
+  }
+
+  @Test
+  @DisplayName("removeNonReusableAttributes tolerates missing data")
+  void removeNonReusableAttributes_toleratesMissingData() {
+    assessmentService.removeNonReusableAttributes(null, AssessmentRulebase.MERITS);
+    assessmentService.removeNonReusableAttributes(
+        new AssessmentDetail(), AssessmentRulebase.MERITS);
   }
 }

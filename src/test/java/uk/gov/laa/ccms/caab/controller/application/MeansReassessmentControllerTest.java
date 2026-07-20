@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
+import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -20,6 +22,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_QUICK_EDIT_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildAssessmentDetail;
@@ -43,11 +46,11 @@ import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.SummarySubmissionFormData;
 import uk.gov.laa.ccms.caab.bean.validators.declaration.DeclarationSubmissionValidator;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
+import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.mapper.SubmissionSummaryDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
-import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
@@ -92,25 +95,44 @@ class MeansReassessmentControllerTest {
   }
 
   @Test
-  void startMeansReassessmentCreatesDraftWhenNoneExists() throws Exception {
-    BaseApplicationDetail createdSummary = new BaseApplicationDetail().id(456);
-
-    when(applicationService.getTdsApplications(any(), eq(user), eq(0), eq(1)))
-        .thenReturn(new ApplicationDetails().content(Collections.emptyList()))
-        .thenReturn(new ApplicationDetails().content(List.of(createdSummary)));
-    when(amendmentService.createMeansReassessmentForCase(ebsCase, user)).thenReturn("456");
-    when(applicationService.getApplication("456")).thenReturn(Mono.just(amendment));
+  void startMeansReassessmentBuildsInMemoryApplicationWithoutPersisting() throws Exception {
+    when(amendmentService.buildMeansReassessment(ebsCase, user)).thenReturn(amendment);
 
     mockMvc
         .perform(
             get("/means-reassessment").sessionAttr(CASE, ebsCase).sessionAttr(USER_DETAILS, user))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/means-reassessment/summary"))
-        .andExpect(request().sessionAttribute(APPLICATION_SUMMARY, createdSummary))
+        // The application is held in the session but not persisted, so there is no id/summary and
+        // the case overview never sees a draft (old PUI parity).
         .andExpect(request().sessionAttribute(APPLICATION, amendment))
-        .andExpect(request().sessionAttribute(APPLICATION_ID, "456"));
+        .andExpect(request().sessionAttribute(ACTIVE_CASE, notNullValue()))
+        .andExpect(request().sessionAttributeDoesNotExist(APPLICATION_ID))
+        .andExpect(request().sessionAttributeDoesNotExist(APPLICATION_SUMMARY));
 
-    verify(amendmentService).createMeansReassessmentForCase(ebsCase, user);
+    verify(amendmentService).buildMeansReassessment(ebsCase, user);
+    verify(applicationService, never()).getTdsApplications(any(), any(), anyInt(), anyInt());
+  }
+
+  @Test
+  void startMeansReassessmentClearsAStaleDraftFromAnEarlierJourney() throws Exception {
+    when(amendmentService.buildMeansReassessment(ebsCase, user)).thenReturn(amendment);
+
+    mockMvc
+        .perform(
+            get("/means-reassessment")
+                .sessionAttr(CASE, ebsCase)
+                .sessionAttr(USER_DETAILS, user)
+                // An Amend Case draft the user started earlier in this session.
+                .sessionAttr(APPLICATION_ID, "999")
+                .sessionAttr(APPLICATION_SUMMARY, new BaseApplicationDetail().id(999)))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/means-reassessment/summary"))
+        // The assessment resolves by APPLICATION_ID ahead of the session application, so a stale id
+        // left behind would run the reassessment against that draft instead of this application.
+        .andExpect(request().sessionAttributeDoesNotExist(APPLICATION_ID))
+        .andExpect(request().sessionAttributeDoesNotExist(APPLICATION_SUMMARY))
+        .andExpect(request().sessionAttribute(APPLICATION, amendment));
   }
 
   @Test
@@ -158,7 +180,7 @@ class MeansReassessmentControllerTest {
   }
 
   @Test
-  void deleteMeansReassessmentClearsAssessmentButPreservesDraft() throws Exception {
+  void deleteMeansReassessmentClearsAssessmentOnly() throws Exception {
     when(assessmentService.deleteAssessments(eq(user), anyList(), eq("CASE123"), eq(null)))
         .thenReturn(Mono.empty());
 
@@ -176,11 +198,9 @@ class MeansReassessmentControllerTest {
         .andExpect(request().sessionAttributeDoesNotExist(APPLICATION))
         .andExpect(request().sessionAttributeDoesNotExist(ACTIVE_CASE));
 
-    // Only the means assessment data is removed (mirrors old PUI DeleteAssessmentController).
+    // Only the means assessment data is removed, mirroring old PUI's DeleteAssessmentController -
+    // the shared draft is left untouched (the case overview ignores a means-reassessment draft).
     verify(assessmentService).deleteAssessments(eq(user), anyList(), eq("CASE123"), eq(null));
-    // The application draft is preserved so a reused general amendment (e.g. added opponents) is
-    // not
-    // lost.
     verify(applicationService, never()).abandonApplication(any(), any());
   }
 
@@ -207,7 +227,14 @@ class MeansReassessmentControllerTest {
                 .sessionAttr(USER_DETAILS, user))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/amendments/submit-case"))
-        .andExpect(request().sessionAttribute(SUBMISSION_TRANSACTION_ID, "TRANS123"));
+        .andExpect(request().sessionAttribute(SUBMISSION_TRANSACTION_ID, "TRANS123"))
+        // The post-submission cleanup can only learn that this was a means reassessment from the
+        // session: the quick edit type is never persisted against the TDS draft.
+        .andExpect(
+            request()
+                .sessionAttribute(
+                    SUBMISSION_QUICK_EDIT_TYPE,
+                    QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT));
   }
 
   @Test

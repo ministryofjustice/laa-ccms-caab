@@ -8,6 +8,8 @@ import java.util.Optional;
 import org.springframework.lang.Nullable;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
+import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
@@ -23,12 +25,16 @@ public final class ApplicationUtil {
    *     the application type ID
    */
   public static String getAppAmendTypeAssessmentInput(final ApplicationDetail application) {
-    if (APP_TYPE_EXCEPTIONAL_CASE_FUNDING.equalsIgnoreCase(
-        application.getApplicationType().getId())) {
-      return APP_TYPE_SUBSTANTIVE;
-    } else {
-      return application.getApplicationType().getId();
-    }
+    final String applicationTypeId = getApplicationTypeId(application);
+    return APP_TYPE_EXCEPTIONAL_CASE_FUNDING.equalsIgnoreCase(applicationTypeId)
+        ? APP_TYPE_SUBSTANTIVE
+        : applicationTypeId;
+  }
+
+  private static String getApplicationTypeId(final ApplicationDetail application) {
+    return application.getApplicationType() == null
+        ? null
+        : application.getApplicationType().getId();
   }
 
   /**
@@ -39,12 +45,13 @@ public final class ApplicationUtil {
    */
   public static boolean getProviderHasContractAssessmentInput(final ApplicationDetail application) {
     final String devolvedPowersContractFlag =
-        application.getApplicationType().getDevolvedPowers().getContractFlag();
+        Optional.ofNullable(application.getApplicationType())
+            .map(ApplicationType::getDevolvedPowers)
+            .map(DevolvedPowersDetail::getContractFlag)
+            .orElse(null);
 
-    if (devolvedPowersContractFlag != null) {
-      return devolvedPowersContractFlag.toLowerCase().startsWith("yes");
-    }
-    return false;
+    return devolvedPowersContractFlag != null
+        && devolvedPowersContractFlag.toLowerCase().startsWith("yes");
   }
 
   /**
@@ -54,8 +61,7 @@ public final class ApplicationUtil {
    * @return true if the application type is "EXCEPTIONAL_CASE_FUNDING", otherwise false
    */
   public static boolean getEcfFlagAssessmentInput(final ApplicationDetail application) {
-    return APP_TYPE_EXCEPTIONAL_CASE_FUNDING.equalsIgnoreCase(
-        application.getApplicationType().getId());
+    return APP_TYPE_EXCEPTIONAL_CASE_FUNDING.equalsIgnoreCase(getApplicationTypeId(application));
   }
 
   /**
@@ -76,10 +82,7 @@ public final class ApplicationUtil {
    * @return a string determining if the application is an application or an amendment
    */
   public static String getNewApplicationOrAmendment(final ApplicationDetail application) {
-    if (application.getAmendment()) {
-      return "AMENDMENT";
-    }
-    return "APPLICATION";
+    return Boolean.TRUE.equals(application.getAmendment()) ? "AMENDMENT" : "APPLICATION";
   }
 
   /**

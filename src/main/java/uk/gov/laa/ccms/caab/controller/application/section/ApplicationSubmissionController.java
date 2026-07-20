@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.DECLARATION_APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.CcmsModule.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
@@ -29,6 +28,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.validation.Validator;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -226,7 +226,12 @@ public class ApplicationSubmissionController {
 
               boolean hasFormErrors =
                   processValidations(
-                      providerDetails, generalDetails, application, opponents, model);
+                      providerDetails,
+                      generalDetails,
+                      application,
+                      opponents,
+                      model,
+                      caseContext.isAmendment());
 
               return validateProceedings(application.getProceedings(), model)
                   .flatMap(
@@ -272,7 +277,8 @@ public class ApplicationSubmissionController {
       AddressFormData generalDetails,
       ApplicationDetail application,
       List<AbstractOpponentFormData> opponents,
-      Model model) {
+      Model model,
+      boolean isAmendment) {
     boolean hasErrors = false;
 
     if (validateAndAddErrors(
@@ -286,7 +292,7 @@ public class ApplicationSubmissionController {
       hasErrors = true;
     }
     hasErrors |= validateOpponents(opponents, model);
-    hasErrors |= validatePriorAuthorities(application.getPriorAuthorities(), model);
+    hasErrors |= validatePriorAuthorities(application.getPriorAuthorities(), model, isAmendment);
 
     return hasErrors;
   }
@@ -305,17 +311,47 @@ public class ApplicationSubmissionController {
       final Validator validator,
       final Model model,
       final String errorAttribute) {
+    return validateAndAddErrors(formData, validator, model, errorAttribute, Collections.emptySet());
+  }
+
+  /**
+   * Validates the form data and adds any validation errors to the model, ignoring errors on the
+   * given fields.
+   *
+   * @param formData the form data object to validate
+   * @param validator the validator to apply
+   * @param model the model to hold the collected error messages
+   * @param errorAttribute the model attribute key under which the errors will be added
+   * @param suppressedFields field names whose errors are dropped (used to skip fields old PUI does
+   *     not enforce on an amendment)
+   * @return {@code true} if there are validation errors, {@code false} otherwise
+   */
+  protected boolean validateAndAddErrors(
+      final Object formData,
+      final Validator validator,
+      final Model model,
+      final String errorAttribute,
+      final Set<String> suppressedFields) {
     final BindingResult bindingResult =
         new BeanPropertyBindingResult(formData, formData.getClass().getSimpleName());
     validator.validate(formData, bindingResult);
 
-    if (bindingResult.hasErrors()) {
-      final List<String> errors =
-          bindingResult.getAllErrors().stream().map(ObjectError::getDefaultMessage).toList();
+    final List<String> errors =
+        bindingResult.getAllErrors().stream()
+            .filter(error -> !isSuppressedField(error, suppressedFields))
+            .map(ObjectError::getDefaultMessage)
+            .toList();
+
+    if (!errors.isEmpty()) {
       model.addAttribute(errorAttribute, errors);
       return true;
     }
     return false;
+  }
+
+  private boolean isSuppressedField(final ObjectError error, final Set<String> suppressedFields) {
+    return error instanceof FieldError fieldError
+        && suppressedFields.contains(fieldError.getField());
   }
 
   /**
@@ -413,10 +449,18 @@ public class ApplicationSubmissionController {
    * @return {@code true} if there are validation errors, {@code false} otherwise
    */
   protected boolean validatePriorAuthorities(
-      final List<PriorAuthorityDetail> priorAuthorities, final Model model) {
+      final List<PriorAuthorityDetail> priorAuthorities,
+      final Model model,
+      final boolean isAmendment) {
     if (priorAuthorities == null || priorAuthorities.isEmpty()) {
       return false;
     }
+
+    // Old PUI does not enforce the prior authority justification on an amendment
+    // (opponentTitleErrorFilter covers PriorAuthority.justification), so existing data with an
+    // empty justification does not block the submission.
+    final Set<String> suppressedFields =
+        isAmendment ? Set.of("justification") : Collections.emptySet();
 
     final Set<String> priorAuthorityErrors = new HashSet<>();
     for (final PriorAuthorityDetail priorAuthority : priorAuthorities) {
@@ -435,7 +479,8 @@ public class ApplicationSubmissionController {
           priorAuthorityFlow.getPriorAuthorityDetailsFormData(),
           priorAuthorityDetailsValidator,
           model,
-          "priorAuthorityDetails")) {
+          "priorAuthorityDetails",
+          suppressedFields)) {
         priorAuthorityErrors.addAll(getErrorsFromModel(model, "priorAuthorityDetails"));
       }
     }
@@ -494,19 +539,6 @@ public class ApplicationSubmissionController {
     return model.containsAttribute(attributeName)
         ? (List<String>) model.getAttribute(attributeName)
         : Collections.emptyList();
-  }
-
-  /**
-   * Returns the user to the application section task page after continue is clicked.
-   *
-   * @return the redirection URL to the application summary page
-   */
-  @PostMapping("/{caseContext}/validate")
-  public String applicationValidatePost(
-      @PathVariable("caseContext") final CaseContext caseContext) {
-
-    String redirectPath = caseContext.isAmendment() ? "/case/overview" : "/application/sections";
-    return "redirect:" + redirectPath;
   }
 
   /**
@@ -912,11 +944,25 @@ public class ApplicationSubmissionController {
         getLatestAmendmentAssessment(AssessmentName.MERITS, amendment, user);
     assessmentService.calculateAssessmentStatuses(amendment, means, merits, user);
 
+    // calculateAssessmentStatuses may persist a new status (REQUIRED/UNCHANGED) via the assessment
+    // API without updating the objects above, which therefore still hold the pre-patch status. The
+    // gates must see what was written, so re-read both here: this is a read-after-write, not a
+    // redundant fetch, and passing `means`/`merits` in instead would let a blocked amendment
+    // through. Read once and share, so a single pass cannot see two different means statuses.
+    final AssessmentDetail meansAfterStatusUpdate =
+        getLatestAmendmentAssessment(AssessmentName.MEANS, amendment, user);
+    final AssessmentDetail meritsAfterStatusUpdate =
+        getLatestAmendmentAssessment(AssessmentName.MERITS, amendment, user);
+
     // Block an amendment that has not actually changed anything (CCMSPUI-932, scenario 5). Old PUI
     // permits an empty amendment; the new PUI surfaces a validation error instead.
     boolean hasErrors = validateAmendmentHasChanges(amendment, caseDetail, model);
-    hasErrors |= validateMeansAssessment(amendment, user, meansLegalAmendmentAvailable, model);
-    hasErrors |= validateMeritsAssessment(amendment, user, model);
+    hasErrors |=
+        validateMeansAssessment(
+            amendment, meansAfterStatusUpdate, user, meansLegalAmendmentAvailable, model);
+    hasErrors |=
+        validateMeritsAssessment(
+            amendment, meansAfterStatusUpdate, meritsAfterStatusUpdate, user, model);
     return hasErrors;
   }
 
@@ -932,23 +978,11 @@ public class ApplicationSubmissionController {
 
   private boolean validateMeansAssessment(
       final ApplicationDetail amendment,
+      final AssessmentDetail meansAssessment,
       final UserDetail user,
       final boolean meansLegalAmendmentAvailable,
       final Model model) {
 
-    // Means validation only has an effect for ECF means amendments: the completeness gate (Gate B)
-    // requires the MNLA function, and the reassessment gate (Gate A) only fires for the ECF
-    // application type (see AssessmentService#isMeansReassessmentRequiredForAmendment). When
-    // neither
-    // holds the means assessment is not part of this amendment, so skip the (blocking,
-    // SOA-touching)
-    // assessment lookups entirely rather than fetching them for nothing.
-    if (!meansLegalAmendmentAvailable && !isEcfApplicationType(amendment)) {
-      return false;
-    }
-
-    final AssessmentDetail meansAssessment =
-        getLatestAmendmentAssessment(AssessmentName.MEANS, amendment, user);
     final String status = assessmentStatus(meansAssessment);
 
     // Gate A: a reassessment is required (only meaningful when not already incomplete/not started).
@@ -984,16 +1018,19 @@ public class ApplicationSubmissionController {
   }
 
   private boolean validateMeritsAssessment(
-      final ApplicationDetail amendment, final UserDetail user, final Model model) {
+      final ApplicationDetail amendment,
+      final AssessmentDetail meansAssessment,
+      final AssessmentDetail meritsAssessment,
+      final UserDetail user,
+      final Model model) {
 
-    final AssessmentDetail meritsAssessment =
-        getLatestAmendmentAssessment(AssessmentName.MERITS, amendment, user);
     final String status = assessmentStatus(meritsAssessment);
 
-    // Gate A: a reassessment is required.
+    // Gate A: a reassessment is required. The means assessment is passed so that a means-only
+    // change does not demand a merits reassessment (old PUI's !meansLast guard).
     if (notIncompleteOrNotStarted(status)
         && assessmentService.isMeritsReassessmentRequiredForAmendment(
-            amendment, meritsAssessment, user)) {
+            amendment, meansAssessment, meritsAssessment, user)) {
       model.addAttribute(
           MERITS_ASSESSMENT_ERRORS, List.of(resolveMessage(MERITS_REASSESSMENT_REQUIRED_KEY)));
       return true;
@@ -1058,13 +1095,6 @@ public class ApplicationSubmissionController {
    */
   private boolean hasBeenStarted(final String status) {
     return status != null && !AssessmentStatus.NOT_STARTED.getStatus().equalsIgnoreCase(status);
-  }
-
-  private boolean isEcfApplicationType(final ApplicationDetail application) {
-    return application != null
-        && application.getApplicationType() != null
-        && APP_TYPE_EXCEPTIONAL_CASE_FUNDING.equalsIgnoreCase(
-            application.getApplicationType().getId());
   }
 
   private String resolveMessage(final String key) {

@@ -34,13 +34,12 @@ public final class AmendmentUtil {
    *     properties.
    */
   public static void cleanAppForQuickAmendSubmit(ApplicationDetail app) {
-    // Means reassessment keeps proceedings and opponents: EBS applies only the means via the
-    // "MeansReassessment" message type, and an empty-proceedings update is rejected. Other quick
-    // amends still strip them.
-    if (!QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT.equals(app.getQuickEditType())) {
-      app.setProceedings(new ArrayList<ProceedingDetail>());
-      app.setOpponents(new ArrayList<OpponentDetail>());
-    }
+    // Every quick amendment - means reassessment included - submits without proceedings or
+    // opponents. Old PUI strips them unconditionally before converting the case update
+    // (CcmsHelper.cleanAppForQuickAmendSubmit), so a quick amend never carries the case's
+    // proceedings/opponents, nor any amend-case changes made against the shared draft.
+    app.setProceedings(new ArrayList<ProceedingDetail>());
+    app.setOpponents(new ArrayList<OpponentDetail>());
     app.setLarScopeFlag(null);
     if (QuickEditTypeConstants.MESSAGE_TYPE_EDIT_PROVIDER.equals(app.getQuickEditType())) {
       app.setCorrespondenceAddress(null);
