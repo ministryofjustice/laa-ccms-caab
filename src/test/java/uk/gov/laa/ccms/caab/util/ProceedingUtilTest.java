@@ -120,4 +120,23 @@ class ProceedingUtilTest {
         ProceedingUtil.getRequestedScopeForAssessmentInput(
             proceedingWith((ScopeLimitationDetail) null)));
   }
+
+  @Test
+  @DisplayName(
+      "Requested scope ignores null entries, so one real scope beside a null is not MULTIPLE")
+  void getRequestedScope_ignoresNullBesideSingleRealScope() {
+    assertEquals(
+        "FM001",
+        ProceedingUtil.getRequestedScopeForAssessmentInput(
+            proceedingWith(null, scopeLimitationWithId("FM001"))));
+  }
+
+  @Test
+  @DisplayName("Requested scope returns MULTIPLE when two real scopes remain after ignoring a null")
+  void getRequestedScope_multipleWhenTwoRealScopesBesideNull() {
+    assertEquals(
+        "MULTIPLE",
+        ProceedingUtil.getRequestedScopeForAssessmentInput(
+            proceedingWith(null, scopeLimitationWithId("FM001"), scopeLimitationWithId("FM002"))));
+  }
 }

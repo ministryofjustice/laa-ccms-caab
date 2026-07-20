@@ -95,13 +95,13 @@ public final class ProceedingUtil {
    */
   public static String getRequestedScopeForAssessmentInput(final ProceedingDetail proceeding) {
     return Optional.ofNullable(proceeding.getScopeLimitations())
+        .map(scopeLimitations -> scopeLimitations.stream().filter(Objects::nonNull).toList())
         .filter(scopeLimitations -> !scopeLimitations.isEmpty())
         .map(
             scopeLimitations ->
                 scopeLimitations.size() > 1
                     ? "MULTIPLE"
-                    : Optional.ofNullable(scopeLimitations.getFirst())
-                        .map(scopeLimitation -> scopeLimitation.getScopeLimitation())
+                    : Optional.ofNullable(scopeLimitations.getFirst().getScopeLimitation())
                         .map(StringDisplayValue::getId)
                         .orElse(null))
         .orElse(null);
