@@ -77,6 +77,7 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentRelationshipDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentRelationshipTargetDetail;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -120,11 +121,31 @@ public interface AssessmentMapper {
       return null;
     }
 
-    return List.of(
-        toAssessmentEntityTypeDetailGlobal(context),
-        toAssessmentEntityTypeDetailProceeding(context),
-        toAssessmentEntityTypeDetailOpponent(context),
-        toAssessmentEntityTypeDetailLinkedCase(context));
+    final List<AssessmentEntityTypeDetail> entityTypes =
+        new ArrayList<>(
+            List.of(
+                toAssessmentEntityTypeDetailGlobal(context),
+                toAssessmentEntityTypeDetailProceeding(context),
+                toAssessmentEntityTypeDetailOpponent(context)));
+
+    if (!isMeansAssessment(context)) {
+      entityTypes.add(toAssessmentEntityTypeDetailLinkedCase(context));
+    }
+
+    return entityTypes;
+  }
+
+  /**
+   * Determines whether the assessment being mapped is the means assessment.
+   *
+   * @param context the assessment mapping context
+   * @return true if the context is mapping the means rulebase
+   */
+  private boolean isMeansAssessment(final AssessmentMappingContext context) {
+    return Optional.ofNullable(context.getAssessment())
+        .map(AssessmentDetail::getName)
+        .filter(name -> name.equalsIgnoreCase(AssessmentRulebase.MEANS.getName()))
+        .isPresent();
   }
 
   /**
@@ -181,23 +202,29 @@ public interface AssessmentMapper {
               .relationshipTargets(proceedingRelationshipTargets)
               .prepopulated(true);
 
-      // linked case relationships - declared even when empty, so the rulebase knows
-      // InstanceCount(the linked cases) = 0 rather than unknown.
-      final List<LinkedCaseDetail> linkedCases = getAssessmentLinkedCases(context.getApplication());
+      final List<AssessmentRelationshipDetail> globalRelationships =
+          new ArrayList<>(List.of(opponentRelationship, proceedingRelationship));
 
-      final List<AssessmentRelationshipTargetDetail> linkedCaseRelationshipTargets =
-          linkedCases.stream()
-              .map(
-                  linkedCase ->
-                      new AssessmentRelationshipTargetDetail()
-                          .targetEntityId(getLinkedCaseOpaInstanceMappingId(linkedCase)))
-              .collect(Collectors.toList());
+      // Declared even when empty so merits knows InstanceCount(the linked cases) = 0. Withheld from
+      // means, which old PUI never sends: its unseeded LINKED_CASE_OWNER blocks CLIENT_PROV_LA.
+      if (!isMeansAssessment(context)) {
+        final List<LinkedCaseDetail> linkedCases =
+            getAssessmentLinkedCases(context.getApplication());
 
-      final AssessmentRelationshipDetail linkedCaseRelationship =
-          new AssessmentRelationshipDetail()
-              .name(LINKED_CASE.getType().toLowerCase().replace("_", ""))
-              .relationshipTargets(linkedCaseRelationshipTargets)
-              .prepopulated(true);
+        final List<AssessmentRelationshipTargetDetail> linkedCaseRelationshipTargets =
+            linkedCases.stream()
+                .map(
+                    linkedCase ->
+                        new AssessmentRelationshipTargetDetail()
+                            .targetEntityId(getLinkedCaseOpaInstanceMappingId(linkedCase)))
+                .collect(Collectors.toList());
+
+        globalRelationships.add(
+            new AssessmentRelationshipDetail()
+                .name(LINKED_CASE.getType().toLowerCase().replace("_", ""))
+                .relationshipTargets(linkedCaseRelationshipTargets)
+                .prepopulated(true));
+      }
 
       // global entities
       final List<AssessmentEntityDetail> globalEntityList =
@@ -205,8 +232,7 @@ public interface AssessmentMapper {
               new AssessmentEntityDetail()
                   .name(context.getApplication().getCaseReferenceNumber())
                   .attributes(globalToAttributeList(context))
-                  .relations(
-                      List.of(opponentRelationship, proceedingRelationship, linkedCaseRelationship))
+                  .relations(globalRelationships)
                   .prepopulated(false));
 
       return new AssessmentEntityTypeDetail().name(GLOBAL.getType()).entities(globalEntityList);
