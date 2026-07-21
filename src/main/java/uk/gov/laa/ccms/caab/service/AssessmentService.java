@@ -897,18 +897,16 @@ public class AssessmentService {
       final AssessmentEntityTypeDetail proceedingEntityType,
       final boolean checkScopeLimitation) {
 
-    if (proceedingEntityType == null
-        && (application.getProceedings() == null || application.getProceedings().isEmpty())) {
-      return true;
-    }
+    final List<ProceedingDetail> proceedings =
+        Optional.ofNullable(application.getProceedings()).orElseGet(List::of);
 
-    // No proceedings to compare against, so nothing can be judged changed (old PUI guards its
-    // loops with the same null check).
+    // Nothing in the assessment to compare against: unchanged, unless the application has no
+    // proceedings either (old PUI guards its loops with the same null check).
     if (proceedingEntityType == null) {
-      return false;
+      return proceedings.isEmpty();
     }
 
-    for (final ProceedingDetail proceeding : application.getProceedings()) {
+    for (final ProceedingDetail proceeding : proceedings) {
       final String matterType = proceeding.getMatterType().getId();
       final String proceedingType = proceeding.getProceedingType().getId();
       final String clientInvolvementType = proceeding.getClientInvolvement().getId();

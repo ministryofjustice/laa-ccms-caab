@@ -1177,6 +1177,19 @@ public class AssessmentServiceTest {
   }
 
   @Test
+  @DisplayName("Null proceedings are treated as none rather than throwing")
+  void checkAssessmentForProceedingKeyChange_nullProceedings_doesNotThrow() {
+    // The key-change date can come from opponents alone, so this is reachable with no proceedings.
+    final ApplicationDetail application = new ApplicationDetail();
+    application.setProceedings(null);
+
+    assertFalse(
+        assessmentService.checkAssessmentForProceedingKeyChange(
+            application, buildProceedingsEntityTypeDetail()));
+    assertTrue(assessmentService.checkAssessmentForProceedingKeyChange(application, null));
+  }
+
+  @Test
   @DisplayName("A changed scope limitation requires a merits reassessment but not a means one")
   void testIsReassessmentRequired_applicationScopeLimitationChanged_meritsOnly() {
     // Scope changed from the recorded "TEST": a merits concern only. The proceeding is dated as
