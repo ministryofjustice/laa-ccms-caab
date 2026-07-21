@@ -509,7 +509,7 @@ class ApplicationSubmissionControllerTest {
     final ApplicationDetail amendment = amendmentApplication(true, true, false);
     stubAmendmentValidationCommon(amendment);
     stubAssessments("INCOMPLETE", "COMPLETE");
-    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any()))
+    when(assessmentService.isMeritsReassessmentRequired(any(), any(), any(), any()))
         .thenReturn(false);
 
     final MvcResult mvcResult =
@@ -535,9 +535,8 @@ class ApplicationSubmissionControllerTest {
     final ApplicationDetail amendment = amendmentApplication(true, false, false);
     stubAmendmentValidationCommon(amendment);
     stubAssessments(null, "COMPLETE");
-    when(assessmentService.isMeansReassessmentRequiredForAmendment(any(), any(), any()))
-        .thenReturn(true);
-    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any()))
+    when(assessmentService.isMeansReassessmentRequired(any(), any(), any())).thenReturn(true);
+    when(assessmentService.isMeritsReassessmentRequired(any(), any(), any(), any()))
         .thenReturn(false);
 
     final MvcResult mvcResult =
@@ -591,10 +590,10 @@ class ApplicationSubmissionControllerTest {
     final ApplicationDetail amendment = amendmentApplication(true, false, false);
     stubAmendmentValidationCommon(amendment);
     stubAssessments("INCOMPLETE", "COMPLETE");
-    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any()))
+    when(assessmentService.isMeritsReassessmentRequired(any(), any(), any(), any()))
         .thenReturn(false);
     // Means status is INCOMPLETE so the reassessment gate (Gate A) is skipped and
-    // isMeansReassessmentRequiredForAmendment is never consulted - completeness (Gate B) blocks it.
+    // isMeansReassessmentRequired is never consulted - completeness (Gate B) blocks it.
 
     final MvcResult mvcResult =
         mockMvc
@@ -620,7 +619,7 @@ class ApplicationSubmissionControllerTest {
     final ApplicationDetail amendment = amendmentApplication(false, false, false);
     stubAmendmentValidationCommon(amendment);
     stubAssessments("INCOMPLETE", "COMPLETE");
-    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any()))
+    when(assessmentService.isMeritsReassessmentRequired(any(), any(), any(), any()))
         .thenReturn(false);
 
     final MvcResult mvcResult =
@@ -676,7 +675,7 @@ class ApplicationSubmissionControllerTest {
     // Non-ECF, non-MNLA amendment: means validation is skipped. Merits has no assessment yet, so
     // the
     // merits reassessment gate is consulted and returns false.
-    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any()))
+    when(assessmentService.isMeritsReassessmentRequired(any(), any(), any(), any()))
         .thenReturn(false);
 
     final MvcResult mvcResult =
@@ -699,9 +698,8 @@ class ApplicationSubmissionControllerTest {
     final ApplicationDetail amendment = amendmentApplication(true, true, true);
     stubAmendmentValidationCommon(amendment);
     stubAssessments("COMPLETE", "COMPLETE");
-    when(assessmentService.isMeansReassessmentRequiredForAmendment(any(), any(), any()))
-        .thenReturn(false);
-    when(assessmentService.isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any()))
+    when(assessmentService.isMeansReassessmentRequired(any(), any(), any())).thenReturn(false);
+    when(assessmentService.isMeritsReassessmentRequired(any(), any(), any(), any()))
         .thenReturn(false);
 
     final MvcResult mvcResult =
@@ -753,9 +751,8 @@ class ApplicationSubmissionControllerTest {
         .andExpect(model().attributeDoesNotExist("meritsAssessmentErrors"));
     // The (blocking, SOA-touching) amendment assessment validation must be skipped entirely.
     verify(assessmentService, never()).getAssessments(any(), any(), any());
-    verify(assessmentService, never()).isMeansReassessmentRequiredForAmendment(any(), any(), any());
-    verify(assessmentService, never())
-        .isMeritsReassessmentRequiredForAmendment(any(), any(), any(), any());
+    verify(assessmentService, never()).isMeansReassessmentRequired(any(), any(), any());
+    verify(assessmentService, never()).isMeritsReassessmentRequired(any(), any(), any(), any());
   }
 
   private ApplicationDetail amendmentApplication(
