@@ -644,6 +644,9 @@ public class AssessmentService {
       return true;
     }
 
+    // Below the key-change guard as in old PUI, so it is skipped when nothing carries an audit
+    // trail. A proceeding deletion still forces both assessments REQUIRED via the flag block in
+    // calculateAssessmentStatuses, which does not depend on these timestamps.
     if (Boolean.TRUE.equals(application.getMeritsReassessmentRequired())) {
       return true;
     }
