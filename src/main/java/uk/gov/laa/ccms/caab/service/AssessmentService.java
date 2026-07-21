@@ -535,8 +535,7 @@ public class AssessmentService {
     if (Boolean.TRUE.equals(application.getAmendment())) {
       // Old PUI's only means rule on an amendment (LSC-1783), and only while no means assessment
       // exists - once one does it must not re-trigger.
-      return isSubstantiveAmendmentOfEmergencyCertificate(
-          application, assessment, getEbsCase(application, user));
+      return isSubstantiveAmendmentOfEmergencyCertificate(application, assessment, user);
     }
 
     if (assessment == null) {
@@ -571,11 +570,18 @@ public class AssessmentService {
   private boolean isSubstantiveAmendmentOfEmergencyCertificate(
       final ApplicationDetail application,
       final AssessmentDetail assessment,
-      final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase) {
-    return assessment == null
+      final UserDetail user) {
+
+    // The in-memory conditions first: the EBS case is a blocking SOA call, and this rule can only
+    // fire on a substantive amendment that has no assessment yet.
+    if (assessment != null || !APP_TYPE_SUBSTANTIVE.equals(getApplicationTypeId(application))) {
+      return false;
+    }
+
+    final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase = getEbsCase(application, user);
+
+    return ebsCase != null
         && !hasEbsAmendments(ebsCase)
-        && APP_TYPE_SUBSTANTIVE.equals(getApplicationTypeId(application))
-        && ebsCase != null
         && APP_TYPE_EMERGENCY.equals(ebsCase.getCertificateType());
   }
 
@@ -616,10 +622,8 @@ public class AssessmentService {
 
     // Old PUI only forces reassessment here when there is NO merits assessment at all (a
     // substantive amendment of an emergency certificate); once one exists it must not re-trigger.
-    // Amendment-only, so the EBS case - a blocking SOA call - is not fetched for an application.
     if (Boolean.TRUE.equals(application.getAmendment())
-        && isSubstantiveAmendmentOfEmergencyCertificate(
-            application, assessment, getEbsCase(application, user))) {
+        && isSubstantiveAmendmentOfEmergencyCertificate(application, assessment, user)) {
       return true;
     }
 

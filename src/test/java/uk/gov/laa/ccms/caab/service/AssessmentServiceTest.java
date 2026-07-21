@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -606,7 +607,8 @@ public class AssessmentServiceTest {
                     .proceedings(Collections.emptyList()))
             .certificateType(APP_TYPE_EMERGENCY);
 
-    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
+    lenient()
+        .when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
         .thenReturn(Mono.just(ebsCase));
 
     // No merits assessment + substantive amendment of an emergency certificate => reassessment
@@ -637,7 +639,8 @@ public class AssessmentServiceTest {
                 new uk.gov.laa.ccms.caab.model.CostStructureDetail()
                     .requestedCostLimitation(new java.math.BigDecimal("2000")));
 
-    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
+    lenient()
+        .when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
         .thenReturn(Mono.just(new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()));
 
     // Cost limit increased since the merits cost limit was recorded => reassessment required even
@@ -669,7 +672,8 @@ public class AssessmentServiceTest {
                     .limitAtTimeOfMerits(new java.math.BigDecimal("1000")))
             .costs(new uk.gov.laa.ccms.caab.model.CostStructureDetail());
 
-    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
+    lenient()
+        .when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
         .thenReturn(Mono.just(new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()));
 
     final boolean result =
@@ -691,7 +695,8 @@ public class AssessmentServiceTest {
     final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase =
         new uk.gov.laa.ccms.soa.gateway.model.CaseDetail().certificateType(APP_TYPE_EMERGENCY);
 
-    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
+    lenient()
+        .when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
         .thenReturn(Mono.just(ebsCase));
 
     final boolean result = assessmentService.isReassessmentRequired(application, assessment, user);
@@ -715,7 +720,8 @@ public class AssessmentServiceTest {
                 new uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails()
                     .proceedings(Collections.emptyList()));
 
-    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
+    lenient()
+        .when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
         .thenReturn(Mono.just(ebsCase));
     stubProgressStatusDescriptions();
 
@@ -741,7 +747,8 @@ public class AssessmentServiceTest {
                     .proceedings(Collections.emptyList()))
             .certificateType(APP_TYPE_EMERGENCY);
 
-    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
+    lenient()
+        .when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
         .thenReturn(Mono.just(ebsCase));
     stubProgressStatusDescriptions();
 
@@ -774,7 +781,8 @@ public class AssessmentServiceTest {
     assessment.setCheckpoint(
         new uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail());
 
-    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
+    lenient()
+        .when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
         .thenReturn(Mono.just(new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()));
 
     final boolean result = assessmentService.isReassessmentRequired(application, assessment, user);
@@ -1174,6 +1182,25 @@ public class AssessmentServiceTest {
     assessment.setName(MEANS.getName());
 
     assertFalse(assessmentService.isReassessmentRequired(application, assessment, user));
+  }
+
+  @Test
+  @DisplayName("An amendment with an existing assessment does not fetch the EBS case")
+  void isReassessmentRequired_amendmentWithAssessment_skipsEbsCaseLookup() {
+    // The emergency-certificate rule can only fire when no assessment exists, so the blocking SOA
+    // call must be skipped once one does - it runs on every amendment submit-validation.
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(true)
+            .caseReferenceNumber("CASE-123")
+            .applicationType(new ApplicationType().id(APP_TYPE_SUBSTANTIVE));
+
+    final AssessmentDetail meansAssessment = new AssessmentDetail();
+    meansAssessment.setName(MEANS.getName());
+
+    assertFalse(assessmentService.isMeansReassessmentRequired(application, meansAssessment, user));
+
+    verify(soaApiClient, never()).getCase(anyString(), anyString(), anyString());
   }
 
   @Test
