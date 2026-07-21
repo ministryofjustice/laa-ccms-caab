@@ -9,7 +9,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -607,8 +606,7 @@ public class AssessmentServiceTest {
                     .proceedings(Collections.emptyList()))
             .certificateType(APP_TYPE_EMERGENCY);
 
-    lenient()
-        .when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
+    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
         .thenReturn(Mono.just(ebsCase));
 
     // No merits assessment + substantive amendment of an emergency certificate => reassessment
@@ -639,10 +637,6 @@ public class AssessmentServiceTest {
                 new uk.gov.laa.ccms.caab.model.CostStructureDetail()
                     .requestedCostLimitation(new java.math.BigDecimal("2000")));
 
-    lenient()
-        .when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
-        .thenReturn(Mono.just(new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()));
-
     // Cost limit increased since the merits cost limit was recorded => reassessment required even
     // though no merits assessment has been performed yet (old PUI checks this at the top level).
     final boolean result =
@@ -672,10 +666,6 @@ public class AssessmentServiceTest {
                     .limitAtTimeOfMerits(new java.math.BigDecimal("1000")))
             .costs(new uk.gov.laa.ccms.caab.model.CostStructureDetail());
 
-    lenient()
-        .when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
-        .thenReturn(Mono.just(new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()));
-
     final boolean result =
         assessmentService.isReassessmentRequired(application, MERITS, null, null, user);
 
@@ -692,12 +682,8 @@ public class AssessmentServiceTest {
     assessment.setCheckpoint(
         new uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail());
 
-    final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase =
-        new uk.gov.laa.ccms.soa.gateway.model.CaseDetail().certificateType(APP_TYPE_EMERGENCY);
-
-    lenient()
-        .when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
-        .thenReturn(Mono.just(ebsCase));
+    // No EBS case is stubbed: an existing assessment rules out the emergency-certificate rule, so
+    // the lookup must not happen.
 
     final boolean result = assessmentService.isReassessmentRequired(application, assessment, user);
 
@@ -714,15 +700,8 @@ public class AssessmentServiceTest {
             .caseReferenceNumber("CASE-123")
             .applicationType(new ApplicationType().id(APP_TYPE_EXCEPTIONAL_CASE_FUNDING));
 
-    final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase =
-        new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()
-            .applicationDetails(
-                new uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails()
-                    .proceedings(Collections.emptyList()));
-
-    lenient()
-        .when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
-        .thenReturn(Mono.just(ebsCase));
+    // No EBS case is stubbed: an ECF application type rules out the emergency-certificate rule
+    // before the lookup, so it must not happen.
     stubProgressStatusDescriptions();
 
     assessmentService.calculateAssessmentStatuses(application, null, null, user);
@@ -747,8 +726,7 @@ public class AssessmentServiceTest {
                     .proceedings(Collections.emptyList()))
             .certificateType(APP_TYPE_EMERGENCY);
 
-    lenient()
-        .when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
+    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
         .thenReturn(Mono.just(ebsCase));
     stubProgressStatusDescriptions();
 
@@ -780,10 +758,6 @@ public class AssessmentServiceTest {
     assessment.setName(MERITS.getName());
     assessment.setCheckpoint(
         new uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail());
-
-    lenient()
-        .when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
-        .thenReturn(Mono.just(new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()));
 
     final boolean result = assessmentService.isReassessmentRequired(application, assessment, user);
 
