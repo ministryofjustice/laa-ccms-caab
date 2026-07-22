@@ -12,14 +12,14 @@
        th:text="#{site.returnToCaseOverview}"></a>
   </div>
   <div id="main-content">
-    <span class="govuk-caption-l" th:text="#{case.overview}"></span>
     <h1 class="govuk-heading-l" th:text="#{billing.statementOfAccount.title}"></h1>
+
+    <p class="govuk-body" th:text="#{billing.draftNote}"></p>
 
     <!-- Statement of account -->
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full"
            th:with="soa=${statementOfAccount},prov=${statementOfAccount?.provider},prior=${statementOfAccount?.priorSolicitor},cnsl=${statementOfAccount?.counsel},total=${statementOfAccount?.total}">
-        <h2 class="govuk-heading-m" th:text="#{billing.statementOfAccount.title}"></h2>
         <table class="govuk-table" id="statement-of-account-table">
           <thead class="govuk-table__head">
             <tr class="govuk-table__row">
@@ -36,82 +36,86 @@
           </thead>
           <tbody class="govuk-table__body">
             <tr class="govuk-table__row">
-              <th scope="row" class="govuk-table__header" th:text="#{billing.soa.row.certificateCostLimitation}"></th>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(prov?.certificateCostLimitation ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(prior?.certificateCostLimitation ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(cnsl?.certificateCostLimitation ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(total?.costLimitation?.certificateAmount ?: 0)}"></td>
+              <th scope="row" class="govuk-table__header govuk-!-font-weight-regular" th:text="#{billing.soa.row.certificateCostLimitation}"></th>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${prov?.certificateCostLimitation != null ? #numbers.formatCurrency(prov?.certificateCostLimitation) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${prior?.certificateCostLimitation != null ? #numbers.formatCurrency(prior?.certificateCostLimitation) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${cnsl?.certificateCostLimitation != null ? #numbers.formatCurrency(cnsl?.certificateCostLimitation) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${total?.certificateCostLimitation != null ? #numbers.formatCurrency(total?.certificateCostLimitation) : ''}"></td>
             </tr>
-            <tr class="govuk-table__row">
-              <th scope="row" class="govuk-table__header" th:text="#{billing.soa.row.counselCostCeiling}"></th>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${!soa.userBelongsToCurrentProvider ? #numbers.formatCurrency(total?.counselCostCeiling?.currentAmount ?: 0) : ''}"></td>
+            <!-- The ceiling is held against the case, so it sits in the column the user's firm owns. -->
+            <tr class="govuk-table__row" th:with="ceiling=${soa?.counselCostCeiling}">
+              <th scope="row" class="govuk-table__header govuk-!-font-weight-regular" th:text="#{billing.soa.row.counselCostCeiling}"></th>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${!soa.userBelongsToCurrentProvider and ceiling != null ? #numbers.formatCurrency(ceiling) : ''}"></td>
               <td class="govuk-table__cell govuk-table__cell--numeric"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${soa.userBelongsToCurrentProvider ? #numbers.formatCurrency(total?.counselCostCeiling?.currentAmount ?: 0) : ''}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(total?.counselCostCeiling?.currentAmount ?: 0)}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${soa.userBelongsToCurrentProvider and ceiling != null ? #numbers.formatCurrency(ceiling) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${ceiling != null ? #numbers.formatCurrency(ceiling) : ''}"></td>
             </tr>
             <tr class="govuk-table__row">
-              <th scope="row" class="govuk-table__header" th:text="#{billing.soa.row.undertaking}"></th>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(prov?.undertaking ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(prior?.undertaking ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(cnsl?.undertaking ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(total?.undertakingAmount ?: 0)}"></td>
+              <th scope="row" class="govuk-table__header govuk-!-font-weight-regular" th:text="#{billing.soa.row.undertaking}"></th>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${prov?.undertaking != null ? #numbers.formatCurrency(prov?.undertaking) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${prior?.undertaking != null ? #numbers.formatCurrency(prior?.undertaking) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${cnsl?.undertaking != null ? #numbers.formatCurrency(cnsl?.undertaking) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${total?.undertaking != null ? #numbers.formatCurrency(total?.undertaking) : ''}"></td>
             </tr>
             <tr class="govuk-table__row">
-              <th scope="row" class="govuk-table__header" th:text="#{billing.soa.row.billsAuthorised}"></th>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(prov?.billsAuthorised ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(prior?.billsAuthorised ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(cnsl?.billsAuthorised ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(total?.bills?.amountAuthorized ?: 0)}"></td>
+              <th scope="row" class="govuk-table__header govuk-!-font-weight-regular" th:text="#{billing.soa.row.billsAuthorised}"></th>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${prov?.billsAuthorised != null ? #numbers.formatCurrency(prov?.billsAuthorised) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${prior?.billsAuthorised != null ? #numbers.formatCurrency(prior?.billsAuthorised) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${cnsl?.billsAuthorised != null ? #numbers.formatCurrency(cnsl?.billsAuthorised) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${total?.billsAuthorised != null ? #numbers.formatCurrency(total?.billsAuthorised) : ''}"></td>
             </tr>
             <tr class="govuk-table__row">
-              <th scope="row" class="govuk-table__header" th:text="#{billing.soa.row.billsSubmitted}"></th>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(prov?.billsSubmittedButNotAuthorised ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(prior?.billsSubmittedButNotAuthorised ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(cnsl?.billsSubmittedButNotAuthorised ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(total?.bills?.amountSubmitted ?: 0)}"></td>
+              <th scope="row" class="govuk-table__header govuk-!-font-weight-regular" th:text="#{billing.soa.row.billsSubmitted}"></th>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${prov?.billsSubmittedButNotAuthorised != null ? #numbers.formatCurrency(prov?.billsSubmittedButNotAuthorised) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${prior?.billsSubmittedButNotAuthorised != null ? #numbers.formatCurrency(prior?.billsSubmittedButNotAuthorised) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${cnsl?.billsSubmittedButNotAuthorised != null ? #numbers.formatCurrency(cnsl?.billsSubmittedButNotAuthorised) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${total?.billsSubmittedButNotAuthorised != null ? #numbers.formatCurrency(total?.billsSubmittedButNotAuthorised) : ''}"></td>
             </tr>
             <tr class="govuk-table__row">
-              <th scope="row" class="govuk-table__header" th:text="#{billing.soa.row.poaRecouped}"></th>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(prov?.poaRecouped ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(prior?.poaRecouped ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(cnsl?.poaRecouped ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(total?.poa?.amountRecouped ?: 0)}"></td>
+              <th scope="row" class="govuk-table__header govuk-!-font-weight-regular" th:text="#{billing.soa.row.poaRecouped}"></th>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${prov?.poaRecouped != null ? #numbers.formatCurrency(prov?.poaRecouped) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${prior?.poaRecouped != null ? #numbers.formatCurrency(prior?.poaRecouped) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${cnsl?.poaRecouped != null ? #numbers.formatCurrency(cnsl?.poaRecouped) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${total?.poaRecouped != null ? #numbers.formatCurrency(total?.poaRecouped) : ''}"></td>
             </tr>
             <tr class="govuk-table__row">
-              <th scope="row" class="govuk-table__header" th:text="#{billing.soa.row.poaAuthorised}"></th>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(prov?.poaAuthorised ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(prior?.poaAuthorised ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(cnsl?.poaAuthorised ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(total?.poa?.amountAuthorized ?: 0)}"></td>
+              <th scope="row" class="govuk-table__header govuk-!-font-weight-regular" th:text="#{billing.soa.row.poaAuthorised}"></th>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${prov?.poaAuthorised != null ? #numbers.formatCurrency(prov?.poaAuthorised) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${prior?.poaAuthorised != null ? #numbers.formatCurrency(prior?.poaAuthorised) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${cnsl?.poaAuthorised != null ? #numbers.formatCurrency(cnsl?.poaAuthorised) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${total?.poaAuthorised != null ? #numbers.formatCurrency(total?.poaAuthorised) : ''}"></td>
             </tr>
             <tr class="govuk-table__row">
-              <th scope="row" class="govuk-table__header" th:text="#{billing.soa.row.poaSubmitted}"></th>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(prov?.poaSubmittedButNotAuthorised ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(prior?.poaSubmittedButNotAuthorised ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(cnsl?.poaSubmittedButNotAuthorised ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(total?.poa?.amountSubmitted ?: 0)}"></td>
+              <th scope="row" class="govuk-table__header govuk-!-font-weight-regular" th:text="#{billing.soa.row.poaSubmitted}"></th>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${prov?.poaSubmittedButNotAuthorised != null ? #numbers.formatCurrency(prov?.poaSubmittedButNotAuthorised) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${prior?.poaSubmittedButNotAuthorised != null ? #numbers.formatCurrency(prior?.poaSubmittedButNotAuthorised) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${cnsl?.poaSubmittedButNotAuthorised != null ? #numbers.formatCurrency(cnsl?.poaSubmittedButNotAuthorised) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${total?.poaSubmittedButNotAuthorised != null ? #numbers.formatCurrency(total?.poaSubmittedButNotAuthorised) : ''}"></td>
             </tr>
             <tr class="govuk-table__row">
               <th scope="row" class="govuk-table__header"><strong th:text="#{billing.soa.row.costLimitationRemaining}"></strong></th>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(prov?.costLimitationRemaining ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(prior?.costLimitationRemaining ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(cnsl?.costLimitationRemaining ?: 0)}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(total?.costLimitation?.remainingAmount ?: 0)}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${prov?.costLimitationRemaining != null ? #numbers.formatCurrency(prov?.costLimitationRemaining) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${prior?.costLimitationRemaining != null ? #numbers.formatCurrency(prior?.costLimitationRemaining) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${cnsl?.costLimitationRemaining != null ? #numbers.formatCurrency(cnsl?.costLimitationRemaining) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${total?.costLimitationRemaining != null ? #numbers.formatCurrency(total?.costLimitationRemaining) : ''}"></td>
             </tr>
-            <tr class="govuk-table__row">
+            <tr class="govuk-table__row" th:with="remaining=${soa?.counselCostCeilingRemaining}">
               <th scope="row" class="govuk-table__header"><strong th:text="#{billing.soa.row.counselCostCeilingRemaining}"></strong></th>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${!soa.userBelongsToCurrentProvider ? #numbers.formatCurrency(total?.counselCostCeiling?.remainingAmount ?: 0) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${!soa.userBelongsToCurrentProvider and remaining != null ? #numbers.formatCurrency(remaining) : ''}"></td>
               <td class="govuk-table__cell govuk-table__cell--numeric"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${soa.userBelongsToCurrentProvider ? #numbers.formatCurrency(total?.counselCostCeiling?.remainingAmount ?: 0) : ''}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(total?.counselCostCeiling?.remainingAmount ?: 0)}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${soa.userBelongsToCurrentProvider and remaining != null ? #numbers.formatCurrency(remaining) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${remaining != null ? #numbers.formatCurrency(remaining) : ''}"></td>
             </tr>
           </tbody>
         </table>
 
-        <p class="govuk-body" th:if="${showEnterUndertaking}">
-          <a class="govuk-link govuk-link--no-visited-state" href="#"
-             id="enter-undertaking-link" th:text="#{billing.enterUndertaking}"></a>
-        </p>
+        <div class="govuk-button-group">
+          <govuk:button th:if="${showEnterUndertaking}"
+                        classes="govuk-button--secondary"
+                        th:href="'#'"
+                        id="enter-undertaking-button"
+                        th:text="#{billing.enterUndertaking}"/>
+        </div>
       </div>
     </div>
 
@@ -127,19 +131,22 @@
               <th scope="col" class="govuk-table__header" th:text="#{billing.billsAndPoa.col.dateSubmitted}"></th>
               <th scope="col" class="govuk-table__header" th:text="#{billing.billsAndPoa.col.dateAuthorised}"></th>
               <th scope="col" class="govuk-table__header govuk-table__header--numeric" th:text="#{billing.billsAndPoa.col.amount}"></th>
+              <th scope="col" class="govuk-table__header" th:text="#{billing.billsAndPoa.col.action}"></th>
             </tr>
           </thead>
           <tbody class="govuk-table__body">
             <tr class="govuk-table__row" th:each="invoice : ${statementOfAccount?.invoices}">
               <td class="govuk-table__cell" th:text="${invoice.invoiceType}"></td>
               <td class="govuk-table__cell" th:text="${invoice.invoiceStatus}"></td>
-              <td class="govuk-table__cell" th:text="${invoice.dateSubmitted != null ? #dates.format(invoice.dateSubmitted, 'dd/MM/yyyy') : ''}"></td>
-              <td class="govuk-table__cell" th:text="${invoice.dateAuthorized != null ? #dates.format(invoice.dateAuthorized, 'dd/MM/yyyy') : ''}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${#numbers.formatCurrency(invoice.invoiceAmount ?: 0)}"></td>
+              <td class="govuk-table__cell" th:text="${invoice.dateSubmitted != null ? #temporals.format(invoice.dateSubmitted, 'dd/MM/yyyy') : ''}"></td>
+              <td class="govuk-table__cell" th:text="${invoice.dateAuthorised != null ? #temporals.format(invoice.dateAuthorised, 'dd/MM/yyyy') : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${invoice.invoiceAmount != null ? #numbers.formatCurrency(invoice.invoiceAmount) : ''}"></td>
+              <!-- TODO: edit / delete / copy bill links, once the draft Bill and POA journeys exist. -->
+              <td class="govuk-table__cell"></td>
             </tr>
             <tr class="govuk-table__row"
                 th:if="${statementOfAccount == null or statementOfAccount.invoices == null or statementOfAccount.invoices.isEmpty()}">
-              <td class="govuk-table__cell" colspan="5" th:text="#{billing.billsAndPoa.none}"></td>
+              <td class="govuk-table__cell" colspan="6" th:text="#{billing.billsAndPoa.none}"></td>
             </tr>
           </tbody>
         </table>
