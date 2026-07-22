@@ -91,7 +91,7 @@ class ActionViewHelperTest {
                 FunctionConstants.BILLING,
                 "action.billing.name",
                 "action.billing.description",
-                "#"),
+                "/case/billing"),
             new ExpectedAction(
                 FunctionConstants.OUTCOME_WITH_DISCHARGE,
                 "action.recordOutcome.name",

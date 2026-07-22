@@ -24,6 +24,7 @@ import uk.gov.laa.ccms.caab.controller.application.section.EvidenceSectionContro
 import uk.gov.laa.ccms.caab.controller.application.section.OpponentsSectionController;
 import uk.gov.laa.ccms.caab.controller.application.section.ProviderDetailsSectionController;
 import uk.gov.laa.ccms.caab.controller.application.section.ScopeLimitationController;
+import uk.gov.laa.ccms.caab.controller.billing.BillingController;
 import uk.gov.laa.ccms.caab.controller.client.EditClientAddressDetailsController;
 import uk.gov.laa.ccms.caab.controller.client.EditClientAddressDetailsSearchController;
 import uk.gov.laa.ccms.caab.controller.client.EditClientBasicDetailsController;
@@ -66,6 +67,7 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
       AssessmentController.class,
       CaseSubmissionController.class,
       CaseController.class,
+      BillingController.class,
       MeansReassessmentController.class,
       AmendCaseController.class,
       CounselSearchController.class,
