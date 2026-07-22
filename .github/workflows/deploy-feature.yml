@@ -22,8 +22,8 @@ jobs:
     outputs:
       feature_version: ${{ steps.get-feature-version.outputs.feature_version }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: ministryofjustice/laa-ccms-common-workflows/.github/actions/remove-prefix@345e0172073b135f5bb0dfaa8ba3731abe1054cc # v2.1.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: ministryofjustice/laa-ccms-common-workflows/.github/actions/remove-prefix@4daa796eff475c7a107e17daf4e4882b8a1b949b # v2.3.0
         id: get-feature-name
         with:
           string: ${{ github.ref_name }}
@@ -37,7 +37,7 @@ jobs:
 
   build:
     needs: [ define-feature-version ]
-    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/gradle-build-and-publish.yml@v2
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/gradle-build-and-publish.yml@v2.3.0
     permissions:
       contents: write
       packages: write
@@ -53,7 +53,7 @@ jobs:
 
   ecr-publish-image:
     needs: [ build ]
-    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@v2
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@v2.3.0
     permissions:
       contents: read
       id-token: write
@@ -72,7 +72,7 @@ jobs:
 
   update-helm-chart:
     needs: [ ecr-publish-image ]
-    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/update-helm-chart.yml@v2
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/update-helm-chart.yml@v2.3.0
     with:
       helm_charts_repository: 'laa-ccms-caab-helm-charts'
       helm_charts_branch: 'development'
