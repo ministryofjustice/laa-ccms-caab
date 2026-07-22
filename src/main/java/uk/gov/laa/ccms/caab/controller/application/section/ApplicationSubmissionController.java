@@ -987,8 +987,7 @@ public class ApplicationSubmissionController {
 
     // Gate A: a reassessment is required (only meaningful when not already incomplete/not started).
     if (notIncompleteOrNotStarted(status)
-        && assessmentService.isMeansReassessmentRequiredForAmendment(
-            amendment, meansAssessment, user)) {
+        && assessmentService.isMeansReassessmentRequired(amendment, meansAssessment, user)) {
       model.addAttribute(
           MEANS_ASSESSMENT_ERRORS, List.of(resolveMessage(MEANS_REASSESSMENT_REQUIRED_KEY)));
       return true;
@@ -1029,7 +1028,7 @@ public class ApplicationSubmissionController {
     // Gate A: a reassessment is required. The means assessment is passed so that a means-only
     // change does not demand a merits reassessment (old PUI's !meansLast guard).
     if (notIncompleteOrNotStarted(status)
-        && assessmentService.isMeritsReassessmentRequiredForAmendment(
+        && assessmentService.isMeritsReassessmentRequired(
             amendment, meansAssessment, meritsAssessment, user)) {
       model.addAttribute(
           MERITS_ASSESSMENT_ERRORS, List.of(resolveMessage(MERITS_REASSESSMENT_REQUIRED_KEY)));

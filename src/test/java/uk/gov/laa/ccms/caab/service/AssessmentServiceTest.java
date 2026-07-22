@@ -265,10 +265,24 @@ public class AssessmentServiceTest {
   @CsvSource({"COMPLETE", "ERROR"})
   void testCalculateAssessmentStatuses_meritsAssessment_reassessmentRequired(
       final String assessmentStatus) {
-    final ApplicationDetail application = new ApplicationDetail().amendment(false);
+    // A proceeding changed a minute after the merits assessment was created - old PUI's key-change
+    // rule. Without a key change nothing on an application can require a merits reassessment.
+    final Date meritsCreated = new Date(System.currentTimeMillis() - 60_000);
+
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(false)
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .auditTrail(
+                        new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(new Date())));
 
     final AssessmentDetail meritsAssessment =
-        new AssessmentDetail().id(ASSESSMENT_ID).name(MERITS.getName()).status(assessmentStatus);
+        new AssessmentDetail()
+            .id(ASSESSMENT_ID)
+            .name(MERITS.getName())
+            .status(assessmentStatus)
+            .auditDetail(new AuditDetail().created(meritsCreated));
 
     final UserDetail user = buildUserDetail();
 
@@ -567,8 +581,10 @@ public class AssessmentServiceTest {
     assessmentService.calculateAssessmentStatuses(
         application, meansAssessment, meritsAssessment, user);
 
+    // Means is flagged twice, merits only by the reassessment-required block: with no proceedings
+    // or opponents there is no key-change date, which every old PUI merits rule depends on.
     verify(assessmentApiClient, times(2)).patchAssessment(eq(101L), anyString(), any());
-    verify(assessmentApiClient, times(2)).patchAssessment(eq(102L), anyString(), any());
+    verify(assessmentApiClient, times(1)).patchAssessment(eq(102L), anyString(), any());
     assertEquals("Re-assessment Required", application.getMeansAssessmentStatus());
     assertEquals("Re-assessment Required", application.getMeritsAssessmentStatus());
   }
@@ -621,9 +637,6 @@ public class AssessmentServiceTest {
                 new uk.gov.laa.ccms.caab.model.CostStructureDetail()
                     .requestedCostLimitation(new java.math.BigDecimal("2000")));
 
-    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
-        .thenReturn(Mono.just(new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()));
-
     // Cost limit increased since the merits cost limit was recorded => reassessment required even
     // though no merits assessment has been performed yet (old PUI checks this at the top level).
     final boolean result =
@@ -653,9 +666,6 @@ public class AssessmentServiceTest {
                     .limitAtTimeOfMerits(new java.math.BigDecimal("1000")))
             .costs(new uk.gov.laa.ccms.caab.model.CostStructureDetail());
 
-    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
-        .thenReturn(Mono.just(new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()));
-
     final boolean result =
         assessmentService.isReassessmentRequired(application, MERITS, null, null, user);
 
@@ -672,11 +682,8 @@ public class AssessmentServiceTest {
     assessment.setCheckpoint(
         new uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail());
 
-    final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase =
-        new uk.gov.laa.ccms.soa.gateway.model.CaseDetail().certificateType(APP_TYPE_EMERGENCY);
-
-    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
-        .thenReturn(Mono.just(ebsCase));
+    // No EBS case is stubbed: an existing assessment rules out the emergency-certificate rule, so
+    // the lookup must not happen.
 
     final boolean result = assessmentService.isReassessmentRequired(application, assessment, user);
 
@@ -693,14 +700,8 @@ public class AssessmentServiceTest {
             .caseReferenceNumber("CASE-123")
             .applicationType(new ApplicationType().id(APP_TYPE_EXCEPTIONAL_CASE_FUNDING));
 
-    final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase =
-        new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()
-            .applicationDetails(
-                new uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails()
-                    .proceedings(Collections.emptyList()));
-
-    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
-        .thenReturn(Mono.just(ebsCase));
+    // No EBS case is stubbed: an ECF application type rules out the emergency-certificate rule
+    // before the lookup, so it must not happen.
     stubProgressStatusDescriptions();
 
     assessmentService.calculateAssessmentStatuses(application, null, null, user);
@@ -758,9 +759,6 @@ public class AssessmentServiceTest {
     assessment.setCheckpoint(
         new uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail());
 
-    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
-        .thenReturn(Mono.just(new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()));
-
     final boolean result = assessmentService.isReassessmentRequired(application, assessment, user);
 
     assertTrue(result);
@@ -776,6 +774,7 @@ public class AssessmentServiceTest {
   }
 
   @Test
+  @DisplayName("A proceeding deleted since the means assessment was run requires a reassessment")
   void testIsReassessmentRequired_assessmentHasMoreProceedingsThanApplication_assertsTrue() {
     final String matterType = "TEST";
     final String proceedingType = "TEST";
@@ -797,7 +796,11 @@ public class AssessmentServiceTest {
             .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
             .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
 
+    // The proceeding count comparison is old PUI's "Condition 021", which lives in the means rules
+    // only (AssessmentHelper.isMeansReassessmentRequired). Merits learns of a deleted proceeding
+    // from the meritsReassessmentRequired flag that ApplicationService.deleteProceeding sets.
     final AssessmentDetail assessment = buildAssessmentDetailMultipleProceedings();
+    assessment.setName(MEANS.getName());
 
     final boolean result = assessmentService.isReassessmentRequired(application, assessment, user);
 
@@ -811,6 +814,8 @@ public class AssessmentServiceTest {
     final String clientInvolvement = "TEST";
     final String scopeLimitation = "TEST";
 
+    // The proceeding is dated as the assessment was created, so the key-change rule cannot fire and
+    // the flag is the only thing left that can require the reassessment.
     final ApplicationDetail application =
         new ApplicationDetail()
             .meritsReassessmentRequired(true)
@@ -821,6 +826,7 @@ public class AssessmentServiceTest {
                     .matterType(new StringDisplayValue().id(matterType))
                     .proceedingType(new StringDisplayValue().id(proceedingType))
                     .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
+                    .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(auditDate))
                     .addScopeLimitationsItem(
                         new ScopeLimitationDetail()
                             .scopeLimitation(new StringDisplayValue().id(scopeLimitation))))
@@ -1055,6 +1061,164 @@ public class AssessmentServiceTest {
     assessment.setName(MERITS.getName());
 
     assertFalse(assessmentService.isReassessmentRequired(application, assessment, user));
+  }
+
+  @Test
+  @DisplayName(
+      "A key change after the merits assessment was created requires a merits reassessment on an "
+          + "application, as it does on an amendment")
+  void testIsReassessmentRequired_applicationMeritsKeyChangeAfterAssessment_assertsTrue() {
+    final Date meritsCreated = new Date(System.currentTimeMillis() - 60_000);
+
+    // An opponent edited a minute after the merits assessment was created. Old PUI applies this
+    // rule to applications and amendments alike.
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(false)
+            .addOpponentsItem(
+                new OpponentDetail()
+                    .id(234)
+                    .type("Organisation")
+                    .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(new Date())))
+            .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
+            .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
+
+    final AssessmentDetail assessment = buildAssessmentDetail(meritsCreated);
+    assessment.setName(MERITS.getName());
+
+    assertTrue(
+        assessmentService.isReassessmentRequired(application, MERITS, assessment, null, user));
+  }
+
+  @Test
+  @DisplayName(
+      "A key change does not require a merits reassessment when the means assessment was the last "
+          + "one run")
+  void testIsReassessmentRequired_applicationMeritsKeyChangeButMeansLast_assertsFalse() {
+    final Date meritsCreated = new Date(System.currentTimeMillis() - 60_000);
+
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(false)
+            .addOpponentsItem(
+                new OpponentDetail()
+                    .id(234)
+                    .type("Organisation")
+                    .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(new Date())))
+            .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
+            .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
+
+    final AssessmentDetail meritsAssessment = buildAssessmentDetail(meritsCreated);
+    meritsAssessment.setName(MERITS.getName());
+
+    // Means saved after merits: the key change is the means assessment's own, and a means change
+    // must not flip merits to reassessment-required (old PUI's !meansLast guard).
+    final AssessmentDetail meansAssessment = buildAssessmentDetail(new Date());
+    meansAssessment.setName(MEANS.getName());
+
+    assertFalse(
+        assessmentService.isReassessmentRequired(
+            application, MERITS, meritsAssessment, meansAssessment, user));
+  }
+
+  @Test
+  @DisplayName("An updated opponent does not require a means reassessment on an application")
+  void testIsReassessmentRequired_applicationMeansOpponentUpdated_assertsFalse() {
+    final String matterType = "TEST";
+    final String proceedingType = "TEST";
+    final String clientInvolvement = "TEST";
+    final String scopeLimitation = "TEST";
+
+    // Only the proceedings drive a means reassessment: old PUI's means rules never look at the
+    // opponents, the cost limit or the scope limitations, all of which belong to merits.
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(false)
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .id(123)
+                    .matterType(new StringDisplayValue().id(matterType))
+                    .proceedingType(new StringDisplayValue().id(proceedingType))
+                    .clientInvolvement(new StringDisplayValue().id(clientInvolvement))
+                    .addScopeLimitationsItem(
+                        new ScopeLimitationDetail()
+                            .scopeLimitation(new StringDisplayValue().id(scopeLimitation))))
+            .addOpponentsItem(
+                new OpponentDetail()
+                    .id(234)
+                    .type("Individual")
+                    .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(new Date())))
+            .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(999.00)))
+            .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(5000.00)));
+
+    final AssessmentDetail assessment =
+        buildAssessmentDetail(new Date(System.currentTimeMillis() - 60_000));
+    assessment.setName(MEANS.getName());
+
+    assertFalse(assessmentService.isReassessmentRequired(application, assessment, user));
+  }
+
+  @Test
+  @DisplayName("An amendment with an existing assessment does not fetch the EBS case")
+  void isReassessmentRequired_amendmentWithAssessment_skipsEbsCaseLookup() {
+    // The emergency-certificate rule can only fire when no assessment exists, so the blocking SOA
+    // call must be skipped once one does - it runs on every amendment submit-validation.
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(true)
+            .caseReferenceNumber("CASE-123")
+            .applicationType(new ApplicationType().id(APP_TYPE_SUBSTANTIVE));
+
+    final AssessmentDetail meansAssessment = new AssessmentDetail();
+    meansAssessment.setName(MEANS.getName());
+
+    assertFalse(assessmentService.isMeansReassessmentRequired(application, meansAssessment, user));
+
+    verify(soaApiClient, never()).getCase(anyString(), anyString(), anyString());
+  }
+
+  @Test
+  @DisplayName("Null proceedings are treated as none rather than throwing")
+  void checkAssessmentForProceedingKeyChange_nullProceedings_doesNotThrow() {
+    // The key-change date can come from opponents alone, so this is reachable with no proceedings.
+    final ApplicationDetail application = new ApplicationDetail();
+    application.setProceedings(null);
+
+    assertFalse(
+        assessmentService.checkAssessmentForProceedingKeyChange(
+            application, buildProceedingsEntityTypeDetail()));
+    assertTrue(assessmentService.checkAssessmentForProceedingKeyChange(application, null));
+  }
+
+  @Test
+  @DisplayName("A changed scope limitation requires a merits reassessment but not a means one")
+  void testIsReassessmentRequired_applicationScopeLimitationChanged_meritsOnly() {
+    // Scope changed from the recorded "TEST": a merits concern only. The proceeding is dated as
+    // the assessment was created so the key-change rule cannot fire and mask the difference.
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .amendment(false)
+            .addProceedingsItem(
+                new ProceedingDetail()
+                    .id(123)
+                    .matterType(new StringDisplayValue().id("TEST"))
+                    .proceedingType(new StringDisplayValue().id("TEST"))
+                    .clientInvolvement(new StringDisplayValue().id("TEST"))
+                    .auditTrail(new uk.gov.laa.ccms.caab.model.AuditDetail().lastSaved(auditDate))
+                    .addScopeLimitationsItem(
+                        new ScopeLimitationDetail()
+                            .scopeLimitation(new StringDisplayValue().id("CHANGED"))))
+            .costLimit(new CostLimitDetail().limitAtTimeOfMerits(BigDecimal.valueOf(1000.00)))
+            .costs(new CostStructureDetail().requestedCostLimitation(BigDecimal.valueOf(1000.00)));
+
+    final AssessmentDetail meansAssessment = buildAssessmentDetail(auditDate);
+    meansAssessment.setName(MEANS.getName());
+
+    final AssessmentDetail meritsAssessment = buildAssessmentDetail(auditDate);
+    meritsAssessment.setName(MERITS.getName());
+
+    assertFalse(assessmentService.isReassessmentRequired(application, meansAssessment, user));
+    assertTrue(assessmentService.isReassessmentRequired(application, meritsAssessment, user));
   }
 
   @ParameterizedTest

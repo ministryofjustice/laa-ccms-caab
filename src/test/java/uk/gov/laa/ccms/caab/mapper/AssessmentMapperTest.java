@@ -16,6 +16,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
@@ -23,6 +24,7 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentRelationshipDetail;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -75,6 +77,52 @@ class AssessmentMapperTest {
     final List<AssessmentEntityTypeDetail> result =
         assessmentMapper.toAssessmentEntityTypeList(context);
     assertEquals(4, result.size());
+  }
+
+  @Test
+  @DisplayName("The means prepop carries no LINKED_CASES entity or relationship")
+  void toAssessmentEntityTypeList_meansAssessment_omitsLinkedCases() {
+    // Old PUI never sends a LINKED_CASES instance; one leaves LINKED_CASE_OWNER unknown, which
+    // blocks the means goal CLIENT_PROV_LA and strands the assessment INCOMPLETE.
+    final LinkedCaseDetail linkedCase = new LinkedCaseDetail();
+    linkedCase.setLscCaseReference("LINK-1");
+    context.getApplication().setLinkedCases(List.of(linkedCase));
+    context.setAssessment(new AssessmentDetail().name(AssessmentRulebase.MEANS.getName()));
+
+    final List<AssessmentEntityTypeDetail> result =
+        assessmentMapper.toAssessmentEntityTypeList(context);
+
+    assertTrue(
+        result.stream().noneMatch(entityType -> "LINKED_CASES".equals(entityType.getName())),
+        "means prepop must not declare a LINKED_CASES entity type");
+
+    final AssessmentEntityDetail globalEntity =
+        result.stream()
+            .filter(entityType -> "global".equals(entityType.getName()))
+            .findFirst()
+            .orElseThrow()
+            .getEntities()
+            .get(0);
+    assertTrue(
+        globalEntity.getRelations().stream()
+            .noneMatch(relationship -> "linkedcases".equals(relationship.getName())),
+        "means global entity must not declare the linkedcases relationship");
+  }
+
+  @Test
+  @DisplayName("The merits prepop keeps LINKED_CASES for its case-routing instance count")
+  void toAssessmentEntityTypeList_meritsAssessment_keepsLinkedCases() {
+    final LinkedCaseDetail linkedCase = new LinkedCaseDetail();
+    linkedCase.setLscCaseReference("LINK-1");
+    context.getApplication().setLinkedCases(List.of(linkedCase));
+    context.setAssessment(new AssessmentDetail().name(AssessmentRulebase.MERITS.getName()));
+
+    final List<AssessmentEntityTypeDetail> result =
+        assessmentMapper.toAssessmentEntityTypeList(context);
+
+    assertTrue(
+        result.stream().anyMatch(entityType -> "LINKED_CASES".equals(entityType.getName())),
+        "merits prepop must still declare a LINKED_CASES entity type");
   }
 
   @Test
