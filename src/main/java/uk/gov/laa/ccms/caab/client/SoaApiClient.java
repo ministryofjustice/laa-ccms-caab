@@ -12,7 +12,6 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
-import uk.gov.laa.ccms.soa.gateway.model.CaseStatementOfAccount;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
@@ -173,33 +172,6 @@ public class SoaApiClient {
             e ->
                 soaApiClientErrorHandler.handleApiRetrieveError(
                     e, "Cases", "case reference", caseReferenceNumber));
-  }
-
-  /**
-   * Fetches the statement of account (billing figures and bills/POA invoices) for a case.
-   *
-   * @param caseReferenceNumber The reference number of the case.
-   * @param loginId The login identifier for the user.
-   * @param userType Type of the user (e.g., admin, user).
-   * @return A Mono wrapping the CaseStatementOfAccount.
-   */
-  public Mono<CaseStatementOfAccount> getCaseStatementOfAccount(
-      final String caseReferenceNumber, final String loginId, final String userType) {
-    return soaApiWebClient
-        .get()
-        .uri(
-            builder ->
-                builder
-                    .path("/cases/{case-reference}/statement-of-account")
-                    .build(caseReferenceNumber))
-        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
-        .header(SOA_GATEWAY_USER_ROLE, userType)
-        .retrieve()
-        .bodyToMono(CaseStatementOfAccount.class)
-        .onErrorResume(
-            e ->
-                soaApiClientErrorHandler.handleApiRetrieveError(
-                    e, "Case Statement of Account", "case reference", caseReferenceNumber));
   }
 
   /**

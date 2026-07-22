@@ -47,6 +47,7 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
+import uk.gov.laa.ccms.data.model.StatementOfAccountDetails;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
@@ -1029,6 +1030,35 @@ public class EbsApiClient extends BaseApiClient {
         .onErrorResume(
             e ->
                 ebsApiClientErrorHandler.handleApiRetrieveError(e, "Counsel details", queryParams));
+  }
+
+  /**
+   * Retrieves the statement of account rows held against a case, one per billing provider.
+   *
+   * @param caseReferenceNumber the case to fetch the statement of account for.
+   * @param billingProviderPartyId the billing provider to restrict the rows to. When null, every
+   *     statement held against the case is returned.
+   * @return A Mono wrapping the StatementOfAccountDetails.
+   */
+  public Mono<StatementOfAccountDetails> getStatementOfAccount(
+      final String caseReferenceNumber, final Long billingProviderPartyId) {
+    final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
+    addQueryParam(queryParams, "case-reference-number", caseReferenceNumber);
+    addQueryParam(queryParams, "billing-provider-party-id", billingProviderPartyId);
+    // The view has no natural order; sort so the rows are stable between requests.
+    addQueryParam(queryParams, "sort", "billingProviderPartyId");
+
+    return ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/statementofaccount").queryParams(queryParams).build())
+        .retrieve()
+        // A case with no statements at all is a 404 from EBS, not an error.
+        .onStatus(HttpStatus.NOT_FOUND::equals, response -> Mono.empty())
+        .bodyToMono(StatementOfAccountDetails.class)
+        .onErrorResume(
+            e ->
+                ebsApiClientErrorHandler.handleApiRetrieveError(
+                    e, "Statement of account", queryParams));
   }
 
   private static MultiValueMap<String, String> buildQueryParams(
