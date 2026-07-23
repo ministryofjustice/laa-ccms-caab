@@ -1,19 +1,11 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -600,7 +592,6 @@ public class AllocateCostLimitControllerTest {
           new CostStructureDetail()
               .addCostEntriesItem(
                   new CostEntryDetail()
-                      .requestedCosts(new BigDecimal("2250"))
                       .resourceName("PATRICK J BOWE")
                       .costCategory("Counsel")
                       .amountBilled(new BigDecimal("604.63"))
@@ -611,6 +602,14 @@ public class AllocateCostLimitControllerTest {
       ebsCase.setProviderDetails(
           new ApplicationProviderDetails()
               .provider(new IntDisplayValue().displayValue("provider")));
+
+      List<CostEntryDetail> existingCosts =
+          List.of(
+              new CostEntryDetail()
+                  .requestedCosts(new BigDecimal("2000"))
+                  .resourceName("PATRICK J BOWE")
+                  .costCategory("Counsel")
+                  .amountBilled(new BigDecimal("604.63")));
 
       AllocateCostsFormData formData = new AllocateCostsFormData();
       formData.setRequestedCostLimitation(new BigDecimal("25000"));
@@ -626,12 +625,77 @@ public class AllocateCostLimitControllerTest {
                       .sessionAttr(CASE, ebsCase)
                       .sessionAttr(USER_DETAILS, user)
                       .sessionAttr(ACTIVE_CASE, activeCase)
-                      .sessionAttr(COST_ALLOCATION_FORM_DATA, formData)))
+                      .sessionAttr(COST_ALLOCATION_FORM_DATA, formData)
+                      .sessionAttr(COST_ALLOCATION_CASE_COST_ENTRIES, existingCosts)))
           .hasRedirectedUrl("/amendments/submit-case");
 
       // The costs held in session are submitted as-is, so the requested cost limitation and each
       // entry's EBS id survive the review step.
       verify(amendmentService).submitQuickAmendmentCostAllocation(formData, "CASE123", user);
     }
+  }
+
+  @Test
+  @DisplayName(
+      "Should return cost allocation review view and not update session when submit clicked with validation errors")
+  void shouldReturnViewWhenSubmitHasValidationErrors() {
+    ApplicationDetail ebsCase = new ApplicationDetail();
+    UserDetail user = new UserDetail();
+    user.setProvider(new BaseProvider());
+    user.getProvider().setId(123);
+    ActiveCase activeCase = ActiveCase.builder().caseReferenceNumber("CASE123").build();
+    ebsCase.caseReferenceNumber("123456");
+    CostStructureDetail costs =
+        new CostStructureDetail()
+            .addCostEntriesItem(
+                new CostEntryDetail()
+                    .resourceName("PATRICK J BOWE")
+                    .costCategory("Counsel")
+                    .amountBilled(new BigDecimal("604.63"))
+                    .requestedCosts(new BigDecimal("604.63")))
+            .grantedCostLimitation(new BigDecimal("25000"))
+            .requestedCostLimitation(new BigDecimal("25000"));
+    ebsCase.setCosts(costs);
+    ebsCase.setProviderDetails(
+        new ApplicationProviderDetails().provider(new IntDisplayValue().displayValue("provider")));
+
+    List<CostEntryDetail> existingCosts =
+        List.of(
+            new CostEntryDetail()
+                .requestedCosts(new BigDecimal("604.63"))
+                .resourceName("PATRICK J BOWE")
+                .costCategory("Counsel")
+                .amountBilled(new BigDecimal("604.63")));
+
+    AllocateCostsFormData formData = new AllocateCostsFormData();
+    formData.setRequestedCostLimitation(new BigDecimal("25000"));
+    formData.setGrantedCostLimitation(new BigDecimal("25000"));
+    formData.setCostEntries(costs.getCostEntries());
+
+    // Mock validator to add an error
+    doAnswer(
+            invocation -> {
+              org.springframework.validation.Errors errors = invocation.getArgument(2);
+              errors.reject("costCostAllocation.requestedAmount.unchangedAmount");
+              return null;
+            })
+        .when(allocateCostLimitValidator)
+        .validateCostsHaveBeenUpdated(
+            anyList(), anyList(), any(org.springframework.validation.Errors.class));
+
+    assertThat(
+            mockMvc.perform(
+                post("/allocate-cost-limit/review")
+                    .sessionAttr(CASE, ebsCase)
+                    .sessionAttr(USER_DETAILS, user)
+                    .sessionAttr(ACTIVE_CASE, activeCase)
+                    .sessionAttr(COST_ALLOCATION_FORM_DATA, formData)
+                    .sessionAttr(COST_ALLOCATION_CASE_COST_ENTRIES, existingCosts)))
+        .hasStatusOk()
+        .hasViewName("application/case-costs-review")
+        .model()
+        .containsEntry("case", ebsCase)
+        .containsEntry("costDetails", formData)
+        .containsKey("org.springframework.validation.BindingResult.costDetails");
   }
 }

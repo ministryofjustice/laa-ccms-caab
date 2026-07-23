@@ -16,6 +16,7 @@
         <p class="govuk-body-l" th:text="#{caseCosts.review.leadParagraph}"></p>
 
         <form th:action="@{/allocate-cost-limit/review}" th:object="${costDetails}" method="post">
+            <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-full">
                     <table class="govuk-table">

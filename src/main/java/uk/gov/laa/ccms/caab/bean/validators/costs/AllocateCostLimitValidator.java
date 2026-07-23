@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.bean.validators.costs;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.springframework.stereotype.Component;
@@ -93,6 +94,33 @@ public class AllocateCostLimitValidator extends AbstractValidator {
             "costEntries[" + (index == -1 ? 0 : index) + "].requestedCosts",
             "costCostAllocation.requestedAmount.belowBilledAmount");
       }
+    }
+  }
+
+  public void validateCostsHaveBeenUpdated(
+      List<CostEntryDetail> updatedCosts, List<CostEntryDetail> existingCosts, Errors errors) {
+    boolean hasCostsBeenUpdated = false;
+    for (CostEntryDetail updatedCost : updatedCosts) {
+      CostEntryDetail existingCost =
+          existingCosts.stream()
+              .filter(
+                  c -> {
+                    if (updatedCost.getLscResourceId() != null) {
+                      return Objects.equals(c.getLscResourceId(), updatedCost.getLscResourceId());
+                    }
+                    return Objects.equals(c.getResourceName(), updatedCost.getResourceName());
+                  })
+              .findFirst()
+              .orElse(null);
+
+      if (existingCost == null
+          || existingCost.getRequestedCosts().compareTo(updatedCost.getRequestedCosts()) != 0) {
+        hasCostsBeenUpdated = true;
+        break;
+      }
+    }
+    if (!hasCostsBeenUpdated) {
+      errors.reject("costCostAllocation.requestedAmount.unchangedAmount");
     }
   }
 }
