@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_CASE_COST_ENTRIES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -74,6 +76,10 @@ public class AllocateCostLimitController {
 
       // Update only the costs to avoid overwriting session-scoped metadata like availableFunctions.
       ebsCase.setCosts(freshCase.getCosts());
+
+      List<CostEntryDetail> existingCosts =
+          freshCase.getCosts().getCostEntries().stream().distinct().collect(Collectors.toList());
+      session.setAttribute(COST_ALLOCATION_CASE_COST_ENTRIES, existingCosts);
 
       allocateCostsFormData = proceedingAndCostsMapper.toAllocateCostsForm(ebsCase);
       session.setAttribute(COST_ALLOCATION_FORM_DATA, allocateCostsFormData);
@@ -220,9 +226,28 @@ public class AllocateCostLimitController {
   public String submitCaseCosts(
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
-      @SessionAttribute(COST_ALLOCATION_FORM_DATA)
-          final AllocateCostsFormData allocateCostsFormData,
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(COST_ALLOCATION_FORM_DATA) AllocateCostsFormData allocateCostsFormData,
+      @SessionAttribute(COST_ALLOCATION_CASE_COST_ENTRIES)
+          final List<CostEntryDetail> existingCosts,
+      final Model model,
       final HttpSession session) {
+
+    List<CostEntryDetail> updatedCosts =
+        ebsCase.getCosts().getCostEntries().stream().distinct().collect(Collectors.toList());
+
+    final BindingResult bindingResult =
+        new BeanPropertyBindingResult(allocateCostsFormData, COST_ALLOCATION_FORM_DATA);
+
+    allocateCostLimitValidator.validateCostsHaveBeenUpdated(
+        updatedCosts, existingCosts, bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      model.addAttribute("costDetails", allocateCostsFormData);
+      model.addAttribute("case", ebsCase);
+      model.addAttribute(BindingResult.MODEL_KEY_PREFIX + "costDetails", bindingResult);
+      return "application/case-costs-review";
+    }
 
     final String transactionId =
         amendmentService.submitQuickAmendmentCostAllocation(
