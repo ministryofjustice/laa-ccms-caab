@@ -1,11 +1,21 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.*;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_CASE_COST_ENTRIES;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

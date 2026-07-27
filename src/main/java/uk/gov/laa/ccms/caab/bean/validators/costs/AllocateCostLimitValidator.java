@@ -114,7 +114,7 @@ public class AllocateCostLimitValidator extends AbstractValidator {
               .orElse(null);
 
       if (existingCost == null
-          || existingCost.getRequestedCosts().compareTo(updatedCost.getRequestedCosts()) != 0) {
+          || !Objects.equals(existingCost.getRequestedCosts(), updatedCost.getRequestedCosts())) {
         hasCostsBeenUpdated = true;
         break;
       }
