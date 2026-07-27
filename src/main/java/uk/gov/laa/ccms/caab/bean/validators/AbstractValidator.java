@@ -8,6 +8,7 @@ import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NUMERIC_
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.TELEPHONE_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.UK_POSTCODE;
 import static uk.gov.laa.ccms.caab.util.DateUtils.COMPONENT_DATE_PATTERN;
+import static uk.gov.laa.ccms.caab.util.DateUtils.convertToDate;
 
 import java.math.BigDecimal;
 import java.text.ParsePosition;
@@ -294,6 +295,8 @@ public abstract class AbstractValidator implements Validator {
           "Date of birth",
           COMPONENT_DATE_PATTERN,
           errors);
+      validateDateInPast(
+          convertToDate(individual.getDateOfBirth()), "dateOfBirth", "Date of birth", errors);
     }
   }
 

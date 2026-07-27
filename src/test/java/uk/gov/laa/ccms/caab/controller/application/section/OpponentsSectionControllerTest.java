@@ -1087,6 +1087,54 @@ class OpponentsSectionControllerTest {
   }
 
   @Test
+  void editNonSharedOrganisationPost_validationErrors_maxLengthsExceeded_returnsToSharedEditScreen()
+      throws Exception {
+    String selectedOpponentId = "123";
+    OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
+    opponentFormData.setShared(false);
+    opponentFormData.setOrganisationName(RandomStringUtils.insecure().nextAlphabetic(370));
+    opponentFormData.setContactNameRole(RandomStringUtils.insecure().nextAlphabetic(40));
+
+    CommonLookupDetail orgTypes =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES))
+        .thenReturn(Mono.just(orgTypes));
+
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(new RelationshipToCaseLookupValueDetail());
+    when(lookupService.getOrganisationToCaseRelationships())
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
+
+    CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
+
+    CommonLookupDetail countriesLookupDetail = new CommonLookupDetail();
+    when(lookupService.getCountries()).thenReturn(Mono.just(countriesLookupDetail));
+
+    mockMvc
+        .perform(
+            post("/application/sections/opponents/{id}/edit", selectedOpponentId)
+                .sessionAttr(CURRENT_OPPONENT, opponentFormData)
+                .sessionAttr(USER_DETAILS, user))
+        .andDo(print())
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "organisationName"))
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "contactNameRole"))
+        .andExpect(model().attribute("organisationTypes", orgTypes.getContent()))
+        .andExpect(
+            model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
+        .andExpect(
+            model()
+                .attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
+        .andExpect(model().attribute("countries", countriesLookupDetail.getContent()))
+        .andExpect(view().name("application/opponents/opponents-organisation-edit"));
+
+    verifyNoInteractions(opponentService);
+  }
+
+  @Test
   void editIndividualPost_validationErrors_returnsToIndividualEditScreen() throws Exception {
     String selectedOpponentId = "123";
     IndividualOpponentFormData opponentFormData = new IndividualOpponentFormData();
@@ -1127,6 +1175,79 @@ class OpponentsSectionControllerTest {
                 .sessionAttr(CURRENT_OPPONENT, opponentFormData)
                 .sessionAttr(USER_DETAILS, user))
         .andDo(print())
+        .andExpect(model().attribute("contactTitles", contactTitles.getContent()))
+        .andExpect(
+            model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
+        .andExpect(
+            model()
+                .attribute("relationshipsToClient", relationshipToClientLookupDetail.getContent()))
+        .andExpect(model().attribute("countries", countries.getContent()))
+        .andExpect(model().attributeExists("legalAidedOptions"))
+        .andExpect(view().name("application/opponents/opponents-individual-edit"));
+
+    verifyNoInteractions(opponentService);
+  }
+
+  @Test
+  void editIndividualPost_validationErrors_maxLengthsExceeded_returnsToIndividualEditScreen()
+      throws Exception {
+    String selectedOpponentId = "123";
+    IndividualOpponentFormData opponentFormData = new IndividualOpponentFormData();
+    opponentFormData.setFirstName(RandomStringUtils.insecure().nextAlphabetic(40));
+    opponentFormData.setMiddleNames(RandomStringUtils.insecure().nextAlphabetic(40));
+    opponentFormData.setSurname(RandomStringUtils.insecure().nextAlphabetic(40));
+    opponentFormData.setHouseNameOrNumber(RandomStringUtils.insecure().nextAlphabetic(40));
+    opponentFormData.setAddressLine1(RandomStringUtils.insecure().nextAlphabetic(250));
+    opponentFormData.setAddressLine2(RandomStringUtils.insecure().nextAlphabetic(40));
+    opponentFormData.setCity(RandomStringUtils.insecure().nextAlphabetic(40));
+    opponentFormData.setCounty(RandomStringUtils.insecure().nextAlphabetic(40));
+    opponentFormData.setTelephoneHome(RandomStringUtils.insecure().nextNumeric(16));
+    opponentFormData.setTelephoneMobile(RandomStringUtils.insecure().nextNumeric(16));
+    opponentFormData.setTelephoneWork(RandomStringUtils.insecure().nextNumeric(16));
+    opponentFormData.setFaxNumber(RandomStringUtils.insecure().nextNumeric(16));
+    opponentFormData.setEmailAddress("test@" + RandomStringUtils.insecure().nextNumeric(200));
+    opponentFormData.setCertificateNumber(RandomStringUtils.insecure().nextAlphabetic(40));
+
+    CommonLookupDetail contactTitles =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+        .thenReturn(Mono.just(contactTitles));
+
+    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
+        new RelationshipToCaseLookupDetail()
+            .addContentItem(new RelationshipToCaseLookupValueDetail());
+    when(lookupService.getPersonToCaseRelationships())
+        .thenReturn(Mono.just(relationshipToCaseLookupDetail));
+
+    CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
+
+    CommonLookupDetail countries =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+    when(lookupService.getCountries()).thenReturn(Mono.just(countries));
+
+    mockMvc
+        .perform(
+            post("/application/sections/opponents/{id}/edit", selectedOpponentId)
+                .sessionAttr(CURRENT_OPPONENT, opponentFormData)
+                .sessionAttr(USER_DETAILS, user))
+        .andDo(print())
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "firstName"))
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "middleNames"))
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "surname"))
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "houseNameOrNumber"))
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "addressLine1"))
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "addressLine2"))
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "city"))
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "county"))
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "telephoneWork"))
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "telephoneMobile"))
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "telephoneHome"))
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "faxNumber"))
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "emailAddress"))
+        .andExpect(model().attributeHasFieldErrors(CURRENT_OPPONENT, "certificateNumber"))
         .andExpect(model().attribute("contactTitles", contactTitles.getContent()))
         .andExpect(
             model().attribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent()))
