@@ -223,6 +223,9 @@ public class SessionConstants {
   /** Session attribute used to store the cost allocation flow form data. */
   public static final String COST_ALLOCATION_FORM_DATA = "costAllocationFormData";
 
+  /** Session attribute used to keep track of existing cost allocations. */
+  public static final String COST_ALLOCATION_CASE_COST_ENTRIES = "costAllocationCaseCostEntries";
+
   /** Session attribute for keeping track of counsel search criteria. */
   public static final String COUNSEL_SEARCH_CRITERIA = "counselSearchCriteria";
 
