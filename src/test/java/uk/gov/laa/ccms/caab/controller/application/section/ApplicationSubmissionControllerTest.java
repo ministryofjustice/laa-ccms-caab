@@ -27,6 +27,7 @@ import static uk.gov.laa.ccms.caab.constants.CcmsModule.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_VIEW;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
@@ -292,6 +293,15 @@ class ApplicationSubmissionControllerTest {
   @Test
   @DisplayName("Test applicationSummaryPost - success")
   void testApplicationSummaryPost_success() throws Exception {
+    final String applicationId = "12345";
+    final UserDetail mockUser = buildUserDetail();
+    final ActiveCase mockActiveCase =
+        ActiveCase.builder()
+            .providerId(1)
+            .applicationId(1)
+            .caseReferenceNumber("caseRef123")
+            .clientReferenceNumber("clientRef456")
+            .build();
     final SummarySubmissionFormData formData = new SummarySubmissionFormData();
     final SubmissionSummaryDisplay submissionSummary = SubmissionSummaryDisplay.builder().build();
 
@@ -299,7 +309,10 @@ class ApplicationSubmissionControllerTest {
         .perform(
             post("/{caseContext}/submit/summary", CaseContext.APPLICATION)
                 .flashAttr("summarySubmissionFormData", formData)
-                .sessionAttr(SUBMISSION_SUMMARY, submissionSummary))
+                .sessionAttr(SUBMISSION_SUMMARY, submissionSummary)
+                .sessionAttr(APPLICATION_ID, applicationId)
+                .sessionAttr(USER_DETAILS, mockUser)
+                .sessionAttr(ACTIVE_CASE, mockActiveCase))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/declaration"));
 
@@ -753,6 +766,28 @@ class ApplicationSubmissionControllerTest {
     verify(assessmentService, never()).getAssessments(any(), any(), any());
     verify(assessmentService, never()).isMeansReassessmentRequired(any(), any(), any());
     verify(assessmentService, never()).isMeritsReassessmentRequired(any(), any(), any(), any());
+  }
+
+  @Test
+  @DisplayName("GET submit/summary - already submitted redirects to alreadySubmitted page")
+  void testApplicationSummary_alreadySubmittedRedirects() throws Exception {
+    final UserDetail mockUser = buildUserDetail();
+    final ActiveCase mockActiveCase =
+        ActiveCase.builder()
+            .providerId(1)
+            .applicationId(1)
+            .caseReferenceNumber("caseRef123")
+            .clientReferenceNumber("clientRef456")
+            .build();
+
+    mockMvc
+        .perform(
+            get("/{caseContext}/submit/summary", CaseContext.AMENDMENTS)
+                .sessionAttr(USER_DETAILS, mockUser)
+                .sessionAttr(ACTIVE_CASE, mockActiveCase)
+                .sessionAttr(SUBMISSION_RESULT, "confirmed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/submissions/alreadySubmitted"));
   }
 
   private ApplicationDetail amendmentApplication(
