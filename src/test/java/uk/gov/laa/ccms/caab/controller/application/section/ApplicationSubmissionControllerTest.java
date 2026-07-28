@@ -790,6 +790,43 @@ class ApplicationSubmissionControllerTest {
         .andExpect(redirectedUrl("/submissions/alreadySubmitted"));
   }
 
+  @Test
+  @DisplayName(
+      "GET submit/summary - amendment with missing ACTIVE_CASE redirects to alreadySubmitted")
+  void testApplicationSummary_amendmentMissingActiveCaseRedirects() throws Exception {
+    final UserDetail mockUser = buildUserDetail();
+
+    mockMvc
+        .perform(
+            get("/{caseContext}/submit/summary", CaseContext.AMENDMENTS)
+                .sessionAttr(USER_DETAILS, mockUser)
+                .sessionAttr(SUBMISSION_RESULT, "confirmed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/submissions/alreadySubmitted"));
+  }
+
+  @Test
+  @DisplayName("POST submit/summary - already submitted redirects to alreadySubmitted page")
+  void testApplicationSummaryPost_alreadySubmittedRedirects() throws Exception {
+    final UserDetail mockUser = buildUserDetail();
+    final ActiveCase mockActiveCase =
+        ActiveCase.builder()
+            .providerId(1)
+            .applicationId(1)
+            .caseReferenceNumber("caseRef123")
+            .clientReferenceNumber("clientRef456")
+            .build();
+
+    mockMvc
+        .perform(
+            post("/{caseContext}/submit/summary", CaseContext.AMENDMENTS)
+                .sessionAttr(USER_DETAILS, mockUser)
+                .sessionAttr(ACTIVE_CASE, mockActiveCase)
+                .sessionAttr(SUBMISSION_RESULT, "confirmed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/submissions/alreadySubmitted"));
+  }
+
   private ApplicationDetail amendmentApplication(
       final boolean meansLegalAmendment, final boolean meansAmended, final boolean meritsAmended) {
     final ApplicationDetail amendment = new ApplicationDetail();

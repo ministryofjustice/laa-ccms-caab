@@ -555,7 +555,7 @@ public class ApplicationSubmissionController {
   @GetMapping("/{caseContext}/submit/summary")
   public String applicationSummary(
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
+      @SessionAttribute(value = ACTIVE_CASE, required = false) final ActiveCase activeCase,
       @PathVariable("caseContext") final CaseContext caseContext,
       final HttpSession session,
       final Model model) {
@@ -770,7 +770,7 @@ public class ApplicationSubmissionController {
           final SummarySubmissionFormData summarySubmissionFormData,
       @SessionAttribute(value = APPLICATION_ID, required = false) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
+      @SessionAttribute(value = ACTIVE_CASE, required = false) final ActiveCase activeCase,
       final BindingResult bindingResult,
       final Model model,
       final HttpSession session) {
