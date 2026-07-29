@@ -154,8 +154,10 @@ public class BillingService {
       return null;
     }
     if (!userBelongsToCurrentProvider) {
-      // Only the user's own statement was requested when viewing another provider's case.
-      return statements.get(0);
+      // The request was restricted to the user's own firm, so its statement is the only one
+      // returned. With no provider to restrict by, the response holds every firm and none of them
+      // can be attributed to the user, so no provider statement is shown.
+      return currentProviderId == null ? null : statements.get(0);
     }
     return statements.stream()
         .filter(statement -> ENTITY_TYPE_PROVIDER.equalsIgnoreCase(statement.getEntityType()))

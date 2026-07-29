@@ -132,6 +132,32 @@ class BillingServiceTest {
   }
 
   @Test
+  @DisplayName("Does not attribute an arbitrary firm's statement when the user has no provider")
+  void userWithoutProvider() {
+    // With no provider the request is unrestricted, so every firm's statement comes back; none can
+    // be attributed to the user, so the provider column must not borrow one.
+    UserDetail user = new UserDetail().loginId("user1").userType("EXTERNAL");
+    ApplicationDetail ebsCase =
+        new ApplicationDetail()
+            .caseReferenceNumber(CASE_REF)
+            .providerDetails(
+                new ApplicationProviderDetails().provider(new IntDisplayValue().id(10)));
+
+    StatementOfAccountDetails response =
+        new StatementOfAccountDetails()
+            .addContentItem(statement("Provider", 99L, new BigDecimal("500")));
+
+    when(ebsApiClient.getStatementOfAccount(CASE_REF, null)).thenReturn(Mono.just(response));
+
+    StatementOfAccountDisplay display =
+        billingService.getStatementOfAccountDisplay(CASE_REF, ebsCase, user);
+
+    assertThat(display.isUserBelongsToCurrentProvider()).isFalse();
+    // No statement was attributed, so the provider column is zeroed rather than showing firm 99.
+    assertThat(display.getProvider().getBillsAuthorised()).isEqualByComparingTo("0");
+  }
+
+  @Test
   @DisplayName("Shows zeros, not blanks, when the case has no statement for the provider")
   void noProviderStatement() {
     UserDetail user =
@@ -153,7 +179,7 @@ class BillingServiceTest {
 
     assertThat(display.getProvider().getBillsAuthorised()).isEqualByComparingTo("0");
     assertThat(display.getProvider().getUndertaking()).isEqualByComparingTo("0");
-    // A firm with no statement contributes nothing, so the counsel column stays blank.
+    // No prior solicitor statements were summed, so the prior solicitor column stays blank.
     assertThat(display.getPriorSolicitor().getBillsAuthorised()).isNull();
   }
 

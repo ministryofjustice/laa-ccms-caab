@@ -1051,10 +1051,16 @@ public class EbsApiClient extends BaseApiClient {
     return ebsApiWebClient
         .get()
         .uri(builder -> builder.path("/statementofaccount").queryParams(queryParams).build())
-        .retrieve()
-        // A case with no statements at all is a 404 from EBS, not an error.
-        .onStatus(HttpStatus.NOT_FOUND::equals, response -> Mono.empty())
-        .bodyToMono(StatementOfAccountDetails.class)
+        .exchangeToMono(
+            response -> {
+              if (HttpStatus.NOT_FOUND.equals(response.statusCode())) {
+                return response.releaseBody().then(Mono.empty());
+              }
+              if (response.statusCode().isError()) {
+                return response.createException().flatMap(Mono::error);
+              }
+              return response.bodyToMono(StatementOfAccountDetails.class);
+            })
         .onErrorResume(
             e ->
                 ebsApiClientErrorHandler.handleApiRetrieveError(
