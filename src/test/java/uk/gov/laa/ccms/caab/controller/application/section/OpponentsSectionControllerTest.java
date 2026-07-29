@@ -136,7 +136,7 @@ class OpponentsSectionControllerTest {
 
     OrganisationSearchCriteria resultSearchCriteria =
         (OrganisationSearchCriteria)
-            result.getModelAndView().getModel().get(ORGANISATION_SEARCH_CRITERIA);
+            result.getRequest().getSession().getAttribute(ORGANISATION_SEARCH_CRITERIA);
     assertNull(resultSearchCriteria.getName());
     assertNull(resultSearchCriteria.getType());
     assertNull(resultSearchCriteria.getCity());
