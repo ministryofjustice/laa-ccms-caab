@@ -110,16 +110,10 @@ public class OpponentsSectionController {
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
       @SessionAttribute(value = APPLICATION_ID, required = false) final String applicationId,
       @SessionAttribute(value = USER_DETAILS, required = false) final UserDetail user,
-      @ModelAttribute(ORGANISATION_SEARCH_CRITERIA) final OrganisationSearchCriteria searchCriteria,
       final HttpServletRequest request,
       final Model model) {
 
-    if (searchCriteria.getName() != null
-        || searchCriteria.getType() != null
-        || searchCriteria.getCity() != null
-        || searchCriteria.getPostcode() != null) {
-      model.addAttribute(ORGANISATION_SEARCH_CRITERIA, new OrganisationSearchCriteria());
-    }
+    model.addAttribute(ORGANISATION_SEARCH_CRITERIA, new OrganisationSearchCriteria());
 
     CaseContext resolvedCaseContext = resolveCaseContext(caseContext, request);
     addCaseContext(model, resolvedCaseContext);
