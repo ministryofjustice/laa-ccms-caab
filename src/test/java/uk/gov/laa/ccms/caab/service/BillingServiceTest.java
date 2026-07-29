@@ -21,6 +21,7 @@ import uk.gov.laa.ccms.data.model.StatementOfAccountBills;
 import uk.gov.laa.ccms.data.model.StatementOfAccountDetail;
 import uk.gov.laa.ccms.data.model.StatementOfAccountDetails;
 import uk.gov.laa.ccms.data.model.StatementOfAccountInvoice;
+import uk.gov.laa.ccms.data.model.StatementOfAccountInvoiceList;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,6 +42,14 @@ class BillingServiceTest {
         .bills(new StatementOfAccountBills().amountAuthorised(billsAuthorised));
   }
 
+  private StatementOfAccountInvoiceList invoiceList(final StatementOfAccountInvoice... invoices) {
+    final StatementOfAccountInvoiceList list = new StatementOfAccountInvoiceList();
+    for (final StatementOfAccountInvoice invoice : invoices) {
+      list.addInvoiceItem(invoice);
+    }
+    return list;
+  }
+
   @Test
   @DisplayName("Buckets statements into provider, counsel and prior solicitor columns")
   void bucketsStatements() {
@@ -57,13 +66,15 @@ class BillingServiceTest {
         new StatementOfAccountDetails()
             .addContentItem(
                 statement("Provider", 10L, new BigDecimal("100"))
-                    .addInvoicesItem(
-                        new StatementOfAccountInvoice()
-                            .invoiceType("Bill")
-                            .invoiceStatus("Authorised")
-                            .invoiceAmount(new BigDecimal("100")))
-                    .addInvoicesItem(
-                        new StatementOfAccountInvoice().invoiceType("Bill").invoiceStatus("Draft")))
+                    .invoiceList(
+                        invoiceList(
+                            new StatementOfAccountInvoice()
+                                .invoiceType("Bill")
+                                .invoiceStatus("Authorised")
+                                .invoiceAmount(new BigDecimal("100")),
+                            new StatementOfAccountInvoice()
+                                .invoiceType("Bill")
+                                .invoiceStatus("Draft"))))
             .addContentItem(statement("Counsel", 55L, new BigDecimal("20")))
             .addContentItem(statement("Provider", 99L, new BigDecimal("30")));
 
@@ -198,10 +209,11 @@ class BillingServiceTest {
         new StatementOfAccountDetails()
             .addContentItem(
                 statement("Counsel", 55L, new BigDecimal("20"))
-                    .addInvoicesItem(new StatementOfAccountInvoice().invoiceType("Counsel Bill")))
+                    .invoiceList(
+                        invoiceList(new StatementOfAccountInvoice().invoiceType("Counsel Bill"))))
             .addContentItem(
                 statement("Provider", 10L, new BigDecimal("100"))
-                    .addInvoicesItem(new StatementOfAccountInvoice().invoiceType("Bill")));
+                    .invoiceList(invoiceList(new StatementOfAccountInvoice().invoiceType("Bill"))));
 
     when(ebsApiClient.getStatementOfAccount(CASE_REF, null)).thenReturn(Mono.just(response));
 

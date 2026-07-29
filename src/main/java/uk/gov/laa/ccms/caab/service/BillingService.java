@@ -17,6 +17,7 @@ import uk.gov.laa.ccms.data.model.StatementOfAccountCostLimitation;
 import uk.gov.laa.ccms.data.model.StatementOfAccountDetail;
 import uk.gov.laa.ccms.data.model.StatementOfAccountDetails;
 import uk.gov.laa.ccms.data.model.StatementOfAccountInvoice;
+import uk.gov.laa.ccms.data.model.StatementOfAccountInvoiceList;
 import uk.gov.laa.ccms.data.model.StatementOfAccountPoa;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -189,10 +190,11 @@ public class BillingService {
       final List<StatementOfAccountDetail> statements) {
     final List<StatementOfAccountInvoice> invoices = new ArrayList<>();
     for (final StatementOfAccountDetail statement : statements) {
-      if (statement.getInvoices() == null) {
+      final StatementOfAccountInvoiceList invoiceList = statement.getInvoiceList();
+      if (invoiceList == null || invoiceList.getInvoice() == null) {
         continue;
       }
-      for (final StatementOfAccountInvoice invoice : statement.getInvoices()) {
+      for (final StatementOfAccountInvoice invoice : invoiceList.getInvoice()) {
         // EBS draft invoices are backed by the (as yet unbuilt) TDS draft store; do not show them
         // here yet. Submitted / authorised / rejected invoices are the real statement figures.
         if (!INVOICE_STATUS_DRAFT.equalsIgnoreCase(invoice.getInvoiceStatus())) {
@@ -224,7 +226,7 @@ public class BillingService {
         orZero(bills != null ? bills.getAmountSubmitted() : null));
     column.setPoaRecouped(orZero(poa != null ? poa.getAmountRecouped() : null));
     // The "POA authorised" row shows the un-recouped balance, as the legacy PUI did.
-    column.setPoaAuthorised(orZero(poa != null ? poa.getAmountUnrecouped() : null));
+    column.setPoaAuthorised(orZero(poa != null ? poa.getAmountUnRecouped() : null));
     column.setPoaSubmittedButNotAuthorised(orZero(poa != null ? poa.getAmountSubmitted() : null));
     return column;
   }
