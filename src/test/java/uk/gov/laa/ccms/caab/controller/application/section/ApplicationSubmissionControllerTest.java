@@ -823,7 +823,7 @@ class ApplicationSubmissionControllerTest {
             post("/{caseContext}/submit/summary", CaseContext.AMENDMENTS)
                 .sessionAttr(USER_DETAILS, mockUser)
                 .sessionAttr(ACTIVE_CASE, mockActiveCase)
-                .sessionAttr(APPLICATION_ID, activeCase.getApplicationId())
+                .sessionAttr(APPLICATION_ID, String.valueOf(mockActiveCase.getApplicationId()))
                 .sessionAttr(SUBMISSION_SUMMARY, submissionSummary)
                 .sessionAttr(SUBMISSION_RESULT, "confirmed"))
         .andExpect(status().is3xxRedirection())
