@@ -12,6 +12,12 @@ portal:
   logoutUrl: http://localhost:8081/logout
 
 spring:
+  devtools:
+    # Local-only: the OPA means/merits interview is long-lived, so an auto-restart
+    # mid-interview (e.g. IntelliJ rebuilding when you tab to the browser) wipes the
+    # HTTP session and the OPA return lands on the ERROR page instead of the summary.
+    restart:
+      enabled: false
   security:
     saml2:
       relyingparty:
