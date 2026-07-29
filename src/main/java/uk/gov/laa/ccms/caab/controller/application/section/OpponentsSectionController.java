@@ -114,12 +114,10 @@ public class OpponentsSectionController {
       final HttpServletRequest request,
       final Model model) {
 
-    if (Stream.of(
-            searchCriteria.getName(),
-            searchCriteria.getType(),
-            searchCriteria.getCity(),
-            searchCriteria.getPostcode())
-        .anyMatch(Objects::nonNull)) {
+    if (searchCriteria.getName() != null
+        || searchCriteria.getType() != null
+        || searchCriteria.getCity() != null
+        || searchCriteria.getPostcode() != null) {
       model.addAttribute(ORGANISATION_SEARCH_CRITERIA, new OrganisationSearchCriteria());
     }
 
