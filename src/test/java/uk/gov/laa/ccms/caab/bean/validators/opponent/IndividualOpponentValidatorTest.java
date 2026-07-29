@@ -69,6 +69,20 @@ class IndividualOpponentValidatorTest {
     assertEquals(1, errors.getFieldErrors("dateOfBirth").size());
   }
 
+  @Test
+  public void validate_futureDateOfBirth() {
+    opponentFormData.setTitle("title");
+    opponentFormData.setFirstName("first");
+    opponentFormData.setSurname("surname");
+    opponentFormData.setRelationshipToCase("rel2case");
+    opponentFormData.setRelationshipToClient("rel2client");
+    opponentFormData.setDateOfBirth("30/09/2099");
+
+    validator.validate(opponentFormData, errors);
+    assertEquals(1, errors.getErrorCount());
+    assertEquals(1, errors.getFieldErrors("dateOfBirth").size());
+  }
+
   @ParameterizedTest
   @CsvFileSource(resources = "/csv/IndividualOpponentValidatorTest_values.csv", nullValues = "null")
   public void testIndividualOpponentValidation(

@@ -499,7 +499,7 @@ public class OpponentsSectionController {
   public String editOpponent(
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
       @PathVariable("opponent-id") final Integer opponentId,
-      @ModelAttribute(CURRENT_OPPONENT) final AbstractOpponentFormData currentOpponent,
+      @Validated @ModelAttribute(CURRENT_OPPONENT) final AbstractOpponentFormData currentOpponent,
       final BindingResult bindingResult,
       @SessionAttribute(value = APPLICATION_ID, required = false) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
