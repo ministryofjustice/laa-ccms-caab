@@ -296,8 +296,13 @@ public abstract class AbstractValidator implements Validator {
           COMPONENT_DATE_PATTERN,
           errors);
       if (!errors.hasFieldErrors("dateOfBirth")) {
-        validateDateInPast(
-            convertToDate(individual.getDateOfBirth()), "dateOfBirth", "Date of birth", errors);
+        try {
+          validateDateInPast(
+              convertToDate(individual.getDateOfBirth()), "dateOfBirth", "Date of birth", errors);
+        } catch (java.time.format.DateTimeParseException ex) {
+          errors.rejectValue(
+              "dateOfBirth", "invalid.input", GENERIC_DATEFIELD_ENTRY.formatted("Date of birth"));
+        }
       }
     }
   }

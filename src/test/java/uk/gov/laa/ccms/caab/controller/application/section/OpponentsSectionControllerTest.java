@@ -1087,8 +1087,9 @@ class OpponentsSectionControllerTest {
   }
 
   @Test
-  void editNonSharedOrganisationPost_validationErrors_maxLengthsExceeded_returnsToSharedEditScreen()
-      throws Exception {
+  void
+      editNonSharedOrganisationPost_validationErrors_maxLengthsExceeded_returnsToNonSharedEditScreen()
+          throws Exception {
     String selectedOpponentId = "123";
     OrganisationOpponentFormData opponentFormData = new OrganisationOpponentFormData();
     opponentFormData.setShared(false);
