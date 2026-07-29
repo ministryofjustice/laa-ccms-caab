@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -39,6 +40,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
@@ -111,6 +113,34 @@ class OpponentsSectionControllerTest {
         .perform(get("/application/sections/opponents").sessionAttr("applicationId", "123"))
         .andExpect(status().isOk())
         .andExpect(view().name("application/sections/opponents-section"));
+  }
+
+  @Test
+  void opponents_clearsOrganisationSearchCriteria() throws Exception {
+    OrganisationSearchCriteria searchCriteria = new OrganisationSearchCriteria();
+    searchCriteria.setName("Test Organisation Name");
+    searchCriteria.setType("NHS");
+    searchCriteria.setCity("London");
+    searchCriteria.setPostcode("SW1A 0AA");
+    when(applicationService.getOpponents(any())).thenReturn(new ArrayList<>());
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                get("/application/sections/opponents")
+                    .sessionAttr("applicationId", "123")
+                    .sessionAttr(ORGANISATION_SEARCH_CRITERIA, searchCriteria))
+            .andExpect(status().isOk())
+            .andExpect(view().name("application/sections/opponents-section"))
+            .andReturn();
+
+    OrganisationSearchCriteria resultSearchCriteria =
+        (OrganisationSearchCriteria)
+            result.getModelAndView().getModel().get(ORGANISATION_SEARCH_CRITERIA);
+    assertNull(resultSearchCriteria.getName());
+    assertNull(resultSearchCriteria.getType());
+    assertNull(resultSearchCriteria.getCity());
+    assertNull(resultSearchCriteria.getPostcode());
   }
 
   @Test

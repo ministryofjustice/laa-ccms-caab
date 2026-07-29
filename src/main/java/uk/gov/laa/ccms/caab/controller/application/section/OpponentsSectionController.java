@@ -12,6 +12,8 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
@@ -110,8 +112,18 @@ public class OpponentsSectionController {
       @PathVariable(value = "caseContext", required = false) final CaseContext caseContext,
       @SessionAttribute(value = APPLICATION_ID, required = false) final String applicationId,
       @SessionAttribute(value = USER_DETAILS, required = false) final UserDetail user,
+      @ModelAttribute(ORGANISATION_SEARCH_CRITERIA) final OrganisationSearchCriteria searchCriteria,
       final HttpServletRequest request,
       final Model model) {
+
+    if (Stream.of(
+            searchCriteria.getName(),
+            searchCriteria.getType(),
+            searchCriteria.getCity(),
+            searchCriteria.getPostcode())
+        .anyMatch(Objects::nonNull)) {
+      model.addAttribute(ORGANISATION_SEARCH_CRITERIA, new OrganisationSearchCriteria());
+    }
 
     CaseContext resolvedCaseContext = resolveCaseContext(caseContext, request);
     addCaseContext(model, resolvedCaseContext);
