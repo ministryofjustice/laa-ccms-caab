@@ -809,6 +809,7 @@ class ApplicationSubmissionControllerTest {
   @DisplayName("POST submit/summary - already submitted redirects to alreadySubmitted page")
   void testApplicationSummaryPost_alreadySubmittedRedirects() throws Exception {
     final UserDetail mockUser = buildUserDetail();
+    final SubmissionSummaryDisplay submissionSummary = SubmissionSummaryDisplay.builder().build();
     final ActiveCase mockActiveCase =
         ActiveCase.builder()
             .providerId(1)
@@ -822,6 +823,8 @@ class ApplicationSubmissionControllerTest {
             post("/{caseContext}/submit/summary", CaseContext.AMENDMENTS)
                 .sessionAttr(USER_DETAILS, mockUser)
                 .sessionAttr(ACTIVE_CASE, mockActiveCase)
+                .sessionAttr(APPLICATION_ID, activeCase.getApplicationId())
+                .sessionAttr(SUBMISSION_SUMMARY, submissionSummary)
                 .sessionAttr(SUBMISSION_RESULT, "confirmed"))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/submissions/alreadySubmitted"));
