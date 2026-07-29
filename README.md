@@ -39,7 +39,7 @@ The application can be run in one of the following ways. As above, add `secret` 
 #### Terminal
 
 ```shell
-./gradlew bootRun --args='--spring.profiles.active=local
+./gradlew bootRun --args='--spring.profiles.active=local'
 ```
 
 #### IntelliJ
