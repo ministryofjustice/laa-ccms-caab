@@ -63,6 +63,17 @@ public class BillingService {
     final boolean userBelongsToCurrentProvider =
         currentProviderId != null && currentProviderId.equals(caseProviderId);
 
+    final StatementOfAccountDisplay display = new StatementOfAccountDisplay();
+    display.setUserBelongsToCurrentProvider(userBelongsToCurrentProvider);
+
+    // If the user does not belong to the case's provider and we cannot identify their own
+    // provider, there is nothing to scope the query to. An unrestricted query returns every firm's
+    // statement and invoices, so return an empty display rather than expose another firm's billing
+    // data.
+    if (!userBelongsToCurrentProvider && currentProviderId == null) {
+      return display;
+    }
+
     // Users outside the case's provider only see their own firm's figures (legacy PUI behaviour).
     final StatementOfAccountDetails response =
         ebsApiClient
@@ -70,8 +81,6 @@ public class BillingService {
                 caseReferenceNumber, userBelongsToCurrentProvider ? null : currentProviderId)
             .block();
 
-    final StatementOfAccountDisplay display = new StatementOfAccountDisplay();
-    display.setUserBelongsToCurrentProvider(userBelongsToCurrentProvider);
     if (response == null) {
       return display;
     }

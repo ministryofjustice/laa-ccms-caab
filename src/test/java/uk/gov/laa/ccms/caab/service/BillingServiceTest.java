@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -146,10 +147,12 @@ class BillingServiceTest {
   }
 
   @Test
-  @DisplayName("Does not attribute an arbitrary firm's statement when the user has no provider")
+  @DisplayName(
+      "Fetches and shows nothing when the user has no provider and is not the case provider")
   void userWithoutProvider() {
-    // With no provider the request is unrestricted, so every firm's statement comes back; none can
-    // be attributed to the user, so the provider column must not borrow one.
+    // With no provider there is nothing to scope the query to. Querying unrestricted would return
+    // every firm's statement and invoices, so no query is made and nothing is shown — another
+    // firm's billing data must never be exposed.
     UserDetail user = new UserDetail().loginId("user1").userType("EXTERNAL");
     ApplicationDetail ebsCase =
         new ApplicationDetail()
@@ -157,18 +160,13 @@ class BillingServiceTest {
             .providerDetails(
                 new ApplicationProviderDetails().provider(new IntDisplayValue().id(10)));
 
-    StatementOfAccountDetails response =
-        new StatementOfAccountDetails()
-            .addContentItem(statement("Provider", 99L, new BigDecimal("500")));
-
-    when(ebsApiClient.getStatementOfAccount(CASE_REF, null)).thenReturn(Mono.just(response));
-
     StatementOfAccountDisplay display =
         billingService.getStatementOfAccountDisplay(CASE_REF, ebsCase, user);
 
     assertThat(display.isUserBelongsToCurrentProvider()).isFalse();
-    // No statement was attributed, so the provider column is zeroed rather than showing firm 99.
-    assertThat(display.getProvider().getBillsAuthorised()).isEqualByComparingTo("0");
+    assertThat(display.getProvider()).isNull();
+    assertThat(display.getInvoices()).isNull();
+    verifyNoInteractions(ebsApiClient);
   }
 
   @Test
