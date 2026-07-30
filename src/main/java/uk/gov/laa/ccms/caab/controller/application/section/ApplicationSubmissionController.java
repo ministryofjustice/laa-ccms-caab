@@ -797,7 +797,9 @@ public class ApplicationSubmissionController {
               .getApplication(applicationId)
               .blockOptional()
               .orElseThrow(
-                  () -> new CaabApplicationException("Failed to retrieve amendment application detail"));
+                  () ->
+                      new CaabApplicationException(
+                          "Failed to retrieve amendment application detail"));
 
       final String response = amendmentService.submitAmendment(amendment, user);
 
