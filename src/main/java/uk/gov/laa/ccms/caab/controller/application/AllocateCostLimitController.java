@@ -256,6 +256,7 @@ public class AllocateCostLimitController {
     session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
     session.removeAttribute(SUBMISSION_RESULT);
     session.removeAttribute(COST_ALLOCATION_FORM_DATA);
+    session.removeAttribute(COST_ALLOCATION_CASE_COST_ENTRIES);
 
     return "redirect:/amendments/submit-case";
   }
