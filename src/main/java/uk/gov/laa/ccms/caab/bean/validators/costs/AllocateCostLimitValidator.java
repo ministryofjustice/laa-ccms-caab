@@ -116,8 +116,7 @@ public class AllocateCostLimitValidator extends AbstractValidator {
       if (existingCost == null
           || (existingCost.getRequestedCosts() != null
               && updatedCost.getRequestedCosts() != null
-              && Float.valueOf(existingCost.getRequestedCosts().toString())
-                      .compareTo(Float.valueOf(updatedCost.getRequestedCosts().toString()))
+              && existingCost.getRequestedCosts().compareTo(updatedCost.getRequestedCosts())
                   != 0)) {
         hasCostsBeenUpdated = true;
         break;
