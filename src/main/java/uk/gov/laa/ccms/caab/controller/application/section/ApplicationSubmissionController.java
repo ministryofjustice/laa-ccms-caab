@@ -792,7 +792,12 @@ public class ApplicationSubmissionController {
     }
 
     if (caseContext.isAmendment()) {
-      ApplicationDetail amendment = applicationService.getApplication(applicationId).block();
+      final ApplicationDetail amendment =
+          applicationService
+              .getApplication(applicationId)
+              .blockOptional()
+              .orElseThrow(
+                  () -> new CaabApplicationException("Failed to retrieve amendment application detail"));
 
       final String response = amendmentService.submitAmendment(amendment, user);
 
