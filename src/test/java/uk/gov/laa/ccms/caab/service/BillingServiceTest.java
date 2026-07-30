@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +16,8 @@ import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
+import uk.gov.laa.ccms.caab.model.CostEntryDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.StatementOfAccountBills;
@@ -250,5 +253,72 @@ class BillingServiceTest {
     assertThat(display.getProvider().getPoaRecouped()).isEqualByComparingTo("0");
     // The cost limitation block is optional on a statement, so it stays blank.
     assertThat(display.getProvider().getCertificateCostLimitation()).isNull();
+  }
+
+  @Test
+  @DisplayName("Derives the counsel cost ceiling and remaining from the case's counsel cost limits")
+  void derivesCounselCostCeiling() {
+    UserDetail user =
+        new UserDetail().loginId("user1").userType("EXTERNAL").provider(new BaseProvider().id(10));
+    ApplicationDetail ebsCase =
+        new ApplicationDetail()
+            .caseReferenceNumber(CASE_REF)
+            .providerDetails(
+                new ApplicationProviderDetails().provider(new IntDisplayValue().id(10)))
+            .costs(
+                new CostStructureDetail()
+                    .costEntries(
+                        List.of(
+                            // Two counsel limits are summed (casing is ignored)...
+                            new CostEntryDetail()
+                                .costCategory("Counsel")
+                                .requestedCosts(new BigDecimal("1000"))
+                                .amountBilled(new BigDecimal("400")),
+                            new CostEntryDetail()
+                                .costCategory("COUNSEL")
+                                .requestedCosts(new BigDecimal("500"))
+                                .amountBilled(BigDecimal.ZERO),
+                            // ...and a non-counsel limit is excluded.
+                            new CostEntryDetail()
+                                .costCategory("PROFIT")
+                                .requestedCosts(new BigDecimal("9999"))
+                                .amountBilled(BigDecimal.ZERO))));
+
+    StatementOfAccountDetails response =
+        new StatementOfAccountDetails()
+            .addContentItem(statement("Provider", 10L, new BigDecimal("100")));
+
+    when(ebsApiClient.getStatementOfAccount(CASE_REF, null)).thenReturn(Mono.just(response));
+
+    StatementOfAccountDisplay display =
+        billingService.getStatementOfAccountDisplay(CASE_REF, ebsCase, user);
+
+    // Ceiling = 1000 + 500; remaining = (1000 - 400) + (500 - 0).
+    assertThat(display.getCounselCostCeiling()).isEqualByComparingTo("1500");
+    assertThat(display.getCounselCostCeilingRemaining()).isEqualByComparingTo("1100");
+  }
+
+  @Test
+  @DisplayName("Counsel cost ceiling is zero when the case carries no counsel cost limits")
+  void counselCostCeilingZeroWhenNoCounselCosts() {
+    UserDetail user =
+        new UserDetail().loginId("user1").userType("EXTERNAL").provider(new BaseProvider().id(10));
+    ApplicationDetail ebsCase =
+        new ApplicationDetail()
+            .caseReferenceNumber(CASE_REF)
+            .providerDetails(
+                new ApplicationProviderDetails().provider(new IntDisplayValue().id(10)));
+
+    StatementOfAccountDetails response =
+        new StatementOfAccountDetails()
+            .addContentItem(statement("Provider", 10L, new BigDecimal("100")));
+
+    when(ebsApiClient.getStatementOfAccount(CASE_REF, null)).thenReturn(Mono.just(response));
+
+    StatementOfAccountDisplay display =
+        billingService.getStatementOfAccountDisplay(CASE_REF, ebsCase, user);
+
+    assertThat(display.getCounselCostCeiling()).isEqualByComparingTo("0");
+    assertThat(display.getCounselCostCeilingRemaining()).isEqualByComparingTo("0");
   }
 }

@@ -12,6 +12,8 @@ import uk.gov.laa.ccms.caab.bean.billing.SoaFigureColumn;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CostEntryDetail;
+import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.data.model.StatementOfAccountBills;
 import uk.gov.laa.ccms.data.model.StatementOfAccountCostLimitation;
 import uk.gov.laa.ccms.data.model.StatementOfAccountDetail;
@@ -36,6 +38,7 @@ public class BillingService {
 
   private static final String ENTITY_TYPE_PROVIDER = "PROVIDER";
   private static final String ENTITY_TYPE_COUNSEL = "COUNSEL";
+  private static final String COST_CATEGORY_COUNSEL = "COUNSEL";
   private static final String INVOICE_STATUS_DRAFT = "Draft";
 
   private final EbsApiClient ebsApiClient;
@@ -94,7 +97,7 @@ public class BillingService {
     display.setTotal(
         addColumns(display.getProvider(), display.getPriorSolicitor(), display.getCounsel()));
 
-    setCounselCostCeiling(display);
+    setCounselCostCeiling(display, ebsCase);
 
     display.setInvoices(flattenNonDraftInvoices(providerFirst(statements, providerStatement)));
     return display;
@@ -113,14 +116,30 @@ public class BillingService {
   /**
    * Sets the counsel cost ceiling shown against the case.
    *
-   * <p>TODO: this is a placeholder of zero. EBS holds the ceiling on the case-level total of its
-   * statement of account service, and the view behind {@code /statementofaccount} does not carry
-   * it. Zero is what the legacy PUI displays wherever EBS reports no ceiling, but a case that
-   * carries a real one will be understated until the figure is exposed on the API.
+   * <p>The {@code /statementofaccount} view carries no ceiling, so it is derived from the case's
+   * counsel cost limitations, as the legacy PUI's EBS summary block did. The ceiling is the sum of
+   * the requested counsel cost limits, and the remaining is that total less what has been billed
+   * against them.
    */
-  private void setCounselCostCeiling(final StatementOfAccountDisplay display) {
-    display.setCounselCostCeiling(BigDecimal.ZERO);
-    display.setCounselCostCeilingRemaining(BigDecimal.ZERO);
+  private void setCounselCostCeiling(
+      final StatementOfAccountDisplay display, final ApplicationDetail ebsCase) {
+    final List<CostEntryDetail> counselEntries =
+        Optional.ofNullable(ebsCase.getCosts())
+            .map(CostStructureDetail::getCostEntries)
+            .orElseGet(List::of)
+            .stream()
+            .filter(entry -> COST_CATEGORY_COUNSEL.equalsIgnoreCase(entry.getCostCategory()))
+            .toList();
+
+    BigDecimal ceiling = BigDecimal.ZERO;
+    BigDecimal remaining = BigDecimal.ZERO;
+    for (final CostEntryDetail entry : counselEntries) {
+      final BigDecimal requested = orZero(entry.getRequestedCosts());
+      ceiling = ceiling.add(requested);
+      remaining = remaining.add(requested.subtract(orZero(entry.getAmountBilled())));
+    }
+    display.setCounselCostCeiling(ceiling);
+    display.setCounselCostCeilingRemaining(remaining);
   }
 
   /** EBS does not return a firm name against a statement, so it is taken from the case or user. */
