@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -38,7 +39,6 @@ public class AllocateCostLimitValidatorTest {
         new CostStructureDetail()
             .addCostEntriesItem(
                 new CostEntryDetail()
-                    .requestedCosts(new BigDecimal("2250"))
                     .resourceName("PATRICK J BOWE")
                     .costCategory("Counsel")
                     .amountBilled(new BigDecimal("604.63"))
@@ -169,6 +169,76 @@ public class AllocateCostLimitValidatorTest {
 
       String errorCode = errors.getFieldError("costEntries[0].requestedCosts").getCode();
       assertEquals("invalid.decimal.places", errorCode);
+    }
+  }
+
+  @Nested
+  @DisplayName("validateCostsHaveBeenUpdated() tests")
+  class ValidateCostsHaveBeenUpdatedTests {
+
+    @Test
+    @DisplayName("Should not have errors when new cost added")
+    void validateCostsHaveBeenUpdated_WithNewCostAllocated_NoErrors() {
+      List<CostEntryDetail> updatedCosts =
+          List.of(
+              new CostEntryDetail()
+                  .resourceName("PATRICK J BOWE")
+                  .costCategory("Counsel")
+                  .requestedCosts(new BigDecimal("604.63")),
+              new CostEntryDetail()
+                  .resourceName("PATRICK J JANE")
+                  .costCategory("Counsel")
+                  .requestedCosts(new BigDecimal("1999.99")));
+      List<CostEntryDetail> existingCosts = allocateCostsFormData.getCostEntries();
+      allocateCostLimitValidator.validateCostsHaveBeenUpdated(updatedCosts, existingCosts, errors);
+      assertFalse(errors.hasErrors());
+    }
+
+    @Test
+    @DisplayName("Should not have errors when existing cost updated")
+    void validateCostsHaveBeenUpdated_WithExistingCostUpdated_NoErrors() {
+      List<CostEntryDetail> existingCosts = allocateCostsFormData.getCostEntries();
+      List<CostEntryDetail> updatedCosts =
+          List.of(
+              new CostEntryDetail()
+                  .resourceName("PATRICK J BOWE")
+                  .costCategory("Counsel")
+                  .requestedCosts(new BigDecimal("700.00")));
+      allocateCostLimitValidator.validateCostsHaveBeenUpdated(updatedCosts, existingCosts, errors);
+      assertFalse(errors.hasErrors());
+    }
+
+    @Test
+    @DisplayName("Should have errors when no cost updated")
+    void validateCostsHaveBeenUpdated_WithNoCostUpdated_HasErrors() {
+      List<CostEntryDetail> existingCosts = allocateCostsFormData.getCostEntries();
+      List<CostEntryDetail> updatedCosts =
+          List.of(
+              new CostEntryDetail()
+                  .resourceName("PATRICK J BOWE")
+                  .costCategory("Counsel")
+                  .requestedCosts(new BigDecimal("604.63")));
+      allocateCostLimitValidator.validateCostsHaveBeenUpdated(updatedCosts, existingCosts, errors);
+      assertTrue(errors.hasErrors());
+    }
+
+    @Test
+    @DisplayName("Should have errors when cost updated but numeric value is the same")
+    void validateCostsHaveBeenUpdated_WithCostUpdatedButSameValue_HasErrors() {
+      List<CostEntryDetail> existingCosts =
+          List.of(
+              new CostEntryDetail()
+                  .resourceName("PATRICK J BOWE")
+                  .costCategory("Counsel")
+                  .requestedCosts(new BigDecimal("1000")));
+      List<CostEntryDetail> updatedCosts =
+          List.of(
+              new CostEntryDetail()
+                  .resourceName("PATRICK J BOWE")
+                  .costCategory("Counsel")
+                  .requestedCosts(new BigDecimal("1000.00")));
+      allocateCostLimitValidator.validateCostsHaveBeenUpdated(updatedCosts, existingCosts, errors);
+      assertTrue(errors.hasErrors());
     }
   }
 }
