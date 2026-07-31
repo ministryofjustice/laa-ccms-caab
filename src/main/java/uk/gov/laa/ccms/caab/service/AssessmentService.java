@@ -1264,6 +1264,10 @@ public class AssessmentService {
     final String providerId = user.getProvider().getId().toString();
     final String referenceId = application.getCaseReferenceNumber();
 
+    // Starting the merits assessment answers the outstanding reassessment demand, so clear it here
+    // - above the preserve-on-re-entry return, so re-entering a COMPLETE merits clears it too.
+    clearMeritsReassessmentLatch(application, assessmentRulebase, user);
+
     // Preserve a finished assessment on mere re-entry. Re-opening the assessment page would
     // otherwise delete the COMPLETE assessment and rebuild an empty INCOMPLETE shell, discarding
     // the
@@ -1299,6 +1303,45 @@ public class AssessmentService {
 
     // start new assessment
     startNewAssessment(assessmentRulebase, application, client, user, isReassessment);
+  }
+
+  /**
+   * Clears the persisted {@code meritsReassessmentRequired} flag, which {@code deleteProceeding}
+   * and {@code changeLeadProceeding} set and nothing else turned off. While it is set, every load
+   * forces both assessments to {@code REQUIRED}, so the case can never leave "Requires
+   * Reassessment" no matter how often the merits is completed.
+   *
+   * <p>Merits only: running the means assessment does not answer a demand for the merits.
+   *
+   * @param application the application the assessment is being started for
+   * @param assessmentRulebase the rulebase being started
+   * @param user the user starting the assessment
+   */
+  private void clearMeritsReassessmentLatch(
+      final ApplicationDetail application,
+      final AssessmentRulebase assessmentRulebase,
+      final UserDetail user) {
+
+    if (AssessmentRulebase.MERITS != assessmentRulebase
+        || application.getId() == null
+        || !Boolean.TRUE.equals(application.getMeritsReassessmentRequired())) {
+      return;
+    }
+
+    log.info(
+        "Clearing meritsReassessmentRequired for application [{}] as the merits assessment is "
+            + "being started",
+        application.getId());
+
+    caabApiClient
+        .patchApplication(
+            application.getId().toString(),
+            new ApplicationDetail().meritsReassessmentRequired(false),
+            user.getLoginId())
+        .block();
+
+    // This request's status calculation reads the same instance, so it must not still see it set.
+    application.setMeritsReassessmentRequired(false);
   }
 
   /**

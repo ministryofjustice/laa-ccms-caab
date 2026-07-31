@@ -113,6 +113,8 @@ public class OpponentsSectionController {
       final HttpServletRequest request,
       final Model model) {
 
+    model.addAttribute(ORGANISATION_SEARCH_CRITERIA, new OrganisationSearchCriteria());
+
     CaseContext resolvedCaseContext = resolveCaseContext(caseContext, request);
     addCaseContext(model, resolvedCaseContext);
 
