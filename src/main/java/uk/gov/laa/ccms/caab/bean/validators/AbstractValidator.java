@@ -284,22 +284,8 @@ public abstract class AbstractValidator implements Validator {
    *
    * @param target The object to be validated.
    * @param errors The Errors object to store validation errors.
-   * @param required Whether date of birth is required.
    */
   public void validateDateOfBirth(Object target, Errors errors, boolean required) {
-    validateDateOfBirth(target, errors, required, COMPONENT_DATE_PATTERN);
-  }
-
-  /**
-   * Validates the date of birth of the {@link Individual} against the supplied date pattern.
-   *
-   * @param target The object to be validated.
-   * @param errors The Errors object to store validation errors.
-   * @param required Whether date of birth is required.
-   * @param datePattern The expected date format pattern (e.g. "d/M/yyyy" or "yyyy-MM-dd").
-   */
-  public void validateDateOfBirth(
-      Object target, Errors errors, boolean required, String datePattern) {
     if (required) {
       ValidationUtils.rejectIfEmpty(
           errors, "dateOfBirth", "required.dob", "Please complete 'Date of birth'");
@@ -309,7 +295,11 @@ public abstract class AbstractValidator implements Validator {
 
     if (individual.getDateOfBirth() != null && !individual.getDateOfBirth().isBlank()) {
       validateValidDateField(
-          individual.getDateOfBirth(), "dateOfBirth", "Date of birth", datePattern, errors);
+          individual.getDateOfBirth(),
+          "dateOfBirth",
+          "Date of birth",
+          COMPONENT_DATE_PATTERN,
+          errors);
       if (!errors.hasFieldErrors("dateOfBirth")) {
         try {
           validateDateInPast(

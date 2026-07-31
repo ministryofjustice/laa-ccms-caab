@@ -51,7 +51,8 @@ class ClientSearchCriteriaValidatorTest {
     validator.validateForename(clientSearchCriteria, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("forename"));
-    assertEquals("required.forename", errors.getFieldError("forename").getCode());
+    assertEquals(
+        "required.forename", Objects.requireNonNull(errors.getFieldError("forename")).getCode());
   }
 
   @Test
@@ -90,7 +91,8 @@ class ClientSearchCriteriaValidatorTest {
     validator.validateSurnameAtBirth(clientSearchCriteria, errors);
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("surname"));
-    assertEquals("required.surname", errors.getFieldError("surname").getCode());
+    assertEquals(
+        "required.surname", Objects.requireNonNull(errors.getFieldError("surname")).getCode());
   }
 
   @Test
@@ -125,12 +127,13 @@ class ClientSearchCriteriaValidatorTest {
     "'', required.dob",
     "abc-12-1990, invalid.format",
     "1-ab-1990, invalid.format",
-    "1-12-abcd, invalid.format"
+    "1-12-abcd, invalid.format",
+    "4/3/07, invalid.input",
   })
   void testValidateDateOfBirth_VariousValues(String dateOfBirth, String expectedErrorCode) {
     clientSearchCriteria.setDateOfBirth(dateOfBirth);
 
-    validator.validateDateOfBirth(clientSearchCriteria, errors, true, "d/M/yyyy");
+    validator.validateDateOfBirth(clientSearchCriteria, errors, true);
 
     if (expectedErrorCode.isBlank()) {
       assertFalse(errors.hasErrors());
@@ -174,7 +177,8 @@ class ClientSearchCriteriaValidatorTest {
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("uniqueIdentifierValue"));
     assertEquals(
-        "invalid.uniqueIdentifierValue", errors.getFieldError("uniqueIdentifierValue").getCode());
+        "invalid.uniqueIdentifierValue",
+        Objects.requireNonNull(errors.getFieldError("uniqueIdentifierValue")).getCode());
   }
 
   @ParameterizedTest
@@ -186,14 +190,15 @@ class ClientSearchCriteriaValidatorTest {
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("uniqueIdentifierValue"));
     assertEquals(
-        "invalid.uniqueIdentifierValue", errors.getFieldError("uniqueIdentifierValue").getCode());
+        "invalid.uniqueIdentifierValue",
+        Objects.requireNonNull(errors.getFieldError("uniqueIdentifierValue")).getCode());
   }
 
   @Test
   void testValidate_Valid() {
     clientSearchCriteria.setForename("John");
     clientSearchCriteria.setSurname("Doe");
-    clientSearchCriteria.setDateOfBirth("1/12/1990");
+    clientSearchCriteria.setDateOfBirth("01/12/1990");
     clientSearchCriteria.setUniqueIdentifierType(1);
     clientSearchCriteria.setUniqueIdentifierValue("AB123456C");
     validator.validate(clientSearchCriteria, errors);
@@ -203,11 +208,11 @@ class ClientSearchCriteriaValidatorTest {
   @ParameterizedTest
   @CsvSource({
     "'','','', 3",
-    "'',Doe,12-1990,2",
-    "John,'',12-1990,2",
+    "'',Doe,12/1990,2",
+    "John,'',12/1990,2",
     "John,Doe,1990,1",
-    "John,Doe,1-1990,1",
-    "John,Doe,1-12-,1",
+    "John,Doe,1/1990,1",
+    "John,Doe,1/12/,1",
   })
   void testValidate_Invalid(
       String forename, String surname, String dobDay, int expectedErrorCount) {
