@@ -44,6 +44,9 @@ public abstract class AbstractValidator implements Validator {
   protected static String GENERIC_MISSING_DATE_FIELDS_FORMAT =
       "Your input for '%s' is incomplete. Please enter a value for day, month and year.";
 
+  protected static final String SPECIFIC_DATEFIELD_ENTRY =
+      "Your input for '%s' is invalid. Please enter the date in DD/MM/YYYY format.";
+
   protected static String GENERIC_FIRST_CHAR_ALPHA =
       "Your input for %s is invalid. "
           + "The first character must be a letter. Please amend your entry.";
@@ -281,8 +284,22 @@ public abstract class AbstractValidator implements Validator {
    *
    * @param target The object to be validated.
    * @param errors The Errors object to store validation errors.
+   * @param required Whether date of birth is required.
    */
   public void validateDateOfBirth(Object target, Errors errors, boolean required) {
+    validateDateOfBirth(target, errors, required, COMPONENT_DATE_PATTERN);
+  }
+
+  /**
+   * Validates the date of birth of the {@link Individual} against the supplied date pattern.
+   *
+   * @param target The object to be validated.
+   * @param errors The Errors object to store validation errors.
+   * @param required Whether date of birth is required.
+   * @param datePattern The expected date format pattern (e.g. "d/M/yyyy" or "yyyy-MM-dd").
+   */
+  public void validateDateOfBirth(
+      Object target, Errors errors, boolean required, String datePattern) {
     if (required) {
       ValidationUtils.rejectIfEmpty(
           errors, "dateOfBirth", "required.dob", "Please complete 'Date of birth'");
@@ -292,18 +309,14 @@ public abstract class AbstractValidator implements Validator {
 
     if (individual.getDateOfBirth() != null && !individual.getDateOfBirth().isBlank()) {
       validateValidDateField(
-          individual.getDateOfBirth(),
-          "dateOfBirth",
-          "Date of birth",
-          COMPONENT_DATE_PATTERN,
-          errors);
+          individual.getDateOfBirth(), "dateOfBirth", "Date of birth", datePattern, errors);
       if (!errors.hasFieldErrors("dateOfBirth")) {
         try {
           validateDateInPast(
               convertToDate(individual.getDateOfBirth()), "dateOfBirth", "Date of birth", errors);
         } catch (java.time.format.DateTimeParseException ex) {
           errors.rejectValue(
-              "dateOfBirth", "invalid.input", GENERIC_DATEFIELD_ENTRY.formatted("Date of birth"));
+              "dateOfBirth", "invalid.input", SPECIFIC_DATEFIELD_ENTRY.formatted("Date of birth"));
         }
       }
     }
