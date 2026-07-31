@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="#{service.name} + ' - ' + #{submission.alreadySubmitted.title}"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs"></div>
+    <div id="main-content" class="govuk-!-padding-top-7">
+        <h1 class="govuk-heading-l" th:text="#{submission.alreadySubmitted.title}"></h1>
+        <p class="govuk-body-l" th:text="#{submission.alreadySubmitted.body}"></p>
+        <p class="govuk-body-l" th:text="#{submission.alreadySubmitted.continue}"></p>
+        <div class="govuk-button-group">
+            <a class="govuk-button" th:href="@{/case/overview}" data-module="govuk-button" th:text="#{submission.alreadySubmitted.button}"></a>
+        </div>
+    </div>
+</div>
+</body>
+</html>
