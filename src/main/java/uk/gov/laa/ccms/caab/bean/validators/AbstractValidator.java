@@ -36,6 +36,8 @@ public abstract class AbstractValidator implements Validator {
   private static final String GENERIC_CURRENCY_REQUIRED = "Please enter a currency value for '%s'.";
   private static final String GENERIC_DATEFIELD_ENTRY =
       "Your date range is invalid. Please amend your entry for the %s field.";
+  private static final String GENERIC_DATEFIELD_PAST =
+      "You must provide a date in the past for the %s field. Please amend your entry.";
   protected static String GENERIC_INCORRECT_FORMAT =
       "Your input for '%s' is in an incorrect format. Please amend your entry.";
 
@@ -301,7 +303,7 @@ public abstract class AbstractValidator implements Validator {
               convertToDate(individual.getDateOfBirth()), "dateOfBirth", "Date of birth", errors);
         } catch (java.time.format.DateTimeParseException ex) {
           errors.rejectValue(
-              "dateOfBirth", "invalid.input", GENERIC_DATEFIELD_ENTRY.formatted("Date of birth"));
+              "dateOfBirth", "invalid.input", GENERIC_DATEFIELD_PAST.formatted("Date of birth"));
         }
       }
     }
@@ -318,7 +320,7 @@ public abstract class AbstractValidator implements Validator {
       final Date dateToCheck, final String fieldName, String field, Errors errors) {
     Date today = Date.from(Instant.now());
     if (!today.after(dateToCheck)) {
-      errors.rejectValue(fieldName, "invalid.input", GENERIC_DATEFIELD_ENTRY.formatted(field));
+      errors.rejectValue(fieldName, "invalid.input", GENERIC_DATEFIELD_PAST.formatted(field));
     }
   }
 
