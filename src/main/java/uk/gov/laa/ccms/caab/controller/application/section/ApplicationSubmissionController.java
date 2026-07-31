@@ -560,7 +560,7 @@ public class ApplicationSubmissionController {
       final HttpSession session,
       final Model model) {
 
-    if (isAlreadySubmitted(session, caseContext, activeCase)) {
+    if (isAlreadySubmitted(session, activeCase)) {
       return caseContext.isApplication()
           ? "redirect:/home"
           : "redirect:/submissions/alreadySubmitted";
@@ -777,7 +777,7 @@ public class ApplicationSubmissionController {
       final Model model,
       final HttpSession session) {
 
-    if (isAlreadySubmitted(session, caseContext, activeCase)
+    if (isAlreadySubmitted(session, activeCase)
         || (caseContext.isAmendment() && applicationId == null)) {
       return caseContext.isApplication()
           ? "redirect:/home"
@@ -1130,9 +1130,7 @@ public class ApplicationSubmissionController {
     return messageSource.getMessage(key, null, LocaleContextHolder.getLocale());
   }
 
-  private boolean isAlreadySubmitted(
-      final HttpSession session, final CaseContext caseContext, final ActiveCase activeCase) {
-    return "confirmed".equals(session.getAttribute(SUBMISSION_RESULT))
-        || (caseContext.isAmendment() && activeCase == null);
+  private boolean isAlreadySubmitted(final HttpSession session, final ActiveCase activeCase) {
+    return "confirmed".equals(session.getAttribute(SUBMISSION_RESULT)) || activeCase == null;
   }
 }
