@@ -47,6 +47,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -1709,6 +1710,109 @@ public class AssessmentServiceTest {
         .deleteAssessments(
             eq(List.of(AssessmentRulebase.MEANS.getName())), any(), any(), any(), any());
     verify(assessmentMapper, never()).toAssessmentDetail(any(), any());
+  }
+
+  @Test
+  @DisplayName(
+      "startAssessment clears the persisted meritsReassessmentRequired latch when the merits "
+          + "assessment is started, including on re-entry to a COMPLETE assessment")
+  void startAssessmentClearsMeritsReassessmentLatch() {
+    final String caseRef = "CASE-123";
+    final String providerId = String.valueOf(user.getProvider().getId());
+    final String prepopName = AssessmentRulebase.MERITS.getPrePopAssessmentName();
+
+    // A proceeding deletion / lead-proceeding change has latched the flag on.
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .id(1)
+            .caseReferenceNumber(caseRef)
+            .amendment(true)
+            .meritsReassessmentRequired(true)
+            .proceedings(new ArrayList<>())
+            .opponents(new ArrayList<>());
+
+    final AssessmentDetail completeAssessment =
+        new AssessmentDetail()
+            .id(50L)
+            .name(AssessmentRulebase.MERITS.getName())
+            .caseReferenceNumber(caseRef)
+            .status("COMPLETE")
+            .entityTypes(new ArrayList<>())
+            .auditDetail(new AuditDetail().lastSaved(auditDate));
+    when(assessmentApiClient.getAssessments(
+            List.of(AssessmentRulebase.MERITS.getName()), providerId, caseRef))
+        .thenReturn(
+            just(new AssessmentDetails().content(new ArrayList<>(List.of(completeAssessment)))));
+
+    final AssessmentDetail existingPrepop =
+        new AssessmentDetail()
+            .id(99L)
+            .name(prepopName)
+            .caseReferenceNumber(caseRef)
+            .entityTypes(new ArrayList<>())
+            .auditDetail(new AuditDetail().lastSaved(auditDate));
+    when(assessmentApiClient.getAssessments(List.of(prepopName), providerId, caseRef))
+        .thenReturn(
+            just(new AssessmentDetails().content(new ArrayList<>(List.of(existingPrepop)))));
+
+    when(caabApiClient.patchApplication(eq("1"), any(), eq(user.getLoginId())))
+        .thenReturn(Mono.empty());
+
+    assessmentService.startAssessment(application, AssessmentRulebase.MERITS, null, user, false);
+
+    final ArgumentCaptor<ApplicationDetail> patchCaptor =
+        ArgumentCaptor.forClass(ApplicationDetail.class);
+    verify(caabApiClient).patchApplication(eq("1"), patchCaptor.capture(), eq(user.getLoginId()));
+    assertEquals(Boolean.FALSE, patchCaptor.getValue().getMeritsReassessmentRequired());
+
+    // The in-memory application is kept consistent for the rest of the request.
+    assertEquals(Boolean.FALSE, application.getMeritsReassessmentRequired());
+  }
+
+  @Test
+  @DisplayName("startAssessment does not clear the merits latch for the means rulebase")
+  void startAssessmentDoesNotClearMeritsLatchForMeans() {
+    final String caseRef = "CASE-123";
+    final String providerId = String.valueOf(user.getProvider().getId());
+    final String prepopName = AssessmentRulebase.MEANS.getPrePopAssessmentName();
+
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .id(1)
+            .caseReferenceNumber(caseRef)
+            .amendment(true)
+            .meritsReassessmentRequired(true)
+            .proceedings(new ArrayList<>())
+            .opponents(new ArrayList<>());
+
+    final AssessmentDetail completeAssessment =
+        new AssessmentDetail()
+            .id(50L)
+            .name(AssessmentRulebase.MEANS.getName())
+            .caseReferenceNumber(caseRef)
+            .status("COMPLETE")
+            .entityTypes(new ArrayList<>())
+            .auditDetail(new AuditDetail().lastSaved(auditDate));
+    when(assessmentApiClient.getAssessments(
+            List.of(AssessmentRulebase.MEANS.getName()), providerId, caseRef))
+        .thenReturn(
+            just(new AssessmentDetails().content(new ArrayList<>(List.of(completeAssessment)))));
+
+    final AssessmentDetail existingPrepop =
+        new AssessmentDetail()
+            .id(99L)
+            .name(prepopName)
+            .caseReferenceNumber(caseRef)
+            .entityTypes(new ArrayList<>())
+            .auditDetail(new AuditDetail().lastSaved(auditDate));
+    when(assessmentApiClient.getAssessments(List.of(prepopName), providerId, caseRef))
+        .thenReturn(
+            just(new AssessmentDetails().content(new ArrayList<>(List.of(existingPrepop)))));
+
+    assessmentService.startAssessment(application, AssessmentRulebase.MEANS, null, user, false);
+
+    verify(caabApiClient, never()).patchApplication(any(), any(), any());
+    assertEquals(Boolean.TRUE, application.getMeritsReassessmentRequired());
   }
 
   @Test
