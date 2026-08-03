@@ -44,6 +44,9 @@ public abstract class AbstractValidator implements Validator {
   protected static String GENERIC_MISSING_DATE_FIELDS_FORMAT =
       "Your input for '%s' is incomplete. Please enter a value for day, month and year.";
 
+  protected static final String SPECIFIC_DATEFIELD_ENTRY =
+      "Your input for '%s' is invalid. Please enter the date in DD/MM/YYYY format.";
+
   protected static String GENERIC_FIRST_CHAR_ALPHA =
       "Your input for %s is invalid. "
           + "The first character must be a letter. Please amend your entry.";
@@ -303,7 +306,7 @@ public abstract class AbstractValidator implements Validator {
               convertToDate(individual.getDateOfBirth()), "dateOfBirth", "Date of birth", errors);
         } catch (java.time.format.DateTimeParseException ex) {
           errors.rejectValue(
-              "dateOfBirth", "invalid.input", GENERIC_DATEFIELD_ENTRY.formatted("Date of birth"));
+              "dateOfBirth", "invalid.format", SPECIFIC_DATEFIELD_ENTRY.formatted("Date of birth"));
         }
       }
     }
