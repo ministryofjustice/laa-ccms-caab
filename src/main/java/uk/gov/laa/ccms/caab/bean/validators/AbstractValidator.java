@@ -14,7 +14,11 @@ import java.math.BigDecimal;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.Date;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -38,6 +42,8 @@ public abstract class AbstractValidator implements Validator {
       "Your date range is invalid. Please amend your entry for the %s field.";
   private static final String GENERIC_DATEFIELD_PAST =
       "You must provide a date in the past for the %s field. Please amend your entry.";
+  private static final String GENERIC_DATEFIELD_AFTER_DATE =
+      "You must provide a date after %s for the %s field. Please amend your entry.";
   protected static String GENERIC_INCORRECT_FORMAT =
       "Your input for '%s' is in an incorrect format. Please amend your entry.";
 
@@ -264,6 +270,19 @@ public abstract class AbstractValidator implements Validator {
     if (pos.getIndex() == 0) {
       validDate = null;
       reportInvalidDate(field, displayName, errors);
+    } else {
+      validateDateAfterGivenDate(
+          validDate,
+          Date.from(
+              LocalDate.of(1901, 12, 13)
+                  .atStartOfDay(java.time.ZoneId.systemDefault())
+                  .toInstant()),
+          field,
+          displayName,
+          errors);
+      if (errors.hasFieldErrors(field)) {
+        validDate = null;
+      }
     }
     return validDate;
   }
@@ -324,6 +343,27 @@ public abstract class AbstractValidator implements Validator {
     Date today = Date.from(Instant.now());
     if (!today.after(dateToCheck)) {
       errors.rejectValue(fieldName, "invalid.input", GENERIC_DATEFIELD_PAST.formatted(field));
+    }
+  }
+
+  protected void validateDateAfterGivenDate(
+      final Date dateToCheck,
+      final Date givenDate,
+      final String fieldName,
+      String field,
+      Errors errors) {
+    if (!dateToCheck.after(givenDate)) {
+      errors.rejectValue(
+          fieldName,
+          "invalid.input",
+          GENERIC_DATEFIELD_AFTER_DATE.formatted(
+              givenDate
+                  .toInstant()
+                  .atZone(java.time.ZoneId.systemDefault())
+                  .toLocalDate()
+                  .format(
+                      DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(Locale.UK)),
+              field));
     }
   }
 

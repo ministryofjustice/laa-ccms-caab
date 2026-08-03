@@ -128,7 +128,7 @@ class ClientSearchCriteriaValidatorTest {
     "abc-12-1990, invalid.format",
     "1-ab-1990, invalid.format",
     "1-12-abcd, invalid.format",
-    "4/3/07, invalid.format",
+    "13/12/1901, invalid.input"
   })
   void testValidateDateOfBirth_VariousValues(String dateOfBirth, String expectedErrorCode) {
     clientSearchCriteria.setDateOfBirth(dateOfBirth);
