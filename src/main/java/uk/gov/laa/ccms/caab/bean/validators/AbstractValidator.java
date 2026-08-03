@@ -279,6 +279,7 @@ public abstract class AbstractValidator implements Validator {
           field,
           displayName,
           errors);
+    }
     return validDate;
   }
 
@@ -352,7 +353,10 @@ public abstract class AbstractValidator implements Validator {
           fieldName,
           "invalid.input",
           GENERIC_DATEFIELD_AFTER_DATE.formatted(
-              givenDate.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+              givenDate
+                  .toInstant()
+                  .atZone(java.time.ZoneId.systemDefault())
+                  .toLocalDate()
                   .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)),
               field));
     }
