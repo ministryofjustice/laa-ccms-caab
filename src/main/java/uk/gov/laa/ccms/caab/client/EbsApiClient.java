@@ -48,6 +48,7 @@ import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
 import uk.gov.laa.ccms.data.model.StatementOfAccountDetails;
+import uk.gov.laa.ccms.data.model.TaxRateLookupDetail;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
@@ -594,6 +595,22 @@ public class EbsApiClient extends BaseApiClient {
         .bodyToMono(AwardTypeLookupDetail.class)
         .onErrorResume(
             e -> ebsApiClientErrorHandler.handleApiRetrieveError(e, "Award types", queryParams));
+  }
+
+  /**
+   * Retrieves the tax (VAT) rate lookup values, mapping each rate code to its percentage.
+   *
+   * @return A Mono containing the TaxRateLookupDetail or an error handler if an error occurs.
+   */
+  public Mono<TaxRateLookupDetail> getTaxRates() {
+    final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
+    return webClient
+        .get()
+        .uri(builder -> builder.path("/lookup/tax-rates").queryParams(queryParams).build())
+        .retrieve()
+        .bodyToMono(TaxRateLookupDetail.class)
+        .onErrorResume(
+            e -> ebsApiClientErrorHandler.handleApiRetrieveError(e, "Tax rates", queryParams));
   }
 
   /**

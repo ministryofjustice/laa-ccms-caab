@@ -2,8 +2,13 @@ package uk.gov.laa.ccms.caab.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +32,8 @@ import uk.gov.laa.ccms.data.model.StatementOfAccountDetails;
 import uk.gov.laa.ccms.data.model.StatementOfAccountInvoice;
 import uk.gov.laa.ccms.data.model.StatementOfAccountInvoiceList;
 import uk.gov.laa.ccms.data.model.StatementOfAccountPoa;
+import uk.gov.laa.ccms.data.model.TaxRateLookupDetail;
+import uk.gov.laa.ccms.data.model.TaxRateLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -49,9 +56,11 @@ public class BillingService {
   private static final String INVOICE_TYPE_BILL = "Bill";
   private static final String INVOICE_TYPE_POA = "POA";
   private static final BigDecimal HUNDRED = new BigDecimal("100");
+  private static final ZoneId EBS_ZONE = ZoneId.of("Europe/London");
 
   private final EbsApiClient ebsApiClient;
   private final CaabApiClient caabApiClient;
+  private final LookupService lookupService;
 
   /**
    * Retrieve and build the statement of account display for the supplied case.
@@ -157,10 +166,18 @@ public class BillingService {
         poaResponse == null || poaResponse.getContent() == null
             ? List.of()
             : poaResponse.getContent();
-    for (final PaymentOnAccountDetail poa : draftPoas) {
-      rows.add(
-          new BillPoaRow(
-              INVOICE_TYPE_POA, INVOICE_STATUS_DRAFT, null, null, poaTotalCost(poa), true));
+    if (!draftPoas.isEmpty()) {
+      final Map<String, BigDecimal> taxRates = taxRatesByCode();
+      for (final PaymentOnAccountDetail poa : draftPoas) {
+        rows.add(
+            new BillPoaRow(
+                INVOICE_TYPE_POA,
+                INVOICE_STATUS_DRAFT,
+                null,
+                null,
+                poaTotalCost(poa, taxRates),
+                true));
+      }
     }
     display.setDraftPoaExists(!draftPoas.isEmpty());
 
@@ -203,35 +220,72 @@ public class BillingService {
                 new BillPoaRow(
                     invoice.getInvoiceType(),
                     invoice.getInvoiceStatus(),
-                    invoice.getDateSubmitted(),
-                    invoice.getDateAuthorised(),
+                    legacyDisplayDate(invoice.getDateSubmitted()),
+                    legacyDisplayDate(invoice.getDateAuthorised()),
                     invoice.getInvoiceAmount(),
                     false))
         .toList();
   }
 
   /**
-   * The gross draft POA amount, mirroring the legacy PUI: the net cost grossed up by VAT and
-   * rounded down to the penny.
-   *
-   * <p>The stored VAT rate is a reference-data lookup code. The legacy PUI resolved it to a
-   * percentage via its tax-rate lookup; that lookup is introduced with the (not yet built) Create
-   * POA journey, so for now a numeric rate is used as-is and anything else is treated as zero.
+   * Reproduces the legacy PUI's rendering of EBS statement dates for exact parity. EBS supplies the
+   * timestamp as London wall-clock time, but the legacy PUI displayed it in UTC, so a British
+   * Summer Time value recorded at midnight shows as the previous day. Converting Europe/London to
+   * UTC replicates that shift (British Summer Time only; GMT and non-midnight times are
+   * unaffected).
    */
-  private BigDecimal poaTotalCost(final PaymentOnAccountDetail poa) {
-    final BigDecimal net = orZero(poa.getActualNetCost());
-    final BigDecimal multiplier = vatPercent(poa.getVatRate()).divide(HUNDRED).add(BigDecimal.ONE);
-    return net.multiply(multiplier).setScale(2, RoundingMode.DOWN);
+  private LocalDateTime legacyDisplayDate(final LocalDateTime ebsDate) {
+    if (ebsDate == null) {
+      return null;
+    }
+    return ebsDate.atZone(EBS_ZONE).withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
   }
 
-  private BigDecimal vatPercent(final String vatRate) {
-    if (vatRate == null || vatRate.isBlank()) {
-      return BigDecimal.ZERO;
+  /**
+   * The gross draft POA amount, mirroring the legacy PUI: the net cost grossed up by VAT and
+   * rounded down to the penny. The stored VAT rate is a reference-data code resolved to a
+   * percentage via the tax-rate lookup; an unknown code contributes no VAT.
+   */
+  private BigDecimal poaTotalCost(
+      final PaymentOnAccountDetail poa, final Map<String, BigDecimal> taxRates) {
+    final BigDecimal net = orZero(poa.getActualNetCost());
+    final BigDecimal percent = taxRates.getOrDefault(poa.getVatRate(), BigDecimal.ZERO);
+    return net.multiply(percent.divide(HUNDRED).add(BigDecimal.ONE)).setScale(2, RoundingMode.DOWN);
+  }
+
+  /**
+   * Loads the VAT rate code to percentage map from the tax-rate reference data. A failure to load
+   * it is tolerated: draft POA amounts then simply exclude VAT rather than breaking the screen.
+   */
+  private Map<String, BigDecimal> taxRatesByCode() {
+    final TaxRateLookupDetail response;
+    try {
+      response = lookupService.getTaxRates().block();
+    } catch (final Exception e) {
+      log.warn("Could not load tax rates; draft POA amounts will exclude VAT", e);
+      return Map.of();
+    }
+    if (response == null || response.getContent() == null) {
+      return Map.of();
+    }
+    final Map<String, BigDecimal> rates = new HashMap<>();
+    for (final TaxRateLookupValueDetail rate : response.getContent()) {
+      final BigDecimal percent = parsePercent(rate.getTaxRate());
+      if (rate.getCode() != null && percent != null) {
+        rates.put(rate.getCode(), percent);
+      }
+    }
+    return rates;
+  }
+
+  private BigDecimal parsePercent(final String taxRate) {
+    if (taxRate == null || taxRate.isBlank()) {
+      return null;
     }
     try {
-      return new BigDecimal(vatRate);
+      return new BigDecimal(taxRate.trim());
     } catch (final NumberFormatException e) {
-      return BigDecimal.ZERO;
+      return null;
     }
   }
 

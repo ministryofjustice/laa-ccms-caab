@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,6 +36,8 @@ import uk.gov.laa.ccms.data.model.StatementOfAccountDetail;
 import uk.gov.laa.ccms.data.model.StatementOfAccountDetails;
 import uk.gov.laa.ccms.data.model.StatementOfAccountInvoice;
 import uk.gov.laa.ccms.data.model.StatementOfAccountInvoiceList;
+import uk.gov.laa.ccms.data.model.TaxRateLookupDetail;
+import uk.gov.laa.ccms.data.model.TaxRateLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,6 +50,8 @@ class BillingServiceTest {
 
   @Mock CaabApiClient caabApiClient;
 
+  @Mock LookupService lookupService;
+
   @InjectMocks BillingService billingService;
 
   @BeforeEach
@@ -56,6 +61,8 @@ class BillingServiceTest {
     lenient()
         .when(caabApiClient.getPaymentsOnAccount(any(), any()))
         .thenReturn(Mono.just(new PaymentOnAccountDetails()));
+    // Tax rates are only fetched when a draft POA exists; default to none.
+    lenient().when(lookupService.getTaxRates()).thenReturn(Mono.just(new TaxRateLookupDetail()));
   }
 
   private StatementOfAccountDetail statement(
@@ -248,6 +255,49 @@ class BillingServiceTest {
   }
 
   @Test
+  @DisplayName("Renders EBS dates in UTC for legacy parity, shifting BST midnight back a day")
+  void shiftsBstDatesForLegacyParity() {
+    UserDetail user =
+        new UserDetail().loginId("user1").userType("EXTERNAL").provider(new BaseProvider().id(10));
+    ApplicationDetail ebsCase =
+        new ApplicationDetail()
+            .caseReferenceNumber(CASE_REF)
+            .providerDetails(
+                new ApplicationProviderDetails().provider(new IntDisplayValue().id(10)));
+
+    StatementOfAccountDetails response =
+        new StatementOfAccountDetails()
+            .addContentItem(
+                statement("Provider", 10L, null)
+                    .invoiceList(
+                        invoiceList(
+                            // British Summer Time midnight -> shows the previous day.
+                            new StatementOfAccountInvoice()
+                                .invoiceType("POA")
+                                .invoiceStatus("Authorised")
+                                .dateSubmitted(LocalDateTime.of(2018, 6, 5, 0, 0)),
+                            // GMT midnight -> unchanged.
+                            new StatementOfAccountInvoice()
+                                .invoiceType("POA")
+                                .invoiceStatus("Authorised")
+                                .dateSubmitted(LocalDateTime.of(2017, 11, 20, 0, 0)),
+                            // British Summer Time but not midnight -> unchanged date.
+                            new StatementOfAccountInvoice()
+                                .invoiceType("POA")
+                                .invoiceStatus("Authorised")
+                                .dateSubmitted(LocalDateTime.of(2018, 6, 8, 14, 30)))));
+
+    when(ebsApiClient.getStatementOfAccount(CASE_REF, null)).thenReturn(Mono.just(response));
+
+    StatementOfAccountDisplay display =
+        billingService.getStatementOfAccountDisplay(CASE_REF, ebsCase, user);
+
+    assertThat(display.getBillsAndPoa())
+        .extracting(row -> row.dateSubmitted().toLocalDate().toString())
+        .containsExactly("2018-06-04", "2017-11-20", "2018-06-08");
+  }
+
+  @Test
   @DisplayName("Groups the provider's drafts with its own invoices, ahead of other firms'")
   void draftsGroupedWithProviderBlock() {
     UserDetail user =
@@ -407,7 +457,8 @@ class BillingServiceTest {
                                 .invoiceStatus("Authorised"))));
 
     when(ebsApiClient.getStatementOfAccount(CASE_REF, null)).thenReturn(Mono.just(response));
-    // Draft POA of net 200 at 17.5% VAT grosses up to 235.00; draft bill of 300.
+    // Draft POA of net 200 whose VAT code "STD" resolves to 20% grosses up to 240.00; draft bill
+    // 300.
     when(caabApiClient.getPaymentsOnAccount(CASE_REF, "10"))
         .thenReturn(
             Mono.just(
@@ -415,9 +466,14 @@ class BillingServiceTest {
                     .addContentItem(
                         new PaymentOnAccountDetail()
                             .actualNetCost(new BigDecimal("200"))
-                            .vatRate("17.5"))));
+                            .vatRate("STD"))));
     when(caabApiClient.getBill(CASE_REF, "10"))
         .thenReturn(Mono.just(new Bills().amount(new BigDecimal("300"))));
+    when(lookupService.getTaxRates())
+        .thenReturn(
+            Mono.just(
+                new TaxRateLookupDetail()
+                    .addContentItem(new TaxRateLookupValueDetail().code("STD").taxRate("20"))));
 
     StatementOfAccountDisplay display =
         billingService.getStatementOfAccountDisplay(CASE_REF, ebsCase, user);
@@ -429,8 +485,50 @@ class BillingServiceTest {
         .extracting(BillPoaRow::type, BillPoaRow::status)
         .containsExactly(
             tuple("Bill", "Authorised"), tuple("POA", "Draft"), tuple("Bill", "Draft"));
-    assertThat(display.getBillsAndPoa().get(1).amount()).isEqualByComparingTo("235.00");
+    assertThat(display.getBillsAndPoa().get(1).amount()).isEqualByComparingTo("240.00");
     assertThat(display.getBillsAndPoa().get(2).amount()).isEqualByComparingTo("300");
+  }
+
+  @Test
+  @DisplayName("An unknown VAT code contributes no VAT; a load failure leaves the POA net only")
+  void poaVatFallbacks() {
+    UserDetail user =
+        new UserDetail().loginId("user1").userType("EXTERNAL").provider(new BaseProvider().id(10));
+    ApplicationDetail ebsCase =
+        new ApplicationDetail()
+            .caseReferenceNumber(CASE_REF)
+            .providerDetails(
+                new ApplicationProviderDetails().provider(new IntDisplayValue().id(10)));
+
+    StatementOfAccountDetails response =
+        new StatementOfAccountDetails().addContentItem(statement("Provider", 10L, null));
+
+    when(ebsApiClient.getStatementOfAccount(CASE_REF, null)).thenReturn(Mono.just(response));
+    when(caabApiClient.getPaymentsOnAccount(CASE_REF, "10"))
+        .thenReturn(
+            Mono.just(
+                new PaymentOnAccountDetails()
+                    .addContentItem(
+                        new PaymentOnAccountDetail()
+                            .actualNetCost(new BigDecimal("200"))
+                            .vatRate("UNKNOWN"))));
+    // The tax-rate lookup succeeds but has no matching code, so no VAT is applied.
+    when(lookupService.getTaxRates())
+        .thenReturn(
+            Mono.just(
+                new TaxRateLookupDetail()
+                    .addContentItem(new TaxRateLookupValueDetail().code("STD").taxRate("20"))));
+
+    StatementOfAccountDisplay display =
+        billingService.getStatementOfAccountDisplay(CASE_REF, ebsCase, user);
+
+    assertThat(display.getBillsAndPoa())
+        .singleElement()
+        .satisfies(
+            row -> {
+              assertThat(row.type()).isEqualTo("POA");
+              assertThat(row.amount()).isEqualByComparingTo("200.00");
+            });
   }
 
   @Test
