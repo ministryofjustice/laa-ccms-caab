@@ -55,6 +55,7 @@ public class ClientBasicDetailsValidator extends AbstractValidator {
     validateRequiredField("gender", basicDetails.getGender(), "Gender", errors);
     validateRequiredField(
         "maritalStatus", basicDetails.getMaritalStatus(), "Marital status", errors);
+    validateDateOfBirth(target, errors, true);
 
     validateMiddleNames(target, errors);
     validateSurname(target, errors);

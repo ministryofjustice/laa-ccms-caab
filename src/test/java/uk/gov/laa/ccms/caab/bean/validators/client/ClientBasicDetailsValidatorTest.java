@@ -51,6 +51,52 @@ class ClientBasicDetailsValidatorTest {
 
   @ParameterizedTest
   @NullAndEmptySource
+  void validate_dateOfBirthRequired(String dateOfBirth) {
+    basicDetails = buildBasicDetails();
+    basicDetails.setDateOfBirth(dateOfBirth);
+
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+
+    assertTrue(errors.hasErrors());
+    assertNotNull(errors.getFieldError("dateOfBirth"));
+    assertEquals("required.dob", errors.getFieldError("dateOfBirth").getCode());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"4/3/1990", "04/03/1990"})
+  void validate_acceptsBothSingleAndZeroPaddedDobInput(String dateOfBirth) {
+    basicDetails = buildBasicDetails();
+    basicDetails.setDateOfBirth(dateOfBirth);
+
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+
+    assertFalse(errors.hasErrors());
+  }
+
+  @Test
+  void validate_rejectsInvalidDobInput() {
+    basicDetails = buildBasicDetails();
+    basicDetails.setDateOfBirth("1990/03/04");
+
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+
+    assertTrue(errors.hasErrors());
+    assertNotNull(errors.getFieldError("dateOfBirth"));
+  }
+
+  @Test
+  void validate_rejectsFutureDobInput() {
+    basicDetails = buildBasicDetails();
+    basicDetails.setDateOfBirth("01/01/2999");
+
+    clientBasicDetailsValidator.validate(basicDetails, errors);
+
+    assertTrue(errors.hasErrors());
+    assertNotNull(errors.getFieldError("dateOfBirth"));
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
   public void validate_titleRequired(String title) {
     basicDetails = buildBasicDetails();
     basicDetails.setTitle(title);
@@ -169,6 +215,7 @@ class ClientBasicDetailsValidatorTest {
     ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
     basicDetails.setTitle("MR");
     basicDetails.setSurname("TEST");
+    basicDetails.setDateOfBirth("04/03/1990");
     basicDetails.setCountryOfOrigin("UK");
     basicDetails.setGender("MALE");
     basicDetails.setMaritalStatus("SINGLE");
