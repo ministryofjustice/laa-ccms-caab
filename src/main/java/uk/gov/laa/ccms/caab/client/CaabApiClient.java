@@ -12,6 +12,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
@@ -20,6 +21,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
+import uk.gov.laa.ccms.caab.model.Bills;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
@@ -29,6 +31,7 @@ import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
+import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
@@ -55,6 +58,8 @@ public class CaabApiClient {
   public static final String RESOURCE_TYPE_CASE_OUTCOME = "case outcome";
   public static final String RESOURCE_TYPE_EVIDENCE = "evidence";
   public static final String RESOURCE_TYPE_NOTIFICATION_ATTACHMENTS = "notification attachments";
+  public static final String RESOURCE_TYPE_BILL = "bill";
+  public static final String RESOURCE_TYPE_PAYMENTS_ON_ACCOUNT = "payments on account";
 
   /**
    * Creates an application using the CAAB API.
@@ -1167,6 +1172,56 @@ public class CaabApiClient {
             e ->
                 caabApiClientErrorHandler.handleApiDeleteError(
                     e, RESOURCE_TYPE_EVIDENCE, queryParams));
+  }
+
+  /**
+   * Retrieves the draft bill held for a case and provider, if any. A case carries at most one draft
+   * bill at a time, so a single {@link Bills} is returned. An absent draft is signalled by an empty
+   * {@link Mono} rather than an error.
+   *
+   * @param caseReferenceNumber the case reference number.
+   * @param providerId the provider the draft bill belongs to.
+   * @return a Mono of the draft bill, or empty when none exists.
+   */
+  public Mono<Bills> getBill(final String caseReferenceNumber, final String providerId) {
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    queryParams.add("case-reference", caseReferenceNumber);
+    queryParams.add("provider-id", providerId);
+
+    return caabApiWebClient
+        .get()
+        .uri(builder -> builder.path("/bills").queryParams(queryParams).build())
+        .retrieve()
+        .bodyToMono(Bills.class)
+        .onErrorResume(WebClientResponseException.NotFound.class, e -> Mono.empty())
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiRetrieveError(
+                    e, RESOURCE_TYPE_BILL, queryParams));
+  }
+
+  /**
+   * Retrieves the draft payments on account held for a case and provider.
+   *
+   * @param caseReferenceNumber the case reference number.
+   * @param providerId the provider the draft payments on account belong to.
+   * @return a Mono of the draft payments on account.
+   */
+  public Mono<PaymentOnAccountDetails> getPaymentsOnAccount(
+      final String caseReferenceNumber, final String providerId) {
+    final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+    queryParams.add("case-reference", caseReferenceNumber);
+    queryParams.add("provider-id", providerId);
+
+    return caabApiWebClient
+        .get()
+        .uri(builder -> builder.path("/paymentsonaccount").queryParams(queryParams).build())
+        .retrieve()
+        .bodyToMono(PaymentOnAccountDetails.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiRetrieveError(
+                    e, RESOURCE_TYPE_PAYMENTS_ON_ACCOUNT, queryParams));
   }
 
   private MultiValueMap<String, String> createDefaultQueryParams() {

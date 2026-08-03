@@ -135,17 +135,23 @@
             </tr>
           </thead>
           <tbody class="govuk-table__body">
-            <tr class="govuk-table__row" th:each="invoice : ${statementOfAccount?.invoices}">
-              <td class="govuk-table__cell" th:text="${invoice.invoiceType}"></td>
-              <td class="govuk-table__cell" th:text="${invoice.invoiceStatus}"></td>
-              <td class="govuk-table__cell" th:text="${invoice.dateSubmitted != null ? #temporals.format(invoice.dateSubmitted, 'dd/MM/yyyy') : ''}"></td>
-              <td class="govuk-table__cell" th:text="${invoice.dateAuthorised != null ? #temporals.format(invoice.dateAuthorised, 'dd/MM/yyyy') : ''}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${invoice.invoiceAmount != null ? #numbers.formatCurrency(invoice.invoiceAmount) : ''}"></td>
-              <!-- TODO: edit / delete / copy bill links, once the draft Bill and POA journeys exist. -->
-              <td class="govuk-table__cell"></td>
+            <tr class="govuk-table__row" th:each="row : ${statementOfAccount?.billsAndPoa}">
+              <!-- On a draft the type is a link to edit it; submitted rows show plain text. -->
+              <td class="govuk-table__cell">
+                <a th:if="${row.draft}" class="govuk-link" th:href="'#'" th:text="${row.type}"></a>
+                <span th:unless="${row.draft}" th:text="${row.type}"></span>
+              </td>
+              <td class="govuk-table__cell" th:text="${row.status}"></td>
+              <td class="govuk-table__cell" th:text="${row.dateSubmitted != null ? #temporals.format(row.dateSubmitted, 'dd/MM/yyyy') : ''}"></td>
+              <td class="govuk-table__cell" th:text="${row.dateAuthorised != null ? #temporals.format(row.dateAuthorised, 'dd/MM/yyyy') : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${row.amount != null ? #numbers.formatCurrency(row.amount) : ''}"></td>
+              <!-- TODO: point the edit / delete links at the Bill and POA journeys once they exist. -->
+              <td class="govuk-table__cell">
+                <a th:if="${row.draft}" class="govuk-link" th:href="'#'" th:text="#{billing.billsAndPoa.delete}"></a>
+              </td>
             </tr>
             <tr class="govuk-table__row"
-                th:if="${statementOfAccount == null or statementOfAccount.invoices == null or statementOfAccount.invoices.isEmpty()}">
+                th:if="${statementOfAccount == null or statementOfAccount.billsAndPoa == null or statementOfAccount.billsAndPoa.isEmpty()}">
               <td class="govuk-table__cell" colspan="6" th:text="#{billing.billsAndPoa.none}"></td>
             </tr>
           </tbody>

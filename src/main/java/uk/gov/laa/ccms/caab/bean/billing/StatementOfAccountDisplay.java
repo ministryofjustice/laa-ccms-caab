@@ -3,7 +3,6 @@ package uk.gov.laa.ccms.caab.bean.billing;
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.Data;
-import uk.gov.laa.ccms.data.model.StatementOfAccountInvoice;
 
 /**
  * View model for the Case Statement of Account screen. Combines the aggregated figures (shown per
@@ -39,6 +38,17 @@ public class StatementOfAccountDisplay {
   /** The part of the counsel cost ceiling not yet billed. */
   private BigDecimal counselCostCeilingRemaining;
 
-  /** The bills and payment-on-account invoices across all firms. */
-  private List<StatementOfAccountInvoice> invoices;
+  /**
+   * The bills and payment-on-account rows: the submitted / authorised / rejected invoices from EBS
+   * plus the provider's own draft bill and draft payments on account.
+   */
+  private List<BillPoaRow> billsAndPoa;
+
+  /** Whether the provider already has a draft bill, so a new one cannot be created. */
+  private boolean draftBillExists;
+
+  /**
+   * Whether the provider already has a draft payment on account, so a new one cannot be created.
+   */
+  private boolean draftPoaExists;
 }

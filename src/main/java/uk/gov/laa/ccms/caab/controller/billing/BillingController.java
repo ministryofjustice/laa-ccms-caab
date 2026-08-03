@@ -54,10 +54,16 @@ public class BillingController {
     model.addAttribute("statementOfAccount", statementOfAccount);
     model.addAttribute(
         "showEnterUndertaking", availableFunctions.contains(FunctionConstants.ENTER_UNDERTAKING));
+    // A create action is offered only when the case allows it and no draft of that type already
+    // exists, since the create screen edits the existing draft rather than adding a second one.
     model.addAttribute(
-        "showCreateBill", availableFunctions.contains(FunctionConstants.ADD_UPDATE_BILL));
+        "showCreateBill",
+        availableFunctions.contains(FunctionConstants.ADD_UPDATE_BILL)
+            && !statementOfAccount.isDraftBillExists());
     model.addAttribute(
-        "showCreatePoa", availableFunctions.contains(FunctionConstants.ADD_UPDATE_POA));
+        "showCreatePoa",
+        availableFunctions.contains(FunctionConstants.ADD_UPDATE_POA)
+            && !statementOfAccount.isDraftPoaExists());
 
     return "application/billing/case-statement-of-account";
   }

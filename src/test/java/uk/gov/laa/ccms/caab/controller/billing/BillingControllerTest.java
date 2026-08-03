@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.controller.billing;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
@@ -45,6 +46,10 @@ class BillingControllerTest {
             MockMvcBuilders.standaloneSetup(billingController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build());
+    // By default the case has no draft bill or payments on account.
+    lenient()
+        .when(billingService.getStatementOfAccountDisplay(any(), any(), any()))
+        .thenReturn(new StatementOfAccountDisplay());
   }
 
   @Nested
@@ -89,6 +94,29 @@ class BillingControllerTest {
           .containsEntry("showEnterUndertaking", true)
           .containsEntry("showCreateBill", true)
           .containsEntry("showCreatePoa", true);
+    }
+
+    @Test
+    @DisplayName("Hides create bill and POA when a draft already exists, even with the functions")
+    void hidesCreateWhenDraftExists() {
+      ApplicationDetail ebsCase =
+          new ApplicationDetail()
+              .caseReferenceNumber("300000123")
+              .availableFunctions(
+                  List.of(FunctionConstants.ADD_UPDATE_BILL, FunctionConstants.ADD_UPDATE_POA));
+      StatementOfAccountDisplay display = new StatementOfAccountDisplay();
+      display.setDraftBillExists(true);
+      display.setDraftPoaExists(true);
+      when(billingService.getStatementOfAccountDisplay(eq("300000123"), any(), any()))
+          .thenReturn(display);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing").sessionAttr(CASE, ebsCase).sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .containsEntry("showCreateBill", false)
+          .containsEntry("showCreatePoa", false);
     }
 
     @Test

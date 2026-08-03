@@ -1,11 +1,15 @@
 package uk.gov.laa.ccms.caab.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,13 +17,18 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
+import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
+import uk.gov.laa.ccms.caab.model.Bills;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
+import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetail;
+import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.StatementOfAccountBills;
 import uk.gov.laa.ccms.data.model.StatementOfAccountDetail;
@@ -36,7 +45,18 @@ class BillingServiceTest {
 
   @Mock EbsApiClient ebsApiClient;
 
+  @Mock CaabApiClient caabApiClient;
+
   @InjectMocks BillingService billingService;
+
+  @BeforeEach
+  void noDraftsByDefault() {
+    // Unless a test says otherwise, the provider has no draft bill or payments on account.
+    lenient().when(caabApiClient.getBill(any(), any())).thenReturn(Mono.empty());
+    lenient()
+        .when(caabApiClient.getPaymentsOnAccount(any(), any()))
+        .thenReturn(Mono.just(new PaymentOnAccountDetails()));
+  }
 
   private StatementOfAccountDetail statement(
       String entityType, Long firmId, BigDecimal billsAuthorised) {
@@ -95,8 +115,8 @@ class BillingServiceTest {
     // EBS has no case-wide totals block, so the total column is the sum of the three columns.
     assertThat(display.getTotal().getBillsAuthorised()).isEqualByComparingTo("150");
     // The EBS draft invoice is stripped; only the authorised bill remains.
-    assertThat(display.getInvoices()).hasSize(1);
-    assertThat(display.getInvoices().get(0).getInvoiceStatus()).isEqualTo("Authorised");
+    assertThat(display.getBillsAndPoa()).hasSize(1);
+    assertThat(display.getBillsAndPoa().get(0).status()).isEqualTo("Authorised");
   }
 
   @Test
@@ -143,7 +163,7 @@ class BillingServiceTest {
         billingService.getStatementOfAccountDisplay(CASE_REF, ebsCase, user);
 
     assertThat(display.getProvider()).isNull();
-    assertThat(display.getInvoices()).isNull();
+    assertThat(display.getBillsAndPoa()).isNull();
   }
 
   @Test
@@ -165,8 +185,9 @@ class BillingServiceTest {
 
     assertThat(display.isUserBelongsToCurrentProvider()).isFalse();
     assertThat(display.getProvider()).isNull();
-    assertThat(display.getInvoices()).isNull();
+    assertThat(display.getBillsAndPoa()).isNull();
     verifyNoInteractions(ebsApiClient);
+    verifyNoInteractions(caabApiClient);
   }
 
   @Test
@@ -221,9 +242,53 @@ class BillingServiceTest {
     StatementOfAccountDisplay display =
         billingService.getStatementOfAccountDisplay(CASE_REF, ebsCase, user);
 
-    assertThat(display.getInvoices())
-        .extracting(StatementOfAccountInvoice::getInvoiceType)
+    assertThat(display.getBillsAndPoa())
+        .extracting(BillPoaRow::type)
         .containsExactly("Bill", "Counsel Bill");
+  }
+
+  @Test
+  @DisplayName("Groups the provider's drafts with its own invoices, ahead of other firms'")
+  void draftsGroupedWithProviderBlock() {
+    UserDetail user =
+        new UserDetail().loginId("user1").userType("EXTERNAL").provider(new BaseProvider().id(10));
+    ApplicationDetail ebsCase =
+        new ApplicationDetail()
+            .caseReferenceNumber(CASE_REF)
+            .providerDetails(
+                new ApplicationProviderDetails().provider(new IntDisplayValue().id(10)));
+
+    StatementOfAccountDetails response =
+        new StatementOfAccountDetails()
+            .addContentItem(
+                statement("Counsel", 55L, new BigDecimal("20"))
+                    .invoiceList(
+                        invoiceList(
+                            new StatementOfAccountInvoice()
+                                .invoiceType("Counsel Bill")
+                                .invoiceStatus("Authorised"))))
+            .addContentItem(
+                statement("Provider", 10L, new BigDecimal("100"))
+                    .invoiceList(
+                        invoiceList(
+                            new StatementOfAccountInvoice()
+                                .invoiceType("Bill")
+                                .invoiceStatus("Authorised"))));
+
+    when(ebsApiClient.getStatementOfAccount(CASE_REF, null)).thenReturn(Mono.just(response));
+    when(caabApiClient.getBill(CASE_REF, "10"))
+        .thenReturn(Mono.just(new Bills().amount(new BigDecimal("300"))));
+
+    StatementOfAccountDisplay display =
+        billingService.getStatementOfAccountDisplay(CASE_REF, ebsCase, user);
+
+    // Provider's submitted invoice, then the provider's draft, then the counsel firm's invoice.
+    assertThat(display.getBillsAndPoa())
+        .extracting(BillPoaRow::type, BillPoaRow::status)
+        .containsExactly(
+            tuple("Bill", "Authorised"),
+            tuple("Bill", "Draft"),
+            tuple("Counsel Bill", "Authorised"));
   }
 
   @Test
@@ -318,5 +383,127 @@ class BillingServiceTest {
 
     assertThat(display.getCounselCostCeiling()).isEqualByComparingTo("0");
     assertThat(display.getCounselCostCeilingRemaining()).isEqualByComparingTo("0");
+  }
+
+  @Test
+  @DisplayName("Adds the provider's draft bill and draft payments on account as draft rows")
+  void addsDraftBillAndPoaRows() {
+    UserDetail user =
+        new UserDetail().loginId("user1").userType("EXTERNAL").provider(new BaseProvider().id(10));
+    ApplicationDetail ebsCase =
+        new ApplicationDetail()
+            .caseReferenceNumber(CASE_REF)
+            .providerDetails(
+                new ApplicationProviderDetails().provider(new IntDisplayValue().id(10)));
+
+    StatementOfAccountDetails response =
+        new StatementOfAccountDetails()
+            .addContentItem(
+                statement("Provider", 10L, new BigDecimal("100"))
+                    .invoiceList(
+                        invoiceList(
+                            new StatementOfAccountInvoice()
+                                .invoiceType("Bill")
+                                .invoiceStatus("Authorised"))));
+
+    when(ebsApiClient.getStatementOfAccount(CASE_REF, null)).thenReturn(Mono.just(response));
+    // Draft POA of net 200 at 17.5% VAT grosses up to 235.00; draft bill of 300.
+    when(caabApiClient.getPaymentsOnAccount(CASE_REF, "10"))
+        .thenReturn(
+            Mono.just(
+                new PaymentOnAccountDetails()
+                    .addContentItem(
+                        new PaymentOnAccountDetail()
+                            .actualNetCost(new BigDecimal("200"))
+                            .vatRate("17.5"))));
+    when(caabApiClient.getBill(CASE_REF, "10"))
+        .thenReturn(Mono.just(new Bills().amount(new BigDecimal("300"))));
+
+    StatementOfAccountDisplay display =
+        billingService.getStatementOfAccountDisplay(CASE_REF, ebsCase, user);
+
+    assertThat(display.isDraftPoaExists()).isTrue();
+    assertThat(display.isDraftBillExists()).isTrue();
+    // The submitted invoice heads the table, then the draft POA, then the draft bill.
+    assertThat(display.getBillsAndPoa())
+        .extracting(BillPoaRow::type, BillPoaRow::status)
+        .containsExactly(
+            tuple("Bill", "Authorised"), tuple("POA", "Draft"), tuple("Bill", "Draft"));
+    assertThat(display.getBillsAndPoa().get(1).amount()).isEqualByComparingTo("235.00");
+    assertThat(display.getBillsAndPoa().get(2).amount()).isEqualByComparingTo("300");
+  }
+
+  @Test
+  @DisplayName("A draft fetch failure does not break the statement of account")
+  void draftFetchFailureIsTolerated() {
+    UserDetail user =
+        new UserDetail().loginId("user1").userType("EXTERNAL").provider(new BaseProvider().id(10));
+    ApplicationDetail ebsCase =
+        new ApplicationDetail()
+            .caseReferenceNumber(CASE_REF)
+            .providerDetails(
+                new ApplicationProviderDetails().provider(new IntDisplayValue().id(10)));
+
+    StatementOfAccountDetails response =
+        new StatementOfAccountDetails()
+            .addContentItem(
+                statement("Provider", 10L, new BigDecimal("100"))
+                    .invoiceList(
+                        invoiceList(
+                            new StatementOfAccountInvoice()
+                                .invoiceType("Bill")
+                                .invoiceStatus("Authorised"))));
+
+    when(ebsApiClient.getStatementOfAccount(CASE_REF, null)).thenReturn(Mono.just(response));
+    // The draft store is unavailable (e.g. a 500 from the CAAB API).
+    when(caabApiClient.getPaymentsOnAccount(CASE_REF, "10"))
+        .thenReturn(Mono.error(new RuntimeException("boom")));
+    when(caabApiClient.getBill(CASE_REF, "10"))
+        .thenReturn(Mono.error(new RuntimeException("boom")));
+
+    StatementOfAccountDisplay display =
+        billingService.getStatementOfAccountDisplay(CASE_REF, ebsCase, user);
+
+    // The EBS statement still renders; the drafts are simply absent.
+    assertThat(display.getProvider().getBillsAuthorised()).isEqualByComparingTo("100");
+    assertThat(display.getBillsAndPoa())
+        .extracting(BillPoaRow::status)
+        .containsExactly("Authorised");
+    assertThat(display.isDraftPoaExists()).isFalse();
+    assertThat(display.isDraftBillExists()).isFalse();
+  }
+
+  @Test
+  @DisplayName("A draft bill with no amount yet is still shown and hides Create Bill")
+  void draftBillWithoutAmountStillShown() {
+    // An in-progress draft may not have an amount entered yet. The CAAB API returns it (a 404 would
+    // mean no draft), so it must be shown with a blank amount, mirroring the legacy PUI.
+    UserDetail user =
+        new UserDetail().loginId("user1").userType("EXTERNAL").provider(new BaseProvider().id(10));
+    ApplicationDetail ebsCase =
+        new ApplicationDetail()
+            .caseReferenceNumber(CASE_REF)
+            .providerDetails(
+                new ApplicationProviderDetails().provider(new IntDisplayValue().id(10)));
+
+    StatementOfAccountDetails response =
+        new StatementOfAccountDetails()
+            .addContentItem(statement("Provider", 10L, new BigDecimal("100")));
+
+    when(ebsApiClient.getStatementOfAccount(CASE_REF, null)).thenReturn(Mono.just(response));
+    when(caabApiClient.getBill(CASE_REF, "10")).thenReturn(Mono.just(new Bills()));
+
+    StatementOfAccountDisplay display =
+        billingService.getStatementOfAccountDisplay(CASE_REF, ebsCase, user);
+
+    assertThat(display.isDraftBillExists()).isTrue();
+    assertThat(display.getBillsAndPoa())
+        .singleElement()
+        .satisfies(
+            row -> {
+              assertThat(row.type()).isEqualTo("Bill");
+              assertThat(row.status()).isEqualTo("Draft");
+              assertThat(row.amount()).isNull();
+            });
   }
 }

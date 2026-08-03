@@ -1,19 +1,25 @@
 package uk.gov.laa.ccms.caab.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.SoaFigureColumn;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
+import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.Bills;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetail;
+import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.data.model.StatementOfAccountBills;
 import uk.gov.laa.ccms.data.model.StatementOfAccountCostLimitation;
 import uk.gov.laa.ccms.data.model.StatementOfAccountDetail;
@@ -40,8 +46,12 @@ public class BillingService {
   private static final String ENTITY_TYPE_COUNSEL = "COUNSEL";
   private static final String COST_CATEGORY_COUNSEL = "COUNSEL";
   private static final String INVOICE_STATUS_DRAFT = "Draft";
+  private static final String INVOICE_TYPE_BILL = "Bill";
+  private static final String INVOICE_TYPE_POA = "POA";
+  private static final BigDecimal HUNDRED = new BigDecimal("100");
 
   private final EbsApiClient ebsApiClient;
+  private final CaabApiClient caabApiClient;
 
   /**
    * Retrieve and build the statement of account display for the supplied case.
@@ -108,18 +118,121 @@ public class BillingService {
 
     setCounselCostCeiling(display, ebsCase);
 
-    display.setInvoices(flattenNonDraftInvoices(providerFirst(statements, providerStatement)));
+    // Rows are grouped by firm, the current provider first: its submitted invoices, then its own
+    // drafts, then the other firms' invoices. The legacy PUI added the drafts to the provider's own
+    // statement, so they sit within the provider's block rather than at the foot of the table.
+    final List<StatementOfAccountDetail> otherStatements =
+        statements.stream().filter(statement -> statement != providerStatement).toList();
+    final List<BillPoaRow> rows =
+        new ArrayList<>(
+            toRows(
+                flattenNonDraftInvoices(
+                    providerStatement == null ? List.of() : List.of(providerStatement))));
+    addDraftRows(rows, display, caseReferenceNumber, String.valueOf(currentProviderId));
+    rows.addAll(toRows(flattenNonDraftInvoices(otherStatements)));
+    display.setBillsAndPoa(rows);
     return display;
   }
 
-  /** Lists the current provider's statement first, so its invoices head the bills/POA table. */
-  private List<StatementOfAccountDetail> providerFirst(
-      final List<StatementOfAccountDetail> statements,
-      final StatementOfAccountDetail providerStatement) {
-    return Stream.concat(
-            Stream.ofNullable(providerStatement),
-            statements.stream().filter(statement -> statement != providerStatement))
+  /**
+   * Adds the provider's draft payments on account and draft bill to the bills/POA rows, and records
+   * whether each exists so the view can suppress the matching create action (a case carries at most
+   * one draft bill and the create screens edit the existing draft rather than adding another).
+   */
+  private void addDraftRows(
+      final List<BillPoaRow> rows,
+      final StatementOfAccountDisplay display,
+      final String caseReferenceNumber,
+      final String providerId) {
+
+    // The drafts are supplementary to the EBS statement, and come from a separate service. A
+    // failure to load them must not take down the whole statement of account, so each fetch is
+    // tolerated: on error the drafts are simply not shown.
+    final PaymentOnAccountDetails poaResponse =
+        loadDraftQuietly(
+            caabApiClient.getPaymentsOnAccount(caseReferenceNumber, providerId),
+            "payments on account",
+            caseReferenceNumber);
+    final List<PaymentOnAccountDetail> draftPoas =
+        poaResponse == null || poaResponse.getContent() == null
+            ? List.of()
+            : poaResponse.getContent();
+    for (final PaymentOnAccountDetail poa : draftPoas) {
+      rows.add(
+          new BillPoaRow(
+              INVOICE_TYPE_POA, INVOICE_STATUS_DRAFT, null, null, poaTotalCost(poa), true));
+    }
+    display.setDraftPoaExists(!draftPoas.isEmpty());
+
+    // The CAAB API returns 404 (mapped to an empty result) when there is no draft bill, so a
+    // present bill always means a real draft — shown regardless of whether an amount has been
+    // entered yet, as the legacy PUI did (loadBill != null). Its presence also hides Create Bill.
+    final Bills draftBill =
+        loadDraftQuietly(
+            caabApiClient.getBill(caseReferenceNumber, providerId), "bill", caseReferenceNumber);
+    if (draftBill != null) {
+      rows.add(
+          new BillPoaRow(
+              INVOICE_TYPE_BILL, INVOICE_STATUS_DRAFT, null, null, draftBill.getAmount(), true));
+    }
+    display.setDraftBillExists(draftBill != null);
+  }
+
+  /**
+   * Blocks on a draft lookup, returning {@code null} rather than propagating the error so a failure
+   * to reach the draft store does not break the statement of account screen.
+   */
+  private <T> T loadDraftQuietly(
+      final Mono<T> draft, final String description, final String caseReferenceNumber) {
+    try {
+      return draft.block();
+    } catch (final Exception e) {
+      log.warn(
+          "Could not load draft {} for case {}; showing the statement of account without it",
+          description,
+          caseReferenceNumber,
+          e);
+      return null;
+    }
+  }
+
+  private List<BillPoaRow> toRows(final List<StatementOfAccountInvoice> invoices) {
+    return invoices.stream()
+        .map(
+            invoice ->
+                new BillPoaRow(
+                    invoice.getInvoiceType(),
+                    invoice.getInvoiceStatus(),
+                    invoice.getDateSubmitted(),
+                    invoice.getDateAuthorised(),
+                    invoice.getInvoiceAmount(),
+                    false))
         .toList();
+  }
+
+  /**
+   * The gross draft POA amount, mirroring the legacy PUI: the net cost grossed up by VAT and
+   * rounded down to the penny.
+   *
+   * <p>The stored VAT rate is a reference-data lookup code. The legacy PUI resolved it to a
+   * percentage via its tax-rate lookup; that lookup is introduced with the (not yet built) Create
+   * POA journey, so for now a numeric rate is used as-is and anything else is treated as zero.
+   */
+  private BigDecimal poaTotalCost(final PaymentOnAccountDetail poa) {
+    final BigDecimal net = orZero(poa.getActualNetCost());
+    final BigDecimal multiplier = vatPercent(poa.getVatRate()).divide(HUNDRED).add(BigDecimal.ONE);
+    return net.multiply(multiplier).setScale(2, RoundingMode.DOWN);
+  }
+
+  private BigDecimal vatPercent(final String vatRate) {
+    if (vatRate == null || vatRate.isBlank()) {
+      return BigDecimal.ZERO;
+    }
+    try {
+      return new BigDecimal(vatRate);
+    } catch (final NumberFormatException e) {
+      return BigDecimal.ZERO;
+    }
   }
 
   /**
