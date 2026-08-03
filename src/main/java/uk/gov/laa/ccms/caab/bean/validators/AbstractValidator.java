@@ -271,8 +271,14 @@ public abstract class AbstractValidator implements Validator {
       reportInvalidDate(field, displayName, errors);
     } else {
       validateDateAfterGivenDate(
-          validDate, Date.from(Instant.parse("1901-12-13T12:00:00Z")), field, displayName, errors);
-    }
+          validDate,
+          Date.from(
+              LocalDate.of(1901, 12, 13)
+                  .atStartOfDay(java.time.ZoneId.systemDefault())
+                  .toInstant()),
+          field,
+          displayName,
+          errors);
     return validDate;
   }
 
@@ -346,7 +352,7 @@ public abstract class AbstractValidator implements Validator {
           fieldName,
           "invalid.input",
           GENERIC_DATEFIELD_AFTER_DATE.formatted(
-              LocalDate.of(givenDate.getYear(), givenDate.getMonth(), givenDate.getDate())
+              givenDate.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate()
                   .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)),
               field));
     }
