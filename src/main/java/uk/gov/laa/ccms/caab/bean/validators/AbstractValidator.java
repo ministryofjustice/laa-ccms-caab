@@ -280,9 +280,9 @@ public abstract class AbstractValidator implements Validator {
           field,
           displayName,
           errors);
-       if (errors.hasFieldErrors(field)) {
-          validDate = null;
-       }
+      if (errors.hasFieldErrors(field)) {
+        validDate = null;
+      }
     }
     return validDate;
   }
