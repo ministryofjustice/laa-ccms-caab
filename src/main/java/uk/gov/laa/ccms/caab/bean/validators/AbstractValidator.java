@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Date;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -357,7 +358,8 @@ public abstract class AbstractValidator implements Validator {
                   .toInstant()
                   .atZone(java.time.ZoneId.systemDefault())
                   .toLocalDate()
-                  .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)),
+                  .format(
+                      DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(Locale.UK)),
               field));
     }
   }
