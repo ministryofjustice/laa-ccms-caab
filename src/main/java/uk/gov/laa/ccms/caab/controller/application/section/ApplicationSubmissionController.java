@@ -89,6 +89,7 @@ import uk.gov.laa.ccms.caab.model.summary.OpponentsAndOtherPartiesSubmissionSumm
 import uk.gov.laa.ccms.caab.model.summary.ProceedingAndCostSubmissionSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.summary.ProviderSubmissionSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.summary.SubmissionSummaryDisplay;
+import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.ClientService;
@@ -116,6 +117,7 @@ public class ApplicationSubmissionController {
   private final LookupService lookupService;
   private final ClientService clientService;
   private final EvidenceService evidenceService;
+  private final AmendmentService amendmentService;
 
   // mappers
   private final ClientDetailMapper clientDetailsMapper;
@@ -553,10 +555,16 @@ public class ApplicationSubmissionController {
   @GetMapping("/{caseContext}/submit/summary")
   public String applicationSummary(
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
+      @SessionAttribute(value = ACTIVE_CASE, required = false) final ActiveCase activeCase,
       @PathVariable("caseContext") final CaseContext caseContext,
       final HttpSession session,
       final Model model) {
+
+    if (isAlreadySubmitted(session, activeCase)) {
+      return caseContext.isApplication()
+          ? "redirect:/home"
+          : "redirect:/submissions/alreadySubmitted";
+    }
 
     // Pre-processing data - application data
     final Mono<ApplicationDetail> applicationMono =
@@ -762,9 +770,19 @@ public class ApplicationSubmissionController {
       @PathVariable("caseContext") final CaseContext caseContext,
       @ModelAttribute("summarySubmissionFormData")
           final SummarySubmissionFormData summarySubmissionFormData,
+      @SessionAttribute(value = APPLICATION_ID, required = false) final String applicationId,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @SessionAttribute(value = ACTIVE_CASE, required = false) final ActiveCase activeCase,
       final BindingResult bindingResult,
       final Model model,
       final HttpSession session) {
+
+    if (isAlreadySubmitted(session, activeCase)
+        || (caseContext.isAmendment() && applicationId == null)) {
+      return caseContext.isApplication()
+          ? "redirect:/home"
+          : "redirect:/submissions/alreadySubmitted";
+    }
 
     model.addAttribute("caseContext", caseContext);
     model.addAttribute("submissionSummary", submissionSummary);
@@ -774,12 +792,24 @@ public class ApplicationSubmissionController {
     }
 
     if (caseContext.isAmendment()) {
+      final ApplicationDetail amendment =
+          applicationService
+              .getApplication(applicationId)
+              .blockOptional()
+              .orElseThrow(
+                  () ->
+                      new CaabApplicationException(
+                          "Failed to retrieve amendment application detail"));
+
+      final String response = amendmentService.submitAmendment(amendment, user);
+
+      session.setAttribute(SUBMISSION_TRANSACTION_ID, response);
       session.removeAttribute(SUBMISSION_RESULT);
+
+      return "redirect:/amendments/%s".formatted(SUBMISSION_SUBMIT_CASE);
     }
 
-    return caseContext.isAmendment()
-        ? "redirect:/amendments/submitConfirmed"
-        : "redirect:/application/declaration";
+    return "redirect:/application/declaration";
   }
 
   /**
@@ -1098,5 +1128,9 @@ public class ApplicationSubmissionController {
 
   private String resolveMessage(final String key) {
     return messageSource.getMessage(key, null, LocaleContextHolder.getLocale());
+  }
+
+  private boolean isAlreadySubmitted(final HttpSession session, final ActiveCase activeCase) {
+    return "confirmed".equals(session.getAttribute(SUBMISSION_RESULT)) || activeCase == null;
   }
 }

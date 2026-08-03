@@ -182,6 +182,7 @@ public class CaseSubmissionController {
     session.removeAttribute(APPLICATION_SUMMARY);
     session.removeAttribute(APPLICATION_COSTS);
     session.removeAttribute(APPLICATION_FORM_DATA);
+    session.removeAttribute(SUBMISSION_RESULT);
 
     if (caseContext.isApplication()) {
       session.removeAttribute(CASE);

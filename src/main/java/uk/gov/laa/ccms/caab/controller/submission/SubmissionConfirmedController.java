@@ -30,4 +30,9 @@ public class SubmissionConfirmedController {
 
     return "submissions/submissionConfirmed";
   }
+
+  @GetMapping("/submissions/alreadySubmitted")
+  public String alreadySubmitted() {
+    return "submissions/alreadySubmitted";
+  }
 }
