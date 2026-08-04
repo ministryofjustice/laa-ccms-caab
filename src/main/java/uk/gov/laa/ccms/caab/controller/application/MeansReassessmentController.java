@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.DECLARATION_APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_COMPLETE;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_NOT_STARTED;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
@@ -242,11 +244,11 @@ public class MeansReassessmentController {
 
   private String displayStatus(final AssessmentDetail meansAssessment) {
     if (!isStarted(meansAssessment)) {
-      return "Not started";
+      return SECTION_STATUS_NOT_STARTED;
     }
 
     return AssessmentStatus.COMPLETE.getStatus().equalsIgnoreCase(meansAssessment.getStatus())
-        ? "Complete"
+        ? SECTION_STATUS_COMPLETE
         : meansAssessment.getStatus();
   }
 

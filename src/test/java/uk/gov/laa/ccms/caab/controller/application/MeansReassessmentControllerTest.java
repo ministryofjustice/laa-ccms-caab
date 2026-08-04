@@ -244,7 +244,7 @@ class MeansReassessmentControllerTest {
   }
 
   @Test
-  void deleteMeansReassessmentIsAllowedForACompletedAssessment() throws Exception {
+  void deleteMeansReassessmentIsNotGatedOnAssessmentStatus() throws Exception {
     when(assessmentService.deleteAssessments(eq(user), anyList(), eq("CASE123"), eq(null)))
         .thenReturn(Mono.empty());
 
