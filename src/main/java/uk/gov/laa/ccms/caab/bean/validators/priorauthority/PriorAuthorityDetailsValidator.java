@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.bean.validators.priorauthority;
 
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CHARACTER_SET_E;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CHARACTER_SET_G;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -60,7 +61,7 @@ public class PriorAuthorityDetailsValidator extends AbstractValidator {
       validateFieldFormat(
           "justification",
           priorAuthorityDetails.getJustification(),
-          CHARACTER_SET_E,
+          CHARACTER_SET_G,
           "Justification",
           errors);
     }
@@ -123,6 +124,12 @@ public class PriorAuthorityDetailsValidator extends AbstractValidator {
                   errors);
             }
             case FIELD_TYPE_FTS -> {
+              validateFieldFormat(
+                  "dynamicOptions[%s].fieldValue".formatted(key),
+                  value.getFieldValue(),
+                  CHARACTER_SET_E,
+                  value.getFieldDescription(),
+                  errors);
               validateFieldMaxLength(
                   "dynamicOptions[%s].fieldValue".formatted(key),
                   value.getFieldValue(),
@@ -130,13 +137,20 @@ public class PriorAuthorityDetailsValidator extends AbstractValidator {
                   value.getFieldDescription(),
                   errors);
             }
-            case FIELD_TYPE_FTL ->
-                validateFieldMaxLength(
-                    "dynamicOptions[%s].fieldValue".formatted(key),
-                    value.getFieldValue(),
-                    80,
-                    value.getFieldDescription(),
-                    errors);
+            case FIELD_TYPE_FTL -> {
+              validateFieldFormat(
+                  "dynamicOptions[%s].fieldValue".formatted(key),
+                  value.getFieldValue(),
+                  CHARACTER_SET_E,
+                  value.getFieldDescription(),
+                  errors);
+              validateFieldMaxLength(
+                  "dynamicOptions[%s].fieldValue".formatted(key),
+                  value.getFieldValue(),
+                  80,
+                  value.getFieldDescription(),
+                  errors);
+            }
             default -> {
               break;
             }
