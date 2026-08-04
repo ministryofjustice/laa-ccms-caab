@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -421,6 +423,8 @@ class SubmissionSummaryDisplayMapperTest {
         .title("titleCode")
         .surname("Doe")
         .firstName("John")
+        .dateOfBirth(
+            Date.from(LocalDate.of(1970, 1, 1).atStartOfDay(ZoneId.systemDefault()).toInstant()))
         .type("Individual")
         .address(
             new AddressDetail()
@@ -509,6 +513,8 @@ class SubmissionSummaryDisplayMapperTest {
     assertEquals("titleDesc", result.getTitle(), "Title should be mapped correctly.");
     assertEquals("Doe", result.getSurname(), "Surname should be mapped correctly.");
     assertEquals("John", result.getFirstName(), "First Name should be mapped correctly.");
+    assertEquals(
+        "01/01/1970", result.getDateOfBirth(), "Date of Birth should be mapped correctly.");
     assertEquals(
         "12A", result.getHouseNameOrNumber(), "House Name or Number should be mapped correctly.");
     assertEquals(

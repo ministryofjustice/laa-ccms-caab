@@ -103,7 +103,7 @@ public class OpponentMapperTest {
     assertEquals(opponentFormData.getSurname(), result.getSurname());
     assertEquals(
         opponentFormData.getDateOfBirth(),
-        new SimpleDateFormat("d/M/yyyy").format(result.getDateOfBirth()));
+        new SimpleDateFormat("dd/MM/yyyy").format(result.getDateOfBirth()));
     assertEquals(
         opponentFormData.getNationalInsuranceNumber(), result.getNationalInsuranceNumber());
     assertEquals(opponentFormData.getLegalAided(), result.getLegalAided());
@@ -212,7 +212,7 @@ public class OpponentMapperTest {
     assertEquals(opponent.getSurname(), orgResult.getSurname());
 
     assertEquals(
-        new SimpleDateFormat("d/M/yyyy").format(opponent.getDateOfBirth()),
+        new SimpleDateFormat("dd/MM/yyyy").format(opponent.getDateOfBirth()),
         orgResult.getDateOfBirth());
 
     assertEquals(opponent.getPartyId(), orgResult.getPartyId());
@@ -269,7 +269,7 @@ public class OpponentMapperTest {
     opponentFormData.setMiddleNames("themiddles");
     opponentFormData.setSurname("thesurname");
     opponentFormData.setNationalInsuranceNumber("nino");
-    opponentFormData.setDateOfBirth("1/10/2024");
+    opponentFormData.setDateOfBirth("01/10/2024");
     opponentFormData.setLegalAided(true);
     opponentFormData.setCertificateNumber("128376");
 

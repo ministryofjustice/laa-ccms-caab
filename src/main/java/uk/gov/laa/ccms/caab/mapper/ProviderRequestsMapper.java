@@ -19,6 +19,7 @@ import uk.gov.laa.ccms.caab.constants.ProviderRequestDateFields;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.context.ProviderRequestMappingContext;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
+import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.data.model.ProviderRequestDataLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ProviderRequestTypeLookupValueDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ProviderRequestAttribute;
@@ -184,9 +185,8 @@ public interface ProviderRequestsMapper {
     if (isDateField && dynamicOption.getFieldValue() != null) {
 
       try {
-        final DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("d/M/yyyy");
         final DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        final LocalDate date = LocalDate.parse(dynamicOption.getFieldValue(), inputFormatter);
+        final LocalDate date = DateUtils.convertToLocalDate(dynamicOption.getFieldValue());
         return date.format(outputFormatter);
       } catch (final DateTimeParseException e) {
         // Handle the exception or return the original value

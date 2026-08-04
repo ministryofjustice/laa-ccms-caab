@@ -15,7 +15,6 @@ import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 @Slf4j
 public final class NotificationSearchUtil {
 
-  public static final DateTimeFormatter MOJ_DATE_PICKER = DateTimeFormatter.ofPattern("d/M/yyyy");
   public static final DateTimeFormatter ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
   /**
@@ -49,13 +48,13 @@ public final class NotificationSearchUtil {
       } else if (fromNotSet) {
         // If TO set but FROM not set => FROM = TO - 3 Years
         LocalDate notificationToDate =
-            LocalDate.parse(criteria.getNotificationToDate(), MOJ_DATE_PICKER);
+            DateUtils.convertToLocalDate(criteria.getNotificationToDate());
         copyCriteria.setNotificationFromDate(notificationToDate.minusYears(3).format(ISO));
         copyCriteria.setNotificationToDate(notificationToDate.format(ISO));
       } else if (toNotSet) {
         // If FROM set but TO not set => TO = FROM + 3 Years
         LocalDate notificationFromDate =
-            LocalDate.parse(criteria.getNotificationFromDate(), MOJ_DATE_PICKER);
+            DateUtils.convertToLocalDate(criteria.getNotificationFromDate());
         LocalDate toDate = notificationFromDate.plusYears(3);
         // If to date is after today, set to today
         if (toDate.isAfter(LocalDate.now())) {
@@ -66,9 +65,9 @@ public final class NotificationSearchUtil {
       } else {
         // Convert date formats
         LocalDate notificationToDate =
-            LocalDate.parse(criteria.getNotificationToDate(), MOJ_DATE_PICKER);
+            DateUtils.convertToLocalDate(criteria.getNotificationToDate());
         LocalDate notificationFromDate =
-            LocalDate.parse(criteria.getNotificationFromDate(), MOJ_DATE_PICKER);
+            DateUtils.convertToLocalDate(criteria.getNotificationFromDate());
         copyCriteria.setNotificationToDate(notificationToDate.format(ISO));
         copyCriteria.setNotificationFromDate(notificationFromDate.format(ISO));
       }

@@ -25,7 +25,6 @@ import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
-import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
 import uk.gov.laa.ccms.caab.bean.common.Individual;
 
@@ -305,24 +304,20 @@ public abstract class AbstractValidator implements Validator {
    * @param errors The Errors object to store validation errors.
    */
   public void validateDateOfBirth(Object target, Errors errors, boolean required) {
-    if (required) {
-      ValidationUtils.rejectIfEmpty(
-          errors, "dateOfBirth", "required.dob", "Please complete 'Date of birth'");
+    Individual individual = (Individual) target;
+    String dateOfBirth = individual.getDateOfBirth();
+
+    if (required && !StringUtils.hasText(dateOfBirth)) {
+      errors.rejectValue("dateOfBirth", "required.dob", "Please complete 'Date of birth'");
+      return;
     }
 
-    Individual individual = (Individual) target;
-
-    if (individual.getDateOfBirth() != null && !individual.getDateOfBirth().isBlank()) {
+    if (StringUtils.hasText(dateOfBirth)) {
       validateValidDateField(
-          individual.getDateOfBirth(),
-          "dateOfBirth",
-          "Date of birth",
-          COMPONENT_DATE_PATTERN,
-          errors);
+          dateOfBirth, "dateOfBirth", "Date of birth", COMPONENT_DATE_PATTERN, errors);
       if (!errors.hasFieldErrors("dateOfBirth")) {
         try {
-          validateDateInPast(
-              convertToDate(individual.getDateOfBirth()), "dateOfBirth", "Date of birth", errors);
+          validateDateInPast(convertToDate(dateOfBirth), "dateOfBirth", "Date of birth", errors);
         } catch (java.time.format.DateTimeParseException ex) {
           errors.rejectValue(
               "dateOfBirth", "invalid.format", SPECIFIC_DATEFIELD_ENTRY.formatted("Date of birth"));
