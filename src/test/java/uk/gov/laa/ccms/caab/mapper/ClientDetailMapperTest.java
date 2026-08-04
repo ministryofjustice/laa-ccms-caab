@@ -100,17 +100,18 @@ class ClientDetailMapperTest {
     "15/07/1990, 15, 6, 1990",
     "31/12/2022, 31, 11, 2022"
   })
-  void testMapDateOfBirth(String day, int expectedDay, int expectedMonth, int expectedYear) {
+  void testMapDateOfBirth(
+      String dateOfBirth, int expectedDay, int expectedMonth, int expectedYear) {
     // Create a ClientDetails object for testing
     ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
-    basicDetails.setDateOfBirth(day);
+    basicDetails.setDateOfBirth(dateOfBirth);
 
     // Perform the mapping
-    Date dateOfBirth = clientDetailMapper.mapDateOfBirth(basicDetails);
+    Date mappedDateOfBirth = clientDetailMapper.mapDateOfBirth(basicDetails);
 
     // Get Calendar instance for assertions
     Calendar calendar = Calendar.getInstance();
-    calendar.setTime(dateOfBirth);
+    calendar.setTime(mappedDateOfBirth);
 
     // Assertions for the mapped date
     assertThat(calendar.get(Calendar.YEAR)).isEqualTo(expectedYear);

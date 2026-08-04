@@ -22,9 +22,9 @@ public final class DateUtils {
   private DateUtils() {}
 
   /**
-   * Converts a date string in "dd/MM/yyyy" format to a {@link Date}.
+   * Converts a date string in either "dd/MM/yyyy" or "d/M/yyyy" format to a {@link Date}.
    *
-   * @param date the input date string in "dd/MM/yyyy" format
+   * @param date the input date string
    * @return the corresponding {@link Date} object
    */
   public static Date convertToDate(String date) {
@@ -33,9 +33,10 @@ public final class DateUtils {
   }
 
   /**
-   * Converts a date string in "dd/MM/yyyy" format to an ISO 8601 date string ("yyyy-MM-dd").
+   * Converts a date string in either "dd/MM/yyyy" or "d/M/yyyy" format to an ISO 8601 date string
+   * ("yyyy-MM-dd").
    *
-   * @param date the input date string in "dd/MM/yyyy" format
+   * @param date the input date string
    * @return the corresponding date string in ISO 8601 format
    */
   public static String convertToDateString(String date) {

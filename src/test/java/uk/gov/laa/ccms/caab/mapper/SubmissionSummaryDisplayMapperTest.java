@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -421,7 +423,8 @@ class SubmissionSummaryDisplayMapperTest {
         .title("titleCode")
         .surname("Doe")
         .firstName("John")
-        .dateOfBirth(new Date(0))
+        .dateOfBirth(
+            Date.from(LocalDate.of(1970, 1, 1).atStartOfDay(ZoneId.systemDefault()).toInstant()))
         .type("Individual")
         .address(
             new AddressDetail()
