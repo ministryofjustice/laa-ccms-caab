@@ -34,6 +34,7 @@ public class ClientFormDataBasicDetails extends AbstractClientFormData implement
 
   private String gender;
   private String maritalStatus;
+  private Boolean vulnerableClient = false;
   private Boolean highProfileClient = false;
   private Boolean vexatiousLitigant = false;
   private Boolean mentalIncapacity = false;
