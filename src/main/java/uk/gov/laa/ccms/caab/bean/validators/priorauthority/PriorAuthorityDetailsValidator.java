@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.bean.validators.priorauthority;
 
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CHARACTER_SET_E;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,6 +56,14 @@ public class PriorAuthorityDetailsValidator extends AbstractValidator {
 
     validateRequiredField(
         "justification", priorAuthorityDetails.getJustification(), "Justification", errors);
+    if (StringUtils.hasText(priorAuthorityDetails.getJustification())) {
+      validateFieldFormat(
+          "justification",
+          priorAuthorityDetails.getJustification(),
+          CHARACTER_SET_E,
+          "Justification",
+          errors);
+    }
 
     if (priorAuthorityDetails.isValueRequired()) {
       validateRequiredField(
