@@ -32,7 +32,9 @@
                th:href="@{/amendments/assessments(assessment='means', invoked-from='CCMS_MNA05')}"
                th:text="${assessmentComplete ? #messages.msg('site.edit') : #messages.msg('application.section.means')}"></a>
           </li>
-          <li class="govuk-summary-card__action" th:if="${!assessmentComplete}">
+          <li class="govuk-summary-card__action" th:if="${assessmentStarted}">
+            <!-- Delete is offered for any started assessment, complete or not - a completed
+                 reassessment that can only be edited leaves the user with no way to start over. -->
             <a class="govuk-link govuk-link--no-visited-state"
                th:href="@{/means-reassessment/delete}"
                th:text="#{site.delete}"></a>

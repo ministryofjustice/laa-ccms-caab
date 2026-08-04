@@ -154,7 +154,46 @@ class MeansReassessmentControllerTest {
         .andExpect(model().attribute("assessmentStatus", "Complete"))
         .andExpect(model().attribute("assessmentComplete", true))
         .andExpect(model().attribute("canSubmit", true))
-        .andExpect(model().attribute("noSubmitPermission", false));
+        .andExpect(model().attribute("noSubmitPermission", false))
+        // A completed assessment can still be deleted, so the user can start it over.
+        .andExpect(model().attribute("assessmentStarted", true));
+  }
+
+  @Test
+  void summaryOffersDeleteForAnInProgressAssessment() throws Exception {
+    AssessmentDetail assessment =
+        buildAssessmentDetail(new Date()).status(AssessmentStatus.INCOMPLETE.getStatus());
+
+    when(assessmentService.getAssessments(anyList(), anyString(), eq("CASE123")))
+        .thenReturn(Mono.just(new AssessmentDetails().content(List.of(assessment))));
+
+    mockMvc
+        .perform(
+            get("/means-reassessment/summary")
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(CASE, ebsCase)
+                .sessionAttr(USER_DETAILS, user))
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("assessmentComplete", false))
+        .andExpect(model().attribute("assessmentStarted", true));
+  }
+
+  @Test
+  void summaryDoesNotOfferDeleteWhenNoAssessmentHasBeenStarted() throws Exception {
+    when(assessmentService.getAssessments(anyList(), anyString(), eq("CASE123")))
+        .thenReturn(Mono.just(new AssessmentDetails().content(Collections.emptyList())));
+
+    mockMvc
+        .perform(
+            get("/means-reassessment/summary")
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(CASE, ebsCase)
+                .sessionAttr(USER_DETAILS, user))
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("assessmentStatus", "Not started"))
+        .andExpect(model().attribute("assessmentComplete", false))
+        // Nothing to delete until the assessment has been started.
+        .andExpect(model().attribute("assessmentStarted", false));
   }
 
   @Test
@@ -202,6 +241,33 @@ class MeansReassessmentControllerTest {
     // the shared draft is left untouched (the case overview ignores a means-reassessment draft).
     verify(assessmentService).deleteAssessments(eq(user), anyList(), eq("CASE123"), eq(null));
     verify(applicationService, never()).abandonApplication(any(), any());
+  }
+
+  @Test
+  void deleteMeansReassessmentIsAllowedForACompletedAssessment() throws Exception {
+    when(assessmentService.deleteAssessments(eq(user), anyList(), eq("CASE123"), eq(null)))
+        .thenReturn(Mono.empty());
+
+    mockMvc
+        .perform(
+            post("/means-reassessment/delete")
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(CASE, ebsCase)
+                .sessionAttr(APPLICATION, amendment)
+                .sessionAttr(USER_DETAILS, user))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/case/overview"));
+
+    // The delete is not gated on the assessment status - a completed reassessment must be
+    // removable, otherwise it can only ever be edited and the case cannot be worked in the old PUI.
+    verify(assessmentService)
+        .deleteAssessments(
+            user,
+            List.of(
+                AssessmentRulebase.MEANS.getName(),
+                AssessmentRulebase.MEANS.getPrePopAssessmentName()),
+            "CASE123",
+            null);
   }
 
   @Test
