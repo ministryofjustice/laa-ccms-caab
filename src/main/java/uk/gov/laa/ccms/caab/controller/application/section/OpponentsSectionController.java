@@ -46,6 +46,7 @@ import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.OpponentService;
+import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -428,6 +429,8 @@ public class OpponentsSectionController {
       opponentFormData.setDateOfBirthMandatory(relationshipToCase.getDateOfBirthMandatory());
     }
 
+    opponentFormData.setDateOfBirth(
+        DateUtils.normaliseComponentDateIfValid(opponentFormData.getDateOfBirth()));
     individualOpponentValidator.validate(opponentFormData, bindingResult);
 
     if (bindingResult.hasErrors()) {
@@ -525,6 +528,10 @@ public class OpponentsSectionController {
       }
     } else {
       // Validate individual opponent.
+      if (currentOpponent instanceof IndividualOpponentFormData individualOpponent) {
+        individualOpponent.setDateOfBirth(
+            DateUtils.normaliseComponentDateIfValid(individualOpponent.getDateOfBirth()));
+      }
       individualOpponentValidator.validate(currentOpponent, bindingResult);
 
       if (bindingResult.hasErrors()) {
