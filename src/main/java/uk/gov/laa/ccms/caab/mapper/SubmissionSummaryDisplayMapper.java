@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.mapper;
 
+import java.util.Date;
 import java.util.List;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
@@ -21,6 +22,7 @@ import uk.gov.laa.ccms.caab.model.summary.ProceedingAndCostSubmissionSummaryDisp
 import uk.gov.laa.ccms.caab.model.summary.ProceedingSubmissionSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.summary.ProviderSubmissionSummaryDisplay;
 import uk.gov.laa.ccms.caab.model.summary.ScopeLimitationSubmissionSummaryDisplay;
+import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.DeclarationLookupValueDetail;
 
@@ -139,6 +141,7 @@ public interface SubmissionSummaryDisplayMapper {
       target = "relationshipToClient",
       source = "relationshipToClient",
       qualifiedByName = "toRelationshipToClient")
+  @Mapping(target = "dateOfBirth", source = "dateOfBirth", qualifiedByName = "toComponentDate")
   @Mapping(target = "houseNameOrNumber", source = "address.houseNameOrNumber")
   @Mapping(target = "addressLine1", source = "address.addressLine1")
   @Mapping(target = "addressLine2", source = "address.addressLine2")
@@ -208,6 +211,14 @@ public interface SubmissionSummaryDisplayMapper {
   default String toCountryOpponent(
       final String code, @Context final OpponentSubmissionSummaryMappingContext context) {
     return COMMON_MAPPER.toDisplayValue(code, context.getCountry());
+  }
+
+  @Named("toComponentDate")
+  default String toComponentDate(final Date date) {
+    if (date == null) {
+      return null;
+    }
+    return DateUtils.convertToComponentDate(date);
   }
 
   /**

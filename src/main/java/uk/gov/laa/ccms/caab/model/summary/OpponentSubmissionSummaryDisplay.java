@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.model.summary;
 
-import java.util.Date;
 import lombok.Data;
 
 /** Represents the opponent submission summary display. */
@@ -23,7 +22,7 @@ public class OpponentSubmissionSummaryDisplay {
   private String middleNames;
 
   /** The date of birth of the opponent. */
-  private Date dateOfBirth;
+  private String dateOfBirth;
 
   /** The relationship of the opponent to the case. */
   private String relationshipToCase;
