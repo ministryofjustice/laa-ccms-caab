@@ -224,8 +224,8 @@ class BillingServiceTest {
   }
 
   @Test
-  @DisplayName("Lists the provider's invoices ahead of the other firms'")
-  void providerInvoicesFirst() {
+  @DisplayName("Orders submitted invoices by date submitted (newest first), tie-broken by id")
+  void ordersSubmittedInvoicesByDateDescending() {
     UserDetail user =
         new UserDetail().loginId("user1").userType("EXTERNAL").provider(new BaseProvider().id(10));
     ApplicationDetail ebsCase =
@@ -234,24 +234,38 @@ class BillingServiceTest {
             .providerDetails(
                 new ApplicationProviderDetails().provider(new IntDisplayValue().id(10)));
 
+    // GMT dates, so the legacy display shift does not affect the ordering under test.
     StatementOfAccountDetails response =
         new StatementOfAccountDetails()
             .addContentItem(
-                statement("Counsel", 55L, new BigDecimal("20"))
-                    .invoiceList(
-                        invoiceList(new StatementOfAccountInvoice().invoiceType("Counsel Bill"))))
-            .addContentItem(
                 statement("Provider", 10L, new BigDecimal("100"))
-                    .invoiceList(invoiceList(new StatementOfAccountInvoice().invoiceType("Bill"))));
+                    .invoiceList(
+                        invoiceList(
+                            new StatementOfAccountInvoice()
+                                .billingIncidentId(9L)
+                                .invoiceType("Older")
+                                .invoiceStatus("Authorised")
+                                .dateSubmitted(LocalDateTime.of(2020, 1, 15, 0, 0)),
+                            new StatementOfAccountInvoice()
+                                .billingIncidentId(2L)
+                                .invoiceType("NewerB")
+                                .invoiceStatus("Authorised")
+                                .dateSubmitted(LocalDateTime.of(2021, 2, 10, 0, 0)),
+                            new StatementOfAccountInvoice()
+                                .billingIncidentId(1L)
+                                .invoiceType("NewerA")
+                                .invoiceStatus("Authorised")
+                                .dateSubmitted(LocalDateTime.of(2021, 2, 10, 0, 0)))));
 
     when(ebsApiClient.getStatementOfAccount(CASE_REF, null)).thenReturn(Mono.just(response));
 
     StatementOfAccountDisplay display =
         billingService.getStatementOfAccountDisplay(CASE_REF, ebsCase, user);
 
+    // The 2021 rows come first; the equal-dated pair is ordered by ascending billing incident id.
     assertThat(display.getBillsAndPoa())
         .extracting(BillPoaRow::type)
-        .containsExactly("Bill", "Counsel Bill");
+        .containsExactly("NewerA", "NewerB", "Older");
   }
 
   @Test
@@ -292,14 +306,15 @@ class BillingServiceTest {
     StatementOfAccountDisplay display =
         billingService.getStatementOfAccountDisplay(CASE_REF, ebsCase, user);
 
+    // Ordered newest first by (raw) date submitted, each shown with the legacy UTC shift applied.
     assertThat(display.getBillsAndPoa())
         .extracting(row -> row.dateSubmitted().toLocalDate().toString())
-        .containsExactly("2018-06-04", "2017-11-20", "2018-06-08");
+        .containsExactly("2018-06-08", "2018-06-04", "2017-11-20");
   }
 
   @Test
-  @DisplayName("Groups the provider's drafts with its own invoices, ahead of other firms'")
-  void draftsGroupedWithProviderBlock() {
+  @DisplayName("Pins the provider's drafts to the top, ahead of every firm's submitted invoices")
+  void draftsPinnedFirst() {
     UserDetail user =
         new UserDetail().loginId("user1").userType("EXTERNAL").provider(new BaseProvider().id(10));
     ApplicationDetail ebsCase =
@@ -316,14 +331,16 @@ class BillingServiceTest {
                         invoiceList(
                             new StatementOfAccountInvoice()
                                 .invoiceType("Counsel Bill")
-                                .invoiceStatus("Authorised"))))
+                                .invoiceStatus("Authorised")
+                                .dateSubmitted(LocalDateTime.of(2023, 1, 10, 0, 0)))))
             .addContentItem(
                 statement("Provider", 10L, new BigDecimal("100"))
                     .invoiceList(
                         invoiceList(
                             new StatementOfAccountInvoice()
                                 .invoiceType("Bill")
-                                .invoiceStatus("Authorised"))));
+                                .invoiceStatus("Authorised")
+                                .dateSubmitted(LocalDateTime.of(2022, 1, 10, 0, 0)))));
 
     when(ebsApiClient.getStatementOfAccount(CASE_REF, null)).thenReturn(Mono.just(response));
     when(caabApiClient.getBill(CASE_REF, "10"))
@@ -332,13 +349,13 @@ class BillingServiceTest {
     StatementOfAccountDisplay display =
         billingService.getStatementOfAccountDisplay(CASE_REF, ebsCase, user);
 
-    // Provider's submitted invoice, then the provider's draft, then the counsel firm's invoice.
+    // The draft heads the table; the submitted invoices follow, newest first regardless of firm.
     assertThat(display.getBillsAndPoa())
         .extracting(BillPoaRow::type, BillPoaRow::status)
         .containsExactly(
-            tuple("Bill", "Authorised"),
             tuple("Bill", "Draft"),
-            tuple("Counsel Bill", "Authorised"));
+            tuple("Counsel Bill", "Authorised"),
+            tuple("Bill", "Authorised"));
   }
 
   @Test
@@ -480,13 +497,13 @@ class BillingServiceTest {
 
     assertThat(display.isDraftPoaExists()).isTrue();
     assertThat(display.isDraftBillExists()).isTrue();
-    // The submitted invoice heads the table, then the draft POA, then the draft bill.
+    // The drafts head the table (POA then bill), then the submitted invoice.
     assertThat(display.getBillsAndPoa())
         .extracting(BillPoaRow::type, BillPoaRow::status)
         .containsExactly(
-            tuple("Bill", "Authorised"), tuple("POA", "Draft"), tuple("Bill", "Draft"));
-    assertThat(display.getBillsAndPoa().get(1).amount()).isEqualByComparingTo("240.00");
-    assertThat(display.getBillsAndPoa().get(2).amount()).isEqualByComparingTo("300");
+            tuple("POA", "Draft"), tuple("Bill", "Draft"), tuple("Bill", "Authorised"));
+    assertThat(display.getBillsAndPoa().get(0).amount()).isEqualByComparingTo("240.00");
+    assertThat(display.getBillsAndPoa().get(1).amount()).isEqualByComparingTo("300");
   }
 
   @Test

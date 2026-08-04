@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +58,15 @@ public class BillingService {
   private static final String INVOICE_TYPE_POA = "POA";
   private static final BigDecimal HUNDRED = new BigDecimal("100");
   private static final ZoneId EBS_ZONE = ZoneId.of("Europe/London");
+
+  /** Submitted invoices are shown most recent first, tie-broken by billing incident id. */
+  private static final Comparator<StatementOfAccountInvoice> BY_DATE_SUBMITTED_DESC =
+      Comparator.comparing(
+              StatementOfAccountInvoice::getDateSubmitted,
+              Comparator.nullsLast(Comparator.reverseOrder()))
+          .thenComparing(
+              StatementOfAccountInvoice::getBillingIncidentId,
+              Comparator.nullsLast(Comparator.naturalOrder()));
 
   private final EbsApiClient ebsApiClient;
   private final CaabApiClient caabApiClient;
@@ -127,18 +137,15 @@ public class BillingService {
 
     setCounselCostCeiling(display, ebsCase);
 
-    // Rows are grouped by firm, the current provider first: its submitted invoices, then its own
-    // drafts, then the other firms' invoices. The legacy PUI added the drafts to the provider's own
-    // statement, so they sit within the provider's block rather than at the foot of the table.
-    final List<StatementOfAccountDetail> otherStatements =
-        statements.stream().filter(statement -> statement != providerStatement).toList();
-    final List<BillPoaRow> rows =
-        new ArrayList<>(
-            toRows(
-                flattenNonDraftInvoices(
-                    providerStatement == null ? List.of() : List.of(providerStatement))));
+    // The provider's drafts (the actionable, in-progress rows) are pinned to the top, so they stay
+    // visible when the table paginates. The submitted invoices follow, most recent first, with a
+    // stable tie-break so equal submitted dates keep a deterministic order.
+    final List<BillPoaRow> rows = new ArrayList<>();
     addDraftRows(rows, display, caseReferenceNumber, String.valueOf(currentProviderId));
-    rows.addAll(toRows(flattenNonDraftInvoices(otherStatements)));
+    final List<StatementOfAccountInvoice> submitted =
+        new ArrayList<>(flattenNonDraftInvoices(statements));
+    submitted.sort(BY_DATE_SUBMITTED_DESC);
+    rows.addAll(toRows(submitted));
     display.setBillsAndPoa(rows);
     return display;
   }
