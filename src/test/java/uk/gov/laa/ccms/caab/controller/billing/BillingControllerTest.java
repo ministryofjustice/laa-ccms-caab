@@ -9,6 +9,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,9 +20,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
+import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -71,7 +75,42 @@ class BillingControllerTest {
           .hasViewName("application/billing/case-statement-of-account")
           .model()
           .containsEntry("caseReferenceNumber", "300000123")
-          .containsEntry("statementOfAccount", display);
+          .containsEntry("statementOfAccount", display)
+          // The pagination links return to the bills/POA section rather than the top of the page.
+          .containsEntry("paginationAnchor", "bills-and-poa");
+    }
+
+    @Test
+    @DisplayName("Paginates the bills and POA table, ten rows per page, in line with other tables")
+    void paginatesBillsAndPoa() {
+      ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("300000123");
+      StatementOfAccountDisplay display = new StatementOfAccountDisplay();
+      List<BillPoaRow> rows = new ArrayList<>();
+      for (int i = 0; i < 25; i++) {
+        rows.add(new BillPoaRow("POA", "Authorised", null, null, new BigDecimal("1.00"), false));
+      }
+      display.setBillsAndPoa(rows);
+      when(billingService.getStatementOfAccountDisplay(eq("300000123"), any(), any()))
+          .thenReturn(display);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing")
+                      .param("page", "1")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .extractingByKey("billsAndPoaPage")
+          .isInstanceOfSatisfying(
+              Page.class,
+              page -> {
+                // 25 rows at the default size of 10 gives three pages; page 1 holds ten of them.
+                assertThat(page.getTotalElements()).isEqualTo(25);
+                assertThat(page.getTotalPages()).isEqualTo(3);
+                assertThat(page.getNumber()).isEqualTo(1);
+                assertThat(page.getContent()).hasSize(10);
+              });
     }
 
     @Test

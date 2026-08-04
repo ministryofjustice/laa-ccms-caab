@@ -122,7 +122,7 @@
     <!-- Bills and payment on account -->
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
-        <h2 class="govuk-heading-m" th:text="#{billing.billsAndPoa.title}"></h2>
+        <h2 id="bills-and-poa" class="govuk-heading-m" th:text="#{billing.billsAndPoa.title}"></h2>
         <table class="govuk-table" id="bills-and-poa-table">
           <thead class="govuk-table__head">
             <tr class="govuk-table__row">
@@ -135,7 +135,7 @@
             </tr>
           </thead>
           <tbody class="govuk-table__body">
-            <tr class="govuk-table__row" th:each="row : ${statementOfAccount?.billsAndPoa}">
+            <tr class="govuk-table__row" th:each="row : ${billsAndPoaPage?.content}">
               <!-- On a draft the type is a link to edit it; submitted rows show plain text. -->
               <td class="govuk-table__cell">
                 <a th:if="${row.draft}" class="govuk-link" th:href="'#'" th:text="${row.type}"></a>
@@ -151,11 +151,16 @@
               </td>
             </tr>
             <tr class="govuk-table__row"
-                th:if="${statementOfAccount == null or statementOfAccount.billsAndPoa == null or statementOfAccount.billsAndPoa.isEmpty()}">
+                th:if="${billsAndPoaPage == null or billsAndPoaPage.content.isEmpty()}">
               <td class="govuk-table__cell" colspan="6" th:text="#{billing.billsAndPoa.none}"></td>
             </tr>
           </tbody>
         </table>
+
+        <!-- th:replace ignores th:if on the same element, so the null-guard wraps it. -->
+        <th:block th:if="${billsAndPoaPage != null}">
+          <nav th:replace="~{partials/pagination :: pagination(page=${billsAndPoaPage})}"></nav>
+        </th:block>
 
         <div class="govuk-button-group">
           <govuk:button th:if="${showCreateBill}"
