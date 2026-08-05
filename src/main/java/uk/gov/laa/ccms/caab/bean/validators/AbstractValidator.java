@@ -11,12 +11,12 @@ import static uk.gov.laa.ccms.caab.util.DateUtils.COMPONENT_DATE_PATTERN;
 import static uk.gov.laa.ccms.caab.util.DateUtils.convertToDate;
 
 import java.math.BigDecimal;
-import java.text.ParsePosition;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.format.FormatStyle;
+import java.time.format.ResolverStyle;
 import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -262,14 +262,35 @@ public abstract class AbstractValidator implements Validator {
       final String displayName,
       final String datePattern,
       Errors errors) {
-    SimpleDateFormat sdf = new SimpleDateFormat(datePattern);
-    sdf.setLenient(false);
-    ParsePosition pos = new ParsePosition(0);
-    Date validDate = sdf.parse(dateString, pos);
-    if (pos.getIndex() == 0) {
-      validDate = null;
-      reportInvalidDate(field, displayName, errors);
-    } else {
+    final Date validDate;
+    try {
+      final String strictPattern = datePattern.replace("y", "u");
+      final DateTimeFormatter strictFormatter =
+          DateTimeFormatter.ofPattern(strictPattern).withResolverStyle(ResolverStyle.STRICT);
+      LocalDate parsedDate;
+      try {
+        parsedDate = LocalDate.parse(dateString, strictFormatter);
+      } catch (DateTimeParseException ex) {
+        final String strictFlexiblePattern = strictPattern.replace("dd", "d").replace("MM", "M");
+        final DateTimeFormatter strictFlexibleFormatter =
+            DateTimeFormatter.ofPattern(strictFlexiblePattern)
+                .withResolverStyle(ResolverStyle.STRICT);
+        parsedDate = LocalDate.parse(dateString, strictFlexibleFormatter);
+      }
+      validDate = Date.from(parsedDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant());
+    } catch (DateTimeParseException ex) {
+      final String[] dateParts = dateString.split("/", -1);
+      if (dateParts.length == 3
+          && dateParts[2].length() != StringUtils.countOccurrencesOf(datePattern, "y")) {
+        errors.rejectValue(
+            field, "invalid.format", SPECIFIC_DATEFIELD_ENTRY.formatted(displayName));
+      } else {
+        reportInvalidDate(field, displayName, errors);
+      }
+      return null;
+    }
+
+    if (!errors.hasFieldErrors(field)) {
       validateDateAfterGivenDate(
           validDate,
           Date.from(
@@ -279,9 +300,10 @@ public abstract class AbstractValidator implements Validator {
           field,
           displayName,
           errors);
-      if (errors.hasFieldErrors(field)) {
-        validDate = null;
-      }
+    }
+
+    if (errors.hasFieldErrors(field)) {
+      return null;
     }
     return validDate;
   }
