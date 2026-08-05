@@ -1,41 +1,44 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
+# This workflow is part of the application's build and deployment pipeline.
+# The workflow delegates these activities to reusable workflows maintained in
+# https://github.com/ministryofjustice/laa-ccms-common-workflows.
+
 
 name: Deploy main
 
 on:
   push:
-    tags:
-      - '*'
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      release_type:
+        type: choice
+        default: "auto"
+        options: [ "auto", "none", "patch", "minor", "major" ]
 
 permissions:
   contents: read
 
 jobs:
-  assemble:
-    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/gradle-build-and-publish.yml@v2.4.0
+  build-and-publish-release:
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/gradle-build-and-publish.yml@v2
     permissions:
       contents: write
       packages: write
     with:
       java_version: '25'
       java_distribution: 'corretto'
-      build_command: 'assemble'
-      publish_package: 'false'
-      junit_results: 'false'
-      junit_report: 'false'
-      checkstyle_report: 'false'
-      jacoco_coverage_report: 'false'
+      integration_test_task: "integrationTest --tests '*IntegrationTest'"
+      release_type: ${{ inputs.release_type != 'auto' && inputs.release_type || '' }}
+      github_bot_username: 'laa-ccms-caab-service'
     secrets:
       gh_token: ${{ secrets.MF_PAT_TOKEN }}
+      github_app_id: ${{ vars.LAA_CCMS_CAAB_SERVICE_APP_ID }}
+      github_app_private_key: ${{ secrets.LAA_CCMS_CAAB_SERVICE_KEY }}
+      github_app_organisation: 'ministryofjustice'
 
   ecr-publish-image:
-    needs: [ assemble ]
-    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@v2.4.0
+    needs: [ build-and-publish-release ]
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@v2
     permissions:
       contents: read
       id-token: write
@@ -43,7 +46,7 @@ jobs:
     with:
       java_version: '25'
       java_distribution: 'corretto'
-      image_version: ${{ format('{0}-{1}', vars.IMAGE_PREFIX, needs.assemble.outputs.published_artifact_version) }}
+      image_version: ${{ format('{0}-{1}', vars.IMAGE_PREFIX, needs.build-and-publish-release.outputs.published_artifact_version) }}
     secrets:
       gh_token: ${{ secrets.MF_PAT_TOKEN }}
       ecr_repository: ${{ vars.ECR_REPOSITORY }}
@@ -54,7 +57,7 @@ jobs:
 
   update-helm-chart:
     needs: [ ecr-publish-image ]
-    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/update-helm-chart.yml@v2.4.0
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/update-helm-chart.yml@v2
     with:
       helm_charts_repository: 'laa-ccms-caab-helm-charts'
       helm_charts_branch: 'development'
