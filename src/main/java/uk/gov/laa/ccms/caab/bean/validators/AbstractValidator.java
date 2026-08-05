@@ -13,6 +13,7 @@ import static uk.gov.laa.ccms.caab.util.DateUtils.convertToDate;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.FormatStyle;
@@ -263,25 +264,24 @@ public abstract class AbstractValidator implements Validator {
       final String datePattern,
       Errors errors) {
     final Date validDate;
+    final String strictPattern = datePattern.replace("y", "u");
+
+    final DateTimeFormatter strictFormatter =
+        DateTimeFormatter.ofPattern(strictPattern).withResolverStyle(ResolverStyle.STRICT);
+    LocalDate parsedDate;
     try {
-      final String strictPattern = datePattern.replace("y", "u");
-      final DateTimeFormatter strictFormatter =
-          DateTimeFormatter.ofPattern(strictPattern).withResolverStyle(ResolverStyle.STRICT);
-      LocalDate parsedDate;
-      try {
-        parsedDate = LocalDate.parse(dateString, strictFormatter);
-      } catch (DateTimeParseException ex) {
+      if (dateString.length() < datePattern.length()) {
         final String strictFlexiblePattern = strictPattern.replace("dd", "d").replace("MM", "M");
         final DateTimeFormatter strictFlexibleFormatter =
             DateTimeFormatter.ofPattern(strictFlexiblePattern)
                 .withResolverStyle(ResolverStyle.STRICT);
         parsedDate = LocalDate.parse(dateString, strictFlexibleFormatter);
+      } else {
+        parsedDate = LocalDate.parse(dateString, strictFormatter);
       }
-      validDate = Date.from(parsedDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant());
+      validDate = Date.from(parsedDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
     } catch (DateTimeParseException ex) {
-      final String[] dateParts = dateString.split("/", -1);
-      if (dateParts.length == 3
-          && dateParts[2].length() != StringUtils.countOccurrencesOf(datePattern, "y")) {
+      if (dateErrorCausedByDateFormat(dateString, datePattern)) {
         errors.rejectValue(
             field, "invalid.format", SPECIFIC_DATEFIELD_ENTRY.formatted(displayName));
       } else {
@@ -289,23 +289,42 @@ public abstract class AbstractValidator implements Validator {
       }
       return null;
     }
-
-    if (!errors.hasFieldErrors(field)) {
-      validateDateAfterGivenDate(
-          validDate,
-          Date.from(
-              LocalDate.of(1901, 12, 13)
-                  .atStartOfDay(java.time.ZoneId.systemDefault())
-                  .toInstant()),
-          field,
-          displayName,
-          errors);
-    }
-
+    validateDateAfterGivenDate(
+        validDate,
+        Date.from(LocalDate.of(1901, 12, 13).atStartOfDay(ZoneId.systemDefault()).toInstant()),
+        field,
+        displayName,
+        errors);
     if (errors.hasFieldErrors(field)) {
       return null;
     }
     return validDate;
+  }
+
+  private boolean dateErrorCausedByDateFormat(final String dateString, final String datePattern) {
+    String separator;
+    final Matcher matcher = Pattern.compile("[^A-Za-z]").matcher(datePattern);
+    if (matcher.find()) {
+      separator = matcher.group();
+    } else {
+      return false;
+    }
+    final String[] patternParts = datePattern.split(separator, -1);
+    final String[] dateParts = dateString.split(separator, -1);
+    boolean dateFormatError = false;
+    if (patternParts.length != dateParts.length) {
+      dateFormatError = true;
+    } else {
+      for (int i = 0; i < patternParts.length; i++) {
+        if (!dateParts[i].matches("\\d+")) {
+          dateFormatError = false;
+          break;
+        } else if (patternParts[i].length() != dateParts[i].length()) {
+          dateFormatError = true;
+        }
+      }
+    }
+    return dateFormatError;
   }
 
   protected static void reportInvalidDate(String field, String displayName, Errors errors) {
@@ -340,7 +359,7 @@ public abstract class AbstractValidator implements Validator {
       if (!errors.hasFieldErrors("dateOfBirth")) {
         try {
           validateDateInPast(convertToDate(dateOfBirth), "dateOfBirth", "Date of birth", errors);
-        } catch (java.time.format.DateTimeParseException ex) {
+        } catch (DateTimeParseException ex) {
           errors.rejectValue(
               "dateOfBirth", "invalid.format", SPECIFIC_DATEFIELD_ENTRY.formatted("Date of birth"));
         }
@@ -376,7 +395,7 @@ public abstract class AbstractValidator implements Validator {
           GENERIC_DATEFIELD_AFTER_DATE.formatted(
               givenDate
                   .toInstant()
-                  .atZone(java.time.ZoneId.systemDefault())
+                  .atZone(ZoneId.systemDefault())
                   .toLocalDate()
                   .format(
                       DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(Locale.UK)),
