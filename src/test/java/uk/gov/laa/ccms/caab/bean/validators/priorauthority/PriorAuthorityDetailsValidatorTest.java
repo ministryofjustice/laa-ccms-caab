@@ -132,6 +132,18 @@ class PriorAuthorityDetailsValidatorTest {
   }
 
   @Test
+  public void validate_whenSummaryInvalidCharactersButJustificationPresent_HasSummaryErrorOnly() {
+    priorAuthorityDetailsFormData.setSummary("Invalid characters <@>");
+    priorAuthorityDetailsFormData.setJustification("Some justification");
+    priorAuthorityDetailsFormData.setValueRequired(false);
+
+    priorAuthorityDetailsValidator.validate(priorAuthorityDetailsFormData, errors);
+
+    assertTrue(errors.hasFieldErrors("summary"));
+    assertFalse(errors.hasFieldErrors("justification"));
+  }
+
+  @Test
   public void validate_whenJustificationMissingButSummaryPresent_HasJustificationErrorOnly() {
     priorAuthorityDetailsFormData.setSummary("Some summary");
     priorAuthorityDetailsFormData.setJustification(null);
@@ -147,7 +159,7 @@ class PriorAuthorityDetailsValidatorTest {
   public void
       validate_whenJustificationInvalidCharactersButSummaryPresent_HasJustificationErrorOnly() {
     priorAuthorityDetailsFormData.setSummary("Some summary");
-    priorAuthorityDetailsFormData.setJustification("Invalid characters \n &<#>");
+    priorAuthorityDetailsFormData.setJustification("Invalid characters <@>");
     priorAuthorityDetailsFormData.setValueRequired(false);
 
     priorAuthorityDetailsValidator.validate(priorAuthorityDetailsFormData, errors);

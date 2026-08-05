@@ -111,11 +111,4 @@ public class ValidationPatternConstants {
    */
   public static final String CHARACTER_SET_F =
       "^[A-Za-z0-9\\&\\'\\(\\)\\.\\*\\-/!#$%,;\\?\\@\\[\\]_+\\=\\>£:&#92;&#96;\\\\]*$";
-
-  /**
-   * pattern to match what is known in provider-ui as 'characterSetG'. Valid characters are A-Z a-z
-   * 0-9 space ( ) . * - \ / ! # $ % , ; ? @ [ ] _ + = £ : \r \n
-   */
-  public static final String CHARACTER_SET_G =
-      "^[A-Za-z0-9 \\(\\)\\.\\*\\-\\\\/!#$%,;?@\\[\\]_+=£:\\r\\n]*$";
 }
