@@ -307,7 +307,7 @@ public abstract class AbstractValidator implements Validator {
     String separator;
     final Matcher matcher = Pattern.compile("[^A-Za-z]").matcher(datePattern);
     if (matcher.find()) {
-      separator = matcher.group();
+      separator = Pattern.quote(matcher.group());
     } else {
       return false;
     }
