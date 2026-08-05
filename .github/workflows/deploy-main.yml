@@ -19,7 +19,7 @@ permissions:
   contents: read
 
 jobs:
-  build-and-publish-release:
+  build:
     uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/gradle-build-and-publish.yml@v2
     permissions:
       contents: write
@@ -37,7 +37,7 @@ jobs:
       github_app_organisation: 'ministryofjustice'
 
   ecr-publish-image:
-    needs: [ build-and-publish-release ]
+    needs: [ build ]
     uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@v2
     permissions:
       contents: read
@@ -46,7 +46,7 @@ jobs:
     with:
       java_version: '25'
       java_distribution: 'corretto'
-      image_version: ${{ format('{0}-{1}', vars.IMAGE_PREFIX, needs.build-and-publish-release.outputs.published_artifact_version) }}
+      image_version: ${{ format('{0}-{1}', vars.IMAGE_PREFIX, needs.build.outputs.published_artifact_version) }}
     secrets:
       gh_token: ${{ secrets.MF_PAT_TOKEN }}
       ecr_repository: ${{ vars.ECR_REPOSITORY }}
