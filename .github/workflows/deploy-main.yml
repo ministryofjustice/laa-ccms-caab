@@ -12,7 +12,7 @@ on:
     inputs:
       release_type:
         type: choice
-        default: "auto"
+        default: "auto-release-only"
         options: [ "auto-release-only", "none", "patch", "minor", "major" ]
 
 permissions:
