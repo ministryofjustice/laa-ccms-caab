@@ -53,6 +53,7 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
+import uk.gov.laa.ccms.data.model.TaxRateLookupDetail;
 
 /** Service class to handle Common Lookups. */
 @Service
@@ -287,6 +288,15 @@ public class LookupService {
    */
   public Mono<AwardTypeLookupDetail> getAwardTypes(final String code, final String awardType) {
     return ebsApiClient.getAwardTypes(code, awardType);
+  }
+
+  /**
+   * Retrieves the tax (VAT) rate lookup values.
+   *
+   * @return A Mono containing the TaxRateLookupDetail or an error handler if an error occurs.
+   */
+  public Mono<TaxRateLookupDetail> getTaxRates() {
+    return ebsApiClient.getTaxRates();
   }
 
   /**

@@ -56,6 +56,7 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
+import uk.gov.laa.ccms.data.model.TaxRateLookupDetail;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
@@ -1024,6 +1025,29 @@ public class EbsApiClientTest {
       // Assert the URI
       assertEquals(
           "/lookup/award-types?size=1000&code=code1&award-type=type1", actualUri.toString());
+    }
+  }
+
+  @Nested
+  @DisplayName("getTaxRates() Tests")
+  class GetTaxRatesTests {
+
+    @Test
+    void getTaxRates_returnsData() {
+      final TaxRateLookupDetail taxRateLookupDetail = new TaxRateLookupDetail();
+
+      when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.bodyToMono(TaxRateLookupDetail.class))
+          .thenReturn(Mono.just(taxRateLookupDetail));
+
+      final Mono<TaxRateLookupDetail> result = ebsApiClient.getTaxRates();
+
+      StepVerifier.create(result).expectNext(taxRateLookupDetail).verifyComplete();
+
+      final URI actualUri = uriCaptor.getValue().apply(UriComponentsBuilder.newInstance());
+      assertEquals("/lookup/tax-rates?size=1000", actualUri.toString());
     }
   }
 

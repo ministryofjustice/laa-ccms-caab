@@ -37,6 +37,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
+import uk.gov.laa.ccms.caab.model.Bills;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
@@ -46,6 +47,7 @@ import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
+import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
@@ -246,6 +248,57 @@ class CaabApiClientTest {
     final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
     // Assert the URI
+    assertEquals(expectedUri, actualUri.toString());
+  }
+
+  @Test
+  void getBill_success() {
+    final String caseReference = "300000123456";
+    final String providerId = "123456789";
+    final String expectedUri =
+        "/bills?case-reference=%s&provider-id=%s".formatted(caseReference, providerId);
+
+    final Bills mockBill = new Bills();
+
+    final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor =
+        ArgumentCaptor.forClass(Function.class);
+
+    when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Bills.class)).thenReturn(Mono.just(mockBill));
+
+    final Mono<Bills> result = caabApiClient.getBill(caseReference, providerId);
+
+    StepVerifier.create(result).expectNext(mockBill).verifyComplete();
+
+    final URI actualUri = uriCaptor.getValue().apply(UriComponentsBuilder.newInstance());
+    assertEquals(expectedUri, actualUri.toString());
+  }
+
+  @Test
+  void getPaymentsOnAccount_success() {
+    final String caseReference = "300000123456";
+    final String providerId = "123456789";
+    final String expectedUri =
+        "/paymentsonaccount?case-reference=%s&provider-id=%s".formatted(caseReference, providerId);
+
+    final PaymentOnAccountDetails mockPoa = new PaymentOnAccountDetails();
+
+    final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor =
+        ArgumentCaptor.forClass(Function.class);
+
+    when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(PaymentOnAccountDetails.class)).thenReturn(Mono.just(mockPoa));
+
+    final Mono<PaymentOnAccountDetails> result =
+        caabApiClient.getPaymentsOnAccount(caseReference, providerId);
+
+    StepVerifier.create(result).expectNext(mockPoa).verifyComplete();
+
+    final URI actualUri = uriCaptor.getValue().apply(UriComponentsBuilder.newInstance());
     assertEquals(expectedUri, actualUri.toString());
   }
 
