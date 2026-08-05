@@ -1673,9 +1673,10 @@ public class EbsApiClientTest {
   @DisplayName("getClients() Tests")
   class GetClientsTests {
 
-    @Test
+    @ParameterizedTest
+    @CsvSource({"1/1/2000", "01/01/2000"})
     @DisplayName("Should return successfully")
-    void getClients_Successful() {
+    void getClients_Successful(String dobInput) {
       String expectedUri =
           "/clients?first-name=John&surname=Doe&date-of-birth=2000-01-01&page=0&size=10";
 
@@ -1688,7 +1689,7 @@ public class EbsApiClientTest {
 
       clientSearchCriteria.setForename(firstName);
       clientSearchCriteria.setSurname(lastName);
-      clientSearchCriteria.setDateOfBirth("1/1/2000");
+      clientSearchCriteria.setDateOfBirth(dobInput);
       ClientDetails mockClientDetails = new ClientDetails();
 
       ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);

@@ -68,9 +68,9 @@ class ClientDetailMapperTest {
   private final String disability = "TEST";
   private final String specialConsiderations = "TEST SPECIAL CONSIDERATIONS";
 
-  private final String dateofBirth = "10/6/2000";
+  private final String dateofBirth = "10/06/2000";
   private final String day = "10";
-  private final String month = "6";
+  private final String month = "06";
   private final String year = "2000";
 
   @BeforeEach
@@ -93,18 +93,25 @@ class ClientDetailMapperTest {
   }
 
   @ParameterizedTest
-  @CsvSource({"1/1/2000, 1, 0, 2000", "15/7/1990, 15, 6, 1990", "31/12/2022, 31, 11, 2022"})
-  void testMapDateOfBirth(String day, int expectedDay, int expectedMonth, int expectedYear) {
+  @CsvSource({
+    "1/1/2000, 1, 0, 2000",
+    "01/01/2000, 1, 0, 2000",
+    "15/7/1990, 15, 6, 1990",
+    "15/07/1990, 15, 6, 1990",
+    "31/12/2022, 31, 11, 2022"
+  })
+  void testMapDateOfBirth(
+      String dateOfBirth, int expectedDay, int expectedMonth, int expectedYear) {
     // Create a ClientDetails object for testing
     ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
-    basicDetails.setDateOfBirth(day);
+    basicDetails.setDateOfBirth(dateOfBirth);
 
     // Perform the mapping
-    Date dateOfBirth = clientDetailMapper.mapDateOfBirth(basicDetails);
+    Date mappedDateOfBirth = clientDetailMapper.mapDateOfBirth(basicDetails);
 
     // Get Calendar instance for assertions
     Calendar calendar = Calendar.getInstance();
-    calendar.setTime(dateOfBirth);
+    calendar.setTime(mappedDateOfBirth);
 
     // Assertions for the mapped date
     assertThat(calendar.get(Calendar.YEAR)).isEqualTo(expectedYear);

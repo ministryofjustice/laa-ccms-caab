@@ -59,6 +59,7 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.NotificationService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.caab.service.UserService;
+import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.data.model.BaseUser;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -176,6 +177,11 @@ public class ActionsAndNotificationsController {
       @Validated @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
       BindingResult bindingResult,
       Model model) {
+
+    criteria.setNotificationFromDate(
+        DateUtils.normaliseComponentDateIfValid(criteria.getNotificationFromDate()));
+    criteria.setNotificationToDate(
+        DateUtils.normaliseComponentDateIfValid(criteria.getNotificationToDate()));
 
     if (bindingResult.hasErrors()) {
       populateDropdowns(user, model, criteria);

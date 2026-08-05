@@ -28,6 +28,7 @@ import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 /** Controller for handling basic client details selection during the new application process. */
@@ -91,6 +92,8 @@ public class ClientBasicDetailsController {
       BindingResult bindingResult,
       Model model) {
 
+    basicDetails.setDateOfBirth(
+        DateUtils.normaliseComponentDateIfValid(basicDetails.getDateOfBirth()));
     clientBasicDetailsValidator.validate(basicDetails, bindingResult);
 
     if (bindingResult.hasErrors()) {
@@ -117,7 +120,8 @@ public class ClientBasicDetailsController {
 
     basicDetails.setFirstName(clientSearchCriteria.getForename());
     basicDetails.setSurnameAtBirth(clientSearchCriteria.getSurname());
-    basicDetails.setDateOfBirth(clientSearchCriteria.getDateOfBirth());
+    basicDetails.setDateOfBirth(
+        DateUtils.normaliseComponentDateIfValid(clientSearchCriteria.getDateOfBirth()));
 
     String nationalInsuranceNumber =
         clientSearchCriteria.getUniqueIdentifier(UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER);

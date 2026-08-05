@@ -64,6 +64,9 @@ public class DelegatedFunctionsController {
       @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       BindingResult bindingResult) {
 
+    applicationFormData.setDelegatedFunctionUsedDate(
+        DateUtils.normaliseComponentDateIfValid(
+            applicationFormData.getDelegatedFunctionUsedDate()));
     delegatedFunctionsValidator.validate(applicationFormData, bindingResult);
 
     if (!applicationFormData.isDelegatedFunctions()) {
@@ -132,6 +135,9 @@ public class DelegatedFunctionsController {
       BindingResult bindingResult,
       Model model) {
 
+    applicationFormData.setDelegatedFunctionUsedDate(
+        DateUtils.normaliseComponentDateIfValid(
+            applicationFormData.getDelegatedFunctionUsedDate()));
     delegatedFunctionsValidator.validate(applicationFormData, bindingResult);
 
     if (bindingResult.hasErrors()) {

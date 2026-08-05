@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.DECLARATION_APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_COMPLETE;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_NOT_STARTED;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
@@ -83,6 +85,9 @@ public class MeansReassessmentController {
 
     model.addAttribute("assessmentStatus", displayStatus(meansAssessment));
     model.addAttribute("assessmentComplete", assessmentComplete);
+    // A started assessment can always be deleted, complete or not - only "Not started" has nothing
+    // to delete.
+    model.addAttribute("assessmentStarted", isStarted(meansAssessment));
     model.addAttribute("canSubmit", assessmentComplete && hasSubmitPermission);
     // Mirror old PUI (PUI_ContentID_1069): a user who has completed the means assessment but lacks
     // the MNSB submit function is told why they cannot submit.
@@ -233,13 +238,17 @@ public class MeansReassessmentController {
         && AssessmentStatus.COMPLETE.getStatus().equalsIgnoreCase(meansAssessment.getStatus());
   }
 
+  private boolean isStarted(final AssessmentDetail meansAssessment) {
+    return meansAssessment != null && meansAssessment.getStatus() != null;
+  }
+
   private String displayStatus(final AssessmentDetail meansAssessment) {
-    if (meansAssessment == null || meansAssessment.getStatus() == null) {
-      return "Not started";
+    if (!isStarted(meansAssessment)) {
+      return SECTION_STATUS_NOT_STARTED;
     }
 
     return AssessmentStatus.COMPLETE.getStatus().equalsIgnoreCase(meansAssessment.getStatus())
-        ? "Complete"
+        ? SECTION_STATUS_COMPLETE
         : meansAssessment.getStatus();
   }
 
