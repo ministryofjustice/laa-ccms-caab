@@ -28,7 +28,7 @@ jobs:
       java_version: '25'
       java_distribution: 'corretto'
       integration_test_task: "integrationTest --tests '*IntegrationTest'"
-      release_type: ${{ inputs.release_type != 'auto' && inputs.release_type || '' }}
+      release_type: 'none'
       github_bot_username: 'laa-ccms-caab-service'
     secrets:
       gh_token: ${{ secrets.MF_PAT_TOKEN }}

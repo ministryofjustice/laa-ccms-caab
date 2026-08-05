@@ -43,7 +43,7 @@ jobs:
       java_version: '25'
       java_distribution: 'corretto'
       integration_test_task: "integrationTest"
-      publish_package: 'false'
+      release_type: 'none'
       override_version: ${{ needs.define-feature-version.outputs.feature_version }}
     secrets:
       gh_token: ${{ secrets.MF_PAT_TOKEN }}
