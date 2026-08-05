@@ -47,6 +47,8 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
+import uk.gov.laa.ccms.data.model.StatementOfAccountDetails;
+import uk.gov.laa.ccms.data.model.TaxRateLookupDetail;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
@@ -596,6 +598,22 @@ public class EbsApiClient extends BaseApiClient {
   }
 
   /**
+   * Retrieves the tax (VAT) rate lookup values, mapping each rate code to its percentage.
+   *
+   * @return A Mono containing the TaxRateLookupDetail or an error handler if an error occurs.
+   */
+  public Mono<TaxRateLookupDetail> getTaxRates() {
+    final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
+    return webClient
+        .get()
+        .uri(builder -> builder.path("/lookup/tax-rates").queryParams(queryParams).build())
+        .retrieve()
+        .bodyToMono(TaxRateLookupDetail.class)
+        .onErrorResume(
+            e -> ebsApiClientErrorHandler.handleApiRetrieveError(e, "Tax rates", queryParams));
+  }
+
+  /**
    * Retrieves category of law lookup detail based on the provided code, matter type description,
    * and copy cost limit values.
    *
@@ -1029,6 +1047,41 @@ public class EbsApiClient extends BaseApiClient {
         .onErrorResume(
             e ->
                 ebsApiClientErrorHandler.handleApiRetrieveError(e, "Counsel details", queryParams));
+  }
+
+  /**
+   * Retrieves the statement of account rows held against a case, one per billing provider.
+   *
+   * @param caseReferenceNumber the case to fetch the statement of account for.
+   * @param billingProviderPartyId the billing provider to restrict the rows to. When null, every
+   *     statement held against the case is returned.
+   * @return A Mono wrapping the StatementOfAccountDetails.
+   */
+  public Mono<StatementOfAccountDetails> getStatementOfAccount(
+      final String caseReferenceNumber, final Long billingProviderPartyId) {
+    final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
+    addQueryParam(queryParams, "case-reference-number", caseReferenceNumber);
+    addQueryParam(queryParams, "billing-provider-party-id", billingProviderPartyId);
+    // The view has no natural order; sort so the rows are stable between requests.
+    addQueryParam(queryParams, "sort", "billingProviderPartyId");
+
+    return ebsApiWebClient
+        .get()
+        .uri(builder -> builder.path("/statementofaccount").queryParams(queryParams).build())
+        .exchangeToMono(
+            response -> {
+              if (HttpStatus.NOT_FOUND.equals(response.statusCode())) {
+                return response.releaseBody().then(Mono.empty());
+              }
+              if (response.statusCode().isError()) {
+                return response.createException().flatMap(Mono::error);
+              }
+              return response.bodyToMono(StatementOfAccountDetails.class);
+            })
+        .onErrorResume(
+            e ->
+                ebsApiClientErrorHandler.handleApiRetrieveError(
+                    e, "Statement of account", queryParams));
   }
 
   private static MultiValueMap<String, String> buildQueryParams(

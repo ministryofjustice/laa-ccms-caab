@@ -8,6 +8,8 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -108,10 +110,56 @@ class PriorAuthorityDetailsValidatorTest {
     assertTrue(errors.hasFieldErrors("dynamicOptions[intKey].fieldValue"));
   }
 
+  @ParameterizedTest
+  @CsvSource({"FTS,ftsKey", "FTL,ftlKey"})
+  public void validate_DynamicOptionsValidation_TextInvalidCharacters_HasErrors(
+      final String fieldType, final String key) {
+    priorAuthorityDetailsFormData.setSummary("Valid summary");
+    priorAuthorityDetailsFormData.setJustification("Valid justification");
+
+    final Map<String, DynamicOptionFormData> dynamicOptions = new HashMap<>();
+    final DynamicOptionFormData option = new DynamicOptionFormData();
+    option.setMandatory(true);
+    option.setFieldType(fieldType);
+    option.setFieldDescription("Short text option");
+    option.setFieldValue("Invalid characters &<#>");
+    dynamicOptions.put(key, option);
+    priorAuthorityDetailsFormData.setDynamicOptions(dynamicOptions);
+
+    priorAuthorityDetailsValidator.validate(priorAuthorityDetailsFormData, errors);
+
+    assertTrue(errors.hasFieldErrors("dynamicOptions[%s].fieldValue".formatted(key)));
+  }
+
+  @Test
+  public void validate_whenSummaryInvalidCharactersButJustificationPresent_HasSummaryErrorOnly() {
+    priorAuthorityDetailsFormData.setSummary("Invalid characters <@>");
+    priorAuthorityDetailsFormData.setJustification("Some justification");
+    priorAuthorityDetailsFormData.setValueRequired(false);
+
+    priorAuthorityDetailsValidator.validate(priorAuthorityDetailsFormData, errors);
+
+    assertTrue(errors.hasFieldErrors("summary"));
+    assertFalse(errors.hasFieldErrors("justification"));
+  }
+
   @Test
   public void validate_whenJustificationMissingButSummaryPresent_HasJustificationErrorOnly() {
     priorAuthorityDetailsFormData.setSummary("Some summary");
     priorAuthorityDetailsFormData.setJustification(null);
+    priorAuthorityDetailsFormData.setValueRequired(false);
+
+    priorAuthorityDetailsValidator.validate(priorAuthorityDetailsFormData, errors);
+
+    assertTrue(errors.hasFieldErrors("justification"));
+    assertFalse(errors.hasFieldErrors("summary"));
+  }
+
+  @Test
+  public void
+      validate_whenJustificationInvalidCharactersButSummaryPresent_HasJustificationErrorOnly() {
+    priorAuthorityDetailsFormData.setSummary("Some summary");
+    priorAuthorityDetailsFormData.setJustification("Invalid characters <@>");
     priorAuthorityDetailsFormData.setValueRequired(false);
 
     priorAuthorityDetailsValidator.validate(priorAuthorityDetailsFormData, errors);
