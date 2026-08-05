@@ -131,7 +131,7 @@ dependencies {
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
     implementation 'org.springframework.security:spring-security-saml2-service-provider'
 
-    implementation 'uk.gov.laa.springboot:laa-spring-boot-starter-govuk-dialect'
+    implementation 'uk.gov.justice.service.laa:laa-spring-boot-starter-govuk-dialect'
 
     // Metrics
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -160,7 +160,8 @@ test {
 
     jvmArgs(
             "-javaagent:${configurations.mockitoAgent.asPath}",
-            "-Xshare:off"
+            "-Xshare:off",
+            "-Dnet.bytebuddy.safe=true" // Prevent unsafe memory access, see https://github.com/raphw/byte-buddy/issues/1803
     )
 
     finalizedBy jacocoTestReport
