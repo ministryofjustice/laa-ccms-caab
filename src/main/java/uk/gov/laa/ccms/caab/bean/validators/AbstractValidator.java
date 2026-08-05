@@ -321,7 +321,10 @@ public abstract class AbstractValidator implements Validator {
         if (!dateParts[i].matches("\\d+")) {
           dateFormatError = false;
           break;
-        } else if (patternParts[i].length() != dateParts[i].length()) {
+        } else if ((patternParts[i].contains("y")
+                && patternParts[i].length() != dateParts[i].length())
+            || (!patternParts[i].contains("y")
+                && dateParts[i].length() > patternParts[i].length())) {
           dateFormatError = true;
         }
       }

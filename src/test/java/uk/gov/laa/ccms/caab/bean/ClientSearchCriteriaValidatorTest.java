@@ -128,6 +128,7 @@ class ClientSearchCriteriaValidatorTest {
     "abc/12/1990, invalid.format, Your input for 'Date of birth' is in an incorrect format. Please amend your entry.",
     "1/ab/1990, invalid.format, Your input for 'Date of birth' is in an incorrect format. Please amend your entry.",
     "1/12/abcd, invalid.format, Your input for 'Date of birth' is in an incorrect format. Please amend your entry.",
+    "32/1/2024, invalid.format, Your input for 'Date of birth' is in an incorrect format. Please amend your entry.",
     "1-12-2026, invalid.format, Your input for 'Date of birth' is invalid. Please enter the date in DD/MM/YYYY format.",
     "4/3/07, invalid.format, Your input for 'Date of birth' is invalid. Please enter the date in DD/MM/YYYY format.",
     "13/12/1901, invalid.input, You must provide a date after 13 December 1901 for the Date of birth field. Please amend your entry."
