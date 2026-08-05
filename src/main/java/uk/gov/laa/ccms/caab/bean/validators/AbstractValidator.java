@@ -51,7 +51,7 @@ public abstract class AbstractValidator implements Validator {
       "Your input for '%s' is incomplete. Please enter a value for day, month and year.";
 
   protected static final String SPECIFIC_DATEFIELD_ENTRY =
-      "Your input for '%s' is invalid. Please enter the date in DD/MM/YYYY format.";
+      "Your input for '%s' is invalid. Please enter the date in %s format.";
 
   protected static String GENERIC_FIRST_CHAR_ALPHA =
       "Your input for %s is invalid. "
@@ -283,7 +283,9 @@ public abstract class AbstractValidator implements Validator {
     } catch (DateTimeParseException ex) {
       if (dateErrorCausedByDateFormat(dateString, datePattern)) {
         errors.rejectValue(
-            field, "invalid.format", SPECIFIC_DATEFIELD_ENTRY.formatted(displayName));
+            field,
+            "invalid.format",
+            SPECIFIC_DATEFIELD_ENTRY.formatted(displayName, datePattern.toUpperCase()));
       } else {
         reportInvalidDate(field, displayName, errors);
       }
@@ -361,7 +363,10 @@ public abstract class AbstractValidator implements Validator {
           validateDateInPast(convertToDate(dateOfBirth), "dateOfBirth", "Date of birth", errors);
         } catch (DateTimeParseException ex) {
           errors.rejectValue(
-              "dateOfBirth", "invalid.format", SPECIFIC_DATEFIELD_ENTRY.formatted("Date of birth"));
+              "dateOfBirth",
+              "invalid.format",
+              SPECIFIC_DATEFIELD_ENTRY.formatted(
+                  "Date of birth", COMPONENT_DATE_PATTERN.toUpperCase()));
         }
       }
     }
