@@ -1,5 +1,8 @@
 package uk.gov.laa.ccms.caab.bean.validators.priorauthority;
 
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CHARACTER_SET_E;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.STANDARD_CHARACTER_SET;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,9 +54,21 @@ public class PriorAuthorityDetailsValidator extends AbstractValidator {
         (PriorAuthorityDetailsFormData) target;
 
     validateRequiredField("summary", priorAuthorityDetails.getSummary(), "Summary", errors);
+    if (StringUtils.hasText(priorAuthorityDetails.getSummary())) {
+      validateFieldFormat(
+          "summary", priorAuthorityDetails.getSummary(), STANDARD_CHARACTER_SET, "Summary", errors);
+    }
 
     validateRequiredField(
         "justification", priorAuthorityDetails.getJustification(), "Justification", errors);
+    if (StringUtils.hasText(priorAuthorityDetails.getJustification())) {
+      validateFieldFormat(
+          "justification",
+          priorAuthorityDetails.getJustification(),
+          STANDARD_CHARACTER_SET,
+          "Justification",
+          errors);
+    }
 
     if (priorAuthorityDetails.isValueRequired()) {
       validateRequiredField(
@@ -113,6 +128,12 @@ public class PriorAuthorityDetailsValidator extends AbstractValidator {
                   errors);
             }
             case FIELD_TYPE_FTS -> {
+              validateFieldFormat(
+                  "dynamicOptions[%s].fieldValue".formatted(key),
+                  value.getFieldValue(),
+                  CHARACTER_SET_E,
+                  value.getFieldDescription(),
+                  errors);
               validateFieldMaxLength(
                   "dynamicOptions[%s].fieldValue".formatted(key),
                   value.getFieldValue(),
@@ -120,13 +141,20 @@ public class PriorAuthorityDetailsValidator extends AbstractValidator {
                   value.getFieldDescription(),
                   errors);
             }
-            case FIELD_TYPE_FTL ->
-                validateFieldMaxLength(
-                    "dynamicOptions[%s].fieldValue".formatted(key),
-                    value.getFieldValue(),
-                    80,
-                    value.getFieldDescription(),
-                    errors);
+            case FIELD_TYPE_FTL -> {
+              validateFieldFormat(
+                  "dynamicOptions[%s].fieldValue".formatted(key),
+                  value.getFieldValue(),
+                  CHARACTER_SET_E,
+                  value.getFieldDescription(),
+                  errors);
+              validateFieldMaxLength(
+                  "dynamicOptions[%s].fieldValue".formatted(key),
+                  value.getFieldValue(),
+                  80,
+                  value.getFieldDescription(),
+                  errors);
+            }
             default -> {
               break;
             }
