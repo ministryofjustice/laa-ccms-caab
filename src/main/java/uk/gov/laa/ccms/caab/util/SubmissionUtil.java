@@ -14,6 +14,17 @@ public class SubmissionUtil {
   private static final String SUBMISSION_FAILED = "failed";
 
   /**
+   * Returns {@code true} when the session holds a confirmed submission result, indicating the user
+   * has already successfully submitted and any re-attempt should be blocked.
+   *
+   * @param session the current HTTP session
+   * @return {@code true} if the submission has already been confirmed
+   */
+  public static boolean isAlreadySubmitted(final HttpSession session) {
+    return SUBMISSION_CONFIRMED.equals(session.getAttribute(SUBMISSION_RESULT));
+  }
+
+  /**
    * Requires that a session attribute is not null.
    *
    * @param attribute the attribute to check

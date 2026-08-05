@@ -1,8 +1,10 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -32,7 +34,23 @@ class SubmissionConfirmedControllerTest {
   void testSubmissionsConfirmed() throws Exception {
     mockMvc
         .perform(get("/application/testType/confirmed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/submissions/alreadySubmitted?returnUrl=/application/sections"));
+  }
+
+  @Test
+  void testSubmissionsConfirmedWhenSubmissionResultPresent() throws Exception {
+    mockMvc
+        .perform(get("/application/testType/confirmed").sessionAttr(SUBMISSION_RESULT, "confirmed"))
         .andExpect(status().isOk())
         .andExpect(view().name("submissions/submissionConfirmed"));
+  }
+
+  @Test
+  void testSubmissionsConfirmedForAmendmentsWhenSubmissionResultMissing() throws Exception {
+    mockMvc
+        .perform(get("/amendments/submit-case/confirmed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/submissions/alreadySubmitted?returnUrl=/case/overview"));
   }
 }
