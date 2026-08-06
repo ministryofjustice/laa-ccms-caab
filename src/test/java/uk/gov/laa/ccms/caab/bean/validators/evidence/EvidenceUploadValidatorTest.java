@@ -112,19 +112,6 @@ class EvidenceUploadValidatorTest {
   }
 
   @Test
-  public void validate_fileName() {
-    evidenceUploadFormData = buildEvidenceUploadFormData();
-    evidenceUploadFormData.setFile(
-        new MockMultipartFile(
-            "invalid name.pdf", "invalid name.pdf", "application/pdf", "the file data".getBytes()));
-
-    validator.validate(evidenceUploadFormData, errors);
-    assertEquals(1, errors.getErrorCount());
-    assertNotNull(errors.getFieldError("file"));
-    assertEquals("validation.error.invalidFileName", errors.getFieldError("file").getCode());
-  }
-
-  @Test
   @DisplayName("validate - Adds error for invalid magic bytes")
   void validate_InvalidMagicBytes_HasErrors() {
     evidenceUploadFormData = buildEvidenceUploadFormData();

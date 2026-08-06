@@ -226,24 +226,6 @@ class ProviderRequestDetailsValidatorTest {
   }
 
   @Test
-  @DisplayName("validate - Adds error for invalid filename")
-  void validate_InvalidFilename_HasErrors() {
-    final MockMultipartFile invalidFile =
-        new MockMultipartFile(
-            "invalid name.pdf", "invalid name.pdf", "application/pdf", new byte[3]);
-    formData.setFile(invalidFile);
-    formData.setFileExtension("pdf");
-    formData.setClaimUploadEnabled(true);
-    formData.setAdditionalInformation("");
-
-    providerRequestDetailsValidator.validate(formData, errors);
-
-    assertTrue(errors.hasErrors());
-    assertNotNull(errors.getFieldError("file"));
-    assertEquals("validation.error.invalidFileName", errors.getFieldError("file").getCode());
-  }
-
-  @Test
   @DisplayName("validate - Adds error for invalid magic bytes")
   void validate_InvalidMagicBytes_HasErrors() {
     final MockMultipartFile invalidFile =

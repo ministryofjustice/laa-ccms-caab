@@ -35,4 +35,18 @@ class FileUtilTest {
     assertNotNull(result);
     assertEquals(filename, result);
   }
+
+  @Test
+  void testSanitizeFileName_replacesDisallowedCharactersWithUnderscore() {
+    final String result = FileUtil.sanitizeFileName("My interesting%filename!.pdf");
+
+    assertEquals("My_interesting_filename_.pdf", result);
+  }
+
+  @Test
+  void testSanitizeFileName_keepsAllowedCharacters() {
+    final String result = FileUtil.sanitizeFileName("Valid_File-Name123.pdf");
+
+    assertEquals("Valid_File-Name123.pdf", result);
+  }
 }
