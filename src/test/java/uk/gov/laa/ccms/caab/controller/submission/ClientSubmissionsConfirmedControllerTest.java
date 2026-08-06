@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -10,10 +11,10 @@ import static uk.gov.laa.ccms.caab.constants.CaseContext.AMENDMENTS;
 import static uk.gov.laa.ccms.caab.constants.CaseContext.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_REFERENCE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 
-import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,8 +43,6 @@ import uk.gov.laa.ccms.soa.gateway.model.RecordHistory;
 @ContextConfiguration
 @WebAppConfiguration
 class ClientSubmissionsConfirmedControllerTest {
-
-  @Mock private HttpSession httpSession;
 
   @Mock private ApplicationService applicationService;
 
@@ -91,20 +90,32 @@ class ClientSubmissionsConfirmedControllerTest {
 
   @Test
   void testClientUpdateSubmittedApplication() throws Exception {
-    mockMvc
-        .perform(post("/" + APPLICATION.getPathValue() + "/client-update/confirmed"))
-        .andDo(print())
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/sections"));
+    final var result =
+        mockMvc
+            .perform(
+                post("/" + APPLICATION.getPathValue() + "/client-update/confirmed")
+                    .sessionAttr(SUBMISSION_RESULT, "confirmed"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/application/sections"))
+            .andReturn();
+
+    assertThat(result.getRequest().getSession().getAttribute(SUBMISSION_RESULT)).isNull();
   }
 
   @Test
   void testClientUpdateSubmittedAmendment() throws Exception {
-    mockMvc
-        .perform(post("/" + AMENDMENTS.getPathValue() + "/client-update/confirmed"))
-        .andDo(print())
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/case/overview"));
+    final var result =
+        mockMvc
+            .perform(
+                post("/" + AMENDMENTS.getPathValue() + "/client-update/confirmed")
+                    .sessionAttr(SUBMISSION_RESULT, "confirmed"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/case/overview"))
+            .andReturn();
+
+    assertThat(result.getRequest().getSession().getAttribute(SUBMISSION_RESULT)).isNull();
   }
 
   private UserDetail buildUser() {
