@@ -11,12 +11,13 @@ import static uk.gov.laa.ccms.caab.util.DateUtils.COMPONENT_DATE_PATTERN;
 import static uk.gov.laa.ccms.caab.util.DateUtils.convertToDate;
 
 import java.math.BigDecimal;
-import java.text.ParsePosition;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.format.FormatStyle;
+import java.time.format.ResolverStyle;
 import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -50,7 +51,7 @@ public abstract class AbstractValidator implements Validator {
       "Your input for '%s' is incomplete. Please enter a value for day, month and year.";
 
   protected static final String SPECIFIC_DATEFIELD_ENTRY =
-      "Your input for '%s' is invalid. Please enter the date in DD/MM/YYYY format.";
+      "Your input for '%s' is invalid. Please enter the date in %s format.";
 
   protected static String GENERIC_FIRST_CHAR_ALPHA =
       "Your input for %s is invalid. "
@@ -262,28 +263,73 @@ public abstract class AbstractValidator implements Validator {
       final String displayName,
       final String datePattern,
       Errors errors) {
-    SimpleDateFormat sdf = new SimpleDateFormat(datePattern);
-    sdf.setLenient(false);
-    ParsePosition pos = new ParsePosition(0);
-    Date validDate = sdf.parse(dateString, pos);
-    if (pos.getIndex() == 0) {
-      validDate = null;
-      reportInvalidDate(field, displayName, errors);
-    } else {
-      validateDateAfterGivenDate(
-          validDate,
-          Date.from(
-              LocalDate.of(1901, 12, 13)
-                  .atStartOfDay(java.time.ZoneId.systemDefault())
-                  .toInstant()),
-          field,
-          displayName,
-          errors);
-      if (errors.hasFieldErrors(field)) {
-        validDate = null;
+    final Date validDate;
+    final String strictPattern = datePattern.replace("y", "u");
+
+    final DateTimeFormatter strictFormatter =
+        DateTimeFormatter.ofPattern(strictPattern).withResolverStyle(ResolverStyle.STRICT);
+    LocalDate parsedDate;
+    try {
+      if (dateString.length() < datePattern.length()) {
+        final String strictFlexiblePattern = strictPattern.replace("dd", "d").replace("MM", "M");
+        final DateTimeFormatter strictFlexibleFormatter =
+            DateTimeFormatter.ofPattern(strictFlexiblePattern)
+                .withResolverStyle(ResolverStyle.STRICT);
+        parsedDate = LocalDate.parse(dateString, strictFlexibleFormatter);
+      } else {
+        parsedDate = LocalDate.parse(dateString, strictFormatter);
       }
+      validDate = Date.from(parsedDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    } catch (DateTimeParseException ex) {
+      if (dateErrorCausedByDateFormat(dateString, datePattern)) {
+        errors.rejectValue(
+            field,
+            "invalid.format",
+            SPECIFIC_DATEFIELD_ENTRY.formatted(displayName, datePattern.toUpperCase()));
+      } else {
+        reportInvalidDate(field, displayName, errors);
+      }
+      return null;
+    }
+    validateDateAfterGivenDate(
+        validDate,
+        Date.from(LocalDate.of(1901, 12, 13).atStartOfDay(ZoneId.systemDefault()).toInstant()),
+        field,
+        displayName,
+        errors);
+    if (errors.hasFieldErrors(field)) {
+      return null;
     }
     return validDate;
+  }
+
+  private boolean dateErrorCausedByDateFormat(final String dateString, final String datePattern) {
+    String separator;
+    final Matcher matcher = Pattern.compile("[^A-Za-z]").matcher(datePattern);
+    if (matcher.find()) {
+      separator = Pattern.quote(matcher.group());
+    } else {
+      return false;
+    }
+    final String[] patternParts = datePattern.split(separator, -1);
+    final String[] dateParts = dateString.split(separator, -1);
+    boolean dateFormatError = false;
+    if (patternParts.length != dateParts.length) {
+      dateFormatError = true;
+    } else {
+      for (int i = 0; i < patternParts.length; i++) {
+        if (!dateParts[i].matches("\\d+")) {
+          dateFormatError = false;
+          break;
+        } else if ((patternParts[i].contains("y")
+                && patternParts[i].length() != dateParts[i].length())
+            || (!patternParts[i].contains("y")
+                && dateParts[i].length() > patternParts[i].length())) {
+          dateFormatError = true;
+        }
+      }
+    }
+    return dateFormatError;
   }
 
   protected static void reportInvalidDate(String field, String displayName, Errors errors) {
@@ -318,9 +364,12 @@ public abstract class AbstractValidator implements Validator {
       if (!errors.hasFieldErrors("dateOfBirth")) {
         try {
           validateDateInPast(convertToDate(dateOfBirth), "dateOfBirth", "Date of birth", errors);
-        } catch (java.time.format.DateTimeParseException ex) {
+        } catch (DateTimeParseException ex) {
           errors.rejectValue(
-              "dateOfBirth", "invalid.format", SPECIFIC_DATEFIELD_ENTRY.formatted("Date of birth"));
+              "dateOfBirth",
+              "invalid.format",
+              SPECIFIC_DATEFIELD_ENTRY.formatted(
+                  "Date of birth", COMPONENT_DATE_PATTERN.toUpperCase()));
         }
       }
     }
@@ -354,7 +403,7 @@ public abstract class AbstractValidator implements Validator {
           GENERIC_DATEFIELD_AFTER_DATE.formatted(
               givenDate
                   .toInstant()
-                  .atZone(java.time.ZoneId.systemDefault())
+                  .atZone(ZoneId.systemDefault())
                   .toLocalDate()
                   .format(
                       DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(Locale.UK)),

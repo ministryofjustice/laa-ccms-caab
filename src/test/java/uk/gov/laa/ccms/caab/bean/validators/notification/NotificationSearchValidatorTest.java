@@ -86,6 +86,15 @@ class NotificationSearchValidatorTest {
   }
 
   @Test
+  void validateInvalidDate2CharYear() {
+    criteria.setNotificationToDate("12/9/21");
+    validator.validate(criteria, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals(1, errors.getErrorCount());
+    assertNotNull(errors.getFieldError("notificationToDate"));
+  }
+
+  @Test
   void testValidFromAndToDates() {
     criteria.setNotificationFromDate("12/12/2021");
     criteria.setNotificationToDate("13/12/2021");
