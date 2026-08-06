@@ -61,6 +61,7 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.data.model.ScopeLimitationDetails;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
+import uk.gov.laa.ccms.data.model.TaxRateLookupDetail;
 
 @ExtendWith(MockitoExtension.class)
 public class LookupServiceTest {
@@ -396,6 +397,20 @@ public class LookupServiceTest {
     StepVerifier.create(result).expectNext(mockAwardTypeDetails).verifyComplete();
 
     verify(ebsApiClient).getAwardTypes(code, awardType);
+  }
+
+  @Test
+  @DisplayName("getTaxRates returns data successfully")
+  void getTaxRates_success() {
+    final TaxRateLookupDetail mockTaxRates = new TaxRateLookupDetail();
+
+    when(ebsApiClient.getTaxRates()).thenReturn(Mono.just(mockTaxRates));
+
+    final Mono<TaxRateLookupDetail> result = lookupService.getTaxRates();
+
+    StepVerifier.create(result).expectNext(mockTaxRates).verifyComplete();
+
+    verify(ebsApiClient).getTaxRates();
   }
 
   @Test
