@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -542,7 +543,7 @@ class ActionsAndNotificationsControllerTest {
           .model()
           .extracting(m -> m.get("notification"), as(type(Notification.class)))
           .extracting(Notification::getAttachedDocuments)
-          .asList()
+          .asInstanceOf(InstanceOfAssertFactories.LIST)
           .containsExactly(doc2, doc1, doc4, doc3);
     }
   }

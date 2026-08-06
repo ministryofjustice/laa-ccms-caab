@@ -1,0 +1,12 @@
+name: Lint PR title
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [ opened, edited, synchronize, reopened ]
+
+jobs:
+  lint-pr-title:
+    permissions:
+      pull-requests: read
+    uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/lint-pr-title.yml@a5977e695ff627aab738dd22a1e4322e78beada6 # v2.4.0
