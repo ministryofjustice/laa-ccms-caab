@@ -31,7 +31,7 @@ class SubmissionConfirmedControllerTest {
   }
 
   @Test
-  void testSubmissionsConfirmed() throws Exception {
+  void testSubmissionsConfirmedWhenSubmissionResultMissingRedirects() throws Exception {
     mockMvc
         .perform(get("/application/testType/confirmed"))
         .andExpect(status().is3xxRedirection())
