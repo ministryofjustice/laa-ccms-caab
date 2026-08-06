@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
@@ -52,5 +53,23 @@ class SubmissionConfirmedControllerTest {
         .perform(get("/amendments/submit-case/confirmed"))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/submissions/alreadySubmitted?returnUrl=/case/overview"));
+  }
+
+  @Test
+  void testAlreadySubmittedSanitizesExternalReturnUrl() throws Exception {
+    mockMvc
+        .perform(get("/submissions/alreadySubmitted").param("returnUrl", "https://example.com"))
+        .andExpect(status().isOk())
+        .andExpect(view().name("submissions/alreadySubmitted"))
+        .andExpect(model().attribute("returnUrl", "/case/overview"));
+  }
+
+  @Test
+  void testAlreadySubmittedKeepsInternalReturnUrl() throws Exception {
+    mockMvc
+        .perform(get("/submissions/alreadySubmitted").param("returnUrl", "/home"))
+        .andExpect(status().isOk())
+        .andExpect(view().name("submissions/alreadySubmitted"))
+        .andExpect(model().attribute("returnUrl", "/home"));
   }
 }
