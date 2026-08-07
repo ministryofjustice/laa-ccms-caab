@@ -80,6 +80,24 @@ class ProviderRequestDetailsValidatorTest {
     providerRequestDetailsValidator.validate(formData, errors);
 
     assertFalse(errors.hasErrors());
+    assertEquals("valid.pdf", formData.getSanitisedFileName());
+  }
+
+  @Test
+  @DisplayName("validate - Sanitizes filename when claim upload is enabled")
+  void validate_SanitizedFilename_NoErrors() {
+    final MockMultipartFile file =
+        new MockMultipartFile(
+            "file", "My interesting%filename!.pdf", "application/pdf", "something".getBytes());
+    formData.setFile(file);
+    formData.setClaimUploadEnabled(true);
+    formData.setAdditionalInformation("");
+
+    providerRequestDetailsValidator.validate(formData, errors);
+
+    assertFalse(errors.hasErrors());
+    assertEquals("My_interesting_filename_.pdf", formData.getSanitisedFileName());
+    assertEquals("pdf", formData.getFileExtension());
   }
 
   @Test

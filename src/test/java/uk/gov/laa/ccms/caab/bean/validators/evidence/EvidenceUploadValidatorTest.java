@@ -55,6 +55,24 @@ class EvidenceUploadValidatorTest {
 
     validator.validate(evidenceUploadFormData, errors);
     assertFalse(errors.hasErrors());
+    assertEquals("originalName.pdf", evidenceUploadFormData.getSanitisedFileName());
+  }
+
+  @Test
+  void validate_sanitizesFilename() {
+    evidenceUploadFormData = buildEvidenceUploadFormData();
+    evidenceUploadFormData.setFile(
+        new MockMultipartFile(
+            "theFile",
+            "My interesting%filename!.pdf",
+            "application/pdf",
+            "the file data".getBytes()));
+
+    validator.validate(evidenceUploadFormData, errors);
+
+    assertFalse(errors.hasErrors());
+    assertEquals("My_interesting_filename_.pdf", evidenceUploadFormData.getSanitisedFileName());
+    assertEquals("pdf", evidenceUploadFormData.getFileExtension());
   }
 
   @Test
@@ -152,6 +170,50 @@ class EvidenceUploadValidatorTest {
     validator.validate(evidenceUploadFormData, errors);
     assertEquals(1, errors.getErrorCount());
     assertNotNull(errors.getFieldError("documentDescription"));
+  }
+
+  @Test
+  @DisplayName("validate - Rejects double extension")
+  void validate_DoubleExtension_HasErrors() {
+    evidenceUploadFormData = buildEvidenceUploadFormData();
+    evidenceUploadFormData.setFile(
+        new MockMultipartFile(
+            "file", "document.pdf.exe", "application/pdf", "the file data".getBytes()));
+
+    validator.validate(evidenceUploadFormData, errors);
+
+    assertTrue(errors.hasErrors());
+    assertNotNull(errors.getFieldError("file"));
+    assertEquals("validation.error.multipleExtension", errors.getFieldError("file").getCode());
+  }
+
+  @Test
+  @DisplayName("validate - Sanitises and accepts filename with null-byte escape")
+  void validate_NullByteEscapeInFilename_Sanitized() {
+    evidenceUploadFormData = buildEvidenceUploadFormData();
+    evidenceUploadFormData.setFile(
+        new MockMultipartFile(
+            "file", "malicious%00.pdf", "application/pdf", "the file data".getBytes()));
+
+    validator.validate(evidenceUploadFormData, errors);
+
+    assertFalse(errors.hasErrors());
+    assertEquals("malicious_00.pdf", evidenceUploadFormData.getSanitisedFileName());
+  }
+
+  @Test
+  @DisplayName("validate - Rejects filename exceeding 255 characters")
+  void validate_FilenameExceeds255Chars_HasErrors() {
+    evidenceUploadFormData = buildEvidenceUploadFormData();
+    final String longName = "a".repeat(252) + ".pdf";
+    evidenceUploadFormData.setFile(
+        new MockMultipartFile("file", longName, "application/pdf", "the file data".getBytes()));
+
+    validator.validate(evidenceUploadFormData, errors);
+
+    assertTrue(errors.hasErrors());
+    assertNotNull(errors.getFieldError("file"));
+    assertEquals("validation.error.filenameTooLong", errors.getFieldError("file").getCode());
   }
 
   private EvidenceUploadFormData buildEvidenceUploadFormData() {

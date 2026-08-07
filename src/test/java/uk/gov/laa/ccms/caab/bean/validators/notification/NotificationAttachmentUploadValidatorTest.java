@@ -58,6 +58,27 @@ public class NotificationAttachmentUploadValidatorTest {
 
     validator.validate(notificationAttachmentUploadFormData, errors);
     assertFalse(errors.hasErrors());
+    assertEquals("originalName.pdf", notificationAttachmentUploadFormData.getSanitisedFileName());
+  }
+
+  @Test
+  public void validate_electronic_sanitizesFilename() {
+    notificationAttachmentUploadFormData = buildNotificationAttachmentUploadFormData();
+    notificationAttachmentUploadFormData.setSendBy(SendBy.ELECTRONIC);
+    notificationAttachmentUploadFormData.setFile(
+        new MockMultipartFile(
+            "theFile",
+            "My interesting%filename!.pdf",
+            "application/pdf",
+            "the file data".getBytes()));
+
+    validator.validate(notificationAttachmentUploadFormData, errors);
+
+    assertFalse(errors.hasErrors());
+    assertEquals(
+        "My_interesting_filename_.pdf",
+        notificationAttachmentUploadFormData.getSanitisedFileName());
+    assertEquals("pdf", notificationAttachmentUploadFormData.getFileExtension());
   }
 
   @Test

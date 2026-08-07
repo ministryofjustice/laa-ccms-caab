@@ -38,15 +38,22 @@ class FileUtilTest {
 
   @Test
   void testSanitizeFileName_replacesDisallowedCharactersWithUnderscore() {
-    final String result = FileUtil.sanitizeFileName("My interesting%filename!.pdf");
+    final String result = FileUtil.sanitiseFileName("My interesting%filename!.pdf");
 
     assertEquals("My_interesting_filename_.pdf", result);
   }
 
   @Test
   void testSanitizeFileName_keepsAllowedCharacters() {
-    final String result = FileUtil.sanitizeFileName("Valid_File-Name123.pdf");
+    final String result = FileUtil.sanitiseFileName("Valid_File-Name123.pdf");
 
     assertEquals("Valid_File-Name123.pdf", result);
+  }
+
+  @Test
+  void testSanitiseFileName_blankFilename_returnsBlank() {
+    final String result = FileUtil.sanitiseFileName("   ");
+
+    assertEquals("", result);
   }
 }

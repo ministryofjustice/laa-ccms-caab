@@ -76,6 +76,23 @@ class ProviderRequestDocumentUploadValidatorTest {
   }
 
   @Test
+  @DisplayName("validate - Sanitizes filename instead of rejecting it")
+  public void validate_SanitizedFilename_NoErrors() {
+    final MockMultipartFile file =
+        new MockMultipartFile(
+            "file", "My interesting%filename!.pdf", "application/pdf", "the file data".getBytes());
+    evidenceUploadFormData.setFile(file);
+    evidenceUploadFormData.setDocumentType("docType");
+
+    providerRequestDocumentUploadValidator.validate(evidenceUploadFormData, errors);
+
+    assertNotNull(errors.getFieldError("file"));
+    assertEquals("validation.error.invalidMagicBytes", errors.getFieldError("file").getCode());
+    assertEquals("My_interesting_filename_.pdf", evidenceUploadFormData.getSanitisedFileName());
+    assertEquals("pdf", evidenceUploadFormData.getFileExtension());
+  }
+
+  @Test
   @DisplayName("validate - Adds error for invalid magic bytes")
   void validate_InvalidMagicBytes_HasErrors() {
     final MockMultipartFile invalidFile =
