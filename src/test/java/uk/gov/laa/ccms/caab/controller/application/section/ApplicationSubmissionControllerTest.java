@@ -45,6 +45,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -112,6 +113,8 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 
@@ -433,7 +436,17 @@ class ApplicationSubmissionControllerTest {
     mockApplicationDetail.setPriorAuthorities(List.of(mockPriorAuthorityDetail));
 
     final IndividualOpponentFormData mockIndividualOpponent = new IndividualOpponentFormData();
+    mockIndividualOpponent.setRelationshipToCase("OPP");
     final List<AbstractOpponentFormData> mockOpponents = List.of(mockIndividualOpponent);
+
+    final RelationshipToCaseLookupValueDetail relationship =
+        new RelationshipToCaseLookupValueDetail();
+    relationship.setCode("OPP");
+    relationship.setDateOfBirthMandatory(false);
+
+    final RelationshipToCaseLookupDetail mockPersonToCaseRelationships =
+        new RelationshipToCaseLookupDetail();
+    mockPersonToCaseRelationships.setContent(List.of(relationship));
 
     final ProceedingFlowFormData proceedingFlowFormData = new ProceedingFlowFormData("edit");
     proceedingFlowFormData.setMatterTypeDetails(new ProceedingFormDataMatterTypeDetails());
@@ -452,6 +465,8 @@ class ApplicationSubmissionControllerTest {
     when(applicationService.getApplication(applicationId))
         .thenReturn(Mono.just(mockApplicationDetail));
     when(applicationService.getOpponents(applicationId)).thenReturn(mockOpponents);
+    when(lookupService.getPersonToCaseRelationships())
+        .thenReturn(Mono.just(mockPersonToCaseRelationships));
     when(lookupService.getOrderTypeDescription(any()))
         .thenReturn(Mono.just("Order Type Description"));
 
@@ -1032,9 +1047,25 @@ class ApplicationSubmissionControllerTest {
   }
 
   @Test
-  @DisplayName("Test validateOpponents with IndividualOpponentFormData returns true with errors")
-  void testValidateOpponents_WithIndividualOpponentErrors() {
-    final List<AbstractOpponentFormData> opponents = List.of(new IndividualOpponentFormData());
+  @DisplayName(
+      "Test validateOpponents with IndividualOpponentFormData returns true with errors and date of birth not mandatory")
+  void testValidateOpponents_WithIndividualOpponentErrors_DateOfBirthNotMandatory() {
+    final IndividualOpponentFormData opponent = new IndividualOpponentFormData();
+    opponent.setRelationshipToCase("OPP");
+    final List<AbstractOpponentFormData> opponents = List.of(opponent);
+
+    final RelationshipToCaseLookupValueDetail relationship =
+        new RelationshipToCaseLookupValueDetail();
+    relationship.setCode("OPP");
+    relationship.setDateOfBirthMandatory(false);
+    final RelationshipToCaseLookupDetail mockPersonToCaseRelationships =
+        new RelationshipToCaseLookupDetail();
+    mockPersonToCaseRelationships.setContent(List.of(relationship));
+    when(lookupService.getPersonToCaseRelationships())
+        .thenReturn(Mono.just(mockPersonToCaseRelationships));
+
+    final ArgumentCaptor<IndividualOpponentFormData> opponentCaptor =
+        ArgumentCaptor.forClass(IndividualOpponentFormData.class);
 
     doAnswer(
             invocation -> {
@@ -1044,7 +1075,7 @@ class ApplicationSubmissionControllerTest {
               return null;
             })
         .when(individualOpponentValidator)
-        .validate(any(), any());
+        .validate(opponentCaptor.capture(), any());
 
     when(model.containsAttribute("individualOpponent")).thenReturn(true);
     when(model.getAttribute("individualOpponent")).thenReturn(List.of("Error 1"));
@@ -1052,6 +1083,48 @@ class ApplicationSubmissionControllerTest {
     final boolean result = applicationSubmissionController.validateOpponents(opponents, model);
 
     assertTrue(result);
+    assertFalse(opponentCaptor.getValue().isDateOfBirthMandatory());
+  }
+
+  @Test
+  @DisplayName(
+      "Test validateOpponents with IndividualOpponentFormData returns true with errors and date of birth mandatory")
+  void testValidateOpponents_WithIndividualOpponentErrors_DateOfBirthMandatory() {
+    final IndividualOpponentFormData opponent = new IndividualOpponentFormData();
+    opponent.setRelationshipToCase("CHILD");
+    final List<AbstractOpponentFormData> opponents = List.of(opponent);
+
+    final RelationshipToCaseLookupValueDetail relationship =
+        new RelationshipToCaseLookupValueDetail();
+    relationship.setCode("CHILD");
+    relationship.setDateOfBirthMandatory(true);
+
+    final RelationshipToCaseLookupDetail mockPersonToCaseRelationships =
+        new RelationshipToCaseLookupDetail();
+    mockPersonToCaseRelationships.setContent(List.of(relationship));
+    when(lookupService.getPersonToCaseRelationships())
+        .thenReturn(Mono.just(mockPersonToCaseRelationships));
+
+    final ArgumentCaptor<IndividualOpponentFormData> opponentCaptor =
+        ArgumentCaptor.forClass(IndividualOpponentFormData.class);
+
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.reject(
+                  "individualOpponent.required", "Error: Individual opponent validation failed.");
+              return null;
+            })
+        .when(individualOpponentValidator)
+        .validate(opponentCaptor.capture(), any());
+
+    when(model.containsAttribute("individualOpponent")).thenReturn(true);
+    when(model.getAttribute("individualOpponent")).thenReturn(List.of("Error 1"));
+
+    final boolean result = applicationSubmissionController.validateOpponents(opponents, model);
+
+    assertTrue(result);
+    assertTrue(opponentCaptor.getValue().isDateOfBirthMandatory());
   }
 
   @Test
