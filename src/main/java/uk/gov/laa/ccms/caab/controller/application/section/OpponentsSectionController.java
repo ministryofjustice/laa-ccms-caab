@@ -407,30 +407,7 @@ public class OpponentsSectionController {
       final Model model) {
 
     CaseContext resolvedCaseContext = resolveCaseContext(caseContext, request);
-    // If the user has selected a relationship to case, we need to lookup this
-    // record again to determine if date of birth is mandatory.
-    if (StringUtils.hasText(opponentFormData.getRelationshipToCase())) {
-      RelationshipToCaseLookupValueDetail relationshipToCase =
-          lookupService
-              .getPersonToCaseRelationship(opponentFormData.getRelationshipToCase())
-              .map(
-                  relationshipToCaseLookupValueDetail ->
-                      relationshipToCaseLookupValueDetail.orElse(
-                          new RelationshipToCaseLookupValueDetail()
-                              .code(opponentFormData.getRelationshipToCase())
-                              .description(opponentFormData.getRelationshipToCase())))
-              .blockOptional()
-              .orElseThrow(
-                  () ->
-                      new CaabApplicationException(
-                          "Failed to retrieve relationship to case with code: %s"
-                              .formatted(opponentFormData.getRelationshipToCase())));
-
-      opponentFormData.setDateOfBirthMandatory(relationshipToCase.getDateOfBirthMandatory());
-    }
-
-    opponentFormData.setDateOfBirth(
-        DateUtils.normaliseComponentDateIfValid(opponentFormData.getDateOfBirth()));
+    prepareIndividualOpponentForValidation(opponentFormData);
     individualOpponentValidator.validate(opponentFormData, bindingResult);
 
     if (bindingResult.hasErrors()) {
@@ -529,8 +506,7 @@ public class OpponentsSectionController {
     } else {
       // Validate individual opponent.
       if (currentOpponent instanceof IndividualOpponentFormData individualOpponent) {
-        individualOpponent.setDateOfBirth(
-            DateUtils.normaliseComponentDateIfValid(individualOpponent.getDateOfBirth()));
+        prepareIndividualOpponentForValidation(individualOpponent);
       }
       individualOpponentValidator.validate(currentOpponent, bindingResult);
 
@@ -701,6 +677,35 @@ public class OpponentsSectionController {
     return resolveCaseContext(caseContext).isAmendment()
         ? Boolean.TRUE.equals(opponent.getEditable())
         : Boolean.TRUE.equals(opponent.getDeletable());
+  }
+
+  private void prepareIndividualOpponentForValidation(
+      final IndividualOpponentFormData individualOpponent) {
+    // If the user has selected a relationship to case, we need to lookup this
+    // record again to determine if date of birth is mandatory.
+    if (StringUtils.hasText(individualOpponent.getRelationshipToCase())) {
+      RelationshipToCaseLookupValueDetail relationshipToCase =
+          lookupService
+              .getPersonToCaseRelationship(individualOpponent.getRelationshipToCase())
+              .map(
+                  relationshipToCaseLookupValueDetail ->
+                      relationshipToCaseLookupValueDetail.orElse(
+                          new RelationshipToCaseLookupValueDetail()
+                              .code(individualOpponent.getRelationshipToCase())
+                              .description(individualOpponent.getRelationshipToCase())))
+              .blockOptional()
+              .orElseThrow(
+                  () ->
+                      new CaabApplicationException(
+                          "Failed to retrieve relationship to case with code: %s"
+                              .formatted(individualOpponent.getRelationshipToCase())));
+
+      individualOpponent.setDateOfBirthMandatory(
+          Boolean.TRUE.equals(relationshipToCase.getDateOfBirthMandatory()));
+    }
+
+    individualOpponent.setDateOfBirth(
+        DateUtils.normaliseComponentDateIfValid(individualOpponent.getDateOfBirth()));
   }
 
   private void populateOrganisationSearchDropdowns(final Model model) {

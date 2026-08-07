@@ -100,6 +100,8 @@ import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -508,8 +510,19 @@ public class ApplicationSubmissionController {
     }
 
     final Set<String> opponentErrors = new HashSet<>();
+    final List<RelationshipToCaseLookupValueDetail> personToCaseRelationships =
+        opponents.stream().anyMatch(IndividualOpponentFormData.class::isInstance)
+            ? lookupService
+                .getPersonToCaseRelationships()
+                .map(RelationshipToCaseLookupDetail::getContent)
+                .blockOptional()
+                .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"))
+            : List.of();
+
     for (final AbstractOpponentFormData opponent : opponents) {
-      if (opponent instanceof IndividualOpponentFormData) {
+      if (opponent instanceof IndividualOpponentFormData individualOpponent) {
+        individualOpponent.setDateOfBirthMandatory(
+            isIndividualDateOfBirthMandatory(individualOpponent, personToCaseRelationships));
         if (validateAndAddErrors(
             opponent, individualOpponentValidator, model, "individualOpponent")) {
           opponentErrors.addAll(getErrorsFromModel(model, "individualOpponent"));
@@ -527,6 +540,27 @@ public class ApplicationSubmissionController {
       return true;
     }
     return false;
+  }
+
+  private boolean isIndividualDateOfBirthMandatory(
+      final IndividualOpponentFormData individualOpponent,
+      final List<RelationshipToCaseLookupValueDetail> personToCaseRelationships) {
+    final String relationshipToCaseCode = individualOpponent.getRelationshipToCase();
+    if (relationshipToCaseCode == null) {
+      return false;
+    }
+
+    final RelationshipToCaseLookupValueDetail relationshipToCase =
+        personToCaseRelationships.stream()
+            .filter(relationship -> relationshipToCaseCode.equals(relationship.getCode()))
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new CaabApplicationException(
+                        "Failed to find matching relationship to case with code: %s"
+                            .formatted(individualOpponent.getRelationshipToCase())));
+
+    return Boolean.TRUE.equals(relationshipToCase.getDateOfBirthMandatory());
   }
 
   /**
