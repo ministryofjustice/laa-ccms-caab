@@ -787,7 +787,29 @@ class ApplicationSubmissionControllerTest {
                 .sessionAttr(ACTIVE_CASE, mockActiveCase)
                 .sessionAttr(SUBMISSION_RESULT, "confirmed"))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/submissions/alreadySubmitted"));
+        .andExpect(redirectedUrl("/submissions/alreadySubmitted?returnUrl=/case/overview"));
+  }
+
+  @Test
+  @DisplayName("GET submit/summary - application already submitted redirects with home return URL")
+  void testApplicationSummary_applicationAlreadySubmittedRedirects() throws Exception {
+    final UserDetail mockUser = buildUserDetail();
+    final ActiveCase mockActiveCase =
+        ActiveCase.builder()
+            .providerId(1)
+            .applicationId(1)
+            .caseReferenceNumber("caseRef123")
+            .clientReferenceNumber("clientRef456")
+            .build();
+
+    mockMvc
+        .perform(
+            get("/{caseContext}/submit/summary", CaseContext.APPLICATION)
+                .sessionAttr(USER_DETAILS, mockUser)
+                .sessionAttr(ACTIVE_CASE, mockActiveCase)
+                .sessionAttr(SUBMISSION_RESULT, "confirmed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/submissions/alreadySubmitted?returnUrl=/home"));
   }
 
   @Test
@@ -802,7 +824,7 @@ class ApplicationSubmissionControllerTest {
                 .sessionAttr(USER_DETAILS, mockUser)
                 .sessionAttr(SUBMISSION_RESULT, "confirmed"))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/submissions/alreadySubmitted"));
+        .andExpect(redirectedUrl("/submissions/alreadySubmitted?returnUrl=/case/overview"));
   }
 
   @Test
@@ -827,7 +849,7 @@ class ApplicationSubmissionControllerTest {
                 .sessionAttr(SUBMISSION_SUMMARY, submissionSummary)
                 .sessionAttr(SUBMISSION_RESULT, "confirmed"))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/submissions/alreadySubmitted"));
+        .andExpect(redirectedUrl("/submissions/alreadySubmitted?returnUrl=/case/overview"));
   }
 
   private ApplicationDetail amendmentApplication(
