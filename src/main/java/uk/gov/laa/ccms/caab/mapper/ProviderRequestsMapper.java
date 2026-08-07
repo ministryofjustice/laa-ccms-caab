@@ -75,6 +75,7 @@ public interface ProviderRequestsMapper {
   @Mapping(target = "dynamicOptions", ignore = true)
   @Mapping(target = "additionalInformation", ignore = true)
   @Mapping(target = "file", ignore = true)
+  @Mapping(target = "sanitisedFileName", ignore = true)
   @Mapping(target = "fileExtension", ignore = true)
   @Mapping(target = "documentType", ignore = true)
   @Mapping(target = "documentTypeDisplayValue", ignore = true)

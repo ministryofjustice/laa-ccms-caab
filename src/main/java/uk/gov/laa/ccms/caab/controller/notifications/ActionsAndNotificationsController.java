@@ -615,7 +615,7 @@ public class ActionsAndNotificationsController {
             null,
             null,
             null,
-            attachmentUploadFormData.getFile().getOriginalFilename(),
+            attachmentUploadFormData.getSanitisedFileName(),
             attachmentUploadFormData.getFile().getInputStream());
       } catch (AvVirusFoundException | AvScanException | IOException e) {
         bindingResult.rejectValue("file", "scan.failure", e.getMessage());
