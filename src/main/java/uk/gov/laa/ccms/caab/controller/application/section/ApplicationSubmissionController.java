@@ -554,8 +554,12 @@ public class ApplicationSubmissionController {
         .filter(relationship -> relationshipToCaseCode.equals(relationship.getCode()))
         .findFirst()
         .map(relationship -> Boolean.TRUE.equals(relationship.getDateOfBirthMandatory()))
-        .orElse(false);
-  
+        .orElseThrow(
+            () ->
+                new CaabApplicationException(
+                    "Failed to find matching relationship to case with code: %s"
+                        .formatted(individualOpponent.getRelationshipToCase())));
+  }
 
   /**
    * Retrieves a list of error messages from the model by attribute name.
