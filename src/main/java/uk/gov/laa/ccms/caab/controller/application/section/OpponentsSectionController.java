@@ -683,6 +683,7 @@ public class OpponentsSectionController {
       final IndividualOpponentFormData individualOpponent) {
     // If the user has selected a relationship to case, we need to lookup this
     // record again to determine if date of birth is mandatory.
+    individualOpponent.setDateOfBirthMandatory(false);
     if (StringUtils.hasText(individualOpponent.getRelationshipToCase())) {
       RelationshipToCaseLookupValueDetail relationshipToCase =
           lookupService
