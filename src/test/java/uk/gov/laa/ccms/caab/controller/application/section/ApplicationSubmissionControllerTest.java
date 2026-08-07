@@ -1047,7 +1047,8 @@ class ApplicationSubmissionControllerTest {
   }
 
   @Test
-  @DisplayName("Test validateOpponents with IndividualOpponentFormData returns true with errors")
+  @DisplayName(
+      "Test validateOpponents with IndividualOpponentFormData returns true with errors and date of birth not mandatory")
   void testValidateOpponents_WithIndividualOpponentErrors_DateOfBirthNotMandatory() {
     final IndividualOpponentFormData opponent = new IndividualOpponentFormData();
     opponent.setRelationshipToCase("OPP");
@@ -1086,7 +1087,8 @@ class ApplicationSubmissionControllerTest {
   }
 
   @Test
-  @DisplayName("Test validateOpponents with IndividualOpponentFormData returns true with errors")
+  @DisplayName(
+      "Test validateOpponents with IndividualOpponentFormData returns true with errors and date of birth mandatory")
   void testValidateOpponents_WithIndividualOpponentErrors_DateOfBirthMandatory() {
     final IndividualOpponentFormData opponent = new IndividualOpponentFormData();
     opponent.setRelationshipToCase("CHILD");
