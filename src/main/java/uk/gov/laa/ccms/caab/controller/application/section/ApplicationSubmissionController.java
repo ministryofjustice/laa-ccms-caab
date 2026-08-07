@@ -546,22 +546,16 @@ public class ApplicationSubmissionController {
       final IndividualOpponentFormData individualOpponent,
       final List<RelationshipToCaseLookupValueDetail> personToCaseRelationships) {
     final String relationshipToCaseCode = individualOpponent.getRelationshipToCase();
-    if (relationshipToCaseCode == null) {
+    if (relationshipToCaseCode == null || relationshipToCaseCode.isBlank()) {
       return false;
     }
 
-    final RelationshipToCaseLookupValueDetail relationshipToCase =
-        personToCaseRelationships.stream()
-            .filter(relationship -> relationshipToCaseCode.equals(relationship.getCode()))
-            .findFirst()
-            .orElseThrow(
-                () ->
-                    new CaabApplicationException(
-                        "Failed to find matching relationship to case with code: %s"
-                            .formatted(individualOpponent.getRelationshipToCase())));
-
-    return Boolean.TRUE.equals(relationshipToCase.getDateOfBirthMandatory());
-  }
+    return personToCaseRelationships.stream()
+        .filter(relationship -> relationshipToCaseCode.equals(relationship.getCode()))
+        .findFirst()
+        .map(relationship -> Boolean.TRUE.equals(relationship.getDateOfBirthMandatory()))
+        .orElse(false);
+  
 
   /**
    * Retrieves a list of error messages from the model by attribute name.
