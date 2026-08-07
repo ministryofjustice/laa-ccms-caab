@@ -246,8 +246,12 @@
       </fieldset>
     </div>
     <div class="govuk-form-group">
+      <govuk:details th:summaryText="#{details.vulnerableClient}"
+                     th:text="#{details.vulnerableClient.text}"/>
       <govuk:details th:summaryText="#{details.highProfileClient}"
                      th:text="#{details.highProfileClient.text}"/>
+      <govuk:details th:summaryText="#{details.vexatiousLitigant}"
+                     th:text="#{details.vexatiousLitigant.text}"/>
       <govuk:details th:summaryText="#{details.mentalIncapacity}"
                      th:text="#{details.mentalIncapacity.text}"/>
     </div>
