@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.util;
 
 import java.util.Optional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
@@ -42,6 +43,20 @@ public final class FileUtil {
    */
   public static String getFilename(String name, String extension) {
     return name + (extension == null || extension.equals(name) ? "" : "." + extension);
+  }
+
+  /**
+   * Sanitise a filename by replacing characters outside the allowed set with underscores.
+   *
+   * @param filename the original filename.
+   * @return the sanitised filename.
+   */
+  public static String sanitiseFileName(String filename) {
+    if (filename == null || filename.isBlank()) {
+      return "";
+    }
+
+    return StringUtils.cleanPath(filename).replaceAll("[^A-Za-z0-9_.-]", "_");
   }
 
   private FileUtil() {}

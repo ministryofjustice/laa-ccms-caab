@@ -294,7 +294,7 @@ public class ProviderRequestsController {
               null,
               null,
               null,
-              providerRequestDetailsForm.getFile().getOriginalFilename(),
+              providerRequestDetailsForm.getSanitisedFileName(),
               providerRequestDetailsForm.getFile().getInputStream());
         } catch (final AvVirusFoundException | AvScanException | IOException e) {
           bindingResult.rejectValue("file", "scan.failure", e.getMessage());
@@ -419,7 +419,7 @@ public class ProviderRequestsController {
           evidenceUploadFormData.getProviderId(),
           evidenceUploadFormData.getDocumentSender(),
           evidenceUploadFormData.getCcmsModule(),
-          evidenceUploadFormData.getFile().getOriginalFilename(),
+          evidenceUploadFormData.getSanitisedFileName(),
           evidenceUploadFormData.getFile().getInputStream());
     } catch (AvVirusFoundException | AvScanException | IOException e) {
       bindingResult.rejectValue("file", "scan.failure", e.getMessage());

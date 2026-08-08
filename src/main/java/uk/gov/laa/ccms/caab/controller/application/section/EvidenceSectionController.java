@@ -184,7 +184,7 @@ public class EvidenceSectionController {
           evidenceUploadFormData.getProviderId(),
           evidenceUploadFormData.getDocumentSender(),
           evidenceUploadFormData.getCcmsModule(),
-          evidenceUploadFormData.getFile().getOriginalFilename(),
+          evidenceUploadFormData.getSanitisedFileName(),
           evidenceUploadFormData.getFile().getInputStream());
     } catch (AvVirusFoundException | AvScanException | IOException e) {
       bindingResult.rejectValue("file", "scan.failure", e.getMessage());
