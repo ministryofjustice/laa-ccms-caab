@@ -469,7 +469,6 @@ public class CaseController {
   private static boolean isOutcomeAction(String actionCode) {
     return actionCode.equals(
             uk.gov.laa.ccms.caab.constants.FunctionConstants.OUTCOME_WITH_DISCHARGE)
-        || actionCode.equals(uk.gov.laa.ccms.caab.constants.FunctionConstants.OUTCOME_NO_DISCHARGE)
         || actionCode.equals(uk.gov.laa.ccms.caab.constants.FunctionConstants.VIEW_CASE_OUTCOME);
   }
 
