@@ -39,8 +39,8 @@ class ActionViewHelperTest {
   void testGetAllAvailableActionsStructureAndUniqueness() {
     List<AvailableAction> actions = ActionViewHelper.getAllAvailableActions(false);
     assertThat(actions).as("Actions list should not be null").isNotNull();
-    // Expected size: 1 (amendment) + 12 (static) = 13
-    assertThat(actions).as("Should be 13 actions in total (1 amendment + 12 static)").hasSize(13);
+    // Expected size: 1 (amendment) + 11 (static) = 12
+    assertThat(actions).as("Should be 12 actions in total (1 amendment + 11 static)").hasSize(12);
 
     // All action codes should be unique
     List<String> codes = actions.stream().map(AvailableAction::actionCode).toList();
@@ -48,7 +48,7 @@ class ActionViewHelperTest {
 
     // Verify the static actions part
     List<AvailableAction> staticActions = actions.subList(1, actions.size());
-    assertThat(staticActions).as("Should be 12 static actions").hasSize(12);
+    assertThat(staticActions).as("Should be 11 static actions").hasSize(11);
 
     // Spot check a few static actions for their properties
     // First static action: AMEND_CLIENT
@@ -58,8 +58,8 @@ class ActionViewHelperTest {
     assertThat(amendClientAction.descriptionKey()).isEqualTo("action.amendClient.description");
     assertThat(amendClientAction.link()).isEqualTo("/amendments/sections/client/details/summary");
 
-    // Last static action: MEANS_REASSESSMENT (index 11 of staticActions)
-    AvailableAction meansReassessmentAction = staticActions.get(11);
+    // Last static action: MEANS_REASSESSMENT (index 10 of staticActions)
+    AvailableAction meansReassessmentAction = staticActions.get(10);
     assertThat(meansReassessmentAction.actionCode())
         .isEqualTo(FunctionConstants.MEANS_REASSESSMENT);
     assertThat(meansReassessmentAction.actionKey())
@@ -77,7 +77,7 @@ class ActionViewHelperTest {
     List<AvailableAction> allActions = ActionViewHelper.getAllAvailableActions(false);
     List<AvailableAction> staticActions = allActions.subList(1, allActions.size());
 
-    assertThat(staticActions).as("Incorrect number of static actions").hasSize(12);
+    assertThat(staticActions).as("Incorrect number of static actions").hasSize(11);
 
     // Define the expected static actions in order based on ActionViewHelper.AVAILABLE_ACTION_LIST
     List<ExpectedAction> expectedStaticActions =
@@ -96,12 +96,7 @@ class ActionViewHelperTest {
                 FunctionConstants.OUTCOME_WITH_DISCHARGE,
                 "action.recordOutcome.name",
                 "action.recordOutcome.description",
-                "#"),
-            new ExpectedAction(
-                FunctionConstants.OUTCOME_NO_DISCHARGE,
-                "action.recordOutcome.name",
-                "action.recordOutcome.description",
-                "#"),
+                "/case/outcome-and-awards"),
             new ExpectedAction(
                 FunctionConstants.SUBMIT_CASE_REQUEST,
                 "action.submitCaseQuery.name",
@@ -121,7 +116,7 @@ class ActionViewHelperTest {
                 FunctionConstants.VIEW_CASE_OUTCOME,
                 "action.viewOutcome.name",
                 "action.viewOutcome.description",
-                "#"),
+                "/case/outcome-and-awards"),
             new ExpectedAction(
                 FunctionConstants.EDIT_PROVIDER,
                 "action.amendProviderDetails.name",

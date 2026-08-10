@@ -262,6 +262,17 @@ public class CaseController {
   }
 
   /**
+   * Displays the outcome and awards screen.
+   *
+   * @param ebsCase The case details from EBS.
+   * @return The outcome and awards view.
+   */
+  @GetMapping("/case/outcome-and-awards")
+  public String outcomeAndAwards(@SessionAttribute(CASE) final ApplicationDetail ebsCase) {
+    return "application/outcome-and-awards";
+  }
+
+  /**
    * Returns a display object containing an other party within a case.
    *
    * @param ebsCase The case details from EBS.
@@ -425,15 +436,27 @@ public class CaseController {
       ApplicationDetail amendments,
       @SessionAttribute(CASE_REFERENCE_NUMBER) String caseReferenceNumber) {
 
-    if (ebsCase.getAvailableFunctions() == null || ebsCase.getAvailableFunctions().isEmpty()) {
-      return Collections.emptyList();
+    final Set<String> caseAvailableFunctions;
+    if (ebsCase.getAvailableFunctions() != null && !ebsCase.getAvailableFunctions().isEmpty()) {
+      caseAvailableFunctions = Set.copyOf(ebsCase.getAvailableFunctions());
+    } else {
+      caseAvailableFunctions = Collections.emptySet();
     }
 
-    Set<String> caseAvailableFunctions = Set.copyOf(ebsCase.getAvailableFunctions());
     boolean openAmendment = amendment || (hasEbsAmendments(ebsCase) && amendments != null);
 
     return ActionViewHelper.getAllAvailableActions(openAmendment).stream()
-        .filter(availableAction -> caseAvailableFunctions.contains(availableAction.actionCode()))
+        .filter(
+            availableAction -> {
+              // Outcome actions should always be available for submitted cases with proceedings
+              // (not gated on EBS function codes since they're never populated)
+              if (isOutcomeAction(availableAction.actionCode())) {
+                return hasProceedingsWithOutcome(ebsCase);
+              }
+              // All other actions require EBS function codes
+              return !caseAvailableFunctions.isEmpty()
+                  && caseAvailableFunctions.contains(availableAction.actionCode());
+            })
         .map(action -> enhanceActionUrl(action, caseReferenceNumber))
         .toList();
   }
@@ -441,6 +464,17 @@ public class CaseController {
   private static boolean hasEbsAmendments(ApplicationDetail ebsCase) {
     return ebsCase.getAmendmentProceedingsInEbs() != null
         && !ebsCase.getAmendmentProceedingsInEbs().isEmpty();
+  }
+
+  private static boolean isOutcomeAction(String actionCode) {
+    return actionCode.equals(
+            uk.gov.laa.ccms.caab.constants.FunctionConstants.OUTCOME_WITH_DISCHARGE)
+        || actionCode.equals(uk.gov.laa.ccms.caab.constants.FunctionConstants.OUTCOME_NO_DISCHARGE)
+        || actionCode.equals(uk.gov.laa.ccms.caab.constants.FunctionConstants.VIEW_CASE_OUTCOME);
+  }
+
+  private static boolean hasProceedingsWithOutcome(ApplicationDetail ebsCase) {
+    return ebsCase.getProceedings() != null && !ebsCase.getProceedings().isEmpty();
   }
 
   private void setReturnDetails(Model model, String notificationId, HttpServletRequest request) {

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+  <title th:text="|#{service.name} - #{case.outcomeAndAwards.title}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a class="govuk-back-link" th:href="@{/case/overview}" th:text="#{site.returnToCaseOverview}"/>
+  </div>
+
+  <div id="main-content">
+    <h1 class="govuk-heading-l" th:text="#{case.outcomeAndAwards.title}"></h1>
+    <p class="govuk-body-l" th:text="#{case.outcomeAndAwards.intro}"></p>
+
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h2 class="govuk-heading-m"
+            th:text="#{case.outcomeAndAwards.proceedingOutcomeSummary.title}"></h2>
+        <table class="govuk-table">
+          <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.proceedingOutcomeSummary.table.proceeding}"></th>
+            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.proceedingOutcomeSummary.table.formOfCivilLegalService}"></th>
+            <th scope="col" class="govuk-table__header" th:text="#{common.status}"></th>
+            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.proceedingOutcomeSummary.table.outcome}"></th>
+            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.proceedingOutcomeSummary.table.dateGranted}"></th>
+            <th scope="col" class="govuk-table__header" th:text="#{site.action}"></th>
+          </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell">
+              <a class="govuk-link govuk-link--no-visited-state"
+                 href="#"
+                 th:text="#{case.outcomeAndAwards.placeholder.proceeding}"></a>
+            </td>
+            <td class="govuk-table__cell" th:text="#{case.outcomeAndAwards.placeholder.formOfCivilLegalService}"></td>
+            <td class="govuk-table__cell" th:text="#{case.outcomeAndAwards.placeholder.status}"></td>
+            <td class="govuk-table__cell"></td>
+            <td class="govuk-table__cell" th:text="#{case.outcomeAndAwards.placeholder.dateGranted}"></td>
+            <td class="govuk-table__cell"></td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h2 class="govuk-heading-m" th:text="#{case.outcomeAndAwards.awardsSummary.title}"></h2>
+        <div class="govuk-button-group govuk-!-margin-bottom-3">
+          <a class="govuk-button govuk-!-margin-bottom-0"
+             href="#"
+             th:text="#{case.outcomeAndAwards.awardsSummary.addAward}"></a>
+        </div>
+        <table class="govuk-table">
+          <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.awardsSummary.table.type}"></th>
+            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.awardsSummary.table.dateOfOrder}"></th>
+            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.awardsSummary.table.description}"></th>
+            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.awardsSummary.table.value}"></th>
+            <th scope="col" class="govuk-table__header" th:text="#{site.action}"></th>
+          </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell" th:text="#{site.none}"></td>
+            <td class="govuk-table__cell"></td>
+            <td class="govuk-table__cell"></td>
+            <td class="govuk-table__cell"></td>
+            <td class="govuk-table__cell"></td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h2 class="govuk-heading-m"
+            th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.title}"></h2>
+        <table class="govuk-table">
+          <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.table.type}"></th>
+            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.table.preCertificateAmount}"></th>
+            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.table.legalHelpAmount}"></th>
+            <th scope="col" class="govuk-table__header" th:text="#{site.action}"></th>
+          </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell">
+              <a class="govuk-link govuk-link--no-visited-state"
+                 href="#"
+                 th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.link}"></a>
+            </td>
+            <td class="govuk-table__cell" th:text="#{case.outcomeAndAwards.placeholder.currencyZero}"></td>
+            <td class="govuk-table__cell" th:text="#{case.outcomeAndAwards.placeholder.currencyZero}"></td>
+            <td class="govuk-table__cell"></td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <h2 class="govuk-heading-m" th:text="#{case.outcomeAndAwards.documents.title}"></h2>
+        <table class="govuk-table">
+          <thead class="govuk-table__head">
+          <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.documents.table.documents}"></th>
+          </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+          <tr class="govuk-table__row">
+            <td class="govuk-table__cell">
+              <a class="govuk-link govuk-link--no-visited-state"
+                 href="#"
+                 th:text="#{case.outcomeAndAwards.documents.upload}"></a>
+              <strong class="govuk-tag govuk-tag--orange govuk-!-margin-left-1"
+                      th:text="#{case.outcomeAndAwards.documents.newTag}"></strong>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

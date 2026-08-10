@@ -25,12 +25,7 @@ public class ActionViewHelper {
               FunctionConstants.OUTCOME_WITH_DISCHARGE,
               "action.recordOutcome.name",
               "action.recordOutcome.description",
-              "#"),
-          new AvailableAction(
-              FunctionConstants.OUTCOME_NO_DISCHARGE,
-              "action.recordOutcome.name",
-              "action.recordOutcome.description",
-              "#"),
+              "/case/outcome-and-awards"),
           new AvailableAction(
               FunctionConstants.SUBMIT_CASE_REQUEST,
               "action.submitCaseQuery.name",
@@ -50,7 +45,7 @@ public class ActionViewHelper {
               FunctionConstants.VIEW_CASE_OUTCOME,
               "action.viewOutcome.name",
               "action.viewOutcome.description",
-              "#"),
+              "/case/outcome-and-awards"),
           new AvailableAction(
               FunctionConstants.EDIT_PROVIDER,
               "action.amendProviderDetails.name",
