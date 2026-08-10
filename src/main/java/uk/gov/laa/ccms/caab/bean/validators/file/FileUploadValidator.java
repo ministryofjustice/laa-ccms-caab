@@ -101,6 +101,7 @@ public abstract class FileUploadValidator extends AbstractValidator {
 
       if (!hasSingleExtension(fileUploadFormData)) {
         errors.rejectValue("file", MULTIPLE_EXTENSION_ERROR_CODE);
+        return;
       }
 
       if (!isValidExtension(fileUploadFormData.getFileExtension())) {
@@ -111,6 +112,10 @@ public abstract class FileUploadValidator extends AbstractValidator {
             INVALID_EXTENSION_ERROR.formatted(getCommaDelimitedString(validExtensions)));
       } else {
         validateFileSize(fileUploadFormData, errors);
+
+        if (errors.hasErrors()) {
+          return;
+        }
 
         if (!isValidMimeType(fileUploadFormData.getFile().getContentType())) {
           errors.rejectValue(
@@ -218,6 +223,10 @@ public abstract class FileUploadValidator extends AbstractValidator {
 
     int lastDot = filename.lastIndexOf('.');
     int firstDot = filename.indexOf('.');
+
+    if (firstDot < 0) {
+      return true;
+    }
 
     return (firstDot > 0) && (firstDot == lastDot) && lastDot < (filename.length() - 1);
   }

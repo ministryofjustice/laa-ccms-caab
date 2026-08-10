@@ -99,6 +99,21 @@ class EvidenceUploadValidatorTest {
   }
 
   @Test
+  @DisplayName("validate - Filename without dot maps to invalid extension error")
+  void validate_FileWithoutDot_HasInvalidExtensionError() {
+    evidenceUploadFormData = buildEvidenceUploadFormData();
+    evidenceUploadFormData.setFile(
+        new MockMultipartFile(
+            "theFile", "originalName", "application/pdf", "the file data".getBytes()));
+
+    validator.validate(evidenceUploadFormData, errors);
+
+    assertTrue(errors.hasErrors());
+    assertNotNull(errors.getFieldError("file"));
+    assertEquals("validation.error.invalidExtension", errors.getFieldError("file").getCode());
+  }
+
+  @Test
   public void validate_mimeType() {
     evidenceUploadFormData = buildEvidenceUploadFormData();
     evidenceUploadFormData.setFile(
