@@ -39,10 +39,10 @@
             </td>
             <td class="govuk-table__cell" th:text="${proceeding.proceedingType?.displayValue}"></td>
             <td class="govuk-table__cell" th:text="${proceeding.status?.displayValue}"></td>
-            <td class="govuk-table__cell" th:text="${proceeding.outcome?.result}"></td>
+            <td class="govuk-table__cell" th:text="${proceeding.outcome?.result?.displayValue}"></td>
             <td class="govuk-table__cell" th:text="${proceeding.dateGranted != null ? #dates.format(proceeding.dateGranted, 'dd/MM/yyyy') : ''}"></td>
             <td class="govuk-table__cell">
-              <th:block th:if="${proceeding.outcome?.result != null and proceeding.outcome?.result != ''}">
+              <th:block th:if="${proceeding.outcome?.result?.displayValue != null}">
                 <a class="govuk-link" href="#">Clear</a>
               </th:block>
             </td>

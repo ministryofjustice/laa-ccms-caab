@@ -449,12 +449,7 @@ public class CaseController {
     boolean openAmendment = amendment || (hasEbsAmendments(ebsCase) && amendments != null);
 
     return ActionViewHelper.getAllAvailableActions(openAmendment).stream()
-        .filter(
-            availableAction -> {
-              // All actions require EBS function codes
-              return !caseAvailableFunctions.isEmpty()
-                  && caseAvailableFunctions.contains(availableAction.actionCode());
-            })
+        .filter(availableAction -> caseAvailableFunctions.contains(availableAction.actionCode()))
         .map(action -> enhanceActionUrl(action, caseReferenceNumber))
         .toList();
   }
