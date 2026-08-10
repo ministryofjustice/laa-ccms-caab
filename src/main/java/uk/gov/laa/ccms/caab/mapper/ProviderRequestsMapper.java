@@ -146,7 +146,7 @@ public interface ProviderRequestsMapper {
   @Mapping(target = "transferResponseDescription", ignore = true)
   @Mapping(target = "evidenceDescriptions", ignore = true)
   @Mapping(target = "transferRetryCount", constant = "0")
-  @Mapping(target = "fileName", source = "file.originalFilename")
+  @Mapping(target = "fileName", source = "sanitisedFileName")
   @Mapping(target = "fileData", source = "file")
   @Mapping(target = "description", source = "documentDescription")
   @Mapping(target = "documentType.id", source = "documentType")

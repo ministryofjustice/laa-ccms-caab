@@ -307,11 +307,11 @@ class ProviderRequestsMapperTest {
     formData.setDocumentSender("SenderXYZ");
 
     final MultipartFile mockFile = mock(MultipartFile.class);
-    when(mockFile.getOriginalFilename()).thenReturn("testFile.pdf");
     when(commonMapper.toFileBytes(mockFile)).thenReturn(new byte[] {1, 2, 3});
     when(commonMapper.toBase64EncodedStringFromByteArray(new byte[] {1, 2, 3}))
         .thenReturn("encodedString");
     formData.setFile(mockFile);
+    formData.setSanitisedFileName("testFile.pdf");
 
     final EvidenceDocumentDetail result = mapper.toProviderRequestDocumentDetail(formData);
 
@@ -329,7 +329,7 @@ class ProviderRequestsMapperTest {
     assertEquals("SenderXYZ", result.getDocumentSender(), "Document sender should match");
     assertEquals("encodedString", result.getFileData(), "File data should be base64 encoded");
     assertEquals(
-        "testFile.pdf", result.getFileName(), "File name should match the original filename");
+        "testFile.pdf", result.getFileName(), "File name should match the sanitised filename");
     assertEquals(0, result.getTransferRetryCount(), "Transfer retry count should be set to 0");
   }
 

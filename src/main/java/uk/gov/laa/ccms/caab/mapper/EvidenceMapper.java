@@ -48,7 +48,7 @@ public interface EvidenceMapper {
   @Mapping(target = "transferResponseCode", ignore = true)
   @Mapping(target = "transferResponseDescription", ignore = true)
   @Mapping(target = "transferRetryCount", constant = "0")
-  @Mapping(target = "fileName", source = "file.originalFilename")
+  @Mapping(target = "fileName", source = "sanitisedFileName")
   @Mapping(target = "fileData", source = "file")
   @Mapping(target = "description", source = "documentDescription")
   @Mapping(target = "documentType.id", source = "documentType")

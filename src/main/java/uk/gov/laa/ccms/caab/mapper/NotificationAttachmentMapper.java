@@ -49,7 +49,7 @@ public interface NotificationAttachmentMapper {
 
   @Mapping(target = "auditTrail", ignore = true)
   @Mapping(target = "id", source = "documentId")
-  @Mapping(target = "fileName", source = "file.originalFilename")
+  @Mapping(target = "fileName", source = "sanitisedFileName")
   @Mapping(target = "description", source = "documentDescription")
   @Mapping(target = "sendBy", source = "sendBy.code")
   @Mapping(target = "documentType.id", source = "documentType")
