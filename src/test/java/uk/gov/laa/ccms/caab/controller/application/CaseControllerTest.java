@@ -700,6 +700,80 @@ class CaseControllerTest {
     }
 
     @Test
+    @DisplayName(
+        "Case overview screen shows outcome actions when EBS function codes are absent but proceedings exist")
+    public void caseOverviewShowsOutcomeActionWhenNoFunctionCodesButHasProceedings() {
+      final String selectedCaseRef = "7";
+      ApplicationDetail ebsCase =
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              null); // no availableFunctions
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .id(1)
+                  .status(new uk.gov.laa.ccms.caab.model.StringDisplayValue().id("DRAFT"))));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/overview")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(SEARCH_URL, returnUrl)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "availableActions",
+              value ->
+                  assertThat(value)
+                      .asInstanceOf(InstanceOfAssertFactories.COLLECTION)
+                      .extracting("actionCode")
+                      .containsExactlyInAnyOrder(
+                          FunctionConstants.OUTCOME_WITH_DISCHARGE,
+                          FunctionConstants.VIEW_CASE_OUTCOME));
+    }
+
+    @Test
+    @DisplayName(
+        "Case overview screen does not show outcome actions when EBS function codes are absent and there are no proceedings")
+    public void caseOverviewDoesNotShowOutcomeActionWhenNoFunctionCodesAndNoProceedings() {
+      final String selectedCaseRef = "8a";
+      ApplicationDetail ebsCase =
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null, // no proceedings
+              null,
+              null); // no availableFunctions
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/overview")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(SEARCH_URL, returnUrl)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "availableActions",
+              value ->
+                  assertThat(value).asInstanceOf(InstanceOfAssertFactories.COLLECTION).isEmpty());
+    }
+
+    @Test
     @DisplayName("Outcome and awards page loads")
     public void outcomeAndAwardsPageLoads() {
       final String selectedCaseRef = "8";
