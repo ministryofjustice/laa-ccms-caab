@@ -119,6 +119,48 @@
          th:field="*{__${fieldId}__}">
 </div>
 
+<!--
+  GDS password input: masked by default, with a show/hide toggle.
+  https://design-system.service.gov.uk/components/password-input/
+-->
+<div th:fragment="passwordInput(fieldId, label, inputClass)"
+     th:with="hint=${hint}, maxlength=${maxlength ?: maxlengthParam},
+              autocomplete=${autocomplete ?: 'current-password'}"
+     class="govuk-form-group"
+     th:classappend="${#fields.hasErrors(fieldId)} ? 'govuk-form-group--error' : ''">
+  <label class="govuk-label" th:for="${fieldId}" th:text="${label}"></label>
+  <div th:if="${hint}" th:id="${fieldId + '-hint'}" class="govuk-hint" th:text="${hint}"></div>
+  <span th:if="${#fields.hasErrors(fieldId)}"
+        th:errors="*{__${fieldId}__}"
+        th:id="${fieldId + '-error'}"
+        class="govuk-error-message">
+  </span>
+  <div class="govuk-password-input" data-module="govuk-password-input">
+    <div class="govuk-input__wrapper govuk-password-input__wrapper">
+      <!-- th:value rather than th:field: Thymeleaf always blanks the value of a password field -->
+      <input th:class="${'govuk-input govuk-password-input__input govuk-js-password-input-input ' + inputClass
+                         + (#fields.hasErrors(fieldId) ? ' govuk-input--error' : '')}"
+             th:id="${fieldId}"
+             th:name="${fieldId}"
+             type="password"
+             spellcheck="false"
+             autocapitalize="none"
+             th:autocomplete="${autocomplete}"
+             th:maxlength="${maxlength}"
+             th:value="*{__${fieldId}__}"
+             th:attr="aria-describedby=${(hint != null ? fieldId + '-hint ' : '') + (#fields.hasErrors(fieldId) ? fieldId + '-error' : '')}">
+      <button type="button"
+              class="govuk-button govuk-button--secondary govuk-password-input__toggle govuk-js-password-input-toggle"
+              data-module="govuk-button"
+              th:aria-controls="${fieldId}"
+              th:aria-label="#{password.show.ariaLabel}"
+              hidden
+              th:text="#{password.show}">
+      </button>
+    </div>
+  </div>
+</div>
+
 <div th:fragment="largeTextInput(fieldId, label, maxLength)"
      class="govuk-form-group govuk-character-count"
      data-module="govuk-character-count"
