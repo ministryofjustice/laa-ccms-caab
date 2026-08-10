@@ -31,17 +31,21 @@
           </tr>
           </thead>
           <tbody class="govuk-table__body">
-          <tr class="govuk-table__row">
+          <tr class="govuk-table__row" th:each="proceeding : ${proceedings}">
             <td class="govuk-table__cell">
               <a class="govuk-link govuk-link--no-visited-state"
                  href="#"
-                 th:text="#{case.outcomeAndAwards.placeholder.proceeding}"></a>
+                 th:text="${proceeding.description}"></a>
             </td>
-            <td class="govuk-table__cell" th:text="#{case.outcomeAndAwards.placeholder.formOfCivilLegalService}"></td>
-            <td class="govuk-table__cell" th:text="#{case.outcomeAndAwards.placeholder.status}"></td>
-            <td class="govuk-table__cell"></td>
-            <td class="govuk-table__cell" th:text="#{case.outcomeAndAwards.placeholder.dateGranted}"></td>
-            <td class="govuk-table__cell"></td>
+            <td class="govuk-table__cell" th:text="${proceeding.proceedingType?.displayValue}"></td>
+            <td class="govuk-table__cell" th:text="${proceeding.status?.displayValue}"></td>
+            <td class="govuk-table__cell" th:text="${proceeding.outcome?.result}"></td>
+            <td class="govuk-table__cell" th:text="${proceeding.dateGranted != null ? #dates.format(proceeding.dateGranted, 'dd/MM/yyyy') : ''}"></td>
+            <td class="govuk-table__cell">
+              <th:block th:if="${proceeding.outcome?.result != null and proceeding.outcome?.result != ''}">
+                <a class="govuk-link" href="#">Clear</a>
+              </th:block>
+            </td>
           </tr>
           </tbody>
         </table>
@@ -51,11 +55,6 @@
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
         <h2 class="govuk-heading-m" th:text="#{case.outcomeAndAwards.awardsSummary.title}"></h2>
-        <div class="govuk-button-group govuk-!-margin-bottom-3">
-          <a class="govuk-button govuk-!-margin-bottom-0"
-             href="#"
-             th:text="#{case.outcomeAndAwards.awardsSummary.addAward}"></a>
-        </div>
         <table class="govuk-table">
           <thead class="govuk-table__head">
           <tr class="govuk-table__row">
@@ -68,14 +67,15 @@
           </thead>
           <tbody class="govuk-table__body">
           <tr class="govuk-table__row">
-            <td class="govuk-table__cell" th:text="#{site.none}"></td>
-            <td class="govuk-table__cell"></td>
-            <td class="govuk-table__cell"></td>
-            <td class="govuk-table__cell"></td>
-            <td class="govuk-table__cell"></td>
+            <td class="govuk-table__cell" colspan="5" th:text="#{case.outcomeAndAwards.awardsSummary.noAwards}"></td>
           </tr>
           </tbody>
         </table>
+        <div class="govuk-button-group govuk-!-margin-top-3">
+          <a class="govuk-button govuk-!-margin-bottom-0"
+             href="#"
+             th:text="#{case.outcomeAndAwards.awardsSummary.addAward}"></a>
+        </div>
       </div>
     </div>
 
@@ -99,8 +99,8 @@
                  href="#"
                  th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.link}"></a>
             </td>
-            <td class="govuk-table__cell" th:text="#{case.outcomeAndAwards.placeholder.currencyZero}"></td>
-            <td class="govuk-table__cell" th:text="#{case.outcomeAndAwards.placeholder.currencyZero}"></td>
+            <td class="govuk-table__cell">£0</td>
+            <td class="govuk-table__cell">£0</td>
             <td class="govuk-table__cell"></td>
           </tr>
           </tbody>

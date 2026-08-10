@@ -265,10 +265,13 @@ public class CaseController {
    * Displays the outcome and awards screen.
    *
    * @param ebsCase The case details from EBS.
+   * @param model the model
    * @return The outcome and awards view.
    */
   @GetMapping("/case/outcome-and-awards")
-  public String outcomeAndAwards(@SessionAttribute(CASE) final ApplicationDetail ebsCase) {
+  public String outcomeAndAwards(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase, Model model) {
+    model.addAttribute("proceedings", ebsCase.getProceedings());
     return "application/outcome-and-awards";
   }
 
@@ -448,12 +451,7 @@ public class CaseController {
     return ActionViewHelper.getAllAvailableActions(openAmendment).stream()
         .filter(
             availableAction -> {
-              // Outcome actions should always be available for submitted cases with proceedings
-              // (not gated on EBS function codes since they're never populated)
-              if (isOutcomeAction(availableAction.actionCode())) {
-                return hasProceedingsWithOutcome(ebsCase);
-              }
-              // All other actions require EBS function codes
+              // All actions require EBS function codes
               return !caseAvailableFunctions.isEmpty()
                   && caseAvailableFunctions.contains(availableAction.actionCode());
             })
@@ -464,16 +462,6 @@ public class CaseController {
   private static boolean hasEbsAmendments(ApplicationDetail ebsCase) {
     return ebsCase.getAmendmentProceedingsInEbs() != null
         && !ebsCase.getAmendmentProceedingsInEbs().isEmpty();
-  }
-
-  private static boolean isOutcomeAction(String actionCode) {
-    return actionCode.equals(
-            uk.gov.laa.ccms.caab.constants.FunctionConstants.OUTCOME_WITH_DISCHARGE)
-        || actionCode.equals(uk.gov.laa.ccms.caab.constants.FunctionConstants.VIEW_CASE_OUTCOME);
-  }
-
-  private static boolean hasProceedingsWithOutcome(ApplicationDetail ebsCase) {
-    return ebsCase.getProceedings() != null && !ebsCase.getProceedings().isEmpty();
   }
 
   private void setReturnDetails(Model model, String notificationId, HttpServletRequest request) {
