@@ -125,10 +125,10 @@
       </div>
 
       <div class="govuk-form-group"
-           th:classappend="${#fields.hasErrors('courtId')} ? 'govuk-form-group--error' : ''">
-        <label class="govuk-label" for="courtId">Court</label>
-        <span class="govuk-error-message" th:if="${#fields.hasErrors('courtId')}" th:errors="*{courtId}"></span>
-        <select id="courtId" class="govuk-select" th:field="*{courtId}" th:errorclass="govuk-select--error">
+           th:classappend="${#fields.hasErrors('courtCode')} ? 'govuk-form-group--error' : ''">
+        <label class="govuk-label" for="courtCode">Court</label>
+        <span class="govuk-error-message" th:if="${#fields.hasErrors('courtCode')}" th:errors="*{courtCode}"></span>
+        <select id="courtCode" class="govuk-select" th:field="*{courtCode}" th:errorclass="govuk-select--error">
           <option value="">Please Select</option>
           <option th:each="item : ${courts}" th:value="${item['code']}" th:text="${item['description']}"></option>
         </select>
