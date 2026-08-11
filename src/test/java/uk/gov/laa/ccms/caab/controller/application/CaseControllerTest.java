@@ -716,6 +716,34 @@ class CaseControllerTest {
     }
 
     @Test
+    @DisplayName("Record proceeding outcome page loads for selected proceeding")
+    public void recordProceedingOutcomePageLoads() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(List.of(new ProceedingDetail().description("Proceeding 1")));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/proceeding/0/outcome")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/record-proceeding-outcome");
+    }
+
+    @Test
+    @DisplayName("Record proceeding outcome post redirects to outcome and awards")
+    public void recordProceedingOutcomePostRedirectsToOutcomeAndAwards() {
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/proceeding/0/outcome")
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+    }
+
+    @Test
     @DisplayName(
         "Case overview screen shows 'Continue Amendment' when AMEND_CASE is available and it's a TDS amendment")
     public void caseOverviewAmendCaseIsTdsAmendmentShowsContinueAmendment() {

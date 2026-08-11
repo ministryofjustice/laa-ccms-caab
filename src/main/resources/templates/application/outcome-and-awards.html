@@ -31,10 +31,10 @@
           </tr>
           </thead>
           <tbody class="govuk-table__body">
-          <tr class="govuk-table__row" th:each="proceeding : ${proceedings}">
+          <tr class="govuk-table__row" th:each="proceeding, stat : ${proceedings}">
             <td class="govuk-table__cell">
               <a class="govuk-link govuk-link--no-visited-state"
-                 href="#"
+                 th:href="@{/case/outcome-and-awards/proceeding/{index}/outcome(index=${stat.index})}"
                  th:text="${proceeding.description}"></a>
             </td>
             <td class="govuk-table__cell" th:text="${proceeding.levelOfService?.displayValue}"></td>

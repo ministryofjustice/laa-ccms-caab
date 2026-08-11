@@ -33,6 +33,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
@@ -273,6 +274,47 @@ public class CaseController {
       @SessionAttribute(CASE) final ApplicationDetail ebsCase, Model model) {
     model.addAttribute("proceedings", ebsCase.getProceedings());
     return "application/outcome-and-awards";
+  }
+
+  /**
+   * Displays the record proceeding outcome screen for a selected proceeding.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param index The zero-based index of the proceeding.
+   * @param model The model used to pass data to the view.
+   * @return The record proceeding outcome view.
+   */
+  @GetMapping("/case/outcome-and-awards/proceeding/{index}/outcome")
+  public String recordProceedingOutcome(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @PathVariable("index") final int index,
+      Model model) {
+    List<ProceedingDetail> proceedings = ebsCase.getProceedings();
+    String errorMessage = "Could not find proceeding with index: %s".formatted(index);
+    Assert.notEmpty(proceedings, () -> errorMessage);
+    Assert.isTrue(index < proceedings.size(), () -> errorMessage);
+
+    final ProceedingDetail proceeding = proceedings.get(index);
+
+    model.addAttribute("proceeding", proceeding);
+    model.addAttribute("proceedingIndex", index);
+    model.addAttribute(
+        "proceedingOutcome",
+        proceeding.getOutcome() != null ? proceeding.getOutcome() : new ProceedingOutcomeDetail());
+
+    return "application/record-proceeding-outcome";
+  }
+
+  /**
+   * Handles record proceeding outcome form submission and returns to the outcome overview.
+   *
+   * @return Redirect to the outcome and awards overview.
+   */
+  @PostMapping("/case/outcome-and-awards/proceeding/{index}/outcome")
+  public String recordProceedingOutcome(
+      @PathVariable("index") final int index,
+      @ModelAttribute("proceedingOutcome") final ProceedingOutcomeDetail proceedingOutcome) {
+    return "redirect:/case/outcome-and-awards";
   }
 
   /**
