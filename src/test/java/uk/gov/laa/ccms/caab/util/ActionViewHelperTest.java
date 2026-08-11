@@ -39,8 +39,8 @@ class ActionViewHelperTest {
   void testGetAllAvailableActionsStructureAndUniqueness() {
     List<AvailableAction> actions = ActionViewHelper.getAllAvailableActions(false);
     assertThat(actions).as("Actions list should not be null").isNotNull();
-    // Expected size: 1 (amendment) + 11 (static) = 12
-    assertThat(actions).as("Should be 12 actions in total (1 amendment + 11 static)").hasSize(12);
+    // Expected size: 1 (amendment) + 12 (static) = 13
+    assertThat(actions).as("Should be 13 actions in total (1 amendment + 12 static)").hasSize(13);
 
     // All action codes should be unique
     List<String> codes = actions.stream().map(AvailableAction::actionCode).toList();
