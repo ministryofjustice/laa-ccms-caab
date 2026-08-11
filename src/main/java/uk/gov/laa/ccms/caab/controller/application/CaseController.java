@@ -3,6 +3,9 @@ package uk.gov.laa.ccms.caab.controller.application;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OUTCOME_ADR;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OUTCOME_RESOLUTION_METHOD;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OUTCOME_WIDER_BENEFITS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.AMEND_CLIENT_ORIGIN;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
@@ -14,6 +17,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUM
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
+import static uk.gov.laa.ccms.caab.util.DateUtils.convertToComponentDate;
 import static uk.gov.laa.ccms.caab.util.view.ActionViewHelper.enhanceActionUrl;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,6 +43,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import uk.gov.laa.ccms.caab.bean.proceeding.CaseProceedingDisplayStatus;
+import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
 import uk.gov.laa.ccms.caab.constants.PriorAuthorityGroup;
@@ -55,8 +60,14 @@ import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.util.PriorAuthorityUtils;
 import uk.gov.laa.ccms.caab.util.view.ActionViewHelper;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
+import uk.gov.laa.ccms.data.model.OutcomeResultLookupValueDetail;
+import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
+import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /** Controller responsible for handling requests related to cases. */
@@ -66,6 +77,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class CaseController {
 
   private final ApplicationService applicationService;
+  private final LookupService lookupService;
   private static final String SEARCH_URL = "SEARCH_URL";
 
   /**
@@ -298,9 +310,8 @@ public class CaseController {
 
     model.addAttribute("proceeding", proceeding);
     model.addAttribute("proceedingIndex", index);
-    model.addAttribute(
-        "proceedingOutcome",
-        proceeding.getOutcome() != null ? proceeding.getOutcome() : new ProceedingOutcomeDetail());
+    model.addAttribute("proceedingOutcome", toProceedingOutcomeFormData(proceeding));
+    populateOutcomeDropdowns(model, proceeding);
 
     return "application/record-proceeding-outcome";
   }
@@ -313,8 +324,85 @@ public class CaseController {
   @PostMapping("/case/outcome-and-awards/proceeding/{index}/outcome")
   public String recordProceedingOutcome(
       @PathVariable("index") final int index,
-      @ModelAttribute("proceedingOutcome") final ProceedingOutcomeDetail proceedingOutcome) {
+      @ModelAttribute("proceedingOutcome") final ProceedingOutcomeFormData proceedingOutcome) {
     return "redirect:/case/outcome-and-awards";
+  }
+
+  private void populateOutcomeDropdowns(final Model model, final ProceedingDetail proceeding) {
+    final String proceedingCode =
+        Optional.ofNullable(proceeding.getProceedingType()).map(item -> item.getId()).orElse(null);
+
+    final List<StageEndLookupValueDetail> stageEnds =
+        Optional.ofNullable(lookupService.getStageEnds(proceedingCode, null).block())
+            .map(StageEndLookupDetail::getContent)
+            .orElse(Collections.emptyList());
+    model.addAttribute(
+        "stageEnds",
+        stageEnds.stream()
+            .map(stageEnd -> option(stageEnd.getStageEnd(), stageEnd.getDescription()))
+            .toList());
+
+    final List<OutcomeResultLookupValueDetail> results =
+        Optional.ofNullable(lookupService.getOutcomeResults(proceedingCode, null).block())
+            .map(OutcomeResultLookupDetail::getContent)
+            .orElse(Collections.emptyList());
+    model.addAttribute(
+        "results",
+        results.stream()
+            .map(result -> option(result.getOutcomeResult(), result.getOutcomeResultDescription()))
+            .toList());
+
+    model.addAttribute(
+        "resolutionMethods",
+        Optional.ofNullable(
+                lookupService.getCommonValues(COMMON_VALUE_OUTCOME_RESOLUTION_METHOD).block())
+            .map(CommonLookupDetail::getContent)
+            .orElse(Collections.emptyList()));
+    model.addAttribute(
+        "alternativeDisputeResolutions",
+        Optional.ofNullable(lookupService.getCommonValues(COMMON_VALUE_OUTCOME_ADR).block())
+            .map(CommonLookupDetail::getContent)
+            .orElse(Collections.emptyList()));
+    model.addAttribute(
+        "widerBenefitsOptions",
+        Optional.ofNullable(
+                lookupService.getCommonValues(COMMON_VALUE_OUTCOME_WIDER_BENEFITS).block())
+            .map(CommonLookupDetail::getContent)
+            .orElse(Collections.emptyList()));
+  }
+
+  private static ProceedingOutcomeFormData toProceedingOutcomeFormData(
+      final ProceedingDetail proceeding) {
+    final ProceedingOutcomeFormData formData = new ProceedingOutcomeFormData();
+    final ProceedingOutcomeDetail outcome = proceeding.getOutcome();
+
+    if (outcome == null) {
+      return formData;
+    }
+
+    formData.setDateOfFinalWork(
+        Optional.ofNullable(outcome.getDateOfFinalWork())
+            .map(date -> convertToComponentDate(date))
+            .orElse(null));
+    formData.setStageEnd(
+        Optional.ofNullable(outcome.getStageEnd()).map(item -> item.getId()).orElse(null));
+    formData.setResolutionMethod(outcome.getResolutionMethod());
+    formData.setResult(
+        Optional.ofNullable(outcome.getResult()).map(item -> item.getId()).orElse(null));
+    formData.setResultInfo(outcome.getResultInfo());
+    formData.setAlternativeResolution(outcome.getAlternativeResolution());
+    formData.setAdrInfo(outcome.getAdrInfo());
+    formData.setCourtCode(outcome.getCourtCode());
+    formData.setOutcomeCourtCaseNo(outcome.getOutcomeCourtCaseNo());
+    formData.setWiderBenefits(outcome.getWiderBenefits());
+
+    return formData;
+  }
+
+  private static Map<String, String> option(final String code, final String description) {
+    return Map.of(
+        "code", Optional.ofNullable(code).orElse(""),
+        "description", Optional.ofNullable(description).orElse(""));
   }
 
   /**

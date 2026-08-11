@@ -67,12 +67,20 @@ import uk.gov.laa.ccms.caab.model.sections.OrganisationAddressDetailsSectionDisp
 import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.OrganisationOrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
+import uk.gov.laa.ccms.data.model.OutcomeResultLookupValueDetail;
+import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
+import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
 class CaseControllerTest {
 
   @Mock private ApplicationService applicationService;
+  @Mock private LookupService lookupService;
 
   @InjectMocks private CaseController caseController;
 
@@ -721,7 +729,37 @@ class CaseControllerTest {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
           getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
-      ebsCase.setProceedings(List.of(new ProceedingDetail().description("Proceeding 1")));
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .description("Proceeding 1")
+                  .proceedingType(
+                      new StringDisplayValue().id("P1").displayValue("Proceeding name"))));
+
+      when(lookupService.getStageEnds("P1", null))
+          .thenReturn(
+              Mono.just(
+                  new StageEndLookupDetail()
+                      .addContentItem(
+                          new StageEndLookupValueDetail()
+                              .stageEnd("SE1")
+                              .description("Stage End 1"))));
+      when(lookupService.getOutcomeResults("P1", null))
+          .thenReturn(
+              Mono.just(
+                  new OutcomeResultLookupDetail()
+                      .addContentItem(
+                          new OutcomeResultLookupValueDetail()
+                              .outcomeResult("R1")
+                              .outcomeResultDescription("Result 1"))));
+      when(lookupService.getCommonValues(any()))
+          .thenReturn(
+              Mono.just(
+                  new CommonLookupDetail()
+                      .addContentItem(
+                          new CommonLookupValueDetail()
+                              .code("C1")
+                              .description("Common option 1"))));
 
       assertThat(
               mockMvc.perform(

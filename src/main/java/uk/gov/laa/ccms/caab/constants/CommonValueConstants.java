@@ -72,6 +72,16 @@ public class CommonValueConstants {
   /** Type used to retrieve the Proceeding order type. */
   public static final String COMMON_VALUE_PROCEEDING_ORDER_TYPE = "XXCCMS_PROCEEDING_ORDER_TYPE";
 
+  /** Type used to retrieve proceeding outcome ending/resolution methods. */
+  public static final String COMMON_VALUE_OUTCOME_RESOLUTION_METHOD =
+      "XXCCMS_OUTCOME_RESOLUTION_METHOD";
+
+  /** Type used to retrieve proceeding outcome ADR options. */
+  public static final String COMMON_VALUE_OUTCOME_ADR = "XXCCMS_OUTCOME_ADR";
+
+  /** Type used to retrieve proceeding outcome wider benefits options. */
+  public static final String COMMON_VALUE_OUTCOME_WIDER_BENEFITS = "XXCCMS_OUTCOME_WIDER_BENEFITS";
+
   /** Type used to retrieve the Progress status types. */
   public static final String COMMON_VALUE_PROGRESS_STATUS_TYPES = "XXCCMS_OPA_PROGRESS_STATUS";
 

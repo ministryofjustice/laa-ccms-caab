@@ -11,7 +11,7 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a class="govuk-back-link" th:href="@{/case/outcome-and-awards}">Cancel and return to Outcome and Awards</a>
+    <a class="govuk-back-link" th:href="@{/case/outcome-and-awards}" th:text="#{case.recordOutcomes.backLink}"></a>
   </div>
 
   <div id="main-content">
@@ -21,19 +21,20 @@
           method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
 
-      <h1 class="govuk-heading-l">Record proceeding outcome</h1>
-      <p class="govuk-body">* indicates required field</p>
+      <h1 class="govuk-heading-l" th:text="#{case.recordOutcomes.title}"></h1>
+        <p class="govuk-body" th:text="#{case.recordOutcomes.information}"></p>
+      <p class="govuk-body" th:text="#{case.recordOutcomes.requiredFieldText}"></p>
 
       <p class="govuk-body">
-        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">Proceeding</span>
-        <span th:text="${proceeding?.description}"></span>
+        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{case.recordOutcomes.proceeding}"></span>
+        <span th:text="${proceeding?.proceedingType?.displayValue}"></span>
       </p>
       <p class="govuk-body">
-        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">Matter Type</span>
+        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{case.recordOutcomes.matterType}"></span>
         <span th:text="${proceeding?.matterType?.displayValue}"></span>
       </p>
       <p class="govuk-body">
-        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2">Description</span>
+        <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{case.recordOutcomes.description}"></span>
         <span th:text="${proceeding?.description}"></span>
       </p>
 
@@ -48,7 +49,7 @@
 
       <div class="govuk-form-group"
            th:classappend="${#fields.hasErrors('stageEnd')} ? 'govuk-form-group--error' : ''">
-        <label class="govuk-label" for="stageEnd">* Stage End</label>
+        <label class="govuk-label" for="stageEnd" th:text="#{case.recordOutcomes.stageEnd}"></label>
         <span class="govuk-error-message" th:if="${#fields.hasErrors('stageEnd')}" th:errors="*{stageEnd}"></span>
         <select id="stageEnd" class="govuk-select" th:field="*{stageEnd}" th:errorclass="govuk-select--error">
           <option value="">Please Select</option>
@@ -58,7 +59,7 @@
 
       <div class="govuk-form-group"
            th:classappend="${#fields.hasErrors('resolutionMethod')} ? 'govuk-form-group--error' : ''">
-        <label class="govuk-label" for="resolutionMethod">* Ending or Method of Resolution</label>
+        <label class="govuk-label" for="resolutionMethod" th:text="#{case.recordOutcomes.resolutionMethod}"></label>
         <span class="govuk-error-message"
               th:if="${#fields.hasErrors('resolutionMethod')}"
               th:errors="*{resolutionMethod}"></span>
@@ -73,7 +74,7 @@
 
       <div class="govuk-form-group"
            th:classappend="${#fields.hasErrors('result')} ? 'govuk-form-group--error' : ''">
-        <label class="govuk-label" for="result">* Result</label>
+        <label class="govuk-label" for="result" th:text="#{case.recordOutcomes.result}"></label>
         <span class="govuk-error-message" th:if="${#fields.hasErrors('result')}" th:errors="*{result}"></span>
         <select id="result" class="govuk-select" th:field="*{result}" th:errorclass="govuk-select--error">
           <option value="">Please Select</option>
