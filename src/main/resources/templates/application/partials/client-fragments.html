@@ -353,9 +353,10 @@
   </div>
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds">
-      <div class="govuk-form-group" th:if="*{clientFlowFormAction == 'create'}" th:classappend="${#fields.hasErrors('password')} ? 'govuk-form-group--error' : ''">
-        <div th:replace="~{partials/forms :: textInput('password', #{contact.password}, 'govuk-input--width-20')}"></div>
-      </div>
+      <th:block th:if="*{clientFlowFormAction == 'create'}">
+        <!-- new-password: this screen creates the client record, so the password is being set for the first time -->
+        <div th:replace="~{partials/forms :: passwordInput(fieldId = 'password', label = #{contact.password}, inputClass = 'govuk-input--width-20', autocomplete = 'new-password')}"></div>
+      </th:block>
       <govuk:details classes="govuk-!-margin-top-2"
                      th:summaryText="#{details.password}"
                      th:text="#{details.password.text }"/>
