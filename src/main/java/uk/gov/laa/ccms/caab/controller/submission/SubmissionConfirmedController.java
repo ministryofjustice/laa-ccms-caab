@@ -32,7 +32,8 @@ public class SubmissionConfirmedController {
       @PathVariable String submissionType,
       final HttpSession session,
       Model model) {
-    if (!isAlreadySubmitted(session)) {
+    final boolean hasConfirmedSubmission = isAlreadySubmitted(session);
+    if (!hasConfirmedSubmission) {
       return "redirect:/submissions/alreadySubmitted?returnUrl="
           + resolveReturnUrl(caseContext, submissionType);
     }
