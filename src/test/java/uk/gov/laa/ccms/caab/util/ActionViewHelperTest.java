@@ -48,7 +48,7 @@ class ActionViewHelperTest {
 
     // Verify the static actions part
     List<AvailableAction> staticActions = actions.subList(1, actions.size());
-    assertThat(staticActions).as("Should be 11 static actions").hasSize(11);
+    assertThat(staticActions).as("Should be 12 static actions").hasSize(12);
 
     // Spot check a few static actions for their properties
     // First static action: AMEND_CLIENT
@@ -58,8 +58,8 @@ class ActionViewHelperTest {
     assertThat(amendClientAction.descriptionKey()).isEqualTo("action.amendClient.description");
     assertThat(amendClientAction.link()).isEqualTo("/amendments/sections/client/details/summary");
 
-    // Last static action: MEANS_REASSESSMENT (index 10 of staticActions)
-    AvailableAction meansReassessmentAction = staticActions.get(10);
+    // Last static action: MEANS_REASSESSMENT (index 11 of staticActions)
+    AvailableAction meansReassessmentAction = staticActions.get(11);
     assertThat(meansReassessmentAction.actionCode())
         .isEqualTo(FunctionConstants.MEANS_REASSESSMENT);
     assertThat(meansReassessmentAction.actionKey())
@@ -77,7 +77,7 @@ class ActionViewHelperTest {
     List<AvailableAction> allActions = ActionViewHelper.getAllAvailableActions(false);
     List<AvailableAction> staticActions = allActions.subList(1, allActions.size());
 
-    assertThat(staticActions).as("Incorrect number of static actions").hasSize(11);
+    assertThat(staticActions).as("Incorrect number of static actions").hasSize(12);
 
     // Define the expected static actions in order based on ActionViewHelper.AVAILABLE_ACTION_LIST
     List<ExpectedAction> expectedStaticActions =
@@ -94,6 +94,11 @@ class ActionViewHelperTest {
                 "/case/billing"),
             new ExpectedAction(
                 FunctionConstants.OUTCOME_WITH_DISCHARGE,
+                "action.recordOutcome.name",
+                "action.recordOutcome.description",
+                "/case/outcome-and-awards"),
+            new ExpectedAction(
+                FunctionConstants.OUTCOME_NO_DISCHARGE,
                 "action.recordOutcome.name",
                 "action.recordOutcome.description",
                 "/case/outcome-and-awards"),
@@ -116,7 +121,7 @@ class ActionViewHelperTest {
                 FunctionConstants.VIEW_CASE_OUTCOME,
                 "action.viewOutcome.name",
                 "action.viewOutcome.description",
-                "/case/outcome-and-awards"),
+                "#"),
             new ExpectedAction(
                 FunctionConstants.EDIT_PROVIDER,
                 "action.amendProviderDetails.name",
