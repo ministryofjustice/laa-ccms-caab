@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="|#{service.name} - #{billing.poa.remove.title}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/case/billing}" class="govuk-back-link" th:text="#{site.back}"></a>
+  </div>
+  <div id="main-content">
+    <form th:action="@{/case/billing/poa/remove}" method="post">
+      <span class="govuk-caption-l" th:text="#{billing.pageCaption}"></span>
+      <h1 class="govuk-heading-l" th:text="#{billing.poa.remove.title}"></h1>
+      <p class="govuk-body" th:text="#{billing.poa.remove.text}"></p>
+      <div class="govuk-button-group">
+        <button class="govuk-button govuk-button--warning" data-module="govuk-button"
+                id="confirm-remove-poa-button" th:text="#{site.confirm}"></button>
+        <a class="govuk-link" th:href="@{/case/billing}" th:text="#{site.cancel}"></a>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

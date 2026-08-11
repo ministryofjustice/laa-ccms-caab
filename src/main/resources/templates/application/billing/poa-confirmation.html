@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="|#{service.name} - #{billing.poa.confirmation.title}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs"></div>
+  <div id="main-content">
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-two-thirds">
+        <div class="govuk-panel govuk-panel--confirmation">
+          <h1 class="govuk-panel__title" th:text="#{billing.poa.confirmation.panel}"></h1>
+          <div class="govuk-panel__body">
+            <span th:text="#{billing.poa.confirmation.reference}"></span><br>
+            <strong id="poa-submission-reference" th:text="${transactionId}"></strong>
+          </div>
+        </div>
+        <p class="govuk-body" th:text="#{billing.poa.confirmation.text}"></p>
+        <p class="govuk-body">
+          <a class="govuk-link" id="poa-confirmation-return-link"
+             th:href="@{/case/billing}" th:text="#{billing.poa.confirmation.return}"></a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

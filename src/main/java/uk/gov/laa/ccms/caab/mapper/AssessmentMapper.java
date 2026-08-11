@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.mapper;
 
+import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.ALLOCATED_COST_LIMIT;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.APPLICATION_CASE_REF;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.APP_AMEND_TYPE;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.CATEGORY_OF_LAW;
@@ -128,7 +129,11 @@ public interface AssessmentMapper {
                 toAssessmentEntityTypeDetailProceeding(context),
                 toAssessmentEntityTypeDetailOpponent(context)));
 
-    if (!isMeansAssessment(context)) {
+    // Only the merits rulebase consumes linked cases. The means rulebase declares them but is not
+    // sent them, and the billing rulebase (which the bill and POA journeys both run) does not
+    // declare LINKED_CASE_ID / LINKED_CASE_OWNER at all - sending an entity it does not know
+    // breaks the interview load.
+    if (!isMeansAssessment(context) && !isFinancialAssessment(context)) {
       entityTypes.add(toAssessmentEntityTypeDetailLinkedCase(context));
     }
 
@@ -145,6 +150,26 @@ public interface AssessmentMapper {
     return Optional.ofNullable(context.getAssessment())
         .map(AssessmentDetail::getName)
         .filter(name -> name.equalsIgnoreCase(AssessmentRulebase.MEANS.getName()))
+        .isPresent();
+  }
+
+  /**
+   * Determines whether the assessment being mapped is one of the billing rulebases (bill or POA).
+   * The rulebase is read from the context where it is set, falling back to the assessment name so
+   * the check still holds for a context built without one.
+   *
+   * @param context the assessment mapping context
+   * @return true if the context is mapping a billing rulebase
+   */
+  private boolean isFinancialAssessment(final AssessmentMappingContext context) {
+    if (context.getRulebase() != null) {
+      return context.getRulebase().isFinancialAssessment();
+    }
+
+    return Optional.ofNullable(context.getAssessment())
+        .map(AssessmentDetail::getName)
+        .map(AssessmentRulebase::findByName)
+        .filter(AssessmentRulebase::isFinancialAssessment)
         .isPresent();
   }
 
@@ -207,7 +232,11 @@ public interface AssessmentMapper {
 
       // Declared even when empty so merits knows InstanceCount(the linked cases) = 0. Withheld from
       // means, which old PUI never sends: its unseeded LINKED_CASE_OWNER blocks CLIENT_PROV_LA.
-      if (!isMeansAssessment(context)) {
+      // Withheld from the billing rulebases too - they declare no LINKED_CASES entity, and a link
+      // whose target table is absent fails the seed with OPA-DATA-108. This guard must stay in step
+      // with the entity list in toAssessmentEntityTypeList: a link without its table, or a table
+      // without its link, both break the load.
+      if (!isMeansAssessment(context) && !isFinancialAssessment(context)) {
         final List<LinkedCaseDetail> linkedCases =
             getAssessmentLinkedCases(context.getApplication());
 
@@ -604,6 +633,64 @@ public interface AssessmentMapper {
     final ApplicationDetail application = context.getApplication();
     final ClientDetailDetails client = context.getClient().getDetails();
     final UserDetail user = context.getUser();
+    final AssessmentRulebase rulebase = context.getRulebase();
+
+    final List<AssessmentAttributeDetail> attributes =
+        new ArrayList<>(globalAttributes(application, client, user, rulebase));
+
+    // ALLOCATED_COST_LIMIT belongs to the billing and POA rulebases alone - old PUI adds it from
+    // the billing / POA attribute mappers only, so a means or merits assessment must not carry it.
+    if (rulebase != null && rulebase.isFinancialAssessment()) {
+      attributes.add(
+          toAttributeWithValue(
+              ALLOCATED_COST_LIMIT,
+              context.getAllocatedCostLimit() == null
+                  ? null
+                  : context.getAllocatedCostLimit().toPlainString()));
+    }
+
+    return attributes;
+  }
+
+  /**
+   * Maps an attribute to a supplied value, for the attributes whose value is decided by the journey
+   * rather than read off the application, client or user.
+   *
+   * @param attribute the attribute being prepopulated
+   * @param attributeValue the value to prepopulate it with
+   * @return the mapped assessment attribute
+   */
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "value", source = "attributeValue")
+  @Mapping(target = "name", source = "attribute")
+  @Mapping(target = "type", source = "attribute.type")
+  @Mapping(target = "inferencingType", ignore = true)
+  AssessmentAttributeDetail toAttributeWithValue(
+      AssessmentAttribute attribute, String attributeValue);
+
+  /**
+   * The value of {@code POA_OR_BILL_FLAG}, which tells the shared rulebase which billing journey is
+   * running. Old PUI sets it per attribute mapper: "POA" for the POA journey, "BILL" for the bill
+   * journey and "N/A" for means and merits.
+   *
+   * @param rulebase the rulebase being run, may be {@code null}
+   * @return the flag value for that rulebase
+   */
+  private static String poaOrBillFlag(final AssessmentRulebase rulebase) {
+    if (rulebase == AssessmentRulebase.POA) {
+      return "POA";
+    }
+    if (rulebase == AssessmentRulebase.BILLING) {
+      return "BILL";
+    }
+    return "N/A";
+  }
+
+  private List<AssessmentAttributeDetail> globalAttributes(
+      final ApplicationDetail application,
+      final ClientDetailDetails client,
+      final UserDetail user,
+      final AssessmentRulebase rulebase) {
 
     return List.of(
         toApplicationCaseRefAttribute(application, APPLICATION_CASE_REF),
@@ -628,7 +715,7 @@ public interface AssessmentMapper {
         toMaritalStatusAttribute(client, MARITIAL_STATUS),
         toNewApplOrAmendmentAttribute(application, NEW_APPL_OR_AMENDMENT),
         toNiNoAttribute(client, NI_NO),
-        toPoaOrBillFlagAttribute(POA_OR_BILL_FLAG),
+        toAttributeWithValue(POA_OR_BILL_FLAG, poaOrBillFlag(rulebase)),
         toPostCodeAttribute(client, POST_CODE),
         toProviderCaseReferenceAttribute(application, PROVIDER_CASE_REFERENCE),
         toProviderHasContractAttribute(application, PROVIDER_HAS_CONTRACT),
@@ -890,13 +977,6 @@ public interface AssessmentMapper {
   @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toNiNoAttribute(
       ClientDetailDetails client, AssessmentAttribute attribute);
-
-  @Mapping(target = "id", ignore = true)
-  @Mapping(target = "value", constant = "N/A")
-  @Mapping(target = "name", source = "attribute")
-  @Mapping(target = "type", source = "attribute.type")
-  @Mapping(target = "inferencingType", ignore = true)
-  AssessmentAttributeDetail toPoaOrBillFlagAttribute(AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "client.address.postalCode")

@@ -31,10 +31,13 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
+import uk.gov.laa.ccms.soa.gateway.model.InvoiceDetail;
+import uk.gov.laa.ccms.soa.gateway.model.InvoiceResponse;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
+import uk.gov.laa.ccms.soa.gateway.model.PaymentOnAccountDetail;
 import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
 
@@ -309,6 +312,58 @@ class SoaApiClientTest {
         soaApiClient.postClient(clientDetails, loginId, userType);
 
     StepVerifier.create(clientCreatedMono).verifyComplete();
+  }
+
+  @Test
+  void createInvoice_Successful() {
+    InvoiceDetail invoiceDetail = new InvoiceDetail().poa(new PaymentOnAccountDetail());
+    String loginId = "user1";
+    String userType = "userType";
+    String expectedUri = "/invoices";
+
+    InvoiceResponse mockResponse = new InvoiceResponse().invoiceReferenceId("INV-1");
+
+    when(soaApiWebClientMock.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("SoaGateway-User-Role", userType)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(any(MediaType.class))).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(any(InvoiceDetail.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(InvoiceResponse.class)).thenReturn(Mono.just(mockResponse));
+
+    Mono<InvoiceResponse> responseMono =
+        soaApiClient.createInvoice(invoiceDetail, loginId, userType);
+
+    StepVerifier.create(responseMono).expectNext(mockResponse).verifyComplete();
+  }
+
+  @Test
+  void createInvoice_Error() {
+    InvoiceDetail invoiceDetail = new InvoiceDetail().poa(new PaymentOnAccountDetail());
+    String loginId = "user1";
+    String userType = "userType";
+    String expectedUri = "/invoices";
+
+    when(soaApiWebClientMock.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("SoaGateway-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("SoaGateway-User-Role", userType)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(any(MediaType.class))).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(any(InvoiceDetail.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(InvoiceResponse.class))
+        .thenReturn(
+            Mono.error(
+                new WebClientResponseException(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(), "", null, null, null)));
+
+    when(apiClientErrorHandler.handleApiCreateError(any(), eq("Invoice"))).thenReturn(Mono.empty());
+
+    Mono<InvoiceResponse> responseMono =
+        soaApiClient.createInvoice(invoiceDetail, loginId, userType);
+
+    StepVerifier.create(responseMono).verifyComplete();
   }
 
   @Test

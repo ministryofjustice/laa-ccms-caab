@@ -23,6 +23,7 @@ import org.thymeleaf.spring6.view.ThymeleafViewResolver;
       "laa.ccms.soa-api.url=http://mockUrl",
       "laa.ccms.caab-api.url=http://mockUrl",
       "os.api.url=http://mockUrl",
+      "laa.ccms.connector.url=http://mockUrl",
       "av.api.hostname=http://mockUrl",
       "av.api.port=3000",
       "av.api.timeout=100"
@@ -40,6 +41,10 @@ class ApplicationConfigTest {
   @Qualifier("caabApiWebClient")
   @Autowired
   private WebClient caabApiWebClient;
+
+  @Qualifier("connectorApiWebClient")
+  @Autowired
+  private WebClient connectorApiWebClient;
 
   @Qualifier("osApiWebClient")
   @Autowired
@@ -73,6 +78,7 @@ class ApplicationConfigTest {
   @Test
   void osApiWebClientBeanExists() {
     assertNotNull(osApiWebClient, "osApiWebClient bean should not be null");
+    assertNotNull(connectorApiWebClient, "connectorApiWebClient bean should not be null");
   }
 
   @Test

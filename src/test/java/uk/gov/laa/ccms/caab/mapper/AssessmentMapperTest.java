@@ -110,6 +110,42 @@ class AssessmentMapperTest {
   }
 
   @Test
+  @DisplayName("The billing prepop carries no LINKED_CASES entity or relationship")
+  void toAssessmentEntityTypeList_billingRulebases_omitLinkedCases() {
+    // BillingAssessment, which both the bill and POA journeys run, declares no LINKED_CASES
+    // entity. Seeding a link whose target table is absent fails with OPA-DATA-108 ("The target
+    // table 'LINKED_CASES' of link 'LINKED_CASES' ... is missing in the Load response"), so the
+    // entity and the relationship have to be withheld together.
+    for (final AssessmentRulebase rulebase :
+        List.of(AssessmentRulebase.POA, AssessmentRulebase.BILLING)) {
+      final LinkedCaseDetail linkedCase = new LinkedCaseDetail();
+      linkedCase.setLscCaseReference("LINK-1");
+      context.getApplication().setLinkedCases(List.of(linkedCase));
+      context.setAssessment(new AssessmentDetail().name(rulebase.getName()));
+      context.setRulebase(rulebase);
+
+      final List<AssessmentEntityTypeDetail> result =
+          assessmentMapper.toAssessmentEntityTypeList(context);
+
+      assertTrue(
+          result.stream().noneMatch(entityType -> "LINKED_CASES".equals(entityType.getName())),
+          rulebase.getName() + " must not declare a LINKED_CASES entity type");
+
+      final AssessmentEntityDetail globalEntity =
+          result.stream()
+              .filter(entityType -> "global".equals(entityType.getName()))
+              .findFirst()
+              .orElseThrow()
+              .getEntities()
+              .get(0);
+      assertTrue(
+          globalEntity.getRelations().stream()
+              .noneMatch(relationship -> "linkedcases".equals(relationship.getName())),
+          rulebase.getName() + " global entity must not declare the linkedcases relationship");
+    }
+  }
+
+  @Test
   @DisplayName("The merits prepop keeps LINKED_CASES for its case-routing instance count")
   void toAssessmentEntityTypeList_meritsAssessment_keepsLinkedCases() {
     final LinkedCaseDetail linkedCase = new LinkedCaseDetail();
@@ -314,6 +350,60 @@ class AssessmentMapperTest {
     assertContainsAttribute(attributes, AssessmentAttribute.OTHER_PARTY_TYPE, "ORGANISATION");
     assertContainsAttribute(attributes, AssessmentAttribute.RELATIONSHIP_TO_CASE, "relToCase");
     assertContainsAttribute(attributes, AssessmentAttribute.RELATIONSHIP_TO_CLIENT, "relToClient");
+  }
+
+  @Test
+  @DisplayName(
+      "POA_OR_BILL_FLAG is set per rulebase, telling the shared rulebase which journey ran")
+  void poaOrBillFlagIsSetPerRulebase() {
+    assertContainsAttribute(
+        globalAttributesForRulebase(AssessmentRulebase.POA, null),
+        AssessmentAttribute.POA_OR_BILL_FLAG,
+        "POA");
+    assertContainsAttribute(
+        globalAttributesForRulebase(AssessmentRulebase.BILLING, null),
+        AssessmentAttribute.POA_OR_BILL_FLAG,
+        "BILL");
+    assertContainsAttribute(
+        globalAttributesForRulebase(AssessmentRulebase.MEANS, null),
+        AssessmentAttribute.POA_OR_BILL_FLAG,
+        "N/A");
+  }
+
+  @Test
+  @DisplayName("ALLOCATED_COST_LIMIT is prepopulated for the billing rulebases only")
+  void allocatedCostLimitIsBillingOnly() {
+    assertContainsAttribute(
+        globalAttributesForRulebase(AssessmentRulebase.POA, new java.math.BigDecimal("2500.00")),
+        AssessmentAttribute.ALLOCATED_COST_LIMIT,
+        "2500.00");
+
+    // Old PUI never sends it on a means or merits assessment, and those rulebases do not declare
+    // it, so it must not be added there.
+    assertTrue(
+        globalAttributesForRulebase(AssessmentRulebase.MEANS, new java.math.BigDecimal("2500.00"))
+            .stream()
+            .noneMatch(
+                attribute ->
+                    AssessmentAttribute.ALLOCATED_COST_LIMIT.name().equals(attribute.getName())));
+    assertTrue(
+        globalAttributesForRulebase(AssessmentRulebase.MERITS, null).stream()
+            .noneMatch(
+                attribute ->
+                    AssessmentAttribute.ALLOCATED_COST_LIMIT.name().equals(attribute.getName())));
+  }
+
+  private List<AssessmentAttributeDetail> globalAttributesForRulebase(
+      final AssessmentRulebase rulebase, final java.math.BigDecimal allocatedCostLimit) {
+    return assessmentMapper.globalToAttributeList(
+        AssessmentMappingContext.builder()
+            .application(context.getApplication())
+            .user(context.getUser())
+            .client(context.getClient())
+            .opponentContext(context.getOpponentContext())
+            .rulebase(rulebase)
+            .allocatedCostLimit(allocatedCostLimit)
+            .build());
   }
 
   private void assertContainsAttribute(

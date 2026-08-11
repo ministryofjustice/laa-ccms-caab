@@ -135,19 +135,28 @@
             </tr>
           </thead>
           <tbody class="govuk-table__body">
-            <tr class="govuk-table__row" th:each="row : ${billsAndPoaPage?.content}">
+            <tr class="govuk-table__row" th:each="row : ${billsAndPoaPage?.content}"
+                th:with="editablePoa=${row.draft and row.type == 'POA' and canMaintainPoa}">
               <!-- On a draft the type is a link to edit it; submitted rows show plain text. -->
               <td class="govuk-table__cell">
-                <a th:if="${row.draft}" class="govuk-link" th:href="'#'" th:text="${row.type}"></a>
+                <a th:if="${editablePoa}" class="govuk-link" th:href="@{/case/billing/poa}"
+                   th:text="${row.type}"></a>
+                <a th:if="${row.draft and row.type != 'POA'}" class="govuk-link" th:href="'#'"
+                   th:text="${row.type}"></a>
                 <span th:unless="${row.draft}" th:text="${row.type}"></span>
               </td>
               <td class="govuk-table__cell" th:text="${row.status}"></td>
               <td class="govuk-table__cell" th:text="${row.dateSubmitted != null ? #temporals.format(row.dateSubmitted, 'dd/MM/yyyy') : ''}"></td>
               <td class="govuk-table__cell" th:text="${row.dateAuthorised != null ? #temporals.format(row.dateAuthorised, 'dd/MM/yyyy') : ''}"></td>
               <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${row.amount != null ? #numbers.formatCurrency(row.amount) : ''}"></td>
-              <!-- TODO: point the edit / delete links at the Bill and POA journeys once they exist. -->
+              <!-- A draft POA can be deleted; a "Rejected" POA carries no action at all, matching
+                   the legacy PUI. TODO: point the Bill delete link at the Bill journey once it
+                   exists. -->
               <td class="govuk-table__cell">
-                <a th:if="${row.draft}" class="govuk-link" th:href="'#'" th:text="#{billing.billsAndPoa.delete}"></a>
+                <a th:if="${editablePoa}" class="govuk-link" th:href="@{/case/billing/poa/remove}"
+                   th:text="#{billing.billsAndPoa.delete}"></a>
+                <a th:if="${row.draft and row.type != 'POA'}" class="govuk-link" th:href="'#'"
+                   th:text="#{billing.billsAndPoa.delete}"></a>
               </td>
             </tr>
             <tr class="govuk-table__row"
@@ -169,7 +178,7 @@
                         th:text="#{billing.createBill}"/>
           <govuk:button th:if="${showCreatePoa}"
                         classes="govuk-button--secondary"
-                        th:href="'#'"
+                        th:href="@{/case/billing/poa}"
                         id="create-poa-button"
                         th:text="#{billing.createPoa}"/>
         </div>

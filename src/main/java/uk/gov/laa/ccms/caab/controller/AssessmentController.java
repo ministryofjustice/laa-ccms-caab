@@ -9,6 +9,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -31,6 +32,7 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
+import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -41,6 +43,7 @@ import uk.gov.laa.ccms.caab.opa.context.ContextToken;
 import uk.gov.laa.ccms.caab.opa.util.SecurityUtils;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
+import uk.gov.laa.ccms.caab.service.BillingService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
@@ -56,6 +59,7 @@ public class AssessmentController {
 
   private final AssessmentService assessmentService;
   private final ApplicationService applicationService;
+  private final BillingService billingService;
   private final LookupService lookupService;
   private final ClientService clientService;
   private final SecurityUtils contextSecurityUtil;
@@ -85,6 +89,12 @@ public class AssessmentController {
   private static final String MEANS_REASSESSMENT_INVOKED_FROM = "CCMS_MNA05";
   private static final String MEANS_REASSESSMENT_RETURN_LINK_TEXT = "Return to means reassessment";
   private static final String MEANS_REASSESSMENT_RETURN_URL = "/civil/means-reassessment/summary";
+
+  /** The legacy PUI page id for the "Create a POA - POA details" screen. */
+  private static final String POA_INVOKED_FROM = "CCMS_POA01";
+
+  private static final String POA_RETURN_LINK_TEXT = "Return to POA details";
+  private static final String POA_RETURN_URL = "/civil/case/billing/poa";
 
   private static final String CHECKPOINT_START = "START";
   private static final String CHECKPOINT_RESUME = "RESUME";
@@ -162,10 +172,21 @@ public class AssessmentController {
       final HttpSession session,
       final Model model) {
 
-    // Amend-case persists a draft and loads it by id; the standalone means reassessment holds its
-    // application in memory (no draft until submit), so use the session application when there is
-    // no persisted id.
-    final ApplicationDetail application = resolveAssessmentApplication(session);
+    // get rulebase from the assessment passed as the parameter
+    final AssessmentRulebase assessmentRulebase = AssessmentRulebase.findByType(assessment);
+
+    if (assessmentRulebase == null) {
+      throw new CaabApplicationException("Invalid assessment type");
+    }
+
+    // The billing and POA journeys run against a live case rather than a draft application, so
+    // they take the EBS case straight from the session. Amend-case persists a draft and loads it
+    // by id; the standalone means reassessment holds its application in memory (no draft until
+    // submit), so use the session application when there is no persisted id.
+    final ApplicationDetail application =
+        assessmentRulebase.isFinancialAssessment()
+            ? resolveBillingCase(session, assessmentRulebase)
+            : resolveAssessmentApplication(session);
 
     // The TDS draft application does not carry a computed default cost limitation, which the OPA
     // prepop maps into DEFAULT_COST_LIMITATION and the merits rulebase needs to resolve its
@@ -185,13 +206,6 @@ public class AssessmentController {
     // re-typed.
     if (MEANS_REASSESSMENT_INVOKED_FROM.equals(invokedFrom)) {
       applyReassessmentApplicationType(application);
-    }
-
-    // get rulebase from the assessment passed as the parameter
-    final AssessmentRulebase assessmentRulebase = AssessmentRulebase.findByType(assessment);
-
-    if (assessmentRulebase == null) {
-      throw new CaabApplicationException("Invalid assessment type");
     }
 
     // amendment stuff
@@ -239,64 +253,66 @@ public class AssessmentController {
       throw new CaabApplicationException("Failed to retrieve client details");
     }
 
-    // if means or merits assessment
-    if (!assessmentRulebase.isFinancialAssessment()) {
+    // The billing and POA rulebases check the claim against the cost limit allocated to the
+    // provider, so ALLOCATED_COST_LIMIT is prepopulated for those journeys only, matching old
+    // PUI's separate billing / POA attribute mappers.
+    final BigDecimal allocatedCostLimit =
+        assessmentRulebase.isFinancialAssessment()
+            ? billingService.getAllocatedCostLimit(
+                billingService.getStatementOfAccountDisplay(
+                    application.getCaseReferenceNumber(), application, user),
+                application)
+            : null;
 
-      // Required for the connector
-      final String ezgovId = UUID.randomUUID().toString();
+    // Required for the connector
+    final String ezgovId = UUID.randomUUID().toString();
 
-      // start opa assessment. The standalone means reassessment (CCMS_MNA05) reuses the prior
-      // assessment data, so it must not have the "do not reuse" attributes stripped (old PUI's
-      // StartOpaReassessment applies no such strip, unlike the amend-case StartOpaAssessment).
-      assessmentService.startAssessment(
-          application,
-          assessmentRulebase,
-          client,
-          user,
-          MEANS_REASSESSMENT_INVOKED_FROM.equals(invokedFrom));
+    // start opa assessment. The standalone means reassessment (CCMS_MNA05) reuses the prior
+    // assessment data, so it must not have the "do not reuse" attributes stripped (old PUI's
+    // StartOpaReassessment applies no such strip, unlike the amend-case StartOpaAssessment).
+    assessmentService.startAssessment(
+        application,
+        assessmentRulebase,
+        client,
+        user,
+        MEANS_REASSESSMENT_INVOKED_FROM.equals(invokedFrom),
+        allocatedCostLimit);
 
-      final AssessmentDetail prepopAssessment =
-          Optional.ofNullable(
-                  assessmentService
-                      .getAssessments(
-                          List.of(assessmentRulebase.getPrePopAssessmentName()),
-                          String.valueOf(user.getProvider().getId()),
-                          application.getCaseReferenceNumber())
-                      .block())
-              .map(AssessmentDetails::getContent)
-              .filter(content -> !content.isEmpty())
-              .flatMap(content -> content.stream().findFirst())
-              .orElseThrow(
-                  () -> new CaabApplicationException("Failed to retrieve assessment details"));
+    final AssessmentDetail prepopAssessment =
+        Optional.ofNullable(
+                assessmentService
+                    .getAssessments(
+                        List.of(assessmentRulebase.getPrePopAssessmentName()),
+                        String.valueOf(user.getProvider().getId()),
+                        application.getCaseReferenceNumber())
+                    .block())
+            .map(AssessmentDetails::getContent)
+            .filter(content -> !content.isEmpty())
+            .flatMap(content -> content.stream().findFirst())
+            .orElseThrow(
+                () -> new CaabApplicationException("Failed to retrieve assessment details"));
 
-      final String submitReturnUrl = buildSubmitReturnUrl(caseContext);
-      final String contextToken =
-          contextSecurityUtil.createHubContext(
-              application.getCaseReferenceNumber(),
-              assessmentRulebase.getId(),
-              user.getUsername(),
-              user.getProvider().getId().longValue(),
-              session.getId(),
-              invokedFrom,
-              ezgovId,
-              submitReturnUrl);
+    final String submitReturnUrl = buildSubmitReturnUrl(caseContext);
+    final String contextToken =
+        contextSecurityUtil.createHubContext(
+            application.getCaseReferenceNumber(),
+            assessmentRulebase.getId(),
+            user.getUsername(),
+            user.getProvider().getId().longValue(),
+            session.getId(),
+            invokedFrom,
+            ezgovId,
+            submitReturnUrl);
 
-      populateOpaModel(
-          caseContext,
-          contextToken,
-          submitReturnUrl,
-          invokedFrom,
-          prepopAssessment,
-          user,
-          assessmentRulebase,
-          model);
-
-    } else if ("billing".equalsIgnoreCase(assessment)) {
-      // todo - later implementation
-
-    } else if ("poa".equalsIgnoreCase(assessment)) {
-      // todo - later implementation
-    }
+    populateOpaModel(
+        caseContext,
+        contextToken,
+        submitReturnUrl,
+        invokedFrom,
+        prepopAssessment,
+        user,
+        assessmentRulebase,
+        model);
 
     return "application/assessments/assessment-get";
   }
@@ -394,9 +410,47 @@ public class AssessmentController {
     return application;
   }
 
+  /**
+   * Resolves the live case a billing assessment runs against. The POA and bill journeys are started
+   * from the case statement of account, which works on the EBS case held in the session rather than
+   * on a draft application.
+   *
+   * @param session the HTTP session
+   * @return the case to prepopulate the assessment from
+   */
+  private ApplicationDetail resolveBillingCase(
+      final HttpSession session, final AssessmentRulebase assessmentRulebase) {
+    final ApplicationDetail ebsCase =
+        Optional.ofNullable((ApplicationDetail) session.getAttribute(CASE))
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve case"));
+
+    // The interview URL is reachable directly, so the case must be re-checked for the billing
+    // function here and not only on the screen that links to it (old PUI gates the equivalent
+    // StartOpaAssessment step with TestUserAuthorizedFunction).
+    final String requiredFunction =
+        assessmentRulebase == AssessmentRulebase.POA
+            ? FunctionConstants.ADD_UPDATE_POA
+            : FunctionConstants.ADD_UPDATE_BILL;
+
+    if (ebsCase.getAvailableFunctions() == null
+        || !ebsCase.getAvailableFunctions().contains(requiredFunction)) {
+      throw new CaabApplicationException(
+          "User is not authorised to run the %s assessment for this case"
+              .formatted(assessmentRulebase.getType()));
+    }
+
+    return ebsCase;
+  }
+
   private String getCancelLinkUrl(final CaseContext caseContext, final String invokedFrom) {
     if (MEANS_REASSESSMENT_INVOKED_FROM.equals(invokedFrom)) {
       return MEANS_REASSESSMENT_RETURN_URL;
+    }
+
+    // The POA interview is entered from, and returns to, the POA details screen, which sits under
+    // the case rather than under an application or amendment.
+    if (POA_INVOKED_FROM.equals(invokedFrom)) {
+      return POA_RETURN_URL;
     }
 
     return caseContext.isAmendment()
@@ -407,6 +461,10 @@ public class AssessmentController {
   private String getReturnLinkText(final CaseContext caseContext, final String invokedFrom) {
     if (MEANS_REASSESSMENT_INVOKED_FROM.equals(invokedFrom)) {
       return MEANS_REASSESSMENT_RETURN_LINK_TEXT;
+    }
+
+    if (POA_INVOKED_FROM.equals(invokedFrom)) {
+      return POA_RETURN_LINK_TEXT;
     }
 
     return messageSource.getMessage(
