@@ -3,8 +3,10 @@ package uk.gov.laa.ccms.caab.controller.billing;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -32,21 +34,25 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
 import uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox;
 import uk.gov.laa.ccms.caab.bean.validators.declaration.PoaDeclarationSubmissionValidator;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.mapper.SubmissionSummaryDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.BillingService;
+import uk.gov.laa.ccms.caab.service.BillingSummaryPdfService;
 import uk.gov.laa.ccms.caab.service.LookupService;
-import uk.gov.laa.ccms.caab.service.PoaSummaryPdfService;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -65,7 +71,7 @@ class BillingControllerTest {
 
   @Mock PoaDeclarationSubmissionValidator poaDeclarationValidator;
 
-  @Mock PoaSummaryPdfService poaSummaryPdfService;
+  @Mock BillingSummaryPdfService billingSummaryPdfService;
 
   @InjectMocks BillingController billingController;
 
@@ -190,6 +196,62 @@ class BillingControllerTest {
     }
 
     @Test
+    @DisplayName("Explains the withheld create and copy actions while a draft is in progress")
+    void explainsWhyActionsAreWithheldWhileDraftExists() {
+      ApplicationDetail ebsCase =
+          new ApplicationDetail()
+              .caseReferenceNumber("300000123")
+              .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_BILL));
+      StatementOfAccountDisplay display = new StatementOfAccountDisplay();
+      display.setDraftBillExists(true);
+      when(billingService.getStatementOfAccountDisplay(eq("300000123"), any(), any()))
+          .thenReturn(display);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing").sessionAttr(CASE, ebsCase).sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .containsEntry("draftInProgress", true);
+    }
+
+    @Test
+    @DisplayName("A draft POA alone also explains the withheld actions, as it withholds them too")
+    void explainsWhenOnlyADraftPoaExists() {
+      ApplicationDetail ebsCase =
+          new ApplicationDetail()
+              .caseReferenceNumber("300000123")
+              .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_BILL));
+      StatementOfAccountDisplay display = new StatementOfAccountDisplay();
+      display.setDraftPoaExists(true);
+      when(billingService.getStatementOfAccountDisplay(eq("300000123"), any(), any()))
+          .thenReturn(display);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing").sessionAttr(CASE, ebsCase).sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .containsEntry("draftInProgress", true);
+    }
+
+    @Test
+    @DisplayName("Carries no draft explanation when nothing is in progress")
+    void noExplanationWithoutADraft() {
+      ApplicationDetail ebsCase =
+          new ApplicationDetail()
+              .caseReferenceNumber("300000123")
+              .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_BILL));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing").sessionAttr(CASE, ebsCase).sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .containsEntry("draftInProgress", false);
+    }
+
+    @Test
     @DisplayName("Hides billing actions when the case does not carry the relevant functions")
     void hidesActionsWhenFunctionsAbsent() {
       ApplicationDetail ebsCase =
@@ -251,6 +313,37 @@ class BillingControllerTest {
           .hasStatusOk()
           .model()
           .containsEntry("canMaintainPoa", false);
+    }
+
+    @Test
+    @DisplayName("Offers the draft bill's edit and delete links only with the bill function")
+    void showsBillMaintenanceOnlyWithFunction() {
+      ApplicationDetail withFunction =
+          new ApplicationDetail()
+              .caseReferenceNumber("300000123")
+              .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_BILL));
+      ApplicationDetail withoutFunction =
+          new ApplicationDetail()
+              .caseReferenceNumber("300000123")
+              .availableFunctions(List.of(FunctionConstants.BILLING));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing")
+                      .sessionAttr(CASE, withFunction)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .containsEntry("canMaintainBill", true);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing")
+                      .sessionAttr(CASE, withoutFunction)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .containsEntry("canMaintainBill", false);
     }
   }
 
@@ -326,6 +419,482 @@ class BillingControllerTest {
           .hasRedirectedUrl("/case/billing");
 
       verifyNoInteractions(billingService);
+    }
+  }
+
+  @Nested
+  @DisplayName("GET: /case/billing/bill")
+  class CreateBill {
+
+    private ApplicationDetail caseWithBillFunction() {
+      return new ApplicationDetail()
+          .caseReferenceNumber("300000123")
+          .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_BILL));
+    }
+
+    @Test
+    @DisplayName("Creates the draft bill if absent and shows the bill details screen")
+    void createsDraftAndShowsScreen() {
+      when(assessmentService.getAssessments(any(), any(), any()))
+          .thenReturn(Mono.just(new AssessmentDetails()));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/billing/bill-details")
+          .model()
+          // Nothing started yet, so no bill summary link is offered.
+          .containsEntry("assessmentStatus", "Not started")
+          .containsEntry("assessmentComplete", false)
+          .containsEntry("printDraftBill", false);
+
+      verify(billingService).createDraftBillIfAbsent("300000123", "10", user);
+    }
+
+    @Test
+    @DisplayName("Offers the bill summary once the assessment is complete")
+    void offersSummaryWhenComplete() {
+      when(assessmentService.getAssessments(any(), any(), any()))
+          .thenReturn(
+              Mono.just(
+                  new AssessmentDetails()
+                      .addContentItem(
+                          new AssessmentDetail()
+                              .name(AssessmentRulebase.BILLING.getName())
+                              .status(AssessmentStatus.COMPLETE.getStatus()))));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .containsEntry("assessmentComplete", true)
+          .containsEntry("printDraftBill", true);
+    }
+
+    @Test
+    @DisplayName("Looks the status up against the billing rulebase, not the POA one")
+    void readsBillingRulebase() {
+      when(assessmentService.getAssessments(any(), any(), any()))
+          .thenReturn(Mono.just(new AssessmentDetails()));
+
+      mockMvc.perform(
+          get("/case/billing/bill")
+              .sessionAttr(CASE, caseWithBillFunction())
+              .sessionAttr(USER_DETAILS, user));
+
+      verify(assessmentService)
+          .getAssessments(
+              eq(List.of(AssessmentRulebase.BILLING.getName())), eq("10"), eq("300000123"));
+    }
+
+    @Test
+    @DisplayName("Redirects back without creating a draft when the case lacks the bill function")
+    void redirectsWhenNotAuthorised() {
+      ApplicationDetail ebsCase =
+          new ApplicationDetail()
+              .caseReferenceNumber("300000123")
+              .availableFunctions(List.of(FunctionConstants.BILLING));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing");
+
+      verifyNoInteractions(billingService);
+    }
+  }
+
+  @Nested
+  @DisplayName("GET: /case/billing/bill/copy")
+  class CopyBill {
+
+    private ApplicationDetail caseWithBillFunction() {
+      return new ApplicationDetail()
+          .caseReferenceNumber("300000123")
+          .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_BILL));
+    }
+
+    @Test
+    @DisplayName("Copies the rejected bill and opens the bill details screen")
+    void copiesAndOpensBillDetails() {
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill/copy")
+                      .param("billing-id", "555")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing/bill");
+
+      verify(billingService).copyBill("300000123", "10", "555", user);
+    }
+
+    @Test
+    @DisplayName("Refuses the copy when no billing incident id is supplied")
+    void refusesWithoutBillingId() {
+      // A row EBS gave no id for renders the link with an empty billing-id, and the URL can be
+      // reached directly; either way there is nothing to ask EBS for.
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill/copy")
+                      .param("billing-id", "")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing");
+
+      verify(billingService, never()).copyBill(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Refuses the copy while a draft bill is already in progress")
+    void refusesWhileDraftExists() {
+      StatementOfAccountDisplay display = new StatementOfAccountDisplay();
+      display.setDraftBillExists(true);
+      when(billingService.getStatementOfAccountDisplay(eq("300000123"), any(), any()))
+          .thenReturn(display);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill/copy")
+                      .param("billing-id", "555")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing");
+
+      // A case carries at most one draft bill, so the URL cannot be used to get a second.
+      verify(billingService, never()).copyBill(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Refuses the copy when the case does not carry the bill function")
+    void refusesWhenNotAuthorised() {
+      ApplicationDetail ebsCase =
+          new ApplicationDetail()
+              .caseReferenceNumber("300000123")
+              .availableFunctions(List.of(FunctionConstants.BILLING));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill/copy")
+                      .param("billing-id", "555")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing");
+
+      verifyNoInteractions(billingService);
+    }
+  }
+
+  @Nested
+  @DisplayName("/case/billing/bill/remove")
+  class RemoveBill {
+
+    private ApplicationDetail caseWithBillFunction() {
+      return new ApplicationDetail()
+          .caseReferenceNumber("300000123")
+          .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_BILL));
+    }
+
+    @Test
+    @DisplayName("GET shows the delete bill confirmation screen")
+    void showsConfirmation() {
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill/remove")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/billing/bill-remove");
+    }
+
+    @Test
+    @DisplayName("POST deletes the draft bill and its assessment data, then returns")
+    void deletesBillAndAssessments() {
+      when(assessmentService.deleteAssessments(any(), any(), any(), any()))
+          .thenReturn(Mono.empty());
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/billing/bill/remove")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing");
+
+      verify(billingService).deleteDraftBill("300000123", "10", user);
+      // The legacy RemoveBill clears the billing sessions including the pre-population, so a later
+      // bill starts from scratch.
+      verify(assessmentService)
+          .deleteAssessments(
+              eq(user),
+              eq(
+                  List.of(
+                      AssessmentRulebase.BILLING.getName(),
+                      AssessmentRulebase.BILLING.getPrePopAssessmentName())),
+              eq("300000123"),
+              isNull());
+    }
+
+    @Test
+    @DisplayName("Redirects away without deleting when the case lacks the bill function")
+    void redirectsWhenNotAuthorised() {
+      ApplicationDetail ebsCase =
+          new ApplicationDetail()
+              .caseReferenceNumber("300000123")
+              .availableFunctions(List.of(FunctionConstants.BILLING));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/billing/bill/remove")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing");
+
+      verifyNoInteractions(billingService);
+    }
+  }
+
+  @Nested
+  @DisplayName("/case/billing/bill/declaration")
+  class SubmitBill {
+
+    private ApplicationDetail caseWithBillFunction() {
+      return new ApplicationDetail()
+          .caseReferenceNumber("300000123")
+          .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_BILL));
+    }
+
+    private void billingAssessment(final String status, final AssessmentEntityDetail global) {
+      final AssessmentDetail assessment =
+          new AssessmentDetail().name(AssessmentRulebase.BILLING.getName()).status(status);
+      if (global != null) {
+        assessment.entityTypes(
+            List.of(
+                new AssessmentEntityTypeDetail()
+                    .name(AssessmentEntityType.GLOBAL.getType())
+                    .entities(List.of(global))));
+      }
+      when(assessmentService.getAssessments(any(), any(), any()))
+          .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessment)));
+    }
+
+    private AssessmentEntityDetail global(final String name, final String value) {
+      return new AssessmentEntityDetail()
+          .attributes(List.of(new AssessmentAttributeDetail().name(name).value(value)));
+    }
+
+    @Test
+    @DisplayName("Blocks submission and explains why when the bill details are incomplete")
+    void blocksIncompleteBill() {
+      billingAssessment("INCOMPLETE", null);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill/declaration")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          // The legacy PUI returns the user to the bill details screen carrying the reason.
+          .hasViewName("application/billing/bill-details")
+          .model()
+          .containsEntry("submissionError", "billing.bill.error.notComplete");
+    }
+
+    @Test
+    @DisplayName("Blocks submission of a court-assessed claim the court has not yet assessed")
+    void blocksClaimAwaitingCourtAssessment() {
+      billingAssessment(
+          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "false"));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill/declaration")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/billing/bill-details")
+          .model()
+          .containsEntry("submissionError", "billing.bill.error.notAssessed");
+    }
+
+    @Test
+    @DisplayName("Shows the declaration for a complete, court-assessed bill")
+    void showsDeclaration() {
+      billingAssessment(
+          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+      when(lookupService.getDeclarations(any(), any()))
+          .thenReturn(Mono.just(new DeclarationLookupDetail()));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill/declaration")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/billing/bill-declaration");
+    }
+
+    @Test
+    @DisplayName("A bill that never went to court is treated as assessed, as the legacy PUI does")
+    void treatsAbsentCourtAnswerAsAssessed() {
+      billingAssessment(AssessmentStatus.COMPLETE.getStatus(), null);
+      when(lookupService.getDeclarations(any(), any()))
+          .thenReturn(Mono.just(new DeclarationLookupDetail()));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill/declaration")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/billing/bill-declaration");
+    }
+
+    @Test
+    @DisplayName("Keys the declaration on the assessment's bill type")
+    void keysDeclarationOnBillType() {
+      billingAssessment(AssessmentStatus.COMPLETE.getStatus(), global("BILL_TYPE", "CLAIM"));
+      when(lookupService.getDeclarations(any(), any()))
+          .thenReturn(Mono.just(new DeclarationLookupDetail()));
+
+      mockMvc.perform(
+          get("/case/billing/bill/declaration")
+              .sessionAttr(CASE, caseWithBillFunction())
+              .sessionAttr(USER_DETAILS, user));
+
+      verify(lookupService).getDeclarations("BILL", "CLAIM");
+    }
+
+    @Test
+    @DisplayName("POST submits the bill, clears the billing assessments and confirms")
+    void submitsBill() {
+      billingAssessment(
+          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+      when(billingService.submitBill(eq("300000123"), eq("10"), any(), eq(user)))
+          .thenReturn("INV-9");
+      when(assessmentService.deleteAssessments(any(), any(), any(), any()))
+          .thenReturn(Mono.empty());
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/billing/bill/declaration")
+                      .param("declarationOptions[0].fieldValueDisplayValue", "I agree")
+                      .param("declarationOptions[0].checked", "true")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing/bill/confirmation");
+
+      verify(billingService).submitBill(eq("300000123"), eq("10"), any(), eq(user));
+      verify(assessmentService)
+          .deleteAssessments(
+              eq(user),
+              eq(
+                  List.of(
+                      AssessmentRulebase.BILLING.getName(),
+                      AssessmentRulebase.BILLING.getPrePopAssessmentName())),
+              eq("300000123"),
+              isNull());
+    }
+
+    @Test
+    @DisplayName("POST re-shows the declaration without submitting when it is not fully accepted")
+    void rejectsUnacceptedDeclaration() {
+      billingAssessment(
+          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+      when(lookupService.getDeclarations(any(), any()))
+          .thenReturn(Mono.just(new DeclarationLookupDetail()));
+      doAnswer(
+              invocation -> {
+                final Errors errors = invocation.getArgument(1);
+                errors.reject("declaration.required", "You must acknowledge the declaration.");
+                return null;
+              })
+          .when(poaDeclarationValidator)
+          .validate(any(), any());
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/billing/bill/declaration")
+                      .param("declarationOptions[0].fieldValueDisplayValue", "I agree")
+                      .param("declarationOptions[0].checked", "false")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/billing/bill-declaration");
+
+      verify(billingService, never()).submitBill(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("POST cannot be used to submit around the final validation")
+    void postRerunsFinalValidation() {
+      billingAssessment("INCOMPLETE", null);
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/billing/bill/declaration")
+                      .param("declarationOptions[0].fieldValueDisplayValue", "I agree")
+                      .param("declarationOptions[0].checked", "true")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/billing/bill-details");
+
+      verify(billingService, never()).submitBill(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Redirects away when the case does not carry the bill function")
+    void redirectsWhenNotAuthorised() {
+      ApplicationDetail ebsCase =
+          new ApplicationDetail()
+              .caseReferenceNumber("300000123")
+              .availableFunctions(List.of(FunctionConstants.BILLING));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill/declaration")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing");
+
+      verifyNoInteractions(billingService);
+    }
+
+    @Test
+    @DisplayName("The confirmation shows the submission reference and then clears it")
+    void showsConfirmation() {
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill/confirmation")
+                      .sessionAttr(SUBMISSION_TRANSACTION_ID, "INV-9")))
+          .hasStatusOk()
+          .hasViewName("application/billing/bill-confirmation")
+          .model()
+          .containsEntry("transactionId", "INV-9");
+    }
+
+    @Test
+    @DisplayName("The confirmation redirects away when there is no submission to confirm")
+    void redirectsWithoutASubmission() {
+      assertThat(mockMvc.perform(get("/case/billing/bill/confirmation")))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing");
     }
   }
 
@@ -560,7 +1129,7 @@ class BillingControllerTest {
                               .status(AssessmentStatus.COMPLETE.getStatus())
                               .entityTypes(new ArrayList<>()))));
       when(billingService.getAllocatedCostLimit(any(), any())).thenReturn(new BigDecimal("100.00"));
-      when(poaSummaryPdfService.generatePoaSummary(any(), any(), any(), any(), any()))
+      when(billingSummaryPdfService.generatePoaSummary(any(), any(), any(), any(), any()))
           .thenReturn("%PDF-1.4 stub".getBytes());
 
       assertThat(
@@ -571,7 +1140,7 @@ class BillingControllerTest {
           .hasStatusOk()
           .hasContentType(MediaType.APPLICATION_PDF);
 
-      verify(poaSummaryPdfService).generatePoaSummary(any(), any(), any(), any(), any());
+      verify(billingSummaryPdfService).generatePoaSummary(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -588,7 +1157,86 @@ class BillingControllerTest {
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/case/billing");
 
-      verifyNoInteractions(poaSummaryPdfService);
+      verifyNoInteractions(billingSummaryPdfService);
+    }
+  }
+
+  @Nested
+  @DisplayName("GET: /case/billing/bill/summary")
+  class BillSummary {
+
+    private ApplicationDetail caseWithBillFunction() {
+      return new ApplicationDetail()
+          .caseReferenceNumber("300000123")
+          .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_BILL));
+    }
+
+    @Test
+    @DisplayName("Streams the bill summary PDF when the assessment is complete")
+    void streamsPdf() {
+      when(assessmentService.getAssessments(any(), any(), any()))
+          .thenReturn(
+              Mono.just(
+                  new AssessmentDetails()
+                      .addContentItem(
+                          new AssessmentDetail()
+                              .name(AssessmentRulebase.BILLING.getName())
+                              .status(AssessmentStatus.COMPLETE.getStatus())
+                              .entityTypes(new ArrayList<>()))));
+      when(billingService.getAllocatedCostLimit(any(), any())).thenReturn(new BigDecimal("100.00"));
+      when(billingSummaryPdfService.generateBillSummary(any(), any(), any(), any(), any()))
+          .thenReturn("%PDF-1.4 stub".getBytes());
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill/summary")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasContentType(MediaType.APPLICATION_PDF);
+
+      verify(billingSummaryPdfService).generateBillSummary(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Redirects when the assessment is not complete")
+    void redirectsWhenNotComplete() {
+      when(assessmentService.getAssessments(any(), any(), any()))
+          .thenReturn(Mono.just(new AssessmentDetails()));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill/summary")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing");
+
+      verifyNoInteractions(billingSummaryPdfService);
+    }
+
+    @Test
+    @DisplayName("Redirects when the case does not allow a bill to be maintained")
+    void redirectsWhenBillNotAllowed() {
+      when(assessmentService.getAssessments(any(), any(), any()))
+          .thenReturn(
+              Mono.just(
+                  new AssessmentDetails()
+                      .addContentItem(
+                          new AssessmentDetail()
+                              .name(AssessmentRulebase.BILLING.getName())
+                              .status(AssessmentStatus.COMPLETE.getStatus())
+                              .entityTypes(new ArrayList<>()))));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill/summary")
+                      .sessionAttr(CASE, new ApplicationDetail().caseReferenceNumber("300000123"))
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing");
+
+      verifyNoInteractions(billingSummaryPdfService);
     }
   }
 }

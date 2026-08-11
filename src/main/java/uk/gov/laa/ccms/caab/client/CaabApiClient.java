@@ -21,6 +21,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
+import uk.gov.laa.ccms.caab.model.BillCreate;
 import uk.gov.laa.ccms.caab.model.Bills;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
@@ -1202,6 +1203,25 @@ public class CaabApiClient {
   }
 
   /**
+   * Creates a draft bill.
+   *
+   * @param bill the bill to create.
+   * @param loginId the login ID of the user creating it.
+   * @return a Mono that completes when the bill has been created.
+   */
+  public Mono<Void> createBill(final BillCreate bill, final String loginId) {
+    return caabApiWebClient
+        .post()
+        .uri("/bills")
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(bill)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiCreateError(e, RESOURCE_TYPE_BILL));
+  }
+
+  /**
    * Retrieves the draft payments on account held for a case and provider.
    *
    * @param caseReferenceNumber the case reference number.
@@ -1245,6 +1265,26 @@ public class CaabApiClient {
             e ->
                 caabApiClientErrorHandler.handleApiCreateError(
                     e, RESOURCE_TYPE_PAYMENTS_ON_ACCOUNT));
+  }
+
+  /**
+   * Removes a bill.
+   *
+   * @param billId the id of the bill to remove.
+   * @param loginId the login ID of the user removing it.
+   * @return a Mono that completes when the bill has been removed.
+   */
+  public Mono<Void> removeBill(final Long billId, final String loginId) {
+    return caabApiWebClient
+        .delete()
+        .uri("/bills/{bill-id}", billId)
+        .header("Caab-User-Login-Id", loginId)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiDeleteError(
+                    e, RESOURCE_TYPE_BILL, "id", String.valueOf(billId)));
   }
 
   /**

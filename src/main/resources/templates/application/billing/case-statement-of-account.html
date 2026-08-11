@@ -123,6 +123,10 @@
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
         <h2 id="bills-and-poa" class="govuk-heading-m" th:text="#{billing.billsAndPoa.title}"></h2>
+        <!-- Explains why the create buttons, and the copy action on a rejected bill, are absent
+             while a draft is in progress. -->
+        <div class="govuk-inset-text" th:if="${draftInProgress}" id="draft-in-progress-message"
+             th:text="#{billing.billsAndPoa.draftInProgress}"></div>
         <table class="govuk-table" id="bills-and-poa-table">
           <thead class="govuk-table__head">
             <tr class="govuk-table__row">
@@ -136,27 +140,31 @@
           </thead>
           <tbody class="govuk-table__body">
             <tr class="govuk-table__row" th:each="row : ${billsAndPoaPage?.content}"
-                th:with="editablePoa=${row.draft and row.type == 'POA' and canMaintainPoa}">
+                th:with="editablePoa=${row.draft and row.type == 'POA' and canMaintainPoa},editableBill=${row.draft and row.type == 'Bill' and canMaintainBill}">
               <!-- On a draft the type is a link to edit it; submitted rows show plain text. -->
               <td class="govuk-table__cell">
                 <a th:if="${editablePoa}" class="govuk-link" th:href="@{/case/billing/poa}"
                    th:text="${row.type}"></a>
-                <a th:if="${row.draft and row.type != 'POA'}" class="govuk-link" th:href="'#'"
+                <a th:if="${editableBill}" class="govuk-link" th:href="@{/case/billing/bill}"
                    th:text="${row.type}"></a>
-                <span th:unless="${row.draft}" th:text="${row.type}"></span>
+                <span th:unless="${editablePoa or editableBill}" th:text="${row.type}"></span>
               </td>
               <td class="govuk-table__cell" th:text="${row.status}"></td>
               <td class="govuk-table__cell" th:text="${row.dateSubmitted != null ? #temporals.format(row.dateSubmitted, 'dd/MM/yyyy') : ''}"></td>
               <td class="govuk-table__cell" th:text="${row.dateAuthorised != null ? #temporals.format(row.dateAuthorised, 'dd/MM/yyyy') : ''}"></td>
               <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${row.amount != null ? #numbers.formatCurrency(row.amount) : ''}"></td>
-              <!-- A draft POA can be deleted; a "Rejected" POA carries no action at all, matching
-                   the legacy PUI. TODO: point the Bill delete link at the Bill journey once it
-                   exists. -->
+              <!-- A draft Bill or POA can be deleted. A "Rejected" Bill can be copied, but only
+                   when no draft Bill is already in progress, since a case carries at most one.
+                   Every other status carries no action at all, matching the legacy PUI. -->
               <td class="govuk-table__cell">
                 <a th:if="${editablePoa}" class="govuk-link" th:href="@{/case/billing/poa/remove}"
                    th:text="#{billing.billsAndPoa.delete}"></a>
-                <a th:if="${row.draft and row.type != 'POA'}" class="govuk-link" th:href="'#'"
+                <a th:if="${editableBill}" class="govuk-link"
+                   th:href="@{/case/billing/bill/remove}"
                    th:text="#{billing.billsAndPoa.delete}"></a>
+                <a th:if="${row.copyable and canMaintainBill}" class="govuk-link"
+                   th:href="@{/case/billing/bill/copy(billing-id=${row.billingIncidentId})}"
+                   th:text="#{billing.billsAndPoa.copy}"></a>
               </td>
             </tr>
             <tr class="govuk-table__row"
@@ -173,7 +181,7 @@
 
         <div class="govuk-button-group">
           <govuk:button th:if="${showCreateBill}"
-                        th:href="'#'"
+                        th:href="@{/case/billing/bill}"
                         id="create-bill-button"
                         th:text="#{billing.createBill}"/>
           <govuk:button th:if="${showCreatePoa}"

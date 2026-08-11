@@ -9,13 +9,18 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.SoaFigureColumn;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
@@ -23,9 +28,11 @@ import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.BillCreate;
 import uk.gov.laa.ccms.caab.model.Bills;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
@@ -41,8 +48,12 @@ import uk.gov.laa.ccms.data.model.StatementOfAccountPoa;
 import uk.gov.laa.ccms.data.model.TaxRateLookupDetail;
 import uk.gov.laa.ccms.data.model.TaxRateLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.BillDetail;
+import uk.gov.laa.ccms.soa.gateway.model.InvoiceDataResponse;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceDetail;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceResponse;
+import uk.gov.laa.ccms.soa.gateway.model.OpaEntity;
+import uk.gov.laa.ccms.soa.gateway.model.OpaInstance;
 
 /**
  * Service responsible for building the Case Statement of Account display from the per-firm
@@ -61,7 +72,12 @@ public class BillingService {
   private static final String ENTITY_TYPE_COUNSEL = "COUNSEL";
   private static final String COST_CATEGORY_COUNSEL = "COUNSEL";
   private static final String INVOICE_STATUS_DRAFT = "Draft";
+  private static final String INVOICE_STATUS_REJECTED = "Rejected";
   private static final String INVOICE_TYPE_BILL = "Bill";
+  // Entities a copied bill must not carry forward: they belong to the case as it stands now, and
+  // the legacy CopyBill empties them so they re-populate from it.
+  private static final Set<String> COPY_EXCLUDED_ENTITY_TYPES =
+      Set.of("PROCEEDING", "OPPONENT_OTHER_PARTIES");
   private static final String INVOICE_TYPE_POA = "POA";
   private static final BigDecimal HUNDRED = new BigDecimal("100");
   private static final ZoneId EBS_ZONE = ZoneId.of("Europe/London");
@@ -80,6 +96,7 @@ public class BillingService {
   private final LookupService lookupService;
   private final SoaApiClient soaApiClient;
   private final SoaApplicationMapper soaApplicationMapper;
+  private final AssessmentService assessmentService;
 
   /**
    * Retrieve and build the statement of account display for the supplied case.
@@ -155,7 +172,7 @@ public class BillingService {
         new ArrayList<>(flattenNonDraftInvoices(statements));
     submitted.sort(BY_DATE_SUBMITTED_DESC);
     rows.addAll(toRows(submitted));
-    display.setBillsAndPoa(rows);
+    display.setBillsAndPoa(markCopyableBills(rows, display.isDraftBillExists()));
     return display;
   }
 
@@ -206,6 +223,87 @@ public class BillingService {
     return getDraftPaymentsOnAccount(caseReferenceNumber, providerId).stream()
         .findFirst()
         .orElse(paymentOnAccount);
+  }
+
+  /**
+   * Offers the copy action against rejected bills. A case carries at most one draft bill, and
+   * copying creates one, so the action is withheld entirely while a draft bill is already in
+   * progress - the same rule the legacy PUI applies to the Create Bill button.
+   *
+   * <p>A bill is anything EBS does not type as a POA, rather than anything typed exactly "Bill":
+   * EBS returns specific bill types such as "Counsel Bill", and the legacy PUI tests {@code not
+   * fn:contains(invoiceType, 'POA')} so those remain copyable.
+   *
+   * <p>The billing incident id is what addresses the invoice in EBS, and it is optional in the
+   * statement of account - some invoices come back without one. A row missing it cannot be copied,
+   * so the action is withheld rather than offered as a link that could only fail.
+   */
+  private List<BillPoaRow> markCopyableBills(
+      final List<BillPoaRow> rows, final boolean draftBillExists) {
+    if (draftBillExists) {
+      return rows;
+    }
+
+    return rows.stream()
+        .map(
+            row ->
+                isBillInvoice(row.type())
+                        && INVOICE_STATUS_REJECTED.equalsIgnoreCase(row.status())
+                        && row.billingIncidentId() != null
+                    ? row.withCopyable()
+                    : row)
+        .toList();
+  }
+
+  private boolean isBillInvoice(final String invoiceType) {
+    return invoiceType != null && !invoiceType.toUpperCase(Locale.UK).contains(INVOICE_TYPE_POA);
+  }
+
+  /**
+   * Returns the provider's draft bill for a case, if there is one.
+   *
+   * @param caseReferenceNumber the case reference number.
+   * @param providerId the provider the draft belongs to.
+   * @return the draft bill, or {@code null} when there is none.
+   */
+  public Bills getDraftBill(final String caseReferenceNumber, final String providerId) {
+    return caabApiClient.getBill(caseReferenceNumber, providerId).block();
+  }
+
+  /**
+   * Ensures the provider has a draft bill for the case, creating an empty one when there is none.
+   * This ports the legacy PUI {@code AddBill}: entering the bill details screen creates the draft
+   * if it is not already there, so the bill shows in the bills/POA table straight away and the OPA
+   * interview has a draft to write its answers back to. It is deliberately idempotent - re-entering
+   * the screen edits the existing draft rather than adding a second one.
+   *
+   * @param caseReferenceNumber the case reference number.
+   * @param providerId the provider the draft belongs to.
+   * @param user the logged-in user.
+   * @return the existing or newly created draft bill.
+   */
+  public Bills createDraftBillIfAbsent(
+      final String caseReferenceNumber, final String providerId, final UserDetail user) {
+
+    final Bills existing = getDraftBill(caseReferenceNumber, providerId);
+    if (existing != null) {
+      return existing;
+    }
+
+    // The legacy PUI creates the bill carrying only the case and provider; every other field is
+    // filled in by the OPA interview and written back by the connector.
+    final BillCreate bill =
+        new BillCreate().lscCaseReference(caseReferenceNumber).providerId(providerId);
+
+    caabApiClient.createBill(bill, user.getLoginId()).block();
+
+    // The read back should find what was just created; if it does not, still return a draft
+    // carrying both identifiers, since callers rely on a draft always knowing its case and
+    // provider.
+    final Bills created = getDraftBill(caseReferenceNumber, providerId);
+    return created == null
+        ? new Bills().lscCaseReferenceNumber(caseReferenceNumber).providerId(providerId)
+        : created;
   }
 
   /**
@@ -298,15 +396,210 @@ public class BillingService {
         // calculatedNetCost has no source - the legacy PUI's poaClaim is a transient field it never
         // populates - so it is left unset rather than inventing a value.
         .actualTotalCost(poaTotalCost(draft, taxRatesByCode()))
-        .opaResponse(toOpaResponse(poaAssessment));
+        .opaResponse(toOpaResponse(poaAssessment, AssessmentRulebase.POA));
   }
 
   private uk.gov.laa.ccms.soa.gateway.model.AssessmentResult toOpaResponse(
-      final AssessmentDetail poaAssessment) {
+      final AssessmentDetail assessment, final AssessmentRulebase rulebase) {
     final List<uk.gov.laa.ccms.soa.gateway.model.AssessmentResult> results =
-        soaApplicationMapper.mapAssessment(
-            poaAssessment, AssessmentRulebase.POA.getGoalAttributeName());
+        soaApplicationMapper.mapAssessment(assessment, rulebase.getGoalAttributeName());
     return results.isEmpty() ? null : results.get(0);
+  }
+
+  /**
+   * Submits the provider's draft bill to EBS and returns the reference tracking the submission.
+   *
+   * <p>This ports the legacy PUI {@code FinancialSubmissionHelper.addBill}: the draft bill (whose
+   * line details were written back by the OPA interview) and the completed billing assessment are
+   * marshalled into an invoice and sent to EBS via the soa-gateway {@code createInvoice} operation.
+   *
+   * <p>On success the draft is removed, as the legacy PUI's post-submission cleanup does; removing
+   * the billing OPA sessions is the caller's responsibility, mirroring how the delete journey
+   * splits the same work.
+   *
+   * @param caseReferenceNumber the case reference number.
+   * @param providerId the provider the draft belongs to.
+   * @param billingAssessment the completed billing assessment, marshalled onto the invoice.
+   * @param user the logged-in user.
+   * @return the invoice reference returned by EBS.
+   */
+  public String submitBill(
+      final String caseReferenceNumber,
+      final String providerId,
+      final AssessmentDetail billingAssessment,
+      final UserDetail user) {
+
+    final Bills draft = getDraftBill(caseReferenceNumber, providerId);
+    if (draft == null) {
+      throw new CaabApplicationException("No draft bill to submit for case " + caseReferenceNumber);
+    }
+
+    final InvoiceDetail invoice =
+        new InvoiceDetail().bill(toSoaBill(draft, billingAssessment, providerId));
+
+    final InvoiceResponse response =
+        soaApiClient.createInvoice(invoice, user.getLoginId(), user.getUserType()).block();
+
+    // The invoice reached EBS, so the draft has served its purpose; remove it as the legacy PUI's
+    // post-submission cleanup does. A failed submission throws before this, leaving the draft
+    // intact.
+    removeDraftBill(draft, user);
+
+    return response == null ? null : response.getInvoiceReferenceId();
+  }
+
+  /**
+   * Copies a rejected bill onto a new draft, seeding the billing pre-population with the answers
+   * the copied bill carried.
+   *
+   * <p>This ports the legacy PUI {@code CopyBill}: EBS is asked for the copied bill's assessment
+   * data, which is written to a billing pre-population assessment and picked up when the interview
+   * starts, and a draft bill is created so the bill details screen has one to work with.
+   *
+   * <p>The {@code PROCEEDING} and {@code OPPONENT_OTHER_PARTIES} entities are deliberately dropped.
+   * The legacy empties them for the same reason: they belong to the case as it stands now, so
+   * carrying another bill's copies forward would seed stale proceedings and opponents. Emptied,
+   * they are re-populated from the case when the assessment starts.
+   *
+   * @param caseReferenceNumber the case reference number.
+   * @param providerId the provider the new draft belongs to.
+   * @param billingId the billing incident id of the bill being copied.
+   * @param user the logged-in user.
+   */
+  public void copyBill(
+      final String caseReferenceNumber,
+      final String providerId,
+      final String billingId,
+      final UserDetail user) {
+
+    final InvoiceDataResponse invoiceData =
+        soaApiClient.getInvoiceData(billingId, user.getLoginId(), user.getUserType()).block();
+
+    final AssessmentDetail prepop =
+        new AssessmentDetail()
+            .name(AssessmentRulebase.BILLING.getPrePopAssessmentName())
+            .caseReferenceNumber(caseReferenceNumber)
+            .providerId(providerId)
+            .status(AssessmentStatus.INCOMPLETE.getStatus())
+            .entityTypes(toAssessmentEntityTypes(invoiceData));
+
+    assessmentService.saveAssessment(user, prepop).block();
+
+    createDraftBillIfAbsent(caseReferenceNumber, providerId, user);
+  }
+
+  /**
+   * Maps the OPA entities EBS returns for an invoice onto the assessment entity types the
+   * pre-population is held in. Entity types on the exclusion list keep their place but carry no
+   * entities, exactly as the legacy replaces their contents with an empty map.
+   */
+  private List<AssessmentEntityTypeDetail> toAssessmentEntityTypes(
+      final InvoiceDataResponse invoiceData) {
+
+    if (invoiceData == null || invoiceData.getOpaResponse() == null) {
+      return List.of();
+    }
+
+    return invoiceData.getOpaResponse().stream()
+        .map(
+            entity ->
+                new AssessmentEntityTypeDetail()
+                    .name(entity.getEntityName())
+                    .entities(
+                        isCopyExcluded(entity.getEntityName())
+                            ? List.of()
+                            : toAssessmentEntities(entity)))
+        .toList();
+  }
+
+  private boolean isCopyExcluded(final String entityName) {
+    return entityName != null
+        && COPY_EXCLUDED_ENTITY_TYPES.contains(entityName.trim().toUpperCase());
+  }
+
+  private List<AssessmentEntityDetail> toAssessmentEntities(final OpaEntity entity) {
+    if (entity.getInstances() == null) {
+      return List.of();
+    }
+
+    return entity.getInstances().stream()
+        .map(
+            instance ->
+                new AssessmentEntityDetail()
+                    .name(instance.getInstanceLabel())
+                    .prepopulated(true)
+                    .attributes(toAssessmentAttributes(instance)))
+        .toList();
+  }
+
+  private List<AssessmentAttributeDetail> toAssessmentAttributes(final OpaInstance instance) {
+    if (instance.getAttributes() == null) {
+      return List.of();
+    }
+
+    return instance.getAttributes().stream()
+        .map(
+            attribute ->
+                new AssessmentAttributeDetail()
+                    .name(attribute.getAttribute())
+                    .type(attribute.getResponseType())
+                    .value(attribute.getResponseValue())
+                    // The copied answers are the user's own, carried forward as pre-populated
+                    // input, which is how the legacy seeds them onto the new session.
+                    .prepopulated(true))
+        .toList();
+  }
+
+  /**
+   * Deletes the provider's draft bill for a case. This ports the legacy PUI {@code RemoveBill},
+   * which deletes the bill held for the case and provider. Deleting the OPA assessment data that
+   * went with it is the caller's responsibility, as it is in the legacy PUI.
+   *
+   * @param caseReferenceNumber the case reference number.
+   * @param providerId the provider the draft belongs to.
+   * @param user the logged-in user.
+   */
+  public void deleteDraftBill(
+      final String caseReferenceNumber, final String providerId, final UserDetail user) {
+    removeDraftBill(getDraftBill(caseReferenceNumber, providerId), user);
+  }
+
+  private void removeDraftBill(final Bills draft, final UserDetail user) {
+    if (draft != null && draft.getId() != null) {
+      caabApiClient.removeBill(draft.getId(), user.getLoginId()).block();
+    }
+  }
+
+  /**
+   * Maps the draft bill and its completed assessment onto the soa-gateway invoice payload. Mirrors
+   * the legacy PUI's {@code EBSCreateInvoiceClient.createInvoiceAddRQ(Bill)}, field for field. The
+   * provider firm is the logged-in user's own provider there, not the draft's, so it is passed in.
+   */
+  private BillDetail toSoaBill(
+      final Bills draft, final AssessmentDetail billingAssessment, final String providerId) {
+
+    return new BillDetail()
+        .caseReferenceNumber(draft.getLscCaseReferenceNumber())
+        .providerFirmId(providerId)
+        .typeOfBill(draft.getTypeOfBill())
+        .supportingInfo(draft.getSupportingInfo())
+        .clientApproval(toBoolean(draft.getClientApproval()))
+        .dateSentToClient(draft.getDateSendToClient())
+        .clientResponse(draft.getClientResponse())
+        .clientObjectionReason(draft.getClientObjectionReason())
+        .courtCode(draft.getCourtCode())
+        .courtAssessment(toBoolean(draft.getCourtAssessment()))
+        .courtAssessmentDate(draft.getCourtAssessmentDate())
+        .opaResponse(toOpaResponse(billingAssessment, AssessmentRulebase.BILLING));
+  }
+
+  /**
+   * The legacy PUI holds the bill's yes/no answers as booleans; the CAAB API stores them as the
+   * underlying numeric column, so a set flag is any non-zero value. An absent answer stays absent
+   * rather than becoming "no".
+   */
+  private Boolean toBoolean(final Integer value) {
+    return value == null ? null : value != 0;
   }
 
   /**
@@ -417,7 +710,8 @@ public class BillingService {
                     legacyDisplayDate(invoice.getDateSubmitted()),
                     legacyDisplayDate(invoice.getDateAuthorised()),
                     invoice.getInvoiceAmount(),
-                    false))
+                    false,
+                    invoice.getBillingIncidentId()))
         .toList();
   }
 

@@ -96,6 +96,12 @@ public class AssessmentController {
   private static final String POA_RETURN_LINK_TEXT = "Return to POA details";
   private static final String POA_RETURN_URL = "/civil/case/billing/poa";
 
+  /** The legacy PUI page id for the "Create a Bill - Bill details" screen. */
+  private static final String BILL_INVOKED_FROM = "CCMS_CB03";
+
+  private static final String BILL_RETURN_LINK_TEXT = "Return to bill details";
+  private static final String BILL_RETURN_URL = "/civil/case/billing/bill";
+
   private static final String CHECKPOINT_START = "START";
   private static final String CHECKPOINT_RESUME = "RESUME";
 
@@ -453,6 +459,11 @@ public class AssessmentController {
       return POA_RETURN_URL;
     }
 
+    // As does the bill interview, entered from and returning to the bill details screen.
+    if (BILL_INVOKED_FROM.equals(invokedFrom)) {
+      return BILL_RETURN_URL;
+    }
+
     return caseContext.isAmendment()
         ? AMENDMENT_CANCEL_LINK_URL
         : CANCEL_LINK_URL.formatted(caseContext.getPathValue());
@@ -465,6 +476,10 @@ public class AssessmentController {
 
     if (POA_INVOKED_FROM.equals(invokedFrom)) {
       return POA_RETURN_LINK_TEXT;
+    }
+
+    if (BILL_INVOKED_FROM.equals(invokedFrom)) {
+      return BILL_RETURN_LINK_TEXT;
     }
 
     return messageSource.getMessage(

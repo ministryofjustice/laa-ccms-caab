@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,7 +25,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.SoaFigureColumn;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
@@ -35,6 +38,7 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
+import uk.gov.laa.ccms.caab.model.BillCreate;
 import uk.gov.laa.ccms.caab.model.Bills;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
@@ -50,8 +54,12 @@ import uk.gov.laa.ccms.data.model.StatementOfAccountInvoiceList;
 import uk.gov.laa.ccms.data.model.TaxRateLookupDetail;
 import uk.gov.laa.ccms.data.model.TaxRateLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.InvoiceDataResponse;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceDetail;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceResponse;
+import uk.gov.laa.ccms.soa.gateway.model.OpaAttribute;
+import uk.gov.laa.ccms.soa.gateway.model.OpaEntity;
+import uk.gov.laa.ccms.soa.gateway.model.OpaInstance;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Billing service tests")
@@ -68,6 +76,8 @@ class BillingServiceTest {
   @Mock SoaApiClient soaApiClient;
 
   @Mock uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper soaApplicationMapper;
+
+  @Mock AssessmentService assessmentService;
 
   @InjectMocks BillingService billingService;
 
@@ -703,6 +713,155 @@ class BillingServiceTest {
   }
 
   @Nested
+  @DisplayName("Copying a rejected bill")
+  class CopyRejectedBill {
+
+    private final UserDetail user =
+        new UserDetail().loginId("user1").userType("EXTERNAL").provider(new BaseProvider().id(10));
+
+    private final ApplicationDetail ebsCase =
+        new ApplicationDetail()
+            .caseReferenceNumber(CASE_REF)
+            .providerDetails(
+                new ApplicationProviderDetails().provider(new IntDisplayValue().id(10)));
+
+    private StatementOfAccountDisplay displayWith(final boolean draftBillExists) {
+      StatementOfAccountDetails response =
+          new StatementOfAccountDetails()
+              .addContentItem(
+                  statement("Provider", 10L, new BigDecimal("100"))
+                      .invoiceList(
+                          invoiceList(
+                              new StatementOfAccountInvoice()
+                                  .invoiceType("Bill")
+                                  .invoiceStatus("Rejected")
+                                  .billingIncidentId(111L),
+                              // EBS omits the billing incident id on some invoices, as it does for
+                              // the authorised bill on a real case.
+                              new StatementOfAccountInvoice()
+                                  .invoiceType("Bill")
+                                  .invoiceStatus("Authorised"),
+                              // EBS returns specific bill types, not a bare "Bill" - these are the
+                              // shapes a real case carries, and both are bills for copy purposes.
+                              new StatementOfAccountInvoice()
+                                  .invoiceType("Counsel Bill")
+                                  .invoiceStatus("Rejected")
+                                  .billingIncidentId(222L),
+                              new StatementOfAccountInvoice()
+                                  .invoiceType("Counsel Bill")
+                                  .invoiceStatus("Authorised"),
+                              // A rejected bill EBS gives no id for cannot be addressed, so it
+                              // cannot be copied.
+                              new StatementOfAccountInvoice()
+                                  .invoiceType("Counsel Bill")
+                                  .invoiceStatus("Rejected"),
+                              new StatementOfAccountInvoice()
+                                  .invoiceType("POA")
+                                  .invoiceStatus("Rejected")
+                                  .billingIncidentId(333L),
+                              new StatementOfAccountInvoice()
+                                  .invoiceType("Counsel POA")
+                                  .invoiceStatus("Rejected")
+                                  .billingIncidentId(444L))));
+
+      when(ebsApiClient.getStatementOfAccount(CASE_REF, null)).thenReturn(Mono.just(response));
+      when(caabApiClient.getPaymentsOnAccount(CASE_REF, "10"))
+          .thenReturn(Mono.just(new PaymentOnAccountDetails()));
+      when(caabApiClient.getBill(CASE_REF, "10"))
+          .thenReturn(draftBillExists ? Mono.just(new Bills()) : Mono.empty());
+
+      return billingService.getStatementOfAccountDisplay(CASE_REF, ebsCase, user);
+    }
+
+    @Test
+    @DisplayName("Offers the copy action against every rejected bill type, and nothing else")
+    void offersCopyOnRejectedBillOnly() {
+      StatementOfAccountDisplay display = displayWith(false);
+
+      assertThat(display.getBillsAndPoa())
+          .extracting(
+              BillPoaRow::type,
+              BillPoaRow::status,
+              BillPoaRow::billingIncidentId,
+              BillPoaRow::copyable)
+          .containsExactlyInAnyOrder(
+              tuple("Bill", "Rejected", 111L, true),
+              tuple("Bill", "Authorised", null, false),
+              // A specific bill type is still a bill: the legacy PUI tests that the type does not
+              // contain "POA" rather than that it equals "Bill".
+              tuple("Counsel Bill", "Rejected", 222L, true),
+              tuple("Counsel Bill", "Authorised", null, false),
+              // Rejected, and a bill, but EBS gave no id to address it by - so it cannot be copied
+              // and the action is withheld rather than offered as a link that could only fail.
+              tuple("Counsel Bill", "Rejected", null, false),
+              // A rejected POA carries no action at all, matching the legacy PUI - including the
+              // typed variants, which the same "contains POA" test excludes.
+              tuple("POA", "Rejected", 333L, false),
+              tuple("Counsel POA", "Rejected", 444L, false));
+    }
+
+    @Test
+    @DisplayName("Withholds the copy action while a draft bill is already in progress")
+    void withholdsCopyWhileDraftBillExists() {
+      StatementOfAccountDisplay display = displayWith(true);
+
+      assertThat(display.getBillsAndPoa()).noneMatch(BillPoaRow::copyable);
+    }
+  }
+
+  @Nested
+  @DisplayName("Draft bill maintenance")
+  class DraftBill {
+
+    private final UserDetail user =
+        new UserDetail().loginId("user1").userType("EXTERNAL").provider(new BaseProvider().id(10));
+
+    @Test
+    @DisplayName("Creates a draft bill carrying only the case and provider when there is none")
+    void createsDraftWhenAbsent() {
+      Bills created = new Bills().lscCaseReferenceNumber(CASE_REF).providerId("10");
+      when(caabApiClient.getBill(CASE_REF, "10"))
+          .thenReturn(Mono.empty())
+          .thenReturn(Mono.just(created));
+      when(caabApiClient.createBill(any(), eq("user1"))).thenReturn(Mono.empty());
+
+      assertThat(billingService.createDraftBillIfAbsent(CASE_REF, "10", user)).isSameAs(created);
+
+      ArgumentCaptor<BillCreate> captor = ArgumentCaptor.forClass(BillCreate.class);
+      verify(caabApiClient).createBill(captor.capture(), eq("user1"));
+      // Every other field is filled in by the OPA interview, as the legacy PUI does.
+      assertThat(captor.getValue().getLscCaseReference()).isEqualTo(CASE_REF);
+      assertThat(captor.getValue().getProviderId()).isEqualTo("10");
+      assertThat(captor.getValue().getAmount()).isNull();
+    }
+
+    @Test
+    @DisplayName("Falls back to a draft carrying both identifiers when the read back finds nothing")
+    void fallbackDraftCarriesCaseAndProvider() {
+      // The read back should find what was just created; callers rely on a draft always knowing
+      // its case and provider, so the fallback must not drop either.
+      when(caabApiClient.getBill(CASE_REF, "10")).thenReturn(Mono.empty());
+      when(caabApiClient.createBill(any(), eq("user1"))).thenReturn(Mono.empty());
+
+      Bills result = billingService.createDraftBillIfAbsent(CASE_REF, "10", user);
+
+      assertThat(result.getLscCaseReferenceNumber()).isEqualTo(CASE_REF);
+      assertThat(result.getProviderId()).isEqualTo("10");
+    }
+
+    @Test
+    @DisplayName("Re-entering the bill screen edits the existing draft rather than adding another")
+    void isIdempotentWhenDraftExists() {
+      Bills existing = new Bills().lscCaseReferenceNumber(CASE_REF);
+      when(caabApiClient.getBill(CASE_REF, "10")).thenReturn(Mono.just(existing));
+
+      assertThat(billingService.createDraftBillIfAbsent(CASE_REF, "10", user)).isSameAs(existing);
+
+      verify(caabApiClient, never()).createBill(any(), any());
+    }
+  }
+
+  @Nested
   @DisplayName("Allocated cost limit")
   class AllocatedCostLimit {
 
@@ -740,6 +899,244 @@ class BillingServiceTest {
               billingService.getAllocatedCostLimit(
                   new StatementOfAccountDisplay(), new ApplicationDetail()))
           .isEqualByComparingTo("0");
+    }
+  }
+
+  @Nested
+  @DisplayName("Copy bill")
+  class CopyBill {
+
+    private UserDetail user() {
+      return new UserDetail()
+          .loginId("user1")
+          .userType("EXTERNAL")
+          .provider(new BaseProvider().id(10));
+    }
+
+    private OpaEntity entity(final String name, final String attribute, final String value) {
+      return new OpaEntity()
+          .entityName(name)
+          .instances(
+              List.of(
+                  new OpaInstance()
+                      .instanceLabel(name + "-1")
+                      .attributes(
+                          List.of(
+                              new OpaAttribute()
+                                  .attribute(attribute)
+                                  .responseType("text")
+                                  .responseValue(value)))));
+    }
+
+    @Test
+    @DisplayName("Seeds the billing pre-population from the copied bill and creates a draft")
+    void seedsPrepopAndCreatesDraft() {
+      when(soaApiClient.getInvoiceData("555", "user1", "EXTERNAL"))
+          .thenReturn(
+              Mono.just(
+                  new InvoiceDataResponse()
+                      .opaResponse(List.of(entity("GLOBAL", "BILL_TYPE", "CLAIM")))));
+      when(assessmentService.saveAssessment(any(), any())).thenReturn(Mono.empty());
+      when(caabApiClient.createBill(any(), eq("user1"))).thenReturn(Mono.empty());
+
+      billingService.copyBill(CASE_REF, "10", "555", user());
+
+      final ArgumentCaptor<AssessmentDetail> captor =
+          ArgumentCaptor.forClass(AssessmentDetail.class);
+      verify(assessmentService).saveAssessment(eq(user()), captor.capture());
+
+      final AssessmentDetail prepop = captor.getValue();
+      // Seeded onto the pre-population, which the interview picks up when it starts.
+      assertThat(prepop.getName()).isEqualTo(AssessmentRulebase.BILLING.getPrePopAssessmentName());
+      assertThat(prepop.getCaseReferenceNumber()).isEqualTo(CASE_REF);
+      assertThat(prepop.getProviderId()).isEqualTo("10");
+      assertThat(prepop.getEntityTypes()).hasSize(1);
+      assertThat(prepop.getEntityTypes().get(0).getName()).isEqualTo("GLOBAL");
+      assertThat(prepop.getEntityTypes().get(0).getEntities().get(0).getAttributes())
+          .extracting(AssessmentAttributeDetail::getName, AssessmentAttributeDetail::getValue)
+          .containsExactly(tuple("BILL_TYPE", "CLAIM"));
+
+      // The new draft bill gives the bill details screen something to work with.
+      verify(caabApiClient).createBill(any(), eq("user1"));
+    }
+
+    @Test
+    @DisplayName("Drops the copied proceedings and opponents so they re-populate from the case")
+    void dropsCaseSpecificEntities() {
+      when(soaApiClient.getInvoiceData(any(), any(), any()))
+          .thenReturn(
+              Mono.just(
+                  new InvoiceDataResponse()
+                      .opaResponse(
+                          List.of(
+                              entity("GLOBAL", "BILL_TYPE", "CLAIM"),
+                              entity("PROCEEDING", "PROCEEDING_ID", "P1"),
+                              entity("OPPONENT_OTHER_PARTIES", "OPPONENT_ID", "O1")))));
+      when(assessmentService.saveAssessment(any(), any())).thenReturn(Mono.empty());
+      when(caabApiClient.createBill(any(), any())).thenReturn(Mono.empty());
+
+      billingService.copyBill(CASE_REF, "10", "555", user());
+
+      final ArgumentCaptor<AssessmentDetail> captor =
+          ArgumentCaptor.forClass(AssessmentDetail.class);
+      verify(assessmentService).saveAssessment(any(), captor.capture());
+
+      // The entity types are kept so the assessment still has their shape, but carry nothing
+      // copied - the legacy CopyBill replaces their contents with an empty map.
+      assertThat(captor.getValue().getEntityTypes())
+          .extracting(AssessmentEntityTypeDetail::getName, type -> type.getEntities().size())
+          .containsExactlyInAnyOrder(
+              tuple("GLOBAL", 1), tuple("PROCEEDING", 0), tuple("OPPONENT_OTHER_PARTIES", 0));
+    }
+
+    @Test
+    @DisplayName("Still creates the draft when EBS holds no assessment data for the bill")
+    void handlesEmptyInvoiceData() {
+      when(soaApiClient.getInvoiceData(any(), any(), any()))
+          .thenReturn(Mono.just(new InvoiceDataResponse()));
+      when(assessmentService.saveAssessment(any(), any())).thenReturn(Mono.empty());
+      when(caabApiClient.createBill(any(), any())).thenReturn(Mono.empty());
+
+      billingService.copyBill(CASE_REF, "10", "555", user());
+
+      verify(caabApiClient).createBill(any(), any());
+    }
+  }
+
+  @Nested
+  @DisplayName("Submit bill")
+  class SubmitBill {
+
+    private UserDetail user() {
+      return new UserDetail()
+          .loginId("user1")
+          .userType("EXTERNAL")
+          .provider(new BaseProvider().id(10));
+    }
+
+    @Test
+    @DisplayName("Maps the draft bill and assessment onto the invoice and submits it")
+    void submitsDraftBill() {
+      final Date sentToClient = new Date();
+      final Date assessedOn = new Date();
+      final Bills draft =
+          new Bills()
+              .lscCaseReferenceNumber(CASE_REF)
+              .providerId("10")
+              .typeOfBill("CLAIM")
+              .supportingInfo("Info")
+              .clientApproval(1)
+              .dateSendToClient(sentToClient)
+              .clientResponse("Agreed")
+              .clientObjectionReason("None")
+              .courtCode("C1")
+              .courtAssessment(0)
+              .courtAssessmentDate(assessedOn);
+      draft.setId(7L);
+      when(caabApiClient.getBill(CASE_REF, "10")).thenReturn(Mono.just(draft));
+      final AssessmentDetail assessment = new AssessmentDetail();
+      when(soaApplicationMapper.mapAssessment(
+              assessment, AssessmentRulebase.BILLING.getGoalAttributeName()))
+          .thenReturn(List.of(new uk.gov.laa.ccms.soa.gateway.model.AssessmentResult()));
+      when(soaApiClient.createInvoice(any(), eq("user1"), eq("EXTERNAL")))
+          .thenReturn(Mono.just(new InvoiceResponse().invoiceReferenceId("INV-9")));
+      when(caabApiClient.removeBill(eq(7L), eq("user1"))).thenReturn(Mono.empty());
+
+      final String reference = billingService.submitBill(CASE_REF, "10", assessment, user());
+
+      assertThat(reference).isEqualTo("INV-9");
+
+      final ArgumentCaptor<InvoiceDetail> invoiceCaptor =
+          ArgumentCaptor.forClass(InvoiceDetail.class);
+      verify(soaApiClient).createInvoice(invoiceCaptor.capture(), eq("user1"), eq("EXTERNAL"));
+      final uk.gov.laa.ccms.soa.gateway.model.BillDetail bill = invoiceCaptor.getValue().getBill();
+      assertThat(bill.getCaseReferenceNumber()).isEqualTo(CASE_REF);
+      // The provider firm is the logged-in user's own, as the legacy PUI takes it from the session.
+      assertThat(bill.getProviderFirmId()).isEqualTo("10");
+      assertThat(bill.getTypeOfBill()).isEqualTo("CLAIM");
+      assertThat(bill.getSupportingInfo()).isEqualTo("Info");
+      assertThat(bill.getDateSentToClient()).isEqualTo(sentToClient);
+      assertThat(bill.getClientResponse()).isEqualTo("Agreed");
+      assertThat(bill.getClientObjectionReason()).isEqualTo("None");
+      assertThat(bill.getCourtCode()).isEqualTo("C1");
+      assertThat(bill.getCourtAssessmentDate()).isEqualTo(assessedOn);
+      assertThat(bill.getOpaResponse()).isNotNull();
+      // The stored numeric flags become the booleans EBS expects.
+      assertThat(bill.isClientApproval()).isTrue();
+      assertThat(bill.isCourtAssessment()).isFalse();
+      // A POA is never sent alongside a bill: EBS accepts exactly one of the two.
+      assertThat(invoiceCaptor.getValue().getPoa()).isNull();
+
+      // The submitted draft is removed, as the legacy post-submission cleanup does.
+      verify(caabApiClient).removeBill(7L, "user1");
+    }
+
+    @Test
+    @DisplayName("Leaves the draft in place when the submission fails")
+    void keepsDraftWhenSubmissionFails() {
+      when(caabApiClient.getBill(CASE_REF, "10"))
+          .thenReturn(
+              Mono.just(new Bills().id(7L).lscCaseReferenceNumber(CASE_REF).providerId("10")));
+      when(soaApiClient.createInvoice(any(), any(), any()))
+          .thenReturn(Mono.error(new RuntimeException("EBS is down")));
+
+      assertThatThrownBy(
+              () -> billingService.submitBill(CASE_REF, "10", new AssessmentDetail(), user()))
+          .isInstanceOf(RuntimeException.class);
+
+      verify(caabApiClient, never()).removeBill(any(), any());
+    }
+
+    @Test
+    @DisplayName("Leaves an unanswered yes/no question unset rather than defaulting it to no")
+    void leavesUnansweredFlagsUnset() {
+      when(caabApiClient.getBill(CASE_REF, "10"))
+          .thenReturn(Mono.just(new Bills().lscCaseReferenceNumber(CASE_REF).providerId("10")));
+      when(soaApiClient.createInvoice(any(), any(), any()))
+          .thenReturn(Mono.just(new InvoiceResponse().invoiceReferenceId("INV-9")));
+
+      billingService.submitBill(CASE_REF, "10", new AssessmentDetail(), user());
+
+      final ArgumentCaptor<InvoiceDetail> invoiceCaptor =
+          ArgumentCaptor.forClass(InvoiceDetail.class);
+      verify(soaApiClient).createInvoice(invoiceCaptor.capture(), any(), any());
+      assertThat(invoiceCaptor.getValue().getBill().isClientApproval()).isNull();
+      assertThat(invoiceCaptor.getValue().getBill().isCourtAssessment()).isNull();
+    }
+
+    @Test
+    @DisplayName("Deletes the provider's draft bill by id")
+    void deletesDraftBill() {
+      when(caabApiClient.getBill(CASE_REF, "10"))
+          .thenReturn(Mono.just(new Bills().id(7L).lscCaseReferenceNumber(CASE_REF)));
+      when(caabApiClient.removeBill(eq(7L), eq("user1"))).thenReturn(Mono.empty());
+
+      billingService.deleteDraftBill(CASE_REF, "10", user());
+
+      verify(caabApiClient).removeBill(7L, "user1");
+    }
+
+    @Test
+    @DisplayName("Deleting is a no-op when the provider has no draft bill")
+    void deleteIsNoOpWithoutADraft() {
+      when(caabApiClient.getBill(CASE_REF, "10")).thenReturn(Mono.empty());
+
+      billingService.deleteDraftBill(CASE_REF, "10", user());
+
+      verify(caabApiClient, never()).removeBill(any(), any());
+    }
+
+    @Test
+    @DisplayName("Throws when there is no draft bill to submit")
+    void throwsWhenNoDraftBill() {
+      when(caabApiClient.getBill(CASE_REF, "10")).thenReturn(Mono.empty());
+
+      assertThatThrownBy(
+              () -> billingService.submitBill(CASE_REF, "10", new AssessmentDetail(), user()))
+          .isInstanceOf(CaabApplicationException.class)
+          .hasMessageContaining("No draft bill to submit");
+
+      verifyNoInteractions(soaApiClient);
     }
   }
 
