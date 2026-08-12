@@ -158,6 +158,7 @@ public interface EbsApplicationMapper {
   @Mapping(target = "amendmentProceedingsInEbs", source = "amendmentProceedingsInEbs")
   @Mapping(target = "submitted", source = "caseWithOnlyDraftProceedings")
   @Mapping(target = "priorAuthorities", source = "priorAuthorities")
+  @Mapping(target = "availableFunctions", source = "ebsCaseDetail.availableFunctions")
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "relationToLinkedCase", ignore = true)
   @Mapping(target = "quickEditType", ignore = true)

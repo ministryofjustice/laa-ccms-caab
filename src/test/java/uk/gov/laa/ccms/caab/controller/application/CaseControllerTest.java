@@ -700,6 +700,22 @@ class CaseControllerTest {
     }
 
     @Test
+    @DisplayName("Outcome and awards page loads")
+    public void outcomeAndAwardsPageLoads() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards");
+    }
+
+    @Test
     @DisplayName(
         "Case overview screen shows 'Continue Amendment' when AMEND_CASE is available and it's a TDS amendment")
     public void caseOverviewAmendCaseIsTdsAmendmentShowsContinueAmendment() {

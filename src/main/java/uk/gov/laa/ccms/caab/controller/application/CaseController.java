@@ -262,6 +262,20 @@ public class CaseController {
   }
 
   /**
+   * Displays the outcome and awards screen.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param model the model
+   * @return The outcome and awards view.
+   */
+  @GetMapping("/case/outcome-and-awards")
+  public String outcomeAndAwards(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase, Model model) {
+    model.addAttribute("proceedings", ebsCase.getProceedings());
+    return "application/outcome-and-awards";
+  }
+
+  /**
    * Returns a display object containing an other party within a case.
    *
    * @param ebsCase The case details from EBS.
@@ -425,11 +439,13 @@ public class CaseController {
       ApplicationDetail amendments,
       @SessionAttribute(CASE_REFERENCE_NUMBER) String caseReferenceNumber) {
 
-    if (ebsCase.getAvailableFunctions() == null || ebsCase.getAvailableFunctions().isEmpty()) {
-      return Collections.emptyList();
+    final Set<String> caseAvailableFunctions;
+    if (ebsCase.getAvailableFunctions() != null && !ebsCase.getAvailableFunctions().isEmpty()) {
+      caseAvailableFunctions = Set.copyOf(ebsCase.getAvailableFunctions());
+    } else {
+      caseAvailableFunctions = Collections.emptySet();
     }
 
-    Set<String> caseAvailableFunctions = Set.copyOf(ebsCase.getAvailableFunctions());
     boolean openAmendment = amendment || (hasEbsAmendments(ebsCase) && amendments != null);
 
     return ActionViewHelper.getAllAvailableActions(openAmendment).stream()

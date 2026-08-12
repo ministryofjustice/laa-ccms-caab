@@ -25,12 +25,12 @@ public class ActionViewHelper {
               FunctionConstants.OUTCOME_WITH_DISCHARGE,
               "action.recordOutcome.name",
               "action.recordOutcome.description",
-              "#"),
+              "/case/outcome-and-awards"),
           new AvailableAction(
               FunctionConstants.OUTCOME_NO_DISCHARGE,
               "action.recordOutcome.name",
               "action.recordOutcome.description",
-              "#"),
+              "/case/outcome-and-awards"),
           new AvailableAction(
               FunctionConstants.SUBMIT_CASE_REQUEST,
               "action.submitCaseQuery.name",
