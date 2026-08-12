@@ -12,6 +12,9 @@ public abstract class FileUploadFormData {
   /** The multipart file data to upload. */
   private MultipartFile file;
 
+  /** The sanitised filename used for downstream processing. */
+  private String sanitisedFileName;
+
   /** The file extension. */
   private String fileExtension;
 

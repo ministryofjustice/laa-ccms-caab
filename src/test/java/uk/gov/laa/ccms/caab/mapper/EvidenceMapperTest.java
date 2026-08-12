@@ -45,6 +45,7 @@ public class EvidenceMapperTest {
     evidenceUploadFormData.setFile(
         new MockMultipartFile(
             "theFile", "originalName", "contentType", "the file data".getBytes()));
+    evidenceUploadFormData.setSanitisedFileName("originalName");
     evidenceUploadFormData.setFileExtension("ext");
     evidenceUploadFormData.setProviderId(789);
     evidenceUploadFormData.setRegisteredDocumentId("regId");
@@ -70,7 +71,7 @@ public class EvidenceMapperTest {
         Base64.getEncoder().encodeToString(evidenceUploadFormData.getFile().getBytes()),
         result.getFileData());
     assertEquals(evidenceUploadFormData.getFileExtension(), result.getFileExtension());
-    assertEquals(evidenceUploadFormData.getFile().getOriginalFilename(), result.getFileName());
+    assertEquals(evidenceUploadFormData.getSanitisedFileName(), result.getFileName());
     assertNull(result.getId());
     assertNull(result.getNotificationReference());
     assertEquals(evidenceUploadFormData.getProviderId().toString(), result.getProviderId());

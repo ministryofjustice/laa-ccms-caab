@@ -214,7 +214,7 @@ class EvidenceSectionControllerTest {
             eq(formData.getProviderId()),
             eq(formData.getDocumentSender()),
             eq(APPLICATION),
-            eq(formData.getFile().getOriginalFilename()),
+            eq(formData.getSanitisedFileName()),
             any(InputStream.class));
 
     List<EvidenceRequired> evidenceRequired = List.of(new EvidenceRequired("code", "desc"));
@@ -429,6 +429,7 @@ class EvidenceSectionControllerTest {
             "theFile", "originalName.pdf", "contentType", "the file data".getBytes()));
     formData.setProviderId(789);
     formData.setRegisteredDocumentId("regId");
+    formData.setSanitisedFileName(formData.getFile().getOriginalFilename());
     return formData;
   }
 }

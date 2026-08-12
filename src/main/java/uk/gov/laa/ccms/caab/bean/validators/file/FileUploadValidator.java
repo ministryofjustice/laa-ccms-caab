@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.bean.validators.file;
 
 import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 import static uk.gov.laa.ccms.caab.util.FileUtil.getFileExtension;
+import static uk.gov.laa.ccms.caab.util.FileUtil.sanitiseFileName;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,7 +10,6 @@ import java.util.List;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.tika.Tika;
-import org.springframework.util.StringUtils;
 import org.springframework.util.unit.DataSize;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.file.FileUploadFormData;
@@ -25,8 +25,6 @@ public abstract class FileUploadValidator extends AbstractValidator {
   protected static final String FILE_REQUIRED_ERROR = "Please select a file to upload";
 
   protected static final String FILE_REQUIRED_ERROR_CODE = "validation.error.selectAFile";
-
-  protected static final String INVALID_FILE_NAME_ERROR_CODE = "validation.error.invalidFileName";
 
   /** The error message for an invalid file extension. */
   protected static final String INVALID_EXTENSION_ERROR =
@@ -46,11 +44,20 @@ public abstract class FileUploadValidator extends AbstractValidator {
   protected static final String MULTIPLE_EXTENSION_ERROR_CODE =
       "validation.error.multipleExtension";
 
+  /** The error message for a filename that exceeds the maximum length. */
+  protected static final String FILENAME_LENGTH_ERROR =
+      "Filename is too long. The filename must be no more than 255 characters";
+
+  protected static final String FILENAME_LENGTH_ERROR_CODE = "validation.error.filenameTooLong";
+
   /** The error message for an invalid file extension. */
   public static final String MAX_FILESIZE_ERROR =
       "File is too large. The file must be less than %s";
 
   protected static final String MAX_FILESIZE_ERROR_CODE = "validation.error.maxFileSize";
+
+  /** The maximum length of a filename. */
+  protected static final Integer FILENAME_MAX_LENGTH = 255;
 
   /** The maximum length of the document description text area. */
   protected static final Integer DOCUMENT_DESCRIPTION_MAX_LENGTH = 255;
@@ -77,14 +84,24 @@ public abstract class FileUploadValidator extends AbstractValidator {
     if (fileUploadFormData.getFile() == null || fileUploadFormData.getFile().isEmpty()) {
       errors.rejectValue("file", FILE_REQUIRED_ERROR_CODE, FILE_REQUIRED_ERROR);
     } else {
-      fileUploadFormData.setFileExtension(getFileExtension(fileUploadFormData.getFile()));
+      final String sanitisedFilename =
+          sanitiseFileName(fileUploadFormData.getFile().getOriginalFilename());
+      if (sanitisedFilename.isBlank()) {
+        errors.rejectValue("file", FILE_REQUIRED_ERROR_CODE, FILE_REQUIRED_ERROR);
+        return;
+      }
 
-      if (!hasValidFileName(fileUploadFormData)) {
-        errors.rejectValue("file", INVALID_FILE_NAME_ERROR_CODE);
+      fileUploadFormData.setSanitisedFileName(sanitisedFilename);
+      fileUploadFormData.setFileExtension(getFileExtension(sanitisedFilename));
+
+      if (sanitisedFilename.length() > FILENAME_MAX_LENGTH) {
+        errors.rejectValue("file", FILENAME_LENGTH_ERROR_CODE, FILENAME_LENGTH_ERROR);
+        return;
       }
 
       if (!hasSingleExtension(fileUploadFormData)) {
         errors.rejectValue("file", MULTIPLE_EXTENSION_ERROR_CODE);
+        return;
       }
 
       if (!isValidExtension(fileUploadFormData.getFileExtension())) {
@@ -95,6 +112,10 @@ public abstract class FileUploadValidator extends AbstractValidator {
             INVALID_EXTENSION_ERROR.formatted(getCommaDelimitedString(validExtensions)));
       } else {
         validateFileSize(fileUploadFormData, errors);
+
+        if (errors.hasErrors()) {
+          return;
+        }
 
         if (!isValidMimeType(fileUploadFormData.getFile().getContentType())) {
           errors.rejectValue(
@@ -198,31 +219,16 @@ public abstract class FileUploadValidator extends AbstractValidator {
    * @return true if the file only has a single extension, false otherwise.
    */
   protected boolean hasSingleExtension(FileUploadFormData fileUploadFormData) {
-    String filename = StringUtils.cleanPath(fileUploadFormData.getFile().getOriginalFilename());
+    String filename = fileUploadFormData.getSanitisedFileName();
 
     int lastDot = filename.lastIndexOf('.');
     int firstDot = filename.indexOf('.');
 
-    return (firstDot > 0) && (firstDot == lastDot) && lastDot < (filename.length() - 1);
-  }
-
-  /**
-   * Check whether a file has a valid filename using a regex expression.
-   *
-   * @param fileUploadFormData the file upload form data object.
-   * @return true if the filename is valid, false otherwise.
-   */
-  protected boolean hasValidFileName(FileUploadFormData fileUploadFormData) {
-    String filename = StringUtils.cleanPath(fileUploadFormData.getFile().getOriginalFilename());
-
-    if (filename == null || filename.isEmpty()) {
-      return false;
-    } else if (filename.indexOf('\0') > -1) {
-      return false;
-    } else if (filename.contains("%00")) {
-      return false;
+    if (firstDot < 0) {
+      return true;
     }
-    return filename.matches("^[A-Za-z0-9_-]+\\.[A-Za-z0-9]+$");
+
+    return (firstDot > 0) && (firstDot == lastDot) && lastDot < (filename.length() - 1);
   }
 
   /**

@@ -864,6 +864,7 @@ class ActionsAndNotificationsControllerTest {
           new NotificationAttachmentUploadFormData();
       attachmentUploadFormData.setSendBy(SendBy.ELECTRONIC);
       attachmentUploadFormData.setFile(file);
+      attachmentUploadFormData.setSanitisedFileName(filename);
 
       NotificationAttachmentDetail notificationAttachment = new NotificationAttachmentDetail();
       notificationAttachment.setSendBy("E");
@@ -894,8 +895,7 @@ class ActionsAndNotificationsControllerTest {
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/notifications/234/provide-documents-or-evidence");
 
-      verify(avScanService)
-          .performAvScan(any(), any(), any(), any(), eq(file.getOriginalFilename()), any());
+      verify(avScanService).performAvScan(any(), any(), any(), any(), eq(filename), any());
       verify(notificationService)
           .addDraftNotificationAttachment(notificationAttachment, userDetails.getLoginId());
     }

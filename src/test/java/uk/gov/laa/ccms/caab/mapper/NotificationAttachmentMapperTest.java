@@ -160,6 +160,7 @@ public class NotificationAttachmentMapperTest {
         new NotificationAttachmentUploadFormData();
     notificationAttachmentUploadFormData.setFile(
         new MockMultipartFile("name", "filename.txt", null, Base64.getDecoder().decode(fileData)));
+    notificationAttachmentUploadFormData.setSanitisedFileName("filename.txt");
     notificationAttachmentUploadFormData.setProviderId(456);
     notificationAttachmentUploadFormData.setSendBy(SendBy.ELECTRONIC);
     notificationAttachmentUploadFormData.setDocumentType("DOCTYPE");
@@ -180,7 +181,7 @@ public class NotificationAttachmentMapperTest {
     assertEquals(fileData, result.getFileData());
     assertEquals("456", result.getProviderId());
     assertEquals("Document Description", result.getDescription());
-    assertEquals("filename.txt", result.getFileName());
+    assertEquals(notificationAttachmentUploadFormData.getSanitisedFileName(), result.getFileName());
     assertEquals("789", result.getNotificationReference());
     assertEquals(1L, result.getNumber());
     assertEquals("status", result.getStatus());
