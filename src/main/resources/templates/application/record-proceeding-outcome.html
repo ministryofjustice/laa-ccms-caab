@@ -125,15 +125,11 @@
                   maxlength="950"></textarea>
       </div>
 
-      <div class="govuk-form-group"
-           th:classappend="${#fields.hasErrors('courtCode')} ? 'govuk-form-group--error' : ''">
-        <label class="govuk-label" for="courtCode">Court</label>
-        <span class="govuk-error-message" th:if="${#fields.hasErrors('courtCode')}" th:errors="*{courtCode}"></span>
-        <select id="courtCode" class="govuk-select" th:field="*{courtCode}" th:errorclass="govuk-select--error">
-          <option value="">Please Select</option>
-          <option th:each="item : ${courts}" th:value="${item['code']}" th:text="${item['description']}"></option>
-        </select>
-      </div>
+        <div class="govuk-button-group govuk-!-margin-top-3">
+            <a class="govuk-button govuk-!-margin-bottom-0"
+               th:href="@{/court/search}"
+               th:text="#{courtSearch.title}"></a>
+        </div>
 
       <div class="govuk-form-group"
            th:classappend="${#fields.hasErrors('outcomeCourtCaseNo')} ? 'govuk-form-group--error' : ''">
