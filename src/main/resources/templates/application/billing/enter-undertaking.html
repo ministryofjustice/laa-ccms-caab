@@ -33,9 +33,7 @@
 
       <div class="govuk-form-group"
            th:classappend="${#fields.hasErrors('acceptedTerms')} ? 'govuk-form-group--error' : ''">
-        <fieldset class="govuk-fieldset"
-                  role="group"
-                  th:attr="aria-describedby=${#fields.hasErrors('acceptedTerms')} ? 'acceptedTerms-hint acceptedTerms-error' : 'acceptedTerms-hint'">
+        <fieldset class="govuk-fieldset" aria-describedby="acceptedTerms-hint">
           <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
             <h2 class="govuk-fieldset__heading" th:text="#{billing.enterUndertaking.acceptanceOfTerms}"></h2>
           </legend>
@@ -46,8 +44,9 @@
             <div class="govuk-checkboxes__item">
               <input class="govuk-checkboxes__input"
                      id="acceptedTerms"
+                     name="acceptedTerms"
                      type="checkbox"
-                     th:checked="*{acceptedTerms}">
+                     th:checked="${undertakingFormData.acceptedTerms}">
               <label class="govuk-label govuk-checkboxes__label"
                      for="acceptedTerms"
                      th:text="#{billing.enterUndertaking.termsConfirmation}"></label>
