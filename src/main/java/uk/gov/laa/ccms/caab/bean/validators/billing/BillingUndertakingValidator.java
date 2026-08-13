@@ -23,7 +23,7 @@ public class BillingUndertakingValidator extends AbstractValidator {
   }
 
   /**
-   * Validates the cost details in the {@link uk.gov.laa.ccms.caab.bean.costs.CostsFormData}.
+   * Validates the undertaking details in the {@link UndertakingFormData}.
    *
    * @param target The object to be validated.
    * @param errors The Errors object to store validation errors.
@@ -52,22 +52,15 @@ public class BillingUndertakingValidator extends AbstractValidator {
           "Undertaking",
           errors);
     }
-  }
 
-  public void validateUndertakingRange(
-      final BigDecimal undertakingAmount,
-      final BigDecimal minimumUndertaking,
-      final BigDecimal maximumUndertaking,
-      final Errors errors) {
-
-    if (undertakingAmount != null) {
-      if (undertakingAmount.compareTo(minimumUndertaking) < 0
-          || undertakingAmount.compareTo(maximumUndertaking) > 0) {
-        errors.rejectValue(
-            "undertakingAmount",
-            "billing.undertakingAmount.outOfRange");
+    if (!errors.hasFieldErrors("undertakingAmount")
+        && undertakingFormData.getUndertakingMinimumAmount() != null
+        && undertakingFormData.getUndertakingMaximumAmount() != null) {
+      final BigDecimal undertakingAmount = new BigDecimal(undertakingFormData.getUndertakingAmount());
+      if (undertakingAmount.compareTo(undertakingFormData.getUndertakingMinimumAmount()) < 0
+          || undertakingAmount.compareTo(undertakingFormData.getUndertakingMaximumAmount()) > 0) {
+        errors.rejectValue("undertakingAmount", "billing.undertakingAmount.outOfRange");
       }
     }
   }
 }
-

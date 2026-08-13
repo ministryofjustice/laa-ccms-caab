@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.billing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
@@ -243,7 +244,7 @@ class BillingControllerTest {
     void submitsUndertakingAndRedirects() {
       ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("300000123");
       when(amendmentService.submitQuickAmendmentUndertaking(
-              eq("300000123"), eq(user), eq(new BigDecimal("250.00")), eq(new BigDecimal("900.00"))))
+              any(), eq("300000123"), eq(user)))
           .thenReturn("TRANS123");
 
       assertThat(
@@ -254,7 +255,8 @@ class BillingControllerTest {
                       .sessionAttr("undertakingMinimum", new BigDecimal("100.00"))
                       .sessionAttr("undertakingMaximum", new BigDecimal("900.00"))
                       .sessionAttr(SUBMISSION_RESULT, "old-result")
-                      .param("undertakingAmount", "250.00")))
+                      .param("undertakingAmount", "250.00")
+                      .param("acceptedTerms", "true")))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/amendments/submit-case")
           .request()
@@ -265,7 +267,17 @@ class BillingControllerTest {
 
       verify(amendmentService)
           .submitQuickAmendmentUndertaking(
-              "300000123", user, new BigDecimal("250.00"), new BigDecimal("900.00"));
+              argThat(
+                  formData ->
+                      formData != null
+                          && "250.00".equals(formData.getUndertakingAmount())
+                          && formData.isAcceptedTerms()
+                          && formData.getUndertakingMaximumAmount() != null
+                          && formData.getUndertakingMaximumAmount()
+                                  .compareTo(new BigDecimal("900.00"))
+                              == 0),
+              eq("300000123"),
+              eq(user));
     }
 
     @Test
@@ -302,7 +314,7 @@ class BillingControllerTest {
           .containsEntry("undertakingMaximum", new BigDecimal("900.00"));
 
       verify(amendmentService, never())
-          .submitQuickAmendmentUndertaking(any(), any(), any(), any());
+          .submitQuickAmendmentUndertaking(any(), any(), any());
     }
   }
 }

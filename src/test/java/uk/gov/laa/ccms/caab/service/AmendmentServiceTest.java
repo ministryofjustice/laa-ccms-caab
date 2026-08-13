@@ -34,6 +34,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
+import uk.gov.laa.ccms.caab.bean.billing.UndertakingFormData;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
@@ -881,9 +882,13 @@ class AmendmentServiceTest {
           .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TRANS123")));
 
       // When
+      UndertakingFormData undertakingFormData =
+          new UndertakingFormData()
+              .setUndertakingAmount("1234.5")
+              .setUndertakingMaximumAmount(new BigDecimal("9000"));
       String transactionId =
           amendmentService.submitQuickAmendmentUndertaking(
-              caseRef, userDetails, new BigDecimal("1234.5"), new BigDecimal("9000"));
+              undertakingFormData, caseRef, userDetails);
 
       // Then
       assertThat(transactionId).isEqualTo("TRANS123");
@@ -926,9 +931,13 @@ class AmendmentServiceTest {
           .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TRANS123")));
 
       // When
+      UndertakingFormData undertakingFormData =
+          new UndertakingFormData()
+              .setUndertakingAmount("1234.5")
+              .setUndertakingMaximumAmount(new BigDecimal("9000"));
       String transactionId =
           amendmentService.submitQuickAmendmentUndertaking(
-              caseRef, userDetails, new BigDecimal("1234.5"), new BigDecimal("9000"));
+              undertakingFormData, caseRef, userDetails);
 
       // Then
       verify(caabApiClient, never()).createApplication(any(), any());

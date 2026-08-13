@@ -750,8 +750,6 @@ public interface SoaApplicationMapper {
   @Mapping(target = "certificateDate", ignore = true)
   @Mapping(target = "preCertificateCosts", ignore = true)
   @Mapping(target = "legalHelpCosts", ignore = true)
-  @Mapping(target = "undertakingAmount", ignore = true)
-  @Mapping(target = "undertakingMaximumAmount", ignore = true)
   @Mapping(target = "awards", ignore = true)
   @Mapping(target = "dischargeStatus", ignore = true)
   @Mapping(target = "caseStatus", ignore = true)

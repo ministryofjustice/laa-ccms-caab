@@ -96,22 +96,23 @@ class BillingUndertakingValidatorTest {
     void validate_WithValidData_NoErrors() {
       undertakingFormData.setUndertakingAmount("1234.56");
       undertakingFormData.setAcceptedTerms(true);
+      undertakingFormData.setUndertakingMinimumAmount(new BigDecimal("100.00"));
+      undertakingFormData.setUndertakingMaximumAmount(new BigDecimal("2000.00"));
 
       billingUndertakingValidator.validate(undertakingFormData, errors);
 
       assertFalse(errors.hasErrors());
     }
-  }
-
-  @Nested
-  @DisplayName("validateUndertakingRange() tests")
-  class ValidateUndertakingRangeTests {
 
     @Test
     @DisplayName("Should have error when undertaking amount is below minimum")
-    void validateUndertakingRange_WhenBelowMinimum_HasErrors() {
-      billingUndertakingValidator.validateUndertakingRange(
-          new BigDecimal("99.99"), new BigDecimal("100.00"), new BigDecimal("900.00"), errors);
+    void validate_WhenBelowMinimum_HasErrors() {
+      undertakingFormData.setUndertakingAmount("99.99");
+      undertakingFormData.setAcceptedTerms(true);
+      undertakingFormData.setUndertakingMinimumAmount(new BigDecimal("100.00"));
+      undertakingFormData.setUndertakingMaximumAmount(new BigDecimal("900.00"));
+
+      billingUndertakingValidator.validate(undertakingFormData, errors);
 
       assertTrue(errors.hasErrors());
       assertNotNull(errors.getFieldError("undertakingAmount"));
@@ -121,9 +122,13 @@ class BillingUndertakingValidatorTest {
 
     @Test
     @DisplayName("Should have error when undertaking amount is above maximum")
-    void validateUndertakingRange_WhenAboveMaximum_HasErrors() {
-      billingUndertakingValidator.validateUndertakingRange(
-          new BigDecimal("900.01"), new BigDecimal("100.00"), new BigDecimal("900.00"), errors);
+    void validate_WhenAboveMaximum_HasErrors() {
+      undertakingFormData.setUndertakingAmount("900.01");
+      undertakingFormData.setAcceptedTerms(true);
+      undertakingFormData.setUndertakingMinimumAmount(new BigDecimal("100.00"));
+      undertakingFormData.setUndertakingMaximumAmount(new BigDecimal("900.00"));
+
+      billingUndertakingValidator.validate(undertakingFormData, errors);
 
       assertTrue(errors.hasErrors());
       assertNotNull(errors.getFieldError("undertakingAmount"));
@@ -133,18 +138,13 @@ class BillingUndertakingValidatorTest {
 
     @Test
     @DisplayName("Should not have errors when undertaking amount is within range")
-    void validateUndertakingRange_WhenWithinRange_NoErrors() {
-      billingUndertakingValidator.validateUndertakingRange(
-          new BigDecimal("500.00"), new BigDecimal("100.00"), new BigDecimal("900.00"), errors);
+    void validate_WhenWithinRange_NoErrors() {
+      undertakingFormData.setUndertakingAmount("500.00");
+      undertakingFormData.setAcceptedTerms(true);
+      undertakingFormData.setUndertakingMinimumAmount(new BigDecimal("100.00"));
+      undertakingFormData.setUndertakingMaximumAmount(new BigDecimal("900.00"));
 
-      assertFalse(errors.hasErrors());
-    }
-
-    @Test
-    @DisplayName("Should not have errors when undertaking amount is null")
-    void validateUndertakingRange_WhenUndertakingAmountNull_NoErrors() {
-      billingUndertakingValidator.validateUndertakingRange(
-          null, new BigDecimal("100.00"), new BigDecimal("900.00"), errors);
+      billingUndertakingValidator.validate(undertakingFormData, errors);
 
       assertFalse(errors.hasErrors());
     }

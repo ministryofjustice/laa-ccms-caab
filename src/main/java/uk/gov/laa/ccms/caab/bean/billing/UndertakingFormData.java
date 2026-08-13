@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.bean.billing;
 
+import java.math.BigDecimal;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -13,4 +14,10 @@ public class UndertakingFormData {
 
   /** Whether the undertaking terms were accepted. */
   private boolean acceptedTerms;
+
+  /** Minimum undertaking amount allowed for the case. */
+  private BigDecimal undertakingMinimumAmount;
+
+  /** Maximum undertaking amount used for quick amendment submission. */
+  private BigDecimal undertakingMaximumAmount;
 }

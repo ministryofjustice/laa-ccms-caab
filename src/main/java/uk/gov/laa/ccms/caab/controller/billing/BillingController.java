@@ -152,7 +152,7 @@ public class BillingController {
     BigDecimal undertakingMaximum =
         (BigDecimal) session.getAttribute("undertakingMaximum");
 
-    if (undertakingMaximum == null) {
+    if (undertakingMinimum == null || undertakingMaximum == null) {
       final StatementOfAccountDetail statementOfAccount =
           billingService.getCurrentProviderStatement(ebsCase.getCaseReferenceNumber(), ebsCase, user);
       if (statementOfAccount != null) {
@@ -168,15 +168,11 @@ public class BillingController {
       undertakingMaximum = undertakingMaximum == null ? BigDecimal.ZERO : undertakingMaximum;
     }
 
+    undertakingFormData.setUndertakingMinimumAmount(undertakingMinimum);
+    undertakingFormData.setUndertakingMaximumAmount(undertakingMaximum);
+
     // validate
     billingUndertakingValidator.validate(undertakingFormData, bindingResult);
-    if (!bindingResult.hasErrors()) {
-      billingUndertakingValidator.validateUndertakingRange(
-          new BigDecimal(undertakingFormData.getUndertakingAmount()),
-          undertakingMinimum,
-          undertakingMaximum,
-          bindingResult);
-    }
 
     if (bindingResult.hasErrors()) {
       session.setAttribute("undertakingMinimum", undertakingMinimum);
@@ -186,11 +182,9 @@ public class BillingController {
     }
 
     final String transactionId = amendmentService.submitQuickAmendmentUndertaking(
+        undertakingFormData,
         ebsCase.getCaseReferenceNumber(),
-        user,
-        new BigDecimal(undertakingFormData.getUndertakingAmount()),
-        undertakingMaximum
-    );
+        user);
 
     session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
     session.removeAttribute(SUBMISSION_RESULT);
