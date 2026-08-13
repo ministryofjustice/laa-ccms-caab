@@ -655,6 +655,43 @@ class AmendmentServiceTest {
               eq(QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT));
       assertThat(transactionId).isEqualTo("TRANS123");
     }
+
+    @Test
+    @DisplayName(
+        "Should persist the draft with its costs intact, stripping them only for submission")
+    void shouldPersistDraftWithCostsBeforeStrippingForSubmission() {
+      UserDetail userDetails =
+          new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
+      ApplicationDetail amendment = buildFullApplicationDetail();
+      amendment.setCaseReferenceNumber("12345");
+      assertThat(amendment.getCosts()).isNotNull();
+
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), any()))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TRANS123")));
+
+      // createApplication and toCaseDetail share the same amendment instance, which clean mutates
+      // in place, so snapshot the persisted state at call time rather than at verify time.
+      final boolean[] costsPresentWhenPersisted = {false};
+      when(caabApiClient.createApplication(any(), any()))
+          .thenAnswer(
+              invocation -> {
+                costsPresentWhenPersisted[0] =
+                    ((ApplicationDetail) invocation.getArgument(1)).getCosts() != null;
+                return Mono.just("123");
+              });
+
+      amendmentService.submitMeansReassessment(
+          userDetails, amendment, new AssessmentDetail().status("COMPLETE"));
+
+      // The draft is persisted with its costs, so a later Amend Case cannot NPE on it...
+      assertThat(costsPresentWhenPersisted[0]).isTrue();
+      // ...while the submission payload is still stripped of costs.
+      ArgumentCaptor<CaseMappingContext> contextCaptor =
+          ArgumentCaptor.forClass(CaseMappingContext.class);
+      verify(soaApplicationMapper).toCaseDetail(contextCaptor.capture());
+      assertThat(contextCaptor.getValue().getTdsApplication().getCosts()).isNull();
+    }
   }
 
   @Nested

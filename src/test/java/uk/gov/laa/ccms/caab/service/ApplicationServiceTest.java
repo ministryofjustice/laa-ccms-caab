@@ -959,6 +959,106 @@ class ApplicationServiceTest {
   }
 
   @Test
+  @DisplayName(
+      "getApplicationSections tolerates a costs-null draft (quick amendment orphaned by a "
+          + "timed-out session) instead of throwing a NullPointerException")
+  void getApplicationSections_costsNull_doesNotThrow() {
+
+    final UserDetail user = buildUserDetail();
+
+    final RelationshipToCaseLookupDetail orgRelationshipsDetail =
+        new RelationshipToCaseLookupDetail();
+    orgRelationshipsDetail.addContentItem(new RelationshipToCaseLookupValueDetail());
+
+    final RelationshipToCaseLookupDetail personRelationshipsDetail =
+        new RelationshipToCaseLookupDetail();
+    personRelationshipsDetail.addContentItem(new RelationshipToCaseLookupValueDetail());
+
+    final CommonLookupDetail relationshipToClientLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+
+    final CommonLookupDetail contactTitleLookupDetail =
+        new CommonLookupDetail().addContentItem(new CommonLookupValueDetail());
+
+    final AuditDetail auditDetail = new AuditDetail();
+    auditDetail.setLastSaved(Date.from(Instant.now()));
+    auditDetail.setLastSavedBy("TestUser");
+
+    final ClientDetail client = new ClientDetail();
+    client.setFirstName("bob");
+    client.setSurname("ross");
+
+    final ApplicationType applicationType = new ApplicationType();
+    applicationType.id("test 123");
+    applicationType.setDisplayValue("testing123");
+
+    final ApplicationProviderDetails providerDetails = buildApplicationProviderDetails(1);
+    providerDetails.setProviderContact(null);
+
+    final AddressDetail address = new AddressDetail().preferredAddress("prefAdd");
+
+    final ApplicationDetail applicationDetail = new ApplicationDetail();
+    applicationDetail.setProviderDetails(providerDetails);
+    applicationDetail.setAuditTrail(auditDetail);
+    applicationDetail.setClient(client);
+    applicationDetail.setApplicationType(applicationType);
+    applicationDetail.setProceedings(new ArrayList<>());
+    applicationDetail.setPriorAuthorities(new ArrayList<>());
+    applicationDetail.setOpponents(new ArrayList<>());
+    // The orphaned quick-amendment draft has no cost structure.
+    applicationDetail.setCosts(null);
+    applicationDetail.setCorrespondenceAddress(address);
+
+    final AssessmentDetails meansAssessmentDetails =
+        new AssessmentDetails()
+            .addContentItem(new AssessmentDetail().status(AssessmentStatus.INCOMPLETE.getStatus()));
+
+    final AssessmentDetails meritsAssessmentDetails =
+        new AssessmentDetails()
+            .addContentItem(new AssessmentDetail().status(AssessmentStatus.COMPLETE.getStatus()));
+
+    final CommonLookupValueDetail correspondenceMethodLookup =
+        new CommonLookupValueDetail().description("correspondence method1");
+
+    when(lookupService.getCommonValue(
+            COMMON_VALUE_CASE_ADDRESS_OPTION,
+            applicationDetail.getCorrespondenceAddress().getPreferredAddress()))
+        .thenReturn(Mono.just(Optional.of(correspondenceMethodLookup)));
+    when(lookupService.getOrganisationToCaseRelationships())
+        .thenReturn(Mono.just(orgRelationshipsDetail));
+    when(lookupService.getPersonToCaseRelationships())
+        .thenReturn(Mono.just(personRelationshipsDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.just(relationshipToClientLookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+        .thenReturn(Mono.just(contactTitleLookupDetail));
+
+    when(assessmentService.getAssessments(
+            List.of("meansAssessment"),
+            user.getProvider().getId().toString(),
+            applicationDetail.getCaseReferenceNumber()))
+        .thenReturn(Mono.just(meansAssessmentDetails));
+    when(assessmentService.getAssessments(
+            List.of("meritsAssessment"),
+            user.getProvider().getId().toString(),
+            applicationDetail.getCaseReferenceNumber()))
+        .thenReturn(Mono.just(meritsAssessmentDetails));
+    when(evidenceService.isEvidenceRequired(
+            any(AssessmentDetail.class),
+            any(AssessmentDetail.class),
+            eq(applicationType),
+            anyList()))
+        .thenReturn(false);
+
+    final ApplicationSectionDisplay summary =
+        applicationService.getApplicationSections(applicationDetail, user);
+
+    assertNotNull(summary);
+    // The guard initialises an empty cost structure rather than throwing.
+    assertNotNull(applicationDetail.getCosts());
+  }
+
+  @Test
   void shouldReturnCaseDetailsDisplay() {
 
     final RelationshipToCaseLookupDetail orgRelationshipsDetail =
