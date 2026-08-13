@@ -6,7 +6,7 @@ import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.billing.UndertakingFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
-/** Validates the cost details form. */
+/** Validates the undertaking form. */
 @Component
 public class BillingUndertakingValidator extends AbstractValidator {
 

@@ -152,11 +152,15 @@ public class BillingService {
   }
 
   /**
-   * Returns the current undertaking draft for the supplied case and provider, if one exists.
+   * Returns the statement-of-account entry for the relevant provider for the supplied case.
+   *
+   * <p>If the user belongs to the case provider, the case-wide statement is requested; otherwise the
+   * request is scoped to the user's provider (to avoid exposing other firms' billing data).
    *
    * @param caseReferenceNumber the case reference number.
+   * @param ebsCase the case details from EBS (used to determine the case provider).
    * @param user the logged-in user.
-   * @return a form model populated from the first undertaking draft, or blanks when none exists.
+   * @return the matching provider statement, or {@code null} when none can be safely determined.
    */
   public StatementOfAccountDetail getCurrentProviderStatement(
     final String caseReferenceNumber, final ApplicationDetail ebsCase, final UserDetail user) {
