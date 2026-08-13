@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -171,6 +172,78 @@ class BillingServiceTest {
 
     assertThat(display.getProvider()).isNull();
     assertThat(display.getBillsAndPoa()).isNull();
+  }
+
+  @Test
+  @DisplayName("Returns current provider statement when user belongs to the case provider")
+  void getCurrentProviderStatementForCaseProvider() {
+    UserDetail user =
+        new UserDetail().loginId("user1").userType("EXTERNAL").provider(new BaseProvider().id(10));
+    ApplicationDetail ebsCase =
+        new ApplicationDetail()
+            .caseReferenceNumber(CASE_REF)
+            .providerDetails(
+                new ApplicationProviderDetails().provider(new IntDisplayValue().id(10)));
+
+    StatementOfAccountDetail providerStatement = statement("Provider", 10L, new BigDecimal("100"));
+    StatementOfAccountDetails response =
+        new StatementOfAccountDetails()
+            .addContentItem(statement("Counsel", 55L, new BigDecimal("20")))
+            .addContentItem(providerStatement)
+            .addContentItem(statement("Provider", 99L, new BigDecimal("30")));
+
+    when(ebsApiClient.getStatementOfAccount(CASE_REF, null)).thenReturn(Mono.just(response));
+
+    StatementOfAccountDetail result =
+        billingService.getCurrentProviderStatement(CASE_REF, ebsCase, user);
+
+    assertThat(result).isSameAs(providerStatement);
+    verify(ebsApiClient).getStatementOfAccount(CASE_REF, null);
+  }
+
+  @Test
+  @DisplayName(
+      "Returns first statement when user is not on case provider and request is scoped to their firm")
+  void getCurrentProviderStatementForNonCaseProviderUser() {
+    UserDetail user =
+        new UserDetail()
+            .loginId("user1")
+            .userType("EXTERNAL")
+            .provider(new BaseProvider().id(77).name("Other Firm"));
+    ApplicationDetail ebsCase =
+        new ApplicationDetail()
+            .caseReferenceNumber(CASE_REF)
+            .providerDetails(
+                new ApplicationProviderDetails().provider(new IntDisplayValue().id(10)));
+
+    StatementOfAccountDetail userFirmStatement = statement("Provider", 77L, new BigDecimal("50"));
+    StatementOfAccountDetails response =
+        new StatementOfAccountDetails().addContentItem(userFirmStatement);
+
+    when(ebsApiClient.getStatementOfAccount(CASE_REF, 77L)).thenReturn(Mono.just(response));
+
+    StatementOfAccountDetail result =
+        billingService.getCurrentProviderStatement(CASE_REF, ebsCase, user);
+
+    assertThat(result).isSameAs(userFirmStatement);
+    verify(ebsApiClient).getStatementOfAccount(CASE_REF, 77L);
+  }
+
+  @Test
+  @DisplayName("Returns null when user has no provider and is not the case provider")
+  void getCurrentProviderStatementReturnsNullWithoutProviderContext() {
+    UserDetail user = new UserDetail().loginId("user1").userType("EXTERNAL");
+    ApplicationDetail ebsCase =
+        new ApplicationDetail()
+            .caseReferenceNumber(CASE_REF)
+            .providerDetails(
+                new ApplicationProviderDetails().provider(new IntDisplayValue().id(10)));
+
+    StatementOfAccountDetail result =
+        billingService.getCurrentProviderStatement(CASE_REF, ebsCase, user);
+
+    assertThat(result).isNull();
+    verifyNoInteractions(ebsApiClient);
   }
 
   @Test

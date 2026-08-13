@@ -139,7 +139,7 @@ public class BillingController {
    *     amendment.
    */
   @PostMapping("/case/billing/undertaking")
-  public String saveUndertaking(
+  public String submitUndertaking(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @ModelAttribute("undertakingFormData") final UndertakingFormData undertakingFormData,

@@ -35,14 +35,14 @@ public class BillingUndertakingValidator extends AbstractValidator {
     validateRequiredField(
         "undertakingAmount",
         undertakingFormData.getUndertakingAmount(),
-        "Undertaking",
+        "Total Bills including Counsel will not exceed",
         errors);
 
-//    validateRequiredField(
-//        "acceptedTerms",
-//        undertakingFormData.getAcceptedTerms(),
-//        "Accepted terms",
-//        errors);
+    if (!undertakingFormData.isAcceptedTerms()) {
+      errors.rejectValue(
+          "acceptedTerms",
+          "billing.acceptedTerms.required");
+    }
 
     if (undertakingFormData.getUndertakingAmount() != null
         && !undertakingFormData.getUndertakingAmount().isEmpty()) {

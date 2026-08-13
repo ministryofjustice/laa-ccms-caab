@@ -102,4 +102,23 @@ class AmendmentUtilTest {
     assertThat(amendmentDetail.getCosts()).isNull();
     assertThat(amendmentDetail.getCategoryOfLaw()).isNotNull();
   }
+
+  @Test
+  @DisplayName("Should clean when edit type is undertaking")
+  void shouldCleanWhenEditTypeUndertaking() {
+    // Given
+    ApplicationDetail amendmentDetail = ApplicationDetailUtils.buildFullApplicationDetail();
+    amendmentDetail.setQuickEditType(QuickEditTypeConstants.MESSAGE_TYPE_UNDERTAKING);
+    // When
+    AmendmentUtil.cleanAppForQuickAmendSubmit(amendmentDetail);
+    // Then
+    assertThat(amendmentDetail.getProceedings()).isEmpty();
+    assertThat(amendmentDetail.getOpponents()).isEmpty();
+    assertThat(amendmentDetail.getProviderDetails().getSupervisor()).isNull();
+    assertThat(amendmentDetail.getProviderDetails().getFeeEarner()).isNull();
+    assertThat(amendmentDetail.getProviderDetails().getProviderContact()).isNull();
+    assertThat(amendmentDetail.getCorrespondenceAddress()).isNull();
+    assertThat(amendmentDetail.getCosts()).isNull();
+    assertThat(amendmentDetail.getCategoryOfLaw()).isNotNull();
+  }
 }

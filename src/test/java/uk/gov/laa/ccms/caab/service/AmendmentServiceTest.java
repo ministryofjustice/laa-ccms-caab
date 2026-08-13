@@ -859,4 +859,86 @@ class AmendmentServiceTest {
       return contextCaptor.getValue().getTdsApplication().getCosts();
     }
   }
+
+  @Nested
+  @DisplayName("submitQuickAmendmentUndertaking() tests")
+  class SubmitQuickAmendmentUndertakingTests {
+
+    @Test
+    @DisplayName("Should submit quick amend undertaking with undertaking fields")
+    void shouldSubmitQuickAmendmentUndertaking() {
+      // Given
+      String caseRef = "12345";
+      UserDetail userDetails =
+          new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
+      ApplicationDetail caseDetail = buildFullApplicationDetail();
+      caseDetail.setCaseReferenceNumber(caseRef);
+
+      when(applicationService.getCase(any(), anyLong(), any())).thenReturn(caseDetail);
+      when(caabApiClient.createApplication(any(), any())).thenReturn(Mono.just("123"));
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), any()))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TRANS123")));
+
+      // When
+      String transactionId =
+          amendmentService.submitQuickAmendmentUndertaking(
+              caseRef, userDetails, new BigDecimal("1234.5"), new BigDecimal("9000"));
+
+      // Then
+      assertThat(transactionId).isEqualTo("TRANS123");
+
+      verify(soaApiClient)
+          .updateCase(
+              eq("123"),
+              eq("Type"),
+              any(),
+              eq(QuickEditTypeConstants.MESSAGE_TYPE_UNDERTAKING));
+
+      ArgumentCaptor<CaseMappingContext> contextCaptor =
+          ArgumentCaptor.forClass(CaseMappingContext.class);
+      verify(soaApplicationMapper).toCaseDetail(contextCaptor.capture());
+
+      ApplicationDetail submittedAmendment = contextCaptor.getValue().getTdsApplication();
+      assertThat(submittedAmendment.getQuickEditType())
+          .isEqualTo(QuickEditTypeConstants.MESSAGE_TYPE_UNDERTAKING);
+      assertThat(submittedAmendment.getMeansAssessmentAmended()).isFalse();
+      assertThat(submittedAmendment.getMeritsAssessmentAmended()).isFalse();
+      assertThat(submittedAmendment.getUndertakingAmount()).isEqualByComparingTo("1234.5");
+      assertThat(submittedAmendment.getUndertakingMaximumAmount()).isEqualByComparingTo("9000");
+    }
+
+    @Test
+    @DisplayName("Should not create quick amendment application when TDS application exists")
+    void shouldNotCreateQuickAmendmentApplicationWhenTdsApplicationExists() {
+      // Given
+      String caseRef = "12345";
+      UserDetail userDetails =
+          new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
+      ApplicationDetail caseDetail = buildFullApplicationDetail();
+      caseDetail.setCaseReferenceNumber(caseRef);
+
+      when(applicationService.getCase(any(), anyLong(), any())).thenReturn(caseDetail);
+      when(applicationService.getTdsApplicationSummary(eq(caseRef), eq(userDetails)))
+          .thenReturn(new BaseApplicationDetail().caseReferenceNumber(caseRef));
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), any()))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TRANS123")));
+
+      // When
+      String transactionId =
+          amendmentService.submitQuickAmendmentUndertaking(
+              caseRef, userDetails, new BigDecimal("1234.5"), new BigDecimal("9000"));
+
+      // Then
+      verify(caabApiClient, never()).createApplication(any(), any());
+      verify(soaApiClient, times(1))
+          .updateCase(
+              eq("123"),
+              eq("Type"),
+              any(),
+              eq(QuickEditTypeConstants.MESSAGE_TYPE_UNDERTAKING));
+      assertThat(transactionId).isEqualTo("TRANS123");
+    }
+  }
 }
