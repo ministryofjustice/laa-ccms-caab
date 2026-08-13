@@ -24,6 +24,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,6 +37,8 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -44,6 +47,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import uk.gov.laa.ccms.caab.bean.proceeding.CaseProceedingDisplayStatus;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
+import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
 import uk.gov.laa.ccms.caab.constants.PriorAuthorityGroup;
@@ -61,6 +65,7 @@ import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.caab.util.PriorAuthorityUtils;
 import uk.gov.laa.ccms.caab.util.view.ActionViewHelper;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -78,6 +83,7 @@ public class CaseController {
 
   private final ApplicationService applicationService;
   private final LookupService lookupService;
+  private final ProceedingOutcomeValidator proceedingOutcomeValidator;
   private static final String SEARCH_URL = "SEARCH_URL";
 
   /**
@@ -323,9 +329,133 @@ public class CaseController {
    */
   @PostMapping("/case/outcome-and-awards/proceeding/{index}/outcome")
   public String recordProceedingOutcome(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
       @PathVariable("index") final int index,
-      @ModelAttribute("proceedingOutcome") final ProceedingOutcomeFormData proceedingOutcome) {
+      @ModelAttribute("proceedingOutcome") final ProceedingOutcomeFormData proceedingOutcome,
+      final BindingResult bindingResult,
+      final Model model) {
+
+    final ProceedingDetail proceeding = validateProceedingIndex(ebsCase, index);
+
+    proceedingOutcomeValidator.validate(proceedingOutcome, bindingResult);
+    if (bindingResult.hasErrors()) {
+      model.addAttribute("proceeding", proceeding);
+      model.addAttribute("proceedingIndex", index);
+      populateOutcomeDropdowns(model, proceeding);
+      return "application/record-proceeding-outcome";
+    }
+
+    final ProceedingOutcomeDetail originalOutcome = proceeding.getOutcome();
+    proceeding.setOutcome(buildProceedingOutcome(proceeding, proceedingOutcome));
+    if (originalOutcome != null) {
+      proceeding.getOutcome().setId(originalOutcome.getId());
+    }
+
+    try {
+      applicationService.updateProceeding(proceeding, user);
+    } catch (CaabApiClientException ex) {
+      log.warn("Failed to update proceeding outcome for proceeding {}", proceeding.getId(), ex);
+      proceeding.setOutcome(originalOutcome);
+      bindingResult.reject(
+          "proceedingOutcome.update.failed",
+          "We could not save the proceeding outcome. Please try again.");
+      model.addAttribute("proceeding", proceeding);
+      model.addAttribute("proceedingIndex", index);
+      populateOutcomeDropdowns(model, proceeding);
+      return "application/record-proceeding-outcome";
+    }
+
     return "redirect:/case/outcome-and-awards";
+  }
+
+  private ProceedingDetail validateProceedingIndex(
+      final ApplicationDetail ebsCase, final int index) {
+    final List<ProceedingDetail> proceedings = ebsCase.getProceedings();
+    String errorMessage = "Could not find proceeding with index: %s".formatted(index);
+    Assert.notEmpty(proceedings, () -> errorMessage);
+    Assert.isTrue(index < proceedings.size(), () -> errorMessage);
+    return proceedings.get(index);
+  }
+
+  private ProceedingOutcomeDetail buildProceedingOutcome(
+      final ProceedingDetail proceeding, final ProceedingOutcomeFormData proceedingOutcome) {
+    final String proceedingCode =
+        Optional.ofNullable(proceeding.getProceedingType()).map(item -> item.getId()).orElse(null);
+    final Map<String, String> stageEndMap =
+        buildOutcomeMap(lookupService.getStageEnds(proceedingCode, null).block());
+    final Map<String, String> resultMap =
+        buildOutcomeMap(lookupService.getOutcomeResults(proceedingCode, null).block());
+    final Map<String, String> courtMap =
+        buildOutcomeMap(lookupService.getCourts(proceedingCode).block());
+
+    final ProceedingOutcomeDetail outcome = new ProceedingOutcomeDetail();
+    outcome.setDateOfFinalWork(
+        StringUtils.hasText(proceedingOutcome.getDateOfFinalWork())
+            ? DateUtils.convertToDate(proceedingOutcome.getDateOfFinalWork())
+            : null);
+    outcome.setProceedingCaseId(proceeding.getProceedingCaseId());
+    outcome.setProceedingType(proceeding.getProceedingType());
+    outcome.setMatterType(proceeding.getMatterType());
+    outcome.setDescription(proceeding.getDescription());
+    outcome.setStageEnd(toStringDisplayValue(proceedingOutcome.getStageEnd(), stageEndMap));
+    outcome.setResolutionMethod(proceedingOutcome.getResolutionMethod());
+    outcome.setResult(toStringDisplayValue(proceedingOutcome.getResult(), resultMap));
+    outcome.setResultInfo(proceedingOutcome.getResultInfo());
+    outcome.setAlternativeResolution(proceedingOutcome.getAlternativeResolution());
+    outcome.setAdrInfo(proceedingOutcome.getAdrInfo());
+    outcome.setCourtCode(proceedingOutcome.getCourtCode());
+    outcome.setCourtName(
+        courtMap.getOrDefault(proceedingOutcome.getCourtCode(), proceedingOutcome.getCourtCode()));
+    outcome.setOutcomeCourtCaseNo(proceedingOutcome.getOutcomeCourtCaseNo());
+    outcome.setWiderBenefits(proceedingOutcome.getWiderBenefits());
+    return outcome;
+  }
+
+  private uk.gov.laa.ccms.caab.model.StringDisplayValue toStringDisplayValue(
+      final String code, final Map<String, String> lookups) {
+    if (!StringUtils.hasText(code)) {
+      return null;
+    }
+    return new uk.gov.laa.ccms.caab.model.StringDisplayValue()
+        .id(code)
+        .displayValue(lookups.getOrDefault(code, code));
+  }
+
+  private Map<String, String> buildOutcomeMap(final CommonLookupDetail lookupDetail) {
+    if (lookupDetail == null || lookupDetail.getContent() == null) {
+      return Collections.emptyMap();
+    }
+
+    final Map<String, String> result = new HashMap<>();
+    lookupDetail.getContent().stream()
+        .filter(Objects::nonNull)
+        .forEach(item -> result.put(item.getCode(), item.getDescription()));
+    return result;
+  }
+
+  private Map<String, String> buildOutcomeMap(final StageEndLookupDetail lookupDetail) {
+    if (lookupDetail == null || lookupDetail.getContent() == null) {
+      return Collections.emptyMap();
+    }
+
+    final Map<String, String> result = new HashMap<>();
+    lookupDetail.getContent().stream()
+        .filter(Objects::nonNull)
+        .forEach(item -> result.put(item.getStageEnd(), item.getDescription()));
+    return result;
+  }
+
+  private Map<String, String> buildOutcomeMap(final OutcomeResultLookupDetail lookupDetail) {
+    if (lookupDetail == null || lookupDetail.getContent() == null) {
+      return Collections.emptyMap();
+    }
+
+    final Map<String, String> result = new HashMap<>();
+    lookupDetail.getContent().stream()
+        .filter(Objects::nonNull)
+        .forEach(item -> result.put(item.getOutcomeResult(), item.getOutcomeResultDescription()));
+    return result;
   }
 
   private void populateOutcomeDropdowns(final Model model, final ProceedingDetail proceeding) {
@@ -361,6 +491,11 @@ public class CaseController {
     model.addAttribute(
         "alternativeDisputeResolutions",
         Optional.ofNullable(lookupService.getCommonValues(COMMON_VALUE_OUTCOME_ADR).block())
+            .map(CommonLookupDetail::getContent)
+            .orElse(Collections.emptyList()));
+    model.addAttribute(
+        "courts",
+        Optional.ofNullable(lookupService.getCourts(proceedingCode).block())
             .map(CommonLookupDetail::getContent)
             .orElse(Collections.emptyList()));
     model.addAttribute(

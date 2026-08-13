@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -43,6 +44,7 @@ import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
+import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -81,6 +83,7 @@ class CaseControllerTest {
 
   @Mock private ApplicationService applicationService;
   @Mock private LookupService lookupService;
+  @Mock private ProceedingOutcomeValidator proceedingOutcomeValidator;
 
   @InjectMocks private CaseController caseController;
 
@@ -752,7 +755,13 @@ class CaseControllerTest {
                           new OutcomeResultLookupValueDetail()
                               .outcomeResult("R1")
                               .outcomeResultDescription("Result 1"))));
-      when(lookupService.getCommonValues(any()))
+      when(lookupService.getCourts("P1"))
+          .thenReturn(
+              Mono.just(
+                  new CommonLookupDetail()
+                      .addContentItem(
+                          new CommonLookupValueDetail().code("CT1").description("Court 1"))));
+      when(lookupService.getCommonValues(anyString()))
           .thenReturn(
               Mono.just(
                   new CommonLookupDetail()
@@ -773,10 +782,57 @@ class CaseControllerTest {
     @Test
     @DisplayName("Record proceeding outcome post redirects to outcome and awards")
     public void recordProceedingOutcomePostRedirectsToOutcomeAndAwards() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .id(77)
+                  .proceedingCaseId("pc1")
+                  .proceedingType(
+                      new StringDisplayValue().id("P1").displayValue("Proceeding name"))));
+
+      doNothing().when(proceedingOutcomeValidator).validate(any(), any());
+      when(lookupService.getStageEnds("P1", null))
+          .thenReturn(
+              Mono.just(
+                  new StageEndLookupDetail()
+                      .addContentItem(
+                          new StageEndLookupValueDetail()
+                              .stageEnd("SE1")
+                              .description("Stage End 1"))));
+      when(lookupService.getOutcomeResults("P1", null))
+          .thenReturn(
+              Mono.just(
+                  new OutcomeResultLookupDetail()
+                      .addContentItem(
+                          new OutcomeResultLookupValueDetail()
+                              .outcomeResult("R1")
+                              .outcomeResultDescription("Result 1"))));
+      when(lookupService.getCourts("P1"))
+          .thenReturn(
+              Mono.just(
+                  new CommonLookupDetail()
+                      .addContentItem(
+                          new CommonLookupValueDetail().code("CT1").description("Court 1"))));
+      doNothing().when(applicationService).updateProceeding(any(ProceedingDetail.class), any());
+
       assertThat(
               mockMvc.perform(
                   post("/case/outcome-and-awards/proceeding/0/outcome")
-                      .sessionAttr(USER_DETAILS, user)))
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .param("dateOfFinalWork", "01/01/2026")
+                      .param("stageEnd", "SE1")
+                      .param("resolutionMethod", "RM1")
+                      .param("result", "R1")
+                      .param("resultInfo", "Result info")
+                      .param("alternativeResolution", "ADR1")
+                      .param("adrInfo", "ADR info")
+                      .param("courtCode", "CT1")
+                      .param("outcomeCourtCaseNo", "123")
+                      .param("widerBenefits", "WB1")))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/case/outcome-and-awards");
     }
