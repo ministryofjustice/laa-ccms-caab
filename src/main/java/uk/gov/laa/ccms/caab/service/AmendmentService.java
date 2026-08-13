@@ -424,15 +424,19 @@ public class AmendmentService {
       ApplicationDetail amendment,
       AssessmentDetail meansAssessment,
       AssessmentDetail meritsAssessment) {
-    AmendmentUtil.cleanAppForQuickAmendSubmit(amendment);
-
     BaseApplicationDetail existingApplication =
         applicationService.getTdsApplicationSummary(amendment.getCaseReferenceNumber(), userDetail);
 
     if (existingApplication == null) {
-      // Create an application in TDS
+      // Persist the full draft BEFORE stripping it for submission. A stripped, costs-null draft
+      // crashes a later Amend Case when the post-submission cleanup is skipped (e.g. a session
+      // timeout), and its empty proceedings never match the base case so a pure reassessment is
+      // wrongly kept rather than removed.
       caabApiClient.createApplication(userDetail.getLoginId(), amendment).block();
     }
+
+    // Strip the in-memory amendment to the submission payload; the persisted draft keeps its shape.
+    AmendmentUtil.cleanAppForQuickAmendSubmit(amendment);
 
     // Register and transfer any documents uploaded against this amendment so they are attached to
     // the case update, matching the legacy provider UI amendment submission behaviour.

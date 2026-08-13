@@ -1795,6 +1795,11 @@ public class ApplicationService {
   private void setCostLimitations(final ApplicationDetail application, boolean isAmendment) {
     BigDecimal defaultCostLimitation = new BigDecimal("0.00");
 
+    // Tolerate a costs-null draft (e.g. a quick amendment orphaned by a skipped cleanup).
+    if (application.getCosts() == null) {
+      application.setCosts(new CostStructureDetail());
+    }
+
     final BigDecimal currentDefault = application.getCosts().getDefaultCostLimitation();
     final BigDecimal currentRequested = application.getCosts().getRequestedCostLimitation();
 
