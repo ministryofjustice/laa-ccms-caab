@@ -98,7 +98,7 @@ public class BillingService {
 
     // If the user does not belong to the case's provider and we cannot identify their own
     // provider, there is nothing to scope the query to. An unrestricted query returns every firm's
-    // statement and invoices, so return null rather than expose another firm's billing data.
+    // statement and invoices, so return an empty display rather than expose another firm's billing data.
     if (!userBelongsToCurrentProvider && currentProviderId == null) {
       return display;
     }
@@ -175,7 +175,7 @@ public class BillingService {
 
       // If the user does not belong to the case's provider and we cannot identify their own
       // provider, there is nothing to scope the query to. An unrestricted query returns every firm's
-      // statement and invoices, so return an empty display rather than expose another firm's billing
+      // statement and invoices, so return null rather than expose another firm's billing
       // data.
       if (!userBelongsToCurrentProvider && currentProviderId == null) {
         return null;
