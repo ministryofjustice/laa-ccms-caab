@@ -1,9 +1,13 @@
 package uk.gov.laa.ccms.caab.controller.billing;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -12,15 +16,22 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
+import uk.gov.laa.ccms.caab.bean.billing.UndertakingFormData;
+import uk.gov.laa.ccms.caab.bean.validators.billing.BillingUndertakingValidator;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.BillingService;
 import uk.gov.laa.ccms.caab.util.PaginationUtil;
+import uk.gov.laa.ccms.data.model.StatementOfAccountDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /** Controller responsible for handling requests related to case billing. */
@@ -30,6 +41,8 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class BillingController {
 
   private final BillingService billingService;
+  private final BillingUndertakingValidator billingUndertakingValidator;
+  private final AmendmentService amendmentService;
 
   /**
    * Displays the case statement of account (billing) screen. The available billing actions are
@@ -91,5 +104,99 @@ public class BillingController {
             && !statementOfAccount.isDraftPoaExists());
 
     return "application/billing/case-statement-of-account";
+  }
+
+  /**
+   * Displays the enter undertaking screen and clears any previously cached undertaking range
+   * values from the session.
+   *
+   * @param model The model used to pass form data to the view.
+   * @param session The current HTTP session.
+   * @return The enter undertaking view.
+   */
+  @GetMapping("/case/billing/undertaking")
+  public String enterUndertaking(final Model model,
+      final HttpSession session) {
+    session.removeAttribute("undertakingMinimum");
+    session.removeAttribute("undertakingMaximum");
+    model.addAttribute("undertakingFormData", new UndertakingFormData());
+    return "application/billing/enter-undertaking";
+  }
+
+  /**
+   * Validates and submits an undertaking amount as a quick amendment.
+   *
+   * <p>The valid undertaking range is derived from the current provider statement and cached in
+   * the session for redisplay when validation fails.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param user The logged-in user.
+   * @param undertakingFormData The undertaking form payload.
+   * @param bindingResult Validation errors for the form.
+   * @param model The model used to pass form data back to the view.
+   * @param session The current HTTP session.
+   * @return The enter undertaking view when validation fails; otherwise a redirect to submit the
+   *     amendment.
+   */
+  @PostMapping("/case/billing/undertaking")
+  public String saveUndertaking(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @ModelAttribute("undertakingFormData") final UndertakingFormData undertakingFormData,
+      final BindingResult bindingResult,
+      final Model model,
+      HttpSession session) {
+
+    BigDecimal undertakingMinimum =
+        (BigDecimal) session.getAttribute("undertakingMinimum");
+    BigDecimal undertakingMaximum =
+        (BigDecimal) session.getAttribute("undertakingMaximum");
+
+    if (undertakingMaximum == null) {
+      final StatementOfAccountDetail statementOfAccount =
+          billingService.getCurrentProviderStatement(ebsCase.getCaseReferenceNumber(), ebsCase, user);
+      if (statementOfAccount != null) {
+        if (statementOfAccount.getBills() != null) {
+          undertakingMinimum = statementOfAccount.getBills().getTotalAmount();
+        }
+        if (statementOfAccount.getCostLimitation() != null) {
+          undertakingMaximum = statementOfAccount.getCostLimitation().getRemainingAmount();
+        }
+      }
+
+      undertakingMinimum = undertakingMinimum == null ? BigDecimal.ZERO : undertakingMinimum;
+      undertakingMaximum = undertakingMaximum == null ? BigDecimal.ZERO : undertakingMaximum;
+    }
+
+    // validate
+    billingUndertakingValidator.validate(undertakingFormData, bindingResult);
+    if (!bindingResult.hasErrors()) {
+      billingUndertakingValidator.validateUndertakingRange(
+          new BigDecimal(undertakingFormData.getUndertakingAmount()),
+          undertakingMinimum,
+          undertakingMaximum,
+          bindingResult);
+    }
+
+    if (bindingResult.hasErrors()) {
+      session.setAttribute("undertakingMinimum", undertakingMinimum);
+      session.setAttribute("undertakingMaximum", undertakingMaximum);
+      model.addAttribute("undertakingFormData", undertakingFormData);
+      return "application/billing/enter-undertaking";
+    }
+
+    final String transactionId = amendmentService.submitQuickAmendmentUndertaking(
+        ebsCase.getCaseReferenceNumber(),
+        user,
+        new BigDecimal(undertakingFormData.getUndertakingAmount()),
+        undertakingMaximum
+    );
+
+    session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
+    session.removeAttribute(SUBMISSION_RESULT);
+    session.removeAttribute("undertakingMinimum");
+    session.removeAttribute("undertakingMaximum");
+    model.addAttribute("undertakingFormData", new UndertakingFormData());
+    return "redirect:/amendments/submit-case";
   }
 }

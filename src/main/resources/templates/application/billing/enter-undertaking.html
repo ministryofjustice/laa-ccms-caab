@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+  <title th:text="|#{service.name} - #{billing.enterUndertaking.title}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/case/billing}" class="govuk-back-link" th:text="#{site.cancelAndReturnToFinancialsSummary}"></a>
+  </div>
+  <div id="main-content">
+    <form action="#" th:action="@{/case/billing/undertaking}" th:object="${undertakingFormData}" method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+
+      <h1 class="govuk-heading-l" th:text="#{billing.enterUndertaking.title}"></h1>
+      <p class="govuk-body-l" th:utext="#{billing.enterUndertaking.leadParagraph}"></p>
+
+      <div class="govuk-form-group">
+        <label class="govuk-label" for="undertakingAmount" th:text="#{billing.enterUndertaking.totalBills}"></label>
+        <div class="govuk-input__wrapper">
+          <div class="govuk-input__prefix" aria-hidden="true">£</div>
+          <input class="govuk-input govuk-input--width-5"
+                 th:errorclass="govuk-input--error"
+                 type="text"
+                 spellcheck="false"
+                 th:field="*{undertakingAmount}"
+                 id="undertakingAmount">
+        </div>
+      </div>
+
+      <div class="govuk-form-group">
+        <fieldset class="govuk-fieldset" role="group" aria-describedby="acceptedTerms-hint">
+          <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+            <h2 class="govuk-fieldset__heading" th:text="#{billing.enterUndertaking.acceptanceOfTerms}"></h2>
+          </legend>
+          <div id="acceptedTerms-hint" class="govuk-hint" th:text="#{billing.enterUndertaking.terms}"></div>
+          <div class="govuk-checkboxes" data-module="govuk-checkboxes">
+            <div class="govuk-checkboxes__item">
+              <input class="govuk-checkboxes__input"
+                     id="acceptedTerms"
+                     name="acceptedTerms"
+                     type="checkbox"
+                     th:checked="*{acceptedTerms}">
+              <label class="govuk-label govuk-checkboxes__label"
+                     for="acceptedTerms"
+                     th:text="#{billing.enterUndertaking.termsConfirmation}"></label>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="govuk-button-group">
+        <button class="govuk-button" data-module="govuk-button" type="submit" th:text="#{site.submit}"></button>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>
