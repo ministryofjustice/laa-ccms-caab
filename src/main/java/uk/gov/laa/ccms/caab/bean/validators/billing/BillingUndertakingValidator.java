@@ -49,7 +49,7 @@ public class BillingUndertakingValidator extends AbstractValidator {
       validateCurrencyField(
           "undertakingAmount",
           undertakingFormData.getUndertakingAmount(),
-          "Undertaking",
+          "Total Bills including Counsel will not exceed",
           errors);
     }
 
