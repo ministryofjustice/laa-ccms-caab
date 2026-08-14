@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.controller.submission;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_REFERENCE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpSession;
@@ -59,6 +60,7 @@ public class ClientSubmissionsConfirmedController {
               log.debug("Application details submitted: {}", applicationFormData);
               session.removeAttribute(APPLICATION_FORM_DATA);
               session.removeAttribute(CLIENT_REFERENCE);
+              session.removeAttribute(SUBMISSION_RESULT);
               session.setAttribute(APPLICATION_ID, applicationId);
             })
         .thenReturn("redirect:/application/sections")
@@ -72,7 +74,9 @@ public class ClientSubmissionsConfirmedController {
    * @return Redirect path to go back to either case sections or amendments summary page.
    */
   @PostMapping("/{caseContext}/client-update/confirmed")
-  public String clientUpdateSubmitted(@PathVariable("caseContext") final CaseContext context) {
+  public String clientUpdateSubmitted(
+      @PathVariable("caseContext") final CaseContext context, final HttpSession session) {
+    session.removeAttribute(SUBMISSION_RESULT);
     return switch (context) {
       case APPLICATION -> "redirect:/application/sections";
       case AMENDMENTS -> "redirect:/case/overview";

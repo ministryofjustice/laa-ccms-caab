@@ -593,9 +593,8 @@ public class ApplicationSubmissionController {
       final Model model) {
 
     if (isAlreadySubmitted(session, activeCase)) {
-      return caseContext.isApplication()
-          ? "redirect:/home"
-          : "redirect:/submissions/alreadySubmitted";
+      final String returnUrl = caseContext.isApplication() ? "/home" : "/case/overview";
+      return "redirect:/submissions/alreadySubmitted?returnUrl=" + returnUrl;
     }
 
     // Pre-processing data - application data
@@ -811,9 +810,8 @@ public class ApplicationSubmissionController {
 
     if (isAlreadySubmitted(session, activeCase)
         || (caseContext.isAmendment() && applicationId == null)) {
-      return caseContext.isApplication()
-          ? "redirect:/home"
-          : "redirect:/submissions/alreadySubmitted";
+      final String returnUrl = caseContext.isApplication() ? "/home" : "/case/overview";
+      return "redirect:/submissions/alreadySubmitted?returnUrl=" + returnUrl;
     }
 
     model.addAttribute("caseContext", caseContext);
