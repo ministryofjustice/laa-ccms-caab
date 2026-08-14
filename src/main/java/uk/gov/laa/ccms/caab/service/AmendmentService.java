@@ -20,8 +20,8 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
-import uk.gov.laa.ccms.caab.bean.billing.UndertakingFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.billing.UndertakingFormData;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.builders.ApplicationTypeBuilder;
@@ -345,19 +345,20 @@ public class AmendmentService {
   }
 
   /**
-   * Submits a quick amendment for entering an undertaking on a given case. This method creates a quick
-   * amendment application, applies the new undertaking, and submits the amendment. Finally, a case
-   * is updated which returns the transaction ID associated with the submission.
+   * Submits a quick amendment for entering an undertaking on a given case. This method creates a
+   * quick amendment application, applies the new undertaking, and submits the amendment. Finally, a
+   * case is updated which returns the transaction ID associated with the submission.
    *
    * @param undertakingFormData the undertaking details being submitted
-   * @param caseReferenceNumber the unique reference number of the case to which the amendment applies
+   * @param caseReferenceNumber the unique reference number of the case to which the amendment
+   *     applies
    * @param userDetail the details of the user initiating the amendment
    * @return the transaction ID of the submitted amendment
    */
   public String submitQuickAmendmentUndertaking(
-     final UndertakingFormData undertakingFormData,
-     final String caseReferenceNumber,
-     final UserDetail userDetail) {
+      final UndertakingFormData undertakingFormData,
+      final String caseReferenceNumber,
+      final UserDetail userDetail) {
     ApplicationDetail amendment = createAmendmentObject(caseReferenceNumber, userDetail);
     amendment.setQuickEditType(QuickEditTypeConstants.MESSAGE_TYPE_UNDERTAKING);
     amendment.setMeansAssessmentAmended(Boolean.FALSE);
@@ -365,8 +366,7 @@ public class AmendmentService {
     amendment.setUndertakingAmount(new BigDecimal(undertakingFormData.getUndertakingAmount()));
     amendment.setUndertakingMaximumAmount(undertakingFormData.getUndertakingMaximumAmount());
 
-    return updateCaseWithUndertakingQuickAmendment(
-        userDetail, amendment);
+    return updateCaseWithUndertakingQuickAmendment(userDetail, amendment);
   }
 
   /**
@@ -446,10 +446,8 @@ public class AmendmentService {
   }
 
   private String updateCaseWithUndertakingQuickAmendment(
-      UserDetail userDetail,
-      ApplicationDetail amendment) {
-    return updateCaseWithQuickAmendment(
-        userDetail, amendment, null, null);
+      UserDetail userDetail, ApplicationDetail amendment) {
+    return updateCaseWithQuickAmendment(userDetail, amendment, null, null);
   }
 
   private String updateCaseWithQuickAmendment(

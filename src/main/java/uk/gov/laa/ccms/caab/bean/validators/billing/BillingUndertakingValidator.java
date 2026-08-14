@@ -14,8 +14,8 @@ public class BillingUndertakingValidator extends AbstractValidator {
    * Determines if the Validator supports the provided class.
    *
    * @param clazz The class to check for support.
-   * @return {@code true} if the class is assignable from
-   * {@link uk.gov.laa.ccms.caab.bean.billing.UndertakingFormData}, {@code false} otherwise.
+   * @return {@code true} if the class is assignable from {@link
+   *     uk.gov.laa.ccms.caab.bean.billing.UndertakingFormData}, {@code false} otherwise.
    */
   @Override
   public boolean supports(final Class<?> clazz) {
@@ -39,9 +39,7 @@ public class BillingUndertakingValidator extends AbstractValidator {
         errors);
 
     if (!undertakingFormData.isAcceptedTerms()) {
-      errors.rejectValue(
-          "acceptedTerms",
-          "billing.acceptedTerms.required");
+      errors.rejectValue("acceptedTerms", "billing.acceptedTerms.required");
     }
 
     if (undertakingFormData.getUndertakingAmount() != null
@@ -56,11 +54,11 @@ public class BillingUndertakingValidator extends AbstractValidator {
     if (!errors.hasFieldErrors("undertakingAmount")
         && undertakingFormData.getUndertakingMinimumAmount() != null
         && undertakingFormData.getUndertakingMaximumAmount() != null) {
-      final BigDecimal undertakingAmount = new BigDecimal(undertakingFormData.getUndertakingAmount());
+      final BigDecimal undertakingAmount =
+          new BigDecimal(undertakingFormData.getUndertakingAmount());
       if (undertakingFormData.getUndertakingMaximumAmount().compareTo(BigDecimal.ZERO) == 0
           || undertakingAmount.compareTo(undertakingFormData.getUndertakingMinimumAmount()) < 0
-          || undertakingAmount.compareTo(undertakingFormData.getUndertakingMaximumAmount()) > 0)
-      {
+          || undertakingAmount.compareTo(undertakingFormData.getUndertakingMaximumAmount()) > 0) {
         errors.rejectValue("undertakingAmount", "billing.undertakingAmount.outOfRange");
       }
     }

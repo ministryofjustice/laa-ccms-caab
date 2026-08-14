@@ -17,8 +17,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
@@ -110,16 +110,15 @@ public class BillingController {
   }
 
   /**
-   * Displays the enter undertaking screen and clears any previously cached undertaking range
-   * values from the session.
+   * Displays the enter undertaking screen and clears any previously cached undertaking range values
+   * from the session.
    *
    * @param model The model used to pass form data to the view.
    * @param session The current HTTP session.
    * @return The enter undertaking view.
    */
   @GetMapping("/case/billing/undertaking")
-  public String enterUndertaking(final Model model,
-      final HttpSession session) {
+  public String enterUndertaking(final Model model, final HttpSession session) {
     session.removeAttribute("undertakingMinimum");
     session.removeAttribute("undertakingMaximum");
     model.addAttribute("statutoryChargeManualUrl", STATUTORY_CHARGE_MANUAL_URL);
@@ -130,8 +129,8 @@ public class BillingController {
   /**
    * Validates and submits an undertaking amount as a quick amendment.
    *
-   * <p>The valid undertaking range is derived from the current provider statement and cached in
-   * the session for redisplay when validation fails.
+   * <p>The valid undertaking range is derived from the current provider statement and cached in the
+   * session for redisplay when validation fails.
    *
    * @param ebsCase The case details from EBS.
    * @param user The logged-in user.
@@ -151,14 +150,13 @@ public class BillingController {
       final Model model,
       HttpSession session) {
 
-    BigDecimal undertakingMinimum =
-        (BigDecimal) session.getAttribute("undertakingMinimum");
-    BigDecimal undertakingMaximum =
-        (BigDecimal) session.getAttribute("undertakingMaximum");
+    BigDecimal undertakingMinimum = (BigDecimal) session.getAttribute("undertakingMinimum");
+    BigDecimal undertakingMaximum = (BigDecimal) session.getAttribute("undertakingMaximum");
 
     if (undertakingMinimum == null || undertakingMaximum == null) {
       final StatementOfAccountDetail statementOfAccount =
-          billingService.getCurrentProviderStatement(ebsCase.getCaseReferenceNumber(), ebsCase, user);
+          billingService.getCurrentProviderStatement(
+              ebsCase.getCaseReferenceNumber(), ebsCase, user);
       if (statementOfAccount != null) {
         if (statementOfAccount.getBills() != null) {
           undertakingMinimum = statementOfAccount.getBills().getTotalAmount();
@@ -186,10 +184,9 @@ public class BillingController {
       return "application/billing/enter-undertaking";
     }
 
-    final String transactionId = amendmentService.submitQuickAmendmentUndertaking(
-        undertakingFormData,
-        ebsCase.getCaseReferenceNumber(),
-        user);
+    final String transactionId =
+        amendmentService.submitQuickAmendmentUndertaking(
+            undertakingFormData, ebsCase.getCaseReferenceNumber(), user);
 
     session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
     session.removeAttribute(SUBMISSION_RESULT);

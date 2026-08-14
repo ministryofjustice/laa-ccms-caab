@@ -62,7 +62,8 @@ class BillingUndertakingValidatorTest {
 
       assertTrue(errors.hasErrors());
       assertNotNull(errors.getFieldError("undertakingAmount"));
-      assertEquals("required.undertakingAmount", errors.getFieldError("undertakingAmount").getCode());
+      assertEquals(
+          "required.undertakingAmount", errors.getFieldError("undertakingAmount").getCode());
     }
 
     @Test
@@ -75,7 +76,8 @@ class BillingUndertakingValidatorTest {
 
       assertTrue(errors.hasErrors());
       assertNotNull(errors.getFieldError("acceptedTerms"));
-      assertEquals("billing.acceptedTerms.required", errors.getFieldError("acceptedTerms").getCode());
+      assertEquals(
+          "billing.acceptedTerms.required", errors.getFieldError("acceptedTerms").getCode());
     }
 
     @Test
@@ -117,7 +119,8 @@ class BillingUndertakingValidatorTest {
       assertTrue(errors.hasErrors());
       assertNotNull(errors.getFieldError("undertakingAmount"));
       assertEquals(
-          "billing.undertakingAmount.outOfRange", errors.getFieldError("undertakingAmount").getCode());
+          "billing.undertakingAmount.outOfRange",
+          errors.getFieldError("undertakingAmount").getCode());
     }
 
     @Test
@@ -133,7 +136,8 @@ class BillingUndertakingValidatorTest {
       assertTrue(errors.hasErrors());
       assertNotNull(errors.getFieldError("undertakingAmount"));
       assertEquals(
-          "billing.undertakingAmount.outOfRange", errors.getFieldError("undertakingAmount").getCode());
+          "billing.undertakingAmount.outOfRange",
+          errors.getFieldError("undertakingAmount").getCode());
     }
 
     @Test
@@ -162,7 +166,8 @@ class BillingUndertakingValidatorTest {
       assertTrue(errors.hasErrors());
       assertNotNull(errors.getFieldError("undertakingAmount"));
       assertEquals(
-          "billing.undertakingAmount.outOfRange", errors.getFieldError("undertakingAmount").getCode());
+          "billing.undertakingAmount.outOfRange",
+          errors.getFieldError("undertakingAmount").getCode());
     }
   }
 }

@@ -98,7 +98,8 @@ public class BillingService {
 
     // If the user does not belong to the case's provider and we cannot identify their own
     // provider, there is nothing to scope the query to. An unrestricted query returns every firm's
-    // statement and invoices, so return an empty display rather than expose another firm's billing data.
+    // statement and invoices, so return an empty display rather than expose another firm's billing
+    // data.
     if (!userBelongsToCurrentProvider && currentProviderId == null) {
       return display;
     }
@@ -153,8 +154,8 @@ public class BillingService {
   /**
    * Returns the statement-of-account entry for the relevant provider for the supplied case.
    *
-   * <p>If the user belongs to the case provider, the case-wide statement is requested; otherwise the
-   * request is scoped to the user's provider (to avoid exposing other firms' billing data).
+   * <p>If the user belongs to the case provider, the case-wide statement is requested; otherwise
+   * the request is scoped to the user's provider (to avoid exposing other firms' billing data).
    *
    * @param caseReferenceNumber the case reference number.
    * @param ebsCase the case details from EBS (used to determine the case provider).
@@ -162,38 +163,38 @@ public class BillingService {
    * @return the matching provider statement, or {@code null} when none can be safely determined.
    */
   public StatementOfAccountDetail getCurrentProviderStatement(
-    final String caseReferenceNumber, final ApplicationDetail ebsCase, final UserDetail user) {
+      final String caseReferenceNumber, final ApplicationDetail ebsCase, final UserDetail user) {
 
-      final Long currentProviderId =
-          Optional.ofNullable(user.getProvider())
-              .map(BaseProvider::getId)
-              .map(Integer::longValue)
-              .orElse(null);
-      final Long caseProviderId = caseProviderId(ebsCase);
-      final boolean userBelongsToCurrentProvider =
-          currentProviderId != null && currentProviderId.equals(caseProviderId);
+    final Long currentProviderId =
+        Optional.ofNullable(user.getProvider())
+            .map(BaseProvider::getId)
+            .map(Integer::longValue)
+            .orElse(null);
+    final Long caseProviderId = caseProviderId(ebsCase);
+    final boolean userBelongsToCurrentProvider =
+        currentProviderId != null && currentProviderId.equals(caseProviderId);
 
-      // If the user does not belong to the case's provider and we cannot identify their own
-      // provider, there is nothing to scope the query to. An unrestricted query returns every firm's
-      // statement and invoices, so return null rather than expose another firm's billing
-      // data.
-      if (!userBelongsToCurrentProvider && currentProviderId == null) {
-        return null;
-      }
+    // If the user does not belong to the case's provider and we cannot identify their own
+    // provider, there is nothing to scope the query to. An unrestricted query returns every firm's
+    // statement and invoices, so return null rather than expose another firm's billing
+    // data.
+    if (!userBelongsToCurrentProvider && currentProviderId == null) {
+      return null;
+    }
 
-      // Users outside the case's provider only see their own firm's figures (legacy PUI behaviour).
-      final StatementOfAccountDetails response =
-          ebsApiClient
-              .getStatementOfAccount(
-                  caseReferenceNumber, userBelongsToCurrentProvider ? null : currentProviderId)
-              .block();
+    // Users outside the case's provider only see their own firm's figures (legacy PUI behaviour).
+    final StatementOfAccountDetails response =
+        ebsApiClient
+            .getStatementOfAccount(
+                caseReferenceNumber, userBelongsToCurrentProvider ? null : currentProviderId)
+            .block();
 
-      if (response == null) {
-        return null;
-      }
+    if (response == null) {
+      return null;
+    }
 
-      final List<StatementOfAccountDetail> statements =
-          response.getContent() == null ? List.of() : response.getContent();
+    final List<StatementOfAccountDetail> statements =
+        response.getContent() == null ? List.of() : response.getContent();
 
     return currentProviderStatement(statements, currentProviderId, userBelongsToCurrentProvider);
   }

@@ -28,9 +28,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
-import org.springframework.validation.Errors;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
@@ -226,7 +226,8 @@ class BillingControllerTest {
           .hasViewName("application/billing/enter-undertaking")
           .model()
           .hasEntrySatisfying(
-              "undertakingFormData", value -> assertThat(value).isInstanceOf(UndertakingFormData.class));
+              "undertakingFormData",
+              value -> assertThat(value).isInstanceOf(UndertakingFormData.class));
 
       assertThat(result)
           .request()
@@ -243,8 +244,7 @@ class BillingControllerTest {
     @DisplayName("Submits undertaking and redirects to amendment submission")
     void submitsUndertakingAndRedirects() {
       ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("300000123");
-      when(amendmentService.submitQuickAmendmentUndertaking(
-              any(), eq("300000123"), eq(user)))
+      when(amendmentService.submitQuickAmendmentUndertaking(any(), eq("300000123"), eq(user)))
           .thenReturn("TRANS123");
 
       assertThat(
@@ -262,8 +262,7 @@ class BillingControllerTest {
           .request()
           .sessionAttributes()
           .containsEntry(SUBMISSION_TRANSACTION_ID, "TRANS123")
-          .doesNotContainKeys(
-              SUBMISSION_RESULT, "undertakingMinimum", "undertakingMaximum");
+          .doesNotContainKeys(SUBMISSION_RESULT, "undertakingMinimum", "undertakingMaximum");
 
       verify(amendmentService)
           .submitQuickAmendmentUndertaking(
@@ -273,7 +272,8 @@ class BillingControllerTest {
                           && "250.00".equals(formData.getUndertakingAmount())
                           && formData.isAcceptedTerms()
                           && formData.getUndertakingMaximumAmount() != null
-                          && formData.getUndertakingMaximumAmount()
+                          && formData
+                                  .getUndertakingMaximumAmount()
                                   .compareTo(new BigDecimal("900.00"))
                               == 0),
               eq("300000123"),
@@ -313,8 +313,7 @@ class BillingControllerTest {
           .containsEntry("undertakingMinimum", new BigDecimal("300.00"))
           .containsEntry("undertakingMaximum", new BigDecimal("900.00"));
 
-      verify(amendmentService, never())
-          .submitQuickAmendmentUndertaking(any(), any(), any());
+      verify(amendmentService, never()).submitQuickAmendmentUndertaking(any(), any(), any());
     }
   }
 }

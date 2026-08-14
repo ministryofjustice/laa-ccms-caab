@@ -895,10 +895,7 @@ class AmendmentServiceTest {
 
       verify(soaApiClient)
           .updateCase(
-              eq("123"),
-              eq("Type"),
-              any(),
-              eq(QuickEditTypeConstants.MESSAGE_TYPE_UNDERTAKING));
+              eq("123"), eq("Type"), any(), eq(QuickEditTypeConstants.MESSAGE_TYPE_UNDERTAKING));
 
       ArgumentCaptor<CaseMappingContext> contextCaptor =
           ArgumentCaptor.forClass(CaseMappingContext.class);
@@ -943,10 +940,7 @@ class AmendmentServiceTest {
       verify(caabApiClient, never()).createApplication(any(), any());
       verify(soaApiClient, times(1))
           .updateCase(
-              eq("123"),
-              eq("Type"),
-              any(),
-              eq(QuickEditTypeConstants.MESSAGE_TYPE_UNDERTAKING));
+              eq("123"), eq("Type"), any(), eq(QuickEditTypeConstants.MESSAGE_TYPE_UNDERTAKING));
       assertThat(transactionId).isEqualTo("TRANS123");
     }
   }
