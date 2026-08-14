@@ -57,8 +57,10 @@ public class BillingUndertakingValidator extends AbstractValidator {
         && undertakingFormData.getUndertakingMinimumAmount() != null
         && undertakingFormData.getUndertakingMaximumAmount() != null) {
       final BigDecimal undertakingAmount = new BigDecimal(undertakingFormData.getUndertakingAmount());
-      if (undertakingAmount.compareTo(undertakingFormData.getUndertakingMinimumAmount()) < 0
-          || undertakingAmount.compareTo(undertakingFormData.getUndertakingMaximumAmount()) > 0) {
+      if (undertakingFormData.getUndertakingMaximumAmount().compareTo(BigDecimal.ZERO) == 0
+          || undertakingAmount.compareTo(undertakingFormData.getUndertakingMinimumAmount()) < 0
+          || undertakingAmount.compareTo(undertakingFormData.getUndertakingMaximumAmount()) > 0)
+      {
         errors.rejectValue("undertakingAmount", "billing.undertakingAmount.outOfRange");
       }
     }

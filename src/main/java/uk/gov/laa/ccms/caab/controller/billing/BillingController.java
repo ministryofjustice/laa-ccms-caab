@@ -40,6 +40,9 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @Slf4j
 public class BillingController {
 
+  private static final String STATUTORY_CHARGE_MANUAL_URL =
+      "https://assets.publishing.service.gov.uk/media/6a4756b1d200ca05e289e412/The_Statutory_Charge_Manual_July_2026.pdf";
+
   private final BillingService billingService;
   private final BillingUndertakingValidator billingUndertakingValidator;
   private final AmendmentService amendmentService;
@@ -119,6 +122,7 @@ public class BillingController {
       final HttpSession session) {
     session.removeAttribute("undertakingMinimum");
     session.removeAttribute("undertakingMaximum");
+    model.addAttribute("statutoryChargeManualUrl", STATUTORY_CHARGE_MANUAL_URL);
     model.addAttribute("undertakingFormData", new UndertakingFormData());
     return "application/billing/enter-undertaking";
   }
@@ -177,6 +181,7 @@ public class BillingController {
     if (bindingResult.hasErrors()) {
       session.setAttribute("undertakingMinimum", undertakingMinimum);
       session.setAttribute("undertakingMaximum", undertakingMaximum);
+      model.addAttribute("statutoryChargeManualUrl", STATUTORY_CHARGE_MANUAL_URL);
       model.addAttribute("undertakingFormData", undertakingFormData);
       return "application/billing/enter-undertaking";
     }

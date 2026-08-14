@@ -148,5 +148,21 @@ class BillingUndertakingValidatorTest {
 
       assertFalse(errors.hasErrors());
     }
+
+    @Test
+    @DisplayName("Should have error when maximum is zero even if undertaking amount is zero")
+    void validate_WhenMaximumIsZero_HasErrors() {
+      undertakingFormData.setUndertakingAmount("0");
+      undertakingFormData.setAcceptedTerms(true);
+      undertakingFormData.setUndertakingMinimumAmount(BigDecimal.ZERO);
+      undertakingFormData.setUndertakingMaximumAmount(BigDecimal.ZERO);
+
+      billingUndertakingValidator.validate(undertakingFormData, errors);
+
+      assertTrue(errors.hasErrors());
+      assertNotNull(errors.getFieldError("undertakingAmount"));
+      assertEquals(
+          "billing.undertakingAmount.outOfRange", errors.getFieldError("undertakingAmount").getCode());
+    }
   }
 }

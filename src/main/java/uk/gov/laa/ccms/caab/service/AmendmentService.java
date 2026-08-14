@@ -349,24 +349,24 @@ public class AmendmentService {
    * amendment application, applies the new undertaking, and submits the amendment. Finally, a case
    * is updated which returns the transaction ID associated with the submission.
    *
-  * @param undertakingFormData the undertaking details being submitted
-  * @param caseReferenceNumber the unique reference number of the case to which the amendment applies
-  * @param userDetail the details of the user initiating the amendment
-  * @return the transaction ID of the submitted amendment
-  */
- public String submitQuickAmendmentUndertaking(
+   * @param undertakingFormData the undertaking details being submitted
+   * @param caseReferenceNumber the unique reference number of the case to which the amendment applies
+   * @param userDetail the details of the user initiating the amendment
+   * @return the transaction ID of the submitted amendment
+   */
+  public String submitQuickAmendmentUndertaking(
      final UndertakingFormData undertakingFormData,
      final String caseReferenceNumber,
      final UserDetail userDetail) {
-   ApplicationDetail amendment = createAmendmentObject(caseReferenceNumber, userDetail);
-   amendment.setQuickEditType(QuickEditTypeConstants.MESSAGE_TYPE_UNDERTAKING);
-   amendment.setMeansAssessmentAmended(Boolean.FALSE);
-   amendment.setMeritsAssessmentAmended(Boolean.FALSE);
-   amendment.setUndertakingAmount(new BigDecimal(undertakingFormData.getUndertakingAmount()));
-   amendment.setUndertakingMaximumAmount(undertakingFormData.getUndertakingMaximumAmount());
+    ApplicationDetail amendment = createAmendmentObject(caseReferenceNumber, userDetail);
+    amendment.setQuickEditType(QuickEditTypeConstants.MESSAGE_TYPE_UNDERTAKING);
+    amendment.setMeansAssessmentAmended(Boolean.FALSE);
+    amendment.setMeritsAssessmentAmended(Boolean.FALSE);
+    amendment.setUndertakingAmount(new BigDecimal(undertakingFormData.getUndertakingAmount()));
+    amendment.setUndertakingMaximumAmount(undertakingFormData.getUndertakingMaximumAmount());
 
-   return updateCaseWithUndertakingQuickAmendment(
-       userDetail, amendment);
+    return updateCaseWithUndertakingQuickAmendment(
+        userDetail, amendment);
   }
 
   /**

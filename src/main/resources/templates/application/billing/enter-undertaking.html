@@ -40,7 +40,8 @@
           <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
             <h2 class="govuk-fieldset__heading" th:text="#{billing.enterUndertaking.acceptanceOfTerms}"></h2>
           </legend>
-          <div id="acceptedTerms-hint" class="govuk-hint" th:text="#{billing.enterUndertaking.terms}"></div>
+          <div id="acceptedTerms-hint" class="govuk-hint"
+               th:utext="#{billing.enterUndertaking.terms(${statutoryChargeManualUrl})}"></div>
           <div class="govuk-checkboxes"
                th:classappend="${#fields.hasErrors('acceptedTerms')} ? ' govuk-checkboxes--error' : ''"
                data-module="govuk-checkboxes">
