@@ -163,6 +163,8 @@ public interface SoaApplicationMapper {
   @Mapping(target = "meritsAssessmentAmended", ignore = true)
   @Mapping(target = "meansAssessmentStatus", ignore = true)
   @Mapping(target = "meansAssessmentAmended", ignore = true)
+  @Mapping(target = "undertakingAmount", ignore = true)
+  @Mapping(target = "undertakingMaximumAmount", ignore = true)
   @Mapping(target = "leadProceedingChanged", ignore = true)
   @Mapping(target = "editProceedingsAndCostsAllowed", ignore = true)
   @Mapping(target = "costLimit", ignore = true)

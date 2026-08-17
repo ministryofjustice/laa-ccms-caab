@@ -92,7 +92,7 @@ dependencies {
 
     implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.103'
 
-    implementation 'uk.gov.laa.ccms.caab:caab-api:0.3.1'
+    implementation 'uk.gov.laa.ccms.caab:caab-api:0.8.0'
 
     implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.57'
 
