@@ -206,7 +206,19 @@ class ActionViewHelperTest {
   }
 
   @Test
-  void isClearOutcomeAllowedReturnsFalseWhenOutcomeHasNoLocalId() {
+  void isClearOutcomeAllowedReturnsFalseWhenProceedingIsNull() {
+    assertThat(ActionViewHelper.isClearOutcomeAllowed(null)).isFalse();
+  }
+
+  @Test
+  void isClearOutcomeAllowedReturnsFalseWhenAvailableFunctionsIsNull() {
+    ProceedingDetail proceeding = new ProceedingDetail().outcome(new ProceedingOutcomeDetail().id(123));
+
+    assertThat(ActionViewHelper.isClearOutcomeAllowed(proceeding)).isFalse();
+  }
+
+  @Test
+  void isClearOutcomeAllowedReturnsFalseWhenOutcomeHasNoId() {
     ProceedingDetail proceeding =
         new ProceedingDetail()
             .availableFunctions(List.of(FunctionConstants.CLEAR_RECORDED_OUTCOME))
