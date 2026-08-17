@@ -624,6 +624,44 @@ public class ApplicationService {
   }
 
   /**
+   * Removes the draft application for a case from the TDS once the new case has been confirmed in
+   * EBS. This mirrors old PUI's post-submission cleanup for a {@code CASE_ADD} submission ({@code
+   * ClearSubmittedData.removeApplication}): the draft and its non-financial assessments are deleted
+   * so no obsolete data is left behind to interfere with later amendments, which create their own
+   * temporary draft against the same case reference.
+   *
+   * <p>Unlike {@link #abandonApplication}, this does not remove evidence documents or record an
+   * abandonment metric - the application was submitted, not abandoned, and its documents have
+   * already been registered against the case in EBS. No-op if no draft exists, or if the only draft
+   * held for the case is an amendment.
+   *
+   * <p>The prepop is removed alongside the live means/merits sessions, matching old PUI's {@code
+   * removeOpaSessionsForAssessmentIncludingPrepop} for this journey - a brand new application
+   * leaves nothing behind for a later assessment to reuse. This is the one point of difference from
+   * {@link #removeSubmittedAmendment}, which keeps the prepop.
+   *
+   * @param caseReferenceNumber the case whose submitted draft should be removed
+   * @param user the user that submitted the application
+   */
+  public void removeSubmittedApplication(final String caseReferenceNumber, final UserDetail user) {
+
+    final BaseApplicationDetail tdsApplication =
+        getTdsApplicationSummary(caseReferenceNumber, user);
+
+    if (tdsApplication == null || Boolean.TRUE.equals(tdsApplication.getAmendment())) {
+      return;
+    }
+
+    final Mono<Void> deleteAppMono =
+        caabApiClient.deleteApplication(String.valueOf(tdsApplication.getId()), user.getLoginId());
+    final Mono<Void> deleteAssessmentsMono =
+        assessmentService.deleteAssessments(
+            user, getNonFinancialAssessmentNamesIncludingPrepop(), caseReferenceNumber, null);
+
+    Mono.when(deleteAppMono, deleteAssessmentsMono).block();
+  }
+
+  /**
    * Removes the in-progress amendment / quick-amendment draft for a case from the TDS once it has
    * been confirmed in EBS. This mirrors the old PUI post-submission cleanup ({@code
    * QuickAmendPollingController}: {@code deleteOPASessionData} + {@code removeApplication}): the

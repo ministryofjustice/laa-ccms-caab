@@ -634,6 +634,20 @@ public class LookupService {
   }
 
   /**
+   * Retrieves declaration details for a submission type and bill type. The bill submissions (bill
+   * and POA) share the {@code BILL} declaration type and differ only by bill type, so this forwards
+   * both axes to the lookup.
+   *
+   * @param submissionType the type of submission for the declaration
+   * @param billType the bill type qualifying the declaration, may be {@code null}
+   * @return a Mono emitting the declaration lookup details
+   */
+  public Mono<DeclarationLookupDetail> getDeclarations(
+      final String submissionType, final String billType) {
+    return ebsApiClient.getDeclarations(submissionType, billType);
+  }
+
+  /**
    * Retrieves provider request types based on parameters.
    *
    * @param type the type provider request

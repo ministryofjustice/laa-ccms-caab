@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="|#{service.name} - #{billing.poa.declaration.title}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/case/billing/poa}" class="govuk-back-link"
+       th:text="#{site.back}"></a>
+  </div>
+  <div id="main-content">
+    <form action="#" th:action="@{/case/billing/poa/declaration}"
+          th:object="${summarySubmissionFormData}" method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <span class="govuk-caption-l" th:text="#{billing.pageCaption}"></span>
+      <h1 class="govuk-heading-l" th:text="#{billing.poa.declaration.heading}"></h1>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+          <p class="govuk-body-l" th:text="#{billing.poa.declaration.intro}"></p>
+        </div>
+      </div>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+          <div class="govuk-form-group">
+            <fieldset class="govuk-fieldset">
+              <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
+                <span class="govuk-fieldset__heading" th:text="#{billing.poa.declaration.legend}"></span>
+              </legend>
+              <div class="govuk-checkboxes">
+                <div th:each="declarationOption, stat : *{declarationOptions}">
+                  <!-- A hidden field per option so every declaration binds even when its box is
+                       unticked (an unchecked checkbox submits nothing on its own); this lets the
+                       validator require all boxes to be ticked, as the legacy PUI does. -->
+                  <input type="hidden"
+                         th:name="'declarationOptions[' + ${stat.index} + '].fieldValueDisplayValue'"
+                         th:value="${declarationOption.fieldValueDisplayValue}" />
+                  <div class="govuk-checkboxes__item">
+                    <input class="govuk-checkboxes__input"
+                           th:id="'declaration_' + ${stat.index}"
+                           th:name="'declarationOptions[' + ${stat.index} + '].checked'"
+                           type="checkbox"
+                           th:checked="${declarationOption.checked}" />
+                    <label class="govuk-label govuk-checkboxes__label"
+                           th:for="'declaration_' + ${stat.index}">
+                      <span th:text="${declarationOption.fieldValueDisplayValue}"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </div>
+      <div class="govuk-button-group">
+        <button class="govuk-button" data-module="govuk-button" th:text="#{billing.poa.submit}"></button>
+        <a th:href="@{/case/billing/poa}" class="govuk-link" th:text="#{site.back}"></a>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

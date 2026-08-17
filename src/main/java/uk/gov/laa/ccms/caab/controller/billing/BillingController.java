@@ -1,26 +1,60 @@
 package uk.gov.laa.ccms.caab.controller.billing;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.DECLARATION_BILL;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_COMPLETE;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_NOT_STARTED;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentAttribute;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentEntitiesForEntityType;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getMostRecentAssessmentDetail;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import java.math.BigDecimal;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
+import uk.gov.laa.ccms.caab.bean.SummarySubmissionFormData;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
+import uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox;
+import uk.gov.laa.ccms.caab.bean.validators.declaration.PoaDeclarationSubmissionValidator;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
+import uk.gov.laa.ccms.caab.mapper.SubmissionSummaryDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.BillingService;
+import uk.gov.laa.ccms.caab.service.BillingSummaryPdfService;
+import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.util.PaginationUtil;
+import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /** Controller responsible for handling requests related to case billing. */
@@ -30,6 +64,16 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class BillingController {
 
   private final BillingService billingService;
+  private final AssessmentService assessmentService;
+  private final LookupService lookupService;
+  private final SubmissionSummaryDisplayMapper submissionSummaryDisplayMapper;
+  private final PoaDeclarationSubmissionValidator poaDeclarationValidator;
+  private final BillingSummaryPdfService billingSummaryPdfService;
+
+  private static final String CASE_STATEMENT_OF_ACCOUNT_URL = "redirect:/case/billing";
+  private static final String OPA_BILL_TYPE_ATTRIBUTE = "BILL_TYPE";
+  private static final String OPA_COURT_ASSESSED_BILL_ATTRIBUTE = "COURT_ASSESSED_BILL";
+  private static final String BILL_DECLARATION_VIEW = "application/billing/bill-declaration";
 
   /**
    * Displays the case statement of account (billing) screen. The available billing actions are
@@ -54,10 +98,7 @@ public class BillingController {
       final HttpServletRequest request,
       final Model model) {
 
-    final Set<String> availableFunctions =
-        ebsCase.getAvailableFunctions() == null
-            ? Collections.emptySet()
-            : Set.copyOf(ebsCase.getAvailableFunctions());
+    final Set<String> availableFunctions = availableFunctions(ebsCase);
 
     final StatementOfAccountDisplay statementOfAccount =
         billingService.getStatementOfAccountDisplay(
@@ -89,7 +130,710 @@ public class BillingController {
         "showCreatePoa",
         availableFunctions.contains(FunctionConstants.ADD_UPDATE_POA)
             && !statementOfAccount.isDraftPoaExists());
+    // The draft POA's edit and delete links are only offered to a user allowed to maintain a POA,
+    // mirroring the legacy PUI, which hides the actions when the function is not on the case.
+    model.addAttribute("canMaintainPoa", canMaintainPoa(ebsCase));
+    // Likewise for the draft bill's edit and delete links.
+    model.addAttribute("canMaintainBill", canMaintainBill(ebsCase));
+    // A draft withholds the create action for its own type, and a draft bill also withholds the
+    // copy action against a rejected bill, since copying creates a draft bill. Explain that rather
+    // than leaving the actions silently absent - the legacy PUI carries a note to the same purpose
+    // as static intro text on this screen.
+    model.addAttribute(
+        "draftInProgress",
+        statementOfAccount.isDraftBillExists() || statementOfAccount.isDraftPoaExists());
 
     return "application/billing/case-statement-of-account";
+  }
+
+  /**
+   * Displays the "Create a POA - POA details" screen, the entry point to the POA billing journey.
+   *
+   * <p>This ports the legacy PUI {@code CCMS_POA01}: entering the screen creates the draft payment
+   * on account if the provider does not already have one ({@code AddPaymentOnAccount}), and the
+   * screen then shows the status of the POA assessment ({@code PreparePOADetails}). Selecting "POA
+   * details" starts the OPA interview; once it is complete a "POA summary" link is offered, exactly
+   * as the legacy screen did.
+   *
+   * @param ebsCase the case details from EBS.
+   * @param user the logged-in user.
+   * @param model the model used to pass data to the view.
+   * @return the POA details view.
+   */
+  @GetMapping("/case/billing/poa")
+  public String createPoa(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final Model model) {
+
+    if (!canMaintainPoa(ebsCase)) {
+      return CASE_STATEMENT_OF_ACCOUNT_URL;
+    }
+
+    billingService.createDraftPaymentOnAccountIfAbsent(
+        ebsCase.getCaseReferenceNumber(), providerId(user), user);
+
+    final AssessmentDetail poaAssessment =
+        getLatestAssessment(ebsCase, user, AssessmentRulebase.POA);
+    final boolean assessmentComplete = isComplete(poaAssessment);
+
+    model.addAttribute("assessmentStatus", displayStatus(poaAssessment));
+    model.addAttribute("assessmentComplete", assessmentComplete);
+    // The legacy PUI only reveals the "POA summary" link, and the Action column holding it, once
+    // the assessment is complete (PreparePOADetails' viewPOASummary flag).
+    model.addAttribute("viewPoaSummary", assessmentComplete);
+
+    return "application/billing/poa-details";
+  }
+
+  /**
+   * Displays the "Create a Bill - Bill details" screen, the entry point to the bill billing
+   * journey.
+   *
+   * <p>This ports the legacy PUI {@code CCMS_CB03}: entering the screen creates the draft bill if
+   * the provider does not already have one ({@code AddBill}), and the screen then shows the status
+   * of the billing assessment ({@code PrepareBillClaimSummary}). Selecting "Bill details" starts
+   * the OPA interview; once it is complete a "Bill summary" link is offered, exactly as the legacy
+   * screen did.
+   *
+   * @param ebsCase the case details from EBS.
+   * @param user the logged-in user.
+   * @param model the model used to pass data to the view.
+   * @return the bill details view.
+   */
+  @GetMapping("/case/billing/bill")
+  public String createBill(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final Model model) {
+
+    if (!canMaintainBill(ebsCase)) {
+      return CASE_STATEMENT_OF_ACCOUNT_URL;
+    }
+
+    billingService.createDraftBillIfAbsent(
+        ebsCase.getCaseReferenceNumber(), providerId(user), user);
+
+    final AssessmentDetail billingAssessment =
+        getLatestAssessment(ebsCase, user, AssessmentRulebase.BILLING);
+    final boolean assessmentComplete = isComplete(billingAssessment);
+
+    model.addAttribute("assessmentStatus", displayStatus(billingAssessment));
+    model.addAttribute("assessmentComplete", assessmentComplete);
+    // The legacy PUI only reveals the "Bill summary" link, and the Action column holding it, once
+    // the assessment is complete (PrepareBillClaimSummary's printDraftBill flag).
+    model.addAttribute("printDraftBill", assessmentComplete);
+
+    return "application/billing/bill-details";
+  }
+
+  /**
+   * Copies a rejected bill onto a new draft and opens the bill details screen for it.
+   *
+   * <p>This ports the legacy PUI {@code CopyBill}. A case carries at most one draft bill, and
+   * copying creates one, so the copy is refused while a draft is already in progress - the same
+   * rule that withholds the action in the bills/POA table, applied here so it cannot be worked
+   * around by coming straight to this URL.
+   *
+   * @param ebsCase the case details from EBS.
+   * @param user the logged-in user.
+   * @param billingId the billing incident id of the bill to copy.
+   * @return a redirect to the bill details screen, or back to the statement when it cannot be
+   *     copied.
+   */
+  @GetMapping("/case/billing/bill/copy")
+  public String copyBill(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @RequestParam("billing-id") final String billingId) {
+
+    // Nothing can be fetched from EBS without an invoice to address, so refuse rather than asking
+    // it for a blank one. The action is already withheld from rows carrying no billing incident
+    // id; this covers the URL being reached directly.
+    if (!canMaintainBill(ebsCase) || billingId == null || billingId.isBlank()) {
+      return CASE_STATEMENT_OF_ACCOUNT_URL;
+    }
+
+    final StatementOfAccountDisplay statementOfAccount =
+        billingService.getStatementOfAccountDisplay(
+            ebsCase.getCaseReferenceNumber(), ebsCase, user);
+    if (statementOfAccount.isDraftBillExists()) {
+      return CASE_STATEMENT_OF_ACCOUNT_URL;
+    }
+
+    billingService.copyBill(ebsCase.getCaseReferenceNumber(), providerId(user), billingId, user);
+
+    return "redirect:/case/billing/bill";
+  }
+
+  /**
+   * Displays the "Delete bill" confirmation screen.
+   *
+   * @param ebsCase the case details from EBS.
+   * @return the delete bill confirmation view.
+   */
+  @GetMapping("/case/billing/bill/remove")
+  public String removeBillConfirmation(@SessionAttribute(CASE) final ApplicationDetail ebsCase) {
+    if (!canMaintainBill(ebsCase)) {
+      return CASE_STATEMENT_OF_ACCOUNT_URL;
+    }
+
+    return "application/billing/bill-remove";
+  }
+
+  /**
+   * Deletes the provider's draft bill and the billing assessment data that went with it, then
+   * returns to the case statement of account.
+   *
+   * <p>This ports the legacy PUI {@code RemoveBill}, which deletes the bill held for the case and
+   * provider and removes the billing OPA sessions, including the pre-population session, so a later
+   * bill starts from scratch rather than resuming the deleted one.
+   *
+   * @param ebsCase the case details from EBS.
+   * @param user the logged-in user.
+   * @return a redirect to the case statement of account.
+   */
+  @PostMapping("/case/billing/bill/remove")
+  public String removeBill(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user) {
+
+    if (!canMaintainBill(ebsCase)) {
+      return CASE_STATEMENT_OF_ACCOUNT_URL;
+    }
+
+    billingService.deleteDraftBill(ebsCase.getCaseReferenceNumber(), providerId(user), user);
+
+    deleteBillingAssessments(ebsCase, user);
+
+    return CASE_STATEMENT_OF_ACCOUNT_URL;
+  }
+
+  private void deleteBillingAssessments(final ApplicationDetail ebsCase, final UserDetail user) {
+    assessmentService
+        .deleteAssessments(
+            user,
+            List.of(
+                AssessmentRulebase.BILLING.getName(),
+                AssessmentRulebase.BILLING.getPrePopAssessmentName()),
+            ebsCase.getCaseReferenceNumber(),
+            null)
+        .block();
+  }
+
+  /**
+   * Displays the bill declaration, the step between the bill details screen and submission.
+   *
+   * <p>This ports the legacy PUI {@code CCMS_CB03} submit chain. {@code PerformFinalValForBill}
+   * runs first and, on failure, returns the user to the bill details screen carrying the reason
+   * rather than letting the submission proceed. The declaration statements themselves are keyed on
+   * the assessment's bill type, and the user must accept them all to submit.
+   *
+   * @param ebsCase the case details from EBS.
+   * @param user the logged-in user.
+   * @param summarySubmissionFormData the declaration form data.
+   * @param model the model used to pass data to the view.
+   * @return the bill declaration view, or a redirect when the bill cannot be submitted.
+   */
+  @GetMapping("/case/billing/bill/declaration")
+  public String billDeclaration(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @ModelAttribute("summarySubmissionFormData")
+          final SummarySubmissionFormData summarySubmissionFormData,
+      final Model model) {
+
+    if (!canMaintainBill(ebsCase)) {
+      return CASE_STATEMENT_OF_ACCOUNT_URL;
+    }
+
+    final AssessmentDetail billingAssessment =
+        getLatestAssessment(ebsCase, user, AssessmentRulebase.BILLING);
+
+    final String validationError = billFinalValidationError(billingAssessment);
+    if (validationError != null) {
+      return billDetailsWithError(model, billingAssessment, validationError);
+    }
+
+    return declarationDetails(
+        model, summarySubmissionFormData, billingAssessment, BILL_DECLARATION_VIEW);
+  }
+
+  /**
+   * Submits the provider's draft bill to EBS once the declaration is acknowledged, and shows the
+   * submission confirmation.
+   *
+   * <p>This ports the legacy PUI bill submit chain ({@code PerformFinalValForBill} to {@code
+   * PerformSubmission}): the final validation is re-run so the declaration cannot be posted around
+   * it, the declaration must be accepted in full, and the draft bill and its completed assessment
+   * are then sent to EBS. The billing OPA sessions (including the pre-population) are removed
+   * afterwards so a later bill starts afresh, as the legacy post-submission cleanup does.
+   *
+   * @param ebsCase the case details from EBS.
+   * @param user the logged-in user.
+   * @param summarySubmissionFormData the declaration form data.
+   * @param bindingResult the validation result for the declaration.
+   * @param model the model used to pass data to the view.
+   * @param session the HTTP session, used to carry the submission reference to the confirmation.
+   * @return a redirect to the confirmation, or the declaration view when validation fails.
+   */
+  @PostMapping("/case/billing/bill/declaration")
+  public String billDeclarationPost(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @ModelAttribute("summarySubmissionFormData")
+          final SummarySubmissionFormData summarySubmissionFormData,
+      final BindingResult bindingResult,
+      final Model model,
+      final HttpSession session) {
+
+    if (!canMaintainBill(ebsCase)) {
+      return CASE_STATEMENT_OF_ACCOUNT_URL;
+    }
+
+    final AssessmentDetail billingAssessment =
+        getLatestAssessment(ebsCase, user, AssessmentRulebase.BILLING);
+
+    final String validationError = billFinalValidationError(billingAssessment);
+    if (validationError != null) {
+      return billDetailsWithError(model, billingAssessment, validationError);
+    }
+
+    // The bill and POA declarations share the legacy rule that every statement must be accepted.
+    poaDeclarationValidator.validate(summarySubmissionFormData, bindingResult);
+    if (bindingResult.hasErrors()) {
+      return declarationDetails(
+          model, summarySubmissionFormData, billingAssessment, BILL_DECLARATION_VIEW);
+    }
+
+    final String transactionId =
+        billingService.submitBill(
+            ebsCase.getCaseReferenceNumber(), providerId(user), billingAssessment, user);
+
+    deleteBillingAssessments(ebsCase, user);
+
+    session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
+
+    return "redirect:/case/billing/bill/confirmation";
+  }
+
+  /**
+   * Displays the bill submission confirmation, showing the reference EBS returned for the
+   * submission.
+   *
+   * @param transactionId the submission reference carried from the submit step.
+   * @param session the HTTP session, which the reference is cleared from.
+   * @param model the model used to pass data to the view.
+   * @return the bill confirmation view, or a redirect when there is no submission to confirm.
+   */
+  @GetMapping("/case/billing/bill/confirmation")
+  public String billConfirmation(
+      @SessionAttribute(name = SUBMISSION_TRANSACTION_ID, required = false)
+          final String transactionId,
+      final HttpSession session,
+      final Model model) {
+
+    if (transactionId == null) {
+      return CASE_STATEMENT_OF_ACCOUNT_URL;
+    }
+
+    session.removeAttribute(SUBMISSION_TRANSACTION_ID);
+    model.addAttribute("transactionId", transactionId);
+    return "application/billing/bill-confirmation";
+  }
+
+  /**
+   * Re-renders the bill details screen carrying a final validation failure, which is where the
+   * legacy PUI leaves the user when the bill cannot be submitted.
+   */
+  private String billDetailsWithError(
+      final Model model, final AssessmentDetail billingAssessment, final String errorMessageCode) {
+
+    final boolean assessmentComplete = isComplete(billingAssessment);
+    model.addAttribute("assessmentStatus", displayStatus(billingAssessment));
+    model.addAttribute("assessmentComplete", assessmentComplete);
+    model.addAttribute("printDraftBill", assessmentComplete);
+    model.addAttribute("submissionError", errorMessageCode);
+
+    return "application/billing/bill-details";
+  }
+
+  /**
+   * Displays the "Delete payment on account" confirmation screen.
+   *
+   * @param ebsCase the case details from EBS.
+   * @return the delete POA confirmation view.
+   */
+  @GetMapping("/case/billing/poa/remove")
+  public String removePoaConfirmation(@SessionAttribute(CASE) final ApplicationDetail ebsCase) {
+    if (!canMaintainPoa(ebsCase)) {
+      return CASE_STATEMENT_OF_ACCOUNT_URL;
+    }
+
+    return "application/billing/poa-remove";
+  }
+
+  /**
+   * Deletes the provider's draft payment on account and the POA assessment data that went with it,
+   * then returns to the case statement of account.
+   *
+   * <p>This ports the legacy PUI {@code RemovePaymentOfAccount}, which deletes the POA held for the
+   * case and provider and removes the POA OPA sessions, including the pre-population session, so a
+   * later POA starts from scratch rather than resuming the deleted one.
+   *
+   * @param ebsCase the case details from EBS.
+   * @param user the logged-in user.
+   * @return a redirect to the case statement of account.
+   */
+  @PostMapping("/case/billing/poa/remove")
+  public String removePoa(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user) {
+
+    if (!canMaintainPoa(ebsCase)) {
+      return CASE_STATEMENT_OF_ACCOUNT_URL;
+    }
+
+    billingService.deleteDraftPaymentsOnAccount(
+        ebsCase.getCaseReferenceNumber(), providerId(user), user);
+
+    assessmentService
+        .deleteAssessments(
+            user,
+            List.of(
+                AssessmentRulebase.POA.getName(), AssessmentRulebase.POA.getPrePopAssessmentName()),
+            ebsCase.getCaseReferenceNumber(),
+            null)
+        .block();
+
+    return CASE_STATEMENT_OF_ACCOUNT_URL;
+  }
+
+  /**
+   * Displays the POA declaration screen, the step before the POA is submitted to EBS.
+   *
+   * <p>This ports the legacy PUI {@code RetrieveDeclarationText}: the declaration statements the
+   * provider must acknowledge are looked up for the bill declaration type, qualified by the POA
+   * assessment's bill type, and the user must select them to proceed to submit.
+   *
+   * @param ebsCase the case details from EBS.
+   * @param user the logged-in user.
+   * @param summarySubmissionFormData the declaration form data.
+   * @param model the model used to pass data to the view.
+   * @return the POA declaration view, or a redirect when the POA cannot be submitted.
+   */
+  @GetMapping("/case/billing/poa/declaration")
+  public String poaDeclaration(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @ModelAttribute("summarySubmissionFormData")
+          final SummarySubmissionFormData summarySubmissionFormData,
+      final Model model) {
+
+    final AssessmentDetail poaAssessment =
+        getLatestAssessment(ebsCase, user, AssessmentRulebase.POA);
+    // A POA can only be submitted when the case allows it and the assessment is complete, the same
+    // two conditions the details screen uses to reveal Submit. Guard the declaration too, so it
+    // cannot be reached directly for a POA that is not ready.
+    if (!canMaintainPoa(ebsCase) || !isComplete(poaAssessment)) {
+      return CASE_STATEMENT_OF_ACCOUNT_URL;
+    }
+
+    return poaDeclarationDetails(model, summarySubmissionFormData, poaAssessment);
+  }
+
+  /**
+   * Submits the provider's draft payment on account to EBS once the declaration is acknowledged,
+   * and shows the submission confirmation.
+   *
+   * <p>This ports the legacy PUI POA submit chain ({@code PerformFinalValForPoa} to {@code
+   * PerformSubmission}): the declaration must be acknowledged, the draft POA and its completed
+   * assessment are sent to EBS, and the POA OPA sessions (including the pre-population) are then
+   * removed, exactly as the legacy post-submission cleanup does, so a later POA starts afresh.
+   *
+   * @param ebsCase the case details from EBS.
+   * @param user the logged-in user.
+   * @param summarySubmissionFormData the declaration form data.
+   * @param bindingResult the validation result for the declaration.
+   * @param model the model used to pass data to the view.
+   * @param session the HTTP session, used to carry the submission reference to the confirmation.
+   * @return a redirect to the confirmation, or the declaration view when validation fails.
+   */
+  @PostMapping("/case/billing/poa/declaration")
+  public String poaDeclarationPost(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @ModelAttribute("summarySubmissionFormData")
+          final SummarySubmissionFormData summarySubmissionFormData,
+      final BindingResult bindingResult,
+      final Model model,
+      final HttpSession session) {
+
+    final AssessmentDetail poaAssessment =
+        getLatestAssessment(ebsCase, user, AssessmentRulebase.POA);
+    if (!canMaintainPoa(ebsCase) || !isComplete(poaAssessment)) {
+      return CASE_STATEMENT_OF_ACCOUNT_URL;
+    }
+
+    poaDeclarationValidator.validate(summarySubmissionFormData, bindingResult);
+    if (bindingResult.hasErrors()) {
+      return poaDeclarationDetails(model, summarySubmissionFormData, poaAssessment);
+    }
+
+    final String transactionId =
+        billingService.submitPaymentOnAccount(
+            ebsCase.getCaseReferenceNumber(), providerId(user), poaAssessment, user);
+
+    assessmentService
+        .deleteAssessments(
+            user,
+            List.of(
+                AssessmentRulebase.POA.getName(), AssessmentRulebase.POA.getPrePopAssessmentName()),
+            ebsCase.getCaseReferenceNumber(),
+            null)
+        .block();
+
+    session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
+
+    return "redirect:/case/billing/poa/confirmation";
+  }
+
+  /**
+   * Displays the POA submission confirmation, showing the reference EBS returned for the
+   * submission.
+   *
+   * @param transactionId the submission reference carried from the submit step.
+   * @param model the model used to pass data to the view.
+   * @return the POA confirmation view, or a redirect when there is no submission to confirm.
+   */
+  @GetMapping("/case/billing/poa/confirmation")
+  public String poaConfirmation(
+      @SessionAttribute(name = SUBMISSION_TRANSACTION_ID, required = false)
+          final String transactionId,
+      final HttpSession session,
+      final Model model) {
+
+    if (transactionId == null) {
+      return CASE_STATEMENT_OF_ACCOUNT_URL;
+    }
+
+    session.removeAttribute(SUBMISSION_TRANSACTION_ID);
+    model.addAttribute("transactionId", transactionId);
+    return "application/billing/poa-confirmation";
+  }
+
+  /**
+   * Streams the POA summary report as a PDF, generated from the completed POA assessment. This
+   * ports the legacy PUI {@code GetPoaSummary}: the report shows the claim lines the OPA interview
+   * captured, and is only reachable once the assessment is complete. It is generated on demand and
+   * served inline (opened in a new tab by the summary link) rather than stored, as the legacy PUI
+   * did, since it is a stateless view of the current assessment.
+   *
+   * @param ebsCase the case details from EBS.
+   * @param user the logged-in user.
+   * @return the PDF response, or a redirect when the POA summary cannot be shown.
+   */
+  @GetMapping("/case/billing/poa/summary")
+  public ResponseEntity<byte[]> poaSummary(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user) {
+
+    final AssessmentDetail poaAssessment =
+        getLatestAssessment(ebsCase, user, AssessmentRulebase.POA);
+    if (!canMaintainPoa(ebsCase) || !isComplete(poaAssessment)) {
+      return summaryUnavailable();
+    }
+
+    return summaryPdf(
+        "poa-summary.pdf",
+        (statement, allocatedCostLimit) ->
+            billingSummaryPdfService.generatePoaSummary(
+                ebsCase, providerName(user), poaAssessment, statement, allocatedCostLimit),
+        ebsCase,
+        user);
+  }
+
+  /**
+   * Streams the bill summary report as a PDF, generated from the completed billing assessment. This
+   * ports the legacy PUI {@code GetBillSummary}, which is its {@code GetPoaSummary} bar the report
+   * title and the assessment it reads, so both run through the same generator here too.
+   *
+   * @param ebsCase the case details from EBS.
+   * @param user the logged-in user.
+   * @return the PDF response, or a redirect when the bill summary cannot be shown.
+   */
+  @GetMapping("/case/billing/bill/summary")
+  public ResponseEntity<byte[]> billSummary(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user) {
+
+    final AssessmentDetail billingAssessment =
+        getLatestAssessment(ebsCase, user, AssessmentRulebase.BILLING);
+    if (!canMaintainBill(ebsCase) || !isComplete(billingAssessment)) {
+      return summaryUnavailable();
+    }
+
+    return summaryPdf(
+        "bill-summary.pdf",
+        (statement, allocatedCostLimit) ->
+            billingSummaryPdfService.generateBillSummary(
+                ebsCase, providerName(user), billingAssessment, statement, allocatedCostLimit),
+        ebsCase,
+        user);
+  }
+
+  /**
+   * Gathers the cost figures both summary reports need, renders one, and serves it inline so the
+   * summary link opens it in a new tab.
+   */
+  private ResponseEntity<byte[]> summaryPdf(
+      final String filename,
+      final BiFunction<StatementOfAccountDisplay, BigDecimal, byte[]> render,
+      final ApplicationDetail ebsCase,
+      final UserDetail user) {
+
+    final StatementOfAccountDisplay statement =
+        billingService.getStatementOfAccountDisplay(
+            ebsCase.getCaseReferenceNumber(), ebsCase, user);
+    final BigDecimal allocatedCostLimit = billingService.getAllocatedCostLimit(statement, ebsCase);
+
+    final String contentDisposition =
+        ContentDisposition.inline().filename(filename, StandardCharsets.UTF_8).build().toString();
+
+    return ResponseEntity.ok()
+        .contentType(MediaType.APPLICATION_PDF)
+        .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
+        .body(render.apply(statement, allocatedCostLimit));
+  }
+
+  private ResponseEntity<byte[]> summaryUnavailable() {
+    return ResponseEntity.status(HttpStatus.FOUND).location(URI.create("/case/billing")).build();
+  }
+
+  private String poaDeclarationDetails(
+      final Model model,
+      final SummarySubmissionFormData summarySubmissionFormData,
+      final AssessmentDetail poaAssessment) {
+
+    return declarationDetails(
+        model, summarySubmissionFormData, poaAssessment, "application/billing/poa-declaration");
+  }
+
+  /**
+   * Builds the declaration screen for a bill or POA submission. The legacy PUI keys both from the
+   * same table, on the assessment's {@code BILL_TYPE}, differing only in which assessment it reads
+   * ({@code RetrieveDeclarationText} / {@code DeclarationHelper.getDeclarationTextsForBills}).
+   */
+  private String declarationDetails(
+      final Model model,
+      final SummarySubmissionFormData summarySubmissionFormData,
+      final AssessmentDetail assessment,
+      final String view) {
+
+    final DeclarationLookupDetail declarations =
+        lookupService.getDeclarations(DECLARATION_BILL, billType(assessment)).block();
+    final List<DynamicCheckbox> declarationOptions =
+        submissionSummaryDisplayMapper.toDeclarationFormDataDynamicOptionList(declarations);
+
+    if (summarySubmissionFormData.getDeclarationOptions() == null
+        || summarySubmissionFormData.getDeclarationOptions().isEmpty()) {
+      summarySubmissionFormData.setDeclarationOptions(declarationOptions);
+    }
+    model.addAttribute("summarySubmissionFormData", summarySubmissionFormData);
+    return view;
+  }
+
+  /**
+   * The bill type qualifies the declaration lookup. It is produced by the assessment and held on
+   * the global entity, mirroring the legacy PUI, which reads the {@code BILL_TYPE} attribute from
+   * the assessment session to key the declaration retrieval.
+   */
+  private String billType(final AssessmentDetail assessment) {
+    return getAssessmentEntitiesForEntityType(assessment, AssessmentEntityType.GLOBAL).stream()
+        .map(entity -> getAssessmentAttribute(entity, OPA_BILL_TYPE_ATTRIBUTE))
+        .filter(attribute -> attribute != null && attribute.getValue() != null)
+        .map(AssessmentAttributeDetail::getValue)
+        .findFirst()
+        .orElse(null);
+  }
+
+  /**
+   * Runs the legacy PUI's final validation for a bill ({@code PerformFinalValForBill}) and returns
+   * the message code of the first failure, or {@code null} when the bill may be submitted.
+   *
+   * <p>Two conditions block submission: the bill details must be complete, and a claim the provider
+   * has said needs court assessment must actually have been assessed. The court answer is absent
+   * for bills that never went near a court, which the legacy treats as assessed rather than as a
+   * failure.
+   */
+  private String billFinalValidationError(final AssessmentDetail billingAssessment) {
+    if (!isComplete(billingAssessment)) {
+      return "billing.bill.error.notComplete";
+    }
+
+    return isCourtAssessed(billingAssessment) ? null : "billing.bill.error.notAssessed";
+  }
+
+  private boolean isCourtAssessed(final AssessmentDetail billingAssessment) {
+    return getAssessmentEntitiesForEntityType(billingAssessment, AssessmentEntityType.GLOBAL)
+        .stream()
+        .map(entity -> getAssessmentAttribute(entity, OPA_COURT_ASSESSED_BILL_ATTRIBUTE))
+        .filter(attribute -> attribute != null && attribute.getValue() != null)
+        .map(AssessmentAttributeDetail::getValue)
+        .findFirst()
+        .map(Boolean::parseBoolean)
+        .orElse(true);
+  }
+
+  private Set<String> availableFunctions(final ApplicationDetail ebsCase) {
+    return ebsCase.getAvailableFunctions() == null
+        ? Collections.emptySet()
+        : Set.copyOf(ebsCase.getAvailableFunctions());
+  }
+
+  private boolean canMaintainPoa(final ApplicationDetail ebsCase) {
+    return availableFunctions(ebsCase).contains(FunctionConstants.ADD_UPDATE_POA);
+  }
+
+  private boolean canMaintainBill(final ApplicationDetail ebsCase) {
+    return availableFunctions(ebsCase).contains(FunctionConstants.ADD_UPDATE_BILL);
+  }
+
+  private String providerId(final UserDetail user) {
+    return String.valueOf(user.getProvider().getId());
+  }
+
+  private String providerName(final UserDetail user) {
+    return user.getProvider() == null ? null : user.getProvider().getName();
+  }
+
+  private AssessmentDetail getLatestAssessment(
+      final ApplicationDetail ebsCase, final UserDetail user, final AssessmentRulebase rulebase) {
+    final AssessmentDetails assessmentDetails =
+        assessmentService
+            .getAssessments(
+                List.of(rulebase.getName()), providerId(user), ebsCase.getCaseReferenceNumber())
+            .block();
+
+    if (assessmentDetails == null || assessmentDetails.getContent() == null) {
+      return null;
+    }
+
+    return getMostRecentAssessmentDetail(assessmentDetails.getContent());
+  }
+
+  private boolean isComplete(final AssessmentDetail assessment) {
+    return assessment != null
+        && AssessmentStatus.COMPLETE.getStatus().equalsIgnoreCase(assessment.getStatus());
+  }
+
+  private String displayStatus(final AssessmentDetail assessment) {
+    if (assessment == null || assessment.getStatus() == null) {
+      return SECTION_STATUS_NOT_STARTED;
+    }
+
+    return AssessmentStatus.COMPLETE.getStatus().equalsIgnoreCase(assessment.getStatus())
+        ? SECTION_STATUS_COMPLETE
+        : assessment.getStatus();
   }
 }

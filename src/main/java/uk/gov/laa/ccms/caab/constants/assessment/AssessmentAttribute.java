@@ -89,6 +89,10 @@ public enum AssessmentAttribute {
   MERITS_EVIDENCE_REQD("boolean", true, true),
   NEW_APPL_OR_AMENDMENT("text", true, true),
   NI_NO("text", true, true),
+  // billing / POA only - the cost limit allocated to the provider, which the billing rulebases
+  // check the claim against. Old PUI prepopulates it from the billing and POA attribute mappers
+  // only, so it is not sent on a means or merits assessment.
+  ALLOCATED_COST_LIMIT("currency", true, true),
   POA_OR_BILL_FLAG("text", true, true),
   POST_CODE("text", true, true),
   PROVIDER_CASE_REFERENCE("text", true, true),

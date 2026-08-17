@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -29,6 +30,7 @@ import static uk.gov.laa.ccms.caab.util.AssessmentModelUtils.buildAssessmentDeta
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -54,7 +56,10 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
+import uk.gov.laa.ccms.caab.constants.FunctionConstants;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
@@ -62,6 +67,7 @@ import uk.gov.laa.ccms.caab.opa.context.ContextToken;
 import uk.gov.laa.ccms.caab.opa.util.SecurityUtils;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
+import uk.gov.laa.ccms.caab.service.BillingService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryAttributeLookupValueDetail;
@@ -81,6 +87,8 @@ public class AssessmentControllerTest {
   @Mock private LookupService lookupService;
 
   @Mock private ClientService clientService;
+
+  @Mock private BillingService billingService;
 
   @Mock private SecurityUtils contextSecurityUtil;
   @Mock private MessageSource messageSource;
@@ -237,7 +245,8 @@ public class AssessmentControllerTest {
     // reassessment flag is passed true so the "do not reuse" strip is skipped.
     final ArgumentCaptor<ApplicationDetail> captor =
         ArgumentCaptor.forClass(ApplicationDetail.class);
-    verify(assessmentService).startAssessment(captor.capture(), any(), any(), any(), eq(true));
+    verify(assessmentService)
+        .startAssessment(captor.capture(), any(), any(), any(), eq(true), isNull());
     assertEquals("SUB", captor.getValue().getApplicationType().getId());
     verify(applicationService, never()).getApplication(anyString());
   }
@@ -285,10 +294,94 @@ public class AssessmentControllerTest {
   }
 
   @Test
-  public void assessmentGet_unknownAssessment() {
-    when(applicationService.getApplication(anyString()))
-        .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
+  public void assessmentGet_poa_runsAgainstTheEbsCaseAndPrepopulatesTheAllocatedCostLimit()
+      throws Exception {
+    // The POA journey is started from the case statement of account, so it runs against the EBS
+    // case held in the session rather than against a draft application, and it feeds the
+    // allocated cost limit into the rulebase.
+    final ApplicationDetail ebsCase =
+        buildApplicationDetail(1, true, new Date())
+            .caseReferenceNumber("CASE123")
+            .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_POA));
 
+    final StatementOfAccountDisplay statementOfAccount = new StatementOfAccountDisplay();
+    when(billingService.getStatementOfAccountDisplay(eq("CASE123"), any(), any()))
+        .thenReturn(statementOfAccount);
+    when(billingService.getAllocatedCostLimit(eq(statementOfAccount), any()))
+        .thenReturn(new BigDecimal("2500.00"));
+
+    when(contextSecurityUtil.createHubContext(
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyString()))
+        .thenReturn("contextToken");
+    when(clientService.getClient(anyString(), anyString(), anyString()))
+        .thenReturn(Mono.just(new ClientDetail()));
+
+    final AssessmentDetail assessmentDetail = buildAssessmentDetail(new Date());
+    assessmentDetail.setId(1L);
+    when(assessmentService.getAssessments(any(), anyString(), anyString()))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessmentDetail)));
+
+    mockMvc
+        .perform(
+            get("/application/assessments")
+                .param("assessment", "poa")
+                .param("invoked-from", "CCMS_POA01")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(CASE, ebsCase)
+                .sessionAttr(ACTIVE_CASE, activeCase))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/assessments/assessment-get"))
+        .andExpect(model().attribute("assessmentType", "POA"))
+        // The interview returns the user to the POA details screen, not to an application.
+        .andExpect(model().attribute("cancelUrl", "/civil/case/billing/poa"))
+        .andExpect(model().attribute("returnLinkText", "Return to POA details"));
+
+    // No draft application is loaded - the EBS case is used directly.
+    verify(applicationService, never()).getApplication(anyString());
+    verify(assessmentService)
+        .startAssessment(
+            any(),
+            eq(AssessmentRulebase.POA),
+            any(),
+            any(),
+            eq(false),
+            eq(new BigDecimal("2500.00")));
+  }
+
+  @Test
+  public void assessmentGet_poa_rejectedWhenTheCaseDoesNotCarryThePoaFunction() {
+    // The interview URL is reachable directly, so it must re-check the case function itself.
+    final ApplicationDetail ebsCase =
+        buildApplicationDetail(1, true, new Date())
+            .caseReferenceNumber("CASE123")
+            .availableFunctions(List.of(FunctionConstants.BILLING));
+
+    final MockHttpServletRequestBuilder request =
+        get("/application/assessments")
+            .param("assessment", "poa")
+            .param("invoked-from", "CCMS_POA01")
+            .sessionAttr(USER_DETAILS, userDetails)
+            .sessionAttr(CASE, ebsCase)
+            .sessionAttr(ACTIVE_CASE, activeCase);
+
+    final Exception exception = assertThrows(Exception.class, () -> this.mockMvc.perform(request));
+
+    assertInstanceOf(CaabApplicationException.class, exception.getCause());
+    assertEquals(
+        "User is not authorised to run the POA assessment for this case",
+        exception.getCause().getMessage());
+  }
+
+  @Test
+  public void assessmentGet_unknownAssessment() {
+    // The assessment type is validated before any data is loaded, so no application is fetched.
     final MockHttpServletRequestBuilder request =
         get("/application/assessments")
             .param("assessment", "unknown")

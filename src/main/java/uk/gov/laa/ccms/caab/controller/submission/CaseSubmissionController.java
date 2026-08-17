@@ -113,6 +113,11 @@ public class CaseSubmissionController {
       applicationService.removeSubmittedAmendment(
           caseReferenceNumber, user, (String) session.getAttribute(SUBMISSION_QUICK_EDIT_TYPE));
       refreshCaseSession(caseReferenceNumber, user, session);
+    } else {
+      // The new case is now confirmed in EBS, so remove the spent TDS draft (mirrors old PUI's
+      // ClearSubmittedData for a CASE_ADD submission) - otherwise the obsolete draft is left in
+      // XXCCMS_APPLICATION, where it can interfere with a later amendment of the same case.
+      applicationService.removeSubmittedApplication(caseReferenceNumber, user);
     }
 
     session.removeAttribute(SUBMISSION_POLL_COUNT);

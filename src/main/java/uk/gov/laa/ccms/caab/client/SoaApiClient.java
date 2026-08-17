@@ -19,6 +19,9 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
+import uk.gov.laa.ccms.soa.gateway.model.InvoiceDataResponse;
+import uk.gov.laa.ccms.soa.gateway.model.InvoiceDetail;
+import uk.gov.laa.ccms.soa.gateway.model.InvoiceResponse;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
@@ -120,6 +123,54 @@ public class SoaApiClient {
         .retrieve()
         .bodyToMono(ClientTransactionResponse.class)
         .onErrorResume(e -> soaApiClientErrorHandler.handleApiCreateError(e, "Client"));
+  }
+
+  /**
+   * Submits an invoice to EBS. The invoice carries either a bill or a payment on account, one of
+   * which the soa-gateway requires to be present.
+   *
+   * @param invoiceDetail the invoice to submit.
+   * @param loginId The login identifier for the user.
+   * @param userType Type of the user (e.g., admin, user).
+   * @return A Mono wrapping the InvoiceResponse holding the returned invoice reference.
+   */
+  public Mono<InvoiceResponse> createInvoice(
+      final InvoiceDetail invoiceDetail, final String loginId, final String userType) {
+    return soaApiWebClient
+        .post()
+        .uri("/invoices")
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(invoiceDetail)
+        .retrieve()
+        .bodyToMono(InvoiceResponse.class)
+        .onErrorResume(e -> soaApiClientErrorHandler.handleApiCreateError(e, "Invoice"));
+  }
+
+  /**
+   * Retrieves the OPA assessment data EBS holds against an invoice, so it can seed a new
+   * assessment. This is what the legacy PUI's copy-bill journey reads to carry a rejected bill's
+   * answers onto a new draft.
+   *
+   * @param billingId the billing incident id of the invoice to read.
+   * @param loginId The login identifier for the user.
+   * @param userType Type of the user (e.g., admin, user).
+   * @return A Mono wrapping the invoice's assessment data.
+   */
+  public Mono<InvoiceDataResponse> getInvoiceData(
+      final String billingId, final String loginId, final String userType) {
+    return soaApiWebClient
+        .get()
+        .uri("/invoices/{billing-id}", billingId)
+        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
+        .header(SOA_GATEWAY_USER_ROLE, userType)
+        .retrieve()
+        .bodyToMono(InvoiceDataResponse.class)
+        .onErrorResume(
+            e ->
+                soaApiClientErrorHandler.handleApiRetrieveError(
+                    e, "Invoice data", "billing id", billingId));
   }
 
   /**

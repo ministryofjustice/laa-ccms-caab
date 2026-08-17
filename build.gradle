@@ -75,6 +75,11 @@ configurations.configureEach {
             details.useVersion '5.4.3'
             details.because 'Temporary override'
         }
+        // 5.6.3 targets httpcore5 5.4.3, matching the override above.
+        if (details.requested.group == 'org.apache.httpcomponents.client5') {
+            details.useVersion '5.6.3'
+            details.because 'Temporary Snyk override (SNYK-JAVA-ORGAPACHEHTTPCOMPONENTSCLIENT5-18857813) until upgraded in Spring Boot'
+        }
         if (details.requested.group == 'org.bouncycastle') {
             details.useVersion '1.85'
             details.because 'Temporary override to remediate vulnerability'
@@ -88,11 +93,17 @@ configurations.configureEach {
 
 dependencies {
 
-    implementation 'uk.gov.laa.ccms.data:data-api:0.0.110'
+    // Renders the POA summary: an HTML template is built with Thymeleaf (already present) and
+    // converted to PDF, the same pairing the legacy PUI uses for its financial summaries.
+    implementation 'org.xhtmlrenderer:flying-saucer-pdf-openpdf:9.4.0'
 
-    implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.0.103'
+    implementation 'uk.gov.laa.ccms.data:data-api:0.1.0'
 
-    implementation 'uk.gov.laa.ccms.caab:caab-api:0.3.1'
+    // 0.1.3 carries GetInvoiceData, needed to copy a rejected bill.
+    implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.1.3'
+
+    // 0.7.0 carries the bill id needed to delete a draft (PR #175).
+    implementation 'uk.gov.laa.ccms.caab:caab-api:0.7.0'
 
     implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.57'
 

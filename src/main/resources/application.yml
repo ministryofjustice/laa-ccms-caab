@@ -101,6 +101,9 @@ laa:
       hostname: ${ASSESSMENT_API_HOSTNAME}
       url: ${laa.ccms.assessment-api.hostname}
       accessToken: ${ASSESSMENT_API_ACCESS_TOKEN}
+    connector:
+      hostname: ${CONNECTOR_URL}
+      url: ${laa.ccms.connector.hostname}
     oracle-web-determination-server:
       hostname: ${OWD_URL}
       url: ${laa.ccms.oracle-web-determination-server.hostname}

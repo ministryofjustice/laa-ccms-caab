@@ -21,6 +21,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
+import uk.gov.laa.ccms.caab.model.BillCreate;
 import uk.gov.laa.ccms.caab.model.Bills;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
@@ -31,6 +32,7 @@ import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
+import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetail;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
@@ -1201,6 +1203,25 @@ public class CaabApiClient {
   }
 
   /**
+   * Creates a draft bill.
+   *
+   * @param bill the bill to create.
+   * @param loginId the login ID of the user creating it.
+   * @return a Mono that completes when the bill has been created.
+   */
+  public Mono<Void> createBill(final BillCreate bill, final String loginId) {
+    return caabApiWebClient
+        .post()
+        .uri("/bills")
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(bill)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(e -> caabApiClientErrorHandler.handleApiCreateError(e, RESOURCE_TYPE_BILL));
+  }
+
+  /**
    * Retrieves the draft payments on account held for a case and provider.
    *
    * @param caseReferenceNumber the case reference number.
@@ -1222,6 +1243,71 @@ public class CaabApiClient {
             e ->
                 caabApiClientErrorHandler.handleApiRetrieveError(
                     e, RESOURCE_TYPE_PAYMENTS_ON_ACCOUNT, queryParams));
+  }
+
+  /**
+   * Creates a draft payment on account.
+   *
+   * @param paymentOnAccount the payment on account to create.
+   * @param loginId the login ID of the user creating it.
+   * @return a Mono of the created payment on account's id.
+   */
+  public Mono<String> createPaymentOnAccount(
+      final PaymentOnAccountDetail paymentOnAccount, final String loginId) {
+    return caabApiWebClient
+        .post()
+        .uri("/paymentsonaccount")
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(paymentOnAccount)
+        .exchangeToMono(CaabApiClient::getIdResponse)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiCreateError(
+                    e, RESOURCE_TYPE_PAYMENTS_ON_ACCOUNT));
+  }
+
+  /**
+   * Removes a bill.
+   *
+   * @param billId the id of the bill to remove.
+   * @param loginId the login ID of the user removing it.
+   * @return a Mono that completes when the bill has been removed.
+   */
+  public Mono<Void> removeBill(final Long billId, final String loginId) {
+    return caabApiWebClient
+        .delete()
+        .uri("/bills/{bill-id}", billId)
+        .header("Caab-User-Login-Id", loginId)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiDeleteError(
+                    e, RESOURCE_TYPE_BILL, "id", String.valueOf(billId)));
+  }
+
+  /**
+   * Removes a draft payment on account.
+   *
+   * @param paymentOnAccountId the id of the payment on account to remove.
+   * @param loginId the login ID of the user removing it.
+   * @return a Mono that completes when the payment on account has been removed.
+   */
+  public Mono<Void> removePaymentOnAccount(final Long paymentOnAccountId, final String loginId) {
+    return caabApiWebClient
+        .delete()
+        .uri("/paymentsonaccount/{payment-on-account-id}", paymentOnAccountId)
+        .header("Caab-User-Login-Id", loginId)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiDeleteError(
+                    e,
+                    RESOURCE_TYPE_PAYMENTS_ON_ACCOUNT,
+                    "id",
+                    String.valueOf(paymentOnAccountId)));
   }
 
   private MultiValueMap<String, String> createDefaultQueryParams() {
