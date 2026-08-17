@@ -1821,6 +1821,64 @@ class ApplicationServiceTest {
   }
 
   @Test
+  void removeSubmittedApplication_deletesDraftAndAssessments() {
+    final UserDetail user = buildUserDetail();
+    final String caseReferenceNumber = "CASE-123";
+    // A new application takes the prepop with it (old PUI ClearSubmittedData.removeApplication uses
+    // removeOpaSessionsForAssessmentIncludingPrepop), unlike an amendment which keeps it.
+    final List<String> expectedAssessmentNames =
+        List.of(MEANS.getName(), MEANS_PREPOP.getName(), MERITS.getName(), MERITS_PREPOP.getName());
+
+    final ApplicationDetails tdsApplications =
+        new ApplicationDetails()
+            .addContentItem(new BaseApplicationDetail().id(42).amendment(false));
+    when(caabApiClient.getApplications(any(), eq(user.getProvider().getId()), eq(0), eq(1)))
+        .thenReturn(Mono.just(tdsApplications));
+    when(caabApiClient.deleteApplication("42", user.getLoginId())).thenReturn(Mono.empty());
+    when(assessmentService.deleteAssessments(
+            user, expectedAssessmentNames, caseReferenceNumber, null))
+        .thenReturn(Mono.empty());
+
+    applicationService.removeSubmittedApplication(caseReferenceNumber, user);
+
+    verify(caabApiClient).deleteApplication("42", user.getLoginId());
+    verify(assessmentService)
+        .deleteAssessments(user, expectedAssessmentNames, caseReferenceNumber, null);
+    // Submitted (not abandoned): the evidence documents are already registered against the case in
+    // EBS, and no abandonment metric is recorded.
+    verify(evidenceService, never()).removeDocuments(any(), any());
+    verify(puiMetricService, never()).incrementAbandonedCount(any());
+  }
+
+  @Test
+  void removeSubmittedApplication_amendmentDraft_isNoOp() {
+    final UserDetail user = buildUserDetail();
+    // An amendment draft against the same case reference belongs to the amendment journey, which
+    // has its own cleanup - a new-application submission must not remove it.
+    final ApplicationDetails tdsApplications =
+        new ApplicationDetails().addContentItem(new BaseApplicationDetail().id(42).amendment(true));
+    when(caabApiClient.getApplications(any(), eq(user.getProvider().getId()), eq(0), eq(1)))
+        .thenReturn(Mono.just(tdsApplications));
+
+    applicationService.removeSubmittedApplication("CASE-123", user);
+
+    verify(caabApiClient, never()).deleteApplication(any(), any());
+    verify(assessmentService, never()).deleteAssessments(any(), any(), any(), any());
+  }
+
+  @Test
+  void removeSubmittedApplication_noDraft_isNoOp() {
+    final UserDetail user = buildUserDetail();
+    when(caabApiClient.getApplications(any(), eq(user.getProvider().getId()), eq(0), eq(1)))
+        .thenReturn(Mono.just(new ApplicationDetails()));
+
+    applicationService.removeSubmittedApplication("CASE-123", user);
+
+    verify(caabApiClient, never()).deleteApplication(any(), any());
+    verify(assessmentService, never()).deleteAssessments(any(), any(), any(), any());
+  }
+
+  @Test
   void getDefaultScopeLimitation_withEmergencyApplicationType_returnsEmergencyScopeLimitations() {
     String categoryOfLaw = "Family";
     String matterType = "FAM";
