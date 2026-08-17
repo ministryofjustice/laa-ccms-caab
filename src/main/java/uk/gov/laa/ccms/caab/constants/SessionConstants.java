@@ -233,4 +233,9 @@ public class SessionConstants {
 
   /** Session attribute used to keep track of the selected counsel for confirmation. */
   public static final String SELECTED_COUNSEL = "selectedCounsel";
+
+  /** Session attribute for keeping track of counsel search criteria. */
+  public static final String UNDERTAKING_MINIMUM = "undertakingMinimum";
+
+  public static final String UNDERTAKING_MAXIMUM = "undertakingMaximum";
 }

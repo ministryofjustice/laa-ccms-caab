@@ -6,6 +6,8 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.UNDERTAKING_MAXIMUM;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.UNDERTAKING_MINIMUM;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentAttribute;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentEntitiesForEntityType;
@@ -197,8 +199,8 @@ public class BillingController {
       final Model model,
       HttpSession session) {
 
-    BigDecimal undertakingMinimum = (BigDecimal) session.getAttribute("undertakingMinimum");
-    BigDecimal undertakingMaximum = (BigDecimal) session.getAttribute("undertakingMaximum");
+    BigDecimal undertakingMinimum = (BigDecimal) session.getAttribute(UNDERTAKING_MINIMUM);
+    BigDecimal undertakingMaximum = (BigDecimal) session.getAttribute(UNDERTAKING_MAXIMUM);
 
     if (undertakingMinimum == null || undertakingMaximum == null) {
       final StatementOfAccountDetail statementOfAccount =
@@ -224,8 +226,8 @@ public class BillingController {
     billingUndertakingValidator.validate(undertakingFormData, bindingResult);
 
     if (bindingResult.hasErrors()) {
-      session.setAttribute("undertakingMinimum", undertakingMinimum);
-      session.setAttribute("undertakingMaximum", undertakingMaximum);
+      session.setAttribute(UNDERTAKING_MINIMUM, undertakingMinimum);
+      session.setAttribute(UNDERTAKING_MAXIMUM, undertakingMaximum);
       model.addAttribute("statutoryChargeManualUrl", STATUTORY_CHARGE_MANUAL_URL);
       model.addAttribute("undertakingFormData", undertakingFormData);
       return "application/billing/enter-undertaking";
@@ -237,8 +239,8 @@ public class BillingController {
 
     session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
     session.removeAttribute(SUBMISSION_RESULT);
-    session.removeAttribute("undertakingMinimum");
-    session.removeAttribute("undertakingMaximum");
+    session.removeAttribute(UNDERTAKING_MINIMUM);
+    session.removeAttribute(UNDERTAKING_MAXIMUM);
     model.addAttribute("undertakingFormData", new UndertakingFormData());
     return "redirect:/amendments/submit-case";
   }

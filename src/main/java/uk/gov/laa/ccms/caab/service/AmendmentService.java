@@ -366,7 +366,7 @@ public class AmendmentService {
     amendment.setUndertakingAmount(new BigDecimal(undertakingFormData.getUndertakingAmount()));
     amendment.setUndertakingMaximumAmount(undertakingFormData.getUndertakingMaximumAmount());
 
-    return updateCaseWithUndertakingQuickAmendment(userDetail, amendment);
+    return updateCaseWithQuickAmendment(userDetail, amendment);
   }
 
   /**
@@ -442,11 +442,6 @@ public class AmendmentService {
    * @return Transaction ID of the updated case.
    */
   private String updateCaseWithQuickAmendment(UserDetail userDetail, ApplicationDetail amendment) {
-    return updateCaseWithQuickAmendment(userDetail, amendment, null, null);
-  }
-
-  private String updateCaseWithUndertakingQuickAmendment(
-      UserDetail userDetail, ApplicationDetail amendment) {
     return updateCaseWithQuickAmendment(userDetail, amendment, null, null);
   }
 
