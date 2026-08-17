@@ -75,6 +75,11 @@ configurations.configureEach {
             details.useVersion '5.4.3'
             details.because 'Temporary override'
         }
+        // 5.6.3 targets httpcore5 5.4.3, matching the override above.
+        if (details.requested.group == 'org.apache.httpcomponents.client5') {
+            details.useVersion '5.6.3'
+            details.because 'Temporary Snyk override (SNYK-JAVA-ORGAPACHEHTTPCOMPONENTSCLIENT5-18857813) until upgraded in Spring Boot'
+        }
         if (details.requested.group == 'org.bouncycastle') {
             details.useVersion '1.85'
             details.because 'Temporary override to remediate vulnerability'
