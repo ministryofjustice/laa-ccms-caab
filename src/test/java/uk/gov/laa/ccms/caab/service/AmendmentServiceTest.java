@@ -32,6 +32,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
@@ -68,8 +69,9 @@ class AmendmentServiceTest {
   @Mock private SoaApplicationMapper soaApplicationMapper;
   @Mock private EvidenceService evidenceService;
 
+  @Mock private AssessmentService assessmentService;
+
   private AmendmentService amendmentService;
-  private AssessmentService assessmentService;
 
   @BeforeEach
   void beforeEach() {
@@ -86,6 +88,80 @@ class AmendmentServiceTest {
     lenient()
         .when(evidenceService.getEvidenceDocumentsForCase(any(), any()))
         .thenReturn(Mono.just(new EvidenceDocumentDetails()));
+  }
+
+  @Nested
+  @DisplayName("submitAmendment() tests")
+  class SubmitAmendmentTests {
+
+    private ApplicationDetail amendment(final String caseRef) {
+      final ApplicationDetail amendment = new ApplicationDetail();
+      amendment.setId(77);
+      amendment.setCaseReferenceNumber(caseRef);
+      return amendment;
+    }
+
+    private UserDetail user() {
+      return new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
+    }
+
+    @Test
+    @DisplayName("Should register, upload and attach amendment documents on submit")
+    void shouldAttachAmendmentDocuments() {
+      // Given
+      final String caseRef = "300001407940";
+      final EvidenceDocumentDetails amendmentDocuments =
+          new EvidenceDocumentDetails().addContentItem(new BaseEvidenceDocumentDetail().id(55));
+
+      when(assessmentService.getAssessments(any(), any(), any()))
+          .thenReturn(Mono.just(new AssessmentDetails().content(List.of())));
+      when(evidenceService.getEvidenceDocumentsForCase(eq(caseRef), eq(CcmsModule.AMENDMENT)))
+          .thenReturn(Mono.just(amendmentDocuments));
+      when(evidenceService.uploadAndUpdateDocuments(any(), eq(caseRef), eq(null), any()))
+          .thenReturn(Mono.empty());
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), eq("LegalAmendment")))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TX-1")));
+
+      final UserDetail user = user();
+
+      // When
+      final String transactionId = amendmentService.submitAmendment(amendment(caseRef), user);
+
+      // Then
+      verify(evidenceService).registerPreviouslyUploadedDocuments(amendmentDocuments, user);
+      verify(evidenceService).uploadAndUpdateDocuments(amendmentDocuments, caseRef, null, user);
+
+      final ArgumentCaptor<CaseMappingContext> contextCaptor =
+          ArgumentCaptor.forClass(CaseMappingContext.class);
+      verify(soaApplicationMapper).toCaseDetail(contextCaptor.capture());
+      assertThat(contextCaptor.getValue().getCaseDocs()).isEqualTo(amendmentDocuments.getContent());
+      assertThat(transactionId).isEqualTo("TX-1");
+    }
+
+    @Test
+    @DisplayName("Should submit with no case docs when no amendment documents were uploaded")
+    void shouldSubmitWithNoCaseDocs() {
+      // Given - the default stub returns an empty EvidenceDocumentDetails
+      final String caseRef = "300001407940";
+
+      when(assessmentService.getAssessments(any(), any(), any()))
+          .thenReturn(Mono.just(new AssessmentDetails().content(List.of())));
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), eq("LegalAmendment")))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TX-2")));
+
+      // When
+      amendmentService.submitAmendment(amendment(caseRef), user());
+
+      // Then
+      verify(evidenceService, never()).registerPreviouslyUploadedDocuments(any(), any());
+
+      final ArgumentCaptor<CaseMappingContext> contextCaptor =
+          ArgumentCaptor.forClass(CaseMappingContext.class);
+      verify(soaApplicationMapper).toCaseDetail(contextCaptor.capture());
+      assertThat(contextCaptor.getValue().getCaseDocs()).isEmpty();
+    }
   }
 
   @Nested

@@ -67,6 +67,9 @@ public class ApplicationConstants {
   /** The status of a draft domain object (used for, for example, proceedings and bills). */
   public static final String STATUS_DRAFT = "Draft";
 
+  /** The status of a prior authority which has already been granted by the LAA. */
+  public static final String PRIOR_AUTHORITY_STATUS_GRANT = "Grant";
+
   /** Display value for a Proceeding at status 'outcome'. */
   public static final String PROCEEDING_STATUS_OUTCOME_DISPLAY = "Outcome";
 

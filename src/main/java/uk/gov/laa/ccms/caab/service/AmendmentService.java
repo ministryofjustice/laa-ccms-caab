@@ -601,12 +601,17 @@ public class AmendmentService {
     assessmentService.calculateAssessmentStatuses(
         amendment, meansAssessment, meritsAssessment, userDetail);
 
+    // Register and transfer any documents uploaded against this amendment so they are attached to
+    // the case update, matching old PUI's CaseSubmissionHelper.amendCase.
+    final List<BaseEvidenceDocumentDetail> caseDocs =
+        registerAndUploadAmendmentDocuments(amendment.getCaseReferenceNumber(), userDetail);
+
     CaseMappingContext caseMappingContext =
         CaseMappingContext.builder()
             .tdsApplication(amendment)
             .meansAssessment(meansAssessment)
             .meritsAssessment(meritsAssessment)
-            .caseDocs(Collections.emptyList())
+            .caseDocs(caseDocs)
             .user(userDetail)
             .build();
     CaseDetail caseToSubmit = soaApplicationMapper.toCaseDetail(caseMappingContext);

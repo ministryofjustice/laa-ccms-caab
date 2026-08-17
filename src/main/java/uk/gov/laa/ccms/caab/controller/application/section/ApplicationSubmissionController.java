@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.DECLARATION_APPLICATION;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.PRIOR_AUTHORITY_STATUS_GRANT;
 import static uk.gov.laa.ccms.caab.constants.CcmsModule.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
@@ -295,7 +296,7 @@ public class ApplicationSubmissionController {
       model.addAttribute("generalDetailsFormData", generalDetails);
       hasErrors = true;
     }
-    hasErrors |= validateOpponents(opponents, model);
+    hasErrors |= validateOpponents(opponents, model, isAmendment);
     hasErrors |= validatePriorAuthorities(application.getPriorAuthorities(), model, isAmendment);
 
     return hasErrors;
@@ -468,6 +469,13 @@ public class ApplicationSubmissionController {
 
     final Set<String> priorAuthorityErrors = new HashSet<>();
     for (final PriorAuthorityDetail priorAuthority : priorAuthorities) {
+      // Old PUI never re-validates a prior authority the LAA has already granted
+      // (PerformFinalValForApplication: `if (!PRIOR_AUTHORITY_STATUS_GRANT.equalsIgnoreCase(
+      // priorAuthority.getStatus()))`), so historic reference data cannot block a new submission.
+      if (isPriorAuthorityGranted(priorAuthority)) {
+        continue;
+      }
+
       final PriorAuthorityFlowFormData priorAuthorityFlow =
           proceedingAndCostsMapper.toPriorAuthorityFlowFormData(priorAuthority);
 
@@ -497,17 +505,33 @@ public class ApplicationSubmissionController {
   }
 
   /**
+   * Returns whether a prior authority has already been granted by the LAA, in which case its
+   * details are historic and are not re-validated at submission.
+   */
+  private boolean isPriorAuthorityGranted(final PriorAuthorityDetail priorAuthority) {
+    return PRIOR_AUTHORITY_STATUS_GRANT.equalsIgnoreCase(priorAuthority.getStatus());
+  }
+
+  /**
    * Validates a list of opponents and collects any validation errors.
    *
    * @param opponents the list of opponents to validate
    * @param model the model used to store validation errors
+   * @param isAmendment whether the submission being validated is an amendment
    * @return {@code true} if there are validation errors, {@code false} otherwise
    */
   protected boolean validateOpponents(
-      final List<AbstractOpponentFormData> opponents, final Model model) {
+      final List<AbstractOpponentFormData> opponents,
+      final Model model,
+      final boolean isAmendment) {
     if (opponents == null || opponents.isEmpty()) {
       return false;
     }
+
+    // Old PUI's amendment error filter (opponentTitleErrorFilter) drops Opponent.title errors as
+    // well as PriorAuthority.justification, so an existing opponent recorded without a title does
+    // not block an amendment. Only individual opponents carry a title.
+    final Set<String> suppressedFields = isAmendment ? Set.of("title") : Collections.emptySet();
 
     final Set<String> opponentErrors = new HashSet<>();
     final List<RelationshipToCaseLookupValueDetail> personToCaseRelationships =
@@ -524,7 +548,7 @@ public class ApplicationSubmissionController {
         individualOpponent.setDateOfBirthMandatory(
             isIndividualDateOfBirthMandatory(individualOpponent, personToCaseRelationships));
         if (validateAndAddErrors(
-            opponent, individualOpponentValidator, model, "individualOpponent")) {
+            opponent, individualOpponentValidator, model, "individualOpponent", suppressedFields)) {
           opponentErrors.addAll(getErrorsFromModel(model, "individualOpponent"));
         }
       } else if (opponent instanceof OrganisationOpponentFormData) {
