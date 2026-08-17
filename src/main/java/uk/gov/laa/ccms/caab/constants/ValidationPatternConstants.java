@@ -14,7 +14,7 @@ public class ValidationPatternConstants {
   public static final String MONETARY_INPUT_2DP = "[0-9]+(\\.[0-9][0-9]?)?";
 
   /** Validation pattern to check for currency values. */
-  public static final String CURRENCY_PATTERN = "[0-9]+(.[0-9]{1,2})?";
+  public static final String CURRENCY_PATTERN = "[0-9]+(\\.[0-9]{1,2})?";
 
   /** Validation pattern for an email address. */
   public static final String EMAIL_ADDRESS =

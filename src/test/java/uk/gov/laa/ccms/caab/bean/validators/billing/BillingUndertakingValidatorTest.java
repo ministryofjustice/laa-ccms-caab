@@ -83,7 +83,7 @@ class BillingUndertakingValidatorTest {
     @Test
     @DisplayName("Should have errors when undertaking amount has invalid currency format")
     void validate_WithInvalidCurrencyFormat_HasErrors() {
-      undertakingFormData.setUndertakingAmount("not a number");
+      undertakingFormData.setUndertakingAmount("12a34");
       undertakingFormData.setAcceptedTerms(true);
 
       billingUndertakingValidator.validate(undertakingFormData, errors);
