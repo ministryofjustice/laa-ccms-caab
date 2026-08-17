@@ -119,6 +119,9 @@ class CaseSubmissionControllerTest {
     verify(applicationService, times(1)).getCaseStatus(anyString());
     // New (non-amendment) case submission must not remove an amendment draft.
     verify(applicationService, never()).removeSubmittedAmendment(anyString(), any(), any());
+    // The confirmed application's spent TDS draft must be removed, otherwise it is left behind in
+    // XXCCMS_APPLICATION (mirrors old PUI's ClearSubmittedData).
+    verify(applicationService, times(1)).removeSubmittedApplication("ref123", userDetail);
   }
 
   @Test
@@ -257,6 +260,49 @@ class CaseSubmissionControllerTest {
 
     verify(applicationService, times(1)).getCaseStatus(anyString());
     verify(applicationService, times(1)).getCase(anyString(), anyLong(), anyString());
+    // The fallback confirms the same submission, so it must clean up the draft too.
+    verify(applicationService, times(1))
+        .removeSubmittedApplication(activeCase.getCaseReferenceNumber(), userDetail);
+  }
+
+  @Test
+  @DisplayName("Test addCaseSubmission - Amendment confirmed does not remove an application draft")
+  void testAddCaseSubmission_AmendmentConfirmedDoesNotRemoveApplication() throws Exception {
+    final String refNumber = "ref123";
+    final TransactionStatus mockStatus = new TransactionStatus();
+    mockStatus.setReferenceNumber(refNumber);
+    when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
+
+    final ApplicationDetail mockCase = new ApplicationDetail();
+    mockCase.setCaseReferenceNumber(refNumber);
+    when(applicationService.getCase(anyString(), anyLong(), anyString())).thenReturn(mockCase);
+
+    mockMvc
+        .perform(
+            get("/amendments/submit-case")
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
+                .sessionAttr(USER_DETAILS, userDetail))
+        .andExpect(status().is3xxRedirection());
+
+    // An amendment has its own cleanup: the new-application cleanup must not also run.
+    verify(applicationService, never()).removeSubmittedApplication(anyString(), any());
+  }
+
+  @Test
+  @DisplayName("Test addCaseSubmission - Case not confirmed does not remove the draft")
+  void testAddCaseSubmission_CaseNotConfirmedDoesNotRemoveApplication() throws Exception {
+    final TransactionStatus mockStatus = new TransactionStatus(); // No reference number set
+    when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
+
+    mockMvc
+        .perform(
+            get("/application/submit-case")
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
+                .sessionAttr(USER_DETAILS, userDetail))
+        .andExpect(status().isOk());
+
+    // The submission is still in flight - the draft must survive until EBS confirms the case.
+    verify(applicationService, never()).removeSubmittedApplication(anyString(), any());
   }
 
   @Test
