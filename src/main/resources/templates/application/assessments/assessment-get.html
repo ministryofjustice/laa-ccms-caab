@@ -43,6 +43,10 @@
 
 <div class="govuk-width-container">
 
+  <!-- No back link for the billing rulebases: they carry their own "Save and Return" in the
+       rulebase itself, so adding one here shows the user two. Old PUI does the same, stripping its
+       return links from the POA interview viewpoint (CCMS_POA01A's Remove amendments) for exactly
+       this reason. -->
   <th:block th:if="${assessmentType == 'MEANS' || assessmentType == 'MERITS'}">
     <div id="breadcrumbs">
       <a th:href="${cancelUrl}" class="govuk-back-link" th:text="${returnLinkText}"></a>
@@ -85,9 +89,19 @@
 
     var owdUrl = [[${owdUrl}]];
     var deploymentName = [[${deploymentName}]];
+    var cancelUrl = [[${cancelUrl}]];
 
     function doExit(url) {
-        window.location = url;
+        // When the user leaves the interview before completing it, OWD calls this with its abort
+        // URL (.../assessments/confirm/abortIFrame.do), which the PUI has no handler for - hitting
+        // it shows a "No static resource" error. Send them back to the screen the interview was
+        // launched from instead. A normal submit redirect (.../confirm/caseSummary.do) is followed
+        // unchanged.
+        if (url && url.indexOf("abortIFrame") !== -1) {
+            window.location = cancelUrl;
+        } else {
+            window.location = url;
+        }
     }
 
     if (checkpoint === 'START') {

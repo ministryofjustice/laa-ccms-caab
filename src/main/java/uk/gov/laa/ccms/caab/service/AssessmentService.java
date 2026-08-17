@@ -47,6 +47,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -65,10 +66,12 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentRelationshipDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentRelationshipTargetDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.assessment.model.PatchAssessmentDetail;
 import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
+import uk.gov.laa.ccms.caab.client.ConnectorApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute;
@@ -80,6 +83,7 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.constants.assessment.InstanceMappingPrefix;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.AssessmentMapper;
+import uk.gov.laa.ccms.caab.mapper.OpaSessionMapper;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -95,6 +99,7 @@ import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryAttributeDisplay;
 import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryEntityDisplay;
+import uk.gov.laa.ccms.caab.opa.session.OpaSessionJson;
 import uk.gov.laa.ccms.caab.util.AssessmentReuseUtil;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.caab.util.ProceedingUtil;
@@ -124,6 +129,8 @@ public class AssessmentService {
   private final SoaApiClient soaApiClient;
   private final EbsApiClient ebsApiClient;
   private final AssessmentMapper assessmentMapper;
+  private final ConnectorApiClient connectorApiClient;
+  private final OpaSessionMapper opaSessionMapper;
   private final LookupService lookupService;
 
   /**
@@ -1260,6 +1267,27 @@ public class AssessmentService {
       final ClientDetail client,
       final UserDetail user,
       final boolean isReassessment) {
+    startAssessment(application, assessmentRulebase, client, user, isReassessment, null);
+  }
+
+  /**
+   * Starts a new assessment by removing any previous assessments and initiating a new one.
+   *
+   * @param application the application detail for the assessment
+   * @param assessmentRulebase the rulebase for the assessment
+   * @param client the client detail for the assessment
+   * @param user the user detail initiating the assessment
+   * @param isReassessment whether this is the standalone means reassessment journey
+   * @param allocatedCostLimit the cost limit allocated to the provider, prepopulated into {@code
+   *     ALLOCATED_COST_LIMIT} for the billing and POA rulebases only
+   */
+  public void startAssessment(
+      final ApplicationDetail application,
+      final AssessmentRulebase assessmentRulebase,
+      final ClientDetail client,
+      final UserDetail user,
+      final boolean isReassessment,
+      final BigDecimal allocatedCostLimit) {
 
     final String providerId = user.getProvider().getId().toString();
     final String referenceId = application.getCaseReferenceNumber();
@@ -1302,7 +1330,8 @@ public class AssessmentService {
         .block();
 
     // start new assessment
-    startNewAssessment(assessmentRulebase, application, client, user, isReassessment);
+    startNewAssessment(
+        assessmentRulebase, application, client, user, isReassessment, allocatedCostLimit);
   }
 
   /**
@@ -1358,12 +1387,21 @@ public class AssessmentService {
       final ApplicationDetail application,
       final ClientDetail client,
       final UserDetail user,
-      final boolean isReassessment) {
+      final boolean isReassessment,
+      final BigDecimal allocatedCostLimit) {
     log.debug("Name - {}, AssessmentType - {}", user.getUsername(), assessmentRulebase.getType());
     final String referenceId = application.getCaseReferenceNumber();
     final String providerId = user.getProvider().getId().toString();
 
-    final boolean prepopulateFromEbs = Boolean.TRUE.equals(application.getAmendment());
+    // Amendments reuse the prior assessment from EBS. The billing rulebases ALSO need it, and for
+    // a different reason: their entity data - bill and POA history, the provider firms on the
+    // case, prior authorities - is held in EBS and is never derivable from the application. Old
+    // PUI fetches it on every financial start (StartOpaAssessment -> GetAssessmentDataHelper
+    // .getAssessmentData(assessmentType)). Without it the rulebase has no history to reason over
+    // and BILLING_IS_COMPLETE can never resolve, stranding the POA INCOMPLETE.
+    final boolean prepopulateFromEbs =
+        Boolean.TRUE.equals(application.getAmendment())
+            || assessmentRulebase.isFinancialAssessment();
 
     final List<AssessmentEntityType> opaEntitiesRetrievedFromEbs = null;
 
@@ -1401,6 +1439,8 @@ public class AssessmentService {
             .assessment(assessment)
             .client(client)
             .user(user)
+            .rulebase(assessmentRulebase)
+            .allocatedCostLimit(allocatedCostLimit)
             .build();
 
     // Only map the prepop when it is (re)created here - an existing prepop keeps its persisted
@@ -1441,21 +1481,87 @@ public class AssessmentService {
       removeNonReusableAttributes(assessment, assessmentRulebase);
     }
 
-    // if means and merits:
-    if (!assessmentRulebase.isFinancialAssessment()) {
-      if (isAssessmentReferenceConsistent(prepopAssessment)
-          && isAssessmentReferenceConsistent(assessment)) {
+    // The billing rulebases derive their entity data (bill and POA history, provider firms, prior
+    // authorities) during an assessment rather than taking it as prepopulated input, so the
+    // interview cannot resolve BILLING_IS_COMPLETE unless the session has been assessed first. Old
+    // PUI assesses on every financial start (StartOpaAssessment -> callOpa) and writes the result
+    // back over both sessions; do the same here before they are saved.
+    if (assessmentRulebase.isFinancialAssessment()) {
+      assessFinancialSession(prepopAssessment, assessment, user);
+    }
 
-        // call opa - save to database
-        saveAssessment(user, assessment).block();
-        saveAssessment(user, prepopAssessment).block();
-      } else {
-        log.info("pre-pop assessment or assessment data is corrupted!");
-        throw new CaabApplicationException("pre-pop assessment or assessment data is corrupted!");
+    // The billing and POA rulebases are prepopulated and persisted exactly as means and merits
+    // are - old PUI runs all four through the same StartOpaAssessment - so they share this save.
+    if (isAssessmentReferenceConsistent(prepopAssessment)
+        && isAssessmentReferenceConsistent(assessment)) {
+
+      // call opa - save to database
+      saveAssessment(user, assessment).block();
+      saveAssessment(user, prepopAssessment).block();
+    } else {
+      log.info("pre-pop assessment or assessment data is corrupted!");
+      throw new CaabApplicationException("pre-pop assessment or assessment data is corrupted!");
+    }
+  }
+
+  /**
+   * Assesses the working session through the connector and merges the result into both the working
+   * and pre-population assessments, mirroring the legacy PUI's {@code callOpa} for financial
+   * assessments.
+   *
+   * <p>The assess response carries the entities the billing rulebase derives, which the interview
+   * needs in order to reach its completion goal. A failure is logged and swallowed rather than
+   * propagated: the interview is still usable without it (it simply cannot complete), so a
+   * connector outage should not stop the user opening the screen.
+   *
+   * @param prepopAssessment the pre-population assessment, merged in place.
+   * @param assessment the working assessment, merged in place.
+   * @param user the user starting the assessment.
+   */
+  private void assessFinancialSession(
+      final AssessmentDetail prepopAssessment,
+      final AssessmentDetail assessment,
+      final UserDetail user) {
+    try {
+      // The WORKING session is sent, not the pre-population one, as old PUI does (callOpa is
+      // passed opaSession). This is not cosmetic: the connector derives the rulebase from the
+      // assessment name with StringUtils.contains(enumName, sessionName), so the name has to be
+      // the base "poaAssessment". The longer "poaAssessment_PREPOP" matches no branch, leaving the
+      // rulebase id unset and failing the request with a 500.
+      final OpaSessionJson assessed =
+          connectorApiClient
+              .assess(opaSessionMapper.toOpaSession(assessment, user.getLoginId()))
+              .block();
+
+      if (assessed == null) {
+        log.warn(
+            "The connector returned no assessed session for [{}]; the billing entities the "
+                + "rulebase derives will be missing and the assessment cannot complete.",
+            assessment.getName());
+        return;
       }
 
-    } else {
-      // todo - later implementation in future story
+      opaSessionMapper.mergeInto(prepopAssessment, assessed);
+      opaSessionMapper.mergeInto(assessment, assessed);
+
+      log.info(
+          "Assessed [{}] for case [{}] through the connector; the session now carries {} entity "
+              + "types: {}",
+          assessment.getName(),
+          assessment.getCaseReferenceNumber(),
+          assessment.getEntityTypes() == null ? 0 : assessment.getEntityTypes().size(),
+          assessment.getEntityTypes() == null
+              ? List.of()
+              : assessment.getEntityTypes().stream()
+                  .map(entityType -> entityType.getName())
+                  .toList());
+    } catch (final Exception e) {
+      log.error(
+          "Failed to assess [{}] for case [{}] through the connector; the assessment will not be "
+              + "able to complete until this succeeds.",
+          prepopAssessment.getName(),
+          prepopAssessment.getCaseReferenceNumber(),
+          e);
     }
   }
 
@@ -1521,9 +1627,32 @@ public class AssessmentService {
    */
   private List<CaseAssessmentDetail> fetchEbsAssessmentData(
       final String caseReferenceNumber, final AssessmentRulebase assessmentRulebase) {
+    // ebs-api only accepts MEANS and MERITS for assessment-type, so a billing fetch is rejected
+    // with a 400 until BILLING is added to that enum. Tolerate it for the billing rulebases: the
+    // POA screen and interview still work without the history, they just cannot complete, and a
+    // hard failure here would take the journey down entirely.
+    if (assessmentRulebase.isFinancialAssessment()) {
+      try {
+        return fetchEbsAssessmentDataInternal(caseReferenceNumber, assessmentRulebase);
+      } catch (final Exception e) {
+        log.warn(
+            "Could not fetch {} assessment data from EBS for case {}; the billing history the "
+                + "rulebase needs will be missing and the assessment cannot complete.",
+            assessmentRulebase.getEbsAssessmentType(),
+            caseReferenceNumber,
+            e);
+        return List.of();
+      }
+    }
+
+    return fetchEbsAssessmentDataInternal(caseReferenceNumber, assessmentRulebase);
+  }
+
+  private List<CaseAssessmentDetail> fetchEbsAssessmentDataInternal(
+      final String caseReferenceNumber, final AssessmentRulebase assessmentRulebase) {
     return Optional.ofNullable(
             ebsApiClient
-                .getCaseAssessment(caseReferenceNumber, assessmentRulebase.getType())
+                .getCaseAssessment(caseReferenceNumber, assessmentRulebase.getEbsAssessmentType())
                 .block())
         .map(CaseAssessmentDetails::getAssessmentDetails)
         .orElseGet(List::of);
@@ -1608,16 +1737,48 @@ public class AssessmentService {
       return;
     }
 
+    // An entity type EBS returns but the assessment does not yet hold is created rather than
+    // dropped. For means and merits this never happened - EBS only returns types the mapper
+    // already builds - but the billing rulebases get their whole entity graph this way
+    // (BILL_HISTORY, POA_HISTORY, UNRECOUPED_POA_HISTORY, PROVIDER_FIRM, LINE_HISTORY,
+    // PRIOR_AUTHORITIES), so silently discarding them left the assessment unable to complete.
     final AssessmentEntityTypeDetail entityType =
-        findEntityType(assessment, opaEntity.getEntityName());
+        Optional.ofNullable(findEntityType(assessment, opaEntity.getEntityName()))
+            .orElseGet(
+                () -> {
+                  final AssessmentEntityTypeDetail added =
+                      new AssessmentEntityTypeDetail()
+                          .name(opaEntity.getEntityName())
+                          .entities(new ArrayList<>());
+                  if (assessment.getEntityTypes() == null) {
+                    assessment.setEntityTypes(new ArrayList<>());
+                  }
+                  assessment.getEntityTypes().add(added);
+                  return added;
+                });
 
-    if (entityType == null) {
-      return;
+    if (entityType.getEntities() == null) {
+      entityType.setEntities(new ArrayList<>());
     }
+
+    // Decided once, before any instance is merged: a type CAAB builds no instances for is sourced
+    // wholly from EBS. Re-checking per instance would only ever create the first, because the type
+    // stops being empty as soon as it is added.
+    final boolean ebsSourced = orEmptyList(entityType.getEntities()).isEmpty();
 
     opaEntity.getInstances().stream()
         .filter(Objects::nonNull)
-        .forEach(opaInstance -> mergeOpaInstanceIntoEntityType(entityType, opaInstance));
+        .forEach(
+            opaInstance -> mergeOpaInstanceIntoEntityType(entityType, opaInstance, ebsSourced));
+
+    // Every billing entity is contained by global in the rulebase, so the global entity has to
+    // carry a link to each instance. Without it OPA rejects the seed outright: "No parent link
+    // reference specified for row '...' in table 'BILL_HISTORY'". The relationship name is the
+    // entity type lowercased with underscores removed, which is exactly how old PUI's
+    // CcmsOpaRelationshipMap pairs them (BILL_HISTORY <-> billhistory).
+    if (ebsSourced) {
+      linkGlobalToEntities(assessment, entityType);
+    }
   }
 
   private AssessmentEntityTypeDetail findEntityType(
@@ -1629,26 +1790,106 @@ public class AssessmentService {
   }
 
   private void mergeOpaInstanceIntoEntityType(
-      final AssessmentEntityTypeDetail entityType, final OpaInstance opaInstance) {
+      final AssessmentEntityTypeDetail entityType,
+      final OpaInstance opaInstance,
+      final boolean ebsSourced) {
     if (opaInstance.getInstanceLabel() == null || opaInstance.getAttributes() == null) {
       return;
     }
 
-    final AssessmentEntityDetail entity = findEntity(entityType, opaInstance);
+    AssessmentEntityDetail entity = findEntity(entityType, opaInstance);
+
+    // The billing collections (bill and POA history, provider firms, prior authorities) are only
+    // ever known to EBS, so every instance of them is created here. Where CAAB did build instances
+    // the existing matching is left alone, so the deliberate means/merits behaviour (including the
+    // linked case reconciliation below) is unaffected.
+    if (entity == null && ebsSourced) {
+      entity =
+          new AssessmentEntityDetail()
+              .name(opaInstance.getInstanceLabel())
+              .prepopulated(true)
+              .attributes(new ArrayList<>())
+              .relations(new ArrayList<>());
+      if (entityType.getEntities() == null) {
+        entityType.setEntities(new ArrayList<>());
+      }
+      entityType.getEntities().add(entity);
+    }
 
     if (entity == null) {
       return;
     }
 
+    final AssessmentEntityDetail target = entity;
+
     // The mapper-built attribute list may be immutable; make it mutable before merging.
-    entity.setAttributes(
-        entity.getAttributes() == null
+    target.setAttributes(
+        target.getAttributes() == null
             ? new ArrayList<>()
-            : new ArrayList<>(entity.getAttributes()));
+            : new ArrayList<>(target.getAttributes()));
 
     opaInstance.getAttributes().stream()
         .filter(Objects::nonNull)
-        .forEach(opaAttribute -> mergeOpaAttributeIntoEntity(entity, opaAttribute));
+        .forEach(opaAttribute -> mergeOpaAttributeIntoEntity(target, opaAttribute));
+  }
+
+  /**
+   * Adds the containment link from the global entity to every instance of an EBS-sourced entity
+   * type, which OPA requires before it will accept them.
+   *
+   * @param assessment the assessment being seeded
+   * @param entityType the EBS-sourced entity type to link
+   */
+  private void linkGlobalToEntities(
+      final AssessmentDetail assessment, final AssessmentEntityTypeDetail entityType) {
+
+    final AssessmentEntityTypeDetail globalType = findEntityType(assessment, GLOBAL.getType());
+    if (globalType == null || orEmptyList(globalType.getEntities()).isEmpty()) {
+      return;
+    }
+
+    final AssessmentEntityDetail globalEntity = globalType.getEntities().getFirst();
+    final String relationshipName = entityType.getName().toLowerCase(Locale.ROOT).replace("_", "");
+
+    if (globalEntity.getRelations() == null) {
+      globalEntity.setRelations(new ArrayList<>());
+    } else {
+      globalEntity.setRelations(new ArrayList<>(globalEntity.getRelations()));
+    }
+
+    final AssessmentRelationshipDetail relationship =
+        globalEntity.getRelations().stream()
+            .filter(relation -> relationshipName.equalsIgnoreCase(relation.getName()))
+            .findFirst()
+            .orElseGet(
+                () -> {
+                  final AssessmentRelationshipDetail added =
+                      new AssessmentRelationshipDetail()
+                          .name(relationshipName)
+                          .prepopulated(true)
+                          .relationshipTargets(new ArrayList<>());
+                  globalEntity.getRelations().add(added);
+                  return added;
+                });
+
+    if (relationship.getRelationshipTargets() == null) {
+      relationship.setRelationshipTargets(new ArrayList<>());
+    }
+
+    for (final AssessmentEntityDetail entity : orEmptyList(entityType.getEntities())) {
+      final boolean alreadyLinked =
+          relationship.getRelationshipTargets().stream()
+              .anyMatch(target -> entity.getName().equals(target.getTargetEntityId()));
+      if (!alreadyLinked) {
+        relationship
+            .getRelationshipTargets()
+            .add(new AssessmentRelationshipTargetDetail().targetEntityId(entity.getName()));
+      }
+    }
+  }
+
+  private <T> List<T> orEmptyList(final List<T> list) {
+    return Optional.ofNullable(list).orElseGet(List::of);
   }
 
   private AssessmentEntityDetail findEntity(

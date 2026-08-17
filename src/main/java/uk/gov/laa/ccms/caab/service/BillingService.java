@@ -15,11 +15,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.SoaFigureColumn;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
+import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.Bills;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
@@ -36,6 +41,8 @@ import uk.gov.laa.ccms.data.model.StatementOfAccountPoa;
 import uk.gov.laa.ccms.data.model.TaxRateLookupDetail;
 import uk.gov.laa.ccms.data.model.TaxRateLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.InvoiceDetail;
+import uk.gov.laa.ccms.soa.gateway.model.InvoiceResponse;
 
 /**
  * Service responsible for building the Case Statement of Account display from the per-firm
@@ -71,6 +78,8 @@ public class BillingService {
   private final EbsApiClient ebsApiClient;
   private final CaabApiClient caabApiClient;
   private final LookupService lookupService;
+  private final SoaApiClient soaApiClient;
+  private final SoaApplicationMapper soaApplicationMapper;
 
   /**
    * Retrieve and build the statement of account display for the supplied case.
@@ -148,6 +157,184 @@ public class BillingService {
     rows.addAll(toRows(submitted));
     display.setBillsAndPoa(rows);
     return display;
+  }
+
+  /**
+   * Returns the provider's draft payments on account for a case, most recently created first.
+   *
+   * @param caseReferenceNumber the case reference number.
+   * @param providerId the provider the drafts belong to.
+   * @return the draft payments on account, empty when there are none.
+   */
+  public List<PaymentOnAccountDetail> getDraftPaymentsOnAccount(
+      final String caseReferenceNumber, final String providerId) {
+    final PaymentOnAccountDetails response =
+        caabApiClient.getPaymentsOnAccount(caseReferenceNumber, providerId).block();
+
+    return response == null || response.getContent() == null ? List.of() : response.getContent();
+  }
+
+  /**
+   * Ensures the provider has a draft payment on account for the case, creating an empty one when
+   * there is none. This ports the legacy PUI {@code AddPaymentOnAccount}: entering the POA details
+   * screen creates the draft if it is not already there, so the POA shows in the bills/POA table
+   * straight away and the OPA interview has a draft to write its answers back to. It is
+   * deliberately idempotent - re-entering the screen edits the existing draft rather than adding a
+   * second one.
+   *
+   * @param caseReferenceNumber the case reference number.
+   * @param providerId the provider the draft belongs to.
+   * @param user the logged-in user.
+   * @return the existing or newly created draft payment on account.
+   */
+  public PaymentOnAccountDetail createDraftPaymentOnAccountIfAbsent(
+      final String caseReferenceNumber, final String providerId, final UserDetail user) {
+
+    final List<PaymentOnAccountDetail> existing =
+        getDraftPaymentsOnAccount(caseReferenceNumber, providerId);
+    if (!existing.isEmpty()) {
+      return existing.get(0);
+    }
+
+    // The legacy PUI creates the POA carrying only the case and provider; every other field is
+    // filled in by the OPA interview and written back by the connector.
+    final PaymentOnAccountDetail paymentOnAccount =
+        new PaymentOnAccountDetail().lscCaseReference(caseReferenceNumber).providerId(providerId);
+
+    caabApiClient.createPaymentOnAccount(paymentOnAccount, user.getLoginId()).block();
+
+    return getDraftPaymentsOnAccount(caseReferenceNumber, providerId).stream()
+        .findFirst()
+        .orElse(paymentOnAccount);
+  }
+
+  /**
+   * Deletes the provider's draft payments on account for a case. This ports the legacy PUI {@code
+   * RemovePaymentOfAccount}, which deletes the POA held for the case and provider. Deleting the OPA
+   * assessment data that went with it is the caller's responsibility, as it is in the legacy PUI
+   * (the same handler removes the POA OPA sessions).
+   *
+   * @param caseReferenceNumber the case reference number.
+   * @param providerId the provider the drafts belong to.
+   * @param user the logged-in user.
+   */
+  public void deleteDraftPaymentsOnAccount(
+      final String caseReferenceNumber, final String providerId, final UserDetail user) {
+
+    for (final PaymentOnAccountDetail poa :
+        getDraftPaymentsOnAccount(caseReferenceNumber, providerId)) {
+      if (poa.getId() != null) {
+        caabApiClient.removePaymentOnAccount(poa.getId().longValue(), user.getLoginId()).block();
+      }
+    }
+  }
+
+  /**
+   * Submits the provider's draft payment on account to EBS and, once accepted, deletes the draft.
+   *
+   * <p>This ports the legacy PUI {@code FinancialSubmissionHelper.addPoa}: the draft POA (whose
+   * line details were written back by the OPA interview) and the completed POA assessment are
+   * marshalled into an invoice and sent to EBS via the soa-gateway {@code createInvoice} operation.
+   * The invoice returns a reference used to track the submission. On success the draft is removed,
+   * as the legacy PUI's post-submission cleanup does; removing the POA OPA sessions is the caller's
+   * responsibility, mirroring how the delete journey splits the same work.
+   *
+   * @param caseReferenceNumber the case reference number.
+   * @param providerId the provider the draft belongs to.
+   * @param poaAssessment the completed POA assessment, marshalled onto the invoice.
+   * @param user the logged-in user.
+   * @return the invoice reference returned by EBS.
+   */
+  public String submitPaymentOnAccount(
+      final String caseReferenceNumber,
+      final String providerId,
+      final AssessmentDetail poaAssessment,
+      final UserDetail user) {
+
+    final PaymentOnAccountDetail draft =
+        getDraftPaymentsOnAccount(caseReferenceNumber, providerId).stream()
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new CaabApplicationException(
+                        "No draft payment on account to submit for case " + caseReferenceNumber));
+
+    final InvoiceDetail invoice =
+        new InvoiceDetail().poa(toSoaPaymentOnAccount(draft, poaAssessment, providerId));
+
+    final InvoiceResponse response =
+        soaApiClient.createInvoice(invoice, user.getLoginId(), user.getUserType()).block();
+
+    // The invoice reached EBS, so the draft has served its purpose; remove it as the legacy PUI's
+    // post-submission cleanup does. A failed submission throws before this, leaving the draft
+    // intact.
+    deleteDraftPaymentsOnAccount(caseReferenceNumber, providerId, user);
+
+    return response == null ? null : response.getInvoiceReferenceId();
+  }
+
+  /**
+   * Maps the draft payment on account and its completed assessment onto the soa-gateway invoice
+   * payload. The line-detail fields are taken straight from the draft (the OPA interview wrote them
+   * there); the gross total is derived from the net and VAT exactly as the draft amount is shown,
+   * and the assessment is marshalled as the OPA response. Mirrors the legacy PUI's {@code
+   * EBSCreateInvoiceClient.createInvoiceAddRQ(PaymentOnAccount)}.
+   */
+  private uk.gov.laa.ccms.soa.gateway.model.PaymentOnAccountDetail toSoaPaymentOnAccount(
+      final PaymentOnAccountDetail draft,
+      final AssessmentDetail poaAssessment,
+      final String providerId) {
+
+    return new uk.gov.laa.ccms.soa.gateway.model.PaymentOnAccountDetail()
+        .providerId(providerId)
+        .caseReferenceNumber(draft.getLscCaseReference())
+        .reason(draft.getReason())
+        .courtType(draft.getCourtType())
+        .dateIncurred(draft.getDateIncurred())
+        .actualNetCost(draft.getActualNetCost())
+        .vatRate(draft.getVatRate())
+        .dtldAssessmentOrderDate(draft.getDtldAssessmentOrderDate())
+        .notes(draft.getNotes())
+        // calculatedNetCost has no source - the legacy PUI's poaClaim is a transient field it never
+        // populates - so it is left unset rather than inventing a value.
+        .actualTotalCost(poaTotalCost(draft, taxRatesByCode()))
+        .opaResponse(toOpaResponse(poaAssessment));
+  }
+
+  private uk.gov.laa.ccms.soa.gateway.model.AssessmentResult toOpaResponse(
+      final AssessmentDetail poaAssessment) {
+    final List<uk.gov.laa.ccms.soa.gateway.model.AssessmentResult> results =
+        soaApplicationMapper.mapAssessment(
+            poaAssessment, AssessmentRulebase.POA.getGoalAttributeName());
+    return results.isEmpty() ? null : results.get(0);
+  }
+
+  /**
+   * The cost limit allocated to the provider, which the billing and POA rulebases check the claim
+   * against. This ports the legacy PUI {@code CaseHelper.getProviderAllocatedCostLimitation}: the
+   * certificate cost limitation from the provider's own statement, falling back to the case's
+   * granted cost limitation when EBS holds no statement for that provider.
+   *
+   * @param statementOfAccount the assembled statement of account display.
+   * @param ebsCase the case the statement of account belongs to.
+   * @return the allocated cost limit, never {@code null}.
+   */
+  public BigDecimal getAllocatedCostLimit(
+      final StatementOfAccountDisplay statementOfAccount, final ApplicationDetail ebsCase) {
+
+    final BigDecimal certificateCostLimitation =
+        Optional.ofNullable(statementOfAccount)
+            .map(StatementOfAccountDisplay::getProvider)
+            .map(SoaFigureColumn::getCertificateCostLimitation)
+            .orElse(null);
+
+    if (certificateCostLimitation != null) {
+      return certificateCostLimitation;
+    }
+
+    return Optional.ofNullable(ebsCase.getCosts())
+        .map(CostStructureDetail::getGrantedCostLimitation)
+        .orElse(BigDecimal.ZERO);
   }
 
   /**

@@ -119,6 +119,10 @@ public class SecurityConfiguration {
                     .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode())
                     .requestMatchers(HttpMethod.GET, "/case/details/costs/allocation")
                     .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode())
+                    // Creating and deleting a payment on account both need the POA function, as
+                    // they do in the legacy PUI.
+                    .requestMatchers("/case/billing/poa", "/case/billing/poa/**")
+                    .hasAuthority(UserRole.CREATE_PAYMENT_ON_ACCOUNT.getCode())
                     .anyRequest()
                     .authenticated())
         .csrf(csrf -> csrf.ignoringRequestMatchers("/csp/report"))

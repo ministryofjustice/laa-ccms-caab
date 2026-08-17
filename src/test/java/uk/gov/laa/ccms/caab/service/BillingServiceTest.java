@@ -1,9 +1,13 @@
 package uk.gov.laa.ccms.caab.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -12,16 +16,23 @@ import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
+import uk.gov.laa.ccms.caab.bean.billing.SoaFigureColumn;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
+import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.Bills;
@@ -39,6 +50,8 @@ import uk.gov.laa.ccms.data.model.StatementOfAccountInvoiceList;
 import uk.gov.laa.ccms.data.model.TaxRateLookupDetail;
 import uk.gov.laa.ccms.data.model.TaxRateLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.InvoiceDetail;
+import uk.gov.laa.ccms.soa.gateway.model.InvoiceResponse;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Billing service tests")
@@ -51,6 +64,10 @@ class BillingServiceTest {
   @Mock CaabApiClient caabApiClient;
 
   @Mock LookupService lookupService;
+
+  @Mock SoaApiClient soaApiClient;
+
+  @Mock uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper soaApplicationMapper;
 
   @InjectMocks BillingService billingService;
 
@@ -620,5 +637,191 @@ class BillingServiceTest {
               assertThat(row.status()).isEqualTo("Draft");
               assertThat(row.amount()).isNull();
             });
+  }
+
+  @Nested
+  @DisplayName("Draft payment on account maintenance")
+  class DraftPaymentOnAccount {
+
+    private final UserDetail user =
+        new UserDetail().loginId("user1").userType("EXTERNAL").provider(new BaseProvider().id(10));
+
+    @Test
+    @DisplayName("Creates a draft POA carrying only the case and provider when there is none")
+    void createsDraftWhenAbsent() {
+      when(caabApiClient.getPaymentsOnAccount(CASE_REF, "10"))
+          .thenReturn(Mono.just(new PaymentOnAccountDetails()))
+          .thenReturn(
+              Mono.just(
+                  new PaymentOnAccountDetails()
+                      .addContentItem(new PaymentOnAccountDetail().id(7))));
+      when(caabApiClient.createPaymentOnAccount(any(), eq("user1"))).thenReturn(Mono.just("7"));
+
+      PaymentOnAccountDetail created =
+          billingService.createDraftPaymentOnAccountIfAbsent(CASE_REF, "10", user);
+
+      assertThat(created.getId()).isEqualTo(7);
+
+      ArgumentCaptor<PaymentOnAccountDetail> captor =
+          ArgumentCaptor.forClass(PaymentOnAccountDetail.class);
+      verify(caabApiClient).createPaymentOnAccount(captor.capture(), eq("user1"));
+      // Every other field is filled in by the OPA interview, as the legacy PUI does.
+      assertThat(captor.getValue().getLscCaseReference()).isEqualTo(CASE_REF);
+      assertThat(captor.getValue().getProviderId()).isEqualTo("10");
+      assertThat(captor.getValue().getActualNetCost()).isNull();
+    }
+
+    @Test
+    @DisplayName("Re-entering the POA screen edits the existing draft rather than adding another")
+    void isIdempotentWhenDraftExists() {
+      PaymentOnAccountDetail existing = new PaymentOnAccountDetail().id(3);
+      when(caabApiClient.getPaymentsOnAccount(CASE_REF, "10"))
+          .thenReturn(Mono.just(new PaymentOnAccountDetails().addContentItem(existing)));
+
+      assertThat(billingService.createDraftPaymentOnAccountIfAbsent(CASE_REF, "10", user))
+          .isSameAs(existing);
+
+      verify(caabApiClient, never()).createPaymentOnAccount(any(), any());
+    }
+
+    @Test
+    @DisplayName("Deletes every draft POA the provider holds for the case")
+    void deletesDrafts() {
+      when(caabApiClient.getPaymentsOnAccount(CASE_REF, "10"))
+          .thenReturn(
+              Mono.just(
+                  new PaymentOnAccountDetails()
+                      .addContentItem(new PaymentOnAccountDetail().id(3))
+                      .addContentItem(new PaymentOnAccountDetail().id(4))));
+      when(caabApiClient.removePaymentOnAccount(any(), any())).thenReturn(Mono.empty());
+
+      billingService.deleteDraftPaymentsOnAccount(CASE_REF, "10", user);
+
+      verify(caabApiClient).removePaymentOnAccount(3L, "user1");
+      verify(caabApiClient).removePaymentOnAccount(4L, "user1");
+    }
+  }
+
+  @Nested
+  @DisplayName("Allocated cost limit")
+  class AllocatedCostLimit {
+
+    @Test
+    @DisplayName("Uses the provider statement's certificate cost limitation when there is one")
+    void usesProviderCertificateCostLimitation() {
+      StatementOfAccountDisplay display = new StatementOfAccountDisplay();
+      SoaFigureColumn provider = new SoaFigureColumn();
+      provider.setCertificateCostLimitation(new BigDecimal("2500.00"));
+      display.setProvider(provider);
+
+      ApplicationDetail ebsCase =
+          new ApplicationDetail()
+              .costs(new CostStructureDetail().grantedCostLimitation(new BigDecimal("999.00")));
+
+      assertThat(billingService.getAllocatedCostLimit(display, ebsCase))
+          .isEqualByComparingTo("2500.00");
+    }
+
+    @Test
+    @DisplayName("Falls back to the case's granted cost limitation when EBS holds no statement")
+    void fallsBackToGrantedCostLimitation() {
+      ApplicationDetail ebsCase =
+          new ApplicationDetail()
+              .costs(new CostStructureDetail().grantedCostLimitation(new BigDecimal("999.00")));
+
+      assertThat(billingService.getAllocatedCostLimit(new StatementOfAccountDisplay(), ebsCase))
+          .isEqualByComparingTo("999.00");
+    }
+
+    @Test
+    @DisplayName("Is zero when neither a statement nor a granted cost limitation is available")
+    void isZeroWhenNothingAvailable() {
+      assertThat(
+              billingService.getAllocatedCostLimit(
+                  new StatementOfAccountDisplay(), new ApplicationDetail()))
+          .isEqualByComparingTo("0");
+    }
+  }
+
+  @Nested
+  @DisplayName("Submit payment on account")
+  class SubmitPaymentOnAccount {
+
+    private UserDetail user() {
+      return new UserDetail()
+          .loginId("user1")
+          .userType("EXTERNAL")
+          .provider(new BaseProvider().id(10));
+    }
+
+    @Test
+    @DisplayName("Maps the draft and assessment onto the invoice, submits it and deletes the draft")
+    void submitsAndDeletesDraft() {
+      final PaymentOnAccountDetail draft =
+          new PaymentOnAccountDetail()
+              .id(5)
+              .lscCaseReference(CASE_REF)
+              .providerId("10")
+              .reason("Reason")
+              .courtType("CT")
+              .actualNetCost(new BigDecimal("100"))
+              .vatRate("1")
+              .notes("Notes");
+      when(caabApiClient.getPaymentsOnAccount(CASE_REF, "10"))
+          .thenReturn(Mono.just(new PaymentOnAccountDetails().addContentItem(draft)));
+      when(lookupService.getTaxRates())
+          .thenReturn(
+              Mono.just(
+                  new TaxRateLookupDetail()
+                      .addContentItem(new TaxRateLookupValueDetail().code("1").taxRate("20"))));
+      final AssessmentDetail assessment = new AssessmentDetail();
+      when(soaApplicationMapper.mapAssessment(
+              assessment, AssessmentRulebase.POA.getGoalAttributeName()))
+          .thenReturn(List.of(new uk.gov.laa.ccms.soa.gateway.model.AssessmentResult()));
+      when(soaApiClient.createInvoice(any(), eq("user1"), eq("EXTERNAL")))
+          .thenReturn(Mono.just(new InvoiceResponse().invoiceReferenceId("INV-1")));
+      when(caabApiClient.removePaymentOnAccount(eq(5L), eq("user1"))).thenReturn(Mono.empty());
+
+      final String reference =
+          billingService.submitPaymentOnAccount(CASE_REF, "10", assessment, user());
+
+      assertThat(reference).isEqualTo("INV-1");
+
+      final ArgumentCaptor<InvoiceDetail> invoiceCaptor =
+          ArgumentCaptor.forClass(InvoiceDetail.class);
+      verify(soaApiClient).createInvoice(invoiceCaptor.capture(), eq("user1"), eq("EXTERNAL"));
+      final uk.gov.laa.ccms.soa.gateway.model.PaymentOnAccountDetail poa =
+          invoiceCaptor.getValue().getPoa();
+      assertThat(poa.getProviderId()).isEqualTo("10");
+      assertThat(poa.getCaseReferenceNumber()).isEqualTo(CASE_REF);
+      assertThat(poa.getReason()).isEqualTo("Reason");
+      assertThat(poa.getCourtType()).isEqualTo("CT");
+      assertThat(poa.getActualNetCost()).isEqualByComparingTo("100");
+      assertThat(poa.getVatRate()).isEqualTo("1");
+      assertThat(poa.getNotes()).isEqualTo("Notes");
+      // 100 net grossed up by the 20% VAT the rate code resolves to.
+      assertThat(poa.getActualTotalCost()).isEqualByComparingTo("120.00");
+      // The legacy PUI never populates the calculated net cost, so it is left unset.
+      assertThat(poa.getCalculatedNetCost()).isNull();
+      assertThat(poa.getOpaResponse()).isNotNull();
+
+      // The submitted draft is removed.
+      verify(caabApiClient).removePaymentOnAccount(5L, "user1");
+    }
+
+    @Test
+    @DisplayName("Throws when there is no draft payment on account to submit")
+    void throwsWhenNoDraft() {
+      when(caabApiClient.getPaymentsOnAccount(CASE_REF, "10"))
+          .thenReturn(Mono.just(new PaymentOnAccountDetails()));
+
+      assertThatThrownBy(
+              () ->
+                  billingService.submitPaymentOnAccount(
+                      CASE_REF, "10", new AssessmentDetail(), user()))
+          .isInstanceOf(CaabApplicationException.class);
+
+      verifyNoInteractions(soaApiClient);
+    }
   }
 }

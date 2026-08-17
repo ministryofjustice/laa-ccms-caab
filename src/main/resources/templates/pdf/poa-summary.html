@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <title th:text="${data}">POA REPORT</title>
+  <style type="text/css">
+    @page { size: A4 landscape; margin: 1.5cm; }
+    body { font-family: Arial, sans-serif; color: #000; }
+    h2#report-title { text-align: center; font-size: 14pt; margin: 0 0 12px 0; }
+    table { border-collapse: collapse; width: 100%; font-size: 8pt; }
+    table#top-section { margin-bottom: 12px; }
+    table#top-section td { border: 1px solid #000; padding: 4px 6px; }
+    td.tcell { background-color: #a9a9a9; font-weight: bold; width: 12.5%; }
+    td.value { width: 12.5%; }
+    table#middle-section { margin-bottom: 12px; -fs-table-paginate: paginate; }
+    table#middle-section th { background-color: #a9a9a9; border: 1px solid #000; padding: 4px; }
+    table#middle-section td { border: 1px solid #000; padding: 3px 4px; }
+    table#middle-section thead { display: table-header-group; }
+    table#middle-section tr { page-break-inside: avoid; }
+    table#bottom-section td { border: 1px solid #000; padding: 4px 6px; }
+    td.currency { text-align: right; }
+  </style>
+</head>
+<body>
+  <h2 id="report-title" th:text="${data}">POA REPORT</h2>
+
+  <table id="top-section">
+    <tr>
+      <td class="tcell">Case Ref No</td>
+      <td class="value" th:text="${topSectionData.caseReference}"></td>
+      <td class="tcell">Description</td>
+      <td class="value" th:text="${topSectionData.description}"></td>
+      <td class="tcell">Total POA (£)</td>
+      <td class="value" th:text="${topSectionData.totalPoa}"></td>
+      <td class="tcell">Cost Limit (£)</td>
+      <td class="value currency"
+          th:text="${#numbers.formatDecimal(topSectionData.costLimit,1,'COMMA',2,'POINT')}"></td>
+    </tr>
+    <tr>
+      <td class="tcell">Provider Name</td>
+      <td class="value" th:text="${topSectionData.providerName}"></td>
+      <td class="tcell">Case Status</td>
+      <td class="value" th:text="${topSectionData.caseStatus}"></td>
+      <td class="tcell">Total Bills (£)</td>
+      <td class="value currency"
+          th:text="${#numbers.formatDecimal(topSectionData.totalBills,1,'COMMA',2,'POINT')}"></td>
+      <td class="tcell">Available Cost Limit (£)</td>
+      <td class="value currency"
+          th:text="${#numbers.formatDecimal(topSectionData.availableCostLimit,1,'COMMA',2,'POINT')}"></td>
+    </tr>
+    <tr>
+      <td class="tcell">Bill Type</td>
+      <td class="value" th:text="${topSectionData.billType}"></td>
+      <td class="tcell">Court Assessed Bill</td>
+      <td class="value" th:text="${topSectionData.courtAssessedBill}"></td>
+      <td class="tcell"></td>
+      <td class="value"></td>
+      <td class="tcell">Total Value of Claim (£)</td>
+      <td class="value currency"
+          th:text="${#numbers.formatDecimal(topSectionData.totalValueOfClaim,1,'COMMA',2,'POINT')}"></td>
+    </tr>
+  </table>
+
+  <table id="middle-section">
+    <thead>
+      <tr>
+        <th>Line No</th>
+        <th>Date</th>
+        <th>Cost Type</th>
+        <th>Category of Work</th>
+        <th>Work Conducted</th>
+        <th>Hours:Min Claimed</th>
+        <th>Items Claimed</th>
+        <th>Rate Claimed (£)</th>
+        <th>Uplift Claimed (%)</th>
+        <th>Net Claim (£)</th>
+        <th>VAT (%)</th>
+        <th>Total Claim (£)</th>
+        <th>Fee Earner</th>
+        <th>Prior Authority</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="billLine : ${billLines}">
+        <td th:text="${billLine.lineNumber}"></td>
+        <td th:text="${billLine.dateDisplay}"></td>
+        <td th:text="${billLine.costType}"></td>
+        <td th:text="${billLine.categoryOfWork}"></td>
+        <td th:text="${billLine.workConducted}"></td>
+        <td th:text="${billLine.hoursMinClaimed}"></td>
+        <td th:text="${billLine.itemsClaimed}"></td>
+        <td class="currency"
+            th:text="${#numbers.formatDecimal(billLine.rateClaimed,1,'COMMA',2,'POINT')}"></td>
+        <td class="currency"
+            th:text="${#numbers.formatDecimal(billLine.upliftClaimed,1,'COMMA',2,'POINT')}"></td>
+        <td class="currency"
+            th:text="${#numbers.formatDecimal(billLine.netClaim,1,'COMMA',2,'POINT')}"></td>
+        <td class="currency"
+            th:text="${#numbers.formatDecimal(billLine.vat,1,'COMMA',2,'POINT')}"></td>
+        <td class="currency"
+            th:text="${#numbers.formatDecimal(billLine.totalClaim,1,'COMMA',2,'POINT')}"></td>
+        <td th:text="${billLine.feeEarner}"></td>
+        <td th:text="${billLine.priorAuthority}"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table id="bottom-section">
+    <tr>
+      <td class="tcell">Total Hours Minutes Claimed</td>
+      <td th:text="${bottomSectionData.totalHoursMinutesClaimed}"></td>
+      <td class="tcell">Total Net Claim (£)</td>
+      <td class="currency"
+          th:text="${#numbers.formatDecimal(bottomSectionData.totalNetClaim,1,'COMMA',2,'POINT')}"></td>
+      <td class="tcell">Total Claim (inc VAT &amp; Uplift £)</td>
+      <td class="currency"
+          th:text="${#numbers.formatDecimal(bottomSectionData.totalClaimIncVatAndUplift,1,'COMMA',2,'POINT')}"></td>
+    </tr>
+  </table>
+</body>
+</html>
