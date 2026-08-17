@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.billing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
@@ -19,6 +21,8 @@ import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.thymeleaf.web.IWebExchange;
 import org.thymeleaf.web.servlet.JakartaServletWebApplication;
+import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
+import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -80,11 +84,23 @@ class BillingTemplateRenderTest {
   }
 
   @Test
-  @DisplayName("POA confirmation renders through the layout")
+  @DisplayName("POA confirmation renders through the layout in the shared submission shape")
   void poaConfirmationRenders() {
     final String html =
         render("application/billing/poa-confirmation", Map.of("transactionId", "INV-1"));
     assertThat(html).contains("poa-submission-reference").contains("INV-1");
+    assertConfirmationShape(html);
+  }
+
+  /**
+   * The billing confirmations follow the service's shared submission confirmation - a heading and
+   * body text - rather than the GOV.UK confirmation panel they originally used.
+   */
+  private void assertConfirmationShape(final String html) {
+    assertThat(html)
+        .contains("govuk-heading-l")
+        .contains("govuk-body-l")
+        .doesNotContain("govuk-panel--confirmation");
   }
 
   @Test
@@ -97,6 +113,119 @@ class BillingTemplateRenderTest {
 
     final String html = render("application/billing/poa-details", model);
     assertThat(html).contains("poa-summary-link").contains("submit-poa-button");
+  }
+
+  @Test
+  @DisplayName("Bill details renders through the layout with the summary and submit actions")
+  void billDetailsRenders() {
+    final Map<String, Object> model = new HashMap<>();
+    model.put("assessmentStatus", "Complete");
+    model.put("assessmentComplete", true);
+    model.put("printDraftBill", true);
+
+    final String html = render("application/billing/bill-details", model);
+    assertThat(html)
+        .contains("bill-details-link")
+        .contains("bill-summary-link")
+        // The summary opens the generated PDF, rather than being an inert placeholder.
+        .contains("/case/billing/bill/summary")
+        .contains("submit-bill-button")
+        // The screen's two required headers, and the renamed return link.
+        .contains("Billing")
+        .contains("Status")
+        .contains("Cancel and return to case statement of account");
+  }
+
+  @Test
+  @DisplayName("Bill confirmation renders through the layout in the shared submission shape")
+  void billConfirmationRenders() {
+    final String html =
+        render("application/billing/bill-confirmation", Map.of("transactionId", "INV-9"));
+    assertThat(html).contains("bill-submission-reference").contains("INV-9");
+    assertConfirmationShape(html);
+  }
+
+  @Test
+  @DisplayName("Bill details renders a final validation failure")
+  void billDetailsRendersSubmissionError() {
+    final Map<String, Object> model = new HashMap<>();
+    model.put("assessmentStatus", "In progress");
+    model.put("assessmentComplete", false);
+    model.put("printDraftBill", false);
+    model.put("submissionError", "billing.bill.error.notComplete");
+
+    final String html = render("application/billing/bill-details", model);
+    assertThat(html)
+        .contains("bill-submission-error")
+        .contains("You must provide the Bill Details completely");
+  }
+
+  @Test
+  @DisplayName("Bill details withholds the summary and enables no submit before the assessment")
+  void billDetailsWithholdsSummaryBeforeAssessment() {
+    final Map<String, Object> model = new HashMap<>();
+    model.put("assessmentStatus", "Not started");
+    model.put("assessmentComplete", false);
+    model.put("printDraftBill", false);
+
+    final String html = render("application/billing/bill-details", model);
+    assertThat(html).contains("bill-details-link").doesNotContain("bill-summary-link");
+    // Submit stays available before the assessment completes: the legacy PUI runs its final
+    // validation on the click and explains the failure rather than disabling the button.
+    assertThat(html).contains("submit-bill-button").doesNotContain("bill-submission-error");
+  }
+
+  /**
+   * Builds the statement of account model around a single copyable rejected bill, so the copy
+   * action's conditions can be exercised through a real render.
+   *
+   * <p>Whether a row is copyable at all - which includes it carrying a billing incident id - is
+   * decided in {@code BillingService} and covered by its tests; the view only gates on the
+   * resulting flag and the user's function.
+   */
+  private Map<String, Object> statementModel(final boolean canMaintainBill) {
+    final BillPoaRow rejected =
+        new BillPoaRow(
+                "Counsel Bill", "Rejected", null, null, new BigDecimal("100.00"), false, 222L)
+            .withCopyable();
+
+    final Map<String, Object> model = new HashMap<>();
+    model.put("caseReferenceNumber", "300000123");
+    model.put("statementOfAccount", new StatementOfAccountDisplay());
+    model.put("billsAndPoaPage", new PageImpl<>(List.of(rejected)));
+    model.put("currentUrl", "http://localhost/case/billing");
+    model.put("paginationAnchor", "bills-and-poa");
+    model.put("showEnterUndertaking", false);
+    model.put("showCreateBill", true);
+    model.put("showCreatePoa", true);
+    model.put("canMaintainPoa", true);
+    model.put("canMaintainBill", canMaintainBill);
+    model.put("draftInProgress", false);
+    return model;
+  }
+
+  @Test
+  @DisplayName("Statement of account offers the copy action on a copyable rejected bill")
+  void statementOffersCopy() {
+    final String html =
+        render("application/billing/case-statement-of-account", statementModel(true));
+    assertThat(html).contains("/case/billing/bill/copy").contains("billing-id=222");
+  }
+
+  @Test
+  @DisplayName("Statement of account withholds the copy action without the bill function")
+  void statementWithholdsCopyWithoutFunction() {
+    // The controller refuses the copy without the function, so the link must not be offered.
+    final String html =
+        render("application/billing/case-statement-of-account", statementModel(false));
+    assertThat(html).doesNotContain("/case/billing/bill/copy");
+  }
+
+  @Test
+  @DisplayName("Bill remove confirmation renders through the layout")
+  void billRemoveRenders() {
+    final String html = render("application/billing/bill-remove", Map.of());
+    assertThat(html).contains("confirm-remove-bill-button");
   }
 
   @Test

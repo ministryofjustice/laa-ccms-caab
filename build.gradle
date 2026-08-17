@@ -99,9 +99,11 @@ dependencies {
 
     implementation 'uk.gov.laa.ccms.data:data-api:0.1.0'
 
-    implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.1.1'
+    // 0.1.3 carries GetInvoiceData, needed to copy a rejected bill.
+    implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.1.3'
 
-    implementation 'uk.gov.laa.ccms.caab:caab-api:0.3.1'
+    // 0.7.0 carries the bill id needed to delete a draft (PR #175).
+    implementation 'uk.gov.laa.ccms.caab:caab-api:0.7.0'
 
     implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.57'
 

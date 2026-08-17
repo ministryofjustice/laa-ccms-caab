@@ -4,17 +4,21 @@ import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentAttribute;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentEntitiesForEntityType;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
@@ -34,9 +38,14 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 
 /**
- * Builds the POA summary report PDF from the completed POA assessment, mirroring the legacy PUI's
- * {@code InvoiceGenerationService}. The claim lines and header figures are read from the assessment
- * (the OPA interview wrote them there) and rendered through a Thymeleaf template to PDF.
+ * Builds the bill and POA summary report PDFs from the completed billing assessment, mirroring the
+ * legacy PUI's {@code InvoiceGenerationService}. The claim lines and header figures are read from
+ * the assessment (the OPA interview wrote them there) and rendered through a Thymeleaf template to
+ * PDF.
+ *
+ * <p>One generator serves both reports, as it does in the legacy PUI: its {@code GetBillSummary}
+ * and {@code GetPoaSummary} handlers are identical bar the report title and which assessment they
+ * read.
  *
  * <p>Unlike the legacy PUI, the report is generated on demand and streamed rather than stored in
  * S3: it is a stateless view of the current assessment, so there is nothing to persist.
@@ -44,11 +53,13 @@ import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class PoaSummaryPdfService {
+public class BillingSummaryPdfService {
 
-  private static final String TEMPLATE = "pdf/poa-summary";
-  private static final String REPORT_TITLE = "POA REPORT";
+  private static final String TEMPLATE = "pdf/billing-summary";
+  private static final String POA_REPORT_TITLE = "POA REPORT";
+  private static final String BILL_REPORT_TITLE = "BILL REPORT";
   private static final String BILL_LINE_ENTITY_SUFFIX = "_BILL_LINE";
+  private static final String LOGO_RESOURCE = "static/assets/images/laa.png";
 
   private static final String ATTR_BILL_TYPE = "BILL_TYPE";
   private static final String ATTR_BILL_DESCRIPTION = "BILL_DESCRIPTION";
@@ -78,7 +89,14 @@ public class PoaSummaryPdfService {
   private final SpringTemplateEngine templateEngine;
 
   /**
-   * Renders the POA summary report for a completed assessment to a PDF.
+   * The LAA logo, inlined as a data URI. The renderer is given no base URI - the HTML is handed to
+   * it as a string - so an embedded image is the one form it can resolve in every environment,
+   * packaged jar included. Read once and held, since it never changes.
+   */
+  private String logoDataUri;
+
+  /**
+   * Renders the POA summary report for a completed POA assessment to a PDF.
    *
    * @param ebsCase the case the POA belongs to.
    * @param providerName the submitting provider's name.
@@ -94,13 +112,47 @@ public class PoaSummaryPdfService {
       final StatementOfAccountDisplay statement,
       final BigDecimal allocatedCostLimit) {
 
+    return generateSummary(
+        POA_REPORT_TITLE, ebsCase, providerName, assessment, statement, allocatedCostLimit);
+  }
+
+  /**
+   * Renders the bill summary report for a completed billing assessment to a PDF.
+   *
+   * @param ebsCase the case the bill belongs to.
+   * @param providerName the submitting provider's name.
+   * @param assessment the completed billing assessment.
+   * @param statement the case statement of account, for the header cost figures.
+   * @param allocatedCostLimit the provider's allocated cost limit.
+   * @return the rendered PDF bytes.
+   */
+  public byte[] generateBillSummary(
+      final ApplicationDetail ebsCase,
+      final String providerName,
+      final AssessmentDetail assessment,
+      final StatementOfAccountDisplay statement,
+      final BigDecimal allocatedCostLimit) {
+
+    return generateSummary(
+        BILL_REPORT_TITLE, ebsCase, providerName, assessment, statement, allocatedCostLimit);
+  }
+
+  private byte[] generateSummary(
+      final String reportTitle,
+      final ApplicationDetail ebsCase,
+      final String providerName,
+      final AssessmentDetail assessment,
+      final StatementOfAccountDisplay statement,
+      final BigDecimal allocatedCostLimit) {
+
     final List<BillLine> billLines = buildBillLines(assessment);
     final TopSectionData top =
         buildTopSection(ebsCase, providerName, assessment, statement, allocatedCostLimit);
     final BottomSectionData bottom = buildBottomSection(billLines);
 
     final Context context = new Context();
-    context.setVariable("data", REPORT_TITLE);
+    context.setVariable("data", reportTitle);
+    context.setVariable("logo", logoDataUri());
     context.setVariable("topSectionData", top);
     context.setVariable("billLines", billLines);
     context.setVariable("bottomSectionData", bottom);
@@ -114,8 +166,25 @@ public class PoaSummaryPdfService {
       renderer.createPDF(out);
       return out.toByteArray();
     } catch (final Exception e) {
-      throw new CaabApplicationException("Failed to generate the POA summary PDF", e);
+      throw new CaabApplicationException("Failed to generate the " + reportTitle + " PDF", e);
     }
+  }
+
+  /**
+   * The LAA logo as a data URI, or an empty string if it cannot be read - a missing logo should
+   * cost the user the report's header image, not the report.
+   */
+  private synchronized String logoDataUri() {
+    if (logoDataUri == null) {
+      try (InputStream logo = new ClassPathResource(LOGO_RESOURCE).getInputStream()) {
+        logoDataUri =
+            "data:image/png;base64," + Base64.getEncoder().encodeToString(logo.readAllBytes());
+      } catch (final IOException e) {
+        log.warn("Could not read the report logo from {}; rendering without it", LOGO_RESOURCE, e);
+        logoDataUri = "";
+      }
+    }
+    return logoDataUri;
   }
 
   private TopSectionData buildTopSection(

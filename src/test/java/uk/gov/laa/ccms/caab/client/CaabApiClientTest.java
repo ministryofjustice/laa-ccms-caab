@@ -37,6 +37,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
+import uk.gov.laa.ccms.caab.model.BillCreate;
 import uk.gov.laa.ccms.caab.model.Bills;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
@@ -275,6 +276,26 @@ class CaabApiClientTest {
 
     final URI actualUri = uriCaptor.getValue().apply(UriComponentsBuilder.newInstance());
     assertEquals(expectedUri, actualUri.toString());
+  }
+
+  @Test
+  void createBill_success() {
+    final BillCreate bill =
+        new BillCreate().lscCaseReference("300000123456").providerId("123456789");
+    final String loginId = "user789";
+    final String expectedUri = "/bills";
+
+    when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(any(BillCreate.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.createBill(bill, loginId);
+
+    StepVerifier.create(result).verifyComplete();
   }
 
   @Test
