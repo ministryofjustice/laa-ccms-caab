@@ -40,6 +40,8 @@ public class ApplicationConfig implements WebMvcConfigurer {
 
   private final String osApiUrl;
 
+  private final String connectorApiUrl;
+
   private final String avApiHostName;
 
   private final Integer avApiPort;
@@ -73,6 +75,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
       final CaabApiProperties caabApiProperties,
       final AssessmentApiProperties assessmentApiProperties,
       @Value("${os.api.url}") final String osApiUrl,
+      @Value("${laa.ccms.connector.url}") final String connectorApiUrl,
       @Value("${av.api.hostname}") final String avApiHostName,
       @Value("${av.api.port}") final Integer avApiPort,
       @Value("${av.api.timeout}") final Integer avApiTimeout,
@@ -82,6 +85,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
     this.caabApiProperties = caabApiProperties;
     this.assessmentApiProperties = assessmentApiProperties;
     this.osApiUrl = osApiUrl;
+    this.connectorApiUrl = connectorApiUrl;
     this.avApiHostName = avApiHostName;
     this.avApiPort = avApiPort;
     this.avApiTimeout = avApiTimeout;
@@ -133,6 +137,20 @@ public class ApplicationConfig implements WebMvcConfigurer {
    *
    * @return A WebClient instance configured for the Ordinance Survey API.
    */
+  /**
+   * Creates a WebClient bean for interacting with the OPA connector.
+   *
+   * <p>The connector needs no access token - it authenticates the caller from the encrypted context
+   * token carried in the OPA session - so this is a plain client rather than one built by {@code
+   * createWebClient}.
+   *
+   * @return A WebClient instance configured for the connector URL.
+   */
+  @Bean("connectorApiWebClient")
+  WebClient connectorApiWebClient() {
+    return WebClient.create(connectorApiUrl);
+  }
+
   @Bean("osApiWebClient")
   WebClient osApiWebClient() {
     return WebClient.create(osApiUrl);

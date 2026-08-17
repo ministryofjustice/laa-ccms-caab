@@ -119,6 +119,23 @@ public class SecurityConfiguration {
                     .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode())
                     .requestMatchers(HttpMethod.GET, "/case/details/costs/allocation")
                     .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode())
+                    // Creating and deleting a payment on account both need the POA function, as
+                    // they do in the legacy PUI.
+                    .requestMatchers("/case/billing/poa", "/case/billing/poa/**")
+                    .hasAuthority(UserRole.CREATE_PAYMENT_ON_ACCOUNT.getCode())
+                    // Submitting and deleting a bill are separate permissions from creating one in
+                    // the legacy PUI, which gates them on the subbill and delete-bill functions.
+                    .requestMatchers(
+                        "/case/billing/bill/declaration", "/case/billing/bill/confirmation")
+                    .hasAuthority(UserRole.SUBMIT_BILL.getCode())
+                    .requestMatchers("/case/billing/bill/remove")
+                    .hasAuthority(UserRole.DELETE_BILL.getCode())
+                    // Copying creates a bill, and the summary reports on the one being created, so
+                    // both take the create permission.
+                    .requestMatchers("/case/billing/bill/copy", "/case/billing/bill/summary")
+                    .hasAuthority(UserRole.CREATE_BILL.getCode())
+                    .requestMatchers("/case/billing/bill")
+                    .hasAuthority(UserRole.CREATE_BILL.getCode())
                     .anyRequest()
                     .authenticated())
         .csrf(csrf -> csrf.ignoringRequestMatchers("/csp/report"))

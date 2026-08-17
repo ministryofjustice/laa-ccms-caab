@@ -37,6 +37,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
+import uk.gov.laa.ccms.caab.model.BillCreate;
 import uk.gov.laa.ccms.caab.model.Bills;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
@@ -47,6 +48,7 @@ import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
+import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetail;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
@@ -277,6 +279,26 @@ class CaabApiClientTest {
   }
 
   @Test
+  void createBill_success() {
+    final BillCreate bill =
+        new BillCreate().lscCaseReference("300000123456").providerId("123456789");
+    final String loginId = "user789";
+    final String expectedUri = "/bills";
+
+    when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(any(BillCreate.class))).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.createBill(bill, loginId);
+
+    StepVerifier.create(result).verifyComplete();
+  }
+
+  @Test
   void getPaymentsOnAccount_success() {
     final String caseReference = "300000123456";
     final String providerId = "123456789";
@@ -300,6 +322,44 @@ class CaabApiClientTest {
 
     final URI actualUri = uriCaptor.getValue().apply(UriComponentsBuilder.newInstance());
     assertEquals(expectedUri, actualUri.toString());
+  }
+
+  @Test
+  void createPaymentOnAccount_success() {
+    final PaymentOnAccountDetail paymentOnAccount =
+        new PaymentOnAccountDetail().lscCaseReference("300000123456").providerId("123456789");
+    final String loginId = "user789";
+    final String expectedUri = "/paymentsonaccount";
+    final String locationId = "7";
+
+    when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(any(PaymentOnAccountDetail.class)))
+        .thenReturn(requestHeadersMock);
+    when(requestHeadersMock.exchangeToMono(any(Function.class))).thenReturn(Mono.just(locationId));
+
+    final Mono<String> result = caabApiClient.createPaymentOnAccount(paymentOnAccount, loginId);
+
+    StepVerifier.create(result).expectNext(locationId).verifyComplete();
+  }
+
+  @Test
+  void removePaymentOnAccount_success() {
+    final Long paymentOnAccountId = 7L;
+    final String loginId = "user123";
+    final String expectedUri = "/paymentsonaccount/{payment-on-account-id}";
+
+    when(caabApiWebClient.delete()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, paymentOnAccountId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    final Mono<Void> result = caabApiClient.removePaymentOnAccount(paymentOnAccountId, loginId);
+
+    StepVerifier.create(result).verifyComplete();
   }
 
   @Test

@@ -45,6 +45,16 @@ class AssessmentRulebaseTest {
     assertEquals("MeansAssessment", AssessmentRulebase.MEANS.getDeploymentName());
     assertEquals("MeritsAssessment", AssessmentRulebase.MERITS.getDeploymentName());
     assertEquals("BillingAssessment", AssessmentRulebase.BILLING.getDeploymentName());
-    assertEquals("PoaAssessment", AssessmentRulebase.POA.getDeploymentName());
+    // The POA journey runs the shared BillingAssessment deployment - there is no POA rulebase
+    // deployed to OWD, so asking for "PoaAssessment" fails with "Unable to load interview".
+    assertEquals("BillingAssessment", AssessmentRulebase.POA.getDeploymentName());
+
+    // POA shares the BILLING rulebase, so EBS holds its stored assessment data under BILLING too
+    // (old PUI's poaAssessment definition carries assessmentType "BILLING"). Asking EBS for "POA"
+    // returns nothing, leaving the billing history the rulebase needs unseeded.
+    assertEquals("BILLING", AssessmentRulebase.POA.getEbsAssessmentType());
+    assertEquals("BILLING", AssessmentRulebase.BILLING.getEbsAssessmentType());
+    assertEquals("MEANS", AssessmentRulebase.MEANS.getEbsAssessmentType());
+    assertEquals("MERITS", AssessmentRulebase.MERITS.getEbsAssessmentType());
   }
 }
