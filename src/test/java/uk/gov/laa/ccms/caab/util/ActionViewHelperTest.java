@@ -7,6 +7,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.model.AvailableAction;
+import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 import uk.gov.laa.ccms.caab.util.view.ActionViewHelper;
 
 class ActionViewHelperTest {
@@ -172,5 +174,57 @@ class ActionViewHelperTest {
                 .isEqualTo(expected.link);
           }
         });
+  }
+
+  @Test
+  void isClearOutcomeAllowedReturnsTrueWhenAllConditionsAreMet() {
+    ProceedingDetail proceeding =
+        new ProceedingDetail()
+            .availableFunctions(List.of(FunctionConstants.CLEAR_RECORDED_OUTCOME))
+            .outcome(new ProceedingOutcomeDetail().id(123));
+
+    assertThat(ActionViewHelper.isClearOutcomeAllowed(proceeding)).isTrue();
+  }
+
+  @Test
+  void isClearOutcomeAllowedReturnsFalseWhenClearFunctionIsMissing() {
+    ProceedingDetail proceeding =
+        new ProceedingDetail()
+            .availableFunctions(List.of("OTHER"))
+            .outcome(new ProceedingOutcomeDetail().id(123));
+
+    assertThat(ActionViewHelper.isClearOutcomeAllowed(proceeding)).isFalse();
+  }
+
+  @Test
+  void isClearOutcomeAllowedReturnsFalseWhenOutcomeIsMissing() {
+    ProceedingDetail proceeding =
+        new ProceedingDetail()
+            .availableFunctions(List.of(FunctionConstants.CLEAR_RECORDED_OUTCOME));
+
+    assertThat(ActionViewHelper.isClearOutcomeAllowed(proceeding)).isFalse();
+  }
+
+  @Test
+  void isClearOutcomeAllowedReturnsFalseWhenProceedingIsNull() {
+    assertThat(ActionViewHelper.isClearOutcomeAllowed(null)).isFalse();
+  }
+
+  @Test
+  void isClearOutcomeAllowedReturnsFalseWhenAvailableFunctionsIsNull() {
+    ProceedingDetail proceeding =
+        new ProceedingDetail().outcome(new ProceedingOutcomeDetail().id(123));
+
+    assertThat(ActionViewHelper.isClearOutcomeAllowed(proceeding)).isFalse();
+  }
+
+  @Test
+  void isClearOutcomeAllowedReturnsFalseWhenOutcomeHasNoId() {
+    ProceedingDetail proceeding =
+        new ProceedingDetail()
+            .availableFunctions(List.of(FunctionConstants.CLEAR_RECORDED_OUTCOME))
+            .outcome(new ProceedingOutcomeDetail());
+
+    assertThat(ActionViewHelper.isClearOutcomeAllowed(proceeding)).isFalse();
   }
 }

@@ -56,4 +56,7 @@ public final class FunctionConstants {
 
   /** The submit means reassessment function key, available on a case. */
   public static final String SUBMIT_MEANS_REASSESSMENT = "MNSB";
+
+  /** The clear recorded outcome function key, available on a proceeding. */
+  public static final String CLEAR_RECORDED_OUTCOME = "CLROUT";
 }
