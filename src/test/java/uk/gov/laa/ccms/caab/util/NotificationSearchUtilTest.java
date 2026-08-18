@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -115,5 +116,96 @@ class NotificationSearchUtilTest {
     // Then
     assertEquals(toResultStringDate(fromDate), result.getNotificationFromDate());
     assertEquals(toResultStringDate(toDate), result.getNotificationToDate());
+  }
+
+  @Test
+  @DisplayName("Should null a blank assignee so that the query parameter is omitted")
+  void shouldNullBlankAssignee() {
+    // Given
+    NotificationSearchCriteria input = new NotificationSearchCriteria();
+    input.setAssignedToUserId("");
+    // When
+    NotificationSearchCriteria result =
+        NotificationSearchUtil.prepareNotificationSearchCriteria(input);
+    // Then
+    assertNull(result.getAssignedToUserId());
+  }
+
+  @Test
+  @DisplayName("Should null blank filters so that their query parameters are omitted")
+  void shouldNullBlankFilters() {
+    // Given
+    NotificationSearchCriteria input = new NotificationSearchCriteria();
+    input.setNotificationType("");
+    input.setCaseReference("");
+    input.setProviderCaseReference("");
+    input.setClientSurname("");
+    // When
+    NotificationSearchCriteria result =
+        NotificationSearchUtil.prepareNotificationSearchCriteria(input);
+    // Then
+    assertNull(result.getNotificationType());
+    assertNull(result.getCaseReference());
+    assertNull(result.getProviderCaseReference());
+    assertNull(result.getClientSurname());
+  }
+
+  @Test
+  @DisplayName("Should keep populated filters")
+  void shouldKeepPopulatedFilters() {
+    // Given
+    NotificationSearchCriteria input = new NotificationSearchCriteria();
+    input.setNotificationType("N");
+    input.setCaseReference("300000851818");
+    // When
+    NotificationSearchCriteria result =
+        NotificationSearchUtil.prepareNotificationSearchCriteria(input);
+    // Then
+    assertEquals("N", result.getNotificationType());
+    assertEquals("300000851818", result.getCaseReference());
+  }
+
+  @Test
+  @DisplayName("Should not apply a default date range to a search from a case")
+  void shouldNotApplyDefaultDateRangeToCaseSearch() {
+    // Given
+    NotificationSearchCriteria input = new NotificationSearchCriteria();
+    input.setOriginatesFromCase(true);
+    input.setCaseReference("300000851818");
+    // When
+    NotificationSearchCriteria result =
+        NotificationSearchUtil.prepareNotificationSearchCriteria(input);
+    // Then
+    assertNull(result.getNotificationFromDate());
+    assertNull(result.getNotificationToDate());
+  }
+
+  @Test
+  @DisplayName("Should still honour dates entered on a search from a case")
+  void shouldHonourDatesEnteredOnCaseSearch() {
+    // Given
+    LocalDate fromDate = LocalDate.of(2018, 5, 1);
+    NotificationSearchCriteria input = new NotificationSearchCriteria();
+    input.setOriginatesFromCase(true);
+    input.setNotificationFromDate(toMojStringDate(fromDate));
+    // When
+    NotificationSearchCriteria result =
+        NotificationSearchUtil.prepareNotificationSearchCriteria(input);
+    // Then
+    assertEquals(toResultStringDate(fromDate), result.getNotificationFromDate());
+    assertEquals(toResultStringDate(LocalDate.of(2021, 5, 1)), result.getNotificationToDate());
+  }
+
+  @Test
+  @DisplayName("Should keep a populated assignee")
+  void shouldKeepPopulatedAssignee() {
+    // Given
+    NotificationSearchCriteria input = new NotificationSearchCriteria();
+    input.setAssignedToUserId("PENNY.WALL@SWITALSKIS.COM");
+    // When
+    NotificationSearchCriteria result =
+        NotificationSearchUtil.prepareNotificationSearchCriteria(input);
+    // Then
+    assertEquals("PENNY.WALL@SWITALSKIS.COM", result.getAssignedToUserId());
   }
 }

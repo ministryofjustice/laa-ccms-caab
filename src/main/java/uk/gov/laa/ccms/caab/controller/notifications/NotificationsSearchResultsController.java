@@ -109,7 +109,9 @@ public class NotificationsSearchResultsController {
     int finalSize = paginationRequest.size();
     String finalPageSort = paginationRequest.sort();
 
-    if (!StringUtils.hasText(criteria.getAssignedToUserId())) {
+    // A case search may deliberately search all assignees, e.g. where the case has no primary
+    // contact, so only default to the logged-in user outside of the case context.
+    if (!StringUtils.hasText(criteria.getAssignedToUserId()) && !criteria.isOriginatesFromCase()) {
       criteria.setAssignedToUserId(user.getLoginId());
     }
 

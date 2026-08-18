@@ -17,6 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.NotificationConstants.SORT_DIRECTION;
 import static uk.gov.laa.ccms.caab.constants.NotificationConstants.SORT_FIELD;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATION_SEARCH_CRITERIA;
 
@@ -36,6 +37,8 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.advice.NotificationsActiveCaseModelAdvice;
+import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.NotificationService;
@@ -284,6 +287,108 @@ class NotificationsSearchResultsControllerTest {
         .andExpect(model().attribute(NOTIFICATIONS_SEARCH_RESULTS, nextPageNotifications));
 
     verify(notificationService).getNotifications(any(), anyInt(), eq(1), eq(10));
+  }
+
+  @Test
+  void testGetSearchResults_WhenAssigneeEmpty_DefaultsToLoggedInUser() throws Exception {
+    when(notificationService.getNotifications(any(), anyInt(), any(), any()))
+        .thenReturn(Mono.just(getNotificationsMock()));
+
+    NotificationSearchCriteria criteria = buildNotificationSearchCriteria();
+    criteria.setAssignedToUserId("");
+
+    ArgumentCaptor<NotificationSearchCriteria> criteriaArg =
+        ArgumentCaptor.forClass(NotificationSearchCriteria.class);
+
+    this.mockMvc
+        .perform(
+            get("/notifications/search-results")
+                .sessionAttr("user", userDetails)
+                .queryParam("page", "0")
+                .queryParam("size", "10")
+                .queryParam("pageSort", "dateAssigned,asc")
+                .sessionAttr(NOTIFICATION_SEARCH_CRITERIA, criteria))
+        .andExpect(status().isOk());
+
+    verify(notificationService).getNotifications(criteriaArg.capture(), anyInt(), any(), any());
+
+    assertEquals("testLoginId", criteriaArg.getValue().getAssignedToUserId());
+  }
+
+  @Test
+  void testGetSearchResults_WhenAssigneeEmptyAndFromCase_SearchesAllAssignees() throws Exception {
+    when(notificationService.getNotifications(any(), anyInt(), any(), any()))
+        .thenReturn(Mono.just(getNotificationsMock()));
+
+    NotificationSearchCriteria criteria = buildNotificationSearchCriteria();
+    criteria.setAssignedToUserId("");
+    criteria.setOriginatesFromCase(true);
+
+    ArgumentCaptor<NotificationSearchCriteria> criteriaArg =
+        ArgumentCaptor.forClass(NotificationSearchCriteria.class);
+
+    this.mockMvc
+        .perform(
+            get("/notifications/search-results")
+                .sessionAttr("user", userDetails)
+                .queryParam("page", "0")
+                .queryParam("size", "10")
+                .queryParam("pageSort", "dateAssigned,asc")
+                .sessionAttr(NOTIFICATION_SEARCH_CRITERIA, criteria))
+        .andExpect(status().isOk());
+
+    verify(notificationService).getNotifications(criteriaArg.capture(), anyInt(), any(), any());
+
+    assertEquals("", criteriaArg.getValue().getAssignedToUserId());
+  }
+
+  @Test
+  void testGetSearchResults_WhenFromCase_AddsCaseContextToHeader() throws Exception {
+    when(notificationService.getNotifications(any(), anyInt(), any(), any()))
+        .thenReturn(Mono.just(getNotificationsMock()));
+
+    NotificationSearchCriteria criteria = buildNotificationSearchCriteria();
+    criteria.setOriginatesFromCase(true);
+
+    ActiveCase activeCase =
+        ActiveCase.builder().caseReferenceNumber("300000851818").client("Jane Doe").build();
+
+    standaloneSetup(notificationsSearchResultsController)
+        .setControllerAdvice(new NotificationsActiveCaseModelAdvice())
+        .build()
+        .perform(
+            get("/notifications/search-results")
+                .sessionAttr("user", userDetails)
+                .queryParam("page", "0")
+                .queryParam("size", "10")
+                .queryParam("pageSort", "dateAssigned,asc")
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(NOTIFICATION_SEARCH_CRITERIA, criteria))
+        .andExpect(status().isOk())
+        .andExpect(model().attribute(ACTIVE_CASE, activeCase));
+  }
+
+  @Test
+  void testGetSearchResults_WhenGeneralSearch_DoesNotAddCaseContextToHeader() throws Exception {
+    when(notificationService.getNotifications(any(), anyInt(), any(), any()))
+        .thenReturn(Mono.just(getNotificationsMock()));
+
+    ActiveCase activeCase =
+        ActiveCase.builder().caseReferenceNumber("300000851818").client("Jane Doe").build();
+
+    standaloneSetup(notificationsSearchResultsController)
+        .setControllerAdvice(new NotificationsActiveCaseModelAdvice())
+        .build()
+        .perform(
+            get("/notifications/search-results")
+                .sessionAttr("user", userDetails)
+                .queryParam("page", "0")
+                .queryParam("size", "10")
+                .queryParam("pageSort", "dateAssigned,asc")
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(NOTIFICATION_SEARCH_CRITERIA, buildNotificationSearchCriteria()))
+        .andExpect(status().isOk())
+        .andExpect(model().attributeDoesNotExist(ACTIVE_CASE));
   }
 
   private static Notifications getNotificationsMock() {
