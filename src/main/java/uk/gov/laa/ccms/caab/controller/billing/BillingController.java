@@ -87,6 +87,7 @@ public class BillingController {
   private static final String OPA_BILL_TYPE_ATTRIBUTE = "BILL_TYPE";
   private static final String OPA_COURT_ASSESSED_BILL_ATTRIBUTE = "COURT_ASSESSED_BILL";
   private static final String BILL_DECLARATION_VIEW = "application/billing/bill-declaration";
+  private static final String POA_DECLARATION_VIEW = "application/billing/poa-declaration";
 
   /** Session attribute holding the billing submission this session has already sent. */
   private static final String BILLING_SUBMISSION_SENT = "billingSubmissionSent";
@@ -461,8 +462,59 @@ public class BillingController {
       return billDetailsWithError(model, billingAssessment, validationError);
     }
 
-    return declarationDetails(
-        model, summarySubmissionFormData, billingAssessment, BILL_DECLARATION_VIEW);
+    final List<DynamicCheckbox> options = declarationOptions(billingAssessment);
+    if (options.isEmpty()) {
+      // Nothing to acknowledge, so there is no declaration to show. Reached directly rather than
+      // through Submit, so send the user back to the bill instead of submitting it.
+      return "redirect:/case/billing/bill";
+    }
+
+    return declarationDetails(model, summarySubmissionFormData, options, BILL_DECLARATION_VIEW);
+  }
+
+  /**
+   * Handles Submit on the bill details screen, showing the declaration when there is one to
+   * acknowledge and submitting the bill straight away when there is not.
+   *
+   * <p>This is the legacy PUI's submit chain: {@code PerformFinalValForBill} runs first, then
+   * {@code RetrieveDeclarationText} decides whether a declaration exists for this bill type. When
+   * none is configured it sets {@code SHOW_DECLARATION} to false and the chain goes directly to
+   * {@code PerformSubmission}, rather than showing an empty declaration screen.
+   *
+   * @param ebsCase the case details from EBS.
+   * @param user the logged-in user.
+   * @param summarySubmissionFormData the declaration form data.
+   * @param model the model used to pass data to the view.
+   * @param session the HTTP session, used to carry the submission reference to the confirmation.
+   * @return the declaration view, or a redirect to the confirmation when there is no declaration.
+   */
+  @PostMapping("/case/billing/bill/submit")
+  public String billSubmit(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @ModelAttribute("summarySubmissionFormData")
+          final SummarySubmissionFormData summarySubmissionFormData,
+      final Model model,
+      final HttpSession session) {
+
+    if (!canMaintainBill(ebsCase)) {
+      return CASE_STATEMENT_OF_ACCOUNT_URL;
+    }
+
+    final AssessmentDetail billingAssessment =
+        getLatestAssessment(ebsCase, user, AssessmentRulebase.BILLING);
+
+    final String validationError = billFinalValidationError(billingAssessment);
+    if (validationError != null) {
+      return billDetailsWithError(model, billingAssessment, validationError);
+    }
+
+    final List<DynamicCheckbox> options = declarationOptions(billingAssessment);
+    if (!options.isEmpty()) {
+      return declarationDetails(model, summarySubmissionFormData, options, BILL_DECLARATION_VIEW);
+    }
+
+    return submitBillAndConfirm(ebsCase, user, billingAssessment, session);
   }
 
   /**
@@ -512,29 +564,7 @@ public class BillingController {
           model, summarySubmissionFormData, billingAssessment, BILL_DECLARATION_VIEW);
     }
 
-    if (!claimSubmission(session, BILL_SUBMISSION)) {
-      // A second submit of this declaration, which a double-clicked button sends before the first
-      // has finished. Both would read the same draft bill before either removed it, so EBS would
-      // take two identical bills. Send the user to the confirmation instead of submitting again.
-      return "redirect:/case/billing/bill/confirmation";
-    }
-
-    final String transactionId;
-    try {
-      transactionId =
-          billingService.submitBill(
-              ebsCase.getCaseReferenceNumber(), providerId(user), billingAssessment, user);
-    } catch (final RuntimeException e) {
-      // Nothing reached EBS, so let the user try again in this session.
-      releaseSubmission(session);
-      throw e;
-    }
-
-    deleteBillingAssessments(ebsCase, user);
-
-    session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
-
-    return "redirect:/case/billing/bill/confirmation";
+    return submitBillAndConfirm(ebsCase, user, billingAssessment, session);
   }
 
   /**
@@ -660,7 +690,48 @@ public class BillingController {
       return CASE_STATEMENT_OF_ACCOUNT_URL;
     }
 
-    return poaDeclarationDetails(model, summarySubmissionFormData, poaAssessment);
+    final List<DynamicCheckbox> options = declarationOptions(poaAssessment);
+    if (options.isEmpty()) {
+      // Nothing to acknowledge - as for the bill, do not show an empty declaration.
+      return "redirect:/case/billing/poa";
+    }
+
+    return declarationDetails(model, summarySubmissionFormData, options, POA_DECLARATION_VIEW);
+  }
+
+  /**
+   * Handles Submit on the POA details screen, showing the declaration when there is one to
+   * acknowledge and submitting the payment on account straight away when there is not. See {@link
+   * #billSubmit} for the legacy behaviour this follows.
+   *
+   * @param ebsCase the case details from EBS.
+   * @param user the logged-in user.
+   * @param summarySubmissionFormData the declaration form data.
+   * @param model the model used to pass data to the view.
+   * @param session the HTTP session, used to carry the submission reference to the confirmation.
+   * @return the declaration view, or a redirect to the confirmation when there is no declaration.
+   */
+  @PostMapping("/case/billing/poa/submit")
+  public String poaSubmit(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @ModelAttribute("summarySubmissionFormData")
+          final SummarySubmissionFormData summarySubmissionFormData,
+      final Model model,
+      final HttpSession session) {
+
+    final AssessmentDetail poaAssessment =
+        getLatestAssessment(ebsCase, user, AssessmentRulebase.POA);
+    if (!canMaintainPoa(ebsCase) || !isComplete(poaAssessment)) {
+      return CASE_STATEMENT_OF_ACCOUNT_URL;
+    }
+
+    final List<DynamicCheckbox> options = declarationOptions(poaAssessment);
+    if (!options.isEmpty()) {
+      return declarationDetails(model, summarySubmissionFormData, options, POA_DECLARATION_VIEW);
+    }
+
+    return submitPoaAndConfirm(ebsCase, user, poaAssessment, session);
   }
 
   /**
@@ -701,34 +772,7 @@ public class BillingController {
       return poaDeclarationDetails(model, summarySubmissionFormData, poaAssessment);
     }
 
-    if (!claimSubmission(session, POA_SUBMISSION)) {
-      // As for the bill declaration above - a repeat submit must not reach EBS a second time.
-      return "redirect:/case/billing/poa/confirmation";
-    }
-
-    final String transactionId;
-    try {
-      transactionId =
-          billingService.submitPaymentOnAccount(
-              ebsCase.getCaseReferenceNumber(), providerId(user), poaAssessment, user);
-    } catch (final RuntimeException e) {
-      // Nothing reached EBS, so let the user try again in this session.
-      releaseSubmission(session);
-      throw e;
-    }
-
-    assessmentService
-        .deleteAssessments(
-            user,
-            List.of(
-                AssessmentRulebase.POA.getName(), AssessmentRulebase.POA.getPrePopAssessmentName()),
-            ebsCase.getCaseReferenceNumber(),
-            null)
-        .block();
-
-    session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
-
-    return "redirect:/case/billing/poa/confirmation";
+    return submitPoaAndConfirm(ebsCase, user, poaAssessment, session);
   }
 
   /**
@@ -850,7 +894,7 @@ public class BillingController {
       final AssessmentDetail poaAssessment) {
 
     return declarationDetails(
-        model, summarySubmissionFormData, poaAssessment, "application/billing/poa-declaration");
+        model, summarySubmissionFormData, poaAssessment, POA_DECLARATION_VIEW);
   }
 
   /**
@@ -864,10 +908,29 @@ public class BillingController {
       final AssessmentDetail assessment,
       final String view) {
 
+    return declarationDetails(
+        model, summarySubmissionFormData, declarationOptions(assessment), view);
+  }
+
+  /**
+   * Looks up the declaration statements the provider must acknowledge for an assessment's bill
+   * type. An empty list means none is configured, which the legacy PUI treats as "do not show the
+   * declaration" rather than as an empty screen.
+   */
+  private List<DynamicCheckbox> declarationOptions(final AssessmentDetail assessment) {
     final DeclarationLookupDetail declarations =
         lookupService.getDeclarations(DECLARATION_BILL, billType(assessment)).block();
-    final List<DynamicCheckbox> declarationOptions =
+    final List<DynamicCheckbox> options =
         submissionSummaryDisplayMapper.toDeclarationFormDataDynamicOptionList(declarations);
+    return options == null ? List.of() : options;
+  }
+
+  /** Renders a declaration screen from statements that have already been looked up. */
+  private String declarationDetails(
+      final Model model,
+      final SummarySubmissionFormData summarySubmissionFormData,
+      final List<DynamicCheckbox> declarationOptions,
+      final String view) {
 
     if (summarySubmissionFormData.getDeclarationOptions() == null
         || summarySubmissionFormData.getDeclarationOptions().isEmpty()) {
@@ -969,6 +1032,94 @@ public class BillingController {
     return AssessmentStatus.COMPLETE.getStatus().equalsIgnoreCase(assessment.getStatus())
         ? SECTION_STATUS_COMPLETE
         : assessment.getStatus();
+  }
+
+  /**
+   * Sends the draft bill to EBS and hands the user to the confirmation. Shared by the declaration
+   * POST and by Submit on the bill details screen, which skips the declaration when none is
+   * configured for the bill type.
+   *
+   * @param ebsCase the case details from EBS.
+   * @param user the logged-in user.
+   * @param billingAssessment the completed billing assessment.
+   * @param session the HTTP session, used to carry the submission reference to the confirmation.
+   * @return a redirect to the bill confirmation.
+   */
+  private String submitBillAndConfirm(
+      final ApplicationDetail ebsCase,
+      final UserDetail user,
+      final AssessmentDetail billingAssessment,
+      final HttpSession session) {
+
+    if (!claimSubmission(session, BILL_SUBMISSION)) {
+      // A second submit, which a double-clicked button sends before the first has finished. Both
+      // would read the same draft bill before either removed it, so EBS would take two identical
+      // bills. Send the user to the confirmation instead of submitting again.
+      return "redirect:/case/billing/bill/confirmation";
+    }
+
+    final String transactionId;
+    try {
+      transactionId =
+          billingService.submitBill(
+              ebsCase.getCaseReferenceNumber(), providerId(user), billingAssessment, user);
+    } catch (final RuntimeException e) {
+      // Nothing reached EBS, so let the user try again in this session.
+      releaseSubmission(session);
+      throw e;
+    }
+
+    deleteBillingAssessments(ebsCase, user);
+
+    session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
+
+    return "redirect:/case/billing/bill/confirmation";
+  }
+
+  /**
+   * Sends the draft payment on account to EBS and hands the user to the confirmation. Shared by the
+   * declaration POST and by Submit on the POA details screen.
+   *
+   * @param ebsCase the case details from EBS.
+   * @param user the logged-in user.
+   * @param poaAssessment the completed POA assessment.
+   * @param session the HTTP session, used to carry the submission reference to the confirmation.
+   * @return a redirect to the POA confirmation.
+   */
+  private String submitPoaAndConfirm(
+      final ApplicationDetail ebsCase,
+      final UserDetail user,
+      final AssessmentDetail poaAssessment,
+      final HttpSession session) {
+
+    if (!claimSubmission(session, POA_SUBMISSION)) {
+      // As for the bill above - a repeat submit must not reach EBS a second time.
+      return "redirect:/case/billing/poa/confirmation";
+    }
+
+    final String transactionId;
+    try {
+      transactionId =
+          billingService.submitPaymentOnAccount(
+              ebsCase.getCaseReferenceNumber(), providerId(user), poaAssessment, user);
+    } catch (final RuntimeException e) {
+      // Nothing reached EBS, so let the user try again in this session.
+      releaseSubmission(session);
+      throw e;
+    }
+
+    assessmentService
+        .deleteAssessments(
+            user,
+            List.of(
+                AssessmentRulebase.POA.getName(), AssessmentRulebase.POA.getPrePopAssessmentName()),
+            ebsCase.getCaseReferenceNumber(),
+            null)
+        .block();
+
+    session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
+
+    return "redirect:/case/billing/poa/confirmation";
   }
 
   /**
