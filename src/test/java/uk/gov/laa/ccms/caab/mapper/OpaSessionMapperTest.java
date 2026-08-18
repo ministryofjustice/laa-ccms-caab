@@ -153,6 +153,40 @@ class OpaSessionMapperTest {
   }
 
   @Test
+  @DisplayName("Gives a derived entity a prepopulated flag even when the connector omits it")
+  void derivedEntityIsNeverMissingPrepopulated() throws Exception {
+    // The rulebase derives billing history rows and does not say whether they are prepopulated.
+    // The assessment API requires the flag and rejects the whole save with a 400 when it is null.
+    String response =
+        """
+        {"assessment":"poaAssessment","ownerID":"26517","targetID":"300000609272",
+         "opaListEntities":[
+           {"entityType":"BILL_HISTORY","opaEntities":[
+             {"entityId":"3000006092720001","attribute":[
+               {"attributeId":"BILL_AMOUNT","attributeType":"currency","value":"311.00"}]}]}]}
+        """;
+
+    AssessmentDetail assessment = assessment();
+    mapper.mergeInto(assessment, objectMapper.readValue(response, OpaSessionJson.class));
+
+    assertThat(assessment.getEntityTypes())
+        .allSatisfy(
+            entityType ->
+                assertThat(entityType.getEntities())
+                    .isNotNull()
+                    .allSatisfy(entity -> assertThat(entity.getPrepopulated()).isNotNull()));
+
+    AssessmentEntityDetail derived =
+        assessment.getEntityTypes().stream()
+            .filter(entityType -> "BILL_HISTORY".equals(entityType.getName()))
+            .findFirst()
+            .orElseThrow()
+            .getEntities()
+            .get(0);
+    assertThat(derived.getPrepopulated()).isFalse();
+  }
+
+  @Test
   @DisplayName("Merges the derived billing entities from an assess response into the assessment")
   void mergesDerivedEntities() throws Exception {
     // A cut-down assess response: the rulebase has derived a POA_HISTORY row that CAAB never sent.
