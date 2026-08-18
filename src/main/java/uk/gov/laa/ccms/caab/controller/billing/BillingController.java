@@ -168,8 +168,8 @@ public class BillingController {
    */
   @GetMapping("/case/billing/undertaking")
   public String enterUndertaking(final Model model, final HttpSession session) {
-    session.removeAttribute("undertakingMinimum");
-    session.removeAttribute("undertakingMaximum");
+    session.removeAttribute(UNDERTAKING_MINIMUM);
+    session.removeAttribute(UNDERTAKING_MAXIMUM);
     model.addAttribute("statutoryChargeManualUrl", STATUTORY_CHARGE_MANUAL_URL);
     model.addAttribute("undertakingFormData", new UndertakingFormData());
     return "application/billing/enter-undertaking";
