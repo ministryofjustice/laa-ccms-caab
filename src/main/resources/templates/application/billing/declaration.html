@@ -3,23 +3,28 @@
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title th:text="|#{service.name} - #{billing.bill.declaration.title}|"></title>
+  <!-- Shared by the bill and the payment on account: the legacy PUI runs one declaration screen for
+       both, differing only in which assessment supplies the bill type. billingContext carries that,
+       and its path value doubles as the message key segment. -->
+  <title th:text="|#{service.name} - #{${billingContext.messagePrefix + '.declaration.title'}}|"></title>
 </head>
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/case/billing/bill}" class="govuk-back-link"
+    <a th:href="@{${billingContext.detailsUrl}}" class="govuk-back-link"
        th:text="#{site.back}"></a>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{/case/billing/bill/declaration}"
+    <form action="#" th:action="@{${billingContext.declarationUrl}}"
           th:object="${summarySubmissionFormData}" method="post">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <span class="govuk-caption-l" th:text="#{billing.pageCaption}"></span>
-      <h1 class="govuk-heading-l" th:text="#{billing.bill.declaration.heading}"></h1>
+      <h1 class="govuk-heading-l"
+          th:text="#{${billingContext.messagePrefix + '.declaration.heading'}}"></h1>
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
-          <p class="govuk-body-l" th:text="#{billing.bill.declaration.intro}"></p>
+          <p class="govuk-body-l"
+             th:text="#{${billingContext.messagePrefix + '.declaration.intro'}}"></p>
         </div>
       </div>
       <div class="govuk-grid-row">
@@ -27,7 +32,8 @@
           <div class="govuk-form-group">
             <fieldset class="govuk-fieldset">
               <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">
-                <span class="govuk-fieldset__heading" th:text="#{billing.bill.declaration.legend}"></span>
+                <span class="govuk-fieldset__heading"
+                      th:text="#{${billingContext.messagePrefix + '.declaration.legend'}}"></span>
               </legend>
               <div class="govuk-checkboxes">
                 <div th:each="declarationOption, stat : *{declarationOptions}">
@@ -56,9 +62,10 @@
       </div>
       <div class="govuk-button-group">
         <button class="govuk-button" data-module="govuk-button"
-                data-prevent-double-click="true" id="submit-bill-declaration-button"
-                th:text="#{billing.bill.submit}"></button>
-        <a th:href="@{/case/billing/bill}" class="govuk-link" th:text="#{site.back}"></a>
+                data-prevent-double-click="true"
+                th:id="'submit-' + ${billingContext.pathValue} + '-declaration-button'"
+                th:text="#{${billingContext.messagePrefix + '.submit'}}"></button>
+        <a th:href="@{${billingContext.detailsUrl}}" class="govuk-link" th:text="#{site.back}"></a>
       </div>
     </form>
   </div>

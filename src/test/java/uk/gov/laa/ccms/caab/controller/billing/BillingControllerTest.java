@@ -31,6 +31,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
+import org.springframework.format.support.DefaultFormattingConversionService;
+import org.springframework.format.support.FormattingConversionService;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
@@ -49,6 +51,7 @@ import uk.gov.laa.ccms.caab.bean.billing.UndertakingFormData;
 import uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox;
 import uk.gov.laa.ccms.caab.bean.validators.billing.BillingUndertakingValidator;
 import uk.gov.laa.ccms.caab.bean.validators.declaration.PoaDeclarationSubmissionValidator;
+import uk.gov.laa.ccms.caab.config.StringToBillingContextConverter;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
@@ -97,9 +100,15 @@ class BillingControllerTest {
 
   @BeforeEach
   void setUp() {
+    // The billing routes take bill/poa as a path variable, so the converter the application
+    // registers has to be present here too.
+    final FormattingConversionService conversionService = new DefaultFormattingConversionService();
+    conversionService.addConverter(new StringToBillingContextConverter());
+
     mockMvc =
         MockMvcTester.create(
             MockMvcBuilders.standaloneSetup(billingController)
+                .setConversionService(conversionService)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build());
     // By default the case has no draft bill or payments on account.
@@ -878,7 +887,7 @@ class BillingControllerTest {
                       .sessionAttr(CASE, caseWithBillFunction())
                       .sessionAttr(USER_DETAILS, user)))
           .hasStatusOk()
-          .hasViewName("application/billing/bill-declaration");
+          .hasViewName("application/billing/declaration");
     }
 
     @Test
@@ -893,7 +902,7 @@ class BillingControllerTest {
                       .sessionAttr(CASE, caseWithBillFunction())
                       .sessionAttr(USER_DETAILS, user)))
           .hasStatusOk()
-          .hasViewName("application/billing/bill-declaration");
+          .hasViewName("application/billing/declaration");
     }
 
     @Test
@@ -981,7 +990,7 @@ class BillingControllerTest {
                       .sessionAttr(CASE, caseWithBillFunction())
                       .sessionAttr(USER_DETAILS, user)))
           .hasStatusOk()
-          .hasViewName("application/billing/bill-declaration");
+          .hasViewName("application/billing/declaration");
 
       verify(billingService, never()).submitBill(any(), any(), any(), any());
     }
@@ -1055,7 +1064,7 @@ class BillingControllerTest {
                       .sessionAttr(CASE, caseWithBillFunction())
                       .sessionAttr(USER_DETAILS, user)))
           .hasStatusOk()
-          .hasViewName("application/billing/bill-declaration");
+          .hasViewName("application/billing/declaration");
 
       verify(billingService, never()).submitBill(any(), any(), any(), any());
     }
@@ -1105,7 +1114,7 @@ class BillingControllerTest {
                   get("/case/billing/bill/confirmation")
                       .sessionAttr(SUBMISSION_TRANSACTION_ID, "INV-9")))
           .hasStatusOk()
-          .hasViewName("application/billing/bill-confirmation")
+          .hasViewName("application/billing/confirmation")
           .model()
           .containsEntry("transactionId", "INV-9");
     }
@@ -1225,7 +1234,7 @@ class BillingControllerTest {
                       .sessionAttr(CASE, caseWithPoaFunction())
                       .sessionAttr(USER_DETAILS, user)))
           .hasStatusOk()
-          .hasViewName("application/billing/poa-declaration")
+          .hasViewName("application/billing/declaration")
           .model()
           .containsKey("summarySubmissionFormData");
     }
@@ -1300,7 +1309,7 @@ class BillingControllerTest {
                       .sessionAttr(CASE, caseWithPoaFunction())
                       .sessionAttr(USER_DETAILS, user)))
           .hasStatusOk()
-          .hasViewName("application/billing/poa-declaration");
+          .hasViewName("application/billing/declaration");
 
       verifyNoInteractions(billingService);
     }
@@ -1313,7 +1322,7 @@ class BillingControllerTest {
                   get("/case/billing/poa/confirmation")
                       .sessionAttr(SUBMISSION_TRANSACTION_ID, "INV-9")))
           .hasStatusOk()
-          .hasViewName("application/billing/poa-confirmation")
+          .hasViewName("application/billing/confirmation")
           .model()
           .containsEntry("transactionId", "INV-9");
     }
