@@ -4779,3 +4779,24 @@ fieldset {
     margin-right: auto;
     float: left;
 }
+
+/* The interview's "Return to ..." control is OPA's exit control, `div.opa-exit`. It is
+   `position: absolute; top: 8px; left: 8px`, positioned against `form.opa-interview`, and the
+   form's first content - the screen heading - starts at the top of that same box, so the two are
+   painted on top of each other. Measured on the running interview (bill assessment, case
+   300000609272): the exit control and the h1 were both at y=181.
+
+   The rulebase does have rules meant to make room for it, but neither can ever match here:
+   `#interview header[role=banner]+* { padding-top:30px }` and
+   `#interviewDiv form[role=form] { margin-top:36px }` - and neither `#interview` nor
+   `#interviewDiv` exists in this page or in old PUI's iframeHolding.jsp, both of which embed the
+   interview in `#interview-wrapper`.
+
+   Padding rather than margin: the exit control is positioned against the form's padding box, so
+   padding moves the content clear while leaving the control where it is. Verified in the browser -
+   the h1 moved to y=229 and the control stayed at y=181. */
+.ccms-opa-interview-wrapper {
+  form.opa-interview {
+    padding-top: 48px;
+  }
+}
