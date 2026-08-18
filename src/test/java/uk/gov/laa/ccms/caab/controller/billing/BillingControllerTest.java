@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.billing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
@@ -13,6 +14,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
@@ -41,7 +43,9 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
+import uk.gov.laa.ccms.caab.bean.billing.UndertakingFormData;
 import uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox;
+import uk.gov.laa.ccms.caab.bean.validators.billing.BillingUndertakingValidator;
 import uk.gov.laa.ccms.caab.bean.validators.declaration.PoaDeclarationSubmissionValidator;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
@@ -49,12 +53,16 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.mapper.SubmissionSummaryDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.BillingService;
 import uk.gov.laa.ccms.caab.service.BillingSummaryPdfService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
+import uk.gov.laa.ccms.data.model.StatementOfAccountBills;
+import uk.gov.laa.ccms.data.model.StatementOfAccountCostLimitation;
+import uk.gov.laa.ccms.data.model.StatementOfAccountDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
@@ -62,6 +70,10 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 class BillingControllerTest {
 
   @Mock BillingService billingService;
+
+  @Mock BillingUndertakingValidator billingUndertakingValidator;
+
+  @Mock AmendmentService amendmentService;
 
   @Mock AssessmentService assessmentService;
 
@@ -344,6 +356,115 @@ class BillingControllerTest {
           .hasStatusOk()
           .model()
           .containsEntry("canMaintainBill", false);
+    }
+  }
+
+  @Nested
+  @DisplayName("GET: /case/billing/undertaking")
+  class EnterUndertaking {
+
+    @Test
+    @DisplayName("Returns undertaking view, clears cached range and initialises form data")
+    void returnsUndertakingViewAndClearsRange() {
+      final var result =
+          mockMvc.perform(
+              get("/case/billing/undertaking")
+                  .sessionAttr("undertakingMinimum", new BigDecimal("100"))
+                  .sessionAttr("undertakingMaximum", new BigDecimal("900")));
+
+      assertThat(result)
+          .hasStatusOk()
+          .hasViewName("application/billing/enter-undertaking")
+          .model()
+          .hasEntrySatisfying(
+              "undertakingFormData",
+              value -> assertThat(value).isInstanceOf(UndertakingFormData.class));
+
+      assertThat(result)
+          .request()
+          .sessionAttributes()
+          .doesNotContainKeys("undertakingMinimum", "undertakingMaximum");
+    }
+  }
+
+  @Nested
+  @DisplayName("POST: /case/billing/undertaking")
+  class SaveUndertaking {
+
+    @Test
+    @DisplayName("Submits undertaking and redirects to amendment submission")
+    void submitsUndertakingAndRedirects() {
+      ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("300000123");
+      when(amendmentService.submitQuickAmendmentUndertaking(any(), eq("300000123"), eq(user)))
+          .thenReturn("TRANS123");
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/billing/undertaking")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr("undertakingMinimum", new BigDecimal("100.00"))
+                      .sessionAttr("undertakingMaximum", new BigDecimal("900.00"))
+                      .sessionAttr(SUBMISSION_RESULT, "old-result")
+                      .param("undertakingAmount", "250.00")
+                      .param("acceptedTerms", "true")))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/amendments/submit-case")
+          .request()
+          .sessionAttributes()
+          .containsEntry(SUBMISSION_TRANSACTION_ID, "TRANS123")
+          .doesNotContainKeys(SUBMISSION_RESULT, "undertakingMinimum", "undertakingMaximum");
+
+      verify(amendmentService)
+          .submitQuickAmendmentUndertaking(
+              argThat(
+                  formData ->
+                      formData != null
+                          && "250.00".equals(formData.getUndertakingAmount())
+                          && formData.isAcceptedTerms()
+                          && formData.getUndertakingMaximumAmount() != null
+                          && formData
+                                  .getUndertakingMaximumAmount()
+                                  .compareTo(new BigDecimal("900.00"))
+                              == 0),
+              eq("300000123"),
+              eq(user));
+    }
+
+    @Test
+    @DisplayName("Returns undertaking view with cached range when validation fails")
+    void returnsViewWithCachedRangeWhenValidationFails() {
+      ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("300000123");
+      StatementOfAccountDetail statement = new StatementOfAccountDetail();
+      statement.setBills(new StatementOfAccountBills().totalAmount(new BigDecimal("300.00")));
+      statement.setCostLimitation(
+          new StatementOfAccountCostLimitation().remainingAmount(new BigDecimal("900.00")));
+
+      when(billingService.getCurrentProviderStatement(eq("300000123"), any(), any()))
+          .thenReturn(statement);
+      doAnswer(
+              invocation -> {
+                Errors errors = invocation.getArgument(1);
+                errors.rejectValue("undertakingAmount", "billing.undertakingAmount.required");
+                return null;
+              })
+          .when(billingUndertakingValidator)
+          .validate(any(), any());
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/billing/undertaking")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("undertakingAmount", "")))
+          .hasStatusOk()
+          .hasViewName("application/billing/enter-undertaking")
+          .request()
+          .sessionAttributes()
+          .containsEntry("undertakingMinimum", new BigDecimal("300.00"))
+          .containsEntry("undertakingMaximum", new BigDecimal("900.00"));
+
+      verify(amendmentService, never()).submitQuickAmendmentUndertaking(any(), any(), any());
     }
   }
 

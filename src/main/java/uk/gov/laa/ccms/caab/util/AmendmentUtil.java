@@ -68,6 +68,13 @@ public final class AmendmentUtil {
       app.getProviderDetails().setProviderContact(null);
       app.setCorrespondenceAddress(null);
       app.setCosts(null);
+    } else if (QuickEditTypeConstants.MESSAGE_TYPE_UNDERTAKING.equals(app.getQuickEditType())) {
+      // TODO: Check if you can just set provider details to null once CCMSPUI-692 is completed
+      app.getProviderDetails().setSupervisor(null);
+      app.getProviderDetails().setFeeEarner(null);
+      app.getProviderDetails().setProviderContact(null);
+      app.setCorrespondenceAddress(null);
+      app.setCosts(null);
     }
   }
 

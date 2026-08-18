@@ -19,6 +19,9 @@ public class QuickEditTypeConstants {
   /** The Message Type to be used for Means reassessments amendments. */
   public static final String MESSAGE_TYPE_MEANS_REASSESSMENT = "MeansReassessment";
 
+  /** The Message Type to be used for undertaking amendments. */
+  public static final String MESSAGE_TYPE_UNDERTAKING = "Undertaking";
+
   /** The Message Type to be used for Means Assessments Legal Amendment amendments. */
   public static final String MESSAGE_TYPE_MEANS_ASSESSMENT_LEGAL_AMENDMENT = "LegalAmendment";
 }

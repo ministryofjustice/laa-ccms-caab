@@ -4,7 +4,10 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.DECLARATION_BI
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_COMPLETE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_NOT_STARTED;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.UNDERTAKING_MAXIMUM;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.UNDERTAKING_MINIMUM;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentAttribute;
 import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getAssessmentEntitiesForEntityType;
@@ -41,7 +44,9 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.SummarySubmissionFormData;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
+import uk.gov.laa.ccms.caab.bean.billing.UndertakingFormData;
 import uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox;
+import uk.gov.laa.ccms.caab.bean.validators.billing.BillingUndertakingValidator;
 import uk.gov.laa.ccms.caab.bean.validators.declaration.PoaDeclarationSubmissionValidator;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
@@ -49,12 +54,14 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.mapper.SubmissionSummaryDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.BillingService;
 import uk.gov.laa.ccms.caab.service.BillingSummaryPdfService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.util.PaginationUtil;
 import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
+import uk.gov.laa.ccms.data.model.StatementOfAccountDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /** Controller responsible for handling requests related to case billing. */
@@ -63,12 +70,17 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @Slf4j
 public class BillingController {
 
+  private static final String STATUTORY_CHARGE_MANUAL_URL =
+      "https://assets.publishing.service.gov.uk/media/6a4756b1d200ca05e289e412/The_Statutory_Charge_Manual_July_2026.pdf";
+
   private final BillingService billingService;
+  private final AmendmentService amendmentService;
   private final AssessmentService assessmentService;
   private final LookupService lookupService;
   private final SubmissionSummaryDisplayMapper submissionSummaryDisplayMapper;
   private final PoaDeclarationSubmissionValidator poaDeclarationValidator;
   private final BillingSummaryPdfService billingSummaryPdfService;
+  private final BillingUndertakingValidator billingUndertakingValidator;
 
   private static final String CASE_STATEMENT_OF_ACCOUNT_URL = "redirect:/case/billing";
   private static final String OPA_BILL_TYPE_ATTRIBUTE = "BILL_TYPE";
@@ -144,6 +156,93 @@ public class BillingController {
         statementOfAccount.isDraftBillExists() || statementOfAccount.isDraftPoaExists());
 
     return "application/billing/case-statement-of-account";
+  }
+
+  /**
+   * Displays the enter undertaking screen and clears any previously cached undertaking range values
+   * from the session.
+   *
+   * @param model The model used to pass form data to the view.
+   * @param session The current HTTP session.
+   * @return The enter undertaking view.
+   */
+  @GetMapping("/case/billing/undertaking")
+  public String enterUndertaking(final Model model, final HttpSession session) {
+    session.removeAttribute(UNDERTAKING_MINIMUM);
+    session.removeAttribute(UNDERTAKING_MAXIMUM);
+    model.addAttribute("statutoryChargeManualUrl", STATUTORY_CHARGE_MANUAL_URL);
+    model.addAttribute("undertakingFormData", new UndertakingFormData());
+    return "application/billing/enter-undertaking";
+  }
+
+  /**
+   * Validates and submits an undertaking amount as a quick amendment.
+   *
+   * <p>The valid undertaking range is derived from the current provider statement and cached in the
+   * session for redisplay when validation fails.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param user The logged-in user.
+   * @param undertakingFormData The undertaking form payload.
+   * @param bindingResult Validation errors for the form.
+   * @param model The model used to pass form data back to the view.
+   * @param session The current HTTP session.
+   * @return The enter undertaking view when validation fails; otherwise a redirect to submit the
+   *     amendment.
+   */
+  @PostMapping("/case/billing/undertaking")
+  public String submitUndertaking(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @ModelAttribute("undertakingFormData") final UndertakingFormData undertakingFormData,
+      final BindingResult bindingResult,
+      final Model model,
+      HttpSession session) {
+
+    BigDecimal undertakingMinimum = (BigDecimal) session.getAttribute(UNDERTAKING_MINIMUM);
+    BigDecimal undertakingMaximum = (BigDecimal) session.getAttribute(UNDERTAKING_MAXIMUM);
+
+    if (undertakingMinimum == null || undertakingMaximum == null) {
+      final StatementOfAccountDetail statementOfAccount =
+          billingService.getCurrentProviderStatement(
+              ebsCase.getCaseReferenceNumber(), ebsCase, user);
+      if (statementOfAccount != null) {
+        if (statementOfAccount.getBills() != null) {
+          undertakingMinimum = statementOfAccount.getBills().getTotalAmount();
+        }
+        if (statementOfAccount.getCostLimitation() != null) {
+          undertakingMaximum = statementOfAccount.getCostLimitation().getRemainingAmount();
+        }
+      }
+
+      undertakingMinimum = undertakingMinimum == null ? BigDecimal.ZERO : undertakingMinimum;
+      undertakingMaximum = undertakingMaximum == null ? BigDecimal.ZERO : undertakingMaximum;
+    }
+
+    undertakingFormData.setUndertakingMinimumAmount(undertakingMinimum);
+    undertakingFormData.setUndertakingMaximumAmount(undertakingMaximum);
+
+    // validate
+    billingUndertakingValidator.validate(undertakingFormData, bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      session.setAttribute(UNDERTAKING_MINIMUM, undertakingMinimum);
+      session.setAttribute(UNDERTAKING_MAXIMUM, undertakingMaximum);
+      model.addAttribute("statutoryChargeManualUrl", STATUTORY_CHARGE_MANUAL_URL);
+      model.addAttribute("undertakingFormData", undertakingFormData);
+      return "application/billing/enter-undertaking";
+    }
+
+    final String transactionId =
+        amendmentService.submitQuickAmendmentUndertaking(
+            undertakingFormData, ebsCase.getCaseReferenceNumber(), user);
+
+    session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
+    session.removeAttribute(SUBMISSION_RESULT);
+    session.removeAttribute(UNDERTAKING_MINIMUM);
+    session.removeAttribute(UNDERTAKING_MAXIMUM);
+    model.addAttribute("undertakingFormData", new UndertakingFormData());
+    return "redirect:/amendments/submit-case";
   }
 
   /**

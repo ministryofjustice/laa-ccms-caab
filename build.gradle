@@ -103,7 +103,7 @@ dependencies {
     implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.1.3'
 
     // 0.7.0 carries the bill id needed to delete a draft (PR #175).
-    implementation 'uk.gov.laa.ccms.caab:caab-api:0.7.0'
+    implementation 'uk.gov.laa.ccms.caab:caab-api:0.8.0'
 
     implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.57'
 
