@@ -16,7 +16,7 @@
         <h1 class="govuk-heading-l" th:text="#{courtSearch.title}"></h1>
         <p class="govuk-body" th:text="#{courtSearch.information}"></p>
 
-        <form th:action="@{/court/search}"
+        <form th:action="@{/court/search(proceedingIndex=${proceedingIndex})}"
               th:object="${courtSearchCriteria}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
 

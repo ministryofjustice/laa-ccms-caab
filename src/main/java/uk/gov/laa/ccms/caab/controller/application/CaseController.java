@@ -5,7 +5,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERG
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OUTCOME_ADR;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OUTCOME_RESOLUTION_METHOD;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OUTCOME_WIDER_BENEFITS;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_WIDER_BENEFITS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.AMEND_CLIENT_ORIGIN;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
@@ -15,6 +15,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMAR
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COURT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
 import static uk.gov.laa.ccms.caab.util.DateUtils.convertToComponentDate;
@@ -69,6 +70,7 @@ import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.caab.util.PriorAuthorityUtils;
 import uk.gov.laa.ccms.caab.util.view.ActionViewHelper;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupValueDetail;
 import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
@@ -305,7 +307,10 @@ public class CaseController {
   @GetMapping("/case/outcome-and-awards/proceeding/{index}/outcome")
   public String recordProceedingOutcome(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(value = SELECTED_COURT, required = false)
+          final CommonLookupValueDetail selectedCourt,
       @PathVariable("index") final int index,
+      HttpSession session,
       Model model) {
     List<ProceedingDetail> proceedings = ebsCase.getProceedings();
     String errorMessage = "Could not find proceeding with index: %s".formatted(index);
@@ -313,10 +318,17 @@ public class CaseController {
     Assert.isTrue(index < proceedings.size(), () -> errorMessage);
 
     final ProceedingDetail proceeding = proceedings.get(index);
+    final ProceedingOutcomeFormData formData = toProceedingOutcomeFormData(proceeding);
+
+    if (selectedCourt != null) {
+      formData.setCourtCode(selectedCourt.getCode());
+      formData.setCourtName(selectedCourt.getDescription());
+      session.removeAttribute(SELECTED_COURT);
+    }
 
     model.addAttribute("proceeding", proceeding);
     model.addAttribute("proceedingIndex", index);
-    model.addAttribute("proceedingOutcome", toProceedingOutcomeFormData(proceeding));
+    model.addAttribute("proceedingOutcome", formData);
     populateOutcomeDropdowns(model, proceeding);
 
     return "application/record-proceeding-outcome";
@@ -500,8 +512,7 @@ public class CaseController {
             .orElse(Collections.emptyList()));
     model.addAttribute(
         "widerBenefitsOptions",
-        Optional.ofNullable(
-                lookupService.getCommonValues(COMMON_VALUE_OUTCOME_WIDER_BENEFITS).block())
+        Optional.ofNullable(lookupService.getCommonValues(COMMON_VALUE_WIDER_BENEFITS).block())
             .map(CommonLookupDetail::getContent)
             .orElse(Collections.emptyList()));
   }

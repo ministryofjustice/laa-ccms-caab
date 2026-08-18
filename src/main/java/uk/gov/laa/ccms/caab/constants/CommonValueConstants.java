@@ -79,7 +79,7 @@ public class CommonValueConstants {
   public static final String COMMON_VALUE_OUTCOME_ADR = "XXCCMS_OUTCOME_ADR";
 
   /** Type used to retrieve proceeding outcome wider benefits options. */
-  public static final String COMMON_VALUE_OUTCOME_WIDER_BENEFITS = "XXCCMS_OUTCOME_WIDER_BENEFITS";
+  public static final String COMMON_VALUE_WIDER_BENEFITS = "XXCCMS_WIDER_BENEFITS";
 
   /** Type used to retrieve the Progress status types. */
   public static final String COMMON_VALUE_PROGRESS_STATUS_TYPES = "XXCCMS_OPA_PROGRESS_STATUS";

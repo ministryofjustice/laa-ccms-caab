@@ -22,6 +22,8 @@ public class ProceedingOutcomeFormData {
 
   private String courtCode;
 
+  private String courtName;
+
   private String outcomeCourtCaseNo;
 
   private String widerBenefits;

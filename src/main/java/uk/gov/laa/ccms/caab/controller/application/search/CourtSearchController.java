@@ -1,9 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.COUNSEL_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_RESULTS;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COUNSEL;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COURT;
 
 import jakarta.servlet.http.HttpSession;
@@ -25,7 +23,6 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.util.PaginationUtil;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
-import uk.gov.laa.ccms.data.model.CounselLookupValueDetail;
 
 @Controller
 @RequiredArgsConstructor
@@ -37,7 +34,6 @@ public class CourtSearchController {
   private final LookupService lookupService;
 
   protected static final String CURRENT_URL = "currentUrl";
-
   protected static final String COURT_RESULTS_PAGE = "courtResultsPage";
 
   /**
@@ -53,24 +49,32 @@ public class CourtSearchController {
   /**
    * Displays the court search screen.
    *
+   * @param proceedingIndex The index of the proceeding.
+   * @param searchCriteria The court search criteria.
+   * @param model The model used to pass data to the view.
    * @return The court search view.
    */
   @GetMapping("/court/search")
   public String courtSearch(
-      @ModelAttribute(COURT_SEARCH_CRITERIA) final CourtSearchCriteria searchCriteria
-  ) {
+      @RequestParam(value = "proceedingIndex") final int proceedingIndex,
+      @ModelAttribute(COURT_SEARCH_CRITERIA) final CourtSearchCriteria searchCriteria,
+      Model model) {
+
+    model.addAttribute("proceedingIndex", proceedingIndex);
     return "application/court-search";
   }
 
   /**
    * POST method to look for paginated court details.
    *
+   * @param proceedingIndex The index of the proceeding.
    * @param searchCriteria Criteria for court search.
    * @param bindingResult handler validation errors.
    * @return View name in terms of string value.
    */
   @PostMapping("/court/search")
   public String courtSearch(
+      @RequestParam(value = "proceedingIndex") final int proceedingIndex,
       @ModelAttribute(COURT_SEARCH_CRITERIA) final CourtSearchCriteria searchCriteria,
       BindingResult bindingResult,
       final HttpSession session,
@@ -78,24 +82,28 @@ public class CourtSearchController {
 
     courtSearchValidator.validate(searchCriteria, bindingResult);
     if (bindingResult.hasErrors()) {
+      model.addAttribute("proceedingIndex", proceedingIndex);
       return "application/court-search";
     }
 
-    CommonLookupDetail result = lookupService
-        .getCourts(searchCriteria.getCourtCode(), searchCriteria.getCourtName())
+    CommonLookupDetail result =
+        lookupService
+            .getCourts(searchCriteria.getCourtCode(), searchCriteria.getCourtName())
             .block();
 
     if (result.getContent() == null || result.getContent().isEmpty()) {
+      model.addAttribute("proceedingIndex", proceedingIndex);
       return "application/court-search-no-results";
     }
 
     session.setAttribute(COURT_SEARCH_RESULTS, result.getContent());
-    return "redirect:/court/results";
+    return "redirect:/court/results?proceedingIndex=" + proceedingIndex;
   }
 
   /**
    * GET method to look for paginated court details.
    *
+   * @param proceedingIndex The index of the proceeding.
    * @param page Default page 0 to show when not specified.
    * @param size Default size 10 to show page when not specified.
    * @param model Model (MVC) to pass data to view.
@@ -103,6 +111,7 @@ public class CourtSearchController {
    */
   @GetMapping("/court/results")
   public String courtLookupGet(
+      @RequestParam(value = "proceedingIndex") final int proceedingIndex,
       @RequestParam(value = "page", defaultValue = "0") final int page,
       @RequestParam(value = "size", defaultValue = "10") final int size,
       final HttpSession httpSession,
@@ -116,15 +125,14 @@ public class CourtSearchController {
       return "redirect:/court/search";
     }
 
-    var pagedResults = PaginationUtil.paginateList(
-        Pageable.ofSize(size).withPage(page),
-        lookupValueDetails);
-
+    var pagedResults =
+        PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), lookupValueDetails);
 
     String searchUrl = "/court/results";
     model.addAttribute(CURRENT_URL, searchUrl);
     model.addAttribute(COURT_RESULTS_PAGE, pagedResults);
 
+    model.addAttribute("proceedingIndex", proceedingIndex);
     return "application/court-search-results";
   }
 
@@ -133,10 +141,14 @@ public class CourtSearchController {
    *
    * @param index The index of the selected court in the search results.
    * @param session The current HTTP session.
+   * @param proceedingIndex The index of the proceeding.
    * @return A redirect to the court confirmation screen.
    */
   @GetMapping("/court/select")
-  public String selectCourt(@RequestParam("index") int index, HttpSession session) {
+  public String selectCourt(
+      @RequestParam("index") int index,
+      @RequestParam("proceedingIndex") int proceedingIndex,
+      HttpSession session) {
 
     @SuppressWarnings("unchecked")
     List<CommonLookupValueDetail> lookupValueDetails =
@@ -148,6 +160,6 @@ public class CourtSearchController {
       session.setAttribute(SELECTED_COURT, selectedCourt);
     }
 
-    return "redirect:/application/court/confirm";
+    return "redirect:/case/outcome-and-awards/proceeding/" + proceedingIndex + "/outcome";
   }
 }
