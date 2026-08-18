@@ -43,7 +43,7 @@ public class BillingUndertakingValidator extends AbstractValidator {
     }
 
     if (undertakingFormData.getUndertakingAmount() != null
-        && !undertakingFormData.getUndertakingAmount().isEmpty()) {
+        && !undertakingFormData.getUndertakingAmount().isBlank()) {
       validateCurrencyField(
           "undertakingAmount",
           undertakingFormData.getUndertakingAmount(),
