@@ -239,6 +239,9 @@ public class SessionConstants {
 
   public static final String COURT_SEARCH_RESULTS = "courtSearchResults";
 
+  /** Session attribute used to keep track of the selected court for confirmation. */
+  public static final String SELECTED_COURT = "selectedCourt";
+
   /** Session attribute for keeping track of undertaking minimum. */
   public static final String UNDERTAKING_MINIMUM = "undertakingMinimum";
 

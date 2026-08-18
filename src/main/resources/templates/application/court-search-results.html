@@ -6,37 +6,30 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/counsel/search}" class="govuk-back-link" th:text="#{caseCosts.allocateCostLimit.cancel}"></a>
+        <a th:href="@{/court/search}" class="govuk-back-link" th:text="#{site.returnToCourtSearch}"></a>
     </div>
     <div id="main-content">
-        <span class="govuk-caption-l" th:text="#{counsel.search.caption}"></span>
-        <h1 class="govuk-heading-l" th:text="#{counsel.search.results}"></h1>
-        <p class="govuk-body-l" th:text="#{counsel.search.results.returned(${counselResultsPage.totalElements})}"></p>
-        <p class="govuk-body-l" th:text="#{counsel.search.results.summary}"></p>
+        <h1 class="govuk-heading-l" th:text="#{courtSearch.results}"></h1>
+        <p class="govuk-body-l" th:text="#{courtSearch.results.message}"></p>
+        <p class="govuk-body-l" th:text="#{courtSearch.results.returned(${courtResultsPage.totalElements})}"></p>
         <table class="govuk-table">
             <thead class="govuk-table__head">
             <tr class="govuk-table__row">
-                <th scope="col" class="govuk-table__header" th:text="#{counsel.search.name}"/>
-                <th scope="col" class="govuk-table__header" th:text="#{counsel.search.company}"/>
-                <th scope="col" class="govuk-table__header" th:text="#{counsel.search.laaCounselRef}"/>
-                <th scope="col" class="govuk-table__header" th:text="#{counsel.search.category}"/>
-                <th scope="col" class="govuk-table__header" th:text="#{counsel.search.county}"/>
+                <th scope="col" class="govuk-table__header" th:text="#{courtSearch.courtCode}"/>
+                <th scope="col" class="govuk-table__header" th:text="#{courtSearch.courtName}"/>
             </tr>
             </thead>
             <tbody class="govuk-table__body">
-            <tr class="govuk-table__row" th:each="row, rowStat : ${counselResultsPage.content}">
+            <tr class="govuk-table__row" th:each="row, rowStat : ${courtResultsPage.content}">
 
-                <td class="govuk-table__cell"><a class="govuk-link" th:href="@{/counsel/select(index=${(counselResultsPage.number * counselResultsPage.size) + rowStat.index})}" th:text="${row.name}"></a></td>
-                <td class="govuk-table__cell" th:text="${row.company}"></td>
-                <td class="govuk-table__cell" th:text="${row.legalAidSupplierNumber}"></td>
-                <td class="govuk-table__cell" th:text="${row.category}"></td>
-                <td class="govuk-table__cell" th:text="${row.county}"></td>
+                <td class="govuk-table__cell"><a class="govuk-link" th:href="@{/court/select(index=${(courtResultsPage.number * courtResultsPage.size) + rowStat.index})}" th:text="${row.getCode()}"></a></td>
+                <td class="govuk-table__cell" th:text="${row.getDescription()}"></td>
             </tr>
             </tbody>
         </table>
-        <nav th:replace="~{partials/pagination :: pagination(page=${counselResultsPage})}"></nav>
+        <nav th:replace="~{partials/pagination :: pagination(page=${courtResultsPage})}"></nav>
         <div class="govuk-button-group">
-            <a th:href="@{/counsel/search}" class="govuk-button govuk-button--secondary" data-module="govuk-button" th:text="#{site.back}"></a>
+            <a th:href="@{/court/search}" class="govuk-button govuk-button--secondary" data-module="govuk-button" th:text="#{site.back}"></a>
         </div>
     </div>
 </div>

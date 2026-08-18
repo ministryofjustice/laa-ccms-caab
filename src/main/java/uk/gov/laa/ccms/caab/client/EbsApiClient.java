@@ -1055,7 +1055,7 @@ public class EbsApiClient extends BaseApiClient {
    *
    * @return A {@link Mono} wrapping the {@link CaseDetail}.
    */
-  public Mono<CourtLookupDetail> getCourtDetails(CourtSearchCriteria criteria) {
+  public Mono<CommonLookupDetail> getCourtDetails(CourtSearchCriteria criteria) {
 
     MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
 
@@ -1076,7 +1076,7 @@ public class EbsApiClient extends BaseApiClient {
                             Mono.error(
                                 ebsApiClientErrorHandler.createException(
                                     body, HttpStatus.resolve(response.statusCode().value())))))
-        .bodyToMono(CourtLookupDetail.class)
+        .bodyToMono(CommonLookupDetail.class)
         .onErrorResume(
             e -> ebsApiClientErrorHandler.handleApiRetrieveError(e, "Court details", queryParams));
   }
