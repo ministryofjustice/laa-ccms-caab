@@ -1276,6 +1276,21 @@ class SoaApplicationMapperTest {
   }
 
   @Test
+  @DisplayName("toCaseDetail sends the case's available functions so soa-gateway can read MNLA")
+  void testToCaseDetail_SendsAvailableFunctions() {
+    final ApplicationDetail applicationDetail = buildApplicationDetail(1, false, new Date());
+    applicationDetail.setAvailableFunctions(List.of("MNLA", "MNR"));
+
+    final CaseMappingContext context =
+        CaseMappingContext.builder().tdsApplication(applicationDetail).build();
+
+    final CaseDetail result = applicationMapper.toCaseDetail(context);
+
+    assertNotNull(result);
+    assertEquals(List.of("MNLA", "MNR"), result.getAvailableFunctions());
+  }
+
+  @Test
   @DisplayName("Test toCaseDetail with null CaseMappingContext")
   void testToCaseDetail_Null() {
     assertNull(applicationMapper.toCaseDetail(null));
@@ -1605,6 +1620,7 @@ class SoaApplicationMapperTest {
         new StringDisplayValue().id("scopeId").displayValue("Scope Description"));
     scopeLimitationDetail.setScopeLimitationWording("Scope Limitation Wording");
     scopeLimitationDetail.setDelegatedFuncApplyInd(new BooleanDisplayValue().flag(true));
+    scopeLimitationDetail.setEbsId("12345");
 
     final ScopeLimitation result = applicationMapper.toSoaScopeLimitation(scopeLimitationDetail);
 
@@ -1612,6 +1628,34 @@ class SoaApplicationMapperTest {
     assertEquals("scopeId", result.getScopeLimitation());
     assertEquals("Scope Limitation Wording", result.getScopeLimitationWording());
     assertTrue(result.isDelegatedFunctionsApply());
+    assertEquals("12345", result.getScopeLimitationId());
+  }
+
+  @Test
+  @DisplayName(
+      "toSoaScopeLimitation sends the stored EBS id so EBS matches the existing limitation")
+  void testToSoaScopeLimitation_SendsEbsId() {
+    final ScopeLimitationDetail scopeLimitationDetail = new ScopeLimitationDetail();
+    scopeLimitationDetail.setEbsId("98765");
+    scopeLimitationDetail.setScopeLimitationWording("Amended non-default wording");
+
+    final ScopeLimitation result = applicationMapper.toSoaScopeLimitation(scopeLimitationDetail);
+
+    assertNotNull(result);
+    assertEquals("98765", result.getScopeLimitationId());
+    assertEquals("Amended non-default wording", result.getScopeLimitationWording());
+  }
+
+  @Test
+  @DisplayName("toSoaScopeLimitation leaves the EBS id null for a newly added scope limitation")
+  void testToSoaScopeLimitation_NoEbsId() {
+    final ScopeLimitationDetail scopeLimitationDetail = new ScopeLimitationDetail();
+    scopeLimitationDetail.setScopeLimitationWording("New wording");
+
+    final ScopeLimitation result = applicationMapper.toSoaScopeLimitation(scopeLimitationDetail);
+
+    assertNotNull(result);
+    assertNull(result.getScopeLimitationId());
   }
 
   @Test

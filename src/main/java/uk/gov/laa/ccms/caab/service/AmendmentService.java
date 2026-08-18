@@ -464,6 +464,8 @@ public class AmendmentService {
     // Strip the in-memory amendment to the submission payload; the persisted draft keeps its shape.
     AmendmentUtil.cleanAppForQuickAmendSubmit(amendment);
 
+    populateAvailableFunctionsForSubmission(amendment, userDetail);
+
     // Register and transfer any documents uploaded against this amendment so they are attached to
     // the case update, matching the legacy provider UI amendment submission behaviour.
     final List<BaseEvidenceDocumentDetail> caseDocs =
@@ -487,6 +489,47 @@ public class AmendmentService {
             amendment.getQuickEditType());
 
     return Objects.requireNonNull(caseTransactionResponseMono.block()).getTransactionId();
+  }
+
+  /**
+   * Ensures the amendment carries the case's available functions before it is submitted.
+   * soa-gateway decides whether a means reassessment is forced to SUBSTANTIVE from {@code
+   * !availableFunctions.contains("MNLA")}, but the TDS draft does not persist them, so an amendment
+   * reloaded for submission has none. Old PUI has the same gap and falls back to the original case
+   * (see {@code CaseToEBSCaseConverter.addAmendmentDetails}); this does the same.
+   *
+   * <p>Only fetched when the means assessment was amended, which is the only case where soa-gateway
+   * reads the flag.
+   *
+   * @param amendment the amendment about to be submitted
+   * @param userDetail the user submitting the amendment
+   */
+  private void populateAvailableFunctionsForSubmission(
+      final ApplicationDetail amendment, final UserDetail userDetail) {
+    if (!Boolean.TRUE.equals(amendment.getMeansAssessmentAmended())
+        || (amendment.getAvailableFunctions() != null
+            && !amendment.getAvailableFunctions().isEmpty())) {
+      return;
+    }
+
+    try {
+      final ApplicationDetail baseCase =
+          applicationService.getCase(
+              amendment.getCaseReferenceNumber(),
+              userDetail.getProvider().getId(),
+              userDetail.getLoginId());
+
+      if (baseCase != null) {
+        amendment.setAvailableFunctions(baseCase.getAvailableFunctions());
+      }
+    } catch (final Exception e) {
+      // Falling back to no available functions keeps the previous behaviour rather than taking the
+      // submission down; soa-gateway then treats the update as a reassessment.
+      log.warn(
+          "Could not read the available functions for case {}; submitting without them.",
+          amendment.getCaseReferenceNumber(),
+          e);
+    }
   }
 
   /**
@@ -626,6 +669,8 @@ public class AmendmentService {
 
     assessmentService.calculateAssessmentStatuses(
         amendment, meansAssessment, meritsAssessment, userDetail);
+
+    populateAvailableFunctionsForSubmission(amendment, userDetail);
 
     // Register and transfer any documents uploaded against this amendment so they are attached to
     // the case update, matching old PUI's CaseSubmissionHelper.amendCase.

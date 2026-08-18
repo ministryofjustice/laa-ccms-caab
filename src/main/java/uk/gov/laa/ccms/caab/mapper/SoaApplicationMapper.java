@@ -755,7 +755,11 @@ public interface SoaApplicationMapper {
   @Mapping(target = "awards", ignore = true)
   @Mapping(target = "dischargeStatus", ignore = true)
   @Mapping(target = "caseStatus", ignore = true)
-  @Mapping(target = "availableFunctions", ignore = true)
+  // soa-gateway derives its `reassessment` flag from these
+  // (`!availableFunctions.contains("MNLA")`),
+  // which decides whether a means reassessment is forced to SUBSTANTIVE. Leaving them unmapped sent
+  // an empty list, making that flag unconditionally true.
+  @Mapping(target = "availableFunctions", source = "tdsApplication.availableFunctions")
   CaseDetail toCaseDetail(CaseMappingContext context);
 
   @Mapping(target = "ccmsDocumentId", source = "registeredDocumentId")
@@ -928,7 +932,10 @@ public interface SoaApplicationMapper {
   @Mapping(target = "scopeLimitation", source = "scopeLimitation.id")
   @Mapping(target = "scopeLimitationWording", source = "scopeLimitationWording")
   @Mapping(target = "delegatedFunctionsApply", source = "delegatedFuncApplyInd.flag")
-  @Mapping(target = "scopeLimitationId", ignore = true)
+  // Old PUI sends the stored EBS id (CaseToEBSCaseConverter.convertToEBSScopeLimitation:
+  // `outProc.setScopeLimitationID(scopeLimitation.getEbsId())`) so EBS can match the
+  // scope limitation already on the proceeding rather than treating it as a new one.
+  @Mapping(target = "scopeLimitationId", source = "ebsId")
   ScopeLimitation toSoaScopeLimitation(ScopeLimitationDetail scopeLimitationDetail);
 
   @Mapping(target = "otherPartyId", source = ".", qualifiedByName = "mapOpponentId")

@@ -163,6 +163,50 @@ class AmendmentServiceTest {
       verify(soaApplicationMapper).toCaseDetail(contextCaptor.capture());
       assertThat(contextCaptor.getValue().getCaseDocs()).isEmpty();
     }
+
+    @Test
+    @DisplayName("Should take available functions from the case when the amended means has none")
+    void shouldPopulateAvailableFunctionsFromCase() {
+      // Given - a TDS-loaded amendment never carries available functions
+      final String caseRef = "300001407940";
+      final ApplicationDetail amendment = amendment(caseRef);
+      amendment.setMeansAssessmentAmended(true);
+
+      when(assessmentService.getAssessments(any(), any(), any()))
+          .thenReturn(Mono.just(new AssessmentDetails().content(List.of())));
+      when(applicationService.getCase(eq(caseRef), eq(10L), eq("123")))
+          .thenReturn(new ApplicationDetail().availableFunctions(List.of("MNLA", "MNR")));
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), eq("LegalAmendment")))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TX-3")));
+
+      // When
+      amendmentService.submitAmendment(amendment, user());
+
+      // Then
+      assertThat(amendment.getAvailableFunctions()).containsExactly("MNLA", "MNR");
+    }
+
+    @Test
+    @DisplayName("Should not read the case when the means assessment was not amended")
+    void shouldNotReadCaseWhenMeansNotAmended() {
+      // Given
+      final String caseRef = "300001407940";
+      final ApplicationDetail amendment = amendment(caseRef);
+      amendment.setMeansAssessmentAmended(false);
+
+      when(assessmentService.getAssessments(any(), any(), any()))
+          .thenReturn(Mono.just(new AssessmentDetails().content(List.of())));
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), eq("LegalAmendment")))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TX-4")));
+
+      // When
+      amendmentService.submitAmendment(amendment, user());
+
+      // Then
+      verify(applicationService, never()).getCase(any(), anyLong(), any());
+    }
   }
 
   @Nested
