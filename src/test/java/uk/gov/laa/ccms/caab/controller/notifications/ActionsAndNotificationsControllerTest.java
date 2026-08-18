@@ -213,6 +213,8 @@ class ActionsAndNotificationsControllerTest {
       criteria.setOriginatesFromCase(true);
       criteria.setPrimaryContactName("Provider Contact");
       criteria.setAssignedToUserId("5");
+      // A case search turns this on
+      criteria.setIncludeClosed(true);
 
       Map<String, Object> flashMap = new HashMap<>();
       flashMap.put("user", userDetails);
@@ -226,6 +228,7 @@ class ActionsAndNotificationsControllerTest {
       assertThat(criteria.isOriginatesFromCase()).isFalse();
       assertThat(criteria.getPrimaryContactName()).isEmpty();
       assertThat(criteria.getAssignedToUserId()).isEqualTo(userDetails.getLoginId());
+      assertThat(criteria.isIncludeClosed()).isFalse();
     }
 
     @Test

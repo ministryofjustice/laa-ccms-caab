@@ -130,6 +130,9 @@ public class NotificationSearchCriteria {
     criteria.setClientSurname("");
     criteria.setProviderCaseReference("");
     criteria.setAssignedToUserId("");
+    // A case search turns this on, so a later general search would keep including closed
+    // notifications unless it is cleared here too
+    criteria.setIncludeClosed(false);
     // Clear the case context, otherwise a general search keeps the case-specific defaults
     criteria.setOriginatesFromCase(false);
     criteria.setPrimaryContactName("");
