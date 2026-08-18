@@ -35,7 +35,7 @@
           <div class="govuk-inset-text" id="primary-contact-inset-text"
                th:if="${notificationSearchCriteria.originatesFromCase
                  and !#strings.isEmpty(notificationSearchCriteria.primaryContactName)}"
-               th:utext="#{notifications.search.specificCasePrimaryContactHintText(${notificationSearchCriteria.primaryContactName})}"></div>
+               th:utext="#{notifications.search.specificCasePrimaryContactHintText(${#strings.escapeXml(notificationSearchCriteria.primaryContactName)})}"></div>
 
           <th:block
               th:with="hint=${feeEarnersUnavailable} ? #{notifications.search.filterUnavailable} : null, disabled=${feeEarnersUnavailable}">
@@ -70,7 +70,7 @@
 
           <th:block th:if="${notificationSearchCriteria.originatesFromCase}">
             <div class="govuk-inset-text" id="specific-case-reference-inset-text"
-              th:utext="#{notifications.search.specificCaseHintText(${notificationSearchCriteria.caseReference})}"></div>
+              th:utext="#{notifications.search.specificCaseHintText(${#strings.escapeXml(notificationSearchCriteria.caseReference)})}"></div>
             <input type="hidden" th:field="*{caseReference}"/>
           </th:block>
 
