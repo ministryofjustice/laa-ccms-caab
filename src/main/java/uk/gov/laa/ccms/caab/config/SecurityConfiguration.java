@@ -125,8 +125,12 @@ public class SecurityConfiguration {
                     .hasAuthority(UserRole.CREATE_PAYMENT_ON_ACCOUNT.getCode())
                     // Submitting and deleting a bill are separate permissions from creating one in
                     // the legacy PUI, which gates them on the subbill and delete-bill functions.
+                    // The bill rules are exact paths, not a prefix, so every route that submits
+                    // a bill has to be listed - "/case/billing/bill" alone does not cover them.
                     .requestMatchers(
-                        "/case/billing/bill/declaration", "/case/billing/bill/confirmation")
+                        "/case/billing/bill/submit",
+                        "/case/billing/bill/declaration",
+                        "/case/billing/bill/confirmation")
                     .hasAuthority(UserRole.SUBMIT_BILL.getCode())
                     .requestMatchers("/case/billing/bill/remove")
                     .hasAuthority(UserRole.DELETE_BILL.getCode())

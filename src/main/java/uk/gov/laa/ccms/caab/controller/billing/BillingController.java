@@ -98,6 +98,13 @@ public class BillingController {
   private static final String POA_SUBMISSION = "poa";
 
   /**
+   * How long a repeat submit waits for the submission already in flight, as attempts x interval.
+   */
+  private static final int SUBMISSION_WAIT_ATTEMPTS = 100;
+
+  private static final long SUBMISSION_WAIT_INTERVAL_MILLIS = 100L;
+
+  /**
    * Displays the case statement of account (billing) screen. The available billing actions are
    * shown based on the functions the case carries, and the statement of account figures and
    * bills/POA invoices are retrieved from EBS, mirroring the legacy PUI behaviour. The bills/POA
@@ -875,12 +882,6 @@ public class BillingController {
         : assessment.getStatus();
   }
 
-  /**
-   * Returns the view to show instead of submitting, or {@code null} when the submission may go
-   * ahead. A bill re-runs its final validation and explains the failure on the details screen; a
-   * POA needs the case to allow it and its assessment to be complete, the same two conditions the
-   * details screen uses to reveal Submit.
-   */
   /** Whether the case allows this submission at all, checked before any assessment is read. */
   private String notAuthorised(
       final BillingContext billingContext, final ApplicationDetail ebsCase) {
@@ -947,7 +948,11 @@ public class BillingController {
     if (!claimSubmission(session, billingContext.getPathValue())) {
       // A second submit, which a double-clicked button sends before the first has finished. Both
       // would read the same draft before either removed it, so EBS would take two identical
-      // submissions. Send the user to the confirmation instead of submitting again.
+      // submissions, so this one must not submit. The browser follows THIS response rather than
+      // the first request's, so wait for that one to record its reference first - redirecting
+      // straight to the confirmation would arrive before there is anything to show, bouncing the
+      // user to the statement of account without ever seeing their submission reference.
+      awaitSubmissionInFlight(session);
       return billingContext.getConfirmationRedirect();
     }
 
@@ -970,6 +975,33 @@ public class BillingController {
     session.setAttribute(SUBMISSION_TRANSACTION_ID, transactionId);
 
     return billingContext.getConfirmationRedirect();
+  }
+
+  /**
+   * Waits, briefly, for a submission already in flight in this session to record its reference.
+   *
+   * <p>Returns as soon as the reference appears, or as soon as the claim is released - which is
+   * what a failed submission does, and means there will be no reference to wait for. Gives up after
+   * {@value #SUBMISSION_WAIT_ATTEMPTS} attempts so a slow or hung submission cannot hold this
+   * request indefinitely; the user then lands on the statement of account, as they did before,
+   * rather than being blocked.
+   *
+   * @param session the current session.
+   */
+  private void awaitSubmissionInFlight(final HttpSession session) {
+    for (int attempt = 0; attempt < SUBMISSION_WAIT_ATTEMPTS; attempt++) {
+      if (session.getAttribute(SUBMISSION_TRANSACTION_ID) != null
+          || session.getAttribute(BILLING_SUBMISSION_SENT) == null) {
+        return;
+      }
+
+      try {
+        Thread.sleep(SUBMISSION_WAIT_INTERVAL_MILLIS);
+      } catch (final InterruptedException e) {
+        Thread.currentThread().interrupt();
+        return;
+      }
+    }
   }
 
   /**

@@ -56,6 +56,7 @@ import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.SubmissionSummaryDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
@@ -1010,6 +1011,45 @@ class BillingControllerTest {
                       .sessionAttr(USER_DETAILS, user)))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/case/billing/bill");
+    }
+
+    @Test
+    @DisplayName("A submission that failed can be retried in the same session")
+    void allowsRetryAfterFailedSubmission() {
+      // Given - the first submit never reaches EBS
+      final String caseRef = "300000123";
+      billingAssessment(
+          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+      when(assessmentService.deleteAssessments(any(), any(), any(), any()))
+          .thenReturn(Mono.empty());
+      when(billingService.submitBill(eq(caseRef), eq("10"), any(), eq(user)))
+          .thenThrow(new CaabApplicationException("EBS unavailable"))
+          .thenReturn("INV-7");
+
+      final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(CASE, caseWithBillFunction());
+      session.setAttribute(USER_DETAILS, user);
+
+      // When - the first attempt fails, so the claim is released rather than held
+      assertThat(
+              mockMvc.perform(
+                  post("/case/billing/bill/declaration")
+                      .param("declarationOptions[0].fieldValueDisplayValue", "I agree")
+                      .param("declarationOptions[0].checked", "true")
+                      .session(session)))
+          .hasFailed();
+
+      // Then - a second attempt is allowed through, and submits
+      assertThat(
+              mockMvc.perform(
+                  post("/case/billing/bill/declaration")
+                      .param("declarationOptions[0].fieldValueDisplayValue", "I agree")
+                      .param("declarationOptions[0].checked", "true")
+                      .session(session)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing/bill/confirmation");
+
+      verify(billingService, times(2)).submitBill(eq(caseRef), eq("10"), any(), eq(user));
     }
 
     @Test
