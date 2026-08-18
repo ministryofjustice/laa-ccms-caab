@@ -23,6 +23,7 @@ import org.thymeleaf.web.IWebExchange;
 import org.thymeleaf.web.servlet.JakartaServletWebApplication;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
+import uk.gov.laa.ccms.caab.constants.BillingContext;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -87,8 +88,15 @@ class BillingTemplateRenderTest {
   @DisplayName("POA confirmation renders through the layout in the shared submission shape")
   void poaConfirmationRenders() {
     final String html =
-        render("application/billing/poa-confirmation", Map.of("transactionId", "INV-1"));
-    assertThat(html).contains("poa-submission-reference").contains("INV-1");
+        render(
+            "application/billing/confirmation",
+            Map.of("transactionId", "INV-1", "billingContext", BillingContext.POA));
+    assertThat(html)
+        .contains("poa-submission-reference")
+        .contains("INV-1")
+        // The key is built from the billing context, so a wrong one renders ??key??.
+        .contains("Payment on account submitted")
+        .doesNotContain("??");
     assertConfirmationShape(html);
   }
 
@@ -140,8 +148,14 @@ class BillingTemplateRenderTest {
   @DisplayName("Bill confirmation renders through the layout in the shared submission shape")
   void billConfirmationRenders() {
     final String html =
-        render("application/billing/bill-confirmation", Map.of("transactionId", "INV-9"));
-    assertThat(html).contains("bill-submission-reference").contains("INV-9");
+        render(
+            "application/billing/confirmation",
+            Map.of("transactionId", "INV-9", "billingContext", BillingContext.BILL));
+    assertThat(html)
+        .contains("bill-submission-reference")
+        .contains("INV-9")
+        .contains("Bill submitted")
+        .doesNotContain("??");
     assertConfirmationShape(html);
   }
 

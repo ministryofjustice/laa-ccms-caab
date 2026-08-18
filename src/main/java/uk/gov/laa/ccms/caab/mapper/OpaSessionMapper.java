@@ -132,6 +132,11 @@ public class OpaSessionMapper {
                 final AssessmentEntityDetail added =
                     new AssessmentEntityDetail()
                         .name(entityId)
+                        // The assessment API requires this, and rejects the whole save with a 400
+                        // when it is null. Entities the rulebase derives while assessing were not
+                        // seeded by pre-population, so false is the right default; the connector
+                        // overrides it below when it says otherwise.
+                        .prepopulated(false)
                         .attributes(new ArrayList<>())
                         .relations(new ArrayList<>());
                 entityType.getEntities().add(added);

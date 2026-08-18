@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -30,7 +31,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
+import org.springframework.format.support.DefaultFormattingConversionService;
+import org.springframework.format.support.FormattingConversionService;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.Errors;
@@ -47,10 +51,12 @@ import uk.gov.laa.ccms.caab.bean.billing.UndertakingFormData;
 import uk.gov.laa.ccms.caab.bean.declaration.DynamicCheckbox;
 import uk.gov.laa.ccms.caab.bean.validators.billing.BillingUndertakingValidator;
 import uk.gov.laa.ccms.caab.bean.validators.declaration.PoaDeclarationSubmissionValidator;
+import uk.gov.laa.ccms.caab.config.StringToBillingContextConverter;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.SubmissionSummaryDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
@@ -60,6 +66,7 @@ import uk.gov.laa.ccms.caab.service.BillingSummaryPdfService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
+import uk.gov.laa.ccms.data.model.DeclarationLookupValueDetail;
 import uk.gov.laa.ccms.data.model.StatementOfAccountBills;
 import uk.gov.laa.ccms.data.model.StatementOfAccountCostLimitation;
 import uk.gov.laa.ccms.data.model.StatementOfAccountDetail;
@@ -94,9 +101,15 @@ class BillingControllerTest {
 
   @BeforeEach
   void setUp() {
+    // The billing routes take bill/poa as a path variable, so the converter the application
+    // registers has to be present here too.
+    final FormattingConversionService conversionService = new DefaultFormattingConversionService();
+    conversionService.addConverter(new StringToBillingContextConverter());
+
     mockMvc =
         MockMvcTester.create(
             MockMvcBuilders.standaloneSetup(billingController)
+                .setConversionService(conversionService)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build());
     // By default the case has no draft bill or payments on account.
@@ -812,6 +825,17 @@ class BillingControllerTest {
           .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessment)));
     }
 
+    /** Reference data has a declaration for this bill type, so the screen has one to show. */
+    private void declarationConfigured() {
+      when(lookupService.getDeclarations(any(), any()))
+          .thenReturn(
+              Mono.just(
+                  new DeclarationLookupDetail()
+                      .addContentItem(new DeclarationLookupValueDetail().text("I agree"))));
+      when(submissionSummaryDisplayMapper.toDeclarationFormDataDynamicOptionList(any()))
+          .thenReturn(List.of(new DynamicCheckbox()));
+    }
+
     private AssessmentEntityDetail global(final String name, final String value) {
       return new AssessmentEntityDetail()
           .attributes(List.of(new AssessmentAttributeDetail().name(name).value(value)));
@@ -856,8 +880,7 @@ class BillingControllerTest {
     void showsDeclaration() {
       billingAssessment(
           AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
-      when(lookupService.getDeclarations(any(), any()))
-          .thenReturn(Mono.just(new DeclarationLookupDetail()));
+      declarationConfigured();
 
       assertThat(
               mockMvc.perform(
@@ -865,15 +888,14 @@ class BillingControllerTest {
                       .sessionAttr(CASE, caseWithBillFunction())
                       .sessionAttr(USER_DETAILS, user)))
           .hasStatusOk()
-          .hasViewName("application/billing/bill-declaration");
+          .hasViewName("application/billing/declaration");
     }
 
     @Test
     @DisplayName("A bill that never went to court is treated as assessed, as the legacy PUI does")
     void treatsAbsentCourtAnswerAsAssessed() {
       billingAssessment(AssessmentStatus.COMPLETE.getStatus(), null);
-      when(lookupService.getDeclarations(any(), any()))
-          .thenReturn(Mono.just(new DeclarationLookupDetail()));
+      declarationConfigured();
 
       assertThat(
               mockMvc.perform(
@@ -881,15 +903,14 @@ class BillingControllerTest {
                       .sessionAttr(CASE, caseWithBillFunction())
                       .sessionAttr(USER_DETAILS, user)))
           .hasStatusOk()
-          .hasViewName("application/billing/bill-declaration");
+          .hasViewName("application/billing/declaration");
     }
 
     @Test
     @DisplayName("Keys the declaration on the assessment's bill type")
     void keysDeclarationOnBillType() {
       billingAssessment(AssessmentStatus.COMPLETE.getStatus(), global("BILL_TYPE", "CLAIM"));
-      when(lookupService.getDeclarations(any(), any()))
-          .thenReturn(Mono.just(new DeclarationLookupDetail()));
+      declarationConfigured();
 
       mockMvc.perform(
           get("/case/billing/bill/declaration")
@@ -932,12 +953,140 @@ class BillingControllerTest {
     }
 
     @Test
-    @DisplayName("POST re-shows the declaration without submitting when it is not fully accepted")
-    void rejectsUnacceptedDeclaration() {
+    @DisplayName("Submit skips the declaration and sends the bill when none is configured")
+    void skipsEmptyDeclaration() {
+      // Given - reference data holds no declaration for this bill type
       billingAssessment(
           AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
       when(lookupService.getDeclarations(any(), any()))
           .thenReturn(Mono.just(new DeclarationLookupDetail()));
+      when(billingService.submitBill(eq("300000123"), eq("10"), any(), eq(user)))
+          .thenReturn("INV-9");
+      when(assessmentService.deleteAssessments(any(), any(), any(), any()))
+          .thenReturn(Mono.empty());
+
+      // When
+      assertThat(
+              mockMvc.perform(
+                  post("/case/billing/bill/submit")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing/bill/confirmation");
+
+      // Then - straight to EBS, exactly as old PUI does when SHOW_DECLARATION is false
+      verify(billingService).submitBill(eq("300000123"), eq("10"), any(), eq(user));
+    }
+
+    @Test
+    @DisplayName("Submit shows the declaration, and sends nothing, when one is configured")
+    void showsDeclarationBeforeSubmitting() {
+      billingAssessment(
+          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+      declarationConfigured();
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/billing/bill/submit")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/billing/declaration");
+
+      verify(billingService, never()).submitBill(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("The declaration screen redirects to the bill when none is configured")
+    void declarationRedirectsWhenEmpty() {
+      billingAssessment(
+          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+      when(lookupService.getDeclarations(any(), any()))
+          .thenReturn(Mono.just(new DeclarationLookupDetail()));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill/declaration")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing/bill");
+    }
+
+    @Test
+    @DisplayName("A submission that failed can be retried in the same session")
+    void allowsRetryAfterFailedSubmission() {
+      // Given - the first submit never reaches EBS
+      final String caseRef = "300000123";
+      billingAssessment(
+          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+      when(assessmentService.deleteAssessments(any(), any(), any(), any()))
+          .thenReturn(Mono.empty());
+      when(billingService.submitBill(eq(caseRef), eq("10"), any(), eq(user)))
+          .thenThrow(new CaabApplicationException("EBS unavailable"))
+          .thenReturn("INV-7");
+
+      final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(CASE, caseWithBillFunction());
+      session.setAttribute(USER_DETAILS, user);
+
+      // When - the first attempt fails, so the claim is released rather than held
+      assertThat(
+              mockMvc.perform(
+                  post("/case/billing/bill/declaration")
+                      .param("declarationOptions[0].fieldValueDisplayValue", "I agree")
+                      .param("declarationOptions[0].checked", "true")
+                      .session(session)))
+          .hasFailed();
+
+      // Then - a second attempt is allowed through, and submits
+      assertThat(
+              mockMvc.perform(
+                  post("/case/billing/bill/declaration")
+                      .param("declarationOptions[0].fieldValueDisplayValue", "I agree")
+                      .param("declarationOptions[0].checked", "true")
+                      .session(session)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing/bill/confirmation");
+
+      verify(billingService, times(2)).submitBill(eq(caseRef), eq("10"), any(), eq(user));
+    }
+
+    @Test
+    @DisplayName("POST does not submit the bill again when the declaration is submitted twice")
+    void doesNotSubmitBillTwice() {
+      billingAssessment(
+          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+      when(billingService.submitBill(eq("300000123"), eq("10"), any(), eq(user)))
+          .thenReturn("INV-9");
+      when(assessmentService.deleteAssessments(any(), any(), any(), any()))
+          .thenReturn(Mono.empty());
+
+      final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(CASE, caseWithBillFunction());
+      session.setAttribute(USER_DETAILS, user);
+
+      for (int attempt = 0; attempt < 2; attempt++) {
+        assertThat(
+                mockMvc.perform(
+                    post("/case/billing/bill/declaration")
+                        .param("declarationOptions[0].fieldValueDisplayValue", "I agree")
+                        .param("declarationOptions[0].checked", "true")
+                        .session(session)))
+            .hasStatus3xxRedirection()
+            .hasRedirectedUrl("/case/billing/bill/confirmation");
+      }
+
+      // One bill, however many times the declaration was posted.
+      verify(billingService, times(1)).submitBill(eq("300000123"), eq("10"), any(), eq(user));
+    }
+
+    @Test
+    @DisplayName("POST re-shows the declaration without submitting when it is not fully accepted")
+    void rejectsUnacceptedDeclaration() {
+      billingAssessment(
+          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+      declarationConfigured();
       doAnswer(
               invocation -> {
                 final Errors errors = invocation.getArgument(1);
@@ -955,7 +1104,7 @@ class BillingControllerTest {
                       .sessionAttr(CASE, caseWithBillFunction())
                       .sessionAttr(USER_DETAILS, user)))
           .hasStatusOk()
-          .hasViewName("application/billing/bill-declaration");
+          .hasViewName("application/billing/declaration");
 
       verify(billingService, never()).submitBill(any(), any(), any(), any());
     }
@@ -1005,7 +1154,7 @@ class BillingControllerTest {
                   get("/case/billing/bill/confirmation")
                       .sessionAttr(SUBMISSION_TRANSACTION_ID, "INV-9")))
           .hasStatusOk()
-          .hasViewName("application/billing/bill-confirmation")
+          .hasViewName("application/billing/confirmation")
           .model()
           .containsEntry("transactionId", "INV-9");
     }
@@ -1125,7 +1274,7 @@ class BillingControllerTest {
                       .sessionAttr(CASE, caseWithPoaFunction())
                       .sessionAttr(USER_DETAILS, user)))
           .hasStatusOk()
-          .hasViewName("application/billing/poa-declaration")
+          .hasViewName("application/billing/declaration")
           .model()
           .containsKey("summarySubmissionFormData");
     }
@@ -1200,7 +1349,7 @@ class BillingControllerTest {
                       .sessionAttr(CASE, caseWithPoaFunction())
                       .sessionAttr(USER_DETAILS, user)))
           .hasStatusOk()
-          .hasViewName("application/billing/poa-declaration");
+          .hasViewName("application/billing/declaration");
 
       verifyNoInteractions(billingService);
     }
@@ -1213,7 +1362,7 @@ class BillingControllerTest {
                   get("/case/billing/poa/confirmation")
                       .sessionAttr(SUBMISSION_TRANSACTION_ID, "INV-9")))
           .hasStatusOk()
-          .hasViewName("application/billing/poa-confirmation")
+          .hasViewName("application/billing/confirmation")
           .model()
           .containsEntry("transactionId", "INV-9");
     }

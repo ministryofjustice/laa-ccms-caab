@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
 /** Provides error-handling capabilities for the API client interactions. */
@@ -39,7 +40,7 @@ public abstract class AbstractApiClientErrorHandler {
    */
   public <T> Mono<T> handleApiCreateError(final Throwable e, final String resourceType) {
     final String message = "Failed to create %s".formatted(resourceType);
-    log.error(message, e);
+    log.error("{}{}", message, responseBody(e), e);
     return Mono.error(createException(message, e));
   }
 
@@ -60,7 +61,7 @@ public abstract class AbstractApiClientErrorHandler {
       final String resourceId) {
     final String message =
         "Failed to delete %s with %s: %s".formatted(resourceType, resourceIdType, resourceId);
-    log.error(message, e);
+    log.error("{}{}", message, responseBody(e), e);
     return Mono.error(createException(message, e));
   }
 
@@ -101,7 +102,7 @@ public abstract class AbstractApiClientErrorHandler {
       final String resourceId) {
     final String message =
         "Failed to update %s with %s: %s".formatted(resourceType, resourceIdType, resourceId);
-    log.error(message, e);
+    log.error("{}{}", message, responseBody(e), e);
     return Mono.error(createException(message, e));
   }
 
@@ -147,7 +148,7 @@ public abstract class AbstractApiClientErrorHandler {
     }
     final String message =
         "Failed to retrieve %s with %s: %s".formatted(resourceType, resourceIdType, resourceId);
-    log.error(message, e);
+    log.error("{}{}", message, responseBody(e), e);
     return Mono.error(createException(message, e));
   }
 
@@ -190,8 +191,27 @@ public abstract class AbstractApiClientErrorHandler {
     }
 
     final String message = messageBuilder.toString();
-    log.error(message, e);
+    log.error("{}{}", message, responseBody(e), e);
 
     return Mono.error(createException(message, e));
+  }
+
+  /**
+   * The body the API sent back with its error, appended to the log message.
+   *
+   * <p>Without it a 4xx says only that the request was rejected, leaving the field at fault to be
+   * guessed at - for a validation failure the body names it.
+   *
+   * @param e the exception thrown during the API operation.
+   * @return the response body, prefixed for the log, or an empty string when there is none.
+   */
+  private String responseBody(final Throwable e) {
+    if (e instanceof WebClientResponseException webClientResponseException) {
+      final String body = webClientResponseException.getResponseBodyAsString();
+      if (!body.isBlank()) {
+        return " - the API responded: " + body;
+      }
+    }
+    return "";
   }
 }
