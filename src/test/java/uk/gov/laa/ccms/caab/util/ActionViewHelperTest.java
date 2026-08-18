@@ -212,7 +212,8 @@ class ActionViewHelperTest {
 
   @Test
   void isClearOutcomeAllowedReturnsFalseWhenAvailableFunctionsIsNull() {
-    ProceedingDetail proceeding = new ProceedingDetail().outcome(new ProceedingOutcomeDetail().id(123));
+    ProceedingDetail proceeding =
+        new ProceedingDetail().outcome(new ProceedingOutcomeDetail().id(123));
 
     assertThat(ActionViewHelper.isClearOutcomeAllowed(proceeding)).isFalse();
   }
