@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.service;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EMERGENCY_APPLICATION_TYPE_CODES;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_INDIVIDUAL;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.PRIOR_AUTHORITY_STATUS_GRANT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CASE_ADDRESS_OPTION;
@@ -1795,10 +1796,7 @@ public class ApplicationService {
   }
 
   private boolean isDeletePriorAuthorityAllowed(final PriorAuthorityDetail priorAuthority) {
-    if (priorAuthority.getStatus().equals("Grant")) {
-      return false;
-    }
-    return true;
+    return !PRIOR_AUTHORITY_STATUS_GRANT.equals(priorAuthority.getStatus());
   }
 
   /**
