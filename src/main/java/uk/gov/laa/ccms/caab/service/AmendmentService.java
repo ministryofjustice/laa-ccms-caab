@@ -11,6 +11,7 @@ import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -461,10 +462,25 @@ public class AmendmentService {
       caabApiClient.createApplication(userDetail.getLoginId(), amendment).block();
     }
 
+    // Old PUI strips the same fields but then reads these two off the original case rather than the
+    // stripped amendment (CaseToEBSCaseConverter.convertToEBSApplicationDetails takes LARDetails
+    // from lscCase and preferredAddress from lscCase.correspondenceAddress), so they still reach
+    // EBS. The amendment was built from the case, so capture them before the strip.
+    final Boolean caseLarScopeFlag = amendment.getLarScopeFlag();
+    final String casePreferredAddress =
+        Optional.ofNullable(amendment.getCorrespondenceAddress())
+            .map(AddressDetail::getPreferredAddress)
+            .orElse(null);
+
     // Strip the in-memory amendment to the submission payload; the persisted draft keeps its shape.
     AmendmentUtil.cleanAppForQuickAmendSubmit(amendment);
 
-    populateAvailableFunctionsForSubmission(amendment, userDetail);
+    amendment.setLarScopeFlag(caseLarScopeFlag);
+    if (amendment.getCorrespondenceAddress() == null && casePreferredAddress != null) {
+      // Only the preferred address survives the strip, matching what old PUI submits.
+      amendment.setCorrespondenceAddress(
+          new AddressDetail().preferredAddress(casePreferredAddress));
+    }
 
     // Register and transfer any documents uploaded against this amendment so they are attached to
     // the case update, matching the legacy provider UI amendment submission behaviour.

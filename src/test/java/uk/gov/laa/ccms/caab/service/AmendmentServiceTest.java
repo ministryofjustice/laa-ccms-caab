@@ -45,8 +45,10 @@ import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
+import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
+import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
@@ -185,6 +187,31 @@ class AmendmentServiceTest {
 
       // Then
       assertThat(amendment.getAvailableFunctions()).containsExactly("MNLA", "MNR");
+    }
+
+    @Test
+    @DisplayName("Quick amendment keeps the case LAR flag and preferred address after stripping")
+    void shouldRestoreCaseLevelDataOnQuickAmendment() {
+      // Given - the amendment is built from the case, then the strip nulls both fields
+      final String caseRef = "300000630332";
+      final ApplicationDetail amendment = amendment(caseRef);
+      amendment.setProviderDetails(new ApplicationProviderDetails());
+      amendment.setLarScopeFlag(true);
+      amendment.setCorrespondenceAddress(new AddressDetail().preferredAddress("POST"));
+
+      when(applicationService.getTdsApplicationSummary(eq(caseRef), any()))
+          .thenReturn(new BaseApplicationDetail());
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), eq("MeansReassessment")))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TX-5")));
+
+      // When
+      amendmentService.submitMeansReassessment(user(), amendment, new AssessmentDetail());
+
+      // Then - both survive, and the rest of the address does not come back with them
+      assertThat(amendment.getLarScopeFlag()).isTrue();
+      assertThat(amendment.getCorrespondenceAddress().getPreferredAddress()).isEqualTo("POST");
+      assertThat(amendment.getCorrespondenceAddress().getAddressLine1()).isNull();
     }
 
     @Test
