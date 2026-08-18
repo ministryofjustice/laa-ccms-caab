@@ -813,11 +813,18 @@ public class EbsApiClient extends BaseApiClient {
     final MultiValueMap<String, String> queryParams =
         buildQueryParams(criteria, providerId, page, pageSize);
 
+    log.debug("Searching notifications with query parameters: {}", queryParams);
+
     return webClient
         .get()
         .uri(builder -> builder.path("/notifications").queryParams(queryParams).build())
         .retrieve()
         .bodyToMono(Notifications.class)
+        .doOnNext(
+            notifications ->
+                log.debug(
+                    "Notification search matched {} notifications",
+                    Optional.ofNullable(notifications.getTotalElements()).orElse(0)))
         .onErrorResume(
             e -> ebsApiClientErrorHandler.handleApiRetrieveError(e, "Notifications", queryParams));
   }

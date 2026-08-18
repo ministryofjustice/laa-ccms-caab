@@ -15,6 +15,45 @@
     <h1 class="govuk-heading-l" th:text="#{notifications.heading}"/>
     <p class="govuk-body-l"
     th:text="#{notifications.search.noResults.leadParagraph}"/>
+    <!-- utext is required because the message contains markup; both values are escaped before
+         interpolation as the case reference can be user-supplied. -->
+    <div class="govuk-inset-text" id="primary-contact-inset-text"
+         th:if="${notificationSearchCriteria.originatesFromCase
+           and !#strings.isEmpty(notificationSearchCriteria.primaryContactName)}"
+         th:utext="#{notifications.search.noResults.primaryContact(${#strings.escapeXml(notificationSearchCriteria.caseReference)}, ${#strings.escapeXml(notificationSearchCriteria.primaryContactName)})}"></div>
+    <h2 class="govuk-heading-m" th:text="#{notifications.search.noResults.criteriaHeading}"/>
+    <dl class="govuk-summary-list govuk-summary-list--no-border" id="applied-filters">
+      <div class="govuk-summary-list__row"
+           th:if="${!#strings.isEmpty(notificationSearchCriteria.caseReference)}">
+        <dt class="govuk-summary-list__key" th:text="#{common.laaRef}"/>
+        <dd class="govuk-summary-list__value" th:text="${notificationSearchCriteria.caseReference}"/>
+      </div>
+      <div class="govuk-summary-list__row">
+        <dt class="govuk-summary-list__key" th:text="#{common.assignedTo}"/>
+        <dd class="govuk-summary-list__value">
+          <span th:if="${#strings.isEmpty(notificationSearchCriteria.assignedToUserId)}"
+                th:text="#{notifications.search.noResults.criteria.allAssignees}"/>
+          <span th:unless="${#strings.isEmpty(notificationSearchCriteria.assignedToUserId)}"
+                th:text="${notificationSearchCriteria.assignedToUserId}"/>
+        </dd>
+      </div>
+      <div class="govuk-summary-list__row">
+        <dt class="govuk-summary-list__key"
+            th:text="#{notifications.search.notificationDetails.actionType.label}"/>
+        <dd class="govuk-summary-list__value">
+          <span th:if="${#strings.isEmpty(notificationSearchCriteria.notificationType)}"
+                th:text="#{notifications.search.noResults.criteria.allTypes}"/>
+          <span th:unless="${#strings.isEmpty(notificationSearchCriteria.notificationType)}"
+                th:text="${notificationSearchCriteria.notificationType}"/>
+        </dd>
+      </div>
+      <div class="govuk-summary-list__row">
+        <dt class="govuk-summary-list__key"
+            th:text="#{notifications.search.includeClosedNotifications.legendText}"/>
+        <dd class="govuk-summary-list__value"
+            th:text="${notificationSearchCriteria.includeClosed} ? #{site.yes} : #{site.no}"/>
+      </div>
+    </dl>
     <p class="govuk-body govuk-!-text-align-right">
       <a class="govuk-button govuk-button--secondary"
          data-module="govuk-button"

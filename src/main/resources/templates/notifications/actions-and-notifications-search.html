@@ -32,6 +32,11 @@
                 th:replace="~{partials/forms :: dropdown('assignedToUserId', #{common.assignedTo}, ${users}, 'loginId', 'loginId', false)}"></div>
           </th:block>
 
+          <div class="govuk-inset-text" id="primary-contact-inset-text"
+               th:if="${notificationSearchCriteria.originatesFromCase
+                 and !#strings.isEmpty(notificationSearchCriteria.primaryContactName)}"
+               th:utext="#{notifications.search.specificCasePrimaryContactHintText(${notificationSearchCriteria.primaryContactName})}"></div>
+
           <th:block
               th:with="hint=${feeEarnersUnavailable} ? #{notifications.search.filterUnavailable} : null, disabled=${feeEarnersUnavailable}">
             <div

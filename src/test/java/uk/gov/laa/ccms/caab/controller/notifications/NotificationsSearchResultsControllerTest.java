@@ -286,6 +286,59 @@ class NotificationsSearchResultsControllerTest {
     verify(notificationService).getNotifications(any(), anyInt(), eq(1), eq(10));
   }
 
+  @Test
+  void testGetSearchResults_WhenAssigneeEmpty_DefaultsToLoggedInUser() throws Exception {
+    when(notificationService.getNotifications(any(), anyInt(), any(), any()))
+        .thenReturn(Mono.just(getNotificationsMock()));
+
+    NotificationSearchCriteria criteria = buildNotificationSearchCriteria();
+    criteria.setAssignedToUserId("");
+
+    ArgumentCaptor<NotificationSearchCriteria> criteriaArg =
+        ArgumentCaptor.forClass(NotificationSearchCriteria.class);
+
+    this.mockMvc
+        .perform(
+            get("/notifications/search-results")
+                .sessionAttr("user", userDetails)
+                .queryParam("page", "0")
+                .queryParam("size", "10")
+                .queryParam("pageSort", "dateAssigned,asc")
+                .sessionAttr(NOTIFICATION_SEARCH_CRITERIA, criteria))
+        .andExpect(status().isOk());
+
+    verify(notificationService).getNotifications(criteriaArg.capture(), anyInt(), any(), any());
+
+    assertEquals("testLoginId", criteriaArg.getValue().getAssignedToUserId());
+  }
+
+  @Test
+  void testGetSearchResults_WhenAssigneeEmptyAndFromCase_SearchesAllAssignees() throws Exception {
+    when(notificationService.getNotifications(any(), anyInt(), any(), any()))
+        .thenReturn(Mono.just(getNotificationsMock()));
+
+    NotificationSearchCriteria criteria = buildNotificationSearchCriteria();
+    criteria.setAssignedToUserId("");
+    criteria.setOriginatesFromCase(true);
+
+    ArgumentCaptor<NotificationSearchCriteria> criteriaArg =
+        ArgumentCaptor.forClass(NotificationSearchCriteria.class);
+
+    this.mockMvc
+        .perform(
+            get("/notifications/search-results")
+                .sessionAttr("user", userDetails)
+                .queryParam("page", "0")
+                .queryParam("size", "10")
+                .queryParam("pageSort", "dateAssigned,asc")
+                .sessionAttr(NOTIFICATION_SEARCH_CRITERIA, criteria))
+        .andExpect(status().isOk());
+
+    verify(notificationService).getNotifications(criteriaArg.capture(), anyInt(), any(), any());
+
+    assertEquals("", criteriaArg.getValue().getAssignedToUserId());
+  }
+
   private static Notifications getNotificationsMock() {
     return new Notifications()
         .addContentItem(

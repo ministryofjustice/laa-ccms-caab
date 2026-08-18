@@ -63,6 +63,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
+import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.NotificationService;
@@ -203,6 +204,47 @@ class ActionsAndNotificationsControllerTest {
                   get("/notifications/search?notification_type=all").flashAttrs(flashMap)))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/notifications/search-results?page=0&refresh=true");
+    }
+
+    @Test
+    @DisplayName("Should clear the case context when searching all notifications")
+    void shouldClearCaseContextWhenSearchingAllNotifications() {
+      NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+      criteria.setOriginatesFromCase(true);
+      criteria.setPrimaryContactName("Provider Contact");
+      criteria.setAssignedToUserId("5");
+
+      Map<String, Object> flashMap = new HashMap<>();
+      flashMap.put("user", userDetails);
+      flashMap.put("notificationSearchCriteria", criteria);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/notifications/search?notification_type=all").flashAttrs(flashMap)))
+          .hasStatus3xxRedirection();
+
+      assertThat(criteria.isOriginatesFromCase()).isFalse();
+      assertThat(criteria.getPrimaryContactName()).isEmpty();
+      assertThat(criteria.getAssignedToUserId()).isEqualTo(userDetails.getLoginId());
+    }
+
+    @Test
+    @DisplayName("Should preserve the case's assignee when returning to a case's results")
+    void shouldPreserveCaseAssigneeWhenReturningToCaseResults() {
+      NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+      criteria.setOriginatesFromCase(true);
+      criteria.setAssignedToUserId("5");
+
+      Map<String, Object> flashMap = new HashMap<>();
+      flashMap.put("user", userDetails);
+      flashMap.put("notificationSearchCriteria", criteria);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/notifications/search?notification_type=N").flashAttrs(flashMap)))
+          .hasStatus3xxRedirection();
+
+      assertThat(criteria.getAssignedToUserId()).isEqualTo("5");
     }
 
     @Test
@@ -402,6 +444,7 @@ class ActionsAndNotificationsControllerTest {
       Notifications notificationsMock = getNotificationsMock();
 
       when(notificationSearchValidator.supports(any())).thenReturn(true);
+      stubProviderUsers(new BaseUser().loginId("SOMEONE.ELSE@TEST.COM"));
 
       ApplicationDetail ebsCase = buildFullApplicationDetail();
       assertThat(
@@ -414,6 +457,168 @@ class ActionsAndNotificationsControllerTest {
           .debug();
       assertThat(criteria.isOriginatesFromCase()).isTrue();
       assertThat(criteria.getCaseReference()).isEqualTo(ebsCase.getCaseReferenceNumber());
+    }
+
+    @Test
+    @DisplayName("Should discard filters from an earlier search in the session")
+    void shouldDiscardFiltersFromEarlierSearch() {
+      NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+      criteria.setClientSurname("Stale");
+      criteria.setProviderCaseReference("STALE-REF");
+      criteria.setFeeEarnerId(99);
+      criteria.setNotificationFromDate("01/01/2024");
+
+      Map<String, Object> flashMap = new HashMap<>();
+      flashMap.put("user", userDetails);
+      flashMap.put("notificationSearchCriteria", criteria);
+
+      when(notificationSearchValidator.supports(any())).thenReturn(true);
+      stubProviderUsers(new BaseUser().loginId("PENNY.WALL@SWITALSKIS.COM"));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/notifications/case-search")
+                      .sessionAttr(
+                          CASE, caseWithPrimaryContact("PENNY.WALL@SWITALSKIS.COM", "Penny Wall"))
+                      .flashAttrs(flashMap)))
+          .hasStatus3xxRedirection();
+
+      assertThat(criteria.getClientSurname()).isEmpty();
+      assertThat(criteria.getProviderCaseReference()).isEmpty();
+      assertThat(criteria.getFeeEarnerId()).isNull();
+      assertThat(criteria.getNotificationFromDate()).isEmpty();
+      assertThat(criteria.getNotificationToDate()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Should include the case's closed notifications")
+    void shouldIncludeClosedNotifications() {
+      NotificationSearchCriteria criteria =
+          performCaseSearch(
+              caseWithPrimaryContact("PENNY.WALL@SWITALSKIS.COM", "Penny Wall"),
+              new BaseUser().loginId("PENNY.WALL@SWITALSKIS.COM"));
+
+      assertThat(criteria.isIncludeClosed()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Should not filter the case's notifications by type")
+    void shouldNotFilterByNotificationType() {
+      NotificationSearchCriteria criteria =
+          performCaseSearch(
+              caseWithPrimaryContact("PENNY.WALL@SWITALSKIS.COM", "Penny Wall"),
+              new BaseUser().loginId("PENNY.WALL@SWITALSKIS.COM"));
+
+      assertThat(criteria.getNotificationType()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Should default assigned to filter to the primary contact's login ID")
+    void shouldDefaultAssignedToFilterToPrimaryContactLoginId() {
+      NotificationSearchCriteria criteria =
+          performCaseSearch(
+              caseWithPrimaryContact("PENNY.WALL@SWITALSKIS.COM", "Penny Wall"),
+              new BaseUser().loginId("PENNY.WALL@SWITALSKIS.COM").username("Penny Wall"));
+
+      assertThat(criteria.getAssignedToUserId()).isEqualTo("PENNY.WALL@SWITALSKIS.COM");
+      assertThat(criteria.getPrimaryContactName()).isEqualTo("PENNY.WALL@SWITALSKIS.COM");
+    }
+
+    @Test
+    @DisplayName("Should resolve the primary contact when the case only records their username")
+    void shouldResolvePrimaryContactFromUsernameOnly() {
+      // EBS may populate only the username against the case, leaving the login ID blank
+      NotificationSearchCriteria criteria =
+          performCaseSearch(
+              caseWithPrimaryContact(null, "PENNY.WALL@SWITALSKIS.COM"),
+              new BaseUser().loginId("PENNY.WALL@SWITALSKIS.COM").username("Penny Wall"));
+
+      assertThat(criteria.getAssignedToUserId()).isEqualTo("PENNY.WALL@SWITALSKIS.COM");
+    }
+
+    @Test
+    @DisplayName("Should resolve the primary contact's login ID by matching on username")
+    void shouldResolvePrimaryContactLoginIdByUsername() {
+      NotificationSearchCriteria criteria =
+          performCaseSearch(
+              caseWithPrimaryContact(null, "PENNY.WALL@SWITALSKIS.COM"),
+              new BaseUser().loginId("PWALL").username("PENNY.WALL@SWITALSKIS.COM"));
+
+      assertThat(criteria.getAssignedToUserId()).isEqualTo("PWALL");
+      assertThat(criteria.getPrimaryContactName()).isEqualTo("PWALL");
+    }
+
+    @Test
+    @DisplayName("Should search all assignees when the primary contact is not a provider user")
+    void shouldSearchAllAssigneesWhenPrimaryContactNotAProviderUser() {
+      NotificationSearchCriteria criteria =
+          performCaseSearch(
+              caseWithPrimaryContact("5", "Provider Contact"),
+              new BaseUser().loginId("SOMEONE.ELSE@TEST.COM").username("Someone Else"));
+
+      assertThat(criteria.getAssignedToUserId()).isEmpty();
+      assertThat(criteria.getPrimaryContactName()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Should search all assignees when the case has no primary contact")
+    void shouldSearchAllAssigneesWhenCaseHasNoPrimaryContact() {
+      NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+      Map<String, Object> flashMap = new HashMap<>();
+      flashMap.put("user", userDetails);
+      flashMap.put("notificationSearchCriteria", criteria);
+
+      when(notificationSearchValidator.supports(any())).thenReturn(true);
+
+      ApplicationDetail ebsCase = buildFullApplicationDetail();
+      ebsCase.getProviderDetails().setProviderContact(null);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/notifications/case-search")
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttrs(flashMap)))
+          .hasStatus3xxRedirection();
+
+      assertThat(criteria.getAssignedToUserId()).isEmpty();
+      assertThat(criteria.getPrimaryContactName()).isEmpty();
+      verify(userService, never()).getUsers(any());
+    }
+
+    private ApplicationDetail caseWithPrimaryContact(String loginId, String username) {
+      ApplicationDetail ebsCase = buildFullApplicationDetail();
+      ebsCase
+          .getProviderDetails()
+          .setProviderContact(new StringDisplayValue().id(loginId).displayValue(username));
+      return ebsCase;
+    }
+
+    private NotificationSearchCriteria performCaseSearch(
+        ApplicationDetail ebsCase, BaseUser... providerUsers) {
+      NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
+      Map<String, Object> flashMap = new HashMap<>();
+      flashMap.put("user", userDetails);
+      flashMap.put("notificationSearchCriteria", criteria);
+
+      when(notificationSearchValidator.supports(any())).thenReturn(true);
+      stubProviderUsers(providerUsers);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/notifications/case-search")
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttrs(flashMap)))
+          .hasStatus3xxRedirection();
+
+      return criteria;
+    }
+
+    private void stubProviderUsers(BaseUser... providerUsers) {
+      UserDetails users = new UserDetails();
+      for (BaseUser providerUser : providerUsers) {
+        users.addContentItem(providerUser);
+      }
+      when(userService.getUsers(userDetails.getProvider().getId())).thenReturn(Mono.just(users));
     }
   }
 

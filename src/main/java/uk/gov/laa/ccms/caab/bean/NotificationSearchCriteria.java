@@ -21,6 +21,7 @@ public class NotificationSearchCriteria {
    */
   public NotificationSearchCriteria(@NotNull NotificationSearchCriteria criteria) {
     this.originatesFromCase = criteria.isOriginatesFromCase();
+    this.primaryContactName = criteria.getPrimaryContactName();
     this.caseReference = criteria.getCaseReference();
     this.clientSurname = criteria.getClientSurname();
     this.providerCaseReference = criteria.getProviderCaseReference();
@@ -39,6 +40,9 @@ public class NotificationSearchCriteria {
 
   /** Flag which indicates whether to allow the user to modify the case reference. */
   private boolean originatesFromCase = false;
+
+  /** The name of the primary contact of the case the search originates from, for display only. */
+  private String primaryContactName;
 
   /** The LAA Application/Case Reference. */
   @Size(max = 35)
@@ -126,5 +130,8 @@ public class NotificationSearchCriteria {
     criteria.setClientSurname("");
     criteria.setProviderCaseReference("");
     criteria.setAssignedToUserId("");
+    // Clear the case context, otherwise a general search keeps the case-specific defaults
+    criteria.setOriginatesFromCase(false);
+    criteria.setPrimaryContactName("");
   }
 }
