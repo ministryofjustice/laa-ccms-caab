@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -31,6 +32,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.Errors;
@@ -929,6 +931,35 @@ class BillingControllerTest {
                       AssessmentRulebase.BILLING.getPrePopAssessmentName())),
               eq("300000123"),
               isNull());
+    }
+
+    @Test
+    @DisplayName("POST does not submit the bill again when the declaration is submitted twice")
+    void doesNotSubmitBillTwice() {
+      billingAssessment(
+          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+      when(billingService.submitBill(eq("300000123"), eq("10"), any(), eq(user)))
+          .thenReturn("INV-9");
+      when(assessmentService.deleteAssessments(any(), any(), any(), any()))
+          .thenReturn(Mono.empty());
+
+      final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(CASE, caseWithBillFunction());
+      session.setAttribute(USER_DETAILS, user);
+
+      for (int attempt = 0; attempt < 2; attempt++) {
+        assertThat(
+                mockMvc.perform(
+                    post("/case/billing/bill/declaration")
+                        .param("declarationOptions[0].fieldValueDisplayValue", "I agree")
+                        .param("declarationOptions[0].checked", "true")
+                        .session(session)))
+            .hasStatus3xxRedirection()
+            .hasRedirectedUrl("/case/billing/bill/confirmation");
+      }
+
+      // One bill, however many times the declaration was posted.
+      verify(billingService, times(1)).submitBill(eq("300000123"), eq("10"), any(), eq(user));
     }
 
     @Test

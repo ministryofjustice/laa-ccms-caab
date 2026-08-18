@@ -55,7 +55,8 @@
         </div>
       </div>
       <div class="govuk-button-group">
-        <button class="govuk-button" data-module="govuk-button" th:text="#{billing.poa.submit}"></button>
+        <button class="govuk-button" data-module="govuk-button"
+                data-prevent-double-click="true" th:text="#{billing.poa.submit}"></button>
         <a th:href="@{/case/billing/poa}" class="govuk-link" th:text="#{site.back}"></a>
       </div>
     </form>

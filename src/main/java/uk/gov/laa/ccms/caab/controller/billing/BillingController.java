@@ -38,6 +38,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.util.WebUtils;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
@@ -86,6 +87,12 @@ public class BillingController {
   private static final String OPA_BILL_TYPE_ATTRIBUTE = "BILL_TYPE";
   private static final String OPA_COURT_ASSESSED_BILL_ATTRIBUTE = "COURT_ASSESSED_BILL";
   private static final String BILL_DECLARATION_VIEW = "application/billing/bill-declaration";
+
+  /** Session attribute holding the billing submission this session has already sent. */
+  private static final String BILLING_SUBMISSION_SENT = "billingSubmissionSent";
+
+  private static final String BILL_SUBMISSION = "bill";
+  private static final String POA_SUBMISSION = "poa";
 
   /**
    * Displays the case statement of account (billing) screen. The available billing actions are
@@ -505,9 +512,23 @@ public class BillingController {
           model, summarySubmissionFormData, billingAssessment, BILL_DECLARATION_VIEW);
     }
 
-    final String transactionId =
-        billingService.submitBill(
-            ebsCase.getCaseReferenceNumber(), providerId(user), billingAssessment, user);
+    if (!claimSubmission(session, BILL_SUBMISSION)) {
+      // A second submit of this declaration, which a double-clicked button sends before the first
+      // has finished. Both would read the same draft bill before either removed it, so EBS would
+      // take two identical bills. Send the user to the confirmation instead of submitting again.
+      return "redirect:/case/billing/bill/confirmation";
+    }
+
+    final String transactionId;
+    try {
+      transactionId =
+          billingService.submitBill(
+              ebsCase.getCaseReferenceNumber(), providerId(user), billingAssessment, user);
+    } catch (final RuntimeException e) {
+      // Nothing reached EBS, so let the user try again in this session.
+      releaseSubmission(session);
+      throw e;
+    }
 
     deleteBillingAssessments(ebsCase, user);
 
@@ -537,6 +558,7 @@ public class BillingController {
     }
 
     session.removeAttribute(SUBMISSION_TRANSACTION_ID);
+    releaseSubmission(session);
     model.addAttribute("transactionId", transactionId);
     return "application/billing/bill-confirmation";
   }
@@ -679,9 +701,21 @@ public class BillingController {
       return poaDeclarationDetails(model, summarySubmissionFormData, poaAssessment);
     }
 
-    final String transactionId =
-        billingService.submitPaymentOnAccount(
-            ebsCase.getCaseReferenceNumber(), providerId(user), poaAssessment, user);
+    if (!claimSubmission(session, POA_SUBMISSION)) {
+      // As for the bill declaration above - a repeat submit must not reach EBS a second time.
+      return "redirect:/case/billing/poa/confirmation";
+    }
+
+    final String transactionId;
+    try {
+      transactionId =
+          billingService.submitPaymentOnAccount(
+              ebsCase.getCaseReferenceNumber(), providerId(user), poaAssessment, user);
+    } catch (final RuntimeException e) {
+      // Nothing reached EBS, so let the user try again in this session.
+      releaseSubmission(session);
+      throw e;
+    }
 
     assessmentService
         .deleteAssessments(
@@ -717,6 +751,7 @@ public class BillingController {
     }
 
     session.removeAttribute(SUBMISSION_TRANSACTION_ID);
+    releaseSubmission(session);
     model.addAttribute("transactionId", transactionId);
     return "application/billing/poa-confirmation";
   }
@@ -934,5 +969,41 @@ public class BillingController {
     return AssessmentStatus.COMPLETE.getStatus().equalsIgnoreCase(assessment.getStatus())
         ? SECTION_STATUS_COMPLETE
         : assessment.getStatus();
+  }
+
+  /**
+   * Claims the single submission a declaration screen is allowed to make, returning {@code false}
+   * when this session has already made it.
+   *
+   * <p>A double-clicked submit button sends two requests that run at the same time. Without this,
+   * both read the same draft before either removes it and EBS accepts both, which is how one bill
+   * was submitted twice for the same amount. The check and the claim are done under the session
+   * mutex so two concurrent requests cannot both win it.
+   *
+   * @param session the current session.
+   * @param submission which declaration is being submitted.
+   * @return {@code true} if this request may submit, {@code false} if it is a repeat.
+   */
+  private boolean claimSubmission(final HttpSession session, final String submission) {
+    synchronized (WebUtils.getSessionMutex(session)) {
+      if (submission.equals(session.getAttribute(BILLING_SUBMISSION_SENT))) {
+        return false;
+      }
+      session.setAttribute(BILLING_SUBMISSION_SENT, submission);
+      return true;
+    }
+  }
+
+  /**
+   * Releases the submission claim, so the next bill or payment on account in this session can be
+   * submitted. Called once the submission has been confirmed to the user, and when a submission
+   * failed without reaching EBS.
+   *
+   * @param session the current session.
+   */
+  private void releaseSubmission(final HttpSession session) {
+    synchronized (WebUtils.getSessionMutex(session)) {
+      session.removeAttribute(BILLING_SUBMISSION_SENT);
+    }
   }
 }
