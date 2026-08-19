@@ -132,6 +132,9 @@
             <span th:text="${proceedingOutcome.getCourtCode() + ' ' + proceedingOutcome.getCourtName()}"></span>
         </p>
 
+        <input type="hidden" th:field="*{courtCode}"/>
+        <input type="hidden" th:field="*{courtName}"/>
+
       <div class="govuk-form-group"
            th:classappend="${#fields.hasErrors('outcomeCourtCaseNo')} ? 'govuk-form-group--error' : ''">
         <label class="govuk-label" for="outcomeCourtCaseNo" th:text="#{case.recordOutcomes.courtCaseNumber}"></label>

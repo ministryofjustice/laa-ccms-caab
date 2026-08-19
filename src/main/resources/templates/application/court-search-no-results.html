@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title th:text="#{service.name} + ' - ' + #{court.search.title}"></title>
+    <title th:text="#{service.name} + ' - ' + #{courtSearch.noResults}"></title>
 </head>
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/court/search}" class="govuk-back-link" th:text="#{site.returnToCourtSearch}"></a>
+        <a th:href="@{/court/search(proceedingIndex=${proceedingIndex})}" class="govuk-back-link" th:text="#{site.returnToCourtSearch}"></a>
     </div>
     <div id="main-content">
         <th:block>

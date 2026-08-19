@@ -97,7 +97,7 @@ public class CourtSearchController {
               .getCourts(searchCriteria.getCourtCode(), searchCriteria.getCourtName())
               .block();
 
-      if (result.getContent() == null || result.getContent().isEmpty()) {
+      if (result == null || result.getContent() == null || result.getContent().isEmpty()) {
         model.addAttribute("proceedingIndex", proceedingIndex);
         return "application/court-search-no-results";
       }
@@ -105,6 +105,7 @@ public class CourtSearchController {
     } catch (EbsApiClientException e) {
       if (e.getMessage().contains(TOO_MANY_RESULTS)
           || (e.getCause() != null && e.getCause().getMessage().contains(TOO_MANY_RESULTS))) {
+        model.addAttribute("proceedingIndex", proceedingIndex);
         return "application/court-search-too-many-results";
       }
       throw new CaabApplicationException("Error performing court search.", e);
@@ -136,7 +137,7 @@ public class CourtSearchController {
         (List<CommonLookupValueDetail>) httpSession.getAttribute(COURT_SEARCH_RESULTS);
 
     if (lookupValueDetails == null) {
-      return "redirect:/court/search";
+      return "redirect:/court/search?proceedingIndex=" + proceedingIndex;
     }
 
     var pagedResults =

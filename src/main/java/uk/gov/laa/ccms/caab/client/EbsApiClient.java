@@ -1019,7 +1019,7 @@ public class EbsApiClient extends BaseApiClient {
   /**
    * Retrieves the counsel lookup details based on the counsel search criteria.
    *
-   * @return A {@link Mono} wrapping the {@link CaseDetail}.
+   * @return A {@link Mono} wrapping the {@link CounselLookupDetail}.
    */
   public Mono<CounselLookupDetail> getCounselDetails(CounselSearchCriteria criteria) {
 
@@ -1051,9 +1051,9 @@ public class EbsApiClient extends BaseApiClient {
   }
 
   /**
-   * Retrieves the counsel lookup details based on the counsel search criteria.
+   * Retrieves the court lookup details based on the court search criteria.
    *
-   * @return A {@link Mono} wrapping the {@link CaseDetail}.
+   * @return A {@link Mono} wrapping the {@link CommonLookupDetail}.
    */
   public Mono<CommonLookupDetail> getCourtDetails(CourtSearchCriteria criteria) {
 

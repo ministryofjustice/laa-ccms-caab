@@ -315,7 +315,7 @@ public class CaseController {
     List<ProceedingDetail> proceedings = ebsCase.getProceedings();
     String errorMessage = "Could not find proceeding with index: %s".formatted(index);
     Assert.notEmpty(proceedings, () -> errorMessage);
-    Assert.isTrue(index < proceedings.size(), () -> errorMessage);
+    Assert.isTrue(index >= 0 && index < proceedings.size(), () -> errorMessage);
 
     final ProceedingDetail proceeding = proceedings.get(index);
     final ProceedingOutcomeFormData formData = toProceedingOutcomeFormData(proceeding);
@@ -399,7 +399,9 @@ public class CaseController {
     final Map<String, String> resultMap =
         buildOutcomeMap(lookupService.getOutcomeResults(proceedingCode, null).block());
     final Map<String, String> courtMap =
-        buildOutcomeMap(lookupService.getCourts(proceedingCode).block());
+        StringUtils.hasText(proceedingOutcome.getCourtCode())
+            ? buildOutcomeMap(lookupService.getCourts(proceedingOutcome.getCourtCode()).block())
+            : Collections.emptyMap();
 
     final ProceedingOutcomeDetail outcome = new ProceedingOutcomeDetail();
     outcome.setDateOfFinalWork(
@@ -418,7 +420,10 @@ public class CaseController {
     outcome.setAdrInfo(proceedingOutcome.getAdrInfo());
     outcome.setCourtCode(proceedingOutcome.getCourtCode());
     outcome.setCourtName(
-        courtMap.getOrDefault(proceedingOutcome.getCourtCode(), proceedingOutcome.getCourtCode()));
+        StringUtils.hasText(proceedingOutcome.getCourtName())
+            ? proceedingOutcome.getCourtName()
+            : courtMap.getOrDefault(
+                proceedingOutcome.getCourtCode(), proceedingOutcome.getCourtCode()));
     outcome.setOutcomeCourtCaseNo(proceedingOutcome.getOutcomeCourtCaseNo());
     outcome.setWiderBenefits(proceedingOutcome.getWiderBenefits());
     return outcome;
@@ -539,6 +544,7 @@ public class CaseController {
     formData.setAlternativeResolution(outcome.getAlternativeResolution());
     formData.setAdrInfo(outcome.getAdrInfo());
     formData.setCourtCode(outcome.getCourtCode());
+    formData.setCourtName(outcome.getCourtName());
     formData.setOutcomeCourtCaseNo(outcome.getOutcomeCourtCaseNo());
     formData.setWiderBenefits(outcome.getWiderBenefits());
 

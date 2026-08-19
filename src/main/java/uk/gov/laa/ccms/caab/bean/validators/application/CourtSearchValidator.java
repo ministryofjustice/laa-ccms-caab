@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.bean.validators.application;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 
@@ -22,7 +23,23 @@ public class CourtSearchValidator extends AbstractValidator {
    * @param errors The Errors object to store validation errors.
    */
   @Override
-  public void validate(Object target, org.springframework.validation.Errors errors) {
+  public void validate(Object target, Errors errors) {
     log.info("Validating Court Search Form");
+
+    CourtSearchCriteria courtSearchCriteria = (CourtSearchCriteria) target;
+
+    String courtCode = courtSearchCriteria.getCourtCode();
+    String courtName = courtSearchCriteria.getCourtName();
+
+    validateAllFieldsAreEmpty("courtCode", errors, courtCode, courtName);
+
+    if (!errors.hasErrors()) {
+      if (org.springframework.util.StringUtils.hasText(courtCode)) {
+        validateFieldMaxLength("courtCode", courtCode, 35, "Court Code", errors);
+      }
+      if (org.springframework.util.StringUtils.hasText(courtName)) {
+        validateFieldMaxLength("courtName", courtName, 35, "Court Name", errors);
+      }
+    }
   }
 }

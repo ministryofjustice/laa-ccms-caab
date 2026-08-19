@@ -6,7 +6,7 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/court/search}" class="govuk-back-link" th:text="#{courtSearch.backLink}"></a>
+        <a th:href="@{/court/search(proceedingIndex=${proceedingIndex})}" class="govuk-back-link" th:text="#{courtSearch.backLink}"></a>
     </div>
     <div id="main-content">
 
