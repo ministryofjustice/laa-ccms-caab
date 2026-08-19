@@ -106,6 +106,29 @@ class CourtSearchControllerTest {
   }
 
   @Test
+  @DisplayName("POST /court/search with too many results returns too many results view")
+  public void courtSearchPostWithTooManyResultsReturnsTooManyResultsView() throws Exception {
+    List<CommonLookupValueDetail> courts =
+        java.util.stream.IntStream.rangeClosed(1, CourtSearchController.MAX_COURT_RESULTS + 1)
+            .mapToObj(
+                i ->
+                    new CommonLookupValueDetail().code(String.valueOf(i)).description("Court " + i))
+            .toList();
+    CommonLookupDetail result = new CommonLookupDetail().content(courts);
+
+    when(lookupService.getCourts(anyString(), anyString())).thenReturn(Mono.just(result));
+
+    assertThat(
+            mockMvcTester.perform(
+                post("/court/search")
+                    .param("proceedingIndex", "0")
+                    .param("courtCode", "")
+                    .param("courtName", "Court")))
+        .hasViewName("application/court-search-too-many-results")
+        .hasModelAttribute("proceedingIndex", 0);
+  }
+
+  @Test
   @DisplayName("POST /court/search with results redirects to court results page")
   public void courtSearchPostWithResultsRedirectsToResults() throws Exception {
     CommonLookupValueDetail court1 =

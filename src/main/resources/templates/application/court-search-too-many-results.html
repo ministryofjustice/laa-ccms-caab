@@ -6,15 +6,14 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/court/search(proceedingIndex=${proceedingIndex})}" class="govuk-back-link" th:text="#{courtSearch.backLink}"></a>
+        <a th:href="@{/court/search(proceedingIndex=${proceedingIndex})}" class="govuk-back-link" th:text="#{site.returnToCourtSearch}"></a>
     </div>
     <div id="main-content">
 
         <th:block>
-            <span class="govuk-caption-l" th:text="#{courtSearch.caption}"/>
             <h1 class="govuk-heading-l" th:text="#{courtSearch.tooManyResults}"></h1>
-            <p class="govuk-body-l" th:text="#{site.tooManyResults(#{courtSearch})}"></p>
-            <p class="govuk-body-l" th:text="#{courtSearch.results.refine}"></p>
+            <p class="govuk-body-l" th:text="#{courtSearch.tooManyResults.info1}"></p>
+            <p class="govuk-body-l" th:text="#{courtSearch.tooManyResults.info2}"></p>
         </th:block>
 
     </div>

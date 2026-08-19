@@ -38,6 +38,7 @@ public class CourtSearchController {
 
   protected static final String CURRENT_URL = "currentUrl";
   protected static final String COURT_RESULTS_PAGE = "courtResultsPage";
+  protected static final int MAX_COURT_RESULTS = 100;
 
   /**
    * Provides an instance of {@link CourtSearchCriteria} for use in the model.
@@ -84,6 +85,7 @@ public class CourtSearchController {
       Model model) {
 
     courtSearchValidator.validate(searchCriteria, bindingResult);
+
     if (bindingResult.hasErrors()) {
       model.addAttribute("proceedingIndex", proceedingIndex);
       return "application/court-search";
@@ -100,6 +102,11 @@ public class CourtSearchController {
       if (result == null || result.getContent() == null || result.getContent().isEmpty()) {
         model.addAttribute("proceedingIndex", proceedingIndex);
         return "application/court-search-no-results";
+      }
+
+      if (result.getContent().size() > MAX_COURT_RESULTS) {
+        model.addAttribute("proceedingIndex", proceedingIndex);
+        return "application/court-search-too-many-results";
       }
 
     } catch (EbsApiClientException e) {
@@ -143,7 +150,7 @@ public class CourtSearchController {
     var pagedResults =
         PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), lookupValueDetails);
 
-    String searchUrl = "/court/results";
+    String searchUrl = "/court/results?proceedingIndex=" + proceedingIndex;
     model.addAttribute(CURRENT_URL, searchUrl);
     model.addAttribute(COURT_RESULTS_PAGE, pagedResults);
 
