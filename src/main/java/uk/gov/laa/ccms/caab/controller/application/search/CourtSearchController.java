@@ -92,7 +92,7 @@ public class CourtSearchController {
     CommonLookupDetail result = null;
 
     try {
-      searchResult =
+      result =
           lookupService
               .getCourts(searchCriteria.getCourtCode(), searchCriteria.getCourtName())
               .block();
