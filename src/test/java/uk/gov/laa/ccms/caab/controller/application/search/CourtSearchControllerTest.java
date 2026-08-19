@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import reactor.core.publisher.Mono;
@@ -181,7 +182,9 @@ class CourtSearchControllerTest {
 
     assertThat(
             mockMvcTester.perform(
-                get("/court/results").param("proceedingIndex", "1").session((HttpSession) session)))
+                get("/court/results")
+                    .param("proceedingIndex", "1")
+                    .session((MockHttpSession) session)))
         .hasViewName("application/court-search-results")
         .hasModelAttribute("proceedingIndex", 1);
   }
@@ -209,7 +212,7 @@ class CourtSearchControllerTest {
                     .param("proceedingIndex", "0")
                     .param("page", "0")
                     .param("size", "10")
-                    .session((HttpSession) session)))
+                    .session((MockHttpSession) session)))
         .hasViewName("application/court-search-results");
   }
 
@@ -236,7 +239,7 @@ class CourtSearchControllerTest {
                 get("/court/select")
                     .param("index", "0")
                     .param("proceedingIndex", "0")
-                    .session((HttpSession) session))
+                    .session((MockHttpSession) session))
             .andReturn()
             .getRequest()
             .getSession();
@@ -266,7 +269,7 @@ class CourtSearchControllerTest {
                 get("/court/select")
                     .param("index", "0")
                     .param("proceedingIndex", "2")
-                    .session((HttpSession) session)))
+                    .session((MockHttpSession) session)))
         .hasStatus3xxRedirection()
         .hasRedirectedUrl("/case/outcome-and-awards/proceeding/2/outcome");
   }
@@ -292,7 +295,7 @@ class CourtSearchControllerTest {
                 get("/court/select")
                     .param("index", "99")
                     .param("proceedingIndex", "0")
-                    .session((HttpSession) session))
+                    .session((MockHttpSession) session))
             .andReturn()
             .getRequest()
             .getSession();
@@ -323,7 +326,7 @@ class CourtSearchControllerTest {
                 get("/court/select")
                     .param("index", "5")
                     .param("proceedingIndex", "0")
-                    .session((HttpSession) session))
+                    .session((MockHttpSession) session))
             .andReturn()
             .getRequest()
             .getSession();
@@ -354,7 +357,7 @@ class CourtSearchControllerTest {
                 get("/court/select")
                     .param("index", "-1")
                     .param("proceedingIndex", "0")
-                    .session((HttpSession) session))
+                    .session((MockHttpSession) session))
             .andReturn()
             .getRequest()
             .getSession();

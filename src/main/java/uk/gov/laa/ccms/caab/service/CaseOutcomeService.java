@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 
 /** Service class to handle Case Outcomes. */
 @Service
@@ -28,5 +29,48 @@ public class CaseOutcomeService {
         .getCaseOutcomes(caseReferenceNumber, providerId)
         .mapNotNull(caseOutcomeDetails -> caseOutcomeDetails.getContent().stream().findFirst())
         .block();
+  }
+
+  /**
+   * Creates or updates a single proceeding outcome within the case outcome record. Because the CAAB
+   * API has no PATCH endpoint for case outcomes, the existing record is deleted and recreated with
+   * the updated proceeding outcome.
+   *
+   * @param caseReferenceNumber - the case reference number.
+   * @param providerId - the provider id.
+   * @param proceedingOutcome - the updated proceeding outcome to store.
+   * @param loginId - the login ID of the user performing the update.
+   */
+  public void updateProceedingOutcome(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final ProceedingOutcomeDetail proceedingOutcome,
+      final String loginId) {
+
+    Optional<CaseOutcomeDetail> existing = getCaseOutcome(caseReferenceNumber, providerId);
+
+    final CaseOutcomeDetail caseOutcome;
+    if (existing.isPresent()) {
+      caseOutcome = existing.get();
+      // Replace any existing outcome for this proceeding
+      caseOutcome
+          .getProceedingOutcomes()
+          .removeIf(
+              o ->
+                  proceedingOutcome.getProceedingCaseId() != null
+                      && proceedingOutcome.getProceedingCaseId().equals(o.getProceedingCaseId()));
+      caseOutcome.addProceedingOutcomesItem(proceedingOutcome);
+      // Use bulk delete (by case ref + provider) — individual DELETE is not supported by the API
+      caabApiClient.deleteCaseOutcomes(caseReferenceNumber, providerId, loginId).block();
+      caseOutcome.setId(null);
+    } else {
+      caseOutcome =
+          new CaseOutcomeDetail()
+              .caseReferenceNumber(caseReferenceNumber)
+              .providerId(String.valueOf(providerId));
+      caseOutcome.addProceedingOutcomesItem(proceedingOutcome);
+    }
+
+    caabApiClient.createCaseOutcome(loginId, caseOutcome).block();
   }
 }

@@ -242,6 +242,9 @@ public class SessionConstants {
   /** Session attribute used to keep track of the selected court for confirmation. */
   public static final String SELECTED_COURT = "selectedCourt";
 
+  /** Session attribute for in-progress proceeding outcome form data. */
+  public static final String PROCEEDING_OUTCOME_FORM_DATA = "proceedingOutcomeFormData";
+
   /** Session attribute for keeping track of undertaking minimum. */
   public static final String UNDERTAKING_MINIMUM = "undertakingMinimum";
 

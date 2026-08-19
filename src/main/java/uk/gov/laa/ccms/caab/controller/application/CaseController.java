@@ -15,6 +15,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMAR
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COURT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
@@ -56,6 +57,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.AvailableAction;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
@@ -65,6 +67,7 @@ import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.caab.util.PriorAuthorityUtils;
@@ -85,6 +88,7 @@ public class CaseController {
 
   private final ApplicationService applicationService;
   private final LookupService lookupService;
+  private final CaseOutcomeService caseOutcomeService;
   private final ProceedingOutcomeValidator proceedingOutcomeValidator;
   private static final String SEARCH_URL = "SEARCH_URL";
 
@@ -307,6 +311,7 @@ public class CaseController {
   @GetMapping("/case/outcome-and-awards/proceeding/{index}/outcome")
   public String recordProceedingOutcome(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(value = SELECTED_COURT, required = false)
           final CommonLookupValueDetail selectedCourt,
       @PathVariable("index") final int index,
@@ -318,7 +323,19 @@ public class CaseController {
     Assert.isTrue(index >= 0 && index < proceedings.size(), () -> errorMessage);
 
     final ProceedingDetail proceeding = proceedings.get(index);
-    final ProceedingOutcomeFormData formData = toProceedingOutcomeFormData(proceeding);
+
+    // If returning from court search, restore the in-progress form data saved to session
+    ProceedingOutcomeFormData formData =
+        (ProceedingOutcomeFormData) session.getAttribute(PROCEEDING_OUTCOME_FORM_DATA);
+    if (formData != null) {
+      session.removeAttribute(PROCEEDING_OUTCOME_FORM_DATA);
+    } else {
+      // Load any previously saved outcome from the CAAB API
+      final ProceedingOutcomeDetail savedOutcome =
+          loadSavedProceedingOutcome(ebsCase, user, proceeding);
+      proceeding.setOutcome(savedOutcome);
+      formData = toProceedingOutcomeFormData(proceeding);
+    }
 
     if (selectedCourt != null) {
       formData.setCourtCode(selectedCourt.getCode());
@@ -332,6 +349,23 @@ public class CaseController {
     populateOutcomeDropdowns(model, proceeding);
 
     return "application/record-proceeding-outcome";
+  }
+
+  /**
+   * Saves in-progress proceeding outcome form data to session and redirects to court search.
+   *
+   * @param index The zero-based index of the proceeding.
+   * @param proceedingOutcome The in-progress form data to preserve.
+   * @param session The current HTTP session.
+   * @return Redirect to the court search screen.
+   */
+  @PostMapping("/case/outcome-and-awards/proceeding/{index}/outcome/court-search")
+  public String recordProceedingOutcomeCourtSearch(
+      @PathVariable("index") final int index,
+      @ModelAttribute("proceedingOutcome") final ProceedingOutcomeFormData proceedingOutcome,
+      HttpSession session) {
+    session.setAttribute(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome);
+    return "redirect:/court/search?proceedingIndex=" + index;
   }
 
   /**
@@ -358,17 +392,19 @@ public class CaseController {
       return "application/record-proceeding-outcome";
     }
 
-    final ProceedingOutcomeDetail originalOutcome = proceeding.getOutcome();
-    proceeding.setOutcome(buildProceedingOutcome(proceeding, proceedingOutcome));
-    if (originalOutcome != null) {
-      proceeding.getOutcome().setId(originalOutcome.getId());
-    }
+    final ProceedingOutcomeDetail outcome = buildProceedingOutcome(proceeding, proceedingOutcome);
 
     try {
-      applicationService.updateProceeding(proceeding, user);
+      caseOutcomeService.updateProceedingOutcome(
+          ebsCase.getCaseReferenceNumber(),
+          user.getProvider().getId().intValue(),
+          outcome,
+          user.getLoginId());
     } catch (CaabApiClientException ex) {
-      log.warn("Failed to update proceeding outcome for proceeding {}", proceeding.getId(), ex);
-      proceeding.setOutcome(originalOutcome);
+      log.warn(
+          "Failed to update proceeding outcome for proceeding caseId: {}",
+          proceeding.getProceedingCaseId(),
+          ex);
       bindingResult.reject(
           "proceedingOutcome.update.failed",
           "We could not save the proceeding outcome. Please try again.");
@@ -388,6 +424,22 @@ public class CaseController {
     Assert.notEmpty(proceedings, () -> errorMessage);
     Assert.isTrue(index < proceedings.size(), () -> errorMessage);
     return proceedings.get(index);
+  }
+
+  private ProceedingOutcomeDetail loadSavedProceedingOutcome(
+      final ApplicationDetail ebsCase, final UserDetail user, final ProceedingDetail proceeding) {
+    return caseOutcomeService
+        .getCaseOutcome(ebsCase.getCaseReferenceNumber(), user.getProvider().getId().intValue())
+        .map(CaseOutcomeDetail::getProceedingOutcomes)
+        .flatMap(
+            outcomes ->
+                outcomes.stream()
+                    .filter(
+                        o ->
+                            proceeding.getProceedingCaseId() != null
+                                && proceeding.getProceedingCaseId().equals(o.getProceedingCaseId()))
+                    .findFirst())
+        .orElse(null);
   }
 
   private ProceedingOutcomeDetail buildProceedingOutcome(
