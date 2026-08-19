@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
+import static uk.gov.laa.ccms.caab.constants.CounselLookupConstants.TOO_MANY_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COURT;
@@ -19,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CourtSearchValidator;
+import uk.gov.laa.ccms.caab.client.EbsApiClientException;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.util.PaginationUtil;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -86,14 +89,25 @@ public class CourtSearchController {
       return "application/court-search";
     }
 
-    CommonLookupDetail result =
-        lookupService
-            .getCourts(searchCriteria.getCourtCode(), searchCriteria.getCourtName())
-            .block();
+    CommonLookupDetail result = null;
 
-    if (result.getContent() == null || result.getContent().isEmpty()) {
-      model.addAttribute("proceedingIndex", proceedingIndex);
-      return "application/court-search-no-results";
+    try {
+      searchResult =
+          lookupService
+              .getCourts(searchCriteria.getCourtCode(), searchCriteria.getCourtName())
+              .block();
+
+      if (result.getContent() == null || result.getContent().isEmpty()) {
+        model.addAttribute("proceedingIndex", proceedingIndex);
+        return "application/court-search-no-results";
+      }
+
+    } catch (EbsApiClientException e) {
+      if (e.getMessage().contains(TOO_MANY_RESULTS)
+          || (e.getCause() != null && e.getCause().getMessage().contains(TOO_MANY_RESULTS))) {
+        return "application/court-search-too-many-results";
+      }
+      throw new CaabApplicationException("Error performing court search.", e);
     }
 
     session.setAttribute(COURT_SEARCH_RESULTS, result.getContent());
