@@ -63,7 +63,7 @@ class CourtSearchControllerTest {
 
   @Test
   @DisplayName("GET /court/search returns court search view")
-  public void courtSearchReturnsView() throws Exception {
+  public void courtSearchReturnsView() {
     assertThat(mockMvcTester.perform(get("/court/search").param("proceedingIndex", "1")))
         .hasViewName("application/court-search");
   }
@@ -71,21 +71,32 @@ class CourtSearchControllerTest {
   @Test
   @DisplayName("GET /court/search passes proceeding index to model")
   public void courtSearchPassesProceedingIndexToModel() throws Exception {
-    assertThat(mockMvcTester.perform(get("/court/search").param("proceedingIndex", "2")))
-        .hasModelAttribute("proceedingIndex", 2);
+    assertThat(
+            mockMvc
+                .perform(get("/court/search").param("proceedingIndex", "2"))
+                .andReturn()
+                .getModelAndView()
+                .getModel()
+                .get("proceedingIndex"))
+        .isEqualTo(2);
   }
 
   @Test
   @DisplayName("POST /court/search with validation errors returns search view")
   public void courtSearchPostWithValidationErrorsReturnsSearchView() throws Exception {
-    assertThat(
-            mockMvcTester.perform(
+    var modelAndView =
+        mockMvc
+            .perform(
                 post("/court/search")
                     .param("proceedingIndex", "0")
                     .param("courtCode", "")
-                    .param("courtName", "")))
-        .hasViewName("application/court-search")
-        .hasModelAttribute("proceedingIndex", 0);
+                    .param("courtName", ""))
+            .andReturn()
+            .getModelAndView();
+
+    assertThat(modelAndView).isNotNull();
+    assertThat(modelAndView.getViewName()).isEqualTo("application/court-search");
+    assertThat(modelAndView.getModel().get("proceedingIndex")).isEqualTo(0);
   }
 
   @Test
@@ -95,14 +106,19 @@ class CourtSearchControllerTest {
 
     when(lookupService.getCourts(anyString(), anyString())).thenReturn(Mono.just(emptyResult));
 
-    assertThat(
-            mockMvcTester.perform(
+    var modelAndView =
+        mockMvc
+            .perform(
                 post("/court/search")
                     .param("proceedingIndex", "0")
                     .param("courtCode", "123")
-                    .param("courtName", "NonExistent")))
-        .hasViewName("application/court-search-no-results")
-        .hasModelAttribute("proceedingIndex", 0);
+                    .param("courtName", "NonExistent"))
+            .andReturn()
+            .getModelAndView();
+
+    assertThat(modelAndView).isNotNull();
+    assertThat(modelAndView.getViewName()).isEqualTo("application/court-search-no-results");
+    assertThat(modelAndView.getModel().get("proceedingIndex")).isEqualTo(0);
   }
 
   @Test
@@ -118,14 +134,19 @@ class CourtSearchControllerTest {
 
     when(lookupService.getCourts(anyString(), anyString())).thenReturn(Mono.just(result));
 
-    assertThat(
-            mockMvcTester.perform(
+    var modelAndView =
+        mockMvc
+            .perform(
                 post("/court/search")
                     .param("proceedingIndex", "0")
                     .param("courtCode", "")
-                    .param("courtName", "Court")))
-        .hasViewName("application/court-search-too-many-results")
-        .hasModelAttribute("proceedingIndex", 0);
+                    .param("courtName", "Court"))
+            .andReturn()
+            .getModelAndView();
+
+    assertThat(modelAndView).isNotNull();
+    assertThat(modelAndView.getViewName()).isEqualTo("application/court-search-too-many-results");
+    assertThat(modelAndView.getModel().get("proceedingIndex")).isEqualTo(0);
   }
 
   @Test
@@ -203,13 +224,18 @@ class CourtSearchControllerTest {
 
     session.setAttribute(COURT_SEARCH_RESULTS, List.of(court1, court2));
 
-    assertThat(
-            mockMvcTester.perform(
+    var modelAndView =
+        mockMvc
+            .perform(
                 get("/court/results")
                     .param("proceedingIndex", "1")
-                    .session((MockHttpSession) session)))
-        .hasViewName("application/court-search-results")
-        .hasModelAttribute("proceedingIndex", 1);
+                    .session((MockHttpSession) session))
+            .andReturn()
+            .getModelAndView();
+
+    assertThat(modelAndView).isNotNull();
+    assertThat(modelAndView.getViewName()).isEqualTo("application/court-search-results");
+    assertThat(modelAndView.getModel().get("proceedingIndex")).isEqualTo(1);
   }
 
   @Test
