@@ -85,7 +85,7 @@ configurations.configureEach {
             details.because 'Temporary override to remediate vulnerability'
         }
         if (details.requested.group == 'io.netty') {
-            details.useVersion '4.2.16.Final'
+            details.useVersion '4.2.17.Final'
             details.because 'Temporary override to remediate vulnerability'
         }
     }
