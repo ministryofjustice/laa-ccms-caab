@@ -1,5 +1,5 @@
 plugins {
-    id 'uk.gov.justice.service.laa.laa-spring-boot-gradle-plugin' version '3.0.1'
+    id 'uk.gov.justice.service.laa.laa-spring-boot-gradle-plugin' version '3.0.2'
     id 'com.diffplug.spotless' version '8.9.0'
 }
 
