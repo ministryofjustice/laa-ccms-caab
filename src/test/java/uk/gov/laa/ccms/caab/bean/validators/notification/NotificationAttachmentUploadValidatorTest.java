@@ -82,6 +82,45 @@ public class NotificationAttachmentUploadValidatorTest {
   }
 
   @Test
+  void validate_electronic_collapsesRepeatedSpacesInFilename() {
+    notificationAttachmentUploadFormData = buildNotificationAttachmentUploadFormData();
+    notificationAttachmentUploadFormData.setSendBy(SendBy.ELECTRONIC);
+    notificationAttachmentUploadFormData.setFile(
+        new MockMultipartFile(
+            "theFile",
+            "Test             Upload--  -- copyDoublespaces.rtf",
+            "text/plain",
+            "the file data".getBytes()));
+
+    validator.validate(notificationAttachmentUploadFormData, errors);
+
+    assertEquals("validation.error.invalidExtension", errors.getFieldError("file").getCode());
+    assertEquals(
+        "Test_Upload--_--_copyDoublespaces.rtf",
+        notificationAttachmentUploadFormData.getSanitisedFileName());
+    assertEquals("rtf", notificationAttachmentUploadFormData.getFileExtension());
+  }
+
+  @Test
+  void validate_electronic_sanitizesSpecialAndInternationalCharactersInFilename() {
+    notificationAttachmentUploadFormData = buildNotificationAttachmentUploadFormData();
+    notificationAttachmentUploadFormData.setSendBy(SendBy.ELECTRONIC);
+    notificationAttachmentUploadFormData.setFile(
+        new MockMultipartFile(
+            "theFile",
+            "TestUpload™‹#. €@£ {}__[';]_' copy.rtf",
+            "text/plain",
+            "the file data".getBytes()));
+
+    validator.validate(notificationAttachmentUploadFormData, errors);
+
+    assertEquals("validation.error.invalidExtension", errors.getFieldError("file").getCode());
+    assertEquals(
+        "TestUploadTM______copy.rtf", notificationAttachmentUploadFormData.getSanitisedFileName());
+    assertEquals("rtf", notificationAttachmentUploadFormData.getFileExtension());
+  }
+
+  @Test
   public void validate_postal_noErrors() {
     notificationAttachmentUploadFormData = buildNotificationAttachmentUploadFormData();
     notificationAttachmentUploadFormData.setSendBy(SendBy.POSTAL);
