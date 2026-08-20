@@ -128,9 +128,6 @@
                     th:text="#{courtSearch.title}"></button>
         </div>
 
-        <input type="hidden" th:field="*{courtCode}">
-        <input type="hidden" th:field="*{courtName}">
-
         <p class="govuk-body" th:if="${proceedingOutcome.getCourtCode() != null}">
             <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{case.recordOutcomes.court}"></span>
             <span th:text="${proceedingOutcome.getCourtCode() + ' ' + proceedingOutcome.getCourtName()}"></span>
