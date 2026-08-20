@@ -290,13 +290,39 @@ public class CaseController {
    * Displays the outcome and awards screen.
    *
    * @param ebsCase The case details from EBS.
+   * @param user The current user details.
    * @param model the model
    * @return The outcome and awards view.
    */
   @GetMapping("/case/outcome-and-awards")
   public String outcomeAndAwards(
-      @SessionAttribute(CASE) final ApplicationDetail ebsCase, Model model) {
-    model.addAttribute("proceedings", ebsCase.getProceedings());
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      Model model) {
+    final List<ProceedingDetail> proceedings = ebsCase.getProceedings();
+
+    // Refresh proceeding outcomes from CAAB so that the overview reflects the latest saved state.
+    caseOutcomeService
+        .getCaseOutcome(ebsCase.getCaseReferenceNumber(), user.getProvider().getId().intValue())
+        .ifPresent(
+            caseOutcome -> {
+              final List<ProceedingOutcomeDetail> saved = caseOutcome.getProceedingOutcomes();
+              if (saved != null && proceedings != null) {
+                proceedings.forEach(
+                    proceeding ->
+                        saved.stream()
+                            .filter(
+                                o ->
+                                    proceeding.getProceedingCaseId() != null
+                                        && proceeding
+                                            .getProceedingCaseId()
+                                            .equals(o.getProceedingCaseId()))
+                            .findFirst()
+                            .ifPresent(proceeding::setOutcome));
+              }
+            });
+
+    model.addAttribute("proceedings", proceedings);
     return "application/outcome-and-awards";
   }
 
