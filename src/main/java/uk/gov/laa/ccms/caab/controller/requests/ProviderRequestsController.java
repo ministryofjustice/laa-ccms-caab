@@ -9,6 +9,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_UPLOAD_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRIOR_AUTHORITY_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROVIDER_REQUEST_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 import static uk.gov.laa.ccms.caab.util.FileUtil.getFileExtension;
@@ -257,7 +258,8 @@ public class ProviderRequestsController {
       @ModelAttribute("providerRequestDetails")
           final ProviderRequestDetailsFormData providerRequestDetailsForm,
       final Model model,
-      final BindingResult bindingResult) {
+      final BindingResult bindingResult,
+      final HttpSession session) {
 
     providerRequestsMapper.toProviderRequestDetailsFormData(
         providerRequestDetailsForm, providerRequestFlow);
@@ -336,6 +338,7 @@ public class ProviderRequestsController {
                 documents, UNRELATED_CASE_REFERENCE, notificationId, userDetail)
             .block();
       }
+      session.setAttribute(SUBMISSION_RESULT, "confirmed");
       String redirectUrl = "/application/provider-request/confirmed";
       if (isValidCaseReference(caseRef)) {
         redirectUrl += "?caseReferenceNumber=" + caseRef;
@@ -636,8 +639,10 @@ public class ProviderRequestsController {
   public String clientUpdateSubmitted(
       @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
-      final SessionStatus sessionStatus) {
+      final SessionStatus sessionStatus,
+      final HttpSession session) {
 
+    session.removeAttribute(SUBMISSION_RESULT);
     sessionStatus.setComplete();
 
     String caseRef = providerRequestFlow.getCaseReferenceNumber();

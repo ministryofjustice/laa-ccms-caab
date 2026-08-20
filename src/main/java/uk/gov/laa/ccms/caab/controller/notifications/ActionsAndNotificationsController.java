@@ -5,6 +5,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_N
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATION_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 
@@ -502,7 +503,8 @@ public class ActionsAndNotificationsController {
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @PathVariable(NOTIFICATION_ID) String notificationId,
       @SessionAttribute(NOTIFICATION) Notification notification,
-      Model model) {
+      Model model,
+      HttpSession session) {
 
     NotificationAttachmentDetails notificationAttachmentDetails =
         notificationService
@@ -522,6 +524,7 @@ public class ActionsAndNotificationsController {
     notificationService.submitNotificationAttachments(
         notificationId, user.getLoginId(), user.getUserType(), user.getUserId());
 
+    session.setAttribute(SUBMISSION_RESULT, "confirmed");
     return "redirect:/application/notification-attachments/confirmed";
   }
 
@@ -538,6 +541,7 @@ public class ActionsAndNotificationsController {
       @SessionAttribute(NOTIFICATION) Notification notification,
       HttpSession session) {
 
+    session.removeAttribute(SUBMISSION_RESULT);
     String notificationId = notification.getNotificationId();
     Notification updatedNotification =
         notificationService

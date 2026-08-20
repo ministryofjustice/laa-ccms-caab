@@ -73,6 +73,9 @@ public class ClientSubmissionsInProgressController {
       session.removeAttribute(SUBMISSION_POLL_COUNT);
       session.removeAttribute(SUBMISSION_TRANSACTION_ID);
       session.setAttribute(SUBMISSION_RESULT, SUBMISSION_CONFIRMED);
+      log.debug(
+          "Client create complete - set SUBMISSION_RESULT=confirmed, session id={}",
+          session.getId());
       session.removeAttribute(CLIENT_SEARCH_CRITERIA);
       session.removeAttribute(CLIENT_FLOW_FORM_DATA);
 

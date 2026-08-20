@@ -835,8 +835,9 @@ class ProviderRequestsControllerTest {
     when(evidenceService.uploadAndUpdateDocuments(any(), any(), any(), any()))
         .thenReturn(Mono.empty());
 
+    var session = org.mockito.Mockito.mock(jakarta.servlet.http.HttpSession.class);
     providerRequestsController.postRequestDetail(
-        user, providerRequestFlow, "submit", details, model, binding);
+        user, providerRequestFlow, "submit", details, model, binding, session);
 
     verify(providerRequestService)
         .submitProviderRequest(

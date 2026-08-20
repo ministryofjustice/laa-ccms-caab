@@ -34,15 +34,16 @@ class SubmissionConfirmedControllerTest {
   @Test
   void testSubmissionsConfirmedWhenSubmissionResultMissingRedirects() throws Exception {
     mockMvc
-        .perform(get("/application/testType/confirmed"))
+        .perform(get("/application/submit-case/confirmed"))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/submissions/alreadySubmitted?returnUrl=/application/sections"));
+        .andExpect(redirectedUrl("/submissions/alreadySubmitted?returnUrl=/home"));
   }
 
   @Test
   void testSubmissionsConfirmedWhenSubmissionResultPresent() throws Exception {
     mockMvc
-        .perform(get("/application/testType/confirmed").sessionAttr(SUBMISSION_RESULT, "confirmed"))
+        .perform(
+            get("/application/submit-case/confirmed").sessionAttr(SUBMISSION_RESULT, "confirmed"))
         .andExpect(status().isOk())
         .andExpect(view().name("submissions/submissionConfirmed"));
   }

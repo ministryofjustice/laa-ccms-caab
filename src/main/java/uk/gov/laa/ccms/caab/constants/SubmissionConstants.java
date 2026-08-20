@@ -18,6 +18,12 @@ public class SubmissionConstants {
   /** submission used for create case. */
   public static final String SUBMISSION_SUBMIT_CASE = "submit-case";
 
+  /** submission used for provider requests. */
+  public static final String SUBMISSION_PROVIDER_REQUEST = "provider-request";
+
+  /** submission used for notification attachments. */
+  public static final String SUBMISSION_NOTIFICATION_ATTACHMENTS = "notification-attachments";
+
   /** the maximum amount of poll request for a submission. */
   @Value("${submission.max-poll-count:6}")
   private Integer maxPollCount;

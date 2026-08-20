@@ -1,9 +1,14 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_CLIENT;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_NOTIFICATION_ATTACHMENTS;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_PROVIDER_REQUEST;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_UPDATE_CLIENT;
 import static uk.gov.laa.ccms.caab.util.SubmissionUtil.isAlreadySubmitted;
 
 import jakarta.servlet.http.HttpSession;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -20,6 +25,13 @@ import uk.gov.laa.ccms.caab.constants.CaseContext;
 @Slf4j
 public class SubmissionConfirmedController {
   private static final String DEFAULT_RETURN_URL = "/case/overview";
+  private static final Set<String> GUARDED_SUBMISSION_TYPES =
+      Set.of(
+          SUBMISSION_SUBMIT_CASE,
+          SUBMISSION_CREATE_CLIENT,
+          SUBMISSION_UPDATE_CLIENT,
+          SUBMISSION_PROVIDER_REQUEST,
+          SUBMISSION_NOTIFICATION_ATTACHMENTS);
 
   /**
    * Handles the GET request for all confirmed submissions screen.
@@ -32,10 +44,16 @@ public class SubmissionConfirmedController {
       @PathVariable String submissionType,
       final HttpSession session,
       Model model) {
-    final boolean hasConfirmedSubmission = isAlreadySubmitted(session);
-    if (!hasConfirmedSubmission) {
-      return "redirect:/submissions/alreadySubmitted?returnUrl="
-          + resolveReturnUrl(caseContext, submissionType);
+    log.debug("GET confirmed page: caseContext={}, submissionType={}", caseContext, submissionType);
+    if (GUARDED_SUBMISSION_TYPES.contains(submissionType)) {
+      log.debug("Submission type {} is guarded, checking SUBMISSION_RESULT", submissionType);
+      final boolean hasConfirmedSubmission = isAlreadySubmitted(session);
+      log.debug("hasConfirmedSubmission={}", hasConfirmedSubmission);
+      if (!hasConfirmedSubmission) {
+        log.info("Redirecting to alreadySubmitted - SUBMISSION_RESULT not found");
+        return "redirect:/submissions/alreadySubmitted?returnUrl="
+            + resolveReturnUrl(caseContext, submissionType);
+      }
     }
 
     model.addAttribute("submissionType", submissionType);
