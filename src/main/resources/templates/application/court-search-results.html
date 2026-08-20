@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs}, userRoles=${user.functions}, pageRoles='VC')}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="#{service.name} + ' - ' + #{courtSearch.results}"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a th:href="@{/court/search(proceedingIndex=${proceedingIndex})}" class="govuk-back-link" th:text="#{site.returnToCourtSearch}"></a>
+    </div>
+    <div id="main-content">
+        <h1 class="govuk-heading-l" th:text="#{courtSearch.results}"></h1>
+        <p class="govuk-body-l" th:text="#{courtSearch.results.message}"></p>
+        <p class="govuk-body-l" th:text="#{courtSearch.results.returned(${courtResultsPage.totalElements})}"></p>
+        <table class="govuk-table">
+            <thead class="govuk-table__head">
+            <tr class="govuk-table__row">
+                <th scope="col" class="govuk-table__header" th:text="#{courtSearch.courtCode}"/>
+                <th scope="col" class="govuk-table__header" th:text="#{courtSearch.courtName}"/>
+            </tr>
+            </thead>
+            <tbody class="govuk-table__body">
+            <tr class="govuk-table__row" th:each="row, rowStat : ${courtResultsPage.content}">
+
+                <td class="govuk-table__cell"><a class="govuk-link" th:href="@{/court/select(index=${(courtResultsPage.number * courtResultsPage.size) + rowStat.index}, proceedingIndex=${proceedingIndex})}" th:text="${row.getCode()}"></a></td>
+                <td class="govuk-table__cell" th:text="${row.getDescription()}"></td>
+            </tr>
+            </tbody>
+        </table>
+        <nav th:replace="~{partials/pagination :: pagination(page=${courtResultsPage})}"></nav>
+        <div class="govuk-button-group">
+            <a th:href="@{/court/search(proceedingIndex=${proceedingIndex})}" class="govuk-button govuk-button--secondary" data-module="govuk-button" th:text="#{site.back}"></a>
+        </div>
+    </div>
+</div>
+</body>
+</html>
