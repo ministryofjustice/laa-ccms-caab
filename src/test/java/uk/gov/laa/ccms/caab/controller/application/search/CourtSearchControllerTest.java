@@ -204,7 +204,7 @@ class CourtSearchControllerTest {
   public void courtResultsWithoutSessionRedirectsToSearch() throws Exception {
     assertThat(mockMvcTester.perform(get("/court/results").param("proceedingIndex", "0")))
         .hasStatus3xxRedirection()
-        .hasRedirectedUrl("/court/search");
+        .hasRedirectedUrl("/court/search?proceedingIndex=0");
   }
 
   @Test

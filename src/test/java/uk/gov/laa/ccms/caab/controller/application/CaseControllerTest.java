@@ -2,9 +2,11 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -52,6 +54,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.ClientDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
@@ -69,6 +72,7 @@ import uk.gov.laa.ccms.caab.model.sections.OrganisationAddressDetailsSectionDisp
 import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.OrganisationOrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -83,6 +87,7 @@ class CaseControllerTest {
 
   @Mock private ApplicationService applicationService;
   @Mock private LookupService lookupService;
+  @Mock private CaseOutcomeService caseOutcomeService;
   @Mock private ProceedingOutcomeValidator proceedingOutcomeValidator;
 
   @InjectMocks private CaseController caseController;
@@ -105,6 +110,11 @@ class CaseControllerTest {
                 .build());
     this.user = ApplicationTestUtils.buildUser();
     returnUrl = "returnUrl";
+    lenient()
+        .when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+        .thenReturn(
+            java.util.Optional.of(
+                new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
   }
 
   @Nested
@@ -755,7 +765,8 @@ class CaseControllerTest {
                           new OutcomeResultLookupValueDetail()
                               .outcomeResult("R1")
                               .outcomeResultDescription("Result 1"))));
-      when(lookupService.getCourts("P1"))
+      lenient()
+          .when(lookupService.getCourts(anyString()))
           .thenReturn(
               Mono.just(
                   new CommonLookupDetail()
@@ -810,13 +821,16 @@ class CaseControllerTest {
                           new OutcomeResultLookupValueDetail()
                               .outcomeResult("R1")
                               .outcomeResultDescription("Result 1"))));
-      when(lookupService.getCourts("P1"))
+      lenient()
+          .when(lookupService.getCourts(anyString()))
           .thenReturn(
               Mono.just(
                   new CommonLookupDetail()
                       .addContentItem(
                           new CommonLookupValueDetail().code("CT1").description("Court 1"))));
-      doNothing().when(applicationService).updateProceeding(any(ProceedingDetail.class), any());
+      doNothing()
+          .when(caseOutcomeService)
+          .updateProceedingOutcome(anyString(), anyInt(), any(), anyString());
 
       assertThat(
               mockMvc.perform(
