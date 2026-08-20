@@ -67,6 +67,11 @@ class IndividualOpponentValidatorTest {
     validator.validate(opponentFormData, errors);
     assertEquals(1, errors.getErrorCount());
     assertEquals(1, errors.getFieldErrors("dateOfBirth").size());
+    assertEquals(1, errors.getErrorCount());
+    assertEquals(1, errors.getFieldErrors("dateOfBirth").size());
+    assertEquals(
+        "Date of Birth must be supplied because this Opponent is recorded as a Child on the Relationship to Case section.",
+        errors.getFieldError("dateOfBirth").getDefaultMessage());
   }
 
   @Test
