@@ -418,10 +418,9 @@ class ProviderRequestsMapperTest {
   void shouldMapFileToProviderRequestAttribute() {
     final ProviderRequestDetailsFormData formData = new ProviderRequestDetailsFormData();
     formData.setClaimUploadLabel("Claim Upload Label");
+    formData.setSanitisedFileName("testFile.pdf");
 
     final MultipartFile mockFile = mock(MultipartFile.class);
-    when(mockFile.getOriginalFilename()).thenReturn("testFile.pdf");
-
     formData.setFile(mockFile);
 
     final ProviderRequestAttribute result = mapper.fileToProviderRequestAttribute(formData);
@@ -429,6 +428,24 @@ class ProviderRequestsMapperTest {
     assertNotNull(result, "Result should not be null");
     assertEquals("Claim Upload Label", result.getLabel(), "Label should match");
     assertEquals("testFile.pdf", result.getText(), "File name should match");
+  }
+
+  @Test
+  @DisplayName("Should map sanitised filename to ProviderRequestAttribute text")
+  void shouldMapSanitisedFilenameToProviderRequestAttribute() {
+    final ProviderRequestDetailsFormData formData = new ProviderRequestDetailsFormData();
+    formData.setClaimUploadLabel("Claim Upload Label");
+    formData.setSanitisedFileName("My_interesting_filename_.pdf");
+
+    final MultipartFile mockFile = mock(MultipartFile.class);
+    formData.setFile(mockFile);
+
+    final ProviderRequestAttribute result = mapper.fileToProviderRequestAttribute(formData);
+
+    assertNotNull(result, "Result should not be null");
+    assertEquals("Claim Upload Label", result.getLabel(), "Label should match");
+    assertEquals(
+        "My_interesting_filename_.pdf", result.getText(), "Text should use sanitised name");
   }
 
   @Test

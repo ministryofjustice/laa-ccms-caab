@@ -56,4 +56,19 @@ class FileUtilTest {
 
     assertEquals("", result);
   }
+
+  @Test
+  void testSanitiseFileName_collapsesMultipleSpacesToSingleUnderscore() {
+    final String result =
+        FileUtil.sanitiseFileName("Test             Upload--  -- copyDoublespaces.rtf");
+
+    assertEquals("Test_Upload--_--_copyDoublespaces.rtf", result);
+  }
+
+  @Test
+  void testSanitiseFileName_replacesSpecialAndInternationalCharactersWithUnderscore() {
+    final String result = FileUtil.sanitiseFileName("TestUpload™‹#. €@£ {}__[';]_' copy.rtf");
+
+    assertEquals("TestUploadTM______copy.rtf", result);
+  }
 }
