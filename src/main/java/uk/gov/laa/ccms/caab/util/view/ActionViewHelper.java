@@ -36,7 +36,7 @@ public class ActionViewHelper {
               FunctionConstants.SUBMIT_CASE_REQUEST,
               "action.submitCaseQuery.name",
               "action.submitCaseQuery.description",
-              "/provider-requests/types"),
+              "/case-provider-requests/types"),
           new AvailableAction(
               FunctionConstants.VIEW_CASE,
               "action.viewCase.name",
@@ -115,7 +115,7 @@ public class ActionViewHelper {
       return action;
     }
 
-    String url = "/provider-requests/types";
+    String url = "/case-provider-requests/types";
 
     if (caseReferenceNumber != null) {
       url += "?caseReferenceNumber=" + caseReferenceNumber;

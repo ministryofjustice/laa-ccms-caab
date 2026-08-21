@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.controller.requests;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -19,7 +20,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_UPLOAD_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROVIDER_REQUEST_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
@@ -31,11 +31,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -51,6 +55,7 @@ import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestDetailsValida
 import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestDocumentUploadValidator;
 import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestTypesValidator;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
+import uk.gov.laa.ccms.caab.constants.ProviderRequestFlowType;
 import uk.gov.laa.ccms.caab.exception.AvScanException;
 import uk.gov.laa.ccms.caab.mapper.ProviderRequestsMapper;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
@@ -92,6 +97,10 @@ class ProviderRequestsControllerTest {
   @InjectMocks private ProviderRequestsController providerRequestsController;
 
   private static final String MAX_FILE_SIZE = String.valueOf(5L * 1024 * 1024);
+  private static final String PROVIDER_REQUEST_SUBMIT_URL = "providerRequestSubmitUrl";
+  private static final String PROVIDER_REQUEST_BACK_URL = "providerRequestBackUrl";
+  private static final String PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_ATTRIBUTE =
+      "providerRequestEvidenceUploadFormAttribute";
 
   @BeforeEach
   public void setup() {
@@ -153,6 +162,15 @@ class ProviderRequestsControllerTest {
     return lookupItem;
   }
 
+  private String buildExpectedUrl(
+      final ProviderRequestFlowType flowType, final String path, final String caseRef) {
+    String url = flowType.getBasePath() + path;
+    if (flowType.isCaseScoped()) {
+      url += "?caseReferenceNumber=" + caseRef;
+    }
+    return url;
+  }
+
   /** Mocks AV scan service to throw an exception. */
   private void mockAvScanServiceToThrow() throws AvScanException {
     doThrow(new AvScanException("Virus alert"))
@@ -160,51 +178,89 @@ class ProviderRequestsControllerTest {
         .performAvScan(any(), any(), any(), any(), any(), any(InputStream.class));
   }
 
-  @Test
-  @DisplayName("GET /provider-requests/types should return provider request type view")
-  void testGetRequestType() throws Exception {
-    when(lookupService.getProviderRequestTypes(eq(false), isNull()))
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1, /home", // general flow
+    "CASE, 300001234567, /case/overview", // case flow
+  })
+  @DisplayName("GET general/case provider requests types should return provider request type view")
+  void testGetRequestType(String requestType, String caseRef, String expectedBackUrl)
+      throws Exception {
+    when(lookupService.getProviderRequestTypes(anyBoolean(), isNull()))
         .thenReturn(Mono.just(new ProviderRequestTypeLookupDetail()));
 
-    mockMvc
-        .perform(get("/provider-requests/types").sessionAttr(USER_DETAILS, userDetails))
-        .andExpect(status().isOk())
-        .andExpect(view().name("requests/provider-request-type"))
-        .andExpect(model().attributeExists("providerRequestTypeDetails"))
-        .andExpect(model().attributeExists("providerRequestTypes"))
-        .andExpect(model().attribute("providerRequestTypes", Collections.emptyList()));
+    ProviderRequestFlowType providerRequestFlowType = ProviderRequestFlowType.valueOf(requestType);
+    String requestUrl = buildExpectedUrl(providerRequestFlowType, "/types", caseRef);
 
-    verify(lookupService).getProviderRequestTypes(eq(false), isNull());
+    final ResultActions resultActions =
+        mockMvc
+            .perform(get(requestUrl).sessionAttr(USER_DETAILS, userDetails))
+            .andExpect(status().isOk())
+            .andExpect(view().name("requests/provider-request-type"))
+            .andExpect(model().attributeExists("providerRequestTypeDetails"))
+            .andExpect(model().attributeExists("providerRequestTypes"))
+            .andExpect(model().attribute("providerRequestTypes", Collections.emptyList()));
+
+    resultActions
+        .andExpect(
+            model()
+                .attribute(
+                    PROVIDER_REQUEST_SUBMIT_URL, providerRequestFlowType.getBasePath() + "/types"))
+        .andExpect(model().attribute(PROVIDER_REQUEST_BACK_URL, expectedBackUrl));
+
+    if (providerRequestFlowType.isCaseScoped()) {
+      resultActions.andExpect(model().attribute("caseReference", caseRef));
+    } else {
+      resultActions.andExpect(model().attributeDoesNotExist("caseReference"));
+    }
+
+    verify(lookupService)
+        .getProviderRequestTypes(eq(providerRequestFlowType.isCaseScoped()), isNull());
   }
 
-  @Test
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1", // general flow
+    "CASE, 300001234567", // case flow
+  })
   @DisplayName(
-      "POST /provider-requests/types should redirect to provider request details on success")
-  void testRequestTypePost_Success() throws Exception {
-    final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
+      "POST general/case provider requests types should redirect to provider request details on success")
+  void testRequestTypePost_Success(String requestType, String caseRef) throws Exception {
+    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef(caseRef);
     final ProviderRequestTypeFormData providerRequestTypeDetails =
         new ProviderRequestTypeFormData();
 
     doAnswer(invocation -> null).when(providerRequestTypeValidator).validate(any(), any());
 
+    ProviderRequestFlowType providerRequestFlowType = ProviderRequestFlowType.valueOf(requestType);
+    String expectedUrl = buildExpectedUrl(providerRequestFlowType, "/details", caseRef);
+
     mockMvc
         .perform(
-            post("/provider-requests/types")
+            post(providerRequestFlowType.getBasePath() + "/types")
                 .sessionAttr(USER_DETAILS, userDetails)
-                .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow)
+                .sessionAttr(providerRequestFlowType.getFlowSessionAttribute(), providerRequestFlow)
                 .flashAttr("providerRequestTypeDetails", providerRequestTypeDetails))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/provider-requests/details"));
+        .andExpect(redirectedUrl(expectedUrl));
 
     verify(providerRequestTypeValidator).validate(any(), any());
   }
 
-  @Test
-  @DisplayName("POST /provider-requests/types should return form view with validation errors")
-  void testRequestTypePost_HasValidationErrors() throws Exception {
-    final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1, /home", // general flow
+    "CASE, 300001234567, /case/overview", // case flow
+  })
+  @DisplayName(
+      "POST general/case provider requests types should return form view with validation errors")
+  void testRequestTypePost_HasValidationErrors(
+      String requestType, String caseRef, String expectedBackUrl) throws Exception {
+    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef(caseRef);
     final ProviderRequestTypeFormData providerRequestTypeDetails =
         new ProviderRequestTypeFormData();
+
+    ProviderRequestFlowType providerRequestFlowType = ProviderRequestFlowType.valueOf(requestType);
 
     doAnswer(
             invocation -> {
@@ -218,50 +274,77 @@ class ProviderRequestsControllerTest {
         .when(providerRequestTypeValidator)
         .validate(any(), any());
 
-    when(lookupService.getProviderRequestTypes(eq(false), isNull()))
+    when(lookupService.getProviderRequestTypes(anyBoolean(), isNull()))
         .thenReturn(Mono.just(new ProviderRequestTypeLookupDetail()));
 
-    mockMvc
-        .perform(
-            post("/provider-requests/types")
-                .sessionAttr(USER_DETAILS, userDetails)
-                .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow)
-                .flashAttr("providerRequestTypeDetails", providerRequestTypeDetails))
-        .andExpect(status().isOk())
-        .andExpect(view().name("requests/provider-request-type"))
+    final ResultActions resultActions =
+        mockMvc
+            .perform(
+                post(providerRequestFlowType.getBasePath() + "/types")
+                    .sessionAttr(USER_DETAILS, userDetails)
+                    .sessionAttr(
+                        providerRequestFlowType.getFlowSessionAttribute(), providerRequestFlow)
+                    .flashAttr("providerRequestTypeDetails", providerRequestTypeDetails))
+            .andExpect(status().isOk())
+            .andExpect(view().name("requests/provider-request-type"))
+            .andExpect(
+                model()
+                    .attributeHasFieldErrors("providerRequestTypeDetails", "providerRequestType"))
+            .andExpect(model().attributeExists(providerRequestFlowType.getFlowSessionAttribute()))
+            .andExpect(model().attributeExists("providerRequestTypeDetails"))
+            .andExpect(model().attributeExists("providerRequestTypes"));
+
+    resultActions
         .andExpect(
-            model().attributeHasFieldErrors("providerRequestTypeDetails", "providerRequestType"))
-        .andExpect(model().attributeExists(PROVIDER_REQUEST_FLOW_FORM_DATA))
-        .andExpect(model().attributeExists("providerRequestTypeDetails"))
-        .andExpect(model().attributeExists("providerRequestTypes"));
+            model()
+                .attribute(
+                    PROVIDER_REQUEST_SUBMIT_URL, providerRequestFlowType.getBasePath() + "/types"))
+        .andExpect(model().attribute(PROVIDER_REQUEST_BACK_URL, expectedBackUrl));
 
     verify(providerRequestTypeValidator).validate(any(), any());
-    verify(lookupService).getProviderRequestTypes(eq(false), isNull());
+    verify(lookupService)
+        .getProviderRequestTypes(eq(providerRequestFlowType.isCaseScoped()), isNull());
   }
 
-  @Test
-  @DisplayName("Should populate provider request types in the model")
-  void testPopulateProviderRequestTypes() throws Exception {
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1",
+    "CASE, 123456789012",
+  })
+  @DisplayName("Should populate provider request types in the model for general/case flow")
+  void testPopulateProviderRequestTypes(String requestType, String caseRef) throws Exception {
     final ProviderRequestTypeLookupValueDetail mockRequestType =
         new ProviderRequestTypeLookupValueDetail();
     final ProviderRequestTypeLookupDetail mockDetail = new ProviderRequestTypeLookupDetail();
     mockDetail.setContent(List.of(mockRequestType));
+    final ProviderRequestFlowType providerRequestFlowType =
+        ProviderRequestFlowType.valueOf(requestType);
+    String requestUrl = buildExpectedUrl(providerRequestFlowType, "/types", caseRef);
 
-    when(lookupService.getProviderRequestTypes(eq(false), isNull()))
+    when(lookupService.getProviderRequestTypes(
+            eq(providerRequestFlowType.isCaseScoped()), isNull()))
         .thenReturn(Mono.just(mockDetail));
 
-    mockMvc
-        .perform(get("/provider-requests/types").sessionAttr(USER_DETAILS, userDetails))
-        .andExpect(status().isOk())
-        .andExpect(model().attributeExists("providerRequestTypes"))
-        .andExpect(model().attribute("providerRequestTypes", List.of(mockRequestType)));
+    final ResultActions resultActions =
+        mockMvc
+            .perform(get(requestUrl).sessionAttr(USER_DETAILS, userDetails))
+            .andExpect(status().isOk())
+            .andExpect(model().attributeExists("providerRequestTypes"))
+            .andExpect(model().attribute("providerRequestTypes", List.of(mockRequestType)));
 
-    verify(lookupService).getProviderRequestTypes(eq(false), isNull());
+    verify(lookupService)
+        .getProviderRequestTypes(eq(providerRequestFlowType.isCaseScoped()), isNull());
   }
 
-  @Test
-  @DisplayName("Should populate provider request types in the model based on user function codes")
-  void testPopulateProviderRequestTypesBasedOnUserFunctionCodes() throws Exception {
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1",
+    "CASE, 123456789012",
+  })
+  @DisplayName(
+      "Should populate provider request types in the model based on user function codes for general/case flow")
+  void testPopulateProviderRequestTypesBasedOnUserFunctionCodes(String requestType, String caseRef)
+      throws Exception {
     final ProviderRequestTypeLookupValueDetail mockRequestType1 =
         new ProviderRequestTypeLookupValueDetail();
     mockRequestType1.setName("test1");
@@ -278,41 +361,63 @@ class ProviderRequestsControllerTest {
 
     final ProviderRequestTypeLookupDetail mockDetail = new ProviderRequestTypeLookupDetail();
     mockDetail.setContent(List.of(mockRequestType1, mockRequestType2, mockRequestType3));
+    final ProviderRequestFlowType providerRequestFlowType =
+        ProviderRequestFlowType.valueOf(requestType);
+    String requestUrl = buildExpectedUrl(providerRequestFlowType, "/types", caseRef);
 
-    when(lookupService.getProviderRequestTypes(eq(false), isNull()))
+    when(lookupService.getProviderRequestTypes(
+            eq(providerRequestFlowType.isCaseScoped()), isNull()))
         .thenReturn(Mono.just(mockDetail));
 
-    mockMvc
-        .perform(
-            get("/provider-requests/types")
-                .sessionAttr(USER_DETAILS, userDetails.addFunctionsItem("CR")))
-        .andExpect(status().isOk())
-        .andExpect(model().attributeExists("providerRequestTypes"))
-        .andExpect(
-            model().attribute("providerRequestTypes", List.of(mockRequestType2, mockRequestType3)));
+    final ResultActions resultActions =
+        mockMvc
+            .perform(get(requestUrl).sessionAttr(USER_DETAILS, userDetails.addFunctionsItem("CR")))
+            .andExpect(status().isOk())
+            .andExpect(model().attributeExists("providerRequestTypes"))
+            .andExpect(
+                model()
+                    .attribute(
+                        "providerRequestTypes", List.of(mockRequestType2, mockRequestType3)));
 
-    verify(lookupService).getProviderRequestTypes(eq(false), isNull());
+    verify(lookupService)
+        .getProviderRequestTypes(eq(providerRequestFlowType.isCaseScoped()), isNull());
   }
 
-  @Test
-  @DisplayName("Should handle empty provider request types in the model")
-  void testPopulateProviderRequestTypes_Empty() throws Exception {
-    when(lookupService.getProviderRequestTypes(eq(false), isNull()))
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1",
+    "CASE, 123456789012",
+  })
+  @DisplayName("Should handle empty provider request types in the model for general/case flow")
+  void testPopulateProviderRequestTypes_Empty(String requestType, String caseRef) throws Exception {
+    final ProviderRequestFlowType providerRequestFlowType =
+        ProviderRequestFlowType.valueOf(requestType);
+    String requestUrl = buildExpectedUrl(providerRequestFlowType, "/types", caseRef);
+
+    when(lookupService.getProviderRequestTypes(
+            eq(providerRequestFlowType.isCaseScoped()), isNull()))
         .thenReturn(Mono.just(new ProviderRequestTypeLookupDetail()));
 
-    mockMvc
-        .perform(get("/provider-requests/types").sessionAttr(USER_DETAILS, userDetails))
-        .andExpect(status().isOk())
-        .andExpect(model().attributeExists("providerRequestTypes"))
-        .andExpect(model().attribute("providerRequestTypes", Collections.emptyList()));
+    final ResultActions resultActions =
+        mockMvc
+            .perform(get(requestUrl).sessionAttr(USER_DETAILS, userDetails))
+            .andExpect(status().isOk())
+            .andExpect(model().attributeExists("providerRequestTypes"))
+            .andExpect(model().attribute("providerRequestTypes", Collections.emptyList()));
 
-    verify(lookupService).getProviderRequestTypes(eq(false), isNull());
+    verify(lookupService)
+        .getProviderRequestTypes(eq(providerRequestFlowType.isCaseScoped()), isNull());
   }
 
-  @Test
-  @DisplayName("Should return provider request detail view with populated model attributes")
-  void testProviderRequestsDetails_PopulatesModel() {
-    final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1",
+    "CASE, 123456789012",
+  })
+  @DisplayName(
+      "Should return provider request detail view with populated model attributes for general/case flow")
+  void testProviderRequestsDetails_PopulatesModel(String requestType, String caseRef) {
+    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef(caseRef);
     final ProviderRequestDetailsFormData providerRequestDetailsForm =
         new ProviderRequestDetailsFormData();
     final ProviderRequestTypeFormData providerRequestType = new ProviderRequestTypeFormData();
@@ -331,27 +436,39 @@ class ProviderRequestsControllerTest {
     when(lookupService.getProviderRequestTypes(null, "testType"))
         .thenReturn(Mono.just(lookupDetail));
 
+    final ProviderRequestFlowType providerRequestFlowType =
+        ProviderRequestFlowType.valueOf(requestType);
+
     final String viewName =
         providerRequestsController.providerRequestsDetails(
-            providerRequestFlow, providerRequestDetailsForm, model);
+            providerRequestFlow, providerRequestDetailsForm, model, providerRequestFlowType);
+
+    String expectedBackUrl = buildExpectedUrl(providerRequestFlowType, "/types", caseRef);
 
     verify(lookupService).getProviderRequestTypes(null, "testType");
     verify(mapper).populateProviderRequestDetailsForm(providerRequestDetailsForm, dynamicForm);
     verify(model).addAttribute("providerRequestDynamicForm", dynamicForm);
     verify(model).addAttribute("providerRequestDetails", providerRequestDetailsForm);
     verify(model).addAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow);
-
+    verify(model)
+        .addAttribute(
+            PROVIDER_REQUEST_SUBMIT_URL, providerRequestFlowType.getBasePath() + "/details");
+    verify(model).addAttribute(PROVIDER_REQUEST_BACK_URL, expectedBackUrl);
     assertEquals("requests/provider-request-detail", viewName);
     assertTrue(providerRequestDetailsForm.isClaimUploadEnabled());
     assertEquals("Upload Files", providerRequestDetailsForm.getClaimUploadLabel());
     assertEquals("Additional Info", providerRequestDetailsForm.getAdditionalInformationLabel());
   }
 
-  @Test
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1",
+    "CASE, 123456789012",
+  })
   @DisplayName(
-      "GET /provider-requests/details should return provider request detail view with populated model")
-  void testGetRequestDetail_PopulatesModel() throws Exception {
-    final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
+      "GET general/case provider request details should return detail view with populated model")
+  void testRequestDetail_Get_PopulatesModel(String requestType, String caseRef) throws Exception {
+    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef(caseRef);
     final ProviderRequestDetailsFormData providerRequestDetailsForm =
         new ProviderRequestDetailsFormData();
     final ProviderRequestTypeFormData providerRequestType = new ProviderRequestTypeFormData();
@@ -381,23 +498,44 @@ class ProviderRequestsControllerTest {
     when(providerRequestDetailsValidator.getValidExtensions()).thenReturn(List.of("xml"));
     when(providerRequestDetailsValidator.getMaxFileSize()).thenReturn(MAX_FILE_SIZE);
 
-    mockMvc
-        .perform(
-            get("/provider-requests/details")
-                .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow))
-        .andExpect(status().isOk())
-        .andExpect(view().name("requests/provider-request-detail"))
-        .andExpect(model().attributeExists("documentTypes"))
-        .andExpect(model().attributeExists("maxFileSize"))
-        .andExpect(model().attributeExists("validExtensions"))
-        .andExpect(model().attributeExists("claimMaxFileSize"))
-        .andExpect(model().attributeExists("claimValidExtensions"))
-        .andExpect(model().attributeExists("providerRequestDynamicForm"))
-        .andExpect(model().attribute("providerRequestDynamicForm", dynamicForm))
-        .andExpect(model().attributeExists("providerRequestDetails"))
-        .andExpect(model().attribute("providerRequestDetails", providerRequestDetailsForm))
-        .andExpect(model().attributeExists(PROVIDER_REQUEST_FLOW_FORM_DATA))
-        .andExpect(model().attribute(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow));
+    ProviderRequestFlowType providerRequestFlowType = ProviderRequestFlowType.valueOf(requestType);
+    String requestUrl = buildExpectedUrl(providerRequestFlowType, "/details", caseRef);
+
+    final ResultActions resultActions =
+        mockMvc
+            .perform(
+                get(requestUrl)
+                    .sessionAttr(
+                        providerRequestFlowType.getFlowSessionAttribute(), providerRequestFlow))
+            .andExpect(status().isOk())
+            .andExpect(view().name("requests/provider-request-detail"))
+            .andExpect(model().attributeExists("documentTypes"))
+            .andExpect(model().attributeExists("maxFileSize"))
+            .andExpect(model().attributeExists("validExtensions"))
+            .andExpect(model().attributeExists("claimMaxFileSize"))
+            .andExpect(model().attributeExists("claimValidExtensions"))
+            .andExpect(model().attributeExists("providerRequestDynamicForm"))
+            .andExpect(model().attribute("providerRequestDynamicForm", dynamicForm))
+            .andExpect(model().attributeExists("providerRequestDetails"))
+            .andExpect(model().attribute("providerRequestDetails", providerRequestDetailsForm))
+            .andExpect(model().attributeExists(PROVIDER_REQUEST_FLOW_FORM_DATA))
+            .andExpect(model().attribute(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow));
+
+    String expectedBackUrl = buildExpectedUrl(providerRequestFlowType, "/types", caseRef);
+
+    resultActions
+        .andExpect(
+            model()
+                .attribute(
+                    PROVIDER_REQUEST_SUBMIT_URL,
+                    providerRequestFlowType.getBasePath() + "/details"))
+        .andExpect(model().attribute(PROVIDER_REQUEST_BACK_URL, expectedBackUrl));
+
+    if (providerRequestFlowType.isCaseScoped()) {
+      resultActions.andExpect(model().attribute("caseReference", caseRef));
+    } else {
+      resultActions.andExpect(model().attributeDoesNotExist("caseReference"));
+    }
 
     verify(lookupService).getProviderRequestTypes(null, "testType");
     verify(mapper).populateProviderRequestDetailsForm(providerRequestDetailsForm, dynamicForm);
@@ -432,44 +570,14 @@ class ProviderRequestsControllerTest {
     verify(model).addAttribute("testCode", commonValues);
   }
 
-  @Test
-  @DisplayName("Should redirect to document upload when action is 'document_upload'")
-  void testPostRequestDetail_documentUpload() throws Exception {
-    final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
-    final ProviderRequestDetailsFormData providerRequestDetailsForm =
-        new ProviderRequestDetailsFormData();
-    final ProviderRequestTypeFormData providerRequestType = new ProviderRequestTypeFormData();
-    providerRequestType.setProviderRequestType("testType");
-    providerRequestFlow.setRequestTypeFormData(providerRequestType);
-    providerRequestFlow.setRequestDetailsFormData(providerRequestDetailsForm);
-    providerRequestFlow.setCaseReferenceNumber(null);
-
-    final ProviderRequestTypeLookupValueDetail dynamicForm =
-        new ProviderRequestTypeLookupValueDetail()
-            .isClaimUploadEnabled(false)
-            .additionalInformationPrompt("Additional Info");
-
-    final ProviderRequestTypeLookupDetail lookupDetail = new ProviderRequestTypeLookupDetail();
-    lookupDetail.setContent(List.of(dynamicForm));
-
-    mockMvc
-        .perform(
-            post("/provider-requests/details")
-                .sessionAttr(USER_DETAILS, userDetails)
-                .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow)
-                .param("action", "document_upload")
-                .flashAttr("providerRequestDetails", providerRequestDetailsForm))
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/provider-requests/documents?caseReferenceNumber="));
-
-    verify(mapper)
-        .toProviderRequestDetailsFormData(providerRequestDetailsForm, providerRequestFlow);
-  }
-
-  @Test
-  @DisplayName("Should remove document and return view name when action is 'document_delete'")
-  void testPostRequestDetail_documentDelete() throws Exception {
-    final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1",
+    "CASE, 123456789012",
+  })
+  @DisplayName("POST general/case request details should remove document and return detail view")
+  void testRequestDetail_Post_documentDelete(String requestType, String caseRef) throws Exception {
+    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef(caseRef);
     final ProviderRequestDetailsFormData providerRequestDetailsForm =
         new ProviderRequestDetailsFormData();
     providerRequestDetailsForm.setDocumentIdToDelete(123);
@@ -495,24 +603,43 @@ class ProviderRequestsControllerTest {
     when(evidenceService.getEvidenceDocumentsForApplicationOrOutcome(any(), eq(CcmsModule.REQUEST)))
         .thenReturn(Mono.just(new EvidenceDocumentDetails()));
 
-    mockMvc
-        .perform(
-            post("/provider-requests/details")
-                .sessionAttr(USER_DETAILS, userDetails)
-                .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow)
-                .param("action", "document_delete")
-                .flashAttr("providerRequestDetails", providerRequestDetailsForm))
-        .andExpect(status().isOk())
-        .andExpect(view().name("requests/provider-request-detail"));
+    ProviderRequestFlowType providerRequestFlowType = ProviderRequestFlowType.valueOf(requestType);
+
+    final ResultActions resultActions =
+        mockMvc
+            .perform(
+                post(providerRequestFlowType.getBasePath() + "/details")
+                    .sessionAttr(USER_DETAILS, userDetails)
+                    .sessionAttr(
+                        providerRequestFlowType.getFlowSessionAttribute(), providerRequestFlow)
+                    .param("action", "document_delete")
+                    .flashAttr("providerRequestDetails", providerRequestDetailsForm))
+            .andExpect(status().isOk())
+            .andExpect(view().name("requests/provider-request-detail"));
+
+    String expectedBackUrl = buildExpectedUrl(providerRequestFlowType, "/types", caseRef);
+
+    resultActions
+        .andExpect(
+            model()
+                .attribute(
+                    PROVIDER_REQUEST_SUBMIT_URL,
+                    providerRequestFlowType.getBasePath() + "/details"))
+        .andExpect(model().attribute(PROVIDER_REQUEST_BACK_URL, expectedBackUrl));
 
     verify(evidenceService)
         .removeDocument(anyString(), eq(123), eq(CcmsModule.REQUEST), eq(userDetails.getLoginId()));
   }
 
-  @Test
-  @DisplayName("Should return provider request details view with validation errors")
-  void testPostRequestDetail_validationErrors() throws Exception {
-    final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1",
+    "CASE, 123456789012",
+  })
+  @DisplayName("POST general/case request details should return detail view with validation errors")
+  void testRequestDetail_Post_validationErrors(String requestType, String caseRef)
+      throws Exception {
+    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef(caseRef);
     final ProviderRequestDetailsFormData providerRequestDetailsForm =
         new ProviderRequestDetailsFormData();
     final ProviderRequestTypeFormData providerRequestType = new ProviderRequestTypeFormData();
@@ -552,34 +679,52 @@ class ProviderRequestsControllerTest {
     when(providerRequestDetailsValidator.getValidExtensions()).thenReturn(List.of("xml"));
     when(providerRequestDetailsValidator.getMaxFileSize()).thenReturn(MAX_FILE_SIZE);
 
-    mockMvc
-        .perform(
-            post("/provider-requests/details")
-                .sessionAttr(USER_DETAILS, userDetails)
-                .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow)
-                .flashAttr("providerRequestDetails", providerRequestDetailsForm)
-                .param("action", "submit"))
-        .andExpect(status().isOk())
-        .andExpect(view().name("requests/provider-request-detail"))
-        .andExpect(model().attributeExists("documentTypes"))
-        .andExpect(model().attributeExists("maxFileSize"))
-        .andExpect(model().attributeExists("validExtensions"))
-        .andExpect(model().attributeExists("claimMaxFileSize"))
-        .andExpect(model().attributeExists("claimValidExtensions"))
-        .andExpect(model().attributeExists("providerRequestDynamicForm"))
-        .andExpect(model().attribute("providerRequestDynamicForm", dynamicForm))
+    ProviderRequestFlowType providerRequestFlowType = ProviderRequestFlowType.valueOf(requestType);
+
+    final ResultActions resultActions =
+        mockMvc
+            .perform(
+                post(providerRequestFlowType.getBasePath() + "/details")
+                    .sessionAttr(USER_DETAILS, userDetails)
+                    .sessionAttr(
+                        providerRequestFlowType.getFlowSessionAttribute(), providerRequestFlow)
+                    .flashAttr("providerRequestDetails", providerRequestDetailsForm)
+                    .param("action", "submit"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("requests/provider-request-detail"))
+            .andExpect(model().attributeExists("documentTypes"))
+            .andExpect(model().attributeExists("maxFileSize"))
+            .andExpect(model().attributeExists("validExtensions"))
+            .andExpect(model().attributeExists("claimMaxFileSize"))
+            .andExpect(model().attributeExists("claimValidExtensions"))
+            .andExpect(model().attributeExists("providerRequestDynamicForm"))
+            .andExpect(model().attribute("providerRequestDynamicForm", dynamicForm))
+            .andExpect(
+                model().attributeHasFieldErrors("providerRequestDetails", "additionalInformation"))
+            .andExpect(model().attributeExists("providerRequestDetails"))
+            .andExpect(model().attributeExists(PROVIDER_REQUEST_FLOW_FORM_DATA));
+
+    String expectedBackUrl = buildExpectedUrl(providerRequestFlowType, "/types", caseRef);
+
+    resultActions
         .andExpect(
-            model().attributeHasFieldErrors("providerRequestDetails", "additionalInformation"))
-        .andExpect(model().attributeExists("providerRequestDetails"))
-        .andExpect(model().attributeExists(PROVIDER_REQUEST_FLOW_FORM_DATA));
+            model()
+                .attribute(
+                    PROVIDER_REQUEST_SUBMIT_URL,
+                    providerRequestFlowType.getBasePath() + "/details"))
+        .andExpect(model().attribute(PROVIDER_REQUEST_BACK_URL, expectedBackUrl));
 
     verify(providerRequestDetailsValidator).validate(eq(providerRequestDetailsForm), any());
   }
 
-  @Test
-  @DisplayName("Should handle AV scan exception and return provider request details view")
-  void testPostRequestDetail_avScanException() throws Exception {
-    final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1",
+    "CASE, 123456789012",
+  })
+  @DisplayName("POST general/case request details should handle AV scan exception")
+  void testRequestDetail_Post_avScanException(String requestType, String caseRef) throws Exception {
+    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef(caseRef);
     final ProviderRequestDetailsFormData providerRequestDetailsForm =
         new ProviderRequestDetailsFormData();
     final ProviderRequestTypeFormData providerRequestType = new ProviderRequestTypeFormData();
@@ -605,28 +750,46 @@ class ProviderRequestsControllerTest {
         .when(avScanService)
         .performAvScan(any(), any(), any(), any(), any(), any(InputStream.class));
 
-    mockMvc
-        .perform(
-            post("/provider-requests/details")
-                .sessionAttr(USER_DETAILS, userDetails)
-                .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow)
-                .flashAttr("providerRequestDetails", providerRequestDetailsForm)
-                .param("action", "submit"))
-        .andExpect(status().isOk())
-        .andExpect(view().name("requests/provider-request-detail"))
-        .andExpect(model().attributeExists("providerRequestDetails"))
-        .andExpect(model().attributeExists(PROVIDER_REQUEST_FLOW_FORM_DATA));
+    ProviderRequestFlowType providerRequestFlowType = ProviderRequestFlowType.valueOf(requestType);
+
+    final ResultActions resultActions =
+        mockMvc
+            .perform(
+                post(providerRequestFlowType.getBasePath() + "/details")
+                    .sessionAttr(USER_DETAILS, userDetails)
+                    .sessionAttr(
+                        providerRequestFlowType.getFlowSessionAttribute(), providerRequestFlow)
+                    .flashAttr("providerRequestDetails", providerRequestDetailsForm)
+                    .param("action", "submit"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("requests/provider-request-detail"))
+            .andExpect(model().attributeExists("providerRequestDetails"))
+            .andExpect(model().attributeExists(PROVIDER_REQUEST_FLOW_FORM_DATA));
+
+    String expectedBackUrl = buildExpectedUrl(providerRequestFlowType, "/types", caseRef);
+
+    resultActions
+        .andExpect(
+            model()
+                .attribute(
+                    PROVIDER_REQUEST_SUBMIT_URL,
+                    providerRequestFlowType.getBasePath() + "/details"))
+        .andExpect(model().attribute(PROVIDER_REQUEST_BACK_URL, expectedBackUrl));
 
     verify(avScanService).performAvScan(any(), any(), any(), any(), any(), any(InputStream.class));
   }
 
-  @Test
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1",
+    "CASE, 123456789012",
+  })
   @DisplayName(
-      "GET /provider-requests/documents should return document upload view with populated model")
-  void testAddDocumentsToRequest() throws Exception {
+      "GET general/case provider request documents should return upload view with populated model")
+  void testAddDocumentsToRequestGet(String requestType, String caseRef) throws Exception {
     final String maxFileSize = String.valueOf(5L * 1024 * 1024);
     final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
-    final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
+    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef(caseRef);
     commonLookupDetail.setContent(
         List.of(new CommonLookupValueDetail().code("DOC1").description("Document Type 1")));
     when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
@@ -636,26 +799,53 @@ class ProviderRequestsControllerTest {
         .thenReturn(List.of("pdf", "docx"));
     when(providerRequestDocumentUploadValidator.getMaxFileSize()).thenReturn(maxFileSize); // 5 MB
 
-    mockMvc
-        .perform(
-            get("/provider-requests/documents")
-                .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow))
-        .andExpect(status().isOk())
-        .andExpect(view().name("requests/provider-request-doc-upload"))
-        .andExpect(
-            model()
-                .attributeExists(
-                    EVIDENCE_UPLOAD_FORM_DATA)) // Check EvidenceUploadFormData is in the model
-        .andExpect(model().attributeExists("documentTypes")) // Check documentTypes dropdown
+    ProviderRequestFlowType providerRequestFlowType = ProviderRequestFlowType.valueOf(requestType);
+    String requestUrl = buildExpectedUrl(providerRequestFlowType, "/documents", caseRef);
+
+    final ResultActions resultActions =
+        mockMvc
+            .perform(
+                get(requestUrl)
+                    .sessionAttr(
+                        providerRequestFlowType.getFlowSessionAttribute(), providerRequestFlow))
+            .andExpect(status().isOk())
+            .andExpect(view().name("requests/provider-request-doc-upload"))
+            .andExpect(
+                model()
+                    .attributeExists(providerRequestFlowType.getEvidenceUploadSessionAttribute()))
+            .andExpect(
+                model()
+                    .attribute(
+                        PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_ATTRIBUTE,
+                        providerRequestFlowType.getEvidenceUploadSessionAttribute()))
+            .andExpect(model().attributeExists("documentTypes")) // Check documentTypes dropdown
+            .andExpect(
+                model()
+                    .attribute(
+                        "documentTypes",
+                        List.of(
+                            new CommonLookupValueDetail()
+                                .code("DOC1")
+                                .description("Document Type 1"))))
+            .andExpect(
+                model().attribute("validExtensions", "pdf or docx")) // Check valid file extensions
+            .andExpect(model().attribute("maxFileSize", maxFileSize)); // Check max file size
+
+    String expectedBackUrl = buildExpectedUrl(providerRequestFlowType, "/details", caseRef);
+
+    resultActions
         .andExpect(
             model()
                 .attribute(
-                    "documentTypes",
-                    List.of(
-                        new CommonLookupValueDetail().code("DOC1").description("Document Type 1"))))
-        .andExpect(
-            model().attribute("validExtensions", "pdf or docx")) // Check valid file extensions
-        .andExpect(model().attribute("maxFileSize", maxFileSize)); // Check max file size
+                    PROVIDER_REQUEST_SUBMIT_URL,
+                    providerRequestFlowType.getBasePath() + "/documents"))
+        .andExpect(model().attribute(PROVIDER_REQUEST_BACK_URL, expectedBackUrl));
+
+    if (providerRequestFlowType.isCaseScoped()) {
+      resultActions.andExpect(model().attribute("caseReference", caseRef));
+    } else {
+      resultActions.andExpect(model().attributeDoesNotExist("caseReference"));
+    }
 
     // Verify interactions with mocks
     verify(lookupService).getCommonValues(COMMON_VALUE_DOCUMENT_TYPES);
@@ -663,10 +853,14 @@ class ProviderRequestsControllerTest {
     verify(providerRequestDocumentUploadValidator).getMaxFileSize();
   }
 
-  @Test
-  @DisplayName("Should handle document upload and redirect to provider request details")
-  void testPostDocuments_success() throws Exception {
-    final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1",
+    "CASE, 123456789012",
+  })
+  @DisplayName("POST general/case provider request documents should redirect to request details")
+  void testAddDocumentsToRequestPost_success(String requestType, String caseRef) throws Exception {
+    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef(caseRef);
     final EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
     final MockMultipartFile mockFile =
         new MockMultipartFile("file", "testfile.txt", "text/plain", "Test content".getBytes());
@@ -678,25 +872,38 @@ class ProviderRequestsControllerTest {
     when(evidenceService.addDocument(eq(evidenceDocumentDetail), eq(userDetails.getLoginId())))
         .thenReturn(Mono.just("Success"));
 
+    ProviderRequestFlowType providerRequestFlowType = ProviderRequestFlowType.valueOf(requestType);
+    String expectedRedirect = providerRequestFlowType.getBasePath() + "/details";
+    if (providerRequestFlowType.isCaseScoped()) {
+      expectedRedirect += "?caseReferenceNumber=" + caseRef;
+    }
+
     // Perform the request
     mockMvc
         .perform(
-            post("/provider-requests/documents")
+            post(providerRequestFlowType.getBasePath() + "/documents")
                 .sessionAttr(USER_DETAILS, userDetails)
-                .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow)
-                .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, evidenceUploadFormData))
+                .sessionAttr(providerRequestFlowType.getFlowSessionAttribute(), providerRequestFlow)
+                .flashAttr(
+                    providerRequestFlowType.getEvidenceUploadSessionAttribute(),
+                    evidenceUploadFormData))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/provider-requests/details?caseReferenceNumber="));
+        .andExpect(redirectedUrl(expectedRedirect));
 
     // Verify interactions
     verify(mapper).toProviderRequestDocumentDetail(evidenceUploadFormData);
     verify(evidenceService).addDocument(eq(evidenceDocumentDetail), eq(userDetails.getLoginId()));
   }
 
-  @Test
-  @DisplayName("Should handle validation errors during document upload")
-  void testPostDocuments_validationErrors() throws Exception {
-    final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1",
+    "CASE, 123456789012",
+  })
+  @DisplayName("POST general/case provider request documents should handle validation errors")
+  void testAddDocumentsToRequestPost_validationErrors(String requestType, String caseRef)
+      throws Exception {
+    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef(caseRef);
     final EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
 
     // Mock providerRequestDocumentUploadValidator behavior
@@ -719,24 +926,50 @@ class ProviderRequestsControllerTest {
         .thenReturn(List.of("pdf", "docx"));
     when(providerRequestDocumentUploadValidator.getMaxFileSize()).thenReturn(MAX_FILE_SIZE);
 
-    mockMvc
-        .perform(
-            post("/provider-requests/documents")
-                .sessionAttr(USER_DETAILS, userDetails)
-                .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow)
-                .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, evidenceUploadFormData))
-        .andExpect(status().isOk())
-        .andExpect(view().name("requests/provider-request-doc-upload"))
-        .andExpect(model().attributeHasFieldErrors(EVIDENCE_UPLOAD_FORM_DATA, "file"))
-        .andExpect(model().attributeExists("documentTypes"))
+    ProviderRequestFlowType providerRequestFlowType = ProviderRequestFlowType.valueOf(requestType);
+
+    final ResultActions resultActions =
+        mockMvc
+            .perform(
+                post(providerRequestFlowType.getBasePath() + "/documents")
+                    .sessionAttr(USER_DETAILS, userDetails)
+                    .sessionAttr(
+                        providerRequestFlowType.getFlowSessionAttribute(), providerRequestFlow)
+                    .flashAttr(
+                        providerRequestFlowType.getEvidenceUploadSessionAttribute(),
+                        evidenceUploadFormData))
+            .andExpect(status().isOk())
+            .andExpect(view().name("requests/provider-request-doc-upload"))
+            .andExpect(
+                model()
+                    .attributeHasFieldErrors(
+                        providerRequestFlowType.getEvidenceUploadSessionAttribute(), "file"))
+            .andExpect(
+                model()
+                    .attribute(
+                        PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_ATTRIBUTE,
+                        providerRequestFlowType.getEvidenceUploadSessionAttribute()))
+            .andExpect(model().attributeExists("documentTypes"))
+            .andExpect(
+                model()
+                    .attribute(
+                        "documentTypes",
+                        List.of(
+                            new CommonLookupValueDetail()
+                                .code("DOC1")
+                                .description("Document Type 1"))))
+            .andExpect(model().attribute("validExtensions", "pdf or docx"))
+            .andExpect(model().attribute("maxFileSize", MAX_FILE_SIZE));
+
+    String expectedBackUrl = buildExpectedUrl(providerRequestFlowType, "/details", caseRef);
+
+    resultActions
         .andExpect(
             model()
                 .attribute(
-                    "documentTypes",
-                    List.of(
-                        new CommonLookupValueDetail().code("DOC1").description("Document Type 1"))))
-        .andExpect(model().attribute("validExtensions", "pdf or docx"))
-        .andExpect(model().attribute("maxFileSize", MAX_FILE_SIZE));
+                    PROVIDER_REQUEST_SUBMIT_URL,
+                    providerRequestFlowType.getBasePath() + "/documents"))
+        .andExpect(model().attribute(PROVIDER_REQUEST_BACK_URL, expectedBackUrl));
 
     // Verify interactions with mocked dependencies
     verify(providerRequestDocumentUploadValidator).validate(eq(evidenceUploadFormData), any());
@@ -745,46 +978,15 @@ class ProviderRequestsControllerTest {
     verify(providerRequestDocumentUploadValidator).getMaxFileSize();
   }
 
-  @Test
-  @DisplayName("GET /provider-requests/types with caseReferenceNumber should set caseReference")
-  void testGetRequestType_withCaseReference_setsCaseReference() throws Exception {
-    when(lookupService.getProviderRequestTypes(eq(true), isNull()))
-        .thenReturn(Mono.just(new ProviderRequestTypeLookupDetail()));
-
-    mockMvc
-        .perform(
-            get("/provider-requests/types")
-                .sessionAttr(USER_DETAILS, userDetails)
-                .param("caseReferenceNumber", "123456789012"))
-        .andExpect(status().isOk())
-        .andExpect(model().attribute("caseReference", "123456789012"));
-  }
-
-  @Test
-  @DisplayName(
-      "POST /provider-requests/types should redirect to /details preserving caseReferenceNumber")
-  void testRequestTypePost_redirectsWithCaseReference() throws Exception {
-    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef("123456789012");
-    final ProviderRequestTypeFormData providerRequestTypeDetails =
-        new ProviderRequestTypeFormData();
-    providerRequestTypeDetails.setProviderRequestType("testType");
-
-    doAnswer(invocation -> null).when(providerRequestTypeValidator).validate(any(), any());
-
-    mockMvc
-        .perform(
-            post("/provider-requests/types")
-                .sessionAttr(USER_DETAILS, userDetails)
-                .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow)
-                .flashAttr("providerRequestTypeDetails", providerRequestTypeDetails))
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/provider-requests/details?caseReferenceNumber=123456789012"));
-  }
-
-  @Test
-  @DisplayName("Should include case ref number in redirect to doc upload if present")
-  void testDocUpload_redirectsWithCaseReference() throws Exception {
-    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef("123456789012");
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1, /general-provider-requests/documents",
+    "CASE, 123456789012, /case-provider-requests/documents?caseReferenceNumber=123456789012",
+  })
+  @DisplayName("POST general/case provider request details redirects to document upload by flow")
+  void testRequestDetailPost_DocumentUploadRedirectByFlow(
+      String requestType, String caseRef, String expectedRedirect) throws Exception {
+    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef(caseRef);
     final ProviderRequestDetailsFormData providerRequestDetailsForm =
         new ProviderRequestDetailsFormData();
     final ProviderRequestTypeFormData providerRequestType = new ProviderRequestTypeFormData();
@@ -792,40 +994,40 @@ class ProviderRequestsControllerTest {
     providerRequestFlow.setRequestTypeFormData(providerRequestType);
     providerRequestFlow.setRequestDetailsFormData(providerRequestDetailsForm);
 
-    final ProviderRequestTypeLookupValueDetail dynamicForm =
-        new ProviderRequestTypeLookupValueDetail()
-            .isClaimUploadEnabled(false)
-            .additionalInformationPrompt("Additional Info");
-
-    final ProviderRequestTypeLookupDetail lookupDetail = new ProviderRequestTypeLookupDetail();
-    lookupDetail.setContent(List.of(dynamicForm));
+    ProviderRequestFlowType providerRequestFlowType = ProviderRequestFlowType.valueOf(requestType);
 
     mockMvc
         .perform(
-            post("/provider-requests/details")
+            post(providerRequestFlowType.getBasePath() + "/details")
                 .sessionAttr(USER_DETAILS, userDetails)
-                .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow)
+                .sessionAttr(providerRequestFlowType.getFlowSessionAttribute(), providerRequestFlow)
                 .param("action", "document_upload")
                 .flashAttr("providerRequestDetails", providerRequestDetailsForm))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/provider-requests/documents?caseReferenceNumber=123456789012"));
+        .andExpect(redirectedUrl(expectedRedirect));
 
     verify(mapper)
         .toProviderRequestDetailsFormData(providerRequestDetailsForm, providerRequestFlow);
   }
 
-  @Test
-  @DisplayName("Service should be called with caseReferenceNumber when provided")
-  void testSubmitProviderRequest_callsServiceWithCaseRef() throws Exception {
-    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef("123456789012");
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1",
+    "CASE, 123456789012",
+  })
+  @DisplayName("POST general/case submit provider request uses flow-specific case reference")
+  void testSubmitProviderRequest_UsesFlowSpecificCaseReference(String requestType, String caseRef) {
+    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef(caseRef);
     providerRequestFlow.setRequestTypeFormData(new ProviderRequestTypeFormData());
+    providerRequestFlow.setRequestDetailsFormData(new ProviderRequestDetailsFormData());
 
-    ProviderRequestDetailsFormData details = new ProviderRequestDetailsFormData();
+    final ProviderRequestDetailsFormData details = new ProviderRequestDetailsFormData();
     details.setClaimUploadEnabled(false);
 
-    UserDetail user = new UserDetail();
-    Model model = new ExtendedModelMap();
-    BindingResult binding = new BeanPropertyBindingResult(details, "details");
+    final UserDetail user = new UserDetail();
+    final Model model = new ExtendedModelMap();
+    final BindingResult binding = new BeanPropertyBindingResult(details, "details");
+    final MockHttpSession session = new MockHttpSession();
 
     when(providerRequestService.submitProviderRequest(any(), any(), any(), any())).thenReturn("id");
 
@@ -835,26 +1037,42 @@ class ProviderRequestsControllerTest {
     when(evidenceService.uploadAndUpdateDocuments(any(), any(), any(), any()))
         .thenReturn(Mono.empty());
 
-    providerRequestsController.postRequestDetail(
-        user, providerRequestFlow, "submit", details, model, binding);
+    ProviderRequestFlowType providerRequestFlowType = ProviderRequestFlowType.valueOf(requestType);
+    final String viewName;
+    if (providerRequestFlowType.isCaseScoped()) {
+      viewName =
+          providerRequestsController.postCaseRequestDetail(
+              user, providerRequestFlow, "submit", details, model, binding, session);
+    } else {
+      viewName =
+          providerRequestsController.postGeneralRequestDetail(
+              user, providerRequestFlow, "submit", details, model, binding, session);
+    }
 
     verify(providerRequestService)
         .submitProviderRequest(
             any(ProviderRequestTypeFormData.class),
             any(ProviderRequestDetailsFormData.class),
-            eq("123456789012"),
+            eq(caseRef),
             any(UserDetail.class));
+    final String expectedViewName =
+        providerRequestFlowType.isCaseScoped()
+            ? "redirect:/application/case-provider-requests/confirmed?caseReferenceNumber="
+                + caseRef
+            : "redirect:/application/general-provider-requests/confirmed";
+    assertEquals(expectedViewName, viewName);
   }
 
   @Test
-  @DisplayName("GET /types without caseReferenceNumber should pass isCaseRelated=false to lookup")
+  @DisplayName(
+      "GET /general/provider-requests/types with invalid caseReferenceNumber should stay general")
   void testInvalidCaseReference() throws Exception {
     when(lookupService.getProviderRequestTypes(eq(false), isNull()))
         .thenReturn(Mono.just(new ProviderRequestTypeLookupDetail()));
 
     mockMvc
         .perform(
-            get("/provider-requests/types")
+            get(ProviderRequestFlowType.GENERAL.getBasePath() + "/types")
                 .sessionAttr(USER_DETAILS, userDetails)
                 .param("caseReferenceNumber", "123**"))
         .andExpect(status().isOk())
