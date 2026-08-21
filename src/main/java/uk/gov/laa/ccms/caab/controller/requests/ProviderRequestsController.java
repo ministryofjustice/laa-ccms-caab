@@ -5,6 +5,7 @@ import static uk.gov.laa.ccms.caab.constants.CcmsModule.REQUEST;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_PROVIDER_REQUEST_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.GENERAL_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA;
@@ -248,6 +249,7 @@ public class ProviderRequestsController {
     addProviderRequestFlowModel(model, flowType, providerRequestFlow, caseRef, "/types", null);
 
     if (bindingResult.hasErrors()) {
+      addCaseReferenceIfValid(model, caseRef);
       populateProviderRequestTypes(model, userDetail, flowType.isCaseScoped());
       model.addAttribute("providerRequestTypeDetails", providerRequestTypeDetails);
       return "requests/provider-request-type";
@@ -682,7 +684,7 @@ public class ProviderRequestsController {
   @ExceptionHandler(MaxUploadSizeExceededException.class)
   public String handleUploadFileTooLarge(
       final HttpServletRequest request, final HttpSession session, final Model model) {
-    ProviderRequestFlowType flowType = getFlowType(request.getRequestURI());
+    ProviderRequestFlowType flowType = getFlowType(request.getServletPath());
     final String evidenceUploadSessionAttribute = flowType.getEvidenceUploadSessionAttribute();
     EvidenceUploadFormData evidenceUploadFormData =
         (EvidenceUploadFormData) session.getAttribute(evidenceUploadSessionAttribute);
@@ -855,34 +857,24 @@ public class ProviderRequestsController {
     model.addAttribute("claimMaxFileSize", providerRequestDetailsValidator.getMaxFileSize());
   }
 
-  /**
-   * Handles the POST request for the submission page.
-   *
-   * @param providerRequestFlow session attribute containing flow form data.
-   * @return the view for either the home page or case overview page
-   */
+  /** Handles the POST request for the submission page. */
   @PostMapping("/application/general-provider-requests/confirmed")
-  public String generalProviderRequestSubmitted(
-      @SessionAttribute(GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA)
-          final ProviderRequestFlowFormData providerRequestFlow,
-      final HttpSession session) {
-    return providerRequestSubmitted(providerRequestFlow, session, ProviderRequestFlowType.GENERAL);
+  public String generalProviderRequestSubmitted(final HttpSession session, final Model model) {
+    return providerRequestSubmitted(session, model, ProviderRequestFlowType.GENERAL);
   }
 
-  /** Handles the POST request for the case provider request confirmation page. */
   @PostMapping("/application/case-provider-requests/confirmed")
-  public String caseProviderRequestSubmitted(
-      @SessionAttribute(CASE_PROVIDER_REQUEST_FLOW_FORM_DATA)
-          final ProviderRequestFlowFormData providerRequestFlow,
-      final HttpSession session) {
-    return providerRequestSubmitted(providerRequestFlow, session, ProviderRequestFlowType.CASE);
+  public String caseProviderRequestSubmitted(final HttpSession session, final Model model) {
+    return providerRequestSubmitted(session, model, ProviderRequestFlowType.CASE);
   }
 
   private String providerRequestSubmitted(
-      final ProviderRequestFlowFormData providerRequestFlow,
-      final HttpSession session,
-      final ProviderRequestFlowType flowType) {
-    clearProviderRequestSession(session, flowType);
+      final HttpSession session, final Model model, final ProviderRequestFlowType flowType) {
+    session.removeAttribute(SUBMISSION_RESULT);
+    model.asMap().remove(flowType.getFlowSessionAttribute());
+    model.asMap().remove(flowType.getEvidenceUploadSessionAttribute());
+    session.removeAttribute(flowType.getFlowSessionAttribute());
+    session.removeAttribute(flowType.getEvidenceUploadSessionAttribute());
     return "redirect:" + flowTypeReturnUrl(flowType);
   }
 
@@ -909,6 +901,8 @@ public class ProviderRequestsController {
       final Model model) {
     session.removeAttribute(ACTIVE_CASE);
     model.asMap().remove(ACTIVE_CASE);
+    session.removeAttribute(CASE);
+    model.asMap().remove(CASE);
     providerRequestFlow.setCaseReferenceNumber(UNRELATED_CASE_REFERENCE);
     return UNRELATED_CASE_REFERENCE;
   }
@@ -973,15 +967,8 @@ public class ProviderRequestsController {
   }
 
   private ProviderRequestFlowType getFlowType(String requestUri) {
-    return requestUri.startsWith(ProviderRequestFlowType.CASE.getBasePath())
+    return requestUri.contains(ProviderRequestFlowType.CASE.getBasePath())
         ? ProviderRequestFlowType.CASE
         : ProviderRequestFlowType.GENERAL;
-  }
-
-  private void clearProviderRequestSession(
-      final HttpSession session, final ProviderRequestFlowType flowType) {
-    session.removeAttribute(SUBMISSION_RESULT);
-    session.removeAttribute(flowType.getFlowSessionAttribute());
-    session.removeAttribute(flowType.getEvidenceUploadSessionAttribute());
   }
 }

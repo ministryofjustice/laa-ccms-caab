@@ -17,7 +17,7 @@
          th:text="#{caseDetails.overview.return}"/>
   </div>
   <div id="main-content">
-    <form action="#" th:action="@{${providerRequestDetailsUrl}}" th:object="${providerRequestDetails}" method="post" enctype="multipart/form-data">
+    <form action="#" th:action="@{${providerRequestSubmitUrl}}" th:object="${providerRequestDetails}" method="post" enctype="multipart/form-data">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <span th:unless="${caseReference != null}"  class="govuk-caption-l" th:text="#{request.general}"></span>
       <h1 class="govuk-heading-l" th:text="#{request.details}"></h1>
@@ -196,7 +196,7 @@
 
           <div class="govuk-button-group">
             <button type="submit" name="action" value="submit" class="govuk-button" data-module="govuk-button" th:text="#{site.submit}"></button>
-            <a th:href="@{${providerRequestTypesUrl}}" class="govuk-link" th:text="#{site.back}"></a>
+            <a th:href="@{${providerRequestBackUrl}}" class="govuk-link" th:text="#{site.back}"></a>
           </div>
         </div>
       </div>
