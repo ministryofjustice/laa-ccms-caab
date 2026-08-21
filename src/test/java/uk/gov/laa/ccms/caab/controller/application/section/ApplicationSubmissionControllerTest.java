@@ -14,6 +14,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -1102,7 +1103,8 @@ class ApplicationSubmissionControllerTest {
     when(model.containsAttribute("individualOpponent")).thenReturn(true);
     when(model.getAttribute("individualOpponent")).thenReturn(List.of("Error 1"));
 
-    final boolean result = applicationSubmissionController.validateOpponents(opponents, model);
+    final boolean result =
+        applicationSubmissionController.validateOpponents(opponents, model, false);
 
     assertTrue(result);
     assertFalse(opponentCaptor.getValue().isDateOfBirthMandatory());
@@ -1143,7 +1145,8 @@ class ApplicationSubmissionControllerTest {
     when(model.containsAttribute("individualOpponent")).thenReturn(true);
     when(model.getAttribute("individualOpponent")).thenReturn(List.of("Error 1"));
 
-    final boolean result = applicationSubmissionController.validateOpponents(opponents, model);
+    final boolean result =
+        applicationSubmissionController.validateOpponents(opponents, model, false);
 
     assertTrue(result);
     assertTrue(opponentCaptor.getValue().isDateOfBirthMandatory());
@@ -1168,7 +1171,8 @@ class ApplicationSubmissionControllerTest {
     when(model.containsAttribute("organisationOpponent")).thenReturn(true);
     when(model.getAttribute("organisationOpponent")).thenReturn(List.of("Error 1"));
 
-    final boolean result = applicationSubmissionController.validateOpponents(opponents, model);
+    final boolean result =
+        applicationSubmissionController.validateOpponents(opponents, model, false);
 
     assertTrue(result);
   }
@@ -1178,7 +1182,8 @@ class ApplicationSubmissionControllerTest {
   void testValidateOpponents_WithNoOpponents() {
     final List<AbstractOpponentFormData> opponents = List.of();
 
-    final boolean result = applicationSubmissionController.validateOpponents(opponents, model);
+    final boolean result =
+        applicationSubmissionController.validateOpponents(opponents, model, false);
 
     assertFalse(result);
   }
@@ -1186,7 +1191,7 @@ class ApplicationSubmissionControllerTest {
   @Test
   @DisplayName("Test validateOpponents with null opponents returns false")
   void testValidateOpponents_WithNullOpponents() {
-    final boolean result = applicationSubmissionController.validateOpponents(null, model);
+    final boolean result = applicationSubmissionController.validateOpponents(null, model, false);
 
     assertFalse(result);
   }
@@ -1220,6 +1225,118 @@ class ApplicationSubmissionControllerTest {
         applicationSubmissionController.validatePriorAuthorities(priorAuthorities, model, false));
     assertFalse(
         applicationSubmissionController.validatePriorAuthorities(priorAuthorities, model, true));
+  }
+
+  @Test
+  @DisplayName("validateOpponents - amendment suppresses a missing opponent title")
+  void testValidateOpponents_amendmentSuppressesTitle() {
+    final IndividualOpponentFormData opponent = new IndividualOpponentFormData();
+    opponent.setRelationshipToCase("OPP");
+    final List<AbstractOpponentFormData> opponents = List.of(opponent);
+
+    final RelationshipToCaseLookupValueDetail relationship =
+        new RelationshipToCaseLookupValueDetail();
+    relationship.setCode("OPP");
+    relationship.setDateOfBirthMandatory(false);
+    final RelationshipToCaseLookupDetail lookup = new RelationshipToCaseLookupDetail();
+    lookup.setContent(List.of(relationship));
+    when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.just(lookup));
+
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.rejectValue("title", "required", "Enter a title.");
+              return null;
+            })
+        .when(individualOpponentValidator)
+        .validate(any(), any());
+
+    lenient().when(model.containsAttribute("individualOpponent")).thenReturn(true);
+    lenient().when(model.getAttribute("individualOpponent")).thenReturn(List.of("Enter a title."));
+
+    // Application blocks; amendment suppresses (old PUI's opponentTitleErrorFilter).
+    assertTrue(applicationSubmissionController.validateOpponents(opponents, model, false));
+    assertFalse(applicationSubmissionController.validateOpponents(opponents, model, true));
+  }
+
+  @Test
+  @DisplayName("validateOpponents - amendment still blocks non-title opponent errors")
+  void testValidateOpponents_amendmentStillBlocksOtherErrors() {
+    final IndividualOpponentFormData opponent = new IndividualOpponentFormData();
+    opponent.setRelationshipToCase("OPP");
+    final List<AbstractOpponentFormData> opponents = List.of(opponent);
+
+    final RelationshipToCaseLookupValueDetail relationship =
+        new RelationshipToCaseLookupValueDetail();
+    relationship.setCode("OPP");
+    relationship.setDateOfBirthMandatory(false);
+    final RelationshipToCaseLookupDetail lookup = new RelationshipToCaseLookupDetail();
+    lookup.setContent(List.of(relationship));
+    when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.just(lookup));
+
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.rejectValue("surname", "required", "Enter a surname.");
+              return null;
+            })
+        .when(individualOpponentValidator)
+        .validate(any(), any());
+
+    when(model.containsAttribute("individualOpponent")).thenReturn(true);
+    when(model.getAttribute("individualOpponent")).thenReturn(List.of("Enter a surname."));
+
+    assertTrue(applicationSubmissionController.validateOpponents(opponents, model, true));
+  }
+
+  @Test
+  @DisplayName("validatePriorAuthorities - a granted prior authority is not validated")
+  void testValidatePriorAuthorities_grantedPriorAuthoritySkipped() {
+    final PriorAuthorityDetail granted = new PriorAuthorityDetail();
+    granted.setStatus("Grant");
+
+    assertFalse(
+        applicationSubmissionController.validatePriorAuthorities(List.of(granted), model, true));
+    assertFalse(
+        applicationSubmissionController.validatePriorAuthorities(List.of(granted), model, false));
+
+    verifyNoInteractions(priorAuthorityTypeValidator, priorAuthorityDetailsValidator);
+    verify(proceedingAndCostsMapper, never()).toPriorAuthorityFlowFormData(any());
+  }
+
+  @Test
+  @DisplayName(
+      "validatePriorAuthorities - a draft prior authority alongside a granted one is validated")
+  void testValidatePriorAuthorities_draftValidatedWhenGrantedPresent() {
+    final PriorAuthorityFlowFormData flow = new PriorAuthorityFlowFormData("edit");
+    flow.setPriorAuthorityTypeFormData(new PriorAuthorityTypeFormData());
+    flow.setPriorAuthorityDetailsFormData(new PriorAuthorityDetailsFormData());
+    when(proceedingAndCostsMapper.toPriorAuthorityFlowFormData(any())).thenReturn(flow);
+
+    doNothing().when(priorAuthorityTypeValidator).validate(any(), any());
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.rejectValue("summary", "required", "Enter a summary.");
+              return null;
+            })
+        .when(priorAuthorityDetailsValidator)
+        .validate(any(), any());
+
+    when(model.containsAttribute("priorAuthorityDetails")).thenReturn(true);
+    when(model.getAttribute("priorAuthorityDetails")).thenReturn(List.of("Enter a summary."));
+
+    final PriorAuthorityDetail granted = new PriorAuthorityDetail();
+    granted.setStatus("Grant");
+    final PriorAuthorityDetail draft = new PriorAuthorityDetail();
+    draft.setStatus("Draft");
+
+    assertTrue(
+        applicationSubmissionController.validatePriorAuthorities(
+            List.of(granted, draft), model, true));
+
+    // Only the draft prior authority reaches the validators.
+    verify(priorAuthorityDetailsValidator, times(1)).validate(any(), any());
   }
 
   @Test

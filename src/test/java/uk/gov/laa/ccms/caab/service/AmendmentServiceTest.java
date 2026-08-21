@@ -32,6 +32,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.billing.UndertakingFormData;
@@ -44,8 +45,10 @@ import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
 import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
+import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
+import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
@@ -69,8 +72,9 @@ class AmendmentServiceTest {
   @Mock private SoaApplicationMapper soaApplicationMapper;
   @Mock private EvidenceService evidenceService;
 
+  @Mock private AssessmentService assessmentService;
+
   private AmendmentService amendmentService;
-  private AssessmentService assessmentService;
 
   @BeforeEach
   void beforeEach() {
@@ -87,6 +91,149 @@ class AmendmentServiceTest {
     lenient()
         .when(evidenceService.getEvidenceDocumentsForCase(any(), any()))
         .thenReturn(Mono.just(new EvidenceDocumentDetails()));
+  }
+
+  @Nested
+  @DisplayName("submitAmendment() tests")
+  class SubmitAmendmentTests {
+
+    private ApplicationDetail amendment(final String caseRef) {
+      final ApplicationDetail amendment = new ApplicationDetail();
+      amendment.setId(77);
+      amendment.setCaseReferenceNumber(caseRef);
+      return amendment;
+    }
+
+    private UserDetail user() {
+      return new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
+    }
+
+    @Test
+    @DisplayName("Should register, upload and attach amendment documents on submit")
+    void shouldAttachAmendmentDocuments() {
+      // Given
+      final String caseRef = "300001407940";
+      final EvidenceDocumentDetails amendmentDocuments =
+          new EvidenceDocumentDetails().addContentItem(new BaseEvidenceDocumentDetail().id(55));
+
+      when(assessmentService.getAssessments(any(), any(), any()))
+          .thenReturn(Mono.just(new AssessmentDetails().content(List.of())));
+      when(evidenceService.getEvidenceDocumentsForCase(eq(caseRef), eq(CcmsModule.AMENDMENT)))
+          .thenReturn(Mono.just(amendmentDocuments));
+      when(evidenceService.uploadAndUpdateDocuments(any(), eq(caseRef), eq(null), any()))
+          .thenReturn(Mono.empty());
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), eq("LegalAmendment")))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TX-1")));
+
+      final UserDetail user = user();
+
+      // When
+      final String transactionId = amendmentService.submitAmendment(amendment(caseRef), user);
+
+      // Then
+      verify(evidenceService).registerPreviouslyUploadedDocuments(amendmentDocuments, user);
+      verify(evidenceService).uploadAndUpdateDocuments(amendmentDocuments, caseRef, null, user);
+
+      final ArgumentCaptor<CaseMappingContext> contextCaptor =
+          ArgumentCaptor.forClass(CaseMappingContext.class);
+      verify(soaApplicationMapper).toCaseDetail(contextCaptor.capture());
+      assertThat(contextCaptor.getValue().getCaseDocs()).isEqualTo(amendmentDocuments.getContent());
+      assertThat(transactionId).isEqualTo("TX-1");
+    }
+
+    @Test
+    @DisplayName("Should submit with no case docs when no amendment documents were uploaded")
+    void shouldSubmitWithNoCaseDocs() {
+      // Given - the default stub returns an empty EvidenceDocumentDetails
+      final String caseRef = "300001407940";
+
+      when(assessmentService.getAssessments(any(), any(), any()))
+          .thenReturn(Mono.just(new AssessmentDetails().content(List.of())));
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), eq("LegalAmendment")))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TX-2")));
+
+      // When
+      amendmentService.submitAmendment(amendment(caseRef), user());
+
+      // Then
+      verify(evidenceService, never()).registerPreviouslyUploadedDocuments(any(), any());
+
+      final ArgumentCaptor<CaseMappingContext> contextCaptor =
+          ArgumentCaptor.forClass(CaseMappingContext.class);
+      verify(soaApplicationMapper).toCaseDetail(contextCaptor.capture());
+      assertThat(contextCaptor.getValue().getCaseDocs()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Should take available functions from the case when the amended means has none")
+    void shouldPopulateAvailableFunctionsFromCase() {
+      // Given - a TDS-loaded amendment never carries available functions
+      final String caseRef = "300001407940";
+      final ApplicationDetail amendment = amendment(caseRef);
+      amendment.setMeansAssessmentAmended(true);
+
+      when(assessmentService.getAssessments(any(), any(), any()))
+          .thenReturn(Mono.just(new AssessmentDetails().content(List.of())));
+      when(applicationService.getCase(eq(caseRef), eq(10L), eq("123")))
+          .thenReturn(new ApplicationDetail().availableFunctions(List.of("MNLA", "MNR")));
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), eq("LegalAmendment")))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TX-3")));
+
+      // When
+      amendmentService.submitAmendment(amendment, user());
+
+      // Then
+      assertThat(amendment.getAvailableFunctions()).containsExactly("MNLA", "MNR");
+    }
+
+    @Test
+    @DisplayName("Quick amendment keeps the case LAR flag and preferred address after stripping")
+    void shouldRestoreCaseLevelDataOnQuickAmendment() {
+      // Given - the amendment is built from the case, then the strip nulls both fields
+      final String caseRef = "300000630332";
+      final ApplicationDetail amendment = amendment(caseRef);
+      amendment.setProviderDetails(new ApplicationProviderDetails());
+      amendment.setLarScopeFlag(true);
+      amendment.setCorrespondenceAddress(new AddressDetail().preferredAddress("POST"));
+
+      when(applicationService.getTdsApplicationSummary(eq(caseRef), any()))
+          .thenReturn(new BaseApplicationDetail());
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), eq("MeansReassessment")))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TX-5")));
+
+      // When
+      amendmentService.submitMeansReassessment(user(), amendment, new AssessmentDetail());
+
+      // Then - both survive, and the rest of the address does not come back with them
+      assertThat(amendment.getLarScopeFlag()).isTrue();
+      assertThat(amendment.getCorrespondenceAddress().getPreferredAddress()).isEqualTo("POST");
+      assertThat(amendment.getCorrespondenceAddress().getAddressLine1()).isNull();
+    }
+
+    @Test
+    @DisplayName("Should not read the case when the means assessment was not amended")
+    void shouldNotReadCaseWhenMeansNotAmended() {
+      // Given
+      final String caseRef = "300001407940";
+      final ApplicationDetail amendment = amendment(caseRef);
+      amendment.setMeansAssessmentAmended(false);
+
+      when(assessmentService.getAssessments(any(), any(), any()))
+          .thenReturn(Mono.just(new AssessmentDetails().content(List.of())));
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(soaApiClient.updateCase(any(), any(), any(), eq("LegalAmendment")))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TX-4")));
+
+      // When
+      amendmentService.submitAmendment(amendment, user());
+
+      // Then
+      verify(applicationService, never()).getCase(any(), anyLong(), any());
+    }
   }
 
   @Nested

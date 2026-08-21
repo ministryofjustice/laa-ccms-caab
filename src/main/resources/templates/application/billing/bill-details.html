@@ -67,9 +67,14 @@
       <!-- Submit stays available whatever the assessment status: the legacy PUI runs its final
            validation on the click and explains the failure, rather than leaving the user with a
            dead button and no reason. -->
-      <a th:href="@{/case/billing/bill/declaration}" role="button" draggable="false"
-         class="govuk-button" data-module="govuk-button" id="submit-bill-button"
-         th:text="#{billing.bill.submit}"></a>
+      <!-- A POST, not a link: when no declaration is configured for this bill type there is no
+           declaration to show and the bill is submitted on this request, so it must not be
+           reachable by following or prefetching a URL. -->
+      <form th:action="@{/case/billing/bill/submit}" method="post">
+        <button class="govuk-button" data-module="govuk-button"
+                data-prevent-double-click="true" id="submit-bill-button"
+                th:text="#{billing.bill.submit}"></button>
+      </form>
     </div>
   </div>
 </div>

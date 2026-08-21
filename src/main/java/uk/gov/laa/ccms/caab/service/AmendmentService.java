@@ -11,6 +11,7 @@ import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -461,8 +462,25 @@ public class AmendmentService {
       caabApiClient.createApplication(userDetail.getLoginId(), amendment).block();
     }
 
+    // Old PUI strips the same fields but then reads these two off the original case rather than the
+    // stripped amendment (CaseToEBSCaseConverter.convertToEBSApplicationDetails takes LARDetails
+    // from lscCase and preferredAddress from lscCase.correspondenceAddress), so they still reach
+    // EBS. The amendment was built from the case, so capture them before the strip.
+    final Boolean caseLarScopeFlag = amendment.getLarScopeFlag();
+    final String casePreferredAddress =
+        Optional.ofNullable(amendment.getCorrespondenceAddress())
+            .map(AddressDetail::getPreferredAddress)
+            .orElse(null);
+
     // Strip the in-memory amendment to the submission payload; the persisted draft keeps its shape.
     AmendmentUtil.cleanAppForQuickAmendSubmit(amendment);
+
+    amendment.setLarScopeFlag(caseLarScopeFlag);
+    if (amendment.getCorrespondenceAddress() == null && casePreferredAddress != null) {
+      // Only the preferred address survives the strip, matching what old PUI submits.
+      amendment.setCorrespondenceAddress(
+          new AddressDetail().preferredAddress(casePreferredAddress));
+    }
 
     // Register and transfer any documents uploaded against this amendment so they are attached to
     // the case update, matching the legacy provider UI amendment submission behaviour.
@@ -487,6 +505,47 @@ public class AmendmentService {
             amendment.getQuickEditType());
 
     return Objects.requireNonNull(caseTransactionResponseMono.block()).getTransactionId();
+  }
+
+  /**
+   * Ensures the amendment carries the case's available functions before it is submitted.
+   * soa-gateway decides whether a means reassessment is forced to SUBSTANTIVE from {@code
+   * !availableFunctions.contains("MNLA")}, but the TDS draft does not persist them, so an amendment
+   * reloaded for submission has none. Old PUI has the same gap and falls back to the original case
+   * (see {@code CaseToEBSCaseConverter.addAmendmentDetails}); this does the same.
+   *
+   * <p>Only fetched when the means assessment was amended, which is the only case where soa-gateway
+   * reads the flag.
+   *
+   * @param amendment the amendment about to be submitted
+   * @param userDetail the user submitting the amendment
+   */
+  private void populateAvailableFunctionsForSubmission(
+      final ApplicationDetail amendment, final UserDetail userDetail) {
+    if (!Boolean.TRUE.equals(amendment.getMeansAssessmentAmended())
+        || (amendment.getAvailableFunctions() != null
+            && !amendment.getAvailableFunctions().isEmpty())) {
+      return;
+    }
+
+    try {
+      final ApplicationDetail baseCase =
+          applicationService.getCase(
+              amendment.getCaseReferenceNumber(),
+              userDetail.getProvider().getId(),
+              userDetail.getLoginId());
+
+      if (baseCase != null) {
+        amendment.setAvailableFunctions(baseCase.getAvailableFunctions());
+      }
+    } catch (final Exception e) {
+      // Falling back to no available functions keeps the previous behaviour rather than taking the
+      // submission down; soa-gateway then treats the update as a reassessment.
+      log.warn(
+          "Could not read the available functions for case {}; submitting without them.",
+          amendment.getCaseReferenceNumber(),
+          e);
+    }
   }
 
   /**
@@ -627,12 +686,19 @@ public class AmendmentService {
     assessmentService.calculateAssessmentStatuses(
         amendment, meansAssessment, meritsAssessment, userDetail);
 
+    populateAvailableFunctionsForSubmission(amendment, userDetail);
+
+    // Register and transfer any documents uploaded against this amendment so they are attached to
+    // the case update, matching old PUI's CaseSubmissionHelper.amendCase.
+    final List<BaseEvidenceDocumentDetail> caseDocs =
+        registerAndUploadAmendmentDocuments(amendment.getCaseReferenceNumber(), userDetail);
+
     CaseMappingContext caseMappingContext =
         CaseMappingContext.builder()
             .tdsApplication(amendment)
             .meansAssessment(meansAssessment)
             .meritsAssessment(meritsAssessment)
-            .caseDocs(Collections.emptyList())
+            .caseDocs(caseDocs)
             .user(userDetail)
             .build();
     CaseDetail caseToSubmit = soaApplicationMapper.toCaseDetail(caseMappingContext);

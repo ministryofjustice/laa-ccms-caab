@@ -58,6 +58,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
   @Override
   public void addFormatters(FormatterRegistry registry) {
     registry.addConverter(new StringToCaseContextConverter());
+    registry.addConverter(new StringToBillingContextConverter());
   }
 
   /**

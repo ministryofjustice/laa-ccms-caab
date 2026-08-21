@@ -54,9 +54,13 @@
     <div class="govuk-button-group">
       <!-- Submit takes the user to the declaration they must acknowledge before the POA is sent to
            EBS, porting the legacy PUI's declaration + PerformSubmission flow. -->
-      <a th:if="${assessmentComplete}" th:href="@{/case/billing/poa/declaration}" role="button"
-         draggable="false" class="govuk-button" data-module="govuk-button" id="submit-poa-button"
-         th:text="#{billing.poa.submit}"></a>
+      <!-- A POST, not a link - see the bill details screen: with no declaration configured the
+           POA is submitted on this request. -->
+      <form th:if="${assessmentComplete}" th:action="@{/case/billing/poa/submit}" method="post">
+        <button class="govuk-button" data-module="govuk-button"
+                data-prevent-double-click="true" id="submit-poa-button"
+                th:text="#{billing.poa.submit}"></button>
+      </form>
       <button th:unless="${assessmentComplete}" type="button" disabled aria-disabled="true"
               class="govuk-button" data-module="govuk-button" id="submit-poa-button"
               th:text="#{billing.poa.submit}"></button>
