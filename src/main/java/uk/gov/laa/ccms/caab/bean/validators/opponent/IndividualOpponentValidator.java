@@ -56,7 +56,7 @@ public class IndividualOpponentValidator extends AbstractOpponentValidator {
           "required.dob",
           "Date of Birth must be supplied because this Opponent is recorded as a Child on the Relationship to Case section.");
     } else {
-      validateDateOfBirth(target, errors, hasDateOfBirth);
+      validateDateOfBirth(target, errors, false);
     }
 
     validateRequiredField(
