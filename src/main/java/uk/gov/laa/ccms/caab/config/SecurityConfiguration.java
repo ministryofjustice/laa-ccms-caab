@@ -78,7 +78,8 @@ public class SecurityConfiguration {
                     .permitAll() // Ensure Actuator endpoints are excluded
                     .requestMatchers(HttpMethod.POST, "/csp/report")
                     .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/provider-requests/*")
+                    .requestMatchers(
+                        HttpMethod.GET, "/general-provider-requests/*", "/case-provider-requests/*")
                     .hasAuthority(UserRole.CREATE_PROVIDER_REQUEST.getCode())
                     .requestMatchers(
                         HttpMethod.GET,

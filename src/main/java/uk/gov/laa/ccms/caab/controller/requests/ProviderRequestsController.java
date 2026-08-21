@@ -5,14 +5,17 @@ import static uk.gov.laa.ccms.caab.constants.CcmsModule.REQUEST;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_UPLOAD_FORM_DATA;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRIOR_AUTHORITY_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_PROVIDER_REQUEST_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.GENERAL_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROVIDER_REQUEST_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 import static uk.gov.laa.ccms.caab.util.FileUtil.getFileExtension;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,7 +38,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -48,11 +50,11 @@ import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestDocumentUploa
 import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestTypesValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
+import uk.gov.laa.ccms.caab.constants.ProviderRequestFlowType;
 import uk.gov.laa.ccms.caab.exception.AvScanException;
 import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProviderRequestsMapper;
-import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.service.AvScanService;
@@ -70,7 +72,13 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @Controller
 @Slf4j
 @RequiredArgsConstructor
-@SessionAttributes(value = {PROVIDER_REQUEST_FLOW_FORM_DATA})
+@SessionAttributes(
+    value = {
+      GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA,
+      CASE_PROVIDER_REQUEST_FLOW_FORM_DATA,
+      GENERAL_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA,
+      CASE_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA
+    })
 public class ProviderRequestsController {
 
   private final LookupService lookupService;
@@ -92,9 +100,27 @@ public class ProviderRequestsController {
    *
    * @return A new instance of {@link ProviderRequestFlowFormData}.
    */
-  @ModelAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
-  public ProviderRequestFlowFormData getProviderRequestFlowFormData() {
+  @ModelAttribute(GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA)
+  public ProviderRequestFlowFormData getGeneralProviderRequestFlowFormData() {
     return new ProviderRequestFlowFormData();
+  }
+
+  /** Creates a new instance of {@link ProviderRequestFlowFormData} for case-scoped requests. */
+  @ModelAttribute(CASE_PROVIDER_REQUEST_FLOW_FORM_DATA)
+  public ProviderRequestFlowFormData getCaseProviderRequestFlowFormData() {
+    return new ProviderRequestFlowFormData();
+  }
+
+  /** Creates a new instance of {@link EvidenceUploadFormData} for general provider requests. */
+  @ModelAttribute(GENERAL_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA)
+  public EvidenceUploadFormData getGeneralProviderRequestEvidenceUploadFormData() {
+    return new EvidenceUploadFormData();
+  }
+
+  /** Creates a new instance of {@link EvidenceUploadFormData} for case provider requests. */
+  @ModelAttribute(CASE_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA)
+  public EvidenceUploadFormData getCaseProviderRequestEvidenceUploadFormData() {
+    return new EvidenceUploadFormData();
   }
 
   /**
@@ -103,32 +129,61 @@ public class ProviderRequestsController {
    * @param model The model for the view.
    * @return The view name for the client basic details page
    */
-  @GetMapping("/provider-requests/types")
-  public String getRequestType(
-      @ModelAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
+  @GetMapping("/general-provider-requests/types")
+  public String getGeneralRequestType(
+      @ModelAttribute(GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA)
+          final ProviderRequestFlowFormData providerRequestFlow,
+      @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
+      final Model model,
+      HttpSession session) {
+    return requestTypeGet(
+        providerRequestFlow,
+        UNRELATED_CASE_REFERENCE,
+        userDetail,
+        model,
+        session,
+        ProviderRequestFlowType.GENERAL);
+  }
+
+  /** Handles the GET request for selecting the case-scoped provider request type page. */
+  @GetMapping("/case-provider-requests/types")
+  public String getCaseRequestType(
+      @ModelAttribute(CASE_PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
       @RequestParam(required = false) final String caseReferenceNumber,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
-      @SessionAttribute(name = CASE, required = false) ApplicationDetail ebsCase,
       final Model model,
       HttpSession session) {
+    return requestTypeGet(
+        providerRequestFlow,
+        caseReferenceNumber,
+        userDetail,
+        model,
+        session,
+        ProviderRequestFlowType.CASE);
+  }
 
-    String effectiveCaseRef = getEffectiveCaseReference(caseReferenceNumber);
+  private String requestTypeGet(
+      final ProviderRequestFlowFormData providerRequestFlow,
+      final String caseReferenceNumber,
+      final UserDetail userDetail,
+      final Model model,
+      final HttpSession session,
+      final ProviderRequestFlowType flowType) {
+    final String effectiveCaseRef =
+        flowType.isCaseScoped()
+            ? initialiseCaseRequestScope(providerRequestFlow, caseReferenceNumber, model)
+            : initialiseGeneralRequestScope(providerRequestFlow, session, model);
     providerRequestFlow.setCaseReferenceNumber(effectiveCaseRef);
-
-    clearCaseIfInvalid(caseReferenceNumber, session, model);
-
-    if (!UNRELATED_CASE_REFERENCE.equals(effectiveCaseRef)) {
-      model.addAttribute("caseReference", effectiveCaseRef);
-    }
 
     // reset the details data, so new document id and form details are created
     providerRequestFlow.resetRequestDetailsFormData();
 
-    model.addAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow);
+    addProviderRequestFlowModel(
+        model, flowType, providerRequestFlow, effectiveCaseRef, "/types", null);
     model.addAttribute("providerRequestTypeDetails", providerRequestFlow.getRequestTypeFormData());
 
-    populateProviderRequestTypes(model, userDetail, caseReferenceNumber);
+    populateProviderRequestTypes(model, userDetail, flowType.isCaseScoped());
 
     return "requests/provider-request-type";
   }
@@ -143,36 +198,64 @@ public class ProviderRequestsController {
    * @return the view name for the provider request type form if there are errors, otherwise a
    *     redirect to the provider request details page
    */
-  @PostMapping("/provider-requests/types")
-  public String requestTypePost(
-      @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
+  @PostMapping("/general-provider-requests/types")
+  public String requestTypeGeneralPost(
+      @SessionAttribute(GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
       @ModelAttribute("providerRequestTypeDetails")
           final ProviderRequestTypeFormData providerRequestTypeDetails,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       final Model model,
       final BindingResult bindingResult) {
+    return requestTypePost(
+        providerRequestFlow,
+        providerRequestTypeDetails,
+        userDetail,
+        model,
+        bindingResult,
+        ProviderRequestFlowType.GENERAL);
+  }
 
+  /** Handles the POST request for submitting case-scoped provider request type details. */
+  @PostMapping("/case-provider-requests/types")
+  public String requestTypeCasePost(
+      @SessionAttribute(CASE_PROVIDER_REQUEST_FLOW_FORM_DATA)
+          final ProviderRequestFlowFormData providerRequestFlow,
+      @ModelAttribute("providerRequestTypeDetails")
+          final ProviderRequestTypeFormData providerRequestTypeDetails,
+      @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
+      final Model model,
+      final BindingResult bindingResult) {
+    return requestTypePost(
+        providerRequestFlow,
+        providerRequestTypeDetails,
+        userDetail,
+        model,
+        bindingResult,
+        ProviderRequestFlowType.CASE);
+  }
+
+  private String requestTypePost(
+      final ProviderRequestFlowFormData providerRequestFlow,
+      final ProviderRequestTypeFormData providerRequestTypeDetails,
+      final UserDetail userDetail,
+      final Model model,
+      final BindingResult bindingResult,
+      final ProviderRequestFlowType flowType) {
     providerRequestTypeValidator.validate(providerRequestTypeDetails, bindingResult);
 
+    String caseRef = providerRequestFlow.getCaseReferenceNumber();
+    addProviderRequestFlowModel(model, flowType, providerRequestFlow, caseRef, "/types", null);
+
     if (bindingResult.hasErrors()) {
-      String caseRef = providerRequestFlow.getCaseReferenceNumber();
-      addCaseReferenceIfValid(model, caseRef);
-      populateProviderRequestTypes(model, userDetail, caseRef);
-      model.addAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow);
+      populateProviderRequestTypes(model, userDetail, flowType.isCaseScoped());
       model.addAttribute("providerRequestTypeDetails", providerRequestTypeDetails);
       return "requests/provider-request-type";
     }
 
     providerRequestFlow.setRequestTypeFormData(providerRequestTypeDetails);
-    model.addAttribute(PRIOR_AUTHORITY_FLOW_FORM_DATA, providerRequestFlow);
 
-    String redirect = "/provider-requests/details";
-    String caseRefNo = providerRequestFlow.getCaseReferenceNumber();
-    if (isValidCaseReference(caseRefNo)) {
-      redirect += "?caseReferenceNumber=" + caseRefNo;
-    }
-    return "redirect:" + redirect;
+    return "redirect:" + buildFlowUrl(flowType, "/details", caseRef);
   }
 
   /**
@@ -183,12 +266,10 @@ public class ProviderRequestsController {
    * @param userDetail Logged-in user details.
    */
   protected void populateProviderRequestTypes(
-      final Model model, UserDetail userDetail, String caseReferenceNumber) {
+      final Model model, UserDetail userDetail, boolean isCaseRelated) {
 
     List<String> functions =
         Optional.ofNullable(userDetail.getFunctions()).orElse(Collections.emptyList());
-
-    boolean isCaseRelated = isValidCaseReference(caseReferenceNumber);
 
     final List<ProviderRequestTypeLookupValueDetail> providerRequestTypes =
         Optional.ofNullable(
@@ -214,29 +295,52 @@ public class ProviderRequestsController {
    * @param model the model to store attributes for rendering the view
    * @return the view name for the provider request details page
    */
-  @GetMapping("/provider-requests/details")
-  public String getRequestDetail(
-      @RequestParam(required = false) final String caseReferenceNumber,
-      @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
+  @GetMapping("/general-provider-requests/details")
+  public String getGeneralRequestDetail(
+      @SessionAttribute(GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
-      @SessionAttribute(name = CASE, required = false) ApplicationDetail ebsCase,
       final Model model,
       HttpSession session) {
+    return requestDetailGet(
+        UNRELATED_CASE_REFERENCE,
+        providerRequestFlow,
+        model,
+        session,
+        ProviderRequestFlowType.GENERAL);
+  }
 
-    if (caseReferenceNumber != null && !caseReferenceNumber.isBlank()) {
-      providerRequestFlow.setCaseReferenceNumber(caseReferenceNumber);
-    }
+  /** Handles the GET request for the case-scoped provider request details page. */
+  @GetMapping("/case-provider-requests/details")
+  public String getCaseRequestDetail(
+      @RequestParam(required = false) final String caseReferenceNumber,
+      @SessionAttribute(CASE_PROVIDER_REQUEST_FLOW_FORM_DATA)
+          final ProviderRequestFlowFormData providerRequestFlow,
+      final Model model,
+      HttpSession session) {
+    return requestDetailGet(
+        caseReferenceNumber, providerRequestFlow, model, session, ProviderRequestFlowType.CASE);
+  }
 
-    String caseRef = providerRequestFlow.getCaseReferenceNumber();
-    clearCaseIfInvalid(caseRef, session, model);
-    addCaseReferenceIfValid(model, caseRef);
-
+  private String requestDetailGet(
+      final String caseReferenceNumber,
+      final ProviderRequestFlowFormData providerRequestFlow,
+      final Model model,
+      final HttpSession session,
+      final ProviderRequestFlowType flowType) {
+    final String caseRef =
+        flowType.isCaseScoped()
+            ? initialiseCaseRequestScope(providerRequestFlow, caseReferenceNumber, model)
+            : initialiseGeneralRequestScope(providerRequestFlow, session, model);
+    providerRequestFlow.setCaseReferenceNumber(caseRef);
+    addProviderRequestFlowModel(
+        model, flowType, providerRequestFlow, caseRef, "/details", "/types");
     populateAddEvidenceModel(model);
 
     final ProviderRequestDetailsFormData providerRequestDetailsForm =
         providerRequestFlow.getRequestDetailsFormData();
 
-    return providerRequestsDetails(providerRequestFlow, providerRequestDetailsForm, model);
+    return providerRequestsDetails(
+        providerRequestFlow, providerRequestDetailsForm, model, flowType);
   }
 
   /**
@@ -248,17 +352,60 @@ public class ProviderRequestsController {
    * @param bindingResult holds validation errors, if any.
    * @return the view name or redirection for the appropriate linked page.
    */
-  @PostMapping("/provider-requests/details")
-  public String postRequestDetail(
+  @PostMapping("/general-provider-requests/details")
+  public String postGeneralRequestDetail(
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
-      @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
+      @SessionAttribute(GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
       @RequestParam final String action,
       @ModelAttribute("providerRequestDetails")
           final ProviderRequestDetailsFormData providerRequestDetailsForm,
       final Model model,
-      final BindingResult bindingResult) {
+      final BindingResult bindingResult,
+      final HttpSession session) {
+    return requestDetailPost(
+        userDetail,
+        providerRequestFlow,
+        action,
+        providerRequestDetailsForm,
+        model,
+        bindingResult,
+        session,
+        ProviderRequestFlowType.GENERAL);
+  }
 
+  /** Handles the POST request to submit case-scoped provider request details. */
+  @PostMapping("/case-provider-requests/details")
+  public String postCaseRequestDetail(
+      @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
+      @SessionAttribute(CASE_PROVIDER_REQUEST_FLOW_FORM_DATA)
+          final ProviderRequestFlowFormData providerRequestFlow,
+      @RequestParam final String action,
+      @ModelAttribute("providerRequestDetails")
+          final ProviderRequestDetailsFormData providerRequestDetailsForm,
+      final Model model,
+      final BindingResult bindingResult,
+      final HttpSession session) {
+    return requestDetailPost(
+        userDetail,
+        providerRequestFlow,
+        action,
+        providerRequestDetailsForm,
+        model,
+        bindingResult,
+        session,
+        ProviderRequestFlowType.CASE);
+  }
+
+  private String requestDetailPost(
+      final UserDetail userDetail,
+      final ProviderRequestFlowFormData providerRequestFlow,
+      final String action,
+      final ProviderRequestDetailsFormData providerRequestDetailsForm,
+      final Model model,
+      final BindingResult bindingResult,
+      final HttpSession session,
+      final ProviderRequestFlowType flowType) {
     providerRequestsMapper.toProviderRequestDetailsFormData(
         providerRequestDetailsForm, providerRequestFlow);
 
@@ -268,8 +415,7 @@ public class ProviderRequestsController {
     if ("document_upload".equals(action)) {
       providerRequestFlow.setRequestDetailsFormData(providerRequestDetailsForm);
 
-      return "redirect:/provider-requests/documents?caseReferenceNumber="
-          + (isValidCaseReference(caseRef) ? caseRef : "");
+      return "redirect:" + buildFlowUrl(flowType, "/documents", caseRef);
     } else if ("document_delete".equals(action)) {
 
       evidenceService.removeDocument(
@@ -278,13 +424,15 @@ public class ProviderRequestsController {
           REQUEST,
           userDetail.getLoginId());
 
-      return providerRequestsDetails(providerRequestFlow, providerRequestDetailsForm, model);
+      return providerRequestsDetails(
+          providerRequestFlow, providerRequestDetailsForm, model, flowType);
     } else {
       providerRequestDetailsValidator.validate(providerRequestDetailsForm, bindingResult);
 
       if (bindingResult.hasErrors()) {
         populateAddEvidenceModel(model);
-        return providerRequestsDetails(providerRequestFlow, providerRequestDetailsForm, model);
+        return providerRequestsDetails(
+            providerRequestFlow, providerRequestDetailsForm, model, flowType);
       }
 
       if (providerRequestDetailsForm.isClaimUploadEnabled()) {
@@ -299,7 +447,8 @@ public class ProviderRequestsController {
         } catch (final AvVirusFoundException | AvScanException | IOException e) {
           bindingResult.rejectValue("file", "scan.failure", e.getMessage());
           providerRequestDetailsForm.setFile(null);
-          return providerRequestsDetails(providerRequestFlow, providerRequestDetailsForm, model);
+          return providerRequestsDetails(
+              providerRequestFlow, providerRequestDetailsForm, model, flowType);
         }
       }
 
@@ -336,11 +485,8 @@ public class ProviderRequestsController {
                 documents, UNRELATED_CASE_REFERENCE, notificationId, userDetail)
             .block();
       }
-      String redirectUrl = "/application/provider-request/confirmed";
-      if (isValidCaseReference(caseRef)) {
-        redirectUrl += "?caseReferenceNumber=" + caseRef;
-      }
-      return "redirect:" + redirectUrl;
+      session.setAttribute(SUBMISSION_RESULT, "confirmed");
+      return "redirect:/application" + buildFlowUrl(flowType, "/confirmed", caseRef);
     }
   }
 
@@ -350,23 +496,47 @@ public class ProviderRequestsController {
    * @param model the model to populate with attributes for the view
    * @return the name of the view for uploading provider request documents
    */
-  @GetMapping("/provider-requests/documents")
-  public String addDocumentsToRequest(
-      @RequestParam(required = false) final String caseReferenceNumber,
-      @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
+  @GetMapping("/general-provider-requests/documents")
+  public String addDocumentsToGeneralRequest(
+      @SessionAttribute(GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
       final Model model,
       HttpSession session) {
+    return addDocumentsToRequestGet(
+        UNRELATED_CASE_REFERENCE,
+        providerRequestFlow,
+        model,
+        session,
+        ProviderRequestFlowType.GENERAL);
+  }
 
-    if (caseReferenceNumber != null && !caseReferenceNumber.isBlank()) {
-      providerRequestFlow.setCaseReferenceNumber(caseReferenceNumber);
-    }
+  /** Handles GET requests to add documents to a case-scoped provider request. */
+  @GetMapping("/case-provider-requests/documents")
+  public String addDocumentsToCaseRequest(
+      @RequestParam(required = false) final String caseReferenceNumber,
+      @SessionAttribute(CASE_PROVIDER_REQUEST_FLOW_FORM_DATA)
+          final ProviderRequestFlowFormData providerRequestFlow,
+      final Model model,
+      HttpSession session) {
+    return addDocumentsToRequestGet(
+        caseReferenceNumber, providerRequestFlow, model, session, ProviderRequestFlowType.CASE);
+  }
 
-    String caseRef = providerRequestFlow.getCaseReferenceNumber();
-    clearCaseIfInvalid(caseRef, session, model);
-    addCaseReferenceIfValid(model, caseRef);
+  private String addDocumentsToRequestGet(
+      final String caseReferenceNumber,
+      final ProviderRequestFlowFormData providerRequestFlow,
+      final Model model,
+      final HttpSession session,
+      final ProviderRequestFlowType flowType) {
+    final String caseRef =
+        flowType.isCaseScoped()
+            ? initialiseCaseRequestScope(providerRequestFlow, caseReferenceNumber, model)
+            : initialiseGeneralRequestScope(providerRequestFlow, session, model);
+    addProviderRequestFlowModel(
+        model, flowType, providerRequestFlow, caseRef, "/documents", "/details");
 
-    model.addAttribute(EVIDENCE_UPLOAD_FORM_DATA, new EvidenceUploadFormData());
+    EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
+    addEvidenceUploadFormModel(model, flowType, evidenceUploadFormData);
     populateAddEvidenceModel(model);
     return "requests/provider-request-doc-upload";
   }
@@ -380,29 +550,72 @@ public class ProviderRequestsController {
    * @param model The model for the view.
    * @return The view name for the evidence upload view.
    */
-  @PostMapping("/provider-requests/documents")
-  public String addDocumentsToRequest(
+  @PostMapping("/general-provider-requests/documents")
+  public String addDocumentsToGeneralRequest(
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
-      @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
+      @SessionAttribute(GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
-      @ModelAttribute(EVIDENCE_UPLOAD_FORM_DATA)
+      @ModelAttribute(GENERAL_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA)
+          final EvidenceUploadFormData evidenceUploadFormData,
+      final BindingResult bindingResult,
+      final Model model) {
+    return addDocumentsToRequestPost(
+        userDetail,
+        providerRequestFlow,
+        evidenceUploadFormData,
+        UNRELATED_CASE_REFERENCE,
+        bindingResult,
+        model,
+        ProviderRequestFlowType.GENERAL);
+  }
+
+  /** Handles the POST request to upload a new case-scoped evidence document. */
+  @PostMapping("/case-provider-requests/documents")
+  public String addDocumentsToCaseRequest(
+      @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
+      @SessionAttribute(CASE_PROVIDER_REQUEST_FLOW_FORM_DATA)
+          final ProviderRequestFlowFormData providerRequestFlow,
+      @ModelAttribute(CASE_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA)
           final EvidenceUploadFormData evidenceUploadFormData,
       @RequestParam(required = false) String caseReferenceNumber,
       final BindingResult bindingResult,
       final Model model) {
+    return addDocumentsToRequestPost(
+        userDetail,
+        providerRequestFlow,
+        evidenceUploadFormData,
+        caseReferenceNumber,
+        bindingResult,
+        model,
+        ProviderRequestFlowType.CASE);
+  }
 
+  private String addDocumentsToRequestPost(
+      final UserDetail userDetail,
+      final ProviderRequestFlowFormData providerRequestFlow,
+      final EvidenceUploadFormData evidenceUploadFormData,
+      final String caseReferenceNumber,
+      final BindingResult bindingResult,
+      final Model model,
+      final ProviderRequestFlowType flowType) {
     final String documentSessionId =
         providerRequestFlow.getRequestDetailsFormData().getDocumentSessionId().toString();
 
-    final String caseRef = providerRequestFlow.getCaseReferenceNumber();
+    final String caseRef =
+        flowType.isCaseScoped()
+            ? resolveCaseReference(
+                caseReferenceNumber, providerRequestFlow.getCaseReferenceNumber())
+            : UNRELATED_CASE_REFERENCE;
 
     // set the additional details for the evidence upload
     evidenceUploadFormData.setApplicationOrOutcomeId(documentSessionId);
-    evidenceUploadFormData.setCaseReferenceNumber(getEffectiveCaseReference(caseReferenceNumber));
+    evidenceUploadFormData.setCaseReferenceNumber(caseRef);
     evidenceUploadFormData.setProviderId(userDetail.getProvider().getId());
     evidenceUploadFormData.setDocumentSender(userDetail.getLoginId());
     evidenceUploadFormData.setCcmsModule(REQUEST);
-
+    addEvidenceUploadFormModel(model, flowType, evidenceUploadFormData);
+    addProviderRequestFlowModel(
+        model, flowType, providerRequestFlow, caseRef, "/documents", "/details");
     // Validate the evidence form data
     providerRequestDocumentUploadValidator.validate(evidenceUploadFormData, bindingResult);
 
@@ -455,30 +668,40 @@ public class ProviderRequestsController {
         .blockOptional()
         .orElseThrow(() -> new CaabApplicationException("Failed to save document"));
 
-    return "redirect:/provider-requests/details?caseReferenceNumber="
-        + (isValidCaseReference(caseRef) ? caseRef : "");
+    return "redirect:" + buildFlowUrl(flowType, "/details", caseRef);
   }
 
   /**
    * Exception handler to catch when the uploaded file is too large.
    *
-   * @param evidenceUploadFormData - the form data for the page.
+   * @param request the current request.
+   * @param session the current session.
    * @param model - the model
    * @return the view name for the evidence-add screen.
    */
   @ExceptionHandler(MaxUploadSizeExceededException.class)
   public String handleUploadFileTooLarge(
-      @SessionAttribute(EVIDENCE_UPLOAD_FORM_DATA)
-          final EvidenceUploadFormData evidenceUploadFormData,
-      final Model model) {
+      final HttpServletRequest request, final HttpSession session, final Model model) {
+    ProviderRequestFlowType flowType = getFlowType(request.getRequestURI());
+    final String evidenceUploadSessionAttribute = flowType.getEvidenceUploadSessionAttribute();
+    EvidenceUploadFormData evidenceUploadFormData =
+        (EvidenceUploadFormData) session.getAttribute(evidenceUploadSessionAttribute);
+    ProviderRequestFlowFormData providerRequestFlow =
+        (ProviderRequestFlowFormData) session.getAttribute(flowType.getFlowSessionAttribute());
+    String caseRef =
+        providerRequestFlow != null ? providerRequestFlow.getCaseReferenceNumber() : null;
 
     // Manually construct a BindingResult to hold the file size error.
     final BindingResult bindingResult =
-        new BeanPropertyBindingResult(evidenceUploadFormData, EVIDENCE_UPLOAD_FORM_DATA);
+        new BeanPropertyBindingResult(evidenceUploadFormData, evidenceUploadSessionAttribute);
     providerRequestDocumentUploadValidator.rejectFileSize(bindingResult);
 
-    model.addAttribute(EVIDENCE_UPLOAD_FORM_DATA, evidenceUploadFormData);
-    model.addAttribute(BindingResult.MODEL_KEY_PREFIX + EVIDENCE_UPLOAD_FORM_DATA, bindingResult);
+    addEvidenceUploadFormModel(model, flowType, evidenceUploadFormData);
+    model.addAttribute(
+        BindingResult.MODEL_KEY_PREFIX + evidenceUploadSessionAttribute, bindingResult);
+
+    addProviderRequestFlowModel(
+        model, flowType, providerRequestFlow, caseRef, "/documents", "/details");
 
     populateAddEvidenceModel(model);
     return "requests/provider-request-doc-upload";
@@ -495,7 +718,8 @@ public class ProviderRequestsController {
   protected String providerRequestsDetails(
       final ProviderRequestFlowFormData providerRequestFlow,
       final ProviderRequestDetailsFormData providerRequestDetailsForm,
-      final Model model) {
+      final Model model,
+      final ProviderRequestFlowType flowType) {
 
     final String type = providerRequestFlow.getRequestTypeFormData().getProviderRequestType();
 
@@ -566,7 +790,13 @@ public class ProviderRequestsController {
     model.addAttribute("providerRequestDynamicForm", dynamicForm);
     model.addAttribute("providerRequestDetails", providerRequestDetailsForm);
 
-    model.addAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow);
+    addProviderRequestFlowModel(
+        model,
+        flowType,
+        providerRequestFlow,
+        providerRequestFlow.getCaseReferenceNumber(),
+        "/details",
+        "/types");
 
     return "requests/provider-request-detail";
   }
@@ -629,28 +859,69 @@ public class ProviderRequestsController {
    * Handles the POST request for the submission page.
    *
    * @param providerRequestFlow session attribute containing flow form data.
-   * @param sessionStatus status of current session
    * @return the view for either the home page or case overview page
    */
-  @PostMapping("/application/provider-request/confirmed")
-  public String clientUpdateSubmitted(
-      @SessionAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA)
+  @PostMapping("/application/general-provider-requests/confirmed")
+  public String generalProviderRequestSubmitted(
+      @SessionAttribute(GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
-      final SessionStatus sessionStatus) {
-
-    sessionStatus.setComplete();
-
-    String caseRef = providerRequestFlow.getCaseReferenceNumber();
-    if (isValidCaseReference(caseRef)) {
-      return "redirect:/case/overview";
-    }
-    return "redirect:/home";
+      final HttpSession session) {
+    return providerRequestSubmitted(providerRequestFlow, session, ProviderRequestFlowType.GENERAL);
   }
 
-  private String getEffectiveCaseReference(String caseReferenceNumber) {
-    return isValidCaseReference(caseReferenceNumber)
-        ? caseReferenceNumber
-        : UNRELATED_CASE_REFERENCE;
+  /** Handles the POST request for the case provider request confirmation page. */
+  @PostMapping("/application/case-provider-requests/confirmed")
+  public String caseProviderRequestSubmitted(
+      @SessionAttribute(CASE_PROVIDER_REQUEST_FLOW_FORM_DATA)
+          final ProviderRequestFlowFormData providerRequestFlow,
+      final HttpSession session) {
+    return providerRequestSubmitted(providerRequestFlow, session, ProviderRequestFlowType.CASE);
+  }
+
+  private String providerRequestSubmitted(
+      final ProviderRequestFlowFormData providerRequestFlow,
+      final HttpSession session,
+      final ProviderRequestFlowType flowType) {
+    clearProviderRequestSession(session, flowType);
+    return "redirect:" + flowTypeReturnUrl(flowType);
+  }
+
+  private String resolveCaseReference(
+      final String caseReferenceNumber, final String existingCaseReference) {
+    String resolvedCaseReference;
+    if (isValidCaseReference(caseReferenceNumber)) {
+      resolvedCaseReference = caseReferenceNumber;
+    } else if (isValidCaseReference(existingCaseReference)) {
+      resolvedCaseReference = existingCaseReference;
+    } else {
+      resolvedCaseReference = UNRELATED_CASE_REFERENCE;
+    }
+
+    if (!isValidCaseReference(resolvedCaseReference)) {
+      throw new CaabApplicationException("Case provider requests require a valid case reference");
+    }
+    return resolvedCaseReference;
+  }
+
+  private String initialiseGeneralRequestScope(
+      final ProviderRequestFlowFormData providerRequestFlow,
+      final HttpSession session,
+      final Model model) {
+    session.removeAttribute(ACTIVE_CASE);
+    model.asMap().remove(ACTIVE_CASE);
+    providerRequestFlow.setCaseReferenceNumber(UNRELATED_CASE_REFERENCE);
+    return UNRELATED_CASE_REFERENCE;
+  }
+
+  private String initialiseCaseRequestScope(
+      final ProviderRequestFlowFormData providerRequestFlow,
+      final String caseReferenceNumber,
+      final Model model) {
+    final String resolvedCaseReference =
+        resolveCaseReference(caseReferenceNumber, providerRequestFlow.getCaseReferenceNumber());
+    model.addAttribute("caseReference", resolvedCaseReference);
+    providerRequestFlow.setCaseReferenceNumber(resolvedCaseReference);
+    return resolvedCaseReference;
   }
 
   private boolean isValidCaseReference(String caseReferenceNumber) {
@@ -665,10 +936,52 @@ public class ProviderRequestsController {
     }
   }
 
-  private void clearCaseIfInvalid(String caseReferenceNumber, HttpSession session, Model model) {
-    if (!isValidCaseReference(caseReferenceNumber)) {
-      session.removeAttribute(ACTIVE_CASE);
-      model.asMap().remove(ACTIVE_CASE);
+  private void addProviderRequestFlowModel(
+      final Model model,
+      final ProviderRequestFlowType flowType,
+      final ProviderRequestFlowFormData providerRequestFlow,
+      final String caseRef,
+      final String submitPath,
+      final String backPath) {
+    model.addAttribute(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow);
+    model.addAttribute("providerRequestSubmitUrl", flowType.getBasePath() + submitPath);
+    model.addAttribute(
+        "providerRequestBackUrl",
+        backPath == null ? flowTypeReturnUrl(flowType) : buildFlowUrl(flowType, backPath, caseRef));
+  }
+
+  private void addEvidenceUploadFormModel(
+      final Model model,
+      final ProviderRequestFlowType flowType,
+      final EvidenceUploadFormData evidenceUploadFormData) {
+    model.addAttribute(
+        "providerRequestEvidenceUploadFormAttribute", flowType.getEvidenceUploadSessionAttribute());
+    model.addAttribute(flowType.getEvidenceUploadSessionAttribute(), evidenceUploadFormData);
+  }
+
+  private String buildFlowUrl(
+      final ProviderRequestFlowType flowType, final String path, final String caseReferenceNumber) {
+    final String url = flowType.getBasePath() + path;
+    if (!flowType.isCaseScoped()) {
+      return url;
     }
+    return url + "?caseReferenceNumber=" + resolveCaseReference(caseReferenceNumber, null);
+  }
+
+  private String flowTypeReturnUrl(final ProviderRequestFlowType flowType) {
+    return flowType.isCaseScoped() ? "/case/overview" : "/home";
+  }
+
+  private ProviderRequestFlowType getFlowType(String requestUri) {
+    return requestUri.startsWith(ProviderRequestFlowType.CASE.getBasePath())
+        ? ProviderRequestFlowType.CASE
+        : ProviderRequestFlowType.GENERAL;
+  }
+
+  private void clearProviderRequestSession(
+      final HttpSession session, final ProviderRequestFlowType flowType) {
+    session.removeAttribute(SUBMISSION_RESULT);
+    session.removeAttribute(flowType.getFlowSessionAttribute());
+    session.removeAttribute(flowType.getEvidenceUploadSessionAttribute());
   }
 }
