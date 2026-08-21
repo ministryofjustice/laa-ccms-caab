@@ -12,6 +12,7 @@ import uk.gov.laa.ccms.caab.bean.common.DynamicOptionFormData;
 import uk.gov.laa.ccms.caab.bean.request.ProviderRequestDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.validators.file.FileUploadValidator;
 import uk.gov.laa.ccms.caab.constants.ProviderRequestDateFields;
+import uk.gov.laa.ccms.caab.util.DateUtils;
 
 /**
  * Validator component responsible for validating {@link
@@ -28,7 +29,6 @@ public class ProviderRequestDetailsValidator extends FileUploadValidator {
   private static final String FIELD_TYPE_FTL = "FTL";
 
   private static final String DATE_FORMAT = "dd/MM/yyyy";
-
   private static final BigDecimal MAX_COST_LIMIT = new BigDecimal("100000000.00");
 
   public ProviderRequestDetailsValidator(
@@ -79,14 +79,23 @@ public class ProviderRequestDetailsValidator extends FileUploadValidator {
             });
   }
 
+  private void validateDateInputCharacters(
+      final String fieldPath, final String fieldValue, final Errors errors) {
+    if (DateUtils.hasInvalidDateCharacters(fieldValue)) {
+      errors.rejectValue(fieldPath, "validation.error.invalidDateCharacters");
+    }
+  }
+
+  private boolean isDateField(String fieldCode, DynamicOptionFormData value) {
+    return FIELD_TYPE_DATE.equals(value.getFieldType())
+        || ProviderRequestDateFields.isDateField(fieldCode);
+  }
+
   private void validateFieldByType(
       String fieldCode, String fieldPath, DynamicOptionFormData value, Errors errors) {
 
-    boolean isDateField =
-        FIELD_TYPE_DATE.equals(value.getFieldType())
-            || ProviderRequestDateFields.isDateField(fieldCode);
-
-    if (isDateField) {
+    if (isDateField(fieldCode, value)) {
+      validateDateInputCharacters(fieldPath, value.getFieldValue(), errors);
       validateValidDateField(
           value.getFieldValue(), fieldPath, value.getFieldDescription(), DATE_FORMAT, errors);
       return;

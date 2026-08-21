@@ -96,4 +96,33 @@ public final class DateUtils {
       return date;
     }
   }
+
+  /**
+   * Only keeps digits and forward slashes, as the accepted date format is "dd/MM/yyyy".
+   *
+   * @param date the input date string
+   * @return sanitised date string, or null/blank if input is null/blank
+   */
+  public static String sanitiseDateInput(String date) {
+    if (date == null || date.isBlank()) {
+      return date;
+    }
+    return date.replaceAll("[^0-9/]", "");
+  }
+
+  /**
+   * Checks if a date string contains invalid characters. A date string is considered invalid if it
+   * contains characters other than digits and forward slashes (the accepted format is
+   * "dd/MM/yyyy").
+   *
+   * @param date the input date string to check
+   * @return true if the date contains invalid characters, false otherwise
+   */
+  public static boolean hasInvalidDateCharacters(String date) {
+    if (date == null || date.isBlank()) {
+      return false;
+    }
+    String sanitised = sanitiseDateInput(date);
+    return !date.equals(sanitised);
+  }
 }

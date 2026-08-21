@@ -266,13 +266,13 @@
   </fieldset>
 </div>
 
-<div th:fragment="dateOfBirth(required)">
+<div th:fragment="dateOfBirth(required, value)">
   <moj:datepicker
       id="dob"
       name="dateOfBirth"
       th:label="${required} ? #{person.dob} : #{site.optional(#{person.dob})}"
       th:hint="#{site.dateHint}"
       th:errorMessage="${#fields.hasErrors('dateOfBirth') ? #fields.errors('dateOfBirth').getFirst() : ''}"
-      th:value="*{__${'dateOfBirth'}__}">
+      th:attr="value=${value}">
   </moj:datepicker>
 </div>
