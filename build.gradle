@@ -1,5 +1,5 @@
 plugins {
-    id 'uk.gov.justice.service.laa.laa-spring-boot-gradle-plugin' version '3.0.1'
+    id 'uk.gov.justice.service.laa.laa-spring-boot-gradle-plugin' version '3.0.2'
     id 'com.diffplug.spotless' version '8.9.0'
 }
 
@@ -133,7 +133,7 @@ dependencies {
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
-    implementation 'org.json:json:20260719'
+    implementation 'org.json:json:20260814'
 
     implementation 'io.swagger.core.v3:swagger-annotations:2.2.53'
 
