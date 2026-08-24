@@ -584,22 +584,26 @@ public class CaseController {
         Optional.ofNullable(
                 lookupService.getCommonValues(COMMON_VALUE_OUTCOME_RESOLUTION_METHOD).block())
             .map(CommonLookupDetail::getContent)
-            .orElse(Collections.emptyList()));
+            .orElse(Collections.emptyList())
+            .stream()
+            .map(item -> option(item.getCode(), item.getDescription()))
+            .toList());
     model.addAttribute(
         "alternativeDisputeResolutions",
         Optional.ofNullable(lookupService.getCommonValues(COMMON_VALUE_OUTCOME_ADR).block())
             .map(CommonLookupDetail::getContent)
-            .orElse(Collections.emptyList()));
-    model.addAttribute(
-        "courts",
-        Optional.ofNullable(lookupService.getCourts(proceedingCode).block())
-            .map(CommonLookupDetail::getContent)
-            .orElse(Collections.emptyList()));
+            .orElse(Collections.emptyList())
+            .stream()
+            .map(item -> option(item.getCode(), item.getDescription()))
+            .toList());
     model.addAttribute(
         "widerBenefitsOptions",
         Optional.ofNullable(lookupService.getCommonValues(COMMON_VALUE_WIDER_BENEFITS).block())
             .map(CommonLookupDetail::getContent)
-            .orElse(Collections.emptyList()));
+            .orElse(Collections.emptyList())
+            .stream()
+            .map(item -> option(item.getCode(), item.getDescription()))
+            .toList());
   }
 
   private static ProceedingOutcomeFormData toProceedingOutcomeFormData(
