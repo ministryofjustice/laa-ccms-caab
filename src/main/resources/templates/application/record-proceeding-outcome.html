@@ -42,7 +42,7 @@
               name="dateOfFinalWork"
               th:label="#{case.recordOutcomes.dateOfFinalWork}"
               th:hint="#{case.recordOutcomes.dateOfFinalWork.hint}"
-              th:value="*{__${'dateOfFinalWork'}__}"
+              th:attr="value=*{dateOfFinalWork}"
               th:errorMessage="${#fields.hasErrors('dateOfFinalWork') ? #fields.errors('dateOfFinalWork').getFirst() : ''}">
       </moj:datepicker>
 
