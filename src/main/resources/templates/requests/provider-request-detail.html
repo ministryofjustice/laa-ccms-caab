@@ -121,7 +121,7 @@
                               th:name="'dynamicOptions[__${option.code}__].fieldValue'"
                               th:label="${option.mandatoryFlag} ? ${option.label} : #{site.optional(${option.label})}"
                               th:hint="#{site.dateHint}"
-                              th:value="*{dynamicOptions[__${option.code}__].fieldValue}"
+                              th:attr="value=*{dynamicOptions[__${option.code}__].fieldValue}"
                               th:errorMessage="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue') ? #fields.errors('dynamicOptions[__${option.code}__].fieldValue').getFirst() : ''}">
                       </moj:datepicker>
                   </th:block>
