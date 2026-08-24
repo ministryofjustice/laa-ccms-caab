@@ -1,9 +1,11 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_GENERAL_PROVIDER_REQUEST;
 import static uk.gov.laa.ccms.caab.util.SubmissionUtil.isAlreadySubmitted;
 
 import jakarta.servlet.http.HttpSession;
+import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -20,6 +22,9 @@ import uk.gov.laa.ccms.caab.constants.CaseContext;
 @Slf4j
 public class SubmissionConfirmedController {
   private static final String DEFAULT_RETURN_URL = "/case/overview";
+  private static final String[] HOME_RETURN_URL_SUBMISSION_TYPES = {
+    SUBMISSION_SUBMIT_CASE, SUBMISSION_SUBMIT_GENERAL_PROVIDER_REQUEST
+  };
 
   /**
    * Handles the GET request for all confirmed submissions screen.
@@ -55,7 +60,9 @@ public class SubmissionConfirmedController {
     if (caseContext.isAmendment()) {
       return "/case/overview";
     }
-    return SUBMISSION_SUBMIT_CASE.equals(submissionType) ? "/home" : "/application/sections";
+    return Arrays.asList(HOME_RETURN_URL_SUBMISSION_TYPES).contains(submissionType)
+        ? "/home"
+        : "/application/sections";
   }
 
   private String sanitizeReturnUrl(final String returnUrl) {

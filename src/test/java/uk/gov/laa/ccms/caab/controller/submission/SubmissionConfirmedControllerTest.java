@@ -56,6 +56,24 @@ class SubmissionConfirmedControllerTest {
   }
 
   @Test
+  void testSubmissionsConfirmedWhenSubmissionResultMissingWithSubmitCaseSubmissionType()
+      throws Exception {
+    mockMvc
+        .perform(get("/application/submit-case/confirmed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/submissions/alreadySubmitted?returnUrl=/home"));
+  }
+
+  @Test
+  void testSubmissionsConfirmedWhenSubmissionResultMissingWithGeneralProviderRequestSubmissionType()
+      throws Exception {
+    mockMvc
+        .perform(get("/application/submit-general-provider-request/confirmed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/submissions/alreadySubmitted?returnUrl=/home"));
+  }
+
+  @Test
   void testAlreadySubmittedSanitizesExternalReturnUrl() throws Exception {
     mockMvc
         .perform(get("/submissions/alreadySubmitted").param("returnUrl", "https://example.com"))

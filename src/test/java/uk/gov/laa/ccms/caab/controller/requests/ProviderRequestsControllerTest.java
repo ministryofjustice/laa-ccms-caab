@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.requests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -21,9 +23,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROVIDER_REQUEST_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
+import jakarta.servlet.http.HttpSession;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
@@ -36,9 +40,11 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
@@ -1057,15 +1063,136 @@ class ProviderRequestsControllerTest {
             any(UserDetail.class));
     final String expectedViewName =
         providerRequestFlowType.isCaseScoped()
-            ? "redirect:/application/case-provider-requests/confirmed?caseReferenceNumber="
+            ? "redirect:/application/submit-case-provider-request/confirmed?caseReferenceNumber="
                 + caseRef
-            : "redirect:/application/general-provider-requests/confirmed";
+            : "redirect:/application/submit-general-provider-request/confirmed";
     assertEquals(expectedViewName, viewName);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1",
+    "CASE, 123456789012",
+  })
+  @DisplayName(
+      "MaxUploadSizeExceededException handler returns upload form with flow-specific form,"
+          + " binding error, and return URLs for general/case flow")
+  void testHandleUploadFileTooLarge(String requestType, String caseRef) {
+    final ProviderRequestFlowType flowType = ProviderRequestFlowType.valueOf(requestType);
+    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef(caseRef);
+    final EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
+
+    final MockHttpServletRequest servletRequest = new MockHttpServletRequest();
+    servletRequest.setServletPath(flowType.getBasePath() + "/documents");
+
+    final MockHttpSession session = new MockHttpSession();
+    session.setAttribute(flowType.getFlowSessionAttribute(), providerRequestFlow);
+    session.setAttribute(flowType.getEvidenceUploadSessionAttribute(), evidenceUploadFormData);
+
+    final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
+    commonLookupDetail.setContent(
+        List.of(new CommonLookupValueDetail().code("DOC1").description("Document Type 1")));
+    when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+        .thenReturn(Mono.just(commonLookupDetail));
+    when(providerRequestDocumentUploadValidator.getValidExtensions())
+        .thenReturn(List.of("pdf", "docx"));
+    when(providerRequestDocumentUploadValidator.getMaxFileSize()).thenReturn(MAX_FILE_SIZE);
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(0);
+              errors.rejectValue("file", "error.file.size", "File too large");
+              return null;
+            })
+        .when(providerRequestDocumentUploadValidator)
+        .rejectFileSize(any(Errors.class));
+
+    final ExtendedModelMap model = new ExtendedModelMap();
+
+    final String viewName =
+        providerRequestsController.handleUploadFileTooLarge(servletRequest, session, model);
+
+    assertEquals("requests/provider-request-doc-upload", viewName);
+
+    // Assert the correct flow-specific evidence upload form attribute name is in the model
+    assertEquals(
+        flowType.getEvidenceUploadSessionAttribute(),
+        model.get(PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_ATTRIBUTE));
+    assertEquals(evidenceUploadFormData, model.get(flowType.getEvidenceUploadSessionAttribute()));
+
+    // Assert binding result is present and carries the file-size error
+    final BindingResult bindingResult =
+        (BindingResult)
+            model.get(
+                BindingResult.MODEL_KEY_PREFIX + flowType.getEvidenceUploadSessionAttribute());
+    assertNotNull(bindingResult);
+    assertTrue(bindingResult.hasErrors());
+
+    // Assert flow-specific submit and back URLs are correct
+    assertEquals(flowType.getBasePath() + "/documents", model.get(PROVIDER_REQUEST_SUBMIT_URL));
+    assertEquals(
+        buildExpectedUrl(flowType, "/details", caseRef), model.get(PROVIDER_REQUEST_BACK_URL));
+
+    verify(providerRequestDocumentUploadValidator).rejectFileSize(any(Errors.class));
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1, /home",
+    "CASE, 123456789012, /case/overview",
+  })
+  @DisplayName(
+      "POST general/case provider request confirmed clears flow-specific session attributes,"
+          + " leaves the other flow intact, and redirects to /home vs /case/overview")
+  void testProviderRequestSubmitted(String requestType, String caseRef, String expectedRedirect)
+      throws Exception {
+    final ProviderRequestFlowType flowType = ProviderRequestFlowType.valueOf(requestType);
+    final ProviderRequestFlowType otherFlow =
+        flowType == ProviderRequestFlowType.GENERAL
+            ? ProviderRequestFlowType.CASE
+            : ProviderRequestFlowType.GENERAL;
+
+    final ProviderRequestFlowFormData generalFlow = createFlowWithCaseRef("-1");
+    final ProviderRequestFlowFormData caseFlow = createFlowWithCaseRef(caseRef);
+    final EvidenceUploadFormData generalEvidenceUpload = new EvidenceUploadFormData();
+    final EvidenceUploadFormData caseEvidenceUpload = new EvidenceUploadFormData();
+
+    final String confirmUrl =
+        "/application/submit-%s-provider-request/confirmed"
+            .formatted(flowType.isCaseScoped() ? "case" : "general");
+
+    final MvcResult result =
+        mockMvc
+            .perform(
+                post(confirmUrl)
+                    .sessionAttr(SUBMISSION_RESULT, "confirmed")
+                    .sessionAttr(
+                        ProviderRequestFlowType.GENERAL.getFlowSessionAttribute(), generalFlow)
+                    .sessionAttr(
+                        ProviderRequestFlowType.GENERAL.getEvidenceUploadSessionAttribute(),
+                        generalEvidenceUpload)
+                    .sessionAttr(ProviderRequestFlowType.CASE.getFlowSessionAttribute(), caseFlow)
+                    .sessionAttr(
+                        ProviderRequestFlowType.CASE.getEvidenceUploadSessionAttribute(),
+                        caseEvidenceUpload))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl(expectedRedirect))
+            .andReturn();
+
+    final HttpSession session = result.getRequest().getSession(false);
+
+    // SUBMISSION_RESULT and the selected flow's session attributes must be cleared
+    assertNull(session.getAttribute(SUBMISSION_RESULT));
+    assertNull(session.getAttribute(flowType.getFlowSessionAttribute()));
+    assertNull(session.getAttribute(flowType.getEvidenceUploadSessionAttribute()));
+
+    // The other flow's session attributes must remain intact
+    assertNotNull(session.getAttribute(otherFlow.getFlowSessionAttribute()));
+    assertNotNull(session.getAttribute(otherFlow.getEvidenceUploadSessionAttribute()));
   }
 
   @Test
   @DisplayName(
-      "GET /general/provider-requests/types with invalid caseReferenceNumber should stay general")
+      "GET /general-provider-requests/types with invalid caseReferenceNumber should stay general")
   void testInvalidCaseReference() throws Exception {
     when(lookupService.getProviderRequestTypes(eq(false), isNull()))
         .thenReturn(Mono.just(new ProviderRequestTypeLookupDetail()));
@@ -1074,7 +1201,7 @@ class ProviderRequestsControllerTest {
         .perform(
             get(ProviderRequestFlowType.GENERAL.getBasePath() + "/types")
                 .sessionAttr(USER_DETAILS, userDetails)
-                .param("caseReferenceNumber", "123**"))
+                .param("caseReferenceNumber", "123456789012"))
         .andExpect(status().isOk())
         .andExpect(model().attributeDoesNotExist("caseReference"));
 

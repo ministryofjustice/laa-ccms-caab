@@ -488,7 +488,13 @@ public class ProviderRequestsController {
             .block();
       }
       session.setAttribute(SUBMISSION_RESULT, "confirmed");
-      return "redirect:/application" + buildFlowUrl(flowType, "/confirmed", caseRef);
+      String redirectUrl =
+          "/application/submit-%s-provider-request/confirmed"
+              .formatted(flowType.isCaseScoped() ? "case" : "general");
+      if (isValidCaseReference(caseRef)) {
+        redirectUrl += "?caseReferenceNumber=" + caseRef;
+      }
+      return "redirect:" + redirectUrl;
     }
   }
 
@@ -709,6 +715,28 @@ public class ProviderRequestsController {
     return "requests/provider-request-doc-upload";
   }
 
+  /** Handles the POST request for the general submission page. */
+  @PostMapping("/application/submit-general-provider-request/confirmed")
+  public String generalProviderRequestSubmitted(final HttpSession session, final Model model) {
+    return providerRequestSubmitted(session, model, ProviderRequestFlowType.GENERAL);
+  }
+
+  /** Handles the POST request for the case submission page. */
+  @PostMapping("/application/submit-case-provider-request/confirmed")
+  public String caseProviderRequestSubmitted(final HttpSession session, final Model model) {
+    return providerRequestSubmitted(session, model, ProviderRequestFlowType.CASE);
+  }
+
+  private String providerRequestSubmitted(
+      final HttpSession session, final Model model, final ProviderRequestFlowType flowType) {
+    session.removeAttribute(SUBMISSION_RESULT);
+    model.asMap().remove(flowType.getFlowSessionAttribute());
+    model.asMap().remove(flowType.getEvidenceUploadSessionAttribute());
+    session.removeAttribute(flowType.getFlowSessionAttribute());
+    session.removeAttribute(flowType.getEvidenceUploadSessionAttribute());
+    return "redirect:" + flowTypeReturnUrl(flowType);
+  }
+
   /**
    * Retrieves and prepares data needed for the provider request details page.
    *
@@ -857,27 +885,6 @@ public class ProviderRequestsController {
     model.addAttribute("claimMaxFileSize", providerRequestDetailsValidator.getMaxFileSize());
   }
 
-  /** Handles the POST request for the submission page. */
-  @PostMapping("/application/general-provider-requests/confirmed")
-  public String generalProviderRequestSubmitted(final HttpSession session, final Model model) {
-    return providerRequestSubmitted(session, model, ProviderRequestFlowType.GENERAL);
-  }
-
-  @PostMapping("/application/case-provider-requests/confirmed")
-  public String caseProviderRequestSubmitted(final HttpSession session, final Model model) {
-    return providerRequestSubmitted(session, model, ProviderRequestFlowType.CASE);
-  }
-
-  private String providerRequestSubmitted(
-      final HttpSession session, final Model model, final ProviderRequestFlowType flowType) {
-    session.removeAttribute(SUBMISSION_RESULT);
-    model.asMap().remove(flowType.getFlowSessionAttribute());
-    model.asMap().remove(flowType.getEvidenceUploadSessionAttribute());
-    session.removeAttribute(flowType.getFlowSessionAttribute());
-    session.removeAttribute(flowType.getEvidenceUploadSessionAttribute());
-    return "redirect:" + flowTypeReturnUrl(flowType);
-  }
-
   private String resolveCaseReference(
       final String caseReferenceNumber, final String existingCaseReference) {
     String resolvedCaseReference;
@@ -903,6 +910,7 @@ public class ProviderRequestsController {
     model.asMap().remove(ACTIVE_CASE);
     session.removeAttribute(CASE);
     model.asMap().remove(CASE);
+    session.removeAttribute(SUBMISSION_RESULT);
     providerRequestFlow.setCaseReferenceNumber(UNRELATED_CASE_REFERENCE);
     return UNRELATED_CASE_REFERENCE;
   }
