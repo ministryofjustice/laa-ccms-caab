@@ -172,10 +172,11 @@ public class CourtSearchController {
       @RequestParam("proceedingIndex") int proceedingIndex,
       HttpSession session) {
 
+    session.removeAttribute(SELECTED_COURT);
+
     @SuppressWarnings("unchecked")
     List<CommonLookupValueDetail> lookupValueDetails =
         (List<CommonLookupValueDetail>) session.getAttribute(COURT_SEARCH_RESULTS);
-
     if (lookupValueDetails != null && index >= 0 && index < lookupValueDetails.size()) {
       CommonLookupValueDetail selectedCourt = lookupValueDetails.get(index);
       log.debug("Selecting court: {}", selectedCourt.getCode());
