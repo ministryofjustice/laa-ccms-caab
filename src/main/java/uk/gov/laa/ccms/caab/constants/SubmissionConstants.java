@@ -22,6 +22,10 @@ public class SubmissionConstants {
   public static final String SUBMISSION_SUBMIT_GENERAL_PROVIDER_REQUEST =
       "submit-general-provider-request";
 
+  /** submission used for submit case provider request. */
+  public static final String SUBMISSION_SUBMIT_CASE_PROVIDER_REQUEST =
+      "submit-case-provider-request";
+
   /** the maximum amount of poll request for a submission. */
   @Value("${submission.max-poll-count:6}")
   private Integer maxPollCount;

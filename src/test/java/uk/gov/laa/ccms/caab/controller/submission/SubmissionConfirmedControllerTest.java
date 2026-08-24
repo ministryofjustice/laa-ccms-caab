@@ -56,6 +56,15 @@ class SubmissionConfirmedControllerTest {
   }
 
   @Test
+  void testSubmissionsConfirmedWhenSubmissionResultMissingWithCaseProviderRequestSubmissionType()
+      throws Exception {
+    mockMvc
+        .perform(get("/application/submit-case-provider-request/confirmed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/submissions/alreadySubmitted?returnUrl=/case/overview"));
+  }
+
+  @Test
   void testSubmissionsConfirmedWhenSubmissionResultMissingWithSubmitCaseSubmissionType()
       throws Exception {
     mockMvc

@@ -12,6 +12,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -879,10 +880,7 @@ class ProviderRequestsControllerTest {
         .thenReturn(Mono.just("Success"));
 
     ProviderRequestFlowType providerRequestFlowType = ProviderRequestFlowType.valueOf(requestType);
-    String expectedRedirect = providerRequestFlowType.getBasePath() + "/details";
-    if (providerRequestFlowType.isCaseScoped()) {
-      expectedRedirect += "?caseReferenceNumber=" + caseRef;
-    }
+    String expectedRedirect = buildExpectedUrl(providerRequestFlowType, "/details", caseRef);
 
     // Perform the request
     mockMvc
@@ -982,6 +980,107 @@ class ProviderRequestsControllerTest {
     verify(lookupService).getCommonValues(COMMON_VALUE_DOCUMENT_TYPES);
     verify(providerRequestDocumentUploadValidator).getValidExtensions();
     verify(providerRequestDocumentUploadValidator).getMaxFileSize();
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1",
+    "CASE, 123456789012",
+  })
+  @DisplayName("Should pass sanitised filename to AV scan during document upload")
+  void testPostDocuments_usesSanitisedFilenameForAvScan(String requestType, String caseRef)
+      throws Exception {
+    final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
+    final EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
+    final ProviderRequestFlowType providerRequestFlowType =
+        ProviderRequestFlowType.valueOf(requestType);
+    final MockMultipartFile mockFile =
+        new MockMultipartFile(
+            "file", "My interesting%filename!.pdf", "application/pdf", "Test content".getBytes());
+    evidenceUploadFormData.setFile(mockFile);
+    evidenceUploadFormData.setSanitisedFileName("My_interesting_filename_.pdf");
+
+    final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
+    when(mapper.toProviderRequestDocumentDetail(eq(evidenceUploadFormData)))
+        .thenReturn(evidenceDocumentDetail);
+    when(evidenceService.addDocument(eq(evidenceDocumentDetail), eq(userDetails.getLoginId())))
+        .thenReturn(Mono.just("Success"));
+
+    doAnswer(
+            invocation -> {
+              final EvidenceUploadFormData formData = invocation.getArgument(0);
+              formData.setSanitisedFileName("My_interesting_filename_.pdf");
+              formData.setFileExtension("pdf");
+              return null;
+            })
+        .when(providerRequestDocumentUploadValidator)
+        .validate(any(), any());
+
+    String expectedRedirect = buildExpectedUrl(providerRequestFlowType, "/details", caseRef);
+
+    mockMvc
+        .perform(
+            post(providerRequestFlowType.getBasePath() + "/documents")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(providerRequestFlowType.getFlowSessionAttribute(), providerRequestFlow)
+                .flashAttr(
+                    providerRequestFlowType.getEvidenceUploadSessionAttribute(),
+                    evidenceUploadFormData))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl(expectedRedirect));
+
+    verify(avScanService)
+        .performAvScan(
+            any(), any(), any(), any(), eq("My_interesting_filename_.pdf"), any(InputStream.class));
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL", "CASE",
+  })
+  @DisplayName("Should not persist document when validator rejects problematic filename")
+  void testPostDocuments_validationErrorPreventsPersistence(String requestType) throws Exception {
+    final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
+    final EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
+    ProviderRequestFlowType providerRequestFlowType = ProviderRequestFlowType.valueOf(requestType);
+
+    evidenceUploadFormData.setFile(
+        new MockMultipartFile(
+            "file",
+            "Test             Upload--  -- copyDoublespaces.rtf",
+            "text/plain",
+            "Test content".getBytes()));
+
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.rejectValue("file", "scan.failure", "Service error");
+              return null;
+            })
+        .when(providerRequestDocumentUploadValidator)
+        .validate(any(), any());
+
+    final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
+    commonLookupDetail.setContent(
+        List.of(new CommonLookupValueDetail().code("DOC1").description("Document Type 1")));
+    when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+        .thenReturn(Mono.just(commonLookupDetail));
+    when(providerRequestDocumentUploadValidator.getValidExtensions())
+        .thenReturn(List.of("pdf", "rtf"));
+    when(providerRequestDocumentUploadValidator.getMaxFileSize()).thenReturn(MAX_FILE_SIZE);
+
+    mockMvc
+        .perform(
+            post(providerRequestFlowType.getBasePath() + "/documents")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(providerRequestFlowType.getFlowSessionAttribute(), providerRequestFlow)
+                .flashAttr(
+                    providerRequestFlowType.getEvidenceUploadSessionAttribute(),
+                    evidenceUploadFormData))
+        .andExpect(status().isOk())
+        .andExpect(view().name("requests/provider-request-doc-upload"));
+
+    verify(evidenceService, never()).addDocument(any(), anyString());
   }
 
   @ParameterizedTest
@@ -1191,8 +1290,7 @@ class ProviderRequestsControllerTest {
   }
 
   @Test
-  @DisplayName(
-      "GET /general-provider-requests/types with invalid caseReferenceNumber should stay general")
+  @DisplayName("GET /general-provider-requests/types disregards caseReferenceNumber")
   void testInvalidCaseReference() throws Exception {
     when(lookupService.getProviderRequestTypes(eq(false), isNull()))
         .thenReturn(Mono.just(new ProviderRequestTypeLookupDetail()));
