@@ -990,7 +990,7 @@ class ProviderRequestsControllerTest {
   @DisplayName("Should pass sanitised filename to AV scan during document upload")
   void testPostDocuments_usesSanitisedFilenameForAvScan(String requestType, String caseRef)
       throws Exception {
-    final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
+    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef(caseRef);
     final EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
     final ProviderRequestFlowType providerRequestFlowType =
         ProviderRequestFlowType.valueOf(requestType);
@@ -1036,11 +1036,13 @@ class ProviderRequestsControllerTest {
 
   @ParameterizedTest
   @CsvSource({
-    "GENERAL", "CASE",
+    "GENERAL, -1",
+    "CASE, 123456789012",
   })
   @DisplayName("Should not persist document when validator rejects problematic filename")
-  void testPostDocuments_validationErrorPreventsPersistence(String requestType) throws Exception {
-    final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
+  void testPostDocuments_validationErrorPreventsPersistence(String requestType, String caseRef)
+      throws Exception {
+    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef(caseRef);
     final EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
     ProviderRequestFlowType providerRequestFlowType = ProviderRequestFlowType.valueOf(requestType);
 
