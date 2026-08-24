@@ -33,8 +33,8 @@ public class CaseOutcomeService {
 
   /**
    * Creates or updates a single proceeding outcome within the case outcome record. Because the CAAB
-   * API has no PATCH endpoint for case outcomes, the existing record is deleted and recreated with
-   * the updated proceeding outcome.
+   * API has no PATCH endpoint for case outcomes, the existing record is recreated with the updated
+   * proceeding outcome.
    *
    * @param caseReferenceNumber - the case reference number.
    * @param providerId - the provider id.
@@ -50,8 +50,15 @@ public class CaseOutcomeService {
     Optional<CaseOutcomeDetail> existing = getCaseOutcome(caseReferenceNumber, providerId);
 
     final CaseOutcomeDetail caseOutcome;
+    Integer existingCaseOutcomeId = null;
     if (existing.isPresent()) {
       caseOutcome = existing.get();
+      existingCaseOutcomeId = caseOutcome.getId();
+      if (existingCaseOutcomeId == null) {
+        throw new IllegalStateException(
+            "Case outcome record exists but has no id for case reference number: "
+                + caseReferenceNumber);
+      }
       // Replace any existing outcome for this proceeding
       caseOutcome
           .getProceedingOutcomes()
@@ -60,8 +67,6 @@ public class CaseOutcomeService {
                   proceedingOutcome.getProceedingCaseId() != null
                       && proceedingOutcome.getProceedingCaseId().equals(o.getProceedingCaseId()));
       caseOutcome.addProceedingOutcomesItem(proceedingOutcome);
-      // Use bulk delete (by case ref + provider) — individual DELETE is not supported by the API
-      caabApiClient.deleteCaseOutcomes(caseReferenceNumber, providerId, loginId).block();
       caseOutcome.setId(null);
     } else {
       caseOutcome =
@@ -72,5 +77,8 @@ public class CaseOutcomeService {
     }
 
     caabApiClient.createCaseOutcome(loginId, caseOutcome).block();
+    if (existingCaseOutcomeId != null) {
+      caabApiClient.deleteCaseOutcome(existingCaseOutcomeId, loginId).block();
+    }
   }
 }

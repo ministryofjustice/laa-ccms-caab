@@ -36,7 +36,7 @@
               <a class="govuk-link govuk-link--no-visited-state"
                  th:href="@{/case/outcome-and-awards/proceeding/{index}/outcome(index=${stat.index})}"
                  th:text="${proceeding.description}"
-                 id="proceedingOutcomeSummaryLink"
+                th:id="|proceedingOutcomeSummaryLink-${stat.index}|"
               ></a>
             </td>
             <td class="govuk-table__cell" th:text="${proceeding.levelOfService?.displayValue}"></td>
