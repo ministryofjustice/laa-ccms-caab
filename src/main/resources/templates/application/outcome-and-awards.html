@@ -35,7 +35,9 @@
             <td class="govuk-table__cell">
               <a class="govuk-link govuk-link--no-visited-state"
                  th:href="@{/case/outcome-and-awards/proceeding/{index}/outcome(index=${stat.index})}"
-                 th:text="${proceeding.description}"></a>
+                 th:text="${proceeding.description}"
+                 id="proceedingOutcomeSummaryLink"
+              ></a>
             </td>
             <td class="govuk-table__cell" th:text="${proceeding.levelOfService?.displayValue}"></td>
             <td class="govuk-table__cell" th:text="${proceeding.status?.displayValue}"></td>
@@ -74,7 +76,9 @@
         <div class="govuk-button-group govuk-!-margin-top-3">
           <a class="govuk-button govuk-!-margin-bottom-0"
              href="#"
-             th:text="#{case.outcomeAndAwards.awardsSummary.addAward}"></a>
+             th:text="#{case.outcomeAndAwards.awardsSummary.addAward}"
+             id="addAwardButton"
+          ></a>
         </div>
       </div>
     </div>
@@ -97,7 +101,9 @@
             <td class="govuk-table__cell">
               <a class="govuk-link govuk-link--no-visited-state"
                  href="#"
-                 th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.link}"></a>
+                 th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.link}"
+                 id="preCertificateAndLegalHelpCostsLink"
+              ></a>
             </td>
             <td class="govuk-table__cell">£0</td>
             <td class="govuk-table__cell">£0</td>
@@ -130,7 +136,9 @@
             <td class="govuk-table__cell">
               <a class="govuk-link govuk-link--no-visited-state"
                  href="#"
-                 th:text="#{case.outcomeAndAwards.documents.upload}"></a>
+                 th:text="#{case.outcomeAndAwards.documents.upload}"
+                id="documentUploadLink"
+              ></a>
               <strong class="govuk-tag govuk-tag--orange govuk-!-margin-left-1"
                       th:text="#{case.outcomeAndAwards.documents.newTag}"></strong>
             </td>

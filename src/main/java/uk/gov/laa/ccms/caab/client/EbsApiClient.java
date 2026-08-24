@@ -16,7 +16,6 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.CounselSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
@@ -1048,37 +1047,6 @@ public class EbsApiClient extends BaseApiClient {
         .onErrorResume(
             e ->
                 ebsApiClientErrorHandler.handleApiRetrieveError(e, "Counsel details", queryParams));
-  }
-
-  /**
-   * Retrieves the court lookup details based on the court search criteria.
-   *
-   * @return A {@link Mono} wrapping the {@link CommonLookupDetail}.
-   */
-  public Mono<CommonLookupDetail> getCourtDetails(CourtSearchCriteria criteria) {
-
-    MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
-
-    queryParams.add("courtCode", criteria.getCourtCode());
-    queryParams.add("courtName", criteria.getCourtName());
-
-    return ebsApiWebClient
-        .get()
-        .uri(uriBuilder -> uriBuilder.path("/lookup/courts").queryParams(queryParams).build())
-        .retrieve()
-        .onStatus(
-            HttpStatusCode::is4xxClientError,
-            response ->
-                response
-                    .bodyToMono(String.class)
-                    .flatMap(
-                        body ->
-                            Mono.error(
-                                ebsApiClientErrorHandler.createException(
-                                    body, HttpStatus.resolve(response.statusCode().value())))))
-        .bodyToMono(CommonLookupDetail.class)
-        .onErrorResume(
-            e -> ebsApiClientErrorHandler.handleApiRetrieveError(e, "Court details", queryParams));
   }
 
   /**
