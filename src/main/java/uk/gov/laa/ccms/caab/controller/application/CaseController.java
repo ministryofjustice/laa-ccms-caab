@@ -390,8 +390,6 @@ public class CaseController {
       @PathVariable("index") final int index,
       @ModelAttribute("proceedingOutcome") final ProceedingOutcomeFormData proceedingOutcome,
       HttpSession session) {
-    proceedingOutcome.setCourtCode(null);
-    proceedingOutcome.setCourtName(null);
     session.setAttribute(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome);
     return "redirect:/court/search?proceedingIndex=" + index;
   }
