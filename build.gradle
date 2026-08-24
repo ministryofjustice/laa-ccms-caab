@@ -88,6 +88,10 @@ configurations.configureEach {
             details.useVersion '4.2.17.Final'
             details.because 'Temporary override to remediate vulnerability'
         }
+        if (details.requested.group == 'io.micrometer:micrometer-core') {
+            details.useVersion '1.17.1'
+            details.because 'Temporary override to remediate vulnerability'
+        }
     }
 }
 
