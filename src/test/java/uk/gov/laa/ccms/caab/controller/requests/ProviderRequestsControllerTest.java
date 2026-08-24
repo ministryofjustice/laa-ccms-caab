@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -694,6 +695,47 @@ class ProviderRequestsControllerTest {
   }
 
   @Test
+  @DisplayName("Should pass sanitised filename to AV scan during document upload")
+  void testPostDocuments_usesSanitisedFilenameForAvScan() throws Exception {
+    final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
+    final EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
+    final MockMultipartFile mockFile =
+        new MockMultipartFile(
+            "file", "My interesting%filename!.pdf", "application/pdf", "Test content".getBytes());
+    evidenceUploadFormData.setFile(mockFile);
+    evidenceUploadFormData.setSanitisedFileName("My_interesting_filename_.pdf");
+
+    final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
+    when(mapper.toProviderRequestDocumentDetail(eq(evidenceUploadFormData)))
+        .thenReturn(evidenceDocumentDetail);
+    when(evidenceService.addDocument(eq(evidenceDocumentDetail), eq(userDetails.getLoginId())))
+        .thenReturn(Mono.just("Success"));
+
+    doAnswer(
+            invocation -> {
+              final EvidenceUploadFormData formData = invocation.getArgument(0);
+              formData.setSanitisedFileName("My_interesting_filename_.pdf");
+              formData.setFileExtension("pdf");
+              return null;
+            })
+        .when(providerRequestDocumentUploadValidator)
+        .validate(any(), any());
+
+    mockMvc
+        .perform(
+            post("/provider-requests/documents")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow)
+                .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, evidenceUploadFormData))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/provider-requests/details?caseReferenceNumber="));
+
+    verify(avScanService)
+        .performAvScan(
+            any(), any(), any(), any(), eq("My_interesting_filename_.pdf"), any(InputStream.class));
+  }
+
+  @Test
   @DisplayName("Should handle validation errors during document upload")
   void testPostDocuments_validationErrors() throws Exception {
     final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
@@ -743,6 +785,48 @@ class ProviderRequestsControllerTest {
     verify(lookupService).getCommonValues(COMMON_VALUE_DOCUMENT_TYPES);
     verify(providerRequestDocumentUploadValidator).getValidExtensions();
     verify(providerRequestDocumentUploadValidator).getMaxFileSize();
+  }
+
+  @Test
+  @DisplayName("Should not persist document when validator rejects problematic filename")
+  void testPostDocuments_validationErrorPreventsPersistence() throws Exception {
+    final ProviderRequestFlowFormData providerRequestFlow = new ProviderRequestFlowFormData();
+    final EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
+    evidenceUploadFormData.setFile(
+        new MockMultipartFile(
+            "file",
+            "Test             Upload--  -- copyDoublespaces.rtf",
+            "text/plain",
+            "Test content".getBytes()));
+
+    doAnswer(
+            invocation -> {
+              final Errors errors = invocation.getArgument(1);
+              errors.rejectValue("file", "scan.failure", "Service error");
+              return null;
+            })
+        .when(providerRequestDocumentUploadValidator)
+        .validate(any(), any());
+
+    final CommonLookupDetail commonLookupDetail = new CommonLookupDetail();
+    commonLookupDetail.setContent(
+        List.of(new CommonLookupValueDetail().code("DOC1").description("Document Type 1")));
+    when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+        .thenReturn(Mono.just(commonLookupDetail));
+    when(providerRequestDocumentUploadValidator.getValidExtensions())
+        .thenReturn(List.of("pdf", "rtf"));
+    when(providerRequestDocumentUploadValidator.getMaxFileSize()).thenReturn(MAX_FILE_SIZE);
+
+    mockMvc
+        .perform(
+            post("/provider-requests/documents")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(PROVIDER_REQUEST_FLOW_FORM_DATA, providerRequestFlow)
+                .flashAttr(EVIDENCE_UPLOAD_FORM_DATA, evidenceUploadFormData))
+        .andExpect(status().isOk())
+        .andExpect(view().name("requests/provider-request-doc-upload"));
+
+    verify(evidenceService, never()).addDocument(any(), anyString());
   }
 
   @Test

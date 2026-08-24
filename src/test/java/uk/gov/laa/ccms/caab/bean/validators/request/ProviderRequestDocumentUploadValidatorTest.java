@@ -27,9 +27,9 @@ class ProviderRequestDocumentUploadValidatorTest {
   public void setUp() {
     providerRequestDocumentUploadValidator =
         new ProviderRequestDocumentUploadValidator(
-            Arrays.asList("pdf", "jpg", "png"),
+            Arrays.asList("pdf", "jpg", "png", "rtf"),
             "5MB",
-            Arrays.asList("application/pdf", "image/jpg", "image/png"));
+            Arrays.asList("application/pdf", "image/jpg", "image/png", "text/plain"));
     evidenceUploadFormData = new EvidenceUploadFormData();
     errors = new BeanPropertyBindingResult(evidenceUploadFormData, "evidenceUploadFormData");
   }
@@ -64,6 +64,45 @@ class ProviderRequestDocumentUploadValidatorTest {
   }
 
   @Test
+  @DisplayName("validate - Collapses repeated spaces in filename")
+  void validate_RepeatedSpaces_Sanitized() {
+    final MockMultipartFile file =
+        new MockMultipartFile(
+            "file",
+            "Test             Upload--  -- copyDoublespaces.rtf",
+            "text/plain",
+            "the file data".getBytes());
+    evidenceUploadFormData.setFile(file);
+    evidenceUploadFormData.setDocumentType("docType");
+
+    providerRequestDocumentUploadValidator.validate(evidenceUploadFormData, errors);
+
+    assertFalse(errors.hasFieldErrors("file"));
+    assertEquals(
+        "Test_Upload--_--_copyDoublespaces.rtf", evidenceUploadFormData.getSanitisedFileName());
+    assertEquals("rtf", evidenceUploadFormData.getFileExtension());
+  }
+
+  @Test
+  @DisplayName("validate - Sanitizes special and international filename characters")
+  void validate_SpecialInternationalCharacters_Sanitized() {
+    final MockMultipartFile file =
+        new MockMultipartFile(
+            "file",
+            "TestUpload™‹#. €@£ {}__[';]_' copy.rtf",
+            "text/plain",
+            "the file data".getBytes());
+    evidenceUploadFormData.setFile(file);
+    evidenceUploadFormData.setDocumentType("docType");
+
+    providerRequestDocumentUploadValidator.validate(evidenceUploadFormData, errors);
+
+    assertFalse(errors.hasFieldErrors("file"));
+    assertEquals("TestUploadTM______copy.rtf", evidenceUploadFormData.getSanitisedFileName());
+    assertEquals("rtf", evidenceUploadFormData.getFileExtension());
+  }
+
+  @Test
   @DisplayName("validate - Adds error when document description exceeds max length")
   public void validate_DescriptionExceedsMaxLength_HasErrors() {
     final String longDescription = "A".repeat(300); // Exceeds max length of 255
@@ -86,8 +125,7 @@ class ProviderRequestDocumentUploadValidatorTest {
 
     providerRequestDocumentUploadValidator.validate(evidenceUploadFormData, errors);
 
-    assertNotNull(errors.getFieldError("file"));
-    assertEquals("validation.error.invalidMagicBytes", errors.getFieldError("file").getCode());
+    assertFalse(errors.hasFieldErrors("file"));
     assertEquals("My_interesting_filename_.pdf", evidenceUploadFormData.getSanitisedFileName());
     assertEquals("pdf", evidenceUploadFormData.getFileExtension());
   }
