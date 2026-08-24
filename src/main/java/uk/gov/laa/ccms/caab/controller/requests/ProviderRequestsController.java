@@ -15,7 +15,6 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 import static uk.gov.laa.ccms.caab.util.FileUtil.getFileExtension;
-import static uk.gov.laa.ccms.caab.util.SubmissionUtil.isAlreadySubmitted;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -453,11 +452,6 @@ public class ProviderRequestsController {
           return providerRequestsDetails(
               providerRequestFlow, providerRequestDetailsForm, model, flowType);
         }
-      }
-
-      if (isAlreadySubmitted(session)) {
-        final String returnUrl = flowType.isCaseScoped() ? "/case/overview" : "/home";
-        return "redirect:/submissions/alreadySubmitted?returnUrl=" + returnUrl;
       }
 
       // call soa-api a register the notification request
