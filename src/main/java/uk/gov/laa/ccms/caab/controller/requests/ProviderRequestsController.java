@@ -696,7 +696,7 @@ public class ProviderRequestsController {
   @ExceptionHandler(MaxUploadSizeExceededException.class)
   public String handleUploadFileTooLarge(
       final HttpServletRequest request, final HttpSession session, final Model model) {
-    ProviderRequestFlowType flowType = getFlowType(request.getServletPath());
+    ProviderRequestFlowType flowType = getFlowType(request.getRequestURI());
     final String evidenceUploadSessionAttribute = flowType.getEvidenceUploadSessionAttribute();
     EvidenceUploadFormData evidenceUploadFormData =
         (EvidenceUploadFormData) session.getAttribute(evidenceUploadSessionAttribute);
@@ -916,7 +916,6 @@ public class ProviderRequestsController {
     model.asMap().remove(ACTIVE_CASE);
     session.removeAttribute(CASE);
     model.asMap().remove(CASE);
-    session.removeAttribute(SUBMISSION_RESULT);
     providerRequestFlow.setCaseReferenceNumber(UNRELATED_CASE_REFERENCE);
     return UNRELATED_CASE_REFERENCE;
   }

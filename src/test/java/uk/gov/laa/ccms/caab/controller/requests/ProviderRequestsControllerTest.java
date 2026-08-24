@@ -1184,7 +1184,7 @@ class ProviderRequestsControllerTest {
     final EvidenceUploadFormData evidenceUploadFormData = new EvidenceUploadFormData();
 
     final MockHttpServletRequest servletRequest = new MockHttpServletRequest();
-    servletRequest.setServletPath(flowType.getBasePath() + "/documents");
+    servletRequest.setRequestURI("https://example.com" + flowType.getBasePath() + "/documents");
 
     final MockHttpSession session = new MockHttpSession();
     session.setAttribute(flowType.getFlowSessionAttribute(), providerRequestFlow);
