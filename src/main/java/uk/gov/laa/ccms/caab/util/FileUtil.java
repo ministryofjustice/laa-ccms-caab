@@ -1,13 +1,12 @@
 package uk.gov.laa.ccms.caab.util;
 
+import java.text.Normalizer;
 import java.util.Optional;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 
 /** Utility class for handling file related operations. */
 public final class FileUtil {
-
   /**
    * Extract the file extension from the filename of a MultipartFile. If the filename doesn't have a
    * '.' in it, then the whole filename will be returned.
@@ -56,7 +55,18 @@ public final class FileUtil {
       return "";
     }
 
-    return StringUtils.cleanPath(filename).replaceAll("[^A-Za-z0-9_.-]", "_");
+    final String trimmedFilename = filename.trim();
+    final int lastDot = trimmedFilename.lastIndexOf('.');
+    final String baseName = lastDot > 0 ? trimmedFilename.substring(0, lastDot) : trimmedFilename;
+    final String extension = lastDot > 0 ? trimmedFilename.substring(lastDot) : "";
+
+    return sanitiseFileNamePart(baseName, false) + sanitiseFileNamePart(extension, true);
+  }
+
+  private static String sanitiseFileNamePart(String value, boolean preserveDots) {
+    final String normalizedValue = Normalizer.normalize(value, Normalizer.Form.NFKD);
+    final String pattern = preserveDots ? "[^A-Za-z0-9_.-]+" : "[^A-Za-z0-9_-]+";
+    return normalizedValue.replaceAll(pattern, "_");
   }
 
   private FileUtil() {}

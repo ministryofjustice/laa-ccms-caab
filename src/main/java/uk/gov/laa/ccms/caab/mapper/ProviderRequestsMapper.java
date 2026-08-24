@@ -204,7 +204,7 @@ public interface ProviderRequestsMapper {
       ProviderRequestDetailsFormData formData);
 
   @Mapping(target = "label", source = "claimUploadLabel")
-  @Mapping(target = "text", source = "file.originalFilename")
+  @Mapping(target = "text", source = "sanitisedFileName")
   @Mapping(
       target = "document",
       expression =

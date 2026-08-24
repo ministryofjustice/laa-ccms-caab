@@ -48,7 +48,7 @@
               name="notificationFromDate"
               th:label="#{notifications.search.notificationDates.from.label}"
               th:hint="#{notifications.search.notificationDates.from.hintText}"
-              th:value="*{__${'notificationFromDate'}__}"
+              th:attr="value=*{notificationFromDate}"
               th:errorMessage="${#fields.hasErrors('notificationFromDate') ? #fields.errors('notificationFromDate').getFirst() : ''}">
           </moj:datepicker>
           <moj:datepicker
@@ -56,7 +56,7 @@
               name="notificationToDate"
               th:label="#{notifications.search.notificationDates.to.label}"
               th:hint="#{notifications.search.notificationDates.to.hintText}"
-              th:value="*{__${'notificationToDate'}__}"
+              th:attr="value=*{notificationToDate}"
               th:errorMessage="${#fields.hasErrors('notificationToDate') ? #fields.errors('notificationToDate').getFirst() : ''}">
           </moj:datepicker>
 

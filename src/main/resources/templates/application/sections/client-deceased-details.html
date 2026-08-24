@@ -23,7 +23,7 @@
               th:label="#{client.deceased.question}"
               th:hint="#{site.dateHint}"
               th:errorMessage="${#fields.hasErrors('dateOfDeath') ? #fields.errors('dateOfDeath').getFirst() : ''}"
-              th:value="*{__${'dateOfDeath'}__}">
+              th:attr="value=*{dateOfDeath}">
       </moj:datepicker>
 
       <p class="govuk-body" th:text="#{client.deceased.text1}"></p>

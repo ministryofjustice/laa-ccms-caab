@@ -34,7 +34,7 @@
             name="delegatedFunctionUsedDate"
             th:label="#{application.delegatedFunctions.dateQuestion}"
             th:hint="#{site.dateHint}"
-            th:value="*{__${'delegatedFunctionUsedDate'}__}"
+            th:attr="value=*{delegatedFunctionUsedDate}"
             th:errorMessage="${#fields.hasErrors('delegatedFunctionUsedDate') ? #fields.errors('delegatedFunctionUsedDate').getFirst() : ''}">
     </moj:datepicker>
 

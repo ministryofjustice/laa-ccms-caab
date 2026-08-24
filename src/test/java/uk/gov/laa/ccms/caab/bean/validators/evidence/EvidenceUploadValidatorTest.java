@@ -76,6 +76,41 @@ class EvidenceUploadValidatorTest {
   }
 
   @Test
+  void validate_collapsesRepeatedSpacesInFilename() {
+    evidenceUploadFormData = buildEvidenceUploadFormData();
+    evidenceUploadFormData.setFile(
+        new MockMultipartFile(
+            "theFile",
+            "Test             Upload--  -- copyDoublespaces.rtf",
+            "text/plain",
+            "the file data".getBytes()));
+
+    validator.validate(evidenceUploadFormData, errors);
+
+    assertEquals("validation.error.invalidExtension", errors.getFieldError("file").getCode());
+    assertEquals(
+        "Test_Upload--_--_copyDoublespaces.rtf", evidenceUploadFormData.getSanitisedFileName());
+    assertEquals("rtf", evidenceUploadFormData.getFileExtension());
+  }
+
+  @Test
+  void validate_sanitizesSpecialAndInternationalCharactersInFilename() {
+    evidenceUploadFormData = buildEvidenceUploadFormData();
+    evidenceUploadFormData.setFile(
+        new MockMultipartFile(
+            "theFile",
+            "TestUpload™‹#. €@£ {}__[';]_' copy.rtf",
+            "text/plain",
+            "the file data".getBytes()));
+
+    validator.validate(evidenceUploadFormData, errors);
+
+    assertEquals("validation.error.invalidExtension", errors.getFieldError("file").getCode());
+    assertEquals("TestUploadTM______copy.rtf", evidenceUploadFormData.getSanitisedFileName());
+    assertEquals("rtf", evidenceUploadFormData.getFileExtension());
+  }
+
+  @Test
   public void validate_fileMandatory() {
     evidenceUploadFormData = buildEvidenceUploadFormData();
     evidenceUploadFormData.setFile(null);
@@ -199,7 +234,7 @@ class EvidenceUploadValidatorTest {
 
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("file"));
-    assertEquals("validation.error.multipleExtension", errors.getFieldError("file").getCode());
+    assertEquals("validation.error.invalidExtension", errors.getFieldError("file").getCode());
   }
 
   @Test
