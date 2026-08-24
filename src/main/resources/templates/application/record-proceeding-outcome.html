@@ -42,7 +42,7 @@
               name="dateOfFinalWork"
               th:label="#{case.recordOutcomes.dateOfFinalWork}"
               th:hint="#{case.recordOutcomes.dateOfFinalWork.hint}"
-              th:value="*{__${'dateOfFinalWork'}__}"
+              th:attr="value=*{dateOfFinalWork}"
               th:errorMessage="${#fields.hasErrors('dateOfFinalWork') ? #fields.errors('dateOfFinalWork').getFirst() : ''}">
       </moj:datepicker>
 
@@ -128,9 +128,9 @@
                     th:text="#{case.recordOutcomes.courtButton}"></button>
         </div>
 
-        <p class="govuk-body" th:if="${proceedingOutcome.getCourtCode() != null}">
+        <p class="govuk-body" th:if="${#strings.isNotEmpty(proceedingOutcome.courtCode)}">
             <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{case.recordOutcomes.court}"></span>
-            <span th:text="${proceedingOutcome.getCourtCode() + ' ' + proceedingOutcome.getCourtName()}"></span>
+            <span th:text="${proceedingOutcome.courtName != null ? proceedingOutcome.courtCode + ' ' + proceedingOutcome.courtName : proceedingOutcome.courtCode}"></span>
         </p>
 
         <input type="hidden" th:field="*{courtCode}"/>

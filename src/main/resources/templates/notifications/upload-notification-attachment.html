@@ -35,8 +35,7 @@
            th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
         <label class="govuk-label" for="file" th:text="#{notifications.documents.send.chooseFile}"/>
           <div id="file-upload-hint" class="govuk-hint">
-              <span th:text="#{notifications.documents.send.validation.extensionSize(${validExtensions}, ${maxFileSize})}"></span></br>
-              <span th:text="#{request.noSpaces}"></span>
+              <span th:text="#{notifications.documents.send.validation.extensionSize(${validExtensions}, ${maxFileSize})}"></span>
           </div>
         <input class="govuk-file-upload" id="file" name="file" type="file">
       </div>
