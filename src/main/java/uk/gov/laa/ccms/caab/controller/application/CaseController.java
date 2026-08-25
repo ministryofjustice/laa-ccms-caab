@@ -306,6 +306,14 @@ public class CaseController {
             .map(CaseOutcomeDetail::getProceedingOutcomes)
             .orElse(Collections.emptyList());
 
+    // Index saved outcomes by proceedingCaseId once for O(1) lookups below.
+    final Map<String, ProceedingOutcomeDetail> savedOutcomeIndex = new HashMap<>();
+    for (final ProceedingOutcomeDetail o : savedOutcomes) {
+      if (o.getProceedingCaseId() != null) {
+        savedOutcomeIndex.put(o.getProceedingCaseId(), o);
+      }
+    }
+
     // Build a resolved-outcome map per proceeding: prefer CAAB save, fall back to EBS.
     // The session ebsCase is never mutated so each request starts from a clean EBS baseline.
     final Map<String, ProceedingOutcomeDetail> resolvedOutcomes = new HashMap<>();
@@ -315,10 +323,8 @@ public class CaseController {
           continue;
         }
         final ProceedingOutcomeDetail outcome =
-            savedOutcomes.stream()
-                .filter(o -> proceeding.getProceedingCaseId().equals(o.getProceedingCaseId()))
-                .findFirst()
-                .orElse(proceeding.getOutcome());
+            savedOutcomeIndex.getOrDefault(
+                proceeding.getProceedingCaseId(), proceeding.getOutcome());
         resolvedOutcomes.put(proceeding.getProceedingCaseId(), outcome);
       }
     }
