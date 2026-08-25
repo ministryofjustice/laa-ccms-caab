@@ -46,6 +46,7 @@ import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
+import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
@@ -738,20 +739,17 @@ class CaseControllerTest {
     }
 
     @Test
-    @DisplayName("Outcome and awards clears stale proceeding outcomes not present in CAAB")
-    public void outcomeAndAwardsClearsStaleProceedingOutcomes() {
+    @DisplayName("Outcome and awards retains EBS proceeding outcome when no local save exists")
+    public void outcomeAndAwardsRetainsEbsOutcomeWhenNoLocalSave() {
       final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail ebsOutcome =
+          new ProceedingOutcomeDetail()
+              .proceedingCaseId("pc1")
+              .result(new StringDisplayValue().id("R1").displayValue("EBS outcome"));
       ApplicationDetail ebsCase =
           getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
       ebsCase.setProceedings(
-          List.of(
-              new ProceedingDetail()
-                  .proceedingCaseId("pc1")
-                  .outcome(
-                      new ProceedingOutcomeDetail()
-                          .proceedingCaseId("pc1")
-                          .result(
-                              new StringDisplayValue().id("R1").displayValue("Stale outcome")))));
+          List.of(new ProceedingDetail().proceedingCaseId("pc1").outcome(ebsOutcome)));
 
       when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
           .thenReturn(
@@ -771,7 +769,8 @@ class CaseControllerTest {
               value -> {
                 List<ProceedingDetail> proceedings = (List<ProceedingDetail>) value;
                 assertThat(proceedings).hasSize(1);
-                assertThat(proceedings.get(0).getOutcome()).isNull();
+                assertThat(proceedings.get(0).getOutcome()).isNotNull();
+                assertThat(proceedings.get(0).getOutcome().getResult().getId()).isEqualTo("R1");
               });
     }
 
@@ -827,6 +826,50 @@ class CaseControllerTest {
                       .sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/record-proceeding-outcome");
+    }
+
+    @Test
+    @DisplayName("Record proceeding outcome falls back to EBS outcome when no local save exists")
+    public void recordProceedingOutcomeUsesEbsOutcomeWhenNoLocalSave() {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail ebsOutcome =
+          new ProceedingOutcomeDetail().proceedingCaseId("pc1").resultInfo("EBS result info");
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .proceedingCaseId("pc1")
+                  .description("Proceeding 1")
+                  .proceedingType(new StringDisplayValue().id("P1").displayValue("Proceeding name"))
+                  .outcome(ebsOutcome)));
+
+      // No local save — CAAB returns an empty list of proceeding outcomes
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+      when(lookupService.getStageEnds("P1", null))
+          .thenReturn(Mono.just(new StageEndLookupDetail()));
+      when(lookupService.getOutcomeResults("P1", null))
+          .thenReturn(Mono.just(new OutcomeResultLookupDetail()));
+      when(lookupService.getCommonValues(anyString()))
+          .thenReturn(Mono.just(new CommonLookupDetail()));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/proceeding/0/outcome")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/record-proceeding-outcome")
+          .model()
+          .hasEntrySatisfying(
+              "proceedingOutcome",
+              value -> {
+                ProceedingOutcomeFormData formData = (ProceedingOutcomeFormData) value;
+                assertThat(formData.getResultInfo()).isEqualTo("EBS result info");
+              });
     }
 
     @Test

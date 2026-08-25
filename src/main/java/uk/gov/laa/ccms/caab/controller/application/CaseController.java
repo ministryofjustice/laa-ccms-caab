@@ -306,21 +306,19 @@ public class CaseController {
             .map(CaseOutcomeDetail::getProceedingOutcomes)
             .orElse(Collections.emptyList());
 
-    // Refresh proceeding outcomes from CAAB so the overview reflects only persisted state.
+    // Refresh proceeding outcomes: prefer the locally-saved version, fall back to EBS outcome.
     if (proceedings != null) {
       proceedings.forEach(
           proceeding -> {
-            final ProceedingOutcomeDetail matchingOutcome =
-                savedOutcomes.stream()
-                    .filter(
-                        savedOutcome ->
-                            proceeding.getProceedingCaseId() != null
-                                && proceeding
-                                    .getProceedingCaseId()
-                                    .equals(savedOutcome.getProceedingCaseId()))
-                    .findFirst()
-                    .orElse(null);
-            proceeding.setOutcome(matchingOutcome);
+            savedOutcomes.stream()
+                .filter(
+                    savedOutcome ->
+                        proceeding.getProceedingCaseId() != null
+                            && proceeding
+                                .getProceedingCaseId()
+                                .equals(savedOutcome.getProceedingCaseId()))
+                .findFirst()
+                .ifPresent(proceeding::setOutcome);
           });
     }
 
@@ -358,10 +356,12 @@ public class CaseController {
     if (formData != null) {
       session.removeAttribute(PROCEEDING_OUTCOME_FORM_DATA);
     } else {
-      // Load any previously saved outcome from the CAAB API
+      // Load any previously saved outcome from the CAAB API; fall back to EBS outcome if absent
       final ProceedingOutcomeDetail savedOutcome =
           loadSavedProceedingOutcome(ebsCase, user, proceeding);
-      proceeding.setOutcome(savedOutcome);
+      if (savedOutcome != null) {
+        proceeding.setOutcome(savedOutcome);
+      }
       formData = toProceedingOutcomeFormData(proceeding);
     }
 
