@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -25,6 +26,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
+import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 
@@ -36,7 +38,7 @@ class CaseOutcomeServiceTest {
   @Spy @InjectMocks private CaseOutcomeService caseOutcomeService;
 
   @Test
-  void updateProceedingOutcome_existingOutcome_createsNewRecordThenDeletesOld() {
+  void updateProceedingOutcome_existingOutcome_deletesOldThenCreatesNewRecord() {
     final String caseReferenceNumber = "300000001";
     final Integer providerId = 123;
     final String loginId = "user1";
@@ -82,12 +84,12 @@ class CaseOutcomeServiceTest {
     assertNull(createdCaseOutcome.getId());
 
     final InOrder inOrder = inOrder(caabApiClient);
-    inOrder.verify(caabApiClient).createCaseOutcome(eq(loginId), any(CaseOutcomeDetail.class));
     inOrder.verify(caabApiClient).deleteCaseOutcome(existingCaseOutcomeId, loginId);
+    inOrder.verify(caabApiClient).createCaseOutcome(eq(loginId), any(CaseOutcomeDetail.class));
   }
 
   @Test
-  void updateProceedingOutcome_whenCreateFails_oldRecordIsNotDeleted() {
+  void updateProceedingOutcome_whenCreateFails_attemptsRestoreAndThrows() {
     final String caseReferenceNumber = "300000001";
     final Integer providerId = 123;
     final String loginId = "user1";
@@ -95,26 +97,39 @@ class CaseOutcomeServiceTest {
     final CaseOutcomeDetail existingCaseOutcome = new CaseOutcomeDetail();
     existingCaseOutcome.setId(42);
     existingCaseOutcome.setProceedingOutcomes(
-        new ArrayList<>(List.of(new ProceedingOutcomeDetail().proceedingCaseId("pc1"))));
+        new ArrayList<>(
+            List.of(new ProceedingOutcomeDetail().proceedingCaseId("pc1").resultInfo("old"))));
 
     final ProceedingOutcomeDetail replacementProceedingOutcome =
-        new ProceedingOutcomeDetail().proceedingCaseId("pc1");
+        new ProceedingOutcomeDetail().proceedingCaseId("pc1").resultInfo("new");
 
     doReturn(Optional.of(existingCaseOutcome))
         .when(caseOutcomeService)
         .getCaseOutcome(caseReferenceNumber, providerId);
 
+    when(caabApiClient.deleteCaseOutcome(42, loginId)).thenReturn(Mono.empty());
     when(caabApiClient.createCaseOutcome(eq(loginId), any(CaseOutcomeDetail.class)))
-        .thenReturn(Mono.error(new RuntimeException("Transient API failure")));
+        .thenReturn(
+            Mono.error(new CaabApiClientException("Transient API failure")),
+            Mono.just("restored-id"));
 
     assertThrows(
-        RuntimeException.class,
+        CaabApiClientException.class,
         () ->
             caseOutcomeService.updateProceedingOutcome(
                 caseReferenceNumber, providerId, replacementProceedingOutcome, loginId));
 
-    verify(caabApiClient, never()).deleteCaseOutcome(any(), any());
+    verify(caabApiClient).deleteCaseOutcome(42, loginId);
+    final ArgumentCaptor<CaseOutcomeDetail> caseOutcomeCaptor =
+        ArgumentCaptor.forClass(CaseOutcomeDetail.class);
+    verify(caabApiClient, times(2)).createCaseOutcome(eq(loginId), caseOutcomeCaptor.capture());
     verify(caabApiClient, never()).deleteCaseOutcomes(any(), any(), any());
+
+    final List<CaseOutcomeDetail> createAttempts = caseOutcomeCaptor.getAllValues();
+    assertEquals("pc1", createAttempts.get(0).getProceedingOutcomes().get(0).getProceedingCaseId());
+    assertEquals("pc1", createAttempts.get(1).getProceedingOutcomes().get(0).getProceedingCaseId());
+    assertEquals("new", createAttempts.get(0).getProceedingOutcomes().get(0).getResultInfo());
+    assertEquals("old", createAttempts.get(1).getProceedingOutcomes().get(0).getResultInfo());
   }
 
   @Test

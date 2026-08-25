@@ -62,6 +62,7 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualAddressContactDetailsSectionDisplay;
@@ -734,6 +735,44 @@ class CaseControllerTest {
                       .sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/outcome-and-awards");
+    }
+
+    @Test
+    @DisplayName("Outcome and awards clears stale proceeding outcomes not present in CAAB")
+    public void outcomeAndAwardsClearsStaleProceedingOutcomes() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .proceedingCaseId("pc1")
+                  .outcome(
+                      new ProceedingOutcomeDetail()
+                          .proceedingCaseId("pc1")
+                          .result(
+                              new StringDisplayValue().id("R1").displayValue("Stale outcome")))));
+
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards")
+          .model()
+          .hasEntrySatisfying(
+              "proceedings",
+              value -> {
+                List<ProceedingDetail> proceedings = (List<ProceedingDetail>) value;
+                assertThat(proceedings).hasSize(1);
+                assertThat(proceedings.get(0).getOutcome()).isNull();
+              });
     }
 
     @Test

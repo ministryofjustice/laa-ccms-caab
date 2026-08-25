@@ -300,27 +300,29 @@ public class CaseController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       Model model) {
     final List<ProceedingDetail> proceedings = ebsCase.getProceedings();
+    final List<ProceedingOutcomeDetail> savedOutcomes =
+        caseOutcomeService
+            .getCaseOutcome(ebsCase.getCaseReferenceNumber(), user.getProvider().getId().intValue())
+            .map(CaseOutcomeDetail::getProceedingOutcomes)
+            .orElse(Collections.emptyList());
 
-    // Refresh proceeding outcomes from CAAB so that the overview reflects the latest saved state.
-    caseOutcomeService
-        .getCaseOutcome(ebsCase.getCaseReferenceNumber(), user.getProvider().getId().intValue())
-        .ifPresent(
-            caseOutcome -> {
-              final List<ProceedingOutcomeDetail> saved = caseOutcome.getProceedingOutcomes();
-              if (saved != null && proceedings != null) {
-                proceedings.forEach(
-                    proceeding ->
-                        saved.stream()
-                            .filter(
-                                o ->
-                                    proceeding.getProceedingCaseId() != null
-                                        && proceeding
-                                            .getProceedingCaseId()
-                                            .equals(o.getProceedingCaseId()))
-                            .findFirst()
-                            .ifPresent(proceeding::setOutcome));
-              }
-            });
+    // Refresh proceeding outcomes from CAAB so the overview reflects only persisted state.
+    if (proceedings != null) {
+      proceedings.forEach(
+          proceeding -> {
+            final ProceedingOutcomeDetail matchingOutcome =
+                savedOutcomes.stream()
+                    .filter(
+                        savedOutcome ->
+                            proceeding.getProceedingCaseId() != null
+                                && proceeding
+                                    .getProceedingCaseId()
+                                    .equals(savedOutcome.getProceedingCaseId()))
+                    .findFirst()
+                    .orElse(null);
+            proceeding.setOutcome(matchingOutcome);
+          });
+    }
 
     model.addAttribute("proceedings", proceedings);
     return "application/outcome-and-awards";

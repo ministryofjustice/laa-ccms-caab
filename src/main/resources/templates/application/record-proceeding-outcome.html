@@ -51,7 +51,7 @@
         <label class="govuk-label" for="stageEnd" th:text="#{case.recordOutcomes.stageEnd}"></label>
         <span class="govuk-error-message" th:if="${#fields.hasErrors('stageEnd')}" th:errors="*{stageEnd}"></span>
         <select id="stageEnd" class="govuk-select" th:field="*{stageEnd}" th:errorclass="govuk-select--error">
-          <option value="">Please Select</option>
+          <option value="" th:text="#{site.select}"></option>
           <option th:each="item : ${stageEnds}" th:value="${item['code']}" th:text="${item['description']}"></option>
         </select>
       </div>
@@ -66,7 +66,7 @@
                 class="govuk-select"
                 th:field="*{resolutionMethod}"
                 th:errorclass="govuk-select--error">
-          <option value="">Please Select</option>
+          <option value="" th:text="#{site.select}"></option>
           <option th:each="item : ${resolutionMethods}" th:value="${item['code']}" th:text="${item['description']}"></option>
         </select>
       </div>
@@ -76,7 +76,7 @@
         <label class="govuk-label" for="result" th:text="#{case.recordOutcomes.result}"></label>
         <span class="govuk-error-message" th:if="${#fields.hasErrors('result')}" th:errors="*{result}"></span>
         <select id="result" class="govuk-select" th:field="*{result}" th:errorclass="govuk-select--error">
-          <option value="">Please Select</option>
+          <option value="" th:text="#{site.select}"></option>
           <option th:each="item : ${results}" th:value="${item['code']}" th:text="${item['description']}"></option>
         </select>
       </div>
@@ -96,7 +96,7 @@
 
       <div class="govuk-form-group"
            th:classappend="${#fields.hasErrors('alternativeResolution')} ? 'govuk-form-group--error' : ''">
-        <label class="govuk-label" for="alternativeResolution" th:text="#{case.recordOutcomes.alternativeDisputeResolution}">* Alternative Dispute Resolution</label>
+        <label class="govuk-label" for="alternativeResolution" th:text="#{case.recordOutcomes.alternativeDisputeResolution}"></label>
         <span class="govuk-error-message"
               th:if="${#fields.hasErrors('alternativeResolution')}"
               th:errors="*{alternativeResolution}"></span>
@@ -104,7 +104,7 @@
                 class="govuk-select"
                 th:field="*{alternativeResolution}"
                 th:errorclass="govuk-select--error">
-          <option value="">Please Select</option>
+          <option value="" th:text="#{site.select}"></option>
           <option th:each="item : ${alternativeDisputeResolutions}" th:value="${item['code']}" th:text="${item['description']}"></option>
         </select>
       </div>
@@ -128,7 +128,7 @@
                     th:text="#{case.recordOutcomes.courtButton}"></button>
         </div>
 
-        <p class="govuk-body" th:if="${#strings.isNotEmpty(proceedingOutcome.courtCode)}">
+        <p class="govuk-body">
             <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{case.recordOutcomes.court}"></span>
             <span th:text="${proceedingOutcome.courtName != null ? proceedingOutcome.courtCode + ' ' + proceedingOutcome.courtName : proceedingOutcome.courtCode}"></span>
         </p>
@@ -154,7 +154,7 @@
         <label class="govuk-label" for="widerBenefits" th:text="#{case.recordOutcomes.widerBenefits}"></label>
         <span class="govuk-error-message" th:if="${#fields.hasErrors('widerBenefits')}" th:errors="*{widerBenefits}"></span>
         <select id="widerBenefits" class="govuk-select" th:field="*{widerBenefits}" th:errorclass="govuk-select--error">
-          <option value="">Please Select</option>
+          <option value="" th:text="#{site.select}"></option>
           <option th:each="item : ${widerBenefitsOptions}" th:value="${item['code']}" th:text="${item['description']}"></option>
         </select>
       </div>
