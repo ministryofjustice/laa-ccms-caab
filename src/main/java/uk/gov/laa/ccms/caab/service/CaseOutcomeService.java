@@ -1,11 +1,15 @@
 package uk.gov.laa.ccms.caab.service;
 
+import java.util.ArrayList;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
+import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 
 /** Service class to handle Case Outcomes. */
 @Service
@@ -28,5 +32,90 @@ public class CaseOutcomeService {
         .getCaseOutcomes(caseReferenceNumber, providerId)
         .mapNotNull(caseOutcomeDetails -> caseOutcomeDetails.getContent().stream().findFirst())
         .block();
+  }
+
+  /**
+   * Creates or updates a single proceeding outcome within the case outcome record. Because the CAAB
+   * API has no PATCH endpoint for case outcomes, the existing record is recreated with the updated
+   * proceeding outcome.
+   *
+   * @param caseReferenceNumber - the case reference number.
+   * @param providerId - the provider id.
+   * @param proceedingOutcome - the updated proceeding outcome to store.
+   * @param loginId - the login ID of the user performing the update.
+   */
+  public void updateProceedingOutcome(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final ProceedingOutcomeDetail proceedingOutcome,
+      final String loginId) {
+
+    Optional<CaseOutcomeDetail> existing = getCaseOutcome(caseReferenceNumber, providerId);
+
+    final CaseOutcomeDetail caseOutcome;
+    if (existing.isPresent()) {
+      final CaseOutcomeDetail existingCaseOutcome = existing.get();
+      final Integer existingCaseOutcomeId = existingCaseOutcome.getId();
+      if (existingCaseOutcomeId == null) {
+        throw new IllegalStateException(
+            "Case outcome record exists but has no id for case reference number: "
+                + caseReferenceNumber);
+      }
+
+      final CaseOutcomeDetail rollbackCaseOutcome = copyCaseOutcomeForCreate(existingCaseOutcome);
+      caseOutcome = copyCaseOutcomeForCreate(existingCaseOutcome);
+      if (caseOutcome.getProceedingOutcomes() == null) {
+        caseOutcome.setProceedingOutcomes(new ArrayList<>());
+      }
+
+      // Replace any existing outcome for this proceeding
+      caseOutcome
+          .getProceedingOutcomes()
+          .removeIf(
+              o ->
+                  proceedingOutcome.getProceedingCaseId() != null
+                      && proceedingOutcome.getProceedingCaseId().equals(o.getProceedingCaseId()));
+      caseOutcome.addProceedingOutcomesItem(proceedingOutcome);
+
+      caabApiClient.deleteCaseOutcome(existingCaseOutcomeId, loginId).block();
+      try {
+        caabApiClient.createCaseOutcome(loginId, caseOutcome).block();
+      } catch (CaabApiClientException ex) {
+        log.warn(
+            "Failed to create updated case outcome for case reference number: {}. "
+                + "Attempting to restore previous case outcome data.",
+            caseReferenceNumber,
+            ex);
+        try {
+          caabApiClient.createCaseOutcome(loginId, rollbackCaseOutcome).block();
+        } catch (CaabApiClientException restoreEx) {
+          log.error(
+              "Failed to restore previous case outcome for case reference number: {}",
+              caseReferenceNumber,
+              restoreEx);
+          ex.addSuppressed(restoreEx);
+        }
+        throw ex;
+      }
+      return;
+    } else {
+      caseOutcome =
+          new CaseOutcomeDetail()
+              .caseReferenceNumber(caseReferenceNumber)
+              .providerId(String.valueOf(providerId));
+      caseOutcome.addProceedingOutcomesItem(proceedingOutcome);
+    }
+
+    caabApiClient.createCaseOutcome(loginId, caseOutcome).block();
+  }
+
+  private CaseOutcomeDetail copyCaseOutcomeForCreate(final CaseOutcomeDetail source) {
+    final CaseOutcomeDetail copy = new CaseOutcomeDetail();
+    BeanUtils.copyProperties(source, copy);
+    copy.setId(null);
+    if (source.getProceedingOutcomes() != null) {
+      copy.setProceedingOutcomes(new ArrayList<>(source.getProceedingOutcomes()));
+    }
+    return copy;
   }
 }
