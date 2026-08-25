@@ -168,7 +168,7 @@ public class LookupServiceTest {
     final CommonLookupDetail mockCourtDetails = new CommonLookupDetail(); // Populate as needed
 
     when(ebsApiClient.getCommonValues(
-            COMMON_VALUE_COURTS, "*" + courtCode + "*", "*" + description.toUpperCase() + "*"))
+            COMMON_VALUE_COURTS, "*" + courtCode + "*", "*" + description + "*"))
         .thenReturn(Mono.just(mockCourtDetails));
 
     final Mono<CommonLookupDetail> result = lookupService.getCourts(courtCode, description);
@@ -176,8 +176,7 @@ public class LookupServiceTest {
     StepVerifier.create(result).expectNext(mockCourtDetails).verifyComplete();
 
     verify(ebsApiClient)
-        .getCommonValues(
-            COMMON_VALUE_COURTS, "*" + courtCode + "*", "*" + description.toUpperCase() + "*");
+        .getCommonValues(COMMON_VALUE_COURTS, "*" + courtCode + "*", "*" + description + "*");
   }
 
   @Test

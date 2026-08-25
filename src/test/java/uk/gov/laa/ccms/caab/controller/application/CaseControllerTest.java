@@ -2,8 +2,11 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,6 +46,7 @@ import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
+import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -50,6 +54,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.ClientDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
@@ -57,6 +62,7 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualAddressContactDetailsSectionDisplay;
@@ -67,12 +73,23 @@ import uk.gov.laa.ccms.caab.model.sections.OrganisationAddressDetailsSectionDisp
 import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.OrganisationOrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
+import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
+import uk.gov.laa.ccms.data.model.OutcomeResultLookupValueDetail;
+import uk.gov.laa.ccms.data.model.StageEndLookupDetail;
+import uk.gov.laa.ccms.data.model.StageEndLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
 class CaseControllerTest {
 
   @Mock private ApplicationService applicationService;
+  @Mock private LookupService lookupService;
+  @Mock private CaseOutcomeService caseOutcomeService;
+  @Mock private ProceedingOutcomeValidator proceedingOutcomeValidator;
 
   @InjectMocks private CaseController caseController;
 
@@ -94,6 +111,11 @@ class CaseControllerTest {
                 .build());
     this.user = ApplicationTestUtils.buildUser();
     returnUrl = "returnUrl";
+    lenient()
+        .when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+        .thenReturn(
+            java.util.Optional.of(
+                new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
   }
 
   @Nested
@@ -713,6 +735,159 @@ class CaseControllerTest {
                       .sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/outcome-and-awards");
+    }
+
+    @Test
+    @DisplayName("Outcome and awards clears stale proceeding outcomes not present in CAAB")
+    public void outcomeAndAwardsClearsStaleProceedingOutcomes() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .proceedingCaseId("pc1")
+                  .outcome(
+                      new ProceedingOutcomeDetail()
+                          .proceedingCaseId("pc1")
+                          .result(
+                              new StringDisplayValue().id("R1").displayValue("Stale outcome")))));
+
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards")
+          .model()
+          .hasEntrySatisfying(
+              "proceedings",
+              value -> {
+                List<ProceedingDetail> proceedings = (List<ProceedingDetail>) value;
+                assertThat(proceedings).hasSize(1);
+                assertThat(proceedings.get(0).getOutcome()).isNull();
+              });
+    }
+
+    @Test
+    @DisplayName("Record proceeding outcome page loads for selected proceeding")
+    public void recordProceedingOutcomePageLoads() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .description("Proceeding 1")
+                  .proceedingType(
+                      new StringDisplayValue().id("P1").displayValue("Proceeding name"))));
+
+      when(lookupService.getStageEnds("P1", null))
+          .thenReturn(
+              Mono.just(
+                  new StageEndLookupDetail()
+                      .addContentItem(
+                          new StageEndLookupValueDetail()
+                              .stageEnd("SE1")
+                              .description("Stage End 1"))));
+      when(lookupService.getOutcomeResults("P1", null))
+          .thenReturn(
+              Mono.just(
+                  new OutcomeResultLookupDetail()
+                      .addContentItem(
+                          new OutcomeResultLookupValueDetail()
+                              .outcomeResult("R1")
+                              .outcomeResultDescription("Result 1"))));
+      lenient()
+          .when(lookupService.getCourts(anyString()))
+          .thenReturn(
+              Mono.just(
+                  new CommonLookupDetail()
+                      .addContentItem(
+                          new CommonLookupValueDetail().code("CT1").description("Court 1"))));
+      when(lookupService.getCommonValues(anyString()))
+          .thenReturn(
+              Mono.just(
+                  new CommonLookupDetail()
+                      .addContentItem(
+                          new CommonLookupValueDetail()
+                              .code("C1")
+                              .description("Common option 1"))));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/proceeding/0/outcome")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/record-proceeding-outcome");
+    }
+
+    @Test
+    @DisplayName("Record proceeding outcome post redirects to outcome and awards")
+    public void recordProceedingOutcomePostRedirectsToOutcomeAndAwards() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .id(77)
+                  .proceedingCaseId("pc1")
+                  .proceedingType(
+                      new StringDisplayValue().id("P1").displayValue("Proceeding name"))));
+
+      doNothing().when(proceedingOutcomeValidator).validate(any(), any());
+      when(lookupService.getStageEnds("P1", null))
+          .thenReturn(
+              Mono.just(
+                  new StageEndLookupDetail()
+                      .addContentItem(
+                          new StageEndLookupValueDetail()
+                              .stageEnd("SE1")
+                              .description("Stage End 1"))));
+      when(lookupService.getOutcomeResults("P1", null))
+          .thenReturn(
+              Mono.just(
+                  new OutcomeResultLookupDetail()
+                      .addContentItem(
+                          new OutcomeResultLookupValueDetail()
+                              .outcomeResult("R1")
+                              .outcomeResultDescription("Result 1"))));
+      lenient()
+          .when(lookupService.getCourts(anyString()))
+          .thenReturn(
+              Mono.just(
+                  new CommonLookupDetail()
+                      .addContentItem(
+                          new CommonLookupValueDetail().code("CT1").description("Court 1"))));
+      doNothing()
+          .when(caseOutcomeService)
+          .updateProceedingOutcome(anyString(), anyInt(), any(), anyString());
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/proceeding/0/outcome")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .param("dateOfFinalWork", "01/01/2026")
+                      .param("stageEnd", "SE1")
+                      .param("resolutionMethod", "RM1")
+                      .param("result", "R1")
+                      .param("resultInfo", "Result info")
+                      .param("alternativeResolution", "ADR1")
+                      .param("adrInfo", "ADR info")
+                      .param("courtCode", "CT1")
+                      .param("outcomeCourtCaseNo", "123")
+                      .param("widerBenefits", "WB1")))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
     }
 
     @Test
