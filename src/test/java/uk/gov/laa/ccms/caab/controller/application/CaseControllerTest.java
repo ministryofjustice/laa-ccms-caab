@@ -29,6 +29,7 @@ import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -765,12 +766,22 @@ class CaseControllerTest {
           .hasViewName("application/outcome-and-awards")
           .model()
           .hasEntrySatisfying(
+              "resolvedOutcomes",
+              value -> {
+                @SuppressWarnings("unchecked")
+                Map<String, ProceedingOutcomeDetail> resolved =
+                    (Map<String, ProceedingOutcomeDetail>) value;
+                assertThat(resolved).containsKey("pc1");
+                assertThat(resolved.get("pc1").getResult().getId()).isEqualTo("R1");
+              })
+          .hasEntrySatisfying(
               "proceedings",
               value -> {
+                // Session object is NOT mutated — original EBS outcome is preserved
+                @SuppressWarnings("unchecked")
                 List<ProceedingDetail> proceedings = (List<ProceedingDetail>) value;
                 assertThat(proceedings).hasSize(1);
-                assertThat(proceedings.get(0).getOutcome()).isNotNull();
-                assertThat(proceedings.get(0).getOutcome().getResult().getId()).isEqualTo("R1");
+                assertThat(proceedings.get(0).getOutcome()).isSameAs(ebsOutcome);
               });
     }
 

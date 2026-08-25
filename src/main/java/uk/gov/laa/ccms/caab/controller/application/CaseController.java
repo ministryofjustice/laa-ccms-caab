@@ -306,23 +306,25 @@ public class CaseController {
             .map(CaseOutcomeDetail::getProceedingOutcomes)
             .orElse(Collections.emptyList());
 
-    // Refresh proceeding outcomes: prefer the locally-saved version, fall back to EBS outcome.
+    // Build a resolved-outcome map per proceeding: prefer CAAB save, fall back to EBS.
+    // The session ebsCase is never mutated so each request starts from a clean EBS baseline.
+    final Map<String, ProceedingOutcomeDetail> resolvedOutcomes = new HashMap<>();
     if (proceedings != null) {
-      proceedings.forEach(
-          proceeding -> {
+      for (final ProceedingDetail proceeding : proceedings) {
+        if (proceeding.getProceedingCaseId() == null) {
+          continue;
+        }
+        final ProceedingOutcomeDetail outcome =
             savedOutcomes.stream()
-                .filter(
-                    savedOutcome ->
-                        proceeding.getProceedingCaseId() != null
-                            && proceeding
-                                .getProceedingCaseId()
-                                .equals(savedOutcome.getProceedingCaseId()))
+                .filter(o -> proceeding.getProceedingCaseId().equals(o.getProceedingCaseId()))
                 .findFirst()
-                .ifPresent(proceeding::setOutcome);
-          });
+                .orElse(proceeding.getOutcome());
+        resolvedOutcomes.put(proceeding.getProceedingCaseId(), outcome);
+      }
     }
 
     model.addAttribute("proceedings", proceedings);
+    model.addAttribute("resolvedOutcomes", resolvedOutcomes);
     return "application/outcome-and-awards";
   }
 
@@ -356,13 +358,13 @@ public class CaseController {
     if (formData != null) {
       session.removeAttribute(PROCEEDING_OUTCOME_FORM_DATA);
     } else {
-      // Load any previously saved outcome from the CAAB API; fall back to EBS outcome if absent
+      // Load any previously saved outcome from the CAAB API; fall back to EBS outcome if absent.
+      // Resolved outcome is passed directly — the session proceeding is never mutated.
       final ProceedingOutcomeDetail savedOutcome =
           loadSavedProceedingOutcome(ebsCase, user, proceeding);
-      if (savedOutcome != null) {
-        proceeding.setOutcome(savedOutcome);
-      }
-      formData = toProceedingOutcomeFormData(proceeding);
+      final ProceedingOutcomeDetail effectiveOutcome =
+          savedOutcome != null ? savedOutcome : proceeding.getOutcome();
+      formData = toProceedingOutcomeFormData(effectiveOutcome);
     }
 
     if (selectedCourt != null) {
@@ -607,9 +609,8 @@ public class CaseController {
   }
 
   private static ProceedingOutcomeFormData toProceedingOutcomeFormData(
-      final ProceedingDetail proceeding) {
+      final ProceedingOutcomeDetail outcome) {
     final ProceedingOutcomeFormData formData = new ProceedingOutcomeFormData();
-    final ProceedingOutcomeDetail outcome = proceeding.getOutcome();
 
     if (outcome == null) {
       return formData;

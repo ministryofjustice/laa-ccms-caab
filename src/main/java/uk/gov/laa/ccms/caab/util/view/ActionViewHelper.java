@@ -6,6 +6,7 @@ import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.model.AvailableAction;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 
 /** Utility class for managing and retrieving available actions for a case. */
 public class ActionViewHelper {
@@ -129,13 +130,26 @@ public class ActionViewHelper {
    * Determines whether the clear outcome action should be shown for a proceeding.
    *
    * @param proceeding the proceeding to evaluate.
+   * @param outcome the resolved outcome for the proceeding (may differ from proceeding.getOutcome()
+   *     when the display list is built independently of the session object).
    * @return true when the proceeding can clear its outcome.
    */
-  public static boolean isClearOutcomeAllowed(ProceedingDetail proceeding) {
+  public static boolean isClearOutcomeAllowed(
+      final ProceedingDetail proceeding, final ProceedingOutcomeDetail outcome) {
     return proceeding != null
         && proceeding.getAvailableFunctions() != null
         && proceeding.getAvailableFunctions().contains(FunctionConstants.CLEAR_RECORDED_OUTCOME)
-        && proceeding.getOutcome() != null
-        && proceeding.getOutcome().getId() != null;
+        && outcome != null
+        && outcome.getId() != null;
+  }
+
+  /**
+   * Determines whether the clear outcome action should be shown for a proceeding.
+   *
+   * @param proceeding the proceeding to evaluate.
+   * @return true when the proceeding can clear its outcome.
+   */
+  public static boolean isClearOutcomeAllowed(ProceedingDetail proceeding) {
+    return isClearOutcomeAllowed(proceeding, proceeding != null ? proceeding.getOutcome() : null);
   }
 }
