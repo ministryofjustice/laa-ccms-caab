@@ -181,6 +181,40 @@ class NotificationServiceTest {
   }
 
   @Test
+  void retrieveDraftNotificationAttachment_checksS3() {
+    String documentId = "123";
+
+    when(s3ApiClient.getDraftDocumentUrl(eq(documentId))).thenReturn(Optional.of("document-url"));
+
+    notificationService.retrieveDraftNotificationAttachment(documentId, "loginId", "userType");
+
+    verify(s3ApiClient).getDraftDocumentUrl(documentId);
+    verifyNoInteractions(caabApiClient);
+    verify(s3ApiClient, never()).uploadDraftDocument(any(), any(), any(), any());
+  }
+
+  @Test
+  void retrieveDraftNotificationAttachment_uploadsDataToS3() {
+    String documentId = "123";
+    String documentContent = "documentContent";
+    String fileName = "abc.pdf";
+
+    when(s3ApiClient.getDraftDocumentUrl(eq(documentId))).thenReturn(Optional.empty());
+
+    NotificationAttachmentDetail draftAttachment = new NotificationAttachmentDetail();
+    draftAttachment.setFileData(documentContent);
+    draftAttachment.setFileName(fileName);
+
+    when(caabApiClient.getNotificationAttachment(Integer.parseInt(documentId)))
+        .thenReturn(Mono.just(draftAttachment));
+
+    notificationService.retrieveDraftNotificationAttachment(documentId, "loginId", "userType");
+
+    verify(caabApiClient).getNotificationAttachment(Integer.parseInt(documentId));
+    verify(s3ApiClient).uploadDraftDocument(documentId, documentContent, "pdf", fileName);
+  }
+
+  @Test
   void retrieveCoverSheet_checksS3() {
     String documentId = "documentId";
 
@@ -244,7 +278,7 @@ class NotificationServiceTest {
 
     verify(caabApiClient).createNotificationAttachment(notificationAttachment, "loginId");
 
-    verify(s3ApiClient).uploadDraftDocument(attachmentId, fileData, "pdf");
+    verify(s3ApiClient).uploadDraftDocument(attachmentId, fileData, "pdf", "abc.pdf");
   }
 
   @Test
@@ -265,7 +299,7 @@ class NotificationServiceTest {
 
     verify(caabApiClient).updateNotificationAttachment(notificationAttachment, "loginId");
 
-    verify(s3ApiClient).uploadDraftDocument(attachmentId, fileData, "pdf");
+    verify(s3ApiClient).uploadDraftDocument(attachmentId, fileData, "pdf", "abc.pdf");
   }
 
   @Test
