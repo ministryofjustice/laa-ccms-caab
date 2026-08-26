@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.client;
 
 import static uk.gov.laa.ccms.caab.util.FileUtil.getFilename;
 
+import io.awspring.cloud.s3.ObjectMetadata;
 import io.awspring.cloud.s3.S3Resource;
 import io.awspring.cloud.s3.S3Template;
 import java.io.ByteArrayInputStream;
@@ -16,6 +17,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.http.ContentDisposition;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -157,9 +159,11 @@ public class S3ApiClient {
    * @param documentId the ID of the document.
    * @param fileData the content of the document.
    * @param extension the extension of the document
+   * @param fileName the filename to set in Content-Disposition metadata.
    */
-  public void uploadDraftDocument(String documentId, String fileData, String extension) {
-    uploadDocument(documentId, fileData, extension, true);
+  public void uploadDraftDocument(
+      String documentId, String fileData, String extension, String fileName) {
+    uploadDocument(documentId, fileData, extension, true, fileName);
   }
 
   /**
@@ -170,7 +174,7 @@ public class S3ApiClient {
    * @param extension the extension of the document
    */
   public void uploadDocument(String documentId, String fileData, String extension) {
-    uploadDocument(documentId, fileData, extension, false);
+    uploadDocument(documentId, fileData, extension, false, null);
   }
 
   /**
@@ -180,15 +184,29 @@ public class S3ApiClient {
    * @param fileData The content of the document to upload.
    * @param extension The extension of the document to upload.
    * @param isDraft Whether the document is a draft.
+   * @param fileName The filename to set in Content-Disposition metadata.
    */
   private void uploadDocument(
-      String documentId, String fileData, String extension, boolean isDraft) {
+      String documentId, String fileData, String extension, boolean isDraft, String fileName) {
     InputStream contentInputStream = new ByteArrayInputStream(Base64.getDecoder().decode(fileData));
     String filename = getFilename(documentId, extension);
     if (isDraft) {
       filename = getDraftId(filename);
     }
-    s3Template.upload(documentBucketProperties.getName(), filename, contentInputStream);
+    if (fileName == null) {
+      s3Template.upload(documentBucketProperties.getName(), filename, contentInputStream);
+      return;
+    }
+
+    final String contentDisposition =
+        ContentDisposition.attachment()
+            .filename(fileName, StandardCharsets.UTF_8)
+            .build()
+            .toString();
+    final ObjectMetadata objectMetadata =
+        ObjectMetadata.builder().contentDisposition(contentDisposition).build();
+    s3Template.upload(
+        documentBucketProperties.getName(), filename, contentInputStream, objectMetadata);
   }
 
   /**
