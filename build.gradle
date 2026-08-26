@@ -139,7 +139,7 @@ dependencies {
 
     implementation 'org.json:json:20260814'
 
-    implementation 'io.swagger.core.v3:swagger-annotations:2.2.53'
+    implementation 'io.swagger.core.v3:swagger-annotations:2.2.54'
 
     //SAML security
     implementation 'org.springframework.boot:spring-boot-starter-security-saml2'
