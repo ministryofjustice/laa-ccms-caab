@@ -4,7 +4,10 @@ import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQU
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_HOME_OFFICE_REFERENCE;
 import static uk.gov.laa.ccms.caab.constants.UniqueIdentifierTypeConstants.UNIQUE_IDENTIFIER_NATIONAL_INSURANCE_NUMBER;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -813,11 +816,20 @@ public class EbsApiClient extends BaseApiClient {
     final MultiValueMap<String, String> queryParams =
         buildQueryParams(criteria, providerId, page, pageSize);
 
+    if (log.isDebugEnabled()) {
+      log.debug("Searching notifications with query parameters: {}", redact(queryParams));
+    }
+
     return webClient
         .get()
         .uri(builder -> builder.path("/notifications").queryParams(queryParams).build())
         .retrieve()
         .bodyToMono(Notifications.class)
+        .doOnNext(
+            notifications ->
+                log.debug(
+                    "Notification search matched {} notifications",
+                    Optional.ofNullable(notifications.getTotalElements()).orElse(0)))
         .onErrorResume(
             e -> ebsApiClientErrorHandler.handleApiRetrieveError(e, "Notifications", queryParams));
   }
@@ -1082,6 +1094,32 @@ public class EbsApiClient extends BaseApiClient {
             e ->
                 ebsApiClientErrorHandler.handleApiRetrieveError(
                     e, "Statement of account", queryParams));
+  }
+
+  /** Query parameters which identify a person or a case, and so must not be written to logs. */
+  private static final Set<String> SENSITIVE_QUERY_PARAMS =
+      Set.of(
+          "client-surname",
+          "assigned-to-user-id",
+          "fee-earner-id",
+          "case-reference-number",
+          "provider-case-reference");
+
+  /**
+   * Replace the values of any personally identifying query parameters, so that a search can be
+   * diagnosed from which filters were applied without their values reaching the logs.
+   *
+   * @param queryParams the query parameters to redact.
+   * @return the query parameters, with sensitive values replaced by a marker.
+   */
+  private static Map<String, String> redact(final MultiValueMap<String, String> queryParams) {
+    Map<String, String> redacted = new LinkedHashMap<>();
+    queryParams.forEach(
+        (key, values) ->
+            redacted.put(
+                key,
+                SENSITIVE_QUERY_PARAMS.contains(key) ? "[redacted]" : String.join(",", values)));
+    return redacted;
   }
 
   private static MultiValueMap<String, String> buildQueryParams(
