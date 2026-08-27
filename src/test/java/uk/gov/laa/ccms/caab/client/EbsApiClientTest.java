@@ -300,6 +300,35 @@ public class EbsApiClientTest {
     }
 
     @Test
+    @DisplayName("Should omit the assignee parameter when it is null, to search all assignees")
+    void getNotifications_omitsNullAssignee() {
+      NotificationSearchCriteria criteria = new NotificationSearchCriteria();
+      criteria.setAssignedToUserId(null);
+      criteria.setLoginId("testUserId");
+      criteria.setUserType("testUserType");
+      int page = 10;
+      int size = 10;
+      String expectedUri =
+          String.format(
+              "/notifications?provider-id=1&include-closed=%s&page=%s&size=%s",
+              criteria.isIncludeClosed(), page, size);
+
+      ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+      when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+      when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.bodyToMono(Notifications.class)).thenReturn(Mono.just(new Notifications()));
+
+      StepVerifier.create(ebsApiClient.getNotifications(criteria, 1, page, size))
+          .expectNextCount(1)
+          .verifyComplete();
+
+      URI actualUri = uriCaptor.getValue().apply(UriComponentsBuilder.newInstance());
+      assertEquals(expectedUri, actualUri.toString());
+    }
+
+    @Test
     @DisplayName("Should handle error")
     void getNotifications_handlesError() {
 

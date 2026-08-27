@@ -70,7 +70,7 @@
 
             <p class="govuk-body">For non case related queries please create a general request.</p>
 
-            <div th:replace="~{partials/actions :: restrictedActionLink('Create general request', ${user.functions}, 'PRNC', true, 'govuk-button--secondary', @{/provider-requests/types}, false)}"></div>
+            <div th:replace="~{partials/actions :: restrictedActionLink('Create general request', ${user.functions}, 'PRNC', true, 'govuk-button--secondary', @{/general-provider-requests/types}, false)}"></div>
 
         </div>
     </body>
