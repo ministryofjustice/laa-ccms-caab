@@ -15,6 +15,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMAR
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COURT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -47,6 +48,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.proceeding.CaseProceedingDisplayStatus;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidator;
@@ -401,6 +403,10 @@ public class CaseController {
       @ModelAttribute("proceedingOutcome") final ProceedingOutcomeFormData proceedingOutcome,
       HttpSession session) {
     session.setAttribute(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome);
+    final CourtSearchCriteria courtSearchCriteria = new CourtSearchCriteria();
+    courtSearchCriteria.setCourtCode(proceedingOutcome.getCourtCode());
+    courtSearchCriteria.setCourtName(proceedingOutcome.getCourtName());
+    session.setAttribute(COURT_SEARCH_CRITERIA, courtSearchCriteria);
     return "redirect:/court/search?proceedingIndex=" + index;
   }
 
