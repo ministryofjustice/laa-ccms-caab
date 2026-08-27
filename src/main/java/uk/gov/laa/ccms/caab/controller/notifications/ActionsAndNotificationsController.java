@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -51,6 +52,7 @@ import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.NotificationAttachmentMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
@@ -153,7 +155,10 @@ public class ActionsAndNotificationsController {
       }
       criteria.setLoginId(user.getLoginId());
       criteria.setUserType(user.getUserType());
-      criteria.setAssignedToUserId(user.getLoginId());
+      // Preserve the case-specific assignee default when returning to a case's results
+      if (!criteria.isOriginatesFromCase()) {
+        criteria.setAssignedToUserId(user.getLoginId());
+      }
       model.addAttribute(NOTIFICATION_SEARCH_CRITERIA, criteria);
       return "redirect:/notifications/search-results?page=0&refresh=true";
     }
@@ -196,6 +201,14 @@ public class ActionsAndNotificationsController {
    * notification search criteria based on the current user and case details, and then redirects to
    * the search results page.
    *
+   * <p>The "assigned to" filter defaults to the case's primary contact rather than the logged-in
+   * user, so that users with cross-office access still see the case's notifications. If the case
+   * has no primary contact, the filter is left blank so that all assignees are searched.
+   *
+   * <p>Any criteria from an earlier search in this session are discarded first, and no notification
+   * type, default date range or open-only filter is applied, so that the search returns all of the
+   * case's notifications.
+   *
    * @param ebsCase the application details of the current case
    * @param user the details of the currently logged-in user
    * @param criteria the notification search criteria to be populated
@@ -209,15 +222,83 @@ public class ActionsAndNotificationsController {
       @ModelAttribute(NOTIFICATION_SEARCH_CRITERIA) NotificationSearchCriteria criteria,
       Model model) {
 
-    // For notifications
-    criteria.setNotificationType("N");
+    Optional<BaseUser> primaryContact = findPrimaryContact(ebsCase, user);
+    String primaryContactLoginId = primaryContact.map(BaseUser::getLoginId).orElse("");
+
+    // Start from a clean slate, otherwise filters from an earlier search in this session, such as a
+    // client surname or a date range, are still applied on top of the case.
+    NotificationSearchCriteria.reset(criteria);
+
+    // The type is left unset so that the case's actions are listed alongside its notifications,
+    // rather than being hidden by a filter the user did not choose.
     criteria.setLoginId(user.getLoginId());
     criteria.setUserType(user.getUserType());
-    criteria.setAssignedToUserId(user.getLoginId());
+    criteria.setAssignedToUserId(primaryContactLoginId);
+    criteria.setPrimaryContactName(
+        primaryContact
+            .map(BaseUser::getUsername)
+            .filter(StringUtils::hasText)
+            .orElse(primaryContactLoginId));
     criteria.setOriginatesFromCase(true);
     criteria.setCaseReference(ebsCase.getCaseReferenceNumber());
+    // The case reference already bounds this search, so show the case's closed notifications too
+    // rather than silently hiding them.
+    criteria.setIncludeClosed(true);
     model.addAttribute(NOTIFICATION_SEARCH_CRITERIA, criteria);
     return "redirect:/notifications/search-results?page=0&refresh=true";
+  }
+
+  /**
+   * Find a case's primary (provider) contact among the provider's users, so that their login ID can
+   * drive the "assigned to" filter and their username can be shown to the user.
+   *
+   * <p>A case identifies its primary contact by login ID or by username, and only one of the two is
+   * necessarily populated. The "assigned to" filter is keyed on login ID, so the contact is matched
+   * against the provider's users on either value to find it.
+   *
+   * @param ebsCase the case to get the primary contact for.
+   * @param user the logged-in user, used to identify the provider.
+   * @return the primary contact, or empty if they cannot be determined, so that all assignees are
+   *     searched rather than none.
+   */
+  private Optional<BaseUser> findPrimaryContact(ApplicationDetail ebsCase, UserDetail user) {
+    List<String> primaryContactIdentifiers =
+        Optional.ofNullable(ebsCase.getProviderDetails())
+            .map(ApplicationProviderDetails::getProviderContact)
+            .stream()
+            .flatMap(contact -> Stream.of(contact.getId(), contact.getDisplayValue()))
+            .filter(StringUtils::hasText)
+            .toList();
+
+    if (primaryContactIdentifiers.isEmpty()) {
+      return Optional.empty();
+    }
+
+    return getProviderUsers(user).stream()
+        .filter(providerUser -> matchesAny(providerUser, primaryContactIdentifiers))
+        .filter(providerUser -> StringUtils.hasText(providerUser.getLoginId()))
+        .findFirst();
+  }
+
+  private boolean matchesAny(BaseUser providerUser, List<String> identifiers) {
+    return identifiers.stream()
+        .anyMatch(
+            identifier ->
+                identifier.equalsIgnoreCase(providerUser.getLoginId())
+                    || identifier.equalsIgnoreCase(providerUser.getUsername()));
+  }
+
+  private List<BaseUser> getProviderUsers(UserDetail user) {
+    return userService
+        .getUsers(user.getProvider().getId())
+        .map(details -> Optional.ofNullable(details.getContent()).orElse(Collections.emptyList()))
+        .onErrorResume(
+            e -> {
+              log.error("Failed to retrieve users", e);
+              return Mono.just(Collections.emptyList());
+            })
+        .blockOptional()
+        .orElse(Collections.emptyList());
   }
 
   /**

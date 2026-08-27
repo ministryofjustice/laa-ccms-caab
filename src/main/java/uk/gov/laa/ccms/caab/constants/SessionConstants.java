@@ -220,6 +220,20 @@ public class SessionConstants {
   /** Session attribute used to keep track of the provider request flow data. */
   public static final String PROVIDER_REQUEST_FLOW_FORM_DATA = "providerRequestFlow";
 
+  /** Session attribute used to keep track of the general provider request flow data. */
+  public static final String GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA = "generalProviderRequestFlow";
+
+  /** Session attribute used to keep track of the case provider request flow data. */
+  public static final String CASE_PROVIDER_REQUEST_FLOW_FORM_DATA = "caseProviderRequestFlow";
+
+  /** Session attribute used to keep track of general provider request upload form data. */
+  public static final String GENERAL_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA =
+      "generalProviderRequestEvidenceUploadForm";
+
+  /** Session attribute used to keep track of case provider request upload form data. */
+  public static final String CASE_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA =
+      "caseProviderRequestEvidenceUploadForm";
+
   /** Session attribute used to store the cost allocation flow form data. */
   public static final String COST_ALLOCATION_FORM_DATA = "costAllocationFormData";
 
