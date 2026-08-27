@@ -34,7 +34,6 @@ public class CounselSearchValidator extends AbstractValidator {
     String name = counselSearchCriteria.getName();
     String company = counselSearchCriteria.getCompany();
     String laaCounselRef = counselSearchCriteria.getLaaCounselReference();
-    String category = counselSearchCriteria.getCategory();
 
     validateAtLeastOneSearchCriteria(target, errors);
 
