@@ -1,5 +1,5 @@
 plugins {
-    id 'uk.gov.justice.service.laa.laa-spring-boot-gradle-plugin' version '3.0.2'
+    id 'uk.gov.justice.service.laa.laa-spring-boot-gradle-plugin' version '3.0.3'
     id 'com.diffplug.spotless' version '8.10.0'
 }
 
@@ -41,56 +41,16 @@ repositories {
 
 configurations.configureEach {
     resolutionStrategy.eachDependency { details ->
-        if (details.requested.group == 'org.apache.tomcat.embed') {
-            details.useVersion '11.0.23'
-            details.because 'Temporary Snyk override until upgraded in Spring Boot'
-        }
-        if (details.requested.group == 'ch.qos.logback') {
-            details.useVersion '1.5.36'
-            details.because 'Temporary Snyk override (SNYK-JAVA-CHQOSLOGBACK-17675439) until upgraded in Spring Boot'
-        }
-        // Not jackson-annotations: it only publishes '2.21' for this minor line, no patch versions.
-        if (details.requested.group == 'com.fasterxml.jackson.core'
-                && details.requested.name in ['jackson-databind', 'jackson-core']) {
-            details.useVersion '2.21.5'
-            details.because 'Temporary Snyk override (SNYK-JAVA-COMFASTERXMLJACKSONCORE-17457695) until upgraded in Spring Boot'
-        }
-        // Jackson 3 (Spring Boot 4). Not jackson-annotations: it has no 3.x release at all.
-        if (details.requested.group == 'tools.jackson.core'
-                && details.requested.name in ['jackson-databind', 'jackson-core']) {
-            details.useVersion '3.1.5'
-            details.because 'Temporary Snyk override (SNYK-JAVA-TOOLSJACKSONCORE-17972609) until upgraded in Spring Boot'
-        }
-        if (details.requested.group == 'org.apache.logging.log4j') {
-            details.useVersion '2.25.5'
-            details.because 'Temporary override'
-        }
         // Build-time only: reaches us via checkstyle's doxia transitives, never the app classpath.
         if (details.requested.group == 'org.codehaus.plexus'
                 && details.requested.name == 'plexus-utils') {
             details.useVersion '3.6.1'
             details.because 'Snyk override (SNYK-JAVA-ORGCODEHAUSPLEXUS-15766699); checkstyle pins the vulnerable 3.3.0'
         }
-        if (details.requested.group == 'org.apache.httpcomponents.core5') {
-            details.useVersion '5.4.3'
-            details.because 'Temporary override'
-        }
-        // 5.6.3 targets httpcore5 5.4.3, matching the override above.
-        if (details.requested.group == 'org.apache.httpcomponents.client5') {
-            details.useVersion '5.6.3'
-            details.because 'Temporary Snyk override (SNYK-JAVA-ORGAPACHEHTTPCOMPONENTSCLIENT5-18857813) until upgraded in Spring Boot'
-        }
+        // Not managed by the Spring Boot BOM; pulled in transitively via the SAML/opensaml stack.
         if (details.requested.group == 'org.bouncycastle') {
             details.useVersion '1.85'
-            details.because 'Temporary override to remediate vulnerability'
-        }
-        if (details.requested.group == 'io.netty') {
-            details.useVersion '4.2.17.Final'
-            details.because 'Temporary override to remediate vulnerability'
-        }
-        if (details.requested.name == 'micrometer-core') {
-            details.useVersion '1.17.1'
-            details.because 'Temporary override to remediate vulnerability'
+            details.because 'Override to remediate vulnerability; not covered by the Spring Boot dependency BOM'
         }
     }
 }
