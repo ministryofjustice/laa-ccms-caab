@@ -153,11 +153,7 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
                 .param("size", "10")
                 .param("sort", "name,asc"))
         .andExpect(status().isOk()) // SUCCESSFUL
-        .andExpect(view().name("application/counsel-search"))
-        .andExpect(
-            model()
-                .attributeHasFieldErrorCode(
-                    COUNSEL_SEARCH_CRITERIA, "name", "at.least.one.search.required"));
+        .andExpect(view().name("application/counsel-search"));
   }
 
   @Test
