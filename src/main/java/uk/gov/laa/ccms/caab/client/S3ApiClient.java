@@ -34,6 +34,8 @@ import uk.gov.laa.ccms.caab.config.S3DocumentBucketProperties;
 @EnableConfigurationProperties({S3DocumentBucketProperties.class})
 public class S3ApiClient {
 
+  private static final String DRAFT_PREFIX = "draft/";
+
   // For Simple Interactions
   private final S3Template s3Template;
 
@@ -42,8 +44,6 @@ public class S3ApiClient {
 
   private final S3ApiClientErrorHandler errorHandler;
   private final S3DocumentBucketProperties documentBucketProperties;
-
-  private static final String DRAFT_PREFIX = "draft/";
 
   /**
    * Retrieve the content of a document from S3.
@@ -163,7 +163,8 @@ public class S3ApiClient {
    */
   public void uploadDraftDocument(
       String documentId, String fileData, String extension, String fileName) {
-    uploadDocument(documentId, fileData, extension, true, fileName);
+    String objectKey = getDraftId(getFilename(documentId, extension));
+    uploadDocumentToS3(objectKey, fileData, fileName);
   }
 
   /**
@@ -174,39 +175,45 @@ public class S3ApiClient {
    * @param extension the extension of the document
    */
   public void uploadDocument(String documentId, String fileData, String extension) {
-    uploadDocument(documentId, fileData, extension, false, null);
+    String objectKey = getFilename(documentId, extension);
+    uploadDocumentToS3(objectKey, fileData, null);
   }
 
   /**
-   * Upload a document to S3.
+   * Upload document content to S3 under the given object key.
    *
-   * @param documentId The id of the document to upload.
+   * @param objectKey The fully-qualified S3 object key to upload to.
    * @param fileData The content of the document to upload.
-   * @param extension The extension of the document to upload.
-   * @param isDraft Whether the document is a draft.
-   * @param fileName The filename to set in Content-Disposition metadata.
+   * @param fileName The filename to set in Content-Disposition metadata, or null if none.
    */
-  private void uploadDocument(
-      String documentId, String fileData, String extension, boolean isDraft, String fileName) {
+  private void uploadDocumentToS3(String objectKey, String fileData, String fileName) {
     InputStream contentInputStream = new ByteArrayInputStream(Base64.getDecoder().decode(fileData));
-    String filename = getFilename(documentId, extension);
-    if (isDraft) {
-      filename = getDraftId(filename);
-    }
-    if (fileName == null) {
-      s3Template.upload(documentBucketProperties.getName(), filename, contentInputStream);
-      return;
-    }
+    ObjectMetadata objectMetadata = buildContentDispositionMetadata(fileName);
 
+    if (objectMetadata != null) {
+      s3Template.upload(
+          documentBucketProperties.getName(), objectKey, contentInputStream, objectMetadata);
+    } else {
+      s3Template.upload(documentBucketProperties.getName(), objectKey, contentInputStream);
+    }
+  }
+
+  /**
+   * Build S3 object metadata carrying a Content-Disposition header for the given filename.
+   *
+   * @param fileName The filename to set in Content-Disposition metadata.
+   * @return the {@link ObjectMetadata}, or null if no filename was provided.
+   */
+  private ObjectMetadata buildContentDispositionMetadata(String fileName) {
+    if (fileName == null) {
+      return null;
+    }
     final String contentDisposition =
         ContentDisposition.attachment()
             .filename(fileName, StandardCharsets.UTF_8)
             .build()
             .toString();
-    final ObjectMetadata objectMetadata =
-        ObjectMetadata.builder().contentDisposition(contentDisposition).build();
-    s3Template.upload(
-        documentBucketProperties.getName(), filename, contentInputStream, objectMetadata);
+    return ObjectMetadata.builder().contentDisposition(contentDisposition).build();
   }
 
   /**
