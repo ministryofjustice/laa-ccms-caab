@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.bean.validators.application;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
@@ -31,7 +32,7 @@ public class CourtSearchValidator extends AbstractValidator {
     String courtCode = courtSearchCriteria.getCourtCode();
     String courtName = courtSearchCriteria.getCourtName();
 
-    validateAllFieldsAreEmpty("courtCode", errors, courtCode, courtName);
+    validateAtLeastOneSearchCriteria(target, errors);
 
     if (!errors.hasErrors()) {
       if (org.springframework.util.StringUtils.hasText(courtCode)) {
@@ -40,6 +41,24 @@ public class CourtSearchValidator extends AbstractValidator {
       if (org.springframework.util.StringUtils.hasText(courtName)) {
         validateFieldMaxLength("courtName", courtName, 35, "Court Name", errors);
       }
+    }
+  }
+
+  /**
+   * Validates that at least one search criteria is provided in the {@link CourtSearchCriteria}.
+   *
+   * @param target The target object to be validated.
+   * @param errors The Errors object to store validation errors.
+   */
+  public void validateAtLeastOneSearchCriteria(Object target, Errors errors) {
+    CourtSearchCriteria searchCriteria = (CourtSearchCriteria) target;
+
+    if (!StringUtils.hasText(searchCriteria.getCourtCode())
+        && !StringUtils.hasText(searchCriteria.getCourtName())) {
+      errors.rejectValue(
+          null,
+          "required.atLeastOneSearchCriteria",
+          "You must provide at least one search criteria below. Please amend your entry.");
     }
   }
 }
