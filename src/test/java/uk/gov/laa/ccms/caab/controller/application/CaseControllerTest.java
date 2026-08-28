@@ -23,12 +23,15 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMAR
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -45,7 +48,9 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
+import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
@@ -738,20 +743,17 @@ class CaseControllerTest {
     }
 
     @Test
-    @DisplayName("Outcome and awards clears stale proceeding outcomes not present in CAAB")
-    public void outcomeAndAwardsClearsStaleProceedingOutcomes() {
+    @DisplayName("Outcome and awards retains EBS proceeding outcome when no local save exists")
+    public void outcomeAndAwardsRetainsEbsOutcomeWhenNoLocalSave() {
       final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail ebsOutcome =
+          new ProceedingOutcomeDetail()
+              .proceedingCaseId("pc1")
+              .result(new StringDisplayValue().id("R1").displayValue("EBS outcome"));
       ApplicationDetail ebsCase =
           getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
       ebsCase.setProceedings(
-          List.of(
-              new ProceedingDetail()
-                  .proceedingCaseId("pc1")
-                  .outcome(
-                      new ProceedingOutcomeDetail()
-                          .proceedingCaseId("pc1")
-                          .result(
-                              new StringDisplayValue().id("R1").displayValue("Stale outcome")))));
+          List.of(new ProceedingDetail().proceedingCaseId("pc1").outcome(ebsOutcome)));
 
       when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
           .thenReturn(
@@ -767,11 +769,22 @@ class CaseControllerTest {
           .hasViewName("application/outcome-and-awards")
           .model()
           .hasEntrySatisfying(
+              "resolvedOutcomes",
+              value -> {
+                @SuppressWarnings("unchecked")
+                Map<String, ProceedingOutcomeDetail> resolved =
+                    (Map<String, ProceedingOutcomeDetail>) value;
+                assertThat(resolved).containsKey("pc1");
+                assertThat(resolved.get("pc1").getResult().getId()).isEqualTo("R1");
+              })
+          .hasEntrySatisfying(
               "proceedings",
               value -> {
+                // Session object is NOT mutated — original EBS outcome is preserved
+                @SuppressWarnings("unchecked")
                 List<ProceedingDetail> proceedings = (List<ProceedingDetail>) value;
                 assertThat(proceedings).hasSize(1);
-                assertThat(proceedings.get(0).getOutcome()).isNull();
+                assertThat(proceedings.get(0).getOutcome()).isSameAs(ebsOutcome);
               });
     }
 
@@ -827,6 +840,50 @@ class CaseControllerTest {
                       .sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/record-proceeding-outcome");
+    }
+
+    @Test
+    @DisplayName("Record proceeding outcome falls back to EBS outcome when no local save exists")
+    public void recordProceedingOutcomeUsesEbsOutcomeWhenNoLocalSave() {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail ebsOutcome =
+          new ProceedingOutcomeDetail().proceedingCaseId("pc1").resultInfo("EBS result info");
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .proceedingCaseId("pc1")
+                  .description("Proceeding 1")
+                  .proceedingType(new StringDisplayValue().id("P1").displayValue("Proceeding name"))
+                  .outcome(ebsOutcome)));
+
+      // No local save — CAAB returns an empty list of proceeding outcomes
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+      when(lookupService.getStageEnds("P1", null))
+          .thenReturn(Mono.just(new StageEndLookupDetail()));
+      when(lookupService.getOutcomeResults("P1", null))
+          .thenReturn(Mono.just(new OutcomeResultLookupDetail()));
+      when(lookupService.getCommonValues(anyString()))
+          .thenReturn(Mono.just(new CommonLookupDetail()));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/proceeding/0/outcome")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/record-proceeding-outcome")
+          .model()
+          .hasEntrySatisfying(
+              "proceedingOutcome",
+              value -> {
+                ProceedingOutcomeFormData formData = (ProceedingOutcomeFormData) value;
+                assertThat(formData.getResultInfo()).isEqualTo("EBS result info");
+              });
     }
 
     @Test
@@ -888,6 +945,50 @@ class CaseControllerTest {
                       .param("widerBenefits", "WB1")))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/case/outcome-and-awards");
+    }
+
+    @Test
+    @DisplayName(
+        "Record proceeding outcome court search prepopulates court search criteria from form data")
+    public void recordProceedingOutcomeCourtSearchPrepopulatesCourtSearchCriteria()
+        throws Exception {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .id(77)
+                  .proceedingCaseId("pc1")
+                  .proceedingType(
+                      new StringDisplayValue().id("P1").displayValue("Proceeding name"))));
+
+      var result =
+          mockMvc.perform(
+              post("/case/outcome-and-awards/proceeding/0/outcome/court-search")
+                  .sessionAttr(USER_DETAILS, user)
+                  .sessionAttr(CASE, ebsCase)
+                  .param("dateOfFinalWork", "01/01/2026")
+                  .param("courtCode", "CT1")
+                  .param("courtName", "Test Court"));
+
+      assertThat(result)
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/court/search?proceedingIndex=0");
+
+      ProceedingOutcomeFormData savedFormData =
+          (ProceedingOutcomeFormData)
+              result.getRequest().getSession().getAttribute(PROCEEDING_OUTCOME_FORM_DATA);
+      assertThat(savedFormData)
+          .hasFieldOrPropertyWithValue("courtCode", "CT1")
+          .hasFieldOrPropertyWithValue("courtName", "Test Court");
+
+      CourtSearchCriteria courtSearchCriteria =
+          (CourtSearchCriteria)
+              result.getRequest().getSession().getAttribute(COURT_SEARCH_CRITERIA);
+      assertThat(courtSearchCriteria)
+          .hasFieldOrPropertyWithValue("courtCode", "CT1")
+          .hasFieldOrPropertyWithValue("courtName", "Test Court");
     }
 
     @Test

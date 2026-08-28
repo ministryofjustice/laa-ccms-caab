@@ -41,10 +41,10 @@
             </td>
             <td class="govuk-table__cell" th:text="${proceeding.levelOfService?.displayValue}"></td>
             <td class="govuk-table__cell" th:text="${proceeding.status?.displayValue}"></td>
-            <td class="govuk-table__cell" th:text="${proceeding.outcome?.result?.displayValue}"></td>
+            <td class="govuk-table__cell" th:text="${resolvedOutcomes[proceeding.proceedingCaseId]?.result?.displayValue}"></td>
             <td class="govuk-table__cell" th:text="${proceeding.dateGranted != null ? #dates.format(proceeding.dateGranted, 'dd/MM/yyyy') : ''}"></td>
             <td class="govuk-table__cell">
-              <th:block th:if="${T(uk.gov.laa.ccms.caab.util.view.ActionViewHelper).isClearOutcomeAllowed(proceeding)}">
+              <th:block th:if="${T(uk.gov.laa.ccms.caab.util.view.ActionViewHelper).isClearOutcomeAllowed(proceeding, resolvedOutcomes[proceeding.proceedingCaseId])}">
                 <a class="govuk-link" href="#">Clear</a>
               </th:block>
             </td>

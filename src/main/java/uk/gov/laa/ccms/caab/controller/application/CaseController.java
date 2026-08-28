@@ -15,6 +15,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMAR
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COURT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -47,6 +48,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.proceeding.CaseProceedingDisplayStatus;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidator;
@@ -306,25 +308,31 @@ public class CaseController {
             .map(CaseOutcomeDetail::getProceedingOutcomes)
             .orElse(Collections.emptyList());
 
-    // Refresh proceeding outcomes from CAAB so the overview reflects only persisted state.
+    // Index saved outcomes by proceedingCaseId once for O(1) lookups below.
+    final Map<String, ProceedingOutcomeDetail> savedOutcomeIndex = new HashMap<>();
+    for (final ProceedingOutcomeDetail o : savedOutcomes) {
+      if (o.getProceedingCaseId() != null) {
+        savedOutcomeIndex.put(o.getProceedingCaseId(), o);
+      }
+    }
+
+    // Build a resolved-outcome map per proceeding: prefer CAAB save, fall back to EBS.
+    // The session ebsCase is never mutated so each request starts from a clean EBS baseline.
+    final Map<String, ProceedingOutcomeDetail> resolvedOutcomes = new HashMap<>();
     if (proceedings != null) {
-      proceedings.forEach(
-          proceeding -> {
-            final ProceedingOutcomeDetail matchingOutcome =
-                savedOutcomes.stream()
-                    .filter(
-                        savedOutcome ->
-                            proceeding.getProceedingCaseId() != null
-                                && proceeding
-                                    .getProceedingCaseId()
-                                    .equals(savedOutcome.getProceedingCaseId()))
-                    .findFirst()
-                    .orElse(null);
-            proceeding.setOutcome(matchingOutcome);
-          });
+      for (final ProceedingDetail proceeding : proceedings) {
+        if (proceeding.getProceedingCaseId() == null) {
+          continue;
+        }
+        final ProceedingOutcomeDetail outcome =
+            savedOutcomeIndex.getOrDefault(
+                proceeding.getProceedingCaseId(), proceeding.getOutcome());
+        resolvedOutcomes.put(proceeding.getProceedingCaseId(), outcome);
+      }
     }
 
     model.addAttribute("proceedings", proceedings);
+    model.addAttribute("resolvedOutcomes", resolvedOutcomes);
     return "application/outcome-and-awards";
   }
 
@@ -358,11 +366,13 @@ public class CaseController {
     if (formData != null) {
       session.removeAttribute(PROCEEDING_OUTCOME_FORM_DATA);
     } else {
-      // Load any previously saved outcome from the CAAB API
+      // Load any previously saved outcome from the CAAB API; fall back to EBS outcome if absent.
+      // Resolved outcome is passed directly — the session proceeding is never mutated.
       final ProceedingOutcomeDetail savedOutcome =
           loadSavedProceedingOutcome(ebsCase, user, proceeding);
-      proceeding.setOutcome(savedOutcome);
-      formData = toProceedingOutcomeFormData(proceeding);
+      final ProceedingOutcomeDetail effectiveOutcome =
+          savedOutcome != null ? savedOutcome : proceeding.getOutcome();
+      formData = toProceedingOutcomeFormData(effectiveOutcome);
     }
 
     if (selectedCourt != null) {
@@ -393,6 +403,10 @@ public class CaseController {
       @ModelAttribute("proceedingOutcome") final ProceedingOutcomeFormData proceedingOutcome,
       HttpSession session) {
     session.setAttribute(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome);
+    final CourtSearchCriteria courtSearchCriteria = new CourtSearchCriteria();
+    courtSearchCriteria.setCourtCode(proceedingOutcome.getCourtCode());
+    courtSearchCriteria.setCourtName(proceedingOutcome.getCourtName());
+    session.setAttribute(COURT_SEARCH_CRITERIA, courtSearchCriteria);
     return "redirect:/court/search?proceedingIndex=" + index;
   }
 
@@ -607,9 +621,8 @@ public class CaseController {
   }
 
   private static ProceedingOutcomeFormData toProceedingOutcomeFormData(
-      final ProceedingDetail proceeding) {
+      final ProceedingOutcomeDetail outcome) {
     final ProceedingOutcomeFormData formData = new ProceedingOutcomeFormData();
-    final ProceedingOutcomeDetail outcome = proceeding.getOutcome();
 
     if (outcome == null) {
       return formData;

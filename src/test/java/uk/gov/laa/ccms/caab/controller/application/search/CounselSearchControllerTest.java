@@ -152,12 +152,22 @@ class CounselSearchControllerTest extends BaseCounselSearchControllerTest {
                 .param("page", "0")
                 .param("size", "10")
                 .param("sort", "name,asc"))
-        .andExpect(status().isOk()) // SUCCESSFUL
+        .andExpect(status().isOk())
         .andExpect(view().name("application/counsel-search"))
+        .andExpect(model().attributeHasErrors(COUNSEL_SEARCH_CRITERIA))
         .andExpect(
-            model()
-                .attributeHasFieldErrorCode(
-                    COUNSEL_SEARCH_CRITERIA, "name", "at.least.one.search.required"));
+            result -> {
+              BindingResult br =
+                  (BindingResult)
+                      result
+                          .getModelAndView()
+                          .getModel()
+                          .get(BindingResult.MODEL_KEY_PREFIX + COUNSEL_SEARCH_CRITERIA);
+              assertTrue(
+                  br.getGlobalErrors().stream()
+                      .anyMatch(e -> "required.atLeastOneSearchCriteria".equals(e.getCode())),
+                  "Expected global error code 'required.atLeastOneSearchCriteria' to be present");
+            });
   }
 
   @Test

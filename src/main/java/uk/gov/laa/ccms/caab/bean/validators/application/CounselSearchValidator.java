@@ -34,9 +34,8 @@ public class CounselSearchValidator extends AbstractValidator {
     String name = counselSearchCriteria.getName();
     String company = counselSearchCriteria.getCompany();
     String laaCounselRef = counselSearchCriteria.getLaaCounselReference();
-    String category = counselSearchCriteria.getCategory();
 
-    validateAllFieldsAreEmpty("name", errors, name, company, laaCounselRef, category);
+    validateAtLeastOneSearchCriteria(target, errors);
 
     if (!errors.hasErrors()) {
 
@@ -68,6 +67,26 @@ public class CounselSearchValidator extends AbstractValidator {
         validateFieldMaxLength(
             "laaCounselReference", laaCounselRef, 15, "LAA Counsel Reference", errors);
       }
+    }
+  }
+
+  /**
+   * Validates that at least one search criteria is provided in the {@link CounselSearchCriteria}.
+   *
+   * @param target The target object to be validated.
+   * @param errors The Errors object to store validation errors.
+   */
+  public void validateAtLeastOneSearchCriteria(Object target, Errors errors) {
+    CounselSearchCriteria searchCriteria = (CounselSearchCriteria) target;
+
+    if (!StringUtils.hasText(searchCriteria.getLaaCounselReference())
+        && !StringUtils.hasText(searchCriteria.getName())
+        && !StringUtils.hasText(searchCriteria.getCompany())
+        && !StringUtils.hasText(searchCriteria.getCategory())) {
+      errors.rejectValue(
+          null,
+          "required.atLeastOneSearchCriteria",
+          "You must provide at least one search criteria below. Please amend your entry.");
     }
   }
 }
