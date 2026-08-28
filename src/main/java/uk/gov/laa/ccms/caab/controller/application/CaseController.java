@@ -390,6 +390,30 @@ public class CaseController {
   }
 
   /**
+   * Displays the clear proceeding outcome confirmation screen.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param index The zero-based index of the proceeding.
+   * @param model The model used to pass data to the view.
+   * @return The clear proceeding outcome confirmation view.
+   */
+  @GetMapping("/case/outcome-and-awards/proceeding/{index}/outcome/clear")
+  public String clearProceedingOutcome(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @PathVariable("index") final int index,
+      Model model) {
+    final ProceedingDetail proceeding = validateProceedingIndex(ebsCase, index);
+    if (!ActionViewHelper.isClearOutcomeAllowed(proceeding)) {
+      return "redirect:/case/outcome-and-awards";
+    }
+
+    model.addAttribute("proceeding", proceeding);
+    model.addAttribute("proceedingIndex", index);
+
+    return "application/clear-proceeding-outcome";
+  }
+
+  /**
    * Saves in-progress proceeding outcome form data to session and redirects to court search.
    *
    * @param index The zero-based index of the proceeding.
@@ -454,6 +478,41 @@ public class CaseController {
       model.addAttribute("proceedingIndex", index);
       populateOutcomeDropdowns(model, proceeding);
       return "application/record-proceeding-outcome";
+    }
+
+    return "redirect:/case/outcome-and-awards";
+  }
+
+  /**
+   * Clears persisted outcome data for a single proceeding and returns to the outcomes overview.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param user The current user details.
+   * @param index The zero-based index of the proceeding.
+   * @return Redirect to the outcome and awards overview.
+   */
+  @PostMapping("/case/outcome-and-awards/proceeding/{index}/outcome/clear")
+  public String clearProceedingOutcome(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @PathVariable("index") final int index) {
+    final ProceedingDetail proceeding = validateProceedingIndex(ebsCase, index);
+    if (!ActionViewHelper.isClearOutcomeAllowed(proceeding)) {
+      return "redirect:/case/outcome-and-awards";
+    }
+
+    try {
+      caseOutcomeService.clearProceedingOutcome(
+          ebsCase.getCaseReferenceNumber(),
+          user.getProvider().getId().intValue(),
+          proceeding.getProceedingCaseId(),
+          user.getLoginId());
+    } catch (CaabApiClientException ex) {
+      log.warn(
+          "Failed to clear proceeding outcome for proceeding caseId: {}",
+          proceeding.getProceedingCaseId(),
+          ex);
+      throw new CaabApplicationException("Failed to clear proceeding outcome.", ex);
     }
 
     return "redirect:/case/outcome-and-awards";

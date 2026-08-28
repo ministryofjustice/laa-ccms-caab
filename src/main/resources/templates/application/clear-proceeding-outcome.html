@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:govuk="http://www.thymeleaf.org">
+<head>
+  <title th:text="|#{service.name} - #{case.clearProceedingOutcome.heading(${proceeding.description})}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a class="govuk-back-link"
+       th:href="@{/case/outcome-and-awards}"
+       th:text="#{case.recordOutcomes.backLink}"></a>
+  </div>
+
+  <div id="main-content">
+    <form th:action="@{/case/outcome-and-awards/proceeding/{index}/outcome/clear(index=${proceedingIndex})}"
+          method="post">
+      <h1 class="govuk-heading-l" th:text="#{case.clearProceedingOutcome.heading(${proceeding.ebsId})}"></h1>
+      <p class="govuk-body-l" th:text="#{case.clearProceedingOutcome.lead(${proceeding.ebsId})}"></p>
+
+      <dl class="govuk-summary-list">
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key" th:text="#{case.outcomeAndAwards.proceedingOutcomeSummary.table.proceeding}"></dt>
+          <dd class="govuk-summary-list__value" th:text="${proceeding.description}"></dd>
+        </div>
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key"
+              th:text="#{case.outcomeAndAwards.proceedingOutcomeSummary.table.formOfCivilLegalService}"></dt>
+          <dd class="govuk-summary-list__value" th:text="${proceeding.levelOfService?.displayValue}"></dd>
+        </div>
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key" th:text="#{common.status}"></dt>
+          <dd class="govuk-summary-list__value" th:text="${proceeding.status?.displayValue}"></dd>
+        </div>
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key" th:text="#{case.outcomeAndAwards.proceedingOutcomeSummary.table.outcome}"></dt>
+          <dd class="govuk-summary-list__value" th:text="${proceeding.outcome?.result?.displayValue}"></dd>
+        </div>
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key" th:text="#{case.outcomeAndAwards.proceedingOutcomeSummary.table.dateGranted}"></dt>
+          <dd class="govuk-summary-list__value"
+              th:text="${proceeding.dateGranted != null ? #dates.format(proceeding.dateGranted, 'dd/MM/yyyy') : ''}"></dd>
+        </div>
+      </dl>
+
+      <div class="govuk-button-group">
+        <govuk:button type="submit" id="confirmClearProceedingOutcome" th:text="#{site.confirm}"></govuk:button>
+        <a class="govuk-link govuk-link--no-visited-state"
+           id="cancelClearProceedingOutcome"
+           th:href="@{/case/outcome-and-awards}"
+           th:text="#{site.cancel}"></a>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

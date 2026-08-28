@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
@@ -945,6 +946,106 @@ class CaseControllerTest {
                       .param("widerBenefits", "WB1")))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/case/outcome-and-awards");
+    }
+
+    @Test
+    @DisplayName("Clear proceeding outcome confirmation page loads for allowed proceeding")
+    public void clearProceedingOutcomePageLoadsForAllowedProceeding() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ProceedingDetail proceeding =
+          new ProceedingDetail()
+              .description("1854553")
+              .proceedingCaseId("pc1")
+              .availableFunctions(List.of(FunctionConstants.CLEAR_RECORDED_OUTCOME))
+              .outcome(new ProceedingOutcomeDetail().id(99));
+      ebsCase.setProceedings(List.of(proceeding));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/proceeding/0/outcome/clear")
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/clear-proceeding-outcome")
+          .model()
+          .containsEntry("proceeding", proceeding)
+          .containsEntry("proceedingIndex", 0);
+    }
+
+    @Test
+    @DisplayName("Clear proceeding outcome confirmation redirects when action not allowed")
+    public void clearProceedingOutcomePageRedirectsWhenActionNotAllowed() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ProceedingDetail proceeding =
+          new ProceedingDetail()
+              .description("1854553")
+              .proceedingCaseId("pc1")
+              .availableFunctions(List.of())
+              .outcome(new ProceedingOutcomeDetail().id(99));
+      ebsCase.setProceedings(List.of(proceeding));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/proceeding/0/outcome/clear")
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+    }
+
+    @Test
+    @DisplayName("Clear proceeding outcome confirm clears data and redirects")
+    public void clearProceedingOutcomeConfirmClearsDataAndRedirects() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ProceedingDetail proceeding =
+          new ProceedingDetail()
+              .description("1854553")
+              .proceedingCaseId("pc1")
+              .availableFunctions(List.of(FunctionConstants.CLEAR_RECORDED_OUTCOME))
+              .outcome(new ProceedingOutcomeDetail().id(99));
+      ebsCase.setProceedings(List.of(proceeding));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/proceeding/0/outcome/clear")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(caseOutcomeService)
+          .clearProceedingOutcome(eq("8"), eq(123), eq("pc1"), eq(user.getLoginId()));
+    }
+
+    @Test
+    @DisplayName(
+        "Clear proceeding outcome confirm redirects without clearing when action not allowed")
+    public void clearProceedingOutcomeConfirmRedirectsWhenActionNotAllowed() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ProceedingDetail proceeding =
+          new ProceedingDetail()
+              .description("1854553")
+              .proceedingCaseId("pc1")
+              .availableFunctions(List.of())
+              .outcome(new ProceedingOutcomeDetail().id(99));
+      ebsCase.setProceedings(List.of(proceeding));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/proceeding/0/outcome/clear")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(caseOutcomeService, times(0))
+          .clearProceedingOutcome(anyString(), anyInt(), anyString(), anyString());
     }
 
     @Test
