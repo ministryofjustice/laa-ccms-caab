@@ -40,7 +40,7 @@ spring:
     prefix: file:src/main/resources/templates/
   web:
     resources:
-      static-locations: classpath:/static/
+      static-locations: file:src/main/resources/static/
       cache:
         period: 0
   cloud:
