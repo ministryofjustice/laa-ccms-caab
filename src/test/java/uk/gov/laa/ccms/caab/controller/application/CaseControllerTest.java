@@ -965,7 +965,8 @@ class CaseControllerTest {
       assertThat(
               mockMvc.perform(
                   get("/case/outcome-and-awards/proceeding/0/outcome/clear")
-                      .sessionAttr(CASE, ebsCase)))
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
           .hasStatusOk()
           .hasViewName("application/clear-proceeding-outcome")
           .model()
@@ -990,7 +991,8 @@ class CaseControllerTest {
       assertThat(
               mockMvc.perform(
                   get("/case/outcome-and-awards/proceeding/0/outcome/clear")
-                      .sessionAttr(CASE, ebsCase)))
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/case/outcome-and-awards");
     }

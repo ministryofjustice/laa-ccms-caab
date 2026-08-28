@@ -45,11 +45,11 @@
             <td class="govuk-table__cell" th:text="${proceeding.dateGranted != null ? #dates.format(proceeding.dateGranted, 'dd/MM/yyyy') : ''}"></td>
             <td class="govuk-table__cell">
                 <th:block th:if="${T(uk.gov.laa.ccms.caab.util.view.ActionViewHelper).isClearOutcomeAllowed(proceeding, resolvedOutcomes[proceeding.proceedingCaseId])}">
-                <a class="govuk-link"
-                   th:href="@{/case/outcome-and-awards/proceeding/{index}/outcome/clear(index=${stat.index})}"
-                   th:text="#{site.clear}"
-                   th:id="|clearProceedingOutcomeLink-${stat.index}|"></a>
-              </th:block>
+                    <a class="govuk-link"
+                        th:href="@{/case/outcome-and-awards/proceeding/{index}/outcome/clear(index=${stat.index})}"
+                       th:text="#{site.clear}"
+                        th:id="|clearProceedingOutcomeLink-${stat.index}|"></a>
+                </th:block>
             </td>
           </tr>
           </tbody>

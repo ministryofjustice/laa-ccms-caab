@@ -400,10 +400,15 @@ public class CaseController {
   @GetMapping("/case/outcome-and-awards/proceeding/{index}/outcome/clear")
   public String clearProceedingOutcome(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
       @PathVariable("index") final int index,
       Model model) {
     final ProceedingDetail proceeding = validateProceedingIndex(ebsCase, index);
-    if (!ActionViewHelper.isClearOutcomeAllowed(proceeding)) {
+    final ProceedingOutcomeDetail savedOutcome =
+        loadSavedProceedingOutcome(ebsCase, user, proceeding);
+    final ProceedingOutcomeDetail resolvedOutcome =
+        savedOutcome != null ? savedOutcome : proceeding.getOutcome();
+    if (!ActionViewHelper.isClearOutcomeAllowed(proceeding, resolvedOutcome)) {
       return "redirect:/case/outcome-and-awards";
     }
 
@@ -497,7 +502,11 @@ public class CaseController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @PathVariable("index") final int index) {
     final ProceedingDetail proceeding = validateProceedingIndex(ebsCase, index);
-    if (!ActionViewHelper.isClearOutcomeAllowed(proceeding)) {
+    final ProceedingOutcomeDetail savedOutcome =
+        loadSavedProceedingOutcome(ebsCase, user, proceeding);
+    final ProceedingOutcomeDetail resolvedOutcome =
+        savedOutcome != null ? savedOutcome : proceeding.getOutcome();
+    if (!ActionViewHelper.isClearOutcomeAllowed(proceeding, resolvedOutcome)) {
       return "redirect:/case/outcome-and-awards";
     }
 
