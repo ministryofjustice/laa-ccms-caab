@@ -17,8 +17,8 @@
   <div id="main-content">
     <form th:action="@{/case/outcome-and-awards/proceeding/{index}/outcome/clear(index=${proceedingIndex})}"
           method="post">
-      <h1 class="govuk-heading-l" th:text="#{case.clearProceedingOutcome.heading(${proceeding.ebsId})}"></h1>
-      <p class="govuk-body-l" th:text="#{case.clearProceedingOutcome.lead(${proceeding.ebsId})}"></p>
+      <h1 class="govuk-heading-l" th:text="#{case.clearProceedingOutcome.heading(${proceeding.description})}"></h1>
+      <p class="govuk-body-l" th:text="#{case.clearProceedingOutcome.lead(${proceeding.description})}"></p>
 
       <dl class="govuk-summary-list">
         <div class="govuk-summary-list__row">
