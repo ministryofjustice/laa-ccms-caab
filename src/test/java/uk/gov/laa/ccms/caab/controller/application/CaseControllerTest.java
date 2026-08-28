@@ -1049,6 +1049,34 @@ class CaseControllerTest {
     }
 
     @Test
+    @DisplayName("Clear proceeding outcome confirm wraps API failures in CaabApplicationException")
+    public void clearProceedingOutcomeConfirmThrowsCaabApplicationExceptionWhenServiceFails() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ProceedingDetail proceeding =
+          new ProceedingDetail()
+              .description("1854553")
+              .proceedingCaseId("pc1")
+              .availableFunctions(List.of(FunctionConstants.CLEAR_RECORDED_OUTCOME))
+              .outcome(new ProceedingOutcomeDetail().id(99));
+      ebsCase.setProceedings(List.of(proceeding));
+
+      doThrow(new CaabApiClientException("Downstream failure"))
+          .when(caseOutcomeService)
+          .clearProceedingOutcome(eq("8"), eq(123), eq("pc1"), eq(user.getLoginId()));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/proceeding/0/outcome/clear")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .failure()
+          .hasCauseInstanceOf(CaabApplicationException.class)
+          .hasMessageContaining("Failed to clear proceeding outcome.");
+    }
+
+    @Test
     @DisplayName(
         "Record proceeding outcome court search prepopulates court search criteria from form data")
     public void recordProceedingOutcomeCourtSearchPrepopulatesCourtSearchCriteria()
