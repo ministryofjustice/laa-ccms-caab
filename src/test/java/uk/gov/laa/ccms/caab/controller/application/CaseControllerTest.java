@@ -23,6 +23,8 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMAR
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
@@ -46,6 +48,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidator;
@@ -942,6 +945,50 @@ class CaseControllerTest {
                       .param("widerBenefits", "WB1")))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/case/outcome-and-awards");
+    }
+
+    @Test
+    @DisplayName(
+        "Record proceeding outcome court search prepopulates court search criteria from form data")
+    public void recordProceedingOutcomeCourtSearchPrepopulatesCourtSearchCriteria()
+        throws Exception {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .id(77)
+                  .proceedingCaseId("pc1")
+                  .proceedingType(
+                      new StringDisplayValue().id("P1").displayValue("Proceeding name"))));
+
+      var result =
+          mockMvc.perform(
+              post("/case/outcome-and-awards/proceeding/0/outcome/court-search")
+                  .sessionAttr(USER_DETAILS, user)
+                  .sessionAttr(CASE, ebsCase)
+                  .param("dateOfFinalWork", "01/01/2026")
+                  .param("courtCode", "CT1")
+                  .param("courtName", "Test Court"));
+
+      assertThat(result)
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/court/search?proceedingIndex=0");
+
+      ProceedingOutcomeFormData savedFormData =
+          (ProceedingOutcomeFormData)
+              result.getRequest().getSession().getAttribute(PROCEEDING_OUTCOME_FORM_DATA);
+      assertThat(savedFormData)
+          .hasFieldOrPropertyWithValue("courtCode", "CT1")
+          .hasFieldOrPropertyWithValue("courtName", "Test Court");
+
+      CourtSearchCriteria courtSearchCriteria =
+          (CourtSearchCriteria)
+              result.getRequest().getSession().getAttribute(COURT_SEARCH_CRITERIA);
+      assertThat(courtSearchCriteria)
+          .hasFieldOrPropertyWithValue("courtCode", "CT1")
+          .hasFieldOrPropertyWithValue("courtName", "Test Court");
     }
 
     @Test
