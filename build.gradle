@@ -52,10 +52,6 @@ configurations.configureEach {
             details.useVersion '1.85'
             details.because 'Override to remediate vulnerability; not covered by the Spring Boot dependency BOM'
         }
-        if (details.requested.group == 'io.micrometer') {
-            details.useVersion '1.17.1'
-            details.because 'Snyk remediation for SNYK-JAVA-IOMICROMETER-19233327'
-        }
     }
 }
 
