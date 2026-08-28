@@ -141,10 +141,10 @@ public class CaseOutcomeService {
     }
 
     caabApiClient.deleteCaseOutcome(existingCaseOutcomeId, loginId).block();
-    if (caseOutcome.getProceedingOutcomes().isEmpty()) {
-      return;
-    }
 
+    // Always recreate — even with an empty proceedings list — so that the display layer can
+    // distinguish "case outcomes have been managed (possibly all cleared)" from "never touched",
+    // preventing a cleared outcome from reappearing via the EBS fallback.
     recreateCaseOutcomeWithRollback(caseReferenceNumber, loginId, caseOutcome, rollbackCaseOutcome);
   }
 

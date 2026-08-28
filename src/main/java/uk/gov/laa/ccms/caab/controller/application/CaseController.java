@@ -302,9 +302,16 @@ public class CaseController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       Model model) {
     final List<ProceedingDetail> proceedings = ebsCase.getProceedings();
+    final Optional<CaseOutcomeDetail> caseOutcomeOpt =
+        caseOutcomeService.getCaseOutcome(
+            ebsCase.getCaseReferenceNumber(), user.getProvider().getId().intValue());
+
+    // A CAAB record being present (even with no proceedings) means outcomes have been actively
+    // managed for this case.  When it is absent the case has never been touched and we fall back
+    // to the EBS baseline so existing outcomes still appear.
+    final boolean hasCaabRecord = caseOutcomeOpt.isPresent();
     final List<ProceedingOutcomeDetail> savedOutcomes =
-        caseOutcomeService
-            .getCaseOutcome(ebsCase.getCaseReferenceNumber(), user.getProvider().getId().intValue())
+        caseOutcomeOpt
             .map(CaseOutcomeDetail::getProceedingOutcomes)
             .orElse(Collections.emptyList());
 
@@ -316,8 +323,9 @@ public class CaseController {
       }
     }
 
-    // Build a resolved-outcome map per proceeding: prefer CAAB save, fall back to EBS.
-    // The session ebsCase is never mutated so each request starts from a clean EBS baseline.
+    // Build a resolved-outcome map per proceeding.
+    // When a CAAB record exists: use what is in it (null = cleared by the user).
+    // When no CAAB record exists: fall back to the EBS outcome so pre-existing data is visible.
     final Map<String, ProceedingOutcomeDetail> resolvedOutcomes = new HashMap<>();
     if (proceedings != null) {
       for (final ProceedingDetail proceeding : proceedings) {
@@ -325,8 +333,9 @@ public class CaseController {
           continue;
         }
         final ProceedingOutcomeDetail outcome =
-            savedOutcomeIndex.getOrDefault(
-                proceeding.getProceedingCaseId(), proceeding.getOutcome());
+            hasCaabRecord
+                ? savedOutcomeIndex.get(proceeding.getProceedingCaseId())
+                : proceeding.getOutcome();
         resolvedOutcomes.put(proceeding.getProceedingCaseId(), outcome);
       }
     }
@@ -366,13 +375,12 @@ public class CaseController {
     if (formData != null) {
       session.removeAttribute(PROCEEDING_OUTCOME_FORM_DATA);
     } else {
-      // Load any previously saved outcome from the CAAB API; fall back to EBS outcome if absent.
-      // Resolved outcome is passed directly — the session proceeding is never mutated.
-      final ProceedingOutcomeDetail savedOutcome =
-          loadSavedProceedingOutcome(ebsCase, user, proceeding);
-      final ProceedingOutcomeDetail effectiveOutcome =
-          savedOutcome != null ? savedOutcome : proceeding.getOutcome();
-      formData = toProceedingOutcomeFormData(effectiveOutcome);
+      // Resolve outcome using CAAB-first semantics:
+      // - no CAAB case-outcome record: use EBS baseline outcome
+      // - CAAB record exists but this proceeding has no outcome: treat as cleared (null)
+      formData =
+          toProceedingOutcomeFormData(
+              resolveProceedingOutcomeForDisplay(ebsCase, user, proceeding));
     }
 
     if (selectedCourt != null) {
@@ -404,10 +412,8 @@ public class CaseController {
       @PathVariable("index") final int index,
       Model model) {
     final ProceedingDetail proceeding = validateProceedingIndex(ebsCase, index);
-    final ProceedingOutcomeDetail savedOutcome =
-        loadSavedProceedingOutcome(ebsCase, user, proceeding);
     final ProceedingOutcomeDetail resolvedOutcome =
-        savedOutcome != null ? savedOutcome : proceeding.getOutcome();
+        resolveProceedingOutcomeForDisplay(ebsCase, user, proceeding);
     if (!ActionViewHelper.isClearOutcomeAllowed(proceeding, resolvedOutcome)) {
       return "redirect:/case/outcome-and-awards";
     }
@@ -502,10 +508,8 @@ public class CaseController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @PathVariable("index") final int index) {
     final ProceedingDetail proceeding = validateProceedingIndex(ebsCase, index);
-    final ProceedingOutcomeDetail savedOutcome =
-        loadSavedProceedingOutcome(ebsCase, user, proceeding);
     final ProceedingOutcomeDetail resolvedOutcome =
-        savedOutcome != null ? savedOutcome : proceeding.getOutcome();
+        resolveProceedingOutcomeForDisplay(ebsCase, user, proceeding);
     if (!ActionViewHelper.isClearOutcomeAllowed(proceeding, resolvedOutcome)) {
       return "redirect:/case/outcome-and-awards";
     }
@@ -536,19 +540,24 @@ public class CaseController {
     return proceedings.get(index);
   }
 
-  private ProceedingOutcomeDetail loadSavedProceedingOutcome(
+  private ProceedingOutcomeDetail resolveProceedingOutcomeForDisplay(
       final ApplicationDetail ebsCase, final UserDetail user, final ProceedingDetail proceeding) {
-    return caseOutcomeService
-        .getCaseOutcome(ebsCase.getCaseReferenceNumber(), user.getProvider().getId().intValue())
-        .map(CaseOutcomeDetail::getProceedingOutcomes)
-        .flatMap(
-            outcomes ->
-                outcomes.stream()
-                    .filter(
-                        o ->
-                            proceeding.getProceedingCaseId() != null
-                                && proceeding.getProceedingCaseId().equals(o.getProceedingCaseId()))
-                    .findFirst())
+    final Optional<CaseOutcomeDetail> caseOutcome =
+        caseOutcomeService.getCaseOutcome(
+            ebsCase.getCaseReferenceNumber(), user.getProvider().getId().intValue());
+
+    if (caseOutcome.isEmpty()) {
+      return proceeding.getOutcome();
+    }
+
+    return Optional.ofNullable(caseOutcome.get().getProceedingOutcomes())
+        .orElse(Collections.emptyList())
+        .stream()
+        .filter(
+            o ->
+                proceeding.getProceedingCaseId() != null
+                    && proceeding.getProceedingCaseId().equals(o.getProceedingCaseId()))
+        .findFirst()
         .orElse(null);
   }
 

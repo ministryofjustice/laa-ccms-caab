@@ -119,9 +119,7 @@ class CaseControllerTest {
     returnUrl = "returnUrl";
     lenient()
         .when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
-        .thenReturn(
-            java.util.Optional.of(
-                new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+        .thenReturn(java.util.Optional.empty());
   }
 
   @Nested
@@ -756,10 +754,10 @@ class CaseControllerTest {
       ebsCase.setProceedings(
           List.of(new ProceedingDetail().proceedingCaseId("pc1").outcome(ebsOutcome)));
 
+      // No CAAB record at all means outcomes have never been managed for this case → fall back to
+      // EBS.
       when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
-          .thenReturn(
-              java.util.Optional.of(
-                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+          .thenReturn(java.util.Optional.empty());
 
       assertThat(
               mockMvc.perform(
@@ -786,6 +784,46 @@ class CaseControllerTest {
                 List<ProceedingDetail> proceedings = (List<ProceedingDetail>) value;
                 assertThat(proceedings).hasSize(1);
                 assertThat(proceedings.get(0).getOutcome()).isSameAs(ebsOutcome);
+              });
+    }
+
+    @Test
+    @DisplayName(
+        "Outcome and awards shows null outcome when CAAB record exists but proceeding was cleared")
+    public void outcomeAndAwardsClearedOutcomeNotRestoredFromEbs() {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail ebsOutcome =
+          new ProceedingOutcomeDetail()
+              .proceedingCaseId("pc1")
+              .result(new StringDisplayValue().id("R1").displayValue("EBS outcome"));
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(new ProceedingDetail().proceedingCaseId("pc1").outcome(ebsOutcome)));
+
+      // A CAAB record exists (even with no proceedings) — the outcome for pc1 has been cleared.
+      // The EBS outcome must NOT reappear.
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards")
+          .model()
+          .hasEntrySatisfying(
+              "resolvedOutcomes",
+              value -> {
+                @SuppressWarnings("unchecked")
+                Map<String, ProceedingOutcomeDetail> resolved =
+                    (Map<String, ProceedingOutcomeDetail>) value;
+                assertThat(resolved).containsKey("pc1");
+                assertThat(resolved.get("pc1")).isNull();
               });
     }
 
@@ -859,7 +897,50 @@ class CaseControllerTest {
                   .proceedingType(new StringDisplayValue().id("P1").displayValue("Proceeding name"))
                   .outcome(ebsOutcome)));
 
-      // No local save — CAAB returns an empty list of proceeding outcomes
+      // No local save — no CAAB case outcome record exists.
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(java.util.Optional.empty());
+      when(lookupService.getStageEnds("P1", null))
+          .thenReturn(Mono.just(new StageEndLookupDetail()));
+      when(lookupService.getOutcomeResults("P1", null))
+          .thenReturn(Mono.just(new OutcomeResultLookupDetail()));
+      when(lookupService.getCommonValues(anyString()))
+          .thenReturn(Mono.just(new CommonLookupDetail()));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/proceeding/0/outcome")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/record-proceeding-outcome")
+          .model()
+          .hasEntrySatisfying(
+              "proceedingOutcome",
+              value -> {
+                ProceedingOutcomeFormData formData = (ProceedingOutcomeFormData) value;
+                assertThat(formData.getResultInfo()).isEqualTo("EBS result info");
+              });
+    }
+
+    @Test
+    @DisplayName(
+        "Record proceeding outcome shows blank form when proceeding outcome has been cleared")
+    public void recordProceedingOutcomeShowsBlankWhenProceedingClearedInCaab() {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail ebsOutcome =
+          new ProceedingOutcomeDetail().proceedingCaseId("pc1").resultInfo("EBS result info");
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .proceedingCaseId("pc1")
+                  .description("Proceeding 1")
+                  .proceedingType(new StringDisplayValue().id("P1").displayValue("Proceeding name"))
+                  .outcome(ebsOutcome)));
+
+      // CAAB record exists but this proceeding has no local outcome (it was cleared).
       when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
           .thenReturn(
               java.util.Optional.of(
@@ -883,7 +964,9 @@ class CaseControllerTest {
               "proceedingOutcome",
               value -> {
                 ProceedingOutcomeFormData formData = (ProceedingOutcomeFormData) value;
-                assertThat(formData.getResultInfo()).isEqualTo("EBS result info");
+                assertThat(formData.getResultInfo()).isNull();
+                assertThat(formData.getCourtCode()).isNull();
+                assertThat(formData.getCourtName()).isNull();
               });
     }
 

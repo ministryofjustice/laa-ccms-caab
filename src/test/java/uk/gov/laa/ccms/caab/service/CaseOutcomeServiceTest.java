@@ -1,8 +1,10 @@
 package uk.gov.laa.ccms.caab.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -198,7 +200,7 @@ class CaseOutcomeServiceTest {
   }
 
   @Test
-  void clearProceedingOutcome_lastRemainingOutcome_deletesWithoutRecreate() {
+  void clearProceedingOutcome_lastRemainingOutcome_deletesAndRecreatesWithEmptyProceedingsList() {
     final String caseReferenceNumber = "300000001";
     final Integer providerId = 123;
     final String loginId = "user1";
@@ -213,11 +215,23 @@ class CaseOutcomeServiceTest {
         .when(caseOutcomeService)
         .getCaseOutcome(caseReferenceNumber, providerId);
     when(caabApiClient.deleteCaseOutcome(existingCaseOutcomeId, loginId)).thenReturn(Mono.empty());
+    when(caabApiClient.createCaseOutcome(eq(loginId), any(CaseOutcomeDetail.class)))
+        .thenReturn(Mono.just("new-id"));
 
     caseOutcomeService.clearProceedingOutcome(caseReferenceNumber, providerId, "pc1", loginId);
 
-    verify(caabApiClient).deleteCaseOutcome(existingCaseOutcomeId, loginId);
-    verify(caabApiClient, never()).createCaseOutcome(any(), any());
+    final InOrder inOrder = inOrder(caabApiClient);
+    inOrder.verify(caabApiClient).deleteCaseOutcome(existingCaseOutcomeId, loginId);
+
+    final ArgumentCaptor<CaseOutcomeDetail> captor =
+        ArgumentCaptor.forClass(CaseOutcomeDetail.class);
+    inOrder.verify(caabApiClient).createCaseOutcome(eq(loginId), captor.capture());
+
+    // An empty-proceedings record is created so the display layer knows outcomes have been
+    // managed (preventing a cleared outcome from reappearing via the EBS fallback).
+    assertNotNull(captor.getValue().getProceedingOutcomes());
+    assertTrue(captor.getValue().getProceedingOutcomes().isEmpty());
+    assertNull(captor.getValue().getId());
     verify(caabApiClient, never()).deleteCaseOutcomes(any(), any(), any());
   }
 
