@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.bean.validators.client;
 
-import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.ALPHA_NUMERIC_SPACES_COMMAS;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.ADDRESS_CHARACTER_SET;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.DOUBLE_SPACE;
 
 import org.springframework.stereotype.Component;
@@ -78,7 +78,7 @@ public class CorrespondenceAddressValidator extends AbstractValidator {
       final String value, final String fieldName, final String displayFieldName, Errors errors) {
     if (StringUtils.hasText(value)) {
       // check no double spaces
-      if (!value.matches(ALPHA_NUMERIC_SPACES_COMMAS)) {
+      if (!value.matches(ADDRESS_CHARACTER_SET)) {
         errors.rejectValue(
             fieldName,
             "invalid." + fieldName,
@@ -86,7 +86,7 @@ public class CorrespondenceAddressValidator extends AbstractValidator {
                 + displayFieldName
                 + "' contains an "
                 + "invalid character. Please amend your entry using numbers, "
-                + "letters and spaces only");
+                + "letters, spaces and punctuation only");
       } else if (value.matches(DOUBLE_SPACE)) {
         errors.rejectValue(
             fieldName,

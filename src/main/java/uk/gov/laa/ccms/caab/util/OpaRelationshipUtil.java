@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -51,7 +52,8 @@ public final class OpaRelationshipUtil {
       return Optional.empty();
     }
 
-    return Optional.ofNullable(RELATIONSHIP_BY_ENTITY.get(entityName.trim().toUpperCase()));
+    return Optional.ofNullable(
+        RELATIONSHIP_BY_ENTITY.get(entityName.trim().toUpperCase(Locale.ROOT)));
   }
 
   private static Map<String, String> load(final String resource) {
@@ -92,6 +94,7 @@ public final class OpaRelationshipUtil {
     }
 
     relationshipByEntity.put(
-        line.substring(0, separator).trim().toUpperCase(), line.substring(separator + 1).trim());
+        line.substring(0, separator).trim().toUpperCase(Locale.ROOT),
+        line.substring(separator + 1).trim());
   }
 }
