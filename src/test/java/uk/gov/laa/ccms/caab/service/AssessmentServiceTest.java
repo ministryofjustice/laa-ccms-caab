@@ -1527,6 +1527,44 @@ public class AssessmentServiceTest {
   }
 
   @Test
+  @DisplayName("mergeEbsAssessmentData links global to an EBS-only entity under its published name")
+  void mergeEbsAssessmentDataLinksGlobalUnderThePublishedRelationshipName() {
+    final AssessmentDetail assessment = globalAssessment("CASE-123");
+    final List<CaseAssessmentDetail> rows =
+        List.of(
+            ebsRow(
+                "NON_FAMILY_STATEMENT",
+                "the non-family statement of case1",
+                "NON_FAMILY_STMT_DETAIL",
+                "detail",
+                false));
+
+    assessmentService.mergeEbsAssessmentData(assessment, rows, false);
+
+    // The relationship has to be "nonfamilystatementofcase", not the entity name lowercased with
+    // its underscores removed. The connector resolves this name against the rulebase's own
+    // mapping and skips any it cannot resolve, which leaves the row with no parent link and makes
+    // OPA reject the entire seed - the interview then fails with a generic error.
+    final AssessmentEntityDetail globalEntity =
+        assessment.getEntityTypes().stream()
+            .filter(entityType -> "global".equals(entityType.getName()))
+            .findFirst()
+            .orElseThrow()
+            .getEntities()
+            .getFirst();
+
+    assertEquals(1, globalEntity.getRelations().size());
+
+    final var relationship = globalEntity.getRelations().getFirst();
+    assertEquals("nonfamilystatementofcase", relationship.getName());
+    assertTrue(relationship.getPrepopulated());
+    assertEquals(1, relationship.getRelationshipTargets().size());
+    assertEquals(
+        "the non-family statement of case1",
+        relationship.getRelationshipTargets().getFirst().getTargetEntityId());
+  }
+
+  @Test
   @DisplayName("mergeEbsAssessmentData selects only user-entered attributes when requested")
   void mergeEbsAssessmentDataSelectsUserEnteredAttributes() {
     final AssessmentDetail assessment = globalAssessment("CASE-123");
