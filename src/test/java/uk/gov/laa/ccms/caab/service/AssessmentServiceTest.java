@@ -59,6 +59,8 @@ import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentRelationshipDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentRelationshipTargetDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
@@ -1562,6 +1564,63 @@ public class AssessmentServiceTest {
     assertEquals(
         "the non-family statement of case1",
         relationship.getRelationshipTargets().getFirst().getTargetEntityId());
+  }
+
+  @Test
+  @DisplayName(
+      "mergeEbsAssessmentData re-links an assessment stored under the old relationship name")
+  void mergeEbsAssessmentDataRepairsAStaleRelationshipName() {
+    // An assessment written before the relationship names were corrected: it already holds the
+    // instance, so it is never re-created, and its link to global still carries the name the old
+    // derivation produced.
+    final AssessmentDetail assessment = globalAssessment("CASE-123");
+    assessment
+        .getEntityTypes()
+        .add(
+            new AssessmentEntityTypeDetail()
+                .name("NON_FAMILY_STATEMENT")
+                .entities(
+                    new ArrayList<>(
+                        List.of(
+                            new AssessmentEntityDetail()
+                                .name("the non-family statement of case1")
+                                .attributes(new ArrayList<>())))));
+    assessment
+        .getEntityTypes()
+        .getFirst()
+        .getEntities()
+        .getFirst()
+        .setRelations(
+            new ArrayList<>(
+                List.of(
+                    new AssessmentRelationshipDetail()
+                        .name("nonfamilystatement")
+                        .prepopulated(true)
+                        .relationshipTargets(
+                            new ArrayList<>(
+                                List.of(
+                                    new AssessmentRelationshipTargetDetail()
+                                        .targetEntityId("the non-family statement of case1")))))));
+
+    assessmentService.mergeEbsAssessmentData(
+        assessment,
+        List.of(
+            ebsRow(
+                "NON_FAMILY_STATEMENT",
+                "the non-family statement of case1",
+                "NON_FAMILY_STMT_DETAIL",
+                "detail",
+                false)),
+        false);
+
+    final List<AssessmentRelationshipDetail> relations =
+        assessment.getEntityTypes().getFirst().getEntities().getFirst().getRelations();
+
+    assertEquals(1, relations.size());
+    assertEquals("nonfamilystatementofcase", relations.getFirst().getName());
+    assertEquals(
+        "the non-family statement of case1",
+        relations.getFirst().getRelationshipTargets().getFirst().getTargetEntityId());
   }
 
   @Test

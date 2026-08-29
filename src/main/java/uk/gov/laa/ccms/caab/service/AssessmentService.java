@@ -43,6 +43,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -1762,10 +1763,12 @@ public class AssessmentService {
       entityType.setEntities(new ArrayList<>());
     }
 
-    // Decided once, before any instance is merged: a type CAAB builds no instances for is sourced
-    // wholly from EBS. Re-checking per instance would only ever create the first, because the type
-    // stops being empty as soon as it is added.
-    final boolean ebsSourced = orEmptyList(entityType.getEntities()).isEmpty();
+    // A type CAAB does not build itself reaches an assessment only from EBS, so nothing else links
+    // global to it. This asks that directly rather than asking whether the type currently holds no
+    // instances: an assessment stored before the relationship names were corrected already holds
+    // them, and an emptiness test would skip re-linking it forever, leaving the entity permanently
+    // unreachable from global.
+    final boolean ebsSourced = !isBuiltByCaab(entityType.getName());
 
     opaEntity.getInstances().stream()
         .filter(Objects::nonNull)
@@ -1779,6 +1782,12 @@ public class AssessmentService {
     if (ebsSourced) {
       linkGlobalToEntities(assessment, entityType);
     }
+  }
+
+  private boolean isBuiltByCaab(final String entityTypeName) {
+    return Arrays.stream(AssessmentEntityType.values())
+        .map(AssessmentEntityType::getType)
+        .anyMatch(builtType -> builtType.equalsIgnoreCase(entityTypeName));
   }
 
   private AssessmentEntityTypeDetail findEntityType(
@@ -1895,6 +1904,19 @@ public class AssessmentService {
     if (relationship.getRelationshipTargets() == null) {
       relationship.setRelationshipTargets(new ArrayList<>());
     }
+
+    // An assessment stored before this was corrected still carries the relation the old derivation
+    // produced. The connector cannot resolve that name, so it is dead weight that costs an error in
+    // the connector's log on every interview - drop it, but only when the real name is known, so a
+    // fallback-derived name is never mistaken for the artefact and removed.
+    OpaRelationshipUtil.getRelationshipName(entityName)
+        .map(published -> entityName.toLowerCase(Locale.ROOT).replace("_", ""))
+        .filter(derived -> !derived.equalsIgnoreCase(relationshipName))
+        .ifPresent(
+            derived ->
+                globalEntity
+                    .getRelations()
+                    .removeIf(relation -> derived.equalsIgnoreCase(relation.getName())));
 
     for (final AssessmentEntityDetail entity : orEmptyList(entityType.getEntities())) {
       final boolean alreadyLinked =
