@@ -211,7 +211,8 @@ public class NotificationService {
     s3ApiClient.uploadDraftDocument(
         attachmentId,
         draftAttachment.getFileData(),
-        FileUtil.getFileExtension(draftAttachment.getFileName()));
+        FileUtil.getFileExtension(draftAttachment.getFileName()),
+        draftAttachment.getFileName());
   }
 
   private void uploadToS3(Document attachment, String attachmentId) {
@@ -236,7 +237,10 @@ public class NotificationService {
     if (notificationAttachment.getSendBy().equals(ELECTRONIC.getCode())) {
       String extension = FileUtil.getFileExtension(notificationAttachment.getFileName());
       s3ApiClient.uploadDraftDocument(
-          attachmentId, notificationAttachment.getFileData(), extension);
+          attachmentId,
+          notificationAttachment.getFileData(),
+          extension,
+          notificationAttachment.getFileName());
     }
   }
 
@@ -254,7 +258,8 @@ public class NotificationService {
       s3ApiClient.uploadDraftDocument(
           String.valueOf(notificationAttachment.getId()),
           notificationAttachment.getFileData(),
-          extension);
+          extension,
+          notificationAttachment.getFileName());
     }
   }
 

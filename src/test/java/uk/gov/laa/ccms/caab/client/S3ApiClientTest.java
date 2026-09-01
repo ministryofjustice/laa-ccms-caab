@@ -11,6 +11,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.awspring.cloud.s3.ObjectMetadata;
 import io.awspring.cloud.s3.S3Resource;
 import io.awspring.cloud.s3.S3Template;
 import java.io.IOException;
@@ -28,6 +29,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ContentDisposition;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
@@ -231,8 +233,30 @@ public class S3ApiClientTest {
 
   @Test
   void uploadDraftDocument() {
-    s3ApiClient.uploadDraftDocument("1", "fileData", "pdf");
+    final String originalFilename = "draft-file.pdf";
+    final ArgumentCaptor<ObjectMetadata> metadataCaptor =
+        ArgumentCaptor.forClass(ObjectMetadata.class);
 
-    verify(s3Template).upload(any(), eq(DRAFT_PREFIX + "1.pdf"), any());
+    s3ApiClient.uploadDraftDocument("1", "fileData", "pdf", originalFilename);
+
+    verify(s3Template).upload(any(), eq(DRAFT_PREFIX + "1.pdf"), any(), metadataCaptor.capture());
+    assertEquals(
+        originalFilename,
+        ContentDisposition.parse(metadataCaptor.getValue().getContentDisposition()).getFilename());
+  }
+
+  @Test
+  void uploadDraftDocument_withSpecialCharacters_setsEncodedFilenameMetadata() {
+    final String originalFilename = "résumé final.pdf";
+    final ArgumentCaptor<ObjectMetadata> metadataCaptor =
+        ArgumentCaptor.forClass(ObjectMetadata.class);
+
+    s3ApiClient.uploadDraftDocument("1", "fileData", "pdf", originalFilename);
+
+    verify(s3Template).upload(any(), eq(DRAFT_PREFIX + "1.pdf"), any(), metadataCaptor.capture());
+    assertTrue(metadataCaptor.getValue().getContentDisposition().contains("filename*="));
+    assertEquals(
+        originalFilename,
+        ContentDisposition.parse(metadataCaptor.getValue().getContentDisposition()).getFilename());
   }
 }
