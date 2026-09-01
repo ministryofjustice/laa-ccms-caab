@@ -88,19 +88,27 @@ public final class OpaRelationshipUtil {
       final Map<String, String> relationshipByEntity, final String line, final String resource) {
 
     final int separator = line.indexOf('=');
-    if (separator < 1 || separator == line.length() - 1) {
-      throw new CaabApplicationException(
-          "Expected ENTITY_NAME=relationshipname in %s but found '%s'".formatted(resource, line));
+    if (separator < 0) {
+      throw invalidLine(resource, line);
     }
 
     final String entityName = line.substring(0, separator).trim().toUpperCase(Locale.ROOT);
-    final String existing =
-        relationshipByEntity.putIfAbsent(entityName, line.substring(separator + 1).trim());
+    final String relationshipName = line.substring(separator + 1).trim();
+
+    // An empty name on either side maps an entity to nothing, which fails only at seed time.
+    if (entityName.isEmpty() || relationshipName.isEmpty()) {
+      throw invalidLine(resource, line);
+    }
 
     // A duplicate would silently take whichever relationship name came last, so refuse to load.
-    if (existing != null) {
+    if (relationshipByEntity.putIfAbsent(entityName, relationshipName) != null) {
       throw new CaabApplicationException(
           "Duplicate entity %s in %s".formatted(entityName, resource));
     }
+  }
+
+  private static CaabApplicationException invalidLine(final String resource, final String line) {
+    return new CaabApplicationException(
+        "Expected ENTITY_NAME=relationshipname in %s but found '%s'".formatted(resource, line));
   }
 }
