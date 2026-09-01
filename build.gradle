@@ -47,6 +47,18 @@ configurations.configureEach {
             details.useVersion '3.6.1'
             details.because 'Snyk override (SNYK-JAVA-ORGCODEHAUSPLEXUS-15766699); checkstyle pins the vulnerable 3.3.0'
         }
+        // Jackson 2.x and 3.x are both on the classpath; the Spring Boot BOM pins each one patch
+        // behind. Bump databind with core to keep the pair in lockstep.
+        if (details.requested.group == 'com.fasterxml.jackson.core'
+                && details.requested.name in ['jackson-databind', 'jackson-core']) {
+            details.useVersion '2.21.6'
+            details.because 'Snyk override (SNYK-JAVA-COMFASTERXMLJACKSONCORE-19477042); unsafe reflection in 2.21.5'
+        }
+        if (details.requested.group == 'tools.jackson.core'
+                && details.requested.name in ['jackson-databind', 'jackson-core']) {
+            details.useVersion '3.1.6'
+            details.because 'Snyk override (SNYK-JAVA-TOOLSJACKSONCORE-19477043); unsafe reflection in 3.1.5'
+        }
         // Not managed by the Spring Boot BOM; pulled in transitively via the SAML/opensaml stack.
         if (details.requested.group == 'org.bouncycastle') {
             details.useVersion '1.85'
