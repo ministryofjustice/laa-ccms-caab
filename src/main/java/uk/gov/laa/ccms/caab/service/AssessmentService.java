@@ -43,6 +43,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -101,6 +102,7 @@ import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryAttributeDisplay;
 import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryEntityDisplay;
 import uk.gov.laa.ccms.caab.opa.session.OpaSessionJson;
 import uk.gov.laa.ccms.caab.util.AssessmentReuseUtil;
+import uk.gov.laa.ccms.caab.util.OpaRelationshipUtil;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.caab.util.ProceedingUtil;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
@@ -1761,24 +1763,31 @@ public class AssessmentService {
       entityType.setEntities(new ArrayList<>());
     }
 
-    // Decided once, before any instance is merged: a type CAAB builds no instances for is sourced
-    // wholly from EBS. Re-checking per instance would only ever create the first, because the type
-    // stops being empty as soon as it is added.
-    final boolean ebsSourced = orEmptyList(entityType.getEntities()).isEmpty();
+    // A type CAAB does not build itself reaches an assessment only from EBS, so nothing else links
+    // global to it. This asks that directly rather than asking whether the type currently holds no
+    // instances: an assessment stored before the relationship names were corrected already holds
+    // them, and an emptiness test would skip re-linking it forever, leaving the entity permanently
+    // unreachable from global.
+    final boolean ebsSourced = !isBuiltByCaab(entityType.getName());
 
     opaEntity.getInstances().stream()
         .filter(Objects::nonNull)
         .forEach(
             opaInstance -> mergeOpaInstanceIntoEntityType(entityType, opaInstance, ebsSourced));
 
-    // Every billing entity is contained by global in the rulebase, so the global entity has to
+    // Every EBS-sourced entity is contained by global in the rulebase, so the global entity has to
     // carry a link to each instance. Without it OPA rejects the seed outright: "No parent link
-    // reference specified for row '...' in table 'BILL_HISTORY'". The relationship name is the
-    // entity type lowercased with underscores removed, which is exactly how old PUI's
-    // CcmsOpaRelationshipMap pairs them (BILL_HISTORY <-> billhistory).
+    // reference specified for row '...' in table 'BILL_HISTORY'". The relationship name an entity
+    // is published under is looked up rather than derived - see OpaRelationshipUtil.
     if (ebsSourced) {
       linkGlobalToEntities(assessment, entityType);
     }
+  }
+
+  private boolean isBuiltByCaab(final String entityTypeName) {
+    return Arrays.stream(AssessmentEntityType.values())
+        .map(AssessmentEntityType::getType)
+        .anyMatch(builtType -> builtType.equalsIgnoreCase(entityTypeName));
   }
 
   private AssessmentEntityTypeDetail findEntityType(
@@ -1849,7 +1858,27 @@ public class AssessmentService {
     }
 
     final AssessmentEntityDetail globalEntity = globalType.getEntities().getFirst();
-    final String relationshipName = entityType.getName().toLowerCase(Locale.ROOT).replace("_", "");
+
+    // Falling back to the old derivation keeps an unmapped entity behaving exactly as it did
+    // before, which is all we can do for it: the connector resolves the name against the same
+    // mapping, so a name missing from it is dropped whatever we send. The warning is the only way
+    // this surfaces short of reading OPA's own logs.
+    final String entityName = entityType.getName();
+    final String relationshipName =
+        OpaRelationshipUtil.getRelationshipName(entityName)
+            .orElseGet(
+                () -> {
+                  final String derived = entityName.toLowerCase(Locale.ROOT).replace("_", "");
+                  log.warn(
+                      "No published relationship name is known for OPA entity {}; linking global "
+                          + "to it as '{}'. If the rulebase publishes it under another name the "
+                          + "connector will drop the link and OPA will refuse to seed the "
+                          + "interview. Add it to {}.",
+                      entityName,
+                      derived,
+                      "assessment/opa-relationship-names.txt");
+                  return derived;
+                });
 
     if (globalEntity.getRelations() == null) {
       globalEntity.setRelations(new ArrayList<>());
@@ -1875,6 +1904,19 @@ public class AssessmentService {
     if (relationship.getRelationshipTargets() == null) {
       relationship.setRelationshipTargets(new ArrayList<>());
     }
+
+    // An assessment stored before this was corrected still carries the relation the old derivation
+    // produced. The connector cannot resolve that name, so it is dead weight that costs an error in
+    // the connector's log on every interview - drop it, but only when the real name is known, so a
+    // fallback-derived name is never mistaken for the artefact and removed.
+    OpaRelationshipUtil.getRelationshipName(entityName)
+        .map(published -> entityName.toLowerCase(Locale.ROOT).replace("_", ""))
+        .filter(derived -> !derived.equalsIgnoreCase(relationshipName))
+        .ifPresent(
+            derived ->
+                globalEntity
+                    .getRelations()
+                    .removeIf(relation -> derived.equalsIgnoreCase(relation.getName())));
 
     for (final AssessmentEntityDetail entity : orEmptyList(entityType.getEntities())) {
       final boolean alreadyLinked =
