@@ -93,8 +93,14 @@ public final class OpaRelationshipUtil {
           "Expected ENTITY_NAME=relationshipname in %s but found '%s'".formatted(resource, line));
     }
 
-    relationshipByEntity.put(
-        line.substring(0, separator).trim().toUpperCase(Locale.ROOT),
-        line.substring(separator + 1).trim());
+    final String entityName = line.substring(0, separator).trim().toUpperCase(Locale.ROOT);
+    final String existing =
+        relationshipByEntity.putIfAbsent(entityName, line.substring(separator + 1).trim());
+
+    // A duplicate would silently take whichever relationship name came last, so refuse to load.
+    if (existing != null) {
+      throw new CaabApplicationException(
+          "Duplicate entity %s in %s".formatted(entityName, resource));
+    }
   }
 }
