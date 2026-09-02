@@ -94,12 +94,14 @@ public class CaseOutcomeService {
 
   /**
    * Clears a single proceeding outcome from the case outcome record. Because the CAAB API has no
-   * PATCH endpoint for case outcomes, the existing record is deleted and recreated without the
-   * cleared proceeding outcome.
+   * PATCH endpoint for case outcomes, the existing record is deleted and recreated with a
+   * proceeding-level clear marker. This allows the display layer to suppress EBS fallback for the
+   * specifically cleared proceeding while still hiding the clear action (marker has no clearable
+   * outcome data).
    *
    * @param caseReferenceNumber - the case reference number.
    * @param providerId - the provider id.
-   * @param proceedingCaseId - the proceeding case id whose outcome should be removed.
+   * @param proceedingCaseId - the proceeding case id whose outcome should be cleared.
    * @param loginId - the login ID of the user performing the update.
    */
   public void clearProceedingOutcome(
@@ -139,12 +141,9 @@ public class CaseOutcomeService {
     if (!removed) {
       return;
     }
+    caseOutcome.addProceedingOutcomesItem(buildClearedProceedingOutcomeMarker(proceedingCaseId));
 
     caabApiClient.deleteCaseOutcome(existingCaseOutcomeId, loginId).block();
-
-    // Always recreate — even with an empty proceedings list — so that the display layer can
-    // distinguish "case outcomes have been managed (possibly all cleared)" from "never touched",
-    // preventing a cleared outcome from reappearing via the EBS fallback.
     recreateCaseOutcomeWithRollback(caseReferenceNumber, loginId, caseOutcome, rollbackCaseOutcome);
   }
 
@@ -182,5 +181,10 @@ public class CaseOutcomeService {
       copy.setProceedingOutcomes(new ArrayList<>(source.getProceedingOutcomes()));
     }
     return copy;
+  }
+
+  private ProceedingOutcomeDetail buildClearedProceedingOutcomeMarker(
+      final String proceedingCaseId) {
+    return new ProceedingOutcomeDetail().proceedingCaseId(proceedingCaseId);
   }
 }

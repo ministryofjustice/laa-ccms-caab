@@ -306,10 +306,6 @@ public class CaseController {
         caseOutcomeService.getCaseOutcome(
             ebsCase.getCaseReferenceNumber(), user.getProvider().getId().intValue());
 
-    // A CAAB record being present (even with no proceedings) means outcomes have been actively
-    // managed for this case.  When it is absent the case has never been touched and we fall back
-    // to the EBS baseline so existing outcomes still appear.
-    final boolean hasCaabRecord = caseOutcomeOpt.isPresent();
     final List<ProceedingOutcomeDetail> savedOutcomes =
         caseOutcomeOpt
             .map(CaseOutcomeDetail::getProceedingOutcomes)
@@ -323,25 +319,32 @@ public class CaseController {
       }
     }
 
-    // Build a resolved-outcome map per proceeding.
-    // When a CAAB record exists: use what is in it (null = cleared by the user).
-    // When no CAAB record exists: fall back to the EBS outcome so pre-existing data is visible.
+    // Build a resolved-outcome map per proceeding:
+    // - local persisted outcome takes precedence
+    // - otherwise fall back to EBS outcome
+    // Also keep a local-only map for clear-button eligibility.
     final Map<String, ProceedingOutcomeDetail> resolvedOutcomes = new HashMap<>();
+    final Map<String, ProceedingOutcomeDetail> clearableOutcomes = new HashMap<>();
     if (proceedings != null) {
       for (final ProceedingDetail proceeding : proceedings) {
         if (proceeding.getProceedingCaseId() == null) {
           continue;
         }
+        final ProceedingOutcomeDetail localOutcome =
+            savedOutcomeIndex.get(proceeding.getProceedingCaseId());
         final ProceedingOutcomeDetail outcome =
-            hasCaabRecord
-                ? savedOutcomeIndex.get(proceeding.getProceedingCaseId())
-                : proceeding.getOutcome();
+            localOutcome == null
+                ? proceeding.getOutcome()
+                : isClearedProceedingOutcomeMarker(localOutcome) ? null : localOutcome;
+        final ProceedingOutcomeDetail clearableOutcome = normaliseLegacyClearMarker(localOutcome);
         resolvedOutcomes.put(proceeding.getProceedingCaseId(), outcome);
+        clearableOutcomes.put(proceeding.getProceedingCaseId(), clearableOutcome);
       }
     }
 
     model.addAttribute("proceedings", proceedings);
     model.addAttribute("resolvedOutcomes", resolvedOutcomes);
+    model.addAttribute("clearableOutcomes", clearableOutcomes);
     return "application/outcome-and-awards";
   }
 
@@ -375,9 +378,9 @@ public class CaseController {
     if (formData != null) {
       session.removeAttribute(PROCEEDING_OUTCOME_FORM_DATA);
     } else {
-      // Resolve outcome using CAAB-first semantics:
-      // - no CAAB case-outcome record: use EBS baseline outcome
-      // - CAAB record exists but this proceeding has no outcome: treat as cleared (null)
+      // Resolve per-proceeding:
+      // - local persisted outcome takes precedence
+      // - untouched proceedings fall back to EBS outcome
       formData =
           toProceedingOutcomeFormData(
               resolveProceedingOutcomeForDisplay(ebsCase, user, proceeding));
@@ -412,14 +415,17 @@ public class CaseController {
       @PathVariable("index") final int index,
       Model model) {
     final ProceedingDetail proceeding = validateProceedingIndex(ebsCase, index);
-    final ProceedingOutcomeDetail resolvedOutcome =
-        resolveProceedingOutcomeForDisplay(ebsCase, user, proceeding);
-    if (!ActionViewHelper.isClearOutcomeAllowed(proceeding, resolvedOutcome)) {
+    final ProceedingOutcomeDetail localOutcome =
+        resolveLocalProceedingOutcomeForDisplay(ebsCase, user, proceeding);
+    if (!ActionViewHelper.isClearOutcomeAllowed(proceeding, localOutcome)) {
       return "redirect:/case/outcome-and-awards";
     }
+    final ProceedingOutcomeDetail resolvedOutcome =
+        localOutcome == null ? proceeding.getOutcome() : localOutcome;
 
     model.addAttribute("proceeding", proceeding);
     model.addAttribute("proceedingIndex", index);
+    model.addAttribute("resolvedOutcome", resolvedOutcome);
 
     return "application/clear-proceeding-outcome";
   }
@@ -508,9 +514,9 @@ public class CaseController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @PathVariable("index") final int index) {
     final ProceedingDetail proceeding = validateProceedingIndex(ebsCase, index);
-    final ProceedingOutcomeDetail resolvedOutcome =
-        resolveProceedingOutcomeForDisplay(ebsCase, user, proceeding);
-    if (!ActionViewHelper.isClearOutcomeAllowed(proceeding, resolvedOutcome)) {
+    final ProceedingOutcomeDetail localOutcome =
+        resolveLocalProceedingOutcomeForDisplay(ebsCase, user, proceeding);
+    if (!ActionViewHelper.isClearOutcomeAllowed(proceeding, localOutcome)) {
       return "redirect:/case/outcome-and-awards";
     }
 
@@ -542,15 +548,27 @@ public class CaseController {
 
   private ProceedingOutcomeDetail resolveProceedingOutcomeForDisplay(
       final ApplicationDetail ebsCase, final UserDetail user, final ProceedingDetail proceeding) {
+    final ProceedingOutcomeDetail localOutcome =
+        resolveRawLocalProceedingOutcome(ebsCase, user, proceeding);
+    if (localOutcome == null) {
+      return proceeding.getOutcome();
+    }
+    return isClearedProceedingOutcomeMarker(localOutcome) ? null : localOutcome;
+  }
+
+  private ProceedingOutcomeDetail resolveLocalProceedingOutcomeForDisplay(
+      final ApplicationDetail ebsCase, final UserDetail user, final ProceedingDetail proceeding) {
+    return normaliseLegacyClearMarker(resolveRawLocalProceedingOutcome(ebsCase, user, proceeding));
+  }
+
+  private ProceedingOutcomeDetail resolveRawLocalProceedingOutcome(
+      final ApplicationDetail ebsCase, final UserDetail user, final ProceedingDetail proceeding) {
     final Optional<CaseOutcomeDetail> caseOutcome =
         caseOutcomeService.getCaseOutcome(
             ebsCase.getCaseReferenceNumber(), user.getProvider().getId().intValue());
 
-    if (caseOutcome.isEmpty()) {
-      return proceeding.getOutcome();
-    }
-
-    return Optional.ofNullable(caseOutcome.get().getProceedingOutcomes())
+    return caseOutcome
+        .map(CaseOutcomeDetail::getProceedingOutcomes)
         .orElse(Collections.emptyList())
         .stream()
         .filter(
@@ -559,6 +577,40 @@ public class CaseController {
                     && proceeding.getProceedingCaseId().equals(o.getProceedingCaseId()))
         .findFirst()
         .orElse(null);
+  }
+
+  private ProceedingOutcomeDetail normaliseLegacyClearMarker(
+      final ProceedingOutcomeDetail localOutcome) {
+    if (localOutcome == null) {
+      return null;
+    }
+
+    if (isClearedProceedingOutcomeMarker(localOutcome)) {
+      return null;
+    }
+
+    return localOutcome;
+  }
+
+  private boolean isClearedProceedingOutcomeMarker(final ProceedingOutcomeDetail localOutcome) {
+    return localOutcome != null
+        && localOutcome.getProceedingCaseId() != null
+        && localOutcome.getDateOfFinalWork() == null
+        && !hasStringDisplayValue(localOutcome.getStageEnd())
+        && !StringUtils.hasText(localOutcome.getResolutionMethod())
+        && !hasStringDisplayValue(localOutcome.getResult())
+        && !StringUtils.hasText(localOutcome.getResultInfo())
+        && !StringUtils.hasText(localOutcome.getAlternativeResolution())
+        && !StringUtils.hasText(localOutcome.getAdrInfo())
+        && !StringUtils.hasText(localOutcome.getCourtCode())
+        && !StringUtils.hasText(localOutcome.getCourtName())
+        && !StringUtils.hasText(localOutcome.getOutcomeCourtCaseNo())
+        && !StringUtils.hasText(localOutcome.getWiderBenefits());
+  }
+
+  private boolean hasStringDisplayValue(final uk.gov.laa.ccms.caab.model.StringDisplayValue value) {
+    return value != null
+        && (StringUtils.hasText(value.getId()) || StringUtils.hasText(value.getDisplayValue()));
   }
 
   private ProceedingOutcomeDetail buildProceedingOutcome(

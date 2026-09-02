@@ -250,6 +250,67 @@ class CaseControllerTest {
     }
 
     @Test
+    @DisplayName("Outcome and awards treats legacy local clear marker as cleared and not clearable")
+    public void outcomeAndAwardsIgnoresLegacyClearMarker() {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail ebsOutcome =
+          new ProceedingOutcomeDetail()
+              .proceedingCaseId("pc1")
+              .result(new StringDisplayValue().id("R1").displayValue("EBS outcome"));
+      final ProceedingOutcomeDetail legacyMarker =
+          new ProceedingOutcomeDetail()
+              .id(99)
+              .proceedingCaseId("pc1")
+              .description("Proceeding 1")
+              .proceedingType(new StringDisplayValue().id("P1").displayValue("Type 1"))
+              .stageEnd(new StringDisplayValue().id("").displayValue(""))
+              .result(new StringDisplayValue().id("").displayValue(""))
+              .resolutionMethod("")
+              .resultInfo("")
+              .alternativeResolution("")
+              .adrInfo("")
+              .courtCode("")
+              .courtName("")
+              .outcomeCourtCaseNo("")
+              .widerBenefits("");
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(new ProceedingDetail().proceedingCaseId("pc1").outcome(ebsOutcome)));
+
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(List.of(legacyMarker))));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards")
+          .model()
+          .hasEntrySatisfying(
+              "resolvedOutcomes",
+              value -> {
+                @SuppressWarnings("unchecked")
+                Map<String, ProceedingOutcomeDetail> resolved =
+                    (Map<String, ProceedingOutcomeDetail>) value;
+                assertThat(resolved.get("pc1")).isNull();
+              })
+          .hasEntrySatisfying(
+              "clearableOutcomes",
+              value -> {
+                @SuppressWarnings("unchecked")
+                Map<String, ProceedingOutcomeDetail> clearable =
+                    (Map<String, ProceedingOutcomeDetail>) value;
+                assertThat(clearable).containsKey("pc1");
+                assertThat(clearable.get("pc1")).isNull();
+              });
+    }
+
+    @Test
     @DisplayName("Case overview clears cost allocation flow data")
     public void caseOverviewClearsCostAllocationFlowData() {
       final String selectedCaseRef = "2";
@@ -365,6 +426,55 @@ class CaseControllerTest {
                         "returnTo", value -> assertThat(value).isEqualTo("notification"))
                     .hasEntrySatisfying(
                         NOTIFICATION_ID, value -> assertThat(value).isEqualTo(notificationId));
+              });
+    }
+
+    @Test
+    @DisplayName("Record proceeding outcome treats legacy local clear marker as cleared")
+    public void recordProceedingOutcomeUsesEbsWhenLegacyMarkerExists() {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail ebsOutcome =
+          new ProceedingOutcomeDetail().proceedingCaseId("pc1").resultInfo("EBS result info");
+      final ProceedingOutcomeDetail legacyMarker =
+          new ProceedingOutcomeDetail()
+              .id(99)
+              .proceedingCaseId("pc1")
+              .description("Proceeding 1")
+              .proceedingType(new StringDisplayValue().id("P1").displayValue("Type 1"));
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .proceedingCaseId("pc1")
+                  .description("Proceeding 1")
+                  .proceedingType(new StringDisplayValue().id("P1").displayValue("Proceeding name"))
+                  .outcome(ebsOutcome)));
+
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(List.of(legacyMarker))));
+      when(lookupService.getStageEnds("P1", null))
+          .thenReturn(Mono.just(new StageEndLookupDetail()));
+      when(lookupService.getOutcomeResults("P1", null))
+          .thenReturn(Mono.just(new OutcomeResultLookupDetail()));
+      when(lookupService.getCommonValues(anyString()))
+          .thenReturn(Mono.just(new CommonLookupDetail()));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/proceeding/0/outcome")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/record-proceeding-outcome")
+          .model()
+          .hasEntrySatisfying(
+              "proceedingOutcome",
+              value -> {
+                ProceedingOutcomeFormData formData = (ProceedingOutcomeFormData) value;
+                assertThat(formData.getResultInfo()).isNull();
               });
     }
 
@@ -789,7 +899,49 @@ class CaseControllerTest {
 
     @Test
     @DisplayName(
-        "Outcome and awards shows null outcome when CAAB record exists but proceeding was cleared")
+        "Outcome and awards shows EBS outcome but no clearable local outcome when EBS only")
+    public void outcomeAndAwardsEbsOnlyIsNotClearable() {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail ebsOutcome =
+          new ProceedingOutcomeDetail()
+              .proceedingCaseId("pc1")
+              .result(new StringDisplayValue().id("R1").displayValue("EBS outcome"));
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(new ProceedingDetail().proceedingCaseId("pc1").outcome(ebsOutcome)));
+
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(java.util.Optional.empty());
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "resolvedOutcomes",
+              value -> {
+                @SuppressWarnings("unchecked")
+                Map<String, ProceedingOutcomeDetail> resolved =
+                    (Map<String, ProceedingOutcomeDetail>) value;
+                assertThat(resolved.get("pc1")).isSameAs(ebsOutcome);
+              })
+          .hasEntrySatisfying(
+              "clearableOutcomes",
+              value -> {
+                @SuppressWarnings("unchecked")
+                Map<String, ProceedingOutcomeDetail> clearable =
+                    (Map<String, ProceedingOutcomeDetail>) value;
+                assertThat(clearable.get("pc1")).isNull();
+              });
+    }
+
+    @Test
+    @DisplayName(
+        "Outcome and awards falls back to EBS outcome when local case outcome exists without this proceeding")
     public void outcomeAndAwardsClearedOutcomeNotRestoredFromEbs() {
       final String selectedCaseRef = "8";
       final ProceedingOutcomeDetail ebsOutcome =
@@ -801,8 +953,8 @@ class CaseControllerTest {
       ebsCase.setProceedings(
           List.of(new ProceedingDetail().proceedingCaseId("pc1").outcome(ebsOutcome)));
 
-      // A CAAB record exists (even with no proceedings) — the outcome for pc1 has been cleared.
-      // The EBS outcome must NOT reappear.
+      // A local case outcome exists, but there is no local record for this proceeding, so this
+      // proceeding should still fall back to EBS.
       when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
           .thenReturn(
               java.util.Optional.of(
@@ -823,7 +975,7 @@ class CaseControllerTest {
                 Map<String, ProceedingOutcomeDetail> resolved =
                     (Map<String, ProceedingOutcomeDetail>) value;
                 assertThat(resolved).containsKey("pc1");
-                assertThat(resolved.get("pc1")).isNull();
+                assertThat(resolved.get("pc1").getResult().getId()).isEqualTo("R1");
               });
     }
 
@@ -925,7 +1077,7 @@ class CaseControllerTest {
 
     @Test
     @DisplayName(
-        "Record proceeding outcome shows blank form when proceeding outcome has been cleared")
+        "Record proceeding outcome falls back to EBS outcome when local case outcome has no matching proceeding")
     public void recordProceedingOutcomeShowsBlankWhenProceedingClearedInCaab() {
       final String selectedCaseRef = "8";
       final ProceedingOutcomeDetail ebsOutcome =
@@ -940,7 +1092,8 @@ class CaseControllerTest {
                   .proceedingType(new StringDisplayValue().id("P1").displayValue("Proceeding name"))
                   .outcome(ebsOutcome)));
 
-      // CAAB record exists but this proceeding has no local outcome (it was cleared).
+      // A local case outcome exists but there is no matching local proceeding outcome, so this
+      // proceeding should still use EBS.
       when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
           .thenReturn(
               java.util.Optional.of(
@@ -964,9 +1117,66 @@ class CaseControllerTest {
               "proceedingOutcome",
               value -> {
                 ProceedingOutcomeFormData formData = (ProceedingOutcomeFormData) value;
-                assertThat(formData.getResultInfo()).isNull();
-                assertThat(formData.getCourtCode()).isNull();
-                assertThat(formData.getCourtName()).isNull();
+                assertThat(formData.getResultInfo()).isEqualTo("EBS result info");
+              });
+    }
+
+    @Test
+    @DisplayName(
+        "Outcome and awards falls back to EBS for untouched proceeding when other local outcome exists")
+    public void outcomeAndAwardsFallsBackToEbsForUntouchedProceedingWhenLocalRecordExists() {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail ebsOutcomePc1 =
+          new ProceedingOutcomeDetail()
+              .proceedingCaseId("pc1")
+              .result(new StringDisplayValue().id("R1").displayValue("EBS outcome 1"));
+      final ProceedingOutcomeDetail localOutcomePc2 =
+          new ProceedingOutcomeDetail()
+              .id(200)
+              .proceedingCaseId("pc2")
+              .result(new StringDisplayValue().id("R2").displayValue("Local outcome 2"));
+      final ProceedingOutcomeDetail ebsOutcomePc2 =
+          new ProceedingOutcomeDetail()
+              .proceedingCaseId("pc2")
+              .result(new StringDisplayValue().id("R3").displayValue("EBS outcome 2"));
+
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail().proceedingCaseId("pc1").outcome(ebsOutcomePc1),
+              new ProceedingDetail().proceedingCaseId("pc2").outcome(ebsOutcomePc2)));
+
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(List.of(localOutcomePc2))));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards")
+          .model()
+          .hasEntrySatisfying(
+              "resolvedOutcomes",
+              value -> {
+                @SuppressWarnings("unchecked")
+                Map<String, ProceedingOutcomeDetail> resolved =
+                    (Map<String, ProceedingOutcomeDetail>) value;
+                assertThat(resolved.get("pc1")).isSameAs(ebsOutcomePc1);
+                assertThat(resolved.get("pc2")).isSameAs(localOutcomePc2);
+              })
+          .hasEntrySatisfying(
+              "clearableOutcomes",
+              value -> {
+                @SuppressWarnings("unchecked")
+                Map<String, ProceedingOutcomeDetail> clearable =
+                    (Map<String, ProceedingOutcomeDetail>) value;
+                assertThat(clearable.get("pc1")).isNull();
+                assertThat(clearable.get("pc2")).isSameAs(localOutcomePc2);
               });
     }
 
@@ -1032,9 +1242,16 @@ class CaseControllerTest {
     }
 
     @Test
-    @DisplayName("Clear proceeding outcome confirmation page loads for allowed proceeding")
-    public void clearProceedingOutcomePageLoadsForAllowedProceeding() {
+    @DisplayName(
+        "Clear proceeding outcome confirmation redirects when only legacy local clear marker exists")
+    public void clearProceedingOutcomePageRedirectsWhenLegacyMarkerExists() {
       final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail legacyMarker =
+          new ProceedingOutcomeDetail()
+              .id(99)
+              .proceedingCaseId("pc1")
+              .description("Proceeding 1")
+              .proceedingType(new StringDisplayValue().id("P1").displayValue("Type 1"));
       ApplicationDetail ebsCase =
           getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
       ProceedingDetail proceeding =
@@ -1044,6 +1261,42 @@ class CaseControllerTest {
               .availableFunctions(List.of(FunctionConstants.CLEAR_RECORDED_OUTCOME))
               .outcome(new ProceedingOutcomeDetail().id(99));
       ebsCase.setProceedings(List.of(proceeding));
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(List.of(legacyMarker))));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/proceeding/0/outcome/clear")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+    }
+
+    @Test
+    @DisplayName("Clear proceeding outcome confirmation page loads for allowed proceeding")
+    public void clearProceedingOutcomePageLoadsForAllowedProceeding() {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail localOutcome =
+          new ProceedingOutcomeDetail()
+              .id(99)
+              .proceedingCaseId("pc1")
+              .result(new StringDisplayValue().id("R1").displayValue("Local outcome"));
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ProceedingDetail proceeding =
+          new ProceedingDetail()
+              .description("1854553")
+              .proceedingCaseId("pc1")
+              .availableFunctions(List.of(FunctionConstants.CLEAR_RECORDED_OUTCOME))
+              .outcome(new ProceedingOutcomeDetail().id(99));
+      ebsCase.setProceedings(List.of(proceeding));
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(List.of(localOutcome))));
 
       assertThat(
               mockMvc.perform(
@@ -1054,7 +1307,8 @@ class CaseControllerTest {
           .hasViewName("application/clear-proceeding-outcome")
           .model()
           .containsEntry("proceeding", proceeding)
-          .containsEntry("proceedingIndex", 0);
+          .containsEntry("proceedingIndex", 0)
+          .containsEntry("resolvedOutcome", localOutcome);
     }
 
     @Test
@@ -1081,8 +1335,9 @@ class CaseControllerTest {
     }
 
     @Test
-    @DisplayName("Clear proceeding outcome confirm clears data and redirects")
-    public void clearProceedingOutcomeConfirmClearsDataAndRedirects() {
+    @DisplayName(
+        "Clear proceeding outcome confirmation redirects when only EBS outcome exists and no local persisted outcome")
+    public void clearProceedingOutcomePageRedirectsWhenNoLocalPersistedOutcome() {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
           getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
@@ -1093,6 +1348,39 @@ class CaseControllerTest {
               .availableFunctions(List.of(FunctionConstants.CLEAR_RECORDED_OUTCOME))
               .outcome(new ProceedingOutcomeDetail().id(99));
       ebsCase.setProceedings(List.of(proceeding));
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/proceeding/0/outcome/clear")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+    }
+
+    @Test
+    @DisplayName("Clear proceeding outcome confirm clears data and redirects")
+    public void clearProceedingOutcomeConfirmClearsDataAndRedirects() {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail localOutcome =
+          new ProceedingOutcomeDetail().id(99).proceedingCaseId("pc1").resultInfo("Local outcome");
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ProceedingDetail proceeding =
+          new ProceedingDetail()
+              .description("1854553")
+              .proceedingCaseId("pc1")
+              .availableFunctions(List.of(FunctionConstants.CLEAR_RECORDED_OUTCOME))
+              .outcome(new ProceedingOutcomeDetail().id(99));
+      ebsCase.setProceedings(List.of(proceeding));
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(List.of(localOutcome))));
 
       assertThat(
               mockMvc.perform(
@@ -1134,8 +1422,9 @@ class CaseControllerTest {
     }
 
     @Test
-    @DisplayName("Clear proceeding outcome confirm wraps API failures in CaabApplicationException")
-    public void clearProceedingOutcomeConfirmThrowsCaabApplicationExceptionWhenServiceFails() {
+    @DisplayName(
+        "Clear proceeding outcome confirm redirects without clearing when only EBS outcome exists")
+    public void clearProceedingOutcomeConfirmRedirectsWhenNoLocalPersistedOutcome() {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
           getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
@@ -1146,6 +1435,42 @@ class CaseControllerTest {
               .availableFunctions(List.of(FunctionConstants.CLEAR_RECORDED_OUTCOME))
               .outcome(new ProceedingOutcomeDetail().id(99));
       ebsCase.setProceedings(List.of(proceeding));
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/proceeding/0/outcome/clear")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(caseOutcomeService, times(0))
+          .clearProceedingOutcome(anyString(), anyInt(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("Clear proceeding outcome confirm wraps API failures in CaabApplicationException")
+    public void clearProceedingOutcomeConfirmThrowsCaabApplicationExceptionWhenServiceFails() {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail localOutcome =
+          new ProceedingOutcomeDetail().id(99).proceedingCaseId("pc1").resultInfo("Local outcome");
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ProceedingDetail proceeding =
+          new ProceedingDetail()
+              .description("1854553")
+              .proceedingCaseId("pc1")
+              .availableFunctions(List.of(FunctionConstants.CLEAR_RECORDED_OUTCOME))
+              .outcome(new ProceedingOutcomeDetail().id(99));
+      ebsCase.setProceedings(List.of(proceeding));
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(List.of(localOutcome))));
 
       doThrow(new CaabApiClientException("Downstream failure"))
           .when(caseOutcomeService)

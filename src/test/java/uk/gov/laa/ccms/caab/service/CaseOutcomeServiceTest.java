@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -190,8 +189,10 @@ class CaseOutcomeServiceTest {
     verify(caabApiClient, never()).deleteCaseOutcomes(any(), any(), any());
 
     final CaseOutcomeDetail createdCaseOutcome = createdCaseOutcomeCaptor.getValue();
-    assertEquals(1, createdCaseOutcome.getProceedingOutcomes().size());
+    assertEquals(2, createdCaseOutcome.getProceedingOutcomes().size());
     assertEquals("pc2", createdCaseOutcome.getProceedingOutcomes().get(0).getProceedingCaseId());
+    assertEquals("pc1", createdCaseOutcome.getProceedingOutcomes().get(1).getProceedingCaseId());
+    assertNull(createdCaseOutcome.getProceedingOutcomes().get(1).getResultInfo());
     assertNull(createdCaseOutcome.getId());
 
     final InOrder inOrder = inOrder(caabApiClient);
@@ -200,7 +201,7 @@ class CaseOutcomeServiceTest {
   }
 
   @Test
-  void clearProceedingOutcome_lastRemainingOutcome_deletesAndRecreatesWithEmptyProceedingsList() {
+  void clearProceedingOutcome_lastRemainingOutcome_deletesAndRecreatesWithClearMarker() {
     final String caseReferenceNumber = "300000001";
     final Integer providerId = 123;
     final String loginId = "user1";
@@ -227,10 +228,10 @@ class CaseOutcomeServiceTest {
         ArgumentCaptor.forClass(CaseOutcomeDetail.class);
     inOrder.verify(caabApiClient).createCaseOutcome(eq(loginId), captor.capture());
 
-    // An empty-proceedings record is created so the display layer knows outcomes have been
-    // managed (preventing a cleared outcome from reappearing via the EBS fallback).
     assertNotNull(captor.getValue().getProceedingOutcomes());
-    assertTrue(captor.getValue().getProceedingOutcomes().isEmpty());
+    assertEquals(1, captor.getValue().getProceedingOutcomes().size());
+    assertEquals("pc1", captor.getValue().getProceedingOutcomes().get(0).getProceedingCaseId());
+    assertNull(captor.getValue().getProceedingOutcomes().get(0).getResultInfo());
     assertNull(captor.getValue().getId());
     verify(caabApiClient, never()).deleteCaseOutcomes(any(), any(), any());
   }
@@ -271,10 +272,11 @@ class CaseOutcomeServiceTest {
 
     final List<CaseOutcomeDetail> createAttempts = caseOutcomeCaptor.getAllValues();
     assertEquals(
-        List.of("pc2"),
+        List.of("pc2", "pc1"),
         createAttempts.get(0).getProceedingOutcomes().stream()
             .map(ProceedingOutcomeDetail::getProceedingCaseId)
             .toList());
+    assertNull(createAttempts.get(0).getProceedingOutcomes().get(1).getResultInfo());
     assertEquals(
         List.of("pc1", "pc2"),
         createAttempts.get(1).getProceedingOutcomes().stream()
