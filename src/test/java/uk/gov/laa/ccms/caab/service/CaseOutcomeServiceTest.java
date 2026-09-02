@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -152,6 +153,143 @@ class CaseOutcomeServiceTest {
     verify(caabApiClient).createCaseOutcome(eq(loginId), any(CaseOutcomeDetail.class));
     verify(caabApiClient, never()).deleteCaseOutcome(any(), any());
     verify(caabApiClient, never()).deleteCaseOutcomes(any(), any(), any());
+    verifyNoMoreInteractions(caabApiClient);
+  }
+
+  @Test
+  void clearProceedingOutcome_existingOutcome_deletesOldThenCreatesNewRecord() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final String loginId = "user1";
+    final Integer existingCaseOutcomeId = 42;
+
+    final ProceedingOutcomeDetail proceedingToClear =
+        new ProceedingOutcomeDetail().proceedingCaseId("pc1").resultInfo("old");
+    final ProceedingOutcomeDetail untouchedProceedingOutcome =
+        new ProceedingOutcomeDetail().proceedingCaseId("pc2").resultInfo("keep");
+
+    final CaseOutcomeDetail existingCaseOutcome = new CaseOutcomeDetail();
+    existingCaseOutcome.setId(existingCaseOutcomeId);
+    existingCaseOutcome.setProceedingOutcomes(
+        new ArrayList<>(List.of(proceedingToClear, untouchedProceedingOutcome)));
+
+    doReturn(Optional.of(existingCaseOutcome))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+    when(caabApiClient.deleteCaseOutcome(existingCaseOutcomeId, loginId)).thenReturn(Mono.empty());
+    when(caabApiClient.createCaseOutcome(eq(loginId), any(CaseOutcomeDetail.class)))
+        .thenReturn(Mono.just("new-id"));
+
+    caseOutcomeService.clearProceedingOutcome(caseReferenceNumber, providerId, "pc1", loginId);
+
+    verify(caabApiClient).deleteCaseOutcome(existingCaseOutcomeId, loginId);
+    final ArgumentCaptor<CaseOutcomeDetail> createdCaseOutcomeCaptor =
+        ArgumentCaptor.forClass(CaseOutcomeDetail.class);
+    verify(caabApiClient).createCaseOutcome(eq(loginId), createdCaseOutcomeCaptor.capture());
+    verify(caabApiClient, never()).deleteCaseOutcomes(any(), any(), any());
+
+    final CaseOutcomeDetail createdCaseOutcome = createdCaseOutcomeCaptor.getValue();
+    assertEquals(2, createdCaseOutcome.getProceedingOutcomes().size());
+    assertEquals("pc2", createdCaseOutcome.getProceedingOutcomes().get(0).getProceedingCaseId());
+    assertEquals("pc1", createdCaseOutcome.getProceedingOutcomes().get(1).getProceedingCaseId());
+    assertNull(createdCaseOutcome.getProceedingOutcomes().get(1).getResultInfo());
+    assertNull(createdCaseOutcome.getId());
+
+    final InOrder inOrder = inOrder(caabApiClient);
+    inOrder.verify(caabApiClient).deleteCaseOutcome(existingCaseOutcomeId, loginId);
+    inOrder.verify(caabApiClient).createCaseOutcome(eq(loginId), any(CaseOutcomeDetail.class));
+  }
+
+  @Test
+  void clearProceedingOutcome_lastRemainingOutcome_deletesAndRecreatesWithClearMarker() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final String loginId = "user1";
+    final Integer existingCaseOutcomeId = 42;
+
+    final CaseOutcomeDetail existingCaseOutcome = new CaseOutcomeDetail();
+    existingCaseOutcome.setId(existingCaseOutcomeId);
+    existingCaseOutcome.setProceedingOutcomes(
+        new ArrayList<>(List.of(new ProceedingOutcomeDetail().proceedingCaseId("pc1"))));
+
+    doReturn(Optional.of(existingCaseOutcome))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+    when(caabApiClient.deleteCaseOutcome(existingCaseOutcomeId, loginId)).thenReturn(Mono.empty());
+    when(caabApiClient.createCaseOutcome(eq(loginId), any(CaseOutcomeDetail.class)))
+        .thenReturn(Mono.just("new-id"));
+
+    caseOutcomeService.clearProceedingOutcome(caseReferenceNumber, providerId, "pc1", loginId);
+
+    final InOrder inOrder = inOrder(caabApiClient);
+    inOrder.verify(caabApiClient).deleteCaseOutcome(existingCaseOutcomeId, loginId);
+
+    final ArgumentCaptor<CaseOutcomeDetail> captor =
+        ArgumentCaptor.forClass(CaseOutcomeDetail.class);
+    inOrder.verify(caabApiClient).createCaseOutcome(eq(loginId), captor.capture());
+
+    assertNotNull(captor.getValue().getProceedingOutcomes());
+    assertEquals(1, captor.getValue().getProceedingOutcomes().size());
+    assertEquals("pc1", captor.getValue().getProceedingOutcomes().get(0).getProceedingCaseId());
+    assertNull(captor.getValue().getProceedingOutcomes().get(0).getResultInfo());
+    assertNull(captor.getValue().getId());
+    verify(caabApiClient, never()).deleteCaseOutcomes(any(), any(), any());
+  }
+
+  @Test
+  void clearProceedingOutcome_whenCreateFails_attemptsRestoreAndThrows() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final String loginId = "user1";
+
+    final CaseOutcomeDetail existingCaseOutcome = new CaseOutcomeDetail();
+    existingCaseOutcome.setId(42);
+    existingCaseOutcome.setProceedingOutcomes(
+        new ArrayList<>(
+            List.of(
+                new ProceedingOutcomeDetail().proceedingCaseId("pc1").resultInfo("remove"),
+                new ProceedingOutcomeDetail().proceedingCaseId("pc2").resultInfo("keep"))));
+
+    doReturn(Optional.of(existingCaseOutcome))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+    when(caabApiClient.deleteCaseOutcome(42, loginId)).thenReturn(Mono.empty());
+    when(caabApiClient.createCaseOutcome(eq(loginId), any(CaseOutcomeDetail.class)))
+        .thenReturn(
+            Mono.error(new CaabApiClientException("Transient API failure")),
+            Mono.just("restored-id"));
+
+    assertThrows(
+        CaabApiClientException.class,
+        () ->
+            caseOutcomeService.clearProceedingOutcome(
+                caseReferenceNumber, providerId, "pc1", loginId));
+
+    verify(caabApiClient).deleteCaseOutcome(42, loginId);
+    final ArgumentCaptor<CaseOutcomeDetail> caseOutcomeCaptor =
+        ArgumentCaptor.forClass(CaseOutcomeDetail.class);
+    verify(caabApiClient, times(2)).createCaseOutcome(eq(loginId), caseOutcomeCaptor.capture());
+
+    final List<CaseOutcomeDetail> createAttempts = caseOutcomeCaptor.getAllValues();
+    assertEquals(
+        List.of("pc2", "pc1"),
+        createAttempts.get(0).getProceedingOutcomes().stream()
+            .map(ProceedingOutcomeDetail::getProceedingCaseId)
+            .toList());
+    assertNull(createAttempts.get(0).getProceedingOutcomes().get(1).getResultInfo());
+    assertEquals(
+        List.of("pc1", "pc2"),
+        createAttempts.get(1).getProceedingOutcomes().stream()
+            .map(ProceedingOutcomeDetail::getProceedingCaseId)
+            .toList());
+  }
+
+  @Test
+  void clearProceedingOutcome_whenNoExistingOutcome_noop() {
+    doReturn(Optional.empty()).when(caseOutcomeService).getCaseOutcome("300000001", 123);
+
+    caseOutcomeService.clearProceedingOutcome("300000001", 123, "pc1", "user1");
+
     verifyNoMoreInteractions(caabApiClient);
   }
 }

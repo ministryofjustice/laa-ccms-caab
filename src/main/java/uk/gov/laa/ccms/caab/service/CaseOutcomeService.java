@@ -78,25 +78,8 @@ public class CaseOutcomeService {
       caseOutcome.addProceedingOutcomesItem(proceedingOutcome);
 
       caabApiClient.deleteCaseOutcome(existingCaseOutcomeId, loginId).block();
-      try {
-        caabApiClient.createCaseOutcome(loginId, caseOutcome).block();
-      } catch (CaabApiClientException ex) {
-        log.warn(
-            "Failed to create updated case outcome for case reference number: {}. "
-                + "Attempting to restore previous case outcome data.",
-            caseReferenceNumber,
-            ex);
-        try {
-          caabApiClient.createCaseOutcome(loginId, rollbackCaseOutcome).block();
-        } catch (CaabApiClientException restoreEx) {
-          log.error(
-              "Failed to restore previous case outcome for case reference number: {}",
-              caseReferenceNumber,
-              restoreEx);
-          ex.addSuppressed(restoreEx);
-        }
-        throw ex;
-      }
+      recreateCaseOutcomeWithRollback(
+          caseReferenceNumber, loginId, caseOutcome, rollbackCaseOutcome);
       return;
     } else {
       caseOutcome =
@@ -109,6 +92,87 @@ public class CaseOutcomeService {
     caabApiClient.createCaseOutcome(loginId, caseOutcome).block();
   }
 
+  /**
+   * Clears a single proceeding outcome from the case outcome record. Because the CAAB API has no
+   * PATCH endpoint for case outcomes, the existing record is deleted and recreated with a
+   * proceeding-level clear marker. This allows the display layer to suppress EBS fallback for the
+   * specifically cleared proceeding while still hiding the clear action (marker has no clearable
+   * outcome data).
+   *
+   * @param caseReferenceNumber - the case reference number.
+   * @param providerId - the provider id.
+   * @param proceedingCaseId - the proceeding case id whose outcome should be cleared.
+   * @param loginId - the login ID of the user performing the update.
+   */
+  public void clearProceedingOutcome(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final String proceedingCaseId,
+      final String loginId) {
+    if (proceedingCaseId == null) {
+      return;
+    }
+
+    final Optional<CaseOutcomeDetail> existing = getCaseOutcome(caseReferenceNumber, providerId);
+    if (existing.isEmpty()) {
+      return;
+    }
+
+    final CaseOutcomeDetail existingCaseOutcome = existing.get();
+    final Integer existingCaseOutcomeId = existingCaseOutcome.getId();
+    if (existingCaseOutcomeId == null) {
+      throw new IllegalStateException(
+          "Case outcome record exists but has no id for case reference number: "
+              + caseReferenceNumber);
+    }
+
+    final CaseOutcomeDetail rollbackCaseOutcome = copyCaseOutcomeForCreate(existingCaseOutcome);
+    final CaseOutcomeDetail caseOutcome = copyCaseOutcomeForCreate(existingCaseOutcome);
+
+    if (caseOutcome.getProceedingOutcomes() == null
+        || caseOutcome.getProceedingOutcomes().isEmpty()) {
+      return;
+    }
+
+    final boolean removed =
+        caseOutcome
+            .getProceedingOutcomes()
+            .removeIf(outcome -> proceedingCaseId.equals(outcome.getProceedingCaseId()));
+    if (!removed) {
+      return;
+    }
+    caseOutcome.addProceedingOutcomesItem(buildClearedProceedingOutcomeMarker(proceedingCaseId));
+
+    caabApiClient.deleteCaseOutcome(existingCaseOutcomeId, loginId).block();
+    recreateCaseOutcomeWithRollback(caseReferenceNumber, loginId, caseOutcome, rollbackCaseOutcome);
+  }
+
+  private void recreateCaseOutcomeWithRollback(
+      final String caseReferenceNumber,
+      final String loginId,
+      final CaseOutcomeDetail caseOutcomeToCreate,
+      final CaseOutcomeDetail rollbackCaseOutcome) {
+    try {
+      caabApiClient.createCaseOutcome(loginId, caseOutcomeToCreate).block();
+    } catch (CaabApiClientException ex) {
+      log.warn(
+          "Failed to create updated case outcome for case reference number: {}. "
+              + "Attempting to restore previous case outcome data.",
+          caseReferenceNumber,
+          ex);
+      try {
+        caabApiClient.createCaseOutcome(loginId, rollbackCaseOutcome).block();
+      } catch (CaabApiClientException restoreEx) {
+        log.error(
+            "Failed to restore previous case outcome for case reference number: {}",
+            caseReferenceNumber,
+            restoreEx);
+        ex.addSuppressed(restoreEx);
+      }
+      throw ex;
+    }
+  }
+
   private CaseOutcomeDetail copyCaseOutcomeForCreate(final CaseOutcomeDetail source) {
     final CaseOutcomeDetail copy = new CaseOutcomeDetail();
     BeanUtils.copyProperties(source, copy);
@@ -117,5 +181,10 @@ public class CaseOutcomeService {
       copy.setProceedingOutcomes(new ArrayList<>(source.getProceedingOutcomes()));
     }
     return copy;
+  }
+
+  private ProceedingOutcomeDetail buildClearedProceedingOutcomeMarker(
+      final String proceedingCaseId) {
+    return new ProceedingOutcomeDetail().proceedingCaseId(proceedingCaseId);
   }
 }
