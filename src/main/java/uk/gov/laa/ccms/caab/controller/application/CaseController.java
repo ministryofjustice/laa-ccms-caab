@@ -542,7 +542,7 @@ public class CaseController {
     final List<ProceedingDetail> proceedings = ebsCase.getProceedings();
     String errorMessage = "Could not find proceeding with index: %s".formatted(index);
     Assert.notEmpty(proceedings, () -> errorMessage);
-    Assert.isTrue(index < proceedings.size(), () -> errorMessage);
+    Assert.isTrue(index >= 0 && index < proceedings.size(), () -> errorMessage);
     return proceedings.get(index);
   }
 
@@ -861,13 +861,7 @@ public class CaseController {
       @SessionAttribute(APPLICATION) @Nullable final ApplicationDetail amendments,
       @PathVariable("index") final int index,
       Model model) {
-
-    List<ProceedingDetail> proceedings = ebsCase.getProceedings();
-    String errorMessage = "Could not find proceeding with index: %s".formatted(index);
-    Assert.notEmpty(proceedings, () -> errorMessage);
-    Assert.isTrue(index < proceedings.size(), () -> errorMessage);
-
-    final ProceedingDetail proceedingDetail = ebsCase.getProceedings().get(index);
+    final ProceedingDetail proceedingDetail = validateProceedingIndex(ebsCase, index);
 
     final String proceedingStatus = getProceedingStatus(proceedingDetail, amendments, ebsCase);
 

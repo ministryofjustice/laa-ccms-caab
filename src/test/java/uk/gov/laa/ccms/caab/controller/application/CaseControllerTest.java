@@ -1335,6 +1335,24 @@ class CaseControllerTest {
     }
 
     @Test
+    @DisplayName("Clear proceeding outcome confirmation rejects negative proceeding index")
+    public void clearProceedingOutcomePageRejectsNegativeIndex() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(List.of(new ProceedingDetail().proceedingCaseId("pc1")));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/proceeding/-1/outcome/clear")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .failure()
+          .hasCauseInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("Could not find proceeding with index: -1");
+    }
+
+    @Test
     @DisplayName(
         "Clear proceeding outcome confirmation redirects when only EBS outcome exists and no local persisted outcome")
     public void clearProceedingOutcomePageRedirectsWhenNoLocalPersistedOutcome() {
@@ -1789,6 +1807,18 @@ class CaseControllerTest {
           .failure()
           .hasCauseInstanceOf(IllegalArgumentException.class)
           .hasMessageContaining("Could not find proceeding with index: 1");
+    }
+
+    @Test
+    @DisplayName("Should throw exception when proceeding index is negative")
+    void caseDetailsProceedingThrowsExceptionWhenIndexNegative() {
+      ApplicationDetail ebsCase = new ApplicationDetail();
+      ebsCase.setProceedings(List.of(new ProceedingDetail()));
+
+      assertThat(mockMvc.perform(get("/case/details/proceeding/-1").sessionAttr(CASE, ebsCase)))
+          .failure()
+          .hasCauseInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("Could not find proceeding with index: -1");
     }
 
     @Test
