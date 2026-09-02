@@ -1,8 +1,10 @@
 package uk.gov.laa.ccms.caab.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_VIEW;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
@@ -25,6 +27,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -194,6 +198,22 @@ public class LookupServiceTest {
 
     // A wildcard match on "102" would also return courts such as "1102" and "3102".
     verify(ebsApiClient).getCommonValues(COMMON_VALUE_COURTS, courtCode);
+  }
+
+  @ParameterizedTest
+  @NullSource
+  @ValueSource(strings = {"", " "})
+  @DisplayName("getCourt returns no courts for a blank court code, without querying EBS")
+  void getCourt_withBlankCourtCode_returnsNoCourts(final String courtCode) {
+    final Mono<CommonLookupDetail> result = lookupService.getCourt(courtCode);
+
+    StepVerifier.create(result)
+        .assertNext(detail -> assertTrue(detail.getContent().isEmpty()))
+        .verifyComplete();
+
+    // A null code is dropped from the query, which would return every court and leave callers
+    // treating the first row as the resolved one.
+    verifyNoInteractions(ebsApiClient);
   }
 
   @Test

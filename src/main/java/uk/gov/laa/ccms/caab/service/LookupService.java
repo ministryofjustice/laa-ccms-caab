@@ -203,10 +203,17 @@ public class LookupService {
    * are frequently substrings of one another - a wildcard match on "102" also returns "1102" and
    * "3102", leaving the caller unable to tell which Court the code belongs to.
    *
+   * <p>A blank court code returns no Courts rather than querying EBS. The code query param is
+   * omitted when it is null, which would otherwise return every Court and leave callers treating
+   * the first row as the resolved one.
+   *
    * @param courtCode - the court code.
    * @return A Mono containing the CommonLookupDetail or an error handler if an error occurs.
    */
   public Mono<CommonLookupDetail> getCourt(final String courtCode) {
+    if (!StringUtils.hasText(courtCode)) {
+      return Mono.just(new CommonLookupDetail().content(Collections.emptyList()));
+    }
     return ebsApiClient.getCommonValues(COMMON_VALUE_COURTS, courtCode);
   }
 
