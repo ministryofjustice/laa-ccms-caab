@@ -77,6 +77,7 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.caab.util.PriorAuthorityUtils;
 import uk.gov.laa.ccms.caab.util.view.ActionViewHelper;
+import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
@@ -356,6 +357,21 @@ public class CaseController {
         "preCertificateAndLegalHelpCostsSummary",
         getPreCertificateAndLegalHelpCostsFormData(session, ebsCase.getCaseReferenceNumber()));
     return "application/outcome-and-awards";
+  }
+
+  /**
+   * Displays the Select Award Type screen.
+   *
+   * @param model the model used to populate the award type dropdown
+   * @return the Select Award Type view
+   */
+  @GetMapping("/case/outcome-and-awards/award-type")
+  public String selectAwardType(final Model model) {
+    final AwardTypeLookupDetail awardTypes = lookupService.getAwardTypes().block();
+
+    model.addAttribute("awardTypes", awardTypes.getContent());
+
+    return "application/select-award-type";
   }
 
   /**

@@ -85,6 +85,8 @@ import uk.gov.laa.ccms.caab.model.sections.OrganisationOrganisationDetailsSectio
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
@@ -2403,6 +2405,35 @@ class CaseControllerTest {
           .failure()
           .hasCauseInstanceOf(CaabApplicationException.class)
           .hasMessageContaining("Failed to retrieve case details");
+    }
+
+    @Nested
+    @DisplayName("GET: /case/outcome-and-awards/award-type")
+    class SelectAwardTypeTests {
+
+      @Test
+      @DisplayName("Should display award types returned by the lookup service to the model")
+      void shouldDisplayAwardTypesReturnedByLookup() {
+        final AwardTypeLookupValueDetail costAward =
+            new AwardTypeLookupValueDetail()
+                .code("COST_AWARD")
+                .description("Cost award")
+                .awardType("COST")
+                .enabled(true);
+
+        final AwardTypeLookupDetail awardTypes =
+            new AwardTypeLookupDetail().addContentItem(costAward);
+
+        when(lookupService.getAwardTypes()).thenReturn(Mono.just(awardTypes));
+
+        assertThat(mockMvc.perform(get("/case/outcome-and-awards/award-type")))
+            .hasStatusOk()
+            .hasViewName("application/select-award-type")
+            .model()
+            .containsEntry("awardTypes", awardTypes.getContent());
+
+        verify(lookupService).getAwardTypes();
+      }
     }
   }
 }
