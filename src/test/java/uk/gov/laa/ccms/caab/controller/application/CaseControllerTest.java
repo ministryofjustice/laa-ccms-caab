@@ -1009,7 +1009,7 @@ class CaseControllerTest {
                               .outcomeResult("R1")
                               .outcomeResultDescription("Result 1"))));
       lenient()
-          .when(lookupService.getCourts(anyString()))
+          .when(lookupService.getCourt(anyString()))
           .thenReturn(
               Mono.just(
                   new CommonLookupDetail()
@@ -1212,7 +1212,7 @@ class CaseControllerTest {
                               .outcomeResult("R1")
                               .outcomeResultDescription("Result 1"))));
       lenient()
-          .when(lookupService.getCourts(anyString()))
+          .when(lookupService.getCourt(anyString()))
           .thenReturn(
               Mono.just(
                   new CommonLookupDetail()

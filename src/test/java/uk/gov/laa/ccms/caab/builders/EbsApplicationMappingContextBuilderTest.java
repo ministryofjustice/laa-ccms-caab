@@ -402,7 +402,7 @@ class EbsApplicationMappingContextBuilderTest {
 
     CommonLookupDetail courts =
         new CommonLookupDetail().totalElements(1).addContentItem(new CommonLookupValueDetail());
-    when(lookupService.getCourts(ebsProceeding.getOutcome().getCourtCode()))
+    when(lookupService.getCourt(ebsProceeding.getOutcome().getCourtCode()))
         .thenReturn(Mono.just(courts));
 
     // Call the method under test

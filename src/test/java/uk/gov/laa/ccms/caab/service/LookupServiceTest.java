@@ -180,19 +180,20 @@ public class LookupServiceTest {
   }
 
   @Test
-  @DisplayName("getCourts with only courtCode returns data successfully")
-  void getCourts_withCourtCodeOnly_success() {
-    final String courtCode = "COURT123";
+  @DisplayName("getCourt matches the court code exactly, without wildcards")
+  void getCourt_matchesCourtCodeExactly() {
+    final String courtCode = "102";
     final CommonLookupDetail mockCourtDetails = new CommonLookupDetail(); // Populate as needed
 
-    when(ebsApiClient.getCommonValues(COMMON_VALUE_COURTS, "*" + courtCode + "*", null))
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_COURTS, courtCode))
         .thenReturn(Mono.just(mockCourtDetails));
 
-    final Mono<CommonLookupDetail> result = lookupService.getCourts(courtCode);
+    final Mono<CommonLookupDetail> result = lookupService.getCourt(courtCode);
 
     StepVerifier.create(result).expectNext(mockCourtDetails).verifyComplete();
 
-    verify(ebsApiClient).getCommonValues(COMMON_VALUE_COURTS, "*" + courtCode + "*", null);
+    // A wildcard match on "102" would also return courts such as "1102" and "3102".
+    verify(ebsApiClient).getCommonValues(COMMON_VALUE_COURTS, courtCode);
   }
 
   @Test

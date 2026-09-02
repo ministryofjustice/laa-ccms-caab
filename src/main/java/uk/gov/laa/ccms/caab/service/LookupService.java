@@ -199,14 +199,15 @@ public class LookupService {
   }
 
   /**
-   * Retrieves court details. A wildcard match is performed for courtCode to return all Courts which
-   * contain the provided value.
+   * Retrieves the single Court with the supplied code. An exact match is performed, as court codes
+   * are frequently substrings of one another - a wildcard match on "102" also returns "1102" and
+   * "3102", leaving the caller unable to tell which Court the code belongs to.
    *
    * @param courtCode - the court code.
    * @return A Mono containing the CommonLookupDetail or an error handler if an error occurs.
    */
-  public Mono<CommonLookupDetail> getCourts(final String courtCode) {
-    return this.getCourts(courtCode, null);
+  public Mono<CommonLookupDetail> getCourt(final String courtCode) {
+    return ebsApiClient.getCommonValues(COMMON_VALUE_COURTS, courtCode);
   }
 
   /**

@@ -402,7 +402,7 @@ class SoaApplicationMappingContextBuilderTest {
 
     CommonLookupDetail courts =
         new CommonLookupDetail().totalElements(1).addContentItem(new CommonLookupValueDetail());
-    when(lookupService.getCourts(soaProceeding.getOutcome().getCourtCode()))
+    when(lookupService.getCourt(soaProceeding.getOutcome().getCourtCode()))
         .thenReturn(Mono.just(courts));
 
     // Call the method under test
