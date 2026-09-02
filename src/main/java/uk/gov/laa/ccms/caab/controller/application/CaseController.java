@@ -623,7 +623,7 @@ public class CaseController {
         buildOutcomeMap(lookupService.getOutcomeResults(proceedingCode, null).block());
     final Map<String, String> courtMap =
         StringUtils.hasText(proceedingOutcome.getCourtCode())
-            ? buildOutcomeMap(lookupService.getCourts(proceedingOutcome.getCourtCode()).block())
+            ? buildOutcomeMap(lookupService.getCourt(proceedingOutcome.getCourtCode()).block())
             : Collections.emptyMap();
 
     final ProceedingOutcomeDetail outcome = new ProceedingOutcomeDetail();

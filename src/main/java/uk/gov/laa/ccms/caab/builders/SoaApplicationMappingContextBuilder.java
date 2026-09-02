@@ -467,7 +467,7 @@ public class SoaApplicationMappingContextBuilder {
         combinedOutcomeResults =
             Optional.ofNullable(
                     Mono.zip(
-                            lookupService.getCourts(soaProceeding.getOutcome().getCourtCode()),
+                            lookupService.getCourt(soaProceeding.getOutcome().getCourtCode()),
                             lookupService.getOutcomeResults(
                                 soaProceeding.getProceedingType(),
                                 soaProceeding.getOutcome().getResult()),
@@ -479,7 +479,7 @@ public class SoaApplicationMappingContextBuilder {
 
     /*
      * Only use the looked up Court data if we got a single match.
-     * Otherwise, default to the court code for display.
+     * Otherwise, default to the court code for display, rather than show an arbitrary Court.
      */
     final CommonLookupValueDetail courtLookup =
         combinedOutcomeResults.getT1().getContent().size() == 1

@@ -471,7 +471,7 @@ public class EbsApplicationMappingContextBuilder {
         combinedOutcomeResults =
             Optional.ofNullable(
                     Mono.zip(
-                            lookupService.getCourts(ebsProceeding.getOutcome().getCourtCode()),
+                            lookupService.getCourt(ebsProceeding.getOutcome().getCourtCode()),
                             lookupService.getOutcomeResults(
                                 ebsProceeding.getProceedingType(),
                                 ebsProceeding.getOutcome().getResult()),
@@ -483,7 +483,7 @@ public class EbsApplicationMappingContextBuilder {
 
     /*
      * Only use the looked up Court data if we got a single match.
-     * Otherwise, default to the court code for display.
+     * Otherwise, default to the court code for display, rather than show an arbitrary Court.
      */
     final CommonLookupValueDetail courtLookup =
         combinedOutcomeResults.getT1().getContent().size() == 1
