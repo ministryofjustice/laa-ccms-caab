@@ -229,51 +229,63 @@ public class ApplicationSubmissionController {
               ApplicationDetail application = tuple.getT3();
               List<AbstractOpponentFormData> opponents = tuple.getT4();
 
-              boolean hasFormErrors =
-                  processValidations(
-                      providerDetails,
-                      generalDetails,
-                      application,
-                      opponents,
-                      model,
-                      caseContext.isAmendment());
-
-              return validateProceedings(application.getProceedings(), model)
+              // Form validation performs blocking lookups - validateOpponents resolves the
+              // person-to-case relationships with blockOptional() when the application has an
+              // individual opponent - so run it on the bounded-elastic scheduler rather than the
+              // event-loop thread, as the opponent fetch above and the amendment assessment
+              // validation below already do. Blocking here fails the request outright with
+              // "blockOptional() is blocking, which is not supported in thread reactor-http-epoll",
+              // and the user is shown a System Error page instead of the submission screens.
+              return Mono.fromCallable(
+                      () ->
+                          processValidations(
+                              providerDetails,
+                              generalDetails,
+                              application,
+                              opponents,
+                              model,
+                              caseContext.isAmendment()))
+                  .subscribeOn(Schedulers.boundedElastic())
                   .flatMap(
-                      proceedingsFailed -> {
-                        final boolean baseErrors = hasFormErrors || proceedingsFailed;
+                      hasFormErrors ->
+                          validateProceedings(application.getProceedings(), model)
+                              .flatMap(
+                                  proceedingsFailed -> {
+                                    final boolean baseErrors = hasFormErrors || proceedingsFailed;
 
-                        // If base form/proceedings validation already failed, surface those errors
-                        // immediately and skip the (blocking, SOA-touching) amendment assessment
-                        // validation - it would only add latency and could fail the request for
-                        // reasons unrelated to the errors actually shown to the user.
-                        if (baseErrors) {
-                          model.addAttribute("caseContext", caseContext);
-                          return Mono.just("application/application-validation-error-correction");
-                        }
+                                    // If base form/proceedings validation already failed,
+                                    // surface those errors immediately and skip the (blocking,
+                                    // SOA-touching) amendment assessment validation - it would only
+                                    // add latency and could fail the request for reasons unrelated
+                                    // to the errors actually shown to the user.
+                                    if (baseErrors) {
+                                      model.addAttribute("caseContext", caseContext);
+                                      return Mono.just(
+                                          "application/application-validation-error-correction");
+                                    }
 
-                        // Amendment assessment validation performs blocking assessment lookups, so
-                        // run it on the bounded-elastic scheduler rather than the event-loop
-                        // thread.
-                        final Mono<Boolean> amendmentErrors =
-                            caseContext.isAmendment()
-                                ? Mono.fromCallable(
-                                        () ->
-                                            validateAmendmentAssessments(
-                                                application, caseDetail, user, model))
-                                    .subscribeOn(Schedulers.boundedElastic())
-                                : Mono.just(false);
+                                    // Amendment assessment validation performs blocking assessment
+                                    // lookups, so run it on the bounded-elastic scheduler rather
+                                    // than the event-loop thread.
+                                    final Mono<Boolean> amendmentErrors =
+                                        caseContext.isAmendment()
+                                            ? Mono.fromCallable(
+                                                    () ->
+                                                        validateAmendmentAssessments(
+                                                            application, caseDetail, user, model))
+                                                .subscribeOn(Schedulers.boundedElastic())
+                                            : Mono.just(false);
 
-                        return amendmentErrors.map(
-                            hasAmendmentErrors -> {
-                              if (hasAmendmentErrors) {
-                                model.addAttribute("caseContext", caseContext);
-                                return "application/application-validation-error-correction";
-                              }
-                              return "redirect:/%s/submit/summary"
-                                  .formatted(caseContext.getPathValue());
-                            });
-                      });
+                                    return amendmentErrors.map(
+                                        hasAmendmentErrors -> {
+                                          if (hasAmendmentErrors) {
+                                            model.addAttribute("caseContext", caseContext);
+                                            return "application/application-validation-error-correction";
+                                          }
+                                          return "redirect:/%s/submit/summary"
+                                              .formatted(caseContext.getPathValue());
+                                        });
+                                  }));
             });
   }
 

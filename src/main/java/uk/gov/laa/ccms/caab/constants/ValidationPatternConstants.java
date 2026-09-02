@@ -86,6 +86,16 @@ public class ValidationPatternConstants {
   /** pattern primarily for address house name or number. Alphanumerics with spaces and commas. */
   public static final String ALPHA_NUMERIC_SPACES_COMMAS = "^([A-Za-z0-9 ,])*$";
 
+  /**
+   * Pattern for the lines of an address.
+   *
+   * <p>Wider than {@link #ALPHA_NUMERIC_SPACES_COMMAS} because addresses are not free text the
+   * provider invents: they arrive from EBS, which stores the punctuation real addresses contain -
+   * "21-27, St Pauls Street", "St Paul's Chambers", "Flat 3/1". Rejecting those meant refusing to
+   * submit an amendment over an address CCMS had supplied and the provider had never typed.
+   */
+  public static final String ADDRESS_CHARACTER_SET = "^[A-Za-z0-9 ,\\.\\-'/\\(\\)]*$";
+
   /** pattern to test that the first character in a string is alphabetic. */
   public static final String FIRST_CHARACTER_MUST_BE_ALPHA = "^[A-Za-z].*";
 

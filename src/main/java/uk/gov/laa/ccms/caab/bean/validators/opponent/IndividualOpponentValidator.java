@@ -48,11 +48,16 @@ public class IndividualOpponentValidator extends AbstractOpponentValidator {
         CHARACTER_SET_C,
         errors);
 
-    final boolean dateMandatory =
-        opponentFormData.isDateOfBirthMandatory()
-            || StringUtils.hasText(opponentFormData.getDateOfBirth());
+    final boolean hasDateOfBirth = StringUtils.hasText(opponentFormData.getDateOfBirth());
 
-    validateDateOfBirth(target, errors, dateMandatory);
+    if (opponentFormData.isDateOfBirthMandatory() && !hasDateOfBirth) {
+      errors.rejectValue(
+          "dateOfBirth",
+          "required.dob",
+          "Date of Birth must be supplied because this Opponent is recorded as a Child on the Relationship to Case section.");
+    } else {
+      validateDateOfBirth(target, errors, opponentFormData.isDateOfBirthMandatory());
+    }
 
     validateRequiredField(
         "relationshipToCase",

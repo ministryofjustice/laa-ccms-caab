@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.client;
 
 import static uk.gov.laa.ccms.caab.util.FileUtil.getFilename;
 
+import io.awspring.cloud.s3.ObjectMetadata;
 import io.awspring.cloud.s3.S3Resource;
 import io.awspring.cloud.s3.S3Template;
 import java.io.ByteArrayInputStream;
@@ -16,6 +17,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.http.ContentDisposition;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -32,6 +34,8 @@ import uk.gov.laa.ccms.caab.config.S3DocumentBucketProperties;
 @EnableConfigurationProperties({S3DocumentBucketProperties.class})
 public class S3ApiClient {
 
+  private static final String DRAFT_PREFIX = "draft/";
+
   // For Simple Interactions
   private final S3Template s3Template;
 
@@ -40,8 +44,6 @@ public class S3ApiClient {
 
   private final S3ApiClientErrorHandler errorHandler;
   private final S3DocumentBucketProperties documentBucketProperties;
-
-  private static final String DRAFT_PREFIX = "draft/";
 
   /**
    * Retrieve the content of a document from S3.
@@ -157,9 +159,12 @@ public class S3ApiClient {
    * @param documentId the ID of the document.
    * @param fileData the content of the document.
    * @param extension the extension of the document
+   * @param fileName the filename to set in Content-Disposition metadata.
    */
-  public void uploadDraftDocument(String documentId, String fileData, String extension) {
-    uploadDocument(documentId, fileData, extension, true);
+  public void uploadDraftDocument(
+      String documentId, String fileData, String extension, String fileName) {
+    String objectKey = getDraftId(getFilename(documentId, extension));
+    uploadDocumentToS3(objectKey, fileData, fileName);
   }
 
   /**
@@ -170,25 +175,45 @@ public class S3ApiClient {
    * @param extension the extension of the document
    */
   public void uploadDocument(String documentId, String fileData, String extension) {
-    uploadDocument(documentId, fileData, extension, false);
+    String objectKey = getFilename(documentId, extension);
+    uploadDocumentToS3(objectKey, fileData, null);
   }
 
   /**
-   * Upload a document to S3.
+   * Upload document content to S3 under the given object key.
    *
-   * @param documentId The id of the document to upload.
+   * @param objectKey The fully-qualified S3 object key to upload to.
    * @param fileData The content of the document to upload.
-   * @param extension The extension of the document to upload.
-   * @param isDraft Whether the document is a draft.
+   * @param fileName The filename to set in Content-Disposition metadata, or null if none.
    */
-  private void uploadDocument(
-      String documentId, String fileData, String extension, boolean isDraft) {
+  private void uploadDocumentToS3(String objectKey, String fileData, String fileName) {
     InputStream contentInputStream = new ByteArrayInputStream(Base64.getDecoder().decode(fileData));
-    String filename = getFilename(documentId, extension);
-    if (isDraft) {
-      filename = getDraftId(filename);
+    ObjectMetadata objectMetadata = buildContentDispositionMetadata(fileName);
+
+    if (objectMetadata != null) {
+      s3Template.upload(
+          documentBucketProperties.getName(), objectKey, contentInputStream, objectMetadata);
+    } else {
+      s3Template.upload(documentBucketProperties.getName(), objectKey, contentInputStream);
     }
-    s3Template.upload(documentBucketProperties.getName(), filename, contentInputStream);
+  }
+
+  /**
+   * Build S3 object metadata carrying a Content-Disposition header for the given filename.
+   *
+   * @param fileName The filename to set in Content-Disposition metadata.
+   * @return the {@link ObjectMetadata}, or null if no filename was provided.
+   */
+  private ObjectMetadata buildContentDispositionMetadata(String fileName) {
+    if (fileName == null) {
+      return null;
+    }
+    final String contentDisposition =
+        ContentDisposition.attachment()
+            .filename(fileName, StandardCharsets.UTF_8)
+            .build()
+            .toString();
+    return ObjectMetadata.builder().contentDisposition(contentDisposition).build();
   }
 
   /**

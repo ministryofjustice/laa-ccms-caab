@@ -20,12 +20,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.ContentDisposition;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
 
 @SpringBootTest
@@ -42,6 +46,8 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
   @Autowired private S3ApiClient s3ApiClient;
 
   @Autowired private S3Template s3Template;
+
+  @Autowired private S3Client s3Client;
 
   @BeforeEach
   void beforeEach() {
@@ -222,12 +228,14 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
     String documentName = "integration-test-file-1";
     String documentContent = "ZG9jdW1lbnRDb250ZW50"; // "documentContent" Base64 encoded
     String documentExtension = "pdf";
+    String originalFilename = "integration-upload.pdf";
 
     List<S3Resource> beforeFiles =
         s3Template.listObjects(BUCKET_NAME, "draft/integration-test-file");
     assertTrue(beforeFiles.isEmpty());
 
-    s3ApiClient.uploadDraftDocument(documentName, documentContent, documentExtension);
+    s3ApiClient.uploadDraftDocument(
+        documentName, documentContent, documentExtension, originalFilename);
 
     List<S3Resource> afterFiles =
         s3Template.listObjects(BUCKET_NAME, "draft/integration-test-file");
@@ -237,5 +245,16 @@ public class S3ClientIntegrationTest extends AbstractIntegrationTest {
     assertEquals(
         documentContent,
         Base64.getEncoder().encodeToString(afterFiles.getFirst().getContentAsByteArray()));
+
+    HeadObjectResponse headObjectResponse =
+        s3Client.headObject(
+            HeadObjectRequest.builder()
+                .bucket(BUCKET_NAME)
+                .key("draft/integration-test-file-1.pdf")
+                .build());
+
+    assertEquals(
+        originalFilename,
+        ContentDisposition.parse(headObjectResponse.contentDisposition()).getFilename());
   }
 }
