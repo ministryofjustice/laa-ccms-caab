@@ -482,15 +482,15 @@ public class EbsApplicationMappingContextBuilder {
                 .orElseThrow(() -> new CaabApplicationException("Failed to query lookup data"));
 
     /*
-     * Use the looked up Court data if the code resolved.
-     * Otherwise, default to the court code for display.
+     * Only use the looked up Court data if we got a single match.
+     * Otherwise, default to the court code for display, rather than show an arbitrary Court.
      */
     final CommonLookupValueDetail courtLookup =
-        combinedOutcomeResults.getT1().getContent().isEmpty()
-            ? new CommonLookupValueDetail()
+        combinedOutcomeResults.getT1().getContent().size() == 1
+            ? combinedOutcomeResults.getT1().getContent().getFirst()
+            : new CommonLookupValueDetail()
                 .code(ebsProceeding.getOutcome().getCourtCode())
-                .description(ebsProceeding.getOutcome().getCourtCode())
-            : combinedOutcomeResults.getT1().getContent().getFirst();
+                .description(ebsProceeding.getOutcome().getCourtCode());
 
     // Use the outcome result display data, if we have it.
     final OutcomeResultLookupValueDetail outcomeResultLookup =
