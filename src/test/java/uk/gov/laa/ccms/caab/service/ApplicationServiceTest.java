@@ -1366,6 +1366,7 @@ class ApplicationServiceTest {
     when(lookupService.getCommonValue(
             COMMON_VALUE_RELATIONSHIP_TO_CLIENT, opponent.getRelationshipToClient()))
         .thenReturn(Mono.just(Optional.empty()));
+    when(lookupService.getCountry("thecountry")).thenReturn(Mono.just(Optional.empty()));
 
     String expectedPartyName =
         opponent.getTitle() + " " + opponent.getFirstName() + " " + opponent.getSurname();
@@ -1376,6 +1377,7 @@ class ApplicationServiceTest {
             null,
             opponent.getRelationshipToCase(),
             opponent.getRelationshipToClient(),
+            "thecountry",
             true))
         .thenReturn(new IndividualOpponentFormData());
 
@@ -1389,6 +1391,7 @@ class ApplicationServiceTest {
             null,
             opponent.getRelationshipToCase(),
             opponent.getRelationshipToClient(),
+            "thecountry",
             true);
   }
 
@@ -1405,6 +1408,7 @@ class ApplicationServiceTest {
     when(lookupService.getCommonValue(
             COMMON_VALUE_RELATIONSHIP_TO_CLIENT, opponent.getRelationshipToClient()))
         .thenReturn(Mono.just(Optional.empty()));
+    when(lookupService.getCountry("thecountry")).thenReturn(Mono.just(Optional.empty()));
     when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle()))
         .thenReturn(Mono.just(Optional.empty()));
 
@@ -1416,6 +1420,7 @@ class ApplicationServiceTest {
             opponent.getOrganisationType(),
             opponent.getRelationshipToCase(),
             opponent.getRelationshipToClient(),
+            "thecountry",
             true))
         .thenReturn(new OrganisationOpponentFormData());
 
@@ -1429,6 +1434,7 @@ class ApplicationServiceTest {
             opponent.getOrganisationType(),
             opponent.getRelationshipToCase(),
             opponent.getRelationshipToClient(),
+            "thecountry",
             true);
   }
 
@@ -1460,6 +1466,7 @@ class ApplicationServiceTest {
     when(lookupService.getCommonValue(
             COMMON_VALUE_RELATIONSHIP_TO_CLIENT, opponent.getRelationshipToClient()))
         .thenReturn(Mono.just(Optional.of(relationshipToClient)));
+    when(lookupService.getCountry("thecountry")).thenReturn(Mono.just(Optional.empty()));
 
     CommonLookupValueDetail titleLookup =
         new CommonLookupValueDetail().code(opponent.getTitle()).description("Mr");
@@ -1475,6 +1482,7 @@ class ApplicationServiceTest {
             organisationTypeLookup.getDescription(),
             orgRelationshipToCase.getDescription(),
             relationshipToClient.getDescription(),
+            "thecountry",
             true))
         .thenReturn(new OrganisationOpponentFormData());
 
@@ -1488,6 +1496,7 @@ class ApplicationServiceTest {
             organisationTypeLookup.getDescription(),
             orgRelationshipToCase.getDescription(),
             relationshipToClient.getDescription(),
+            "thecountry",
             true);
   }
 
@@ -1515,6 +1524,7 @@ class ApplicationServiceTest {
     when(lookupService.getCommonValue(
             COMMON_VALUE_RELATIONSHIP_TO_CLIENT, opponent.getRelationshipToClient()))
         .thenReturn(Mono.just(Optional.of(relationshipToClient)));
+    when(lookupService.getCountry("thecountry")).thenReturn(Mono.just(Optional.empty()));
 
     String expectedPartyName =
         opponent.getTitle() + " " + opponent.getFirstName() + " " + opponent.getSurname();
@@ -1525,6 +1535,7 @@ class ApplicationServiceTest {
             null,
             personRelationshipToCase.getDescription(),
             relationshipToClient.getDescription(),
+            "thecountry",
             true))
         .thenReturn(new IndividualOpponentFormData());
 
@@ -1538,6 +1549,7 @@ class ApplicationServiceTest {
             null,
             personRelationshipToCase.getDescription(),
             relationshipToClient.getDescription(),
+            "thecountry",
             true);
   }
 
@@ -1556,9 +1568,16 @@ class ApplicationServiceTest {
     when(lookupService.getCommonValue(
             COMMON_VALUE_RELATIONSHIP_TO_CLIENT, opponent.getRelationshipToClient()))
         .thenReturn(Mono.just(Optional.empty()));
+    when(lookupService.getCountry("thecountry")).thenReturn(Mono.just(Optional.empty()));
 
     when(opponentMapper.toOpponentFormData(
-            eq(opponent), anyString(), isNull(), anyString(), anyString(), anyBoolean()))
+            eq(opponent),
+            anyString(),
+            isNull(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyBoolean()))
         .thenReturn(new IndividualOpponentFormData());
 
     List<AbstractOpponentFormData> result = applicationService.getOpponents(applicationId);
@@ -1568,7 +1587,13 @@ class ApplicationServiceTest {
 
     verify(opponentMapper)
         .toOpponentFormData(
-            eq(opponent), anyString(), isNull(), anyString(), anyString(), anyBoolean());
+            eq(opponent),
+            anyString(),
+            isNull(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyBoolean());
   }
 
   private ApplicationFormData buildApplicationFormData() {

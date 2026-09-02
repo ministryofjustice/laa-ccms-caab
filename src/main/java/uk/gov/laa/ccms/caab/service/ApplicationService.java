@@ -1612,9 +1612,17 @@ public class ApplicationService {
     final Mono<Optional<CommonLookupValueDetail>> titleCommonLookupMono =
         lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle());
 
-    final Tuple4<
+    // Lookup the country display value for the opponent's address.
+    final String countryCode =
+        Optional.ofNullable(opponent.getAddress()).map(AddressDetail::getCountry).orElse(null);
+
+    final Mono<Optional<CommonLookupValueDetail>> countryLookupMono =
+        lookupService.getCountry(countryCode);
+
+    final Tuple5<
             Optional<CommonLookupValueDetail>,
             Optional<RelationshipToCaseLookupValueDetail>,
+            Optional<CommonLookupValueDetail>,
             Optional<CommonLookupValueDetail>,
             Optional<CommonLookupValueDetail>>
         combinedResult =
@@ -1622,7 +1630,8 @@ public class ApplicationService {
                     organisationTypeLookupMono,
                     relationshipToCaseMono,
                     relationshipToCommonLookupMono,
-                    titleCommonLookupMono)
+                    titleCommonLookupMono,
+                    countryLookupMono)
                 .blockOptional()
                 .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
 
@@ -1652,6 +1661,9 @@ public class ApplicationService {
                     .code(opponent.getTitle())
                     .description(opponent.getTitle()));
 
+    final String countryDisplayValue =
+        combinedResult.getT5().map(CommonLookupValueDetail::getDescription).orElse(countryCode);
+
     // Build a name for the opponent depending on the opponent type.
     final String partyName = getPartyName(opponent, titleDisplayValue);
 
@@ -1661,6 +1673,7 @@ public class ApplicationService {
         organisationTypeDisplayValue,
         relationshipToCaseDisplayValue,
         relationshipToClientDisplayValue,
+        countryDisplayValue,
         isEditable);
   }
 

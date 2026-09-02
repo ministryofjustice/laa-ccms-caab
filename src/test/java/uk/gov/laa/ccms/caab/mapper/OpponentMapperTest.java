@@ -26,9 +26,12 @@ public class OpponentMapperTest {
     OrganisationDetail organisationDetail = buildOrganisationDetail("");
     CommonLookupValueDetail orgTypeLookup =
         new CommonLookupValueDetail().code("thecode").description("org type");
+    CommonLookupValueDetail countryLookup =
+        new CommonLookupValueDetail().code("GBR").description("Great Britain");
 
     OrganisationOpponentFormData result =
-        opponentMapper.toOrganisationOpponentFormData(organisationDetail, orgTypeLookup);
+        opponentMapper.toOrganisationOpponentFormData(
+            organisationDetail, orgTypeLookup, countryLookup);
 
     assertNotNull(result);
     assertEquals(organisationDetail.getAddress().getAddressLine1(), result.getAddressLine1());
@@ -45,6 +48,7 @@ public class OpponentMapperTest {
     assertEquals(organisationDetail.getName(), result.getOrganisationName());
     assertEquals(organisationDetail.getType(), result.getOrganisationType());
     assertEquals(orgTypeLookup.getDescription(), result.getOrganisationTypeDisplayValue());
+    assertEquals(countryLookup.getDescription(), result.getCountryDisplayValue());
     assertEquals(organisationDetail.getOtherInformation(), result.getOtherInformation());
     assertEquals(organisationDetail.getPartyId(), result.getPartyId());
     org.junit.jupiter.api.Assertions.assertTrue(result.getDeletable());
@@ -128,6 +132,7 @@ public class OpponentMapperTest {
     final String organisationTypeDisplayValue = "org type";
     final String relationshipToCaseDisplayValue = "relationship 2 case";
     final String relationshipToClientDisplayValue = "relationship 2 client";
+    final String countryDisplayValue = "Great Britain";
     AbstractOpponentFormData result =
         opponentMapper.toOpponentFormData(
             opponent,
@@ -135,6 +140,7 @@ public class OpponentMapperTest {
             organisationTypeDisplayValue,
             relationshipToCaseDisplayValue,
             relationshipToClientDisplayValue,
+            countryDisplayValue,
             true);
 
     assertNotNull(result);
@@ -160,6 +166,7 @@ public class OpponentMapperTest {
     assertEquals(opponent.getOrganisationName(), orgResult.getOrganisationName());
     assertEquals(opponent.getOrganisationType(), orgResult.getOrganisationType());
     assertEquals(organisationTypeDisplayValue, orgResult.getOrganisationTypeDisplayValue());
+    assertEquals(countryDisplayValue, orgResult.getCountryDisplayValue());
     assertEquals(opponent.getOtherInformation(), orgResult.getOtherInformation());
     assertEquals(opponent.getPartyId(), orgResult.getPartyId());
     assertEquals(opponent.getRelationshipToCase(), orgResult.getRelationshipToCase());
@@ -179,6 +186,7 @@ public class OpponentMapperTest {
     final String organisationTypeDisplayValue = "org type";
     final String relationshipToCaseDisplayValue = "relationship 2 case";
     final String relationshipToClientDisplayValue = "relationship 2 client";
+    final String countryDisplayValue = "Great Britain";
     AbstractOpponentFormData result =
         opponentMapper.toOpponentFormData(
             opponent,
@@ -186,6 +194,7 @@ public class OpponentMapperTest {
             organisationTypeDisplayValue,
             relationshipToCaseDisplayValue,
             relationshipToClientDisplayValue,
+            countryDisplayValue,
             true);
 
     assertNotNull(result);

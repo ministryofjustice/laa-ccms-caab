@@ -3,11 +3,14 @@ package uk.gov.laa.ccms.caab.mapper;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 
 import java.util.Collections;
+import java.util.Optional;
+import java.util.function.Function;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.sections.IndividualAddressContactDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
@@ -55,7 +58,7 @@ public abstract class IndividualDetailsSectionDisplayMapper {
   @Mapping(target = "addressLineTwo", source = "opponentDetail.address.addressLine2")
   @Mapping(target = "cityTown", source = "opponentDetail.address.city")
   @Mapping(target = "county", source = "opponentDetail.address.county")
-  @Mapping(target = "country", source = "opponentDetail.address.country")
+  @Mapping(target = "country", source = "opponentDetail", qualifiedByName = "mapCountry")
   @Mapping(target = "postcode", source = "opponentDetail.address.postcode")
   @Mapping(target = "telephoneHome", source = "opponentDetail.telephoneHome")
   @Mapping(target = "telephoneWork", source = "opponentDetail.telephoneWork")
@@ -73,6 +76,22 @@ public abstract class IndividualDetailsSectionDisplayMapper {
   @Mapping(target = "partyIsLegalAided", source = "opponentDetail.legalAided")
   public abstract IndividualEmploymentDetailsSectionDisplay
       toIndividualEmploymentDetailsSectionDisplay(OpponentDetail opponentDetail);
+
+  /** Resolves the address country code to its description, falling back to the code itself. */
+  @Named("mapCountry")
+  protected String mapCountry(OpponentDetail opponentDetail) {
+    final String countryCode =
+        Optional.ofNullable(opponentDetail.getAddress())
+            .map(AddressDetail::getCountry)
+            .orElse(null);
+
+    return lookupService
+        .getCountry(countryCode)
+        .blockOptional()
+        .flatMap(Function.identity())
+        .map(CommonLookupValueDetail::getDescription)
+        .orElse(countryCode);
+  }
 
   @Named("mapRelationshipToClient")
   protected String mapRelationshipToClient(OpponentDetail opponentDetail) {
