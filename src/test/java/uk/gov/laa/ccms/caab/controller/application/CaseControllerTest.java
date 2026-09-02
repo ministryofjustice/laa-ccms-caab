@@ -942,7 +942,7 @@ class CaseControllerTest {
     @Test
     @DisplayName(
         "Outcome and awards falls back to EBS outcome when local case outcome exists without this proceeding")
-public void outcomeAndAwardsFallsBackToEbsOutcomeWhenLocalCaseOutcomeHasNoMatchingProceeding() {
+    public void outcomeAndAwardsFallsBackToEbsOutcomeWhenLocalCaseOutcomeHasNoMatchingProceeding() {
       final String selectedCaseRef = "8";
       final ProceedingOutcomeDetail ebsOutcome =
           new ProceedingOutcomeDetail()
