@@ -128,23 +128,39 @@
         <table class="govuk-table">
           <thead class="govuk-table__head">
           <tr class="govuk-table__row">
-            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.documents.table.documents}"></th>
+            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.documents.table.fileName}"></th>
+            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.documents.table.documentType}"></th>
+            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.documents.table.description}"></th>
+            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.documents.table.uploadDate}"></th>
+            <th scope="col" class="govuk-table__header" th:text="#{site.action}"></th>
           </tr>
           </thead>
           <tbody class="govuk-table__body">
-          <tr class="govuk-table__row">
+          <tr class="govuk-table__row" th:if="${#lists.isEmpty(documents)}">
+            <td class="govuk-table__cell" colspan="5" th:text="#{case.outcomeAndAwards.documents.noDocuments}"></td>
+          </tr>
+          <tr class="govuk-table__row" th:each="document, stat : ${documents}">
+            <td class="govuk-table__cell" th:text="${document.fileName}"></td>
+            <td class="govuk-table__cell" th:text="${document.documentType?.displayValue}"></td>
+            <td class="govuk-table__cell" th:text="${document.description}"></td>
+            <td class="govuk-table__cell" th:text="${document.auditTrail?.created != null ? #dates.format(document.auditTrail.created, 'dd/MM/yyyy') : ''}"></td>
             <td class="govuk-table__cell">
               <a class="govuk-link govuk-link--no-visited-state"
                  href="#"
-                 th:text="#{case.outcomeAndAwards.documents.upload}"
-                id="documentUploadLink"
+                 th:text="#{site.remove}"
+                 th:id="|documentRemoveLink-${stat.index}|"
               ></a>
-              <strong class="govuk-tag govuk-tag--orange govuk-!-margin-left-1"
-                      th:text="#{case.outcomeAndAwards.documents.newTag}"></strong>
             </td>
           </tr>
           </tbody>
         </table>
+        <div class="govuk-button-group govuk-!-margin-top-3">
+          <a class="govuk-link govuk-link--no-visited-state"
+             th:href="@{/case/outcome-and-awards/document/upload}"
+             th:text="#{case.outcomeAndAwards.documents.upload}"
+             id="documentUploadLink"
+          ></a>
+        </div>
       </div>
     </div>
 

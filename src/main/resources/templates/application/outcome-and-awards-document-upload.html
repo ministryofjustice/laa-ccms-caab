@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.w3.org/1999/xhtml">
+<head>
+  <title th:text="|#{service.name} - #{case.outcomeAndAwards.documents.upload}|"></title>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="@{/case/outcome-and-awards}" class="govuk-back-link" th:text="#{site.returnToOutcomeAndAwards}"></a>
+  </div>
+  <div id="main-content">
+    <h1 class="govuk-heading-l" th:text="#{case.outcomeAndAwards.documents.upload}"></h1>
+    <form action="#" th:action="@{/case/outcome-and-awards/document/upload}" method="post" th:object="${outcomeAndAwardsDocumentUploadForm}" enctype="multipart/form-data">
+      <div th:replace="~{partials/document-upload :: uploadFormFields('/case/outcome-and-awards')}"></div>
+    </form>
+  </div>
+</div>
+</body>
+</html>
