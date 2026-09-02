@@ -27,6 +27,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -1522,7 +1523,7 @@ public class ApplicationService {
             .orElseThrow(() -> new CaabApplicationException("Failed to retrieve opponents"));
 
     // Transform the opponents to the form data model.
-    return opponentList.stream().map(this::buildOpponentFormData).toList();
+    return buildOpponentFormData(opponentList);
   }
 
   /**
@@ -1578,6 +1579,21 @@ public class ApplicationService {
   }
 
   /**
+   * Build an AbstractOpponentFormData for each of the provided OpponentDetails, preserving their
+   * order. The countries lookup is fetched once for the whole list rather than per opponent.
+   *
+   * @param opponents - the opponents
+   * @return AbstractOpponentFormData for each OpponentDetail
+   */
+  protected List<AbstractOpponentFormData> buildOpponentFormData(
+      final List<OpponentDetail> opponents) {
+
+    final List<CommonLookupValueDetail> countries = getCountriesLookup();
+
+    return opponents.stream().map(opponent -> buildOpponentFormData(opponent, countries)).toList();
+  }
+
+  /**
    * Build an AbstractOpponentFormData for the provided OpponentDetail. Codes will be translated to
    * their display value depending on the type of opponent.
    *
@@ -1585,6 +1601,27 @@ public class ApplicationService {
    * @return AbstractOpponentFormData for the OpponentDetail
    */
   protected AbstractOpponentFormData buildOpponentFormData(final OpponentDetail opponent) {
+    return buildOpponentFormData(opponent, getCountriesLookup());
+  }
+
+  private List<CommonLookupValueDetail> getCountriesLookup() {
+    return lookupService
+        .getCountries()
+        .blockOptional()
+        .map(CommonLookupDetail::getContent)
+        .orElse(Collections.emptyList());
+  }
+
+  /**
+   * Build an AbstractOpponentFormData for the provided OpponentDetail, resolving its country code
+   * against an already fetched countries lookup.
+   *
+   * @param opponent - the opponent
+   * @param countries - the countries lookup
+   * @return AbstractOpponentFormData for the OpponentDetail
+   */
+  private AbstractOpponentFormData buildOpponentFormData(
+      final OpponentDetail opponent, final List<CommonLookupValueDetail> countries) {
 
     final boolean isOrganisation = OpponentUtil.isOrganisation(opponent);
     final boolean isEditable =
@@ -1612,17 +1649,9 @@ public class ApplicationService {
     final Mono<Optional<CommonLookupValueDetail>> titleCommonLookupMono =
         lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle());
 
-    // Lookup the country display value for the opponent's address.
-    final String countryCode =
-        Optional.ofNullable(opponent.getAddress()).map(AddressDetail::getCountry).orElse(null);
-
-    final Mono<Optional<CommonLookupValueDetail>> countryLookupMono =
-        lookupService.getCountry(countryCode);
-
-    final Tuple5<
+    final Tuple4<
             Optional<CommonLookupValueDetail>,
             Optional<RelationshipToCaseLookupValueDetail>,
-            Optional<CommonLookupValueDetail>,
             Optional<CommonLookupValueDetail>,
             Optional<CommonLookupValueDetail>>
         combinedResult =
@@ -1630,8 +1659,7 @@ public class ApplicationService {
                     organisationTypeLookupMono,
                     relationshipToCaseMono,
                     relationshipToCommonLookupMono,
-                    titleCommonLookupMono,
-                    countryLookupMono)
+                    titleCommonLookupMono)
                 .blockOptional()
                 .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
 
@@ -1661,8 +1689,19 @@ public class ApplicationService {
                     .code(opponent.getTitle())
                     .description(opponent.getTitle()));
 
+    // Resolve the country display value against the already fetched countries lookup.
+    final String countryCode =
+        Optional.ofNullable(opponent.getAddress()).map(AddressDetail::getCountry).orElse(null);
+
     final String countryDisplayValue =
-        combinedResult.getT5().map(CommonLookupValueDetail::getDescription).orElse(countryCode);
+        StringUtils.hasText(countryCode)
+            ? countries.stream()
+                .filter(Objects::nonNull)
+                .filter(country -> countryCode.equals(country.getCode()))
+                .map(CommonLookupValueDetail::getDescription)
+                .findFirst()
+                .orElse(countryCode)
+            : countryCode;
 
     // Build a name for the opponent depending on the opponent type.
     final String partyName = getPartyName(opponent, titleDisplayValue);

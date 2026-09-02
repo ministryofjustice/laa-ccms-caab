@@ -1366,7 +1366,7 @@ class ApplicationServiceTest {
     when(lookupService.getCommonValue(
             COMMON_VALUE_RELATIONSHIP_TO_CLIENT, opponent.getRelationshipToClient()))
         .thenReturn(Mono.just(Optional.empty()));
-    when(lookupService.getCountry("thecountry")).thenReturn(Mono.just(Optional.empty()));
+    when(lookupService.getCountries()).thenReturn(Mono.just(new CommonLookupDetail()));
 
     String expectedPartyName =
         opponent.getTitle() + " " + opponent.getFirstName() + " " + opponent.getSurname();
@@ -1408,7 +1408,7 @@ class ApplicationServiceTest {
     when(lookupService.getCommonValue(
             COMMON_VALUE_RELATIONSHIP_TO_CLIENT, opponent.getRelationshipToClient()))
         .thenReturn(Mono.just(Optional.empty()));
-    when(lookupService.getCountry("thecountry")).thenReturn(Mono.just(Optional.empty()));
+    when(lookupService.getCountries()).thenReturn(Mono.just(new CommonLookupDetail()));
     when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, opponent.getTitle()))
         .thenReturn(Mono.just(Optional.empty()));
 
@@ -1466,7 +1466,7 @@ class ApplicationServiceTest {
     when(lookupService.getCommonValue(
             COMMON_VALUE_RELATIONSHIP_TO_CLIENT, opponent.getRelationshipToClient()))
         .thenReturn(Mono.just(Optional.of(relationshipToClient)));
-    when(lookupService.getCountry("thecountry")).thenReturn(Mono.just(Optional.empty()));
+    when(lookupService.getCountries()).thenReturn(Mono.just(new CommonLookupDetail()));
 
     CommonLookupValueDetail titleLookup =
         new CommonLookupValueDetail().code(opponent.getTitle()).description("Mr");
@@ -1524,7 +1524,7 @@ class ApplicationServiceTest {
     when(lookupService.getCommonValue(
             COMMON_VALUE_RELATIONSHIP_TO_CLIENT, opponent.getRelationshipToClient()))
         .thenReturn(Mono.just(Optional.of(relationshipToClient)));
-    when(lookupService.getCountry("thecountry")).thenReturn(Mono.just(Optional.empty()));
+    when(lookupService.getCountries()).thenReturn(Mono.just(new CommonLookupDetail()));
 
     String expectedPartyName =
         opponent.getTitle() + " " + opponent.getFirstName() + " " + opponent.getSurname();
@@ -1568,7 +1568,7 @@ class ApplicationServiceTest {
     when(lookupService.getCommonValue(
             COMMON_VALUE_RELATIONSHIP_TO_CLIENT, opponent.getRelationshipToClient()))
         .thenReturn(Mono.just(Optional.empty()));
-    when(lookupService.getCountry("thecountry")).thenReturn(Mono.just(Optional.empty()));
+    when(lookupService.getCountries()).thenReturn(Mono.just(new CommonLookupDetail()));
 
     when(opponentMapper.toOpponentFormData(
             eq(opponent),
@@ -1593,6 +1593,60 @@ class ApplicationServiceTest {
             anyString(),
             anyString(),
             anyString(),
+            anyBoolean());
+  }
+
+  @Test
+  void testGetOpponents_fetchesCountriesLookupOnce() {
+    final String applicationId = "123";
+    OpponentDetail firstOpponent = buildOpponent(new Date());
+    firstOpponent.setType(OPPONENT_TYPE_INDIVIDUAL);
+    OpponentDetail secondOpponent = buildOpponent(new Date());
+    secondOpponent.setType(OPPONENT_TYPE_INDIVIDUAL);
+
+    when(caabApiClient.getOpponents(applicationId))
+        .thenReturn(Mono.just(List.of(firstOpponent, secondOpponent)));
+
+    when(lookupService.getCommonValue(COMMON_VALUE_CONTACT_TITLE, firstOpponent.getTitle()))
+        .thenReturn(Mono.just(Optional.empty()));
+    when(lookupService.getPersonToCaseRelationship(firstOpponent.getRelationshipToCase()))
+        .thenReturn(Mono.just(Optional.empty()));
+    when(lookupService.getCommonValue(
+            COMMON_VALUE_RELATIONSHIP_TO_CLIENT, firstOpponent.getRelationshipToClient()))
+        .thenReturn(Mono.just(Optional.empty()));
+    when(lookupService.getCountries())
+        .thenReturn(
+            Mono.just(
+                new CommonLookupDetail()
+                    .addContentItem(
+                        new CommonLookupValueDetail()
+                            .code("thecountry")
+                            .description("The Country"))));
+
+    when(opponentMapper.toOpponentFormData(
+            any(OpponentDetail.class),
+            anyString(),
+            isNull(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyBoolean()))
+        .thenReturn(new IndividualOpponentFormData());
+
+    List<AbstractOpponentFormData> result = applicationService.getOpponents(applicationId);
+
+    assertEquals(2, result.size());
+
+    // The countries list is fetched for the batch, not once per opponent.
+    verify(lookupService, times(1)).getCountries();
+    verify(opponentMapper, times(2))
+        .toOpponentFormData(
+            any(OpponentDetail.class),
+            anyString(),
+            isNull(),
+            anyString(),
+            anyString(),
+            eq("The Country"),
             anyBoolean());
   }
 
