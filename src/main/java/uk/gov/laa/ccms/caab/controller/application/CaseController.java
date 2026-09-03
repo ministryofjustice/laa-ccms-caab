@@ -606,10 +606,10 @@ public class CaseController {
       final PreCertificateAndLegalHelpCostsFormData source) {
     final PreCertificateAndLegalHelpCostsFormData copy =
         new PreCertificateAndLegalHelpCostsFormData();
-    copy.setPreCertificateCosts(source.getPreCertificateCosts());
-    copy.setLegalHelpCosts(source.getLegalHelpCosts());
-    copy.setOfficeCode(source.getOfficeCode());
-    copy.setUniqueFileNumber(source.getUniqueFileNumber());
+copy.setPreCertificateCosts(StringUtils.hasText(source.getPreCertificateCosts()) ? source.getPreCertificateCosts().trim() : null);
+copy.setLegalHelpCosts(StringUtils.hasText(source.getLegalHelpCosts()) ? source.getLegalHelpCosts().trim() : null);
+copy.setOfficeCode(StringUtils.hasText(source.getOfficeCode()) ? source.getOfficeCode().trim() : null);
+copy.setUniqueFileNumber(StringUtils.hasText(source.getUniqueFileNumber()) ? source.getUniqueFileNumber().trim() : null);
     return copy;
   }
 
