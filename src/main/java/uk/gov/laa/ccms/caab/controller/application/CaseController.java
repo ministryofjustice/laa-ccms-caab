@@ -564,7 +564,7 @@ public class CaseController {
   }
 
   /**
-   * Displays the pre-certificate and legal help costs screen.
+   * Handles submission of the pre-certificate and legal help costs form.
    *
    * @param ebsCase The case details from EBS.
    * @param user The current user details.
