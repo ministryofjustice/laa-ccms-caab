@@ -16,9 +16,15 @@ public class ValidationPatternConstants {
   /** Validation pattern to check for currency values. */
   public static final String CURRENCY_PATTERN = "[0-9]+(\\.[0-9]{1,2})?";
 
-  /** Validation pattern for an email address. */
+  /**
+   * Validation pattern for an email address.
+   *
+   * <p>The local part previously carried the HTML entities {@code &amp;} and {@code &apos;} copied
+   * from the legacy PUI config. Java read those literally, so the set also admitted a stray
+   * semicolon. The domain now requires at least one dot - {@code x@y} used to pass.
+   */
   public static final String EMAIL_ADDRESS =
-      "^[A-Za-z0-9!#$%&amp;&apos;\\*\\+\\-/=\\?^_`\\.\\{\\|\\}~]+@[A-Za-z0-9\\-\\.]+$";
+      "^[A-Za-z0-9!#$%&'\\*\\+\\-/=\\?^_`\\.\\{\\|\\}~]+@[A-Za-z0-9\\-]+(\\.[A-Za-z0-9\\-]+)+$";
 
   /** Validation pattern for national insurance numbers. */
   public static final String NATIONAL_INSURANCE_NUMBER_PATTERN = "^[A-Za-z]{2}[0-9]{6}[A-Za-z]{1}$";
@@ -122,9 +128,15 @@ public class ValidationPatternConstants {
   public static final String CHARACTER_SET_E = "^[A-Za-z0-9\\'\\- ]*$";
 
   /**
-   * pattern to match what is known in provider-ui as 'characterSetF. Valid characters are A-Z a-z
-   * 0-9 & ' ( ) . * - / ! # $ % , ; ? @ [ \ ] _ ` | + = > £ :
+   * pattern to match what is known in provider-ui as 'characterSetF'. Valid characters are A-Z a-z
+   * 0-9 &amp; ' ( ) . * - / ! # $ % , ; ? @ [ \ ] _ + = &gt; £ :
+   *
+   * <p>The trailing {@code &#92;&#96;} was HTML entity text copied from the legacy PUI config
+   * rather than the backslash and backtick it was meant to encode. Java read it as the literal
+   * characters, all of which the set already admitted, so removing it changes nothing the pattern
+   * accepts - the backslash is supplied by the escaped literal at the end. Backtick and pipe are
+   * not admitted, despite what this comment previously claimed.
    */
   public static final String CHARACTER_SET_F =
-      "^[A-Za-z0-9\\&\\'\\(\\)\\.\\*\\-/!#$%,;\\?\\@\\[\\]_+\\=\\>£:&#92;&#96;\\\\]*$";
+      "^[A-Za-z0-9\\&\\'\\(\\)\\.\\*\\-/!#$%,;\\?\\@\\[\\]_+\\=\\>£:\\\\]*$";
 }

@@ -42,21 +42,21 @@ public class CounselSearchValidator extends AbstractValidator {
       // Is category is null, empty, or not selected?
       // Is input field name null, empty?
       if (StringUtils.hasText(name)) {
-        validateFieldPattern("name", name, CHARACTER_SET_A, "Name", errors);
+        validateFieldFormat("name", name, CHARACTER_SET_A, "Name", errors);
         validateFieldMinLength("name", name, 3, "Name", errors);
         validateFieldMaxLength("name", name, 35, "Name", errors);
       }
 
       // Is input field company null, empty?
       if (StringUtils.hasText(company)) {
-        validateFieldPattern("company", company, CHARACTER_SET_A, "Company", errors);
+        validateFieldFormat("company", company, CHARACTER_SET_A, "Company", errors);
         validateFieldMinLength("company", company, 3, "Company", errors);
         validateFieldMaxLength("company", company, 35, "Company", errors);
       }
 
       // Is input LAA council ref field null, empty?
       if (StringUtils.hasText(laaCounselRef)) {
-        validateFieldPattern(
+        validateFieldFormat(
             "laaCounselReference",
             laaCounselRef,
             STANDARD_CHARACTER_SET,
