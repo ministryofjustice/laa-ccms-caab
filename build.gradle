@@ -89,7 +89,7 @@ dependencies {
     implementation 'org.mapstruct:mapstruct:1.6.3'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 
-    implementation 'org.apache.tika:tika-core:3.3.2'
+    implementation 'org.apache.tika:tika-core:4.0.0'
 
     // Starters
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
