@@ -11,11 +11,6 @@
       </div>
       <div th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType', #{document.type}, ${documentTypes}, 'code', 'description')}"></div>
       <div th:replace="~{partials/forms :: largeTextInput('documentDescription', #{site.optional(#{document.description})}, 255)}"></div>
-
-      <div class="govuk-button-group">
-        <button class="govuk-button" data-module="govuk-button" th:text="#{site.upload}"></button>
-        <a th:href="@{${backUrl}}" class="govuk-link" th:text="#{site.back}"></a>
-      </div>
     </div>
   </div>
 </div>
