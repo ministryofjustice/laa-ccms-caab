@@ -12,6 +12,21 @@
   <div id="main-content">
     <h1 class="govuk-heading-l" th:text="#{case.outcomeAndAwards.documents.upload}"></h1>
     <form action="#" th:action="@{/case/outcome-and-awards/document/upload}" method="post" th:object="${outcomeAndAwardsDocumentUploadForm}" enctype="multipart/form-data">
+      <div class="govuk-form-group">
+        <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
+          <div class="govuk-checkboxes__item">
+            <input class="govuk-checkboxes__input"
+                   id="outcomesEvidence"
+                   name="evidenceTypes"
+                   value="Outcomes Evidence"
+                   th:checked="${outcomeAndAwardsDocumentUploadForm.evidenceTypes != null and outcomeAndAwardsDocumentUploadForm.evidenceTypes.contains('Outcomes Evidence')}"
+                   type="checkbox"/>
+            <label class="govuk-label govuk-checkboxes__label"
+                   for="outcomesEvidence"
+                   th:text="#{case.outcomeAndAwards.documents.outcomesEvidence}"></label>
+          </div>
+        </div>
+      </div>
       <div th:replace="~{partials/document-upload :: uploadFormFields('/case/outcome-and-awards')}"></div>
     </form>
   </div>

@@ -3,9 +3,11 @@ package uk.gov.laa.ccms.caab.controller.application;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OUTCOME_ADR;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OUTCOME_RESOLUTION_METHOD;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_WIDER_BENEFITS;
+import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.AMEND_CLIENT_ORIGIN;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
@@ -21,10 +23,12 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COURT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
 import static uk.gov.laa.ccms.caab.util.DateUtils.convertToComponentDate;
+import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 import static uk.gov.laa.ccms.caab.util.view.ActionViewHelper.enhanceActionUrl;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashMap;
@@ -48,18 +52,28 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.CaseProceedingDisplayStatus;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidator;
+import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestDocumentUploadValidator;
+import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
+import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.constants.PriorAuthorityGroup;
+import uk.gov.laa.ccms.caab.exception.AvScanException;
+import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.mapper.EvidenceMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.AvailableAction;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
+import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
@@ -69,7 +83,9 @@ import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
+import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.caab.util.PriorAuthorityUtils;
@@ -92,6 +108,10 @@ public class CaseController {
   private final LookupService lookupService;
   private final CaseOutcomeService caseOutcomeService;
   private final ProceedingOutcomeValidator proceedingOutcomeValidator;
+  private final ProviderRequestDocumentUploadValidator providerRequestDocumentUploadValidator;
+  private final EvidenceService evidenceService;
+  private final AvScanService avScanService;
+  private final EvidenceMapper evidenceMapper;
   private static final String SEARCH_URL = "SEARCH_URL";
 
   /**
@@ -333,7 +353,147 @@ public class CaseController {
 
     model.addAttribute("proceedings", proceedings);
     model.addAttribute("resolvedOutcomes", resolvedOutcomes);
+
+    // Documents are retrieved using the generic evidence store, keyed by case reference
+    // number and the OUTCOME ccms module.
+    final List<BaseEvidenceDocumentDetail> documents =
+        evidenceService
+            .getEvidenceDocumentsForCase(ebsCase.getCaseReferenceNumber(), CcmsModule.OUTCOME)
+            .map(EvidenceDocumentDetails::getContent)
+            .blockOptional()
+            .orElse(Collections.emptyList());
+    model.addAttribute("documents", documents);
     return "application/outcome-and-awards";
+  }
+
+  /**
+   * Displays the document upload screen for outcome and awards.
+   *
+   * @param model the model
+   * @return the outcome and awards document upload view
+   */
+  @GetMapping("/case/outcome-and-awards/document/upload")
+  public String outcomeAndAwardsDocumentUpload(final Model model) {
+    model.addAttribute("outcomeAndAwardsDocumentUploadForm", new EvidenceUploadFormData());
+    populateOutcomeAndAwardsDocumentUploadModel(model);
+    return "application/outcome-and-awards-document-upload";
+  }
+
+  /**
+   * Handles the upload of a document from the outcome and awards screen.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param user The current user details.
+   * @param outcomeAndAwardsDocumentUploadForm The upload form data.
+   * @param bindingResult The binding result for validation.
+   * @param model the model
+   * @return the outcome and awards document upload view, or a redirect to outcome and awards.
+   */
+  @PostMapping("/case/outcome-and-awards/document/upload")
+  public String outcomeAndAwardsDocumentUploadPost(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @ModelAttribute("outcomeAndAwardsDocumentUploadForm")
+          final EvidenceUploadFormData outcomeAndAwardsDocumentUploadForm,
+      final BindingResult bindingResult,
+      final Model model) {
+
+    providerRequestDocumentUploadValidator.validate(
+        outcomeAndAwardsDocumentUploadForm, bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      populateOutcomeAndAwardsDocumentUploadModel(model);
+      return "application/outcome-and-awards-document-upload";
+    }
+
+    // applicationOrOutcomeId/caseReferenceNumber and the OUTCOME ccms module are used to
+    // link this document to the case.
+    outcomeAndAwardsDocumentUploadForm.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+    outcomeAndAwardsDocumentUploadForm.setApplicationOrOutcomeId(ebsCase.getCaseReferenceNumber());
+    assert Objects.requireNonNull(user.getProvider()).getId() != null;
+    outcomeAndAwardsDocumentUploadForm.setProviderId(user.getProvider().getId());
+    outcomeAndAwardsDocumentUploadForm.setDocumentSender(user.getLoginId());
+    outcomeAndAwardsDocumentUploadForm.setCcmsModule(CcmsModule.OUTCOME);
+    outcomeAndAwardsDocumentUploadForm.setDocumentTypeDisplayValue(
+        resolveDocumentTypeDisplayValue(outcomeAndAwardsDocumentUploadForm.getDocumentType()));
+    if (outcomeAndAwardsDocumentUploadForm.getEvidenceTypes() == null) {
+      outcomeAndAwardsDocumentUploadForm.setEvidenceTypes(Collections.emptyList());
+    }
+
+    try {
+      avScanService.performAvScan(
+          outcomeAndAwardsDocumentUploadForm.getCaseReferenceNumber(),
+          outcomeAndAwardsDocumentUploadForm.getProviderId(),
+          outcomeAndAwardsDocumentUploadForm.getDocumentSender(),
+          outcomeAndAwardsDocumentUploadForm.getCcmsModule(),
+          outcomeAndAwardsDocumentUploadForm.getSanitisedFileName(),
+          outcomeAndAwardsDocumentUploadForm.getFile().getInputStream());
+    } catch (AvVirusFoundException | AvScanException | IOException e) {
+      bindingResult.rejectValue("file", "scan.failure", e.getMessage());
+      populateOutcomeAndAwardsDocumentUploadModel(model);
+      return "application/outcome-and-awards-document-upload";
+    }
+
+    if (outcomeAndAwardsDocumentUploadForm.getEvidenceTypes().contains("Outcomes Evidence")) {
+      System.out.println("!!!!!!!!!!!!!!IT CONTAINS IT!!!!!!!");
+
+      //       Register the document in EBS to get an EBS document id before saving to the TDS.
+      final String registeredDocumentId =
+          evidenceService
+              .registerDocument(
+                  outcomeAndAwardsDocumentUploadForm.getDocumentType(),
+                  outcomeAndAwardsDocumentUploadForm.getFileExtension(),
+                  outcomeAndAwardsDocumentUploadForm.getDocumentDescription(),
+                  ELECTRONIC.getCode(),
+                  user.getLoginId(),
+                  user.getUserType())
+              .blockOptional()
+              .orElseThrow(() -> new CaabApplicationException("Failed to register document"));
+
+      outcomeAndAwardsDocumentUploadForm.setRegisteredDocumentId(registeredDocumentId);
+    }
+
+    System.out.println("outcomeAndAwardsDocumentUploadForm: " + outcomeAndAwardsDocumentUploadForm);
+
+    // Stores the document in the generic evidence store (TDS) alongside application/request
+    // evidence, keyed by case reference number and the OUTCOME ccms module.
+    evidenceService
+        .addDocument(
+            evidenceMapper.toEvidenceDocumentDetail(outcomeAndAwardsDocumentUploadForm),
+            user.getLoginId())
+        .blockOptional()
+        .orElseThrow(() -> new CaabApplicationException("Failed to save document"));
+
+    return "redirect:/case/outcome-and-awards";
+  }
+
+  /**
+   * Populates the model with the dropdown/validation attributes required by the outcome and awards
+   * document upload view.
+   *
+   * @param model the model
+   */
+  private void populateOutcomeAndAwardsDocumentUploadModel(final Model model) {
+    final DropdownBuilder builder = new DropdownBuilder(model);
+    builder
+        .addDropdown("documentTypes", lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+        .build();
+    model.addAttribute(
+        "validExtensions",
+        getCommaDelimitedString(providerRequestDocumentUploadValidator.getValidExtensions()));
+    model.addAttribute("maxFileSize", providerRequestDocumentUploadValidator.getMaxFileSize());
+  }
+
+  private String resolveDocumentTypeDisplayValue(final String documentTypeCode) {
+    if (documentTypeCode == null) {
+      return null;
+    }
+
+    final Mono<String> documentTypeDescription =
+        lookupService.getDocumentTypeDescription(documentTypeCode);
+    return documentTypeDescription == null
+        ? documentTypeCode
+        : documentTypeDescription.blockOptional().orElse(documentTypeCode);
   }
 
   /**
