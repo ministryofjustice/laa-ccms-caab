@@ -1506,9 +1506,8 @@ class CaseControllerTest {
 
     @Test
     @DisplayName(
-        "Record proceeding outcome court search prepopulates court search criteria from form data")
-    public void recordProceedingOutcomeCourtSearchPrepopulatesCourtSearchCriteria()
-        throws Exception {
+        "Record proceeding outcome court search preserves the outcome but starts the search blank")
+    public void recordProceedingOutcomeCourtSearchStartsTheSearchBlank() throws Exception {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
           getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
@@ -1540,12 +1539,16 @@ class CaseControllerTest {
           .hasFieldOrPropertyWithValue("courtCode", "CT1")
           .hasFieldOrPropertyWithValue("courtName", "Test Court");
 
+      // The court boxes reach EBS as separate query params combined with AND, so carrying the
+      // outcome's court over would make every search "the court already recorded, and whatever was
+      // just typed" - which matches nothing unless the user searches for the court they already
+      // have. The search therefore starts blank.
       CourtSearchCriteria courtSearchCriteria =
           (CourtSearchCriteria)
               result.getRequest().getSession().getAttribute(COURT_SEARCH_CRITERIA);
       assertThat(courtSearchCriteria)
-          .hasFieldOrPropertyWithValue("courtCode", "CT1")
-          .hasFieldOrPropertyWithValue("courtName", "Test Court");
+          .hasFieldOrPropertyWithValue("courtCode", null)
+          .hasFieldOrPropertyWithValue("courtName", null);
     }
 
     @Test
