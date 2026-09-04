@@ -419,15 +419,10 @@ public class LookupService {
       return Mono.just(code);
     }
 
-    final Mono<Optional<CommonLookupValueDetail>> commonValue =
-        getCommonValue(COMMON_VALUE_DOCUMENT_TYPES, code);
-    if (commonValue == null) {
-      return Mono.just(code);
-    }
-
-    return commonValue.map(
-        commonLookupValueDetail ->
-            commonLookupValueDetail.map(CommonLookupValueDetail::getDescription).orElse(code));
+    return getCommonValue(COMMON_VALUE_DOCUMENT_TYPES, code)
+        .map(
+            commonLookupValueDetail ->
+                commonLookupValueDetail.map(CommonLookupValueDetail::getDescription).orElse(code));
   }
 
   /**

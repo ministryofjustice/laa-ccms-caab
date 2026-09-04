@@ -413,8 +413,11 @@ public class CaseController {
     // link this document to the case.
     outcomeAndAwardsDocumentUploadForm.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
     outcomeAndAwardsDocumentUploadForm.setApplicationOrOutcomeId(ebsCase.getCaseReferenceNumber());
-    assert Objects.requireNonNull(user.getProvider()).getId() != null;
-    outcomeAndAwardsDocumentUploadForm.setProviderId(user.getProvider().getId());
+    final Integer providerId =
+        Optional.ofNullable(user.getProvider())
+            .map(p -> p.getId())
+            .orElseThrow(() -> new CaabApplicationException("User provider is null"));
+    outcomeAndAwardsDocumentUploadForm.setProviderId(providerId);
     outcomeAndAwardsDocumentUploadForm.setDocumentSender(user.getLoginId());
     outcomeAndAwardsDocumentUploadForm.setCcmsModule(CcmsModule.OUTCOME);
     outcomeAndAwardsDocumentUploadForm.setDocumentTypeDisplayValue(
