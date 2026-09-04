@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
@@ -54,12 +55,15 @@ import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.PreCertificateAndLegalHelpCostsFormData;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
+import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.PreCertificateAndLegalHelpCostsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidator;
+import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestDocumentUploadValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.mapper.EvidenceMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
@@ -68,6 +72,8 @@ import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.ClientDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
@@ -83,7 +89,9 @@ import uk.gov.laa.ccms.caab.model.sections.OrganisationAddressDetailsSectionDisp
 import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.OrganisationOrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
+import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -101,6 +109,10 @@ class CaseControllerTest {
   @Mock private CaseOutcomeService caseOutcomeService;
   @Mock private ProceedingOutcomeValidator proceedingOutcomeValidator;
   @Mock private PreCertificateAndLegalHelpCostsValidator preCertificateAndLegalHelpCostsValidator;
+  @Mock private ProviderRequestDocumentUploadValidator providerRequestDocumentUploadValidator;
+  @Mock private EvidenceService evidenceService;
+  @Mock private AvScanService avScanService;
+  @Mock private EvidenceMapper evidenceMapper;
 
   @InjectMocks private CaseController caseController;
 
@@ -126,7 +138,19 @@ class CaseControllerTest {
     returnUrl = "returnUrl";
     lenient()
         .when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
-        .thenReturn(java.util.Optional.empty());
+        .thenReturn(
+            java.util.Optional.of(
+                new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+    lenient()
+        .when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+        .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
+    lenient()
+        .when(providerRequestDocumentUploadValidator.getValidExtensions())
+        .thenReturn(List.of());
+    lenient().when(providerRequestDocumentUploadValidator.getMaxFileSize()).thenReturn("8MB");
+    lenient()
+        .when(evidenceService.getEvidenceDocumentsForCase(anyString(), any()))
+        .thenReturn(Mono.just(new EvidenceDocumentDetails().content(Collections.emptyList())));
   }
 
   @Nested
@@ -1028,6 +1052,94 @@ class CaseControllerTest {
                 assertThat(formData.getOfficeCode()).isNull();
                 assertThat(formData.getUniqueFileNumber()).isNull();
               });
+    }
+
+    @Test
+    @DisplayName("Outcome and awards document upload page loads")
+    public void outcomeAndAwardsDocumentUploadPageLoads() {
+      assertThat(mockMvc.perform(get("/case/outcome-and-awards/document/upload")))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards-document-upload")
+          .model()
+          .containsKeys(
+              "outcomeAndAwardsDocumentUploadForm",
+              "documentTypes",
+              "validExtensions",
+              "maxFileSize");
+    }
+
+    @Test
+    @DisplayName("Outcome and awards document upload succeeds and redirects")
+    public void outcomeAndAwardsDocumentUploadPostRedirectsOnSuccess() {
+      final EvidenceUploadFormData formData = new EvidenceUploadFormData();
+      formData.setFile(
+          new org.springframework.mock.web.MockMultipartFile(
+              "file", "document.pdf", "application/pdf", "content".getBytes()));
+      formData.setSanitisedFileName("document.pdf");
+      formData.setFileExtension("pdf");
+      formData.setDocumentType("DOC1");
+      formData.setDocumentDescription("A description");
+
+      final ApplicationDetail ebsCase =
+          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+
+      final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
+      when(evidenceMapper.toEvidenceDocumentDetail(formData)).thenReturn(evidenceDocumentDetail);
+      when(evidenceService.registerDocument(
+              anyString(), anyString(), any(), anyString(), anyString(), any()))
+          .thenReturn(Mono.just("registeredDocId"));
+      when(evidenceService.addDocument(eq(evidenceDocumentDetail), anyString()))
+          .thenReturn(Mono.just("saved"));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("outcomeAndAwardsDocumentUploadForm", formData)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(avScanService)
+          .performAvScan(
+              anyString(),
+              any(),
+              anyString(),
+              any(),
+              eq("document.pdf"),
+              any(java.io.InputStream.class));
+      verify(evidenceService).registerDocument(eq("DOC1"), eq("pdf"), any(), any(), any(), any());
+      verify(evidenceService).addDocument(eq(evidenceDocumentDetail), anyString());
+    }
+
+    @Test
+    @DisplayName("Outcome and awards document upload re-renders view on validation error")
+    public void outcomeAndAwardsDocumentUploadPostReturnsViewOnValidationError() {
+      final EvidenceUploadFormData formData = new EvidenceUploadFormData();
+
+      org.mockito.Mockito.doAnswer(
+              invocation -> {
+                final org.springframework.validation.Errors errors = invocation.getArgument(1);
+                errors.rejectValue("file", "required.file", "Please select a file");
+                return null;
+              })
+          .when(providerRequestDocumentUploadValidator)
+          .validate(any(), any());
+
+      final ApplicationDetail ebsCase =
+          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("outcomeAndAwardsDocumentUploadForm", formData)))
+          .hasViewName("application/outcome-and-awards-document-upload")
+          .model()
+          .containsKeys("documentTypes", "validExtensions", "maxFileSize");
+
+      verify(evidenceService, org.mockito.Mockito.never()).addDocument(any(), any());
     }
 
     @Test
