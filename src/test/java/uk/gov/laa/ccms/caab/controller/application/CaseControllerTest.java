@@ -61,6 +61,7 @@ import uk.gov.laa.ccms.caab.bean.validators.application.PreCertificateAndLegalHe
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidator;
 import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestDocumentUploadValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
+import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.EvidenceMapper;
@@ -1079,6 +1080,7 @@ class CaseControllerTest {
       formData.setFileExtension("pdf");
       formData.setDocumentType("DOC1");
       formData.setDocumentDescription("A description");
+      formData.setEvidenceTypes(List.of("Outcomes Evidence"));
 
       final ApplicationDetail ebsCase =
           getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
@@ -1140,6 +1142,44 @@ class CaseControllerTest {
           .containsKeys("documentTypes", "validExtensions", "maxFileSize");
 
       verify(evidenceService, org.mockito.Mockito.never()).addDocument(any(), any());
+    }
+
+    @Test
+    @DisplayName("Remove outcome and awards document redirects on success")
+    public void removeOutcomeAndAwardsDocumentRedirectsOnSuccess() {
+      final ApplicationDetail ebsCase =
+          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/document/123/remove")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(evidenceService)
+          .removeDocument(
+              ebsCase.getCaseReferenceNumber(), 123, CcmsModule.OUTCOME, user.getLoginId());
+    }
+
+    @Test
+    @DisplayName("Remove outcome and awards document fails for non-existent document")
+    public void removeOutcomeAndAwardsDocumentFailsForNonExistentDocument() {
+      final ApplicationDetail ebsCase =
+          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+
+      doThrow(new CaabApplicationException("Document not found"))
+          .when(evidenceService)
+          .removeDocument(anyString(), anyInt(), any(), anyString());
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/document/999/remove")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .failure()
+          .hasCauseInstanceOf(CaabApplicationException.class);
     }
 
     @Test
