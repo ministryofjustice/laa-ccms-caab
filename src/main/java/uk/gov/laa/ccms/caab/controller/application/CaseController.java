@@ -369,8 +369,11 @@ public class CaseController {
       }
     }
 
+    model.addAttribute("case", ebsCase);
     model.addAttribute("proceedings", proceedings);
     model.addAttribute("resolvedOutcomes", resolvedOutcomes);
+    model.addAttribute(
+        "outcomeDocumentActionAllowed", ActionViewHelper.isOutcomeDocumentActionAllowed(ebsCase));
     model.addAttribute("clearableOutcomes", clearableOutcomes);
     model.addAttribute(
         "preCertificateAndLegalHelpCostsSummary",
