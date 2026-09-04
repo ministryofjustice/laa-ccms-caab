@@ -146,7 +146,7 @@
             <td class="govuk-table__cell" th:text="${document.auditTrail?.created != null ? #dates.format(document.auditTrail.created, 'dd/MM/yyyy') : ''}"></td>
             <td class="govuk-table__cell">
               <a class="govuk-link govuk-link--no-visited-state"
-                 href="#"
+                 th:href="@{/case/outcome-and-awards/document/{id}/remove(id=${document.id})}"
                  th:text="#{site.remove}"
                  th:id="|documentRemoveLink-${stat.index}|"
               ></a>

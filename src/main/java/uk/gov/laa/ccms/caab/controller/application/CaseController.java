@@ -468,6 +468,26 @@ public class CaseController {
   }
 
   /**
+   * Handles the removal of a document from the outcome and awards screen.
+   *
+   * @param documentId The ID of the document to remove.
+   * @param ebsCase The case details from EBS.
+   * @param user The current user details.
+   * @return A redirect to the outcome and awards screen.
+   */
+  @GetMapping("/case/outcome-and-awards/document/{document-id}/remove")
+  public String removeOutcomeAndAwardsDocument(
+      @PathVariable("document-id") final Integer documentId,
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user) {
+
+    evidenceService.removeDocument(
+        ebsCase.getCaseReferenceNumber(), documentId, CcmsModule.OUTCOME, user.getLoginId());
+
+    return "redirect:/case/outcome-and-awards";
+  }
+
+  /**
    * Populates the model with the dropdown/validation attributes required by the outcome and awards
    * document upload view.
    *
