@@ -433,6 +433,21 @@ public class CaseController {
   /**
    * Saves in-progress proceeding outcome form data to session and redirects to court search.
    *
+   * <p>The search starts blank. The court code and name are alternative ways of finding the same
+   * Court, but they reach EBS as separate query parameters and are combined with AND, so carrying
+   * the outcome's existing court over pre-fills both boxes and every subsequent search becomes "the
+   * court already recorded, and whatever was just typed". That matches nothing unless the user
+   * searches for the court they already have: entering a real code such as "127C1" against a stored
+   * name queries {@code code=*127C1*&description=*<stored name>*} and returns no rows, so the
+   * screen reports no results for a Court that plainly exists.
+   *
+   * <p>It is worse when the stored value is a placeholder rather than a court. Live cases carry
+   * "Not Available" in these fields, which is not a Court and never matches, so court search
+   * returns nothing for every term on those cases.
+   *
+   * <p>The in-progress outcome itself is still preserved, so nothing the user typed on the outcome
+   * screen is lost while they go and find a Court.
+   *
    * @param index The zero-based index of the proceeding.
    * @param proceedingOutcome The in-progress form data to preserve.
    * @param session The current HTTP session.
@@ -444,10 +459,7 @@ public class CaseController {
       @ModelAttribute("proceedingOutcome") final ProceedingOutcomeFormData proceedingOutcome,
       HttpSession session) {
     session.setAttribute(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome);
-    final CourtSearchCriteria courtSearchCriteria = new CourtSearchCriteria();
-    courtSearchCriteria.setCourtCode(proceedingOutcome.getCourtCode());
-    courtSearchCriteria.setCourtName(proceedingOutcome.getCourtName());
-    session.setAttribute(COURT_SEARCH_CRITERIA, courtSearchCriteria);
+    session.setAttribute(COURT_SEARCH_CRITERIA, new CourtSearchCriteria());
     return "redirect:/court/search?proceedingIndex=" + index;
   }
 
