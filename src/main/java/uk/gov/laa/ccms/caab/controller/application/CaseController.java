@@ -441,8 +441,6 @@ public class CaseController {
     }
 
     if (outcomeAndAwardsDocumentUploadForm.getEvidenceTypes().contains("Outcomes Evidence")) {
-      System.out.println("!!!!!!!!!!!!!!IT CONTAINS IT!!!!!!!");
-
       //       Register the document in EBS to get an EBS document id before saving to the TDS.
       final String registeredDocumentId =
           evidenceService
@@ -458,8 +456,6 @@ public class CaseController {
 
       outcomeAndAwardsDocumentUploadForm.setRegisteredDocumentId(registeredDocumentId);
     }
-
-    System.out.println("outcomeAndAwardsDocumentUploadForm: " + outcomeAndAwardsDocumentUploadForm);
 
     // Stores the document in the generic evidence store (TDS) alongside application/request
     // evidence, keyed by case reference number and the OUTCOME ccms module.
