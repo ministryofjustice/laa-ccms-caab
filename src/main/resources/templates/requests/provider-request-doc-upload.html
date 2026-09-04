@@ -13,6 +13,10 @@
     <h1 class="govuk-heading-l" th:text="#{request.upload}"></h1>
     <form action="#" th:action="@{${providerRequestSubmitUrl}}" method="post" th:object="${__${providerRequestEvidenceUploadFormAttribute}__}" enctype="multipart/form-data">
       <div th:replace="~{partials/document-upload :: uploadFormFields(${providerRequestBackUrl})}"></div>
+      <div class="govuk-button-group">
+        <button class="govuk-button" data-module="govuk-button" th:text="#{site.upload}"></button>
+        <a th:href="@{${providerRequestBackUrl}}" class="govuk-link" th:text="#{site.back}"></a>
+      </div>
     </form>
   </div>
 </div>
