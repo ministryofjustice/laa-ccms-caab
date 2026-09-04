@@ -351,8 +351,11 @@ public class CaseController {
       }
     }
 
+    model.addAttribute("case", ebsCase);
     model.addAttribute("proceedings", proceedings);
     model.addAttribute("resolvedOutcomes", resolvedOutcomes);
+    model.addAttribute(
+        "outcomeDocumentActionAllowed", ActionViewHelper.isOutcomeDocumentActionAllowed(ebsCase));
 
     // Documents are retrieved using the generic evidence store, keyed by case reference
     // number and the OUTCOME ccms module.

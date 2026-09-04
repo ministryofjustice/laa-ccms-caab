@@ -894,6 +894,172 @@ class CaseControllerTest {
     }
 
     @Test
+    @DisplayName("Outcome and awards document upload link is visible when user has permission")
+    public void outcomeAndAwardsDocumentUploadLinkVisibleWithPermission() {
+      final ApplicationDetail ebsCase =
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards")
+          .model()
+          .hasEntrySatisfying(
+              "case",
+              value -> {
+                assertThat(value).isInstanceOf(ApplicationDetail.class);
+                ApplicationDetail caseDetail = (ApplicationDetail) value;
+                assertThat(caseDetail.getAvailableFunctions())
+                    .contains(FunctionConstants.OUTCOME_WITH_DISCHARGE);
+              })
+          .hasEntrySatisfying(
+              "outcomeDocumentActionAllowed", value -> assertThat(value).isEqualTo(true));
+    }
+
+    @Test
+    @DisplayName("Outcome and awards document upload link is hidden when user lacks permission")
+    public void outcomeAndAwardsDocumentUploadLinkHiddenWithoutPermission() {
+      final ApplicationDetail ebsCase =
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.AMEND_CASE));
+
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards")
+          .model()
+          .hasEntrySatisfying(
+              "case",
+              value -> {
+                assertThat(value).isInstanceOf(ApplicationDetail.class);
+                ApplicationDetail caseDetail = (ApplicationDetail) value;
+                assertThat(caseDetail.getAvailableFunctions())
+                    .doesNotContain(FunctionConstants.OUTCOME_WITH_DISCHARGE)
+                    .doesNotContain(FunctionConstants.OUTCOME_NO_DISCHARGE);
+              })
+          .hasEntrySatisfying(
+              "outcomeDocumentActionAllowed", value -> assertThat(value).isEqualTo(false));
+    }
+
+    @Test
+    @DisplayName("Outcome and awards document remove link is visible when user has permission")
+    public void outcomeAndAwardsDocumentRemoveLinkVisibleWithPermission() {
+      final ApplicationDetail ebsCase =
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_NO_DISCHARGE));
+
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards")
+          .model()
+          .hasEntrySatisfying(
+              "case",
+              value -> {
+                assertThat(value).isInstanceOf(ApplicationDetail.class);
+                ApplicationDetail caseDetail = (ApplicationDetail) value;
+                assertThat(caseDetail.getAvailableFunctions())
+                    .contains(FunctionConstants.OUTCOME_NO_DISCHARGE);
+              })
+          .hasEntrySatisfying(
+              "outcomeDocumentActionAllowed", value -> assertThat(value).isEqualTo(true));
+    }
+
+    @Test
+    @DisplayName("Outcome and awards document remove link is hidden when user lacks permission")
+    public void outcomeAndAwardsDocumentRemoveLinkHiddenWithoutPermission() {
+      final ApplicationDetail ebsCase =
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.VIEW_CASE));
+
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards")
+          .model()
+          .hasEntrySatisfying(
+              "case",
+              value -> {
+                assertThat(value).isInstanceOf(ApplicationDetail.class);
+                ApplicationDetail caseDetail = (ApplicationDetail) value;
+                assertThat(caseDetail.getAvailableFunctions())
+                    .doesNotContain(FunctionConstants.OUTCOME_WITH_DISCHARGE)
+                    .doesNotContain(FunctionConstants.OUTCOME_NO_DISCHARGE);
+              })
+          .hasEntrySatisfying(
+              "outcomeDocumentActionAllowed", value -> assertThat(value).isEqualTo(false));
+    }
+
+    @Test
     @DisplayName("Outcome and awards retains EBS proceeding outcome when no local save exists")
     public void outcomeAndAwardsRetainsEbsOutcomeWhenNoLocalSave() {
       final String selectedCaseRef = "8";
