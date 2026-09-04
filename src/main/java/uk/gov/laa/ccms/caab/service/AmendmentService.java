@@ -600,18 +600,22 @@ public class AmendmentService {
     final ApplicationDetail application = applicationService.getApplication(applicationId).block();
     final ApplicationSectionDisplay amendmentSections = getAmendmentSections(application, user);
 
-    return amendmentSections.getOpponentsAndOtherParties().getOpponents().stream()
-        .map(
-            opponent -> {
-              OpponentDetail opponentDetail =
-                  OpponentUtil.getOpponentById(application, opponent.getId());
-              AbstractOpponentFormData formData =
-                  applicationService.buildOpponentFormData(opponentDetail);
-              formData.setEditable(true);
-              formData.setDeletable(Boolean.TRUE.equals(opponentDetail.getDeleteInd()));
-              return formData;
-            })
-        .toList();
+    final List<OpponentDetail> opponentDetails =
+        amendmentSections.getOpponentsAndOtherParties().getOpponents().stream()
+            .map(opponent -> OpponentUtil.getOpponentById(application, opponent.getId()))
+            .toList();
+
+    // Built as a batch so the shared lookups are only fetched once for the whole list.
+    final List<AbstractOpponentFormData> formDataList =
+        applicationService.buildOpponentFormData(opponentDetails);
+
+    for (int i = 0; i < formDataList.size(); i++) {
+      final AbstractOpponentFormData formData = formDataList.get(i);
+      formData.setEditable(true);
+      formData.setDeletable(Boolean.TRUE.equals(opponentDetails.get(i).getDeleteInd()));
+    }
+
+    return formDataList;
   }
 
   /**

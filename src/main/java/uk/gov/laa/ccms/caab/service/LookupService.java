@@ -92,6 +92,11 @@ public class LookupService {
    * @return Optional CommonLookupValueDetail containing the common lookup value.
    */
   public Mono<Optional<CommonLookupValueDetail>> getCountry(final String code) {
+    // Country codes are never blank, so avoid fetching the whole list for one that is.
+    if (!StringUtils.hasText(code)) {
+      return Mono.just(Optional.empty());
+    }
+
     return getCountries()
         .map(
             commonLookupDetail ->

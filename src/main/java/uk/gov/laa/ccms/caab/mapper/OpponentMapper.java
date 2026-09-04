@@ -28,6 +28,7 @@ public interface OpponentMapper {
   @Mapping(target = "organisationName", source = "organisation.name")
   @Mapping(target = "organisationType", source = "organisation.type")
   @Mapping(target = "organisationTypeDisplayValue", source = "orgTypeLookup.description")
+  @Mapping(target = "countryDisplayValue", source = "countryLookup.description")
   @Mapping(target = "contactNameRole", source = "organisation.contactName")
   @Mapping(target = "telephoneWork", source = "organisation.contactDetails.telephoneWork")
   @Mapping(target = "faxNumber", source = "organisation.contactDetails.fax")
@@ -36,7 +37,9 @@ public interface OpponentMapper {
   @Mapping(target = "deletable", constant = "true")
   @Mapping(target = "type", ignore = true)
   OrganisationOpponentFormData toOrganisationOpponentFormData(
-      OrganisationDetail organisation, CommonLookupValueDetail orgTypeLookup);
+      OrganisationDetail organisation,
+      CommonLookupValueDetail orgTypeLookup,
+      CommonLookupValueDetail countryLookup);
 
   @Mapping(target = "id", source = "opponent.id")
   @Mapping(target = ".", source = "opponent")
@@ -46,6 +49,7 @@ public interface OpponentMapper {
   @Mapping(target = ".", source = "opponent.address")
   @Mapping(target = "organisationType", source = "opponent.organisationType")
   @Mapping(target = "organisationTypeDisplayValue", source = "organisationTypeDisplayValue")
+  @Mapping(target = "countryDisplayValue", source = "countryDisplayValue")
   @Mapping(target = "deletable", source = "opponent.deleteInd")
   @Mapping(target = "shared", source = "opponent.sharedInd")
   @Mapping(target = "editable", source = "editable")
@@ -55,6 +59,7 @@ public interface OpponentMapper {
       final String organisationTypeDisplayValue,
       final String relationshipToCaseDisplayValue,
       final String relationshipToClientDisplayValue,
+      final String countryDisplayValue,
       final boolean editable);
 
   @Mapping(target = "id", source = "opponent.id")
@@ -64,6 +69,7 @@ public interface OpponentMapper {
   @Mapping(target = "relationshipToClientDisplayValue", source = "relationshipToClientDisplayValue")
   @Mapping(target = ".", source = "opponent.address")
   @Mapping(target = "dateOfBirth", source = "opponent.dateOfBirth", dateFormat = "dd/MM/yyyy")
+  @Mapping(target = "countryDisplayValue", source = "countryDisplayValue")
   @Mapping(target = "deletable", source = "opponent.deleteInd")
   @Mapping(target = "editable", source = "editable")
   @Mapping(target = "dateOfBirthMandatory", ignore = true)
@@ -72,6 +78,7 @@ public interface OpponentMapper {
       final String partyName,
       final String relationshipToCaseDisplayValue,
       final String relationshipToClientDisplayValue,
+      final String countryDisplayValue,
       final boolean editable);
 
   /**
@@ -82,6 +89,7 @@ public interface OpponentMapper {
    * @param organisationTypeDisplayValue - the organisation type display value.
    * @param relationshipToCaseDisplayValue - the relationship to case display value.
    * @param relationshipToClientDisplayValue - the relationship to client display value.
+   * @param countryDisplayValue - the country display value.
    * @param editable - flag to indicate that the opponent is editable.
    * @return mapped AbstractOpponentFormData.
    */
@@ -91,6 +99,7 @@ public interface OpponentMapper {
       final String organisationTypeDisplayValue,
       final String relationshipToCaseDisplayValue,
       final String relationshipToClientDisplayValue,
+      final String countryDisplayValue,
       final boolean editable) {
     return OPPONENT_TYPE_ORGANISATION.equals(opponent.getType())
         ? toOrganisationOpponentFormData(
@@ -99,12 +108,14 @@ public interface OpponentMapper {
             organisationTypeDisplayValue,
             relationshipToCaseDisplayValue,
             relationshipToClientDisplayValue,
+            countryDisplayValue,
             editable)
         : toIndividualOpponentFormData(
             opponent,
             partyName,
             relationshipToCaseDisplayValue,
             relationshipToClientDisplayValue,
+            countryDisplayValue,
             editable);
   }
 

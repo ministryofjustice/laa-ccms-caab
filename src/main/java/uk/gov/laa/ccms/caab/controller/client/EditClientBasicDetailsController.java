@@ -5,10 +5,13 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_G
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 
+import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -22,6 +25,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 
 /** Controller for handling edits to client basic details during the application summary process. */
 @Controller
@@ -56,6 +60,7 @@ public class EditClientBasicDetailsController {
     ClientFormDataBasicDetails basicDetails = clientFlowFormData.getBasicDetails();
     basicDetails.setClientFlowFormAction(clientFlowFormData.getAction());
 
+    populateCountryOfOriginDisplayValue(basicDetails, model);
     model.addAttribute("basicDetails", basicDetails);
     return "application/sections/client-basic-details";
   }
@@ -81,6 +86,7 @@ public class EditClientBasicDetailsController {
 
     if (bindingResult.hasErrors()) {
       populateDropdowns(model);
+      populateCountryOfOriginDisplayValue(basicDetails, model);
       return "application/sections/client-basic-details";
     }
 
@@ -105,5 +111,34 @@ public class EditClientBasicDetailsController {
         .addDropdown(
             "maritalStatusList", lookupService.getCommonValues(COMMON_VALUE_MARITAL_STATUS))
         .build();
+  }
+
+  /**
+   * Resolves the client's country of origin code to its description, as the field is read-only on
+   * this screen and would otherwise display the reference code.
+   *
+   * @param basicDetails The basic details of the client.
+   * @param model The model for the view, already populated with the countries lookup.
+   */
+  @SuppressWarnings("unchecked")
+  private void populateCountryOfOriginDisplayValue(
+      final ClientFormDataBasicDetails basicDetails, final Model model) {
+
+    final String countryOfOrigin = basicDetails.getCountryOfOrigin();
+
+    if (!StringUtils.hasText(countryOfOrigin)) {
+      return;
+    }
+
+    Optional.ofNullable((List<CommonLookupValueDetail>) model.getAttribute("countries"))
+        .ifPresent(
+            countries ->
+                model.addAttribute(
+                    "countryOfOriginDisplayValue",
+                    countries.stream()
+                        .filter(country -> countryOfOrigin.equals(country.getCode()))
+                        .map(CommonLookupValueDetail::getDescription)
+                        .findFirst()
+                        .orElse(countryOfOrigin)));
   }
 }

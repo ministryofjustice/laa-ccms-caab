@@ -166,7 +166,8 @@
     </div>
     <p th:if="*{clientFlowFormAction == 'edit'}" class="govuk-body">
       <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{person.countryOfOrigin}"></span>
-      <span th:text="*{countryOfOrigin}"></span>
+      <!-- Show the country description, falling back to the code if it cannot be resolved -->
+      <span th:text="${countryOfOriginDisplayValue} ?: *{countryOfOrigin}"></span>
       <input type="hidden" id="countryOfOrigin" name="countryOfOrigin" th:value="*{countryOfOrigin}">
     </p>
 
