@@ -26,6 +26,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUM
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COURT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
@@ -1549,6 +1550,70 @@ class CaseControllerTest {
       assertThat(courtSearchCriteria)
           .hasFieldOrPropertyWithValue("courtCode", null)
           .hasFieldOrPropertyWithValue("courtName", null);
+    }
+
+    @Test
+    @DisplayName(
+        "Returning from court search keeps the in-progress outcome and applies the chosen court")
+    public void recordProceedingOutcomeRestoresInProgressFormDataOnReturnFromCourtSearch()
+        throws Exception {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .proceedingCaseId("pc1")
+                  .description("Proceeding 1")
+                  .proceedingType(
+                      new StringDisplayValue().id("P1").displayValue("Proceeding name"))));
+
+      // No getCaseOutcome stub: the in-progress form data comes from session, so the controller
+      // never falls back to resolving the outcome. Stubbing it fails as an unnecessary stubbing,
+      // which is itself the proof that the saved form data is what gets used.
+      when(lookupService.getStageEnds("P1", null))
+          .thenReturn(Mono.just(new StageEndLookupDetail()));
+      when(lookupService.getOutcomeResults("P1", null))
+          .thenReturn(Mono.just(new OutcomeResultLookupDetail()));
+      when(lookupService.getCommonValues(anyString()))
+          .thenReturn(Mono.just(new CommonLookupDetail()));
+
+      // What the user had typed on the outcome screen before going to find a Court, carrying the
+      // court the outcome already held.
+      final ProceedingOutcomeFormData inProgress = new ProceedingOutcomeFormData();
+      inProgress.setDateOfFinalWork("01/01/2026");
+      inProgress.setResultInfo("Half-written result info");
+      inProgress.setOutcomeCourtCaseNo("CASE-123");
+      inProgress.setCourtCode("Not Available");
+      inProgress.setCourtName("Not Available");
+
+      final CommonLookupValueDetail chosenCourt =
+          new CommonLookupValueDetail()
+              .code("127C1")
+              .description("Birmingham Civil Justice Centre");
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/proceeding/0/outcome")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(PROCEEDING_OUTCOME_FORM_DATA, inProgress)
+                      .sessionAttr(SELECTED_COURT, chosenCourt)))
+          .hasStatusOk()
+          .hasViewName("application/record-proceeding-outcome")
+          .model()
+          .hasEntrySatisfying(
+              "proceedingOutcome",
+              value -> {
+                ProceedingOutcomeFormData formData = (ProceedingOutcomeFormData) value;
+                // Nothing typed before the detour is lost.
+                assertThat(formData.getDateOfFinalWork()).isEqualTo("01/01/2026");
+                assertThat(formData.getResultInfo()).isEqualTo("Half-written result info");
+                assertThat(formData.getOutcomeCourtCaseNo()).isEqualTo("CASE-123");
+                // And the Court just chosen replaces whatever the outcome held before.
+                assertThat(formData.getCourtCode()).isEqualTo("127C1");
+                assertThat(formData.getCourtName()).isEqualTo("Birmingham Civil Justice Centre");
+              });
     }
 
     @Test
