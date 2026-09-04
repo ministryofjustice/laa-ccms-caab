@@ -25,6 +25,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
@@ -50,8 +51,10 @@ import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.PreCertificateAndLegalHelpCostsFormData;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
+import uk.gov.laa.ccms.caab.bean.validators.application.PreCertificateAndLegalHelpCostsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
@@ -96,6 +99,7 @@ class CaseControllerTest {
   @Mock private LookupService lookupService;
   @Mock private CaseOutcomeService caseOutcomeService;
   @Mock private ProceedingOutcomeValidator proceedingOutcomeValidator;
+  @Mock private PreCertificateAndLegalHelpCostsValidator preCertificateAndLegalHelpCostsValidator;
 
   @InjectMocks private CaseController caseController;
 
@@ -849,6 +853,139 @@ class CaseControllerTest {
                       .sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/outcome-and-awards");
+    }
+
+    @Test
+    @DisplayName("Pre-certificate and legal help costs page loads with existing saved values")
+    public void preCertificateAndLegalHelpCostsPageLoadsWithSavedValues() {
+      final String selectedCaseRef = "8";
+      final PreCertificateAndLegalHelpCostsFormData savedFormData =
+          new PreCertificateAndLegalHelpCostsFormData();
+      savedFormData.setPreCertificateCosts("12.50");
+      savedFormData.setLegalHelpCosts("7.25");
+      savedFormData.setOfficeCode("1A234B");
+      savedFormData.setUniqueFileNumber("010124/001");
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA, savedFormData)))
+          .hasStatusOk()
+          .hasViewName("application/pre-certificate-and-legal-help-costs")
+          .model()
+          .hasEntrySatisfying(
+              "preCertificateAndLegalHelpCosts",
+              value -> {
+                PreCertificateAndLegalHelpCostsFormData formData =
+                    (PreCertificateAndLegalHelpCostsFormData) value;
+                assertThat(formData.getPreCertificateCosts()).isEqualTo("12.50");
+                assertThat(formData.getLegalHelpCosts()).isEqualTo("7.25");
+                assertThat(formData.getOfficeCode()).isEqualTo("1A234B");
+                assertThat(formData.getUniqueFileNumber()).isEqualTo("010124/001");
+              });
+    }
+
+    @Test
+    @DisplayName("Pre-certificate and legal help costs post returns form when validation fails")
+    public void preCertificateAndLegalHelpCostsPostReturnsFormWhenValidationFails() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+
+      org.mockito.Mockito.doAnswer(
+              invocation -> {
+                ((org.springframework.validation.Errors) invocation.getArgument(1))
+                    .rejectValue("officeCode", "invalid.format");
+                return null;
+              })
+          .when(preCertificateAndLegalHelpCostsValidator)
+          .validate(any(), any());
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .param("preCertificateCosts", "12.50")
+                      .param("legalHelpCosts", "7.25")
+                      .param("officeCode", "BAD")
+                      .param("uniqueFileNumber", "010124/001")))
+          .hasStatusOk()
+          .hasViewName("application/pre-certificate-and-legal-help-costs");
+    }
+
+    @Test
+    @DisplayName("Pre-certificate and legal help costs post stores values and redirects")
+    public void preCertificateAndLegalHelpCostsPostStoresValuesAndRedirects() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      doNothing().when(preCertificateAndLegalHelpCostsValidator).validate(any(), any());
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .param("preCertificateCosts", "12.50")
+                      .param("legalHelpCosts", "7.25")
+                      .param("officeCode", "1A234B")
+                      .param("uniqueFileNumber", "010124/001")))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards")
+          .satisfies(
+              response ->
+                  assertThat(response)
+                      .request()
+                      .sessionAttributes()
+                      .hasEntrySatisfying(
+                          PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA,
+                          value -> {
+                            PreCertificateAndLegalHelpCostsFormData formData =
+                                (PreCertificateAndLegalHelpCostsFormData) value;
+                            assertThat(formData.getPreCertificateCosts()).isEqualTo("12.50");
+                            assertThat(formData.getLegalHelpCosts()).isEqualTo("7.25");
+                            assertThat(formData.getOfficeCode()).isEqualTo("1A234B");
+                            assertThat(formData.getUniqueFileNumber()).isEqualTo("010124/001");
+                          }));
+    }
+
+    @Test
+    @DisplayName("Outcome and awards shows saved pre-certificate and legal help costs")
+    public void outcomeAndAwardsShowsSavedPreCertificateAndLegalHelpCosts() {
+      final String selectedCaseRef = "8";
+      final PreCertificateAndLegalHelpCostsFormData savedFormData =
+          new PreCertificateAndLegalHelpCostsFormData();
+      savedFormData.setPreCertificateCosts("12.50");
+      savedFormData.setLegalHelpCosts("7.25");
+      savedFormData.setOfficeCode("1A234B");
+      savedFormData.setUniqueFileNumber("010124/001");
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA, savedFormData)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards")
+          .model()
+          .hasEntrySatisfying(
+              "preCertificateAndLegalHelpCostsSummary",
+              value -> {
+                PreCertificateAndLegalHelpCostsFormData formData =
+                    (PreCertificateAndLegalHelpCostsFormData) value;
+                assertThat(formData.getPreCertificateCosts()).isEqualTo("12.50");
+                assertThat(formData.getLegalHelpCosts()).isEqualTo("7.25");
+                assertThat(formData.getOfficeCode()).isEqualTo("1A234B");
+                assertThat(formData.getUniqueFileNumber()).isEqualTo("010124/001");
+              });
     }
 
     @Test

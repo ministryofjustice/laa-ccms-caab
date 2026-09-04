@@ -259,6 +259,9 @@ public class SessionConstants {
   /** Session attribute for in-progress proceeding outcome form data. */
   public static final String PROCEEDING_OUTCOME_FORM_DATA = "proceedingOutcomeFormData";
 
+  public static final String PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA =
+      "preCertificateAndLegalHelpCostsFormData";
+
   /** Session attribute for keeping track of undertaking minimum. */
   public static final String UNDERTAKING_MINIMUM = "undertakingMinimum";
 
