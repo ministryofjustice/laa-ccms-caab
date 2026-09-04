@@ -40,6 +40,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -855,8 +857,107 @@ class CaseControllerTest {
       verify(evidenceService, org.mockito.Mockito.never()).addDocument(any(), any());
     }
 
+    @ParameterizedTest(name = "Validation error: {0} (field: {1})")
+    @CsvSource({
+      "file type error, file, invalid.extension, File type .exe is not allowed, document.exe",
+      "file size error, file, file.size.exceeded, File size exceeds maximum of 8MB, large.pdf",
+      "missing document type, documentType, required.documentType, Please select a document type, document.pdf",
+    })
+    @DisplayName("Outcome and awards document upload re-renders view on validation errors")
+    public void outcomeAndAwardsDocumentUploadPostReturnsViewOnValidationError(
+        String errorName,
+        String fieldName,
+        String errorCode,
+        String errorMessage,
+        String fileName) {
+      final EvidenceUploadFormData formData = new EvidenceUploadFormData();
+      if ("missing document type".equals(errorName)) {
+        formData.setFile(
+            new org.springframework.mock.web.MockMultipartFile(
+                "file", fileName, "application/pdf", "content".getBytes()));
+        formData.setDocumentType(null);
+      } else if ("file size error".equals(errorName)) {
+        formData.setFile(
+            new org.springframework.mock.web.MockMultipartFile(
+                "file", fileName, "application/pdf", new byte[9_000_000]));
+      } else {
+        formData.setFile(
+            new org.springframework.mock.web.MockMultipartFile(
+                "file", fileName, "application/octet-stream", "content".getBytes()));
+      }
+
+      org.mockito.Mockito.doAnswer(
+              invocation -> {
+                final org.springframework.validation.Errors errors = invocation.getArgument(1);
+                errors.rejectValue(fieldName, errorCode, errorMessage);
+                return null;
+              })
+          .when(providerRequestDocumentUploadValidator)
+          .validate(any(), any());
+
+      final ApplicationDetail ebsCase =
+          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("outcomeAndAwardsDocumentUploadForm", formData)))
+          .hasViewName("application/outcome-and-awards-document-upload")
+          .model()
+          .containsKeys("documentTypes", "validExtensions", "maxFileSize");
+
+      verify(evidenceService, org.mockito.Mockito.never()).addDocument(any(), any());
+    }
+
+    @ParameterizedTest(name = "File type: {0}")
+    @CsvSource({
+      "pdf, application/pdf, DOC1, PDF document",
+      "docx, application/vnd.openxmlformats-officedocument.wordprocessingml.document, DOC2, DOCX document",
+      "rtf, application/rtf, DOC3, RTF document",
+      "tiff, image/tiff, DOC4, TIFF image",
+    })
+    @DisplayName("Outcome and awards document upload succeeds with supported file types")
+    public void outcomeAndAwardsDocumentUploadSucceedsWithSupportedFileTypes(
+        String fileExtension, String mimeType, String docTypeCode, String description) {
+      final EvidenceUploadFormData formData = new EvidenceUploadFormData();
+      final String fileName = "document." + fileExtension;
+      formData.setFile(
+          new org.springframework.mock.web.MockMultipartFile(
+              "file", fileName, mimeType, "content".getBytes()));
+      formData.setSanitisedFileName(fileName);
+      formData.setFileExtension(fileExtension);
+      formData.setDocumentType(docTypeCode);
+      formData.setDocumentDescription(description);
+      formData.setEvidenceTypes(List.of("Outcomes Evidence"));
+
+      final ApplicationDetail ebsCase =
+          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+
+      final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
+      when(evidenceMapper.toEvidenceDocumentDetail(formData)).thenReturn(evidenceDocumentDetail);
+      when(evidenceService.registerDocument(
+              anyString(), anyString(), any(), anyString(), anyString(), any()))
+          .thenReturn(Mono.just("registeredDocId"));
+      when(evidenceService.addDocument(eq(evidenceDocumentDetail), anyString()))
+          .thenReturn(Mono.just("saved"));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("outcomeAndAwardsDocumentUploadForm", formData)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(evidenceService)
+          .registerDocument(eq(docTypeCode), eq(fileExtension), any(), any(), any(), any());
+    }
+
     @Test
-    @DisplayName("Remove outcome and awards document redirects on success")
+    @DisplayName("Remove outcome and awards document succeeds")
     public void removeOutcomeAndAwardsDocumentRedirectsOnSuccess() {
       final ApplicationDetail ebsCase =
           getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
@@ -893,21 +994,19 @@ class CaseControllerTest {
           .hasCauseInstanceOf(CaabApplicationException.class);
     }
 
-    @Test
-    @DisplayName("Outcome and awards document upload link is visible when user has permission")
-    public void outcomeAndAwardsDocumentUploadLinkVisibleWithPermission() {
+    @ParameterizedTest(name = "Upload with permission {0}: {1}")
+    @CsvSource({
+      "OUTCOME_WITH_DISCHARGE, true",
+      "OUTCOME_NO_DISCHARGE, true",
+      "AMEND_CASE, false",
+    })
+    @DisplayName("Outcome and awards document upload link visibility based on permissions")
+    public void outcomeAndAwardsDocumentUploadLinkVisibilityBasedOnPermissions(
+        String permissionCodeName, boolean shouldBeVisible) {
+      String permissionCode = getFunctionConstantByName(permissionCodeName);
+      final List<String> permissions = List.of(permissionCode);
       final ApplicationDetail ebsCase =
-          getEbsCase(
-              "8",
-              1,
-              "ref",
-              "client",
-              "smith",
-              "clientRef",
-              false,
-              null,
-              null,
-              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null, permissions);
 
       when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
           .thenReturn(
@@ -923,32 +1022,23 @@ class CaseControllerTest {
           .hasViewName("application/outcome-and-awards")
           .model()
           .hasEntrySatisfying(
-              "case",
-              value -> {
-                assertThat(value).isInstanceOf(ApplicationDetail.class);
-                ApplicationDetail caseDetail = (ApplicationDetail) value;
-                assertThat(caseDetail.getAvailableFunctions())
-                    .contains(FunctionConstants.OUTCOME_WITH_DISCHARGE);
-              })
-          .hasEntrySatisfying(
-              "outcomeDocumentActionAllowed", value -> assertThat(value).isEqualTo(true));
+              "outcomeDocumentActionAllowed",
+              value -> assertThat(value).isEqualTo(shouldBeVisible));
     }
 
-    @Test
-    @DisplayName("Outcome and awards document upload link is hidden when user lacks permission")
-    public void outcomeAndAwardsDocumentUploadLinkHiddenWithoutPermission() {
+    @ParameterizedTest(name = "Remove link with permission {0}: {1}")
+    @CsvSource({
+      "OUTCOME_NO_DISCHARGE, true",
+      "OUTCOME_WITH_DISCHARGE, true",
+      "VIEW_CASE, false",
+    })
+    @DisplayName("Outcome and awards document remove link visibility based on permissions")
+    public void outcomeAndAwardsDocumentRemoveLinkVisibilityBasedOnPermissions(
+        String permissionCodeName, boolean shouldBeVisible) {
+      String permissionCode = getFunctionConstantByName(permissionCodeName);
+      final List<String> permissions = List.of(permissionCode);
       final ApplicationDetail ebsCase =
-          getEbsCase(
-              "8",
-              1,
-              "ref",
-              "client",
-              "smith",
-              "clientRef",
-              false,
-              null,
-              null,
-              List.of(FunctionConstants.AMEND_CASE));
+          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null, permissions);
 
       when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
           .thenReturn(
@@ -964,21 +1054,163 @@ class CaseControllerTest {
           .hasViewName("application/outcome-and-awards")
           .model()
           .hasEntrySatisfying(
-              "case",
-              value -> {
-                assertThat(value).isInstanceOf(ApplicationDetail.class);
-                ApplicationDetail caseDetail = (ApplicationDetail) value;
-                assertThat(caseDetail.getAvailableFunctions())
-                    .doesNotContain(FunctionConstants.OUTCOME_WITH_DISCHARGE)
-                    .doesNotContain(FunctionConstants.OUTCOME_NO_DISCHARGE);
-              })
-          .hasEntrySatisfying(
-              "outcomeDocumentActionAllowed", value -> assertThat(value).isEqualTo(false));
+              "outcomeDocumentActionAllowed",
+              value -> assertThat(value).isEqualTo(shouldBeVisible));
+    }
+
+    private String getFunctionConstantByName(String name) {
+      return switch (name) {
+        case "OUTCOME_WITH_DISCHARGE" -> FunctionConstants.OUTCOME_WITH_DISCHARGE;
+        case "OUTCOME_NO_DISCHARGE" -> FunctionConstants.OUTCOME_NO_DISCHARGE;
+        case "AMEND_CASE" -> FunctionConstants.AMEND_CASE;
+        case "VIEW_CASE" -> FunctionConstants.VIEW_CASE;
+        default -> throw new IllegalArgumentException("Unknown function constant: " + name);
+      };
     }
 
     @Test
-    @DisplayName("Outcome and awards document remove link is visible when user has permission")
-    public void outcomeAndAwardsDocumentRemoveLinkVisibleWithPermission() {
+    @DisplayName("Outcome and awards document upload fails on AV scan error")
+    public void outcomeAndAwardsDocumentUploadFailsOnAvScanError() {
+      final EvidenceUploadFormData formData = new EvidenceUploadFormData();
+      formData.setFile(
+          new org.springframework.mock.web.MockMultipartFile(
+              "file", "infected.pdf", "application/pdf", "content".getBytes()));
+      formData.setSanitisedFileName("infected.pdf");
+      formData.setFileExtension("pdf");
+      formData.setDocumentType("DOC1");
+      formData.setDocumentDescription("A description");
+
+      final ApplicationDetail ebsCase =
+          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+
+      doThrow(new CaabApplicationException("File failed AV scan"))
+          .when(avScanService)
+          .performAvScan(
+              anyString(), any(), anyString(), any(), anyString(), any(java.io.InputStream.class));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("outcomeAndAwardsDocumentUploadForm", formData)))
+          .failure()
+          .hasCauseInstanceOf(CaabApplicationException.class)
+          .hasMessageContaining("File failed AV scan");
+
+      verify(evidenceService, org.mockito.Mockito.never())
+          .registerDocument(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Outcome and awards document upload fails on registration error")
+    public void outcomeAndAwardsDocumentUploadFailsOnRegistrationError() {
+      final EvidenceUploadFormData formData = new EvidenceUploadFormData();
+      formData.setFile(
+          new org.springframework.mock.web.MockMultipartFile(
+              "file", "document.pdf", "application/pdf", "content".getBytes()));
+      formData.setSanitisedFileName("document.pdf");
+      formData.setFileExtension("pdf");
+      formData.setDocumentType("DOC1");
+      formData.setDocumentDescription("A description");
+      formData.setEvidenceTypes(List.of("Outcomes Evidence"));
+
+      final ApplicationDetail ebsCase =
+          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+
+      when(evidenceService.registerDocument(
+              anyString(), anyString(), any(), anyString(), anyString(), any()))
+          .thenReturn(Mono.error(new CaabApplicationException("Registration failed")));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("outcomeAndAwardsDocumentUploadForm", formData)))
+          .failure()
+          .hasCauseInstanceOf(CaabApplicationException.class)
+          .hasMessageContaining("Registration failed");
+
+      verify(avScanService)
+          .performAvScan(
+              anyString(), any(), anyString(), any(), anyString(), any(java.io.InputStream.class));
+    }
+
+    @Test
+    @DisplayName("Outcome and awards document upload fails on add document error")
+    public void outcomeAndAwardsDocumentUploadFailsOnAddDocumentError() {
+      final EvidenceUploadFormData formData = new EvidenceUploadFormData();
+      formData.setFile(
+          new org.springframework.mock.web.MockMultipartFile(
+              "file", "document.pdf", "application/pdf", "content".getBytes()));
+      formData.setSanitisedFileName("document.pdf");
+      formData.setFileExtension("pdf");
+      formData.setDocumentType("DOC1");
+      formData.setDocumentDescription("A description");
+      formData.setEvidenceTypes(List.of("Outcomes Evidence"));
+
+      final ApplicationDetail ebsCase =
+          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+
+      final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
+      when(evidenceMapper.toEvidenceDocumentDetail(formData)).thenReturn(evidenceDocumentDetail);
+      when(evidenceService.registerDocument(
+              anyString(), anyString(), any(), anyString(), anyString(), any()))
+          .thenReturn(Mono.just("registeredDocId"));
+      when(evidenceService.addDocument(eq(evidenceDocumentDetail), anyString()))
+          .thenReturn(Mono.error(new CaabApplicationException("Failed to add document")));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("outcomeAndAwardsDocumentUploadForm", formData)))
+          .failure()
+          .hasCauseInstanceOf(CaabApplicationException.class)
+          .hasMessageContaining("Failed to add document");
+    }
+
+    @Test
+    @DisplayName("Outcome and awards document upload succeeds without explicit evidence types")
+    public void outcomeAndAwardsDocumentUploadSucceedsWithoutEvidenceTypes() {
+      final EvidenceUploadFormData formData = new EvidenceUploadFormData();
+      formData.setFile(
+          new org.springframework.mock.web.MockMultipartFile(
+              "file", "document.pdf", "application/pdf", "content".getBytes()));
+      formData.setSanitisedFileName("document.pdf");
+      formData.setFileExtension("pdf");
+      formData.setDocumentType("DOC1");
+      formData.setDocumentDescription("A description");
+      formData.setEvidenceTypes(null);
+
+      final ApplicationDetail ebsCase =
+          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+
+      final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
+      when(evidenceMapper.toEvidenceDocumentDetail(formData)).thenReturn(evidenceDocumentDetail);
+      when(evidenceService.addDocument(eq(evidenceDocumentDetail), anyString()))
+          .thenReturn(Mono.just("saved"));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("outcomeAndAwardsDocumentUploadForm", formData)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(evidenceService, org.mockito.Mockito.never())
+          .registerDocument(any(), any(), any(), any(), any(), any());
+      verify(evidenceService).addDocument(eq(evidenceDocumentDetail), anyString());
+    }
+
+    @Test
+    @DisplayName(
+        "Outcome and awards document upload with OUTCOME_NO_DISCHARGE permission allows upload")
+    public void outcomeAndAwardsDocumentUploadPageLoadsWithNoDischargePermission() {
       final ApplicationDetail ebsCase =
           getEbsCase(
               "8",
@@ -992,34 +1224,37 @@ class CaseControllerTest {
               null,
               List.of(FunctionConstants.OUTCOME_NO_DISCHARGE));
 
-      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
-          .thenReturn(
-              java.util.Optional.of(
-                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
-
       assertThat(
               mockMvc.perform(
-                  get("/case/outcome-and-awards")
-                      .sessionAttr(USER_DETAILS, user)
-                      .sessionAttr(CASE, ebsCase)))
+                  get("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
           .hasStatusOk()
-          .hasViewName("application/outcome-and-awards")
+          .hasViewName("application/outcome-and-awards-document-upload")
           .model()
-          .hasEntrySatisfying(
-              "case",
-              value -> {
-                assertThat(value).isInstanceOf(ApplicationDetail.class);
-                ApplicationDetail caseDetail = (ApplicationDetail) value;
-                assertThat(caseDetail.getAvailableFunctions())
-                    .contains(FunctionConstants.OUTCOME_NO_DISCHARGE);
-              })
-          .hasEntrySatisfying(
-              "outcomeDocumentActionAllowed", value -> assertThat(value).isEqualTo(true));
+          .containsKeys(
+              "outcomeAndAwardsDocumentUploadForm",
+              "documentTypes",
+              "validExtensions",
+              "maxFileSize");
     }
 
     @Test
-    @DisplayName("Outcome and awards document remove link is hidden when user lacks permission")
-    public void outcomeAndAwardsDocumentRemoveLinkHiddenWithoutPermission() {
+    @DisplayName("Outcome and awards document upload with both outcome permissions")
+    public void outcomeAndAwardsDocumentUploadSucceedsWithBothPermissions() {
+      final EvidenceUploadFormData formData = new EvidenceUploadFormData();
+      formData.setFile(
+          new org.springframework.mock.web.MockMultipartFile(
+              "file",
+              "document.docx",
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              "content".getBytes()));
+      formData.setSanitisedFileName("document.docx");
+      formData.setFileExtension("docx");
+      formData.setDocumentType("DOC2");
+      formData.setDocumentDescription("Multi-word description with numbers 123");
+      formData.setEvidenceTypes(List.of("Outcomes Evidence"));
+
       final ApplicationDetail ebsCase =
           getEbsCase(
               "8",
@@ -1031,32 +1266,28 @@ class CaseControllerTest {
               false,
               null,
               null,
-              List.of(FunctionConstants.VIEW_CASE));
+              List.of(
+                  FunctionConstants.OUTCOME_WITH_DISCHARGE,
+                  FunctionConstants.OUTCOME_NO_DISCHARGE));
 
-      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
-          .thenReturn(
-              java.util.Optional.of(
-                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+      final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
+      when(evidenceMapper.toEvidenceDocumentDetail(formData)).thenReturn(evidenceDocumentDetail);
+      when(evidenceService.registerDocument(
+              anyString(), anyString(), any(), anyString(), anyString(), any()))
+          .thenReturn(Mono.just("registeredDocId"));
+      when(evidenceService.addDocument(eq(evidenceDocumentDetail), anyString()))
+          .thenReturn(Mono.just("saved"));
 
       assertThat(
               mockMvc.perform(
-                  get("/case/outcome-and-awards")
+                  post("/case/outcome-and-awards/document/upload")
                       .sessionAttr(USER_DETAILS, user)
-                      .sessionAttr(CASE, ebsCase)))
-          .hasStatusOk()
-          .hasViewName("application/outcome-and-awards")
-          .model()
-          .hasEntrySatisfying(
-              "case",
-              value -> {
-                assertThat(value).isInstanceOf(ApplicationDetail.class);
-                ApplicationDetail caseDetail = (ApplicationDetail) value;
-                assertThat(caseDetail.getAvailableFunctions())
-                    .doesNotContain(FunctionConstants.OUTCOME_WITH_DISCHARGE)
-                    .doesNotContain(FunctionConstants.OUTCOME_NO_DISCHARGE);
-              })
-          .hasEntrySatisfying(
-              "outcomeDocumentActionAllowed", value -> assertThat(value).isEqualTo(false));
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("outcomeAndAwardsDocumentUploadForm", formData)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(evidenceService).registerDocument(eq("DOC2"), eq("docx"), any(), any(), any(), any());
     }
 
     @Test
