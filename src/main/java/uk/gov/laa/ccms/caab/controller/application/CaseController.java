@@ -544,11 +544,10 @@ public class CaseController {
       return null;
     }
 
-    final Mono<String> documentTypeDescription =
-        lookupService.getDocumentTypeDescription(documentTypeCode);
-    return documentTypeDescription == null
-        ? documentTypeCode
-        : documentTypeDescription.blockOptional().orElse(documentTypeCode);
+    return lookupService
+        .getDocumentTypeDescription(documentTypeCode)
+        .blockOptional()
+        .orElse(documentTypeCode);
   }
 
   /**
