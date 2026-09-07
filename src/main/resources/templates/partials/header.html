@@ -96,5 +96,7 @@
             </div>
         </div>
     </div>
-    <div th:replace="~{partials/phase-banner :: phase-banner}"></div>
+    <th:block th:if="${user != null}">
+        <div th:replace="~{partials/phase-banner :: phase-banner}"></div>
+    </th:block>
 </th:block>
