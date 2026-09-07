@@ -61,6 +61,7 @@ import uk.gov.laa.ccms.data.model.TaxRateLookupDetail;
 @RequiredArgsConstructor
 @Slf4j
 public class LookupService {
+
   private final EbsApiClient ebsApiClient;
 
   /**
@@ -429,7 +430,7 @@ public class LookupService {
    */
   public Mono<String> getDocumentTypeDescription(final String code) {
     if (!StringUtils.hasText(code)) {
-      return Mono.just(code);
+      return Mono.justOrEmpty(code);
     }
 
     return getCommonValue(COMMON_VALUE_DOCUMENT_TYPES, code)

@@ -1,16 +1,19 @@
-<div th:fragment="uploadFormFields(backUrl)">
+<div th:fragment="uploadFormFields">
   <div th:replace="~{partials/error-summary :: error-summary}"></div>
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds">
-      <div class="govuk-form-group" th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
+      <div class="govuk-form-group"
+           th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
         <label class="govuk-label" for="file" th:text="#{request.chooseFile}"></label>
         <div id="file-upload-hint" class="govuk-hint">
           <span th:text="#{request.fileValidation(${validExtensions},${maxFileSize})}"></span>
         </div>
         <input class="govuk-file-upload" id="file" name="file" type="file">
       </div>
-      <div th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType', #{document.type}, ${documentTypes}, 'code', 'description')}"></div>
-      <div th:replace="~{partials/forms :: largeTextInput('documentDescription', #{site.optional(#{document.description})}, 255)}"></div>
+      <div
+          th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType', #{document.type}, ${documentTypes}, 'code', 'description')}"></div>
+      <div
+          th:replace="~{partials/forms :: largeTextInput('documentDescription', #{site.optional(#{document.description})}, 255)}"></div>
     </div>
   </div>
 </div>

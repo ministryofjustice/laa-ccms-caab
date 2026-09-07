@@ -394,11 +394,17 @@ public class CaseController {
   /**
    * Displays the document upload screen for outcome and awards.
    *
+   * @param ebsCase The case details from EBS.
    * @param model the model
    * @return the outcome and awards document upload view
    */
   @GetMapping("/case/outcome-and-awards/document/upload")
-  public String outcomeAndAwardsDocumentUpload(final Model model) {
+  public String outcomeAndAwardsDocumentUpload(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase, final Model model) {
+    if (!ActionViewHelper.isOutcomeDocumentActionAllowed(ebsCase)) {
+      throw new CaabApplicationException(
+          "User is not authorised to upload outcome documents for this case");
+    }
     model.addAttribute("outcomeAndAwardsDocumentUploadForm", new EvidenceUploadFormData());
     populateOutcomeAndAwardsDocumentUploadModel(model);
     return "application/outcome-and-awards-document-upload";
@@ -448,14 +454,14 @@ public class CaseController {
       outcomeAndAwardsDocumentUploadForm.setEvidenceTypes(Collections.emptyList());
     }
 
-    try {
+    try (var inputStream = outcomeAndAwardsDocumentUploadForm.getFile().getInputStream()) {
       avScanService.performAvScan(
           outcomeAndAwardsDocumentUploadForm.getCaseReferenceNumber(),
           outcomeAndAwardsDocumentUploadForm.getProviderId(),
           outcomeAndAwardsDocumentUploadForm.getDocumentSender(),
           outcomeAndAwardsDocumentUploadForm.getCcmsModule(),
           outcomeAndAwardsDocumentUploadForm.getSanitisedFileName(),
-          outcomeAndAwardsDocumentUploadForm.getFile().getInputStream());
+          inputStream);
     } catch (AvVirusFoundException | AvScanException | IOException e) {
       bindingResult.rejectValue("file", "scan.failure", e.getMessage());
       populateOutcomeAndAwardsDocumentUploadModel(model);
