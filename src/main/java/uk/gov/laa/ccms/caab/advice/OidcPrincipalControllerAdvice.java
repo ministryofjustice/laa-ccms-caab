@@ -4,7 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.saml2.provider.service.authentication.Saml2AssertionAuthentication;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -15,31 +15,32 @@ import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
- * Controller advice class responsible for adding the SAML authenticated principal and user details
+ * Controller advice class responsible for adding the OIDC authenticated principal and user details
  * to the model.
  */
 @ControllerAdvice
 @RequiredArgsConstructor
-public class SamlPrincipalControllerAdvice {
+public class OidcPrincipalControllerAdvice {
 
   private final UserService userService;
 
   /**
-   * Adds the SAML authenticated principal and user details to the model.
+   * Adds the OIDC authenticated principal and user details to the model.
    *
    * @param authentication The authenticated principal representing the authenticated user.
    * @param model The Model object to which attributes will be added.
    * @param session The HttpSession to store and retrieve user details.
    */
   @ModelAttribute
-  public void addSamlPrincipalToModel(
+  public void addOidcPrincipalToModel(
       Authentication authentication, Model model, HttpSession session, HttpServletRequest request) {
 
-    if (authentication instanceof Saml2AssertionAuthentication saml2Authentication
+    if (authentication != null
+        && authentication.getPrincipal() instanceof OidcUser oidcUser
         && !requestIsForController(
             request, uk.gov.laa.ccms.caab.controller.CspReportController.class)) {
 
-      String loginId = saml2Authentication.getName();
+      String loginId = authentication.getName();
 
       UserDetail user = new UserDetail();
       user.setLoginId(loginId);
@@ -60,7 +61,7 @@ public class SamlPrincipalControllerAdvice {
       }
 
       model.addAttribute("user", user);
-      model.addAttribute("userAttributes", saml2Authentication.getCredentials().getAttributes());
+      model.addAttribute("userAttributes", oidcUser.getClaims());
 
       session.setAttribute("user", user);
     }
