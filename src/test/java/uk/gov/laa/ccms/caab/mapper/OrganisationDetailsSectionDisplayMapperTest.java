@@ -2,10 +2,13 @@ package uk.gov.laa.ccms.caab.mapper;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,6 +39,8 @@ class OrganisationDetailsSectionDisplayMapperTest {
   @BeforeEach
   void beforeEach() {
     mapper.lookupService = lookupService;
+    // Country resolution runs on every mapping; individual tests override it where it matters.
+    lenient().when(lookupService.getCountry(any())).thenReturn(Mono.just(Optional.empty()));
   }
 
   @Test
@@ -137,5 +142,29 @@ class OrganisationDetailsSectionDisplayMapperTest {
     assertThat(addressDetails.getEmail()).isEqualTo("email@address.com");
     assertThat(addressDetails.getFax()).isEqualTo("00000111111");
     assertThat(addressDetails.getOtherInformation()).isEqualTo("More information");
+  }
+
+  @Test
+  @DisplayName("Should map the country code to its description")
+  void shouldMapCountryDescription() {
+    // Given
+    OpponentDetail organisationDetails = new OpponentDetail();
+    AddressDetail address = new AddressDetail();
+    address.setCountry("GBR");
+    organisationDetails.setAddress(address);
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.empty());
+    when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES)).thenReturn(Mono.empty());
+    when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.empty());
+    when(lookupService.getCountry("GBR"))
+        .thenReturn(
+            Mono.just(
+                Optional.of(
+                    new CommonLookupValueDetail().code("GBR").description("Great Britain"))));
+    // When
+    OrganisationDetailsSectionDisplay result =
+        mapper.toOrganisationDetailsSectionDisplay(organisationDetails);
+    // Then
+    assertThat(result.addressDetails().getCountry()).isEqualTo("Great Britain");
   }
 }

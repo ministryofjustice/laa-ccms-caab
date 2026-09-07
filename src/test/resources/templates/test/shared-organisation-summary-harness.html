@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<!--
+  Minimal harness that renders the shared organisation summary fragment in a real Spring form
+  binding context, without pulling in layout.html. Used by SharedOrganisationSummaryRenderTest.
+-->
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
+<body>
+<form action="#" th:object="${opponent}" method="post">
+  <div th:replace="~{application/partials/opponent-fragments :: sharedOrganisationSummary}"></div>
+</form>
+</body>
+</html>

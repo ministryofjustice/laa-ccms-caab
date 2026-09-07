@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<!--
+  Minimal harness that renders the client basic details fragment in a real Spring form
+  binding context, without pulling in layout.html. Used by ClientBasicDetailsRenderTest.
+-->
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
+<body>
+<form action="#" th:object="${basicDetails}" method="post">
+  <div th:replace="~{application/partials/client-fragments :: clientBasicFragment}"></div>
+</form>
+</body>
+</html>

@@ -22,7 +22,8 @@
       <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Address line 2', *{addressLine2})}"></div>
       <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('City / town', *{city})}"></div>
       <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('County', *{county})}"></div>
-      <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Country', *{country})}"></div>
+      <!-- Show the country description, falling back to the code if it cannot be resolved -->
+      <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Country', *{countryDisplayValue} ?: *{country})}"></div>
       <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Post code', *{postcode})}"></div>
       <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Telephone', *{telephoneWork})}"></div>
       <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Fax', *{faxNumber})}"></div>

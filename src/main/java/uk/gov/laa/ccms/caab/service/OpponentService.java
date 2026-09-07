@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.service;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 
 import java.util.Optional;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 
@@ -112,7 +114,18 @@ public class OpponentService {
             .orElseThrow(
                 () -> new CaabApplicationException("Failed to retrieve organisation type lookup"));
 
-    return opponentMapper.toOrganisationOpponentFormData(organisation, orgType);
+    // Lookup the display value for the country, which is shown read-only on the summary card.
+    final String countryCode =
+        Optional.ofNullable(organisation.getAddress()).map(AddressDetail::getCountry).orElse(null);
+
+    final CommonLookupValueDetail country =
+        lookupService
+            .getCountry(countryCode)
+            .blockOptional()
+            .flatMap(Function.identity())
+            .orElse(new CommonLookupValueDetail().code(countryCode).description(countryCode));
+
+    return opponentMapper.toOrganisationOpponentFormData(organisation, orgType, country);
   }
 
   /**

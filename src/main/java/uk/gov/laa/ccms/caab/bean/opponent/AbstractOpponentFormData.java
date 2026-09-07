@@ -60,6 +60,9 @@ public abstract class AbstractOpponentFormData {
   /** The opponent's country. */
   private String country;
 
+  /** The display value for the opponent's country. */
+  private String countryDisplayValue;
+
   /** The postcode for the opponent. */
   @Size(max = POSTCODE_CHARACTER_SIZE)
   private String postcode;

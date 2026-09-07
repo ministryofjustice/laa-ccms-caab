@@ -2,6 +2,8 @@ package uk.gov.laa.ccms.caab.mapper;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 
@@ -9,6 +11,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.Date;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,6 +42,8 @@ class IndividualDetailsSectionDisplayMapperTest {
   @BeforeEach
   void beforeEach() {
     mapper.lookupService = lookupService;
+    // Country resolution runs on every mapping; individual tests override it where it matters.
+    lenient().when(lookupService.getCountry(any())).thenReturn(Mono.just(Optional.empty()));
   }
 
   @Test
@@ -136,6 +141,29 @@ class IndividualDetailsSectionDisplayMapperTest {
     assertThat(addressDetails.getTelephoneMobile()).isEqualTo("1122334455");
     assertThat(addressDetails.getEmail()).isEqualTo("email@address.com");
     assertThat(addressDetails.getFax()).isEqualTo("00000111111");
+  }
+
+  @Test
+  @DisplayName("Should map the country code to its description")
+  void shouldMapCountryDescription() {
+    // Given
+    OpponentDetail individualDetails = new OpponentDetail();
+    AddressDetail address = new AddressDetail();
+    address.setCountry("GBR");
+    individualDetails.setAddress(address);
+    when(lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
+        .thenReturn(Mono.empty());
+    when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.empty());
+    when(lookupService.getCountry("GBR"))
+        .thenReturn(
+            Mono.just(
+                Optional.of(
+                    new CommonLookupValueDetail().code("GBR").description("Great Britain"))));
+    // When
+    IndividualDetailsSectionDisplay result =
+        mapper.toIndividualDetailsSectionDisplay(individualDetails);
+    // Then
+    assertThat(result.addressContactDetails().getCountry()).isEqualTo("Great Britain");
   }
 
   @Test

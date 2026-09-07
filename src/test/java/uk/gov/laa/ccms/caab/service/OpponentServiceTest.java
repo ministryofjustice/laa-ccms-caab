@@ -2,6 +2,8 @@ package uk.gov.laa.ccms.caab.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
@@ -111,7 +113,9 @@ public class OpponentServiceTest {
     when(lookupService.getCommonValue(
             COMMON_VALUE_ORGANISATION_TYPES, organisationDetail.getType()))
         .thenReturn(Mono.just(Optional.of(orgLookup)));
-    when(opponentMapper.toOrganisationOpponentFormData(organisationDetail, orgLookup))
+    when(lookupService.getCountry(any())).thenReturn(Mono.just(Optional.empty()));
+    when(opponentMapper.toOrganisationOpponentFormData(
+            eq(organisationDetail), eq(orgLookup), any(CommonLookupValueDetail.class)))
         .thenReturn(expectedResults);
 
     AbstractOpponentFormData result =

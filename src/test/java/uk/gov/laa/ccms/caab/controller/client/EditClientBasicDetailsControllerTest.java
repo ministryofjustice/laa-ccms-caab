@@ -236,4 +236,87 @@ class EditClientBasicDetailsControllerTest {
                       "titles", "countries", "genders", "maritalStatusList", "basicDetails"));
     }
   }
+
+  @Nested
+  @DisplayName("Country of origin display value tests")
+  class CountryOfOriginDisplayValueTests {
+
+    @BeforeEach
+    void setupCountries() {
+      countryLookupDetail =
+          new CommonLookupDetail()
+              .addContentItem(
+                  new CommonLookupValueDetail().code("GBR").description("Great Britain"))
+              .addContentItem(
+                  new CommonLookupValueDetail().code("NFK").description("Norfolk Island"));
+
+      when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+          .thenReturn(Mono.just(titleLookupDetail));
+      when(lookupService.getCountries()).thenReturn(Mono.just(countryLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_GENDER))
+          .thenReturn(Mono.just(genderLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_MARITAL_STATUS))
+          .thenReturn(Mono.just(maritalStatusLookupDetail));
+    }
+
+    @Test
+    @DisplayName("The stored country code is resolved to its description")
+    void resolvesCountryCodeToDescription() throws Exception {
+      basicDetails.setCountryOfOrigin("NFK");
+
+      mockMvc
+          .perform(
+              get("/amendments/sections/client/details/basic")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+          .andExpect(status().isOk())
+          .andExpect(model().attribute("countryOfOriginDisplayValue", "Norfolk Island"));
+    }
+
+    @Test
+    @DisplayName("An unknown country code falls back to the code itself")
+    void unknownCountryCodeFallsBackToCode() throws Exception {
+      basicDetails.setCountryOfOrigin("ZZZ");
+
+      mockMvc
+          .perform(
+              get("/amendments/sections/client/details/basic")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+          .andExpect(status().isOk())
+          .andExpect(model().attribute("countryOfOriginDisplayValue", "ZZZ"));
+    }
+
+    @Test
+    @DisplayName("No display value is added when the client has no country of origin")
+    void noDisplayValueWhenCountryOfOriginMissing() throws Exception {
+      mockMvc
+          .perform(
+              get("/amendments/sections/client/details/basic")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+          .andExpect(status().isOk())
+          .andExpect(model().attributeDoesNotExist("countryOfOriginDisplayValue"));
+    }
+
+    @Test
+    @DisplayName("The description survives a validation error re-render")
+    void resolvesCountryCodeOnValidationError() throws Exception {
+      basicDetails.setCountryOfOrigin("GBR");
+
+      doAnswer(
+              invocation -> {
+                Errors errors = (Errors) invocation.getArguments()[1];
+                errors.rejectValue("title", "required.title", "Please complete 'Title'.");
+                return null;
+              })
+          .when(clientBasicDetailsValidator)
+          .validate(any(), any());
+
+      mockMvc
+          .perform(
+              post("/amendments/sections/client/details/basic")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("basicDetails", basicDetails))
+          .andExpect(status().isOk())
+          .andExpect(model().attribute("countryOfOriginDisplayValue", "Great Britain"));
+    }
+  }
 }
