@@ -260,8 +260,8 @@ public class SessionConstants {
   public static final String PROCEEDING_OUTCOME_FORM_DATA = "proceedingOutcomeFormData";
 
   /**
-   * Base session attribute name for pre-certificate and legal help costs form data.
-   * Actual per-case session key is this value + ":" + caseReferenceNumber.
+   * Base session attribute name for pre-certificate and legal help costs form data. Actual per-case
+   * session key is this value + ":" + caseReferenceNumber.
    */
   public static final String PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA =
       "preCertificateAndLegalHelpCostsFormData";
