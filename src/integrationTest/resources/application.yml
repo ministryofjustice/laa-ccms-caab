@@ -3,13 +3,13 @@ spring:
     oauth2:
       client:
         registration:
-          azure:
+          silas-identity:
             client-id: test-client-id
             client-secret: test-client-secret
             scope: openid,profile,email
             authorization-grant-type: authorization_code
         provider:
-          azure:
+          silas-identity:
             issuer-uri: http://localhost:8081/test-tenant/v2.0
 
   thymeleaf: # Thymeleaf
@@ -53,6 +53,13 @@ laa:
         document-bucket:
           name: laa-ccms-documents
           url-duration: 20
+    entra:
+      silas-enabled: false
+      custom-user-id-claim: ""
+    user-details-api:
+      hostname: localhost
+      port: 8130
+      url: http://${laa.ccms.user-details-api.hostname}:${laa.ccms.user-details-api.port}
     ebs-api:
       hostname: localhost
       port: 8123

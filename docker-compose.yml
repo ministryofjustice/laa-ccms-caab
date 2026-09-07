@@ -1,9 +1,15 @@
 services:
-  # TODO: previously a docker-compose "laa-ccms-caab-saml-mock" container provided a local SAML
-  # IdP. This has been removed as part of the migration to OIDC/EntraID. A local OIDC mock IdP
-  # is a follow-up piece of work; until then, set AZURE_TENANT_ID, AZURE_CLIENT_ID and
-  # AZURE_CLIENT_SECRET env vars to point at a dev EntraID app registration to run locally.
-  # Replace with https://github.com/ministryofjustice/laa-oidc-mock-server
+  laa-ccms-caab-oidc-mock:
+    container_name: laa-ccms-caab-oidc-mock
+    build:
+      context: ../laa-oidc-mock-server
+    ports:
+      - "9000:9000"
+    environment:
+      # The mock registers a single redirect URI, http://<REDIRECT_BASE_URI>/login/oauth2/code/silas-identity,
+      # so this has to carry the application's context path as well as its host and port. The
+      # "silas-identity" segment is the spring client registration id and is fixed by the mock.
+      REDIRECT_BASE_URI: localhost:8010/civil
 
   laa-ccms-mock-contracts:
     container_name: laa-ccms-caab-mock-contracts
