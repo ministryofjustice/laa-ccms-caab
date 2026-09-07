@@ -77,7 +77,7 @@
           </tbody>
         </table>
         <div class="govuk-button-group govuk-!-margin-top-3">
-          <a class="govuk-button govuk-!-margin-bottom-0"
+          <a class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
              href="#"
              th:text="#{case.outcomeAndAwards.awardsSummary.addAward}"
              id="addAwardButton"
@@ -103,13 +103,15 @@
           <tr class="govuk-table__row">
             <td class="govuk-table__cell">
               <a class="govuk-link govuk-link--no-visited-state"
-                 href="#"
-                 th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.link}"
-                 id="preCertificateAndLegalHelpCostsLink"
+                th:href="@{/case/outcome-and-awards/preCertificateAndLegalHelpCosts}"
+                th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.link}"
+                id="preCertificateAndLegalHelpCostsLink"
               ></a>
             </td>
-            <td class="govuk-table__cell">£0</td>
-            <td class="govuk-table__cell">£0</td>
+            <td class="govuk-table__cell"
+                th:text="${#strings.isEmpty(preCertificateAndLegalHelpCostsSummary.preCertificateCosts) ? '£0' : '£' + preCertificateAndLegalHelpCostsSummary.preCertificateCosts}"></td>
+            <td class="govuk-table__cell"
+                th:text="${#strings.isEmpty(preCertificateAndLegalHelpCostsSummary.legalHelpCosts) ? '£0' : '£' + preCertificateAndLegalHelpCostsSummary.legalHelpCosts}"></td>
             <td class="govuk-table__cell"></td>
           </tr>
           </tbody>

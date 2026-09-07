@@ -29,6 +29,12 @@ public class ValidationPatternConstants {
   /** Validation pattern for case reference numbers. */
   public static final String CASE_REFERENCE_NUMBER_PATTERN = "^[A-Za-z0-9 /]*$";
 
+  /** Validation pattern for office codes in NANNNA format. */
+  public static final String OFFICE_CODE_PATTERN = "^[0-9][A-Za-z][0-9]{3}[A-Za-z]$";
+
+  /** Validation pattern for unique file numbers in DDMMYY/NNN format. */
+  public static final String UNIQUE_FILE_NUMBER_PATTERN = "^[0-9]{6}/[0-9]{3}$";
+
   /** Neagtive validation pattern for case reference numbers. */
   public static final String CASE_REFERENCE_NUMBER_NEGATIVE_PATTERN = "(.*)\s\s(.*)";
 

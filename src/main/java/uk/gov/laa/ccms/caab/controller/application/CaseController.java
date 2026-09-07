@@ -16,6 +16,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COURT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -49,8 +50,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.PreCertificateAndLegalHelpCostsFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.CaseProceedingDisplayStatus;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
+import uk.gov.laa.ccms.caab.bean.validators.application.PreCertificateAndLegalHelpCostsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
@@ -92,7 +95,10 @@ public class CaseController {
   private final LookupService lookupService;
   private final CaseOutcomeService caseOutcomeService;
   private final ProceedingOutcomeValidator proceedingOutcomeValidator;
+  private final PreCertificateAndLegalHelpCostsValidator preCertificateAndLegalHelpCostsValidator;
   private static final String SEARCH_URL = "SEARCH_URL";
+  private static final String PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_SESSION_KEY_PREFIX =
+      PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA + ":";
 
   /**
    * Displays the case overview screen.
@@ -300,6 +306,7 @@ public class CaseController {
   public String outcomeAndAwards(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
+      HttpSession session,
       Model model) {
     final List<ProceedingDetail> proceedings = ebsCase.getProceedings();
     final Optional<CaseOutcomeDetail> caseOutcomeOpt =
@@ -345,6 +352,9 @@ public class CaseController {
     model.addAttribute("proceedings", proceedings);
     model.addAttribute("resolvedOutcomes", resolvedOutcomes);
     model.addAttribute("clearableOutcomes", clearableOutcomes);
+    model.addAttribute(
+        "preCertificateAndLegalHelpCostsSummary",
+        getPreCertificateAndLegalHelpCostsFormData(session, ebsCase.getCaseReferenceNumber()));
     return "application/outcome-and-awards";
   }
 
@@ -547,6 +557,87 @@ public class CaseController {
     }
 
     return "redirect:/case/outcome-and-awards";
+  }
+
+  /**
+   * Displays the pre-certificate and legal help costs screen.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param user The current user details.
+   * @return The name of the view to render.
+   */
+  @GetMapping("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
+  public String preCertificateAndLegalHelpCosts(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      HttpSession session,
+      Model model) {
+    model.addAttribute(
+        "preCertificateAndLegalHelpCosts",
+        getPreCertificateAndLegalHelpCostsFormData(session, ebsCase.getCaseReferenceNumber()));
+    return "application/pre-certificate-and-legal-help-costs";
+  }
+
+  /**
+   * Handles submission of the pre-certificate and legal help costs form.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param user The current user details.
+   * @return The name of the view to render.
+   */
+  @PostMapping("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
+  public String preCertificateAndLegalHelpCostsPost(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @ModelAttribute("preCertificateAndLegalHelpCosts")
+          final PreCertificateAndLegalHelpCostsFormData preCertificateAndLegalHelpCosts,
+      final BindingResult bindingResult,
+      final Model model,
+      HttpSession session) {
+
+    preCertificateAndLegalHelpCostsValidator.validate(
+        preCertificateAndLegalHelpCosts, bindingResult);
+    if (bindingResult.hasErrors()) {
+      return "application/pre-certificate-and-legal-help-costs";
+    }
+
+    session.setAttribute(
+        preCertificateAndLegalHelpCostsSessionKey(ebsCase.getCaseReferenceNumber()),
+        copyPreCertificateAndLegalHelpCostsFormData(preCertificateAndLegalHelpCosts));
+    return "redirect:/case/outcome-and-awards";
+  }
+
+  private PreCertificateAndLegalHelpCostsFormData getPreCertificateAndLegalHelpCostsFormData(
+      final HttpSession session, final String caseReferenceNumber) {
+    final PreCertificateAndLegalHelpCostsFormData formData =
+        (PreCertificateAndLegalHelpCostsFormData)
+            session.getAttribute(preCertificateAndLegalHelpCostsSessionKey(caseReferenceNumber));
+    return formData != null
+        ? copyPreCertificateAndLegalHelpCostsFormData(formData)
+        : new PreCertificateAndLegalHelpCostsFormData();
+  }
+
+  private String preCertificateAndLegalHelpCostsSessionKey(final String caseReferenceNumber) {
+    return PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_SESSION_KEY_PREFIX + caseReferenceNumber;
+  }
+
+  private PreCertificateAndLegalHelpCostsFormData copyPreCertificateAndLegalHelpCostsFormData(
+      final PreCertificateAndLegalHelpCostsFormData source) {
+    final PreCertificateAndLegalHelpCostsFormData copy =
+        new PreCertificateAndLegalHelpCostsFormData();
+    copy.setPreCertificateCosts(
+        StringUtils.hasText(source.getPreCertificateCosts())
+            ? source.getPreCertificateCosts().trim()
+            : null);
+    copy.setLegalHelpCosts(
+        StringUtils.hasText(source.getLegalHelpCosts()) ? source.getLegalHelpCosts().trim() : null);
+    copy.setOfficeCode(
+        StringUtils.hasText(source.getOfficeCode()) ? source.getOfficeCode().trim() : null);
+    copy.setUniqueFileNumber(
+        StringUtils.hasText(source.getUniqueFileNumber())
+            ? source.getUniqueFileNumber().trim()
+            : null);
+    return copy;
   }
 
   private ProceedingDetail validateProceedingIndex(
