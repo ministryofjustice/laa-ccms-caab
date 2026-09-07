@@ -4,24 +4,20 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.saml2.provider.service.authentication.OpenSaml5AuthenticationProvider;
-import org.springframework.security.saml2.provider.service.authentication.OpenSaml5AuthenticationProvider.ResponseAuthenticationConverter;
-import org.springframework.security.saml2.provider.service.authentication.OpenSaml5AuthenticationProvider.ResponseToken;
-import org.springframework.security.saml2.provider.service.authentication.Saml2AssertionAuthentication;
-import org.springframework.security.saml2.provider.service.authentication.Saml2Authentication;
-import org.springframework.security.saml2.provider.service.authentication.Saml2ResponseAssertionAccessor;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
@@ -60,9 +56,6 @@ public class SecurityConfiguration {
    */
   @Bean
   SecurityFilterChain configure(HttpSecurity http) throws Exception {
-
-    OpenSaml5AuthenticationProvider authenticationProvider = new OpenSaml5AuthenticationProvider();
-    authenticationProvider.setResponseAuthenticationConverter(groupsConverter());
 
     return http.authorizeHttpRequests(
             authorize ->
@@ -162,45 +155,40 @@ public class SecurityConfiguration {
                         throw new RuntimeException("Failed to redirect to Identity Provider.", e);
                       }
                     }))
-        .saml2Login(
-            saml2 -> saml2.authenticationManager(new ProviderManager(authenticationProvider)))
+        .oauth2Login(
+            oauth2 ->
+                oauth2.userInfoEndpoint(userInfo -> userInfo.oidcUserService(oidcUserService())))
         .build();
   }
 
   /**
-   * Creates a custom converter for processing SAML response tokens.
+   * Creates a custom {@link OAuth2UserService} for processing the OIDC ID token / userinfo response
+   * returned by EntraID, mapping the "groups" claim to granted authorities and enriching them with
+   * the LAA-specific user functions looked up by email.
    *
-   * @return A Converter for processing SAML response tokens into authenticated principals.
+   * @return An OAuth2UserService for loading an authenticated OidcUser.
    */
-  private Converter<ResponseToken, Saml2Authentication> groupsConverter() {
-    ResponseAuthenticationConverter delegate = new ResponseAuthenticationConverter();
-    return responseToken -> {
-      Saml2AssertionAuthentication authentication =
-          (Saml2AssertionAuthentication) delegate.convert(responseToken);
+  @Bean
+  OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService() {
+    OidcUserService delegate = new OidcUserService();
+    return userRequest -> {
+      OidcUser oidcUser = delegate.loadUser(userRequest);
 
-      Saml2ResponseAssertionAccessor accessor = authentication.getCredentials();
-
-      Map<String, List<Object>> attributes = accessor.getAttributes();
-
-      List<Object> groups = attributes.get("groups");
+      List<String> groups = oidcUser.getClaimAsStringList("groups");
       Set<GrantedAuthority> authorities = new HashSet<>();
       if (groups != null) {
-        groups.stream()
-            .map(Object::toString)
-            .map(SimpleGrantedAuthority::new)
-            .forEach(authorities::add);
+        groups.stream().map(SimpleGrantedAuthority::new).forEach(authorities::add);
       } else {
-        authorities.addAll(authentication.getAuthorities());
+        authorities.addAll(oidcUser.getAuthorities());
       }
 
-      // authentication.getPrincipal() is going to be email address here....
-      String principal = authentication.getName();
-      authorities.addAll(getUserFunctions(principal));
-      return new Saml2AssertionAuthentication(
-          principal,
-          authentication.getCredentials(),
-          authorities,
-          authentication.getRelyingPartyRegistrationId());
+      String loginId = oidcUser.getEmail();
+      authorities.addAll(getUserFunctions(loginId));
+
+      // "email" is used as the name attribute key so that authentication.getName() returns the
+      // user's email address, matching the loginId previously derived from the SAML NameID.
+      return new DefaultOidcUser(
+          authorities, oidcUser.getIdToken(), oidcUser.getUserInfo(), "email");
     };
   }
 
