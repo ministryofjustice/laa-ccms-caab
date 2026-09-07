@@ -26,13 +26,17 @@ spring:
     oauth2:
       client:
         registration:
-          azure:
+          # The registration id is the last segment of the redirect URI
+          # (/civil/login/oauth2/code/silas-identity), so it has to match the redirect URI
+          # registered against the EntraID app registration, and the one the local OIDC mock
+          # server registers for its client.
+          silas-identity:
             client-id: ${AZURE_CLIENT_ID}
             client-secret: ${AZURE_CLIENT_SECRET}
             scope: openid,profile,email
             authorization-grant-type: authorization_code
         provider:
-          azure:
+          silas-identity:
             issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0
 
   thymeleaf: # Thymeleaf
@@ -83,6 +87,17 @@ laa:
         document-bucket:
           name: ${S3_DOCUMENT_BUCKET}
           url-duration: 20 # (minutes) - How long generated URLs remain accessible.
+    entra:
+      # External (provider) users reach the service through SiLAS and are resolved through the
+      # User Details API; internal (caseworker) users are resolved through the EBS
+      # XXCCMS_ENTRA_ID_USERS mapping table. The legacy PUI is driven by the same two settings.
+      silas-enabled: ${IS_SILAS_ENABLED:false}
+      custom-user-id-claim: ${ENTRA_CUSTOM_USER_ID_CLAIM:}
+    # Only used when IS_SILAS_ENABLED is true.
+    user-details-api:
+      hostname: ${USER_DETAILS_API_HOSTNAME:}
+      url: ${laa.ccms.user-details-api.hostname}
+      accessToken: ${USER_DETAILS_API_ACCESS_TOKEN:}
     ebs-api:
       hostname: ${CAAB_EBS_API_HOSTNAME}
       url: ${laa.ccms.ebs-api.hostname}

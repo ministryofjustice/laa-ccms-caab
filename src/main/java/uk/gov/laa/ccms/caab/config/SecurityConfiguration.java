@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,18 +18,26 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
-import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
+import uk.gov.laa.ccms.caab.security.CcmsOidcUser;
+import uk.gov.laa.ccms.caab.security.CcmsUserIdentityResolver;
+import uk.gov.laa.ccms.caab.security.CcmsUserResolutionException;
 import uk.gov.laa.ccms.caab.security.CspNonceFilter;
 import uk.gov.laa.ccms.caab.service.UserService;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 /** Configuration class for customizing Spring Security settings. */
 @Configuration
 @RequiredArgsConstructor
+@Slf4j
 public class SecurityConfiguration {
+
+  /** Where a user is sent when EntraID authenticates them but CCMS will not admit them. */
+  static final String AUTHENTICATION_ERROR_PATH = "/authentication-error";
 
   @Value("${portal.logoutUrl}")
   private String logoutUrl;
@@ -46,6 +56,8 @@ public class SecurityConfiguration {
 
   private final UserService userService;
 
+  private final CcmsUserIdentityResolver ccmsUserIdentityResolver;
+
   /**
    * Configures Spring Security filters and settings, along with endpoint restrictions based on
    * granted user authorities (actions).
@@ -60,7 +72,8 @@ public class SecurityConfiguration {
     return http.authorizeHttpRequests(
             authorize ->
                 authorize
-                    .requestMatchers("/assets/**", "/ccms/**", "/favicon.ico")
+                    .requestMatchers(
+                        "/assets/**", "/ccms/**", "/favicon.ico", AUTHENTICATION_ERROR_PATH)
                     .permitAll()
                     .requestMatchers(
                         HttpMethod.GET,
@@ -160,14 +173,20 @@ public class SecurityConfiguration {
                     }))
         .oauth2Login(
             oauth2 ->
-                oauth2.userInfoEndpoint(userInfo -> userInfo.oidcUserService(oidcUserService())))
+                oauth2
+                    .userInfoEndpoint(userInfo -> userInfo.oidcUserService(oidcUserService()))
+                    .failureHandler(authenticationFailureHandler()))
         .build();
   }
 
   /**
    * Creates a custom {@link OAuth2UserService} for processing the OIDC ID token / userinfo response
-   * returned by EntraID, mapping the "groups" claim to granted authorities and enriching them with
-   * the LAA-specific user functions looked up by email.
+   * returned by EntraID.
+   *
+   * <p>EntraID authenticates a user as an email address, which is not a CCMS username, so the
+   * identity it returns is first resolved to the CCMS user behind it. Everything the application
+   * does afterwards - the functions that gate each route, the user details on the model and
+   * session, every EBS and SOA call made on the user's behalf - is done as that CCMS user.
    *
    * @return An OAuth2UserService for loading an authenticated OidcUser.
    */
@@ -177,6 +196,8 @@ public class SecurityConfiguration {
     return userRequest -> {
       OidcUser oidcUser = delegate.loadUser(userRequest);
 
+      String ccmsLoginId = ccmsUserIdentityResolver.resolveCcmsLoginId(oidcUser);
+
       List<String> groups = oidcUser.getClaimAsStringList("groups");
       Set<GrantedAuthority> authorities = new HashSet<>();
       if (groups != null) {
@@ -185,24 +206,50 @@ public class SecurityConfiguration {
         authorities.addAll(oidcUser.getAuthorities());
       }
 
-      String loginId = oidcUser.getEmail();
-      authorities.addAll(getUserFunctions(loginId));
+      authorities.addAll(getUserFunctions(ccmsLoginId));
 
-      // "email" is used as the name attribute key so that authentication.getName() returns the
-      // user's email address, matching the loginId previously derived from the SAML NameID.
-      return new DefaultOidcUser(
-          authorities, oidcUser.getIdToken(), oidcUser.getUserInfo(), "email");
+      return new CcmsOidcUser(oidcUser, ccmsLoginId, authorities);
     };
   }
 
+  /**
+   * Sends a user EntraID authenticated but CCMS would not admit to the authentication error page,
+   * leaving them unauthenticated.
+   *
+   * @return An AuthenticationFailureHandler that reports the failure and denies access.
+   */
+  @Bean
+  AuthenticationFailureHandler authenticationFailureHandler() {
+    return (request, response, exception) -> {
+      log.error("EntraID authentication failed: {}", exception.getMessage(), exception);
+      response.sendRedirect(request.getContextPath() + AUTHENTICATION_ERROR_PATH);
+    };
+  }
+
+  /**
+   * The functions the CCMS user holds, which gate what they can reach in the application.
+   *
+   * @param loginId the CCMS username the EntraID identity resolved to.
+   * @return the user's functions as granted authorities.
+   */
   private Collection<? extends GrantedAuthority> getUserFunctions(String loginId) {
-    return userService
-        .getUserByLoginId(loginId)
-        .blockOptional()
-        .orElseThrow(() -> new RuntimeException("Failed to retrieve user functions."))
-        .getFunctions()
-        .stream()
-        .map(SimpleGrantedAuthority::new)
-        .toList();
+    final Optional<UserDetail> user;
+    try {
+      user = userService.getUserByLoginId(loginId).blockOptional();
+    } catch (RuntimeException e) {
+      // Spring's login filter only acts on an AuthenticationException.
+      throw new CcmsUserResolutionException(
+          "Unable to reach EBS to retrieve CCMS user [%s] - access denied".formatted(loginId), e);
+    }
+
+    List<String> functions =
+        user.map(details -> Optional.ofNullable(details.getFunctions()).orElseGet(List::of))
+            .orElseThrow(
+                () ->
+                    new CcmsUserResolutionException(
+                        "Unable to retrieve CCMS user [%s] from EBS - access denied"
+                            .formatted(loginId)));
+
+    return functions.stream().map(SimpleGrantedAuthority::new).toList();
   }
 }

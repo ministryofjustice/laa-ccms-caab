@@ -22,6 +22,7 @@ import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.CounselSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
+import uk.gov.laa.ccms.caab.model.user.EntraUserMapping;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -108,6 +109,39 @@ public class EbsApiClient extends BaseApiClient {
         .bodyToMono(UserDetail.class)
         .onErrorResume(
             e -> ebsApiClientErrorHandler.handleApiRetrieveError(e, "User", "login id", loginId));
+  }
+
+  /**
+   * Retrieves the CCMS user mapped to an EntraID email address.
+   *
+   * <p>Internal users authenticate as themselves in EntraID, so the identity on the token is an
+   * organisational email address rather than a CCMS username. EBS holds the correspondence between
+   * the two in its {@code XXCCMS_ENTRA_ID_USERS} table, which is what this reads. The legacy PUI
+   * resolves an internal user the same way.
+   *
+   * @param entraEmail the email address of the authenticated EntraID user.
+   * @return a Mono containing the EntraUserMapping, empty if the email address has no mapping, or
+   *     an error handler if an error occurs.
+   */
+  public Mono<EntraUserMapping> getEntraUserMapping(final String entraEmail) {
+    return webClient
+        .get()
+        .uri(
+            uriBuilder ->
+                uriBuilder
+                    .path("/users/entra-mapping")
+                    .queryParam("entra-email", entraEmail)
+                    .build())
+        .retrieve()
+        // An unmapped address is an expected outcome, not a call failure.
+        .onStatus(
+            status -> status.value() == HttpStatus.NOT_FOUND.value(),
+            clientResponse -> Mono.empty())
+        .bodyToMono(EntraUserMapping.class)
+        .onErrorResume(
+            e ->
+                ebsApiClientErrorHandler.handleApiRetrieveError(
+                    e, "Entra user mapping", "entra email", entraEmail));
   }
 
   /**

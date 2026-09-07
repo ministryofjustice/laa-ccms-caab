@@ -6,6 +6,9 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.client.UserDetailsApiClient;
+import uk.gov.laa.ccms.caab.model.user.EntraUserMapping;
+import uk.gov.laa.ccms.caab.model.user.UserViewModel;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
@@ -19,6 +22,7 @@ public class UserService {
 
   private final EbsApiClient ebsApiClient;
   private final SoaApiClient soaApiClient;
+  private final UserDetailsApiClient userDetailsApiClient;
 
   /**
    * Retrieves user details based on the login ID.
@@ -28,6 +32,26 @@ public class UserService {
    */
   public Mono<UserDetail> getUserByLoginId(String loginId) {
     return ebsApiClient.getUserByLoginId(loginId);
+  }
+
+  /**
+   * Retrieves the CCMS user EBS holds against an EntraID email address.
+   *
+   * @param entraEmail The email address of the authenticated EntraID user.
+   * @return A Mono containing the EntraUserMapping, or empty if the email address is not mapped.
+   */
+  public Mono<EntraUserMapping> getEntraUserMapping(String entraEmail) {
+    return ebsApiClient.getEntraUserMapping(entraEmail);
+  }
+
+  /**
+   * Retrieves the CCMS user the User Details API holds against a SiLAS identity.
+   *
+   * @param silasId The SiLAS identifier of the user.
+   * @return A Mono containing the UserViewModel, or empty if the identity is not known.
+   */
+  public Mono<UserViewModel> getUserBySilasId(String silasId) {
+    return userDetailsApiClient.getUserBySilasId(silasId);
   }
 
   /**

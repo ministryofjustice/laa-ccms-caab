@@ -9,7 +9,9 @@ search:
 #    organisations: 500
 
 portal:
-  logoutUrl: https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/logout?post_logout_redirect_uri=http://localhost:8010/civil
+  # Signs you out of the mock IdP as well as this application, so the next sign-in prompts again
+  # rather than silently reusing the mock's session.
+  logoutUrl: http://localhost:9000/logout
 
 spring:
   devtools:
@@ -19,22 +21,27 @@ spring:
     restart:
       enabled: false
   security:
-    # TODO: local dev previously authenticated against a docker-compose SAML mock
-    # (laa-ccms-caab-saml-mock). That container has been removed as part of the migration to
-    # OIDC/EntraID; a local OIDC mock IdP is a follow-up. Until then, set AZURE_TENANT_ID,
-    # AZURE_CLIENT_ID and AZURE_CLIENT_SECRET as environment variables pointing at a dev
-    # EntraID app registration (redirect URI: http://localhost:8010/civil/login/oauth2/code/azure).
+    # Local dev authenticates against the laa-ccms-caab-oidc-mock container
+    # (https://github.com/ministryofjustice/laa-oidc-mock-server), started by docker-compose.
+    # Sign in as provider.user@provider.com / password.
+    #
+    # The client id, secret and redirect URI are the ones the mock server registers; the
+    # "silas-identity" registration id has to stay in step with the redirect URI the mock accepts
+    # (http://localhost:8010/civil/login/oauth2/code/silas-identity).
+    #
+    # To run against a real EntraID app registration instead, override these with the tenant's
+    # issuer-uri, client id and secret.
     oauth2:
       client:
         registration:
-          azure:
-            client-id: ${AZURE_CLIENT_ID}
-            client-secret: ${AZURE_CLIENT_SECRET}
+          silas-identity:
+            client-id: ${AZURE_CLIENT_ID:bulk-claim-client}
+            client-secret: ${AZURE_CLIENT_SECRET:secret}
             scope: openid,profile,email
             authorization-grant-type: authorization_code
         provider:
-          azure:
-            issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0
+          silas-identity:
+            issuer-uri: ${OIDC_ISSUER_URI:http://localhost:9000}
 
   thymeleaf: # Thymeleaf
     cache: false
@@ -92,6 +99,17 @@ laa:
         document-bucket:
           name: laa-ccms-documents
           url-duration: 20
+    entra:
+      # Local dev resolves users through the EBS XXCCMS_ENTRA_ID_USERS mapping table, as an
+      # internal user would. Set silas-enabled to true, and point user-details-api at a running
+      # User Details API, to exercise the external SiLAS path instead.
+      silas-enabled: false
+      custom-user-id-claim: ""
+    user-details-api:
+      hostname: localhost
+      port: 8090
+      url: http://${laa.ccms.user-details-api.hostname}:${laa.ccms.user-details-api.port}
+      access-token: local-user-details-api-token
     ebs-api:
       hostname: localhost
       port: 8009

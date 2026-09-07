@@ -33,7 +33,7 @@
                 <a class="moj-header__link moj-header__link--organisation-name" th:href="@{/home}">Legal Aid Agency</a>
                 <a class="moj-header__link moj-header__link--service-name" th:href="@{/home}">Client and Cost Management System</a>
             </div>
-            <div class="moj-header__content">
+            <div class="moj-header__content" th:if="${user != null}">
                 <nav class="moj-header__navigation" aria-label="Account navigation">
                     <ul class="moj-header__navigation-list">
                         <li class="moj-header__navigation-item">
@@ -45,7 +45,7 @@
         </div>
     </header>
 
-    <div class="govuk-service-navigation"
+    <div class="govuk-service-navigation" th:if="${user != null}"
          data-module="govuk-service-navigation">
         <div class="govuk-width-container">
             <div class="govuk-service-navigation__container">
