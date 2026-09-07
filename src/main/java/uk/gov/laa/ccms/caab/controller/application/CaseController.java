@@ -511,6 +511,11 @@ public class CaseController {
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user) {
 
+    if (!ActionViewHelper.isOutcomeDocumentActionAllowed(ebsCase)) {
+      throw new CaabApplicationException(
+          "User is not authorised to remove outcome documents for this case");
+    }
+
     evidenceService.removeDocument(
         ebsCase.getCaseReferenceNumber(), documentId, CcmsModule.OUTCOME, user.getLoginId());
 
