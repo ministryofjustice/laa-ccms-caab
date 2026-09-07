@@ -81,6 +81,7 @@ import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.caab.util.PriorAuthorityUtils;
 import uk.gov.laa.ccms.caab.util.view.ActionViewHelper;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
@@ -380,6 +381,66 @@ public class CaseController {
     }
 
     return "application/select-award-type";
+  }
+
+  /**
+   * Handles submission of the Select Award Type form.
+   *
+   * <p>Uses the submitted award type code to find the corresponding award type lookup entry. The
+   * selected lookup entry is then used to populate the form with its description and broader award
+   * type category. Based on that category, the user is redirected to the appropriate award details
+   * screen.
+   *
+   * @param awardTypeForm form containing the award type selected by the user
+   * @return redirect to the appropriate award details screen
+   * @throws IllegalArgumentException if the selected award type code cannot be found or its award
+   *     type category is unsupported
+   */
+  @PostMapping("/case/outcome-and-awards/award-type")
+  public String selectAwardType(
+      @ModelAttribute(AWARD_TYPE_FORM) final AwardTypeForm awardTypeForm) {
+
+    final AwardTypeLookupDetail awardTypeLookup = lookupService.getAwardTypes().block();
+
+    /*
+     * The browser submits awardTypeCode. Find the complete lookup entry
+     * corresponding to that code.
+     */
+    final AwardTypeLookupValueDetail selectedAwardType =
+        awardTypeLookup.getContent().stream()
+            .filter(
+                lookupItem ->
+                    Objects.equals(lookupItem.getCode(), awardTypeForm.getAwardTypeCode()))
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        "Unknown award type code: " + awardTypeForm.getAwardTypeCode()));
+
+    /*
+     * Store the trusted values returned by the lookup in the session-backed
+     * form object.
+     */
+    awardTypeForm.setDescription(selectedAwardType.getDescription());
+    awardTypeForm.setAwardType(selectedAwardType.getAwardType());
+
+    /*
+     * Route using the broader AWARD_TYPE lookup value rather than the
+     * individual lookup code.
+     */
+    return switch (selectedAwardType.getAwardType()) {
+      case "COST" -> "redirect:/case/outcome-and-awards/cost-award";
+
+      case "ASSET" -> "redirect:/case/outcome-and-awards/asset";
+
+      case "LAND" -> "redirect:/case/outcome-and-awards/land-property";
+
+      case "DAMAGE" -> "redirect:/case/outcome-and-awards/financial-settlement";
+
+      default ->
+          throw new IllegalArgumentException(
+              "Unsupported award type: " + selectedAwardType.getAwardType());
+    };
   }
 
   /**
