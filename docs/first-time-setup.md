@@ -9,6 +9,7 @@ Clone this repository, along with the following repositories into the same direc
 - [laa-ccms-caab-soa-api](https://github.com/ministryofjustice/laa-ccms-soa-gateway-api)
 - [laa-ccms-caab-assessment-api](https://github.com/ministryofjustice/laa-ccms-caab-assessment-api)
 - [laa-ccms-mock-contracts](https://github.com/ministryofjustice/laa-ccms-mock-contracts)
+- [laa-oidc-mock-server](https://github.com/ministryofjustice/laa-oidc-mock-server)
 
 ## 2. Install Java
 
@@ -39,14 +40,36 @@ You can now [run the application](../README.md#3-run-the-application).
 
 Below is further information about all dependencies.
 
-## Authentication (EntraID / OIDC)
+## Set up laa-oidc-mock-server
 
-Authentication is via OIDC against EntraID. Set the `AZURE_TENANT_ID`, `AZURE_CLIENT_ID` and
-`AZURE_CLIENT_SECRET` environment variables to point at a dev EntraID app registration (redirect
-URI: `http://localhost:8010/civil/login/oauth2/code/azure`).
+Authentication is via OIDC. Locally this runs against the
+[OIDC mock server](https://github.com/ministryofjustice/laa-oidc-mock-server), which replaces the
+SAML mock used before the migration to EntraID. docker-compose builds its image from the clone
+alongside this repository and serves it on port 9000.
 
-There is currently no local OIDC mock IdP (the previous SAML mock container has been removed as
-part of the migration to OIDC); setting up a local mock is a follow-up piece of work.
+Its `Dockerfile` copies in a jar rather than building one, so the jar has to be built first - this
+is the OIDC equivalent of the `mvn package` step the SAML mock needed. Use `assemble` rather than
+`build`: the repository's `checkstyleMain` task currently fails on a missing config file.
+
+```shell
+cd ../laa-oidc-mock-server
+./gradlew clean assemble
+cd -
+
+docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-oidc-mock
+```
+
+The mock has to be running **before** this application starts. `issuer-uri` makes spring fetch the
+provider's discovery document while it builds the client registration, so the application will not
+start if the IdP is unreachable.
+
+Sign in as `provider.user@provider.com` with password `password`.
+
+The mock registers one redirect URI, `http://localhost:8010/civil/login/oauth2/code/silas-identity`,
+which is why `REDIRECT_BASE_URI` in `docker-compose.yml` carries this application's context path.
+
+See [authentication](authentication.md) for how a signed-in identity is turned into a CCMS user,
+and for running against a real EntraID tenant instead.
 
 ## Wiremock standalone
 

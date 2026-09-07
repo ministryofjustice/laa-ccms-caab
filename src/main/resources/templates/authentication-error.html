@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},breadcrumbs=~{::#breadcrumbs})}" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="#{authentication.error.title}"/>
+</head>
+<body>
+<div id="breadcrumbs" class="govuk-!-padding-top-7"></div>
+<div id="main-content">
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-full">
+      <h1 class="govuk-heading-l" th:text="#{authentication.error.heading}"></h1>
+    </div>
+    <div class="govuk-grid-column-two-thirds">
+      <p class="govuk-body" th:text="#{authentication.error.body}"/>
+      <p class="govuk-body" th:text="#{authentication.error.body.contact}"/>
+    </div>
+  </div>
+</div>
+</body>
+</html>
