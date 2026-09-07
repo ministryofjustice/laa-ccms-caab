@@ -9,20 +9,13 @@
       xmlns:govuk="http://www.thymeleaf.org">
 
 <head>
-  <title th:text="|#{service.name} - #{case.selectAwardType.title}|">
-    LAA CCMS - Select Award Type
-  </title>
+  <title th:text="#{service.name} + ' - ' + #{case.selectAwardType.title}"></title>
 </head>
 
 <body>
 <div class="govuk-width-container">
-
   <div id="breadcrumbs">
-    <a class="govuk-back-link"
-       th:href="@{/case/outcome-and-awards}"
-       th:text="#{site.back}">
-      Back
-    </a>
+    <a th:href="@{/case/outcome-and-awards}" class="govuk-back-link" th:text="#{site.cancelAndReturnToOutcomeAndAwards}"></a>
   </div>
 
   <div id="main-content">
@@ -32,78 +25,51 @@
 
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
 
-      <span class="govuk-caption-l"
-            th:text="#{case.selectAwardType.caption}">
-        Outcome and awards
-      </span>
-
       <h1 class="govuk-heading-l"
           th:text="#{case.selectAwardType.title}">
         Select award type
       </h1>
 
-      <p class="govuk-body">  Please enter the details below.</p>
-      <p class="govuk-body" id="required-fields-hint">
-        <span class="ccms-required-marker" aria-hidden="true">*</span>
-        <span class="govuk-visually-hidden">Asterisk</span>
-        <span th:text="#{case.selectAwardType.requiredFields}">
-    indicates required field
-  </span>
-      </p>
-
-      <div class="govuk-grid-row">
-        <div class="govuk-grid-column-two-thirds">
-
-          <div class="govuk-form-group"
-               th:classappend="${#fields.hasErrors('awardTypeCode')}
+      <div class="govuk-form-group"
+           th:classappend="${#fields.hasErrors('awardTypeCode')}
          ? 'govuk-form-group--error'
          : ''">
 
-            <label class="govuk-label govuk-label--s"
-                   for="awardTypeCode">
-              <span class="ccms-required-marker" aria-hidden="true">*</span>
-              <span th:text="#{case.selectAwardType.awardTypeLabel}">
+        <label class="govuk-label govuk-label--s"
+               for="awardTypeCode">
+    <span th:text="#{case.selectAwardType.awardTypeLabel}">
       Award type
     </span>
-              <span class="govuk-visually-hidden">(required)</span>
-            </label>
+        </label>
 
-            <span th:if="${#fields.hasErrors('awardTypeCode')}"
-                  th:errors="*{awardTypeCode}"
-                  id="awardTypeCode-error"
-                  class="govuk-error-message">
+        <span th:if="${#fields.hasErrors('awardTypeCode')}"
+              th:errors="*{awardTypeCode}"
+              id="awardTypeCode-error"
+              class="govuk-error-message">
   </span>
 
-            <select class="govuk-select"
-                    th:errorclass="govuk-select--error"
-                    th:field="*{awardTypeCode}"
-                    id="awardTypeCode"
-                    name="awardTypeCode"
-                    required
-                    aria-required="true"
-                    th:attr="aria-describedby=${#fields.hasErrors('awardTypeCode')}
-              ? 'required-fields-hint awardTypeCode-error'
-              : 'required-fields-hint'}">
+        <select class="govuk-select"
+                th:errorclass="govuk-select--error"
+                th:field="*{awardTypeCode}"
+                id="awardTypeCode"
+                required
+                aria-required="true"
+                th:attr="aria-describedby=${#fields.hasErrors('awardTypeCode')}
+              ? 'awardTypeCode-error'
+              : null">
 
-              <option value=""
-                      th:text="#{site.select}">
-                Please select
-              </option>
+          <option value="" th:text="#{site.select}">
+            Please select
+          </option>
 
-              <option th:each="awardType : ${awardTypes}"
-                      th:value="${awardType.code}"
-                      th:text="${awardType.description}">
-              </option>
-            </select>
-          </div>
-
-          <govuk:button type="submit"
-                        th:text="#{site.continue}">
-            Next
-          </govuk:button>
-
-        </div>
+          <option th:each="item : ${awardTypes}"
+                  th:value="${item.code}"
+                  th:text="${item.description}">
+          </option>
+        </select>
       </div>
+          <govuk:button type="submit" th:text="#{site.next}">
+          </govuk:button>
     </form>
   </div>
 </div>

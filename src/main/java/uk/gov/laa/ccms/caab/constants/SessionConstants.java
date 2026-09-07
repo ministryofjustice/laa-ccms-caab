@@ -271,4 +271,7 @@ public class SessionConstants {
 
   /** Session attribute for keeping track of undertaking maximum. */
   public static final String UNDERTAKING_MAXIMUM = "undertakingMaximum";
+
+  /** Session attribute holding the selected award-type details. */
+  public static final String AWARD_TYPE_FORM = "awardTypeForm";
 }

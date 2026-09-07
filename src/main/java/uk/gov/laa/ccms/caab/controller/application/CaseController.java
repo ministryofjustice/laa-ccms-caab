@@ -12,6 +12,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.AWARD_TYPE_FORM;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
@@ -48,7 +49,9 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import uk.gov.laa.ccms.caab.bean.AwardTypeForm;
 import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.PreCertificateAndLegalHelpCostsFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.CaseProceedingDisplayStatus;
@@ -90,6 +93,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @RequiredArgsConstructor
 @Controller
 @Slf4j
+@SessionAttributes(AWARD_TYPE_FORM)
 public class CaseController {
 
   private final ApplicationService applicationService;
@@ -362,14 +366,18 @@ public class CaseController {
   /**
    * Displays the Select Award Type screen.
    *
-   * @param model the model used to populate the award type dropdown
-   * @return the Select Award Type view
+   * @param model the model used to pass data to the award type dropdown in the view
+   * @return The Select Award Type view
    */
   @GetMapping("/case/outcome-and-awards/award-type")
   public String selectAwardType(final Model model) {
     final AwardTypeLookupDetail awardTypes = lookupService.getAwardTypes().block();
 
     model.addAttribute("awardTypes", awardTypes.getContent());
+
+    if (!model.containsAttribute(AWARD_TYPE_FORM)) {
+      model.addAttribute(AWARD_TYPE_FORM, new AwardTypeForm());
+    }
 
     return "application/select-award-type";
   }
