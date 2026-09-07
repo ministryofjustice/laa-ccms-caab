@@ -12,6 +12,7 @@ Please follow [first time setup](docs/first-time-setup.md).
 ### 1. Run dependencies
 
 This application depends on the following docker containers being run when running locally:
+- OIDC Mock Server
 - Wiremock
 - ClamAV
 - LocalStack
@@ -22,10 +23,11 @@ This application depends on the following docker containers being run when runni
 docker-compose --compatibility -p laa-ccms-caab-development up -d
 ```
 
-Authentication is via OIDC against EntraID. Set the `AZURE_TENANT_ID`, `AZURE_CLIENT_ID` and
-`AZURE_CLIENT_SECRET` environment variables to point at a dev EntraID app registration (redirect
-URI: `http://localhost:8010/civil/login/oauth2/code/azure`). There is currently no local OIDC
-mock IdP; this is a follow-up piece of work.
+Authentication is via OIDC. Locally this runs against the
+[OIDC mock server](https://github.com/ministryofjustice/laa-oidc-mock-server) started by
+docker-compose - sign in as `provider.user@provider.com` / `password`. No further configuration is
+needed. See [authentication](docs/authentication.md) for how a signed-in identity is turned into a
+CCMS user, and for running against a real EntraID tenant instead.
 
 Run the APIs locally. If you wish to use the APIs running in the DEV environment, you can make use of the `secret` profile
 by placing the `application-secret.yml` file in `./src/main/resources/`.

@@ -26,7 +26,9 @@ import uk.gov.laa.ccms.caab.util.UserRoleUtil;
   AssessmentApiProperties.class,
   CaabApiProperties.class,
   EbsApiProperties.class,
-  SoaApiProperties.class
+  EntraProperties.class,
+  SoaApiProperties.class,
+  UserDetailsApiProperties.class
 })
 public class ApplicationConfig implements WebMvcConfigurer {
 
@@ -37,6 +39,8 @@ public class ApplicationConfig implements WebMvcConfigurer {
   private final CaabApiProperties caabApiProperties;
 
   private final AssessmentApiProperties assessmentApiProperties;
+
+  private final UserDetailsApiProperties userDetailsApiProperties;
 
   private final String osApiUrl;
 
@@ -70,6 +74,8 @@ public class ApplicationConfig implements WebMvcConfigurer {
    * @param ebsApiProperties The connection details for the data API.
    * @param soaApiProperties The connection details for the SOA Gateway API.
    * @param caabApiProperties The connection details for the CAAB API.
+   * @param assessmentApiProperties The connection details for the Assessment API.
+   * @param userDetailsApiProperties The connection details for the User Details API.
    * @param osApiUrl The URL of the ordinance survey API.
    * @param loggingInterceptor A logging interceptor for the caab.
    */
@@ -78,6 +84,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
       final SoaApiProperties soaApiProperties,
       final CaabApiProperties caabApiProperties,
       final AssessmentApiProperties assessmentApiProperties,
+      final UserDetailsApiProperties userDetailsApiProperties,
       @Value("${os.api.url}") final String osApiUrl,
       @Value("${laa.ccms.connector.url}") final String connectorApiUrl,
       @Value("${av.api.hostname}") final String avApiHostName,
@@ -89,6 +96,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
     this.soaApiProperties = soaApiProperties;
     this.caabApiProperties = caabApiProperties;
     this.assessmentApiProperties = assessmentApiProperties;
+    this.userDetailsApiProperties = userDetailsApiProperties;
     this.osApiUrl = osApiUrl;
     this.connectorApiUrl = connectorApiUrl;
     this.avApiHostName = avApiHostName;
@@ -136,6 +144,23 @@ public class ApplicationConfig implements WebMvcConfigurer {
   @Bean("assessmentApiWebClient")
   WebClient assessmentApiWebClient() {
     return createWebClient(assessmentApiProperties);
+  }
+
+  /**
+   * Creates a WebClient bean for interacting with the User Details API.
+   *
+   * <p>The User Details API takes its access token in an {@code X-Authorization} header rather than
+   * the standard {@code Authorization} one, so this is built here rather than by {@code
+   * createWebClient}. The legacy PUI calls it the same way.
+   *
+   * @return A WebClient instance configured for the User Details API.
+   */
+  @Bean("userDetailsApiWebClient")
+  WebClient userDetailsApiWebClient() {
+    return WebClient.builder()
+        .baseUrl(userDetailsApiProperties.getUrl())
+        .defaultHeader("X-Authorization", userDetailsApiProperties.getAccessToken())
+        .build();
   }
 
   /**
