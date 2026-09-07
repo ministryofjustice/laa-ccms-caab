@@ -97,6 +97,8 @@ public class CaseController {
   private final ProceedingOutcomeValidator proceedingOutcomeValidator;
   private final PreCertificateAndLegalHelpCostsValidator preCertificateAndLegalHelpCostsValidator;
   private static final String SEARCH_URL = "SEARCH_URL";
+  private static final String PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_SESSION_KEY_PREFIX =
+      PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA + ":";
 
   /**
    * Displays the case overview screen.
@@ -352,7 +354,7 @@ public class CaseController {
     model.addAttribute("clearableOutcomes", clearableOutcomes);
     model.addAttribute(
         "preCertificateAndLegalHelpCostsSummary",
-        getPreCertificateAndLegalHelpCostsFormData(session));
+        getPreCertificateAndLegalHelpCostsFormData(session, ebsCase.getCaseReferenceNumber()));
     return "application/outcome-and-awards";
   }
 
@@ -559,7 +561,8 @@ public class CaseController {
       HttpSession session,
       Model model) {
     model.addAttribute(
-        "preCertificateAndLegalHelpCosts", getPreCertificateAndLegalHelpCostsFormData(session));
+        "preCertificateAndLegalHelpCosts",
+        getPreCertificateAndLegalHelpCostsFormData(session, ebsCase.getCaseReferenceNumber()));
     return "application/pre-certificate-and-legal-help-costs";
   }
 
@@ -587,19 +590,23 @@ public class CaseController {
     }
 
     session.setAttribute(
-        PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA,
+        preCertificateAndLegalHelpCostsSessionKey(ebsCase.getCaseReferenceNumber()),
         copyPreCertificateAndLegalHelpCostsFormData(preCertificateAndLegalHelpCosts));
     return "redirect:/case/outcome-and-awards";
   }
 
   private PreCertificateAndLegalHelpCostsFormData getPreCertificateAndLegalHelpCostsFormData(
-      final HttpSession session) {
+      final HttpSession session, final String caseReferenceNumber) {
     final PreCertificateAndLegalHelpCostsFormData formData =
         (PreCertificateAndLegalHelpCostsFormData)
-            session.getAttribute(PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA);
+            session.getAttribute(preCertificateAndLegalHelpCostsSessionKey(caseReferenceNumber));
     return formData != null
         ? copyPreCertificateAndLegalHelpCostsFormData(formData)
         : new PreCertificateAndLegalHelpCostsFormData();
+  }
+
+  private String preCertificateAndLegalHelpCostsSessionKey(final String caseReferenceNumber) {
+    return PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_SESSION_KEY_PREFIX + caseReferenceNumber;
   }
 
   private PreCertificateAndLegalHelpCostsFormData copyPreCertificateAndLegalHelpCostsFormData(

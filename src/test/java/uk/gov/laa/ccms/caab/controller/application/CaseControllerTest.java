@@ -110,6 +110,8 @@ class CaseControllerTest {
   private String returnUrl;
 
   private static final String SEARCH_URL = "SEARCH_URL";
+  private static final String PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_SESSION_KEY_PREFIX =
+      PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA + ":";
 
   @BeforeEach
   void setUp() {
@@ -873,7 +875,9 @@ class CaseControllerTest {
                   get("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
                       .sessionAttr(USER_DETAILS, user)
                       .sessionAttr(CASE, ebsCase)
-                      .sessionAttr(PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA, savedFormData)))
+                      .sessionAttr(
+                          preCertificateAndLegalHelpCostsSessionKey(selectedCaseRef),
+                          savedFormData)))
           .hasStatusOk()
           .hasViewName("application/pre-certificate-and-legal-help-costs")
           .model()
@@ -943,7 +947,7 @@ class CaseControllerTest {
                       .request()
                       .sessionAttributes()
                       .hasEntrySatisfying(
-                          PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA,
+                          preCertificateAndLegalHelpCostsSessionKey(selectedCaseRef),
                           value -> {
                             PreCertificateAndLegalHelpCostsFormData formData =
                                 (PreCertificateAndLegalHelpCostsFormData) value;
@@ -972,7 +976,9 @@ class CaseControllerTest {
                   get("/case/outcome-and-awards")
                       .sessionAttr(USER_DETAILS, user)
                       .sessionAttr(CASE, ebsCase)
-                      .sessionAttr(PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA, savedFormData)))
+                      .sessionAttr(
+                          preCertificateAndLegalHelpCostsSessionKey(selectedCaseRef),
+                          savedFormData)))
           .hasStatusOk()
           .hasViewName("application/outcome-and-awards")
           .model()
@@ -985,6 +991,41 @@ class CaseControllerTest {
                 assertThat(formData.getLegalHelpCosts()).isEqualTo("7.25");
                 assertThat(formData.getOfficeCode()).isEqualTo("1A234B");
                 assertThat(formData.getUniqueFileNumber()).isEqualTo("010124/001");
+              });
+    }
+
+    @Test
+    @DisplayName("Outcome and awards does not use costs saved for another case reference")
+    public void outcomeAndAwardsDoesNotUseCostsSavedForAnotherCase() {
+      final String selectedCaseRef = "8";
+      final String otherCaseRef = "9";
+      final PreCertificateAndLegalHelpCostsFormData savedFormData =
+          new PreCertificateAndLegalHelpCostsFormData();
+      savedFormData.setPreCertificateCosts("12.50");
+      savedFormData.setLegalHelpCosts("7.25");
+      ApplicationDetail ebsCase =
+          getEbsCase(otherCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(
+                          preCertificateAndLegalHelpCostsSessionKey(selectedCaseRef),
+                          savedFormData)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards")
+          .model()
+          .hasEntrySatisfying(
+              "preCertificateAndLegalHelpCostsSummary",
+              value -> {
+                PreCertificateAndLegalHelpCostsFormData formData =
+                    (PreCertificateAndLegalHelpCostsFormData) value;
+                assertThat(formData.getPreCertificateCosts()).isNull();
+                assertThat(formData.getLegalHelpCosts()).isNull();
+                assertThat(formData.getOfficeCode()).isNull();
+                assertThat(formData.getUniqueFileNumber()).isNull();
               });
     }
 
@@ -2106,6 +2147,10 @@ class CaseControllerTest {
         .failure()
         .hasCauseInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("TDS Application type must not be null");
+  }
+
+  private String preCertificateAndLegalHelpCostsSessionKey(final String caseReferenceNumber) {
+    return PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_SESSION_KEY_PREFIX + caseReferenceNumber;
   }
 
   private ApplicationDetail getEbsCase(
