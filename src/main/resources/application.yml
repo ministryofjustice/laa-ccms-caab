@@ -12,7 +12,7 @@ submission:
   max-poll-count: 6
 
 portal:
-  logoutUrl: ${PORTAL_URL}/oam/server/logout?end_url=${PORTAL_URL}/LAALogin/pages/Logout.jsp
+  logoutUrl: https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/logout?post_logout_redirect_uri=${POST_LOGOUT_REDIRECT_URI}
 
 csp:
   report-enabled: ${CSP_REPORT_ENABLED:true}
@@ -23,19 +23,17 @@ spring:
   application:
     name: laa-ccms-caab
   security:
-    saml2:
-      relyingparty:
+    oauth2:
+      client:
         registration:
-          idp:
-            entity-id: caab-provider-ui
-            assertingparty:
-              metadata-uri: ${PORTAL_URL}/oamfed/idp/metadata
-              singlesignon:
-                url: ${PORTAL_URL}/oamfed/idp/initiatesso?providerid=${spring.security.saml2.relyingparty.registration.idp.entity-id}
-            signing:
-              credentials:
-                private-key: ${SAML_PRIVATE_KEY}
-                certificate: ${SAML_CERTIFICATE}
+          azure:
+            client-id: ${AZURE_CLIENT_ID}
+            client-secret: ${AZURE_CLIENT_SECRET}
+            scope: openid,profile,email
+            authorization-grant-type: authorization_code
+        provider:
+          azure:
+            issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0
 
   thymeleaf: # Thymeleaf
     cache: false

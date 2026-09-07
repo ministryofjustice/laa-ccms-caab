@@ -8,16 +8,13 @@ Clone this repository, along with the following repositories into the same direc
 - [laa-ccms-caab-ebs-api](https://github.com/ministryofjustice/laa-ccms-data-api)
 - [laa-ccms-caab-soa-api](https://github.com/ministryofjustice/laa-ccms-soa-gateway-api)
 - [laa-ccms-caab-assessment-api](https://github.com/ministryofjustice/laa-ccms-caab-assessment-api)
-- [laa-ccms-caab-saml-mock](https://github.com/ministryofjustice/laa-ccms-caab-saml-mock)
 - [laa-ccms-mock-contracts](https://github.com/ministryofjustice/laa-ccms-mock-contracts)
 
 ## 2. Install Java
 
-Follow the steps [here](https://ministryofjustice.github.io/laa-java-community-technical-guidance/java-setup.html#get-started-with-java-versions-and-intellij) (SDKMAN! recommended). You will need both the latest LTS version for this project, and Java 11 for Saml Mock.
+Follow the steps [here](https://ministryofjustice.github.io/laa-java-community-technical-guidance/java-setup.html#get-started-with-java-versions-and-intellij) (SDKMAN! recommended).
 
 ## 3. Build and run dependency images
-
-For first time setup, you only need to follow the manual build steps for saml mock below (up to and including copying the `.jar`). Then you can run to build and run all required containers.
 
 ```shell
 docker-compose --compatibility -p laa-ccms-caab-development up -d --build
@@ -42,32 +39,14 @@ You can now [run the application](../README.md#3-run-the-application).
 
 Below is further information about all dependencies.
 
-## Set up laa-ccms-caab-saml-mock
+## Authentication (EntraID / OIDC)
 
-This step requires maven to be installed on your machine. You can
-use [homebrew](https://formulae.brew.sh/formula/maven) to install it.
+Authentication is via OIDC against EntraID. Set the `AZURE_TENANT_ID`, `AZURE_CLIENT_ID` and
+`AZURE_CLIENT_SECRET` environment variables to point at a dev EntraID app registration (redirect
+URI: `http://localhost:8010/civil/login/oauth2/code/azure`).
 
-```shell
-brew install maven
-```
-
-You will also need to switch to Java 11 to build the application.
-
-Next steps:
-
-```shell
-cd ../laa-ccms-caab-saml-mock
-
-mvn -B package --file pom.xml
-
-cp mujina-idp/target/laa-ccms-caab-saml-mock-1.0.0.jar laa-ccms-caab-saml-mock-1.0.0.jar
-```
-
-### Run laa-ccms-caab-saml-mock standalone
-
-```shell
-docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-saml-mock
-```
+There is currently no local OIDC mock IdP (the previous SAML mock container has been removed as
+part of the migration to OIDC); setting up a local mock is a follow-up piece of work.
 
 ## Wiremock standalone
 
