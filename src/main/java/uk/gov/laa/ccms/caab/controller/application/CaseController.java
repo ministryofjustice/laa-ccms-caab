@@ -428,6 +428,10 @@ public class CaseController {
           final EvidenceUploadFormData outcomeAndAwardsDocumentUploadForm,
       final BindingResult bindingResult,
       final Model model) {
+    if (!ActionViewHelper.isOutcomeDocumentActionAllowed(ebsCase)) {
+      throw new CaabApplicationException(
+          "User is not authorised to upload outcome documents for this case");
+    }
 
     providerRequestDocumentUploadValidator.validate(
         outcomeAndAwardsDocumentUploadForm, bindingResult);
