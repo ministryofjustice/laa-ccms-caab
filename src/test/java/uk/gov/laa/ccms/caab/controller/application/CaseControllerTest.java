@@ -1060,7 +1060,24 @@ class CaseControllerTest {
     @Test
     @DisplayName("Outcome and awards document upload page loads")
     public void outcomeAndAwardsDocumentUploadPageLoads() {
-      assertThat(mockMvc.perform(get("/case/outcome-and-awards/document/upload")))
+      final ApplicationDetail ebsCase =
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/outcome-and-awards-document-upload")
           .model()
