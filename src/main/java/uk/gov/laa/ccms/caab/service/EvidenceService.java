@@ -124,6 +124,8 @@ public class EvidenceService {
    * @param documentType - the document type.
    * @param fileExtension - the file extension.
    * @param documentDescription - the document description.
+   * @param caseReferenceNumber - the case reference number this document relates to, or {@code
+   *     null} if the document is not related to an existing case.
    * @param userId - the user registering the document.
    * @param userType - the user type.
    * @return Mono wrapping the EBS registered document id.
@@ -133,6 +135,7 @@ public class EvidenceService {
       final String fileExtension,
       final String documentDescription,
       final String channel,
+      final String caseReferenceNumber,
       final String userId,
       final String userType) {
 
@@ -144,7 +147,7 @@ public class EvidenceService {
             .text(documentDescription);
 
     return soaApiClient
-        .registerDocument(document, userId, userType)
+        .registerDocument(document, caseReferenceNumber, userId, userType)
         .mapNotNull(ClientTransactionResponse::getReferenceNumber);
   }
 
@@ -541,6 +544,7 @@ public class EvidenceService {
                       evidenceDocumentDetail.getFileExtension(),
                       evidenceDocumentDetail.getDescription(),
                       ELECTRONIC.getCode(),
+                      evidenceDocumentDetail.getCaseReferenceNumber(),
                       user.getLoginId(),
                       user.getUserType())
                   .blockOptional()

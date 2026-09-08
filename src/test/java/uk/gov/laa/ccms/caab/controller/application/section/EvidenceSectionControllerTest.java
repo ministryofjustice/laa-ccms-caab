@@ -251,6 +251,7 @@ class EvidenceSectionControllerTest {
             filename.substring(filename.lastIndexOf('.') + 1),
             formData.getDocumentDescription(),
             ELECTRONIC.getCode(),
+            formData.getCaseReferenceNumber(),
             user.getLoginId(),
             user.getUserType()))
         .thenReturn(Mono.empty());
@@ -286,6 +287,7 @@ class EvidenceSectionControllerTest {
             filename.substring(filename.lastIndexOf('.') + 1),
             formData.getDocumentDescription(),
             ELECTRONIC.getCode(),
+            formData.getCaseReferenceNumber(),
             user.getLoginId(),
             user.getUserType()))
         .thenReturn(Mono.just(registeredDocumentId));

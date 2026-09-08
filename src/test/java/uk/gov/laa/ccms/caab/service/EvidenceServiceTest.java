@@ -121,17 +121,25 @@ class EvidenceServiceTest {
     final ClientTransactionResponse clientTransactionResponse = new ClientTransactionResponse();
     clientTransactionResponse.setReferenceNumber(docId);
 
-    when(soaApiClient.registerDocument(any(Document.class), eq(userId), eq(userType)))
+    when(soaApiClient.registerDocument(
+            any(Document.class), eq(caseReferenceNumber), eq(userId), eq(userType)))
         .thenReturn(Mono.just(clientTransactionResponse));
 
     final Mono<String> resultMono =
         evidenceService.registerDocument(
-            documentType, fileExtension, documentDescription, null, userId, userType);
+            documentType,
+            fileExtension,
+            documentDescription,
+            null,
+            caseReferenceNumber,
+            userId,
+            userType);
 
     StepVerifier.create(resultMono).expectNext(docId).verifyComplete();
 
     verify(soaApiClient)
-        .registerDocument(documentArgumentCaptor.capture(), eq(userId), eq(userType));
+        .registerDocument(
+            documentArgumentCaptor.capture(), eq(caseReferenceNumber), eq(userId), eq(userType));
 
     assertEquals(documentType, documentArgumentCaptor.getValue().getDocumentType());
     assertEquals(fileExtension, documentArgumentCaptor.getValue().getFileExtension());

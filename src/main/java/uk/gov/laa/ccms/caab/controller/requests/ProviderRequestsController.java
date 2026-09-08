@@ -661,6 +661,7 @@ public class ProviderRequestsController {
                   fileExtension,
                   evidenceUploadFormData.getDocumentDescription(),
                   ELECTRONIC.getCode(),
+                  caseRef,
                   userDetail.getLoginId(),
                   userDetail.getUserType())
               .blockOptional()

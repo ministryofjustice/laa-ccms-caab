@@ -203,6 +203,7 @@ public class EvidenceSectionController {
                 fileExtension,
                 evidenceUploadFormData.getDocumentDescription(),
                 ELECTRONIC.getCode(),
+                evidenceUploadFormData.getCaseReferenceNumber(),
                 userDetail.getLoginId(),
                 userDetail.getUserType())
             .blockOptional()
