@@ -456,8 +456,10 @@ public class CaseController {
     outcomeAndAwardsDocumentUploadForm.setProviderId(providerId);
     outcomeAndAwardsDocumentUploadForm.setDocumentSender(user.getLoginId());
     outcomeAndAwardsDocumentUploadForm.setCcmsModule(CcmsModule.OUTCOME);
-    outcomeAndAwardsDocumentUploadForm.setDocumentTypeDisplayValue(
-        resolveDocumentTypeDisplayValue(outcomeAndAwardsDocumentUploadForm.getDocumentType()));
+    if (!StringUtils.hasText(outcomeAndAwardsDocumentUploadForm.getDocumentTypeDisplayValue())) {
+      outcomeAndAwardsDocumentUploadForm.setDocumentTypeDisplayValue(
+          resolveDocumentTypeDisplayValue(outcomeAndAwardsDocumentUploadForm.getDocumentType()));
+    }
     if (outcomeAndAwardsDocumentUploadForm.getEvidenceTypes() == null) {
       outcomeAndAwardsDocumentUploadForm.setEvidenceTypes(Collections.emptyList());
     }
