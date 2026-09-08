@@ -802,12 +802,17 @@ public class BillingController {
    * The bill type qualifies the declaration lookup. It is produced by the assessment and held on
    * the global entity, mirroring the legacy PUI, which reads the {@code BILL_TYPE} attribute from
    * the assessment session to key the declaration retrieval.
+   *
+   * @return the bill type, or null when the assessment carries none or carries a blank one.
    */
   private String billType(final AssessmentDetail assessment) {
     return getAssessmentEntitiesForEntityType(assessment, AssessmentEntityType.GLOBAL).stream()
         .map(entity -> getAssessmentAttribute(entity, OPA_BILL_TYPE_ATTRIBUTE))
         .filter(attribute -> attribute != null && attribute.getValue() != null)
         .map(AssessmentAttributeDetail::getValue)
+        // A blank cannot narrow the lookup any more than a missing one can, so it is reported the
+        // same way rather than being passed on as though it were a bill type.
+        .filter(value -> !value.isBlank())
         .findFirst()
         .orElse(null);
   }

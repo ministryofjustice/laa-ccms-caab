@@ -1494,6 +1494,9 @@ public class EbsApiClientTest {
     @CsvSource({
       "DECLARATION_TYPE, BILL_TYPE, /lookup/declarations?size=1000&type=DECLARATION_TYPE&bill-type=BILL_TYPE",
       "DECLARATION_TYPE, , /lookup/declarations?size=1000&type=DECLARATION_TYPE",
+      // A blank bill type is left off rather than sent as an empty "bill-type=".
+      "DECLARATION_TYPE, '', /lookup/declarations?size=1000&type=DECLARATION_TYPE",
+      "DECLARATION_TYPE, '   ', /lookup/declarations?size=1000&type=DECLARATION_TYPE",
       ", BILL_TYPE, /lookup/declarations?size=1000&bill-type=BILL_TYPE",
       ", , /lookup/declarations?size=1000"
     })

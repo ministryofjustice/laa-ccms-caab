@@ -21,6 +21,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -838,6 +839,14 @@ class BillingControllerTest {
 
     /** Builds the global entity from alternating attribute names and values. */
     private AssessmentEntityDetail global(final String... namesAndValues) {
+      if (namesAndValues.length % 2 != 0) {
+        throw new IllegalArgumentException(
+            "global() takes alternating attribute names and values, so it needs an even number of "
+                + "arguments, but got "
+                + namesAndValues.length
+                + ": "
+                + Arrays.toString(namesAndValues));
+      }
       final List<AssessmentAttributeDetail> attributes = new ArrayList<>();
       for (int i = 0; i < namesAndValues.length; i += 2) {
         attributes.add(
@@ -921,6 +930,25 @@ class BillingControllerTest {
       // type, so asking without one would answer with every bill type's statements at once.
       billingAssessment(
           AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill/declaration")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing/bill");
+
+      verify(lookupService, never()).getDeclarations(any(), any());
+    }
+
+    @Test
+    @DisplayName("Skips the declaration, and never asks for one, when the bill type is blank")
+    void skipsDeclarationWhenBillTypeIsBlank() {
+      // Given - a bill type of whitespace narrows the lookup no better than a missing one does.
+      billingAssessment(
+          AssessmentStatus.COMPLETE.getStatus(),
+          global("BILL_TYPE", "   ", "COURT_ASSESSED_BILL", "true"));
 
       assertThat(
               mockMvc.perform(

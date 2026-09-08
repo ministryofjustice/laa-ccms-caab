@@ -741,8 +741,11 @@ public class EbsApiClient extends BaseApiClient {
     final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
     Optional.ofNullable(type).ifPresent(param -> queryParams.add("type", param));
     // The API binds this as "bill-type"; sent under any other name it is silently ignored and
-    // every bill type's declarations come back.
-    Optional.ofNullable(billType).ifPresent(param -> queryParams.add("bill-type", param));
+    // every bill type's declarations come back. A blank is no narrower than sending nothing, so
+    // it is left off rather than asked for as "bill-type=".
+    Optional.ofNullable(billType)
+        .filter(param -> !param.isBlank())
+        .ifPresent(param -> queryParams.add("bill-type", param));
 
     return webClient
         .get()
