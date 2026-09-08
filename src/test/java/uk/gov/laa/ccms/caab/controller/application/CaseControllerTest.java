@@ -1336,7 +1336,7 @@ class CaseControllerTest {
           .hasRedirectedUrl("/case/outcome-and-awards");
 
       verify(evidenceService)
-          .removeDocument(
+          .removeDocumentForCase(
               ebsCase.getCaseReferenceNumber(), 123, CcmsModule.OUTCOME, user.getLoginId());
     }
 
@@ -1358,7 +1358,7 @@ class CaseControllerTest {
 
       doThrow(new CaabApplicationException("Document not found"))
           .when(evidenceService)
-          .removeDocument(anyString(), anyInt(), any(), anyString());
+          .removeDocumentForCase(anyString(), anyInt(), any(), anyString());
 
       assertThat(
               mockMvc.perform(

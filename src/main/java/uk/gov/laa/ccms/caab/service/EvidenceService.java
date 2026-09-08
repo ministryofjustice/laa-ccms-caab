@@ -228,6 +228,40 @@ public class EvidenceService {
   }
 
   /**
+   * Remove an evidence document from the TDS, validating ownership via case reference number rather
+   * than an application/outcome id. This is required for documents (such as Outcome documents) that
+   * are keyed by case reference number rather than an application/outcome id.
+   *
+   * @param caseReferenceNumber - the case reference number the document should belong to.
+   * @param documentId - the id of the document to remove.
+   * @param ccmsModule - the document's related CCMS module.
+   * @param userId - the user removing a document.
+   */
+  public void removeDocumentForCase(
+      final String caseReferenceNumber,
+      final Integer documentId,
+      final CcmsModule ccmsModule,
+      final String userId) {
+
+    getEvidenceDocumentsForCase(caseReferenceNumber, ccmsModule)
+        .map(EvidenceDocumentDetails::getContent)
+        .mapNotNull(
+            baseEvidenceDocumentDetails ->
+                baseEvidenceDocumentDetails.stream()
+                    .filter(
+                        baseEvidenceDocumentDetail ->
+                            baseEvidenceDocumentDetail.getId() != null
+                                && baseEvidenceDocumentDetail.getId().equals(documentId))
+                    .findFirst()
+                    .orElse(null))
+        .blockOptional()
+        .orElseThrow(
+            () -> new CaabApplicationException("Invalid document id: %s".formatted(documentId)));
+
+    caabApiClient.deleteEvidenceDocument(documentId, userId).block();
+  }
+
+  /**
    * Remove all untransferred evidence documents for the specified case.
    *
    * @param caseReferenceNumber - the case reference number of the documents to remove.

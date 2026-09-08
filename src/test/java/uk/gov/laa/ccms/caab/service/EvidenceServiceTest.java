@@ -225,6 +225,43 @@ class EvidenceServiceTest {
   }
 
   @Test
+  void removeDocumentForCase_correctCaseReferenceNumber_removesDocument() {
+    final Integer docId = 123;
+    final CcmsModule ccmsModule = CcmsModule.OUTCOME;
+
+    final BaseEvidenceDocumentDetail doc = new BaseEvidenceDocumentDetail().id(docId);
+
+    when(caabApiClient.getEvidenceDocuments(
+            null, caseReferenceNumber, null, null, ccmsModule.getCode(), true))
+        .thenReturn(Mono.just(new EvidenceDocumentDetails().addContentItem(doc)));
+
+    when(caabApiClient.deleteEvidenceDocument(docId, userId)).thenReturn(Mono.empty());
+
+    evidenceService.removeDocumentForCase(caseReferenceNumber, docId, ccmsModule, userId);
+
+    verify(caabApiClient).deleteEvidenceDocument(docId, userId);
+  }
+
+  @Test
+  void removeDocumentForCase_incorrectCaseReferenceNumber_throwsException() {
+    final Integer docId = 123;
+    final CcmsModule ccmsModule = CcmsModule.OUTCOME;
+
+    final BaseEvidenceDocumentDetail doc = new BaseEvidenceDocumentDetail().id(456);
+
+    when(caabApiClient.getEvidenceDocuments(
+            null, caseReferenceNumber, null, null, ccmsModule.getCode(), true))
+        .thenReturn(Mono.just(new EvidenceDocumentDetails().addContentItem(doc)));
+
+    assertThrows(
+        CaabApplicationException.class,
+        () ->
+            evidenceService.removeDocumentForCase(caseReferenceNumber, docId, ccmsModule, userId));
+
+    verify(caabApiClient, never()).deleteEvidenceDocument(docId, userId);
+  }
+
+  @Test
   void getOpaDocumentsRequired_buildsCorrectDocTypeList() {
     final AssessmentDetails assessmentDetails = new AssessmentDetails();
     AssessmentDetail meansAssessment = AssessmentModelUtils.buildAssessmentDetail(new Date());

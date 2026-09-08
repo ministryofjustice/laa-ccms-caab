@@ -531,7 +531,7 @@ public class CaseController {
           "User is not authorised to remove outcome documents for this case");
     }
 
-    evidenceService.removeDocument(
+    evidenceService.removeDocumentForCase(
         ebsCase.getCaseReferenceNumber(), documentId, CcmsModule.OUTCOME, user.getLoginId());
 
     return "redirect:/case/outcome-and-awards";
