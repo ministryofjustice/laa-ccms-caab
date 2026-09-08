@@ -15,27 +15,31 @@
     <h1 class="govuk-heading-l" th:text="#{case.outcomeAndAwards.documents.upload}"></h1>
     <form action="#" th:action="@{/case/outcome-and-awards/document/upload}" method="post"
           th:object="${outcomeAndAwardsDocumentUploadForm}" enctype="multipart/form-data">
-      <div
-          th:replace="~{partials/document-upload :: uploadFormFields}"></div>
-      <div class="govuk-form-group">
-        <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
-          <div class="govuk-checkboxes__item"
-               th:with="outcomesEvidenceLabel=#{case.outcomeAndAwards.documents.outcomesEvidence}">
-            <input class="govuk-checkboxes__input"
-                   id="outcomesEvidence"
-                   name="evidenceTypes"
-                   th:value="${outcomesEvidenceLabel}"
-                   th:checked="${outcomeAndAwardsDocumentUploadForm.evidenceTypes != null and outcomeAndAwardsDocumentUploadForm.evidenceTypes.contains(outcomesEvidenceLabel)}"
-                   type="checkbox"/>
-            <label class="govuk-label govuk-checkboxes__label"
-                   for="outcomesEvidence"
-                   th:text="${outcomesEvidenceLabel}"></label>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+          <div
+              th:replace="~{partials/document-upload :: uploadFormFields}"></div>
+          <div class="govuk-form-group">
+            <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
+              <div class="govuk-checkboxes__item"
+                   th:with="outcomesEvidenceLabel=#{case.outcomeAndAwards.documents.outcomesEvidence}">
+                <input class="govuk-checkboxes__input"
+                       id="outcomesEvidence"
+                       name="evidenceTypes"
+                       th:value="${outcomesEvidenceLabel}"
+                       th:checked="${outcomeAndAwardsDocumentUploadForm.evidenceTypes != null and outcomeAndAwardsDocumentUploadForm.evidenceTypes.contains(outcomesEvidenceLabel)}"
+                       type="checkbox"/>
+                <label class="govuk-label govuk-checkboxes__label"
+                       for="outcomesEvidence"
+                       th:text="${outcomesEvidenceLabel}"></label>
+              </div>
+            </div>
+          </div>
+          <div class="govuk-button-group">
+            <button class="govuk-button" data-module="govuk-button" th:text="#{site.upload}"></button>
+            <a th:href="@{/case/outcome-and-awards}" class="govuk-link" th:text="#{site.back}"></a>
           </div>
         </div>
-      </div>
-      <div class="govuk-button-group">
-        <button class="govuk-button" data-module="govuk-button" th:text="#{site.upload}"></button>
-        <a th:href="@{/case/outcome-and-awards}" class="govuk-link" th:text="#{site.back}"></a>
       </div>
     </form>
   </div>

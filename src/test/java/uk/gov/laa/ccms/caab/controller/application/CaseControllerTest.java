@@ -159,6 +159,9 @@ class CaseControllerTest {
     lenient()
         .when(messageSource.getMessage(anyString(), any(), any()))
         .thenReturn("Outcomes Evidence");
+    lenient()
+        .when(lookupService.getDocumentTypeDescription(anyString()))
+        .thenReturn(Mono.just("Document description"));
   }
 
   @Nested
@@ -1107,7 +1110,17 @@ class CaseControllerTest {
       formData.setEvidenceTypes(List.of("Outcomes Evidence"));
 
       final ApplicationDetail ebsCase =
-          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
 
       final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
       when(evidenceMapper.toEvidenceDocumentDetail(formData)).thenReturn(evidenceDocumentDetail);
@@ -1154,7 +1167,17 @@ class CaseControllerTest {
           .validate(any(), any());
 
       final ApplicationDetail ebsCase =
-          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
 
       assertThat(
               mockMvc.perform(
@@ -1208,7 +1231,17 @@ class CaseControllerTest {
           .validate(any(), any());
 
       final ApplicationDetail ebsCase =
-          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
 
       assertThat(
               mockMvc.perform(
@@ -1245,7 +1278,17 @@ class CaseControllerTest {
       formData.setEvidenceTypes(List.of("Outcomes Evidence"));
 
       final ApplicationDetail ebsCase =
-          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
 
       final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
       when(evidenceMapper.toEvidenceDocumentDetail(formData)).thenReturn(evidenceDocumentDetail);
@@ -1272,7 +1315,17 @@ class CaseControllerTest {
     @DisplayName("Remove outcome and awards document succeeds")
     public void removeOutcomeAndAwardsDocumentRedirectsOnSuccess() {
       final ApplicationDetail ebsCase =
-          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
 
       assertThat(
               mockMvc.perform(
@@ -1291,7 +1344,17 @@ class CaseControllerTest {
     @DisplayName("Remove outcome and awards document fails for non-existent document")
     public void removeOutcomeAndAwardsDocumentFailsForNonExistentDocument() {
       final ApplicationDetail ebsCase =
-          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
 
       doThrow(new CaabApplicationException("Document not found"))
           .when(evidenceService)
@@ -1393,7 +1456,17 @@ class CaseControllerTest {
       formData.setDocumentDescription("A description");
 
       final ApplicationDetail ebsCase =
-          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
 
       doThrow(new CaabApplicationException("File failed AV scan"))
           .when(avScanService)
@@ -1428,7 +1501,17 @@ class CaseControllerTest {
       formData.setEvidenceTypes(List.of("Outcomes Evidence"));
 
       final ApplicationDetail ebsCase =
-          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
 
       when(evidenceService.registerDocument(
               anyString(), anyString(), any(), anyString(), anyString(), anyString(), any()))
@@ -1463,7 +1546,17 @@ class CaseControllerTest {
       formData.setEvidenceTypes(List.of("Outcomes Evidence"));
 
       final ApplicationDetail ebsCase =
-          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
 
       final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
       when(evidenceMapper.toEvidenceDocumentDetail(formData)).thenReturn(evidenceDocumentDetail);
@@ -1498,7 +1591,17 @@ class CaseControllerTest {
       formData.setEvidenceTypes(null);
 
       final ApplicationDetail ebsCase =
-          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
 
       final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
       when(evidenceMapper.toEvidenceDocumentDetail(formData)).thenReturn(evidenceDocumentDetail);

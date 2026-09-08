@@ -15,10 +15,14 @@
     <form action="#" th:action="@{${providerRequestSubmitUrl}}" method="post"
           th:object="${__${providerRequestEvidenceUploadFormAttribute}__}"
           enctype="multipart/form-data">
-      <div th:replace="~{partials/document-upload :: uploadFormFields}"></div>
-      <div class="govuk-button-group">
-        <button class="govuk-button" data-module="govuk-button" th:text="#{site.upload}"></button>
-        <a th:href="@{${providerRequestBackUrl}}" class="govuk-link" th:text="#{site.back}"></a>
+      <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+          <div th:replace="~{partials/document-upload :: uploadFormFields}"></div>
+          <div class="govuk-button-group">
+            <button class="govuk-button" data-module="govuk-button" th:text="#{site.upload}"></button>
+            <a th:href="@{${providerRequestBackUrl}}" class="govuk-link" th:text="#{site.back}"></a>
+          </div>
+        </div>
       </div>
     </form>
   </div>
