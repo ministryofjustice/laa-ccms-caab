@@ -1,6 +1,10 @@
 package uk.gov.laa.ccms.caab.bean.validators.client;
 
+import static uk.gov.laa.ccms.caab.constants.CharacterLimitationConstants.SPECIAL_CONSIDERATIONS_CHARACTER_SIZE;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.STANDARD_CHARACTER_SET;
+
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataMonitoringDetails;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
@@ -8,6 +12,8 @@ import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 /** Validator the details provided by client equal opportunities monitoring form. */
 @Component
 public class ClientEqualOpportunitiesMonitoringDetailsValidator extends AbstractValidator {
+
+  private static final String SPECIAL_CONSIDERATIONS_DISPLAY_NAME = "Special considerations";
 
   /**
    * Determines if the Validator supports the provided class.
@@ -36,5 +42,20 @@ public class ClientEqualOpportunitiesMonitoringDetailsValidator extends Abstract
         "ethnicOrigin", monitoringDetails.getEthnicOrigin(), "Ethnic monitoring", errors);
     validateRequiredField(
         "disability", monitoringDetails.getDisability(), "Disability monitoring", errors);
+
+    if (StringUtils.hasText(monitoringDetails.getSpecialConsiderations())) {
+      validateFieldFormat(
+          "specialConsiderations",
+          monitoringDetails.getSpecialConsiderations(),
+          STANDARD_CHARACTER_SET,
+          SPECIAL_CONSIDERATIONS_DISPLAY_NAME,
+          errors);
+      validateFieldMaxLength(
+          "specialConsiderations",
+          monitoringDetails.getSpecialConsiderations(),
+          SPECIAL_CONSIDERATIONS_CHARACTER_SIZE,
+          SPECIAL_CONSIDERATIONS_DISPLAY_NAME,
+          errors);
+    }
   }
 }
