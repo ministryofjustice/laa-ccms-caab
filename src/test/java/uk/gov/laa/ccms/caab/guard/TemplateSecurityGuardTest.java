@@ -67,9 +67,9 @@ class TemplateSecurityGuardTest {
               "requests/provider-request-detail.html", 4,
               "application/prior-authority-details.html", 4,
               "application/case-costs.html", 1,
-              "application/counsel-search.html", 1,
-              "application/record-proceeding-outcome.html", 3,
-              "application/billing/enter-undertaking.html", 1));
+              // The two textareas here still need the shared largeTextInput fragment, which would
+              // add a visible GDS character counter - a UX change that wants sign-off first.
+              "application/record-proceeding-outcome.html", 2));
 
   @Test
   @DisplayName("th:utext never renders an interpolated value without escaping it")
