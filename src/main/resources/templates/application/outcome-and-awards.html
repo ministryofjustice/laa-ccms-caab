@@ -90,29 +90,36 @@
       <div class="govuk-grid-column-full">
         <h2 class="govuk-heading-m"
             th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.title}"></h2>
-        <table class="govuk-table">
+        <table class="govuk-table" id="preCertificateAndLegalHelpCostsTable">
           <thead class="govuk-table__head">
           <tr class="govuk-table__row">
-            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.table.type}"></th>
-            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.table.preCertificateAmount}"></th>
-            <th scope="col" class="govuk-table__header" th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.table.legalHelpAmount}"></th>
-            <th scope="col" class="govuk-table__header" th:text="#{site.action}"></th>
+            <th scope="col" class="govuk-table__header"
+                th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.table.type}"
+                id="preCertificateAndLegalHelpCostsTypeHeader"></th>
+            <th scope="col" class="govuk-table__header"
+                th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.table.preCertificateAmount}"
+                id="preCertificateAndLegalHelpCostsPreCertificateAmountHeader"></th>
+            <th scope="col" class="govuk-table__header"
+                th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.table.legalHelpAmount}"
+                id="preCertificateAndLegalHelpCostsLegalHelpAmountHeader"></th>
+            <th scope="col" class="govuk-table__header" th:text="#{site.action}"
+                id="preCertificateAndLegalHelpCostsActionHeader"></th>
           </tr>
           </thead>
           <tbody class="govuk-table__body">
-          <tr class="govuk-table__row">
-            <td class="govuk-table__cell">
+          <tr class="govuk-table__row" id="preCertificateAndLegalHelpCostsRow">
+            <td class="govuk-table__cell" id="preCertificateAndLegalHelpCostsType">
               <a class="govuk-link govuk-link--no-visited-state"
                 th:href="@{/case/outcome-and-awards/preCertificateAndLegalHelpCosts}"
                 th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.link}"
                 id="preCertificateAndLegalHelpCostsLink"
               ></a>
             </td>
-            <td class="govuk-table__cell"
+            <td class="govuk-table__cell" id="preCertificateAndLegalHelpCostsPreCertificateAmount"
                 th:text="${#strings.isEmpty(preCertificateAndLegalHelpCostsSummary.preCertificateCosts) ? '£0' : '£' + preCertificateAndLegalHelpCostsSummary.preCertificateCosts}"></td>
-            <td class="govuk-table__cell"
+            <td class="govuk-table__cell" id="preCertificateAndLegalHelpCostsLegalHelpAmount"
                 th:text="${#strings.isEmpty(preCertificateAndLegalHelpCostsSummary.legalHelpCosts) ? '£0' : '£' + preCertificateAndLegalHelpCostsSummary.legalHelpCosts}"></td>
-            <td class="govuk-table__cell"></td>
+            <td class="govuk-table__cell" id="preCertificateAndLegalHelpCostsAction"></td>
           </tr>
           </tbody>
         </table>
