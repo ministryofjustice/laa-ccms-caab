@@ -1492,9 +1492,9 @@ public class EbsApiClientTest {
 
     @ParameterizedTest
     @CsvSource({
-      "DECLARATION_TYPE, BILL_TYPE, /lookup/declarations?size=1000&type=DECLARATION_TYPE&billType=BILL_TYPE",
+      "DECLARATION_TYPE, BILL_TYPE, /lookup/declarations?size=1000&type=DECLARATION_TYPE&bill-type=BILL_TYPE",
       "DECLARATION_TYPE, , /lookup/declarations?size=1000&type=DECLARATION_TYPE",
-      ", BILL_TYPE, /lookup/declarations?size=1000&billType=BILL_TYPE",
+      ", BILL_TYPE, /lookup/declarations?size=1000&bill-type=BILL_TYPE",
       ", , /lookup/declarations?size=1000"
     })
     @DisplayName("getDeclarations parameterized test")
@@ -1523,7 +1523,7 @@ public class EbsApiClientTest {
 
     @ParameterizedTest
     @CsvSource({
-      "DECLARATION_TYPE, BILL_TYPE, /lookup/declarations?size=1000&type=DECLARATION_TYPE&billType=BILL_TYPE",
+      "DECLARATION_TYPE, BILL_TYPE, /lookup/declarations?size=1000&type=DECLARATION_TYPE&bill-type=BILL_TYPE",
       "DECLARATION_TYPE, , /lookup/declarations?size=1000&type=DECLARATION_TYPE"
     })
     @DisplayName("getDeclarations handles errors in a parameterized test")

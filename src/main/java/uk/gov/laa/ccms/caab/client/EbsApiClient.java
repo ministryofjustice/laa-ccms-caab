@@ -740,7 +740,9 @@ public class EbsApiClient extends BaseApiClient {
   public Mono<DeclarationLookupDetail> getDeclarations(final String type, final String billType) {
     final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
     Optional.ofNullable(type).ifPresent(param -> queryParams.add("type", param));
-    Optional.ofNullable(billType).ifPresent(param -> queryParams.add("billType", param));
+    // The API binds this as "bill-type"; sent under any other name it is silently ignored and
+    // every bill type's declarations come back.
+    Optional.ofNullable(billType).ifPresent(param -> queryParams.add("bill-type", param));
 
     return webClient
         .get()

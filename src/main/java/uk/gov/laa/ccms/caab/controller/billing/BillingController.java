@@ -778,11 +778,21 @@ public class BillingController {
   /**
    * Looks up the declaration statements the provider must acknowledge for an assessment's bill
    * type. An empty list means none is configured, which the legacy PUI treats as "do not show the
-   * declaration" rather than as an empty screen.
+   * declaration" rather than as an empty screen. An assessment carrying no bill type is treated the
+   * same way, since the statements cannot be narrowed to the bill being submitted.
    */
   private List<DynamicCheckbox> declarationOptions(final AssessmentDetail assessment) {
+    final String billType = billType(assessment);
+    if (billType == null) {
+      // The lookup narrows to the bill type, and without one it answers with every bill type's
+      // statements at once. Nothing can be meaningfully acknowledged, so treat it as "none
+      // configured" rather than showing statements that belong to some other kind of bill.
+      log.warn("No {} on the assessment; skipping the declaration", OPA_BILL_TYPE_ATTRIBUTE);
+      return List.of();
+    }
+
     final DeclarationLookupDetail declarations =
-        lookupService.getDeclarations(DECLARATION_BILL, billType(assessment)).block();
+        lookupService.getDeclarations(DECLARATION_BILL, billType).block();
     final List<DynamicCheckbox> options =
         submissionSummaryDisplayMapper.toDeclarationFormDataDynamicOptionList(declarations);
     return options == null ? List.of() : options;
