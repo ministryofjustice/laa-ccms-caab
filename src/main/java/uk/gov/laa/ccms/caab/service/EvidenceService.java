@@ -124,8 +124,34 @@ public class EvidenceService {
    * @param documentType - the document type.
    * @param fileExtension - the file extension.
    * @param documentDescription - the document description.
-   * @param caseReferenceNumber - the case reference number this document relates to, or {@code
-   *     null} if the document is not related to an existing case.
+   * @param channel - the channel the document was registered from.
+   * @param userId - the user registering the document.
+   * @param userType - the user type.
+   * @return Mono wrapping the EBS registered document id.
+   * @deprecated use {@link #registerDocument(String, String, String, String, String, String,
+   *     String)} instead, providing the case reference number.
+   */
+  @Deprecated
+  public Mono<String> registerDocument(
+      final String documentType,
+      final String fileExtension,
+      final String documentDescription,
+      final String channel,
+      final String userId,
+      final String userType) {
+    return registerDocument(
+        documentType, fileExtension, documentDescription, channel, null, userId, userType);
+  }
+
+  /**
+   * Register a new evidence document in EBS to get a document id.
+   *
+   * @param documentType - the document type.
+   * @param fileExtension - the file extension.
+   * @param documentDescription - the document description.
+   * @param channel - the channel the document was registered from.
+   * @param caseReferenceNumber - the reference number of the case this document relates to, or
+   *     {@code null} if the document is not related to an existing case.
    * @param userId - the user registering the document.
    * @param userType - the user type.
    * @return Mono wrapping the EBS registered document id.
@@ -544,7 +570,6 @@ public class EvidenceService {
                       evidenceDocumentDetail.getFileExtension(),
                       evidenceDocumentDetail.getDescription(),
                       ELECTRONIC.getCode(),
-                      evidenceDocumentDetail.getCaseReferenceNumber(),
                       user.getLoginId(),
                       user.getUserType())
                   .blockOptional()

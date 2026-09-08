@@ -113,8 +113,37 @@ class EvidenceServiceTest {
   }
 
   @Test
-  void registerDocument_callsApiClient() {
+  void registerDocument_deprecatedOverload_callsApiClientWithNullCaseReferenceNumber() {
     final String docId = "123";
+
+    ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.forClass(Document.class);
+
+    final ClientTransactionResponse clientTransactionResponse = new ClientTransactionResponse();
+    clientTransactionResponse.setReferenceNumber(docId);
+
+    when(soaApiClient.registerDocument(
+            any(Document.class), eq((String) null), eq(userId), eq(userType)))
+        .thenReturn(Mono.just(clientTransactionResponse));
+
+    final Mono<String> resultMono =
+        evidenceService.registerDocument(
+            documentType, fileExtension, documentDescription, null, userId, userType);
+
+    StepVerifier.create(resultMono).expectNext(docId).verifyComplete();
+
+    verify(soaApiClient)
+        .registerDocument(
+            documentArgumentCaptor.capture(), eq((String) null), eq(userId), eq(userType));
+
+    assertEquals(documentType, documentArgumentCaptor.getValue().getDocumentType());
+    assertEquals(fileExtension, documentArgumentCaptor.getValue().getFileExtension());
+    assertEquals(documentDescription, documentArgumentCaptor.getValue().getText());
+  }
+
+  @Test
+  void registerDocument_withCaseReferenceNumber_callsApiClient() {
+    final String docId = "123";
+    final String caseReferenceNumber = "caseRef123";
 
     ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.forClass(Document.class);
 
