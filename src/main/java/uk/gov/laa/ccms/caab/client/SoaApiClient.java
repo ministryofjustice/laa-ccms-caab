@@ -374,18 +374,13 @@ public class SoaApiClient {
    * Post basic document details to register the document in EBS.
    *
    * @param document The document details to register.
-   * @param caseReferenceNumber The reference number of the case this document relates to, or {@code
-   *     null} if the document is not related to an existing case.
    * @param loginId The login identifier for the user.
    * @param userType Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ClientTransactionResponse with transaction id and reference number.
    */
   public Mono<ClientTransactionResponse> registerDocument(
-      final Document document,
-      final String caseReferenceNumber,
-      final String loginId,
-      final String userType) {
-    return uploadDocument(document, null, caseReferenceNumber, loginId, userType);
+      final Document document, final String loginId, final String userType) {
+    return uploadDocument(document, null, null, loginId, userType);
   }
 
   /**
