@@ -47,6 +47,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -116,6 +117,7 @@ class CaseControllerTest {
   @Mock private EvidenceService evidenceService;
   @Mock private AvScanService avScanService;
   @Mock private EvidenceMapper evidenceMapper;
+  @Mock private MessageSource messageSource;
 
   @InjectMocks private CaseController caseController;
 
@@ -154,6 +156,9 @@ class CaseControllerTest {
     lenient()
         .when(evidenceService.getEvidenceDocumentsForCase(anyString(), any()))
         .thenReturn(Mono.just(new EvidenceDocumentDetails().content(Collections.emptyList())));
+    lenient()
+        .when(messageSource.getMessage(anyString(), any(), any()))
+        .thenReturn("Outcomes Evidence");
   }
 
   @Nested
@@ -1107,7 +1112,7 @@ class CaseControllerTest {
       final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
       when(evidenceMapper.toEvidenceDocumentDetail(formData)).thenReturn(evidenceDocumentDetail);
       when(evidenceService.registerDocument(
-              anyString(), anyString(), any(), anyString(), anyString(), any()))
+              anyString(), anyString(), any(), anyString(), anyString(), anyString(), any()))
           .thenReturn(Mono.just("registeredDocId"));
       when(evidenceService.addDocument(eq(evidenceDocumentDetail), anyString()))
           .thenReturn(Mono.just("saved"));
@@ -1129,7 +1134,8 @@ class CaseControllerTest {
               any(),
               eq("document.pdf"),
               any(java.io.InputStream.class));
-      verify(evidenceService).registerDocument(eq("DOC1"), eq("pdf"), any(), any(), any(), any());
+      verify(evidenceService)
+          .registerDocument(eq("DOC1"), eq("pdf"), any(), any(), any(), any(), any());
       verify(evidenceService).addDocument(eq(evidenceDocumentDetail), anyString());
     }
 
@@ -1244,7 +1250,7 @@ class CaseControllerTest {
       final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
       when(evidenceMapper.toEvidenceDocumentDetail(formData)).thenReturn(evidenceDocumentDetail);
       when(evidenceService.registerDocument(
-              anyString(), anyString(), any(), anyString(), anyString(), any()))
+              anyString(), anyString(), any(), anyString(), anyString(), anyString(), any()))
           .thenReturn(Mono.just("registeredDocId"));
       when(evidenceService.addDocument(eq(evidenceDocumentDetail), anyString()))
           .thenReturn(Mono.just("saved"));
@@ -1259,7 +1265,7 @@ class CaseControllerTest {
           .hasRedirectedUrl("/case/outcome-and-awards");
 
       verify(evidenceService)
-          .registerDocument(eq(docTypeCode), eq(fileExtension), any(), any(), any(), any());
+          .registerDocument(eq(docTypeCode), eq(fileExtension), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -1270,7 +1276,7 @@ class CaseControllerTest {
 
       assertThat(
               mockMvc.perform(
-                  get("/case/outcome-and-awards/document/123/remove")
+                  post("/case/outcome-and-awards/document/123/remove")
                       .sessionAttr(USER_DETAILS, user)
                       .sessionAttr(CASE, ebsCase)))
           .hasStatus3xxRedirection()
@@ -1293,7 +1299,7 @@ class CaseControllerTest {
 
       assertThat(
               mockMvc.perform(
-                  get("/case/outcome-and-awards/document/999/remove")
+                  post("/case/outcome-and-awards/document/999/remove")
                       .sessionAttr(USER_DETAILS, user)
                       .sessionAttr(CASE, ebsCase)))
           .failure()
@@ -1405,7 +1411,7 @@ class CaseControllerTest {
           .hasMessageContaining("File failed AV scan");
 
       verify(evidenceService, org.mockito.Mockito.never())
-          .registerDocument(any(), any(), any(), any(), any(), any());
+          .registerDocument(any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -1425,7 +1431,7 @@ class CaseControllerTest {
           getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null);
 
       when(evidenceService.registerDocument(
-              anyString(), anyString(), any(), anyString(), anyString(), any()))
+              anyString(), anyString(), any(), anyString(), anyString(), anyString(), any()))
           .thenReturn(Mono.error(new CaabApplicationException("Registration failed")));
 
       assertThat(
@@ -1462,7 +1468,7 @@ class CaseControllerTest {
       final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
       when(evidenceMapper.toEvidenceDocumentDetail(formData)).thenReturn(evidenceDocumentDetail);
       when(evidenceService.registerDocument(
-              anyString(), anyString(), any(), anyString(), anyString(), any()))
+              anyString(), anyString(), any(), anyString(), anyString(), anyString(), any()))
           .thenReturn(Mono.just("registeredDocId"));
       when(evidenceService.addDocument(eq(evidenceDocumentDetail), anyString()))
           .thenReturn(Mono.error(new CaabApplicationException("Failed to add document")));
@@ -1509,7 +1515,7 @@ class CaseControllerTest {
           .hasRedirectedUrl("/case/outcome-and-awards");
 
       verify(evidenceService, org.mockito.Mockito.never())
-          .registerDocument(any(), any(), any(), any(), any(), any());
+          .registerDocument(any(), any(), any(), any(), any(), any(), any());
       verify(evidenceService).addDocument(eq(evidenceDocumentDetail), anyString());
     }
 
@@ -1579,7 +1585,7 @@ class CaseControllerTest {
       final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
       when(evidenceMapper.toEvidenceDocumentDetail(formData)).thenReturn(evidenceDocumentDetail);
       when(evidenceService.registerDocument(
-              anyString(), anyString(), any(), anyString(), anyString(), any()))
+              anyString(), anyString(), any(), anyString(), anyString(), anyString(), any()))
           .thenReturn(Mono.just("registeredDocId"));
       when(evidenceService.addDocument(eq(evidenceDocumentDetail), anyString()))
           .thenReturn(Mono.just("saved"));
@@ -1593,7 +1599,8 @@ class CaseControllerTest {
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/case/outcome-and-awards");
 
-      verify(evidenceService).registerDocument(eq("DOC2"), eq("docx"), any(), any(), any(), any());
+      verify(evidenceService)
+          .registerDocument(eq("DOC2"), eq("docx"), any(), any(), any(), any(), any());
     }
 
     @Test

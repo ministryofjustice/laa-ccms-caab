@@ -490,6 +490,7 @@ public class CaseController {
                   outcomeAndAwardsDocumentUploadForm.getFileExtension(),
                   outcomeAndAwardsDocumentUploadForm.getDocumentDescription(),
                   ELECTRONIC.getCode(),
+                  ebsCase.getCaseReferenceNumber(),
                   user.getLoginId(),
                   user.getUserType())
               .blockOptional()
@@ -518,7 +519,7 @@ public class CaseController {
    * @param user The current user details.
    * @return A redirect to the outcome and awards screen.
    */
-  @GetMapping("/case/outcome-and-awards/document/{document-id}/remove")
+  @PostMapping("/case/outcome-and-awards/document/{document-id}/remove")
   public String removeOutcomeAndAwardsDocument(
       @PathVariable("document-id") final Integer documentId,
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,

@@ -151,11 +151,9 @@
             <td class="govuk-table__cell" th:text="${document.auditTrail?.created != null ? #dates.format(document.auditTrail.created, 'dd/MM/yyyy') : ''}"></td>
             <td class="govuk-table__cell">
               <th:block th:if="${outcomeDocumentActionAllowed}">
-                <a class="govuk-link govuk-link--no-visited-state"
-                   th:href="@{/case/outcome-and-awards/document/{id}/remove(id=${document.id})}"
-                   th:text="#{site.remove}"
-                   th:id="|documentRemoveLink-${stat.index}|"
-                ></a>
+                <form th:action="@{/case/outcome-and-awards/document/{id}/remove(id=${document.id})}" method="post" class="govuk-form">
+                  <button type="submit" class="govuk-body govuk-!-margin-bottom-0 ccms-button-as-link" th:text="#{site.remove}" th:id="|documentRemoveLink-${stat.index}|"></button>
+                </form>
               </th:block>
             </td>
           </tr>
