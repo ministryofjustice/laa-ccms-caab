@@ -23,8 +23,8 @@
             <input class="govuk-checkboxes__input"
                    id="outcomesEvidence"
                    name="evidenceTypes"
-                   value="Outcomes Evidence"
-                   th:checked="${outcomeAndAwardsDocumentUploadForm.evidenceTypes != null and outcomeAndAwardsDocumentUploadForm.evidenceTypes.contains('Outcomes Evidence')}"
+                   th:value="#{case.outcomeAndAwards.documents.outcomesEvidence}"
+                   th:checked="${outcomeAndAwardsDocumentUploadForm.evidenceTypes != null and outcomeAndAwardsDocumentUploadForm.evidenceTypes.contains(#{case.outcomeAndAwards.documents.outcomesEvidence})}"
                    type="checkbox"/>
             <label class="govuk-label govuk-checkboxes__label"
                    for="outcomesEvidence"

@@ -40,6 +40,8 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
@@ -116,7 +118,10 @@ public class CaseController {
   private final EvidenceService evidenceService;
   private final AvScanService avScanService;
   private final EvidenceMapper evidenceMapper;
+  private final MessageSource messageSource;
   private static final String SEARCH_URL = "SEARCH_URL";
+  private static final String OUTCOMES_EVIDENCE_MESSAGE_KEY =
+      "case.outcomeAndAwards.documents.outcomesEvidence";
   private static final String PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_SESSION_KEY_PREFIX =
       PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA + ":";
 
@@ -472,7 +477,11 @@ public class CaseController {
       return "application/outcome-and-awards-document-upload";
     }
 
-    if (outcomeAndAwardsDocumentUploadForm.getEvidenceTypes().contains("Outcomes Evidence")) {
+    if (outcomeAndAwardsDocumentUploadForm
+        .getEvidenceTypes()
+        .contains(
+            messageSource.getMessage(
+                OUTCOMES_EVIDENCE_MESSAGE_KEY, null, LocaleContextHolder.getLocale()))) {
       //       Register the document in EBS to get an EBS document id before saving to the TDS.
       final String registeredDocumentId =
           evidenceService
