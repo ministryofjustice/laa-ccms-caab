@@ -10,7 +10,6 @@ import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -47,8 +46,6 @@ import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationResponseVal
 import uk.gov.laa.ccms.caab.bean.validators.notification.NotificationSearchValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.constants.SendBy;
-import uk.gov.laa.ccms.caab.exception.AvScanException;
-import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.NotificationAttachmentMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -56,6 +53,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
+import uk.gov.laa.ccms.caab.service.AvScanResultHandler;
 import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.NotificationService;
@@ -90,6 +88,7 @@ public class ActionsAndNotificationsController {
   private final NotificationAttachmentUploadValidator attachmentUploadValidator;
   private final NotificationResponseValidator notificationResponseValidator;
   private final AvScanService avScanService;
+  private final AvScanResultHandler avScanResultHandler;
 
   public static final String STATUS_READY_TO_SUBMIT = "Ready to Submit";
 
@@ -690,16 +689,10 @@ public class ActionsAndNotificationsController {
 
     // Carry out AV scan for electronic documents
     if (attachmentUploadFormData.getSendBy().equals(SendBy.ELECTRONIC)) {
-      try {
-        avScanService.performAvScan(
-            null,
-            null,
-            null,
-            null,
-            attachmentUploadFormData.getSanitisedFileName(),
-            attachmentUploadFormData.getFile().getInputStream());
-      } catch (AvVirusFoundException | AvScanException | IOException e) {
-        bindingResult.rejectValue("file", "scan.failure", e.getMessage());
+      if (avScanResultHandler.isScanRejected(
+          attachmentUploadFormData.getSanitisedFileName(),
+          attachmentUploadFormData.getFile(),
+          bindingResult)) {
 
         populateNotificationAttachmentModel(model);
 

@@ -28,8 +28,6 @@ public class AvScanResultHandler {
    * form with errors).
    *
    * <p>On failure, logs the exception and rejects the "file" field with a fixed, generic message.
-   * The exception message is not exposed to the user to avoid leaking internal details (e.g.,
-   * scanner implementation details, file paths, or stack traces).
    *
    * @param formData the evidence upload form data containing case and file details
    * @param bindingResult the binding result to hold validation errors
