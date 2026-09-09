@@ -733,16 +733,20 @@ public class EbsApiClient extends BaseApiClient {
    * Retrieves declaration details based on the provided type and bill type. Constructs a query with
    * the given parameters and sends a GET request to the API.
    *
-   * @param type the type of declaration to retrieve
-   * @param billType the bill type to filter the declarations, may be null
+   * <p>Neither filter is sent when it is blank: a blank narrows nothing, so it is left off rather
+   * than asked for as an empty value.
+   *
+   * @param type the type of declaration to retrieve, may be null or blank
+   * @param billType the bill type to filter the declarations, may be null or blank
    * @return a Mono emitting the {@link DeclarationLookupDetail} or handling errors
    */
   public Mono<DeclarationLookupDetail> getDeclarations(final String type, final String billType) {
     final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
-    Optional.ofNullable(type).ifPresent(param -> queryParams.add("type", param));
+    Optional.ofNullable(type)
+        .filter(param -> !param.isBlank())
+        .ifPresent(param -> queryParams.add("type", param));
     // The API binds this as "bill-type"; sent under any other name it is silently ignored and
-    // every bill type's declarations come back. A blank is no narrower than sending nothing, so
-    // it is left off rather than asked for as "bill-type=".
+    // every bill type's declarations come back.
     Optional.ofNullable(billType)
         .filter(param -> !param.isBlank())
         .ifPresent(param -> queryParams.add("bill-type", param));
