@@ -473,7 +473,9 @@ public class CaseController {
           outcomeAndAwardsDocumentUploadForm.getSanitisedFileName(),
           inputStream);
     } catch (AvVirusFoundException | AvScanException | IOException e) {
-      bindingResult.rejectValue("file", "scan.failure", e.getMessage());
+      log.error("Document AV scan or file processing failed", e);
+      bindingResult.rejectValue(
+          "file", "scan.failure", "Unable to scan the file. Please try again.");
       populateOutcomeAndAwardsDocumentUploadModel(model);
       return "application/outcome-and-awards-document-upload";
     }
