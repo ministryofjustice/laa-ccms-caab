@@ -52,7 +52,6 @@
                 th:errorclass="govuk-select--error"
                 th:field="*{awardTypeCode}"
                 id="awardTypeCode"
-                required
                 aria-required="true"
                 th:attr="aria-describedby=${#fields.hasErrors('awardTypeCode')}
               ? 'awardTypeCode-error'

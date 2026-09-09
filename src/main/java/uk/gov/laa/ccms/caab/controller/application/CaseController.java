@@ -56,6 +56,7 @@ import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.PreCertificateAndLegalHelpCostsFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.CaseProceedingDisplayStatus;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
+import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
 import uk.gov.laa.ccms.caab.bean.validators.application.PreCertificateAndLegalHelpCostsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
@@ -102,6 +103,7 @@ public class CaseController {
   private final CaseOutcomeService caseOutcomeService;
   private final ProceedingOutcomeValidator proceedingOutcomeValidator;
   private final PreCertificateAndLegalHelpCostsValidator preCertificateAndLegalHelpCostsValidator;
+  private final AwardTypeValidator awardTypeValidator;
   private static final String SEARCH_URL = "SEARCH_URL";
   private static final String PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_SESSION_KEY_PREFIX =
       PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA + ":";
@@ -398,14 +400,22 @@ public class CaseController {
    */
   @PostMapping("/case/outcome-and-awards/award-type")
   public String selectAwardType(
-      @ModelAttribute(AWARD_TYPE_FORM) final AwardTypeForm awardTypeForm) {
+      @ModelAttribute(AWARD_TYPE_FORM) final AwardTypeForm awardTypeForm,
+      final BindingResult bindingResult,
+      final Model model) {
+
+    awardTypeValidator.validate(awardTypeForm, bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      final AwardTypeLookupDetail awardTypes = lookupService.getAwardTypes().block();
+
+      model.addAttribute("awardTypes", awardTypes.getContent());
+
+      return "application/select-award-type";
+    }
 
     final AwardTypeLookupDetail awardTypeLookup = lookupService.getAwardTypes().block();
 
-    /*
-     * The browser submits awardTypeCode. Find the complete lookup entry
-     * corresponding to that code.
-     */
     final AwardTypeLookupValueDetail selectedAwardType =
         awardTypeLookup.getContent().stream()
             .filter(
@@ -417,26 +427,14 @@ public class CaseController {
                     new IllegalArgumentException(
                         "Unknown award type code: " + awardTypeForm.getAwardTypeCode()));
 
-    /*
-     * Store the trusted values returned by the lookup in the session-backed
-     * form object.
-     */
     awardTypeForm.setDescription(selectedAwardType.getDescription());
     awardTypeForm.setAwardType(selectedAwardType.getAwardType());
 
-    /*
-     * Route using the broader AWARD_TYPE lookup value rather than the
-     * individual lookup code.
-     */
     return switch (selectedAwardType.getAwardType()) {
       case "COST" -> "redirect:/case/outcome-and-awards/cost-award";
-
       case "ASSET" -> "redirect:/case/outcome-and-awards/asset";
-
       case "LAND" -> "redirect:/case/outcome-and-awards/land-property";
-
       case "DAMAGE" -> "redirect:/case/outcome-and-awards/financial-settlement";
-
       default ->
           throw new IllegalArgumentException(
               "Unsupported award type: " + selectedAwardType.getAwardType());
