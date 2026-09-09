@@ -158,7 +158,7 @@ class CaseControllerTest {
         .thenReturn(Mono.just(new EvidenceDocumentDetails().content(Collections.emptyList())));
     lenient()
         .when(messageSource.getMessage(anyString(), any(), any()))
-        .thenReturn("Outcomes Evidence");
+        .thenReturn("Test Translation");
     lenient()
         .when(lookupService.getDocumentTypeDescription(anyString()))
         .thenReturn(Mono.just("Document description"));
@@ -1107,7 +1107,7 @@ class CaseControllerTest {
       formData.setFileExtension("pdf");
       formData.setDocumentType("DOC1");
       formData.setDocumentDescription("A description");
-      formData.setEvidenceTypes(List.of("Outcomes Evidence"));
+      formData.setEvidenceTypes(List.of("OUTCOMES_EVIDENCE"));
 
       final ApplicationDetail ebsCase =
           getEbsCase(
@@ -1275,7 +1275,7 @@ class CaseControllerTest {
       formData.setFileExtension(fileExtension);
       formData.setDocumentType(docTypeCode);
       formData.setDocumentDescription(description);
-      formData.setEvidenceTypes(List.of("Outcomes Evidence"));
+      formData.setEvidenceTypes(List.of("OUTCOMES_EVIDENCE"));
 
       final ApplicationDetail ebsCase =
           getEbsCase(
@@ -1498,7 +1498,7 @@ class CaseControllerTest {
       formData.setFileExtension("pdf");
       formData.setDocumentType("DOC1");
       formData.setDocumentDescription("A description");
-      formData.setEvidenceTypes(List.of("Outcomes Evidence"));
+      formData.setEvidenceTypes(List.of("OUTCOMES_EVIDENCE"));
 
       final ApplicationDetail ebsCase =
           getEbsCase(
@@ -1543,7 +1543,7 @@ class CaseControllerTest {
       formData.setFileExtension("pdf");
       formData.setDocumentType("DOC1");
       formData.setDocumentDescription("A description");
-      formData.setEvidenceTypes(List.of("Outcomes Evidence"));
+      formData.setEvidenceTypes(List.of("OUTCOMES_EVIDENCE"));
 
       final ApplicationDetail ebsCase =
           getEbsCase(
@@ -1668,7 +1668,7 @@ class CaseControllerTest {
       formData.setFileExtension("docx");
       formData.setDocumentType("DOC2");
       formData.setDocumentDescription("Multi-word description with numbers 123");
-      formData.setEvidenceTypes(List.of("Outcomes Evidence"));
+      formData.setEvidenceTypes(List.of("OUTCOMES_EVIDENCE"));
 
       final ApplicationDetail ebsCase =
           getEbsCase(

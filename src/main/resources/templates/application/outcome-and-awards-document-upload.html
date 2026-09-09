@@ -21,17 +21,16 @@
               th:replace="~{partials/document-upload :: uploadFormFields}"></div>
           <div class="govuk-form-group">
             <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
-              <div class="govuk-checkboxes__item"
-                   th:with="outcomesEvidenceLabel=#{case.outcomeAndAwards.documents.outcomesEvidence}">
+              <div class="govuk-checkboxes__item">
                 <input class="govuk-checkboxes__input"
                        id="outcomesEvidence"
                        name="evidenceTypes"
-                       th:value="${outcomesEvidenceLabel}"
-                       th:checked="${outcomeAndAwardsDocumentUploadForm.evidenceTypes != null and outcomeAndAwardsDocumentUploadForm.evidenceTypes.contains(outcomesEvidenceLabel)}"
+                       value="OUTCOMES_EVIDENCE"
+                       th:checked="${outcomeAndAwardsDocumentUploadForm.evidenceTypes != null and outcomeAndAwardsDocumentUploadForm.evidenceTypes.contains('OUTCOMES_EVIDENCE')}"
                        type="checkbox"/>
                 <label class="govuk-label govuk-checkboxes__label"
                        for="outcomesEvidence"
-                       th:text="${outcomesEvidenceLabel}"></label>
+                       th:text="#{case.outcomeAndAwards.documents.outcomesEvidence}"></label>
               </div>
             </div>
           </div>
