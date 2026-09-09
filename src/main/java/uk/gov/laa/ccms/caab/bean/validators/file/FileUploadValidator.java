@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.bean.validators.file;
 
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.STANDARD_CHARACTER_SET;
 import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 import static uk.gov.laa.ccms.caab.util.FileUtil.getFileExtension;
 import static uk.gov.laa.ccms.caab.util.FileUtil.sanitiseFileName;
@@ -10,6 +11,7 @@ import java.util.List;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.tika.Tika;
+import org.springframework.util.StringUtils;
 import org.springframework.util.unit.DataSize;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.file.FileUploadFormData;
@@ -145,6 +147,15 @@ public abstract class FileUploadValidator extends AbstractValidator {
         DOCUMENT_DESCRIPTION_MAX_LENGTH,
         "description",
         errors);
+
+    if (StringUtils.hasText(fileUploadFormData.getDocumentDescription())) {
+      validateFieldFormat(
+          "documentDescription",
+          fileUploadFormData.getDocumentDescription(),
+          STANDARD_CHARACTER_SET,
+          "description",
+          errors);
+    }
   }
 
   /**

@@ -104,6 +104,8 @@ public class IndividualOpponentValidator extends AbstractOpponentValidator {
           "Certificate number",
           errors);
     }
+
+    validateOtherInformation(opponentFormData.getOtherInformation(), errors);
   }
 
   /**
