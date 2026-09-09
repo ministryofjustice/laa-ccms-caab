@@ -8,6 +8,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_PROVIDER_REQUEST_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.GENERAL_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROVIDER_REQUEST_FLOW_FORM_DATA;
@@ -15,6 +16,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 import static uk.gov.laa.ccms.caab.util.FileUtil.getFileExtension;
+import static uk.gov.laa.ccms.caab.util.SubmissionUtil.isAlreadySubmitted;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -25,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -488,11 +491,18 @@ public class ProviderRequestsController {
             .block();
       }
       session.setAttribute(SUBMISSION_RESULT, "confirmed");
-      String redirectUrl =
-          "/application/submit-%s-provider-request/confirmed"
-              .formatted(flowType.isCaseScoped() ? "case" : "general");
+      final String redirectUrl;
+      if (flowType.isCaseScoped()) {
+        redirectUrl = "/application/submit-case-provider-request/confirmed";
+      } else {
+        final String confirmationId = UUID.randomUUID().toString();
+        session.setAttribute(GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID, confirmationId);
+        redirectUrl =
+            "/application/submit-general-provider-request/confirmed?submissionId=" + confirmationId;
+      }
       if (isValidCaseReference(caseRef)) {
-        redirectUrl += "?caseReferenceNumber=" + caseRef;
+        final String separator = redirectUrl.contains("?") ? "&" : "?";
+        return "redirect:" + redirectUrl + separator + "caseReferenceNumber=" + caseRef;
       }
       return "redirect:" + redirectUrl;
     }
@@ -717,19 +727,36 @@ public class ProviderRequestsController {
 
   /** Handles the POST request for the general submission page. */
   @PostMapping("/application/submit-general-provider-request/confirmed")
-  public String generalProviderRequestSubmitted(final HttpSession session, final Model model) {
-    return providerRequestSubmitted(session, model, ProviderRequestFlowType.GENERAL);
+  public String generalProviderRequestSubmitted(
+      @RequestParam(required = false) final String submissionId,
+      final HttpSession session,
+      final Model model) {
+    return providerRequestSubmitted(session, model, ProviderRequestFlowType.GENERAL, submissionId);
   }
 
   /** Handles the POST request for the case submission page. */
   @PostMapping("/application/submit-case-provider-request/confirmed")
   public String caseProviderRequestSubmitted(final HttpSession session, final Model model) {
-    return providerRequestSubmitted(session, model, ProviderRequestFlowType.CASE);
+    return providerRequestSubmitted(session, model, ProviderRequestFlowType.CASE, null);
   }
 
   private String providerRequestSubmitted(
-      final HttpSession session, final Model model, final ProviderRequestFlowType flowType) {
+      final HttpSession session,
+      final Model model,
+      final ProviderRequestFlowType flowType,
+      final String submissionId) {
+    if (!isAlreadySubmitted(session)) {
+      return "redirect:/submissions/alreadySubmitted?returnUrl=" + flowTypeReturnUrl(flowType);
+    }
+    if (flowType == ProviderRequestFlowType.GENERAL
+        && submissionId != null
+        && !hasValidGeneralConfirmationId(session, submissionId)) {
+      return "redirect:/submissions/alreadySubmitted?returnUrl=" + flowTypeReturnUrl(flowType);
+    }
     session.removeAttribute(SUBMISSION_RESULT);
+    if (flowType == ProviderRequestFlowType.GENERAL) {
+      session.removeAttribute(GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID);
+    }
     model.asMap().remove(flowType.getFlowSessionAttribute());
     model.asMap().remove(flowType.getEvidenceUploadSessionAttribute());
     session.removeAttribute(flowType.getFlowSessionAttribute());
@@ -971,6 +998,13 @@ public class ProviderRequestsController {
 
   private String flowTypeReturnUrl(final ProviderRequestFlowType flowType) {
     return flowType.isCaseScoped() ? "/case/overview" : "/home";
+  }
+
+  private boolean hasValidGeneralConfirmationId(
+      final HttpSession session, final String submissionId) {
+    final Object activeConfirmationId =
+        session.getAttribute(GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID);
+    return submissionId != null && submissionId.equals(activeConfirmationId);
   }
 
   private ProviderRequestFlowType getFlowType(String requestUri) {

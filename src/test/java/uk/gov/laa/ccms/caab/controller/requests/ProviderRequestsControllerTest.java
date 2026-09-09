@@ -23,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROVIDER_REQUEST_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -1162,12 +1163,19 @@ class ProviderRequestsControllerTest {
             any(ProviderRequestDetailsFormData.class),
             eq(caseRef),
             any(UserDetail.class));
-    final String expectedViewName =
-        providerRequestFlowType.isCaseScoped()
-            ? "redirect:/application/submit-case-provider-request/confirmed?caseReferenceNumber="
-                + caseRef
-            : "redirect:/application/submit-general-provider-request/confirmed";
-    assertEquals(expectedViewName, viewName);
+    if (providerRequestFlowType.isCaseScoped()) {
+      assertEquals(
+          "redirect:/application/submit-case-provider-request/confirmed?caseReferenceNumber="
+              + caseRef,
+          viewName);
+    } else {
+      final Object confirmationId = session.getAttribute(GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID);
+      assertNotNull(confirmationId);
+      assertEquals(
+          "redirect:/application/submit-general-provider-request/confirmed?submissionId="
+              + confirmationId,
+          viewName);
+    }
   }
 
   @ParameterizedTest
@@ -1236,35 +1244,60 @@ class ProviderRequestsControllerTest {
     verify(providerRequestDocumentUploadValidator).rejectFileSize(any(Errors.class));
   }
 
-  @ParameterizedTest
-  @CsvSource({
-    "GENERAL, -1, /home",
-    "CASE, 123456789012, /case/overview",
-  })
+  @Test
   @DisplayName(
-      "POST general/case provider request confirmed clears flow-specific session attributes,"
-          + " leaves the other flow intact, and redirects to /home vs /case/overview")
-  void testProviderRequestSubmitted(String requestType, String caseRef, String expectedRedirect)
-      throws Exception {
-    final ProviderRequestFlowType flowType = ProviderRequestFlowType.valueOf(requestType);
-    final ProviderRequestFlowType otherFlow =
-        flowType == ProviderRequestFlowType.GENERAL
-            ? ProviderRequestFlowType.CASE
-            : ProviderRequestFlowType.GENERAL;
-
+      "POST general provider request confirmed clears general-flow session state and redirects home")
+  void testGeneralProviderRequestSubmitted() throws Exception {
     final ProviderRequestFlowFormData generalFlow = createFlowWithCaseRef("-1");
-    final ProviderRequestFlowFormData caseFlow = createFlowWithCaseRef(caseRef);
+    final ProviderRequestFlowFormData caseFlow = createFlowWithCaseRef("123456789012");
     final EvidenceUploadFormData generalEvidenceUpload = new EvidenceUploadFormData();
     final EvidenceUploadFormData caseEvidenceUpload = new EvidenceUploadFormData();
-
-    final String confirmUrl =
-        "/application/submit-%s-provider-request/confirmed"
-            .formatted(flowType.isCaseScoped() ? "case" : "general");
 
     final MvcResult result =
         mockMvc
             .perform(
-                post(confirmUrl)
+                post("/application/submit-general-provider-request/confirmed")
+                    .param("submissionId", "request-123")
+                    .sessionAttr(SUBMISSION_RESULT, "confirmed")
+                    .sessionAttr(GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID, "request-123")
+                    .sessionAttr(
+                        ProviderRequestFlowType.GENERAL.getFlowSessionAttribute(), generalFlow)
+                    .sessionAttr(
+                        ProviderRequestFlowType.GENERAL.getEvidenceUploadSessionAttribute(),
+                        generalEvidenceUpload)
+                    .sessionAttr(ProviderRequestFlowType.CASE.getFlowSessionAttribute(), caseFlow)
+                    .sessionAttr(
+                        ProviderRequestFlowType.CASE.getEvidenceUploadSessionAttribute(),
+                        caseEvidenceUpload))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/home"))
+            .andReturn();
+
+    final HttpSession session = result.getRequest().getSession(false);
+
+    assertNull(session.getAttribute(SUBMISSION_RESULT));
+    assertNull(session.getAttribute(GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID));
+    assertNull(session.getAttribute(ProviderRequestFlowType.GENERAL.getFlowSessionAttribute()));
+    assertNull(
+        session.getAttribute(ProviderRequestFlowType.GENERAL.getEvidenceUploadSessionAttribute()));
+    assertNotNull(session.getAttribute(ProviderRequestFlowType.CASE.getFlowSessionAttribute()));
+    assertNotNull(
+        session.getAttribute(ProviderRequestFlowType.CASE.getEvidenceUploadSessionAttribute()));
+  }
+
+  @Test
+  @DisplayName(
+      "POST case provider request confirmed clears case-flow session state and redirects case overview")
+  void testCaseProviderRequestSubmitted() throws Exception {
+    final ProviderRequestFlowFormData generalFlow = createFlowWithCaseRef("-1");
+    final ProviderRequestFlowFormData caseFlow = createFlowWithCaseRef("123456789012");
+    final EvidenceUploadFormData generalEvidenceUpload = new EvidenceUploadFormData();
+    final EvidenceUploadFormData caseEvidenceUpload = new EvidenceUploadFormData();
+
+    final MvcResult result =
+        mockMvc
+            .perform(
+                post("/application/submit-case-provider-request/confirmed")
                     .sessionAttr(SUBMISSION_RESULT, "confirmed")
                     .sessionAttr(
                         ProviderRequestFlowType.GENERAL.getFlowSessionAttribute(), generalFlow)
@@ -1276,19 +1309,90 @@ class ProviderRequestsControllerTest {
                         ProviderRequestFlowType.CASE.getEvidenceUploadSessionAttribute(),
                         caseEvidenceUpload))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl(expectedRedirect))
+            .andExpect(redirectedUrl("/case/overview"))
             .andReturn();
 
     final HttpSession session = result.getRequest().getSession(false);
 
-    // SUBMISSION_RESULT and the selected flow's session attributes must be cleared
     assertNull(session.getAttribute(SUBMISSION_RESULT));
-    assertNull(session.getAttribute(flowType.getFlowSessionAttribute()));
-    assertNull(session.getAttribute(flowType.getEvidenceUploadSessionAttribute()));
+    assertNull(session.getAttribute(ProviderRequestFlowType.CASE.getFlowSessionAttribute()));
+    assertNull(
+        session.getAttribute(ProviderRequestFlowType.CASE.getEvidenceUploadSessionAttribute()));
+    assertNotNull(session.getAttribute(ProviderRequestFlowType.GENERAL.getFlowSessionAttribute()));
+    assertNotNull(
+        session.getAttribute(ProviderRequestFlowType.GENERAL.getEvidenceUploadSessionAttribute()));
+  }
 
-    // The other flow's session attributes must remain intact
-    assertNotNull(session.getAttribute(otherFlow.getFlowSessionAttribute()));
-    assertNotNull(session.getAttribute(otherFlow.getEvidenceUploadSessionAttribute()));
+  @Test
+  @DisplayName(
+      "POST general provider request confirmed redirects to already-submitted when submission id is stale")
+  void testGeneralProviderRequestSubmittedWithStaleSubmissionIdRedirects() throws Exception {
+    final ProviderRequestFlowFormData generalFlow = createFlowWithCaseRef("-1");
+    final ProviderRequestFlowFormData caseFlow = createFlowWithCaseRef("123456789012");
+    final EvidenceUploadFormData generalEvidenceUpload = new EvidenceUploadFormData();
+    final EvidenceUploadFormData caseEvidenceUpload = new EvidenceUploadFormData();
+
+    final MvcResult result =
+        mockMvc
+            .perform(
+                post("/application/submit-general-provider-request/confirmed")
+                    .param("submissionId", "request-123")
+                    .sessionAttr(SUBMISSION_RESULT, "confirmed")
+                    .sessionAttr(GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID, "request-999")
+                    .sessionAttr(
+                        ProviderRequestFlowType.GENERAL.getFlowSessionAttribute(), generalFlow)
+                    .sessionAttr(
+                        ProviderRequestFlowType.GENERAL.getEvidenceUploadSessionAttribute(),
+                        generalEvidenceUpload)
+                    .sessionAttr(ProviderRequestFlowType.CASE.getFlowSessionAttribute(), caseFlow)
+                    .sessionAttr(
+                        ProviderRequestFlowType.CASE.getEvidenceUploadSessionAttribute(),
+                        caseEvidenceUpload))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/submissions/alreadySubmitted?returnUrl=/home"))
+            .andReturn();
+
+    final HttpSession session = result.getRequest().getSession(false);
+
+    assertEquals("confirmed", session.getAttribute(SUBMISSION_RESULT));
+    assertEquals("request-999", session.getAttribute(GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID));
+    assertNotNull(session.getAttribute(ProviderRequestFlowType.GENERAL.getFlowSessionAttribute()));
+    assertNotNull(
+        session.getAttribute(ProviderRequestFlowType.GENERAL.getEvidenceUploadSessionAttribute()));
+    assertNotNull(session.getAttribute(ProviderRequestFlowType.CASE.getFlowSessionAttribute()));
+    assertNotNull(
+        session.getAttribute(ProviderRequestFlowType.CASE.getEvidenceUploadSessionAttribute()));
+  }
+
+  @Test
+  @DisplayName(
+      "POST general provider request confirmed without submission id still completes when submission is active")
+  void testGeneralProviderRequestSubmittedWithoutSubmissionId() throws Exception {
+    final ProviderRequestFlowFormData generalFlow = createFlowWithCaseRef("-1");
+    final EvidenceUploadFormData generalEvidenceUpload = new EvidenceUploadFormData();
+
+    final MvcResult result =
+        mockMvc
+            .perform(
+                post("/application/submit-general-provider-request/confirmed")
+                    .sessionAttr(SUBMISSION_RESULT, "confirmed")
+                    .sessionAttr(GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID, "request-123")
+                    .sessionAttr(
+                        ProviderRequestFlowType.GENERAL.getFlowSessionAttribute(), generalFlow)
+                    .sessionAttr(
+                        ProviderRequestFlowType.GENERAL.getEvidenceUploadSessionAttribute(),
+                        generalEvidenceUpload))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/home"))
+            .andReturn();
+
+    final HttpSession session = result.getRequest().getSession(false);
+
+    assertNull(session.getAttribute(SUBMISSION_RESULT));
+    assertNull(session.getAttribute(GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID));
+    assertNull(session.getAttribute(ProviderRequestFlowType.GENERAL.getFlowSessionAttribute()));
+    assertNull(
+        session.getAttribute(ProviderRequestFlowType.GENERAL.getEvidenceUploadSessionAttribute()));
   }
 
   @Test
