@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.bean.validators.request;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
@@ -302,5 +303,44 @@ class ProviderRequestDetailsValidatorTest {
 
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("dynamicOptions[PCASEBALS3].fieldValue"));
+  }
+
+  @Test
+  @DisplayName("markup in additional information is rejected")
+  void validate_additionalInformationContainingMarkup_rejects() {
+    formData.setAdditionalInformation("<script>alert(1)</script>");
+
+    providerRequestDetailsValidator.validate(formData, errors);
+
+    assertNotNull(errors.getFieldError("additionalInformation"));
+    assertEquals("invalid.format", errors.getFieldError("additionalInformation").getCode());
+  }
+
+  @Test
+  @DisplayName("ordinary additional information still passes")
+  void validate_ordinaryAdditionalInformation_passes() {
+    formData.setAdditionalInformation("Please review the attached breakdown - total £1,250.00.");
+
+    providerRequestDetailsValidator.validate(formData, errors);
+
+    assertNull(errors.getFieldError("additionalInformation"));
+  }
+
+  @Test
+  @DisplayName("markup in a dynamic free-text field is rejected")
+  void validate_dynamicFreeTextContainingMarkup_rejects() {
+    final DynamicOptionFormData option = new DynamicOptionFormData();
+    option.setFieldType("FTS");
+    option.setFieldDescription("Reference");
+    option.setFieldValue("<script>alert(1)</script>");
+    final Map<String, DynamicOptionFormData> options = new HashMap<>();
+    options.put("REF", option);
+    formData.setDynamicOptions(options);
+
+    providerRequestDetailsValidator.validate(formData, errors);
+
+    assertNotNull(errors.getFieldError("dynamicOptions[REF].fieldValue"));
+    assertEquals(
+        "invalid.format", errors.getFieldError("dynamicOptions[REF].fieldValue").getCode());
   }
 }

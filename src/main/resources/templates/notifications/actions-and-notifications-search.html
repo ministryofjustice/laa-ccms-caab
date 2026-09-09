@@ -69,6 +69,8 @@
               th:text="#{notifications.search.caseInformation.heading}"/>
 
           <th:block th:if="${notificationSearchCriteria.originatesFromCase}">
+            <!-- utext is required because the message contains markup; the case reference is
+                 user-supplied so it must be escaped before interpolation. -->
             <div class="govuk-inset-text" id="specific-case-reference-inset-text"
               th:utext="#{notifications.search.specificCaseHintText(${#strings.escapeXml(notificationSearchCriteria.caseReference)})}"></div>
             <input type="hidden" th:field="*{caseReference}"/>
