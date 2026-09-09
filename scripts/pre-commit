@@ -7,12 +7,15 @@
 # fail loudly rather than skipping silently.
 
 java_major() {
-  [ -x "$1/bin/java" ] || return 1
-  "$1/bin/java" -version 2>&1 | head -1 | sed -n 's/.*version "\([0-9][0-9]*\).*/\1/p'
+  if [ -n "$1" ] && [ -x "$1/bin/java" ]; then
+    java_cmd="$1/bin/java"
+  else
+    java_cmd=$(command -v java 2>/dev/null) || return 1
+  fi
+  "$java_cmd" -version 2>&1 | head -1 | sed -n 's/.*version "\([0-9][0-9]*\).*/\1/p'
 }
 
 current_major=$(java_major "$JAVA_HOME" 2>/dev/null)
-
 if [ -z "$current_major" ] || [ "$current_major" -lt 17 ] 2>/dev/null; then
   if [ -x /usr/libexec/java_home ]; then
     resolved=$(/usr/libexec/java_home -v 17+ 2>/dev/null) || resolved=""
