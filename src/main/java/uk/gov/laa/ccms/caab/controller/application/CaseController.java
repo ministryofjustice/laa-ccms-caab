@@ -29,7 +29,6 @@ import static uk.gov.laa.ccms.caab.util.view.ActionViewHelper.enhanceActionUrl;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,12 +46,15 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
+import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.PreCertificateAndLegalHelpCostsFormData;
@@ -67,8 +69,6 @@ import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.constants.PriorAuthorityGroup;
-import uk.gov.laa.ccms.caab.exception.AvScanException;
-import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.EvidenceMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -86,6 +86,7 @@ import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.AvScanResultHandler;
 import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
@@ -115,6 +116,7 @@ public class CaseController {
   private final ProviderRequestDocumentUploadValidator providerRequestDocumentUploadValidator;
   private final EvidenceService evidenceService;
   private final AvScanService avScanService;
+  private final AvScanResultHandler avScanResultHandler;
   private final EvidenceMapper evidenceMapper;
   private final MessageSource messageSource;
   private static final String SEARCH_URL = "SEARCH_URL";
@@ -462,18 +464,7 @@ public class CaseController {
       outcomeAndAwardsDocumentUploadForm.setEvidenceTypes(Collections.emptyList());
     }
 
-    try (var inputStream = outcomeAndAwardsDocumentUploadForm.getFile().getInputStream()) {
-      avScanService.performAvScan(
-          outcomeAndAwardsDocumentUploadForm.getCaseReferenceNumber(),
-          outcomeAndAwardsDocumentUploadForm.getProviderId(),
-          outcomeAndAwardsDocumentUploadForm.getDocumentSender(),
-          outcomeAndAwardsDocumentUploadForm.getCcmsModule(),
-          outcomeAndAwardsDocumentUploadForm.getSanitisedFileName(),
-          inputStream);
-    } catch (AvVirusFoundException | AvScanException | IOException e) {
-      log.error("Document AV scan or file processing failed", e);
-      bindingResult.rejectValue(
-          "file", "scan.failure", "Unable to scan the file. Please try again.");
+    if (avScanResultHandler.isScanRejected(outcomeAndAwardsDocumentUploadForm, bindingResult)) {
       populateOutcomeAndAwardsDocumentUploadModel(model);
       return "application/outcome-and-awards-document-upload";
     }
@@ -1369,5 +1360,29 @@ public class CaseController {
           "No recent submitted amendment found for case {}", ebsCase.getCaseReferenceNumber());
     }
     return null;
+  }
+
+  /**
+   * Handles MaxUploadSizeExceededException for outcome and awards document upload.
+   *
+   * @param model the model
+   * @return the outcome and awards document upload view
+   */
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public String handleOutcomeAndAwardsUploadFileTooLarge(final Model model) {
+    final EvidenceUploadFormData outcomeAndAwardsDocumentUploadForm = new EvidenceUploadFormData();
+
+    // Manually construct a BindingResult to hold the file size error.
+    final BindingResult bindingResult =
+        new BeanPropertyBindingResult(
+            outcomeAndAwardsDocumentUploadForm, "outcomeAndAwardsDocumentUploadForm");
+    providerRequestDocumentUploadValidator.rejectFileSize(bindingResult);
+
+    model.addAttribute("outcomeAndAwardsDocumentUploadForm", outcomeAndAwardsDocumentUploadForm);
+    model.addAttribute(
+        BindingResult.MODEL_KEY_PREFIX + "outcomeAndAwardsDocumentUploadForm", bindingResult);
+
+    populateOutcomeAndAwardsDocumentUploadModel(model);
+    return "application/outcome-and-awards-document-upload";
   }
 }

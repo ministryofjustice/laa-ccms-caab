@@ -3,9 +3,7 @@ package uk.gov.laa.ccms.caab.controller.application.section;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -27,7 +25,6 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_UPLOAD_FO
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collections;
@@ -55,11 +52,11 @@ import uk.gov.laa.ccms.caab.bean.evidence.EvidenceRequired;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.validators.evidence.EvidenceUploadValidator;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
-import uk.gov.laa.ccms.caab.exception.AvScanException;
 import uk.gov.laa.ccms.caab.mapper.EvidenceMapper;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
+import uk.gov.laa.ccms.caab.service.AvScanResultHandler;
 import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -75,6 +72,8 @@ class EvidenceSectionControllerTest {
   @Mock private EvidenceService evidenceService;
 
   @Mock private AvScanService avScanService;
+
+  @Mock private AvScanResultHandler avScanResultHandler;
 
   @Mock private LookupService lookupService;
 
@@ -207,15 +206,8 @@ class EvidenceSectionControllerTest {
       throws Exception {
     EvidenceUploadFormData formData = buildEvidenceUploadFormData();
 
-    doThrow(new AvScanException("Virus alert"))
-        .when(avScanService)
-        .performAvScan(
-            eq(formData.getCaseReferenceNumber()),
-            eq(formData.getProviderId()),
-            eq(formData.getDocumentSender()),
-            eq(APPLICATION),
-            eq(formData.getSanitisedFileName()),
-            any(InputStream.class));
+    when(avScanResultHandler.isScanRejected(any(EvidenceUploadFormData.class), any()))
+        .thenReturn(true);
 
     List<EvidenceRequired> evidenceRequired = List.of(new EvidenceRequired("code", "desc"));
 

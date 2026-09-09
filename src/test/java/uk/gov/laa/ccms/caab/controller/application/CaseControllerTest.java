@@ -93,6 +93,7 @@ import uk.gov.laa.ccms.caab.model.sections.OrganisationAddressDetailsSectionDisp
 import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.OrganisationOrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.AvScanResultHandler;
 import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
@@ -116,6 +117,7 @@ class CaseControllerTest {
   @Mock private ProviderRequestDocumentUploadValidator providerRequestDocumentUploadValidator;
   @Mock private EvidenceService evidenceService;
   @Mock private AvScanService avScanService;
+  @Mock private AvScanResultHandler avScanResultHandler;
   @Mock private EvidenceMapper evidenceMapper;
   @Mock private MessageSource messageSource;
 
@@ -1122,8 +1124,15 @@ class CaseControllerTest {
               null,
               List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
 
+      formData.setProviderId(1);
+      formData.setDocumentSender("user");
+      formData.setCcmsModule(CcmsModule.OUTCOME);
+      formData.setCaseReferenceNumber("ref");
+
       final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
       when(evidenceMapper.toEvidenceDocumentDetail(formData)).thenReturn(evidenceDocumentDetail);
+      when(avScanResultHandler.isScanRejected(any(EvidenceUploadFormData.class), any()))
+          .thenReturn(false);
       when(evidenceService.registerDocument(
               anyString(), anyString(), any(), anyString(), anyString(), anyString(), any()))
           .thenReturn(Mono.just("registeredDocId"));
@@ -1139,14 +1148,7 @@ class CaseControllerTest {
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/case/outcome-and-awards");
 
-      verify(avScanService)
-          .performAvScan(
-              anyString(),
-              any(),
-              anyString(),
-              any(),
-              eq("document.pdf"),
-              any(java.io.InputStream.class));
+      verify(avScanResultHandler).isScanRejected(any(EvidenceUploadFormData.class), any());
       verify(evidenceService)
           .registerDocument(eq("DOC1"), eq("pdf"), any(), any(), any(), any(), any());
       verify(evidenceService).addDocument(eq(evidenceDocumentDetail), anyString());
@@ -1454,6 +1456,10 @@ class CaseControllerTest {
       formData.setFileExtension("pdf");
       formData.setDocumentType("DOC1");
       formData.setDocumentDescription("A description");
+      formData.setProviderId(1);
+      formData.setDocumentSender("user");
+      formData.setCcmsModule(CcmsModule.OUTCOME);
+      formData.setCaseReferenceNumber("ref");
 
       final ApplicationDetail ebsCase =
           getEbsCase(
@@ -1468,10 +1474,8 @@ class CaseControllerTest {
               null,
               List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
 
-      doThrow(new CaabApplicationException("File failed AV scan"))
-          .when(avScanService)
-          .performAvScan(
-              anyString(), any(), anyString(), any(), anyString(), any(java.io.InputStream.class));
+      when(avScanResultHandler.isScanRejected(any(EvidenceUploadFormData.class), any()))
+          .thenReturn(true);
 
       assertThat(
               mockMvc.perform(
@@ -1479,9 +1483,8 @@ class CaseControllerTest {
                       .sessionAttr(USER_DETAILS, user)
                       .sessionAttr(CASE, ebsCase)
                       .flashAttr("outcomeAndAwardsDocumentUploadForm", formData)))
-          .failure()
-          .hasCauseInstanceOf(CaabApplicationException.class)
-          .hasMessageContaining("File failed AV scan");
+          .hasStatus(org.springframework.http.HttpStatus.OK)
+          .hasViewName("application/outcome-and-awards-document-upload");
 
       verify(evidenceService, org.mockito.Mockito.never())
           .registerDocument(any(), any(), any(), any(), any(), any(), any());
@@ -1499,6 +1502,10 @@ class CaseControllerTest {
       formData.setDocumentType("DOC1");
       formData.setDocumentDescription("A description");
       formData.setEvidenceTypes(List.of("OUTCOMES_EVIDENCE"));
+      formData.setProviderId(1);
+      formData.setDocumentSender("user");
+      formData.setCcmsModule(CcmsModule.OUTCOME);
+      formData.setCaseReferenceNumber("ref");
 
       final ApplicationDetail ebsCase =
           getEbsCase(
@@ -1513,6 +1520,8 @@ class CaseControllerTest {
               null,
               List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
 
+      when(avScanResultHandler.isScanRejected(any(EvidenceUploadFormData.class), any()))
+          .thenReturn(false);
       when(evidenceService.registerDocument(
               anyString(), anyString(), any(), anyString(), anyString(), anyString(), any()))
           .thenReturn(Mono.error(new CaabApplicationException("Registration failed")));
@@ -1527,9 +1536,7 @@ class CaseControllerTest {
           .hasCauseInstanceOf(CaabApplicationException.class)
           .hasMessageContaining("Registration failed");
 
-      verify(avScanService)
-          .performAvScan(
-              anyString(), any(), anyString(), any(), anyString(), any(java.io.InputStream.class));
+      verify(avScanResultHandler).isScanRejected(any(EvidenceUploadFormData.class), any());
     }
 
     @Test
