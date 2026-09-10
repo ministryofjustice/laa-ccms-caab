@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
@@ -21,6 +22,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.AWARD_TYPE_FORM;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
@@ -41,20 +43,26 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.bean.AwardTypeForm;
 import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.PreCertificateAndLegalHelpCostsFormData;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
+import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
 import uk.gov.laa.ccms.caab.bean.validators.application.PreCertificateAndLegalHelpCostsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
@@ -85,6 +93,8 @@ import uk.gov.laa.ccms.caab.model.sections.OrganisationOrganisationDetailsSectio
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
@@ -99,6 +109,7 @@ class CaseControllerTest {
   @Mock private ApplicationService applicationService;
   @Mock private LookupService lookupService;
   @Mock private CaseOutcomeService caseOutcomeService;
+  @Mock private AwardTypeValidator awardTypeValidator;
   @Mock private ProceedingOutcomeValidator proceedingOutcomeValidator;
   @Mock private PreCertificateAndLegalHelpCostsValidator preCertificateAndLegalHelpCostsValidator;
 
@@ -2403,6 +2414,206 @@ class CaseControllerTest {
           .failure()
           .hasCauseInstanceOf(CaabApplicationException.class)
           .hasMessageContaining("Failed to retrieve case details");
+    }
+
+    @Nested
+    @DisplayName("GET: /case/outcome-and-awards/award-type")
+    class SelectAwardTypeTests {
+
+      @Test
+      @DisplayName("Should display award types returned by the lookup service to the model")
+      void shouldDisplayAwardTypesReturnedByLookup() {
+        final AwardTypeLookupValueDetail costAward =
+            new AwardTypeLookupValueDetail()
+                .code("COST_AWARD")
+                .description("Cost award")
+                .awardType("COST")
+                .enabled(true);
+
+        final AwardTypeLookupDetail awardTypes =
+            new AwardTypeLookupDetail().addContentItem(costAward);
+
+        when(lookupService.getAwardTypes()).thenReturn(Mono.just(awardTypes));
+
+        assertThat(mockMvc.perform(get("/case/outcome-and-awards/award-type")))
+            .hasStatusOk()
+            .hasViewName("application/select-award-type")
+            .model()
+            .containsEntry("awardTypes", awardTypes.getContent());
+
+        verify(lookupService).getAwardTypes();
+      }
+    }
+
+    @Nested
+    @DisplayName("POST: /case/outcome-and-awards/award-type")
+    class SubmitAwardTypeTests {
+
+      @ParameterizedTest(name = "{0} resolves to {2} and redirects to {3}")
+      @CsvSource({
+        "FIN_ASSET, Financial Asset, ASSET, /case/outcome-and-awards/asset",
+        "OTH_ASSET, Other Asset, ASSET, /case/outcome-and-awards/asset",
+        "ENFORCEMENT, Enforcement Cost Award, COST, /case/outcome-and-awards/cost-award",
+        "COST, Cost Award, COST, /case/outcome-and-awards/cost-award",
+        "COST_AGR, Cost Settlement, COST, /case/outcome-and-awards/cost-award",
+        "DAMAGE, Financial or Punitive Damages, DAMAGE, /case/outcome-and-awards/financial-settlement",
+        "DAMAGE_AGR, Financial Settlement, DAMAGE, /case/outcome-and-awards/financial-settlement",
+        "LAND, Land/Property, LAND, /case/outcome-and-awards/land-property"
+      })
+      void shouldRedirectAccordingToAwardType(
+          final String code,
+          final String description,
+          final String awardType,
+          final String expectedRedirect) {
+
+        final AwardTypeLookupValueDetail lookupValue =
+            new AwardTypeLookupValueDetail()
+                .code(code)
+                .description(description)
+                .awardType(awardType)
+                .enabled(true);
+
+        final AwardTypeLookupDetail lookupDetail =
+            new AwardTypeLookupDetail().addContentItem(lookupValue);
+
+        when(lookupService.getAwardTypes()).thenReturn(Mono.just(lookupDetail));
+
+        final AwardTypeForm awardTypeForm = new AwardTypeForm();
+
+        assertThat(
+                mockMvc.perform(
+                    post("/case/outcome-and-awards/award-type")
+                        .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
+                        .param("awardTypeCode", code)))
+            .hasStatus3xxRedirection()
+            .hasRedirectedUrl(expectedRedirect);
+
+        assertThat(awardTypeForm.getAwardTypeCode()).isEqualTo(code);
+        assertThat(awardTypeForm.getDescription()).isEqualTo(description);
+        assertThat(awardTypeForm.getAwardType()).isEqualTo(awardType);
+
+        verify(awardTypeValidator).validate(any(AwardTypeForm.class), any());
+
+        verify(lookupService).getAwardTypes();
+      }
+
+      @Test
+      @DisplayName("Should return select award type view when validation fails")
+      void shouldReturnSelectAwardTypeViewWhenValidationFails() {
+        final AwardTypeLookupValueDetail lookupValue =
+            new AwardTypeLookupValueDetail()
+                .code("FIN_ASSET")
+                .description("Financial Asset")
+                .awardType("ASSET")
+                .enabled(true);
+
+        final AwardTypeLookupDetail lookupDetail =
+            new AwardTypeLookupDetail().addContentItem(lookupValue);
+
+        when(lookupService.getAwardTypes()).thenReturn(Mono.just(lookupDetail));
+
+        doAnswer(
+                invocation -> {
+                  final Errors errors = invocation.getArgument(1);
+                  errors.rejectValue(
+                      "awardTypeCode", "required.awardTypeCode", "Please complete 'Award type'.");
+                  return null;
+                })
+            .when(awardTypeValidator)
+            .validate(any(AwardTypeForm.class), any());
+
+        final AwardTypeForm awardTypeForm = new AwardTypeForm();
+
+        assertThat(
+                mockMvc.perform(
+                    post("/case/outcome-and-awards/award-type")
+                        .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
+                        .param("awardTypeCode", "")))
+            .hasStatusOk()
+            .hasViewName("application/select-award-type")
+            .model()
+            .containsEntry("awardTypes", lookupDetail.getContent())
+            .hasEntrySatisfying(
+                BindingResult.MODEL_KEY_PREFIX + AWARD_TYPE_FORM,
+                value -> {
+                  final BindingResult result = (BindingResult) value;
+
+                  assertThat(result.hasFieldErrors("awardTypeCode")).isTrue();
+                  assertThat(result.getFieldError("awardTypeCode")).isNotNull();
+                  assertThat(result.getFieldError("awardTypeCode").getCode())
+                      .isEqualTo("required.awardTypeCode");
+                });
+
+        verify(awardTypeValidator).validate(any(AwardTypeForm.class), any());
+
+        verify(lookupService).getAwardTypes();
+      }
+
+      @Test
+      @DisplayName("Should reject an award type code that is not present in the lookup")
+      void shouldRejectUnknownAwardTypeCode() {
+        final AwardTypeLookupValueDetail lookupValue =
+            new AwardTypeLookupValueDetail()
+                .code("FIN_ASSET")
+                .description("Financial Asset")
+                .awardType("ASSET")
+                .enabled(true);
+
+        final AwardTypeLookupDetail lookupDetail =
+            new AwardTypeLookupDetail().addContentItem(lookupValue);
+
+        when(lookupService.getAwardTypes()).thenReturn(Mono.just(lookupDetail));
+
+        final AwardTypeForm awardTypeForm = new AwardTypeForm();
+
+        assertThat(
+                mockMvc.perform(
+                    post("/case/outcome-and-awards/award-type")
+                        .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
+                        .param("awardTypeCode", "UNKNOWN")))
+            .failure()
+            .hasCauseInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Unknown award type code: UNKNOWN");
+
+        verify(awardTypeValidator).validate(any(AwardTypeForm.class), any());
+
+        verify(lookupService).getAwardTypes();
+      }
+
+      @Test
+      @DisplayName("Should reject an unsupported award type category")
+      void shouldRejectUnsupportedAwardTypeCategory() {
+        final AwardTypeLookupValueDetail lookupValue =
+            new AwardTypeLookupValueDetail()
+                .code("NEW_AWARD")
+                .description("New award")
+                .awardType("UNKNOWN")
+                .enabled(true);
+
+        final AwardTypeLookupDetail lookupDetail =
+            new AwardTypeLookupDetail().addContentItem(lookupValue);
+
+        when(lookupService.getAwardTypes()).thenReturn(Mono.just(lookupDetail));
+
+        final AwardTypeForm awardTypeForm = new AwardTypeForm();
+
+        assertThat(
+                mockMvc.perform(
+                    post("/case/outcome-and-awards/award-type")
+                        .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
+                        .param("awardTypeCode", "NEW_AWARD")))
+            .failure()
+            .hasCauseInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Unsupported award type: UNKNOWN");
+
+        assertThat(awardTypeForm.getAwardTypeCode()).isEqualTo("NEW_AWARD");
+        assertThat(awardTypeForm.getDescription()).isEqualTo("New award");
+        assertThat(awardTypeForm.getAwardType()).isEqualTo("UNKNOWN");
+
+        verify(awardTypeValidator).validate(any(AwardTypeForm.class), any());
+
+        verify(lookupService).getAwardTypes();
+      }
     }
   }
 }
