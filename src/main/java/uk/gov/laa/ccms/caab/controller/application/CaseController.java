@@ -377,7 +377,8 @@ public class CaseController {
    * @return The Select Award Type view
    */
   @GetMapping("/case/outcome-and-awards/award-type")
-  public String selectAwardType(final Model model) {
+  public String selectAwardType(
+      @ModelAttribute(AWARD_TYPE_FORM) final AwardTypeForm awardTypeForm, final Model model) {
     final AwardTypeLookupDetail awardTypes =
         lookupService.getAwardTypes().blockOptional().orElse(new AwardTypeLookupDetail());
 
