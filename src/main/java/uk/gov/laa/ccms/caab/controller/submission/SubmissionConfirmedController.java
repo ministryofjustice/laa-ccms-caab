@@ -91,7 +91,8 @@ public class SubmissionConfirmedController {
   }
 
   private ReturnDestination resolveReturnDestination(final String returnUrl) {
-    return switch (returnUrl) {
+    final String pathOnly = returnUrl == null ? null : returnUrl.split("[?#]", 2)[0];
+    return switch (pathOnly) {
       case "/home" -> ReturnDestination.HOME;
       case "/application/sections" -> ReturnDestination.APPLICATION_SECTIONS;
       default -> ReturnDestination.CASE_OVERVIEW;
