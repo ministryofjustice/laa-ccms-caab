@@ -2581,7 +2581,7 @@ class CaseControllerTest {
       }
 
       @Test
-      @DisplayName("Should reject an unsupported award type category")
+      @DisplayName("Return select award type view")
       void shouldRejectUnsupportedAwardTypeCategory() {
         final AwardTypeLookupValueDetail lookupValue =
             new AwardTypeLookupValueDetail()
@@ -2602,16 +2602,14 @@ class CaseControllerTest {
                     post("/case/outcome-and-awards/award-type")
                         .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
                         .param("awardTypeCode", "NEW_AWARD")))
-            .failure()
-            .hasCauseInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("Unsupported award type: UNKNOWN");
+            .hasStatusOk()
+            .hasViewName("application/select-award-type");
 
         assertThat(awardTypeForm.getAwardTypeCode()).isEqualTo("NEW_AWARD");
         assertThat(awardTypeForm.getDescription()).isEqualTo("New award");
         assertThat(awardTypeForm.getAwardType()).isEqualTo("UNKNOWN");
 
         verify(awardTypeValidator).validate(any(AwardTypeForm.class), any());
-
         verify(lookupService).getAwardTypes();
       }
     }

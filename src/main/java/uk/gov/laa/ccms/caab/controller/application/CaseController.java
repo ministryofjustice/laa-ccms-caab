@@ -3,6 +3,10 @@ package uk.gov.laa.ccms.caab.controller.application;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_COST;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FINANCIAL;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_LAND;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTHER_ASSET;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OUTCOME_ADR;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OUTCOME_RESOLUTION_METHOD;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_WIDER_BENEFITS;
@@ -378,11 +382,6 @@ public class CaseController {
         lookupService.getAwardTypes().blockOptional().orElse(new AwardTypeLookupDetail());
 
     model.addAttribute("awardTypes", awardTypes.getContent());
-
-    if (!model.containsAttribute(AWARD_TYPE_FORM)) {
-      model.addAttribute(AWARD_TYPE_FORM, new AwardTypeForm());
-    }
-
     return "application/select-award-type";
   }
 
@@ -409,9 +408,7 @@ public class CaseController {
 
     if (bindingResult.hasErrors()) {
       final AwardTypeLookupDetail awardTypes = lookupService.getAwardTypes().block();
-
       model.addAttribute("awardTypes", awardTypes.getContent());
-
       return "application/select-award-type";
     }
 
@@ -432,13 +429,11 @@ public class CaseController {
     awardTypeForm.setAwardType(selectedAwardType.getAwardType());
 
     return switch (selectedAwardType.getAwardType()) {
-      case "COST" -> "redirect:/case/outcome-and-awards/cost-award";
-      case "ASSET" -> "redirect:/case/outcome-and-awards/asset";
-      case "LAND" -> "redirect:/case/outcome-and-awards/land-property";
-      case "DAMAGE" -> "redirect:/case/outcome-and-awards/financial-settlement";
-      default ->
-          throw new IllegalArgumentException(
-              "Unsupported award type: " + selectedAwardType.getAwardType());
+      case AWARD_TYPE_COST -> "redirect:/case/outcome-and-awards/cost-award";
+      case AWARD_TYPE_OTHER_ASSET -> "redirect:/case/outcome-and-awards/asset";
+      case AWARD_TYPE_LAND -> "redirect:/case/outcome-and-awards/land-property";
+      case AWARD_TYPE_FINANCIAL -> "redirect:/case/outcome-and-awards/financial-settlement";
+      default -> "application/select-award-type";
     };
   }
 
