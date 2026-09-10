@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.util;
 
-import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.EMERGENCY_APPLICATION_TYPE_CODES;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.MEANS_EVIDENCE_REQD;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute.MERITS_EVIDENCE_REQD;
 import static uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType.GLOBAL;
@@ -54,7 +54,8 @@ public final class EvidenceUtil {
             && (isAssessmentEvidenceRequired(meansAssessment, MEANS_EVIDENCE_REQD)
                 || isAssessmentEvidenceRequired(meritsAssessment, MERITS_EVIDENCE_REQD));
 
-    final boolean isEmergencyApplication = APP_TYPE_EMERGENCY.equals(applicationType.getId());
+    final boolean isEmergencyApplication =
+        EMERGENCY_APPLICATION_TYPE_CODES.contains(applicationType.getId());
 
     final boolean hasPriorAuthorities =
         Optional.ofNullable(priorAuthorities)
