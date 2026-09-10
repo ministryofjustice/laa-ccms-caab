@@ -18,7 +18,6 @@ import static uk.gov.laa.ccms.caab.util.FileUtil.getFileExtension;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -52,12 +51,11 @@ import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestTypesValidato
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.constants.ProviderRequestFlowType;
-import uk.gov.laa.ccms.caab.exception.AvScanException;
-import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProviderRequestsMapper;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
+import uk.gov.laa.ccms.caab.service.AvScanResultHandler;
 import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -86,6 +84,7 @@ public class ProviderRequestsController {
   private final EvidenceService evidenceService;
   private final ProviderRequestService providerRequestService;
   private final AvScanService avScanService;
+  private final AvScanResultHandler avScanResultHandler;
 
   private final ProviderRequestTypesValidator providerRequestTypeValidator;
   private final ProviderRequestDetailsValidator providerRequestDetailsValidator;
@@ -438,16 +437,10 @@ public class ProviderRequestsController {
       }
 
       if (providerRequestDetailsForm.isClaimUploadEnabled()) {
-        try {
-          avScanService.performAvScan(
-              null,
-              null,
-              null,
-              null,
-              providerRequestDetailsForm.getSanitisedFileName(),
-              providerRequestDetailsForm.getFile().getInputStream());
-        } catch (final AvVirusFoundException | AvScanException | IOException e) {
-          bindingResult.rejectValue("file", "scan.failure", e.getMessage());
+        if (avScanResultHandler.isScanRejected(
+            providerRequestDetailsForm.getSanitisedFileName(),
+            providerRequestDetailsForm.getFile(),
+            bindingResult)) {
           providerRequestDetailsForm.setFile(null);
           return providerRequestsDetails(
               providerRequestFlow, providerRequestDetailsForm, model, flowType);
@@ -633,17 +626,7 @@ public class ProviderRequestsController {
       return "requests/provider-request-doc-upload";
     }
 
-    try {
-      // Scan the document for viruses
-      avScanService.performAvScan(
-          evidenceUploadFormData.getCaseReferenceNumber(),
-          evidenceUploadFormData.getProviderId(),
-          evidenceUploadFormData.getDocumentSender(),
-          evidenceUploadFormData.getCcmsModule(),
-          evidenceUploadFormData.getSanitisedFileName(),
-          evidenceUploadFormData.getFile().getInputStream());
-    } catch (AvVirusFoundException | AvScanException | IOException e) {
-      bindingResult.rejectValue("file", "scan.failure", e.getMessage());
+    if (avScanResultHandler.isScanRejected(evidenceUploadFormData, bindingResult)) {
       addCaseReferenceIfValid(model, caseRef);
       populateAddEvidenceModel(model);
       return "requests/provider-request-doc-upload";
@@ -661,6 +644,7 @@ public class ProviderRequestsController {
                   fileExtension,
                   evidenceUploadFormData.getDocumentDescription(),
                   ELECTRONIC.getCode(),
+                  caseRef,
                   userDetail.getLoginId(),
                   userDetail.getUserType())
               .blockOptional()

@@ -11,7 +11,6 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 import static uk.gov.laa.ccms.caab.util.FileUtil.getFileExtension;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
@@ -41,13 +40,12 @@ import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.validators.evidence.EvidenceUploadValidator;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
-import uk.gov.laa.ccms.caab.exception.AvScanException;
-import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.EvidenceMapper;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
+import uk.gov.laa.ccms.caab.service.AvScanResultHandler;
 import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -65,6 +63,8 @@ public class EvidenceSectionController {
   private final EvidenceService evidenceService;
 
   private final AvScanService avScanService;
+
+  private final AvScanResultHandler avScanResultHandler;
 
   private final LookupService lookupService;
 
@@ -177,17 +177,7 @@ public class EvidenceSectionController {
       return "application/evidence/evidence-add";
     }
 
-    try {
-      // Scan the document for viruses
-      avScanService.performAvScan(
-          evidenceUploadFormData.getCaseReferenceNumber(),
-          evidenceUploadFormData.getProviderId(),
-          evidenceUploadFormData.getDocumentSender(),
-          evidenceUploadFormData.getCcmsModule(),
-          evidenceUploadFormData.getSanitisedFileName(),
-          evidenceUploadFormData.getFile().getInputStream());
-    } catch (AvVirusFoundException | AvScanException | IOException e) {
-      bindingResult.rejectValue("file", "scan.failure", e.getMessage());
+    if (avScanResultHandler.isScanRejected(evidenceUploadFormData, bindingResult)) {
       model.addAttribute(CASE_CONTEXT, context);
       populateAddEvidenceModel(evidenceRequired, model);
       return "application/evidence/evidence-add";
@@ -203,6 +193,7 @@ public class EvidenceSectionController {
                 fileExtension,
                 evidenceUploadFormData.getDocumentDescription(),
                 ELECTRONIC.getCode(),
+                evidenceUploadFormData.getCaseReferenceNumber(),
                 userDetail.getLoginId(),
                 userDetail.getUserType())
             .blockOptional()

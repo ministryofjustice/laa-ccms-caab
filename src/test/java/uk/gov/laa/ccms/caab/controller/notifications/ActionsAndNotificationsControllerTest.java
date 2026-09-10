@@ -64,6 +64,7 @@ import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
+import uk.gov.laa.ccms.caab.service.AvScanResultHandler;
 import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.NotificationService;
@@ -103,6 +104,7 @@ class ActionsAndNotificationsControllerTest {
   @Mock private NotificationAttachmentUploadValidator notificationAttachmentUploadValidator;
   @Mock private NotificationResponseValidator notificationResponseValidator;
   @Mock private AvScanService avScanService;
+  @Mock private AvScanResultHandler avScanResultHandler;
 
   private MockMvc oldmockMvc;
   private MockMvcTester mockMvc;
@@ -1099,6 +1101,7 @@ class ActionsAndNotificationsControllerTest {
           .thenReturn(notificationAttachment);
       when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
           .thenReturn(Mono.just(notificationAttachmentDetails));
+      when(avScanResultHandler.isScanRejected(any(), any(), any())).thenReturn(false);
 
       Notification notification = buildNotification();
       Map<String, Object> flashMap = new HashMap<>();
@@ -1113,7 +1116,7 @@ class ActionsAndNotificationsControllerTest {
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/notifications/234/provide-documents-or-evidence");
 
-      verify(avScanService).performAvScan(any(), any(), any(), any(), eq(filename), any());
+      verify(avScanResultHandler).isScanRejected(any(), any(), any());
       verify(notificationService)
           .addDraftNotificationAttachment(notificationAttachment, userDetails.getLoginId());
     }
