@@ -124,6 +124,34 @@ public class EvidenceService {
    * @param documentType - the document type.
    * @param fileExtension - the file extension.
    * @param documentDescription - the document description.
+   * @param channel - the channel the document was registered from.
+   * @param userId - the user registering the document.
+   * @param userType - the user type.
+   * @return Mono wrapping the EBS registered document id.
+   * @deprecated use {@link #registerDocument(String, String, String, String, String, String,
+   *     String)} instead, providing the case reference number.
+   */
+  @Deprecated
+  public Mono<String> registerDocument(
+      final String documentType,
+      final String fileExtension,
+      final String documentDescription,
+      final String channel,
+      final String userId,
+      final String userType) {
+    return registerDocument(
+        documentType, fileExtension, documentDescription, channel, null, userId, userType);
+  }
+
+  /**
+   * Register a new evidence document in EBS to get a document id.
+   *
+   * @param documentType - the document type.
+   * @param fileExtension - the file extension.
+   * @param documentDescription - the document description.
+   * @param channel - the channel the document was registered from.
+   * @param caseReferenceNumber - the reference number of the case this document relates to, or
+   *     {@code null} if the document is not related to an existing case.
    * @param userId - the user registering the document.
    * @param userType - the user type.
    * @return Mono wrapping the EBS registered document id.
@@ -133,6 +161,7 @@ public class EvidenceService {
       final String fileExtension,
       final String documentDescription,
       final String channel,
+      final String caseReferenceNumber,
       final String userId,
       final String userType) {
 
@@ -144,7 +173,7 @@ public class EvidenceService {
             .text(documentDescription);
 
     return soaApiClient
-        .registerDocument(document, userId, userType)
+        .registerDocument(document, caseReferenceNumber, userId, userType)
         .mapNotNull(ClientTransactionResponse::getReferenceNumber);
   }
 
@@ -189,6 +218,40 @@ public class EvidenceService {
                     .filter(
                         baseEvidenceDocumentDetail ->
                             baseEvidenceDocumentDetail.getId().equals(documentId))
+                    .findFirst()
+                    .orElse(null))
+        .blockOptional()
+        .orElseThrow(
+            () -> new CaabApplicationException("Invalid document id: %s".formatted(documentId)));
+
+    caabApiClient.deleteEvidenceDocument(documentId, userId).block();
+  }
+
+  /**
+   * Remove an evidence document from the TDS, validating ownership via case reference number rather
+   * than an application/outcome id. This is required for documents (such as Outcome documents) that
+   * are keyed by case reference number rather than an application/outcome id.
+   *
+   * @param caseReferenceNumber - the case reference number the document should belong to.
+   * @param documentId - the id of the document to remove.
+   * @param ccmsModule - the document's related CCMS module.
+   * @param userId - the user removing a document.
+   */
+  public void removeDocumentForCase(
+      final String caseReferenceNumber,
+      final Integer documentId,
+      final CcmsModule ccmsModule,
+      final String userId) {
+
+    getEvidenceDocumentsForCase(caseReferenceNumber, ccmsModule)
+        .map(EvidenceDocumentDetails::getContent)
+        .mapNotNull(
+            baseEvidenceDocumentDetails ->
+                baseEvidenceDocumentDetails.stream()
+                    .filter(
+                        baseEvidenceDocumentDetail ->
+                            baseEvidenceDocumentDetail.getId() != null
+                                && baseEvidenceDocumentDetail.getId().equals(documentId))
                     .findFirst()
                     .orElse(null))
         .blockOptional()

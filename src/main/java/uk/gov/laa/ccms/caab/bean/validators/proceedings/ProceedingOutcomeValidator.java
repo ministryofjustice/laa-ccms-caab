@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.bean.validators.proceedings;
 
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.STANDARD_CHARACTER_SET;
 import static uk.gov.laa.ccms.caab.util.DateUtils.COMPONENT_DATE_PATTERN;
 
 import org.springframework.stereotype.Component;
@@ -13,6 +14,11 @@ import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 public class ProceedingOutcomeValidator extends AbstractValidator {
 
   private static final int MAX_ADDITIONAL_INFO_LENGTH = 950;
+
+  private static final String RESULT_INFO_DISPLAY_NAME = "Additional information about the Result";
+
+  private static final String ADR_INFO_DISPLAY_NAME =
+      "If ADR was used, explain why it was acceptable to all parties";
 
   @Override
   public boolean supports(final Class<?> clazz) {
@@ -48,21 +54,40 @@ public class ProceedingOutcomeValidator extends AbstractValidator {
           errors);
     }
 
-    if (formData.getResultInfo() != null) {
+    if (StringUtils.hasText(formData.getResultInfo())) {
+      validateFieldFormat(
+          "resultInfo",
+          formData.getResultInfo(),
+          STANDARD_CHARACTER_SET,
+          RESULT_INFO_DISPLAY_NAME,
+          errors);
       validateFieldMaxLength(
           "resultInfo",
           formData.getResultInfo(),
           MAX_ADDITIONAL_INFO_LENGTH,
-          "Additional information about the Result",
+          RESULT_INFO_DISPLAY_NAME,
           errors);
     }
 
-    if (formData.getAdrInfo() != null) {
+    if (StringUtils.hasText(formData.getAdrInfo())) {
+      validateFieldFormat(
+          "adrInfo", formData.getAdrInfo(), STANDARD_CHARACTER_SET, ADR_INFO_DISPLAY_NAME, errors);
       validateFieldMaxLength(
           "adrInfo",
           formData.getAdrInfo(),
           MAX_ADDITIONAL_INFO_LENGTH,
-          "If ADR was used, explain why it was acceptable to all parties",
+          ADR_INFO_DISPLAY_NAME,
+          errors);
+    }
+
+    // Character set only: this field is mapped from EBS and has never carried a length limit, so
+    // imposing one needs the width of the underlying EBS column first.
+    if (StringUtils.hasText(formData.getOutcomeCourtCaseNo())) {
+      validateFieldFormat(
+          "outcomeCourtCaseNo",
+          formData.getOutcomeCourtCaseNo(),
+          STANDARD_CHARACTER_SET,
+          "Court case number",
           errors);
     }
   }

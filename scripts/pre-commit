@@ -1,11 +1,47 @@
 #!/bin/sh
 # scripts/pre-commit
 
+# Gradle needs JDK 17+. If the shell's JAVA_HOME points at something older the wrapper
+# refuses to run, and because this hook used to ignore exit codes the commit went through
+# anyway with the formatting step never having happened. Resolve a usable JDK first, and
+# fail loudly rather than skipping silently.
+
+java_major() {
+  if [ -n "$1" ] && [ -x "$1/bin/java" ]; then
+    java_cmd="$1/bin/java"
+  else
+    java_cmd=$(command -v java 2>/dev/null) || return 1
+  fi
+  "$java_cmd" -version 2>&1 | head -1 | sed -n 's/.*version "\([0-9][0-9]*\).*/\1/p'
+}
+
+current_major=$(java_major "$JAVA_HOME" 2>/dev/null)
+if [ -z "$current_major" ] || [ "$current_major" -lt 17 ] 2>/dev/null; then
+  if [ -x /usr/libexec/java_home ]; then
+    resolved=$(/usr/libexec/java_home -v 17+ 2>/dev/null) || resolved=""
+    if [ -n "$resolved" ]; then
+      JAVA_HOME="$resolved"
+      export JAVA_HOME
+      current_major=$(java_major "$JAVA_HOME" 2>/dev/null)
+    fi
+  fi
+fi
+
+if [ -z "$current_major" ] || [ "$current_major" -lt 17 ] 2>/dev/null; then
+  echo "pre-commit: no JDK 17+ found, so Spotless cannot run."
+  echo "            Set JAVA_HOME to a JDK 17 or newer and commit again."
+  echo "            Skipping would let unformatted code through, so this commit is blocked."
+  exit 1
+fi
+
 # Run spotlessApply
 changed_java_files=$(git diff --cached --name-only -- 'src/*/java/**/*.java')
 if [ -n "$changed_java_files" ]; then
   echo "Running Spotless Apply..."
-  ./gradlew spotlessApply
+  if ! ./gradlew spotlessApply; then
+    echo "pre-commit: spotlessApply failed - commit aborted."
+    exit 1
+  fi
 
   # Re-add files that were changed by Spotless
   # This ensures that formatting changes are included in the current commit
@@ -17,7 +53,10 @@ changed_package_files=$(git diff --cached --name-only -- package.json package-lo
 if [ -n "$changed_package_files" ]; then
   echo "package.json/package-lock.json changed; rebuilding frontend assets..."
 
-  ./gradlew buildFrontend
+  if ! ./gradlew buildFrontend; then
+    echo "pre-commit: buildFrontend failed - commit aborted."
+    exit 1
+  fi
 
   git add \
     src/main/resources/static/assets/fonts \

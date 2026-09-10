@@ -778,11 +778,21 @@ public class BillingController {
   /**
    * Looks up the declaration statements the provider must acknowledge for an assessment's bill
    * type. An empty list means none is configured, which the legacy PUI treats as "do not show the
-   * declaration" rather than as an empty screen.
+   * declaration" rather than as an empty screen. An assessment carrying no bill type is treated the
+   * same way, since the statements cannot be narrowed to the bill being submitted.
    */
   private List<DynamicCheckbox> declarationOptions(final AssessmentDetail assessment) {
+    final String billType = billType(assessment);
+    if (billType == null) {
+      // The lookup narrows to the bill type, and without one it answers with every bill type's
+      // statements at once. Nothing can be meaningfully acknowledged, so treat it as "none
+      // configured" rather than showing statements that belong to some other kind of bill.
+      log.warn("No {} on the assessment; skipping the declaration", OPA_BILL_TYPE_ATTRIBUTE);
+      return List.of();
+    }
+
     final DeclarationLookupDetail declarations =
-        lookupService.getDeclarations(DECLARATION_BILL, billType(assessment)).block();
+        lookupService.getDeclarations(DECLARATION_BILL, billType).block();
     final List<DynamicCheckbox> options =
         submissionSummaryDisplayMapper.toDeclarationFormDataDynamicOptionList(declarations);
     return options == null ? List.of() : options;
@@ -792,12 +802,17 @@ public class BillingController {
    * The bill type qualifies the declaration lookup. It is produced by the assessment and held on
    * the global entity, mirroring the legacy PUI, which reads the {@code BILL_TYPE} attribute from
    * the assessment session to key the declaration retrieval.
+   *
+   * @return the bill type, or null when the assessment carries none or carries a blank one.
    */
   private String billType(final AssessmentDetail assessment) {
     return getAssessmentEntitiesForEntityType(assessment, AssessmentEntityType.GLOBAL).stream()
         .map(entity -> getAssessmentAttribute(entity, OPA_BILL_TYPE_ATTRIBUTE))
         .filter(attribute -> attribute != null && attribute.getValue() != null)
         .map(AssessmentAttributeDetail::getValue)
+        // A blank cannot narrow the lookup any more than a missing one can, so it is reported the
+        // same way rather than being passed on as though it were a bill type.
+        .filter(value -> !value.isBlank())
         .findFirst()
         .orElse(null);
   }

@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.AvailableAction;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
@@ -151,5 +152,18 @@ public class ActionViewHelper {
    */
   public static boolean isClearOutcomeAllowed(ProceedingDetail proceeding) {
     return isClearOutcomeAllowed(proceeding, proceeding != null ? proceeding.getOutcome() : null);
+  }
+
+  /**
+   * Determines whether outcome document actions (upload/remove) should be shown for a case.
+   *
+   * @param ebsCase the case to evaluate.
+   * @return true when the case allows outcome document actions.
+   */
+  public static boolean isOutcomeDocumentActionAllowed(final ApplicationDetail ebsCase) {
+    return ebsCase != null
+        && ebsCase.getAvailableFunctions() != null
+        && (ebsCase.getAvailableFunctions().contains(FunctionConstants.OUTCOME_WITH_DISCHARGE)
+            || ebsCase.getAvailableFunctions().contains(FunctionConstants.OUTCOME_NO_DISCHARGE));
   }
 }

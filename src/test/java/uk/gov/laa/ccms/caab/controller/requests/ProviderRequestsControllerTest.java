@@ -68,6 +68,7 @@ import uk.gov.laa.ccms.caab.exception.AvScanException;
 import uk.gov.laa.ccms.caab.mapper.ProviderRequestsMapper;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
+import uk.gov.laa.ccms.caab.service.AvScanResultHandler;
 import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -97,6 +98,8 @@ class ProviderRequestsControllerTest {
   @Mock private ProviderRequestDocumentUploadValidator providerRequestDocumentUploadValidator;
 
   @Mock private AvScanService avScanService;
+
+  @Mock private AvScanResultHandler avScanResultHandler;
 
   @Mock private ProviderRequestsMapper mapper;
 
@@ -754,9 +757,7 @@ class ProviderRequestsControllerTest {
     when(lookupService.getProviderRequestTypes(null, "testType"))
         .thenReturn(Mono.just(lookupDetail));
 
-    doThrow(new AvScanException("Virus detected"))
-        .when(avScanService)
-        .performAvScan(any(), any(), any(), any(), any(), any(InputStream.class));
+    when(avScanResultHandler.isScanRejected(any(), any(), any())).thenReturn(true);
 
     ProviderRequestFlowType providerRequestFlowType = ProviderRequestFlowType.valueOf(requestType);
 
@@ -784,7 +785,7 @@ class ProviderRequestsControllerTest {
                     providerRequestFlowType.getBasePath() + "/details"))
         .andExpect(model().attribute(PROVIDER_REQUEST_BACK_URL, expectedBackUrl));
 
-    verify(avScanService).performAvScan(any(), any(), any(), any(), any(), any(InputStream.class));
+    verify(avScanResultHandler).isScanRejected(any(), any(), any());
   }
 
   @ParameterizedTest
@@ -1017,6 +1018,9 @@ class ProviderRequestsControllerTest {
         .when(providerRequestDocumentUploadValidator)
         .validate(any(), any());
 
+    when(avScanResultHandler.isScanRejected(any(EvidenceUploadFormData.class), any()))
+        .thenReturn(false);
+
     String expectedRedirect = buildExpectedUrl(providerRequestFlowType, "/details", caseRef);
 
     mockMvc
@@ -1030,9 +1034,7 @@ class ProviderRequestsControllerTest {
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl(expectedRedirect));
 
-    verify(avScanService)
-        .performAvScan(
-            any(), any(), any(), any(), eq("My_interesting_filename_.pdf"), any(InputStream.class));
+    verify(avScanResultHandler).isScanRejected(any(EvidenceUploadFormData.class), any());
   }
 
   @ParameterizedTest
