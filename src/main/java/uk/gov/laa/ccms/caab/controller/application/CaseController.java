@@ -396,7 +396,7 @@ public class CaseController {
    *
    * @param awardTypeForm form containing the award type selected by the user
    * @return redirect to the appropriate award details screen
-   * @throws IllegalArgumentException if the selected award type code cannot be found or its award
+   * @return select award type view if the selected award type code cannot be found or its award
    *     type category is unsupported
    */
   @PostMapping("/case/outcome-and-awards/award-type")

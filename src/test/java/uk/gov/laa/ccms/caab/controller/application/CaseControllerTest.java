@@ -2435,7 +2435,10 @@ class CaseControllerTest {
 
         when(lookupService.getAwardTypes()).thenReturn(Mono.just(awardTypes));
 
-        assertThat(mockMvc.perform(get("/case/outcome-and-awards/award-type")))
+        assertThat(
+                mockMvc.perform(
+                    get("/case/outcome-and-awards/award-type")
+                        .sessionAttr(AWARD_TYPE_FORM, new AwardTypeForm())))
             .hasStatusOk()
             .hasViewName("application/select-award-type")
             .model()
