@@ -127,7 +127,7 @@ class SubmissionConfirmedControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("submissions/alreadySubmitted"))
         .andExpect(model().attribute("returnUrl", "/case/overview"))
-        .andExpect(model().attribute("homeReturn", false));
+        .andExpect(model().attribute("returnDestination", "CASE_OVERVIEW"));
   }
 
   @Test
@@ -137,6 +137,16 @@ class SubmissionConfirmedControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("submissions/alreadySubmitted"))
         .andExpect(model().attribute("returnUrl", "/home"))
-        .andExpect(model().attribute("homeReturn", true));
+        .andExpect(model().attribute("returnDestination", "HOME"));
+  }
+
+  @Test
+  void testAlreadySubmittedKeepsApplicationSectionsReturnUrl() throws Exception {
+    mockMvc
+        .perform(get("/submissions/alreadySubmitted").param("returnUrl", "/application/sections"))
+        .andExpect(status().isOk())
+        .andExpect(view().name("submissions/alreadySubmitted"))
+        .andExpect(model().attribute("returnUrl", "/application/sections"))
+        .andExpect(model().attribute("returnDestination", "APPLICATION_SECTIONS"));
   }
 }

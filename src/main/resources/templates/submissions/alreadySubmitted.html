@@ -10,19 +10,27 @@
         <h1 class="govuk-heading-l" th:text="#{submission.alreadySubmitted.title}"></h1>
         <p class="govuk-body-l" th:text="#{submission.alreadySubmitted.body}"></p>
         <p class="govuk-body-l"
-           th:if="${homeReturn}"
+           th:if="${returnDestination == 'HOME'}"
            th:text="#{submission.alreadySubmitted.continue.home}"></p>
         <p class="govuk-body-l"
-           th:unless="${homeReturn}"
+           th:if="${returnDestination == 'APPLICATION_SECTIONS'}"
+           th:text="#{submission.alreadySubmitted.continue.applicationSections}"></p>
+        <p class="govuk-body-l"
+           th:if="${returnDestination == 'CASE_OVERVIEW'}"
            th:text="#{submission.alreadySubmitted.continue.caseOverview}"></p>
         <div class="govuk-button-group">
             <a class="govuk-button"
-               th:if="${homeReturn}"
+               th:if="${returnDestination == 'HOME'}"
                th:href="@{${returnUrl}}"
                data-module="govuk-button"
                th:text="#{submission.alreadySubmitted.button.home}"></a>
             <a class="govuk-button"
-               th:unless="${homeReturn}"
+               th:if="${returnDestination == 'APPLICATION_SECTIONS'}"
+               th:href="@{${returnUrl}}"
+               data-module="govuk-button"
+               th:text="#{submission.alreadySubmitted.button.applicationSections}"></a>
+            <a class="govuk-button"
+               th:if="${returnDestination == 'CASE_OVERVIEW'}"
                th:href="@{${returnUrl}}"
                data-module="govuk-button"
                th:text="#{submission.alreadySubmitted.button.caseOverview}"></a>
