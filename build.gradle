@@ -1,6 +1,6 @@
 plugins {
     id 'uk.gov.justice.service.laa.laa-spring-boot-gradle-plugin' version '3.0.3'
-    id 'com.diffplug.spotless' version '8.10.0'
+    id 'com.diffplug.spotless' version '8.10.1'
 }
 
 configurations {
@@ -89,7 +89,7 @@ dependencies {
     implementation 'org.mapstruct:mapstruct:1.6.3'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 
-    implementation 'org.apache.tika:tika-core:3.3.2'
+    implementation 'org.apache.tika:tika-core:4.0.0'
 
     // Starters
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
@@ -102,7 +102,7 @@ dependencies {
     implementation 'org.springframework.data:spring-data-commons'
 
 	// AWS S3 Integration
-	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.1.0')
+	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.1.1')
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
 	implementation 'software.amazon.awssdk:sts'
@@ -111,7 +111,7 @@ dependencies {
 
     implementation 'org.json:json:20260814'
 
-    implementation 'io.swagger.core.v3:swagger-annotations:2.2.54'
+    implementation 'io.swagger.core.v3:swagger-annotations:2.2.55'
 
     //SAML security
     implementation 'org.springframework.boot:spring-boot-starter-security-saml2'
