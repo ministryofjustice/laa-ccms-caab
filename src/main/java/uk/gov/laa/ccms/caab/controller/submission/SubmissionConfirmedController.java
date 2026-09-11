@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE_PROVIDER_REQUEST;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_GENERAL_PROVIDER_REQUEST;
@@ -24,6 +25,7 @@ import uk.gov.laa.ccms.caab.constants.CaseContext;
 @Slf4j
 public class SubmissionConfirmedController {
   private static final String DEFAULT_RETURN_URL = "/case/overview";
+  private static final String RETURN_DESTINATION = "returnDestination";
   private static final ArrayList<String> HOME_RETURN_URL_SUBMISSION_TYPES =
       new ArrayList<>(List.of(SUBMISSION_SUBMIT_CASE, SUBMISSION_SUBMIT_GENERAL_PROVIDER_REQUEST));
   private static final ArrayList<String> CASE_OVERVIEW_RETURN_URL_SUBMISSION_TYPES =
@@ -38,9 +40,14 @@ public class SubmissionConfirmedController {
   public String submissionsConfirmed(
       @PathVariable("caseContext") CaseContext caseContext,
       @PathVariable String submissionType,
+      @RequestParam(required = false) final String submissionId,
       final HttpSession session,
       Model model) {
-    final boolean hasConfirmedSubmission = isAlreadySubmitted(session);
+    final boolean hasConfirmedSubmission =
+        isAlreadySubmitted(session)
+            && (!isGeneralProviderRequest(submissionType)
+                || submissionId == null
+                || hasValidGeneralConfirmationId(session, submissionId));
     if (!hasConfirmedSubmission) {
       return "redirect:/submissions/alreadySubmitted?returnUrl="
           + resolveReturnUrl(caseContext, submissionType);
@@ -48,6 +55,7 @@ public class SubmissionConfirmedController {
 
     model.addAttribute("submissionType", submissionType);
     model.addAttribute("caseContext", caseContext);
+    model.addAttribute("submissionId", submissionId);
 
     return "submissions/submissionConfirmed";
   }
@@ -55,7 +63,9 @@ public class SubmissionConfirmedController {
   @GetMapping("/submissions/alreadySubmitted")
   public String alreadySubmitted(
       @RequestParam(required = false) final String returnUrl, final Model model) {
-    model.addAttribute("returnUrl", sanitizeReturnUrl(returnUrl));
+    final String safeReturnUrl = sanitizeReturnUrl(returnUrl);
+    model.addAttribute("returnUrl", safeReturnUrl);
+    model.addAttribute(RETURN_DESTINATION, resolveReturnDestination(safeReturnUrl).name());
     return "submissions/alreadySubmitted";
   }
 
@@ -78,5 +88,31 @@ public class SubmissionConfirmedController {
       return DEFAULT_RETURN_URL;
     }
     return returnUrl;
+  }
+
+  private ReturnDestination resolveReturnDestination(final String returnUrl) {
+    final String pathOnly = returnUrl == null ? null : returnUrl.split("[?#]", 2)[0];
+    return switch (pathOnly) {
+      case "/home" -> ReturnDestination.HOME;
+      case "/application/sections" -> ReturnDestination.APPLICATION_SECTIONS;
+      default -> ReturnDestination.CASE_OVERVIEW;
+    };
+  }
+
+  private boolean isGeneralProviderRequest(final String submissionType) {
+    return SUBMISSION_SUBMIT_GENERAL_PROVIDER_REQUEST.equals(submissionType);
+  }
+
+  private boolean hasValidGeneralConfirmationId(
+      final HttpSession session, final String submissionId) {
+    final Object activeConfirmationId =
+        session.getAttribute(GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID);
+    return submissionId != null && submissionId.equals(activeConfirmationId);
+  }
+
+  private enum ReturnDestination {
+    HOME,
+    CASE_OVERVIEW,
+    APPLICATION_SECTIONS
   }
 }
