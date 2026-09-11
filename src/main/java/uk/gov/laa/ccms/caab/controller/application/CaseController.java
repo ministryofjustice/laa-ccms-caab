@@ -64,6 +64,7 @@ import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
 import uk.gov.laa.ccms.caab.bean.validators.application.PreCertificateAndLegalHelpCostsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
+import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
 import uk.gov.laa.ccms.caab.constants.PriorAuthorityGroup;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -371,18 +372,49 @@ public class CaseController {
   }
 
   /**
+   * Provides the award type form used by the select award type flow.
+   *
+   * <p>If the form does not already exist in the HTTP session, Spring calls this method to create
+   * it. Because {@link CaseController} is annotated with {@link SessionAttributes} for {@code
+   * AWARD_TYPE_FORM}, Spring stores the returned form in the session for subsequent requests.
+   *
+   * @return a new award type form
+   */
+  @ModelAttribute(AWARD_TYPE_FORM)
+  public AwardTypeForm awardTypeForm() {
+    return new AwardTypeForm();
+  }
+
+  /**
    * Displays the Select Award Type screen.
    *
    * @param model the model used to pass data to the award type dropdown in the view
    * @return The Select Award Type view
    */
   @GetMapping("/case/outcome-and-awards/award-type")
-  public String selectAwardType(
-      @ModelAttribute(AWARD_TYPE_FORM) final AwardTypeForm awardTypeForm, final Model model) {
-    final AwardTypeLookupDetail awardTypes =
-        lookupService.getAwardTypes().blockOptional().orElse(new AwardTypeLookupDetail());
+  public String displaySelectAwardType(
+      @ModelAttribute(AWARD_TYPE_FORM) final AwardTypeForm awardTypeForm,
+      final BindingResult bindingResult,
+      final Model model) {
 
-    model.addAttribute("awardTypes", awardTypes.getContent());
+    try {
+      final List<AwardTypeLookupValueDetail> awardTypes =
+          lookupService
+              .getAwardTypes()
+              .blockOptional()
+              .map(AwardTypeLookupDetail::getContent)
+              .orElse(Collections.emptyList());
+
+      model.addAttribute("awardTypes", awardTypes);
+    } catch (EbsApiClientException ex) {
+      log.warn("Failed to retrieve award types", ex);
+
+      bindingResult.reject(
+          "awardType.lookup.failed", "We could not load the award types. Please try again.");
+
+      model.addAttribute("awardTypes", Collections.emptyList());
+    }
+
     return "application/select-award-type";
   }
 
@@ -395,9 +427,8 @@ public class CaseController {
    * screen.
    *
    * @param awardTypeForm form containing the award type selected by the user
-   * @return redirect to the appropriate award details screen
-   * @return select award type view if the selected award type code cannot be found or its award
-   *     type category is unsupported
+   * @return redirect to the appropriate award details screen or select award type view if the
+   *     selected award type code cannot be found or its award type category is unsupported
    */
   @PostMapping("/case/outcome-and-awards/award-type")
   public String selectAwardType(
@@ -407,34 +438,66 @@ public class CaseController {
 
     awardTypeValidator.validate(awardTypeForm, bindingResult);
 
-    if (bindingResult.hasErrors()) {
-      final AwardTypeLookupDetail awardTypes = lookupService.getAwardTypes().block();
-      model.addAttribute("awardTypes", awardTypes.getContent());
+    final List<AwardTypeLookupValueDetail> awardTypes;
+
+    try {
+      awardTypes =
+          lookupService
+              .getAwardTypes()
+              .blockOptional()
+              .map(AwardTypeLookupDetail::getContent)
+              .orElse(Collections.emptyList());
+    } catch (EbsApiClientException ex) {
+      log.warn("Failed to retrieve award types", ex);
+
+      bindingResult.reject(
+          "awardType.lookup.failed", "We could not load the award types. Please try again.");
+
+      model.addAttribute("awardTypes", Collections.emptyList());
       return "application/select-award-type";
     }
 
-    final AwardTypeLookupDetail awardTypeLookup = lookupService.getAwardTypes().block();
+    if (bindingResult.hasErrors()) {
+      model.addAttribute("awardTypes", awardTypes);
+      return "application/select-award-type";
+    }
 
-    final AwardTypeLookupValueDetail selectedAwardType =
-        awardTypeLookup.getContent().stream()
+    final Optional<AwardTypeLookupValueDetail> selectedAwardTypeOpt =
+        awardTypes.stream()
             .filter(
                 lookupItem ->
                     Objects.equals(lookupItem.getCode(), awardTypeForm.getAwardTypeCode()))
-            .findFirst()
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        "Unknown award type code: " + awardTypeForm.getAwardTypeCode()));
+            .findFirst();
+
+    if (selectedAwardTypeOpt.isEmpty()) {
+      bindingResult.rejectValue(
+          "awardTypeCode", "awardType.invalid", "Please select a valid award type.");
+
+      model.addAttribute("awardTypes", awardTypes);
+      return "application/select-award-type";
+    }
+
+    final AwardTypeLookupValueDetail selectedAwardType = selectedAwardTypeOpt.get();
 
     awardTypeForm.setDescription(selectedAwardType.getDescription());
     awardTypeForm.setAwardType(selectedAwardType.getAwardType());
 
     return switch (selectedAwardType.getAwardType()) {
       case AWARD_TYPE_COST -> "redirect:/case/outcome-and-awards/cost-award";
+
       case AWARD_TYPE_OTHER_ASSET -> "redirect:/case/outcome-and-awards/asset";
+
       case AWARD_TYPE_LAND -> "redirect:/case/outcome-and-awards/land-property";
+
       case AWARD_TYPE_FINANCIAL -> "redirect:/case/outcome-and-awards/financial-settlement";
-      default -> "application/select-award-type";
+
+      default -> {
+        bindingResult.rejectValue(
+            "awardTypeCode", "awardType.unsupported", "The selected award type is not supported.");
+
+        model.addAttribute("awardTypes", awardTypes);
+        yield "application/select-award-type";
+      }
     };
   }
 
