@@ -599,7 +599,7 @@ public class SoaApplicationMappingContextBuilder {
 
     // Build a List of priorAuthorityDetails paired with the common lookup for display info.
     List<Pair<PriorAuthorityDetail, CommonLookupValueDetail>> priorAuthorityDetails =
-        soaPriorAuthority.getDetails().stream()
+        Optional.ofNullable(soaPriorAuthority.getDetails()).orElse(Collections.emptyList()).stream()
             .map(
                 priorAuthorityAttribute -> {
                   PriorAuthorityDetail priorAuthorityDetail =
