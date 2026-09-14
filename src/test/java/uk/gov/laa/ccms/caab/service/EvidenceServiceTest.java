@@ -1,13 +1,18 @@
 package uk.gov.laa.ccms.caab.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OPA_EVIDENCE_ITEMS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OUTCOME_DOCUMENT_CODE;
@@ -36,6 +41,7 @@ import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
@@ -79,6 +85,37 @@ class EvidenceServiceTest {
   private final String userType = "EXTERNAL";
 
   private final CcmsModule source = CcmsModule.APPLICATION;
+
+  @Test
+  void isEvidenceRequired_returnsTrueForEmergencyApplication() {
+    final ApplicationType applicationType = new ApplicationType().id(APP_TYPE_EMERGENCY);
+
+    final boolean evidenceRequired =
+        evidenceService.isEvidenceRequired(null, null, applicationType, Collections.emptyList());
+
+    assertTrue(evidenceRequired);
+  }
+
+  @Test
+  void isEvidenceRequired_returnsTrueForEmergencyDelegatedFunctionsApplication() {
+    final ApplicationType applicationType =
+        new ApplicationType().id(APP_TYPE_EMERGENCY_DEVOLVED_POWERS);
+
+    final boolean evidenceRequired =
+        evidenceService.isEvidenceRequired(null, null, applicationType, Collections.emptyList());
+
+    assertTrue(evidenceRequired);
+  }
+
+  @Test
+  void isEvidenceRequired_returnsFalseForNonEmergencyApplicationWithoutOtherTriggers() {
+    final ApplicationType applicationType = new ApplicationType().id(APP_TYPE_SUBSTANTIVE);
+
+    final boolean evidenceRequired =
+        evidenceService.isEvidenceRequired(null, null, applicationType, Collections.emptyList());
+
+    assertFalse(evidenceRequired);
+  }
 
   @Test
   void getEvidenceDocumentsForCase_callsApiClient() {
