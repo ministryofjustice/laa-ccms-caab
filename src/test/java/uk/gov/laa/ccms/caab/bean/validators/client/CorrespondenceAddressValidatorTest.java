@@ -132,6 +132,26 @@ class CorrespondenceAddressValidatorTest {
   }
 
   @Test
+  @DisplayName("Returns postcode required when country is blank for incomplete manual addresses")
+  void validate_postcodeRequiredWhenCountryBlankForIncompleteManualAddress() {
+    addressDetails.setPreferredAddress("HOME");
+    addressDetails.setCountry(null);
+    addressDetails.setHouseNameNumber("1234");
+    addressDetails.setPostcode(null);
+    addressDetails.setAddressLine1(null);
+    addressDetails.setCityTown(null);
+
+    correspondenceAddressValidator.validate(addressDetails, errors);
+
+    assertTrue(errors.hasErrors());
+    assertEquals(4, errors.getErrorCount());
+    assertEquals(
+        List.of(
+            "required.country", "required.postcode", "required.addressLine1", "required.cityTown"),
+        errors.getFieldErrors().stream().map(error -> error.getCode()).toList());
+  }
+
+  @Test
   @DisplayName("Returns a single postcode required error when postcode is blank")
   void validate_postcodeRequiredOnce() {
     addressDetails.setPostcode(null);

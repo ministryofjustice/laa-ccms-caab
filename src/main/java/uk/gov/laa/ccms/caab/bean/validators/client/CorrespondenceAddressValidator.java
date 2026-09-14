@@ -46,7 +46,12 @@ public class CorrespondenceAddressValidator extends AbstractValidator {
       validateRequiredField(
           "houseNameNumber", addressFormData.getHouseNameNumber(), "House name / number", errors);
 
-      validatePostcodeFormat(addressFormData.getCountry(), addressFormData.getPostcode(), errors);
+      validateRequiredField("postcode", addressFormData.getPostcode(), "Postcode", errors);
+
+      if (StringUtils.hasText(addressFormData.getCountry())
+          && StringUtils.hasText(addressFormData.getPostcode())) {
+        validatePostcodeFormat(addressFormData.getCountry(), addressFormData.getPostcode(), errors);
+      }
 
       validateRequiredField(
           "addressLine1", addressFormData.getAddressLine1(), "Address line 1", errors);
