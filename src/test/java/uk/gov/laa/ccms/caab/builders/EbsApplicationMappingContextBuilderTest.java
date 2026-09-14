@@ -237,6 +237,28 @@ class EbsApplicationMappingContextBuilderTest {
   }
 
   @Test
+  void testBuildEbsPriorAuthorityMappingContext_NullDetails() {
+    PriorAuthority ebsPriorAuthority = buildPriorAuthority();
+    ebsPriorAuthority.setDetails(null);
+
+    PriorAuthorityTypeDetails priorAuthorityTypeDetails =
+        buildPriorAuthorityTypeDetails("otherDataType");
+    PriorAuthorityTypeDetail priorAuthorityTypeDetail =
+        priorAuthorityTypeDetails.getContent().getFirst();
+
+    when(lookupService.getPriorAuthorityType(ebsPriorAuthority.getPriorAuthorityType()))
+        .thenReturn(Mono.just(Optional.of(priorAuthorityTypeDetail)));
+
+    EbsPriorAuthorityMappingContext result =
+        applicationService.buildPriorAuthorityMappingContext(ebsPriorAuthority);
+
+    assertNotNull(result);
+    assertEquals(ebsPriorAuthority, result.getEbsPriorAuthority());
+    assertEquals(Collections.emptyList(), result.getItems());
+    verify(lookupService, times(0)).getCommonValue(anyString(), anyString());
+  }
+
+  @Test
   void testBuildEbsPriorAuthorityMappingContext_UnknownPriorAuthType() {
     PriorAuthority ebsPriorAuthority = buildPriorAuthority();
 

@@ -236,6 +236,28 @@ class SoaApplicationMappingContextBuilderTest {
   }
 
   @Test
+  void testBuildSoaPriorAuthorityMappingContext_NullDetails() {
+    PriorAuthority soaPriorAuthority = buildPriorAuthority();
+    soaPriorAuthority.setDetails(null);
+
+    PriorAuthorityTypeDetails priorAuthorityTypeDetails =
+        buildPriorAuthorityTypeDetails("otherDataType");
+    PriorAuthorityTypeDetail priorAuthorityTypeDetail =
+        priorAuthorityTypeDetails.getContent().getFirst();
+
+    when(lookupService.getPriorAuthorityType(soaPriorAuthority.getPriorAuthorityType()))
+        .thenReturn(Mono.just(Optional.of(priorAuthorityTypeDetail)));
+
+    SoaPriorAuthorityMappingContext result =
+        applicationService.buildPriorAuthorityMappingContext(soaPriorAuthority);
+
+    assertNotNull(result);
+    assertEquals(soaPriorAuthority, result.getSoaPriorAuthority());
+    assertEquals(Collections.emptyList(), result.getItems());
+    verify(lookupService, times(0)).getCommonValue(anyString(), anyString());
+  }
+
+  @Test
   void testBuildSoaPriorAuthorityMappingContext_UnknownPriorAuthType() {
     PriorAuthority soaPriorAuthority = buildPriorAuthority();
 
