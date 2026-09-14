@@ -59,6 +59,13 @@ configurations.configureEach {
             details.useVersion '3.1.6'
             details.because 'Snyk override (SNYK-JAVA-TOOLSJACKSONCORE-19477043); unsafe reflection in 3.1.5'
         }
+        // Keep this override narrow: touching every io.netty module can drag native SSL artifacts
+        // (tcnative) to incompatible coordinates. Snyk flags the HTTP codec specifically.
+        if (details.requested.group == 'io.netty'
+                && details.requested.name == 'netty-codec-http') {
+            details.useVersion '4.2.18.Final'
+            details.because 'Snyk override (SNYK-JAVA-IONETTY-19778369); HTTP request smuggling in 4.2.17.Final'
+        }
         // Not managed by the Spring Boot BOM; pulled in transitively via the SAML/opensaml stack.
         if (details.requested.group == 'org.bouncycastle') {
             details.useVersion '1.85'

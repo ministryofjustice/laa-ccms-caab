@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -108,6 +109,59 @@ class CorrespondenceAddressValidatorTest {
     assertTrue(errors.hasErrors());
     assertNotNull(errors.getFieldError("postcode"));
     assertEquals("invalid.format", errors.getFieldError("postcode").getCode());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @Test
+  @DisplayName("Returns required manual address errors when manual details are partially entered")
+  void validate_manualAddressFieldsRequiredWhenManualDetailsPartiallyEntered() {
+    addressDetails.setPreferredAddress("HOME");
+    addressDetails.setCountry("GBR");
+    addressDetails.setHouseNameNumber("1234");
+    addressDetails.setPostcode(null);
+    addressDetails.setAddressLine1(null);
+    addressDetails.setCityTown(null);
+
+    correspondenceAddressValidator.validate(addressDetails, errors);
+
+    assertTrue(errors.hasErrors());
+    assertEquals(3, errors.getErrorCount());
+    assertEquals(
+        List.of("required.postcode", "required.addressLine1", "required.cityTown"),
+        errors.getFieldErrors().stream().map(error -> error.getCode()).toList());
+  }
+
+  @Test
+  @DisplayName("Returns postcode required when country is blank for incomplete manual addresses")
+  void validate_postcodeRequiredWhenCountryBlankForIncompleteManualAddress() {
+    addressDetails.setPreferredAddress("HOME");
+    addressDetails.setCountry(null);
+    addressDetails.setHouseNameNumber("1234");
+    addressDetails.setPostcode(null);
+    addressDetails.setAddressLine1(null);
+    addressDetails.setCityTown(null);
+
+    correspondenceAddressValidator.validate(addressDetails, errors);
+
+    assertTrue(errors.hasErrors());
+    assertEquals(4, errors.getErrorCount());
+    assertEquals(
+        List.of(
+            "required.country", "required.postcode", "required.addressLine1", "required.cityTown"),
+        errors.getFieldErrors().stream().map(error -> error.getCode()).toList());
+  }
+
+  @Test
+  @DisplayName("Returns a single postcode required error when postcode is blank")
+  void validate_postcodeRequiredOnce() {
+    addressDetails.setPostcode(null);
+
+    correspondenceAddressValidator.validate(addressDetails, errors);
+
+    assertTrue(errors.hasErrors());
+    assertNotNull(errors.getFieldError("postcode"));
+    assertEquals("required.postcode", errors.getFieldError("postcode").getCode());
+    assertEquals(1, errors.getFieldErrors("postcode").size());
     assertEquals(1, errors.getErrorCount());
   }
 
