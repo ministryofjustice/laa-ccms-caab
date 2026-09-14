@@ -8,7 +8,7 @@ ignore:
           unmodified as a linked library in a deployed service that is not
           distributed. 1.0.1 is the latest release; no upgrade path exists.
         expires: 2027-01-10T00:00:00.000Z
-  'snyk:lic:maven:org.xhtmlrenderer:flying-saucer-pdf:LGPL-2.1':
+  'snyk:lic:maven:org.xhtmlrenderer:flying-saucer-pdf-openpdf:LGPL-2.1':
     - '*':
         reason: >-
           LGPL-2.1 obligations attach on distribution. This PDF renderer stack
