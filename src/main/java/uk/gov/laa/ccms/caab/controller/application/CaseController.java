@@ -1232,6 +1232,12 @@ public class CaseController {
     return "redirect:/amendments/sections/linked-cases";
   }
 
+  @GetMapping("/case/view-outcome")
+  public String viewOutcome(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase, Model model, HttpSession session) {
+    return "application/view-outcome";
+  }
+
   private static List<AvailableAction> getAvailableActions(
       ApplicationDetail ebsCase,
       boolean amendment,

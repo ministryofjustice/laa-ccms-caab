@@ -53,7 +53,7 @@ public class ActionViewHelper {
               FunctionConstants.VIEW_CASE_OUTCOME,
               "action.viewOutcome.name",
               "action.viewOutcome.description",
-              "#"),
+              "/case/view-outcome"),
           new AvailableAction(
               FunctionConstants.EDIT_PROVIDER,
               "action.amendProviderDetails.name",
