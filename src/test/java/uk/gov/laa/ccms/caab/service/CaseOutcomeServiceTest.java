@@ -92,7 +92,9 @@ class CaseOutcomeServiceTest {
 
     assertThrows(
         IllegalStateException.class,
-        () -> caseOutcomeService.createFinancialAward(caseReferenceNumber, providerId, request, "user1"));
+        () ->
+            caseOutcomeService.createFinancialAward(
+                caseReferenceNumber, providerId, request, "user1"));
 
     verify(caabApiClient, never()).createFinancialAward(any(), any(), any());
   }
