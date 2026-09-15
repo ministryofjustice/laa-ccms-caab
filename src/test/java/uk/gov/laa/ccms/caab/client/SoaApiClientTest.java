@@ -699,7 +699,7 @@ class SoaApiClientTest {
         .thenReturn(Mono.just(mockDocumentRegistered));
 
     Mono<ClientTransactionResponse> documentRegisteredMono =
-        soaApiClient.registerDocument(document, loginId, userType);
+        soaApiClient.registerDocument(document, null, loginId, userType);
 
     StepVerifier.create(documentRegisteredMono).expectNext(mockDocumentRegistered).verifyComplete();
 

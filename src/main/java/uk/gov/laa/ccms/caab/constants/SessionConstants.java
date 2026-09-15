@@ -230,6 +230,12 @@ public class SessionConstants {
   public static final String GENERAL_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA =
       "generalProviderRequestEvidenceUploadForm";
 
+  /**
+   * Session attribute used to keep track of the active general provider request confirmation id.
+   */
+  public static final String GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID =
+      "generalProviderRequestConfirmationId";
+
   /** Session attribute used to keep track of case provider request upload form data. */
   public static final String CASE_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA =
       "caseProviderRequestEvidenceUploadForm";

@@ -8,6 +8,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_PROVIDER_REQUEST_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.GENERAL_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROVIDER_REQUEST_FLOW_FORM_DATA;
@@ -15,16 +16,17 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 import static uk.gov.laa.ccms.caab.util.FileUtil.getFileExtension;
+import static uk.gov.laa.ccms.caab.util.SubmissionUtil.isAlreadySubmitted;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,12 +54,11 @@ import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestTypesValidato
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.constants.ProviderRequestFlowType;
-import uk.gov.laa.ccms.caab.exception.AvScanException;
-import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ProviderRequestsMapper;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
+import uk.gov.laa.ccms.caab.service.AvScanResultHandler;
 import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -86,6 +87,7 @@ public class ProviderRequestsController {
   private final EvidenceService evidenceService;
   private final ProviderRequestService providerRequestService;
   private final AvScanService avScanService;
+  private final AvScanResultHandler avScanResultHandler;
 
   private final ProviderRequestTypesValidator providerRequestTypeValidator;
   private final ProviderRequestDetailsValidator providerRequestDetailsValidator;
@@ -438,16 +440,10 @@ public class ProviderRequestsController {
       }
 
       if (providerRequestDetailsForm.isClaimUploadEnabled()) {
-        try {
-          avScanService.performAvScan(
-              null,
-              null,
-              null,
-              null,
-              providerRequestDetailsForm.getSanitisedFileName(),
-              providerRequestDetailsForm.getFile().getInputStream());
-        } catch (final AvVirusFoundException | AvScanException | IOException e) {
-          bindingResult.rejectValue("file", "scan.failure", e.getMessage());
+        if (avScanResultHandler.isScanRejected(
+            providerRequestDetailsForm.getSanitisedFileName(),
+            providerRequestDetailsForm.getFile(),
+            bindingResult)) {
           providerRequestDetailsForm.setFile(null);
           return providerRequestsDetails(
               providerRequestFlow, providerRequestDetailsForm, model, flowType);
@@ -488,11 +484,18 @@ public class ProviderRequestsController {
             .block();
       }
       session.setAttribute(SUBMISSION_RESULT, "confirmed");
-      String redirectUrl =
-          "/application/submit-%s-provider-request/confirmed"
-              .formatted(flowType.isCaseScoped() ? "case" : "general");
+      final String redirectUrl;
+      if (flowType.isCaseScoped()) {
+        redirectUrl = "/application/submit-case-provider-request/confirmed";
+      } else {
+        final String confirmationId = UUID.randomUUID().toString();
+        session.setAttribute(GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID, confirmationId);
+        redirectUrl =
+            "/application/submit-general-provider-request/confirmed?submissionId=" + confirmationId;
+      }
       if (isValidCaseReference(caseRef)) {
-        redirectUrl += "?caseReferenceNumber=" + caseRef;
+        final String separator = redirectUrl.contains("?") ? "&" : "?";
+        return "redirect:" + redirectUrl + separator + "caseReferenceNumber=" + caseRef;
       }
       return "redirect:" + redirectUrl;
     }
@@ -633,17 +636,7 @@ public class ProviderRequestsController {
       return "requests/provider-request-doc-upload";
     }
 
-    try {
-      // Scan the document for viruses
-      avScanService.performAvScan(
-          evidenceUploadFormData.getCaseReferenceNumber(),
-          evidenceUploadFormData.getProviderId(),
-          evidenceUploadFormData.getDocumentSender(),
-          evidenceUploadFormData.getCcmsModule(),
-          evidenceUploadFormData.getSanitisedFileName(),
-          evidenceUploadFormData.getFile().getInputStream());
-    } catch (AvVirusFoundException | AvScanException | IOException e) {
-      bindingResult.rejectValue("file", "scan.failure", e.getMessage());
+    if (avScanResultHandler.isScanRejected(evidenceUploadFormData, bindingResult)) {
       addCaseReferenceIfValid(model, caseRef);
       populateAddEvidenceModel(model);
       return "requests/provider-request-doc-upload";
@@ -661,6 +654,7 @@ public class ProviderRequestsController {
                   fileExtension,
                   evidenceUploadFormData.getDocumentDescription(),
                   ELECTRONIC.getCode(),
+                  caseRef,
                   userDetail.getLoginId(),
                   userDetail.getUserType())
               .blockOptional()
@@ -717,19 +711,36 @@ public class ProviderRequestsController {
 
   /** Handles the POST request for the general submission page. */
   @PostMapping("/application/submit-general-provider-request/confirmed")
-  public String generalProviderRequestSubmitted(final HttpSession session, final Model model) {
-    return providerRequestSubmitted(session, model, ProviderRequestFlowType.GENERAL);
+  public String generalProviderRequestSubmitted(
+      @RequestParam(required = false) final String submissionId,
+      final HttpSession session,
+      final Model model) {
+    return providerRequestSubmitted(session, model, ProviderRequestFlowType.GENERAL, submissionId);
   }
 
   /** Handles the POST request for the case submission page. */
   @PostMapping("/application/submit-case-provider-request/confirmed")
   public String caseProviderRequestSubmitted(final HttpSession session, final Model model) {
-    return providerRequestSubmitted(session, model, ProviderRequestFlowType.CASE);
+    return providerRequestSubmitted(session, model, ProviderRequestFlowType.CASE, null);
   }
 
   private String providerRequestSubmitted(
-      final HttpSession session, final Model model, final ProviderRequestFlowType flowType) {
+      final HttpSession session,
+      final Model model,
+      final ProviderRequestFlowType flowType,
+      final String submissionId) {
+    if (!isAlreadySubmitted(session)) {
+      return "redirect:/submissions/alreadySubmitted?returnUrl=" + flowTypeReturnUrl(flowType);
+    }
+    if (flowType == ProviderRequestFlowType.GENERAL
+        && submissionId != null
+        && !hasValidGeneralConfirmationId(session, submissionId)) {
+      return "redirect:/submissions/alreadySubmitted?returnUrl=" + flowTypeReturnUrl(flowType);
+    }
     session.removeAttribute(SUBMISSION_RESULT);
+    if (flowType == ProviderRequestFlowType.GENERAL) {
+      session.removeAttribute(GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID);
+    }
     model.asMap().remove(flowType.getFlowSessionAttribute());
     model.asMap().remove(flowType.getEvidenceUploadSessionAttribute());
     session.removeAttribute(flowType.getFlowSessionAttribute());
@@ -971,6 +982,13 @@ public class ProviderRequestsController {
 
   private String flowTypeReturnUrl(final ProviderRequestFlowType flowType) {
     return flowType.isCaseScoped() ? "/case/overview" : "/home";
+  }
+
+  private boolean hasValidGeneralConfirmationId(
+      final HttpSession session, final String submissionId) {
+    final Object activeConfirmationId =
+        session.getAttribute(GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID);
+    return submissionId != null && submissionId.equals(activeConfirmationId);
   }
 
   private ProviderRequestFlowType getFlowType(String requestUri) {
