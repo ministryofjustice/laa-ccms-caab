@@ -77,7 +77,7 @@
           <tr class="govuk-table__row" th:each="award : ${awards}">
             <td class="govuk-table__cell">
               <a class="govuk-link"
-                 th:if="${award.id != null and award.updateAllowed}"
+                 th:if="${award.id != null}"
                  th:href="@{/case/outcome-and-awards/financial-award/{id}(id=${award.id})}"
                  th:text="${award.awardType}"></a>
             </td>
@@ -88,7 +88,7 @@
                 th:text="${award.awardAmount != null ? '£' + award.awardAmount : (award.amount != null ? '£' + award.amount : '')}"></td>
             <td class="govuk-table__cell">
               <a class="govuk-link"
-                 th:if="${award.id != null and award.deleteAllowed}"
+                 th:if="${award.id != null}"
                  href="#"
                  th:text="#{site.delete}"></a>
             </td>

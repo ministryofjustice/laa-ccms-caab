@@ -81,21 +81,14 @@ public class CaseOutcomeService {
                     new IllegalStateException(
                         "No case outcome exists for case reference number: "
                             + caseReferenceNumber));
-    final FinancialAwardDetail existingAward =
-        Optional.ofNullable(caseOutcome.getFinancialAwards())
-            .orElse(Collections.emptyList())
-            .stream()
-            .filter(award -> financialAwardId.equals(award.getId()))
-            .findFirst()
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "Financial award %s does not belong to case reference number: %s"
-                            .formatted(financialAwardId, caseReferenceNumber)));
-    if (Boolean.FALSE.equals(existingAward.getUpdateAllowed())) {
-      throw new IllegalStateException(
-          "Financial award %s is not updateable".formatted(financialAwardId));
-    }
+    Optional.ofNullable(caseOutcome.getFinancialAwards()).orElse(Collections.emptyList()).stream()
+        .filter(award -> financialAwardId.equals(award.getId()))
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Financial award %s does not belong to case reference number: %s"
+                        .formatted(financialAwardId, caseReferenceNumber)));
     caabApiClient
         .updateFinancialAward(caseOutcome.getId(), financialAwardId, loginId, financialAward)
         .block();
