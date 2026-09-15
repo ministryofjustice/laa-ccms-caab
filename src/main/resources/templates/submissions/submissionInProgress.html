@@ -31,14 +31,10 @@
       <main class="govuk-main-wrapper" id="main-content" role="main">
         <h1 class="govuk-heading-l" th:text="#{submission.progress}"></h1>
         <p class="govuk-body-l"
-           th:if="${submissionStatusUrl != null}"
-           th:utext="#{submission.progress.description(${#strings.escapeXml(submissionStatusUrl)})}">
-        </p>
-        <p class="govuk-body-l"
-           th:unless="${submissionStatusUrl != null}"
-           th:with="defaultSubmissionStatusUrl=@{/{caseContext}/{submissionType}(caseContext=${caseContext.pathValue},submissionType=${submissionType})}"
-           th:utext="#{submission.progress.description(${#strings.escapeXml(defaultSubmissionStatusUrl)})}">
-        </p>
+           th:with="defaultSubmissionStatusUrl=@{/{caseContext}/{submissionType}(caseContext=${caseContext.pathValue},submissionType=${submissionType})},
+            modelSubmissionStatusUrl=@{submissionStatusUrl},
+            computedSubmissionStatusUrl=${submissionStatusUrl != null ? modelSubmissionStatusUrl : defaultSubmissionStatusUrl}"
+           th:utext="#{submission.progress.description(${submissionStatusUrl})}">
         <div class="govuk-grid-row">
           <div class="govuk-grid-column-full">
             <div class="loader"></div>
