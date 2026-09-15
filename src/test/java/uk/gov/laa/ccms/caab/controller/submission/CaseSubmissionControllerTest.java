@@ -239,6 +239,30 @@ class CaseSubmissionControllerTest {
   }
 
   @Test
+  @DisplayName("Test undertaking submission preserves its context while in progress")
+  void testUndertakingSubmissionPreservesContextWhileInProgress() throws Exception {
+    mockMvc
+        .perform(get("/amendments/submit-case/undertaking").sessionAttr(USER_DETAILS, userDetail))
+        .andExpect(status().isOk())
+        .andExpect(view().name("submissions/submissionInProgress"))
+        .andExpect(model().attribute("submissionStatusUrl", "/amendments/submit-case/undertaking"));
+  }
+
+  @Test
+  @DisplayName("Test confirmed undertaking submission preserves its context")
+  void testConfirmedUndertakingSubmissionPreservesContext() throws Exception {
+    mockMvc
+        .perform(
+            get("/amendments/submit-case/undertaking")
+                .sessionAttr(USER_DETAILS, userDetail)
+                .sessionAttr(SUBMISSION_RESULT, "confirmed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/amendments/submit-case/undertaking/confirmed"));
+
+    verify(applicationService, never()).getCaseStatus(anyString());
+  }
+
+  @Test
   @DisplayName("Test addCaseSubmission - Case not confirmed, poll continues")
   void testAddCaseSubmission_CaseNotConfirmed() throws Exception {
     final TransactionStatus mockStatus = new TransactionStatus(); // No reference number set

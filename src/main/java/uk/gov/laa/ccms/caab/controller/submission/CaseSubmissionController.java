@@ -78,10 +78,14 @@ public class CaseSubmissionController {
 
     model.addAttribute("submissionType", SUBMISSION_SUBMIT_CASE);
     model.addAttribute("caseContext", caseContext);
+    model.addAttribute("submissionStatusUrl", submissionStatusUrl(caseContext, submissionContext));
 
     if (!StringUtils.hasText(transactionId)) {
       final String submissionResult = (String) session.getAttribute(SUBMISSION_RESULT);
       if (StringUtils.hasText(submissionResult)) {
+        if (SUBMISSION_CONFIRMED.equals(submissionResult) && submissionContext != null) {
+          return "redirect:" + submissionStatusUrl(caseContext, submissionContext) + "/confirmed";
+        }
         return redirectToSubmissionResult(session, caseContext, SUBMISSION_SUBMIT_CASE);
       }
       return viewIncludingPollCount(session, caseContext, model);
@@ -134,11 +138,7 @@ public class CaseSubmissionController {
     session.removeAttribute(SUBMISSION_TRANSACTION_ID);
     session.removeAttribute(SUBMISSION_QUICK_EDIT_TYPE);
     session.setAttribute(SUBMISSION_RESULT, SUBMISSION_CONFIRMED);
-    return "redirect:/%s/%s%s/confirmed"
-        .formatted(
-            caseContext.getPathValue(),
-            SUBMISSION_SUBMIT_CASE,
-            submissionContext == null ? "" : "/" + submissionContext);
+    return "redirect:" + submissionStatusUrl(caseContext, submissionContext) + "/confirmed";
   }
 
   private boolean pollCountExceeded(final HttpSession session) {
@@ -147,6 +147,15 @@ public class CaseSubmissionController {
     }
     final int submissionPollCount = (int) session.getAttribute(SUBMISSION_POLL_COUNT);
     return submissionPollCount >= submissionConstants.getMaxPollCount();
+  }
+
+  private String submissionStatusUrl(
+      final CaseContext caseContext, final String submissionContext) {
+    return "/%s/%s%s"
+        .formatted(
+            caseContext.getPathValue(),
+            SUBMISSION_SUBMIT_CASE,
+            submissionContext == null ? "" : "/" + submissionContext);
   }
 
   private boolean isCaseAvailableInEbs(final ActiveCase activeCase, final UserDetail user) {
