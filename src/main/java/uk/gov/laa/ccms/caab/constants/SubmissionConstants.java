@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.constants;
 
+import java.util.Map;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,10 @@ public class SubmissionConstants {
 
   /** submission used for create case. */
   public static final String SUBMISSION_SUBMIT_CASE = "submit-case";
+
+  /** Return URLs for submission contexts that have a destination other than the default. */
+  public static final Map<String, String> SUBMISSION_CONTEXT_RETURN_URLS =
+      Map.of("undertaking", "/case/outcome-and-awards");
 
   /** submission used for submit general provider request. */
   public static final String SUBMISSION_SUBMIT_GENERAL_PROVIDER_REQUEST =

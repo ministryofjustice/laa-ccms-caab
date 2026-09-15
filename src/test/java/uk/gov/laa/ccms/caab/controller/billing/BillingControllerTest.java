@@ -423,7 +423,7 @@ class BillingControllerTest {
                       .param("undertakingAmount", "250.00")
                       .param("acceptedTerms", "true")))
           .hasStatus3xxRedirection()
-          .hasRedirectedUrl("/amendments/submit-case")
+          .hasRedirectedUrl("/amendments/submit-case/undertaking")
           .request()
           .sessionAttributes()
           .containsEntry(SUBMISSION_TRANSACTION_ID, "TRANS123")

@@ -161,6 +161,28 @@ class CaseSubmissionControllerTest {
   }
 
   @Test
+  @DisplayName("Test addCaseSubmission - Undertaking amendment confirmed")
+  void testAddCaseSubmission_UndertakingAmendmentConfirmed() throws Exception {
+    final String refNumber = "ref123";
+    final TransactionStatus mockStatus = new TransactionStatus();
+    mockStatus.setReferenceNumber(refNumber);
+    when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
+
+    final ApplicationDetail mockCase = new ApplicationDetail();
+    mockCase.setCaseReferenceNumber(refNumber);
+    when(applicationService.getCase(anyString(), anyLong(), anyString())).thenReturn(mockCase);
+
+    mockMvc
+        .perform(
+            get("/amendments/submit-case/undertaking")
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
+                .sessionAttr(USER_DETAILS, userDetail))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/amendments/submit-case/undertaking/confirmed"))
+        .andExpect(request().sessionAttribute(SUBMISSION_RESULT, "confirmed"));
+  }
+
+  @Test
   @DisplayName("Test addCaseSubmission - Means reassessment confirmed passes its quick edit type")
   void testAddCaseSubmission_MeansReassessmentConfirmed() throws Exception {
     final String refNumber = "ref123";
@@ -363,6 +385,17 @@ class CaseSubmissionControllerTest {
                     APPLICATION_COSTS,
                     APPLICATION_FORM_DATA))
         .andExpect(request().sessionAttribute(ACTIVE_CASE, activeCase));
+  }
+
+  @Test
+  @DisplayName("Test clientUpdateSubmitted - Undertaking redirects to outcome and awards")
+  void testUndertakingSubmittedRedirectsToOutcomeAndAwards() throws Exception {
+    mockMvc
+        .perform(
+            post("/amendments/submit-case/undertaking/confirmed")
+                .sessionAttr(ACTIVE_CASE, activeCase))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/case/outcome-and-awards"));
   }
 
   @Test
