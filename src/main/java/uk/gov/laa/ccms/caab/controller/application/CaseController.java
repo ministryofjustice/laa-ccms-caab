@@ -26,6 +26,7 @@ import static uk.gov.laa.ccms.caab.util.view.ActionViewHelper.enhanceActionUrl;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -59,6 +60,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.AvailableAction;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
+import uk.gov.laa.ccms.caab.model.BaseAwardDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
@@ -345,7 +347,25 @@ public class CaseController {
     model.addAttribute("proceedings", proceedings);
     model.addAttribute("resolvedOutcomes", resolvedOutcomes);
     model.addAttribute("clearableOutcomes", clearableOutcomes);
+    model.addAttribute(
+        "awards", caseOutcomeOpt.map(this::getAwards).orElse(Collections.emptyList()));
     return "application/outcome-and-awards";
+  }
+
+  private List<BaseAwardDetail> getAwards(final CaseOutcomeDetail caseOutcome) {
+    final List<BaseAwardDetail> awards = new ArrayList<>();
+    addAwards(awards, caseOutcome.getCostAwards());
+    addAwards(awards, caseOutcome.getFinancialAwards());
+    addAwards(awards, caseOutcome.getLandAwards());
+    addAwards(awards, caseOutcome.getOtherAssetAwards());
+    return awards;
+  }
+
+  private void addAwards(
+      final List<BaseAwardDetail> awards, final List<? extends BaseAwardDetail> awardsToAdd) {
+    if (awardsToAdd != null) {
+      awards.addAll(awardsToAdd);
+    }
   }
 
   /**

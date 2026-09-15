@@ -71,8 +71,27 @@
           </tr>
           </thead>
           <tbody class="govuk-table__body">
-          <tr class="govuk-table__row">
+          <tr class="govuk-table__row" th:if="${#lists.isEmpty(awards)}">
             <td class="govuk-table__cell" colspan="5" th:text="#{case.outcomeAndAwards.awardsSummary.noAwards}"></td>
+          </tr>
+          <tr class="govuk-table__row" th:each="award : ${awards}">
+            <td class="govuk-table__cell">
+              <a class="govuk-link"
+                 th:if="${award.id != null and award.updateAllowed}"
+                 th:href="@{/case/outcome-and-awards/financial-award/{id}(id=${award.id})}"
+                 th:text="${award.awardType}"></a>
+            </td>
+            <td class="govuk-table__cell"
+                th:text="${award.dateOfOrder != null ? #dates.format(award.dateOfOrder, 'dd/MM/yyyy') : ''}"></td>
+            <td class="govuk-table__cell" th:text="${award.description}"></td>
+            <td class="govuk-table__cell"
+                th:text="${award.awardAmount != null ? '£' + award.awardAmount : (award.amount != null ? '£' + award.amount : '')}"></td>
+            <td class="govuk-table__cell">
+              <a class="govuk-link"
+                 th:if="${award.id != null and award.deleteAllowed}"
+                 href="#"
+                 th:text="#{site.delete}"></a>
+            </td>
           </tr>
           </tbody>
         </table>

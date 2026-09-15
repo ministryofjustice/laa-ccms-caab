@@ -61,12 +61,17 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
+import uk.gov.laa.ccms.caab.model.BaseAwardDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.ClientDetail;
+import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
+import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
+import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
@@ -850,6 +855,43 @@ class CaseControllerTest {
                       .sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/outcome-and-awards");
+    }
+
+    @Test
+    @DisplayName("Outcome and awards page includes every award type")
+    public void outcomeAndAwardsPageIncludesEveryAwardType() {
+      final String selectedCaseRef = "8";
+      final ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      final CostAwardDetail costAward = new CostAwardDetail();
+      final FinancialAwardDetail financialAward = new FinancialAwardDetail();
+      final LandAwardDetail landAward = new LandAwardDetail();
+      final OtherAssetAwardDetail otherAssetAward = new OtherAssetAwardDetail();
+      final CaseOutcomeDetail caseOutcome =
+          new CaseOutcomeDetail()
+              .id(42)
+              .costAwards(List.of(costAward))
+              .financialAwards(List.of(financialAward))
+              .landAwards(List.of(landAward))
+              .otherAssetAwards(List.of(otherAssetAward));
+      when(caseOutcomeService.getCaseOutcome(
+              selectedCaseRef, user.getProvider().getId().intValue()))
+          .thenReturn(java.util.Optional.of(caseOutcome));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "awards",
+              value ->
+                  assertThat(value)
+                      .asInstanceOf(InstanceOfAssertFactories.list(BaseAwardDetail.class))
+                      .containsExactly(costAward, financialAward, landAward, otherAssetAward))
+          .hasEntrySatisfying("caseOutcomeId", value -> assertThat(value).isEqualTo(42));
     }
 
     @Test
