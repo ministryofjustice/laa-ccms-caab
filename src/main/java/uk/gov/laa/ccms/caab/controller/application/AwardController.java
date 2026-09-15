@@ -104,7 +104,8 @@ public class AwardController {
     }
 
     final AwardTypeLookupValueDetail selectedAwardType = selectedAwardTypeOpt.get();
-    awardTypeForm.setDescription(selectedAwardType.getDescription());
+    awardTypeForm.setDescription(
+        StringUtils.capitalize(selectedAwardType.getAwardType().toLowerCase()));
     awardTypeForm.setAwardType(selectedAwardType.getAwardType());
 
     return switch (selectedAwardType.getAwardType()) {

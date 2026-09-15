@@ -30,6 +30,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
@@ -168,7 +169,8 @@ class AwardControllerTest {
           .hasRedirectedUrl(expectedRedirect);
 
       assertThat(awardTypeForm.getAwardTypeCode()).isEqualTo(code);
-      assertThat(awardTypeForm.getDescription()).isEqualTo(description);
+      assertThat(awardTypeForm.getDescription())
+          .isEqualTo(StringUtils.capitalize(awardType.toLowerCase()));
       assertThat(awardTypeForm.getAwardType()).isEqualTo(awardType);
 
       verify(awardTypeValidator).validate(any(AwardTypeForm.class), any());
@@ -311,7 +313,7 @@ class AwardControllerTest {
               });
 
       assertThat(awardTypeForm.getAwardTypeCode()).isEqualTo("NEW_AWARD");
-      assertThat(awardTypeForm.getDescription()).isEqualTo("New award");
+      assertThat(awardTypeForm.getDescription()).isEqualTo("Unknown");
       assertThat(awardTypeForm.getAwardType()).isEqualTo("UNKNOWN");
 
       verify(awardTypeValidator).validate(any(AwardTypeForm.class), any());
