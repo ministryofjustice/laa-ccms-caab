@@ -3,6 +3,10 @@ package uk.gov.laa.ccms.caab.controller.application;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_COST;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FINANCIAL;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_LAND;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTHER_ASSET;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OUTCOME_ADR;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OUTCOME_RESOLUTION_METHOD;
@@ -14,6 +18,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.AWARD_TYPE_FORM;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
@@ -54,18 +59,22 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import uk.gov.laa.ccms.caab.bean.AwardTypeForm;
 import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.PreCertificateAndLegalHelpCostsFormData;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.CaseProceedingDisplayStatus;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
+import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
 import uk.gov.laa.ccms.caab.bean.validators.application.PreCertificateAndLegalHelpCostsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidator;
 import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestDocumentUploadValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
+import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.constants.PriorAuthorityGroup;
@@ -94,6 +103,8 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.caab.util.PriorAuthorityUtils;
 import uk.gov.laa.ccms.caab.util.view.ActionViewHelper;
+import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
@@ -106,6 +117,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @RequiredArgsConstructor
 @Controller
 @Slf4j
+@SessionAttributes(AWARD_TYPE_FORM)
 public class CaseController {
 
   private final ApplicationService applicationService;
@@ -113,6 +125,7 @@ public class CaseController {
   private final CaseOutcomeService caseOutcomeService;
   private final ProceedingOutcomeValidator proceedingOutcomeValidator;
   private final PreCertificateAndLegalHelpCostsValidator preCertificateAndLegalHelpCostsValidator;
+  private final AwardTypeValidator awardTypeValidator;
   private final ProviderRequestDocumentUploadValidator providerRequestDocumentUploadValidator;
   private final EvidenceService evidenceService;
   private final AvScanService avScanService;
@@ -393,6 +406,136 @@ public class CaseController {
             .orElse(Collections.emptyList());
     model.addAttribute("documents", documents);
     return "application/outcome-and-awards";
+  }
+
+  /**
+   * Provides the award type form used by the select award type flow.
+   *
+   * <p>If the form does not already exist in the HTTP session, Spring calls this method to create
+   * it. Because {@link CaseController} is annotated with {@link SessionAttributes} for {@code
+   * AWARD_TYPE_FORM}, Spring stores the returned form in the session for subsequent requests.
+   *
+   * @return a new award type form
+   */
+  @ModelAttribute(AWARD_TYPE_FORM)
+  public AwardTypeForm awardTypeForm() {
+    return new AwardTypeForm();
+  }
+
+  /**
+   * Displays the Select Award Type screen.
+   *
+   * @param model the model used to pass data to the award type dropdown in the view
+   * @return The Select Award Type view
+   */
+  @GetMapping("/case/outcome-and-awards/award-type")
+  public String displaySelectAwardType(
+      @ModelAttribute(AWARD_TYPE_FORM) final AwardTypeForm awardTypeForm,
+      final BindingResult bindingResult,
+      final Model model) {
+
+    try {
+      final List<AwardTypeLookupValueDetail> awardTypes =
+          lookupService
+              .getAwardTypes()
+              .blockOptional()
+              .map(AwardTypeLookupDetail::getContent)
+              .orElse(Collections.emptyList());
+
+      model.addAttribute("awardTypes", awardTypes);
+    } catch (EbsApiClientException ex) {
+      log.warn("Failed to retrieve award types", ex);
+
+      bindingResult.reject(
+          "awardType.lookup.failed", "We could not load the award types. Please try again.");
+
+      model.addAttribute("awardTypes", Collections.emptyList());
+    }
+
+    return "application/select-award-type";
+  }
+
+  /**
+   * Handles submission of the Select Award Type form.
+   *
+   * <p>Uses the submitted award type code to find the corresponding award type lookup entry. The
+   * selected lookup entry is then used to populate the form with its description and broader award
+   * type category. Based on that category, the user is redirected to the appropriate award details
+   * screen.
+   *
+   * @param awardTypeForm form containing the award type selected by the user
+   * @return redirect to the appropriate award details screen or select award type view if the
+   *     selected award type code cannot be found or its award type category is unsupported
+   */
+  @PostMapping("/case/outcome-and-awards/award-type")
+  public String selectAwardType(
+      @ModelAttribute(AWARD_TYPE_FORM) final AwardTypeForm awardTypeForm,
+      final BindingResult bindingResult,
+      final Model model) {
+
+    awardTypeValidator.validate(awardTypeForm, bindingResult);
+
+    final List<AwardTypeLookupValueDetail> awardTypes;
+
+    try {
+      awardTypes =
+          lookupService
+              .getAwardTypes()
+              .blockOptional()
+              .map(AwardTypeLookupDetail::getContent)
+              .orElse(Collections.emptyList());
+    } catch (EbsApiClientException ex) {
+      log.warn("Failed to retrieve award types", ex);
+
+      bindingResult.reject(
+          "awardType.lookup.failed", "We could not load the award types. Please try again.");
+
+      model.addAttribute("awardTypes", Collections.emptyList());
+      return "application/select-award-type";
+    }
+
+    if (bindingResult.hasErrors()) {
+      model.addAttribute("awardTypes", awardTypes);
+      return "application/select-award-type";
+    }
+
+    final Optional<AwardTypeLookupValueDetail> selectedAwardTypeOpt =
+        awardTypes.stream()
+            .filter(
+                lookupItem ->
+                    Objects.equals(lookupItem.getCode(), awardTypeForm.getAwardTypeCode()))
+            .findFirst();
+
+    if (selectedAwardTypeOpt.isEmpty()) {
+      bindingResult.rejectValue(
+          "awardTypeCode", "awardType.invalid", "Please select a valid award type.");
+
+      model.addAttribute("awardTypes", awardTypes);
+      return "application/select-award-type";
+    }
+
+    final AwardTypeLookupValueDetail selectedAwardType = selectedAwardTypeOpt.get();
+
+    awardTypeForm.setDescription(selectedAwardType.getDescription());
+    awardTypeForm.setAwardType(selectedAwardType.getAwardType());
+
+    return switch (selectedAwardType.getAwardType()) {
+      case AWARD_TYPE_COST -> "redirect:/case/outcome-and-awards/cost-award";
+
+      case AWARD_TYPE_OTHER_ASSET -> "redirect:/case/outcome-and-awards/asset";
+
+      case AWARD_TYPE_LAND -> "redirect:/case/outcome-and-awards/land-property";
+
+      case AWARD_TYPE_FINANCIAL -> "redirect:/case/outcome-and-awards/financial-settlement";
+
+      default -> {
+        bindingResult.rejectValue(
+            "awardTypeCode", "awardType.unsupported", "The selected award type is not supported.");
+
+        model.addAttribute("awardTypes", awardTypes);
+        yield "application/select-award-type";
+      }
+    };
   }
 
   /**
