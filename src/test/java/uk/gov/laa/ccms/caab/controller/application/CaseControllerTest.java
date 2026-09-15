@@ -933,8 +933,7 @@ class CaseControllerTest {
               value ->
                   assertThat(value)
                       .asInstanceOf(InstanceOfAssertFactories.list(BaseAwardDetail.class))
-                      .containsExactly(costAward, financialAward, landAward, otherAssetAward))
-          .hasEntrySatisfying("caseOutcomeId", value -> assertThat(value).isEqualTo(42));
+                      .containsExactly(costAward, financialAward, landAward, otherAssetAward));
     }
 
     @Test

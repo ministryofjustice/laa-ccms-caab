@@ -81,6 +81,23 @@ class CaseOutcomeServiceTest {
   }
 
   @Test
+  void createFinancialAward_whenNoCaseOutcome_throwsWithoutCreatingAward() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final FinancialAwardRequest request = new FinancialAwardRequest();
+
+    doReturn(Optional.empty())
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> caseOutcomeService.createFinancialAward(caseReferenceNumber, providerId, request, "user1"));
+
+    verify(caabApiClient, never()).createFinancialAward(any(), any(), any());
+  }
+
+  @Test
   void updateFinancialAward_existingUpdateableAward_updatesAward() {
     final String caseReferenceNumber = "300000001";
     final Integer providerId = 123;
