@@ -32,12 +32,12 @@
         <h1 class="govuk-heading-l" th:text="#{submission.progress}"></h1>
         <p class="govuk-body-l"
            th:if="${submissionStatusUrl != null}"
-           th:utext="#{submission.progress.description(${submissionStatusUrl})}">
+           th:utext="#{submission.progress.description(${#strings.escapeXml(submissionStatusUrl)})}">
         </p>
         <p class="govuk-body-l"
            th:unless="${submissionStatusUrl != null}"
            th:with="defaultSubmissionStatusUrl=@{/{caseContext}/{submissionType}(caseContext=${caseContext.pathValue},submissionType=${submissionType})}"
-           th:utext="#{submission.progress.description(${defaultSubmissionStatusUrl})}">
+           th:utext="#{submission.progress.description(${#strings.escapeXml(defaultSubmissionStatusUrl)})}">
         </p>
         <div class="govuk-grid-row">
           <div class="govuk-grid-column-full">
