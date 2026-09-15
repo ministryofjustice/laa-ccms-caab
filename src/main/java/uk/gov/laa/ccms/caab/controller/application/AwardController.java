@@ -180,10 +180,26 @@ public class AwardController {
   public String financialAward(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @SessionAttribute(value = AWARD_TYPE_FORM, required = false)
+          final AwardTypeForm awardTypeForm,
       @ModelAttribute("financialAward") final FinancialAwardFormData financialAward,
       final BindingResult bindingResult,
       final Model model) {
     financialAwardValidator.validate(financialAward, bindingResult);
+
+    if (financialAward.getId() == null
+        && (awardTypeForm == null
+            || !StringUtils.hasText(awardTypeForm.getAwardTypeCode())
+            || !StringUtils.hasText(awardTypeForm.getAwardType())
+            || !StringUtils.hasText(awardTypeForm.getDescription())
+            || !Objects.equals(financialAward.getAwardCode(), awardTypeForm.getAwardTypeCode())
+            || !Objects.equals(financialAward.getAwardType(), awardTypeForm.getAwardType())
+            || !Objects.equals(financialAward.getDescription(), awardTypeForm.getDescription()))) {
+      bindingResult.reject(
+          "financialAward.awardType.mismatch",
+          "The award type details are invalid for your session. Please select an award type again.");
+    }
+
     if (bindingResult.hasErrors()) {
       populateFinancialAwardDropdowns(model);
       return "application/financial-award";

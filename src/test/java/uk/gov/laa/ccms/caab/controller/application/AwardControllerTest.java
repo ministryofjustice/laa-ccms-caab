@@ -28,6 +28,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
@@ -447,9 +448,27 @@ class AwardControllerTest {
           .model()
           .hasErrors();
     }
+
+    @Test
+    void postWithoutIdRejectsAwardTypeDetailsThatDoNotMatchTheSession() {
+      final AwardTypeForm selectedAwardType = new AwardTypeForm();
+      selectedAwardType.setAwardTypeCode("DAMAGE");
+      selectedAwardType.setAwardType("DAMAGE");
+      selectedAwardType.setDescription("Financial or Punitive Damages");
+
+      assertThat(mockMvc.perform(validPost().sessionAttr(AWARD_TYPE_FORM, selectedAwardType)))
+          .hasViewName("application/financial-award")
+          .model()
+          .hasErrors();
+    }
   }
 
-  private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder validPost() {
+  private MockHttpServletRequestBuilder validPost() {
+    final AwardTypeForm selectedAwardType = new AwardTypeForm();
+    selectedAwardType.setAwardTypeCode("DAMAGE_AGR");
+    selectedAwardType.setAwardType("DAMAGE");
+    selectedAwardType.setDescription("Financial Settlement");
+
     return post("/case/outcome-and-awards/financial-award")
         .param("awardCode", "DAMAGE_AGR")
         .param("awardType", "DAMAGE")
@@ -459,6 +478,7 @@ class AwardControllerTest {
         .param("interimAward", "0")
         .param("awardedBy", "COURT")
         .sessionAttr(CASE, ebsCase)
-        .sessionAttr(USER_DETAILS, user);
+        .sessionAttr(USER_DETAILS, user)
+        .sessionAttr(AWARD_TYPE_FORM, selectedAwardType);
   }
 }
