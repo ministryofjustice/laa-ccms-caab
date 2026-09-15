@@ -1,24 +1,23 @@
 package uk.gov.laa.ccms.caab.bean.validators.awards;
 
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CHARACTER_SET_A;
-import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.MONETARY_INPUT_2DP;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.STANDARD_CHARACTER_SET;
+import static uk.gov.laa.ccms.caab.util.DateUtils.COMPONENT_DATE_PATTERN;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
+import java.time.ZoneId;
+import java.util.Date;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.award.FinancialAwardFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
-import uk.gov.laa.ccms.caab.util.DateUtils;
 
 /** Validates financial award input using the legacy AW03 constraints. */
 @Component
 public class FinancialAwardValidator extends AbstractValidator {
 
-  private static final LocalDate EARLIEST_DATE = LocalDate.of(1900, 1, 1);
   private static final BigDecimal MAX_AWARD_AMOUNT = new BigDecimal("99999999.99");
 
   @Override
@@ -95,20 +94,13 @@ public class FinancialAwardValidator extends AbstractValidator {
       return;
     }
 
-    try {
-      final LocalDate date = DateUtils.convertToLocalDate(value);
-      if (date.isBefore(EARLIEST_DATE) || date.isAfter(LocalDate.now())) {
-        errors.rejectValue(
-            field,
-            "invalid.date.range",
-            "'%s' must be between 01/01/1900 and today.".formatted(displayName));
-      }
-    } catch (DateTimeParseException ex) {
+    final Date date =
+        validateValidDateField(value, field, displayName, COMPONENT_DATE_PATTERN, errors);
+    if (date != null
+        && date.after(
+            Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()))) {
       errors.rejectValue(
-          field,
-          "invalid.date",
-          "Your input for '%s' is invalid. Please enter the date in DD/MM/YYYY format."
-              .formatted(displayName));
+          field, "invalid.date.range", "'%s' must not be in the future.".formatted(displayName));
     }
   }
 
@@ -116,11 +108,8 @@ public class FinancialAwardValidator extends AbstractValidator {
     if (!StringUtils.hasText(value)) {
       return;
     }
-    if (!value.matches(MONETARY_INPUT_2DP)) {
-      errors.rejectValue(
-          "awardAmount",
-          "invalid.currency",
-          "Please enter 'Amount of Award' as a monetary value with up to 2 decimal places.");
+    validateCurrencyField("awardAmount", value, "Amount of Award", errors);
+    if (errors.hasFieldErrors("awardAmount")) {
       return;
     }
     if (new BigDecimal(value).compareTo(MAX_AWARD_AMOUNT) > 0) {

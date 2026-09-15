@@ -71,6 +71,22 @@ class FinancialAwardValidatorTest {
             "otherDetails");
   }
 
+  @Test
+  void acceptsTodayAndRejectsFutureDates() {
+    final FinancialAwardFormData form = validForm();
+    form.setDateOfOrder(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+    form.setOrderServedDate(
+        LocalDate.now().plusDays(1).format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+    final BeanPropertyBindingResult errors = new BeanPropertyBindingResult(form, "financialAward");
+
+    validator.validate(form, errors);
+
+    assertThat(errors.getFieldErrors())
+        .extracting("field")
+        .doesNotContain("dateOfOrder")
+        .contains("orderServedDate");
+  }
+
   private FinancialAwardFormData validForm() {
     final FinancialAwardFormData form = new FinancialAwardFormData();
     form.setAwardType("DAMAGE");

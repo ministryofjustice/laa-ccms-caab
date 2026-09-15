@@ -47,12 +47,15 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
+import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.PreCertificateAndLegalHelpCostsFormData;
@@ -1378,5 +1381,29 @@ public class CaseController {
           "No recent submitted amendment found for case {}", ebsCase.getCaseReferenceNumber());
     }
     return null;
+  }
+
+  /**
+   * Handles MaxUploadSizeExceededException for outcome and awards document upload.
+   *
+   * @param model the model
+   * @return the outcome and awards document upload view
+   */
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public String handleOutcomeAndAwardsUploadFileTooLarge(final Model model) {
+    final EvidenceUploadFormData outcomeAndAwardsDocumentUploadForm = new EvidenceUploadFormData();
+
+    // Manually construct a BindingResult to hold the file size error.
+    final BindingResult bindingResult =
+        new BeanPropertyBindingResult(
+            outcomeAndAwardsDocumentUploadForm, "outcomeAndAwardsDocumentUploadForm");
+    providerRequestDocumentUploadValidator.rejectFileSize(bindingResult);
+
+    model.addAttribute("outcomeAndAwardsDocumentUploadForm", outcomeAndAwardsDocumentUploadForm);
+    model.addAttribute(
+        BindingResult.MODEL_KEY_PREFIX + "outcomeAndAwardsDocumentUploadForm", bindingResult);
+
+    populateOutcomeAndAwardsDocumentUploadModel(model);
+    return "application/outcome-and-awards-document-upload";
   }
 }
