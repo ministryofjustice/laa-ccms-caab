@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.bean.validators.request;
 
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.STANDARD_CHARACTER_SET;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -104,12 +106,16 @@ public class ProviderRequestDetailsValidator extends FileUploadValidator {
             fieldPath, value.getFieldValue(), 30, value.getFieldDescription(), errors);
         validateNumericField(fieldPath, value.getFieldValue(), value.getFieldDescription(), errors);
       }
-      case FIELD_TYPE_FTS ->
-          validateFieldMaxLength(
-              fieldPath, value.getFieldValue(), 30, value.getFieldDescription(), errors);
-      case FIELD_TYPE_FTL ->
-          validateFieldMaxLength(
-              fieldPath, value.getFieldValue(), 80, value.getFieldDescription(), errors);
+      case FIELD_TYPE_FTS -> {
+        validateFieldMaxLength(
+            fieldPath, value.getFieldValue(), 30, value.getFieldDescription(), errors);
+        validateFreeTextCharacters(fieldPath, value, errors);
+      }
+      case FIELD_TYPE_FTL -> {
+        validateFieldMaxLength(
+            fieldPath, value.getFieldValue(), 80, value.getFieldDescription(), errors);
+        validateFreeTextCharacters(fieldPath, value, errors);
+      }
       default -> log.warn("Unsupported field type: {}", value.getFieldType());
     }
   }
@@ -130,5 +136,34 @@ public class ProviderRequestDetailsValidator extends FileUploadValidator {
         8000,
         formData.getAdditionalInformationLabel(),
         errors);
+
+    if (StringUtils.hasText(formData.getAdditionalInformation())) {
+      validateFieldFormat(
+          "additionalInformation",
+          formData.getAdditionalInformation(),
+          STANDARD_CHARACTER_SET,
+          formData.getAdditionalInformationLabel(),
+          errors);
+    }
+  }
+
+  /**
+   * Apply the standard character set to a dynamic free-text field. These fields are defined by
+   * reference data rather than in code, so they had a length limit but no character restriction.
+   *
+   * @param fieldPath the bound path of the dynamic field.
+   * @param value the submitted dynamic option.
+   * @param errors the Errors object to store validation errors.
+   */
+  private void validateFreeTextCharacters(
+      final String fieldPath, final DynamicOptionFormData value, final Errors errors) {
+    if (StringUtils.hasText(value.getFieldValue())) {
+      validateFieldFormat(
+          fieldPath,
+          value.getFieldValue(),
+          STANDARD_CHARACTER_SET,
+          value.getFieldDescription(),
+          errors);
+    }
   }
 }

@@ -3,10 +3,12 @@ package uk.gov.laa.ccms.caab.bean.validators.opponent;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CURRENT_OPPONENT;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -179,5 +181,40 @@ class IndividualOpponentValidatorTest {
     validator.validate(opponentFormData, errors);
     assertFalse(errors.hasErrors());
     assertEquals(0, errors.getErrorCount());
+  }
+
+  /**
+   * This field is declared on the shared opponent bean, but was previously only checked for the
+   * organisation opponent - leaving the same field unrestricted on the individual screen.
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"<script>alert(1)</script>", "a < b", "closing bracket >"})
+  @DisplayName("markup in other information is rejected for an individual opponent")
+  public void validate_otherInformationContainingMarkup_rejects(final String value) {
+    opponentFormData.setOtherInformation(value);
+
+    validator.validate(opponentFormData, errors);
+
+    assertNotNull(errors.getFieldError("otherInformation"));
+    assertEquals("invalid.format", errors.getFieldError("otherInformation").getCode());
+  }
+
+  @Test
+  public void validate_otherInformationAboveMaximumLength_rejects() {
+    opponentFormData.setOtherInformation("a".repeat(2001));
+
+    validator.validate(opponentFormData, errors);
+
+    assertNotNull(errors.getFieldError("otherInformation"));
+    assertEquals("length.exceeds.max", errors.getFieldError("otherInformation").getCode());
+  }
+
+  @Test
+  public void validate_ordinaryOtherInformation_passes() {
+    opponentFormData.setOtherInformation("Opponent is represented by Smith & Co. (ref 12/345).");
+
+    validator.validate(opponentFormData, errors);
+
+    assertNull(errors.getFieldError("otherInformation"));
   }
 }

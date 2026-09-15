@@ -8,6 +8,30 @@ ignore:
           unmodified as a linked library in a deployed service that is not
           distributed. 1.0.1 is the latest release; no upgrade path exists.
         expires: 2027-01-10T00:00:00.000Z
+  'snyk:lic:maven:org.xhtmlrenderer:flying-saucer-pdf-openpdf:LGPL-2.1':
+    - '*':
+        reason: >-
+          LGPL-2.1 obligations attach on distribution. This PDF renderer stack
+          is used unmodified inside a deployed service that is not distributed,
+          and there is no upgrade-only remediation path because the current
+          renderer family remains LGPL/MPL licensed.
+        expires: 2027-09-14T00:00:00.000Z
+  'snyk:lic:maven:org.xhtmlrenderer:flying-saucer-core:LGPL-2.1':
+    - '*':
+        reason: >-
+          LGPL-2.1 obligations attach on distribution. This PDF renderer stack
+          is used unmodified inside a deployed service that is not distributed,
+          and there is no upgrade-only remediation path because the current
+          renderer family remains LGPL/MPL licensed.
+        expires: 2027-09-14T00:00:00.000Z
+  'snyk:lic:maven:com.github.librepdf:openpdf:(LGPL-2.1_OR_MPL-2.0)':
+    - '*':
+        reason: >-
+          LGPL-2.1/MPL-2.0 obligations attach on distribution. This PDF
+          renderer stack is used unmodified inside a deployed service that is
+          not distributed, and there is no upgrade-only remediation path
+          because the current renderer family remains LGPL/MPL licensed.
+        expires: 2027-09-14T00:00:00.000Z
   SNYK-UBUNTU2404-GLIBC-15804597:
     - '*':
         reason: "Temporary ignore pending upstream Ubuntu package update."
@@ -28,6 +52,14 @@ ignore:
     - '*':
         reason: "Temporary ignore pending upstream Ubuntu package update."
         expires: "2027-08-13T00:00:00.000Z"
+  SNYK-UBUNTU2404-GLIBC-19437583:
+    - '*':
+        reason: "Temporary ignore pending upstream Ubuntu package update."
+        expires: "2027-09-14T00:00:00.000Z"
+  SNYK-UBUNTU2404-ZLIB-19530295:
+    - '*':
+        reason: "Temporary ignore pending upstream Ubuntu package update."
+        expires: "2027-09-14T00:00:00.000Z"
 patch: {}
 exclude:
   global:

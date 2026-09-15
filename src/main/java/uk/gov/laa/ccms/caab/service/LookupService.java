@@ -6,6 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_C
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_METHOD;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_COURTS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DISABILITY;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ETHNIC_ORIGIN;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_GENDER;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_MARITAL_STATUS;
@@ -60,6 +61,7 @@ import uk.gov.laa.ccms.data.model.TaxRateLookupDetail;
 @RequiredArgsConstructor
 @Slf4j
 public class LookupService {
+
   private final EbsApiClient ebsApiClient;
 
   /**
@@ -418,6 +420,23 @@ public class LookupService {
     return ebsApiClient
         .getCommonValues(type, code)
         .mapNotNull(commonLookupDetail -> commonLookupDetail.getContent().stream().findFirst());
+  }
+
+  /**
+   * Get a document type description by code.
+   *
+   * @param code The document type code.
+   * @return The matching description, or the original code if no lookup is found.
+   */
+  public Mono<String> getDocumentTypeDescription(final String code) {
+    if (!StringUtils.hasText(code)) {
+      return Mono.justOrEmpty(code);
+    }
+
+    return getCommonValue(COMMON_VALUE_DOCUMENT_TYPES, code)
+        .map(
+            commonLookupValueDetail ->
+                commonLookupValueDetail.map(CommonLookupValueDetail::getDescription).orElse(code));
   }
 
   /**

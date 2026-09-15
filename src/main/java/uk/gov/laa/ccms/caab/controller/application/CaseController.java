@@ -3,24 +3,33 @@ package uk.gov.laa.ccms.caab.controller.application;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE_DEVOLVED_POWERS;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_COST;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FINANCIAL;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_LAND;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTHER_ASSET;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OUTCOME_ADR;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OUTCOME_RESOLUTION_METHOD;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_WIDER_BENEFITS;
+import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.AMEND_CLIENT_ORIGIN;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.AWARD_TYPE_FORM;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COURT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
 import static uk.gov.laa.ccms.caab.util.DateUtils.convertToComponentDate;
+import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 import static uk.gov.laa.ccms.caab.util.view.ActionViewHelper.enhanceActionUrl;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,6 +45,7 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
@@ -48,20 +58,33 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import uk.gov.laa.ccms.caab.bean.AwardTypeForm;
 import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.PreCertificateAndLegalHelpCostsFormData;
+import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.CaseProceedingDisplayStatus;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
+import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
+import uk.gov.laa.ccms.caab.bean.validators.application.PreCertificateAndLegalHelpCostsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidator;
+import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestDocumentUploadValidator;
+import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
+import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
+import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.constants.PriorAuthorityGroup;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.mapper.EvidenceMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.AvailableAction;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseAwardDetail;
+import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
@@ -71,11 +94,16 @@ import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.AvScanResultHandler;
+import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
+import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.caab.util.PriorAuthorityUtils;
 import uk.gov.laa.ccms.caab.util.view.ActionViewHelper;
+import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
@@ -88,13 +116,25 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @RequiredArgsConstructor
 @Controller
 @Slf4j
+@SessionAttributes(AWARD_TYPE_FORM)
 public class CaseController {
 
   private final ApplicationService applicationService;
   private final LookupService lookupService;
   private final CaseOutcomeService caseOutcomeService;
   private final ProceedingOutcomeValidator proceedingOutcomeValidator;
+  private final PreCertificateAndLegalHelpCostsValidator preCertificateAndLegalHelpCostsValidator;
+  private final AwardTypeValidator awardTypeValidator;
+  private final ProviderRequestDocumentUploadValidator providerRequestDocumentUploadValidator;
+  private final EvidenceService evidenceService;
+  private final AvScanService avScanService;
+  private final AvScanResultHandler avScanResultHandler;
+  private final EvidenceMapper evidenceMapper;
+  private final MessageSource messageSource;
   private static final String SEARCH_URL = "SEARCH_URL";
+  private static final String OUTCOMES_EVIDENCE_CODE = "OUTCOMES_EVIDENCE";
+  private static final String PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_SESSION_KEY_PREFIX =
+      PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA + ":";
 
   /**
    * Displays the case overview screen.
@@ -302,6 +342,7 @@ public class CaseController {
   public String outcomeAndAwards(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
+      HttpSession session,
       Model model) {
     final List<ProceedingDetail> proceedings = ebsCase.getProceedings();
     final Optional<CaseOutcomeDetail> caseOutcomeOpt =
@@ -344,11 +385,28 @@ public class CaseController {
       }
     }
 
+    model.addAttribute("case", ebsCase);
     model.addAttribute("proceedings", proceedings);
     model.addAttribute("resolvedOutcomes", resolvedOutcomes);
+    model.addAttribute(
+        "outcomeDocumentActionAllowed", ActionViewHelper.isOutcomeDocumentActionAllowed(ebsCase));
     model.addAttribute("clearableOutcomes", clearableOutcomes);
     model.addAttribute(
+        "preCertificateAndLegalHelpCostsSummary",
+        getPreCertificateAndLegalHelpCostsFormData(session, ebsCase.getCaseReferenceNumber()));
+
+    model.addAttribute(
         "awards", caseOutcomeOpt.map(this::getAwards).orElse(Collections.emptyList()));
+
+    // Documents are retrieved using the generic evidence store, keyed by case reference
+    // number and the OUTCOME ccms module.
+    final List<BaseEvidenceDocumentDetail> documents =
+        evidenceService
+            .getEvidenceDocumentsForCase(ebsCase.getCaseReferenceNumber(), CcmsModule.OUTCOME)
+            .map(EvidenceDocumentDetails::getContent)
+            .blockOptional()
+            .orElse(Collections.emptyList());
+    model.addAttribute("documents", documents);
     return "application/outcome-and-awards";
   }
 
@@ -366,6 +424,293 @@ public class CaseController {
     if (awardsToAdd != null) {
       awards.addAll(awardsToAdd);
     }
+  }
+
+  /**
+   * Provides the award type form used by the select award type flow.
+   *
+   * <p>If the form does not already exist in the HTTP session, Spring calls this method to create
+   * it. Because {@link CaseController} is annotated with {@link SessionAttributes} for {@code
+   * AWARD_TYPE_FORM}, Spring stores the returned form in the session for subsequent requests.
+   *
+   * @return a new award type form
+   */
+  @ModelAttribute(AWARD_TYPE_FORM)
+  public AwardTypeForm awardTypeForm() {
+    return new AwardTypeForm();
+  }
+
+  /**
+   * Displays the Select Award Type screen.
+   *
+   * @param model the model used to pass data to the award type dropdown in the view
+   * @return The Select Award Type view
+   */
+  @GetMapping("/case/outcome-and-awards/award-type")
+  public String displaySelectAwardType(
+      @ModelAttribute(AWARD_TYPE_FORM) final AwardTypeForm awardTypeForm,
+      final BindingResult bindingResult,
+      final Model model) {
+
+    try {
+      final List<AwardTypeLookupValueDetail> awardTypes =
+          lookupService
+              .getAwardTypes()
+              .blockOptional()
+              .map(AwardTypeLookupDetail::getContent)
+              .orElse(Collections.emptyList());
+
+      model.addAttribute("awardTypes", awardTypes);
+    } catch (EbsApiClientException ex) {
+      log.warn("Failed to retrieve award types", ex);
+
+      bindingResult.reject(
+          "awardType.lookup.failed", "We could not load the award types. Please try again.");
+
+      model.addAttribute("awardTypes", Collections.emptyList());
+    }
+
+    return "application/select-award-type";
+  }
+
+  /**
+   * Handles submission of the Select Award Type form.
+   *
+   * <p>Uses the submitted award type code to find the corresponding award type lookup entry. The
+   * selected lookup entry is then used to populate the form with its description and broader award
+   * type category. Based on that category, the user is redirected to the appropriate award details
+   * screen.
+   *
+   * @param awardTypeForm form containing the award type selected by the user
+   * @return redirect to the appropriate award details screen or select award type view if the
+   *     selected award type code cannot be found or its award type category is unsupported
+   */
+  @PostMapping("/case/outcome-and-awards/award-type")
+  public String selectAwardType(
+      @ModelAttribute(AWARD_TYPE_FORM) final AwardTypeForm awardTypeForm,
+      final BindingResult bindingResult,
+      final Model model) {
+
+    awardTypeValidator.validate(awardTypeForm, bindingResult);
+
+    final List<AwardTypeLookupValueDetail> awardTypes;
+
+    try {
+      awardTypes =
+          lookupService
+              .getAwardTypes()
+              .blockOptional()
+              .map(AwardTypeLookupDetail::getContent)
+              .orElse(Collections.emptyList());
+    } catch (EbsApiClientException ex) {
+      log.warn("Failed to retrieve award types", ex);
+
+      bindingResult.reject(
+          "awardType.lookup.failed", "We could not load the award types. Please try again.");
+
+      model.addAttribute("awardTypes", Collections.emptyList());
+      return "application/select-award-type";
+    }
+
+    if (bindingResult.hasErrors()) {
+      model.addAttribute("awardTypes", awardTypes);
+      return "application/select-award-type";
+    }
+
+    final Optional<AwardTypeLookupValueDetail> selectedAwardTypeOpt =
+        awardTypes.stream()
+            .filter(
+                lookupItem ->
+                    Objects.equals(lookupItem.getCode(), awardTypeForm.getAwardTypeCode()))
+            .findFirst();
+
+    if (selectedAwardTypeOpt.isEmpty()) {
+      bindingResult.rejectValue(
+          "awardTypeCode", "awardType.invalid", "Please select a valid award type.");
+
+      model.addAttribute("awardTypes", awardTypes);
+      return "application/select-award-type";
+    }
+
+    final AwardTypeLookupValueDetail selectedAwardType = selectedAwardTypeOpt.get();
+
+    awardTypeForm.setDescription(selectedAwardType.getDescription());
+    awardTypeForm.setAwardType(selectedAwardType.getAwardType());
+
+    return switch (selectedAwardType.getAwardType()) {
+      case AWARD_TYPE_COST -> "redirect:/case/outcome-and-awards/cost-award";
+
+      case AWARD_TYPE_OTHER_ASSET -> "redirect:/case/outcome-and-awards/asset";
+
+      case AWARD_TYPE_LAND -> "redirect:/case/outcome-and-awards/land-property";
+
+      case AWARD_TYPE_FINANCIAL -> "redirect:/case/outcome-and-awards/financial-settlement";
+
+      default -> {
+        bindingResult.rejectValue(
+            "awardTypeCode", "awardType.unsupported", "The selected award type is not supported.");
+
+        model.addAttribute("awardTypes", awardTypes);
+        yield "application/select-award-type";
+      }
+    };
+  }
+
+  /**
+   * Displays the document upload screen for outcome and awards.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param model the model
+   * @return the outcome and awards document upload view
+   */
+  @GetMapping("/case/outcome-and-awards/document/upload")
+  public String outcomeAndAwardsDocumentUpload(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase, final Model model) {
+    if (!ActionViewHelper.isOutcomeDocumentActionAllowed(ebsCase)) {
+      throw new CaabApplicationException(
+          "User is not authorised to upload outcome documents for this case");
+    }
+    model.addAttribute("outcomeAndAwardsDocumentUploadForm", new EvidenceUploadFormData());
+    populateOutcomeAndAwardsDocumentUploadModel(model);
+    return "application/outcome-and-awards-document-upload";
+  }
+
+  /**
+   * Handles the upload of a document from the outcome and awards screen.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param user The current user details.
+   * @param outcomeAndAwardsDocumentUploadForm The upload form data.
+   * @param bindingResult The binding result for validation.
+   * @param model the model
+   * @return the outcome and awards document upload view, or a redirect to outcome and awards.
+   */
+  @PostMapping("/case/outcome-and-awards/document/upload")
+  public String outcomeAndAwardsDocumentUploadPost(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @ModelAttribute("outcomeAndAwardsDocumentUploadForm")
+          final EvidenceUploadFormData outcomeAndAwardsDocumentUploadForm,
+      final BindingResult bindingResult,
+      final Model model) {
+    if (!ActionViewHelper.isOutcomeDocumentActionAllowed(ebsCase)) {
+      throw new CaabApplicationException(
+          "User is not authorised to upload outcome documents for this case");
+    }
+
+    providerRequestDocumentUploadValidator.validate(
+        outcomeAndAwardsDocumentUploadForm, bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      populateOutcomeAndAwardsDocumentUploadModel(model);
+      return "application/outcome-and-awards-document-upload";
+    }
+
+    // applicationOrOutcomeId/caseReferenceNumber and the OUTCOME ccms module are used to
+    // link this document to the case.
+    outcomeAndAwardsDocumentUploadForm.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+    outcomeAndAwardsDocumentUploadForm.setApplicationOrOutcomeId(ebsCase.getCaseReferenceNumber());
+    final Integer providerId =
+        Optional.ofNullable(user.getProvider())
+            .map(p -> p.getId())
+            .orElseThrow(() -> new CaabApplicationException("User provider is null"));
+    outcomeAndAwardsDocumentUploadForm.setProviderId(providerId);
+    outcomeAndAwardsDocumentUploadForm.setDocumentSender(user.getLoginId());
+    outcomeAndAwardsDocumentUploadForm.setCcmsModule(CcmsModule.OUTCOME);
+    if (!StringUtils.hasText(outcomeAndAwardsDocumentUploadForm.getDocumentTypeDisplayValue())) {
+      outcomeAndAwardsDocumentUploadForm.setDocumentTypeDisplayValue(
+          resolveDocumentTypeDisplayValue(outcomeAndAwardsDocumentUploadForm.getDocumentType()));
+    }
+    if (outcomeAndAwardsDocumentUploadForm.getEvidenceTypes() == null) {
+      outcomeAndAwardsDocumentUploadForm.setEvidenceTypes(Collections.emptyList());
+    }
+
+    if (avScanResultHandler.isScanRejected(outcomeAndAwardsDocumentUploadForm, bindingResult)) {
+      populateOutcomeAndAwardsDocumentUploadModel(model);
+      return "application/outcome-and-awards-document-upload";
+    }
+
+    if (outcomeAndAwardsDocumentUploadForm.getEvidenceTypes().contains(OUTCOMES_EVIDENCE_CODE)) {
+      //       Register the document in EBS to get an EBS document id before saving to the TDS.
+      final String registeredDocumentId =
+          evidenceService
+              .registerDocument(
+                  outcomeAndAwardsDocumentUploadForm.getDocumentType(),
+                  outcomeAndAwardsDocumentUploadForm.getFileExtension(),
+                  outcomeAndAwardsDocumentUploadForm.getDocumentDescription(),
+                  ELECTRONIC.getCode(),
+                  ebsCase.getCaseReferenceNumber(),
+                  user.getLoginId(),
+                  user.getUserType())
+              .blockOptional()
+              .orElseThrow(() -> new CaabApplicationException("Failed to register document"));
+
+      outcomeAndAwardsDocumentUploadForm.setRegisteredDocumentId(registeredDocumentId);
+    }
+
+    // Stores the document in the generic evidence store (TDS) alongside application/request
+    // evidence, keyed by case reference number and the OUTCOME ccms module.
+    evidenceService
+        .addDocument(
+            evidenceMapper.toEvidenceDocumentDetail(outcomeAndAwardsDocumentUploadForm),
+            user.getLoginId())
+        .blockOptional()
+        .orElseThrow(() -> new CaabApplicationException("Failed to save document"));
+
+    return "redirect:/case/outcome-and-awards";
+  }
+
+  /**
+   * Handles the removal of a document from the outcome and awards screen.
+   *
+   * @param documentId The ID of the document to remove.
+   * @param ebsCase The case details from EBS.
+   * @param user The current user details.
+   * @return A redirect to the outcome and awards screen.
+   */
+  @PostMapping("/case/outcome-and-awards/document/{document-id}/remove")
+  public String removeOutcomeAndAwardsDocument(
+      @PathVariable("document-id") final Integer documentId,
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user) {
+
+    if (!ActionViewHelper.isOutcomeDocumentActionAllowed(ebsCase)) {
+      throw new CaabApplicationException(
+          "User is not authorised to remove outcome documents for this case");
+    }
+
+    evidenceService.removeDocumentForCase(
+        ebsCase.getCaseReferenceNumber(), documentId, CcmsModule.OUTCOME, user.getLoginId());
+
+    return "redirect:/case/outcome-and-awards";
+  }
+
+  /**
+   * Populates the model with the dropdown/validation attributes required by the outcome and awards
+   * document upload view.
+   *
+   * @param model the model
+   */
+  private void populateOutcomeAndAwardsDocumentUploadModel(final Model model) {
+    final DropdownBuilder builder = new DropdownBuilder(model);
+    builder
+        .addDropdown("documentTypes", lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+        .build();
+    model.addAttribute(
+        "validExtensions",
+        getCommaDelimitedString(providerRequestDocumentUploadValidator.getValidExtensions()));
+    model.addAttribute("maxFileSize", providerRequestDocumentUploadValidator.getMaxFileSize());
+  }
+
+  private String resolveDocumentTypeDisplayValue(final String documentTypeCode) {
+    if (documentTypeCode == null) {
+      return null;
+    }
+
+    return lookupService
+        .getDocumentTypeDescription(documentTypeCode)
+        .blockOptional()
+        .orElse(documentTypeCode);
   }
 
   /**
@@ -567,6 +912,87 @@ public class CaseController {
     }
 
     return "redirect:/case/outcome-and-awards";
+  }
+
+  /**
+   * Displays the pre-certificate and legal help costs screen.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param user The current user details.
+   * @return The name of the view to render.
+   */
+  @GetMapping("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
+  public String preCertificateAndLegalHelpCosts(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      HttpSession session,
+      Model model) {
+    model.addAttribute(
+        "preCertificateAndLegalHelpCosts",
+        getPreCertificateAndLegalHelpCostsFormData(session, ebsCase.getCaseReferenceNumber()));
+    return "application/pre-certificate-and-legal-help-costs";
+  }
+
+  /**
+   * Handles submission of the pre-certificate and legal help costs form.
+   *
+   * @param ebsCase The case details from EBS.
+   * @param user The current user details.
+   * @return The name of the view to render.
+   */
+  @PostMapping("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
+  public String preCertificateAndLegalHelpCostsPost(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @ModelAttribute("preCertificateAndLegalHelpCosts")
+          final PreCertificateAndLegalHelpCostsFormData preCertificateAndLegalHelpCosts,
+      final BindingResult bindingResult,
+      final Model model,
+      HttpSession session) {
+
+    preCertificateAndLegalHelpCostsValidator.validate(
+        preCertificateAndLegalHelpCosts, bindingResult);
+    if (bindingResult.hasErrors()) {
+      return "application/pre-certificate-and-legal-help-costs";
+    }
+
+    session.setAttribute(
+        preCertificateAndLegalHelpCostsSessionKey(ebsCase.getCaseReferenceNumber()),
+        copyPreCertificateAndLegalHelpCostsFormData(preCertificateAndLegalHelpCosts));
+    return "redirect:/case/outcome-and-awards";
+  }
+
+  private PreCertificateAndLegalHelpCostsFormData getPreCertificateAndLegalHelpCostsFormData(
+      final HttpSession session, final String caseReferenceNumber) {
+    final PreCertificateAndLegalHelpCostsFormData formData =
+        (PreCertificateAndLegalHelpCostsFormData)
+            session.getAttribute(preCertificateAndLegalHelpCostsSessionKey(caseReferenceNumber));
+    return formData != null
+        ? copyPreCertificateAndLegalHelpCostsFormData(formData)
+        : new PreCertificateAndLegalHelpCostsFormData();
+  }
+
+  private String preCertificateAndLegalHelpCostsSessionKey(final String caseReferenceNumber) {
+    return PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_SESSION_KEY_PREFIX + caseReferenceNumber;
+  }
+
+  private PreCertificateAndLegalHelpCostsFormData copyPreCertificateAndLegalHelpCostsFormData(
+      final PreCertificateAndLegalHelpCostsFormData source) {
+    final PreCertificateAndLegalHelpCostsFormData copy =
+        new PreCertificateAndLegalHelpCostsFormData();
+    copy.setPreCertificateCosts(
+        StringUtils.hasText(source.getPreCertificateCosts())
+            ? source.getPreCertificateCosts().trim()
+            : null);
+    copy.setLegalHelpCosts(
+        StringUtils.hasText(source.getLegalHelpCosts()) ? source.getLegalHelpCosts().trim() : null);
+    copy.setOfficeCode(
+        StringUtils.hasText(source.getOfficeCode()) ? source.getOfficeCode().trim() : null);
+    copy.setUniqueFileNumber(
+        StringUtils.hasText(source.getUniqueFileNumber())
+            ? source.getUniqueFileNumber().trim()
+            : null);
+    return copy;
   }
 
   private ProceedingDetail validateProceedingIndex(

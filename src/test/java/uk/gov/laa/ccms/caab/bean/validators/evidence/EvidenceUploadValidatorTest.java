@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.bean.validators.evidence;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.EVIDENCE_UPLOAD_FORM_DATA;
 
@@ -282,5 +283,26 @@ class EvidenceUploadValidatorTest {
     formData.setProviderId(789);
     formData.setRegisteredDocumentId("regId");
     return formData;
+  }
+
+  @Test
+  @DisplayName("markup in the document description is rejected")
+  public void validate_documentDescriptionContainingMarkup_rejects() {
+    evidenceUploadFormData.setDocumentDescription("<script>alert(1)</script>");
+
+    validator.validateDocumentDescription(evidenceUploadFormData, errors);
+
+    assertNotNull(errors.getFieldError("documentDescription"));
+    assertEquals("invalid.format", errors.getFieldError("documentDescription").getCode());
+  }
+
+  @Test
+  @DisplayName("an ordinary document description still passes")
+  public void validate_ordinaryDocumentDescription_passes() {
+    evidenceUploadFormData.setDocumentDescription("Bank statement (Jan-Mar 2026), pages 1-4.");
+
+    validator.validateDocumentDescription(evidenceUploadFormData, errors);
+
+    assertNull(errors.getFieldError("documentDescription"));
   }
 }

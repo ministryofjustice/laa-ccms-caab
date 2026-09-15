@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html"
+      xmlns:govuk="http://www.thymeleaf.org">
+<head>
+    <title th:text="|#{service.name} - #{preCertificateAndLegalHelpCosts.title}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+    <div id="breadcrumbs">
+        <a th:href="@{/case/outcome-and-awards}" class="govuk-back-link"
+           th:text="#{preCertificateAndLegalHelpCosts.backLink}"></a>
+    </div>
+
+    <div id="main-content">
+        <h1 class="govuk-heading-l" th:text="#{preCertificateAndLegalHelpCosts.title}"></h1>
+        <p class="govuk-body" th:text="#{preCertificateAndLegalHelpCosts.information}"></p>
+
+        <form
+                th:action="@{/case/outcome-and-awards/preCertificateAndLegalHelpCosts}"
+                th:object="${preCertificateAndLegalHelpCosts}"
+                method="post">
+
+            <div th:replace="~{partials/error-summary :: error-summary}"></div>
+
+            <div th:replace="~{partials/forms :: currencyInput('preCertificateCosts', #{preCertificateAndLegalHelpCosts.preCertificateCosts}, 10)}"></div>
+            <h2 class="govuk-heading-m" th:text="#{preCertificateAndLegalHelpCosts.legalHelp}"></h2>
+            <div th:replace="~{partials/forms :: currencyInput('legalHelpCosts', #{preCertificateAndLegalHelpCosts.legalHelpCosts}, 10)}"></div>
+            <div th:replace="~{partials/forms :: textInput(fieldId='officeCode', label=#{preCertificateAndLegalHelpCosts.officeCode}, inputClass='govuk-input--width-10', hint=#{preCertificateAndLegalHelpCosts.officeCode.hint}, maxlengthParam=6)}"></div>
+            <div th:replace="~{partials/forms :: textInput(fieldId='uniqueFileNumber', label=#{preCertificateAndLegalHelpCosts.uniqueFileNumber}, inputClass='govuk-input--width-10', hint=#{preCertificateAndLegalHelpCosts.uniqueFileNumber.hint}, maxlengthParam=10)}"></div>
+
+
+            <govuk:button th:text="#{site.next}"/>
+        </form>
+    </div>
+</div>
+</body>
+</html>

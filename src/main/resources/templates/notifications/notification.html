@@ -53,7 +53,7 @@
                   th:with="formattedDate=${#temporals.format(note.date,'dd MMMM yyyy')}, formattedTime=${#temporals.format(note.date,'HH:mm')}"
                   th:text="#{notifications.noteTitle(${formattedDate}, ${formattedTime})}">
               </h3>
-              <p class="govuk-body ccms-pre-formatted" th:id="|note-${idx.index}|" th:utext="${note.message}"></p>
+              <p class="govuk-body ccms-pre-formatted" th:id="|note-${idx.index}|" th:text="${note.message}"></p>
             </div>
           </div>
         </div>

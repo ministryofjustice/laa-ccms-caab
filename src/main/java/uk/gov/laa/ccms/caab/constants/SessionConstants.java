@@ -230,6 +230,12 @@ public class SessionConstants {
   public static final String GENERAL_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA =
       "generalProviderRequestEvidenceUploadForm";
 
+  /**
+   * Session attribute used to keep track of the active general provider request confirmation id.
+   */
+  public static final String GENERAL_PROVIDER_REQUEST_CONFIRMATION_ID =
+      "generalProviderRequestConfirmationId";
+
   /** Session attribute used to keep track of case provider request upload form data. */
   public static final String CASE_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA =
       "caseProviderRequestEvidenceUploadForm";
@@ -259,9 +265,19 @@ public class SessionConstants {
   /** Session attribute for in-progress proceeding outcome form data. */
   public static final String PROCEEDING_OUTCOME_FORM_DATA = "proceedingOutcomeFormData";
 
+  /**
+   * Base session attribute name for pre-certificate and legal help costs form data. Actual per-case
+   * session key is this value + ":" + caseReferenceNumber.
+   */
+  public static final String PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA =
+      "preCertificateAndLegalHelpCostsFormData";
+
   /** Session attribute for keeping track of undertaking minimum. */
   public static final String UNDERTAKING_MINIMUM = "undertakingMinimum";
 
   /** Session attribute for keeping track of undertaking maximum. */
   public static final String UNDERTAKING_MAXIMUM = "undertakingMaximum";
+
+  /** Session attribute holding the selected award-type details. */
+  public static final String AWARD_TYPE_FORM = "awardTypeForm";
 }

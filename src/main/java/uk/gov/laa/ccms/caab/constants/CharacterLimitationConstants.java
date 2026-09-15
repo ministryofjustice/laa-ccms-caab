@@ -33,5 +33,8 @@ public final class CharacterLimitationConstants {
   /** the size for justification. */
   public static final int JUSTIFICATION_CHARACTER_SIZE = 200;
 
+  /** the size for the free-text message on a notification response. */
+  public static final int NOTIFICATION_MESSAGE_CHARACTER_SIZE = 2000;
+
   private CharacterLimitationConstants() {}
 }

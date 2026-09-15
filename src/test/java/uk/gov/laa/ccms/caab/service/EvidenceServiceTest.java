@@ -1,13 +1,18 @@
 package uk.gov.laa.ccms.caab.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY_DEVOLVED_POWERS;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_SUBSTANTIVE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OPA_EVIDENCE_ITEMS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_OUTCOME_DOCUMENT_CODE;
@@ -36,6 +41,7 @@ import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
@@ -81,6 +87,37 @@ class EvidenceServiceTest {
   private final CcmsModule source = CcmsModule.APPLICATION;
 
   @Test
+  void isEvidenceRequired_returnsTrueForEmergencyApplication() {
+    final ApplicationType applicationType = new ApplicationType().id(APP_TYPE_EMERGENCY);
+
+    final boolean evidenceRequired =
+        evidenceService.isEvidenceRequired(null, null, applicationType, Collections.emptyList());
+
+    assertTrue(evidenceRequired);
+  }
+
+  @Test
+  void isEvidenceRequired_returnsTrueForEmergencyDelegatedFunctionsApplication() {
+    final ApplicationType applicationType =
+        new ApplicationType().id(APP_TYPE_EMERGENCY_DEVOLVED_POWERS);
+
+    final boolean evidenceRequired =
+        evidenceService.isEvidenceRequired(null, null, applicationType, Collections.emptyList());
+
+    assertTrue(evidenceRequired);
+  }
+
+  @Test
+  void isEvidenceRequired_returnsFalseForNonEmergencyApplicationWithoutOtherTriggers() {
+    final ApplicationType applicationType = new ApplicationType().id(APP_TYPE_SUBSTANTIVE);
+
+    final boolean evidenceRequired =
+        evidenceService.isEvidenceRequired(null, null, applicationType, Collections.emptyList());
+
+    assertFalse(evidenceRequired);
+  }
+
+  @Test
   void getEvidenceDocumentsForCase_callsApiClient() {
     EvidenceDocumentDetails evidenceDocumentDetails = new EvidenceDocumentDetails();
     when(caabApiClient.getEvidenceDocuments(
@@ -113,7 +150,7 @@ class EvidenceServiceTest {
   }
 
   @Test
-  void registerDocument_callsApiClient() {
+  void registerDocument_deprecatedOverload_callsApiClientWithNullCaseReferenceNumber() {
     final String docId = "123";
 
     ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.forClass(Document.class);
@@ -121,7 +158,8 @@ class EvidenceServiceTest {
     final ClientTransactionResponse clientTransactionResponse = new ClientTransactionResponse();
     clientTransactionResponse.setReferenceNumber(docId);
 
-    when(soaApiClient.registerDocument(any(Document.class), eq(userId), eq(userType)))
+    when(soaApiClient.registerDocument(
+            any(Document.class), eq((String) null), eq(userId), eq(userType)))
         .thenReturn(Mono.just(clientTransactionResponse));
 
     final Mono<String> resultMono =
@@ -131,7 +169,43 @@ class EvidenceServiceTest {
     StepVerifier.create(resultMono).expectNext(docId).verifyComplete();
 
     verify(soaApiClient)
-        .registerDocument(documentArgumentCaptor.capture(), eq(userId), eq(userType));
+        .registerDocument(
+            documentArgumentCaptor.capture(), eq((String) null), eq(userId), eq(userType));
+
+    assertEquals(documentType, documentArgumentCaptor.getValue().getDocumentType());
+    assertEquals(fileExtension, documentArgumentCaptor.getValue().getFileExtension());
+    assertEquals(documentDescription, documentArgumentCaptor.getValue().getText());
+  }
+
+  @Test
+  void registerDocument_withCaseReferenceNumber_callsApiClient() {
+    final String docId = "123";
+    final String caseReferenceNumber = "caseRef123";
+
+    ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.forClass(Document.class);
+
+    final ClientTransactionResponse clientTransactionResponse = new ClientTransactionResponse();
+    clientTransactionResponse.setReferenceNumber(docId);
+
+    when(soaApiClient.registerDocument(
+            any(Document.class), eq(caseReferenceNumber), eq(userId), eq(userType)))
+        .thenReturn(Mono.just(clientTransactionResponse));
+
+    final Mono<String> resultMono =
+        evidenceService.registerDocument(
+            documentType,
+            fileExtension,
+            documentDescription,
+            null,
+            caseReferenceNumber,
+            userId,
+            userType);
+
+    StepVerifier.create(resultMono).expectNext(docId).verifyComplete();
+
+    verify(soaApiClient)
+        .registerDocument(
+            documentArgumentCaptor.capture(), eq(caseReferenceNumber), eq(userId), eq(userType));
 
     assertEquals(documentType, documentArgumentCaptor.getValue().getDocumentType());
     assertEquals(fileExtension, documentArgumentCaptor.getValue().getFileExtension());
@@ -183,6 +257,43 @@ class EvidenceServiceTest {
     assertThrows(
         CaabApplicationException.class,
         () -> evidenceService.removeDocument(applicationId, docId, CcmsModule.APPLICATION, userId));
+
+    verify(caabApiClient, never()).deleteEvidenceDocument(docId, userId);
+  }
+
+  @Test
+  void removeDocumentForCase_correctCaseReferenceNumber_removesDocument() {
+    final Integer docId = 123;
+    final CcmsModule ccmsModule = CcmsModule.OUTCOME;
+
+    final BaseEvidenceDocumentDetail doc = new BaseEvidenceDocumentDetail().id(docId);
+
+    when(caabApiClient.getEvidenceDocuments(
+            null, caseReferenceNumber, null, null, ccmsModule.getCode(), true))
+        .thenReturn(Mono.just(new EvidenceDocumentDetails().addContentItem(doc)));
+
+    when(caabApiClient.deleteEvidenceDocument(docId, userId)).thenReturn(Mono.empty());
+
+    evidenceService.removeDocumentForCase(caseReferenceNumber, docId, ccmsModule, userId);
+
+    verify(caabApiClient).deleteEvidenceDocument(docId, userId);
+  }
+
+  @Test
+  void removeDocumentForCase_incorrectCaseReferenceNumber_throwsException() {
+    final Integer docId = 123;
+    final CcmsModule ccmsModule = CcmsModule.OUTCOME;
+
+    final BaseEvidenceDocumentDetail doc = new BaseEvidenceDocumentDetail().id(456);
+
+    when(caabApiClient.getEvidenceDocuments(
+            null, caseReferenceNumber, null, null, ccmsModule.getCode(), true))
+        .thenReturn(Mono.just(new EvidenceDocumentDetails().addContentItem(doc)));
+
+    assertThrows(
+        CaabApplicationException.class,
+        () ->
+            evidenceService.removeDocumentForCase(caseReferenceNumber, docId, ccmsModule, userId));
 
     verify(caabApiClient, never()).deleteEvidenceDocument(docId, userId);
   }

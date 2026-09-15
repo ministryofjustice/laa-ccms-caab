@@ -21,6 +21,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -836,9 +837,22 @@ class BillingControllerTest {
           .thenReturn(List.of(new DynamicCheckbox()));
     }
 
-    private AssessmentEntityDetail global(final String name, final String value) {
-      return new AssessmentEntityDetail()
-          .attributes(List.of(new AssessmentAttributeDetail().name(name).value(value)));
+    /** Builds the global entity from alternating attribute names and values. */
+    private AssessmentEntityDetail global(final String... namesAndValues) {
+      if (namesAndValues.length % 2 != 0) {
+        throw new IllegalArgumentException(
+            "global() takes alternating attribute names and values, so it needs an even number of "
+                + "arguments, but got "
+                + namesAndValues.length
+                + ": "
+                + Arrays.toString(namesAndValues));
+      }
+      final List<AssessmentAttributeDetail> attributes = new ArrayList<>();
+      for (int i = 0; i < namesAndValues.length; i += 2) {
+        attributes.add(
+            new AssessmentAttributeDetail().name(namesAndValues[i]).value(namesAndValues[i + 1]));
+      }
+      return new AssessmentEntityDetail().attributes(attributes);
     }
 
     @Test
@@ -862,7 +876,8 @@ class BillingControllerTest {
     @DisplayName("Blocks submission of a court-assessed claim the court has not yet assessed")
     void blocksClaimAwaitingCourtAssessment() {
       billingAssessment(
-          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "false"));
+          AssessmentStatus.COMPLETE.getStatus(),
+          global("BILL_TYPE", "Solicitor Final", "COURT_ASSESSED_BILL", "false"));
 
       assertThat(
               mockMvc.perform(
@@ -879,7 +894,8 @@ class BillingControllerTest {
     @DisplayName("Shows the declaration for a complete, court-assessed bill")
     void showsDeclaration() {
       billingAssessment(
-          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+          AssessmentStatus.COMPLETE.getStatus(),
+          global("BILL_TYPE", "Solicitor Final", "COURT_ASSESSED_BILL", "true"));
       declarationConfigured();
 
       assertThat(
@@ -894,7 +910,8 @@ class BillingControllerTest {
     @Test
     @DisplayName("A bill that never went to court is treated as assessed, as the legacy PUI does")
     void treatsAbsentCourtAnswerAsAssessed() {
-      billingAssessment(AssessmentStatus.COMPLETE.getStatus(), null);
+      billingAssessment(
+          AssessmentStatus.COMPLETE.getStatus(), global("BILL_TYPE", "Solicitor Final"));
       declarationConfigured();
 
       assertThat(
@@ -904,6 +921,44 @@ class BillingControllerTest {
                       .sessionAttr(USER_DETAILS, user)))
           .hasStatusOk()
           .hasViewName("application/billing/declaration");
+    }
+
+    @Test
+    @DisplayName("Skips the declaration, and never asks for one, without a bill type")
+    void skipsDeclarationWithoutBillType() {
+      // Given - a completed assessment that carries no BILL_TYPE. The lookup narrows on the bill
+      // type, so asking without one would answer with every bill type's statements at once.
+      billingAssessment(
+          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill/declaration")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing/bill");
+
+      verify(lookupService, never()).getDeclarations(any(), any());
+    }
+
+    @Test
+    @DisplayName("Skips the declaration, and never asks for one, when the bill type is blank")
+    void skipsDeclarationWhenBillTypeIsBlank() {
+      // Given - a bill type of whitespace narrows the lookup no better than a missing one does.
+      billingAssessment(
+          AssessmentStatus.COMPLETE.getStatus(),
+          global("BILL_TYPE", "   ", "COURT_ASSESSED_BILL", "true"));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/bill/declaration")
+                      .sessionAttr(CASE, caseWithBillFunction())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing/bill");
+
+      verify(lookupService, never()).getDeclarations(any(), any());
     }
 
     @Test
@@ -924,7 +979,8 @@ class BillingControllerTest {
     @DisplayName("POST submits the bill, clears the billing assessments and confirms")
     void submitsBill() {
       billingAssessment(
-          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+          AssessmentStatus.COMPLETE.getStatus(),
+          global("BILL_TYPE", "Solicitor Final", "COURT_ASSESSED_BILL", "true"));
       when(billingService.submitBill(eq("300000123"), eq("10"), any(), eq(user)))
           .thenReturn("INV-9");
       when(assessmentService.deleteAssessments(any(), any(), any(), any()))
@@ -957,7 +1013,8 @@ class BillingControllerTest {
     void skipsEmptyDeclaration() {
       // Given - reference data holds no declaration for this bill type
       billingAssessment(
-          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+          AssessmentStatus.COMPLETE.getStatus(),
+          global("BILL_TYPE", "Solicitor Final", "COURT_ASSESSED_BILL", "true"));
       when(lookupService.getDeclarations(any(), any()))
           .thenReturn(Mono.just(new DeclarationLookupDetail()));
       when(billingService.submitBill(eq("300000123"), eq("10"), any(), eq(user)))
@@ -982,7 +1039,8 @@ class BillingControllerTest {
     @DisplayName("Submit shows the declaration, and sends nothing, when one is configured")
     void showsDeclarationBeforeSubmitting() {
       billingAssessment(
-          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+          AssessmentStatus.COMPLETE.getStatus(),
+          global("BILL_TYPE", "Solicitor Final", "COURT_ASSESSED_BILL", "true"));
       declarationConfigured();
 
       assertThat(
@@ -1000,7 +1058,8 @@ class BillingControllerTest {
     @DisplayName("The declaration screen redirects to the bill when none is configured")
     void declarationRedirectsWhenEmpty() {
       billingAssessment(
-          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+          AssessmentStatus.COMPLETE.getStatus(),
+          global("BILL_TYPE", "Solicitor Final", "COURT_ASSESSED_BILL", "true"));
       when(lookupService.getDeclarations(any(), any()))
           .thenReturn(Mono.just(new DeclarationLookupDetail()));
 
@@ -1019,7 +1078,8 @@ class BillingControllerTest {
       // Given - the first submit never reaches EBS
       final String caseRef = "300000123";
       billingAssessment(
-          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+          AssessmentStatus.COMPLETE.getStatus(),
+          global("BILL_TYPE", "Solicitor Final", "COURT_ASSESSED_BILL", "true"));
       when(assessmentService.deleteAssessments(any(), any(), any(), any()))
           .thenReturn(Mono.empty());
       when(billingService.submitBill(eq(caseRef), eq("10"), any(), eq(user)))
@@ -1056,7 +1116,8 @@ class BillingControllerTest {
     @DisplayName("POST does not submit the bill again when the declaration is submitted twice")
     void doesNotSubmitBillTwice() {
       billingAssessment(
-          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+          AssessmentStatus.COMPLETE.getStatus(),
+          global("BILL_TYPE", "Solicitor Final", "COURT_ASSESSED_BILL", "true"));
       when(billingService.submitBill(eq("300000123"), eq("10"), any(), eq(user)))
           .thenReturn("INV-9");
       when(assessmentService.deleteAssessments(any(), any(), any(), any()))
@@ -1085,7 +1146,8 @@ class BillingControllerTest {
     @DisplayName("POST re-shows the declaration without submitting when it is not fully accepted")
     void rejectsUnacceptedDeclaration() {
       billingAssessment(
-          AssessmentStatus.COMPLETE.getStatus(), global("COURT_ASSESSED_BILL", "true"));
+          AssessmentStatus.COMPLETE.getStatus(),
+          global("BILL_TYPE", "Solicitor Final", "COURT_ASSESSED_BILL", "true"));
       declarationConfigured();
       doAnswer(
               invocation -> {
@@ -1247,6 +1309,7 @@ class BillingControllerTest {
           .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_POA));
     }
 
+    /** A completed POA assessment, which carries its bill type as the legacy PUI's does. */
     private void completeAssessment() {
       when(assessmentService.getAssessments(any(), any(), any()))
           .thenReturn(
@@ -1256,7 +1319,18 @@ class BillingControllerTest {
                           new AssessmentDetail()
                               .name(AssessmentRulebase.POA.getName())
                               .status(AssessmentStatus.COMPLETE.getStatus())
-                              .entityTypes(new ArrayList<>()))));
+                              .entityTypes(
+                                  List.of(
+                                      new AssessmentEntityTypeDetail()
+                                          .name(AssessmentEntityType.GLOBAL.getType())
+                                          .entities(
+                                              List.of(
+                                                  new AssessmentEntityDetail()
+                                                      .attributes(
+                                                          List.of(
+                                                              new AssessmentAttributeDetail()
+                                                                  .name("BILL_TYPE")
+                                                                  .value("Solicitor POA"))))))))));
     }
 
     @Test

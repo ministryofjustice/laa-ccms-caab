@@ -136,18 +136,7 @@
         <input type="hidden" th:field="*{courtCode}"/>
         <input type="hidden" th:field="*{courtName}"/>
 
-      <div class="govuk-form-group"
-           th:classappend="${#fields.hasErrors('outcomeCourtCaseNo')} ? 'govuk-form-group--error' : ''">
-        <label class="govuk-label" for="outcomeCourtCaseNo" th:text="#{case.recordOutcomes.courtCaseNumber}"></label>
-        <span class="govuk-error-message"
-              th:if="${#fields.hasErrors('outcomeCourtCaseNo')}"
-              th:errors="*{outcomeCourtCaseNo}"></span>
-        <input id="outcomeCourtCaseNo"
-               class="govuk-input govuk-input--width-20"
-               th:field="*{outcomeCourtCaseNo}"
-               th:errorclass="govuk-input--error"
-               type="text">
-      </div>
+      <div th:replace="~{partials/forms :: textInput('outcomeCourtCaseNo', #{case.recordOutcomes.courtCaseNumber}, 'govuk-input--width-20')}"></div>
 
       <div class="govuk-form-group"
            th:classappend="${#fields.hasErrors('widerBenefits')} ? 'govuk-form-group--error' : ''">

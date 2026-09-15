@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
@@ -15,16 +16,19 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EMERGENCY;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_COSTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.AWARD_TYPE_FORM;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COURT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -40,23 +44,37 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.bean.AwardTypeForm;
 import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.PreCertificateAndLegalHelpCostsFormData;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
+import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
+import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
+import uk.gov.laa.ccms.caab.bean.validators.application.PreCertificateAndLegalHelpCostsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingOutcomeValidator;
+import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestDocumentUploadValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
+import uk.gov.laa.ccms.caab.client.EbsApiClientException;
+import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.mapper.EvidenceMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
@@ -67,6 +85,8 @@ import uk.gov.laa.ccms.caab.model.ClientDetail;
 import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
+import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.LandAwardDetail;
@@ -85,8 +105,13 @@ import uk.gov.laa.ccms.caab.model.sections.OrganisationAddressDetailsSectionDisp
 import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.OrganisationOrganisationDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.AvScanResultHandler;
+import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
+import uk.gov.laa.ccms.caab.service.EvidenceService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.OutcomeResultLookupDetail;
@@ -101,7 +126,15 @@ class CaseControllerTest {
   @Mock private ApplicationService applicationService;
   @Mock private LookupService lookupService;
   @Mock private CaseOutcomeService caseOutcomeService;
+  @Mock private AwardTypeValidator awardTypeValidator;
   @Mock private ProceedingOutcomeValidator proceedingOutcomeValidator;
+  @Mock private PreCertificateAndLegalHelpCostsValidator preCertificateAndLegalHelpCostsValidator;
+  @Mock private ProviderRequestDocumentUploadValidator providerRequestDocumentUploadValidator;
+  @Mock private EvidenceService evidenceService;
+  @Mock private AvScanService avScanService;
+  @Mock private AvScanResultHandler avScanResultHandler;
+  @Mock private EvidenceMapper evidenceMapper;
+  @Mock private MessageSource messageSource;
 
   @InjectMocks private CaseController caseController;
 
@@ -112,6 +145,8 @@ class CaseControllerTest {
   private String returnUrl;
 
   private static final String SEARCH_URL = "SEARCH_URL";
+  private static final String PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_SESSION_KEY_PREFIX =
+      PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA + ":";
 
   @BeforeEach
   void setUp() {
@@ -125,7 +160,25 @@ class CaseControllerTest {
     returnUrl = "returnUrl";
     lenient()
         .when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
-        .thenReturn(java.util.Optional.empty());
+        .thenReturn(
+            java.util.Optional.of(
+                new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+    lenient()
+        .when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+        .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
+    lenient()
+        .when(providerRequestDocumentUploadValidator.getValidExtensions())
+        .thenReturn(List.of());
+    lenient().when(providerRequestDocumentUploadValidator.getMaxFileSize()).thenReturn("8MB");
+    lenient()
+        .when(evidenceService.getEvidenceDocumentsForCase(anyString(), any()))
+        .thenReturn(Mono.just(new EvidenceDocumentDetails().content(Collections.emptyList())));
+    lenient()
+        .when(messageSource.getMessage(anyString(), any(), any()))
+        .thenReturn("Test Translation");
+    lenient()
+        .when(lookupService.getDocumentTypeDescription(anyString()))
+        .thenReturn(Mono.just("Document description"));
   }
 
   @Nested
@@ -892,6 +945,824 @@ class CaseControllerTest {
                       .asInstanceOf(InstanceOfAssertFactories.list(BaseAwardDetail.class))
                       .containsExactly(costAward, financialAward, landAward, otherAssetAward))
           .hasEntrySatisfying("caseOutcomeId", value -> assertThat(value).isEqualTo(42));
+    }
+
+    @Test
+    @DisplayName("Pre-certificate and legal help costs page loads with existing saved values")
+    public void preCertificateAndLegalHelpCostsPageLoadsWithSavedValues() {
+      final String selectedCaseRef = "8";
+      final PreCertificateAndLegalHelpCostsFormData savedFormData =
+          new PreCertificateAndLegalHelpCostsFormData();
+      savedFormData.setPreCertificateCosts("12.50");
+      savedFormData.setLegalHelpCosts("7.25");
+      savedFormData.setOfficeCode("1A234B");
+      savedFormData.setUniqueFileNumber("010124/001");
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(
+                          preCertificateAndLegalHelpCostsSessionKey(selectedCaseRef),
+                          savedFormData)))
+          .hasStatusOk()
+          .hasViewName("application/pre-certificate-and-legal-help-costs")
+          .model()
+          .hasEntrySatisfying(
+              "preCertificateAndLegalHelpCosts",
+              value -> {
+                PreCertificateAndLegalHelpCostsFormData formData =
+                    (PreCertificateAndLegalHelpCostsFormData) value;
+                assertThat(formData.getPreCertificateCosts()).isEqualTo("12.50");
+                assertThat(formData.getLegalHelpCosts()).isEqualTo("7.25");
+                assertThat(formData.getOfficeCode()).isEqualTo("1A234B");
+                assertThat(formData.getUniqueFileNumber()).isEqualTo("010124/001");
+              });
+    }
+
+    @Test
+    @DisplayName("Pre-certificate and legal help costs post returns form when validation fails")
+    public void preCertificateAndLegalHelpCostsPostReturnsFormWhenValidationFails() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+
+      org.mockito.Mockito.doAnswer(
+              invocation -> {
+                ((org.springframework.validation.Errors) invocation.getArgument(1))
+                    .rejectValue("officeCode", "invalid.format");
+                return null;
+              })
+          .when(preCertificateAndLegalHelpCostsValidator)
+          .validate(any(), any());
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .param("preCertificateCosts", "12.50")
+                      .param("legalHelpCosts", "7.25")
+                      .param("officeCode", "BAD")
+                      .param("uniqueFileNumber", "010124/001")))
+          .hasStatusOk()
+          .hasViewName("application/pre-certificate-and-legal-help-costs");
+    }
+
+    @Test
+    @DisplayName("Pre-certificate and legal help costs post stores values and redirects")
+    public void preCertificateAndLegalHelpCostsPostStoresValuesAndRedirects() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      doNothing().when(preCertificateAndLegalHelpCostsValidator).validate(any(), any());
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/preCertificateAndLegalHelpCosts")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .param("preCertificateCosts", "12.50")
+                      .param("legalHelpCosts", "7.25")
+                      .param("officeCode", "1A234B")
+                      .param("uniqueFileNumber", "010124/001")))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards")
+          .satisfies(
+              response ->
+                  assertThat(response)
+                      .request()
+                      .sessionAttributes()
+                      .hasEntrySatisfying(
+                          preCertificateAndLegalHelpCostsSessionKey(selectedCaseRef),
+                          value -> {
+                            PreCertificateAndLegalHelpCostsFormData formData =
+                                (PreCertificateAndLegalHelpCostsFormData) value;
+                            assertThat(formData.getPreCertificateCosts()).isEqualTo("12.50");
+                            assertThat(formData.getLegalHelpCosts()).isEqualTo("7.25");
+                            assertThat(formData.getOfficeCode()).isEqualTo("1A234B");
+                            assertThat(formData.getUniqueFileNumber()).isEqualTo("010124/001");
+                          }));
+    }
+
+    @Test
+    @DisplayName("Outcome and awards shows saved pre-certificate and legal help costs")
+    public void outcomeAndAwardsShowsSavedPreCertificateAndLegalHelpCosts() {
+      final String selectedCaseRef = "8";
+      final PreCertificateAndLegalHelpCostsFormData savedFormData =
+          new PreCertificateAndLegalHelpCostsFormData();
+      savedFormData.setPreCertificateCosts("12.50");
+      savedFormData.setLegalHelpCosts("7.25");
+      savedFormData.setOfficeCode("1A234B");
+      savedFormData.setUniqueFileNumber("010124/001");
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(
+                          preCertificateAndLegalHelpCostsSessionKey(selectedCaseRef),
+                          savedFormData)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards")
+          .model()
+          .hasEntrySatisfying(
+              "preCertificateAndLegalHelpCostsSummary",
+              value -> {
+                PreCertificateAndLegalHelpCostsFormData formData =
+                    (PreCertificateAndLegalHelpCostsFormData) value;
+                assertThat(formData.getPreCertificateCosts()).isEqualTo("12.50");
+                assertThat(formData.getLegalHelpCosts()).isEqualTo("7.25");
+                assertThat(formData.getOfficeCode()).isEqualTo("1A234B");
+                assertThat(formData.getUniqueFileNumber()).isEqualTo("010124/001");
+              });
+    }
+
+    @Test
+    @DisplayName("Outcome and awards does not use costs saved for another case reference")
+    public void outcomeAndAwardsDoesNotUseCostsSavedForAnotherCase() {
+      final String selectedCaseRef = "8";
+      final String otherCaseRef = "9";
+      final PreCertificateAndLegalHelpCostsFormData savedFormData =
+          new PreCertificateAndLegalHelpCostsFormData();
+      savedFormData.setPreCertificateCosts("12.50");
+      savedFormData.setLegalHelpCosts("7.25");
+      ApplicationDetail ebsCase =
+          getEbsCase(otherCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(
+                          preCertificateAndLegalHelpCostsSessionKey(selectedCaseRef),
+                          savedFormData)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards")
+          .model()
+          .hasEntrySatisfying(
+              "preCertificateAndLegalHelpCostsSummary",
+              value -> {
+                PreCertificateAndLegalHelpCostsFormData formData =
+                    (PreCertificateAndLegalHelpCostsFormData) value;
+                assertThat(formData.getPreCertificateCosts()).isNull();
+                assertThat(formData.getLegalHelpCosts()).isNull();
+                assertThat(formData.getOfficeCode()).isNull();
+                assertThat(formData.getUniqueFileNumber()).isNull();
+              });
+    }
+
+    @Test
+    @DisplayName("Outcome and awards document upload page loads")
+    public void outcomeAndAwardsDocumentUploadPageLoads() {
+      final ApplicationDetail ebsCase =
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards-document-upload")
+          .model()
+          .containsKeys(
+              "outcomeAndAwardsDocumentUploadForm",
+              "documentTypes",
+              "validExtensions",
+              "maxFileSize");
+    }
+
+    @Test
+    @DisplayName("Outcome and awards document upload succeeds and redirects")
+    public void outcomeAndAwardsDocumentUploadPostRedirectsOnSuccess() {
+      final EvidenceUploadFormData formData = new EvidenceUploadFormData();
+      formData.setFile(
+          new org.springframework.mock.web.MockMultipartFile(
+              "file", "document.pdf", "application/pdf", "content".getBytes()));
+      formData.setSanitisedFileName("document.pdf");
+      formData.setFileExtension("pdf");
+      formData.setDocumentType("DOC1");
+      formData.setDocumentDescription("A description");
+      formData.setEvidenceTypes(List.of("OUTCOMES_EVIDENCE"));
+
+      final ApplicationDetail ebsCase =
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+
+      formData.setProviderId(1);
+      formData.setDocumentSender("user");
+      formData.setCcmsModule(CcmsModule.OUTCOME);
+      formData.setCaseReferenceNumber("ref");
+
+      final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
+      when(evidenceMapper.toEvidenceDocumentDetail(formData)).thenReturn(evidenceDocumentDetail);
+      when(avScanResultHandler.isScanRejected(any(EvidenceUploadFormData.class), any()))
+          .thenReturn(false);
+      when(evidenceService.registerDocument(
+              anyString(), anyString(), any(), anyString(), anyString(), anyString(), any()))
+          .thenReturn(Mono.just("registeredDocId"));
+      when(evidenceService.addDocument(eq(evidenceDocumentDetail), anyString()))
+          .thenReturn(Mono.just("saved"));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("outcomeAndAwardsDocumentUploadForm", formData)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(avScanResultHandler).isScanRejected(any(EvidenceUploadFormData.class), any());
+      verify(evidenceService)
+          .registerDocument(eq("DOC1"), eq("pdf"), any(), any(), any(), any(), any());
+      verify(evidenceService).addDocument(eq(evidenceDocumentDetail), anyString());
+    }
+
+    @Test
+    @DisplayName("Outcome and awards document upload re-renders view on validation error")
+    public void outcomeAndAwardsDocumentUploadPostReturnsViewOnValidationError() {
+      final EvidenceUploadFormData formData = new EvidenceUploadFormData();
+
+      org.mockito.Mockito.doAnswer(
+              invocation -> {
+                final org.springframework.validation.Errors errors = invocation.getArgument(1);
+                errors.rejectValue("file", "required.file", "Please select a file");
+                return null;
+              })
+          .when(providerRequestDocumentUploadValidator)
+          .validate(any(), any());
+
+      final ApplicationDetail ebsCase =
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("outcomeAndAwardsDocumentUploadForm", formData)))
+          .hasViewName("application/outcome-and-awards-document-upload")
+          .model()
+          .containsKeys("documentTypes", "validExtensions", "maxFileSize");
+
+      verify(evidenceService, org.mockito.Mockito.never()).addDocument(any(), any());
+    }
+
+    @ParameterizedTest(name = "Validation error: {0} (field: {1})")
+    @CsvSource({
+      "file type error, file, invalid.extension, File type .exe is not allowed, document.exe",
+      "file size error, file, file.size.exceeded, File size exceeds maximum of 8MB, large.pdf",
+      "missing document type, documentType, required.documentType, Please select a document type, document.pdf",
+    })
+    @DisplayName("Outcome and awards document upload re-renders view on validation errors")
+    public void outcomeAndAwardsDocumentUploadPostReturnsViewOnValidationError(
+        String errorName,
+        String fieldName,
+        String errorCode,
+        String errorMessage,
+        String fileName) {
+      final EvidenceUploadFormData formData = new EvidenceUploadFormData();
+      if ("missing document type".equals(errorName)) {
+        formData.setFile(
+            new org.springframework.mock.web.MockMultipartFile(
+                "file", fileName, "application/pdf", "content".getBytes()));
+        formData.setDocumentType(null);
+      } else if ("file size error".equals(errorName)) {
+        formData.setFile(
+            new org.springframework.mock.web.MockMultipartFile(
+                "file", fileName, "application/pdf", new byte[9_000_000]));
+      } else {
+        formData.setFile(
+            new org.springframework.mock.web.MockMultipartFile(
+                "file", fileName, "application/octet-stream", "content".getBytes()));
+      }
+
+      org.mockito.Mockito.doAnswer(
+              invocation -> {
+                final org.springframework.validation.Errors errors = invocation.getArgument(1);
+                errors.rejectValue(fieldName, errorCode, errorMessage);
+                return null;
+              })
+          .when(providerRequestDocumentUploadValidator)
+          .validate(any(), any());
+
+      final ApplicationDetail ebsCase =
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("outcomeAndAwardsDocumentUploadForm", formData)))
+          .hasViewName("application/outcome-and-awards-document-upload")
+          .model()
+          .containsKeys("documentTypes", "validExtensions", "maxFileSize");
+
+      verify(evidenceService, org.mockito.Mockito.never()).addDocument(any(), any());
+    }
+
+    @ParameterizedTest(name = "File type: {0}")
+    @CsvSource({
+      "pdf, application/pdf, DOC1, PDF document",
+      "docx, application/vnd.openxmlformats-officedocument.wordprocessingml.document, DOC2, DOCX document",
+      "rtf, application/rtf, DOC3, RTF document",
+      "tiff, image/tiff, DOC4, TIFF image",
+    })
+    @DisplayName("Outcome and awards document upload succeeds with supported file types")
+    public void outcomeAndAwardsDocumentUploadSucceedsWithSupportedFileTypes(
+        String fileExtension, String mimeType, String docTypeCode, String description) {
+      final EvidenceUploadFormData formData = new EvidenceUploadFormData();
+      final String fileName = "document." + fileExtension;
+      formData.setFile(
+          new org.springframework.mock.web.MockMultipartFile(
+              "file", fileName, mimeType, "content".getBytes()));
+      formData.setSanitisedFileName(fileName);
+      formData.setFileExtension(fileExtension);
+      formData.setDocumentType(docTypeCode);
+      formData.setDocumentDescription(description);
+      formData.setEvidenceTypes(List.of("OUTCOMES_EVIDENCE"));
+
+      final ApplicationDetail ebsCase =
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+
+      final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
+      when(evidenceMapper.toEvidenceDocumentDetail(formData)).thenReturn(evidenceDocumentDetail);
+      when(evidenceService.registerDocument(
+              anyString(), anyString(), any(), anyString(), anyString(), anyString(), any()))
+          .thenReturn(Mono.just("registeredDocId"));
+      when(evidenceService.addDocument(eq(evidenceDocumentDetail), anyString()))
+          .thenReturn(Mono.just("saved"));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("outcomeAndAwardsDocumentUploadForm", formData)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(evidenceService)
+          .registerDocument(eq(docTypeCode), eq(fileExtension), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Remove outcome and awards document succeeds")
+    public void removeOutcomeAndAwardsDocumentRedirectsOnSuccess() {
+      final ApplicationDetail ebsCase =
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/document/123/remove")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(evidenceService)
+          .removeDocumentForCase(
+              ebsCase.getCaseReferenceNumber(), 123, CcmsModule.OUTCOME, user.getLoginId());
+    }
+
+    @Test
+    @DisplayName("Remove outcome and awards document fails for non-existent document")
+    public void removeOutcomeAndAwardsDocumentFailsForNonExistentDocument() {
+      final ApplicationDetail ebsCase =
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+
+      doThrow(new CaabApplicationException("Document not found"))
+          .when(evidenceService)
+          .removeDocumentForCase(anyString(), anyInt(), any(), anyString());
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/document/999/remove")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .failure()
+          .hasCauseInstanceOf(CaabApplicationException.class);
+    }
+
+    @ParameterizedTest(name = "Upload with permission {0}: {1}")
+    @CsvSource({
+      "OUTCOME_WITH_DISCHARGE, true",
+      "OUTCOME_NO_DISCHARGE, true",
+      "AMEND_CASE, false",
+    })
+    @DisplayName("Outcome and awards document upload link visibility based on permissions")
+    public void outcomeAndAwardsDocumentUploadLinkVisibilityBasedOnPermissions(
+        String permissionCodeName, boolean shouldBeVisible) {
+      String permissionCode = getFunctionConstantByName(permissionCodeName);
+      final List<String> permissions = List.of(permissionCode);
+      final ApplicationDetail ebsCase =
+          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null, permissions);
+
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards")
+          .model()
+          .hasEntrySatisfying(
+              "outcomeDocumentActionAllowed",
+              value -> assertThat(value).isEqualTo(shouldBeVisible));
+    }
+
+    @ParameterizedTest(name = "Remove link with permission {0}: {1}")
+    @CsvSource({
+      "OUTCOME_NO_DISCHARGE, true",
+      "OUTCOME_WITH_DISCHARGE, true",
+      "VIEW_CASE, false",
+    })
+    @DisplayName("Outcome and awards document remove link visibility based on permissions")
+    public void outcomeAndAwardsDocumentRemoveLinkVisibilityBasedOnPermissions(
+        String permissionCodeName, boolean shouldBeVisible) {
+      String permissionCode = getFunctionConstantByName(permissionCodeName);
+      final List<String> permissions = List.of(permissionCode);
+      final ApplicationDetail ebsCase =
+          getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null, permissions);
+
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              java.util.Optional.of(
+                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards")
+          .model()
+          .hasEntrySatisfying(
+              "outcomeDocumentActionAllowed",
+              value -> assertThat(value).isEqualTo(shouldBeVisible));
+    }
+
+    private String getFunctionConstantByName(String name) {
+      return switch (name) {
+        case "OUTCOME_WITH_DISCHARGE" -> FunctionConstants.OUTCOME_WITH_DISCHARGE;
+        case "OUTCOME_NO_DISCHARGE" -> FunctionConstants.OUTCOME_NO_DISCHARGE;
+        case "AMEND_CASE" -> FunctionConstants.AMEND_CASE;
+        case "VIEW_CASE" -> FunctionConstants.VIEW_CASE;
+        default -> throw new IllegalArgumentException("Unknown function constant: " + name);
+      };
+    }
+
+    @Test
+    @DisplayName("Outcome and awards document upload fails on AV scan error")
+    public void outcomeAndAwardsDocumentUploadFailsOnAvScanError() {
+      final EvidenceUploadFormData formData = new EvidenceUploadFormData();
+      formData.setFile(
+          new org.springframework.mock.web.MockMultipartFile(
+              "file", "infected.pdf", "application/pdf", "content".getBytes()));
+      formData.setSanitisedFileName("infected.pdf");
+      formData.setFileExtension("pdf");
+      formData.setDocumentType("DOC1");
+      formData.setDocumentDescription("A description");
+      formData.setProviderId(1);
+      formData.setDocumentSender("user");
+      formData.setCcmsModule(CcmsModule.OUTCOME);
+      formData.setCaseReferenceNumber("ref");
+
+      final ApplicationDetail ebsCase =
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+
+      when(avScanResultHandler.isScanRejected(any(EvidenceUploadFormData.class), any()))
+          .thenReturn(true);
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("outcomeAndAwardsDocumentUploadForm", formData)))
+          .hasStatus(org.springframework.http.HttpStatus.OK)
+          .hasViewName("application/outcome-and-awards-document-upload");
+
+      verify(evidenceService, org.mockito.Mockito.never())
+          .registerDocument(any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Outcome and awards document upload fails on registration error")
+    public void outcomeAndAwardsDocumentUploadFailsOnRegistrationError() {
+      final EvidenceUploadFormData formData = new EvidenceUploadFormData();
+      formData.setFile(
+          new org.springframework.mock.web.MockMultipartFile(
+              "file", "document.pdf", "application/pdf", "content".getBytes()));
+      formData.setSanitisedFileName("document.pdf");
+      formData.setFileExtension("pdf");
+      formData.setDocumentType("DOC1");
+      formData.setDocumentDescription("A description");
+      formData.setEvidenceTypes(List.of("OUTCOMES_EVIDENCE"));
+      formData.setProviderId(1);
+      formData.setDocumentSender("user");
+      formData.setCcmsModule(CcmsModule.OUTCOME);
+      formData.setCaseReferenceNumber("ref");
+
+      final ApplicationDetail ebsCase =
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+
+      when(avScanResultHandler.isScanRejected(any(EvidenceUploadFormData.class), any()))
+          .thenReturn(false);
+      when(evidenceService.registerDocument(
+              anyString(), anyString(), any(), anyString(), anyString(), anyString(), any()))
+          .thenReturn(Mono.error(new CaabApplicationException("Registration failed")));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("outcomeAndAwardsDocumentUploadForm", formData)))
+          .failure()
+          .hasCauseInstanceOf(CaabApplicationException.class)
+          .hasMessageContaining("Registration failed");
+
+      verify(avScanResultHandler).isScanRejected(any(EvidenceUploadFormData.class), any());
+    }
+
+    @Test
+    @DisplayName("Outcome and awards document upload fails on add document error")
+    public void outcomeAndAwardsDocumentUploadFailsOnAddDocumentError() {
+      final EvidenceUploadFormData formData = new EvidenceUploadFormData();
+      formData.setFile(
+          new org.springframework.mock.web.MockMultipartFile(
+              "file", "document.pdf", "application/pdf", "content".getBytes()));
+      formData.setSanitisedFileName("document.pdf");
+      formData.setFileExtension("pdf");
+      formData.setDocumentType("DOC1");
+      formData.setDocumentDescription("A description");
+      formData.setEvidenceTypes(List.of("OUTCOMES_EVIDENCE"));
+
+      final ApplicationDetail ebsCase =
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+
+      final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
+      when(evidenceMapper.toEvidenceDocumentDetail(formData)).thenReturn(evidenceDocumentDetail);
+      when(evidenceService.registerDocument(
+              anyString(), anyString(), any(), anyString(), anyString(), anyString(), any()))
+          .thenReturn(Mono.just("registeredDocId"));
+      when(evidenceService.addDocument(eq(evidenceDocumentDetail), anyString()))
+          .thenReturn(Mono.error(new CaabApplicationException("Failed to add document")));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("outcomeAndAwardsDocumentUploadForm", formData)))
+          .failure()
+          .hasCauseInstanceOf(CaabApplicationException.class)
+          .hasMessageContaining("Failed to add document");
+    }
+
+    @Test
+    @DisplayName("Outcome and awards document upload succeeds without explicit evidence types")
+    public void outcomeAndAwardsDocumentUploadSucceedsWithoutEvidenceTypes() {
+      final EvidenceUploadFormData formData = new EvidenceUploadFormData();
+      formData.setFile(
+          new org.springframework.mock.web.MockMultipartFile(
+              "file", "document.pdf", "application/pdf", "content".getBytes()));
+      formData.setSanitisedFileName("document.pdf");
+      formData.setFileExtension("pdf");
+      formData.setDocumentType("DOC1");
+      formData.setDocumentDescription("A description");
+      formData.setEvidenceTypes(null);
+
+      final ApplicationDetail ebsCase =
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+
+      final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
+      when(evidenceMapper.toEvidenceDocumentDetail(formData)).thenReturn(evidenceDocumentDetail);
+      when(evidenceService.addDocument(eq(evidenceDocumentDetail), anyString()))
+          .thenReturn(Mono.just("saved"));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("outcomeAndAwardsDocumentUploadForm", formData)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(evidenceService, org.mockito.Mockito.never())
+          .registerDocument(any(), any(), any(), any(), any(), any(), any());
+      verify(evidenceService).addDocument(eq(evidenceDocumentDetail), anyString());
+    }
+
+    @Test
+    @DisplayName(
+        "Outcome and awards document upload with OUTCOME_NO_DISCHARGE permission allows upload")
+    public void outcomeAndAwardsDocumentUploadPageLoadsWithNoDischargePermission() {
+      final ApplicationDetail ebsCase =
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_NO_DISCHARGE));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards-document-upload")
+          .model()
+          .containsKeys(
+              "outcomeAndAwardsDocumentUploadForm",
+              "documentTypes",
+              "validExtensions",
+              "maxFileSize");
+    }
+
+    @Test
+    @DisplayName("Outcome and awards document upload with both outcome permissions")
+    public void outcomeAndAwardsDocumentUploadSucceedsWithBothPermissions() {
+      final EvidenceUploadFormData formData = new EvidenceUploadFormData();
+      formData.setFile(
+          new org.springframework.mock.web.MockMultipartFile(
+              "file",
+              "document.docx",
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              "content".getBytes()));
+      formData.setSanitisedFileName("document.docx");
+      formData.setFileExtension("docx");
+      formData.setDocumentType("DOC2");
+      formData.setDocumentDescription("Multi-word description with numbers 123");
+      formData.setEvidenceTypes(List.of("OUTCOMES_EVIDENCE"));
+
+      final ApplicationDetail ebsCase =
+          getEbsCase(
+              "8",
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(
+                  FunctionConstants.OUTCOME_WITH_DISCHARGE,
+                  FunctionConstants.OUTCOME_NO_DISCHARGE));
+
+      final EvidenceDocumentDetail evidenceDocumentDetail = new EvidenceDocumentDetail();
+      when(evidenceMapper.toEvidenceDocumentDetail(formData)).thenReturn(evidenceDocumentDetail);
+      when(evidenceService.registerDocument(
+              anyString(), anyString(), any(), anyString(), anyString(), anyString(), any()))
+          .thenReturn(Mono.just("registeredDocId"));
+      when(evidenceService.addDocument(eq(evidenceDocumentDetail), anyString()))
+          .thenReturn(Mono.just("saved"));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/document/upload")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .flashAttr("outcomeAndAwardsDocumentUploadForm", formData)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(evidenceService)
+          .registerDocument(eq("DOC2"), eq("docx"), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -2081,6 +2952,10 @@ class CaseControllerTest {
         .hasMessageContaining("TDS Application type must not be null");
   }
 
+  private String preCertificateAndLegalHelpCostsSessionKey(final String caseReferenceNumber) {
+    return PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_SESSION_KEY_PREFIX + caseReferenceNumber;
+  }
+
   private ApplicationDetail getEbsCase(
       String selectedCaseRef,
       Integer providerId,
@@ -2263,6 +3138,309 @@ class CaseControllerTest {
           .failure()
           .hasCauseInstanceOf(CaabApplicationException.class)
           .hasMessageContaining("Failed to retrieve case details");
+    }
+  }
+
+  @Nested
+  @DisplayName("GET: /case/outcome-and-awards/award-type")
+  class SelectAwardTypeTests {
+
+    @Test
+    @DisplayName("Should display award types returned by the lookup service to the model")
+    void shouldDisplayAwardTypesReturnedByLookup() {
+      final AwardTypeLookupValueDetail costAward =
+          new AwardTypeLookupValueDetail()
+              .code("COST_AWARD")
+              .description("Cost award")
+              .awardType("COST")
+              .enabled(true);
+
+      final AwardTypeLookupDetail awardTypes =
+          new AwardTypeLookupDetail().addContentItem(costAward);
+
+      when(lookupService.getAwardTypes()).thenReturn(Mono.just(awardTypes));
+
+      assertThat(mockMvc.perform(get("/case/outcome-and-awards/award-type")))
+          .hasStatusOk()
+          .hasViewName("application/select-award-type")
+          .model()
+          .containsEntry("awardTypes", awardTypes.getContent())
+          .hasEntrySatisfying(
+              AWARD_TYPE_FORM, value -> assertThat(value).isInstanceOf(AwardTypeForm.class));
+
+      verify(lookupService).getAwardTypes();
+    }
+
+    @Test
+    @DisplayName("Should display an empty award type list when the lookup returns no data")
+    void shouldDisplayEmptyAwardTypesWhenLookupReturnsNoData() {
+      when(lookupService.getAwardTypes()).thenReturn(Mono.empty());
+
+      assertThat(mockMvc.perform(get("/case/outcome-and-awards/award-type")))
+          .hasStatusOk()
+          .hasViewName("application/select-award-type")
+          .model()
+          .containsEntry("awardTypes", Collections.emptyList())
+          .hasEntrySatisfying(
+              AWARD_TYPE_FORM, value -> assertThat(value).isInstanceOf(AwardTypeForm.class));
+
+      verify(lookupService).getAwardTypes();
+    }
+
+    @Test
+    @DisplayName("Should display an error when award types cannot be retrieved")
+    void shouldDisplayErrorWhenAwardTypesCannotBeRetrieved() {
+      when(lookupService.getAwardTypes())
+          .thenReturn(Mono.error(new EbsApiClientException("Failed to retrieve award types")));
+
+      assertThat(mockMvc.perform(get("/case/outcome-and-awards/award-type")))
+          .hasStatusOk()
+          .hasViewName("application/select-award-type")
+          .model()
+          .containsEntry("awardTypes", Collections.emptyList())
+          .hasEntrySatisfying(
+              BindingResult.MODEL_KEY_PREFIX + AWARD_TYPE_FORM,
+              value -> {
+                final BindingResult result = (BindingResult) value;
+
+                assertThat(result.hasGlobalErrors()).isTrue();
+                assertThat(result.getGlobalError()).isNotNull();
+                assertThat(result.getGlobalError().getCode()).isEqualTo("awardType.lookup.failed");
+                assertThat(result.getGlobalError().getDefaultMessage())
+                    .isEqualTo("We could not load the award types. Please try again.");
+              });
+
+      verify(lookupService).getAwardTypes();
+    }
+  }
+
+  @Nested
+  @DisplayName("POST: /case/outcome-and-awards/award-type")
+  class SubmitAwardTypeTests {
+
+    @ParameterizedTest(name = "{0} resolves to {2} and redirects to {3}")
+    @CsvSource({
+      "FIN_ASSET, Financial Asset, ASSET, /case/outcome-and-awards/asset",
+      "OTH_ASSET, Other Asset, ASSET, /case/outcome-and-awards/asset",
+      "ENFORCEMENT, Enforcement Cost Award, COST, /case/outcome-and-awards/cost-award",
+      "COST, Cost Award, COST, /case/outcome-and-awards/cost-award",
+      "COST_AGR, Cost Settlement, COST, /case/outcome-and-awards/cost-award",
+      "DAMAGE, Financial or Punitive Damages, DAMAGE, /case/outcome-and-awards/financial-settlement",
+      "DAMAGE_AGR, Financial Settlement, DAMAGE, /case/outcome-and-awards/financial-settlement",
+      "LAND, Land/Property, LAND, /case/outcome-and-awards/land-property"
+    })
+    void shouldRedirectAccordingToAwardType(
+        final String code,
+        final String description,
+        final String awardType,
+        final String expectedRedirect) {
+
+      final AwardTypeLookupValueDetail lookupValue =
+          new AwardTypeLookupValueDetail()
+              .code(code)
+              .description(description)
+              .awardType(awardType)
+              .enabled(true);
+
+      final AwardTypeLookupDetail lookupDetail =
+          new AwardTypeLookupDetail().addContentItem(lookupValue);
+
+      when(lookupService.getAwardTypes()).thenReturn(Mono.just(lookupDetail));
+
+      final AwardTypeForm awardTypeForm = new AwardTypeForm();
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/award-type")
+                      .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
+                      .param("awardTypeCode", code)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl(expectedRedirect);
+
+      assertThat(awardTypeForm.getAwardTypeCode()).isEqualTo(code);
+      assertThat(awardTypeForm.getDescription()).isEqualTo(description);
+      assertThat(awardTypeForm.getAwardType()).isEqualTo(awardType);
+
+      verify(awardTypeValidator).validate(any(AwardTypeForm.class), any());
+
+      verify(lookupService).getAwardTypes();
+    }
+
+    @Test
+    @DisplayName("Should return select award type view when validation fails")
+    void shouldReturnSelectAwardTypeViewWhenValidationFails() {
+      final AwardTypeLookupValueDetail lookupValue =
+          new AwardTypeLookupValueDetail()
+              .code("FIN_ASSET")
+              .description("Financial Asset")
+              .awardType("ASSET")
+              .enabled(true);
+
+      final AwardTypeLookupDetail lookupDetail =
+          new AwardTypeLookupDetail().addContentItem(lookupValue);
+
+      when(lookupService.getAwardTypes()).thenReturn(Mono.just(lookupDetail));
+
+      doAnswer(
+              invocation -> {
+                final Errors errors = invocation.getArgument(1);
+                errors.rejectValue(
+                    "awardTypeCode", "required.awardTypeCode", "Please complete 'Award type'.");
+                return null;
+              })
+          .when(awardTypeValidator)
+          .validate(any(AwardTypeForm.class), any());
+
+      final AwardTypeForm awardTypeForm = new AwardTypeForm();
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/award-type")
+                      .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
+                      .param("awardTypeCode", "")))
+          .hasStatusOk()
+          .hasViewName("application/select-award-type")
+          .model()
+          .containsEntry("awardTypes", lookupDetail.getContent())
+          .hasEntrySatisfying(
+              BindingResult.MODEL_KEY_PREFIX + AWARD_TYPE_FORM,
+              value -> {
+                final BindingResult result = (BindingResult) value;
+
+                assertThat(result.hasFieldErrors("awardTypeCode")).isTrue();
+                assertThat(result.getFieldError("awardTypeCode")).isNotNull();
+                assertThat(result.getFieldError("awardTypeCode").getCode())
+                    .isEqualTo("required.awardTypeCode");
+              });
+
+      verify(awardTypeValidator).validate(any(AwardTypeForm.class), any());
+
+      verify(lookupService).getAwardTypes();
+    }
+
+    @Test
+    @DisplayName("Should reject an award type code that is not present in the lookup")
+    void shouldRejectUnknownAwardTypeCode() {
+      final AwardTypeLookupValueDetail lookupValue =
+          new AwardTypeLookupValueDetail()
+              .code("FIN_ASSET")
+              .description("Financial Asset")
+              .awardType("ASSET")
+              .enabled(true);
+
+      final AwardTypeLookupDetail lookupDetail =
+          new AwardTypeLookupDetail().addContentItem(lookupValue);
+
+      when(lookupService.getAwardTypes()).thenReturn(Mono.just(lookupDetail));
+
+      final AwardTypeForm awardTypeForm = new AwardTypeForm();
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/award-type")
+                      .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
+                      .param("awardTypeCode", "UNKNOWN")))
+          .hasStatusOk()
+          .hasViewName("application/select-award-type")
+          .model()
+          .containsEntry("awardTypes", lookupDetail.getContent())
+          .hasEntrySatisfying(
+              BindingResult.MODEL_KEY_PREFIX + AWARD_TYPE_FORM,
+              value -> {
+                final BindingResult result = (BindingResult) value;
+
+                assertThat(result.hasFieldErrors("awardTypeCode")).isTrue();
+                assertThat(result.getFieldError("awardTypeCode")).isNotNull();
+                assertThat(result.getFieldError("awardTypeCode").getCode())
+                    .isEqualTo("awardType.invalid");
+                assertThat(result.getFieldError("awardTypeCode").getDefaultMessage())
+                    .isEqualTo("Please select a valid award type.");
+              });
+
+      assertThat(awardTypeForm.getAwardTypeCode()).isEqualTo("UNKNOWN");
+
+      verify(awardTypeValidator).validate(any(AwardTypeForm.class), any());
+      verify(lookupService).getAwardTypes();
+    }
+
+    @Test
+    @DisplayName("Should reject an unsupported award type category")
+    void shouldRejectUnsupportedAwardTypeCategory() {
+      final AwardTypeLookupValueDetail lookupValue =
+          new AwardTypeLookupValueDetail()
+              .code("NEW_AWARD")
+              .description("New award")
+              .awardType("UNKNOWN")
+              .enabled(true);
+
+      final AwardTypeLookupDetail lookupDetail =
+          new AwardTypeLookupDetail().addContentItem(lookupValue);
+
+      when(lookupService.getAwardTypes()).thenReturn(Mono.just(lookupDetail));
+
+      final AwardTypeForm awardTypeForm = new AwardTypeForm();
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/award-type")
+                      .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
+                      .param("awardTypeCode", "NEW_AWARD")))
+          .hasStatusOk()
+          .hasViewName("application/select-award-type")
+          .model()
+          .containsEntry("awardTypes", lookupDetail.getContent())
+          .hasEntrySatisfying(
+              BindingResult.MODEL_KEY_PREFIX + AWARD_TYPE_FORM,
+              value -> {
+                final BindingResult result = (BindingResult) value;
+
+                assertThat(result.hasFieldErrors("awardTypeCode")).isTrue();
+                assertThat(result.getFieldError("awardTypeCode")).isNotNull();
+                assertThat(result.getFieldError("awardTypeCode").getCode())
+                    .isEqualTo("awardType.unsupported");
+                assertThat(result.getFieldError("awardTypeCode").getDefaultMessage())
+                    .isEqualTo("The selected award type is not supported.");
+              });
+
+      assertThat(awardTypeForm.getAwardTypeCode()).isEqualTo("NEW_AWARD");
+      assertThat(awardTypeForm.getDescription()).isEqualTo("New award");
+      assertThat(awardTypeForm.getAwardType()).isEqualTo("UNKNOWN");
+
+      verify(awardTypeValidator).validate(any(AwardTypeForm.class), any());
+      verify(lookupService).getAwardTypes();
+    }
+
+    @Test
+    @DisplayName("Should return the select award type view when the lookup API fails")
+    void shouldReturnSelectAwardTypeViewWhenLookupApiFails() {
+      when(lookupService.getAwardTypes())
+          .thenReturn(Mono.error(new EbsApiClientException("Failed to retrieve award types")));
+
+      final AwardTypeForm awardTypeForm = new AwardTypeForm();
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/award-type")
+                      .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
+                      .param("awardTypeCode", "FIN_ASSET")))
+          .hasStatusOk()
+          .hasViewName("application/select-award-type")
+          .model()
+          .containsEntry("awardTypes", Collections.emptyList())
+          .hasEntrySatisfying(
+              BindingResult.MODEL_KEY_PREFIX + AWARD_TYPE_FORM,
+              value -> {
+                final BindingResult result = (BindingResult) value;
+
+                assertThat(result.hasGlobalErrors()).isTrue();
+                assertThat(result.getGlobalError()).isNotNull();
+                assertThat(result.getGlobalError().getCode()).isEqualTo("awardType.lookup.failed");
+                assertThat(result.getGlobalError().getDefaultMessage())
+                    .isEqualTo("We could not load the award types. Please try again.");
+              });
+
+      verify(awardTypeValidator).validate(any(AwardTypeForm.class), any());
+      verify(lookupService).getAwardTypes();
     }
   }
 }

@@ -10,12 +10,26 @@
     <form action="#"
           th:action="@{/{caseContext}/{submissionType}/confirmed(caseContext=${caseContext.pathValue},
             submissionType=${submissionType})}" method="post">
+      <input th:if="${submissionId != null}" type="hidden" name="submissionId" th:value="${submissionId}">
       <h1 class="govuk-heading-l" th:text="#{submission.confirmation}"></h1>
       <p class="govuk-body-l" th:text="#{submission.successfullyProcessed}"></p>
       <div class="govuk-button-group">
         <button type="submit" class="govuk-button" data-module="govuk-button" th:text="#{site.next}"></button>
       </div>
     </form>
+    <script th:if="${submissionId != null}" th:nonce="${cspNonce}">
+      window.addEventListener('pageshow', function (event) {
+        var navigationEntries = window.performance && window.performance.getEntriesByType
+            ? window.performance.getEntriesByType('navigation')
+            : [];
+        var navigationType = navigationEntries.length > 0 ? navigationEntries[0].type : null;
+        if (event.persisted || navigationType === 'back_forward') {
+          var refreshUrl = new URL(window.location.href);
+          refreshUrl.searchParams.set('backNavigationCheck', Date.now().toString());
+          window.location.replace(refreshUrl.toString());
+        }
+      });
+    </script>
   </div>
 </div>
 </body>

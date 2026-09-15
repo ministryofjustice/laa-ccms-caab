@@ -33,7 +33,9 @@
                 <td class="govuk-table__cell">
                     <a th:href="@{/amendments/summary}" class="govuk-link" th:text="#{submission.errorCorrection.section.amendCase}">Amend case</a>
                 </td>
-                <td class="govuk-table__cell" th:utext="${#strings.listJoin(amendmentNoChangesErrors, '<br/>')}"></td>
+                <td class="govuk-table__cell">
+                  <th:block th:each="error, iter : ${amendmentNoChangesErrors}"><span th:text="${error}"></span><br th:unless="${iter.last}"/></th:block>
+                </td>
             </tr>
             <tr class="govuk-table__row" th:if="${providerDetailsErrors != null and !providerDetailsErrors.isEmpty()}">
               <td class="govuk-table__cell">
@@ -50,7 +52,9 @@
                   </button>
                 </form>
               </td>
-              <td class="govuk-table__cell" th:utext="${#strings.listJoin(providerDetailsErrors, '<br/>')}"></td>
+              <td class="govuk-table__cell">
+                <th:block th:each="error, iter : ${providerDetailsErrors}"><span th:text="${error}"></span><br th:unless="${iter.last}"/></th:block>
+              </td>
             </tr>
             <tr class="govuk-table__row" th:if="${generalDetailsErrors != null and !generalDetailsErrors.isEmpty()}">
               <td class="govuk-table__cell">
@@ -70,37 +74,49 @@
                   </button>
                 </form>
               </td>
-              <td class="govuk-table__cell" th:utext="${#strings.listJoin(generalDetailsErrors, '<br/>')}"></td>
+              <td class="govuk-table__cell">
+                <th:block th:each="error, iter : ${generalDetailsErrors}"><span th:text="${error}"></span><br th:unless="${iter.last}"/></th:block>
+              </td>
             </tr>
             <tr class="govuk-table__row" th:if="${proceedingsErrors != null and !proceedingsErrors.isEmpty()}">
               <td class="govuk-table__cell">
                 <a th:href="@{/{caseContext}/proceedings-and-costs(caseContext=${caseContext.pathValue})}" class="govuk-link" th:text="#{submission.errorCorrection.section.proceedingDetails}">Proceeding details</a>
               </td>
-              <td class="govuk-table__cell" th:utext="${#strings.listJoin(proceedingsErrors, '<br/>')}"></td>
+              <td class="govuk-table__cell">
+                <th:block th:each="error, iter : ${proceedingsErrors}"><span th:text="${error}"></span><br th:unless="${iter.last}"/></th:block>
+              </td>
             </tr>
             <tr class="govuk-table__row" th:if="${priorAuthorityErrors != null and !priorAuthorityErrors.isEmpty()}">
               <td class="govuk-table__cell">
                 <a th:href="@{/{caseContext}/proceedings-and-costs#prior-authority(caseContext=${caseContext.pathValue})}" class="govuk-link" th:text="#{submission.errorCorrection.section.priorAuthorityDetails}">Prior authority details</a>
               </td>
-              <td class="govuk-table__cell" th:utext="${#strings.listJoin(priorAuthorityErrors, '<br/>')}"></td>
+              <td class="govuk-table__cell">
+                <th:block th:each="error, iter : ${priorAuthorityErrors}"><span th:text="${error}"></span><br th:unless="${iter.last}"/></th:block>
+              </td>
             </tr>
             <tr class="govuk-table__row" th:if="${opponentErrors != null and !opponentErrors.isEmpty()}">
               <td class="govuk-table__cell">
                 <a th:href="@{/{caseContext}/sections/opponents(caseContext=${caseContext.pathValue})}" class="govuk-link" th:text="#{submission.errorCorrection.section.opponentDetails}">Opponent details</a>
               </td>
-              <td class="govuk-table__cell" th:utext="${#strings.listJoin(opponentErrors, '<br/>')}"></td>
+              <td class="govuk-table__cell">
+                <th:block th:each="error, iter : ${opponentErrors}"><span th:text="${error}"></span><br th:unless="${iter.last}"/></th:block>
+              </td>
             </tr>
             <tr class="govuk-table__row" th:if="${meansAssessmentErrors != null and !meansAssessmentErrors.isEmpty()}">
                 <td class="govuk-table__cell">
                     <a th:href="@{/amendments/assessments(assessment='means',invoked-from='CCMS_AC01')}" class="govuk-link" th:text="#{submission.errorCorrection.section.meansAssessment}">Means Assessment</a>
                 </td>
-                <td class="govuk-table__cell" th:utext="${#strings.listJoin(meansAssessmentErrors, '<br/>')}"></td>
+                <td class="govuk-table__cell">
+                  <th:block th:each="error, iter : ${meansAssessmentErrors}"><span th:text="${error}"></span><br th:unless="${iter.last}"/></th:block>
+                </td>
             </tr>
             <tr class="govuk-table__row" th:if="${meritsAssessmentErrors != null and !meritsAssessmentErrors.isEmpty()}">
                 <td class="govuk-table__cell">
                     <a th:href="@{/amendments/assessments(assessment='merits',invoked-from='CCMS_AC01')}" class="govuk-link" th:text="#{submission.errorCorrection.section.meritsAssessment}">Merits Assessment</a>
                 </td>
-                <td class="govuk-table__cell" th:utext="${#strings.listJoin(meritsAssessmentErrors, '<br/>')}"></td>
+                <td class="govuk-table__cell">
+                  <th:block th:each="error, iter : ${meritsAssessmentErrors}"><span th:text="${error}"></span><br th:unless="${iter.last}"/></th:block>
+                </td>
             </tr>
             </tbody>
           </table>

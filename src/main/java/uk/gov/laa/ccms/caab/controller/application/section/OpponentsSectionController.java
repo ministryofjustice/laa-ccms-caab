@@ -14,7 +14,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.propertyeditors.StringTrimmerEditor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -42,6 +41,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.model.OrganisationResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
+import uk.gov.laa.ccms.caab.security.ControlCharacterStrippingEditor;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -95,7 +95,9 @@ public class OpponentsSectionController {
    */
   @InitBinder
   public void initBinder(WebDataBinder binder) {
-    binder.registerCustomEditor(String.class, new StringTrimmerEditor(true));
+    // Preserves the trim-and-nullify behaviour while keeping the global control-character strip;
+    // a controller-local editor would otherwise replace the one GlobalBinderAdvice registers.
+    binder.registerCustomEditor(String.class, new ControlCharacterStrippingEditor(true));
   }
 
   /**
