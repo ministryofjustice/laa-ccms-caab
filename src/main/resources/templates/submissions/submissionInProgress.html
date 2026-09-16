@@ -34,10 +34,12 @@
            th:if="${submissionStatusUrl != null}"
            th:with="computedSubmissionStatusUrl=@{${submissionStatusUrl}}"
            th:utext="#{submission.progress.description(${#strings.escapeXml(computedSubmissionStatusUrl)})}">
+        </p>
         <p class="govuk-body-l"
            th:unless="${submissionStatusUrl != null}"
            th:with="computedSubmissionStatusUrl=@{/{caseContext}/{submissionType}(caseContext=${caseContext.pathValue},submissionType=${submissionType})}"
            th:utext="#{submission.progress.description(${#strings.escapeXml(computedSubmissionStatusUrl)})}">
+        </p>
         <div class="govuk-grid-row">
           <div class="govuk-grid-column-full">
             <div class="loader"></div>
