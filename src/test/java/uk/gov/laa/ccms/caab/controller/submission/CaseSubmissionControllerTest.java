@@ -570,9 +570,17 @@ class CaseSubmissionControllerTest {
   @DisplayName("Test submissionFailed - Undertaking redirects to billing")
   void testSubmissionFailed_Undertaking() throws Exception {
     mockMvc
-        .perform(post("/amendments/submit-case/undertaking/failed"))
+        .perform(
+            post("/amendments/submit-case/undertaking/failed")
+                .sessionAttr(SUBMISSION_POLL_COUNT, 3)
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
+                .sessionAttr(SUBMISSION_RESULT, "old-result"))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/case/billing"));
+        .andExpect(redirectedUrl("/case/billing"))
+        .andExpect(request().sessionAttribute(SUBMISSION_RESULT, "failed"))
+        .andExpect(
+            request()
+                .sessionAttributeDoesNotExist(SUBMISSION_POLL_COUNT, SUBMISSION_TRANSACTION_ID));
   }
 
   @Test
@@ -581,7 +589,10 @@ class CaseSubmissionControllerTest {
     mockMvc
         .perform(get("/application/submit-case/failed"))
         .andExpect(status().isOk())
-        .andExpect(view().name("submissions/submissionFailed"));
+        .andExpect(view().name("submissions/submissionFailed"))
+        .andExpect(model().attribute("submissionType", SUBMISSION_SUBMIT_CASE))
+        .andExpect(model().attribute("caseContext", CaseContext.APPLICATION))
+        .andExpect(model().attribute("failureUrl", "/application/submit-case/failed"));
   }
 
   @Test
@@ -591,6 +602,8 @@ class CaseSubmissionControllerTest {
         .perform(get("/amendments/submit-case/undertaking/failed"))
         .andExpect(status().isOk())
         .andExpect(view().name("submissions/submissionFailed"))
+        .andExpect(model().attribute("submissionType", SUBMISSION_SUBMIT_CASE))
+        .andExpect(model().attribute("caseContext", CaseContext.AMENDMENTS))
         .andExpect(model().attribute("failureUrl", "/amendments/submit-case/undertaking/failed"));
   }
 }

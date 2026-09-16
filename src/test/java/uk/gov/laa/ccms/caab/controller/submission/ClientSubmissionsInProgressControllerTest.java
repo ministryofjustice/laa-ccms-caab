@@ -20,6 +20,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_POLL_CO
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
 import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 
 import jakarta.servlet.http.HttpSession;
@@ -33,6 +34,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
 import uk.gov.laa.ccms.caab.service.ClientService;
@@ -324,6 +326,36 @@ public class ClientSubmissionsInProgressControllerTest {
     mockMvc
         .perform(get("/application/client-create/failed"))
         .andExpect(status().isOk())
-        .andExpect(view().name("submissions/submissionFailed"));
+        .andExpect(view().name("submissions/submissionFailed"))
+        .andExpect(model().attribute("submissionType", "client-create"))
+        .andExpect(model().attribute("caseContext", CaseContext.APPLICATION))
+        .andExpect(model().attribute("failureUrl", "/application/client-create/failed"));
+  }
+
+  @Test
+  void testUndertakingSubmissionFailed_POST() throws Exception {
+    mockMvc
+        .perform(
+            post("/amendments/submit-case/undertaking/failed")
+                .sessionAttr(SUBMISSION_POLL_COUNT, 3)
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
+                .sessionAttr(SUBMISSION_RESULT, "old-result"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/case/billing"))
+        .andExpect(request().sessionAttribute(SUBMISSION_RESULT, "failed"))
+        .andExpect(
+            request()
+                .sessionAttributeDoesNotExist(SUBMISSION_POLL_COUNT, SUBMISSION_TRANSACTION_ID));
+  }
+
+  @Test
+  void testUndertakingSubmissionsFailed_GET() throws Exception {
+    mockMvc
+        .perform(get("/amendments/submit-case/undertaking/failed"))
+        .andExpect(status().isOk())
+        .andExpect(view().name("submissions/submissionFailed"))
+        .andExpect(model().attribute("submissionType", SUBMISSION_SUBMIT_CASE))
+        .andExpect(model().attribute("caseContext", CaseContext.AMENDMENTS))
+        .andExpect(model().attribute("failureUrl", "/amendments/submit-case/undertaking/failed"));
   }
 }
