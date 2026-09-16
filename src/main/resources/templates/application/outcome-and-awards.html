@@ -71,8 +71,41 @@
           </tr>
           </thead>
           <tbody class="govuk-table__body">
-          <tr class="govuk-table__row">
+          <tr class="govuk-table__row" th:if="${#lists.isEmpty(awards)}">
             <td class="govuk-table__cell" colspan="5" th:text="#{case.outcomeAndAwards.awardsSummary.noAwards}"></td>
+          </tr>
+          <tr class="govuk-table__row" th:each="award : ${awards}">
+            <td class="govuk-table__cell">
+              <th:block th:if="${award.id != null}" th:switch="${award.awardType}">
+                <a class="govuk-link"
+                   th:case="'COST'"
+                   th:href="@{/case/outcome-and-awards/cost-award/{id}(id=${award.id})}"
+                   th:text="${award.awardType}"></a>
+                <a class="govuk-link"
+                   th:case="'ASSET'"
+                   th:href="@{/case/outcome-and-awards/asset/{id}(id=${award.id})}"
+                   th:text="${award.awardType}"></a>
+                <a class="govuk-link"
+                   th:case="'LAND'"
+                   th:href="@{/case/outcome-and-awards/land-property/{id}(id=${award.id})}"
+                   th:text="${award.awardType}"></a>
+                <a class="govuk-link"
+                   th:case="'DAMAGE'"
+                   th:href="@{/case/outcome-and-awards/financial-award/{id}(id=${award.id})}"
+                   th:text="${award.awardType}"></a>
+              </th:block>
+            </td>
+            <td class="govuk-table__cell"
+                th:text="${award.dateOfOrder != null ? #dates.format(award.dateOfOrder, 'dd/MM/yyyy') : ''}"></td>
+            <td class="govuk-table__cell" th:text="${award.description}"></td>
+            <td class="govuk-table__cell"
+                th:text="${award.awardAmount != null ? '£' + award.awardAmount : (award.amount != null ? '£' + award.amount : '')}"></td>
+            <td class="govuk-table__cell">
+              <a class="govuk-link"
+                 th:if="${award.id != null}"
+                 href="#"
+                 th:text="#{site.delete}"></a>
+            </td>
           </tr>
           </tbody>
         </table>

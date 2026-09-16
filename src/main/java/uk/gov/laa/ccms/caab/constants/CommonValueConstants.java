@@ -81,6 +81,12 @@ public class CommonValueConstants {
   /** Type used to retrieve proceeding outcome wider benefits options. */
   public static final String COMMON_VALUE_WIDER_BENEFITS = "XXCCMS_WIDER_BENEFITS";
 
+  /** Type used to retrieve financial award interim/final options. */
+  public static final String COMMON_VALUE_INTERIM_AWARD = "XXCCMS_INTERIM_AWARD";
+
+  /** Type used to retrieve financial award decision-maker options. */
+  public static final String COMMON_VALUE_AWARDED_BY = "XXCCMS_AWARDED_BY";
+
   /** Type used to retrieve the Progress status types. */
   public static final String COMMON_VALUE_PROGRESS_STATUS_TYPES = "XXCCMS_OPA_PROGRESS_STATUS";
 
