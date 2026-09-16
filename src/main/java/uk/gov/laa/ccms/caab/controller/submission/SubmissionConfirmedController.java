@@ -47,7 +47,7 @@ public class SubmissionConfirmedController {
   }
 
   /** Displays the confirmation page for a case submission context. */
-  @GetMapping("/{caseContext}/submit-case/{submissionContext}/confirmed")
+  @GetMapping("/{caseContext}/submit-case/{submissionContext:undertaking}/confirmed")
   public String submissionContextConfirmed(
       @PathVariable("caseContext") CaseContext caseContext,
       @PathVariable final String submissionContext,

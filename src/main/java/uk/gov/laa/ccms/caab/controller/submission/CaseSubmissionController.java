@@ -210,7 +210,7 @@ public class CaseSubmissionController {
   @PostMapping(
       value = {
         "/{caseContext}/submit-case/confirmed",
-        "/{caseContext}/submit-case/{submissionContext}/confirmed"
+        "/{caseContext}/submit-case/{submissionContext:undertaking}/confirmed"
       })
   public String clientUpdateSubmitted(
       @PathVariable("caseContext") CaseContext caseContext,
