@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.util;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.DEFAULT_AMENDMENT_RETURN_URL;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CONTEXT_RETURN_URLS;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.experimental.UtilityClass;
@@ -51,5 +53,18 @@ public class SubmissionUtil {
     final String resultPath =
         SUBMISSION_CONFIRMED.equals(submissionResult) ? SUBMISSION_CONFIRMED : SUBMISSION_FAILED;
     return "redirect:/%s/%s/%s".formatted(caseContext.getPathValue(), submissionType, resultPath);
+  }
+
+  /**
+   * Resolves the destination for an amendment submission context.
+   *
+   * @param submissionContext the optional submission context
+   * @return the context-specific destination, or the default amendment destination
+   */
+  public static String resolveSubmissionContextReturnUrl(final String submissionContext) {
+    return submissionContext == null
+        ? DEFAULT_AMENDMENT_RETURN_URL
+        : SUBMISSION_CONTEXT_RETURN_URLS.getOrDefault(
+            submissionContext, DEFAULT_AMENDMENT_RETURN_URL);
   }
 }

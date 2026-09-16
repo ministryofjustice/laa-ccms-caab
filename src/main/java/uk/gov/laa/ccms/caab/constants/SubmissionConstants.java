@@ -19,9 +19,12 @@ public class SubmissionConstants {
   /** submission used for create case. */
   public static final String SUBMISSION_SUBMIT_CASE = "submit-case";
 
+  /** Default destination after completing an amendment submission result screen. */
+  public static final String DEFAULT_AMENDMENT_RETURN_URL = "/case/overview";
+
   /** Return URLs for submission contexts that have a destination other than the default. */
   public static final Map<String, String> SUBMISSION_CONTEXT_RETURN_URLS =
-      Map.of("undertaking", "/case/outcome-and-awards");
+      Map.of("undertaking", "/case/billing");
 
   /** submission used for submit general provider request. */
   public static final String SUBMISSION_SUBMIT_GENERAL_PROVIDER_REQUEST =

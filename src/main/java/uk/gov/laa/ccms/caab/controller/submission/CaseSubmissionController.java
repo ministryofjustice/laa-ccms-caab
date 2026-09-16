@@ -14,10 +14,10 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_QUICK_E
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
-import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CONTEXT_RETURN_URLS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
 import static uk.gov.laa.ccms.caab.util.SubmissionUtil.redirectToSubmissionResult;
 import static uk.gov.laa.ccms.caab.util.SubmissionUtil.requireSessionAttribute;
+import static uk.gov.laa.ccms.caab.util.SubmissionUtil.resolveSubmissionContextReturnUrl;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +48,6 @@ public class CaseSubmissionController {
 
   private static final String SUBMISSION_CONFIRMED = "confirmed";
   private static final String SUBMISSION_FAILED = "failed";
-  private static final String DEFAULT_AMENDMENT_RETURN_URL = "/case/overview";
 
   /**
    * Handles the creation of a case submission and updates the model and session with relevant
@@ -83,12 +82,19 @@ public class CaseSubmissionController {
     if (!StringUtils.hasText(transactionId)) {
       final String submissionResult = (String) session.getAttribute(SUBMISSION_RESULT);
       if (StringUtils.hasText(submissionResult)) {
-        if (SUBMISSION_CONFIRMED.equals(submissionResult) && submissionContext != null) {
-          return "redirect:" + submissionStatusUrl(caseContext, submissionContext) + "/confirmed";
+        if (submissionContext != null) {
+          final String resultPath =
+              SUBMISSION_CONFIRMED.equals(submissionResult)
+                  ? SUBMISSION_CONFIRMED
+                  : SUBMISSION_FAILED;
+          return "redirect:"
+              + submissionStatusUrl(caseContext, submissionContext)
+              + "/"
+              + resultPath;
         }
         return redirectToSubmissionResult(session, caseContext, SUBMISSION_SUBMIT_CASE);
       }
-      return viewIncludingPollCount(session, caseContext, model);
+      return viewIncludingPollCount(session, caseContext, submissionContext, model);
     }
 
     requireSessionAttribute(user, USER_DETAILS);
@@ -110,7 +116,7 @@ public class CaseSubmissionController {
           caseContext, user, session, caseReference, submissionContext);
     }
 
-    return viewIncludingPollCount(session, caseContext, model);
+    return viewIncludingPollCount(session, caseContext, submissionContext, model);
   }
 
   private String handleConfirmedSubmission(
@@ -223,12 +229,7 @@ public class CaseSubmissionController {
       session.removeAttribute(APPLICATION_ID);
       return "redirect:/home";
     } else {
-      final String returnUrl =
-          submissionContext == null
-              ? DEFAULT_AMENDMENT_RETURN_URL
-              : SUBMISSION_CONTEXT_RETURN_URLS.getOrDefault(
-                  submissionContext, DEFAULT_AMENDMENT_RETURN_URL);
-      return "redirect:" + returnUrl;
+      return "redirect:" + resolveSubmissionContextReturnUrl(submissionContext);
     }
   }
 
@@ -242,7 +243,10 @@ public class CaseSubmissionController {
    *     exceeded
    */
   protected String viewIncludingPollCount(
-      final HttpSession session, final CaseContext caseContext, final Model model) {
+      final HttpSession session,
+      final CaseContext caseContext,
+      final String submissionContext,
+      final Model model) {
     int submissionPollCount = 0;
 
     if (session.getAttribute(SUBMISSION_POLL_COUNT) != null) {
@@ -252,8 +256,7 @@ public class CaseSubmissionController {
         session.removeAttribute(SUBMISSION_TRANSACTION_ID);
         session.removeAttribute(SUBMISSION_QUICK_EDIT_TYPE);
         session.setAttribute(SUBMISSION_RESULT, SUBMISSION_FAILED);
-        return "redirect:/%s/%s/failed"
-            .formatted(caseContext.getPathValue(), SubmissionConstants.SUBMISSION_SUBMIT_CASE);
+        return "redirect:" + submissionStatusUrl(caseContext, submissionContext) + "/failed";
       }
     }
     submissionPollCount += 1;
