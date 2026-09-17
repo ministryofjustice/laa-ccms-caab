@@ -161,6 +161,36 @@ class CaseSubmissionControllerTest {
   }
 
   @Test
+  @DisplayName("Test addCaseSubmission - Undertaking amendment confirmed")
+  void testAddCaseSubmission_UndertakingAmendmentConfirmed() throws Exception {
+    final String refNumber = "ref123";
+    final TransactionStatus mockStatus = new TransactionStatus();
+    mockStatus.setReferenceNumber(refNumber);
+    when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
+
+    final ApplicationDetail mockCase = new ApplicationDetail();
+    mockCase.setCaseReferenceNumber(refNumber);
+    when(applicationService.getCase(anyString(), anyLong(), anyString())).thenReturn(mockCase);
+
+    mockMvc
+        .perform(
+            get("/amendments/submit-case/undertaking")
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
+                .sessionAttr(USER_DETAILS, userDetail))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/amendments/submit-case/undertaking/confirmed"))
+        .andExpect(request().sessionAttribute(SUBMISSION_RESULT, "confirmed"))
+        .andExpect(request().sessionAttribute(CASE, mockCase))
+        .andExpect(request().sessionAttribute(CASE_REFERENCE_NUMBER, refNumber))
+        .andExpect(request().sessionAttributeDoesNotExist(ACTIVE_CASE))
+        .andExpect(request().sessionAttributeDoesNotExist(SUBMISSION_TRANSACTION_ID));
+
+    verify(applicationService, times(1)).getCaseStatus("transaction123");
+    verify(applicationService, times(1)).getCase(anyString(), anyLong(), anyString());
+    verify(applicationService, times(1)).removeSubmittedAmendment(refNumber, userDetail, null);
+  }
+
+  @Test
   @DisplayName("Test addCaseSubmission - Means reassessment confirmed passes its quick edit type")
   void testAddCaseSubmission_MeansReassessmentConfirmed() throws Exception {
     final String refNumber = "ref123";
@@ -212,6 +242,47 @@ class CaseSubmissionControllerTest {
                 .sessionAttr(SUBMISSION_RESULT, "confirmed"))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/amendments/%s/confirmed".formatted(SUBMISSION_SUBMIT_CASE)));
+
+    verify(applicationService, never()).getCaseStatus(anyString());
+  }
+
+  @Test
+  @DisplayName("Test undertaking submission preserves its context while in progress")
+  void testUndertakingSubmissionPreservesContextWhileInProgress() throws Exception {
+    mockMvc
+        .perform(get("/amendments/submit-case/undertaking").sessionAttr(USER_DETAILS, userDetail))
+        .andExpect(status().isOk())
+        .andExpect(view().name("submissions/submissionInProgress"))
+        .andExpect(model().attribute("caseContext", CaseContext.AMENDMENTS))
+        .andExpect(model().attribute("submissionType", SUBMISSION_SUBMIT_CASE))
+        .andExpect(model().attribute("submissionStatusUrl", "/amendments/submit-case/undertaking"))
+        .andExpect(request().sessionAttribute(SUBMISSION_POLL_COUNT, 1));
+  }
+
+  @Test
+  @DisplayName("Test confirmed undertaking submission preserves its context")
+  void testConfirmedUndertakingSubmissionPreservesContext() throws Exception {
+    mockMvc
+        .perform(
+            get("/amendments/submit-case/undertaking")
+                .sessionAttr(USER_DETAILS, userDetail)
+                .sessionAttr(SUBMISSION_RESULT, "confirmed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/amendments/submit-case/undertaking/confirmed"));
+
+    verify(applicationService, never()).getCaseStatus(anyString());
+  }
+
+  @Test
+  @DisplayName("Test failed undertaking submission preserves its context")
+  void testFailedUndertakingSubmissionPreservesContext() throws Exception {
+    mockMvc
+        .perform(
+            get("/amendments/submit-case/undertaking")
+                .sessionAttr(USER_DETAILS, userDetail)
+                .sessionAttr(SUBMISSION_RESULT, "failed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/amendments/submit-case/undertaking/failed"));
 
     verify(applicationService, never()).getCaseStatus(anyString());
   }
@@ -327,6 +398,28 @@ class CaseSubmissionControllerTest {
   }
 
   @Test
+  @DisplayName("Test addCaseSubmission - Undertaking not confirmed, poll continues")
+  void testAddCaseSubmission_UndertakingNotConfirmed() throws Exception {
+    final TransactionStatus mockStatus = new TransactionStatus();
+    when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
+
+    mockMvc
+        .perform(
+            get("/amendments/submit-case/undertaking")
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
+                .sessionAttr(USER_DETAILS, userDetail))
+        .andExpect(status().isOk())
+        .andExpect(view().name("submissions/submissionInProgress"))
+        .andExpect(model().attribute("caseContext", CaseContext.AMENDMENTS))
+        .andExpect(model().attribute("submissionStatusUrl", "/amendments/submit-case/undertaking"))
+        .andExpect(request().sessionAttribute(SUBMISSION_POLL_COUNT, 1))
+        .andExpect(request().sessionAttribute(SUBMISSION_TRANSACTION_ID, "transaction123"));
+
+    verify(applicationService, times(1)).getCaseStatus("transaction123");
+    verify(applicationService, never()).removeSubmittedAmendment(anyString(), any(), any());
+  }
+
+  @Test
   @DisplayName("Test clientUpdateSubmitted - Removes session attributes and redirects to home")
   void testClientUpdateSubmitted() throws Exception {
     mockMvc
@@ -366,13 +459,41 @@ class CaseSubmissionControllerTest {
   }
 
   @Test
+  @DisplayName("Test clientUpdateSubmitted - Undertaking redirects to billing")
+  void testUndertakingSubmittedRedirectsToBilling() throws Exception {
+    mockMvc
+        .perform(
+            post("/amendments/submit-case/undertaking/confirmed")
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(APPLICATION, new Object())
+                .sessionAttr(APPLICATION_DETAILS, new Object())
+                .sessionAttr(APPLICATION_SUMMARY, new Object())
+                .sessionAttr(APPLICATION_COSTS, new Object())
+                .sessionAttr(APPLICATION_FORM_DATA, new Object())
+                .sessionAttr(SUBMISSION_RESULT, "confirmed"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/case/billing"))
+        .andExpect(
+            request()
+                .sessionAttributeDoesNotExist(
+                    APPLICATION,
+                    APPLICATION_DETAILS,
+                    APPLICATION_SUMMARY,
+                    APPLICATION_COSTS,
+                    APPLICATION_FORM_DATA,
+                    SUBMISSION_RESULT))
+        .andExpect(request().sessionAttribute(ACTIVE_CASE, activeCase));
+  }
+
+  @Test
   @DisplayName("Test viewIncludingPollCount - Poll count within limit")
   void testViewIncludingPollCount_WithinLimit() {
     when(session.getAttribute(SUBMISSION_POLL_COUNT)).thenReturn(1);
     when(submissionConstants.getMaxPollCount()).thenReturn(5);
 
     final String view =
-        caseSubmissionController.viewIncludingPollCount(session, CaseContext.APPLICATION, model);
+        caseSubmissionController.viewIncludingPollCount(
+            session, CaseContext.APPLICATION, null, model);
 
     assertEquals("submissions/submissionInProgress", view);
     verify(session, times(1)).setAttribute(SUBMISSION_POLL_COUNT, 2);
@@ -386,7 +507,8 @@ class CaseSubmissionControllerTest {
     when(submissionConstants.getMaxPollCount()).thenReturn(5);
 
     final String view =
-        caseSubmissionController.viewIncludingPollCount(session, CaseContext.APPLICATION, model);
+        caseSubmissionController.viewIncludingPollCount(
+            session, CaseContext.APPLICATION, null, model);
 
     assertEquals("redirect:/application/%s/failed".formatted(SUBMISSION_SUBMIT_CASE), view);
     verify(session, times(1)).removeAttribute(SUBMISSION_POLL_COUNT);
@@ -395,12 +517,31 @@ class CaseSubmissionControllerTest {
   }
 
   @Test
+  @DisplayName("Test undertaking poll limit redirects to its custom failed endpoint")
+  void testUndertakingPollLimitRedirectsToCustomFailedEndpoint() throws Exception {
+    when(submissionConstants.getMaxPollCount()).thenReturn(5);
+
+    mockMvc
+        .perform(
+            get("/amendments/submit-case/undertaking")
+                .sessionAttr(USER_DETAILS, userDetail)
+                .sessionAttr(SUBMISSION_POLL_COUNT, 5))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/amendments/submit-case/undertaking/failed"))
+        .andExpect(request().sessionAttribute(SUBMISSION_RESULT, "failed"))
+        .andExpect(
+            request()
+                .sessionAttributeDoesNotExist(SUBMISSION_POLL_COUNT, SUBMISSION_TRANSACTION_ID));
+  }
+
+  @Test
   @DisplayName("Test viewIncludingPollCount - Poll count starts from zero")
   void testViewIncludingPollCount_StartFromZero() {
     when(session.getAttribute(SUBMISSION_POLL_COUNT)).thenReturn(null);
 
     final String view =
-        caseSubmissionController.viewIncludingPollCount(session, CaseContext.APPLICATION, model);
+        caseSubmissionController.viewIncludingPollCount(
+            session, CaseContext.APPLICATION, null, model);
 
     assertEquals("submissions/submissionInProgress", view);
     verify(session, times(1)).setAttribute(SUBMISSION_POLL_COUNT, 1);
@@ -426,11 +567,43 @@ class CaseSubmissionControllerTest {
   }
 
   @Test
+  @DisplayName("Test submissionFailed - Undertaking redirects to billing")
+  void testSubmissionFailed_Undertaking() throws Exception {
+    mockMvc
+        .perform(
+            post("/amendments/submit-case/undertaking/failed")
+                .sessionAttr(SUBMISSION_POLL_COUNT, 3)
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
+                .sessionAttr(SUBMISSION_RESULT, "old-result"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/case/billing"))
+        .andExpect(request().sessionAttribute(SUBMISSION_RESULT, "failed"))
+        .andExpect(
+            request()
+                .sessionAttributeDoesNotExist(SUBMISSION_POLL_COUNT, SUBMISSION_TRANSACTION_ID));
+  }
+
+  @Test
   @DisplayName("Test submissionsFailed GET")
   void testSubmissionsFailed() throws Exception {
     mockMvc
         .perform(get("/application/submit-case/failed"))
         .andExpect(status().isOk())
-        .andExpect(view().name("submissions/submissionFailed"));
+        .andExpect(view().name("submissions/submissionFailed"))
+        .andExpect(model().attribute("submissionType", SUBMISSION_SUBMIT_CASE))
+        .andExpect(model().attribute("caseContext", CaseContext.APPLICATION))
+        .andExpect(model().attribute("failureUrl", "/application/submit-case/failed"));
+  }
+
+  @Test
+  @DisplayName("Test undertaking submissionsFailed GET uses its custom failure action")
+  void testUndertakingSubmissionsFailed() throws Exception {
+    mockMvc
+        .perform(get("/amendments/submit-case/undertaking/failed"))
+        .andExpect(status().isOk())
+        .andExpect(view().name("submissions/submissionFailed"))
+        .andExpect(model().attribute("submissionType", SUBMISSION_SUBMIT_CASE))
+        .andExpect(model().attribute("caseContext", CaseContext.AMENDMENTS))
+        .andExpect(model().attribute("failureUrl", "/amendments/submit-case/undertaking/failed"));
   }
 }

@@ -12,6 +12,7 @@ import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.controller.AssessmentController;
 import uk.gov.laa.ccms.caab.controller.application.AllocateCostLimitController;
 import uk.gov.laa.ccms.caab.controller.application.AmendCaseController;
+import uk.gov.laa.ccms.caab.controller.application.AwardController;
 import uk.gov.laa.ccms.caab.controller.application.CaseController;
 import uk.gov.laa.ccms.caab.controller.application.MeansReassessmentController;
 import uk.gov.laa.ccms.caab.controller.application.search.CounselSearchController;
@@ -68,6 +69,7 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
       AssessmentController.class,
       CaseSubmissionController.class,
       CaseController.class,
+      AwardController.class,
       BillingController.class,
       MeansReassessmentController.class,
       AmendCaseController.class,

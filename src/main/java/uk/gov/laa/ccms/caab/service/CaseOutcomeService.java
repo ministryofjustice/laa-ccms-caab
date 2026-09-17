@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +10,8 @@ import org.springframework.stereotype.Service;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
+import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 
 /** Service class to handle Case Outcomes. */
@@ -31,6 +34,63 @@ public class CaseOutcomeService {
     return caabApiClient
         .getCaseOutcomes(caseReferenceNumber, providerId)
         .mapNotNull(caseOutcomeDetails -> caseOutcomeDetails.getContent().stream().findFirst())
+        .block();
+  }
+
+  /** Returns a financial award only when it belongs to the supplied case outcome. */
+  public Optional<FinancialAwardDetail> getFinancialAward(
+      final String caseReferenceNumber, final Integer providerId, final Integer financialAwardId) {
+    final Integer caseOutcomeId =
+        getCaseOutcome(caseReferenceNumber, providerId)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "No case outcome exists for case reference number: " + caseReferenceNumber))
+            .getId();
+    return Optional.ofNullable(
+        caabApiClient.getFinancialAward(caseOutcomeId, financialAwardId).block());
+  }
+
+  /** Creates a financial award without replacing the owning case outcome aggregate. */
+  public void createFinancialAward(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final FinancialAwardRequest financialAward,
+      final String loginId) {
+    final Integer caseOutcomeId =
+        getCaseOutcome(caseReferenceNumber, providerId)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "No case outcome exists for case reference number: " + caseReferenceNumber))
+            .getId();
+    caabApiClient.createFinancialAward(caseOutcomeId, loginId, financialAward).block();
+  }
+
+  /** Updates a financial award without replacing the owning case outcome aggregate. */
+  public void updateFinancialAward(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final Integer financialAwardId,
+      final FinancialAwardRequest financialAward,
+      final String loginId) {
+    final CaseOutcomeDetail caseOutcome =
+        getCaseOutcome(caseReferenceNumber, providerId)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "No case outcome exists for case reference number: "
+                            + caseReferenceNumber));
+    Optional.ofNullable(caseOutcome.getFinancialAwards()).orElse(Collections.emptyList()).stream()
+        .filter(award -> financialAwardId.equals(award.getId()))
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Financial award %s does not belong to case reference number: %s"
+                        .formatted(financialAwardId, caseReferenceNumber)));
+    caabApiClient
+        .updateFinancialAward(caseOutcome.getId(), financialAwardId, loginId, financialAward)
         .block();
   }
 
