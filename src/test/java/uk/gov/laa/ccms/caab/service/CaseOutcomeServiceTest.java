@@ -29,6 +29,8 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
+import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,6 +39,92 @@ class CaseOutcomeServiceTest {
   @Mock private CaabApiClient caabApiClient;
 
   @Spy @InjectMocks private CaseOutcomeService caseOutcomeService;
+
+  @Test
+  void getFinancialAward_existingAward_returnsAward() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final Integer caseOutcomeId = 42;
+    final Integer financialAwardId = 7;
+
+    doReturn(Optional.of(new CaseOutcomeDetail().id(caseOutcomeId)))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+    final FinancialAwardDetail financialAward = new FinancialAwardDetail().id(financialAwardId);
+    when(caabApiClient.getFinancialAward(caseOutcomeId, financialAwardId))
+        .thenReturn(Mono.just(financialAward));
+
+    final Optional<FinancialAwardDetail> result =
+        caseOutcomeService.getFinancialAward(caseReferenceNumber, providerId, financialAwardId);
+
+    assertEquals(financialAward, result.orElseThrow());
+    verify(caabApiClient).getFinancialAward(caseOutcomeId, financialAwardId);
+  }
+
+  @Test
+  void createFinancialAward_existingCaseOutcome_createsAward() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final Integer caseOutcomeId = 42;
+    final String loginId = "user1";
+    final FinancialAwardRequest request = new FinancialAwardRequest();
+
+    doReturn(Optional.of(new CaseOutcomeDetail().id(caseOutcomeId)))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+    when(caabApiClient.createFinancialAward(caseOutcomeId, loginId, request))
+        .thenReturn(Mono.just("7"));
+
+    caseOutcomeService.createFinancialAward(caseReferenceNumber, providerId, request, loginId);
+
+    verify(caabApiClient).createFinancialAward(caseOutcomeId, loginId, request);
+  }
+
+  @Test
+  void createFinancialAward_whenNoCaseOutcome_throwsWithoutCreatingAward() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final FinancialAwardRequest request = new FinancialAwardRequest();
+
+    doReturn(Optional.empty())
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            caseOutcomeService.createFinancialAward(
+                caseReferenceNumber, providerId, request, "user1"));
+
+    verify(caabApiClient, never()).createFinancialAward(any(), any(), any());
+  }
+
+  @Test
+  void updateFinancialAward_existingUpdateableAward_updatesAward() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final Integer caseOutcomeId = 42;
+    final Integer financialAwardId = 7;
+    final String loginId = "user1";
+    final FinancialAwardRequest request = new FinancialAwardRequest();
+
+    final CaseOutcomeDetail caseOutcome =
+        new CaseOutcomeDetail()
+            .id(caseOutcomeId)
+            .financialAwards(
+                List.of(new FinancialAwardDetail().id(financialAwardId).updateAllowed(true)));
+
+    doReturn(Optional.of(caseOutcome))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+    when(caabApiClient.updateFinancialAward(caseOutcomeId, financialAwardId, loginId, request))
+        .thenReturn(Mono.empty());
+
+    caseOutcomeService.updateFinancialAward(
+        caseReferenceNumber, providerId, financialAwardId, request, loginId);
+
+    verify(caabApiClient).updateFinancialAward(caseOutcomeId, financialAwardId, loginId, request);
+  }
 
   @Test
   void updateProceedingOutcome_existingOutcome_deletesOldThenCreatesNewRecord() {

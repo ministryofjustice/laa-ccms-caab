@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.bean.validators.client;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.ADDRESS_CHARACTER_SET;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.DOUBLE_SPACE;
 
+import java.util.stream.Stream;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
@@ -39,22 +40,23 @@ public class CorrespondenceAddressValidator extends AbstractValidator {
     validateRequiredField(
         "preferredAddress", addressFormData.getPreferredAddress(), "Preferred address", errors);
 
-    if ("CASE".equals(addressFormData.getPreferredAddress())) {
+    if (requiresManualAddressDetails(addressFormData)) {
       validateRequiredField("country", addressFormData.getCountry(), "Country", errors);
 
       validateRequiredField(
           "houseNameNumber", addressFormData.getHouseNameNumber(), "House name / number", errors);
 
+      validateRequiredField("postcode", addressFormData.getPostcode(), "Postcode", errors);
+
+      if (StringUtils.hasText(addressFormData.getCountry())
+          && StringUtils.hasText(addressFormData.getPostcode())) {
+        validatePostcodeFormat(addressFormData.getCountry(), addressFormData.getPostcode(), errors);
+      }
+
       validateRequiredField(
           "addressLine1", addressFormData.getAddressLine1(), "Address line 1", errors);
 
       validateRequiredField("cityTown", addressFormData.getCityTown(), "City / town", errors);
-    }
-
-    if (StringUtils.hasText(addressFormData.getCountry())) {
-      validateRequiredField("postcode", addressFormData.getPostcode(), "Postcode", errors);
-
-      validatePostcodeFormat(addressFormData.getCountry(), addressFormData.getPostcode(), errors);
     }
 
     validateAddressField(
@@ -96,5 +98,23 @@ public class CorrespondenceAddressValidator extends AbstractValidator {
                 + "' contains double spaces. Please amend your entry.");
       }
     }
+  }
+
+  private boolean requiresManualAddressDetails(final AddressFormData addressFormData) {
+    return "CASE".equals(addressFormData.getPreferredAddress())
+        || hasManualAddressDetails(addressFormData);
+  }
+
+  private boolean hasManualAddressDetails(final AddressFormData addressFormData) {
+    return Stream.of(
+            addressFormData.getCountry(),
+            addressFormData.getHouseNameNumber(),
+            addressFormData.getPostcode(),
+            addressFormData.getCareOf(),
+            addressFormData.getAddressLine1(),
+            addressFormData.getAddressLine2(),
+            addressFormData.getCityTown(),
+            addressFormData.getCounty())
+        .anyMatch(StringUtils::hasText);
   }
 }

@@ -259,7 +259,7 @@ public class BillingController {
     session.removeAttribute(UNDERTAKING_MINIMUM);
     session.removeAttribute(UNDERTAKING_MAXIMUM);
     model.addAttribute("undertakingFormData", new UndertakingFormData());
-    return "redirect:/amendments/submit-case";
+    return "redirect:/amendments/submit-case/undertaking";
   }
 
   /**

@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.client;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FINANCIAL;
+
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +30,8 @@ import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
+import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
+import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
@@ -58,6 +62,7 @@ public class CaabApiClient {
   public static final String RESOURCE_TYPE_CLIENT = "client";
   public static final String RESOURCE_TYPE_OPPONENTS = "opponents";
   public static final String RESOURCE_TYPE_CASE_OUTCOME = "case outcome";
+  public static final String RESOURCE_TYPE_FINANCIAL_AWARD = "financial award";
   public static final String RESOURCE_TYPE_EVIDENCE = "evidence";
   public static final String RESOURCE_TYPE_NOTIFICATION_ATTACHMENTS = "notification attachments";
   public static final String RESOURCE_TYPE_BILL = "bill";
@@ -785,6 +790,88 @@ public class CaabApiClient {
         .exchangeToMono(CaabApiClient::getIdResponse)
         .onErrorResume(
             e -> caabApiClientErrorHandler.handleApiCreateError(e, RESOURCE_TYPE_CASE_OUTCOME));
+  }
+
+  /**
+   * Creates a financial award for an existing case outcome.
+   *
+   * @param caseOutcomeId the owning case outcome id
+   * @param loginId the ID associated with the user login
+   * @param financialAward the financial award values
+   * @return the created financial award id
+   */
+  public Mono<String> createFinancialAward(
+      final Integer caseOutcomeId,
+      final String loginId,
+      final FinancialAwardRequest financialAward) {
+    return caabApiWebClient
+        .post()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}",
+            caseOutcomeId,
+            AWARD_TYPE_FINANCIAL)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(financialAward)
+        .exchangeToMono(CaabApiClient::getIdResponse)
+        .onErrorResume(
+            e -> caabApiClientErrorHandler.handleApiCreateError(e, RESOURCE_TYPE_FINANCIAL_AWARD));
+  }
+
+  /**
+   * Gets a financial award by id and owning case outcome id.
+   *
+   * @param caseOutcomeId the owning case outcome id
+   * @param financialAwardId the financial award id
+   * @return the financial award
+   */
+  public Mono<FinancialAwardDetail> getFinancialAward(
+      final Integer caseOutcomeId, final Integer financialAwardId) {
+    return caabApiWebClient
+        .get()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{financial-award-id}",
+            caseOutcomeId,
+            AWARD_TYPE_FINANCIAL,
+            financialAwardId)
+        .retrieve()
+        .bodyToMono(FinancialAwardDetail.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiRetrieveError(
+                    e, RESOURCE_TYPE_FINANCIAL_AWARD, "id", String.valueOf(financialAwardId)));
+  }
+
+  /**
+   * Updates a financial award belonging to a case outcome.
+   *
+   * @param caseOutcomeId the owning case outcome id
+   * @param financialAwardId the financial award id
+   * @param loginId the ID associated with the user login
+   * @param financialAward the replacement financial award values
+   * @return completion signal
+   */
+  public Mono<Void> updateFinancialAward(
+      final Integer caseOutcomeId,
+      final Integer financialAwardId,
+      final String loginId,
+      final FinancialAwardRequest financialAward) {
+    return caabApiWebClient
+        .put()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{financial-award-id}",
+            caseOutcomeId,
+            AWARD_TYPE_FINANCIAL,
+            financialAwardId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(financialAward)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiUpdateError(
+                    e, RESOURCE_TYPE_FINANCIAL_AWARD, "id", String.valueOf(financialAwardId)));
   }
 
   /**

@@ -603,7 +603,7 @@ public class EbsApplicationMappingContextBuilder {
 
     // Build a List of priorAuthorityDetails paired with the common lookup for display info.
     List<Pair<PriorAuthorityDetail, CommonLookupValueDetail>> priorAuthorityDetails =
-        ebsPriorAuthority.getDetails().stream()
+        Optional.ofNullable(ebsPriorAuthority.getDetails()).orElse(Collections.emptyList()).stream()
             .map(
                 priorAuthorityAttribute -> {
                   PriorAuthorityDetail priorAuthorityDetail =
