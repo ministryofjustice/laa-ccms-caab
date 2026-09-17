@@ -29,6 +29,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
@@ -81,22 +82,96 @@ class CaseOutcomeServiceTest {
   }
 
   @Test
-  void createFinancialAward_whenNoCaseOutcome_throwsWithoutCreatingAward() {
+  void createFinancialAward_whenNoCaseOutcome_createsBootstrapCaseOutcomeFirst() {
     final String caseReferenceNumber = "300000001";
     final Integer providerId = 123;
+    final Integer caseOutcomeId = 42;
     final FinancialAwardRequest request = new FinancialAwardRequest();
+    final String loginId = "user1";
+    final CaseOutcomeDetail createdCaseOutcome = new CaseOutcomeDetail().id(caseOutcomeId);
 
-    doReturn(Optional.empty())
+    doReturn(Optional.empty(), Optional.of(createdCaseOutcome))
         .when(caseOutcomeService)
         .getCaseOutcome(caseReferenceNumber, providerId);
+    when(caabApiClient.createCaseOutcome(eq(loginId), any(CaseOutcomeDetail.class)))
+        .thenReturn(Mono.just(String.valueOf(caseOutcomeId)));
+    when(caabApiClient.createFinancialAward(caseOutcomeId, loginId, request))
+        .thenReturn(Mono.just("7"));
 
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            caseOutcomeService.createFinancialAward(
-                caseReferenceNumber, providerId, request, "user1"));
+    caseOutcomeService.createFinancialAward(caseReferenceNumber, providerId, request, loginId);
 
-    verify(caabApiClient, never()).createFinancialAward(any(), any(), any());
+    final ArgumentCaptor<CaseOutcomeDetail> caseOutcomeCaptor =
+        ArgumentCaptor.forClass(CaseOutcomeDetail.class);
+    verify(caabApiClient).createCaseOutcome(eq(loginId), caseOutcomeCaptor.capture());
+    verify(caabApiClient).createFinancialAward(caseOutcomeId, loginId, request);
+    assertNull(caseOutcomeCaptor.getValue().getId());
+    assertEquals(caseReferenceNumber, caseOutcomeCaptor.getValue().getCaseReferenceNumber());
+    assertEquals(String.valueOf(providerId), caseOutcomeCaptor.getValue().getProviderId());
+  }
+
+  @Test
+  void getCostAward_existingAward_returnsAward() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final Integer caseOutcomeId = 42;
+    final Integer costAwardId = 7;
+
+    doReturn(Optional.of(new CaseOutcomeDetail().id(caseOutcomeId)))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+    final CostAwardDetail costAward = new CostAwardDetail().id(costAwardId);
+    when(caabApiClient.getCostAward(caseOutcomeId, costAwardId)).thenReturn(Mono.just(costAward));
+
+    final Optional<CostAwardDetail> result =
+        caseOutcomeService.getCostAward(caseReferenceNumber, providerId, costAwardId);
+
+    assertEquals(costAward, result.orElseThrow());
+    verify(caabApiClient).getCostAward(caseOutcomeId, costAwardId);
+  }
+
+  @Test
+  void createCostAward_existingCaseOutcome_createsAward() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final Integer caseOutcomeId = 42;
+    final String loginId = "user1";
+    final CostAwardDetail request = new CostAwardDetail();
+
+    doReturn(Optional.of(new CaseOutcomeDetail().id(caseOutcomeId)))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+    when(caabApiClient.createCostAward(caseOutcomeId, loginId, request)).thenReturn(Mono.just("7"));
+
+    caseOutcomeService.createCostAward(caseReferenceNumber, providerId, request, loginId);
+
+    verify(caabApiClient).createCostAward(caseOutcomeId, loginId, request);
+  }
+
+  @Test
+  void createCostAward_whenNoCaseOutcome_createsBootstrapCaseOutcomeFirst() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final Integer caseOutcomeId = 42;
+    final CostAwardDetail request = new CostAwardDetail();
+    final String loginId = "user1";
+    final CaseOutcomeDetail createdCaseOutcome = new CaseOutcomeDetail().id(caseOutcomeId);
+
+    doReturn(Optional.empty(), Optional.of(createdCaseOutcome))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+    when(caabApiClient.createCaseOutcome(eq(loginId), any(CaseOutcomeDetail.class)))
+        .thenReturn(Mono.just(String.valueOf(caseOutcomeId)));
+    when(caabApiClient.createCostAward(caseOutcomeId, loginId, request)).thenReturn(Mono.just("7"));
+
+    caseOutcomeService.createCostAward(caseReferenceNumber, providerId, request, loginId);
+
+    final ArgumentCaptor<CaseOutcomeDetail> caseOutcomeCaptor =
+        ArgumentCaptor.forClass(CaseOutcomeDetail.class);
+    verify(caabApiClient).createCaseOutcome(eq(loginId), caseOutcomeCaptor.capture());
+    verify(caabApiClient).createCostAward(caseOutcomeId, loginId, request);
+    assertNull(caseOutcomeCaptor.getValue().getId());
+    assertEquals(caseReferenceNumber, caseOutcomeCaptor.getValue().getCaseReferenceNumber());
+    assertEquals(String.valueOf(providerId), caseOutcomeCaptor.getValue().getProviderId());
   }
 
   @Test
@@ -124,6 +199,32 @@ class CaseOutcomeServiceTest {
         caseReferenceNumber, providerId, financialAwardId, request, loginId);
 
     verify(caabApiClient).updateFinancialAward(caseOutcomeId, financialAwardId, loginId, request);
+  }
+
+  @Test
+  void updateCostAward_existingUpdateableAward_updatesAward() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final Integer caseOutcomeId = 42;
+    final Integer costAwardId = 7;
+    final String loginId = "user1";
+    final CostAwardDetail request = new CostAwardDetail();
+
+    final CaseOutcomeDetail caseOutcome =
+        new CaseOutcomeDetail()
+            .id(caseOutcomeId)
+            .costAwards(List.of(new CostAwardDetail().id(costAwardId).updateAllowed(true)));
+
+    doReturn(Optional.of(caseOutcome))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+    when(caabApiClient.updateCostAward(caseOutcomeId, costAwardId, loginId, request))
+        .thenReturn(Mono.empty());
+
+    caseOutcomeService.updateCostAward(
+        caseReferenceNumber, providerId, costAwardId, request, loginId);
+
+    verify(caabApiClient).updateCostAward(caseOutcomeId, costAwardId, loginId, request);
   }
 
   @Test
@@ -175,6 +276,43 @@ class CaseOutcomeServiceTest {
     final InOrder inOrder = inOrder(caabApiClient);
     inOrder.verify(caabApiClient).deleteCaseOutcome(existingCaseOutcomeId, loginId);
     inOrder.verify(caabApiClient).createCaseOutcome(eq(loginId), any(CaseOutcomeDetail.class));
+  }
+
+  @Test
+  void getOrCreateCaseOutcome_whenNoPersistedOutcome_bootstrapsFromSuppliedOutcome() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final String loginId = "user1";
+    final CostAwardDetail costAward = new CostAwardDetail().id(7);
+    final ProceedingOutcomeDetail proceedingOutcome =
+        new ProceedingOutcomeDetail().proceedingCaseId("pc1").resultInfo("saved");
+    final CaseOutcomeDetail bootstrapCaseOutcome =
+        new CaseOutcomeDetail()
+            .id(99)
+            .costAwards(List.of(costAward))
+            .proceedingOutcomes(List.of(proceedingOutcome));
+    final CaseOutcomeDetail createdCaseOutcome = new CaseOutcomeDetail().id(42);
+
+    doReturn(Optional.empty(), Optional.of(createdCaseOutcome))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+    when(caabApiClient.createCaseOutcome(eq(loginId), any(CaseOutcomeDetail.class)))
+        .thenReturn(Mono.just("42"));
+
+    final CaseOutcomeDetail result =
+        caseOutcomeService.getOrCreateCaseOutcome(
+            caseReferenceNumber, providerId, loginId, bootstrapCaseOutcome);
+
+    assertEquals(createdCaseOutcome, result);
+
+    final ArgumentCaptor<CaseOutcomeDetail> caseOutcomeCaptor =
+        ArgumentCaptor.forClass(CaseOutcomeDetail.class);
+    verify(caabApiClient).createCaseOutcome(eq(loginId), caseOutcomeCaptor.capture());
+    assertNull(caseOutcomeCaptor.getValue().getId());
+    assertEquals(caseReferenceNumber, caseOutcomeCaptor.getValue().getCaseReferenceNumber());
+    assertEquals(String.valueOf(providerId), caseOutcomeCaptor.getValue().getProviderId());
+    assertEquals(List.of(costAward), caseOutcomeCaptor.getValue().getCostAwards());
+    assertEquals(List.of(proceedingOutcome), caseOutcomeCaptor.getValue().getProceedingOutcomes());
   }
 
   @Test

@@ -35,12 +35,16 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.AwardTypeForm;
+import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.FinancialAwardFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
+import uk.gov.laa.ccms.caab.bean.validators.awards.CostAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.FinancialAwardValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
+import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
@@ -56,7 +60,9 @@ class AwardControllerTest {
   @Mock private LookupService lookupService;
   @Mock private CaseOutcomeService caseOutcomeService;
   @Mock private AwardTypeValidator awardTypeValidator;
+  @Mock private CostAwardValidator costAwardValidator;
   @Mock private FinancialAwardValidator financialAwardValidator;
+  @Mock private CostAwardMapper costAwardMapper;
   @Mock private FinancialAwardMapper financialAwardMapper;
 
   @InjectMocks private AwardController controller;
@@ -70,6 +76,7 @@ class AwardControllerTest {
     mockMvc = MockMvcTester.create(MockMvcBuilders.standaloneSetup(controller).build());
     ebsCase = new ApplicationDetail().caseReferenceNumber("300000001");
     user = ApplicationTestUtils.buildUser();
+    lenient().when(costAwardMapper.toCostAward(any())).thenReturn(new CostAwardDetail());
     lenient()
         .when(financialAwardMapper.toFinancialAwardRequest(any()))
         .thenReturn(new FinancialAwardRequest());
@@ -322,6 +329,164 @@ class AwardControllerTest {
   }
 
   @Nested
+  @DisplayName("GET: /case/outcome-and-awards/cost-award")
+  class CostAwardGetTests {
+
+    @Test
+    void getNewCostAwardPreservesSelectedAwardMetadataAndInitialisesTotals() {
+      final AwardTypeForm awardTypeForm = new AwardTypeForm();
+      awardTypeForm.setAwardTypeCode("COST_AGR");
+      awardTypeForm.setAwardType("COST");
+      awardTypeForm.setDescription("Cost");
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/cost-award")
+                      .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasViewName("application/cost-award")
+          .model()
+          .containsEntry("totalPreCertificateCosts", "0.00")
+          .containsEntry("totalCertificateCostsAwarded", "0.00")
+          .containsEntry("totalCostsAwarded", "0.00")
+          .hasEntrySatisfying(
+              "costAward",
+              value ->
+                  assertThat(value)
+                      .extracting(
+                          "awardCode",
+                          "awardType",
+                          "description",
+                          "laaFundedLegalCosts",
+                          "otherPreCertificateCosts",
+                          "laaRate",
+                          "marketRate",
+                          "interestRate")
+                      .containsExactly(
+                          "COST_AGR", "COST", "Cost", "0.00", "0.00", "0.00", "0.00", "0.00"));
+    }
+
+    @Test
+    void getNewCostAwardWithoutSelectedAwardMetadataReturnsToOverview() {
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/cost-award")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+    }
+
+    @Test
+    void getExistingCostAwardLoadsPersistedValues() {
+      final CostAwardDetail award =
+          new CostAwardDetail()
+              .id(7)
+              .awardCode("COST")
+              .awardType("COST")
+              .description("Cost")
+              .dateOfOrder(new Date())
+              .awardAmount(new java.math.BigDecimal("123.45"))
+              .awardedBy("COURT");
+      when(caseOutcomeService.getCostAward("300000001", 123, 7)).thenReturn(Optional.of(award));
+      final CostAwardFormData formData = new CostAwardFormData();
+      formData.setId(7);
+      formData.setLaaFundedLegalCosts("123.45");
+      when(costAwardMapper.toCostAwardFormData(award)).thenReturn(formData);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/cost-award/7")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasViewName("application/cost-award")
+          .model()
+          .hasEntrySatisfying(
+              "costAward",
+              value ->
+                  assertThat(value)
+                      .extracting("id", "laaFundedLegalCosts", "otherPreCertificateCosts")
+                      .containsExactly(7, "123.45", "0.00"));
+    }
+  }
+
+  @Nested
+  @DisplayName("POST: /case/outcome-and-awards/cost-award")
+  class CostAwardPostTests {
+
+    @Test
+    void postWithoutIdCreatesCostAward() {
+      assertThat(mockMvc.perform(validCostAwardPost()))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(caseOutcomeService)
+          .createCostAward(
+              eq("300000001"),
+              eq(user.getProvider().getId().intValue()),
+              any(CostAwardDetail.class),
+              eq(user.getLoginId()));
+    }
+
+    @Test
+    void postWithIdUpdatesCostAward() {
+      assertThat(mockMvc.perform(validCostAwardPost().param("id", "7")))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(caseOutcomeService)
+          .updateCostAward(
+              eq("300000001"),
+              eq(user.getProvider().getId().intValue()),
+              eq(7),
+              any(CostAwardDetail.class),
+              eq(user.getLoginId()));
+    }
+
+    @Test
+    void invalidPostRedisplaysCostAwardPage() {
+      doAnswer(
+              invocation -> {
+                invocation
+                    .getArgument(1, Errors.class)
+                    .rejectValue("dateOfOrder", "invalid.format", "Invalid date");
+                return null;
+              })
+          .when(costAwardValidator)
+          .validate(any(), any());
+
+      assertThat(mockMvc.perform(validCostAwardPost()))
+          .hasViewName("application/cost-award")
+          .model()
+          .hasErrors();
+    }
+
+    @Test
+    void apiFailureRedisplaysCostAwardPageWithError() {
+      doThrow(new CaabApiClientException("API failure"))
+          .when(caseOutcomeService)
+          .createCostAward(any(), any(), any(), any());
+
+      assertThat(mockMvc.perform(validCostAwardPost()))
+          .hasViewName("application/cost-award")
+          .model()
+          .hasErrors();
+    }
+
+    @Test
+    void postWithoutIdRejectsAwardTypeDetailsThatDoNotMatchTheSession() {
+      final AwardTypeForm selectedAwardType = new AwardTypeForm();
+      selectedAwardType.setAwardTypeCode("COST");
+      selectedAwardType.setAwardType("COST");
+      selectedAwardType.setDescription("Different");
+
+      assertThat(
+              mockMvc.perform(validCostAwardPost().sessionAttr(AWARD_TYPE_FORM, selectedAwardType)))
+          .hasViewName("application/cost-award")
+          .model()
+          .hasErrors();
+    }
+  }
+
+  @Nested
   @DisplayName("GET: /case/outcome-and-awards/financial-award")
   class FinancialAwardGetTests {
 
@@ -479,6 +644,29 @@ class AwardControllerTest {
         .param("awardAmount", "123.45")
         .param("interimAward", "0")
         .param("awardedBy", "COURT")
+        .sessionAttr(CASE, ebsCase)
+        .sessionAttr(USER_DETAILS, user)
+        .sessionAttr(AWARD_TYPE_FORM, selectedAwardType);
+  }
+
+  private MockHttpServletRequestBuilder validCostAwardPost() {
+    final AwardTypeForm selectedAwardType = new AwardTypeForm();
+    selectedAwardType.setAwardTypeCode("COST_AGR");
+    selectedAwardType.setAwardType("COST");
+    selectedAwardType.setDescription("Cost");
+
+    return post("/case/outcome-and-awards/cost-award")
+        .param("awardCode", "COST_AGR")
+        .param("awardType", "COST")
+        .param("description", "Cost")
+        .param("dateOfOrder", "01/01/2025")
+        .param("courtAssessmentStatus", "ASSESSED")
+        .param("laaFundedLegalCosts", "1.00")
+        .param("otherPreCertificateCosts", "2.00")
+        .param("laaRate", "3.00")
+        .param("marketRate", "4.00")
+        .param("awardedBy", "COURT")
+        .param("interestRate", "8.5")
         .sessionAttr(CASE, ebsCase)
         .sessionAttr(USER_DETAILS, user)
         .sessionAttr(AWARD_TYPE_FORM, selectedAwardType);

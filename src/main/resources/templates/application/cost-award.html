@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns="http://www.w3.org/1999/html"
+      xmlns:moj="http://www.thymeleaf.org"
+      xmlns:govuk="http://www.thymeleaf.org">
+<head>
+  <title th:text="|#{service.name} - #{case.costAward.title}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a class="govuk-back-link"
+       th:href="@{/case/outcome-and-awards}"
+       th:text="#{case.costAward.backLink}"></a>
+  </div>
+
+  <div id="main-content">
+    <form th:action="@{/case/outcome-and-awards/cost-award}"
+          th:object="${costAward}"
+          method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+
+      <h1 class="govuk-heading-l" th:text="#{case.costAward.title}"></h1>
+      <p class="govuk-body" th:text="#{case.costAward.information}"></p>
+
+      <input type="hidden" th:field="*{id}">
+      <input type="hidden" th:field="*{awardType}">
+      <input type="hidden" th:field="*{description}">
+      <input type="hidden" th:field="*{awardCode}">
+
+      <moj:datepicker
+          id="date-of-order"
+          name="dateOfOrder"
+          th:label="#{case.costAward.dateOfOrder}"
+          th:hint="#{site.dateHint}"
+          th:attr="value=*{dateOfOrder}"
+          th:errorMessage="${#fields.hasErrors('dateOfOrder') ? #fields.errors('dateOfOrder').getFirst() : ''}">
+      </moj:datepicker>
+
+      <div th:replace="~{partials/forms :: dropdown('courtAssessmentStatus', #{case.costAward.courtAssessmentStatus}, ${courtAssessmentStatuses}, 'code', 'description', false)}"></div>
+
+      <h2 class="govuk-heading-m govuk-!-margin-top-6"
+          th:text="#{case.costAward.preCertificateCostsAwarded}"></h2>
+      <div th:replace="~{partials/forms :: currencyInput('laaFundedLegalCosts', #{case.costAward.laaFundedLegalCosts}, '10')}"></div>
+      <div th:replace="~{partials/forms :: currencyInput('otherPreCertificateCosts', #{case.costAward.otherPreCertificateCosts}, '10')}"></div>
+      <p class="govuk-body govuk-!-font-weight-bold">
+        <span th:text="#{case.costAward.totalPreCertificateCosts}"></span>
+        <span id="totalPreCertificateCosts" aria-live="polite" th:text="| £ ${totalPreCertificateCosts}|"></span>
+      </p>
+
+      <h2 class="govuk-heading-m govuk-!-margin-top-6"
+          th:text="#{case.costAward.duringCertificateCostsAwarded}"></h2>
+      <div th:replace="~{partials/forms :: currencyInput('laaRate', #{case.costAward.laaRate}, '10')}"></div>
+      <div th:replace="~{partials/forms :: currencyInput('marketRate', #{case.costAward.marketRate}, '10')}"></div>
+      <p class="govuk-body govuk-!-font-weight-bold">
+        <span th:text="#{case.costAward.totalCertificateCostsAwarded}"></span>
+        <span id="totalCertificateCostsAwarded" aria-live="polite" th:text="| £ ${totalCertificateCostsAwarded}|"></span>
+      </p>
+      <p class="govuk-body govuk-!-font-weight-bold govuk-!-margin-bottom-6">
+        <span th:text="#{case.costAward.totalCostsAwarded}"></span>
+        <span id="totalCostsAwarded" aria-live="polite" th:text="| £ ${totalCostsAwarded}|"></span>
+      </p>
+
+      <div th:replace="~{partials/forms :: dropdown('awardedBy', #{case.costAward.awardedBy}, ${awardedByOptions}, 'code', 'description', false)}"></div>
+
+      <h2 class="govuk-heading-m govuk-!-margin-top-6"
+          th:text="#{case.costAward.interestAwarded}"></h2>
+      <div th:replace="~{partials/forms :: textInputWithSuffix(fieldId='interestRate', label=#{case.costAward.interestRate}, inputClass='govuk-input--width-5', suffix='%')}"></div>
+
+      <moj:datepicker
+          id="interest-start-date"
+          name="interestStartDate"
+          th:label="#{case.costAward.interestStartDate}"
+          th:hint="#{site.dateHint}"
+          th:attr="value=*{interestStartDate}"
+          th:errorMessage="${#fields.hasErrors('interestStartDate') ? #fields.errors('interestStartDate').getFirst() : ''}">
+      </moj:datepicker>
+
+      <moj:datepicker
+          id="order-served-date"
+          name="orderServedDate"
+          th:label="#{case.costAward.dateOrderWasServed}"
+          th:hint="#{site.dateHint}"
+          th:attr="value=*{orderServedDate}"
+          th:errorMessage="${#fields.hasErrors('orderServedDate') ? #fields.errors('orderServedDate').getFirst() : ''}">
+      </moj:datepicker>
+
+      <div th:replace="~{partials/forms :: textInput(fieldId='addressLine1', label=#{case.costAward.addressOfServiceLine1}, inputClass='govuk-input--width-20', maxlengthParam=70)}"></div>
+      <div th:replace="~{partials/forms :: textInput(fieldId='addressLine2', label=#{case.costAward.addressOfServiceLine2}, inputClass='govuk-input--width-20', maxlengthParam=35)}"></div>
+      <div th:replace="~{partials/forms :: textInput(fieldId='addressLine3', label=#{case.costAward.addressOfServiceLine3}, inputClass='govuk-input--width-20', maxlengthParam=35)}"></div>
+
+      <div th:replace="~{partials/forms :: largeTextInput('otherDetails', #{case.costAward.anyOtherInformation}, 950)}"></div>
+
+      <div class="govuk-button-group govuk-!-margin-top-6">
+        <button
+            type="button"
+            id="calculate-cost-award-totals"
+            class="govuk-button govuk-button--secondary"
+            data-module="govuk-button"
+            th:text="#{site.calculate}">
+        </button>
+        <govuk:button type="submit" th:text="#{site.next}"/>
+      </div>
+    </form>
+  </div>
+</div>
+<script th:nonce="${cspNonce}">
+  (() => {
+    const fieldIds = [
+      'laaFundedLegalCosts',
+      'otherPreCertificateCosts',
+      'laaRate',
+      'marketRate'
+    ];
+
+    const parseAmount = (value) => {
+      const parsed = Number.parseFloat(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
+
+    const formatAmount = (value) => ` £ ${value.toFixed(2)}`;
+
+    const updateTotals = () => {
+      const amounts = Object.fromEntries(
+        fieldIds.map((fieldId) => [fieldId, parseAmount(document.getElementById(fieldId)?.value)])
+      );
+
+      const totalPreCertificateCosts =
+        amounts.laaFundedLegalCosts + amounts.otherPreCertificateCosts;
+      const totalCertificateCostsAwarded = amounts.laaRate + amounts.marketRate;
+      const totalCostsAwarded =
+        totalPreCertificateCosts + totalCertificateCostsAwarded;
+
+      document.getElementById('totalPreCertificateCosts').textContent =
+        formatAmount(totalPreCertificateCosts);
+      document.getElementById('totalCertificateCostsAwarded').textContent =
+        formatAmount(totalCertificateCostsAwarded);
+      document.getElementById('totalCostsAwarded').textContent =
+        formatAmount(totalCostsAwarded);
+    };
+
+    fieldIds.forEach((fieldId) => {
+      document.getElementById(fieldId)?.addEventListener('input', updateTotals);
+    });
+    document
+      .getElementById('calculate-cost-award-totals')
+      ?.addEventListener('click', updateTotals);
+
+    updateTotals();
+  })();
+</script>
+</body>
+</html>

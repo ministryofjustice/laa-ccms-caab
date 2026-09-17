@@ -335,14 +335,15 @@ public class CaseController {
       HttpSession session,
       Model model) {
     final List<ProceedingDetail> proceedings = ebsCase.getProceedings();
-    final Optional<CaseOutcomeDetail> caseOutcomeOpt =
-        caseOutcomeService.getCaseOutcome(
-            ebsCase.getCaseReferenceNumber(), user.getProvider().getId().intValue());
+    final CaseOutcomeDetail caseOutcome =
+        caseOutcomeService.getOrCreateCaseOutcome(
+            ebsCase.getCaseReferenceNumber(),
+            user.getProvider().getId().intValue(),
+            user.getLoginId(),
+            ebsCase.getCaseOutcome());
 
     final List<ProceedingOutcomeDetail> savedOutcomes =
-        caseOutcomeOpt
-            .map(CaseOutcomeDetail::getProceedingOutcomes)
-            .orElse(Collections.emptyList());
+        Optional.ofNullable(caseOutcome.getProceedingOutcomes()).orElse(Collections.emptyList());
 
     // Index saved outcomes by proceedingCaseId once for O(1) lookups below.
     final Map<String, ProceedingOutcomeDetail> savedOutcomeIndex = new HashMap<>();
@@ -385,8 +386,7 @@ public class CaseController {
         "preCertificateAndLegalHelpCostsSummary",
         getPreCertificateAndLegalHelpCostsFormData(session, ebsCase.getCaseReferenceNumber()));
 
-    model.addAttribute(
-        "awards", caseOutcomeOpt.map(this::getAwards).orElse(Collections.emptyList()));
+    model.addAttribute("awards", getAwards(caseOutcome));
 
     // Documents are retrieved using the generic evidence store, keyed by case reference
     // number and the OUTCOME ccms module.
