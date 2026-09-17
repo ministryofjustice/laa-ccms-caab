@@ -64,6 +64,12 @@ configurations.configureEach {
             details.useVersion '1.85'
             details.because 'Override to remediate vulnerability; not covered by the Spring Boot dependency BOM'
         }
+        // Logback classic pulled in by Spring Boot starter logging
+        if (details.requested.group == 'ch.qos.logback'
+                && details.requested.name in ['logback-classic', 'logback-core']) {
+            details.useVersion '1.6.3'
+            details.because 'Snyk override (SNYK-JAVA-CHQOSLOGBACK-19882330); directory traversal vulnerability in 1.5.38'
+        }
     }
 }
 
