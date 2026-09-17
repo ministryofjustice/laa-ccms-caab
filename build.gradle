@@ -83,6 +83,11 @@ configurations.configureEach {
             details.useVersion '4.2.18.Final'
             details.because 'Snyk override (SNYK-JAVA-IONETTY-19778369); HTTP request smuggling fixed in netty 4.2.18.Final'
         }
+        // Spring Boot BOM pins the vulnerable 1.5.38 release.
+        if (details.requested.group == 'ch.qos.logback') {
+            details.useVersion '1.6.3'
+            details.because 'Snyk override (SNYK-JAVA-CHQOSLOGBACK-19882330); directory traversal via MDCBasedDiscriminator fixed in logback 1.6.3'
+        }
     }
 }
 
