@@ -71,19 +71,6 @@ configurations.configureEach {
             details.useVersion '1.85'
             details.because 'Override to remediate vulnerability; not covered by the Spring Boot dependency BOM'
         }
-        // Spring Framework security vulnerability remediations
-        // Await patch releases for: open redirect, resource allocation, XSS, authorization vulnerabilities
-        if (details.requested.group == 'org.springframework'
-                && details.requested.name in ['spring-webflux', 'spring-webmvc']) {
-            details.useVersion '7.0.9'
-            details.because 'Snyk override; awaiting spring-webflux/webmvc 7.0.10+ (SNYK-JAVA-ORGSPRINGFRAMEWORK-19267433, SNYK-JAVA-ORGSPRINGFRAMEWORK-19267434, SNYK-JAVA-ORGSPRINGFRAMEWORK-19267952, SNYK-JAVA-ORGSPRINGFRAMEWORK-19268252, SNYK-JAVA-ORGSPRINGFRAMEWORK-19267095, SNYK-JAVA-ORGSPRINGFRAMEWORK-19267099)'
-        }
-        // Spring Security security vulnerability remediations
-        // Await patch releases for: timing attack, access control bypass, IV generation vulnerabilities
-        if (details.requested.group == 'org.springframework.security') {
-            details.useVersion '7.1.1'
-            details.because 'Snyk override; awaiting spring-security 7.1.2+ (SNYK-JAVA-ORGSPRINGFRAMEWORKSECURITY-19267441, SNYK-JAVA-ORGSPRINGFRAMEWORKSECURITY-19267439, SNYK-JAVA-ORGSPRINGFRAMEWORKSECURITY-19267391)'
-        }
         // Logback classic pulled in by Spring Boot starter logging
         if (details.requested.group == 'ch.qos.logback'
                 && details.requested.name in ['logback-classic', 'logback-core']) {
