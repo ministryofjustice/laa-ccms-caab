@@ -24,6 +24,7 @@
         addMode,
         addButtonUrl,
         addButtonId)">
+  <input th:if="${removeMode == 'hiddenField'}" type="hidden" th:name="${hiddenFieldName}" th:id="${hiddenFieldName}" />
   <table class="govuk-table">
     <thead class="govuk-table__head">
     <tr class="govuk-table__row">
@@ -35,7 +36,6 @@
     </tr>
     </thead>
     <tbody class="govuk-table__body">
-    <input th:if="${removeMode == 'hiddenField'}" type="hidden" th:name="${hiddenFieldName}" th:id="${hiddenFieldName}" />
     <tr class="govuk-table__row" th:if="${#lists.isEmpty(documents)}">
       <td class="govuk-table__cell" colspan="5" th:text="#{document.table.noDocuments}"></td>
     </tr>
