@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.client;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FINANCIAL;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTHER_ASSET;
 
 import java.net.URI;
 import java.util.List;
@@ -36,6 +37,8 @@ import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
+import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
+import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetail;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
@@ -63,6 +66,7 @@ public class CaabApiClient {
   public static final String RESOURCE_TYPE_OPPONENTS = "opponents";
   public static final String RESOURCE_TYPE_CASE_OUTCOME = "case outcome";
   public static final String RESOURCE_TYPE_FINANCIAL_AWARD = "financial award";
+  public static final String RESOURCE_TYPE_OTHER_ASSET_AWARD = "other asset award";
   public static final String RESOURCE_TYPE_EVIDENCE = "evidence";
   public static final String RESOURCE_TYPE_NOTIFICATION_ATTACHMENTS = "notification attachments";
   public static final String RESOURCE_TYPE_BILL = "bill";
@@ -872,6 +876,68 @@ public class CaabApiClient {
             e ->
                 caabApiClientErrorHandler.handleApiUpdateError(
                     e, RESOURCE_TYPE_FINANCIAL_AWARD, "id", String.valueOf(financialAwardId)));
+  }
+
+  /** Creates an other asset award for an existing case outcome. */
+  public Mono<String> createOtherAssetAward(
+      final Integer caseOutcomeId,
+      final String loginId,
+      final OtherAssetAwardRequest otherAssetAward) {
+    return caabApiWebClient
+        .post()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}",
+            caseOutcomeId,
+            AWARD_TYPE_OTHER_ASSET)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(otherAssetAward)
+        .exchangeToMono(CaabApiClient::getIdResponse)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiCreateError(e, RESOURCE_TYPE_OTHER_ASSET_AWARD));
+  }
+
+  /** Gets an other asset award by id and owning case outcome id. */
+  public Mono<OtherAssetAwardDetail> getOtherAssetAward(
+      final Integer caseOutcomeId, final Integer otherAssetAwardId) {
+    return caabApiWebClient
+        .get()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{other-asset-award-id}",
+            caseOutcomeId,
+            AWARD_TYPE_OTHER_ASSET,
+            otherAssetAwardId)
+        .retrieve()
+        .bodyToMono(OtherAssetAwardDetail.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiRetrieveError(
+                    e, RESOURCE_TYPE_OTHER_ASSET_AWARD, "id", String.valueOf(otherAssetAwardId)));
+  }
+
+  /** Updates an other asset award belonging to a case outcome. */
+  public Mono<Void> updateOtherAssetAward(
+      final Integer caseOutcomeId,
+      final Integer otherAssetAwardId,
+      final String loginId,
+      final OtherAssetAwardRequest otherAssetAward) {
+    return caabApiWebClient
+        .put()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{other-asset-award-id}",
+            caseOutcomeId,
+            AWARD_TYPE_OTHER_ASSET,
+            otherAssetAwardId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(otherAssetAward)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiUpdateError(
+                    e, RESOURCE_TYPE_OTHER_ASSET_AWARD, "id", String.valueOf(otherAssetAwardId)));
   }
 
   /**

@@ -12,6 +12,8 @@ import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
+import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
+import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 
 /** Service class to handle Case Outcomes. */
@@ -91,6 +93,63 @@ public class CaseOutcomeService {
                         .formatted(financialAwardId, caseReferenceNumber)));
     caabApiClient
         .updateFinancialAward(caseOutcome.getId(), financialAwardId, loginId, financialAward)
+        .block();
+  }
+
+  /** Returns an other asset award only when it belongs to the supplied case outcome. */
+  public Optional<OtherAssetAwardDetail> getOtherAssetAward(
+      final String caseReferenceNumber, final Integer providerId, final Integer otherAssetAwardId) {
+    final Integer caseOutcomeId =
+        getCaseOutcome(caseReferenceNumber, providerId)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "No case outcome exists for case reference number: " + caseReferenceNumber))
+            .getId();
+    return Optional.ofNullable(
+        caabApiClient.getOtherAssetAward(caseOutcomeId, otherAssetAwardId).block());
+  }
+
+  /** Creates an other asset award without replacing the owning case outcome aggregate. */
+  public void createOtherAssetAward(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final OtherAssetAwardRequest otherAssetAward,
+      final String loginId) {
+    final Integer caseOutcomeId =
+        getCaseOutcome(caseReferenceNumber, providerId)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "No case outcome exists for case reference number: " + caseReferenceNumber))
+            .getId();
+    caabApiClient.createOtherAssetAward(caseOutcomeId, loginId, otherAssetAward).block();
+  }
+
+  /** Updates an other asset award without replacing the owning case outcome aggregate. */
+  public void updateOtherAssetAward(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final Integer otherAssetAwardId,
+      final OtherAssetAwardRequest otherAssetAward,
+      final String loginId) {
+    final CaseOutcomeDetail caseOutcome =
+        getCaseOutcome(caseReferenceNumber, providerId)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "No case outcome exists for case reference number: "
+                            + caseReferenceNumber));
+    Optional.ofNullable(caseOutcome.getOtherAssetAwards()).orElse(Collections.emptyList()).stream()
+        .filter(award -> otherAssetAwardId.equals(award.getId()))
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Other asset award %s does not belong to case reference number: %s"
+                        .formatted(otherAssetAwardId, caseReferenceNumber)));
+    caabApiClient
+        .updateOtherAssetAward(caseOutcome.getId(), otherAssetAwardId, loginId, otherAssetAward)
         .block();
   }
 

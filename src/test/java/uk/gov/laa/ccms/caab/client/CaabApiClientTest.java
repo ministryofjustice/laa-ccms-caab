@@ -50,6 +50,8 @@ import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
+import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
+import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetail;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
@@ -908,6 +910,71 @@ class CaabApiClientTest {
     StepVerifier.create(
             caabApiClient.updateFinancialAward(
                 caseOutcomeId, financialAwardId, loginId, financialAward))
+        .verifyComplete();
+  }
+
+  @Test
+  void createOtherAssetAward_success() {
+    final OtherAssetAwardRequest otherAssetAward = new OtherAssetAwardRequest();
+    final String loginId = "user789";
+    final Integer caseOutcomeId = 42;
+    final String expectedUri = "/case-outcomes/{case-outcome-id}/awards/{award-type}";
+    final String locationId = "123";
+
+    when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri, caseOutcomeId, "ASSET")).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(otherAssetAward)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.exchangeToMono(any(Function.class))).thenReturn(Mono.just(locationId));
+
+    StepVerifier.create(
+            caabApiClient.createOtherAssetAward(caseOutcomeId, loginId, otherAssetAward))
+        .expectNext(locationId)
+        .verifyComplete();
+  }
+
+  @Test
+  void getOtherAssetAward_success() {
+    final Integer caseOutcomeId = 42;
+    final Integer otherAssetAwardId = 7;
+    final OtherAssetAwardDetail otherAssetAward = new OtherAssetAwardDetail().id(otherAssetAwardId);
+    final String expectedUri =
+        "/case-outcomes/{case-outcome-id}/awards/{award-type}/{other-asset-award-id}";
+
+    when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, caseOutcomeId, "ASSET", otherAssetAwardId))
+        .thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(OtherAssetAwardDetail.class))
+        .thenReturn(Mono.just(otherAssetAward));
+
+    StepVerifier.create(caabApiClient.getOtherAssetAward(caseOutcomeId, otherAssetAwardId))
+        .expectNext(otherAssetAward)
+        .verifyComplete();
+  }
+
+  @Test
+  void updateOtherAssetAward_success() {
+    final OtherAssetAwardRequest otherAssetAward = new OtherAssetAwardRequest();
+    final String loginId = "user789";
+    final Integer caseOutcomeId = 42;
+    final Integer otherAssetAwardId = 7;
+    final String expectedUri =
+        "/case-outcomes/{case-outcome-id}/awards/{award-type}/{other-asset-award-id}";
+
+    when(caabApiWebClient.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri, caseOutcomeId, "ASSET", otherAssetAwardId))
+        .thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(otherAssetAward)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    StepVerifier.create(
+            caabApiClient.updateOtherAssetAward(
+                caseOutcomeId, otherAssetAwardId, loginId, otherAssetAward))
         .verifyComplete();
   }
 

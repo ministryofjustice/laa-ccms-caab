@@ -31,6 +31,8 @@ import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
+import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
+import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 
 @ExtendWith(MockitoExtension.class)
@@ -124,6 +126,117 @@ class CaseOutcomeServiceTest {
         caseReferenceNumber, providerId, financialAwardId, request, loginId);
 
     verify(caabApiClient).updateFinancialAward(caseOutcomeId, financialAwardId, loginId, request);
+  }
+
+  @Test
+  void getOtherAssetAward_existingAward_returnsAward() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final Integer caseOutcomeId = 42;
+    final Integer otherAssetAwardId = 7;
+
+    doReturn(Optional.of(new CaseOutcomeDetail().id(caseOutcomeId)))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+    final OtherAssetAwardDetail otherAssetAward = new OtherAssetAwardDetail().id(otherAssetAwardId);
+    when(caabApiClient.getOtherAssetAward(caseOutcomeId, otherAssetAwardId))
+        .thenReturn(Mono.just(otherAssetAward));
+
+    final Optional<OtherAssetAwardDetail> result =
+        caseOutcomeService.getOtherAssetAward(caseReferenceNumber, providerId, otherAssetAwardId);
+
+    assertEquals(otherAssetAward, result.orElseThrow());
+    verify(caabApiClient).getOtherAssetAward(caseOutcomeId, otherAssetAwardId);
+  }
+
+  @Test
+  void createOtherAssetAward_existingCaseOutcome_createsAward() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final Integer caseOutcomeId = 42;
+    final String loginId = "user1";
+    final OtherAssetAwardRequest request = new OtherAssetAwardRequest();
+
+    doReturn(Optional.of(new CaseOutcomeDetail().id(caseOutcomeId)))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+    when(caabApiClient.createOtherAssetAward(caseOutcomeId, loginId, request))
+        .thenReturn(Mono.just("7"));
+
+    caseOutcomeService.createOtherAssetAward(caseReferenceNumber, providerId, request, loginId);
+
+    verify(caabApiClient).createOtherAssetAward(caseOutcomeId, loginId, request);
+  }
+
+  @Test
+  void createOtherAssetAward_whenNoCaseOutcome_throwsWithoutCreatingAward() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final OtherAssetAwardRequest request = new OtherAssetAwardRequest();
+
+    doReturn(Optional.empty())
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            caseOutcomeService.createOtherAssetAward(
+                caseReferenceNumber, providerId, request, "user1"));
+
+    verify(caabApiClient, never()).createOtherAssetAward(any(), any(), any());
+  }
+
+  @Test
+  void updateOtherAssetAward_existingAward_updatesAward() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final Integer caseOutcomeId = 42;
+    final Integer otherAssetAwardId = 7;
+    final String loginId = "user1";
+    final OtherAssetAwardRequest request = new OtherAssetAwardRequest();
+    final CaseOutcomeDetail caseOutcome =
+        new CaseOutcomeDetail()
+            .id(caseOutcomeId)
+            .otherAssetAwards(List.of(new OtherAssetAwardDetail().id(otherAssetAwardId)));
+
+    doReturn(Optional.of(caseOutcome))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+    when(caabApiClient.updateOtherAssetAward(caseOutcomeId, otherAssetAwardId, loginId, request))
+        .thenReturn(Mono.empty());
+
+    caseOutcomeService.updateOtherAssetAward(
+        caseReferenceNumber, providerId, otherAssetAwardId, request, loginId);
+
+    verify(caabApiClient).updateOtherAssetAward(caseOutcomeId, otherAssetAwardId, loginId, request);
+  }
+
+  @Test
+  void updateOtherAssetAward_whenAwardDoesNotBelongToOutcome_throwsWithoutUpdating() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final Integer caseOutcomeId = 42;
+    final Integer otherAssetAwardId = 7;
+    final OtherAssetAwardRequest request = new OtherAssetAwardRequest();
+    final CaseOutcomeDetail caseOutcome =
+        new CaseOutcomeDetail().id(caseOutcomeId).otherAssetAwards(List.of());
+
+    doReturn(Optional.of(caseOutcome))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+
+    final IllegalStateException exception =
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                caseOutcomeService.updateOtherAssetAward(
+                    caseReferenceNumber, providerId, otherAssetAwardId, request, "user1"));
+
+    assertEquals(
+        "Other asset award 7 does not belong to case reference number: 300000001",
+        exception.getMessage());
+    verify(caabApiClient, never()).updateOtherAssetAward(any(), any(), any(), any());
   }
 
   @Test
