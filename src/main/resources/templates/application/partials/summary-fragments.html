@@ -11,6 +11,46 @@
   </dd>
 </div>
 
+<!-- Summary list row with a caller-supplied value ID. -->
+<div class="govuk-summary-list__row govuk-summary-list__row--no-actions"
+     th:fragment="summaryListDisplayWithId(label, value, valueId)">
+  <dt class="govuk-summary-list__key" th:text="${label}"></dt>
+  <dd class="govuk-summary-list__value" th:id="${valueId}" th:text="${value}"></dd>
+</div>
+
+<!-- Summary list row with an action and optional visually hidden context. -->
+<div class="govuk-summary-list__row"
+     th:fragment="summaryListDisplayWithAction(label, value, valueId, actionText, actionUrl, actionId, visuallyHiddenText)">
+  <dt class="govuk-summary-list__key" th:text="${label}"></dt>
+  <dd class="govuk-summary-list__value" th:id="${valueId}" th:text="${value}"></dd>
+  <dd class="govuk-summary-list__actions">
+    <a class="govuk-link govuk-link--no-visited-state"
+       th:href="${actionUrl}"
+       th:id="${actionId}">
+      <th:block th:text="${actionText}"/>
+      <span class="govuk-visually-hidden"
+            th:if="${visuallyHiddenText != null}"
+            th:text="${visuallyHiddenText}"></span>
+    </a>
+  </dd>
+</div>
+
+<!-- Summary list row whose value is a link. -->
+<div class="govuk-summary-list__row"
+     th:fragment="summaryListDisplayWithLinkValue(
+       rowId, keyId, label, linkText, linkUrl, linkId, valueId)"
+     th:id="${rowId}">
+  <dt class="govuk-summary-list__key" th:id="${keyId}">
+    <th:block th:text="${label}"/>
+  </dt>
+  <dd class="govuk-summary-list__value" th:id="${valueId}">
+    <a class="govuk-link govuk-link--no-visited-state"
+       th:href="${linkUrl}"
+       th:id="${linkId}"
+       th:text="${linkText}"></a>
+  </dd>
+</div>
+
 <!--Simple fragment for repeated summary list rows with yes/no values -->
 <div class="govuk-summary-list__row" th:fragment="summaryListDisplayYesNo(label, checked)">
   <dt class="govuk-summary-list__key" th:text="${label}">
@@ -101,4 +141,3 @@
     </dl>
   </div>
 </div>
-

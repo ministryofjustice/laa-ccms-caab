@@ -21,58 +21,36 @@
             id="general-details"
             th:text="#{caseDetails.general.details}"/>
         <dl class="govuk-summary-list">
-          <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
-            <dt class="govuk-summary-list__key" th:text="#{caseDetails.general.status}"/>
-            <dd class="govuk-summary-list__value"
-                id="general-application-status-value"
-                th:text="${summary.generalDetails.applicationStatus}"/>
-          </div>
-          <div class="govuk-summary-list__row" th:with="fieldName=#{caseDetails.general.client.name}">
-            <dt class="govuk-summary-list__key" th:text="${fieldName}"/>
-            <dd class="govuk-summary-list__value"
-                id="general-client-fullname-value"
-                th:text="${summary.client.clientFullName}"/>
-            <dd class="govuk-summary-list__actions">
-              <a class="govuk-link govuk-link--no-visited-state"
-                 id="amend-client-link"
-                 th:href="@{/amendments/sections/client/details/summary}">
-                <th:block th:text="#{site.amend}"/>
-                <span class="govuk-visually-hidden" th:text="${#strings.toLowerCase(fieldName)}"/>
-              </a>
-            </dd>
-          </div>
-          <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
-            <dt class="govuk-summary-list__key" th:text="#{caseDetails.general.category.law}"/>
-            <dd class="govuk-summary-list__value"
-                id="general-category-of-law-value"
-                th:text="${summary.generalDetails.categoryOfLaw}"/>
-          </div>
-          <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
-            <dt class="govuk-summary-list__key"
-                th:text="#{caseDetails.general.preferred.address}"/>
-            <dd class="govuk-summary-list__value"
-                id="general-correspondence-method-value"
-                th:text="${summary.generalDetails.correspondenceMethod}"/>
-          </div>
-          <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
-            <dt class="govuk-summary-list__key"
-                th:text="#{caseDetails.general.application.type}"/>
-            <dd class="govuk-summary-list__value"
-                id="general-application-type-value"
-                th:text="${summary.applicationType.description}"/>
-          </div>
-          <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
-            <dt class="govuk-summary-list__key"
-                th:text="#{caseDetails.general.delegated.functions.date}"/>
-            <dd
-                id="general-delegated-functions-value"
-                class="govuk-summary-list__value">
-              <th:block th:if="${summary.applicationType.devolvedPowersUsed}"
-                        th:text="${#dates.format(summary.applicationType.devolvedPowersDate, 'dd/MM/yyyy')}"/>
-              <th:block th:unless="${summary.applicationType.devolvedPowersUsed}"
-                        th:text="#{site.none}"/>
-            </dd>
-          </div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+            #{caseDetails.general.status},
+            ${summary.generalDetails.applicationStatus},
+            'general-application-status-value')}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithAction(
+            #{caseDetails.general.client.name},
+            ${summary.client.clientFullName},
+            'general-client-fullname-value',
+            #{site.amend},
+            @{/amendments/sections/client/details/summary},
+            'amend-client-link',
+            ${#strings.toLowerCase(#messages.msg('caseDetails.general.client.name'))})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+            #{caseDetails.general.category.law},
+            ${summary.generalDetails.categoryOfLaw},
+            'general-category-of-law-value')}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+            #{caseDetails.general.preferred.address},
+            ${summary.generalDetails.correspondenceMethod},
+            'general-correspondence-method-value')}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+            #{caseDetails.general.application.type},
+            ${summary.applicationType.description},
+            'general-application-type-value')}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+            #{caseDetails.general.delegated.functions.date},
+            ${summary.applicationType.devolvedPowersUsed
+              ? #dates.format(summary.applicationType.devolvedPowersDate, 'dd/MM/yyyy')
+              : #messages.msg('site.none')},
+            'general-delegated-functions-value')}"></div>
         </dl>
 
       </div>
@@ -122,42 +100,30 @@
         <h2 class="govuk-heading-m" id="provider-details"
             th:text="#{caseDetails.provider.details}"/>
         <dl class="govuk-summary-list">
-          <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key" th:text="#{caseDetails.provider.case.reference}"/>
-            <dd class="govuk-summary-list__value"
-                id="provider-case-reference-value"
-                th:text="${summary.provider.providerCaseReferenceNumber}"/>
-          </div>
-          <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key" th:text="#{caseDetails.provider.name}"/>
-            <dd class="govuk-summary-list__value"
-                id="provider-name-value"
-                th:text="${summary.provider.providerName}"/>
-          </div>
-          <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key" th:text="#{caseDetails.provider.office}"/>
-            <dd class="govuk-summary-list__value"
-                id="provider-office-name-value"
-                th:text="${summary.provider.officeName}"/>
-          </div>
-          <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key" th:text="#{caseDetails.provider.fee.earner}"/>
-            <dd class="govuk-summary-list__value"
-                id="provider-fee-earner-value"
-                th:text="${summary.provider.feeEarner}"/>
-          </div>
-          <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key" th:text="#{caseDetails.provider.supervisor}"/>
-            <dd class="govuk-summary-list__value"
-                id="provider-supervisor-name-value"
-                th:text="${summary.provider.supervisorName}"/>
-          </div>
-          <div class="govuk-summary-list__row">
-            <dt class="govuk-summary-list__key" th:text="#{caseDetails.provider.contact.name}"/>
-            <dd class="govuk-summary-list__value"
-                id="provider-provider-contact-name-value"
-                th:text="${summary.provider.providerContactName}"/>
-          </div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+            #{caseDetails.provider.case.reference},
+            ${summary.provider.providerCaseReferenceNumber},
+            'provider-case-reference-value')}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+            #{caseDetails.provider.name},
+            ${summary.provider.providerName},
+            'provider-name-value')}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+            #{caseDetails.provider.office},
+            ${summary.provider.officeName},
+            'provider-office-name-value')}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+            #{caseDetails.provider.fee.earner},
+            ${summary.provider.feeEarner},
+            'provider-fee-earner-value')}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+            #{caseDetails.provider.supervisor},
+            ${summary.provider.supervisorName},
+            'provider-supervisor-name-value')}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+            #{caseDetails.provider.contact.name},
+            ${summary.provider.providerContactName},
+            'provider-provider-contact-name-value')}"></div>
         </dl>
       </div>
 
@@ -220,30 +186,22 @@
         <h2 class="govuk-heading-m" id="costs" th:text="#{case.overview.costs.title}">
           Costs
         </h2>
-        <table class="govuk-table">
-          <thead>
-          <tr>
-            <th class="govuk-table__header" th:text="#{case.overview.costs.title}"></th>
-            <th class="govuk-table__header" th:text="#{case.overview.costs.requestedAmount}"></th>
-            <th class="govuk-table__header" th:text="#{case.overview.costs.grantedAmount}"></th>
-          </tr>
-          </thead>
-          <tbody class="govuk-table__body">
-          <tr class="govuk-table__row">
-            <td class="govuk-table__cell">
-              <a class="govuk-link govuk-link--no-visited-state"
-                 th:href="@{/case/details/costs}"
-                 th:text="#{case.overview.costs.caseCostLimitation}"
-                 id="case-cost-details-link">
-              </a>
-            </td>
-            <td class="govuk-table__cell"
-                th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.requestedCostLimitation)}"/>
-            <td class="govuk-table__cell"
-                th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)}"/>
-          </tr>
-          </tbody>
-        </table>
+        <dl class="govuk-summary-list">
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithLinkValue(
+            null,
+            null,
+            #{case.overview.costs.title},
+            #{case.overview.costs.caseCostLimitation},
+            @{/case/details/costs},
+            'case-cost-details-link',
+            null)}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(
+            #{case.overview.costs.requestedAmount},
+            ${#numbers.formatCurrency(summary.proceedingsAndCosts.requestedCostLimitation)})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(
+            #{case.overview.costs.grantedAmount},
+            ${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)})}"></div>
+        </dl>
       </div>
     </div>
     <div class="govuk-grid-row">
