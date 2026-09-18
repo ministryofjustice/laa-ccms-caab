@@ -19,24 +19,12 @@
 
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
-          <table class="govuk-table ccms-compact-table">
-            <thead class="govuk-table__head">
-              <tr class="govuk-table__row">
-                <th scope="col" class="govuk-table__header" th:text="#{common.dateAssigned}"></th>
-                <th scope="col" class="govuk-table__header" th:text="#{common.dueDate}"></th>
-                <th scope="col" class="govuk-table__header" th:text="#{common.status}"></th>
-                <th scope="col" class="govuk-table__header" th:text="#{common.assignedTo}"></th>
-              </tr>
-            </thead>
-            <tbody class="govuk-table__body">
-              <tr class="govuk-table__row">
-                <td class="govuk-table__cell" th:text="${#temporals.format(notification.assignDate,'dd/MM/yyyy')}"></td>
-                <td class="govuk-table__cell" th:text="${#temporals.format(notification.dueDate,'dd/MM/yyyy')}"></td>
-                <td class="govuk-table__cell" th:text="${notification.status}"></td>
-                <td class="govuk-table__cell" th:text="${notification.user.loginId}"></td>
-              </tr>
-            </tbody>
-          </table>
+          <dl class="govuk-summary-list">
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{common.dateAssigned}, ${#temporals.format(notification.assignDate,'dd/MM/yyyy')})}"></div>
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{common.dueDate}, ${#temporals.format(notification.dueDate,'dd/MM/yyyy')})}"></div>
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{common.status}, ${notification.status})}"></div>
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{common.assignedTo}, ${notification.user.loginId})}"></div>
+          </dl>
         </div>
       </div>
 
@@ -62,22 +50,10 @@
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
           <h2 class="govuk-heading-m" th:text="#{notifications.subHeading.caseDetails}"/>
-          <table class="govuk-table">
-            <thead class="govuk-table__head">
-              <tr class="govuk-table__row">
-                <th scope="col" class="govuk-table__header"
-                    th:text="#{common.laaRef}"/>
-                <th scope="col" class="govuk-table__header"
-                    th:text="#{common.providerRef}"/>
-                <th scope="col" class="govuk-table__header"
-                    th:text="#{common.client}"/>
-                <th scope="col" class="govuk-table__header"
-                    th:text="#{common.feeEarner}"/>
-              </tr>
-            </thead>
-            <tbody class="govuk-table__body">
-              <tr class="govuk-table__row">
-                <td class="govuk-table__cell">
+          <dl class="govuk-summary-list">
+            <div class="govuk-summary-list__row">
+              <dt class="govuk-summary-list__key" th:text="#{common.laaRef}"></dt>
+              <dd class="govuk-summary-list__value">
                   <span th:if="${#strings.isEmpty(notification.caseReferenceNumber)}" th:text="#{site.none}"/>
                   <th:block th:unless="${#strings.isEmpty(notification.caseReferenceNumber)}">
                     <a class="govuk-link govuk-link--no-visited-state"
@@ -87,14 +63,12 @@
 
                     <span sec:authorize="!hasAuthority(@roles.viewCaseDetails)" th:text="${notification.caseReferenceNumber}"/>
                   </th:block>
-                </td>
-                <td class="govuk-table__cell"
-                    th:text="${notification.providerCaseReferenceNumber}"/>
-                <td class="govuk-table__cell" th:text="${notification.clientName}"/>
-                <td class="govuk-table__cell" th:text="${notification.feeEarner}"/>
-              </tr>
-            </tbody>
-          </table>
+              </dd>
+            </div>
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{common.providerRef}, ${notification.providerCaseReferenceNumber})}"></div>
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{common.client}, ${notification.clientName})}"></div>
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{common.feeEarner}, ${notification.feeEarner})}"></div>
+          </dl>
         </div>
       </div>
       <div class="govuk-grid-row">

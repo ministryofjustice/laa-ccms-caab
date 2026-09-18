@@ -14,25 +14,13 @@
         <p class="govuk-body" th:text="#{client.confirm.leadParagraph}"></p>
         <form action="#" th:action="@{/application/client/confirmed}" method="post">
             <input type="hidden" name="confirmedClientReference" th:value="${clientReferenceNumber}" />
-            <table class="govuk-table">
-                <caption class="govuk-table__caption govuk-table__caption--m" th:text="#{client.search.results.caption}"></caption>
-                <thead class="govuk-table__head">
-                <tr class="govuk-table__row">
-                    <th scope="col" class="govuk-table__header" th:text="#{person.firstName}"></th>
-                    <th scope="col" class="govuk-table__header" th:text="#{person.surname}"></th>
-                    <th scope="col" class="govuk-table__header" th:text="#{person.surnameAtBirth}"></th>
-                    <th scope="col" class="govuk-table__header" th:text="#{address.postcodeDistrict}"></th>
-                </tr>
-                </thead>
-                <tbody class="govuk-table__body">
-                <tr class="govuk-table__row">
-                    <td class="govuk-table__cell" th:text="${client.firstName}"></td>
-                    <td class="govuk-table__cell" th:text="${client.surname}"></td>
-                    <td class="govuk-table__cell" th:text="${client.surnameAtBirth}"></td>
-                    <td class="govuk-table__cell" th:text="${client.getPostCodeDistrict()}"></td>
-                </tr>
-                </tbody>
-            </table>
+            <h2 class="govuk-heading-m" th:text="#{client.search.results.caption}"></h2>
+            <dl class="govuk-summary-list">
+                <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{person.firstName}, ${client.firstName})}"></div>
+                <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{person.surname}, ${client.surname})}"></div>
+                <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{person.surnameAtBirth}, ${client.surnameAtBirth})}"></div>
+                <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{address.postcodeDistrict}, ${client.getPostCodeDistrict()})}"></div>
+            </dl>
             <div class="govuk-button-group">
                 <govuk:button type="submit" th:text="#{site.confirm}"/>
                 <govuk:button classes="govuk-button--secondary"

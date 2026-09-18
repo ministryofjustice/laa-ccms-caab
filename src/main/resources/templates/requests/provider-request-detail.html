@@ -30,7 +30,7 @@
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
 
-          <dl class="govuk-body">
+          <dl class="govuk-summary-list">
             <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{request.type}, ${providerRequestFlow.requestTypeFormData.providerRequestTypeDisplayValue})}"></div>
           </dl>
 
@@ -175,22 +175,9 @@
 
           <th:block th:unless="*{claimUploadEnabled}" >
             <div th:if="${documentsUploaded.isEmpty()}" class="govuk-form-group">
-              <table class="govuk-table">
-                <caption class="govuk-table__caption govuk-table__caption--m" th:text="#{request.documents}"></caption>
-                <thead class="govuk-table__head">
-                <tr class="govuk-table__row">
-                  <th scope="col" class="govuk-table__header" th:text="#{request.documents}"></th>
-                </tr>
-                </thead>
-                <tbody class="govuk-table__body">
-                <tr class="govuk-table__row">
-                  <th scope="row" class="govuk-table__cell">
-                    <button type="submit" name="action" value="document_upload" class="govuk-body govuk-!-margin-bottom-0 ccms-button-as-link"
-                       th:text="#{request.documentUpload}"></button>
-                  </th>
-                </tr>
-                </tbody>
-              </table>
+              <h2 class="govuk-heading-m" th:text="#{request.documents}"></h2>
+              <button type="submit" name="action" value="document_upload" class="govuk-button govuk-button--secondary"
+                      th:text="#{request.documentUpload}"></button>
             </div>
           </th:block>
 
