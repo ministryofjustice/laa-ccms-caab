@@ -12,7 +12,7 @@
 </div>
 
 <!-- Summary list row with a caller-supplied value ID. -->
-<div class="govuk-summary-list__row govuk-summary-list__row--no-actions"
+<div class="govuk-summary-list__row"
      th:fragment="summaryListDisplayWithId(label, value, valueId)">
   <dt class="govuk-summary-list__key" th:text="${label}"></dt>
   <dd class="govuk-summary-list__value" th:id="${valueId}" th:text="${value}"></dd>
