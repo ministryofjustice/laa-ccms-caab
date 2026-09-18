@@ -201,9 +201,9 @@
         </table>
         <div class="govuk-button-group govuk-!-margin-top-3">
           <th:block th:if="${outcomeDocumentActionAllowed}">
-            <a class="govuk-link govuk-link--no-visited-state"
+            <a class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
                th:href="@{/case/outcome-and-awards/document/upload}"
-               th:text="#{case.outcomeAndAwards.documents.upload}"
+               th:text="#{case.outcomeAndAwards.documents.addDocument}"
                id="documentUploadLink"
             ></a>
           </th:block>
