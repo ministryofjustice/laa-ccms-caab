@@ -2,7 +2,7 @@
 <html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org" xmlns:moj="http://www.thymeleaf.org">
 <head>
-  <title th:text="|#{service.name} - #{request.title}|"/>
+  <title th:text="|#{service.name} - #{request.title}|"></title>
 </head>
 <body>
 <div class="govuk-width-container">
@@ -10,11 +10,11 @@
       <a th:unless="${caseReference != null}"
          th:href="@{/home}"
          class="govuk-back-link"
-         th:text="#{site.cancelAndReturnToHome}"/>
+         th:text="#{site.cancelAndReturnToHome}"></a>
       <a th:if="${caseReference != null}"
          th:href="@{/case/overview}"
          class="govuk-back-link"
-         th:text="#{caseDetails.overview.return}"/>
+         th:text="#{caseDetails.overview.return}"></a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{${providerRequestSubmitUrl}}" th:object="${providerRequestDetails}" method="post" enctype="multipart/form-data">
@@ -133,72 +133,25 @@
 
         </div>
       </div>
-      <div class="govuk-grid-row">
+      <div class="govuk-grid-row" th:unless="*{claimUploadEnabled}">
         <div class="govuk-grid-column-full">
-          <th:block th:unless="${documentsUploaded.isEmpty()}" class="govuk-form-group">
-            <table class="govuk-table">
-              <caption class="govuk-table__caption govuk-table__caption--m" th:text="#{request.documents}"></caption>
-              <thead class="govuk-table__head">
-              <tr class="govuk-table__row">
-                <th scope="col" class="govuk-table__header" th:text="#{site.file}"></th>
-                <th scope="col" class="govuk-table__header" th:text="#{site.type}"></th>
-                <th scope="col" class="govuk-table__header" th:text="#{site.description}"></th>
-                <th scope="col" class="govuk-table__header" th:text="#{site.date}"></th>
-                <th scope="col" class="govuk-table__header"></th>
-              </tr>
-              </thead>
-              <tbody class="govuk-table__body">
-              <input type="hidden" name="documentIdToDelete" id="documentIdToDelete" />
-              <tr class="govuk-table__row" th:each="uploadedDoc: ${documentsUploaded}" th:unless="${documentsUploaded.isEmpty()}">
-                <td class="govuk-table__cell" th:text="${uploadedDoc.fileName}"></td>
-                <td class="govuk-table__cell" th:text="${uploadedDoc.documentType.displayValue}"></td>
-                <td class="govuk-table__cell">
-                  <div class="documentDescriptionMore">
-                    <span th:text="${uploadedDoc.description}"></span>
-                  </div>
-                  <div>
-                    <span class="govuk-body moreLess" th:text="#{request.more}"></span>
-                  </div>
-                </td>
-                <td class="govuk-table__cell" th:text="${#dates.format(uploadedDoc.auditTrail.created, 'dd/MM/yyyy')}"></td>
-                <td class="govuk-table__cell">
-                  <button type="submit" name="action" value="document_delete" class="govuk-body govuk-!-margin-bottom-0 ccms-button-as-link"
-                      th:attr="data-delete-id=${uploadedDoc.id}, data-delete-input-id='documentIdToDelete'"
-                      th:text="#{site.remove}"></button>
-                </td>
-              </tr>
-              </tbody>
-            </table>
-            <button type="submit" name="action" value="document_upload" class="govuk-button govuk-button--secondary"
-                th:text="#{request.addAnotherDocument}"></button>
-          </th:block>
-
-          <th:block th:unless="*{claimUploadEnabled}" >
-            <div th:if="${documentsUploaded.isEmpty()}" class="govuk-form-group">
-              <table class="govuk-table">
-                <caption class="govuk-table__caption govuk-table__caption--m" th:text="#{request.documents}"></caption>
-                <thead class="govuk-table__head">
-                <tr class="govuk-table__row">
-                  <th scope="col" class="govuk-table__header" th:text="#{request.documents}"></th>
-                </tr>
-                </thead>
-                <tbody class="govuk-table__body">
-                <tr class="govuk-table__row">
-                  <th scope="row" class="govuk-table__cell">
-                    <button type="submit" name="action" value="document_upload" class="govuk-body govuk-!-margin-bottom-0 ccms-button-as-link"
-                       th:text="#{request.documentUpload}"></button>
-                  </th>
-                </tr>
-                </tbody>
-              </table>
-            </div>
-          </th:block>
-
-          <div class="govuk-button-group">
-            <button type="submit" name="action" value="submit" class="govuk-button" data-module="govuk-button" th:text="#{site.submit}"></button>
-            <a th:href="@{${providerRequestBackUrl}}" class="govuk-link" th:text="#{site.back}"></a>
-          </div>
+          <h2 class="govuk-heading-m" th:text="#{request.documents}"></h2>
+          <div th:replace="~{partials/document-upload :: documentsSection(
+                  documents=${documentsUploaded},
+                  actionAllowed=true,
+                  removeMode='hiddenField',
+                  removeUrlPrefix=null,
+                  removeUrlSuffix=null,
+                  hiddenFieldName='documentIdToDelete',
+                  addMode='submit',
+                  addButtonUrl=null,
+                  addButtonId=null)}"></div>
         </div>
+      </div>
+
+      <div class="govuk-button-group" th:classappend="*{claimUploadEnabled} ? '' : 'govuk-!-margin-top-6'">
+        <button type="submit" name="action" value="submit" class="govuk-button" data-module="govuk-button" th:text="#{site.submit}"></button>
+        <a th:href="@{${providerRequestBackUrl}}" class="govuk-link" th:text="#{site.back}"></a>
       </div>
     </form>
   </div>
