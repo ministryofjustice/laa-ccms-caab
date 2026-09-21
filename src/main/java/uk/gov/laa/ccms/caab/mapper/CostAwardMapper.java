@@ -31,7 +31,10 @@ public interface CostAwardMapper {
       target = "certificateCostMarket",
       source = "marketRate",
       qualifiedByName = "toBigDecimalOrZero")
-  @Mapping(target = "interestAwardedRate", source = "interestRate")
+  @Mapping(
+      target = "interestAwardedRate",
+      source = "interestRate",
+      qualifiedByName = "toBigDecimal")
   @Mapping(
       target = "totalCertCostsAwarded",
       source = ".",
@@ -83,6 +86,7 @@ public interface CostAwardMapper {
     return StringUtils.hasText(value) ? DateUtils.convertToDate(value) : null;
   }
 
+  @Named("toBigDecimal")
   default BigDecimal toBigDecimal(final String value) {
     return StringUtils.hasText(value) ? new BigDecimal(value) : null;
   }

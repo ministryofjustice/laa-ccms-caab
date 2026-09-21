@@ -6,6 +6,7 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
@@ -331,7 +332,17 @@ public class CaseOutcomeService {
       @Nullable final CaseOutcomeDetail bootstrapCaseOutcome) {
     final CaseOutcomeDetail caseOutcomeToCreate =
         initialiseCaseOutcomeForCreate(caseReferenceNumber, providerId, bootstrapCaseOutcome);
-    caabApiClient.createCaseOutcome(loginId, caseOutcomeToCreate).block();
+    try {
+      caabApiClient.createCaseOutcome(loginId, caseOutcomeToCreate).block();
+    } catch (CaabApiClientException ex) {
+      if (!ex.hasHttpStatus(HttpStatus.CONFLICT)) {
+        throw ex;
+      }
+      log.info(
+          "Case outcome already exists for case reference number: {}. Reloading after conflict.",
+          caseReferenceNumber,
+          ex);
+    }
     return getCaseOutcome(caseReferenceNumber, providerId)
         .orElseThrow(
             () ->

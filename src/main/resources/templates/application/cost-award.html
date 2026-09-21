@@ -94,62 +94,52 @@
       <div th:replace="~{partials/forms :: largeTextInput('otherDetails', #{case.costAward.anyOtherInformation}, 950)}"></div>
 
       <div class="govuk-button-group govuk-!-margin-top-6">
-        <button
-            type="button"
-            id="calculate-cost-award-totals"
-            class="govuk-button govuk-button--secondary"
-            data-module="govuk-button"
-            th:text="#{site.calculate}">
-        </button>
         <govuk:button type="submit" th:text="#{site.next}"/>
       </div>
     </form>
+    <script th:nonce="${cspNonce}">
+      (() => {
+        const fieldIds = [
+          'laaFundedLegalCosts',
+          'otherPreCertificateCosts',
+          'laaRate',
+          'marketRate'
+        ];
+
+        const parseAmount = (value) => {
+          const parsed = Number.parseFloat(value);
+          return Number.isFinite(parsed) ? parsed : 0;
+        };
+
+        const formatAmount = (value) => ` £ ${value.toFixed(2)}`;
+
+        const updateTotals = () => {
+          const amounts = Object.fromEntries(
+            fieldIds.map((fieldId) => [fieldId, parseAmount(document.getElementById(fieldId)?.value)])
+          );
+
+          const totalPreCertificateCosts =
+            amounts.laaFundedLegalCosts + amounts.otherPreCertificateCosts;
+          const totalCertificateCostsAwarded = amounts.laaRate + amounts.marketRate;
+          const totalCostsAwarded =
+            totalPreCertificateCosts + totalCertificateCostsAwarded;
+
+          document.getElementById('totalPreCertificateCosts').textContent =
+            formatAmount(totalPreCertificateCosts);
+          document.getElementById('totalCertificateCostsAwarded').textContent =
+            formatAmount(totalCertificateCostsAwarded);
+          document.getElementById('totalCostsAwarded').textContent =
+            formatAmount(totalCostsAwarded);
+        };
+
+        fieldIds.forEach((fieldId) => {
+          document.getElementById(fieldId)?.addEventListener('input', updateTotals);
+        });
+
+        updateTotals();
+      })();
+    </script>
   </div>
 </div>
-<script th:nonce="${cspNonce}">
-  (() => {
-    const fieldIds = [
-      'laaFundedLegalCosts',
-      'otherPreCertificateCosts',
-      'laaRate',
-      'marketRate'
-    ];
-
-    const parseAmount = (value) => {
-      const parsed = Number.parseFloat(value);
-      return Number.isFinite(parsed) ? parsed : 0;
-    };
-
-    const formatAmount = (value) => ` £ ${value.toFixed(2)}`;
-
-    const updateTotals = () => {
-      const amounts = Object.fromEntries(
-        fieldIds.map((fieldId) => [fieldId, parseAmount(document.getElementById(fieldId)?.value)])
-      );
-
-      const totalPreCertificateCosts =
-        amounts.laaFundedLegalCosts + amounts.otherPreCertificateCosts;
-      const totalCertificateCostsAwarded = amounts.laaRate + amounts.marketRate;
-      const totalCostsAwarded =
-        totalPreCertificateCosts + totalCertificateCostsAwarded;
-
-      document.getElementById('totalPreCertificateCosts').textContent =
-        formatAmount(totalPreCertificateCosts);
-      document.getElementById('totalCertificateCostsAwarded').textContent =
-        formatAmount(totalCertificateCostsAwarded);
-      document.getElementById('totalCostsAwarded').textContent =
-        formatAmount(totalCostsAwarded);
-    };
-
-    fieldIds.forEach((fieldId) => {
-      document.getElementById(fieldId)?.addEventListener('input', updateTotals);
-    });
-    document
-      .getElementById('calculate-cost-award-totals')
-      ?.addEventListener('click', updateTotals);
-
-    updateTotals();
-  })();
-</script>
 </body>
 </html>

@@ -25,6 +25,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
@@ -313,6 +314,26 @@ class CaseOutcomeServiceTest {
     assertEquals(String.valueOf(providerId), caseOutcomeCaptor.getValue().getProviderId());
     assertEquals(List.of(costAward), caseOutcomeCaptor.getValue().getCostAwards());
     assertEquals(List.of(proceedingOutcome), caseOutcomeCaptor.getValue().getProceedingOutcomes());
+  }
+
+  @Test
+  void getOrCreateCaseOutcome_whenCreateConflicts_reloadsExistingOutcome() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final String loginId = "user1";
+    final CaseOutcomeDetail reloadedCaseOutcome = new CaseOutcomeDetail().id(42);
+
+    doReturn(Optional.empty(), Optional.of(reloadedCaseOutcome))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+    when(caabApiClient.createCaseOutcome(eq(loginId), any(CaseOutcomeDetail.class)))
+        .thenReturn(Mono.error(new CaabApiClientException("Conflict", HttpStatus.CONFLICT)));
+
+    final CaseOutcomeDetail result =
+        caseOutcomeService.getOrCreateCaseOutcome(caseReferenceNumber, providerId, loginId, null);
+
+    assertEquals(reloadedCaseOutcome, result);
+    verify(caabApiClient).createCaseOutcome(eq(loginId), any(CaseOutcomeDetail.class));
   }
 
   @Test
