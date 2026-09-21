@@ -11,9 +11,11 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_RESULT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SUBMISSION_TRANSACTION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_CREATE_CLIENT;
+import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_UPDATE_CLIENT;
 import static uk.gov.laa.ccms.caab.util.SubmissionUtil.redirectToSubmissionResult;
 import static uk.gov.laa.ccms.caab.util.SubmissionUtil.requireSessionAttribute;
+import static uk.gov.laa.ccms.caab.util.SubmissionUtil.resolveSubmissionContextReturnUrl;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -145,6 +147,23 @@ public class ClientSubmissionsInProgressController {
       @PathVariable("caseContext") CaseContext caseContext,
       @PathVariable String submissionType,
       final HttpSession session) {
+    return submissionFailed(caseContext, submissionType, null, session);
+  }
+
+  /** Handles a failed case submission that has a context-specific return destination. */
+  @PostMapping("/{caseContext}/submit-case/{submissionContext:undertaking}/failed")
+  public String submissionContextFailed(
+      @PathVariable("caseContext") final CaseContext caseContext,
+      @PathVariable final String submissionContext,
+      final HttpSession session) {
+    return submissionFailed(caseContext, SUBMISSION_SUBMIT_CASE, submissionContext, session);
+  }
+
+  private String submissionFailed(
+      final CaseContext caseContext,
+      final String submissionType,
+      final String submissionContext,
+      final HttpSession session) {
     session.removeAttribute(SUBMISSION_POLL_COUNT);
     session.removeAttribute(SUBMISSION_TRANSACTION_ID);
     session.setAttribute(SUBMISSION_RESULT, SUBMISSION_FAILED);
@@ -156,7 +175,7 @@ public class ClientSubmissionsInProgressController {
       }
       return "redirect:/application/sections";
     } else {
-      return "redirect:/case/overview";
+      return "redirect:" + resolveSubmissionContextReturnUrl(submissionContext);
     }
   }
 
@@ -172,9 +191,33 @@ public class ClientSubmissionsInProgressController {
       @PathVariable("caseContext") CaseContext caseContext,
       @PathVariable String submissionType,
       Model model) {
+    return submissionsFailed(caseContext, submissionType, null, model);
+  }
+
+  /** Displays the failed submission screen for a context-specific case submission. */
+  @GetMapping("/{caseContext}/submit-case/{submissionContext:undertaking}/failed")
+  public String submissionContextFailed(
+      @PathVariable("caseContext") final CaseContext caseContext,
+      @PathVariable final String submissionContext,
+      final Model model) {
+    return submissionsFailed(caseContext, SUBMISSION_SUBMIT_CASE, submissionContext, model);
+  }
+
+  private String submissionsFailed(
+      final CaseContext caseContext,
+      final String submissionType,
+      final String submissionContext,
+      final Model model) {
 
     model.addAttribute("submissionType", submissionType);
     model.addAttribute("caseContext", caseContext);
+    model.addAttribute(
+        "failureUrl",
+        "/%s/%s%s/failed"
+            .formatted(
+                caseContext.getPathValue(),
+                submissionType,
+                submissionContext == null ? "" : "/" + submissionContext));
 
     return "submissions/submissionFailed";
   }

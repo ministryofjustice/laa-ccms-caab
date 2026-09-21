@@ -43,6 +43,28 @@ public class SubmissionConfirmedController {
       @RequestParam(required = false) final String submissionId,
       final HttpSession session,
       Model model) {
+    return submissionsConfirmed(caseContext, submissionType, null, submissionId, session, model);
+  }
+
+  /** Displays the confirmation page for a case submission context. */
+  @GetMapping("/{caseContext}/submit-case/{submissionContext:undertaking}/confirmed")
+  public String submissionContextConfirmed(
+      @PathVariable("caseContext") CaseContext caseContext,
+      @PathVariable final String submissionContext,
+      @RequestParam(required = false) final String submissionId,
+      final HttpSession session,
+      Model model) {
+    return submissionsConfirmed(
+        caseContext, SUBMISSION_SUBMIT_CASE, submissionContext, submissionId, session, model);
+  }
+
+  private String submissionsConfirmed(
+      final CaseContext caseContext,
+      final String submissionType,
+      final String submissionContext,
+      final String submissionId,
+      final HttpSession session,
+      final Model model) {
     final boolean hasConfirmedSubmission =
         isAlreadySubmitted(session)
             && (!isGeneralProviderRequest(submissionType)
@@ -56,6 +78,13 @@ public class SubmissionConfirmedController {
     model.addAttribute("submissionType", submissionType);
     model.addAttribute("caseContext", caseContext);
     model.addAttribute("submissionId", submissionId);
+    model.addAttribute(
+        "confirmationUrl",
+        "/%s/%s%s/confirmed"
+            .formatted(
+                caseContext.getPathValue(),
+                submissionType,
+                submissionContext == null ? "" : "/" + submissionContext));
 
     return "submissions/submissionConfirmed";
   }

@@ -7,9 +7,7 @@
 <div class="govuk-width-container">
   <div id="breadcrumbs"></div>
   <div id="main-content" class="govuk-!-padding-top-7">
-    <form action="#"
-          th:action="@{/{caseContext}/{submissionType}/confirmed(caseContext=${caseContext.pathValue},
-            submissionType=${submissionType})}" method="post">
+    <form action="#" th:action="@{${confirmationUrl}}" method="post">
       <input th:if="${submissionId != null}" type="hidden" name="submissionId" th:value="${submissionId}">
       <h1 class="govuk-heading-l" th:text="#{submission.confirmation}"></h1>
       <p class="govuk-body-l" th:text="#{submission.successfullyProcessed}"></p>
