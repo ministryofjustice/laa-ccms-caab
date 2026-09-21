@@ -49,6 +49,19 @@ class SubmissionConfirmedControllerTest {
   }
 
   @Test
+  void testUndertakingSubmissionConfirmedUsesUndertakingConfirmationAction() throws Exception {
+    mockMvc
+        .perform(
+            get("/amendments/submit-case/undertaking/confirmed")
+                .sessionAttr(SUBMISSION_RESULT, "confirmed"))
+        .andExpect(status().isOk())
+        .andExpect(view().name("submissions/submissionConfirmed"))
+        .andExpect(model().attribute("submissionType", "submit-case"))
+        .andExpect(
+            model().attribute("confirmationUrl", "/amendments/submit-case/undertaking/confirmed"));
+  }
+
+  @Test
   void testSubmissionsConfirmedForAmendmentsWhenSubmissionResultMissing() throws Exception {
     mockMvc
         .perform(get("/amendments/submit-case/confirmed"))

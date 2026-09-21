@@ -17,6 +17,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBMIT_CASE;
 import static uk.gov.laa.ccms.caab.util.SubmissionUtil.redirectToSubmissionResult;
 import static uk.gov.laa.ccms.caab.util.SubmissionUtil.requireSessionAttribute;
+import static uk.gov.laa.ccms.caab.util.SubmissionUtil.resolveSubmissionContextReturnUrl;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -59,9 +60,14 @@ public class CaseSubmissionController {
    * @return the view name or a redirect to the confirmed submission page if the case status is
    *     valid
    */
-  @GetMapping("/{caseContext}/submit-case")
+  @GetMapping(
+      value = {
+        "/{caseContext}/submit-case",
+        "/{caseContext}/submit-case/{submissionContext:undertaking}"
+      })
   public String addCaseSubmission(
-      @PathVariable CaseContext caseContext,
+      @PathVariable final CaseContext caseContext,
+      @PathVariable(value = "submissionContext", required = false) final String submissionContext,
       @SessionAttribute(value = SUBMISSION_TRANSACTION_ID, required = false)
           final String transactionId,
       @SessionAttribute(value = USER_DETAILS) final UserDetail user,
@@ -71,13 +77,24 @@ public class CaseSubmissionController {
 
     model.addAttribute("submissionType", SUBMISSION_SUBMIT_CASE);
     model.addAttribute("caseContext", caseContext);
+    model.addAttribute("submissionStatusUrl", submissionStatusUrl(caseContext, submissionContext));
 
     if (!StringUtils.hasText(transactionId)) {
       final String submissionResult = (String) session.getAttribute(SUBMISSION_RESULT);
       if (StringUtils.hasText(submissionResult)) {
+        if (submissionContext != null) {
+          final String resultPath =
+              SUBMISSION_CONFIRMED.equals(submissionResult)
+                  ? SUBMISSION_CONFIRMED
+                  : SUBMISSION_FAILED;
+          return "redirect:"
+              + submissionStatusUrl(caseContext, submissionContext)
+              + "/"
+              + resultPath;
+        }
         return redirectToSubmissionResult(session, caseContext, SUBMISSION_SUBMIT_CASE);
       }
-      return viewIncludingPollCount(session, caseContext, model);
+      return viewIncludingPollCount(session, caseContext, submissionContext, model);
     }
 
     requireSessionAttribute(user, USER_DETAILS);
@@ -85,7 +102,8 @@ public class CaseSubmissionController {
     final TransactionStatus caseStatus = applicationService.getCaseStatus(transactionId).block();
 
     if (caseStatus != null && StringUtils.hasText(caseStatus.getReferenceNumber())) {
-      return handleConfirmedSubmission(caseContext, user, session, caseStatus.getReferenceNumber());
+      return handleConfirmedSubmission(
+          caseContext, user, session, caseStatus.getReferenceNumber(), submissionContext);
     }
 
     // Fallback: if polling reached its limit for a new application, check whether the case is now
@@ -94,17 +112,19 @@ public class CaseSubmissionController {
         && pollCountExceeded(session)
         && isCaseAvailableInEbs(activeCase, user)) {
       final String caseReference = activeCase.getCaseReferenceNumber();
-      return handleConfirmedSubmission(caseContext, user, session, caseReference);
+      return handleConfirmedSubmission(
+          caseContext, user, session, caseReference, submissionContext);
     }
 
-    return viewIncludingPollCount(session, caseContext, model);
+    return viewIncludingPollCount(session, caseContext, submissionContext, model);
   }
 
   private String handleConfirmedSubmission(
       final CaseContext caseContext,
       final UserDetail user,
       final HttpSession session,
-      final String caseReferenceNumber) {
+      final String caseReferenceNumber,
+      final String submissionContext) {
     if (caseContext.isAmendment()) {
       // The amendment is now confirmed in EBS, so remove the spent TDS draft (mirrors old PUI's
       // post-submission cleanup) - otherwise a subsequent amendment would reuse the stale draft.
@@ -124,8 +144,7 @@ public class CaseSubmissionController {
     session.removeAttribute(SUBMISSION_TRANSACTION_ID);
     session.removeAttribute(SUBMISSION_QUICK_EDIT_TYPE);
     session.setAttribute(SUBMISSION_RESULT, SUBMISSION_CONFIRMED);
-    return "redirect:/%s/%s/confirmed"
-        .formatted(caseContext.getPathValue(), SUBMISSION_SUBMIT_CASE);
+    return "redirect:" + submissionStatusUrl(caseContext, submissionContext) + "/confirmed";
   }
 
   private boolean pollCountExceeded(final HttpSession session) {
@@ -134,6 +153,15 @@ public class CaseSubmissionController {
     }
     final int submissionPollCount = (int) session.getAttribute(SUBMISSION_POLL_COUNT);
     return submissionPollCount >= submissionConstants.getMaxPollCount();
+  }
+
+  private String submissionStatusUrl(
+      final CaseContext caseContext, final String submissionContext) {
+    return "/%s/%s%s"
+        .formatted(
+            caseContext.getPathValue(),
+            SUBMISSION_SUBMIT_CASE,
+            submissionContext == null ? "" : "/" + submissionContext);
   }
 
   private boolean isCaseAvailableInEbs(final ActiveCase activeCase, final UserDetail user) {
@@ -179,9 +207,15 @@ public class CaseSubmissionController {
    * @param session the HTTP session to be updated
    * @return a redirect to the home page after removing the active case attribute
    */
-  @PostMapping("/{caseContext}/submit-case/confirmed")
+  @PostMapping(
+      value = {
+        "/{caseContext}/submit-case/confirmed",
+        "/{caseContext}/submit-case/{submissionContext:undertaking}/confirmed"
+      })
   public String clientUpdateSubmitted(
-      @PathVariable("caseContext") CaseContext caseContext, final HttpSession session) {
+      @PathVariable("caseContext") CaseContext caseContext,
+      @PathVariable(value = "submissionContext", required = false) final String submissionContext,
+      final HttpSession session) {
     session.removeAttribute(APPLICATION);
     session.removeAttribute(APPLICATION_DETAILS);
     session.removeAttribute(APPLICATION_SUMMARY);
@@ -195,7 +229,7 @@ public class CaseSubmissionController {
       session.removeAttribute(APPLICATION_ID);
       return "redirect:/home";
     } else {
-      return "redirect:/case/overview";
+      return "redirect:" + resolveSubmissionContextReturnUrl(submissionContext);
     }
   }
 
@@ -209,7 +243,10 @@ public class CaseSubmissionController {
    *     exceeded
    */
   protected String viewIncludingPollCount(
-      final HttpSession session, final CaseContext caseContext, final Model model) {
+      final HttpSession session,
+      final CaseContext caseContext,
+      final String submissionContext,
+      final Model model) {
     int submissionPollCount = 0;
 
     if (session.getAttribute(SUBMISSION_POLL_COUNT) != null) {
@@ -219,8 +256,7 @@ public class CaseSubmissionController {
         session.removeAttribute(SUBMISSION_TRANSACTION_ID);
         session.removeAttribute(SUBMISSION_QUICK_EDIT_TYPE);
         session.setAttribute(SUBMISSION_RESULT, SUBMISSION_FAILED);
-        return "redirect:/%s/%s/failed"
-            .formatted(caseContext.getPathValue(), SubmissionConstants.SUBMISSION_SUBMIT_CASE);
+        return "redirect:" + submissionStatusUrl(caseContext, submissionContext) + "/failed";
       }
     }
     submissionPollCount += 1;
