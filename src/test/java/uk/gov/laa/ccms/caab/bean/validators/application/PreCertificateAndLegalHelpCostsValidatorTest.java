@@ -94,6 +94,9 @@ class PreCertificateAndLegalHelpCostsValidatorTest {
       assertTrue(errors.hasErrors());
       assertNotNull(errors.getFieldError("officeCode"));
       assertEquals("invalid.format", errors.getFieldError("officeCode").getCode());
+      assertEquals(
+          "Your input for 'Office code' is in an incorrect format (NANNNA). Please amend your entry.",
+          errors.getFieldError("officeCode").getDefaultMessage());
     }
 
     @Test
@@ -106,6 +109,33 @@ class PreCertificateAndLegalHelpCostsValidatorTest {
       assertTrue(errors.hasErrors());
       assertNotNull(errors.getFieldError("uniqueFileNumber"));
       assertEquals("invalid.format", errors.getFieldError("uniqueFileNumber").getCode());
+      assertEquals(
+          "Your input for 'Unique file number' is in an incorrect format (DDMMYY/NNN). Please amend your entry.",
+          errors.getFieldError("uniqueFileNumber").getDefaultMessage());
+    }
+
+    @Test
+    @DisplayName("Should use generic format message when no specific format hint is supplied")
+    void validateFieldFormatUsesGenericMessageWhenNoHintProvided() {
+      var testValidator =
+          new PreCertificateAndLegalHelpCostsValidator() {
+            void runFieldValidation(Errors validationErrors) {
+              validateFieldFormat(
+                  "officeCode",
+                  "ABC123",
+                  "^[0-9][A-Za-z][0-9]{3}[A-Za-z]$",
+                  "Office code",
+                  validationErrors);
+            }
+          };
+
+      testValidator.runFieldValidation(errors);
+
+      assertTrue(errors.hasErrors());
+      assertNotNull(errors.getFieldError("officeCode"));
+      assertEquals(
+          "Your input for 'Office code' is in an incorrect format. Please amend your entry.",
+          errors.getFieldError("officeCode").getDefaultMessage());
     }
 
     @Test
