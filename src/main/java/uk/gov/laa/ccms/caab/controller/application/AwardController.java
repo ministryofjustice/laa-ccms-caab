@@ -229,7 +229,8 @@ public class AwardController {
             ebsCase.getCaseReferenceNumber(),
             user.getProvider().getId().intValue(),
             request,
-            user.getLoginId());
+            user.getLoginId(),
+            ebsCase.getCaseOutcome());
       } else {
         caseOutcomeService.updateFinancialAward(
             ebsCase.getCaseReferenceNumber(),
@@ -346,7 +347,8 @@ public class AwardController {
             ebsCase.getCaseReferenceNumber(),
             user.getProvider().getId().intValue(),
             request,
-            user.getLoginId());
+            user.getLoginId(),
+            ebsCase.getCaseOutcome());
       } else {
         caseOutcomeService.updateCostAward(
             ebsCase.getCaseReferenceNumber(),

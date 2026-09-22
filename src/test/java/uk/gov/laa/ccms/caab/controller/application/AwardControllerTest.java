@@ -44,6 +44,7 @@ import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
@@ -70,11 +71,14 @@ class AwardControllerTest {
   private MockMvcTester mockMvc;
   private ApplicationDetail ebsCase;
   private UserDetail user;
+  private CaseOutcomeDetail caseOutcome;
 
   @BeforeEach
   void setUp() {
     mockMvc = MockMvcTester.create(MockMvcBuilders.standaloneSetup(controller).build());
     ebsCase = new ApplicationDetail().caseReferenceNumber("300000001");
+    caseOutcome = new CaseOutcomeDetail().id(55);
+    ebsCase.setCaseOutcome(caseOutcome);
     user = ApplicationTestUtils.buildUser();
     lenient().when(costAwardMapper.toCostAward(any())).thenReturn(new CostAwardDetail());
     lenient()
@@ -440,7 +444,8 @@ class AwardControllerTest {
               eq("300000001"),
               eq(user.getProvider().getId().intValue()),
               any(CostAwardDetail.class),
-              eq(user.getLoginId()));
+              eq(user.getLoginId()),
+              eq(caseOutcome));
     }
 
     @Test
@@ -479,7 +484,7 @@ class AwardControllerTest {
     void apiFailureRedisplaysCostAwardPageWithError() {
       doThrow(new CaabApiClientException("API failure"))
           .when(caseOutcomeService)
-          .createCostAward(any(), any(), any(), any());
+          .createCostAward(any(), any(), any(), any(), any());
 
       assertThat(mockMvc.perform(validCostAwardPost()))
           .hasViewName("application/cost-award")
@@ -599,7 +604,8 @@ class AwardControllerTest {
               eq("300000001"),
               eq(user.getProvider().getId().intValue()),
               any(FinancialAwardRequest.class),
-              eq(user.getLoginId()));
+              eq(user.getLoginId()),
+              eq(caseOutcome));
     }
 
     @Test
@@ -638,7 +644,7 @@ class AwardControllerTest {
     void apiFailureRedisplaysFinancialAwardPageWithError() {
       doThrow(new CaabApiClientException("API failure"))
           .when(caseOutcomeService)
-          .createFinancialAward(any(), any(), any(), any());
+          .createFinancialAward(any(), any(), any(), any(), any());
 
       assertThat(mockMvc.perform(validPost()))
           .hasViewName("application/financial-award")

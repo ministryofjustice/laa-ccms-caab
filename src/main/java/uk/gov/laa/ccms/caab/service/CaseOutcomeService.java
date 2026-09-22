@@ -80,10 +80,11 @@ public class CaseOutcomeService {
       final String caseReferenceNumber,
       final Integer providerId,
       final FinancialAwardRequest financialAward,
-      final String loginId) {
+      final String loginId,
+      @Nullable final CaseOutcomeDetail bootstrapCaseOutcome) {
     final Integer caseOutcomeId =
         requireCaseOutcomeId(
-            getOrCreateCaseOutcome(caseReferenceNumber, providerId, loginId, null),
+            getOrCreateCaseOutcome(caseReferenceNumber, providerId, loginId, bootstrapCaseOutcome),
             caseReferenceNumber);
     caabApiClient.createFinancialAward(caseOutcomeId, loginId, financialAward).block();
   }
@@ -136,10 +137,11 @@ public class CaseOutcomeService {
       final String caseReferenceNumber,
       final Integer providerId,
       final CostAwardDetail costAward,
-      final String loginId) {
+      final String loginId,
+      @Nullable final CaseOutcomeDetail bootstrapCaseOutcome) {
     final Integer caseOutcomeId =
         requireCaseOutcomeId(
-            getOrCreateCaseOutcome(caseReferenceNumber, providerId, loginId, null),
+            getOrCreateCaseOutcome(caseReferenceNumber, providerId, loginId, bootstrapCaseOutcome),
             caseReferenceNumber);
     caabApiClient.createCostAward(caseOutcomeId, loginId, costAward).block();
   }
