@@ -164,6 +164,14 @@ public class CaseOutcomeService {
                 new IllegalStateException(
                     "Cost award %s does not belong to case reference number: %s"
                         .formatted(costAwardId, caseReferenceNumber)));
+    final CostAwardDetail existingCostAward =
+        Optional.ofNullable(caabApiClient.getCostAward(caseOutcomeId, costAwardId).block())
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Cost award %s could not be loaded for case reference number: %s"
+                            .formatted(costAwardId, caseReferenceNumber)));
+    preserveImmutableCostAwardMetadata(costAward, existingCostAward);
     caabApiClient.updateCostAward(caseOutcomeId, costAwardId, loginId, costAward).block();
   }
 
@@ -373,6 +381,14 @@ public class CaseOutcomeService {
               + caseReferenceNumber);
     }
     return caseOutcome.getId();
+  }
+
+  private void preserveImmutableCostAwardMetadata(
+      final CostAwardDetail target, final CostAwardDetail existingCostAward) {
+    target.setId(existingCostAward.getId());
+    target.setAwardType(existingCostAward.getAwardType());
+    target.setAwardCode(existingCostAward.getAwardCode());
+    target.setDescription(existingCostAward.getDescription());
   }
 
   private ProceedingOutcomeDetail buildClearedProceedingOutcomeMarker(

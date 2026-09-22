@@ -209,7 +209,19 @@ class CaseOutcomeServiceTest {
     final Integer caseOutcomeId = 42;
     final Integer costAwardId = 7;
     final String loginId = "user1";
-    final CostAwardDetail request = new CostAwardDetail();
+    final CostAwardDetail request =
+        new CostAwardDetail()
+            .id(99)
+            .awardType("TAMPERED")
+            .awardCode("WRONG")
+            .description("Changed")
+            .courtAssessmentStatus("ASSESSED");
+    final CostAwardDetail existingCostAward =
+        new CostAwardDetail()
+            .id(costAwardId)
+            .awardType("COST")
+            .awardCode("COST_AGR")
+            .description("Cost");
 
     final CaseOutcomeDetail caseOutcome =
         new CaseOutcomeDetail()
@@ -219,12 +231,20 @@ class CaseOutcomeServiceTest {
     doReturn(Optional.of(caseOutcome))
         .when(caseOutcomeService)
         .getCaseOutcome(caseReferenceNumber, providerId);
+    when(caabApiClient.getCostAward(caseOutcomeId, costAwardId))
+        .thenReturn(Mono.just(existingCostAward));
     when(caabApiClient.updateCostAward(caseOutcomeId, costAwardId, loginId, request))
         .thenReturn(Mono.empty());
 
     caseOutcomeService.updateCostAward(
         caseReferenceNumber, providerId, costAwardId, request, loginId);
 
+    assertEquals(costAwardId, request.getId());
+    assertEquals("COST", request.getAwardType());
+    assertEquals("COST_AGR", request.getAwardCode());
+    assertEquals("Cost", request.getDescription());
+    assertEquals("ASSESSED", request.getCourtAssessmentStatus());
+    verify(caabApiClient).getCostAward(caseOutcomeId, costAwardId);
     verify(caabApiClient).updateCostAward(caseOutcomeId, costAwardId, loginId, request);
   }
 
