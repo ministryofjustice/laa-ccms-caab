@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:moj="http://www.thymeleaf.org"
+      xmlns:govuk="http://www.thymeleaf.org">
+<head>
+  <title th:text="|#{service.name} - #{case.otherAssetAward.title}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a class="govuk-back-link"
+       th:href="@{/case/outcome-and-awards}"
+       th:text="#{site.cancelAndReturnToOutcomeAndAwards}"></a>
+  </div>
+
+  <div id="main-content">
+    <form th:action="@{/case/outcome-and-awards/asset}"
+          th:object="${otherAssetAward}"
+          method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+
+      <h1 class="govuk-heading-l" th:text="#{case.otherAssetAward.title}"></h1>
+      <p class="govuk-body" th:text="#{case.otherAssetAward.information}"></p>
+
+      <input type="hidden" th:field="*{id}">
+      <input type="hidden" th:field="*{awardType}">
+      <input type="hidden" th:field="*{description}">
+      <input type="hidden" th:field="*{awardCode}">
+
+      <moj:datepicker
+          id="dateOfOrder"
+          name="dateOfOrder"
+          th:label="#{case.otherAssetAward.dateOfOrder}"
+          th:hint="#{case.otherAssetAward.dateHint}"
+          th:attr="value=*{dateOfOrder}"
+          th:errorMessage="${#fields.hasErrors('dateOfOrder') ? #fields.errors('dateOfOrder').getFirst() : ''}">
+      </moj:datepicker>
+
+      <div th:replace="~{partials/forms :: dropdown('awardedBy', #{case.otherAssetAward.awardedBy}, ${awardedByOptions}, 'code', 'description', false)}"></div>
+      <div th:replace="~{partials/forms :: currencyInput('valuationAmount', #{case.otherAssetAward.valuationAmount}, '10')}"></div>
+      <div th:replace="~{partials/forms :: textInput(fieldId='valuationCriteria', label=#{case.otherAssetAward.valuationCriteria}, inputClass='govuk-input--width-20', maxlengthParam=50)}"></div>
+
+      <moj:datepicker
+          id="valuationDate"
+          name="valuationDate"
+          th:label="#{case.otherAssetAward.valuationDate}"
+          th:hint="#{case.otherAssetAward.dateHint}"
+          th:attr="value=*{valuationDate}"
+          th:errorMessage="${#fields.hasErrors('valuationDate') ? #fields.errors('valuationDate').getFirst() : ''}">
+      </moj:datepicker>
+
+      <div th:replace="~{partials/forms :: textInput(fieldId='awardedPercentage', label=#{case.otherAssetAward.awardedPercentage}, inputClass='govuk-input--width-5', maxlengthParam=6)}"></div>
+      <div th:replace="~{partials/forms :: currencyInput('recoveredAmount', #{case.otherAssetAward.recoveredAmount}, '10')}"></div>
+      <div th:replace="~{partials/forms :: textInput(fieldId='recoveredPercentage', label=#{case.otherAssetAward.recoveredPercentage}, inputClass='govuk-input--width-5', maxlengthParam=6)}"></div>
+      <div th:replace="~{partials/forms :: currencyInput('disputedAmount', #{case.otherAssetAward.disputedAmount}, '10')}"></div>
+      <div th:replace="~{partials/forms :: currencyInput('awardedAmount', #{case.otherAssetAward.awardedAmount}, '10')}"></div>
+      <div th:replace="~{partials/forms :: textInput(fieldId='disputedPercentage', label=#{case.otherAssetAward.disputedPercentage}, inputClass='govuk-input--width-5', maxlengthParam=6)}"></div>
+      <div th:replace="~{partials/forms :: largeTextInput('recovery', #{case.otherAssetAward.recovery}, 200)}"></div>
+      <div th:replace="~{partials/forms :: largeTextInput('noRecoveryDetails', #{case.otherAssetAward.noRecoveryDetails}, 950)}"></div>
+      <div th:replace="~{partials/forms :: largeTextInput('statutoryChargeExemptReason', #{case.otherAssetAward.statutoryChargeExemptReason}, 1000)}"></div>
+
+      <div class="govuk-form-group"
+           th:classappend="${#fields.hasErrors('recoveryOfAwardTimeRelated')} ? 'govuk-form-group--error' : ''">
+        <fieldset class="govuk-fieldset">
+          <legend class="govuk-fieldset__legend"
+                  th:text="#{case.otherAssetAward.recoveryOfAwardTimeRelated}"></legend>
+          <span th:if="${#fields.hasErrors('recoveryOfAwardTimeRelated')}"
+                th:errors="*{recoveryOfAwardTimeRelated}"
+                class="govuk-error-message"></span>
+          <div class="govuk-radios govuk-radios--inline" data-module="govuk-radios">
+            <div class="govuk-radios__item">
+              <input class="govuk-radios__input"
+                     id="recovery-of-award-time-related-yes"
+                     type="radio"
+                     th:field="*{recoveryOfAwardTimeRelated}"
+                     value="true">
+              <label class="govuk-label govuk-radios__label"
+                     for="recovery-of-award-time-related-yes"
+                     th:text="#{site.yes}"></label>
+            </div>
+            <div class="govuk-radios__item">
+              <input class="govuk-radios__input"
+                     id="recovery-of-award-time-related-no"
+                     type="radio"
+                     th:field="*{recoveryOfAwardTimeRelated}"
+                     value="false">
+              <label class="govuk-label govuk-radios__label"
+                     for="recovery-of-award-time-related-no"
+                     th:text="#{site.no}"></label>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="govuk-button-group govuk-!-margin-top-6">
+        <govuk:button type="submit" th:text="#{site.next}"/>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

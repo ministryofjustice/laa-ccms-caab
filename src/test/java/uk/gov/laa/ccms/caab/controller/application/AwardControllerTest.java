@@ -7,6 +7,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -36,13 +37,18 @@ import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.AwardTypeForm;
 import uk.gov.laa.ccms.caab.bean.award.FinancialAwardFormData;
+import uk.gov.laa.ccms.caab.bean.award.OtherAssetAwardFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.FinancialAwardValidator;
+import uk.gov.laa.ccms.caab.bean.validators.awards.OtherAssetAwardValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
+import uk.gov.laa.ccms.caab.mapper.OtherAssetAwardMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
+import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
+import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -58,6 +64,8 @@ class AwardControllerTest {
   @Mock private AwardTypeValidator awardTypeValidator;
   @Mock private FinancialAwardValidator financialAwardValidator;
   @Mock private FinancialAwardMapper financialAwardMapper;
+  @Mock private OtherAssetAwardValidator otherAssetAwardValidator;
+  @Mock private OtherAssetAwardMapper otherAssetAwardMapper;
 
   @InjectMocks private AwardController controller;
 
@@ -73,6 +81,9 @@ class AwardControllerTest {
     lenient()
         .when(financialAwardMapper.toFinancialAwardRequest(any()))
         .thenReturn(new FinancialAwardRequest());
+    lenient()
+        .when(otherAssetAwardMapper.toOtherAssetAwardRequest(any()))
+        .thenReturn(new OtherAssetAwardRequest());
     lenient()
         .when(lookupService.getCommonValues(any()))
         .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
@@ -465,6 +476,194 @@ class AwardControllerTest {
     }
   }
 
+  @Nested
+  @DisplayName("GET: /case/outcome-and-awards/asset")
+  class OtherAssetAwardGetTests {
+
+    @Test
+    void getNewOtherAssetAwardPreservesSelectedAwardMetadata() {
+      final AwardTypeForm awardTypeForm = otherAssetAwardType();
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/asset")
+                      .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasViewName("application/other-asset-award")
+          .model()
+          .hasEntrySatisfying(
+              "otherAssetAward",
+              value ->
+                  assertThat(value)
+                      .extracting("awardCode", "awardType", "description")
+                      .containsExactly("OTH_ASSET", "ASSET", "Asset"));
+    }
+
+    @Test
+    void getNewOtherAssetAwardWithoutSelectedAwardMetadataReturnsToOverview() {
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/asset")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+    }
+
+    @Test
+    void getExistingOtherAssetAwardLoadsPersistedValues() {
+      final OtherAssetAwardDetail award =
+          new OtherAssetAwardDetail()
+              .id(8)
+              .awardCode("OTH_ASSET")
+              .awardType("ASSET")
+              .description("Asset")
+              .valuationAmount(new java.math.BigDecimal("123.45"));
+      when(caseOutcomeService.getOtherAssetAward("300000001", 123, 8))
+          .thenReturn(Optional.of(award));
+      final OtherAssetAwardFormData formData = new OtherAssetAwardFormData();
+      formData.setId(8);
+      formData.setValuationAmount("123.45");
+      when(otherAssetAwardMapper.toOtherAssetAwardFormData(award)).thenReturn(formData);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/asset/8")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasViewName("application/other-asset-award")
+          .model()
+          .hasEntrySatisfying(
+              "otherAssetAward",
+              value ->
+                  assertThat(value)
+                      .extracting("id", "valuationAmount")
+                      .containsExactly(8, "123.45"));
+    }
+  }
+
+  @Nested
+  @DisplayName("POST: /case/outcome-and-awards/asset")
+  class OtherAssetAwardPostTests {
+
+    @Test
+    void postWithoutIdCreatesOtherAssetAward() {
+      assertThat(mockMvc.perform(validOtherAssetPost()))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(caseOutcomeService)
+          .createOtherAssetAward(
+              eq("300000001"),
+              eq(user.getProvider().getId().intValue()),
+              any(OtherAssetAwardRequest.class),
+              eq(user.getLoginId()));
+    }
+
+    @Test
+    void postWithIdUpdatesOtherAssetAward() {
+      assertThat(mockMvc.perform(validOtherAssetPost().param("id", "8")))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(caseOutcomeService)
+          .updateOtherAssetAward(
+              eq("300000001"),
+              eq(user.getProvider().getId().intValue()),
+              eq(8),
+              any(OtherAssetAwardRequest.class),
+              eq(user.getLoginId()));
+    }
+
+    @Test
+    void invalidPostRedisplaysOtherAssetAwardPage() {
+      doAnswer(
+              invocation -> {
+                invocation
+                    .getArgument(1, Errors.class)
+                    .rejectValue("valuationAmount", "invalid.currency", "Invalid amount");
+                return null;
+              })
+          .when(otherAssetAwardValidator)
+          .validate(any(), any());
+
+      assertThat(mockMvc.perform(validOtherAssetPost()))
+          .hasViewName("application/other-asset-award")
+          .model()
+          .hasErrors();
+    }
+
+    @Test
+    void missingRequiredFieldsRedisplayPageAndDoNotCallApi() {
+      doAnswer(
+              invocation -> {
+                new OtherAssetAwardValidator()
+                    .validate(invocation.getArgument(0), invocation.getArgument(1));
+                return null;
+              })
+          .when(otherAssetAwardValidator)
+          .validate(any(), any());
+
+      final var result =
+          mockMvc.perform(
+              post("/case/outcome-and-awards/asset")
+                  .param("awardCode", "OTH_ASSET")
+                  .param("awardType", "ASSET")
+                  .param("description", "Asset")
+                  .param("valuationCriteria", "Entered value is retained")
+                  .sessionAttr(CASE, ebsCase)
+                  .sessionAttr(USER_DETAILS, user)
+                  .sessionAttr(AWARD_TYPE_FORM, otherAssetAwardType()));
+
+      assertThat(result)
+          .hasViewName("application/other-asset-award")
+          .model()
+          .hasErrors()
+          .containsKeys("otherAssetAward", "awardedByOptions")
+          .hasEntrySatisfying(
+              BindingResult.MODEL_KEY_PREFIX + "otherAssetAward",
+              value ->
+                  assertThat(((BindingResult) value).getFieldErrors())
+                      .extracting("field")
+                      .contains(
+                          "dateOfOrder",
+                          "awardedBy",
+                          "valuationAmount",
+                          "valuationDate",
+                          "recoveryOfAwardTimeRelated"))
+          .hasEntrySatisfying(
+              "otherAssetAward",
+              value ->
+                  assertThat(value)
+                      .extracting("valuationCriteria")
+                      .isEqualTo("Entered value is retained"));
+      verifyNoInteractions(otherAssetAwardMapper, caseOutcomeService);
+    }
+
+    @Test
+    void apiFailureRedisplaysOtherAssetAwardPageWithError() {
+      doThrow(new CaabApiClientException("API failure"))
+          .when(caseOutcomeService)
+          .createOtherAssetAward(any(), any(), any(), any());
+
+      assertThat(mockMvc.perform(validOtherAssetPost()))
+          .hasViewName("application/other-asset-award")
+          .model()
+          .hasErrors();
+    }
+
+    @Test
+    void postWithoutIdRejectsAwardTypeDetailsThatDoNotMatchTheSession() {
+      final AwardTypeForm selectedAwardType = otherAssetAwardType();
+      selectedAwardType.setAwardTypeCode("FIN_ASSET");
+
+      assertThat(
+              mockMvc.perform(
+                  validOtherAssetPost().sessionAttr(AWARD_TYPE_FORM, selectedAwardType)))
+          .hasViewName("application/other-asset-award")
+          .model()
+          .hasErrors();
+    }
+  }
+
   private MockHttpServletRequestBuilder validPost() {
     final AwardTypeForm selectedAwardType = new AwardTypeForm();
     selectedAwardType.setAwardTypeCode("DAMAGE_AGR");
@@ -482,5 +681,30 @@ class AwardControllerTest {
         .sessionAttr(CASE, ebsCase)
         .sessionAttr(USER_DETAILS, user)
         .sessionAttr(AWARD_TYPE_FORM, selectedAwardType);
+  }
+
+  private MockHttpServletRequestBuilder validOtherAssetPost() {
+    return post("/case/outcome-and-awards/asset")
+        .param("awardCode", "OTH_ASSET")
+        .param("awardType", "ASSET")
+        .param("description", "Asset")
+        .param("dateOfOrder", "01/01/2025")
+        .param("awardedBy", "COURT")
+        .param("valuationAmount", "123.45")
+        .param("valuationCriteria", "Market value")
+        .param("valuationDate", "02/01/2025")
+        .param("awardedPercentage", "75")
+        .param("recoveryOfAwardTimeRelated", "false")
+        .sessionAttr(CASE, ebsCase)
+        .sessionAttr(USER_DETAILS, user)
+        .sessionAttr(AWARD_TYPE_FORM, otherAssetAwardType());
+  }
+
+  private AwardTypeForm otherAssetAwardType() {
+    final AwardTypeForm selectedAwardType = new AwardTypeForm();
+    selectedAwardType.setAwardTypeCode("OTH_ASSET");
+    selectedAwardType.setAwardType("ASSET");
+    selectedAwardType.setDescription("Asset");
+    return selectedAwardType;
   }
 }
