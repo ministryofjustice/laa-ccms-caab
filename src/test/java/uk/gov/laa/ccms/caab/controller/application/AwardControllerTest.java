@@ -368,6 +368,22 @@ class AwardControllerTest {
     }
 
     @Test
+    void getNewCostAwardWithNonCostSessionAwardTypeReturnsToOverview() {
+      final AwardTypeForm awardTypeForm = new AwardTypeForm();
+      awardTypeForm.setAwardTypeCode("DAMAGE_AGR");
+      awardTypeForm.setAwardType("DAMAGE");
+      awardTypeForm.setDescription("Financial Settlement");
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/cost-award")
+                      .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+    }
+
+    @Test
     void getNewCostAwardWithoutSelectedAwardMetadataReturnsToOverview() {
       assertThat(
               mockMvc.perform(
@@ -437,7 +453,7 @@ class AwardControllerTest {
               eq("300000001"),
               eq(user.getProvider().getId().intValue()),
               eq(7),
-              any(CostAwardDetail.class),
+              any(CostAwardFormData.class),
               eq(user.getLoginId()));
     }
 
@@ -477,6 +493,20 @@ class AwardControllerTest {
       selectedAwardType.setAwardTypeCode("COST");
       selectedAwardType.setAwardType("COST");
       selectedAwardType.setDescription("Different");
+
+      assertThat(
+              mockMvc.perform(validCostAwardPost().sessionAttr(AWARD_TYPE_FORM, selectedAwardType)))
+          .hasViewName("application/cost-award")
+          .model()
+          .hasErrors();
+    }
+
+    @Test
+    void postWithoutIdRejectsNonCostSessionAwardType() {
+      final AwardTypeForm selectedAwardType = new AwardTypeForm();
+      selectedAwardType.setAwardTypeCode("DAMAGE_AGR");
+      selectedAwardType.setAwardType("DAMAGE");
+      selectedAwardType.setDescription("Financial Settlement");
 
       assertThat(
               mockMvc.perform(validCostAwardPost().sessionAttr(AWARD_TYPE_FORM, selectedAwardType)))

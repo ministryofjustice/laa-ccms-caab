@@ -279,10 +279,7 @@ public class AwardController {
 
     final CostAwardFormData costAwardFormData;
     if (costAwardId == null) {
-      if (awardTypeForm == null
-          || !StringUtils.hasText(awardTypeForm.getAwardTypeCode())
-          || !StringUtils.hasText(awardTypeForm.getAwardType())
-          || !StringUtils.hasText(awardTypeForm.getDescription())) {
+      if (!hasValidCostAwardTypeSelection(awardTypeForm)) {
         log.warn("Cost award page requested without complete award type details");
         return "redirect:/case/outcome-and-awards";
       }
@@ -327,10 +324,7 @@ public class AwardController {
     costAwardValidator.validate(costAward, bindingResult);
 
     if (costAward.getId() == null
-        && (awardTypeForm == null
-            || !StringUtils.hasText(awardTypeForm.getAwardTypeCode())
-            || !StringUtils.hasText(awardTypeForm.getAwardType())
-            || !StringUtils.hasText(awardTypeForm.getDescription())
+        && (!hasValidCostAwardTypeSelection(awardTypeForm)
             || !Objects.equals(costAward.getAwardCode(), awardTypeForm.getAwardTypeCode())
             || !Objects.equals(costAward.getAwardType(), awardTypeForm.getAwardType())
             || !Objects.equals(costAward.getDescription(), awardTypeForm.getDescription()))) {
@@ -358,7 +352,7 @@ public class AwardController {
             ebsCase.getCaseReferenceNumber(),
             user.getProvider().getId().intValue(),
             costAward.getId(),
-            request,
+            costAward,
             user.getLoginId());
       }
     } catch (CaabApiClientException ex) {
@@ -405,6 +399,14 @@ public class AwardController {
     model.addAttribute("courtAssessmentStatuses", COURT_ASSESSMENT_STATUSES);
     model.addAttribute(
         "awardedByOptions", getCommonValues(CommonValueConstants.COMMON_VALUE_AWARDED_BY));
+  }
+
+  private boolean hasValidCostAwardTypeSelection(final AwardTypeForm awardTypeForm) {
+    return awardTypeForm != null
+        && StringUtils.hasText(awardTypeForm.getAwardTypeCode())
+        && StringUtils.hasText(awardTypeForm.getAwardType())
+        && StringUtils.hasText(awardTypeForm.getDescription())
+        && AWARD_TYPE_COST.equals(awardTypeForm.getAwardType());
   }
 
   private void initialiseCostAwardAmounts(final CostAwardFormData formData) {

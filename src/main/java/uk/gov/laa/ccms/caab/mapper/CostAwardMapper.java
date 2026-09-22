@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.util.Date;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
@@ -50,6 +51,46 @@ public interface CostAwardMapper {
   @Mapping(target = "auditTrail", ignore = true)
   @Mapping(target = "recovery", ignore = true)
   CostAwardDetail toCostAward(CostAwardFormData formData);
+
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "awardType", ignore = true)
+  @Mapping(target = "description", ignore = true)
+  @Mapping(target = "awardCode", ignore = true)
+  @Mapping(
+      target = "preCertificateLscCost",
+      source = "laaFundedLegalCosts",
+      qualifiedByName = "toBigDecimalOrZero")
+  @Mapping(
+      target = "preCertificateOtherCost",
+      source = "otherPreCertificateCosts",
+      qualifiedByName = "toBigDecimalOrZero")
+  @Mapping(
+      target = "certificateCostLsc",
+      source = "laaRate",
+      qualifiedByName = "toBigDecimalOrZero")
+  @Mapping(
+      target = "certificateCostMarket",
+      source = "marketRate",
+      qualifiedByName = "toBigDecimalOrZero")
+  @Mapping(
+      target = "interestAwardedRate",
+      source = "interestRate",
+      qualifiedByName = "toBigDecimal")
+  @Mapping(
+      target = "totalCertCostsAwarded",
+      source = ".",
+      qualifiedByName = "toTotalCertificateCosts")
+  @Mapping(target = "awardAmount", source = ".", qualifiedByName = "toTotalAwardAmount")
+  @Mapping(target = "updateAllowed", ignore = true)
+  @Mapping(target = "deleteAllowed", ignore = true)
+  @Mapping(target = "ebsId", ignore = true)
+  @Mapping(target = "effectiveDate", ignore = true)
+  @Mapping(target = "costOrFinancial", ignore = true)
+  @Mapping(target = "opponentsToSelect", ignore = true)
+  @Mapping(target = "liableParties", ignore = true)
+  @Mapping(target = "auditTrail", ignore = true)
+  @Mapping(target = "recovery", ignore = true)
+  void updateCostAward(CostAwardFormData formData, @MappingTarget CostAwardDetail costAwardDetail);
 
   @Mapping(target = "dateOfOrder", source = "dateOfOrder", qualifiedByName = "toComponentDate")
   @Mapping(

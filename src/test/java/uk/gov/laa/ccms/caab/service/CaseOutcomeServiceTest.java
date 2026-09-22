@@ -27,8 +27,10 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
+import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
@@ -39,6 +41,7 @@ import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 class CaseOutcomeServiceTest {
 
   @Mock private CaabApiClient caabApiClient;
+  @Mock private CostAwardMapper costAwardMapper;
 
   @Spy @InjectMocks private CaseOutcomeService caseOutcomeService;
 
@@ -209,19 +212,19 @@ class CaseOutcomeServiceTest {
     final Integer caseOutcomeId = 42;
     final Integer costAwardId = 7;
     final String loginId = "user1";
-    final CostAwardDetail request =
-        new CostAwardDetail()
-            .id(99)
-            .awardType("TAMPERED")
-            .awardCode("WRONG")
-            .description("Changed")
-            .courtAssessmentStatus("ASSESSED");
+    final CostAwardFormData request = new CostAwardFormData();
+    request.setId(99);
+    request.setAwardType("TAMPERED");
+    request.setAwardCode("WRONG");
+    request.setDescription("Changed");
+    request.setCourtAssessmentStatus("ASSESSED");
     final CostAwardDetail existingCostAward =
         new CostAwardDetail()
             .id(costAwardId)
             .awardType("COST")
             .awardCode("COST_AGR")
-            .description("Cost");
+            .description("Cost")
+            .ebsId("ebs-1");
 
     final CaseOutcomeDetail caseOutcome =
         new CaseOutcomeDetail()
@@ -233,19 +236,15 @@ class CaseOutcomeServiceTest {
         .getCaseOutcome(caseReferenceNumber, providerId);
     when(caabApiClient.getCostAward(caseOutcomeId, costAwardId))
         .thenReturn(Mono.just(existingCostAward));
-    when(caabApiClient.updateCostAward(caseOutcomeId, costAwardId, loginId, request))
+    when(caabApiClient.updateCostAward(caseOutcomeId, costAwardId, loginId, existingCostAward))
         .thenReturn(Mono.empty());
 
     caseOutcomeService.updateCostAward(
         caseReferenceNumber, providerId, costAwardId, request, loginId);
 
-    assertEquals(costAwardId, request.getId());
-    assertEquals("COST", request.getAwardType());
-    assertEquals("COST_AGR", request.getAwardCode());
-    assertEquals("Cost", request.getDescription());
-    assertEquals("ASSESSED", request.getCourtAssessmentStatus());
+    verify(costAwardMapper).updateCostAward(request, existingCostAward);
     verify(caabApiClient).getCostAward(caseOutcomeId, costAwardId);
-    verify(caabApiClient).updateCostAward(caseOutcomeId, costAwardId, loginId, request);
+    verify(caabApiClient).updateCostAward(caseOutcomeId, costAwardId, loginId, existingCostAward);
   }
 
   @Test

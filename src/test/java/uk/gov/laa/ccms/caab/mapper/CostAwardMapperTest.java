@@ -123,4 +123,36 @@ class CostAwardMapperTest {
     assertThat(request.getTotalCertCostsAwarded()).isEqualByComparingTo("0.00");
     assertThat(request.getAwardAmount()).isEqualByComparingTo("0.00");
   }
+
+  @Test
+  void updateCostAward_preservesNonFormFieldsOnExistingAward() {
+    final CostAwardFormData form = new CostAwardFormData();
+    form.setAwardType("TAMPERED");
+    form.setDescription("Changed");
+    form.setAwardCode("WRONG");
+    form.setCourtAssessmentStatus("ASSESSED");
+    form.setLaaFundedLegalCosts("10.10");
+    form.setOtherPreCertificateCosts("20.20");
+    form.setLaaRate("30.30");
+    form.setMarketRate("40.40");
+
+    final CostAwardDetail existingAward =
+        new CostAwardDetail()
+            .id(7)
+            .awardType("COST")
+            .description("Cost")
+            .awardCode("COST_AGR")
+            .ebsId("ebs-1");
+
+    mapper.updateCostAward(form, existingAward);
+
+    assertThat(existingAward.getId()).isEqualTo(7);
+    assertThat(existingAward.getAwardType()).isEqualTo("COST");
+    assertThat(existingAward.getDescription()).isEqualTo("Cost");
+    assertThat(existingAward.getAwardCode()).isEqualTo("COST_AGR");
+    assertThat(existingAward.getEbsId()).isEqualTo("ebs-1");
+    assertThat(existingAward.getCourtAssessmentStatus()).isEqualTo("ASSESSED");
+    assertThat(existingAward.getPreCertificateLscCost()).isEqualByComparingTo("10.10");
+    assertThat(existingAward.getAwardAmount()).isEqualByComparingTo("101.00");
+  }
 }

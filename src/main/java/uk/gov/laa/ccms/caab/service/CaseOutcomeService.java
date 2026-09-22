@@ -9,8 +9,10 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
+import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
+import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
@@ -24,6 +26,7 @@ import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 public class CaseOutcomeService {
 
   private final CaabApiClient caabApiClient;
+  private final CostAwardMapper costAwardMapper;
 
   /**
    * Get a single Case Outcome based on the supplied case reference number and provider id.
@@ -146,7 +149,7 @@ public class CaseOutcomeService {
       final String caseReferenceNumber,
       final Integer providerId,
       final Integer costAwardId,
-      final CostAwardDetail costAward,
+      final CostAwardFormData costAwardFormData,
       final String loginId) {
     final CaseOutcomeDetail caseOutcome =
         getCaseOutcome(caseReferenceNumber, providerId)
@@ -171,8 +174,8 @@ public class CaseOutcomeService {
                     new IllegalStateException(
                         "Cost award %s could not be loaded for case reference number: %s"
                             .formatted(costAwardId, caseReferenceNumber)));
-    preserveImmutableCostAwardMetadata(costAward, existingCostAward);
-    caabApiClient.updateCostAward(caseOutcomeId, costAwardId, loginId, costAward).block();
+    costAwardMapper.updateCostAward(costAwardFormData, existingCostAward);
+    caabApiClient.updateCostAward(caseOutcomeId, costAwardId, loginId, existingCostAward).block();
   }
 
   /**
@@ -381,14 +384,6 @@ public class CaseOutcomeService {
               + caseReferenceNumber);
     }
     return caseOutcome.getId();
-  }
-
-  private void preserveImmutableCostAwardMetadata(
-      final CostAwardDetail target, final CostAwardDetail existingCostAward) {
-    target.setId(existingCostAward.getId());
-    target.setAwardType(existingCostAward.getAwardType());
-    target.setAwardCode(existingCostAward.getAwardCode());
-    target.setDescription(existingCostAward.getDescription());
   }
 
   private ProceedingOutcomeDetail buildClearedProceedingOutcomeMarker(
