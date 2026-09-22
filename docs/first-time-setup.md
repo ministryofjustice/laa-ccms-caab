@@ -109,6 +109,36 @@ docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-cc
 An S3 bucket `laa-ccms-documents` will be created on startup if it does not already exist, via
 [`/localstack/init-s3.sh`](../localstack/init-s3.sh).
 
+## SOA proxy
+
+SOA dev only accepts HTTPS. PUI, the SOA gateway and the connector expect plain
+HTTP on `localhost:8051`, and an SSM port-forward alone cannot bridge that: Java
+would reject SOA's certificate (a private CA) and its name (not `localhost`).
+
+`laa-ccms-soa-proxy` listens on `localhost:8051` and does the HTTPS to the SOA
+port-forward, which therefore has to use `localPortNumber` **8052**. The
+port-forward command is on the
+[PUI Developer Onboarding](https://dsdmoj.atlassian.net/wiki/spaces/CCMS/pages/6045630839/PUI+Developer+Onboarding)
+page. Nothing changes in the apps, their local config, the JDK or `/etc/hosts`.
+
+This needs Docker Desktop: the SSM port-forward listens on the host's loopback
+only, and Docker Desktop is what makes `host.docker.internal` reach it from a
+container. On Docker Engine (Linux) the proxy would need host networking instead.
+
+The proxy starts with the rest of the stack, or on its own:
+
+```shell
+docker-compose --compatibility -p laa-ccms-caab-development up -d laa-ccms-soa-proxy
+```
+
+With the port-forward up, `./soa-proxy/soa-tls-check.sh` checks the tunnel,
+SOA and the proxy in turn and says what is missing. `docker logs
+laa-ccms-soa-proxy` shows why a call was refused.
+
+The proxy does not verify SOA's certificate: the SSM session already
+authenticates the instance and target, and the only thing that could stand in
+for SOA is a process on your own machine listening on 8052.
+
 ## View metrics
 
 This project exposes actuator endpoints, which are scraped by a Prometheus instance. For debugging,
