@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
@@ -1148,6 +1149,9 @@ public class EbsApiClient extends BaseApiClient {
 
     addQueryParam(queryParams, "provider-id", providerId);
     addQueryParam(queryParams, "case-reference-number", criteria.getCaseReference());
+    if (criteria.isOriginatesFromCase() && StringUtils.hasText(criteria.getCaseReference())) {
+      addQueryParam(queryParams, "exact-case-reference", true);
+    }
     addQueryParam(queryParams, "provider-case-reference", criteria.getProviderCaseReference());
     addQueryParam(queryParams, "assigned-to-user-id", criteria.getAssignedToUserId());
     addQueryParam(queryParams, "client-surname", criteria.getClientSurname());

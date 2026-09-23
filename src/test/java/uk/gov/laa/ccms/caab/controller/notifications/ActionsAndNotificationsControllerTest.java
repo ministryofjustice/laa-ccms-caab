@@ -23,7 +23,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_NOTIFICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.util.ApplicationDetailUtils.buildFullApplicationDetail;
@@ -63,12 +62,13 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
+import uk.gov.laa.ccms.caab.model.NotificationSearchOptions;
 import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.service.AvScanResultHandler;
 import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.service.NotificationSearchOptionsCache;
 import uk.gov.laa.ccms.caab.service.NotificationService;
-import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.BaseOffice;
 import uk.gov.laa.ccms.data.model.BaseProvider;
@@ -80,7 +80,6 @@ import uk.gov.laa.ccms.data.model.Document;
 import uk.gov.laa.ccms.data.model.Notification;
 import uk.gov.laa.ccms.data.model.NotificationInfo;
 import uk.gov.laa.ccms.data.model.Notifications;
-import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
@@ -96,7 +95,7 @@ class ActionsAndNotificationsControllerTest {
           .provider(buildBaseProvider());
   @InjectMocks ActionsAndNotificationsController actionsAndNotificationsController;
   @Mock private NotificationService notificationService;
-  @Mock private ProviderService providerService;
+  @Mock private NotificationSearchOptionsCache notificationSearchOptionsCache;
   @Mock private LookupService lookupService;
   @Mock private UserService userService;
   @Mock private NotificationSearchValidator notificationSearchValidator;
@@ -261,7 +260,6 @@ class ActionsAndNotificationsControllerTest {
       flashMap.put("user", userDetails);
       flashMap.put("notificationSearchCriteria", criteria);
 
-      ProviderDetail providerDetail = new ProviderDetail();
       List<ContactDetail> feeEarners = buildFeeEarners();
 
       CommonLookupDetail notificationTypes = new CommonLookupDetail();
@@ -273,12 +271,7 @@ class ActionsAndNotificationsControllerTest {
               .addContentItem(
                   new BaseUser().userId(123).userType("type1").loginId(userDetails.getLoginId()));
 
-      when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE))
-          .thenReturn(Mono.just(notificationTypes));
-      when(providerService.getProvider(userDetails.getProvider().getId()))
-          .thenReturn(Mono.just(providerDetail));
-      when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
-      when(userService.getUsers(any())).thenReturn(Mono.just(baseUsers));
+      stubSearchOptions(feeEarners, notificationTypes.getContent(), baseUsers.getContent(), true);
 
       assertThat(mockMvc.perform(get("/notifications/search").flashAttrs(flashMap)))
           .hasStatusOk()
@@ -305,7 +298,6 @@ class ActionsAndNotificationsControllerTest {
       flashMap.put("user", userDetails);
       flashMap.put("notificationSearchCriteria", criteria);
 
-      ProviderDetail providerDetail = new ProviderDetail();
       List<ContactDetail> feeEarners = buildFeeEarners();
 
       CommonLookupDetail notificationTypes = new CommonLookupDetail();
@@ -321,12 +313,7 @@ class ActionsAndNotificationsControllerTest {
                       .loginId("login1")
                       .username("login1"));
 
-      when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE))
-          .thenReturn(Mono.just(notificationTypes));
-      when(providerService.getProvider(userDetails.getProvider().getId()))
-          .thenReturn(Mono.just(providerDetail));
-      when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
-      when(userService.getUsers(any())).thenReturn(Mono.just(baseUsers));
+      stubSearchOptions(feeEarners, notificationTypes.getContent(), baseUsers.getContent(), true);
       assertThat(mockMvc.perform(get("/notifications/search").flashAttrs(flashMap)))
           .hasStatusOk()
           .hasViewName("notifications/actions-and-notifications-search")
@@ -342,12 +329,8 @@ class ActionsAndNotificationsControllerTest {
       flashMap.put("user", userDetails);
       flashMap.put("notificationSearchCriteria", criteria);
 
-      when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE))
-          .thenReturn(Mono.error(new RuntimeException("Lookup service failed")));
-      when(providerService.getProvider(userDetails.getProvider().getId()))
-          .thenReturn(Mono.error(new RuntimeException("Provider service failed")));
-      when(userService.getUsers(any()))
-          .thenReturn(Mono.error(new RuntimeException("User service failed")));
+      stubSearchOptions(
+          Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), false);
 
       assertThat(mockMvc.perform(get("/notifications/search").flashAttrs(flashMap)))
           .hasStatusOk()
@@ -379,7 +362,6 @@ class ActionsAndNotificationsControllerTest {
       flashMap.put("user", userDetails);
       flashMap.put("notificationSearchCriteria", criteria);
 
-      ProviderDetail providerDetail = new ProviderDetail();
       List<ContactDetail> feeEarners = buildFeeEarners();
 
       CommonLookupDetail notificationTypes = new CommonLookupDetail();
@@ -394,12 +376,7 @@ class ActionsAndNotificationsControllerTest {
                       .loginId("login1")
                       .username("login1"));
 
-      when(lookupService.getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE))
-          .thenReturn(Mono.just(notificationTypes));
-      when(providerService.getProvider(userDetails.getProvider().getId()))
-          .thenReturn(Mono.just(providerDetail));
-      when(providerService.getAllFeeEarners(providerDetail)).thenReturn(feeEarners);
-      when(userService.getUsers(any())).thenReturn(Mono.just(baseUsers));
+      stubSearchOptions(feeEarners, notificationTypes.getContent(), baseUsers.getContent(), true);
 
       doAnswer(
               invocation -> {
@@ -431,6 +408,30 @@ class ActionsAndNotificationsControllerTest {
       assertThat(mockMvc.perform(post("/notifications/search").flashAttrs(flashMap)))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/notifications/search-results?page=0&refresh=true");
+    }
+  }
+
+  @Nested
+  @DisplayName("GET: /notifications/search-options/prefetch")
+  class PrefetchNotificationSearchOptionsTests {
+
+    @Test
+    @DisplayName("Should warm options for the session provider without binding request parameters")
+    void shouldWarmOptionsForSessionProviderWithoutBindingRequestParameters() {
+      stubSearchOptions(
+          Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), true);
+      Integer providerId = userDetails.getProvider().getId();
+
+      assertThat(
+              mockMvc.perform(
+                  get("/notifications/search-options/prefetch")
+                      .sessionAttr("user", userDetails)
+                      .flashAttr("user", userDetails)
+                      .param("provider.id", "999999")))
+          .hasStatus(204);
+
+      assertThat(userDetails.getProvider().getId()).isEqualTo(providerId);
+      verify(notificationSearchOptionsCache).get(providerId);
     }
   }
 
@@ -1446,5 +1447,21 @@ class ActionsAndNotificationsControllerTest {
     feeEarners.add(new ContactDetail().id(1).name("FeeEarner1"));
     feeEarners.add(new ContactDetail().id(2).name("FeeEarner2"));
     return feeEarners;
+  }
+
+  private void stubSearchOptions(
+      List<ContactDetail> feeEarners,
+      List<CommonLookupValueDetail> notificationTypes,
+      List<BaseUser> users,
+      boolean fullyAvailable) {
+    when(notificationSearchOptionsCache.get(userDetails.getProvider().getId()))
+        .thenReturn(
+            Mono.just(
+                new NotificationSearchOptions(
+                    userDetails.getProvider().getId(),
+                    feeEarners,
+                    notificationTypes,
+                    users,
+                    fullyAvailable)));
   }
 }

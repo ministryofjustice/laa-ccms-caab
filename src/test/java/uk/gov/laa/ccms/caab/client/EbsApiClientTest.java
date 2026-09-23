@@ -329,6 +329,51 @@ public class EbsApiClientTest {
     }
 
     @Test
+    @DisplayName("Should request an exact case reference for a case-originated search")
+    void getNotifications_usesExactCaseReferenceForCaseSearch() {
+      NotificationSearchCriteria criteria = new NotificationSearchCriteria();
+      criteria.setCaseReference("300000000001");
+      criteria.setOriginatesFromCase(true);
+
+      when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+      when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.bodyToMono(Notifications.class)).thenReturn(Mono.just(new Notifications()));
+
+      StepVerifier.create(ebsApiClient.getNotifications(criteria, 1, 0, 10))
+          .expectNextCount(1)
+          .verifyComplete();
+
+      URI actualUri = uriCaptor.getValue().apply(UriComponentsBuilder.newInstance());
+      assertEquals(
+          "/notifications?provider-id=1&case-reference-number=300000000001"
+              + "&exact-case-reference=true&include-closed=false&page=0&size=10",
+          actualUri.toString());
+    }
+
+    @Test
+    @DisplayName("Should retain partial case-reference matching for a general search")
+    void getNotifications_omitsExactCaseReferenceForGeneralSearch() {
+      NotificationSearchCriteria criteria = new NotificationSearchCriteria();
+      criteria.setCaseReference("300000");
+
+      when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+      when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.bodyToMono(Notifications.class)).thenReturn(Mono.just(new Notifications()));
+
+      StepVerifier.create(ebsApiClient.getNotifications(criteria, 1, 0, 10))
+          .expectNextCount(1)
+          .verifyComplete();
+
+      URI actualUri = uriCaptor.getValue().apply(UriComponentsBuilder.newInstance());
+      assertEquals(
+          "/notifications?provider-id=1&case-reference-number=300000"
+              + "&include-closed=false&page=0&size=10",
+          actualUri.toString());
+    }
+
+    @Test
     @DisplayName("Should handle error")
     void getNotifications_handlesError() {
 

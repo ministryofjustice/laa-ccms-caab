@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.controller.provider;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -30,6 +31,7 @@ import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.provider.ProviderFirmFormData;
 import uk.gov.laa.ccms.caab.bean.validators.provider.ProviderFirmValidator;
+import uk.gov.laa.ccms.caab.service.NotificationSearchOptionsCache;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -43,6 +45,8 @@ public class ProviderControllerTest {
   @Mock ProviderFirmValidator validator;
 
   @Mock UserService userService;
+
+  @Mock NotificationSearchOptionsCache notificationSearchOptionsCache;
 
   @InjectMocks ProviderController providerController;
 
@@ -115,6 +119,7 @@ public class ProviderControllerTest {
 
     // Check session has been updated with new provider
     assertEquals(providerFirm2, ((UserDetail) session.getAttribute("user")).getProvider());
+    verify(notificationSearchOptionsCache).clear();
   }
 
   @Test
