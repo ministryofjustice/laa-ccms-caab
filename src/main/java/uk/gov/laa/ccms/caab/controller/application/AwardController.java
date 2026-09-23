@@ -255,15 +255,13 @@ public class AwardController {
     if (otherAssetAwardId == null) {
       if (awardTypeForm == null
           || !StringUtils.hasText(awardTypeForm.getAwardTypeCode())
-          || !StringUtils.hasText(awardTypeForm.getAwardType())
-          || !StringUtils.hasText(awardTypeForm.getDescription())) {
+          || !StringUtils.hasText(awardTypeForm.getAwardType())) {
         log.warn("Other asset award page requested without complete award type details");
         return "redirect:/case/outcome-and-awards";
       }
       formData = new OtherAssetAwardFormData();
       formData.setAwardCode(awardTypeForm.getAwardTypeCode());
       formData.setAwardType(awardTypeForm.getAwardType());
-      formData.setDescription(awardTypeForm.getDescription());
     } else {
       final OtherAssetAwardDetail award =
           caseOutcomeService
@@ -299,10 +297,8 @@ public class AwardController {
         && (awardTypeForm == null
             || !StringUtils.hasText(awardTypeForm.getAwardTypeCode())
             || !StringUtils.hasText(awardTypeForm.getAwardType())
-            || !StringUtils.hasText(awardTypeForm.getDescription())
             || !Objects.equals(otherAssetAward.getAwardCode(), awardTypeForm.getAwardTypeCode())
-            || !Objects.equals(otherAssetAward.getAwardType(), awardTypeForm.getAwardType())
-            || !Objects.equals(otherAssetAward.getDescription(), awardTypeForm.getDescription()))) {
+            || !Objects.equals(otherAssetAward.getAwardType(), awardTypeForm.getAwardType()))) {
       bindingResult.reject(
           "otherAssetAward.awardType.mismatch",
           "The award type details are invalid for your session. Please select an award type again.");
@@ -364,6 +360,15 @@ public class AwardController {
         "awardedByOptions",
         Optional.ofNullable(
                 lookupService.getCommonValues(CommonValueConstants.COMMON_VALUE_AWARDED_BY).block())
+            .map(CommonLookupDetail::getContent)
+            .orElse(Collections.emptyList()));
+
+    model.addAttribute(
+        "recoveryOptions",
+        Optional.ofNullable(
+                lookupService
+                    .getCommonValues(CommonValueConstants.COMMON_VALUE_RECOVERY_ASSET)
+                    .block())
             .map(CommonLookupDetail::getContent)
             .orElse(Collections.emptyList()));
   }

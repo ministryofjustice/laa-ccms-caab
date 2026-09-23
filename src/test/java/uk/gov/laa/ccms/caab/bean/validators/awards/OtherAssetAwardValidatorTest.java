@@ -28,7 +28,7 @@ class OtherAssetAwardValidatorTest {
   }
 
   @Test
-  void acceptsBlankOptionalFields() {
+  void acceptsBlankOptionalFieldsWhenRecoveryIsSelected() {
     final OtherAssetAwardFormData form = new OtherAssetAwardFormData();
     form.setAwardType("ASSET");
     form.setDescription("Asset");
@@ -37,6 +37,7 @@ class OtherAssetAwardValidatorTest {
     form.setAwardedBy("COURT");
     form.setValuationAmount("1000.50");
     form.setValuationDate("02/01/2025");
+    form.setRecovery("UNKNOWN");
     form.setRecoveryOfAwardTimeRelated(false);
     final BeanPropertyBindingResult errors = errorsFor(form);
 
@@ -49,9 +50,11 @@ class OtherAssetAwardValidatorTest {
   void rejectsMissingRequiredAwardDetails() {
     final OtherAssetAwardFormData form = validForm();
     form.setDateOfOrder("");
+    form.setDescription(" ");
     form.setAwardedBy(" ");
     form.setValuationAmount(null);
     form.setValuationDate("");
+    form.setRecovery("");
     form.setRecoveryOfAwardTimeRelated(null);
     final BeanPropertyBindingResult errors = errorsFor(form);
 
@@ -61,22 +64,22 @@ class OtherAssetAwardValidatorTest {
         .extracting("field", "code")
         .contains(
             tuple("dateOfOrder", "required.dateOfOrder"),
+            tuple("description", "required.description"),
             tuple("awardedBy", "required.awardedBy"),
             tuple("valuationAmount", "required.valuationAmount"),
             tuple("valuationDate", "required.valuationDate"),
+            tuple("recovery", "required.recovery"),
             tuple("recoveryOfAwardTimeRelated", "required.recoveryOfAwardTimeRelated"));
   }
 
   @Test
-  void rejectsMissingAwardMetadata() {
+  void rejectsMissingAwardTypeMetadata() {
     final OtherAssetAwardFormData form = new OtherAssetAwardFormData();
     final BeanPropertyBindingResult errors = errorsFor(form);
 
     validator.validate(form, errors);
 
-    assertThat(errors.getFieldErrors())
-        .extracting("field")
-        .contains("awardType", "description", "awardCode");
+    assertThat(errors.getFieldErrors()).extracting("field").contains("awardType", "awardCode");
   }
 
   @Test
@@ -128,18 +131,16 @@ class OtherAssetAwardValidatorTest {
   @Test
   void rejectsFieldsBeyondApiLengthLimits() {
     final OtherAssetAwardFormData form = validForm();
-    form.setValuationCriteria("x".repeat(51));
-    form.setRecovery("x".repeat(201));
-    form.setNoRecoveryDetails("x".repeat(1001));
-    form.setStatutoryChargeExemptReason("x".repeat(1001));
+    form.setDescription("x".repeat(51));
+    form.setNoRecoveryDetails("x".repeat(951));
+    form.setStatutoryChargeExemptReason("x".repeat(951));
     final BeanPropertyBindingResult errors = errorsFor(form);
 
     validator.validate(form, errors);
 
     assertThat(errors.getFieldErrors())
         .extracting("field")
-        .contains(
-            "valuationCriteria", "recovery", "noRecoveryDetails", "statutoryChargeExemptReason");
+        .contains("description", "noRecoveryDetails", "statutoryChargeExemptReason");
   }
 
   private BeanPropertyBindingResult errorsFor(final OtherAssetAwardFormData form) {
@@ -149,12 +150,11 @@ class OtherAssetAwardValidatorTest {
   private OtherAssetAwardFormData validForm() {
     final OtherAssetAwardFormData form = new OtherAssetAwardFormData();
     form.setAwardType("ASSET");
-    form.setDescription("Asset");
+    form.setDescription("Antique jewellery");
     form.setAwardCode("OTH_ASSET");
     form.setDateOfOrder("01/01/2025");
     form.setAwardedBy("COURT");
     form.setValuationAmount("1000.50");
-    form.setValuationCriteria("Market value");
     form.setValuationDate("02/01/2025");
     form.setAwardedPercentage("75.25");
     form.setRecoveredAmount("100.00");

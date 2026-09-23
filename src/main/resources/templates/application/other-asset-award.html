@@ -26,7 +26,6 @@
 
       <input type="hidden" th:field="*{id}">
       <input type="hidden" th:field="*{awardType}">
-      <input type="hidden" th:field="*{description}">
       <input type="hidden" th:field="*{awardCode}">
 
       <moj:datepicker
@@ -38,9 +37,8 @@
           th:errorMessage="${#fields.hasErrors('dateOfOrder') ? #fields.errors('dateOfOrder').getFirst() : ''}">
       </moj:datepicker>
 
-      <div th:replace="~{partials/forms :: dropdown('awardedBy', #{case.otherAssetAward.awardedBy}, ${awardedByOptions}, 'code', 'description', false)}"></div>
+      <div th:replace="~{partials/forms :: textInput(fieldId='description', label=#{case.otherAssetAward.description}, inputClass='govuk-input--width-20', maxlengthParam=50)}"></div>
       <div th:replace="~{partials/forms :: currencyInput('valuationAmount', #{case.otherAssetAward.valuationAmount}, '10')}"></div>
-      <div th:replace="~{partials/forms :: textInput(fieldId='valuationCriteria', label=#{case.otherAssetAward.valuationCriteria}, inputClass='govuk-input--width-20', maxlengthParam=50)}"></div>
 
       <moj:datepicker
           id="valuationDate"
@@ -51,15 +49,65 @@
           th:errorMessage="${#fields.hasErrors('valuationDate') ? #fields.errors('valuationDate').getFirst() : ''}">
       </moj:datepicker>
 
-      <div th:replace="~{partials/forms :: textInput(fieldId='awardedPercentage', label=#{case.otherAssetAward.awardedPercentage}, inputClass='govuk-input--width-5', maxlengthParam=6)}"></div>
-      <div th:replace="~{partials/forms :: currencyInput('recoveredAmount', #{case.otherAssetAward.recoveredAmount}, '10')}"></div>
-      <div th:replace="~{partials/forms :: textInput(fieldId='recoveredPercentage', label=#{case.otherAssetAward.recoveredPercentage}, inputClass='govuk-input--width-5', maxlengthParam=6)}"></div>
-      <div th:replace="~{partials/forms :: currencyInput('disputedAmount', #{case.otherAssetAward.disputedAmount}, '10')}"></div>
-      <div th:replace="~{partials/forms :: currencyInput('awardedAmount', #{case.otherAssetAward.awardedAmount}, '10')}"></div>
-      <div th:replace="~{partials/forms :: textInput(fieldId='disputedPercentage', label=#{case.otherAssetAward.disputedPercentage}, inputClass='govuk-input--width-5', maxlengthParam=6)}"></div>
-      <div th:replace="~{partials/forms :: largeTextInput('recovery', #{case.otherAssetAward.recovery}, 200)}"></div>
+      <section class="govuk-form-group">
+        <h2 class="govuk-heading-m"
+            th:text="#{case.otherAssetAward.awardAndRecovery.title}">
+        </h2>
+
+        <p class="govuk-body"
+           th:text="#{case.otherAssetAward.awardAndRecovery.hint}">
+        </p>
+
+        <div class="award-recovery-grid award-recovery-header">
+          <div></div>
+
+          <div>
+    <span class="govuk-label govuk-label--s"
+          th:text="#{case.otherAssetAward.awardAndRecovery.percent}">
+    </span>
+          </div>
+
+          <div></div>
+
+          <div>
+    <span class="govuk-label govuk-label--s"
+          th:text="#{case.otherAssetAward.awardAndRecovery.amount}">
+    </span>
+          </div>
+        </div>
+
+        <div th:replace="~{partials/forms :: percentageAmountRow(
+      'disputed',
+      #{case.otherAssetAward.awardAndRecovery.disputed},
+      'disputedPercentage',
+      'disputedAmount')}">
+        </div>
+
+        <div th:replace="~{partials/forms :: percentageAmountRow(
+      'awarded',
+      #{case.otherAssetAward.awardAndRecovery.awarded},
+      'awardedPercentage',
+      'awardedAmount')}">
+        </div>
+
+        <div th:replace="~{partials/forms :: percentageAmountRow(
+      'recovered',
+      #{case.otherAssetAward.awardAndRecovery.recovered},
+      'recoveredPercentage',
+      'recoveredAmount')}">
+        </div>
+      </section>
+      <div th:replace="~{partials/forms :: dropdown('awardedBy', #{case.otherAssetAward.awardedBy}, ${awardedByOptions}, 'code', 'description', false)}"></div>
+      <div th:replace="~{partials/forms :: dropdown(
+    'recovery',
+    #{case.otherAssetAward.recovery},
+    ${recoveryOptions},
+    'code',
+    'description',
+    false)}">
+      </div>
       <div th:replace="~{partials/forms :: largeTextInput('noRecoveryDetails', #{case.otherAssetAward.noRecoveryDetails}, 950)}"></div>
-      <div th:replace="~{partials/forms :: largeTextInput('statutoryChargeExemptReason', #{case.otherAssetAward.statutoryChargeExemptReason}, 1000)}"></div>
+      <div th:replace="~{partials/forms :: largeTextInput('statutoryChargeExemptReason', #{case.otherAssetAward.statutoryChargeExemptReason}, 950)}"></div>
 
       <div class="govuk-form-group"
            th:classappend="${#fields.hasErrors('recoveryOfAwardTimeRelated')} ? 'govuk-form-group--error' : ''">

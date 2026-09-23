@@ -497,7 +497,7 @@ class AwardControllerTest {
               value ->
                   assertThat(value)
                       .extracting("awardCode", "awardType", "description")
-                      .containsExactly("OTH_ASSET", "ASSET", "Asset"));
+                      .containsExactly("OTH_ASSET", "ASSET", null));
     }
 
     @Test
@@ -607,8 +607,7 @@ class AwardControllerTest {
               post("/case/outcome-and-awards/asset")
                   .param("awardCode", "OTH_ASSET")
                   .param("awardType", "ASSET")
-                  .param("description", "Asset")
-                  .param("valuationCriteria", "Entered value is retained")
+                  .param("description", "Entered description is retained")
                   .sessionAttr(CASE, ebsCase)
                   .sessionAttr(USER_DETAILS, user)
                   .sessionAttr(AWARD_TYPE_FORM, otherAssetAwardType()));
@@ -617,7 +616,7 @@ class AwardControllerTest {
           .hasViewName("application/other-asset-award")
           .model()
           .hasErrors()
-          .containsKeys("otherAssetAward", "awardedByOptions")
+          .containsKeys("otherAssetAward", "awardedByOptions", "recoveryOptions")
           .hasEntrySatisfying(
               BindingResult.MODEL_KEY_PREFIX + "otherAssetAward",
               value ->
@@ -633,8 +632,8 @@ class AwardControllerTest {
               "otherAssetAward",
               value ->
                   assertThat(value)
-                      .extracting("valuationCriteria")
-                      .isEqualTo("Entered value is retained"));
+                      .extracting("description")
+                      .isEqualTo("Entered description is retained"));
       verifyNoInteractions(otherAssetAwardMapper, caseOutcomeService);
     }
 
@@ -687,13 +686,13 @@ class AwardControllerTest {
     return post("/case/outcome-and-awards/asset")
         .param("awardCode", "OTH_ASSET")
         .param("awardType", "ASSET")
-        .param("description", "Asset")
+        .param("description", "Antique jewellery")
         .param("dateOfOrder", "01/01/2025")
         .param("awardedBy", "COURT")
         .param("valuationAmount", "123.45")
-        .param("valuationCriteria", "Market value")
         .param("valuationDate", "02/01/2025")
         .param("awardedPercentage", "75")
+        .param("recovery", "UNKNOWN")
         .param("recoveryOfAwardTimeRelated", "false")
         .sessionAttr(CASE, ebsCase)
         .sessionAttr(USER_DETAILS, user)

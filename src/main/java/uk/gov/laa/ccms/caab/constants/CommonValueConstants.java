@@ -87,6 +87,9 @@ public class CommonValueConstants {
   /** Type used to retrieve financial award decision-maker options. */
   public static final String COMMON_VALUE_AWARDED_BY = "XXCCMS_AWARDED_BY";
 
+  /** Type used to retrieve other asset award recovery options. */
+  public static final String COMMON_VALUE_RECOVERY_ASSET = "XXCCMS_RECOVERY_ASSET";
+
   /** Type used to retrieve the Progress status types. */
   public static final String COMMON_VALUE_PROGRESS_STATUS_TYPES = "XXCCMS_OPA_PROGRESS_STATUS";
 

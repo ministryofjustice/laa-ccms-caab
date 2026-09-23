@@ -23,13 +23,13 @@ class OtherAssetAwardMapperTest {
     final OtherAssetAwardRequest request = mapper.toOtherAssetAwardRequest(form);
 
     assertThat(request.getAwardType()).isEqualTo("ASSET");
-    assertThat(request.getDescription()).isEqualTo("Asset");
+    assertThat(request.getDescription()).isEqualTo("Antique jewellery");
     assertThat(request.getAwardCode()).isEqualTo("OTH_ASSET");
     assertThat(request.getDateOfOrder().toInstant().atZone(ZoneId.systemDefault()).toLocalDate())
         .isEqualTo(LocalDate.of(2025, 2, 1));
     assertThat(request.getAwardedBy()).isEqualTo("COURT");
     assertThat(request.getValuationAmount()).isEqualByComparingTo("1000.50");
-    assertThat(request.getValuationCriteria()).isEqualTo("Market value");
+    assertThat(request.getValuationCriteria()).isNull();
     assertThat(request.getValuationDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate())
         .isEqualTo(LocalDate.of(2025, 2, 2));
     assertThat(request.getAwardedPercentage()).isEqualByComparingTo("75.25");
@@ -50,12 +50,11 @@ class OtherAssetAwardMapperTest {
         new OtherAssetAwardDetail()
             .id(7)
             .awardType("ASSET")
-            .description("Asset")
+            .description("Antique jewellery")
             .awardCode("OTH_ASSET")
             .dateOfOrder(DateUtils.convertToDate("01/02/2025"))
             .awardedBy("COURT")
             .valuationAmount(new BigDecimal("1000.50"))
-            .valuationCriteria("Market value")
             .valuationDate(DateUtils.convertToDate("02/02/2025"))
             .awardedPercentage(new BigDecimal("75.25"))
             .recoveredAmount(new BigDecimal("100.00"))
@@ -72,12 +71,11 @@ class OtherAssetAwardMapperTest {
 
     assertThat(form.getId()).isEqualTo(7);
     assertThat(form.getAwardType()).isEqualTo("ASSET");
-    assertThat(form.getDescription()).isEqualTo("Asset");
+    assertThat(form.getDescription()).isEqualTo("Antique jewellery");
     assertThat(form.getAwardCode()).isEqualTo("OTH_ASSET");
     assertThat(form.getDateOfOrder()).isEqualTo("01/02/2025");
     assertThat(form.getAwardedBy()).isEqualTo("COURT");
     assertThat(form.getValuationAmount()).isEqualTo("1000.50");
-    assertThat(form.getValuationCriteria()).isEqualTo("Market value");
     assertThat(form.getValuationDate()).isEqualTo("02/02/2025");
     assertThat(form.getAwardedPercentage()).isEqualTo("75.25");
     assertThat(form.getRecoveredAmount()).isEqualTo("100.00");
@@ -109,12 +107,11 @@ class OtherAssetAwardMapperTest {
   private OtherAssetAwardFormData validForm() {
     final OtherAssetAwardFormData form = new OtherAssetAwardFormData();
     form.setAwardType("ASSET");
-    form.setDescription("Asset");
+    form.setDescription("Antique jewellery");
     form.setAwardCode("OTH_ASSET");
     form.setDateOfOrder("01/02/2025");
     form.setAwardedBy("COURT");
     form.setValuationAmount("1000.50");
-    form.setValuationCriteria("Market value");
     form.setValuationDate("02/02/2025");
     form.setAwardedPercentage("75.25");
     form.setRecoveredAmount("100.00");

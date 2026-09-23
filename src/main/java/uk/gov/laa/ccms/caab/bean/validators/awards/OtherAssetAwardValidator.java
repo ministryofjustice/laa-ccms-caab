@@ -31,14 +31,16 @@ public class OtherAssetAwardValidator extends AbstractValidator {
     final OtherAssetAwardFormData formData = (OtherAssetAwardFormData) target;
 
     validateRequiredField("awardType", formData.getAwardType(), "Award type", errors);
-    validateRequiredField("description", formData.getDescription(), "Award description", errors);
+    validateRequiredField("description", formData.getDescription(), "Description of Asset", errors);
     validateRequiredField("awardCode", formData.getAwardCode(), "Award code", errors);
     validateRequiredField(
         "dateOfOrder", formData.getDateOfOrder(), "Date of Order / Agreement", errors);
     validateRequiredField("awardedBy", formData.getAwardedBy(), "Awarded By", errors);
     validateRequiredField(
         "valuationAmount", formData.getValuationAmount(), "Valuation Amount", errors);
-    validateRequiredField("valuationDate", formData.getValuationDate(), "Valuation Date", errors);
+    validateRequiredField(
+        "valuationDate", formData.getValuationDate(), "Date of validation", errors);
+    validateRequiredField("recovery", formData.getRecovery(), "Recovery", errors);
     if (formData.getRecoveryOfAwardTimeRelated() == null) {
       errors.rejectValue(
           "recoveryOfAwardTimeRelated",
@@ -52,7 +54,7 @@ public class OtherAssetAwardValidator extends AbstractValidator {
         "description",
         formData.getDescription(),
         50,
-        "Award description",
+        "Description of Asset",
         STANDARD_CHARACTER_SET,
         errors);
     validateText(
@@ -60,31 +62,22 @@ public class OtherAssetAwardValidator extends AbstractValidator {
     validateText(
         "awardedBy", formData.getAwardedBy(), 50, "Awarded By", STANDARD_CHARACTER_SET, errors);
     validateText(
-        "valuationCriteria",
-        formData.getValuationCriteria(),
-        50,
-        "Valuation Criteria",
-        STANDARD_CHARACTER_SET,
-        errors);
-    validateText(
-        "recovery", formData.getRecovery(), 200, "Recovery", STANDARD_CHARACTER_SET, errors);
-    validateText(
         "noRecoveryDetails",
         formData.getNoRecoveryDetails(),
-        1000,
+        950,
         "No Recovery Details",
         STANDARD_CHARACTER_SET,
         errors);
     validateText(
         "statutoryChargeExemptReason",
         formData.getStatutoryChargeExemptReason(),
-        1000,
+        950,
         "Reason for Statutory Charge Exemption",
         STANDARD_CHARACTER_SET,
         errors);
 
     validateDate("dateOfOrder", formData.getDateOfOrder(), "Date of Order / Agreement", errors);
-    validateDate("valuationDate", formData.getValuationDate(), "Valuation Date", errors);
+    validateDate("valuationDate", formData.getValuationDate(), "Date of validation", errors);
 
     final Map<String, String> amounts =
         Map.of(

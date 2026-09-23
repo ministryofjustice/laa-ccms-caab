@@ -15,6 +15,7 @@ import uk.gov.laa.ccms.caab.util.DateUtils;
 @Mapper(componentModel = "spring")
 public interface OtherAssetAwardMapper {
 
+  @Mapping(target = "valuationCriteria", ignore = true)
   OtherAssetAwardRequest toOtherAssetAwardRequest(OtherAssetAwardFormData formData);
 
   @Mapping(target = "dateOfOrder", source = "dateOfOrder", qualifiedByName = "toComponentDate")
