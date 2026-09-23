@@ -54,6 +54,7 @@ import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
 import uk.gov.laa.ccms.caab.model.NotificationSearchOptions;
+import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.service.AvScanResultHandler;
 import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -274,16 +275,27 @@ public class ActionsAndNotificationsController {
    *     searched rather than none.
    */
   private Optional<BaseUser> findPrimaryContact(ApplicationDetail ebsCase, UserDetail user) {
-    List<String> primaryContactIdentifiers =
+    Optional<StringDisplayValue> providerContact =
         Optional.ofNullable(ebsCase.getProviderDetails())
-            .map(ApplicationProviderDetails::getProviderContact)
-            .stream()
+            .map(ApplicationProviderDetails::getProviderContact);
+    List<String> primaryContactIdentifiers =
+        providerContact.stream()
             .flatMap(contact -> Stream.of(contact.getId(), contact.getDisplayValue()))
             .filter(StringUtils::hasText)
             .toList();
 
     if (primaryContactIdentifiers.isEmpty()) {
       return Optional.empty();
+    }
+
+    Optional<BaseUser> targetedContact =
+        providerContact
+            .map(StringDisplayValue::getId)
+            .filter(StringUtils::hasText)
+            .flatMap(loginId -> getProviderUser(user, loginId))
+            .filter(providerUser -> matchesAny(providerUser, primaryContactIdentifiers));
+    if (targetedContact.isPresent()) {
+      return targetedContact;
     }
 
     return getProviderUsers(user).stream()
@@ -298,6 +310,21 @@ public class ActionsAndNotificationsController {
             identifier ->
                 identifier.equalsIgnoreCase(providerUser.getLoginId())
                     || identifier.equalsIgnoreCase(providerUser.getUsername()));
+  }
+
+  private Optional<BaseUser> getProviderUser(UserDetail user, String loginId) {
+    return userService
+        .getUsers(user.getProvider().getId(), loginId)
+        .flatMapIterable(
+            details -> Optional.ofNullable(details.getContent()).orElse(Collections.emptyList()))
+        .filter(providerUser -> StringUtils.hasText(providerUser.getLoginId()))
+        .next()
+        .onErrorResume(
+            e -> {
+              log.error("Failed to retrieve provider user", e);
+              return Mono.empty();
+            })
+        .blockOptional();
   }
 
   private List<BaseUser> getProviderUsers(UserDetail user) {

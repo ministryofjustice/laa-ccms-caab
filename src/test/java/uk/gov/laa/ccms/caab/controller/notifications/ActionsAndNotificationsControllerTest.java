@@ -46,6 +46,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
@@ -450,9 +451,8 @@ class ActionsAndNotificationsControllerTest {
       Notifications notificationsMock = getNotificationsMock();
 
       when(notificationSearchValidator.supports(any())).thenReturn(true);
-      stubProviderUsers(new BaseUser().loginId("SOMEONE.ELSE@TEST.COM"));
-
       ApplicationDetail ebsCase = buildFullApplicationDetail();
+      stubProviderUsers(ebsCase, new BaseUser().loginId("SOMEONE.ELSE@TEST.COM"));
       assertThat(
               mockMvc.perform(
                   get("/notifications/case-search")
@@ -479,12 +479,13 @@ class ActionsAndNotificationsControllerTest {
       flashMap.put("notificationSearchCriteria", criteria);
 
       when(notificationSearchValidator.supports(any())).thenReturn(true);
-      stubProviderUsers(new BaseUser().loginId("JANE.DOE@EXAMPLE.COM"));
+      ApplicationDetail ebsCase = caseWithPrimaryContact("JANE.DOE@EXAMPLE.COM", "Jane Doe");
+      stubProviderUsers(ebsCase, new BaseUser().loginId("JANE.DOE@EXAMPLE.COM"));
 
       assertThat(
               mockMvc.perform(
                   get("/notifications/case-search")
-                      .sessionAttr(CASE, caseWithPrimaryContact("JANE.DOE@EXAMPLE.COM", "Jane Doe"))
+                      .sessionAttr(CASE, ebsCase)
                       .flashAttrs(flashMap)))
           .hasStatus3xxRedirection();
 
@@ -520,13 +521,15 @@ class ActionsAndNotificationsControllerTest {
     @Test
     @DisplayName("Should default assigned to filter to the primary contact's login ID")
     void shouldDefaultAssignedToFilterToPrimaryContactLoginId() {
+      BaseUser providerUser = new BaseUser().loginId("JANE.DOE@EXAMPLE.COM").username("Jane Doe");
       NotificationSearchCriteria criteria =
           performCaseSearch(
-              caseWithPrimaryContact("JANE.DOE@EXAMPLE.COM", "Jane Doe"),
-              new BaseUser().loginId("JANE.DOE@EXAMPLE.COM").username("Jane Doe"));
+              caseWithPrimaryContact("JANE.DOE@EXAMPLE.COM", "Jane Doe"), providerUser);
 
       assertThat(criteria.getAssignedToUserId()).isEqualTo("JANE.DOE@EXAMPLE.COM");
       assertThat(criteria.getPrimaryContactName()).isEqualTo("Jane Doe");
+      verify(userService).getUsers(userDetails.getProvider().getId(), "JANE.DOE@EXAMPLE.COM");
+      verify(userService, never()).getUsers(userDetails.getProvider().getId());
     }
 
     @Test
@@ -577,6 +580,40 @@ class ActionsAndNotificationsControllerTest {
     }
 
     @Test
+    @DisplayName("Should fall back to all provider users when the targeted lookup fails")
+    void shouldFallBackToAllProviderUsersWhenTargetedLookupFails() {
+      ApplicationDetail ebsCase = caseWithPrimaryContact("JANE.DOE@EXAMPLE.COM", "Jane Doe");
+      BaseUser providerUser = new BaseUser().loginId("JANE.DOE@EXAMPLE.COM").username("Jane Doe");
+      when(userService.getUsers(userDetails.getProvider().getId(), "JANE.DOE@EXAMPLE.COM"))
+          .thenReturn(Mono.error(new RuntimeException("Unavailable")));
+      when(userService.getUsers(userDetails.getProvider().getId()))
+          .thenReturn(Mono.just(new UserDetails().addContentItem(providerUser)));
+
+      NotificationSearchCriteria criteria = performCaseSearchWithoutStubbing(ebsCase);
+
+      assertThat(criteria.getAssignedToUserId()).isEqualTo("JANE.DOE@EXAMPLE.COM");
+      verify(userService).getUsers(userDetails.getProvider().getId());
+    }
+
+    @Test
+    @DisplayName("Should use the full user list when exact login lookup misses on casing")
+    void shouldUseFullUserListWhenExactLoginLookupMissesOnCasing() {
+      String caseLoginId = "jane.doe@example.com";
+      ApplicationDetail ebsCase = caseWithPrimaryContact(caseLoginId, "Jane Doe");
+      BaseUser providerUser = new BaseUser().loginId("JANE.DOE@EXAMPLE.COM").username("Jane Doe");
+      when(userService.getUsers(userDetails.getProvider().getId(), caseLoginId))
+          .thenReturn(Mono.just(new UserDetails()));
+      when(userService.getUsers(userDetails.getProvider().getId()))
+          .thenReturn(Mono.just(new UserDetails().addContentItem(providerUser)));
+
+      NotificationSearchCriteria criteria = performCaseSearchWithoutStubbing(ebsCase);
+
+      assertThat(criteria.getAssignedToUserId()).isEqualTo("JANE.DOE@EXAMPLE.COM");
+      verify(userService).getUsers(userDetails.getProvider().getId(), caseLoginId);
+      verify(userService).getUsers(userDetails.getProvider().getId());
+    }
+
+    @Test
     @DisplayName("Should search all assignees when the case has no primary contact")
     void shouldSearchAllAssigneesWhenCaseHasNoPrimaryContact() {
       NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
@@ -611,13 +648,17 @@ class ActionsAndNotificationsControllerTest {
 
     private NotificationSearchCriteria performCaseSearch(
         ApplicationDetail ebsCase, BaseUser... providerUsers) {
+      stubProviderUsers(ebsCase, providerUsers);
+      return performCaseSearchWithoutStubbing(ebsCase);
+    }
+
+    private NotificationSearchCriteria performCaseSearchWithoutStubbing(ApplicationDetail ebsCase) {
       NotificationSearchCriteria criteria = buildNotificationSearchCritieria();
       Map<String, Object> flashMap = new HashMap<>();
       flashMap.put("user", userDetails);
       flashMap.put("notificationSearchCriteria", criteria);
 
       when(notificationSearchValidator.supports(any())).thenReturn(true);
-      stubProviderUsers(providerUsers);
 
       assertThat(
               mockMvc.perform(
@@ -629,12 +670,29 @@ class ActionsAndNotificationsControllerTest {
       return criteria;
     }
 
-    private void stubProviderUsers(BaseUser... providerUsers) {
+    private void stubProviderUsers(ApplicationDetail ebsCase, BaseUser... providerUsers) {
       UserDetails users = new UserDetails();
       for (BaseUser providerUser : providerUsers) {
         users.addContentItem(providerUser);
       }
-      when(userService.getUsers(userDetails.getProvider().getId())).thenReturn(Mono.just(users));
+
+      String loginId = ebsCase.getProviderDetails().getProviderContact().getId();
+      if (StringUtils.hasText(loginId)) {
+        UserDetails targetedUsers = new UserDetails();
+        for (BaseUser providerUser : providerUsers) {
+          if (loginId.equalsIgnoreCase(providerUser.getLoginId())) {
+            targetedUsers.addContentItem(providerUser);
+          }
+        }
+        when(userService.getUsers(userDetails.getProvider().getId(), loginId))
+            .thenReturn(Mono.just(targetedUsers));
+        if (targetedUsers.getContent().isEmpty()) {
+          when(userService.getUsers(userDetails.getProvider().getId()))
+              .thenReturn(Mono.just(users));
+        }
+      } else {
+        when(userService.getUsers(userDetails.getProvider().getId())).thenReturn(Mono.just(users));
+      }
     }
   }
 

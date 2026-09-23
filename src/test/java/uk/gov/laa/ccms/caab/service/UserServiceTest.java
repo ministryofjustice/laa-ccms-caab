@@ -76,6 +76,20 @@ public class UserServiceTest {
   }
 
   @Test
+  void getUsersByLoginId_returnsData() {
+    Integer providerId = 1234;
+    String loginId = "user@example.com";
+    UserDetails userDetails =
+        new UserDetails().addContentItem(new BaseUser().userId(123).loginId(loginId));
+    when(ebsApiClient.getUsers(providerId, loginId)).thenReturn(Mono.just(userDetails));
+
+    StepVerifier.create(userService.getUsers(providerId, loginId))
+        .expectNextMatches(
+            userList -> loginId.equals(userList.getContent().getFirst().getLoginId()))
+        .verifyComplete();
+  }
+
+  @Test
   void updateUserOptions_updatesUser() {
     String loginId = "loginId";
     String userType = "userType";

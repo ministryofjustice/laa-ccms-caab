@@ -255,6 +255,24 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
+  void testGetUsersByLoginId_returnsData() throws JsonProcessingException {
+    final Integer providerId = 123;
+    final String loginId = "user@example.com";
+    final UserDetails userDetails =
+        new UserDetails().addContentItem(new BaseUser().loginId(loginId).userId(123));
+
+    final String userDetailsJson = objectMapper.writeValueAsString(userDetails);
+    wiremock.stubFor(
+        get("/users?size=1&provider-id=123&login-id=user@example.com")
+            .willReturn(okJson(userDetailsJson)));
+
+    final UserDetails result = ebsApiClient.getUsers(providerId, loginId).block();
+
+    assertNotNull(result);
+    assertEquals(userDetailsJson, objectMapper.writeValueAsString(result));
+  }
+
+  @Test
   public void testGetUsers_notFound() {
     final Integer providerId = 123;
     final String expectedMessage =

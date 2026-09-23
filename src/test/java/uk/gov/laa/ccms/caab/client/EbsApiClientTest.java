@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -868,6 +869,34 @@ public class EbsApiClientTest {
       final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
       assertEquals(expectedUri, actualUri.toString());
+    }
+
+    @Test
+    @DisplayName("Should request one user by provider and login ID")
+    void getUserForProviderAndLoginId_returnsData() {
+      final String expectedUri = "/users?size=1&provider-id=123&login-id=user@example.com";
+      final Integer providerId = 123;
+      final String loginId = "user@example.com";
+      final UserDetails mockDetails =
+          new UserDetails().addContentItem(new BaseUser().loginId(loginId));
+
+      when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.bodyToMono(UserDetails.class)).thenReturn(Mono.just(mockDetails));
+
+      StepVerifier.create(ebsApiClient.getUsers(providerId, loginId))
+          .expectNext(mockDetails)
+          .verifyComplete();
+
+      final URI actualUri = uriCaptor.getValue().apply(UriComponentsBuilder.newInstance());
+      assertEquals(expectedUri, actualUri.toString());
+    }
+
+    @Test
+    @DisplayName("Should reject a blank login ID")
+    void getUserForProviderAndBlankLoginId_throwsException() {
+      assertThrows(IllegalArgumentException.class, () -> ebsApiClient.getUsers(123, " "));
     }
 
     @Test
