@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.notifications;
 
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_NOTIFICATION_TYPE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATION_SEARCH_CRITERIA;
@@ -22,6 +21,7 @@ import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -53,17 +53,17 @@ import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
 import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
+import uk.gov.laa.ccms.caab.model.NotificationSearchOptions;
 import uk.gov.laa.ccms.caab.service.AvScanResultHandler;
 import uk.gov.laa.ccms.caab.service.AvScanService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.service.NotificationSearchOptionsCache;
 import uk.gov.laa.ccms.caab.service.NotificationService;
-import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.data.model.BaseUser;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
-import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.Notification;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -80,11 +80,11 @@ public class ActionsAndNotificationsController {
   public static final String NOTIFICATION_ID = "notification_id";
   public static final String ATTACHMENT_ID = "attachment_id";
   private final LookupService lookupService;
-  private final ProviderService providerService;
   private final NotificationSearchValidator notificationSearchValidator;
   private final NotificationAttachmentMapper notificationAttachmentMapper;
   private final UserService userService;
   private final NotificationService notificationService;
+  private final NotificationSearchOptionsCache notificationSearchOptionsCache;
   private final NotificationAttachmentUploadValidator attachmentUploadValidator;
   private final NotificationResponseValidator notificationResponseValidator;
   private final AvScanService avScanService;
@@ -164,6 +164,19 @@ public class ActionsAndNotificationsController {
 
     populateDropdowns(user, model, criteria);
     return "notifications/actions-and-notifications-search";
+  }
+
+  /**
+   * Warms notification search options for the current provider without delaying results rendering.
+   *
+   * @param user current user details
+   * @return an empty successful response
+   */
+  @GetMapping("/notifications/search-options/prefetch")
+  public ResponseEntity<Void> prefetchNotificationSearchOptions(
+      @SessionAttribute(USER_DETAILS) UserDetail user) {
+    notificationSearchOptionsCache.get(user.getProvider().getId()).block();
+    return ResponseEntity.noContent().build();
   }
 
   /**
@@ -745,53 +758,18 @@ public class ActionsAndNotificationsController {
 
   private void populateDropdowns(
       UserDetail user, Model model, NotificationSearchCriteria criteria) {
-    Mono<List<ContactDetail>> feeEarners =
-        providerService
-            .getProvider(user.getProvider().getId())
-            .map(providerService::getAllFeeEarners)
-            .map(list -> Optional.ofNullable(list).orElse(Collections.emptyList()))
-            .onErrorResume(
-                e -> {
-                  log.error("Failed to retrieve fee earners", e);
-                  return Mono.just(Collections.emptyList());
-                });
-    // get the notification types
-    Mono<List<CommonLookupValueDetail>> notificationTypes =
-        lookupService
-            .getCommonValues(COMMON_VALUE_NOTIFICATION_TYPE)
-            .map(detail -> Optional.ofNullable(detail.getContent()).orElse(Collections.emptyList()))
-            .onErrorResume(
-                e -> {
-                  log.error("Failed to retrieve notification types", e);
-                  return Mono.just(Collections.emptyList());
-                });
-    // get the Users
-    Mono<List<BaseUser>> users =
-        userService
-            .getUsers(user.getProvider().getId())
-            .map(
-                details ->
-                    Optional.ofNullable(details.getContent()).orElse(Collections.emptyList()))
-            .onErrorResume(
-                e -> {
-                  log.error("Failed to retrieve users", e);
-                  return Mono.just(Collections.emptyList());
-                });
+    NotificationSearchOptions options =
+        notificationSearchOptionsCache.get(user.getProvider().getId()).block();
+    if (options == null) {
+      throw new CaabApplicationException("Failed to retrieve notification search options");
+    }
 
-    // Zip all Monos and populate the model once all results are available
-    Mono.zip(feeEarners, notificationTypes, users)
-        .doOnNext(
-            tuple -> {
-              model.addAttribute("feeEarners", tuple.getT1());
-              model.addAttribute("feeEarnersUnavailable", tuple.getT1().isEmpty());
-
-              model.addAttribute("notificationTypes", tuple.getT2());
-              model.addAttribute("notificationTypesUnavailable", tuple.getT2().isEmpty());
-
-              model.addAttribute("users", tuple.getT3());
-              model.addAttribute("usersUnavailable", tuple.getT3().isEmpty());
-            })
-        .block();
+    model.addAttribute("feeEarners", options.feeEarners());
+    model.addAttribute("feeEarnersUnavailable", options.feeEarners().isEmpty());
+    model.addAttribute("notificationTypes", options.notificationTypes());
+    model.addAttribute("notificationTypesUnavailable", options.notificationTypes().isEmpty());
+    model.addAttribute("users", options.users());
+    model.addAttribute("usersUnavailable", options.users().isEmpty());
     model.addAttribute("notificationSearchCriteria", criteria);
   }
 

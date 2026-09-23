@@ -17,6 +17,7 @@ This application depends on the following docker containers being run when runni
 - ClamAV
 - LocalStack
 - Mock Contracts
+- SOA proxy (only when running the SOA gateway, PUI or the connector locally against SOA dev)
 
 ```shell
 docker-compose --compatibility -p laa-ccms-caab-development up -d
