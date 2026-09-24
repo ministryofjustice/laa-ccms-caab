@@ -51,12 +51,12 @@ configurations.configureEach {
         // behind. Bump databind with core to keep the pair in lockstep.
         if (details.requested.group == 'com.fasterxml.jackson.core'
                 && details.requested.name in ['jackson-databind', 'jackson-core']) {
-            details.useVersion '2.21.6'
+            details.useVersion '2.21.7'
             details.because 'Snyk override (SNYK-JAVA-COMFASTERXMLJACKSONCORE-19477042); unsafe reflection in 2.21.5'
         }
         if (details.requested.group == 'tools.jackson.core'
                 && details.requested.name in ['jackson-databind', 'jackson-core']) {
-            details.useVersion '3.1.6'
+            details.useVersion '3.1.7'
             details.because 'Snyk override (SNYK-JAVA-TOOLSJACKSONCORE-19477043); unsafe reflection in 3.1.5'
         }
         // Keep this override narrow: touching every io.netty module can drag native SSL artifacts

@@ -22,37 +22,17 @@
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
         <h2 class="govuk-heading-m" th:text="#{case.overview.summary.title}"/>
-        <table class="govuk-table">
-          <thead class="govuk-table__head">
-          <tr class="govuk-table__row">
-            <th scope="col" class="govuk-table__header"
-                th:text="#{case.overview.summary.status}"/>
-            <th scope="col" class="govuk-table__header"
-                th:text="#{case.overview.summary.costLimit}"/>
-            <th scope="col" class="govuk-table__header"
-                th:unless="${case.status.displayValue == 'Submitted'}"
-                th:text="#{case.overview.summary.certificateType}"/>
-            <th scope="col" class="govuk-table__header"
-                th:if="${case.status.displayValue == 'Submitted'}"
-                th:text="#{case.overview.summary.applicationType}"/>
-            <th scope="col" class="govuk-table__header"
-                th:text="#{case.overview.summary.categoryOfLaw}"/>
-          </tr>
-          </thead>
-          <tbody class="govuk-table__body">
-          <tr class="govuk-table__row">
-            <td class="govuk-table__cell" th:text="${case.status.displayValue}"/>
-            <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(case.costs.requestedCostLimitation)}"/>
-            <td class="govuk-table__cell"
-                th:unless="${case.status.displayValue == 'Submitted'}"
-                th:text="${case.certificate?.displayValue}"/>
-            <td class="govuk-table__cell"
-                th:if="${case.status.displayValue == 'Submitted'}"
-                th:text="${case.applicationType.displayValue}"/>
-            <td class="govuk-table__cell" th:text="${case.categoryOfLaw.displayValue}"/>
-          </tr>
-          </tbody>
-        </table>
+        <dl class="govuk-summary-list">
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{case.overview.summary.status}, ${case.status.displayValue})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{case.overview.summary.costLimit}, ${#numbers.formatCurrency(case.costs.requestedCostLimitation)})}"></div>
+          <th:block th:unless="${case.status.displayValue == 'Submitted'}">
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{case.overview.summary.certificateType}, ${case.certificate?.displayValue})}"></div>
+          </th:block>
+          <th:block th:if="${case.status.displayValue == 'Submitted'}">
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{case.overview.summary.applicationType}, ${case.applicationType.displayValue})}"></div>
+          </th:block>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{case.overview.summary.categoryOfLaw}, ${case.categoryOfLaw.displayValue})}"></div>
+        </dl>
       </div>
     </div>
 
@@ -139,31 +119,21 @@
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
         <h2 class="govuk-heading-m" th:text="#{case.overview.costs.title}"/>
-        <table class="govuk-table">
-          <thead class="govuk-table__head">
-          <tr class="govuk-table__row">
-            <th scope="col" class="govuk-table__header"
-                th:text="#{case.overview.costs.title}"/>
-            <th scope="col" class="govuk-table__header"
-                th:text="${(case.status.displayValue == 'Submitted' || isAmendment)
-                ? #messages.msg('case.overview.costs.requestedAmount')
-                : #messages.msg('case.overview.costs.grantedAmount')}"/>
-          </tr>
-          </thead>
-          <tbody class="govuk-table__body">
-          <tr class="govuk-table__row">
-            <td class="govuk-table__cell"
-                th:text="${(case.status.displayValue == 'Submitted'|| (hasEbsAmendments && !isAmendment))
-                ? #messages.msg('case.overview.costs.costLimitation')
-                : #messages.msg('case.overview.costs.caseCostLimitation')}"/>
-            <td class="govuk-table__cell"
-                th:text="${isAmendment ? (draftCosts != null ? #numbers.formatCurrency(draftCosts.requestedCostLimitation) : #numbers.formatCurrency(0)) : 
-                ((case.status.displayValue == 'Submitted' || hasEbsAmendments) ? 
-                (case.costs != null ? #numbers.formatCurrency(case.costs.requestedCostLimitation) : #numbers.formatCurrency(0)) : 
-                (case.costs != null ? #numbers.formatCurrency(case.costs.grantedCostLimitation) : #numbers.formatCurrency(0)))}"/>
-          </tr>
-          </tbody>
-        </table>
+        <dl class="govuk-summary-list">
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(
+            #{case.overview.costs.title},
+            ${(case.status.displayValue == 'Submitted' || (hasEbsAmendments && !isAmendment))
+              ? #messages.msg('case.overview.costs.costLimitation')
+              : #messages.msg('case.overview.costs.caseCostLimitation')})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(
+            ${(case.status.displayValue == 'Submitted' || isAmendment)
+              ? #messages.msg('case.overview.costs.requestedAmount')
+              : #messages.msg('case.overview.costs.grantedAmount')},
+            ${isAmendment ? (draftCosts != null ? #numbers.formatCurrency(draftCosts.requestedCostLimitation) : #numbers.formatCurrency(0)) :
+              ((case.status.displayValue == 'Submitted' || hasEbsAmendments) ?
+              (case.costs != null ? #numbers.formatCurrency(case.costs.requestedCostLimitation) : #numbers.formatCurrency(0)) :
+              (case.costs != null ? #numbers.formatCurrency(case.costs.grantedCostLimitation) : #numbers.formatCurrency(0)))})}"></div>
+        </dl>
       </div>
     </div>
 
