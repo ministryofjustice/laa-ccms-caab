@@ -20,7 +20,7 @@
         th:text="#{proceedings.scopeLimitationDetails.heading}"/>
       <p class="govuk-body-l" id="lead-paragraph"
         th:text="#{proceedings.scopeLimitationDetails.confirm.leadParagraph}"/>
-      <dl class="govuk-body">
+      <dl class="govuk-summary-list">
         <th:block th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{proceedings.scopeLimitations.scopeLimitation},
           ${scopeLimitation.scopeLimitation.displayValue})}"/>
         <th:block th:unless="${scopeLimitation.nonDefaultWordingReqd}">

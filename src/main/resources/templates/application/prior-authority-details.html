@@ -27,7 +27,7 @@
         <div class="govuk-grid-column-two-thirds">
             <h2 class="govuk-heading-m"
                 th:text="#{proceedings.priorAuthorities.generalDetails}"></h2>
-          <dl class="govuk-body">
+          <dl class="govuk-summary-list">
             <th:block th:replace="~{application/partials/summary-fragments :: summaryListDisplay(
               #{proceedings.priorAuthorities.priorAuthorityType},
               ${priorAuthorityFlow.priorAuthorityTypeFormData.priorAuthorityTypeDisplayValue})}"/>
