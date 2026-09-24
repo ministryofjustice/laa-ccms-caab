@@ -21,18 +21,14 @@ public final class NotificationSearchUtil {
   public static final DateTimeFormatter ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
   /**
-   * Prepares and adjusts the notification search criteria by setting default date ranges if the
-   * notificationFromDate or notificationToDate fields are empty or null. If neither date is set, it
-   * defaults to a range of 3 years from the current date. If only one date is set, it calculates
-   * the other date based on a 3-year window. Also ensures dates are in the format 'yyyy-MM-dd'
-   * ready to be passed to EBS API.
+   * Prepares notification search criteria. When neither date is supplied, both are omitted so the
+   * data API applies its rolling 36-month default from the database date (without an upper bound).
+   * When one date is supplied, the other is calculated using the existing 3-year window. Supplied
+   * dates are formatted as 'yyyy-MM-dd' for the EBS API.
    *
    * <p>Blank filters are also nulled, so that their query parameters are omitted rather than sent
    * empty. An empty parameter is a filter on the empty string, which matches no notifications
    * instead of leaving the filter off.
-   *
-   * <p>Searches which originate from a case are exempt from the default date range, as the case
-   * reference already bounds them.
    *
    * @param criteria the notification search criteria object containing search parameters, including
    *     date ranges to be adjusted if necessary
@@ -55,21 +51,14 @@ public final class NotificationSearchUtil {
         copyCriteria.getNotificationToDate() == null
             || copyCriteria.getNotificationToDate().isBlank();
 
-    // A search from a case is already bounded by its case reference, so leave the dates unset
-    // rather than hiding notifications older than the default window without saying so.
-    if (fromNotSet && toNotSet && copyCriteria.isOriginatesFromCase()) {
+    if (fromNotSet && toNotSet) {
       copyCriteria.setNotificationFromDate(null);
       copyCriteria.setNotificationToDate(null);
       return copyCriteria;
     }
 
     try {
-      // If neither date set
-      if (fromNotSet && toNotSet) {
-        LocalDate today = LocalDate.now();
-        copyCriteria.setNotificationFromDate(today.minusYears(3).format(ISO));
-        copyCriteria.setNotificationToDate(today.format(ISO));
-      } else if (fromNotSet) {
+      if (fromNotSet) {
         // If TO set but FROM not set => FROM = TO - 3 Years
         LocalDate notificationToDate =
             DateUtils.convertToLocalDate(criteria.getNotificationToDate());
