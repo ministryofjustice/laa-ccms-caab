@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:moj="http://www.thymeleaf.org">
+<head>
+  <title th:text="|#{service.name} - #{case.landAward.title}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a class="govuk-back-link"
+       th:href="@{/case/outcome-and-awards}"
+       th:text="#{site.cancelAndReturnToOutcomeAndAwards}"></a>
+  </div>
+
+  <div id="main-content">
+    <form th:action="@{/case/outcome-and-awards/land-property}"
+          th:object="${landAward}"
+          method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+
+      <h1 class="govuk-heading-l" th:text="#{case.landAward.title}"></h1>
+      <p class="govuk-body" th:text="#{case.landAward.information}"></p>
+
+      <input type="hidden" th:field="*{id}">
+      <input type="hidden" th:field="*{awardType}">
+      <input type="hidden" th:field="*{awardCode}">
+
+      <moj:datepicker
+          id="date-of-order"
+          name="dateOfOrder"
+          th:label="#{case.landAward.dateOfOrder}"
+          th:hint="#{case.landAward.dateHint}"
+          th:attr="value=*{dateOfOrder}"
+          th:errorMessage="${#fields.hasErrors('dateOfOrder') ? #fields.errors('dateOfOrder').getFirst() : ''}">
+      </moj:datepicker>
+
+      <div th:replace="~{partials/forms :: textInput(fieldId='description', label=#{case.landAward.description}, inputClass='govuk-input--width-20', maxlengthParam=35)}"></div>
+      <div th:replace="~{partials/forms :: textInput(fieldId='titleNumber', label=#{case.landAward.titleNumber}, inputClass='govuk-input--width-20', maxlengthParam=35)}"></div>
+
+      <fieldset class="govuk-fieldset">
+        <legend class="govuk-fieldset__legend govuk-fieldset__legend--m"
+                th:text="#{case.landAward.address}"></legend>
+        <div th:replace="~{partials/forms :: textInput(fieldId='addressLine1', label=#{case.landAward.addressLine1}, inputClass='govuk-input--width-20', maxlengthParam=70)}"></div>
+        <div th:replace="~{partials/forms :: textInput(fieldId='addressLine2', label=#{case.landAward.addressLine2}, inputClass='govuk-input--width-20', maxlengthParam=35)}"></div>
+        <div th:replace="~{partials/forms :: textInput(fieldId='addressLine3', label=#{case.landAward.addressLine3}, inputClass='govuk-input--width-20', maxlengthParam=35)}"></div>
+      </fieldset>
+
+      <div th:replace="~{partials/forms :: currencyInput('valuationAmount', #{case.landAward.valuationAmount}, '10')}"></div>
+      <div th:replace="~{partials/forms :: dropdown('valuationCriteria', #{case.landAward.valuationCriteria}, ${valuationBasisOptions}, 'code', 'description', false)}"></div>
+
+      <moj:datepicker
+          id="valuation-date"
+          name="valuationDate"
+          th:label="#{case.landAward.valuationDate}"
+          th:hint="#{case.landAward.dateHint}"
+          th:attr="value=*{valuationDate}"
+          th:errorMessage="${#fields.hasErrors('valuationDate') ? #fields.errors('valuationDate').getFirst() : ''}">
+      </moj:datepicker>
+
+      <div th:replace="~{partials/forms :: percentageInput('disputedPercentage', #{case.landAward.disputedPercentage}, '5', 11)}"></div>
+      <div th:replace="~{partials/forms :: percentageInput('awardedPercentage', #{case.landAward.awardedPercentage}, '5', 11)}"></div>
+      <div th:replace="~{partials/forms :: currencyInput('mortgageAmountDue', #{case.landAward.mortgageAmountDue}, '10')}"></div>
+
+      <div th:replace="~{partials/forms :: readOnlyCurrencyInput('equity', #{case.landAward.equity}, '10')}"></div>
+
+      <div th:replace="~{partials/forms :: dropdown('awardedBy', #{case.landAward.awardedBy}, ${awardedByOptions}, 'code', 'description', false)}"></div>
+      <div th:replace="~{partials/forms :: dropdown('recovery', #{case.landAward.recovery}, ${recoveryOptions}, 'code', 'description', false)}"></div>
+      <div th:replace="~{partials/forms :: largeTextInput('noRecoveryDetails', #{case.landAward.noRecoveryDetails}, 950)}"></div>
+      <div th:replace="~{partials/forms :: largeTextInput('statutoryChargeExemptReason', #{case.landAward.statutoryChargeExemptReason}, 950)}"></div>
+      <div th:replace="~{partials/forms :: dropdown('landChargeRegistration', #{case.landAward.landChargeRegistration}, ${landRegistrationOptions}, 'code', 'description', false)}"></div>
+      <div th:replace="~{partials/forms :: textInput(fieldId='registrationReference', label=#{case.landAward.registrationReference}, inputClass='govuk-input--width-20', maxlengthParam=35)}"></div>
+      <div th:replace="~{partials/forms :: dropdown('recoveryOfAwardTimeRelated', #{case.landAward.recoveryOfAwardTimeRelated}, ${yesNoOptions}, 'code', 'description', false)}"></div>
+
+      <div class="govuk-button-group govuk-!-margin-top-6">
+        <button type="submit"
+                name="action"
+                value="calculate"
+                class="govuk-button govuk-button--secondary"
+                data-module="govuk-button"
+                th:text="#{case.landAward.calculate}"></button>
+        <button type="submit"
+                name="action"
+                value="next"
+                class="govuk-button"
+                data-module="govuk-button"
+                th:text="#{site.next}"></button>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

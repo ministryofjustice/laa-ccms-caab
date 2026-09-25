@@ -33,6 +33,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -934,6 +935,99 @@ class CaseControllerTest {
                   assertThat(value)
                       .asInstanceOf(InstanceOfAssertFactories.list(BaseAwardDetail.class))
                       .containsExactly(costAward, financialAward, landAward, otherAssetAward));
+    }
+
+    @Test
+    @DisplayName("Outcome and awards page displays total cost award value")
+    public void outcomeAndAwardsPageCalculatesCostAwardAmount() {
+      final String selectedCaseRef = "8";
+      final ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      final CostAwardDetail costAward =
+          new CostAwardDetail()
+              .preCertificateLscCost(new BigDecimal("10.25"))
+              .preCertificateOtherCost(new BigDecimal("20.50"))
+              .certificateCostLsc(new BigDecimal("30.75"))
+              .certificateCostMarket(new BigDecimal("40.00"));
+      costAward.setAwardAmount(BigDecimal.ONE);
+      final CostAwardDetail partialCostAward =
+          new CostAwardDetail().certificateCostMarket(new BigDecimal("12.50"));
+      final FinancialAwardDetail financialAward = new FinancialAwardDetail();
+      financialAward.setAwardAmount(new BigDecimal("50.00"));
+      final CaseOutcomeDetail caseOutcome =
+          new CaseOutcomeDetail()
+              .costAwards(List.of(costAward, partialCostAward))
+              .financialAwards(List.of(financialAward));
+      when(caseOutcomeService.getCaseOutcome(
+              selectedCaseRef, user.getProvider().getId().intValue()))
+          .thenReturn(java.util.Optional.of(caseOutcome));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "awards",
+              value ->
+                  assertThat(value)
+                      .asInstanceOf(InstanceOfAssertFactories.list(BaseAwardDetail.class))
+                      .containsExactly(costAward, partialCostAward, financialAward));
+      assertThat(costAward.getAwardAmount()).isEqualByComparingTo("101.50");
+      assertThat(partialCostAward.getAwardAmount()).isEqualByComparingTo("12.50");
+      assertThat(financialAward.getAwardAmount()).isEqualByComparingTo("50.00");
+    }
+
+    @Test
+    @DisplayName("Outcome and awards page orders each award type newest first")
+    public void outcomeAndAwardsPageOrdersEachAwardTypeByDescendingId() {
+      final String selectedCaseRef = "8";
+      final ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      final CostAwardDetail oldCost = new CostAwardDetail().id(10);
+      final CostAwardDetail newCost = new CostAwardDetail().id(20);
+      final CostAwardDetail unsavedCost = new CostAwardDetail();
+      final FinancialAwardDetail oldFinancial = new FinancialAwardDetail().id(11);
+      final FinancialAwardDetail newFinancial = new FinancialAwardDetail().id(21);
+      final LandAwardDetail oldLand = new LandAwardDetail().id(12);
+      final LandAwardDetail newLand = new LandAwardDetail().id(22);
+      final OtherAssetAwardDetail oldAsset = new OtherAssetAwardDetail().id(13);
+      final OtherAssetAwardDetail newAsset = new OtherAssetAwardDetail().id(23);
+      final CaseOutcomeDetail caseOutcome =
+          new CaseOutcomeDetail()
+              .costAwards(List.of(oldCost, unsavedCost, newCost))
+              .financialAwards(List.of(newFinancial, oldFinancial))
+              .landAwards(List.of(oldLand, newLand))
+              .otherAssetAwards(List.of(newAsset, oldAsset));
+      when(caseOutcomeService.getCaseOutcome(
+              selectedCaseRef, user.getProvider().getId().intValue()))
+          .thenReturn(java.util.Optional.of(caseOutcome));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "awards",
+              value ->
+                  assertThat(value)
+                      .asInstanceOf(InstanceOfAssertFactories.list(BaseAwardDetail.class))
+                      .containsExactly(
+                          newCost,
+                          oldCost,
+                          unsavedCost,
+                          newFinancial,
+                          oldFinancial,
+                          newLand,
+                          oldLand,
+                          newAsset,
+                          oldAsset));
+      assertThat(caseOutcome.getCostAwards()).containsExactly(oldCost, unsavedCost, newCost);
     }
 
     @Test

@@ -46,6 +46,8 @@ import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
+import uk.gov.laa.ccms.caab.model.LandAwardDetail;
+import uk.gov.laa.ccms.caab.model.LandAwardRequest;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
@@ -908,6 +910,68 @@ class CaabApiClientTest {
     StepVerifier.create(
             caabApiClient.updateFinancialAward(
                 caseOutcomeId, financialAwardId, loginId, financialAward))
+        .verifyComplete();
+  }
+
+  @Test
+  void createLandAward_success() {
+    final LandAwardRequest landAward = new LandAwardRequest();
+    final String loginId = "user789";
+    final Integer caseOutcomeId = 42;
+    final String expectedUri = "/case-outcomes/{case-outcome-id}/awards/{award-type}";
+    final String locationId = "123";
+
+    when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri, caseOutcomeId, "LAND")).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(landAward)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.exchangeToMono(any(Function.class))).thenReturn(Mono.just(locationId));
+
+    StepVerifier.create(caabApiClient.createLandAward(caseOutcomeId, loginId, landAward))
+        .expectNext(locationId)
+        .verifyComplete();
+  }
+
+  @Test
+  void getLandAward_success() {
+    final Integer caseOutcomeId = 42;
+    final Integer landAwardId = 7;
+    final LandAwardDetail landAward = new LandAwardDetail().id(landAwardId);
+    final String expectedUri =
+        "/case-outcomes/{case-outcome-id}/awards/{award-type}/{land-award-id}";
+
+    when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, caseOutcomeId, "LAND", landAwardId))
+        .thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(LandAwardDetail.class)).thenReturn(Mono.just(landAward));
+
+    StepVerifier.create(caabApiClient.getLandAward(caseOutcomeId, landAwardId))
+        .expectNext(landAward)
+        .verifyComplete();
+  }
+
+  @Test
+  void updateLandAward_success() {
+    final LandAwardRequest landAward = new LandAwardRequest();
+    final String loginId = "user789";
+    final Integer caseOutcomeId = 42;
+    final Integer landAwardId = 7;
+    final String expectedUri =
+        "/case-outcomes/{case-outcome-id}/awards/{award-type}/{land-award-id}";
+
+    when(caabApiWebClient.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri, caseOutcomeId, "LAND", landAwardId))
+        .thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(landAward)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    StepVerifier.create(
+            caabApiClient.updateLandAward(caseOutcomeId, landAwardId, loginId, landAward))
         .verifyComplete();
   }
 

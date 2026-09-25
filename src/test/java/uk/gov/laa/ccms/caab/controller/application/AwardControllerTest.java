@@ -36,13 +36,18 @@ import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.AwardTypeForm;
 import uk.gov.laa.ccms.caab.bean.award.FinancialAwardFormData;
+import uk.gov.laa.ccms.caab.bean.award.LandAwardFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.FinancialAwardValidator;
+import uk.gov.laa.ccms.caab.bean.validators.awards.LandAwardValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
+import uk.gov.laa.ccms.caab.mapper.LandAwardMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
+import uk.gov.laa.ccms.caab.model.LandAwardDetail;
+import uk.gov.laa.ccms.caab.model.LandAwardRequest;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -58,6 +63,8 @@ class AwardControllerTest {
   @Mock private AwardTypeValidator awardTypeValidator;
   @Mock private FinancialAwardValidator financialAwardValidator;
   @Mock private FinancialAwardMapper financialAwardMapper;
+  @Mock private LandAwardValidator landAwardValidator;
+  @Mock private LandAwardMapper landAwardMapper;
 
   @InjectMocks private AwardController controller;
 
@@ -73,6 +80,7 @@ class AwardControllerTest {
     lenient()
         .when(financialAwardMapper.toFinancialAwardRequest(any()))
         .thenReturn(new FinancialAwardRequest());
+    lenient().when(landAwardMapper.toLandAwardRequest(any())).thenReturn(new LandAwardRequest());
     lenient()
         .when(lookupService.getCommonValues(any()))
         .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
@@ -407,6 +415,139 @@ class AwardControllerTest {
               eq(user.getLoginId()));
     }
 
+    @Nested
+    @DisplayName("GET: /case/outcome-and-awards/land-property")
+    class LandAwardGetTests {
+
+      @Test
+      void getNewLandAwardPreservesSelectedAwardMetadata() {
+        final AwardTypeForm awardTypeForm = landAwardType();
+
+        assertThat(
+                mockMvc.perform(
+                    get("/case/outcome-and-awards/land-property")
+                        .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
+                        .sessionAttr(CASE, ebsCase)
+                        .sessionAttr(USER_DETAILS, user)))
+            .hasViewName("application/land-property")
+            .model()
+            .hasEntrySatisfying(
+                "landAward",
+                value ->
+                    assertThat(value)
+                        .extracting("awardCode", "awardType", "description")
+                        .containsExactly("LAND", "LAND", null));
+      }
+
+      @Test
+      void getNewLandAwardWithoutSelectedAwardMetadataReturnsToOverview() {
+        assertThat(
+                mockMvc.perform(
+                    get("/case/outcome-and-awards/land-property")
+                        .sessionAttr(CASE, ebsCase)
+                        .sessionAttr(USER_DETAILS, user)))
+            .hasRedirectedUrl("/case/outcome-and-awards");
+      }
+
+      @Test
+      void getExistingLandAwardLoadsPersistedValues() {
+        final LandAwardDetail award = new LandAwardDetail().id(7);
+        final LandAwardFormData form = new LandAwardFormData();
+        form.setId(7);
+        form.setEquity("150000.00");
+        when(caseOutcomeService.getLandAward("300000001", 123, 7)).thenReturn(Optional.of(award));
+        when(landAwardMapper.toLandAwardFormData(award)).thenReturn(form);
+
+        assertThat(
+                mockMvc.perform(
+                    get("/case/outcome-and-awards/land-property/7")
+                        .sessionAttr(CASE, ebsCase)
+                        .sessionAttr(USER_DETAILS, user)))
+            .hasViewName("application/land-property")
+            .model()
+            .hasEntrySatisfying(
+                "landAward",
+                value ->
+                    assertThat(value).extracting("id", "equity").containsExactly(7, "150000.00"));
+      }
+    }
+
+    @Nested
+    @DisplayName("POST: /case/outcome-and-awards/land-property")
+    class LandAwardPostTests {
+
+      @Test
+      void postWithoutIdCalculatesEquityAndCreatesLandAward() {
+        assertThat(mockMvc.perform(validLandPost())).hasRedirectedUrl("/case/outcome-and-awards");
+
+        verify(landAwardMapper)
+            .toLandAwardRequest(
+                org.mockito.ArgumentMatchers.argThat(form -> "150000.00".equals(form.getEquity())));
+        verify(caseOutcomeService)
+            .createLandAward(
+                eq("300000001"),
+                eq(user.getProvider().getId().intValue()),
+                any(LandAwardRequest.class),
+                eq(user.getLoginId()));
+      }
+
+      @Test
+      void calculateRedisplaysCalculatedEquityWithoutSaving() {
+        assertThat(mockMvc.perform(validLandPost().param("action", "calculate")))
+            .hasViewName("application/land-property")
+            .model()
+            .hasEntrySatisfying(
+                "landAward",
+                value -> assertThat(value).extracting("equity").isEqualTo("150000.00"));
+
+        verify(caseOutcomeService, org.mockito.Mockito.never())
+            .createLandAward(any(), any(), any(), any());
+      }
+
+      @Test
+      void postWithIdUpdatesLandAward() {
+        assertThat(mockMvc.perform(validLandPost().param("id", "7")))
+            .hasRedirectedUrl("/case/outcome-and-awards");
+
+        verify(caseOutcomeService)
+            .updateLandAward(
+                eq("300000001"),
+                eq(user.getProvider().getId().intValue()),
+                eq(7),
+                any(LandAwardRequest.class),
+                eq(user.getLoginId()));
+      }
+
+      @Test
+      void invalidPostRedisplaysLandAwardPage() {
+        doAnswer(
+                invocation -> {
+                  invocation
+                      .getArgument(1, Errors.class)
+                      .rejectValue("valuationAmount", "invalid.currency", "Invalid amount");
+                  return null;
+                })
+            .when(landAwardValidator)
+            .validate(any(), any());
+
+        assertThat(mockMvc.perform(validLandPost()))
+            .hasViewName("application/land-property")
+            .model()
+            .hasErrors();
+      }
+
+      @Test
+      void postWithoutIdRejectsAwardTypeDetailsThatDoNotMatchTheSession() {
+        final AwardTypeForm selectedAwardType = landAwardType();
+        selectedAwardType.setAwardTypeCode("OTHER");
+
+        assertThat(mockMvc.perform(validLandPost().sessionAttr(AWARD_TYPE_FORM, selectedAwardType)))
+            .hasViewName("application/land-property")
+            .model()
+            .hasErrors();
+      }
+    }
+
     @Test
     void postWithIdUpdatesFinancialAward() {
       assertThat(mockMvc.perform(validPost().param("id", "7")))
@@ -482,5 +623,34 @@ class AwardControllerTest {
         .sessionAttr(CASE, ebsCase)
         .sessionAttr(USER_DETAILS, user)
         .sessionAttr(AWARD_TYPE_FORM, selectedAwardType);
+  }
+
+  private MockHttpServletRequestBuilder validLandPost() {
+    return post("/case/outcome-and-awards/land-property")
+        .param("awardCode", "LAND")
+        .param("awardType", "LAND")
+        .param("description", "Land")
+        .param("dateOfOrder", "01/01/2025")
+        .param("addressLine1", "1 High Street")
+        .param("valuationAmount", "250000.00")
+        .param("valuationCriteria", "MARKET")
+        .param("valuationDate", "02/01/2025")
+        .param("disputedPercentage", "50.00")
+        .param("awardedPercentage", "25.00")
+        .param("mortgageAmountDue", "100000.00")
+        .param("awardedBy", "COURT")
+        .param("recovery", "RECOVERED")
+        .param("recoveryOfAwardTimeRelated", "Y")
+        .sessionAttr(CASE, ebsCase)
+        .sessionAttr(USER_DETAILS, user)
+        .sessionAttr(AWARD_TYPE_FORM, landAwardType());
+  }
+
+  private AwardTypeForm landAwardType() {
+    final AwardTypeForm awardType = new AwardTypeForm();
+    awardType.setAwardTypeCode("LAND");
+    awardType.setAwardType("LAND");
+    awardType.setDescription("Land");
+    return awardType;
   }
 }
