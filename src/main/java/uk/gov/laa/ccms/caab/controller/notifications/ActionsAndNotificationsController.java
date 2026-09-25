@@ -217,9 +217,9 @@ public class ActionsAndNotificationsController {
    * user, so that users with cross-office access still see the case's notifications. If the case
    * has no primary contact, the filter is left blank so that all assignees are searched.
    *
-   * <p>Any criteria from an earlier search in this session are discarded first, and no notification
-   * type, default date range or open-only filter is applied, so that the search returns all of the
-   * case's notifications.
+   * <p>Any criteria from an earlier search in this session are discarded first. No notification
+   * type or open-only filter is applied. Dates are left blank for the data API's initial rolling
+   * 36-month window; users can enter dates in Refine search to retrieve older notifications.
    *
    * @param ebsCase the application details of the current case
    * @param user the details of the currently logged-in user
@@ -253,8 +253,7 @@ public class ActionsAndNotificationsController {
             .orElse(primaryContactLoginId));
     criteria.setOriginatesFromCase(true);
     criteria.setCaseReference(ebsCase.getCaseReferenceNumber());
-    // The case reference already bounds this search, so show the case's closed notifications too
-    // rather than silently hiding them.
+    // Show the case's closed notifications too rather than silently hiding them.
     criteria.setIncludeClosed(true);
     model.addAttribute(NOTIFICATION_SEARCH_CRITERIA, criteria);
     return "redirect:/notifications/search-results?page=0&refresh=true";

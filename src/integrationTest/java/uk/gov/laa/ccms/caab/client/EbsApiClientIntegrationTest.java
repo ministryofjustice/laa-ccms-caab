@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.client;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.absent;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.notFound;
@@ -332,6 +333,58 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     Mono<Notifications> notificationsMono = ebsApiClient.getNotifications(criteria, 20, page, size);
     Notifications response = notificationsMono.block();
     assertEquals(notifications, response);
+  }
+
+  @Test
+  public void testGetNotifications_forExactCaseWithoutDates() throws JsonProcessingException {
+    Notifications notifications = buildNotifications();
+    String notificationsJson = objectMapper.writeValueAsString(notifications);
+    NotificationSearchCriteria criteria = new NotificationSearchCriteria();
+    criteria.setOriginatesFromCase(true);
+    criteria.setCaseReference("300000000001");
+    criteria.setAssignedToUserId("case_login");
+    criteria.setIncludeClosed(true);
+    criteria.setSort("dateAssigned,asc");
+
+    wiremock.stubFor(
+        get(urlPathEqualTo("/notifications"))
+            .withQueryParam("provider-id", equalTo("20"))
+            .withQueryParam("case-reference-number", equalTo("300000000001"))
+            .withQueryParam("exact-case-reference", equalTo("true"))
+            .withQueryParam("assigned-to-user-id", equalTo("case_login"))
+            .withQueryParam("include-closed", equalTo("true"))
+            .withQueryParam("date-from", absent())
+            .withQueryParam("date-to", absent())
+            .withQueryParam("page", equalTo("0"))
+            .withQueryParam("size", equalTo("10"))
+            .withQueryParam("sort", equalTo("dateAssigned,asc"))
+            .willReturn(okJson(notificationsJson)));
+
+    Notifications response = ebsApiClient.getNotifications(criteria, 20, 0, 10).block();
+
+    assertEquals(notifications, response);
+  }
+
+  @Test
+  public void testGetNotifications_forExactCaseWithHistoricalDates()
+      throws JsonProcessingException {
+    Notifications notifications = buildNotifications();
+    NotificationSearchCriteria criteria = new NotificationSearchCriteria();
+    criteria.setOriginatesFromCase(true);
+    criteria.setCaseReference("300000000001");
+    criteria.setIncludeClosed(true);
+    criteria.setNotificationFromDate("2018-01-01");
+    criteria.setNotificationToDate("2021-01-01");
+
+    wiremock.stubFor(
+        get(urlPathEqualTo("/notifications"))
+            .withQueryParam("case-reference-number", equalTo("300000000001"))
+            .withQueryParam("exact-case-reference", equalTo("true"))
+            .withQueryParam("date-from", equalTo("2018-01-01"))
+            .withQueryParam("date-to", equalTo("2021-01-01"))
+            .willReturn(okJson(objectMapper.writeValueAsString(notifications))));
+
+    assertEquals(notifications, ebsApiClient.getNotifications(criteria, 20, 0, 10).block());
   }
 
   @Test

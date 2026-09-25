@@ -334,6 +334,9 @@ public class EbsApiClientTest {
       NotificationSearchCriteria criteria = new NotificationSearchCriteria();
       criteria.setCaseReference("300000000001");
       criteria.setOriginatesFromCase(true);
+      criteria.setAssignedToUserId("case_login");
+      criteria.setIncludeClosed(true);
+      criteria.setSort("dateAssigned,asc");
 
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
       when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
@@ -347,7 +350,8 @@ public class EbsApiClientTest {
       URI actualUri = uriCaptor.getValue().apply(UriComponentsBuilder.newInstance());
       assertEquals(
           "/notifications?provider-id=1&case-reference-number=300000000001"
-              + "&exact-case-reference=true&include-closed=false&page=0&size=10",
+              + "&exact-case-reference=true&assigned-to-user-id=case_login"
+              + "&include-closed=true&page=0&size=10&sort=dateAssigned,asc",
           actualUri.toString());
     }
 
