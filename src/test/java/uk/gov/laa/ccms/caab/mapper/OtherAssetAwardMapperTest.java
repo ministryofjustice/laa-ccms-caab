@@ -29,7 +29,7 @@ class OtherAssetAwardMapperTest {
         .isEqualTo(LocalDate.of(2025, 2, 1));
     assertThat(request.getAwardedBy()).isEqualTo("COURT");
     assertThat(request.getValuationAmount()).isEqualByComparingTo("1000.50");
-    assertThat(request.getValuationCriteria()).isNull();
+    assertThat(request.getValuationCriteria()).isEqualTo("AGREED");
     assertThat(request.getValuationDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate())
         .isEqualTo(LocalDate.of(2025, 2, 2));
     assertThat(request.getAwardedPercentage()).isEqualByComparingTo("75.25");
@@ -55,6 +55,7 @@ class OtherAssetAwardMapperTest {
             .dateOfOrder(DateUtils.convertToDate("01/02/2025"))
             .awardedBy("COURT")
             .valuationAmount(new BigDecimal("1000.50"))
+            .valuationCriteria("AGREED")
             .valuationDate(DateUtils.convertToDate("02/02/2025"))
             .awardedPercentage(new BigDecimal("75.25"))
             .recoveredAmount(new BigDecimal("100.00"))
@@ -76,6 +77,7 @@ class OtherAssetAwardMapperTest {
     assertThat(form.getDateOfOrder()).isEqualTo("01/02/2025");
     assertThat(form.getAwardedBy()).isEqualTo("COURT");
     assertThat(form.getValuationAmount()).isEqualTo("1000.50");
+    assertThat(form.getValuationCriteria()).isEqualTo("AGREED");
     assertThat(form.getValuationDate()).isEqualTo("02/02/2025");
     assertThat(form.getAwardedPercentage()).isEqualTo("75.25");
     assertThat(form.getRecoveredAmount()).isEqualTo("100.00");
@@ -112,6 +114,7 @@ class OtherAssetAwardMapperTest {
     form.setDateOfOrder("01/02/2025");
     form.setAwardedBy("COURT");
     form.setValuationAmount("1000.50");
+    form.setValuationCriteria("AGREED");
     form.setValuationDate("02/02/2025");
     form.setAwardedPercentage("75.25");
     form.setRecoveredAmount("100.00");

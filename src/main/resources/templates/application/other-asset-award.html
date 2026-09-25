@@ -39,6 +39,14 @@
 
       <div th:replace="~{partials/forms :: textInput(fieldId='description', label=#{case.otherAssetAward.description}, inputClass='govuk-input--width-20', maxlengthParam=50)}"></div>
       <div th:replace="~{partials/forms :: currencyInput('valuationAmount', #{case.otherAssetAward.valuationAmount}, '10')}"></div>
+      <div th:replace="~{partials/forms :: dropdown(
+          'valuationCriteria',
+          #{case.otherAssetAward.valuationCriteria},
+          ${valuationBasisOptions},
+          'code',
+          'description',
+          false)}">
+      </div>
 
       <moj:datepicker
           id="valuationDate"

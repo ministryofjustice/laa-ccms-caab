@@ -39,6 +39,8 @@ public class OtherAssetAwardValidator extends AbstractValidator {
     validateRequiredField(
         "valuationAmount", formData.getValuationAmount(), "Valuation Amount", errors);
     validateRequiredField(
+        "valuationCriteria", formData.getValuationCriteria(), "Basis of validation", errors);
+    validateRequiredField(
         "valuationDate", formData.getValuationDate(), "Date of validation", errors);
     validateRequiredField("recovery", formData.getRecovery(), "Recovery", errors);
     if (formData.getRecoveryOfAwardTimeRelated() == null) {
@@ -61,6 +63,13 @@ public class OtherAssetAwardValidator extends AbstractValidator {
         "awardCode", formData.getAwardCode(), 30, "Award code", STANDARD_CHARACTER_SET, errors);
     validateText(
         "awardedBy", formData.getAwardedBy(), 50, "Awarded By", STANDARD_CHARACTER_SET, errors);
+    validateText(
+        "valuationCriteria",
+        formData.getValuationCriteria(),
+        50,
+        "Basis of validation",
+        STANDARD_CHARACTER_SET,
+        errors);
     validateText(
         "noRecoveryDetails",
         formData.getNoRecoveryDetails(),

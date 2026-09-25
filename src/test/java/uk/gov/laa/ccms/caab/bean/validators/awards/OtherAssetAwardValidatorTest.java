@@ -36,6 +36,7 @@ class OtherAssetAwardValidatorTest {
     form.setDateOfOrder("01/01/2025");
     form.setAwardedBy("COURT");
     form.setValuationAmount("1000.50");
+    form.setValuationCriteria("AGREED");
     form.setValuationDate("02/01/2025");
     form.setRecovery("UNKNOWN");
     form.setRecoveryOfAwardTimeRelated(false);
@@ -53,6 +54,7 @@ class OtherAssetAwardValidatorTest {
     form.setDescription(" ");
     form.setAwardedBy(" ");
     form.setValuationAmount(null);
+    form.setValuationCriteria("");
     form.setValuationDate("");
     form.setRecovery("");
     form.setRecoveryOfAwardTimeRelated(null);
@@ -67,6 +69,7 @@ class OtherAssetAwardValidatorTest {
             tuple("description", "required.description"),
             tuple("awardedBy", "required.awardedBy"),
             tuple("valuationAmount", "required.valuationAmount"),
+            tuple("valuationCriteria", "required.valuationCriteria"),
             tuple("valuationDate", "required.valuationDate"),
             tuple("recovery", "required.recovery"),
             tuple("recoveryOfAwardTimeRelated", "required.recoveryOfAwardTimeRelated"));
@@ -132,6 +135,7 @@ class OtherAssetAwardValidatorTest {
   void rejectsFieldsBeyondApiLengthLimits() {
     final OtherAssetAwardFormData form = validForm();
     form.setDescription("x".repeat(51));
+    form.setValuationCriteria("x".repeat(51));
     form.setNoRecoveryDetails("x".repeat(951));
     form.setStatutoryChargeExemptReason("x".repeat(951));
     final BeanPropertyBindingResult errors = errorsFor(form);
@@ -140,7 +144,8 @@ class OtherAssetAwardValidatorTest {
 
     assertThat(errors.getFieldErrors())
         .extracting("field")
-        .contains("description", "noRecoveryDetails", "statutoryChargeExemptReason");
+        .contains(
+            "description", "valuationCriteria", "noRecoveryDetails", "statutoryChargeExemptReason");
   }
 
   private BeanPropertyBindingResult errorsFor(final OtherAssetAwardFormData form) {
@@ -155,6 +160,7 @@ class OtherAssetAwardValidatorTest {
     form.setDateOfOrder("01/01/2025");
     form.setAwardedBy("COURT");
     form.setValuationAmount("1000.50");
+    form.setValuationCriteria("AGREED");
     form.setValuationDate("02/01/2025");
     form.setAwardedPercentage("75.25");
     form.setRecoveredAmount("100.00");

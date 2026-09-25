@@ -357,6 +357,15 @@ public class AwardController {
 
   private void populateOtherAssetAwardDropdowns(final Model model) {
     model.addAttribute(
+        "valuationBasisOptions",
+        Optional.ofNullable(
+                lookupService
+                    .getCommonValues(CommonValueConstants.COMMON_VALUE_VALUATION_BASIS)
+                    .block())
+            .map(CommonLookupDetail::getContent)
+            .orElse(Collections.emptyList()));
+
+    model.addAttribute(
         "awardedByOptions",
         Optional.ofNullable(
                 lookupService.getCommonValues(CommonValueConstants.COMMON_VALUE_AWARDED_BY).block())

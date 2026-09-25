@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_VALUATION_BASIS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.AWARD_TYPE_FORM;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -492,12 +493,15 @@ class AwardControllerTest {
                       .sessionAttr(USER_DETAILS, user)))
           .hasViewName("application/other-asset-award")
           .model()
+          .containsKey("valuationBasisOptions")
           .hasEntrySatisfying(
               "otherAssetAward",
               value ->
                   assertThat(value)
                       .extracting("awardCode", "awardType", "description")
                       .containsExactly("OTH_ASSET", "ASSET", null));
+
+      verify(lookupService).getCommonValues(COMMON_VALUE_VALUATION_BASIS);
     }
 
     @Test
@@ -533,6 +537,7 @@ class AwardControllerTest {
                       .sessionAttr(USER_DETAILS, user)))
           .hasViewName("application/other-asset-award")
           .model()
+          .containsKey("valuationBasisOptions")
           .hasEntrySatisfying(
               "otherAssetAward",
               value ->
@@ -616,7 +621,8 @@ class AwardControllerTest {
           .hasViewName("application/other-asset-award")
           .model()
           .hasErrors()
-          .containsKeys("otherAssetAward", "awardedByOptions", "recoveryOptions")
+          .containsKeys(
+              "otherAssetAward", "valuationBasisOptions", "awardedByOptions", "recoveryOptions")
           .hasEntrySatisfying(
               BindingResult.MODEL_KEY_PREFIX + "otherAssetAward",
               value ->
@@ -626,6 +632,7 @@ class AwardControllerTest {
                           "dateOfOrder",
                           "awardedBy",
                           "valuationAmount",
+                          "valuationCriteria",
                           "valuationDate",
                           "recoveryOfAwardTimeRelated"))
           .hasEntrySatisfying(
@@ -690,6 +697,7 @@ class AwardControllerTest {
         .param("dateOfOrder", "01/01/2025")
         .param("awardedBy", "COURT")
         .param("valuationAmount", "123.45")
+        .param("valuationCriteria", "AGREED")
         .param("valuationDate", "02/01/2025")
         .param("awardedPercentage", "75")
         .param("recovery", "UNKNOWN")

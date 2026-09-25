@@ -13,6 +13,7 @@ public class OtherAssetAwardFormData {
   private String dateOfOrder;
   private String awardedBy;
   private String valuationAmount;
+  private String valuationCriteria;
   private String valuationDate;
   private String awardedPercentage;
   private String recoveredAmount;
