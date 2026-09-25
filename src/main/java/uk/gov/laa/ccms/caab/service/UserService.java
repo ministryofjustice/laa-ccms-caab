@@ -51,6 +51,18 @@ public class UserService {
   }
 
   /**
+   * Retrieves a user with the supplied login ID for the given provider.
+   *
+   * @param providerId the ID of the provider
+   * @param loginId the login ID of the user
+   * @return a Mono containing at most one matching user
+   */
+  public Mono<UserDetails> getUserByProviderAndLoginId(
+      final Integer providerId, final String loginId) {
+    return ebsApiClient.getUserByProviderAndLoginId(providerId, loginId);
+  }
+
+  /**
    * Updates the user profile options.
    *
    * @param providerId The ID of the provider.

@@ -52,12 +52,12 @@ configurations.configureEach {
         if (details.requested.group == 'com.fasterxml.jackson.core'
                 && details.requested.name in ['jackson-databind', 'jackson-core']) {
             details.useVersion '2.21.7'
-            details.because 'Snyk override (SNYK-JAVA-COMFASTERXMLJACKSONCORE-19477042); unsafe reflection in 2.21.5'
+            details.because 'Snyk override (SNYK-JAVA-COMFASTERXMLJACKSONCORE-20059179, SNYK-JAVA-COMFASTERXMLJACKSONCORE-20059677, SNYK-JAVA-COMFASTERXMLJACKSONCORE-20059683, SNYK-JAVA-COMFASTERXMLJACKSONCORE-20059685)'
         }
         if (details.requested.group == 'tools.jackson.core'
                 && details.requested.name in ['jackson-databind', 'jackson-core']) {
             details.useVersion '3.1.7'
-            details.because 'Snyk override (SNYK-JAVA-TOOLSJACKSONCORE-19477043); unsafe reflection in 3.1.5'
+            details.because 'Snyk override (SNYK-JAVA-TOOLSJACKSONCORE-20059180, SNYK-JAVA-TOOLSJACKSONCORE-20059678, SNYK-JAVA-TOOLSJACKSONCORE-20059682, SNYK-JAVA-TOOLSJACKSONCORE-20059686)'
         }
         // Keep this override narrow: touching every io.netty module can drag native SSL artifacts
         // (tcnative) to incompatible coordinates. Snyk flags the HTTP codec specifically.
