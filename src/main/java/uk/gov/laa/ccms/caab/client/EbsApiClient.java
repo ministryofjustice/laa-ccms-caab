@@ -367,7 +367,7 @@ public class EbsApiClient extends BaseApiClient {
     final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
     Optional.ofNullable(providerId)
         .ifPresent(param -> queryParams.add("provider-id", String.valueOf(param)));
-    return getUsers(queryParams);
+    return getUsers(queryParams, false);
   }
 
   /**
@@ -383,17 +383,21 @@ public class EbsApiClient extends BaseApiClient {
     addQueryParam(queryParams, "size", 1);
     addQueryParam(queryParams, "provider-id", providerId);
     addQueryParam(queryParams, "login-id", loginId);
-    return getUsers(queryParams);
+    return getUsers(queryParams, true);
   }
 
-  private Mono<UserDetails> getUsers(MultiValueMap<String, String> queryParams) {
+  private Mono<UserDetails> getUsers(
+      MultiValueMap<String, String> queryParams, boolean targetedLookup) {
     return webClient
         .get()
         .uri(builder -> builder.path("/users").queryParams(queryParams).build())
         .retrieve()
         .bodyToMono(UserDetails.class)
         .onErrorResume(
-            e -> ebsApiClientErrorHandler.handleApiRetrieveError(e, "Users", queryParams));
+            e ->
+                targetedLookup
+                    ? ebsApiClientErrorHandler.handleTargetedUserRetrieveError(e)
+                    : ebsApiClientErrorHandler.handleApiRetrieveError(e, "Users", queryParams));
   }
 
   /**

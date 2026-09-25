@@ -10,8 +10,13 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
@@ -23,6 +28,7 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -270,6 +276,42 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
     assertNotNull(result);
     assertEquals(userDetailsJson, objectMapper.writeValueAsString(result));
+  }
+
+  @Test
+  void testGetUsersByLoginId_failureDoesNotExposeLoginId() {
+    final String loginId = "user@example.com";
+    final String expectedMessage = "Failed to retrieve provider user by login ID";
+    wiremock.stubFor(
+        get("/users?size=1&provider-id=123&login-id=user@example.com")
+            .willReturn(serverError().withBody("Rejected login-id=user@example.com")));
+
+    Logger logger = (Logger) LoggerFactory.getLogger(EbsApiClientErrorHandler.class);
+    ListAppender<ILoggingEvent> appender = new ListAppender<>();
+    appender.start();
+    logger.addAppender(appender);
+    try {
+      StepVerifier.create(ebsApiClient.getUsers(123, loginId))
+          .expectErrorSatisfies(
+              error -> {
+                EbsApiClientException exception = (EbsApiClientException) error;
+                assertEquals(expectedMessage, exception.getMessage());
+                assertEquals(
+                    org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR,
+                    exception.getHttpStatus());
+                assertNull(exception.getCause());
+                assertFalse(exception.toString().contains(loginId));
+              })
+          .verify();
+      assertEquals(1, appender.list.size());
+      ILoggingEvent event = appender.list.getFirst();
+      assertEquals(expectedMessage + " (HTTP 500)", event.getFormattedMessage());
+      assertFalse(event.getFormattedMessage().contains(loginId));
+      assertNull(event.getThrowableProxy());
+    } finally {
+      logger.detachAppender(appender);
+      appender.stop();
+    }
   }
 
   @Test
