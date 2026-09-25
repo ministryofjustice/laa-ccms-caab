@@ -942,6 +942,14 @@ class EbsApplicationMapperTest {
             .getCertificateCostRateLsc()
             .add(ebsAward.getCostAward().getCertificateCostRateMarket()),
         result.getTotalCertCostsAwarded());
+    assertEquals(
+        ebsAward
+            .getCostAward()
+            .getPreCertificateAwardLsc()
+            .add(ebsAward.getCostAward().getPreCertificateAwardOth())
+            .add(ebsAward.getCostAward().getCertificateCostRateLsc())
+            .add(ebsAward.getCostAward().getCertificateCostRateMarket()),
+        result.getAwardAmount());
 
     // afterMapping (baseAward)
     result

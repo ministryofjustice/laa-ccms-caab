@@ -6,10 +6,15 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.http.HttpStatus;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
+import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
+import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
@@ -21,6 +26,7 @@ import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 public class CaseOutcomeService {
 
   private final CaabApiClient caabApiClient;
+  private final CostAwardMapper costAwardMapper;
 
   /**
    * Get a single Case Outcome based on the supplied case reference number and provider id.
@@ -37,16 +43,34 @@ public class CaseOutcomeService {
         .block();
   }
 
+  /**
+   * Loads the case outcome for Outcome and Awards, creating a bootstrap record when one does not
+   * already exist.
+   */
+  public CaseOutcomeDetail getOrCreateCaseOutcome(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final String loginId,
+      @Nullable final CaseOutcomeDetail bootstrapCaseOutcome) {
+    return getCaseOutcome(caseReferenceNumber, providerId)
+        .orElseGet(
+            () ->
+                createAndReloadCaseOutcome(
+                    caseReferenceNumber, providerId, loginId, bootstrapCaseOutcome));
+  }
+
   /** Returns a financial award only when it belongs to the supplied case outcome. */
   public Optional<FinancialAwardDetail> getFinancialAward(
       final String caseReferenceNumber, final Integer providerId, final Integer financialAwardId) {
     final Integer caseOutcomeId =
-        getCaseOutcome(caseReferenceNumber, providerId)
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "No case outcome exists for case reference number: " + caseReferenceNumber))
-            .getId();
+        requireCaseOutcomeId(
+            getCaseOutcome(caseReferenceNumber, providerId)
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "No case outcome exists for case reference number: "
+                                + caseReferenceNumber)),
+            caseReferenceNumber);
     return Optional.ofNullable(
         caabApiClient.getFinancialAward(caseOutcomeId, financialAwardId).block());
   }
@@ -56,14 +80,12 @@ public class CaseOutcomeService {
       final String caseReferenceNumber,
       final Integer providerId,
       final FinancialAwardRequest financialAward,
-      final String loginId) {
+      final String loginId,
+      @Nullable final CaseOutcomeDetail bootstrapCaseOutcome) {
     final Integer caseOutcomeId =
-        getCaseOutcome(caseReferenceNumber, providerId)
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "No case outcome exists for case reference number: " + caseReferenceNumber))
-            .getId();
+        requireCaseOutcomeId(
+            getOrCreateCaseOutcome(caseReferenceNumber, providerId, loginId, bootstrapCaseOutcome),
+            caseReferenceNumber);
     caabApiClient.createFinancialAward(caseOutcomeId, loginId, financialAward).block();
   }
 
@@ -81,6 +103,7 @@ public class CaseOutcomeService {
                     new IllegalStateException(
                         "No case outcome exists for case reference number: "
                             + caseReferenceNumber));
+    final Integer caseOutcomeId = requireCaseOutcomeId(caseOutcome, caseReferenceNumber);
     Optional.ofNullable(caseOutcome.getFinancialAwards()).orElse(Collections.emptyList()).stream()
         .filter(award -> financialAwardId.equals(award.getId()))
         .findFirst()
@@ -90,8 +113,71 @@ public class CaseOutcomeService {
                     "Financial award %s does not belong to case reference number: %s"
                         .formatted(financialAwardId, caseReferenceNumber)));
     caabApiClient
-        .updateFinancialAward(caseOutcome.getId(), financialAwardId, loginId, financialAward)
+        .updateFinancialAward(caseOutcomeId, financialAwardId, loginId, financialAward)
         .block();
+  }
+
+  /** Returns a cost award only when it belongs to the supplied case outcome. */
+  public Optional<CostAwardDetail> getCostAward(
+      final String caseReferenceNumber, final Integer providerId, final Integer costAwardId) {
+    final Integer caseOutcomeId =
+        requireCaseOutcomeId(
+            getCaseOutcome(caseReferenceNumber, providerId)
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "No case outcome exists for case reference number: "
+                                + caseReferenceNumber)),
+            caseReferenceNumber);
+    return Optional.ofNullable(caabApiClient.getCostAward(caseOutcomeId, costAwardId).block());
+  }
+
+  /** Creates a cost award without replacing the owning case outcome aggregate. */
+  public void createCostAward(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final CostAwardDetail costAward,
+      final String loginId,
+      @Nullable final CaseOutcomeDetail bootstrapCaseOutcome) {
+    final Integer caseOutcomeId =
+        requireCaseOutcomeId(
+            getOrCreateCaseOutcome(caseReferenceNumber, providerId, loginId, bootstrapCaseOutcome),
+            caseReferenceNumber);
+    caabApiClient.createCostAward(caseOutcomeId, loginId, costAward).block();
+  }
+
+  /** Updates a cost award without replacing the owning case outcome aggregate. */
+  public void updateCostAward(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final Integer costAwardId,
+      final CostAwardFormData costAwardFormData,
+      final String loginId) {
+    final CaseOutcomeDetail caseOutcome =
+        getCaseOutcome(caseReferenceNumber, providerId)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "No case outcome exists for case reference number: "
+                            + caseReferenceNumber));
+    final Integer caseOutcomeId = requireCaseOutcomeId(caseOutcome, caseReferenceNumber);
+    Optional.ofNullable(caseOutcome.getCostAwards()).orElse(Collections.emptyList()).stream()
+        .filter(award -> costAwardId.equals(award.getId()))
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Cost award %s does not belong to case reference number: %s"
+                        .formatted(costAwardId, caseReferenceNumber)));
+    final CostAwardDetail existingCostAward =
+        Optional.ofNullable(caabApiClient.getCostAward(caseOutcomeId, costAwardId).block())
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Cost award %s could not be loaded for case reference number: %s"
+                            .formatted(costAwardId, caseReferenceNumber)));
+    costAwardMapper.updateCostAward(costAwardFormData, existingCostAward);
+    caabApiClient.updateCostAward(caseOutcomeId, costAwardId, loginId, existingCostAward).block();
   }
 
   /**
@@ -142,10 +228,7 @@ public class CaseOutcomeService {
           caseReferenceNumber, loginId, caseOutcome, rollbackCaseOutcome);
       return;
     } else {
-      caseOutcome =
-          new CaseOutcomeDetail()
-              .caseReferenceNumber(caseReferenceNumber)
-              .providerId(String.valueOf(providerId));
+      caseOutcome = initialiseCaseOutcomeForCreate(caseReferenceNumber, providerId, null);
       caseOutcome.addProceedingOutcomesItem(proceedingOutcome);
     }
 
@@ -240,7 +323,69 @@ public class CaseOutcomeService {
     if (source.getProceedingOutcomes() != null) {
       copy.setProceedingOutcomes(new ArrayList<>(source.getProceedingOutcomes()));
     }
+    if (source.getCostAwards() != null) {
+      copy.setCostAwards(new ArrayList<>(source.getCostAwards()));
+    }
+    if (source.getFinancialAwards() != null) {
+      copy.setFinancialAwards(new ArrayList<>(source.getFinancialAwards()));
+    }
+    if (source.getLandAwards() != null) {
+      copy.setLandAwards(new ArrayList<>(source.getLandAwards()));
+    }
+    if (source.getOtherAssetAwards() != null) {
+      copy.setOtherAssetAwards(new ArrayList<>(source.getOtherAssetAwards()));
+    }
     return copy;
+  }
+
+  private CaseOutcomeDetail createAndReloadCaseOutcome(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final String loginId,
+      @Nullable final CaseOutcomeDetail bootstrapCaseOutcome) {
+    final CaseOutcomeDetail caseOutcomeToCreate =
+        initialiseCaseOutcomeForCreate(caseReferenceNumber, providerId, bootstrapCaseOutcome);
+    try {
+      caabApiClient.createCaseOutcome(loginId, caseOutcomeToCreate).block();
+    } catch (CaabApiClientException ex) {
+      if (!ex.hasHttpStatus(HttpStatus.CONFLICT)) {
+        throw ex;
+      }
+      log.info(
+          "Case outcome already exists for case reference number: {}. Reloading after conflict.",
+          caseReferenceNumber,
+          ex);
+    }
+    return getCaseOutcome(caseReferenceNumber, providerId)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Created case outcome could not be reloaded for case reference number: "
+                        + caseReferenceNumber));
+  }
+
+  private CaseOutcomeDetail initialiseCaseOutcomeForCreate(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      @Nullable final CaseOutcomeDetail bootstrapCaseOutcome) {
+    final CaseOutcomeDetail caseOutcome =
+        bootstrapCaseOutcome == null
+            ? new CaseOutcomeDetail()
+            : copyCaseOutcomeForCreate(bootstrapCaseOutcome);
+    caseOutcome.setId(null);
+    caseOutcome.setCaseReferenceNumber(caseReferenceNumber);
+    caseOutcome.setProviderId(String.valueOf(providerId));
+    return caseOutcome;
+  }
+
+  private Integer requireCaseOutcomeId(
+      final CaseOutcomeDetail caseOutcome, final String caseReferenceNumber) {
+    if (caseOutcome.getId() == null) {
+      throw new IllegalStateException(
+          "Case outcome record exists but has no id for case reference number: "
+              + caseReferenceNumber);
+    }
+    return caseOutcome.getId();
   }
 
   private ProceedingOutcomeDetail buildClearedProceedingOutcomeMarker(

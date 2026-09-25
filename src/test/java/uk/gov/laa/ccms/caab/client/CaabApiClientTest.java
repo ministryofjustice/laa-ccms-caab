@@ -41,6 +41,7 @@ import uk.gov.laa.ccms.caab.model.BillCreate;
 import uk.gov.laa.ccms.caab.model.Bills;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
+import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
@@ -869,6 +870,26 @@ class CaabApiClientTest {
   }
 
   @Test
+  void createCostAward_success() {
+    final CostAwardDetail costAward = new CostAwardDetail();
+    final String loginId = "user789";
+    final Integer caseOutcomeId = 42;
+    final String expectedUri = "/case-outcomes/{case-outcome-id}/awards/{award-type}";
+    final String locationId = "123";
+
+    when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri, caseOutcomeId, "COST")).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(costAward)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.exchangeToMono(any(Function.class))).thenReturn(Mono.just(locationId));
+
+    StepVerifier.create(caabApiClient.createCostAward(caseOutcomeId, loginId, costAward))
+        .expectNext(locationId)
+        .verifyComplete();
+  }
+
+  @Test
   void getFinancialAward_success() {
     final Integer caseOutcomeId = 42;
     final Integer financialAwardId = 7;
@@ -884,6 +905,25 @@ class CaabApiClientTest {
 
     StepVerifier.create(caabApiClient.getFinancialAward(caseOutcomeId, financialAwardId))
         .expectNext(financialAward)
+        .verifyComplete();
+  }
+
+  @Test
+  void getCostAward_success() {
+    final Integer caseOutcomeId = 42;
+    final Integer costAwardId = 7;
+    final CostAwardDetail costAward = new CostAwardDetail().id(costAwardId);
+    final String expectedUri =
+        "/case-outcomes/{case-outcome-id}/awards/{award-type}/{cost-award-id}";
+
+    when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(expectedUri, caseOutcomeId, "COST", costAwardId))
+        .thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CostAwardDetail.class)).thenReturn(Mono.just(costAward));
+
+    StepVerifier.create(caabApiClient.getCostAward(caseOutcomeId, costAwardId))
+        .expectNext(costAward)
         .verifyComplete();
   }
 
@@ -909,6 +949,113 @@ class CaabApiClientTest {
             caabApiClient.updateFinancialAward(
                 caseOutcomeId, financialAwardId, loginId, financialAward))
         .verifyComplete();
+  }
+
+  @Test
+  void updateCostAward_success() {
+    final CostAwardDetail costAward = new CostAwardDetail();
+    final String loginId = "user789";
+    final Integer caseOutcomeId = 42;
+    final Integer costAwardId = 7;
+    final String expectedUri =
+        "/case-outcomes/{case-outcome-id}/awards/{award-type}/{cost-award-id}";
+
+    when(caabApiWebClient.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri, caseOutcomeId, "COST", costAwardId))
+        .thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(costAward)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    StepVerifier.create(
+            caabApiClient.updateCostAward(caseOutcomeId, costAwardId, loginId, costAward))
+        .verifyComplete();
+  }
+
+  @Test
+  void createCostAward_errorUsesCreateHandler() {
+    final CostAwardDetail costAward = new CostAwardDetail();
+    final String loginId = "user789";
+    final Integer caseOutcomeId = 42;
+    final RuntimeException mappedException = new RuntimeException("Failed to create cost award");
+
+    when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}", caseOutcomeId, "COST"))
+        .thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(costAward)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.exchangeToMono(any(Function.class)))
+        .thenReturn(Mono.error(new CaabApiClientException("upstream")));
+    when(apiClientErrorHandler.handleApiCreateError(
+            any(), eq(CaabApiClient.RESOURCE_TYPE_COST_AWARD)))
+        .thenReturn(Mono.error(mappedException));
+
+    StepVerifier.create(caabApiClient.createCostAward(caseOutcomeId, loginId, costAward))
+        .expectErrorSatisfies(error -> assertEquals(mappedException, error))
+        .verify();
+  }
+
+  @Test
+  void getCostAward_errorUsesRetrieveHandler() {
+    final Integer caseOutcomeId = 42;
+    final Integer costAwardId = 7;
+    final CaabApiClientException exception = new CaabApiClientException("error");
+
+    when(caabApiWebClient.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{cost-award-id}",
+            caseOutcomeId,
+            "COST",
+            costAwardId))
+        .thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(CostAwardDetail.class)).thenReturn(Mono.error(exception));
+    when(apiClientErrorHandler.handleApiRetrieveError(
+            exception, CaabApiClient.RESOURCE_TYPE_COST_AWARD, "id", String.valueOf(costAwardId)))
+        .thenReturn(Mono.empty());
+
+    StepVerifier.create(caabApiClient.getCostAward(caseOutcomeId, costAwardId)).verifyComplete();
+
+    verify(apiClientErrorHandler)
+        .handleApiRetrieveError(
+            exception, CaabApiClient.RESOURCE_TYPE_COST_AWARD, "id", String.valueOf(costAwardId));
+  }
+
+  @Test
+  void updateCostAward_errorUsesUpdateHandler() {
+    final CostAwardDetail costAward = new CostAwardDetail();
+    final String loginId = "user789";
+    final Integer caseOutcomeId = 42;
+    final Integer costAwardId = 7;
+    final CaabApiClientException exception = new CaabApiClientException("error");
+
+    when(caabApiWebClient.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{cost-award-id}",
+            caseOutcomeId,
+            "COST",
+            costAwardId))
+        .thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", loginId)).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(costAward)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.error(exception));
+    when(apiClientErrorHandler.handleApiUpdateError(
+            exception, CaabApiClient.RESOURCE_TYPE_COST_AWARD, "id", String.valueOf(costAwardId)))
+        .thenReturn(Mono.empty());
+
+    StepVerifier.create(
+            caabApiClient.updateCostAward(caseOutcomeId, costAwardId, loginId, costAward))
+        .verifyComplete();
+
+    verify(apiClientErrorHandler)
+        .handleApiUpdateError(
+            exception, CaabApiClient.RESOURCE_TYPE_COST_AWARD, "id", String.valueOf(costAwardId));
   }
 
   @Test

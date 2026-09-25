@@ -154,6 +154,9 @@ class CaseControllerTest {
             java.util.Optional.of(
                 new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
     lenient()
+        .when(caseOutcomeService.getOrCreateCaseOutcome(anyString(), anyInt(), anyString(), any()))
+        .thenReturn(new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList()));
+    lenient()
         .when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
         .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
     lenient()
@@ -327,10 +330,8 @@ class CaseControllerTest {
       ebsCase.setProceedings(
           List.of(new ProceedingDetail().proceedingCaseId("pc1").outcome(ebsOutcome)));
 
-      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
-          .thenReturn(
-              java.util.Optional.of(
-                  new CaseOutcomeDetail().proceedingOutcomes(List.of(legacyMarker))));
+      when(caseOutcomeService.getOrCreateCaseOutcome(anyString(), anyInt(), anyString(), any()))
+          .thenReturn(new CaseOutcomeDetail().proceedingOutcomes(List.of(legacyMarker)));
 
       assertThat(
               mockMvc.perform(
@@ -898,6 +899,10 @@ class CaseControllerTest {
                       .sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/outcome-and-awards");
+
+      verify(caseOutcomeService)
+          .getOrCreateCaseOutcome(
+              selectedCaseRef, user.getProvider().getId().intValue(), user.getLoginId(), null);
     }
 
     @Test
@@ -917,9 +922,9 @@ class CaseControllerTest {
               .financialAwards(List.of(financialAward))
               .landAwards(List.of(landAward))
               .otherAssetAwards(List.of(otherAssetAward));
-      when(caseOutcomeService.getCaseOutcome(
-              selectedCaseRef, user.getProvider().getId().intValue()))
-          .thenReturn(java.util.Optional.of(caseOutcome));
+      when(caseOutcomeService.getOrCreateCaseOutcome(
+              selectedCaseRef, user.getProvider().getId().intValue(), user.getLoginId(), null))
+          .thenReturn(caseOutcome);
 
       assertThat(
               mockMvc.perform(
@@ -1426,11 +1431,6 @@ class CaseControllerTest {
       final ApplicationDetail ebsCase =
           getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null, permissions);
 
-      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
-          .thenReturn(
-              java.util.Optional.of(
-                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
-
       assertThat(
               mockMvc.perform(
                   get("/case/outcome-and-awards")
@@ -1457,11 +1457,6 @@ class CaseControllerTest {
       final List<String> permissions = List.of(permissionCode);
       final ApplicationDetail ebsCase =
           getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null, permissions);
-
-      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
-          .thenReturn(
-              java.util.Optional.of(
-                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
 
       assertThat(
               mockMvc.perform(
@@ -1769,9 +1764,6 @@ class CaseControllerTest {
 
       // No CAAB record at all means outcomes have never been managed for this case → fall back to
       // EBS.
-      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
-          .thenReturn(java.util.Optional.empty());
-
       assertThat(
               mockMvc.perform(
                   get("/case/outcome-and-awards")
@@ -1814,9 +1806,6 @@ class CaseControllerTest {
       ebsCase.setProceedings(
           List.of(new ProceedingDetail().proceedingCaseId("pc1").outcome(ebsOutcome)));
 
-      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
-          .thenReturn(java.util.Optional.empty());
-
       assertThat(
               mockMvc.perform(
                   get("/case/outcome-and-awards")
@@ -1858,10 +1847,8 @@ class CaseControllerTest {
 
       // A local case outcome exists, but there is no local record for this proceeding, so this
       // proceeding should still fall back to EBS.
-      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
-          .thenReturn(
-              java.util.Optional.of(
-                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+      when(caseOutcomeService.getOrCreateCaseOutcome(anyString(), anyInt(), anyString(), any()))
+          .thenReturn(new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList()));
 
       assertThat(
               mockMvc.perform(
@@ -2050,10 +2037,8 @@ class CaseControllerTest {
               new ProceedingDetail().proceedingCaseId("pc1").outcome(ebsOutcomePc1),
               new ProceedingDetail().proceedingCaseId("pc2").outcome(ebsOutcomePc2)));
 
-      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
-          .thenReturn(
-              java.util.Optional.of(
-                  new CaseOutcomeDetail().proceedingOutcomes(List.of(localOutcomePc2))));
+      when(caseOutcomeService.getOrCreateCaseOutcome(anyString(), anyInt(), anyString(), any()))
+          .thenReturn(new CaseOutcomeDetail().proceedingOutcomes(List.of(localOutcomePc2)));
 
       assertThat(
               mockMvc.perform(

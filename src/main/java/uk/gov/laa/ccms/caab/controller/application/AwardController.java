@@ -8,6 +8,8 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.AWARD_TYPE_FORM;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -25,14 +27,18 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.AwardTypeForm;
+import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.FinancialAwardFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
+import uk.gov.laa.ccms.caab.bean.validators.awards.CostAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.FinancialAwardValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.CommonValueConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
@@ -40,6 +46,7 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /** Controller responsible for handling award-related requests. */
@@ -49,10 +56,18 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 @SessionAttributes(AWARD_TYPE_FORM)
 public class AwardController {
 
+  private static final BigDecimal ZERO = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+  private static final List<CommonLookupValueDetail> COURT_ASSESSMENT_STATUSES =
+      List.of(
+          new CommonLookupValueDetail().code("ASSESSED").description("Assessed"),
+          new CommonLookupValueDetail().code("NOT_ASSESSED").description("Not assessed"));
+
   private final LookupService lookupService;
   private final CaseOutcomeService caseOutcomeService;
   private final AwardTypeValidator awardTypeValidator;
+  private final CostAwardValidator costAwardValidator;
   private final FinancialAwardValidator financialAwardValidator;
+  private final CostAwardMapper costAwardMapper;
   private final FinancialAwardMapper financialAwardMapper;
 
   /**
@@ -214,7 +229,8 @@ public class AwardController {
             ebsCase.getCaseReferenceNumber(),
             user.getProvider().getId().intValue(),
             request,
-            user.getLoginId());
+            user.getLoginId(),
+            ebsCase.getCaseOutcome());
       } else {
         caseOutcomeService.updateFinancialAward(
             ebsCase.getCaseReferenceNumber(),
@@ -236,19 +252,9 @@ public class AwardController {
 
   private void populateFinancialAwardDropdowns(final Model model) {
     model.addAttribute(
-        "interimAwardOptions",
-        Optional.ofNullable(
-                lookupService
-                    .getCommonValues(CommonValueConstants.COMMON_VALUE_INTERIM_AWARD)
-                    .block())
-            .map(CommonLookupDetail::getContent)
-            .orElse(Collections.emptyList()));
+        "interimAwardOptions", getCommonValues(CommonValueConstants.COMMON_VALUE_INTERIM_AWARD));
     model.addAttribute(
-        "awardedByOptions",
-        Optional.ofNullable(
-                lookupService.getCommonValues(CommonValueConstants.COMMON_VALUE_AWARDED_BY).block())
-            .map(CommonLookupDetail::getContent)
-            .orElse(Collections.emptyList()));
+        "awardedByOptions", getCommonValues(CommonValueConstants.COMMON_VALUE_AWARDED_BY));
   }
 
   private List<AwardTypeLookupValueDetail> getAwardTypes() {
@@ -257,5 +263,183 @@ public class AwardController {
         .blockOptional()
         .map(AwardTypeLookupDetail::getContent)
         .orElse(Collections.emptyList());
+  }
+
+  @GetMapping(
+      value = {
+        "/case/outcome-and-awards/cost-award",
+        "/case/outcome-and-awards/cost-award/{awardId}"
+      })
+  public String costAward(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @SessionAttribute(value = AWARD_TYPE_FORM, required = false)
+          final AwardTypeForm awardTypeForm,
+      @PathVariable(value = "awardId", required = false) final Integer costAwardId,
+      final Model model) {
+
+    final CostAwardFormData costAwardFormData;
+    if (costAwardId == null) {
+      if (!hasValidCostAwardTypeSelection(awardTypeForm)) {
+        log.warn("Cost award page requested without complete award type details");
+        return "redirect:/case/outcome-and-awards";
+      }
+
+      costAwardFormData = new CostAwardFormData();
+      costAwardFormData.setAwardCode(awardTypeForm.getAwardTypeCode());
+      costAwardFormData.setAwardType(awardTypeForm.getAwardType());
+      costAwardFormData.setDescription(awardTypeForm.getDescription());
+    } else {
+      final CostAwardDetail award =
+          caseOutcomeService
+              .getCostAward(
+                  ebsCase.getCaseReferenceNumber(),
+                  user.getProvider().getId().intValue(),
+                  costAwardId)
+              .orElseThrow(
+                  () ->
+                      new CaabApplicationException(
+                          "Could not find cost award with id: " + costAwardId));
+      costAwardFormData = costAwardMapper.toCostAwardFormData(award);
+    }
+
+    initialiseCostAwardAmounts(costAwardFormData);
+    populateCostAwardPage(model, costAwardFormData);
+    return "application/cost-award";
+  }
+
+  /**
+   * Creates or updates a cost award and returns to the outcome and awards screen.
+   *
+   * @return redirect to the outcome and awards screen when successful
+   */
+  @PostMapping("/case/outcome-and-awards/cost-award")
+  public String costAward(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @SessionAttribute(value = AWARD_TYPE_FORM, required = false)
+          final AwardTypeForm awardTypeForm,
+      @ModelAttribute("costAward") final CostAwardFormData costAward,
+      final BindingResult bindingResult,
+      final Model model) {
+    costAwardValidator.validate(costAward, bindingResult);
+
+    if (costAward.getId() == null
+        && (!hasValidCostAwardTypeSelection(awardTypeForm)
+            || !Objects.equals(costAward.getAwardCode(), awardTypeForm.getAwardTypeCode())
+            || !Objects.equals(costAward.getAwardType(), awardTypeForm.getAwardType())
+            || !Objects.equals(costAward.getDescription(), awardTypeForm.getDescription()))) {
+      bindingResult.reject(
+          "costAward.awardType.mismatch",
+          "The award type details are invalid for your session. Please select an award type again.");
+    }
+
+    if (bindingResult.hasErrors()) {
+      initialiseCostAwardAmounts(costAward);
+      populateCostAwardPage(model, costAward);
+      return "application/cost-award";
+    }
+
+    final CostAwardDetail request = costAwardMapper.toCostAward(costAward);
+    try {
+      if (costAward.getId() == null) {
+        caseOutcomeService.createCostAward(
+            ebsCase.getCaseReferenceNumber(),
+            user.getProvider().getId().intValue(),
+            request,
+            user.getLoginId(),
+            ebsCase.getCaseOutcome());
+      } else {
+        caseOutcomeService.updateCostAward(
+            ebsCase.getCaseReferenceNumber(),
+            user.getProvider().getId().intValue(),
+            costAward.getId(),
+            costAward,
+            user.getLoginId());
+      }
+    } catch (CaabApiClientException ex) {
+      log.warn("Failed to save cost award with id: {}", costAward.getId(), ex);
+      bindingResult.reject(
+          "costAward.save.failed", "We could not save the cost award. Please try again.");
+      initialiseCostAwardAmounts(costAward);
+      populateCostAwardPage(model, costAward);
+      return "application/cost-award";
+    }
+
+    return "redirect:/case/outcome-and-awards";
+  }
+
+  private List<CommonLookupValueDetail> getCommonValues(final String type) {
+    return Optional.ofNullable(lookupService.getCommonValues(type).block())
+        .map(CommonLookupDetail::getContent)
+        .orElse(Collections.emptyList());
+  }
+
+  private void populateCostAwardPage(final Model model, final CostAwardFormData costAwardFormData) {
+    model.addAttribute("costAward", costAwardFormData);
+    populateCostAwardDropdowns(model);
+    model.addAttribute(
+        "totalPreCertificateCosts",
+        formatAmount(
+            toAmount(costAwardFormData.getLaaFundedLegalCosts())
+                .add(toAmount(costAwardFormData.getOtherPreCertificateCosts()))));
+    model.addAttribute(
+        "totalCertificateCostsAwarded",
+        formatAmount(
+            toAmount(costAwardFormData.getLaaRate())
+                .add(toAmount(costAwardFormData.getMarketRate()))));
+    model.addAttribute(
+        "totalCostsAwarded",
+        formatAmount(
+            toAmount(costAwardFormData.getLaaFundedLegalCosts())
+                .add(toAmount(costAwardFormData.getOtherPreCertificateCosts()))
+                .add(toAmount(costAwardFormData.getLaaRate()))
+                .add(toAmount(costAwardFormData.getMarketRate()))));
+  }
+
+  private void populateCostAwardDropdowns(final Model model) {
+    model.addAttribute("courtAssessmentStatuses", COURT_ASSESSMENT_STATUSES);
+    model.addAttribute(
+        "awardedByOptions", getCommonValues(CommonValueConstants.COMMON_VALUE_AWARDED_BY));
+  }
+
+  private boolean hasValidCostAwardTypeSelection(final AwardTypeForm awardTypeForm) {
+    return awardTypeForm != null
+        && StringUtils.hasText(awardTypeForm.getAwardTypeCode())
+        && StringUtils.hasText(awardTypeForm.getAwardType())
+        && StringUtils.hasText(awardTypeForm.getDescription())
+        && AWARD_TYPE_COST.equals(awardTypeForm.getAwardType());
+  }
+
+  private void initialiseCostAwardAmounts(final CostAwardFormData formData) {
+    if (!StringUtils.hasText(formData.getLaaFundedLegalCosts())) {
+      formData.setLaaFundedLegalCosts("0.00");
+    }
+    if (!StringUtils.hasText(formData.getOtherPreCertificateCosts())) {
+      formData.setOtherPreCertificateCosts("0.00");
+    }
+    if (!StringUtils.hasText(formData.getLaaRate())) {
+      formData.setLaaRate("0.00");
+    }
+    if (!StringUtils.hasText(formData.getMarketRate())) {
+      formData.setMarketRate("0.00");
+    }
+    if (!StringUtils.hasText(formData.getInterestRate())) {
+      formData.setInterestRate("0.00");
+    }
+  }
+
+  private BigDecimal toAmount(final String value) {
+    try {
+      return StringUtils.hasText(value)
+          ? new BigDecimal(value).setScale(2, RoundingMode.HALF_UP)
+          : ZERO;
+    } catch (NumberFormatException ex) {
+      return ZERO;
+    }
+  }
+
+  private String formatAmount(final BigDecimal value) {
+    return value.setScale(2, RoundingMode.HALF_UP).toPlainString();
   }
 }

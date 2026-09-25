@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.client;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_COST;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FINANCIAL;
 
 import java.net.URI;
@@ -27,6 +28,7 @@ import uk.gov.laa.ccms.caab.model.BillCreate;
 import uk.gov.laa.ccms.caab.model.Bills;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
+import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
@@ -62,6 +64,7 @@ public class CaabApiClient {
   public static final String RESOURCE_TYPE_CLIENT = "client";
   public static final String RESOURCE_TYPE_OPPONENTS = "opponents";
   public static final String RESOURCE_TYPE_CASE_OUTCOME = "case outcome";
+  public static final String RESOURCE_TYPE_COST_AWARD = "cost award";
   public static final String RESOURCE_TYPE_FINANCIAL_AWARD = "financial award";
   public static final String RESOURCE_TYPE_EVIDENCE = "evidence";
   public static final String RESOURCE_TYPE_NOTIFICATION_ATTACHMENTS = "notification attachments";
@@ -816,6 +819,83 @@ public class CaabApiClient {
         .exchangeToMono(CaabApiClient::getIdResponse)
         .onErrorResume(
             e -> caabApiClientErrorHandler.handleApiCreateError(e, RESOURCE_TYPE_FINANCIAL_AWARD));
+  }
+
+  /**
+   * Creates a cost award for an existing case outcome.
+   *
+   * @param caseOutcomeId the owning case outcome id
+   * @param loginId the ID associated with the user login
+   * @param costAward the cost award values
+   * @return the created cost award id
+   */
+  public Mono<String> createCostAward(
+      final Integer caseOutcomeId, final String loginId, final CostAwardDetail costAward) {
+    return caabApiWebClient
+        .post()
+        .uri("/case-outcomes/{case-outcome-id}/awards/{award-type}", caseOutcomeId, AWARD_TYPE_COST)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(costAward)
+        .exchangeToMono(CaabApiClient::getIdResponse)
+        .onErrorResume(
+            e -> caabApiClientErrorHandler.handleApiCreateError(e, RESOURCE_TYPE_COST_AWARD));
+  }
+
+  /**
+   * Gets a cost award by id and owning case outcome id.
+   *
+   * @param caseOutcomeId the owning case outcome id
+   * @param costAwardId the cost award id
+   * @return the cost award
+   */
+  public Mono<CostAwardDetail> getCostAward(
+      final Integer caseOutcomeId, final Integer costAwardId) {
+    return caabApiWebClient
+        .get()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{cost-award-id}",
+            caseOutcomeId,
+            AWARD_TYPE_COST,
+            costAwardId)
+        .retrieve()
+        .bodyToMono(CostAwardDetail.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiRetrieveError(
+                    e, RESOURCE_TYPE_COST_AWARD, "id", String.valueOf(costAwardId)));
+  }
+
+  /**
+   * Updates a cost award belonging to a case outcome.
+   *
+   * @param caseOutcomeId the owning case outcome id
+   * @param costAwardId the cost award id
+   * @param loginId the ID associated with the user login
+   * @param costAward the replacement cost award values
+   * @return completion signal
+   */
+  public Mono<Void> updateCostAward(
+      final Integer caseOutcomeId,
+      final Integer costAwardId,
+      final String loginId,
+      final CostAwardDetail costAward) {
+    return caabApiWebClient
+        .put()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{cost-award-id}",
+            caseOutcomeId,
+            AWARD_TYPE_COST,
+            costAwardId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(costAward)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiUpdateError(
+                    e, RESOURCE_TYPE_COST_AWARD, "id", String.valueOf(costAwardId)));
   }
 
   /**
