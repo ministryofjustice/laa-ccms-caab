@@ -19,7 +19,6 @@ import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 public class LandAwardValidator extends AbstractValidator {
 
   private static final BigDecimal MAX_AMOUNT = new BigDecimal("99999999.99");
-  private static final LocalDate EARLIEST_DATE = LocalDate.of(1900, 1, 1);
 
   @Override
   public boolean supports(final Class<?> clazz) {
@@ -107,11 +106,6 @@ public class LandAwardValidator extends AbstractValidator {
     if (localDate.isAfter(LocalDate.now())) {
       errors.rejectValue(
           field, "invalid.date.range", "'%s' must not be in the future.".formatted(displayName));
-    } else if (localDate.isBefore(EARLIEST_DATE)) {
-      errors.rejectValue(
-          field,
-          "invalid.date.range",
-          "'%s' must not be earlier than 1 January 1900.".formatted(displayName));
     }
   }
 

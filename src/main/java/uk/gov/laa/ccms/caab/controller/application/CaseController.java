@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
@@ -79,6 +80,7 @@ import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseAwardDetail;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
@@ -403,6 +405,18 @@ public class CaseController {
 
   private List<BaseAwardDetail> getAwards(final CaseOutcomeDetail caseOutcome) {
     final List<BaseAwardDetail> awards = new ArrayList<>();
+    if (caseOutcome.getCostAwards() != null) {
+      for (final CostAwardDetail costAward : caseOutcome.getCostAwards()) {
+        costAward.setAwardAmount(
+            Stream.of(
+                    costAward.getPreCertificateLscCost(),
+                    costAward.getPreCertificateOtherCost(),
+                    costAward.getCertificateCostLsc(),
+                    costAward.getCertificateCostMarket())
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+      }
+    }
     addAwards(awards, caseOutcome.getCostAwards());
     addAwards(awards, caseOutcome.getFinancialAwards());
     addAwards(awards, caseOutcome.getLandAwards());

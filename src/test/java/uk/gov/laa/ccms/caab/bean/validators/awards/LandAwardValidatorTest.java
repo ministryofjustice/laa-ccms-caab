@@ -86,6 +86,28 @@ class LandAwardValidatorTest {
             "registrationReference");
   }
 
+  @Test
+  void usesAbstractValidatorEarliestDateForBothDates() {
+    final LandAwardFormData form = validForm();
+    form.setDateOfOrder("13/12/1901");
+    form.setValuationDate("13/12/1901");
+    final BeanPropertyBindingResult invalid = new BeanPropertyBindingResult(form, "landAward");
+
+    validator.validate(form, invalid);
+
+    assertThat(invalid.getFieldErrors())
+        .extracting("field")
+        .contains("dateOfOrder", "valuationDate");
+
+    form.setDateOfOrder("14/12/1901");
+    form.setValuationDate("14/12/1901");
+    final BeanPropertyBindingResult valid = new BeanPropertyBindingResult(form, "landAward");
+
+    validator.validate(form, valid);
+
+    assertThat(valid.hasErrors()).isFalse();
+  }
+
   private LandAwardFormData validForm() {
     final LandAwardFormData form = new LandAwardFormData();
     form.setAwardType("LAND");
