@@ -60,6 +60,10 @@ ignore:
     - '*':
         reason: "Temporary ignore pending upstream Ubuntu package update."
         expires: "2027-09-14T00:00:00.000Z"
+  SNYK-UBUNTU2404-GLIBC-19785393:
+      - '*':
+        reason: "Temporary ignore pending an Ubuntu/Paketo base-image update."
+        expires: "2026-10-25T00:00:00.000Z"
 patch: {}
 exclude:
   global:
