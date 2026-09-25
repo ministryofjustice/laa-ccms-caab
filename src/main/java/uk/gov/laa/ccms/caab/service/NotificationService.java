@@ -5,14 +5,12 @@ import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
@@ -87,47 +85,11 @@ public class NotificationService {
       final int providerId,
       final Integer page,
       final Integer size) {
-    final long startedAt = System.nanoTime();
-    final Mono<Notifications> request =
-        ebsApiClient.getNotifications(
-            NotificationSearchUtil.prepareNotificationSearchCriteria(searchCriteria),
-            providerId,
-            page,
-            size);
-
-    return request
-        .doOnSuccess(
-            notifications ->
-                log.info(
-                    "Notification query route={} providerId={} page={} size={} fromCase={} "
-                        + "hasCaseRef={} hasAssignee={} includeClosed={} totalElements={} durationMs={}",
-                    "notifications",
-                    providerId,
-                    page,
-                    size,
-                    searchCriteria.isOriginatesFromCase(),
-                    StringUtils.hasText(searchCriteria.getCaseReference()),
-                    StringUtils.hasText(searchCriteria.getAssignedToUserId()),
-                    searchCriteria.isIncludeClosed(),
-                    Optional.ofNullable(notifications)
-                        .map(Notifications::getTotalElements)
-                        .orElse(null),
-                    (System.nanoTime() - startedAt) / 1_000_000))
-        .doOnError(
-            throwable ->
-                log.warn(
-                    "Notification query route={} providerId={} page={} size={} fromCase={} "
-                        + "hasCaseRef={} hasAssignee={} includeClosed={} durationMs={} error={}",
-                    "notifications",
-                    providerId,
-                    page,
-                    size,
-                    searchCriteria.isOriginatesFromCase(),
-                    StringUtils.hasText(searchCriteria.getCaseReference()),
-                    StringUtils.hasText(searchCriteria.getAssignedToUserId()),
-                    searchCriteria.isIncludeClosed(),
-                    (System.nanoTime() - startedAt) / 1_000_000,
-                    throwable.toString()));
+    return ebsApiClient.getNotifications(
+        NotificationSearchUtil.prepareNotificationSearchCriteria(searchCriteria),
+        providerId,
+        page,
+        size);
   }
 
   /**
