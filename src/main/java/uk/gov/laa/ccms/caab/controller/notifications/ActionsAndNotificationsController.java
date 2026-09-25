@@ -317,7 +317,7 @@ public class ActionsAndNotificationsController {
         .getUsers(user.getProvider().getId(), loginId)
         .flatMapIterable(
             details -> Optional.ofNullable(details.getContent()).orElse(Collections.emptyList()))
-        .filter(providerUser -> StringUtils.hasText(providerUser.getLoginId()))
+        .filter(providerUser -> loginId.equals(providerUser.getLoginId()))
         .next()
         .onErrorResume(
             e -> {
