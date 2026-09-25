@@ -614,6 +614,48 @@ class ActionsAndNotificationsControllerTest {
     }
 
     @Test
+    @DisplayName("Should fall back when targeted user has a differently cased login ID")
+    void shouldFallBackWhenTargetedUserLoginIdDiffersByCase() {
+      String caseLoginId = "jane.doe@example.com";
+      ApplicationDetail ebsCase = caseWithPrimaryContact(caseLoginId, "Jane Doe");
+      BaseUser targetedUser =
+          new BaseUser().loginId("JANE.DOE@EXAMPLE.COM").username("Incorrect targeted user");
+      BaseUser fallbackUser = new BaseUser().loginId("JANE.DOE@EXAMPLE.COM").username("Jane Doe");
+      when(userService.getUsers(userDetails.getProvider().getId(), caseLoginId))
+          .thenReturn(Mono.just(new UserDetails().addContentItem(targetedUser)));
+      when(userService.getUsers(userDetails.getProvider().getId()))
+          .thenReturn(Mono.just(new UserDetails().addContentItem(fallbackUser)));
+
+      NotificationSearchCriteria criteria = performCaseSearchWithoutStubbing(ebsCase);
+
+      assertThat(criteria.getAssignedToUserId()).isEqualTo("JANE.DOE@EXAMPLE.COM");
+      assertThat(criteria.getPrimaryContactName()).isEqualTo("Jane Doe");
+      verify(userService).getUsers(userDetails.getProvider().getId(), caseLoginId);
+      verify(userService).getUsers(userDetails.getProvider().getId());
+    }
+
+    @Test
+    @DisplayName("Should fall back when targeted user has an unrelated login ID")
+    void shouldFallBackWhenTargetedUserLoginIdIsUnrelated() {
+      String caseLoginId = "jane.doe@example.com";
+      ApplicationDetail ebsCase = caseWithPrimaryContact(caseLoginId, "Jane Doe");
+      BaseUser targetedUser =
+          new BaseUser().loginId("someone.else@example.com").username("Jane Doe");
+      BaseUser fallbackUser = new BaseUser().loginId(caseLoginId).username("Actual Jane");
+      when(userService.getUsers(userDetails.getProvider().getId(), caseLoginId))
+          .thenReturn(Mono.just(new UserDetails().addContentItem(targetedUser)));
+      when(userService.getUsers(userDetails.getProvider().getId()))
+          .thenReturn(Mono.just(new UserDetails().addContentItem(fallbackUser)));
+
+      NotificationSearchCriteria criteria = performCaseSearchWithoutStubbing(ebsCase);
+
+      assertThat(criteria.getAssignedToUserId()).isEqualTo(caseLoginId);
+      assertThat(criteria.getPrimaryContactName()).isEqualTo("Actual Jane");
+      verify(userService).getUsers(userDetails.getProvider().getId(), caseLoginId);
+      verify(userService).getUsers(userDetails.getProvider().getId());
+    }
+
+    @Test
     @DisplayName("Should search all assignees when the case has no primary contact")
     void shouldSearchAllAssigneesWhenCaseHasNoPrimaryContact() {
       NotificationSearchCriteria criteria = buildNotificationSearchCritieria();

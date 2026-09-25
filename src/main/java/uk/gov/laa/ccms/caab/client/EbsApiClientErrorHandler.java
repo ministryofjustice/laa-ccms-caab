@@ -11,6 +11,13 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class EbsApiClientErrorHandler extends AbstractApiClientErrorHandler {
 
+  /**
+   * Handles targeted user lookup failures without exposing the login ID from the request or error.
+   *
+   * @param error the lookup failure
+   * @param <T> the expected response type
+   * @return an error with safe context and HTTP status when available
+   */
   public <T> Mono<T> handleTargetedUserRetrieveError(Throwable error) {
     String message = "Failed to retrieve provider user by login ID";
     if (error instanceof WebClientResponseException responseException) {
