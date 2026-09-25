@@ -937,6 +937,56 @@ class CaseControllerTest {
     }
 
     @Test
+    @DisplayName("Outcome and awards page orders each award type newest first")
+    public void outcomeAndAwardsPageOrdersEachAwardTypeByDescendingId() {
+      final String selectedCaseRef = "8";
+      final ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      final CostAwardDetail oldCost = new CostAwardDetail().id(10);
+      final CostAwardDetail newCost = new CostAwardDetail().id(20);
+      final CostAwardDetail unsavedCost = new CostAwardDetail();
+      final FinancialAwardDetail oldFinancial = new FinancialAwardDetail().id(11);
+      final FinancialAwardDetail newFinancial = new FinancialAwardDetail().id(21);
+      final LandAwardDetail oldLand = new LandAwardDetail().id(12);
+      final LandAwardDetail newLand = new LandAwardDetail().id(22);
+      final OtherAssetAwardDetail oldAsset = new OtherAssetAwardDetail().id(13);
+      final OtherAssetAwardDetail newAsset = new OtherAssetAwardDetail().id(23);
+      final CaseOutcomeDetail caseOutcome =
+          new CaseOutcomeDetail()
+              .costAwards(List.of(oldCost, unsavedCost, newCost))
+              .financialAwards(List.of(newFinancial, oldFinancial))
+              .landAwards(List.of(oldLand, newLand))
+              .otherAssetAwards(List.of(newAsset, oldAsset));
+      when(caseOutcomeService.getCaseOutcome(
+              selectedCaseRef, user.getProvider().getId().intValue()))
+          .thenReturn(java.util.Optional.of(caseOutcome));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "awards",
+              value ->
+                  assertThat(value)
+                      .asInstanceOf(InstanceOfAssertFactories.list(BaseAwardDetail.class))
+                      .containsExactly(
+                          newCost,
+                          oldCost,
+                          unsavedCost,
+                          newFinancial,
+                          oldFinancial,
+                          newLand,
+                          oldLand,
+                          newAsset,
+                          oldAsset));
+      assertThat(caseOutcome.getCostAwards()).containsExactly(oldCost, unsavedCost, newCost);
+    }
+
+    @Test
     @DisplayName("Pre-certificate and legal help costs page loads with existing saved values")
     public void preCertificateAndLegalHelpCostsPageLoadsWithSavedValues() {
       final String selectedCaseRef = "8";

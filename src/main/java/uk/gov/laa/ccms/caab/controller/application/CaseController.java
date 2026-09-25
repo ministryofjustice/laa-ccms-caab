@@ -32,6 +32,7 @@ import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -412,7 +413,11 @@ public class CaseController {
   private void addAwards(
       final List<BaseAwardDetail> awards, final List<? extends BaseAwardDetail> awardsToAdd) {
     if (awardsToAdd != null) {
-      awards.addAll(awardsToAdd);
+      awardsToAdd.stream()
+          .sorted(
+              Comparator.comparing(
+                  BaseAwardDetail::getId, Comparator.nullsLast(Comparator.reverseOrder())))
+          .forEach(awards::add);
     }
   }
 
