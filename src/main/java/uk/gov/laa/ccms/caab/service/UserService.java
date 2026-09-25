@@ -57,8 +57,9 @@ public class UserService {
    * @param loginId the login ID of the user
    * @return a Mono containing at most one matching user
    */
-  public Mono<UserDetails> getUsers(final Integer providerId, final String loginId) {
-    return ebsApiClient.getUsers(providerId, loginId);
+  public Mono<UserDetails> getUserByProviderAndLoginId(
+      final Integer providerId, final String loginId) {
+    return ebsApiClient.getUserByProviderAndLoginId(providerId, loginId);
   }
 
   /**

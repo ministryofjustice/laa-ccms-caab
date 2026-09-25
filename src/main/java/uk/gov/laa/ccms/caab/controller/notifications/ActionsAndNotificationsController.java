@@ -314,7 +314,7 @@ public class ActionsAndNotificationsController {
 
   private Optional<BaseUser> getProviderUser(UserDetail user, String loginId) {
     return userService
-        .getUsers(user.getProvider().getId(), loginId)
+        .getUserByProviderAndLoginId(user.getProvider().getId(), loginId)
         .flatMapIterable(
             details -> Optional.ofNullable(details.getContent()).orElse(Collections.emptyList()))
         .filter(providerUser -> loginId.equals(providerUser.getLoginId()))

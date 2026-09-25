@@ -528,7 +528,8 @@ class ActionsAndNotificationsControllerTest {
 
       assertThat(criteria.getAssignedToUserId()).isEqualTo("JANE.DOE@EXAMPLE.COM");
       assertThat(criteria.getPrimaryContactName()).isEqualTo("Jane Doe");
-      verify(userService).getUsers(userDetails.getProvider().getId(), "JANE.DOE@EXAMPLE.COM");
+      verify(userService)
+          .getUserByProviderAndLoginId(userDetails.getProvider().getId(), "JANE.DOE@EXAMPLE.COM");
       verify(userService, never()).getUsers(userDetails.getProvider().getId());
     }
 
@@ -584,7 +585,8 @@ class ActionsAndNotificationsControllerTest {
     void shouldFallBackToAllProviderUsersWhenTargetedLookupFails() {
       ApplicationDetail ebsCase = caseWithPrimaryContact("JANE.DOE@EXAMPLE.COM", "Jane Doe");
       BaseUser providerUser = new BaseUser().loginId("JANE.DOE@EXAMPLE.COM").username("Jane Doe");
-      when(userService.getUsers(userDetails.getProvider().getId(), "JANE.DOE@EXAMPLE.COM"))
+      when(userService.getUserByProviderAndLoginId(
+              userDetails.getProvider().getId(), "JANE.DOE@EXAMPLE.COM"))
           .thenReturn(Mono.error(new RuntimeException("Unavailable")));
       when(userService.getUsers(userDetails.getProvider().getId()))
           .thenReturn(Mono.just(new UserDetails().addContentItem(providerUser)));
@@ -601,7 +603,7 @@ class ActionsAndNotificationsControllerTest {
       String caseLoginId = "jane.doe@example.com";
       ApplicationDetail ebsCase = caseWithPrimaryContact(caseLoginId, "Jane Doe");
       BaseUser providerUser = new BaseUser().loginId("JANE.DOE@EXAMPLE.COM").username("Jane Doe");
-      when(userService.getUsers(userDetails.getProvider().getId(), caseLoginId))
+      when(userService.getUserByProviderAndLoginId(userDetails.getProvider().getId(), caseLoginId))
           .thenReturn(Mono.just(new UserDetails()));
       when(userService.getUsers(userDetails.getProvider().getId()))
           .thenReturn(Mono.just(new UserDetails().addContentItem(providerUser)));
@@ -609,7 +611,8 @@ class ActionsAndNotificationsControllerTest {
       NotificationSearchCriteria criteria = performCaseSearchWithoutStubbing(ebsCase);
 
       assertThat(criteria.getAssignedToUserId()).isEqualTo("JANE.DOE@EXAMPLE.COM");
-      verify(userService).getUsers(userDetails.getProvider().getId(), caseLoginId);
+      verify(userService)
+          .getUserByProviderAndLoginId(userDetails.getProvider().getId(), caseLoginId);
       verify(userService).getUsers(userDetails.getProvider().getId());
     }
 
@@ -621,7 +624,7 @@ class ActionsAndNotificationsControllerTest {
       BaseUser targetedUser =
           new BaseUser().loginId("JANE.DOE@EXAMPLE.COM").username("Incorrect targeted user");
       BaseUser fallbackUser = new BaseUser().loginId("JANE.DOE@EXAMPLE.COM").username("Jane Doe");
-      when(userService.getUsers(userDetails.getProvider().getId(), caseLoginId))
+      when(userService.getUserByProviderAndLoginId(userDetails.getProvider().getId(), caseLoginId))
           .thenReturn(Mono.just(new UserDetails().addContentItem(targetedUser)));
       when(userService.getUsers(userDetails.getProvider().getId()))
           .thenReturn(Mono.just(new UserDetails().addContentItem(fallbackUser)));
@@ -630,7 +633,8 @@ class ActionsAndNotificationsControllerTest {
 
       assertThat(criteria.getAssignedToUserId()).isEqualTo("JANE.DOE@EXAMPLE.COM");
       assertThat(criteria.getPrimaryContactName()).isEqualTo("Jane Doe");
-      verify(userService).getUsers(userDetails.getProvider().getId(), caseLoginId);
+      verify(userService)
+          .getUserByProviderAndLoginId(userDetails.getProvider().getId(), caseLoginId);
       verify(userService).getUsers(userDetails.getProvider().getId());
     }
 
@@ -642,7 +646,7 @@ class ActionsAndNotificationsControllerTest {
       BaseUser targetedUser =
           new BaseUser().loginId("someone.else@example.com").username("Jane Doe");
       BaseUser fallbackUser = new BaseUser().loginId(caseLoginId).username("Actual Jane");
-      when(userService.getUsers(userDetails.getProvider().getId(), caseLoginId))
+      when(userService.getUserByProviderAndLoginId(userDetails.getProvider().getId(), caseLoginId))
           .thenReturn(Mono.just(new UserDetails().addContentItem(targetedUser)));
       when(userService.getUsers(userDetails.getProvider().getId()))
           .thenReturn(Mono.just(new UserDetails().addContentItem(fallbackUser)));
@@ -651,7 +655,8 @@ class ActionsAndNotificationsControllerTest {
 
       assertThat(criteria.getAssignedToUserId()).isEqualTo(caseLoginId);
       assertThat(criteria.getPrimaryContactName()).isEqualTo("Actual Jane");
-      verify(userService).getUsers(userDetails.getProvider().getId(), caseLoginId);
+      verify(userService)
+          .getUserByProviderAndLoginId(userDetails.getProvider().getId(), caseLoginId);
       verify(userService).getUsers(userDetails.getProvider().getId());
     }
 
@@ -726,7 +731,7 @@ class ActionsAndNotificationsControllerTest {
             targetedUsers.addContentItem(providerUser);
           }
         }
-        when(userService.getUsers(userDetails.getProvider().getId(), loginId))
+        when(userService.getUserByProviderAndLoginId(userDetails.getProvider().getId(), loginId))
             .thenReturn(Mono.just(targetedUsers));
         if (targetedUsers.getContent().isEmpty()) {
           when(userService.getUsers(userDetails.getProvider().getId()))

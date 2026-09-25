@@ -272,7 +272,8 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
         get("/users?size=1&provider-id=123&login-id=user@example.com")
             .willReturn(okJson(userDetailsJson)));
 
-    final UserDetails result = ebsApiClient.getUsers(providerId, loginId).block();
+    final UserDetails result =
+        ebsApiClient.getUserByProviderAndLoginId(providerId, loginId).block();
 
     assertNotNull(result);
     assertEquals(userDetailsJson, objectMapper.writeValueAsString(result));
@@ -291,7 +292,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     appender.start();
     logger.addAppender(appender);
     try {
-      StepVerifier.create(ebsApiClient.getUsers(123, loginId))
+      StepVerifier.create(ebsApiClient.getUserByProviderAndLoginId(123, loginId))
           .expectErrorSatisfies(
               error -> {
                 EbsApiClientException exception = (EbsApiClientException) error;

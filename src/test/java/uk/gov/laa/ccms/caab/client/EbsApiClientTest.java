@@ -885,7 +885,7 @@ public class EbsApiClientTest {
       when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
       when(responseMock.bodyToMono(UserDetails.class)).thenReturn(Mono.just(mockDetails));
 
-      StepVerifier.create(ebsApiClient.getUsers(providerId, loginId))
+      StepVerifier.create(ebsApiClient.getUserByProviderAndLoginId(providerId, loginId))
           .expectNext(mockDetails)
           .verifyComplete();
 
@@ -896,7 +896,8 @@ public class EbsApiClientTest {
     @Test
     @DisplayName("Should reject a blank login ID")
     void getUserForProviderAndBlankLoginId_throwsException() {
-      assertThrows(IllegalArgumentException.class, () -> ebsApiClient.getUsers(123, " "));
+      assertThrows(
+          IllegalArgumentException.class, () -> ebsApiClient.getUserByProviderAndLoginId(123, " "));
     }
 
     @Test

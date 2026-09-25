@@ -81,9 +81,10 @@ public class UserServiceTest {
     String loginId = "user@example.com";
     UserDetails userDetails =
         new UserDetails().addContentItem(new BaseUser().userId(123).loginId(loginId));
-    when(ebsApiClient.getUsers(providerId, loginId)).thenReturn(Mono.just(userDetails));
+    when(ebsApiClient.getUserByProviderAndLoginId(providerId, loginId))
+        .thenReturn(Mono.just(userDetails));
 
-    StepVerifier.create(userService.getUsers(providerId, loginId))
+    StepVerifier.create(userService.getUserByProviderAndLoginId(providerId, loginId))
         .expectNextMatches(
             userList -> loginId.equals(userList.getContent().getFirst().getLoginId()))
         .verifyComplete();

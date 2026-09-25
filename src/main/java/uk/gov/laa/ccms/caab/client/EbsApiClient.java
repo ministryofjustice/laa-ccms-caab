@@ -377,7 +377,7 @@ public class EbsApiClient extends BaseApiClient {
    * @param loginId the user's login id
    * @return a Mono containing at most one matching user
    */
-  public Mono<UserDetails> getUsers(final int providerId, final String loginId) {
+  public Mono<UserDetails> getUserByProviderAndLoginId(final int providerId, final String loginId) {
     Assert.hasText(loginId, "loginId must not be blank");
     final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
     addQueryParam(queryParams, "size", 1);
