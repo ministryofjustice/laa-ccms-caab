@@ -46,6 +46,7 @@ public class PreCertificateAndLegalHelpCostsValidator extends AbstractValidator 
           formData.getOfficeCode().trim(),
           OFFICE_CODE_PATTERN,
           "Office code",
+          "NANNNA",
           errors);
     }
 
@@ -55,6 +56,7 @@ public class PreCertificateAndLegalHelpCostsValidator extends AbstractValidator 
           formData.getUniqueFileNumber().trim(),
           UNIQUE_FILE_NUMBER_PATTERN,
           "Unique file number",
+          "DDMMYY/NNN",
           errors);
     }
   }

@@ -47,6 +47,9 @@ public abstract class AbstractValidator implements Validator {
   protected static String GENERIC_INCORRECT_FORMAT =
       "Your input for '%s' is in an incorrect format. Please amend your entry.";
 
+  protected static String SPECIFIC_INCORRECT_FORMAT =
+      "Your input for '%s' is in an incorrect format (%s). Please amend your entry.";
+
   protected static String GENERIC_MISSING_DATE_FIELDS_FORMAT =
       "Your input for '%s' is incomplete. Please enter a value for day, month and year.";
 
@@ -147,9 +150,23 @@ public abstract class AbstractValidator implements Validator {
       final String format,
       String displayValue,
       Errors errors) {
+    validateFieldFormat(field, fieldValue, format, displayValue, null, errors);
+  }
+
+  protected void validateFieldFormat(
+      final String field,
+      final String fieldValue,
+      final String format,
+      String displayValue,
+      String formatHint,
+      Errors errors) {
 
     if (fieldValue == null || (!fieldValue.matches(format) && !fieldValue.isEmpty())) {
-      errors.rejectValue(field, "invalid.format", GENERIC_INCORRECT_FORMAT.formatted(displayValue));
+      final String errorMessage =
+          StringUtils.hasText(formatHint)
+              ? SPECIFIC_INCORRECT_FORMAT.formatted(displayValue, formatHint)
+              : GENERIC_INCORRECT_FORMAT.formatted(displayValue);
+      errors.rejectValue(field, "invalid.format", errorMessage);
     }
   }
 

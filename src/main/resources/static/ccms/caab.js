@@ -1,6 +1,31 @@
 document.addEventListener('DOMContentLoaded', function () {
     toggleDiv();
+    prefetchNotificationSearchOptions();
 });
+
+function prefetchNotificationSearchOptions() {
+    var prefetchTarget = document.querySelector('[data-notification-options-prefetch-url]');
+    var prefetchUrl = prefetchTarget ? prefetchTarget.dataset.notificationOptionsPrefetchUrl : null;
+    if (!prefetchUrl) {
+        return;
+    }
+
+    var prefetch = function () {
+        fetch(prefetchUrl, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        }).catch(function () {
+            // Refine search will retry synchronously if background warming fails.
+        });
+    };
+
+    if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(prefetch);
+    } else {
+        window.setTimeout(prefetch, 0);
+    }
+}
 
 function toggleDiv() {
     var documentDescription = document.querySelector('.documentDescriptionMore');

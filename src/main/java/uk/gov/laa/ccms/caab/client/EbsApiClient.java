@@ -12,8 +12,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
@@ -365,13 +367,37 @@ public class EbsApiClient extends BaseApiClient {
     final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
     Optional.ofNullable(providerId)
         .ifPresent(param -> queryParams.add("provider-id", String.valueOf(param)));
+    return getUsers(queryParams, false);
+  }
+
+  /**
+   * Retrieve a specific user for a given provider.
+   *
+   * @param providerId the provider id
+   * @param loginId the user's login id
+   * @return a Mono containing at most one matching user
+   */
+  public Mono<UserDetails> getUserByProviderAndLoginId(final int providerId, final String loginId) {
+    Assert.hasText(loginId, "loginId must not be blank");
+    final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
+    addQueryParam(queryParams, "size", 1);
+    addQueryParam(queryParams, "provider-id", providerId);
+    addQueryParam(queryParams, "login-id", loginId);
+    return getUsers(queryParams, true);
+  }
+
+  private Mono<UserDetails> getUsers(
+      MultiValueMap<String, String> queryParams, boolean targetedLookup) {
     return webClient
         .get()
         .uri(builder -> builder.path("/users").queryParams(queryParams).build())
         .retrieve()
         .bodyToMono(UserDetails.class)
         .onErrorResume(
-            e -> ebsApiClientErrorHandler.handleApiRetrieveError(e, "Users", queryParams));
+            e ->
+                targetedLookup
+                    ? ebsApiClientErrorHandler.handleTargetedUserRetrieveError(e)
+                    : ebsApiClientErrorHandler.handleApiRetrieveError(e, "Users", queryParams));
   }
 
   /**
@@ -1148,6 +1174,9 @@ public class EbsApiClient extends BaseApiClient {
 
     addQueryParam(queryParams, "provider-id", providerId);
     addQueryParam(queryParams, "case-reference-number", criteria.getCaseReference());
+    if (criteria.isOriginatesFromCase() && StringUtils.hasText(criteria.getCaseReference())) {
+      addQueryParam(queryParams, "exact-case-reference", true);
+    }
     addQueryParam(queryParams, "provider-case-reference", criteria.getProviderCaseReference());
     addQueryParam(queryParams, "assigned-to-user-id", criteria.getAssignedToUserId());
     addQueryParam(queryParams, "client-surname", criteria.getClientSurname());

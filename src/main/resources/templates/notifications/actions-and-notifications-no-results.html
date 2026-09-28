@@ -11,7 +11,8 @@
     <a th:if="${notificationSearchCriteria.originatesFromCase}"
        th:href="@{/case/overview}" class="govuk-back-link" th:text="#{site.returnToCaseOverview}"/>
   </div>
-  <div id="main-content">
+  <div id="main-content"
+       th:attr="data-notification-options-prefetch-url=@{/notifications/search-options/prefetch}">
     <h1 class="govuk-heading-l" th:text="#{notifications.heading}"/>
     <p class="govuk-body-l"
     th:text="#{notifications.search.noResults.leadParagraph}"/>

@@ -39,49 +39,30 @@
             </div>
             <div class="govuk-summary-card__content">
               <dl class="govuk-summary-list">
-                <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
-                  <dt class="govuk-summary-list__key"
-                      th:text="#{caseDetails.general.status}"/>
-                  <dd class="govuk-summary-list__value"
-                      id="general-status-value"
-                      th:text="${summary.generalDetails.applicationStatus}"/>
-                </div>
-                <div class="govuk-summary-list__row">
-                  <dt class="govuk-summary-list__key"
-                      th:text="#{caseDetails.general.client.name}"/>
-                  <dd class="govuk-summary-list__value"
-                      id="general-client-name-value"
-                      th:text="${summary.client.clientFullName}"/>
-                  <dd class="govuk-summary-list__actions">
-                    <a class="govuk-link govuk-link--no-visited-state"
-                       id="amend-client-link"
-                       th:href="@{/amendments/sections/client/details/summary}">
-                      <th:block th:text="#{site.amend}"/>
-                      <span class="govuk-visually-hidden" th:text="${#strings.toLowerCase(fieldName)}"/>
-                    </a>
-                  </dd>
-                </div>
-                <div class="govuk-summary-list__row">
-                  <dt class="govuk-summary-list__key govuk-summary-list__row--no-actions"
-                      th:text="#{caseDetails.general.category.law}"/>
-                  <dd class="govuk-summary-list__value"
-                      id="general-category-of-law-value"
-                      th:text="${summary.generalDetails.categoryOfLaw}"/>
-                </div>
-                <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
-                  <dt class="govuk-summary-list__key"
-                      th:text="#{caseDetails.general.preferred.address}"/>
-                  <dd class="govuk-summary-list__value"
-                      id="general-preferred-address-value"
-                      th:text="${summary.generalDetails.correspondenceMethod}"/>
-                </div>
-                <div class="govuk-summary-list__row govuk-summary-list__row--no-actions">
-                  <dt class="govuk-summary-list__key"
-                      th:text="#{amendment.case.amendmentType}"/>
-                  <dd class="govuk-summary-list__value"
-                      id="general-amendment-type-value"
-                      th:text="${summary.applicationType.description}"/>
-                </div>
+                <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+                  #{caseDetails.general.status},
+                  ${summary.generalDetails.applicationStatus},
+                  'general-status-value')}"></div>
+                <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithAction(
+                  #{caseDetails.general.client.name},
+                  ${summary.client.clientFullName},
+                  'general-client-name-value',
+                  #{site.amend},
+                  @{/amendments/sections/client/details/summary},
+                  'amend-client-link',
+                  ${#strings.toLowerCase(#messages.msg('caseDetails.general.client.name'))})}"></div>
+                <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+                  #{caseDetails.general.category.law},
+                  ${summary.generalDetails.categoryOfLaw},
+                  'general-category-of-law-value')}"></div>
+                <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+                  #{caseDetails.general.preferred.address},
+                  ${summary.generalDetails.correspondenceMethod},
+                  'general-preferred-address-value')}"></div>
+                <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+                  #{amendment.case.amendmentType},
+                  ${summary.applicationType.description},
+                  'general-amendment-type-value')}"></div>
               </dl>
             </div>
           </div>
@@ -112,38 +93,24 @@
               <th:block th:unless="${summary.proceedingsAndCosts.proceedings.isEmpty()}"
                         th:each="proceeding, idx : ${summary.proceedingsAndCosts.proceedings}">
                 <h3 class="govuk-heading-m" th:text="${proceeding.proceedingType}"/>
-                <table class="govuk-table govuk-table--small-text-until-tablet">
-                  <caption class="govuk-table__caption govuk-table__caption--m"
-                           th:text="#{amendment.case.proceedings}"/>
-                  <thead>
-                  <tr>
-                    <th class="govuk-table__header"
-                        th:text="#{caseDetails.proceedings.matter.type}"/>
-                    <th class="govuk-table__header"
-                        th:text="#{caseDetails.proceedings.service.type}"/>
-                    <th class="govuk-table__header"
-                        th:text="#{caseDetails.proceedings.client.involvement}"/>
-                    <th class="govuk-table__header"
-                        th:text="#{caseDetails.proceedings.status}"></th>
-                  </tr>
-                  </thead>
-                  <tbody class="govuk-table__body">
-                  <tr class="govuk-table__row">
-                    <td class="govuk-table__cell"
-                        th:id="'proceeding-matter-type-'+${idx.index}+'-value'"
-                        th:text="${proceeding.matterType}"/>
-                    <td class="govuk-table__cell"
-                        th:id="'proceeding-level-of-service-'+${idx.index}+'-value'"
-                        th:text="${proceeding.levelOfService}"/>
-                    <td class="govuk-table__cell"
-                        th:id="'proceeding-client-involvement-'+${idx.index}+'-value'"
-                        th:text="${proceeding.clientInvolvement}"/>
-                    <td class="govuk-table__cell"
-                        th:id="'proceeding-status-'+${idx.index}+'-value'"
-                        th:text="${proceeding.status}"/>
-                  </tr>
-                  </tbody>
-                </table>
+                <dl class="govuk-summary-list">
+                  <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+                    #{caseDetails.proceedings.matter.type},
+                    ${proceeding.matterType},
+                    ${'proceeding-matter-type-' + idx.index + '-value'})}"></div>
+                  <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+                    #{caseDetails.proceedings.service.type},
+                    ${proceeding.levelOfService},
+                    ${'proceeding-level-of-service-' + idx.index + '-value'})}"></div>
+                  <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+                    #{caseDetails.proceedings.client.involvement},
+                    ${proceeding.clientInvolvement},
+                    ${'proceeding-client-involvement-' + idx.index + '-value'})}"></div>
+                  <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+                    #{caseDetails.proceedings.status},
+                    ${proceeding.status},
+                    ${'proceeding-status-' + idx.index + '-value'})}"></div>
+                </dl>
 
                 <table class="govuk-table">
                   <caption class="govuk-table__caption govuk-table__caption--m"
@@ -197,20 +164,14 @@
             </div>
             <div class="govuk-summary-card__content">
               <dl class="govuk-summary-list">
-                <div class="govuk-summary-list__row">
-                  <dt class="govuk-summary-list__key"
-                      th:text="#{caseDetails.costs.requested}"/>
-                  <dd class="govuk-summary-list__value"
-                      id="costs-requested-amount-value"
-                      th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.requestedCostLimitation)}"/>
-                </div>
-                <div class="govuk-summary-list__row">
-                  <dt class="govuk-summary-list__key"
-                      th:text="#{caseDetails.costs.granted}"/>
-                  <dd class="govuk-summary-list__value"
-                      id="costs-granted-amount-value"
-                      th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)}"/>
-                </div>
+                <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+                  #{caseDetails.costs.requested},
+                  ${#numbers.formatCurrency(summary.proceedingsAndCosts.requestedCostLimitation)},
+                  'costs-requested-amount-value')}"></div>
+                <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+                  #{caseDetails.costs.granted},
+                  ${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)},
+                  'costs-granted-amount-value')}"></div>
               </dl>
             </div>
           </div>
@@ -358,17 +319,12 @@
             </div>
             <div class="govuk-summary-card__content">
               <dl class="govuk-summary-list">
-                <div class="govuk-summary-list__row">
-                  <dt class="govuk-summary-list__key"
-                      th:text="#{common.status}"/>
-                  <dd class="govuk-summary-list__value"
-                      id="means-status-value">
-                    <th:block th:with="status=${summary.meansAssessment.status}">
-                      <th:block th:if="${status == 'Not started'}" th:text="#{amendment.case.means.noAssessmentPerformed}"/>
-                      <th:block th:unless="${status == 'Not started'}" th:text="${status}"/>
-                    </th:block>
-                  </dd>
-                </div>
+                <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+                  #{common.status},
+                  ${summary.meansAssessment.status == 'Not started'
+                    ? #messages.msg('amendment.case.means.noAssessmentPerformed')
+                    : summary.meansAssessment.status},
+                  'means-status-value')}"></div>
               </dl>
             </div>
           </div>
@@ -398,17 +354,14 @@
             </div>
             <div class="govuk-summary-card__content">
               <dl class="govuk-summary-list">
-                <div class="govuk-summary-list__row">
-                  <dt class="govuk-summary-list__key"
-                      th:text="#{common.status}"/>
-                  <dd class="govuk-summary-list__value"
-                      id="merits-status-value">
-                    <th:block th:if="${summary.meritsAssessment.enabled}" th:with="status=${summary.meritsAssessment.status}">
-                      <th:block th:if="${status == 'Not started'}" th:text="#{amendment.case.merits.noAssessmentPerformed}"/>
-                      <th:block th:unless="${status == 'Not started'}" th:text="${status}"/>
-                    </th:block>
-                  </dd>
-                </div>
+                <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+                  #{common.status},
+                  ${summary.meritsAssessment.enabled
+                    ? (summary.meritsAssessment.status == 'Not started'
+                      ? #messages.msg('amendment.case.merits.noAssessmentPerformed')
+                      : summary.meritsAssessment.status)
+                    : ''},
+                  'merits-status-value')}"></div>
               </dl>
             </div>
           </div>
@@ -485,18 +438,14 @@
               </th:block>
 
               <dl class="govuk-summary-list">
-                <div class="govuk-summary-list__row">
-                  <dt class="govuk-summary-list__key"
-                      th:text="#{common.status}"/>
-                  <dd class="govuk-summary-list__value"
-                      id="documents-status-value">
-                    <th:block th:if="${summary.documentUpload.enabled}">
-                      <th:block th:if="${evidenceUploaded.isEmpty()}" th:text="#{amendment.case.documents.available}"/>
-                      <th:block th:unless="${evidenceUploaded.isEmpty()}" th:text="#{common.complete}"/>
-                    </th:block>
-                    <th:block th:unless="${summary.documentUpload.enabled}" th:text="#{amendment.case.documents.notRequired}"/>
-                  </dd>
-                </div>
+                <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+                  #{common.status},
+                  ${summary.documentUpload.enabled
+                    ? (evidenceUploaded.isEmpty()
+                      ? #messages.msg('amendment.case.documents.available')
+                      : #messages.msg('common.complete'))
+                    : #messages.msg('amendment.case.documents.notRequired')},
+                  'documents-status-value')}"></div>
               </dl>
             </div>
           </div>

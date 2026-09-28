@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<dl class="govuk-summary-list">
+  <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+    'Status', 'Complete', 'status-value')}"></div>
+  <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithAction(
+    'Client', 'Jane Example', 'client-value',
+    'Change', @{/client}, 'change-client', 'client')}"></div>
+  <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithLinkValue(
+    'costs-row', 'costs-key',
+    'Costs', 'Case cost limitation', @{/costs}, 'costs-link', 'costs-value')}"></div>
+</dl>
+</body>
+</html>

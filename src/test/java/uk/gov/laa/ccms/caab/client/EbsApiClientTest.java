@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -326,6 +327,51 @@ public class EbsApiClientTest {
 
       URI actualUri = uriCaptor.getValue().apply(UriComponentsBuilder.newInstance());
       assertEquals(expectedUri, actualUri.toString());
+    }
+
+    @Test
+    @DisplayName("Should request an exact case reference for a case-originated search")
+    void getNotifications_usesExactCaseReferenceForCaseSearch() {
+      NotificationSearchCriteria criteria = new NotificationSearchCriteria();
+      criteria.setCaseReference("300000000001");
+      criteria.setOriginatesFromCase(true);
+
+      when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+      when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.bodyToMono(Notifications.class)).thenReturn(Mono.just(new Notifications()));
+
+      StepVerifier.create(ebsApiClient.getNotifications(criteria, 1, 0, 10))
+          .expectNextCount(1)
+          .verifyComplete();
+
+      URI actualUri = uriCaptor.getValue().apply(UriComponentsBuilder.newInstance());
+      assertEquals(
+          "/notifications?provider-id=1&case-reference-number=300000000001"
+              + "&exact-case-reference=true&include-closed=false&page=0&size=10",
+          actualUri.toString());
+    }
+
+    @Test
+    @DisplayName("Should retain partial case-reference matching for a general search")
+    void getNotifications_omitsExactCaseReferenceForGeneralSearch() {
+      NotificationSearchCriteria criteria = new NotificationSearchCriteria();
+      criteria.setCaseReference("300000");
+
+      when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+      when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.bodyToMono(Notifications.class)).thenReturn(Mono.just(new Notifications()));
+
+      StepVerifier.create(ebsApiClient.getNotifications(criteria, 1, 0, 10))
+          .expectNextCount(1)
+          .verifyComplete();
+
+      URI actualUri = uriCaptor.getValue().apply(UriComponentsBuilder.newInstance());
+      assertEquals(
+          "/notifications?provider-id=1&case-reference-number=300000"
+              + "&include-closed=false&page=0&size=10",
+          actualUri.toString());
     }
 
     @Test
@@ -823,6 +869,35 @@ public class EbsApiClientTest {
       final Function<UriBuilder, URI> uriFunction = uriCaptor.getValue();
       final URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
       assertEquals(expectedUri, actualUri.toString());
+    }
+
+    @Test
+    @DisplayName("Should request one user by provider and login ID")
+    void getUserForProviderAndLoginId_returnsData() {
+      final String expectedUri = "/users?size=1&provider-id=123&login-id=user@example.com";
+      final Integer providerId = 123;
+      final String loginId = "user@example.com";
+      final UserDetails mockDetails =
+          new UserDetails().addContentItem(new BaseUser().loginId(loginId));
+
+      when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.bodyToMono(UserDetails.class)).thenReturn(Mono.just(mockDetails));
+
+      StepVerifier.create(ebsApiClient.getUserByProviderAndLoginId(providerId, loginId))
+          .expectNext(mockDetails)
+          .verifyComplete();
+
+      final URI actualUri = uriCaptor.getValue().apply(UriComponentsBuilder.newInstance());
+      assertEquals(expectedUri, actualUri.toString());
+    }
+
+    @Test
+    @DisplayName("Should reject a blank login ID")
+    void getUserForProviderAndBlankLoginId_throwsException() {
+      assertThrows(
+          IllegalArgumentException.class, () -> ebsApiClient.getUserByProviderAndLoginId(123, " "));
     }
 
     @Test

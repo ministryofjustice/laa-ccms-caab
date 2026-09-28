@@ -18,58 +18,30 @@
     </p>
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
-        <table class="govuk-table">
-          <caption class="govuk-table__caption govuk-table__caption--m">General details</caption>
-          <tbody class="govuk-table__body">
-            <tr class="govuk-table__row">
-              <th class="govuk-table__header">Status of case</th>
-              <td class="govuk-table__cell" th:text="${summary.generalDetails.applicationStatus}"></td>
-              <th class="govuk-table__header">Preferred address</th>
-              <td class="govuk-table__cell" th:text="${summary.generalDetails.correspondenceMethod}"></td>
-            </tr>
-            <tr class="govuk-table__row">
-              <th class="govuk-table__header">Client name</th>
-              <td class="govuk-table__cell" th:text="${summary.client.clientFullName}"></td>
-              <th class="govuk-table__header">Application type</th>
-              <td class="govuk-table__cell" th:text="${summary.applicationType.description}"></td>
-            </tr>
-            <tr class="govuk-table__row">
-              <th class="govuk-table__header">Category of law</th>
-              <td class="govuk-table__cell" th:text="${summary.generalDetails.categoryOfLaw}"></td>
-              <th class="govuk-table__header" th:if="${summary.applicationType.devolvedPowersUsed}">Delegated functions date</th>
-              <th class="govuk-table__header" th:unless="${summary.applicationType.devolvedPowersUsed}">&nbsp;</th>
-              <td class="govuk-table__cell" th:if="${summary.applicationType.devolvedPowersUsed}" th:text="${#dates.format(summary.applicationType.devolvedPowersDate, 'dd/MM/yyyy')}"></td>
-              <td class="govuk-table__cell" th:unless="${summary.applicationType.devolvedPowersUsed}">&nbsp;</td>
-            </tr>
-          </tbody>
-        </table>
+        <h2 class="govuk-heading-m">General details</h2>
+        <dl class="govuk-summary-list">
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Status of case', ${summary.generalDetails.applicationStatus})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Preferred address', ${summary.generalDetails.correspondenceMethod})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Client name', ${summary.client.clientFullName})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Application type', ${summary.applicationType.description})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Category of law', ${summary.generalDetails.categoryOfLaw})}"></div>
+          <th:block th:if="${summary.applicationType.devolvedPowersUsed}">
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Delegated functions date', ${#dates.format(summary.applicationType.devolvedPowersDate, 'dd/MM/yyyy')})}"></div>
+          </th:block>
+        </dl>
       </div>
     </div>
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
-        <table class="govuk-table">
-          <caption class="govuk-table__caption govuk-table__caption--m">Provider details</caption>
-          <tbody class="govuk-table__body">
-            <tr class="govuk-table__row">
-              <th class="govuk-table__header" nowrap="true">Provider case reference</th>
-              <td class="govuk-table__cell" th:text="${summary.provider.providerCaseReferenceNumber}"></td>
-              <th class="govuk-table__header">Fee earner</th>
-              <td class="govuk-table__cell" th:text="${summary.provider.feeEarner}"></td>
-            </tr>
-            <tr class="govuk-table__row">
-              <th class="govuk-table__header">Provider</th>
-              <td class="govuk-table__cell" th:text="${summary.provider.providerName}"></td>
-              <th class="govuk-table__header">Supervisor</th>
-              <td class="govuk-table__cell" th:text="${summary.provider.supervisorName}"></td>
-            </tr>
-            <tr class="govuk-table__row">
-              <th class="govuk-table__header">Office</th>
-              <td class="govuk-table__cell" th:text="${summary.provider.officeName}"></td>
-              <th class="govuk-table__header">Contact name</th>
-              <td class="govuk-table__cell" th:text="${summary.provider.providerContactName}">&nbsp;</td>
-            </tr>
-          </tbody>
-        </table>
+        <h2 class="govuk-heading-m">Provider details</h2>
+        <dl class="govuk-summary-list">
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Provider case reference', ${summary.provider.providerCaseReferenceNumber})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Fee earner', ${summary.provider.feeEarner})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Provider', ${summary.provider.providerName})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Supervisor', ${summary.provider.supervisorName})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Office', ${summary.provider.officeName})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Contact name', ${summary.provider.providerContactName})}"></div>
+        </dl>
       </div>
     </div>
     <div class="govuk-grid-row">
@@ -78,25 +50,25 @@
           Proceedings
         </span>
         <div th:each="proceeding : ${summary.proceedingsAndCosts.proceedings}">
-          <table class="govuk-table">
-            <caption class="govuk-table__caption govuk-table__caption--m" th:text="${proceeding.proceedingType}"/>
-            <thead>
-              <tr>
-                <th class="govuk-table__header">Matter type</th>
-                <th class="govuk-table__header">Form of civil legal service</th>
-                <th class="govuk-table__header">Client involvement type</th>
-                <th class="govuk-table__header">Status</th>
-              </tr>
-            </thead>
-            <tbody class="govuk-table__body">
-              <tr class="govuk-table__row">
-                <td class="govuk-table__cell" th:text="${proceeding.matterType}"></td>
-                <td class="govuk-table__cell" th:text="${proceeding.levelOfService}"></td>
-                <td class="govuk-table__cell" th:text="${proceeding.clientInvolvement}"></td>
-                <td class="govuk-table__cell" th:text="${proceeding.status}"></td>
-              </tr>
-            </tbody>
-          </table>
+          <h3 class="govuk-heading-s" th:text="${proceeding.proceedingType}"></h3>
+          <dl class="govuk-summary-list">
+            <div class="govuk-summary-list__row">
+              <dt class="govuk-summary-list__key">Matter type</dt>
+              <dd class="govuk-summary-list__value" th:text="${proceeding.matterType}"></dd>
+            </div>
+            <div class="govuk-summary-list__row">
+              <dt class="govuk-summary-list__key">Form of civil legal service</dt>
+              <dd class="govuk-summary-list__value" th:text="${proceeding.levelOfService}"></dd>
+            </div>
+            <div class="govuk-summary-list__row">
+              <dt class="govuk-summary-list__key">Client involvement type</dt>
+              <dd class="govuk-summary-list__value" th:text="${proceeding.clientInvolvement}"></dd>
+            </div>
+            <div class="govuk-summary-list__row">
+              <dt class="govuk-summary-list__key">Status</dt>
+              <dd class="govuk-summary-list__value" th:text="${proceeding.status}"></dd>
+            </div>
+          </dl>
           <table class="govuk-table" th:unless="${proceeding.scopeLimitations.isEmpty()}">
             <thead>
               <tr>
@@ -112,44 +84,17 @@
             </tbody>
           </table>
         </div>
-        <div th:if="${summary.proceedingsAndCosts.proceedings.isEmpty()}">
-          <table class="govuk-table">
-            <thead>
-              <tr>
-                <th class="govuk-table__header">Matter type</th>
-                <th class="govuk-table__header">Form of civil legal service</th>
-                <th class="govuk-table__header">Client involvement type</th>
-                <th class="govuk-table__header">Status</th>
-              </tr>
-            </thead>
-            <tbody class="govuk-table__body">
-              <tr class="govuk-table__row">
-                <td class="govuk-table__cell" colspan="4" th:text="#{site.none}"></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <p class="govuk-body" th:if="${summary.proceedingsAndCosts.proceedings.isEmpty()}" th:text="#{site.none}"></p>
       </div>
     </div>
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
-        <table class="govuk-table">
-          <caption class="govuk-table__caption govuk-table__caption--m">Costs</caption>
-          <thead>
-            <tr>
-              <th class="govuk-table__header">Case costs</th>
-              <th class="govuk-table__header">Requested amount</th>
-              <th class="govuk-table__header">Granted amount</th>
-            </tr>
-          </thead>
-          <tbody class="govuk-table__body">
-            <tr class="govuk-table__row">
-              <th class="govuk-table__header">Case cost limitation</th>
-              <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.requestedCostLimitation)}"></td>
-              <td class="govuk-table__cell" th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)}"></td>
-            </tr>
-          </tbody>
-        </table>
+        <h2 class="govuk-heading-m">Costs</h2>
+        <dl class="govuk-summary-list">
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Case costs', 'Case cost limitation')}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Requested amount', ${#numbers.formatCurrency(summary.proceedingsAndCosts.requestedCostLimitation)})}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Granted amount', ${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)})}"></div>
+        </dl>
       </div>
     </div>
     <div class="govuk-grid-row">
@@ -206,59 +151,26 @@
     </div>
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
-        <table class="govuk-table">
-          <caption class="govuk-table__caption govuk-table__caption--m">Means</caption>
-          <thead>
-            <tr>
-              <th class="govuk-table__header govuk-!-width-one-quarter">&nbsp;</th>
-              <th class="govuk-table__header">Status</th>
-            </tr>
-          </thead>
-          <tbody class="govuk-table__body">
-            <tr class="govuk-table__row">
-              <th class="govuk-table__header">Means assessment</th>
-              <td class="govuk-table__cell" th:text="${summary.meansAssessment.status}"></td>
-            </tr>
-          </tbody>
-        </table>
+        <h2 class="govuk-heading-m">Means</h2>
+        <dl class="govuk-summary-list">
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Means assessment', ${summary.meansAssessment.status})}"></div>
+        </dl>
       </div>
     </div>
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
-        <table class="govuk-table">
-          <caption class="govuk-table__caption govuk-table__caption--m">Merits</caption>
-          <thead>
-            <tr>
-              <th class="govuk-table__header govuk-!-width-one-quarter">&nbsp;</th>
-              <th class="govuk-table__header">Status</th>
-            </tr>
-          </thead>
-          <tbody class="govuk-table__body">
-            <tr class="govuk-table__row">
-              <th class="govuk-table__header">Merits assessment</th>
-              <td class="govuk-table__cell" th:text="${summary.meritsAssessment.status}"></td>
-            </tr>
-          </tbody>
-        </table>
+        <h2 class="govuk-heading-m">Merits</h2>
+        <dl class="govuk-summary-list">
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Merits assessment', ${summary.meritsAssessment.status})}"></div>
+        </dl>
       </div>
     </div>
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
-        <table class="govuk-table">
-          <caption class="govuk-table__caption govuk-table__caption--m">Documents</caption>
-          <thead>
-            <tr>
-              <th class="govuk-table__header govuk-!-width-one-quarter">&nbsp;</th>
-              <th class="govuk-table__header">Status</th>
-            </tr>
-          </thead>
-          <tbody class="govuk-table__body">
-            <tr class="govuk-table__row">
-              <th class="govuk-table__header">Upload documents</th>
-              <td class="govuk-table__cell" th:text="${summary.documentUpload.status}"></td>
-            </tr>
-          </tbody>
-        </table>
+        <h2 class="govuk-heading-m">Documents</h2>
+        <dl class="govuk-summary-list">
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay('Upload documents', ${summary.documentUpload.status})}"></div>
+        </dl>
       </div>
     </div>
 </div>

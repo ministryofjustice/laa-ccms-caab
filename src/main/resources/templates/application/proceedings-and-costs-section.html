@@ -103,33 +103,24 @@
         <!-- Case costs -->
       <div class="govuk-tabs__panel govuk-tabs__panel--hidden" id="case-costs" aria-labelledby="tab_case-costs">
         <h2 class="govuk-heading-l" th:text="#{proceedings.caseCosts.subHeading}"/>
-        <table class="govuk-table">
-          <thead class="govuk-table__head">
-            <tr class="govuk-table__row">
-              <th scope="col" class="govuk-table__header"
-                  th:text="#{proceedings.caseCosts.subHeading}"/>
-              <th scope="col" class="govuk-table__header"
-                  th:text="#{proceedings.caseCosts.table.requestedAmount}"/>
-              <th scope="col" class="govuk-table__header"
-                  th:text="#{proceedings.caseCosts.table.grantedAmount}"/>
-            </tr>
-          </thead>
-          <tbody class="govuk-table__body">
-            <tr class="govuk-table__row">
-              <td class="govuk-table__cell">
-                <a th:href="@{/{caseContext}/case-costs(caseContext=${caseContext.pathValue})}" id="case-cost-limitation-link"
-                   class="govuk-link"
-                   th:text="#{proceedings.caseCosts.link.caseCostLimitation}"/>
-              </td>
-              <td class="govuk-table__cell"
-                  id="case-cost-requested-amount-value"
-                  th:text="${#numbers.formatCurrency(costs.requestedCostLimitation)}"/>
-              <td class="govuk-table__cell"
-                  id="case-cost-granted-amount-value"
-                  th:text="${#numbers.formatCurrency(costs.grantedCostLimitation)}"/>
-            </tr>
-          </tbody>
-        </table>
+        <dl class="govuk-summary-list">
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithLinkValue(
+            null,
+            null,
+            #{proceedings.caseCosts.subHeading},
+            #{proceedings.caseCosts.link.caseCostLimitation},
+            @{/{caseContext}/case-costs(caseContext=${caseContext.pathValue})},
+            'case-cost-limitation-link',
+            null)}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+            #{proceedings.caseCosts.table.requestedAmount},
+            ${#numbers.formatCurrency(costs.requestedCostLimitation)},
+            'case-cost-requested-amount-value')}"></div>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+            #{proceedings.caseCosts.table.grantedAmount},
+            ${#numbers.formatCurrency(costs.grantedCostLimitation)},
+            'case-cost-granted-amount-value')}"></div>
+        </dl>
       </div>
       <!-- Prior Authorities -->
       <div class="govuk-tabs__panel govuk-tabs__panel--hidden" id="prior-authority" aria-labelledby="tab_prior-authority">

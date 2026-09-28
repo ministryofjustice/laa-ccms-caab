@@ -95,7 +95,10 @@ public class SecurityConfiguration {
                         HttpMethod.GET, "/application/search", "/application/search/results")
                     .hasAuthority(UserRole.VIEW_CASES_AND_APPLICATIONS.getCode())
                     .requestMatchers(
-                        HttpMethod.GET, "/notifications/search", "/notifications/search-results")
+                        HttpMethod.GET,
+                        "/notifications/search",
+                        "/notifications/search-results",
+                        "/notifications/search-options/prefetch")
                     .hasAuthority(UserRole.VIEW_NOTIFICATIONS.getCode())
                     .requestMatchers(HttpMethod.GET, "/application/proceedings/add/matter-type")
                     .hasAuthority(UserRole.ADD_PROCEEDING.getCode())

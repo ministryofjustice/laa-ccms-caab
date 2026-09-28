@@ -18,46 +18,32 @@
 
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-full">
-        <table class="govuk-table">
-          <thead>
-          <tr>
-            <th class="govuk-table__header govuk-!-width-one-third" th:text="#{caseDetails.costs.limitation}"></th>
-            <th class="govuk-table__header" th:text="#{caseDetails.costs.amount}"></th>
-            <th class="govuk-table__header" th:text="#{caseDetails.costs.action}"></th>
-          </tr>
-          </thead>
-          <tbody class="govuk-table__body">
-          <tr class="govuk-table__row">
-            <td class="govuk-table__cell" th:text="#{caseDetails.costs.limitation.default}"></td>
-            <td class="govuk-table__cell"
-                th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.defaultCostLimitation)}"
-                id="costs-default-amount-value"></td>
-            <td class="govuk-table__cell"></td>
-          </tr>
-          <tr class="govuk-table__row">
-            <td class="govuk-table__cell" th:text="#{caseDetails.costs.limitation.granted}"></td>
-            <td class="govuk-table__cell"
-                th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)}"
-                id="costs-granted-amount-value"></td>
-            <td class="govuk-table__cell">
-              <span th:if="${case.costs != null and case.costs.grantedCostLimitation != null and case.costs.costEntries != null and !#lists.isEmpty(case.costs.costEntries)}">
-              <a class="govuk-link govuk-link--no-visited-state"
-                 id="case-cost-limitation-link"
-                 th:href="@{/case/details/costs/allocation}">
-                <th:block th:text="#{caseCostDetails.allocation.link}"/>
-              </a>
-                </span>
-            </td>
-          </tr>
-          <tr class="govuk-table__row">
-            <td class="govuk-table__cell" th:text="#{caseDetails.costs.limitation.requested}"></td>
-            <td class="govuk-table__cell"
-                th:text="${#numbers.formatCurrency(summary.proceedingsAndCosts.requestedCostLimitation)}"
-                id="costs-requested-amount-value"></td>
-            <td class="govuk-table__cell"></td>
-          </tr>
-          </tbody>
-        </table>
+        <dl class="govuk-summary-list">
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+            #{caseDetails.costs.limitation.default},
+            ${#numbers.formatCurrency(summary.proceedingsAndCosts.defaultCostLimitation)},
+            'costs-default-amount-value')}"></div>
+          <th:block th:if="${case.costs != null and case.costs.grantedCostLimitation != null and case.costs.costEntries != null and !#lists.isEmpty(case.costs.costEntries)}">
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithAction(
+              #{caseDetails.costs.limitation.granted},
+              ${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)},
+              'costs-granted-amount-value',
+              #{caseCostDetails.allocation.link},
+              @{/case/details/costs/allocation},
+              'case-cost-limitation-link',
+              null)}"></div>
+          </th:block>
+          <th:block th:unless="${case.costs != null and case.costs.grantedCostLimitation != null and case.costs.costEntries != null and !#lists.isEmpty(case.costs.costEntries)}">
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+              #{caseDetails.costs.limitation.granted},
+              ${#numbers.formatCurrency(summary.proceedingsAndCosts.grantedCostLimitation)},
+              'costs-granted-amount-value')}"></div>
+          </th:block>
+          <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayWithId(
+            #{caseDetails.costs.limitation.requested},
+            ${#numbers.formatCurrency(summary.proceedingsAndCosts.requestedCostLimitation)},
+            'costs-requested-amount-value')}"></div>
+        </dl>
       </div>
     </div>
   </div>
