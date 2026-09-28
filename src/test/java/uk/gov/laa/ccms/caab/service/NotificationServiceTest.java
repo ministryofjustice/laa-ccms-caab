@@ -8,10 +8,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -158,6 +161,34 @@ class NotificationServiceTest {
     verify(ebsApiClient).getNotifications(captured.capture(), eq(10), eq(0), eq(10));
     assertEquals("2018-01-01", captured.getValue().getNotificationFromDate());
     assertEquals("2021-01-01", captured.getValue().getNotificationToDate());
+  }
+
+  @Test
+  void getNotifications_forwardsFutureDatesForHomeAndCaseSearches() {
+    LocalDate from = LocalDate.now().plusDays(1);
+    LocalDate to = from.plusMonths(1);
+    NotificationSearchCriteria home = new NotificationSearchCriteria();
+    home.setNotificationFromDate(from.format(DateTimeFormatter.ofPattern("d/M/yyyy")));
+    home.setNotificationToDate(to.format(DateTimeFormatter.ofPattern("d/M/yyyy")));
+    NotificationSearchCriteria caseSearch = new NotificationSearchCriteria(home);
+    caseSearch.setOriginatesFromCase(true);
+    caseSearch.setCaseReference("300000000001");
+
+    when(ebsApiClient.getNotifications(any(), eq(10), eq(0), eq(10)))
+        .thenReturn(Mono.just(new Notifications()));
+
+    notificationService.getNotifications(home, 10, 0, 10).block();
+    notificationService.getNotifications(caseSearch, 10, 0, 10).block();
+
+    ArgumentCaptor<NotificationSearchCriteria> captured =
+        ArgumentCaptor.forClass(NotificationSearchCriteria.class);
+    verify(ebsApiClient, times(2)).getNotifications(captured.capture(), eq(10), eq(0), eq(10));
+    for (NotificationSearchCriteria sent : captured.getAllValues()) {
+      assertEquals(from.toString(), sent.getNotificationFromDate());
+      assertEquals(to.toString(), sent.getNotificationToDate());
+    }
+    assertEquals(false, captured.getAllValues().getFirst().isOriginatesFromCase());
+    assertEquals(true, captured.getAllValues().getLast().isOriginatesFromCase());
   }
 
   @Test

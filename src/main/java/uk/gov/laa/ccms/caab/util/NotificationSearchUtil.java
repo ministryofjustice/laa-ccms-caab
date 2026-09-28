@@ -68,13 +68,8 @@ public final class NotificationSearchUtil {
         // If FROM set but TO not set => TO = FROM + 3 Years
         LocalDate notificationFromDate =
             DateUtils.convertToLocalDate(criteria.getNotificationFromDate());
-        LocalDate toDate = notificationFromDate.plusYears(3);
-        // If to date is after today, set to today
-        if (toDate.isAfter(LocalDate.now())) {
-          toDate = LocalDate.now();
-        }
         copyCriteria.setNotificationFromDate(notificationFromDate.format(ISO));
-        copyCriteria.setNotificationToDate(toDate.format(ISO));
+        copyCriteria.setNotificationToDate(notificationFromDate.plusYears(3).format(ISO));
       } else {
         // Convert date formats
         LocalDate notificationToDate =

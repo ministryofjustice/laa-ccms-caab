@@ -72,8 +72,8 @@ class NotificationSearchUtilTest {
   }
 
   @Test
-  @DisplayName("Should set to date to today if from date is set and within last 3 years")
-  void shouldSetToDateToTodayIfFromDateIsSetAndWithinLast3Years() {
+  @DisplayName("Should not cap a from-only search at today")
+  void shouldSetToDateThreeYearsAfterFromEvenIfFuture() {
     // Given
     LocalDate fromDate = LocalDate.now().minusYears(2).minusMonths(5);
     String fromInput = toMojStringDate(fromDate);
@@ -84,7 +84,21 @@ class NotificationSearchUtilTest {
         NotificationSearchUtil.prepareNotificationSearchCriteria(input);
     // Then
     assertEquals(toResultStringDate(fromDate), result.getNotificationFromDate());
-    assertEquals(toResultStringDate(LocalDate.now()), result.getNotificationToDate());
+    assertEquals(toResultStringDate(fromDate.plusYears(3)), result.getNotificationToDate());
+  }
+
+  @Test
+  @DisplayName("Should derive a three-year window for a future to-only search")
+  void shouldSetFromDateForFutureToDate() {
+    LocalDate toDate = LocalDate.now().plusYears(2);
+    NotificationSearchCriteria input = new NotificationSearchCriteria();
+    input.setNotificationToDate(toMojStringDate(toDate));
+
+    NotificationSearchCriteria result =
+        NotificationSearchUtil.prepareNotificationSearchCriteria(input);
+
+    assertEquals(toResultStringDate(toDate.minusYears(3)), result.getNotificationFromDate());
+    assertEquals(toResultStringDate(toDate), result.getNotificationToDate());
   }
 
   @Test
