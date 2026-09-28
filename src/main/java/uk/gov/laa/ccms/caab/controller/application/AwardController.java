@@ -297,6 +297,7 @@ public class AwardController {
         && (awardTypeForm == null
             || !StringUtils.hasText(awardTypeForm.getAwardTypeCode())
             || !StringUtils.hasText(awardTypeForm.getAwardType())
+            || !Objects.equals(awardTypeForm.getAwardType(), AWARD_TYPE_OTHER_ASSET)
             || !Objects.equals(otherAssetAward.getAwardCode(), awardTypeForm.getAwardTypeCode())
             || !Objects.equals(otherAssetAward.getAwardType(), awardTypeForm.getAwardType()))) {
       bindingResult.reject(
