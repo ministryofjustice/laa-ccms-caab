@@ -12,6 +12,8 @@ import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
+import uk.gov.laa.ccms.caab.model.LandAwardDetail;
+import uk.gov.laa.ccms.caab.model.LandAwardRequest;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 
 /** Service class to handle Case Outcomes. */
@@ -92,6 +94,60 @@ public class CaseOutcomeService {
     caabApiClient
         .updateFinancialAward(caseOutcome.getId(), financialAwardId, loginId, financialAward)
         .block();
+  }
+
+  /** Returns a land award only when it belongs to the supplied case outcome. */
+  public Optional<LandAwardDetail> getLandAward(
+      final String caseReferenceNumber, final Integer providerId, final Integer landAwardId) {
+    final Integer caseOutcomeId =
+        getCaseOutcome(caseReferenceNumber, providerId)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "No case outcome exists for case reference number: " + caseReferenceNumber))
+            .getId();
+    return Optional.ofNullable(caabApiClient.getLandAward(caseOutcomeId, landAwardId).block());
+  }
+
+  /** Creates a land award without replacing the owning case outcome aggregate. */
+  public void createLandAward(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final LandAwardRequest landAward,
+      final String loginId) {
+    final Integer caseOutcomeId =
+        getCaseOutcome(caseReferenceNumber, providerId)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "No case outcome exists for case reference number: " + caseReferenceNumber))
+            .getId();
+    caabApiClient.createLandAward(caseOutcomeId, loginId, landAward).block();
+  }
+
+  /** Updates a land award without replacing the owning case outcome aggregate. */
+  public void updateLandAward(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final Integer landAwardId,
+      final LandAwardRequest landAward,
+      final String loginId) {
+    final CaseOutcomeDetail caseOutcome =
+        getCaseOutcome(caseReferenceNumber, providerId)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "No case outcome exists for case reference number: "
+                            + caseReferenceNumber));
+    Optional.ofNullable(caseOutcome.getLandAwards()).orElse(Collections.emptyList()).stream()
+        .filter(award -> landAwardId.equals(award.getId()))
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Land award %s does not belong to case reference number: %s"
+                        .formatted(landAwardId, caseReferenceNumber)));
+    caabApiClient.updateLandAward(caseOutcome.getId(), landAwardId, loginId, landAward).block();
   }
 
   /**
