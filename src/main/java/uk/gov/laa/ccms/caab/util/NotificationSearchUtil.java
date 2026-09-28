@@ -22,9 +22,9 @@ public final class NotificationSearchUtil {
 
   /**
    * Prepares notification search criteria. When neither date is supplied, both are omitted so the
-   * data API applies its rolling 36-month default from the database date, up to and including today.
-   * When one date is supplied, the other is calculated using the existing 3-year window. Supplied
-   * dates are formatted as 'yyyy-MM-dd' for the EBS API.
+   * data API applies its rolling 36-month default from the database date, up to and including
+   * today. When one date is supplied, the other is calculated using the existing 3-year window.
+   * Supplied dates are formatted as 'yyyy-MM-dd' for the EBS API.
    *
    * <p>Blank filters are also nulled, so that their query parameters are omitted rather than sent
    * empty. An empty parameter is a filter on the empty string, which matches no notifications
