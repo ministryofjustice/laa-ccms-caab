@@ -40,6 +40,12 @@ repositories {
 }
 
 configurations.configureEach {
+    // The application does not enable HTTP/3 or QUIC. Exclude these optional
+    // Netty modules so vulnerable, unused implementations are not packaged.
+    exclude group: 'io.netty', module: 'netty-codec-http3'
+    exclude group: 'io.netty', module: 'netty-codec-classes-quic'
+    exclude group: 'io.netty', module: 'netty-codec-native-quic'
+
     resolutionStrategy.eachDependency { details ->
         // Build-time only: reaches us via checkstyle's doxia transitives, never the app classpath.
         if (details.requested.group == 'org.codehaus.plexus'
