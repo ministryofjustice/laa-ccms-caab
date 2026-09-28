@@ -22,7 +22,7 @@ public final class NotificationSearchUtil {
 
   /**
    * Prepares notification search criteria. When neither date is supplied, both are omitted so the
-   * data API applies its rolling 36-month default from the database date (without an upper bound).
+   * data API applies its rolling 36-month default from the database date, up to and including today.
    * When one date is supplied, the other is calculated using the existing 3-year window. Supplied
    * dates are formatted as 'yyyy-MM-dd' for the EBS API.
    *
