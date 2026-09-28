@@ -107,32 +107,33 @@ class NotificationSearchValidatorTest {
   }
 
   @Test
-  void allowsFutureFromDateWithoutToDate() {
+  void rejectsFutureFromDateWithoutToDate() {
     criteria.setNotificationFromDate(LocalDate.now().plusDays(1).format(DATE_FORMAT));
 
     validator.validate(criteria, errors);
 
-    assertFalse(errors.hasErrors());
+    assertNotNull(errors.getFieldError("notificationFromDate"));
   }
 
   @Test
-  void allowsFutureToDateWithoutFromDate() {
+  void rejectsFutureToDateWithoutFromDate() {
     criteria.setNotificationToDate(LocalDate.now().plusDays(1).format(DATE_FORMAT));
 
     validator.validate(criteria, errors);
 
-    assertFalse(errors.hasErrors());
+    assertNotNull(errors.getFieldError("notificationToDate"));
   }
 
   @Test
-  void allowsFutureDateRangeWithinThreeYears() {
+  void rejectsFutureDateRangeWithinThreeYears() {
     LocalDate from = LocalDate.now().plusDays(1);
     criteria.setNotificationFromDate(from.format(DATE_FORMAT));
     criteria.setNotificationToDate(from.plusYears(3).format(DATE_FORMAT));
 
     validator.validate(criteria, errors);
 
-    assertFalse(errors.hasErrors());
+    assertNotNull(errors.getFieldError("notificationFromDate"));
+    assertNotNull(errors.getFieldError("notificationToDate"));
   }
 
   @Test

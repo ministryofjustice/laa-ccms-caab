@@ -117,8 +117,18 @@ public class NotificationSearchValidator extends AbstractValidator {
       }
     }
 
+    boolean fromInvalid = fromDateEmpty || from == null;
+    if (!fromInvalid) {
+      validateDateInPast(from, dateFromFieldName, dateFromDisplayName, errors);
+    }
+
+    boolean toInvalid = toDateEmpty || to == null;
+    if (!toInvalid) {
+      validateDateInPast(to, dateToFieldName, dateToDisplayName, errors);
+    }
+
     // Validate that To is after From date
-    if (!fromDateEmpty && from != null && !toDateEmpty && to != null) {
+    if (!fromInvalid && !toInvalid) {
       validateFromBeforeToDates(from, dateFromFieldName, to, errors);
       validateLessThanThreeYearsBetweenDates(from, dateToFieldName, to, errors);
     }
