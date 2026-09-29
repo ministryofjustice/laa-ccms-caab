@@ -100,6 +100,7 @@ dependencies {
 
     // 0.11.0 carries the Other Asset Award request model and CRUD endpoints.
     implementation 'uk.gov.laa.ccms.caab:caab-api:0.11.0'
+
     // 0.7.0 carries the bill id needed to delete a draft (PR #175).
     implementation 'uk.gov.laa.ccms.caab:caab-api:0.13.0'
 
