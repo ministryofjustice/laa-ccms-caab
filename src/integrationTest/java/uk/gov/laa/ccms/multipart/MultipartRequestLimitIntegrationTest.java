@@ -1,4 +1,4 @@
-package uk.gov.laa.ccms.caab;
+package uk.gov.laa.ccms.multipart;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
