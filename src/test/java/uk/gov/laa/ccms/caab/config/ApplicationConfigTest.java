@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.config;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import fi.solita.clamav.ClamAVClient;
@@ -14,6 +15,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
+import reactor.netty.http.client.HttpClient;
 
 @ExtendWith(MockitoExtension.class)
 @SpringBootTest(classes = {ApplicationConfig.class, TestConfig.class})
@@ -68,6 +70,11 @@ class ApplicationConfigTest {
   @Test
   void soaApiWebClientBeanExists() {
     assertNotNull(soaApiWebClient, "soaApiWebClient bean should not be null");
+  }
+
+  @Test
+  void httpsClientCanInitialize() {
+    assertDoesNotThrow(() -> HttpClient.create().secure());
   }
 
   @Test

@@ -100,8 +100,8 @@
             <td class="govuk-table__cell" th:text="${award.description}"></td>
             <td class="govuk-table__cell"
                 th:text="${award.awardType == 'LAND' || award.awardType == 'ASSET'
-    ? (award.valuationAmount != null ? '£' + award.valuationAmount : '')
-    : (award.awardAmount != null ? '£' + award.awardAmount : '')}"></td>
+                ? (award.valuationAmount != null ? '£' + award.valuationAmount : '')
+                : (award.awardAmount != null ? '£' + award.awardAmount : '')}"></td>
             <td class="govuk-table__cell">
               <a class="govuk-link"
                  th:if="${award.id != null}"

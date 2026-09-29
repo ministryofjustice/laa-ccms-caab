@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.client;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FINANCIAL;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_LAND;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTHER_ASSET;
 
 import java.net.URI;
@@ -33,6 +34,8 @@ import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
+import uk.gov.laa.ccms.caab.model.LandAwardDetail;
+import uk.gov.laa.ccms.caab.model.LandAwardRequest;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
@@ -67,6 +70,7 @@ public class CaabApiClient {
   public static final String RESOURCE_TYPE_CASE_OUTCOME = "case outcome";
   public static final String RESOURCE_TYPE_FINANCIAL_AWARD = "financial award";
   public static final String RESOURCE_TYPE_OTHER_ASSET_AWARD = "other asset award";
+  public static final String RESOURCE_TYPE_LAND_AWARD = "land award";
   public static final String RESOURCE_TYPE_EVIDENCE = "evidence";
   public static final String RESOURCE_TYPE_NOTIFICATION_ATTACHMENTS = "notification attachments";
   public static final String RESOURCE_TYPE_BILL = "bill";
@@ -938,6 +942,62 @@ public class CaabApiClient {
             e ->
                 caabApiClientErrorHandler.handleApiUpdateError(
                     e, RESOURCE_TYPE_OTHER_ASSET_AWARD, "id", String.valueOf(otherAssetAwardId)));
+  }
+
+  /** Creates a land award for an existing case outcome. */
+  public Mono<String> createLandAward(
+      final Integer caseOutcomeId, final String loginId, final LandAwardRequest landAward) {
+    return caabApiWebClient
+        .post()
+        .uri("/case-outcomes/{case-outcome-id}/awards/{award-type}", caseOutcomeId, AWARD_TYPE_LAND)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(landAward)
+        .exchangeToMono(CaabApiClient::getIdResponse)
+        .onErrorResume(
+            e -> caabApiClientErrorHandler.handleApiCreateError(e, RESOURCE_TYPE_LAND_AWARD));
+  }
+
+  /** Gets a land award by id and owning case outcome id. */
+  public Mono<LandAwardDetail> getLandAward(
+      final Integer caseOutcomeId, final Integer landAwardId) {
+    return caabApiWebClient
+        .get()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{land-award-id}",
+            caseOutcomeId,
+            AWARD_TYPE_LAND,
+            landAwardId)
+        .retrieve()
+        .bodyToMono(LandAwardDetail.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiRetrieveError(
+                    e, RESOURCE_TYPE_LAND_AWARD, "id", String.valueOf(landAwardId)));
+  }
+
+  /** Updates a land award belonging to a case outcome. */
+  public Mono<Void> updateLandAward(
+      final Integer caseOutcomeId,
+      final Integer landAwardId,
+      final String loginId,
+      final LandAwardRequest landAward) {
+    return caabApiWebClient
+        .put()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{land-award-id}",
+            caseOutcomeId,
+            AWARD_TYPE_LAND,
+            landAwardId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(landAward)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiUpdateError(
+                    e, RESOURCE_TYPE_LAND_AWARD, "id", String.valueOf(landAwardId)));
   }
 
   /**
