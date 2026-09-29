@@ -2,6 +2,8 @@ package uk.gov.laa.ccms.caab.bean.validators.notification;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,6 +16,8 @@ import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationSearchValidatorTest {
+
+  private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
   private NotificationSearchCriteria criteria;
 
@@ -100,6 +104,58 @@ class NotificationSearchValidatorTest {
     criteria.setNotificationToDate("13/12/2021");
     validator.validate(criteria, errors);
     assertFalse(errors.hasErrors());
+  }
+
+  @Test
+  void rejectsFutureFromDateWithoutToDate() {
+    criteria.setNotificationFromDate(LocalDate.now().plusDays(1).format(DATE_FORMAT));
+
+    validator.validate(criteria, errors);
+
+    assertNotNull(errors.getFieldError("notificationFromDate"));
+  }
+
+  @Test
+  void rejectsFutureToDateWithoutFromDate() {
+    criteria.setNotificationToDate(LocalDate.now().plusDays(1).format(DATE_FORMAT));
+
+    validator.validate(criteria, errors);
+
+    assertNotNull(errors.getFieldError("notificationToDate"));
+  }
+
+  @Test
+  void rejectsFutureDateRangeWithinThreeYears() {
+    LocalDate from = LocalDate.now().plusDays(1);
+    criteria.setNotificationFromDate(from.format(DATE_FORMAT));
+    criteria.setNotificationToDate(from.plusYears(3).format(DATE_FORMAT));
+
+    validator.validate(criteria, errors);
+
+    assertNotNull(errors.getFieldError("notificationFromDate"));
+    assertNotNull(errors.getFieldError("notificationToDate"));
+  }
+
+  @Test
+  void rejectsFutureDateRangeLongerThanThreeYears() {
+    LocalDate from = LocalDate.now().plusDays(1);
+    criteria.setNotificationFromDate(from.format(DATE_FORMAT));
+    criteria.setNotificationToDate(from.plusYears(3).plusDays(1).format(DATE_FORMAT));
+
+    validator.validate(criteria, errors);
+
+    assertNotNull(errors.getFieldError("notificationToDate"));
+  }
+
+  @Test
+  void rejectsFutureDateRangeWithFromAfterTo() {
+    LocalDate from = LocalDate.now().plusDays(2);
+    criteria.setNotificationFromDate(from.format(DATE_FORMAT));
+    criteria.setNotificationToDate(from.minusDays(1).format(DATE_FORMAT));
+
+    validator.validate(criteria, errors);
+
+    assertTrue(errors.hasErrors());
   }
 
   @Test

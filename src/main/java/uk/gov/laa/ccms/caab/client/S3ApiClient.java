@@ -187,14 +187,18 @@ public class S3ApiClient {
    * @param fileName The filename to set in Content-Disposition metadata, or null if none.
    */
   private void uploadDocumentToS3(String objectKey, String fileData, String fileName) {
-    InputStream contentInputStream = new ByteArrayInputStream(Base64.getDecoder().decode(fileData));
-    ObjectMetadata objectMetadata = buildContentDispositionMetadata(fileName);
+    try (InputStream contentInputStream =
+        new ByteArrayInputStream(Base64.getDecoder().decode(fileData))) {
+      ObjectMetadata objectMetadata = buildContentDispositionMetadata(fileName);
 
-    if (objectMetadata != null) {
-      s3Template.upload(
-          documentBucketProperties.getName(), objectKey, contentInputStream, objectMetadata);
-    } else {
-      s3Template.upload(documentBucketProperties.getName(), objectKey, contentInputStream);
+      if (objectMetadata != null) {
+        s3Template.upload(
+            documentBucketProperties.getName(), objectKey, contentInputStream, objectMetadata);
+      } else {
+        s3Template.upload(documentBucketProperties.getName(), objectKey, contentInputStream);
+      }
+    } catch (IOException e) {
+      errorHandler.handleS3ApiError(e);
     }
   }
 

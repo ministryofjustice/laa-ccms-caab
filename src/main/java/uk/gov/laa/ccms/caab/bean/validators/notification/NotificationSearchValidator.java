@@ -118,13 +118,11 @@ public class NotificationSearchValidator extends AbstractValidator {
     }
 
     boolean fromInvalid = fromDateEmpty || from == null;
-    //  Validate from date is not in the future
     if (!fromInvalid) {
       validateDateInPast(from, dateFromFieldName, dateFromDisplayName, errors);
     }
 
     boolean toInvalid = toDateEmpty || to == null;
-    // Validate to date is not in the future
     if (!toInvalid) {
       validateDateInPast(to, dateToFieldName, dateToDisplayName, errors);
     }
