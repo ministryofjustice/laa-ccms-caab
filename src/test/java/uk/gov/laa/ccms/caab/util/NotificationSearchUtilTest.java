@@ -72,7 +72,7 @@ class NotificationSearchUtilTest {
   }
 
   @Test
-  @DisplayName("Should set to date to today if from date is set and within last 3 years")
+  @DisplayName("Should cap a from-only search at today")
   void shouldSetToDateToTodayIfFromDateIsSetAndWithinLast3Years() {
     // Given
     LocalDate fromDate = LocalDate.now().minusYears(2).minusMonths(5);
@@ -88,17 +88,30 @@ class NotificationSearchUtilTest {
   }
 
   @Test
-  @DisplayName("Should preset to last 3 years if to and from not set")
-  void shouldPresetToLast3YearsIfToAndFromNotSet() {
+  @DisplayName("Should omit both dates when neither is set, leaving the API to apply its default")
+  void shouldOmitDatesIfToAndFromNotSet() {
     // Given
     NotificationSearchCriteria input = new NotificationSearchCriteria();
     // When
     NotificationSearchCriteria result =
         NotificationSearchUtil.prepareNotificationSearchCriteria(input);
     // Then
-    assertEquals(toResultStringDate(LocalDate.now()), result.getNotificationToDate());
-    assertEquals(
-        toResultStringDate(LocalDate.now().minusYears(3)), result.getNotificationFromDate());
+    assertNull(result.getNotificationToDate());
+    assertNull(result.getNotificationFromDate());
+  }
+
+  @Test
+  @DisplayName("Should omit blank dates for a main search")
+  void shouldOmitBlankDatesForMainSearch() {
+    NotificationSearchCriteria input = new NotificationSearchCriteria();
+    input.setNotificationFromDate("");
+    input.setNotificationToDate("  ");
+
+    NotificationSearchCriteria result =
+        NotificationSearchUtil.prepareNotificationSearchCriteria(input);
+
+    assertNull(result.getNotificationFromDate());
+    assertNull(result.getNotificationToDate());
   }
 
   @Test
@@ -166,8 +179,8 @@ class NotificationSearchUtilTest {
   }
 
   @Test
-  @DisplayName("Should not apply a default date range to a search from a case")
-  void shouldNotApplyDefaultDateRangeToCaseSearch() {
+  @DisplayName("Should omit dates for a case search so the API applies its default")
+  void shouldOmitDatesForCaseSearch() {
     // Given
     NotificationSearchCriteria input = new NotificationSearchCriteria();
     input.setOriginatesFromCase(true);

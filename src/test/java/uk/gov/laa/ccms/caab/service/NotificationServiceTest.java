@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.service;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -18,6 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -88,12 +90,9 @@ class NotificationServiceTest {
             .notificationType("N"));
     NotificationSearchCriteria criteria = new NotificationSearchCriteria();
     criteria.setAssignedToUserId("user1");
-    criteria.setNotificationFromDate("2024-01-01");
-    criteria.setNotificationToDate("2025-01-01");
-
     criteria.setLoginId("user1");
     criteria.setUserType("user1");
-    when(ebsApiClient.getNotifications(criteria, 10, 1, 10))
+    when(ebsApiClient.getNotifications(any(), eq(10), eq(1), eq(10)))
         .thenReturn(Mono.just(notificationsMock));
     Mono<Notifications> notificationsMono =
         notificationService.getNotifications(criteria, 10, 1, 10);
@@ -103,6 +102,62 @@ class NotificationServiceTest {
             notifications ->
                 "user1".equals(notifications.getContent().getFirst().getUser().getLoginId()))
         .verifyComplete();
+
+    ArgumentCaptor<NotificationSearchCriteria> captured =
+        ArgumentCaptor.forClass(NotificationSearchCriteria.class);
+    verify(ebsApiClient).getNotifications(captured.capture(), eq(10), eq(1), eq(10));
+    assertNull(captured.getValue().getNotificationFromDate());
+    assertNull(captured.getValue().getNotificationToDate());
+  }
+
+  @Test
+  void getNotifications_usesGeneralEndpointForCaseSearchWithoutDates() {
+    Notifications notificationsMock = new Notifications();
+    NotificationSearchCriteria criteria = new NotificationSearchCriteria();
+    criteria.setOriginatesFromCase(true);
+    criteria.setCaseReference("300000000001");
+    criteria.setAssignedToUserId("case_login");
+    criteria.setIncludeClosed(true);
+
+    when(ebsApiClient.getNotifications(any(), eq(10), eq(0), eq(10)))
+        .thenReturn(Mono.just(notificationsMock));
+
+    StepVerifier.create(notificationService.getNotifications(criteria, 10, 0, 10))
+        .expectNext(notificationsMock)
+        .verifyComplete();
+
+    ArgumentCaptor<NotificationSearchCriteria> captured =
+        ArgumentCaptor.forClass(NotificationSearchCriteria.class);
+    verify(ebsApiClient).getNotifications(captured.capture(), eq(10), eq(0), eq(10));
+    assertEquals("300000000001", captured.getValue().getCaseReference());
+    assertEquals("case_login", captured.getValue().getAssignedToUserId());
+    assertEquals(true, captured.getValue().isOriginatesFromCase());
+    assertEquals(true, captured.getValue().isIncludeClosed());
+    assertNull(captured.getValue().getNotificationFromDate());
+    assertNull(captured.getValue().getNotificationToDate());
+  }
+
+  @Test
+  void getNotifications_usesGeneralEndpointWhenCaseSearchHasAdditionalFilters() {
+    Notifications notificationsMock = new Notifications();
+    NotificationSearchCriteria criteria = new NotificationSearchCriteria();
+    criteria.setOriginatesFromCase(true);
+    criteria.setCaseReference("300000000001");
+    criteria.setIncludeClosed(true);
+    criteria.setNotificationFromDate("1/1/2018");
+
+    when(ebsApiClient.getNotifications(any(), eq(10), eq(0), eq(10)))
+        .thenReturn(Mono.just(notificationsMock));
+
+    StepVerifier.create(notificationService.getNotifications(criteria, 10, 0, 10))
+        .expectNext(notificationsMock)
+        .verifyComplete();
+
+    ArgumentCaptor<NotificationSearchCriteria> captured =
+        ArgumentCaptor.forClass(NotificationSearchCriteria.class);
+    verify(ebsApiClient).getNotifications(captured.capture(), eq(10), eq(0), eq(10));
+    assertEquals("2018-01-01", captured.getValue().getNotificationFromDate());
+    assertEquals("2021-01-01", captured.getValue().getNotificationToDate());
   }
 
   @Test
