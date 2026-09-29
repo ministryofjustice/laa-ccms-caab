@@ -25,6 +25,7 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
+import static uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController.NOTIFICATION_ID;
 import static uk.gov.laa.ccms.caab.util.ApplicationDetailUtils.buildFullApplicationDetail;
 
 import java.util.ArrayList;
@@ -42,12 +43,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.ui.ExtendedModelMap;
 import org.springframework.util.StringUtils;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
+import org.springframework.web.servlet.HandlerMapping;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
@@ -1045,14 +1050,42 @@ class ActionsAndNotificationsControllerTest {
   @DisplayName("GET: /notifications/{notification-id}/attachments/upload")
   class GetUploadAttachmentTests {
 
-    @BeforeEach
-    void setUp() {
-      when(notificationSearchValidator.supports(any())).thenReturn(true);
+    @Test
+    void oversizedNotificationAttachmentShowsUploadError() {
+      MockHttpServletRequest request =
+          new MockHttpServletRequest("POST", "/civil/notifications/234/attachments/upload");
+      request.setContextPath("/civil");
+      request.setAttribute(
+          HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE, Map.of(NOTIFICATION_ID, "234"));
+      when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+          .thenReturn(Mono.just(new CommonLookupDetail()));
+      doAnswer(
+              invocation -> {
+                Errors errors = invocation.getArgument(0);
+                errors.rejectValue("file", "validation.error.maxFileSize", "File is too large");
+                return null;
+              })
+          .when(notificationAttachmentUploadValidator)
+          .rejectFileSize(any(Errors.class));
+      ExtendedModelMap model = new ExtendedModelMap();
+
+      String view = actionsAndNotificationsController.handleAttachmentTooLarge(request, model);
+
+      assertEquals("notifications/upload-notification-attachment", view);
+      assertEquals("234", model.get("notificationId"));
+      BindingResult errors =
+          (BindingResult) model.get(BindingResult.MODEL_KEY_PREFIX + "attachmentUploadFormData");
+      assertEquals("validation.error.maxFileSize", errors.getFieldError("file").getCode());
+      assertEquals(
+          SendBy.ELECTRONIC,
+          ((NotificationAttachmentUploadFormData) model.get("attachmentUploadFormData"))
+              .getSendBy());
     }
 
     @Test
     @DisplayName("Should return expected result")
     void shouldReturnExpectedResult() {
+      when(notificationSearchValidator.supports(any())).thenReturn(true);
 
       CommonLookupValueDetail documentType =
           new CommonLookupValueDetail()

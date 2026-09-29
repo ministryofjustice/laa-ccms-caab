@@ -25,9 +25,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
+import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -36,6 +38,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
@@ -692,8 +696,27 @@ public class ActionsAndNotificationsController {
 
     populateNotificationAttachmentModel(model);
 
+    attachmentUploadFormData.setSendBy(sendBy);
     model.addAttribute("attachmentUploadFormData", attachmentUploadFormData);
     model.addAttribute("notificationId", notificationId);
+    return "notifications/upload-notification-attachment";
+  }
+
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public String handleAttachmentTooLarge(HttpServletRequest request, Model model) {
+    NotificationAttachmentUploadFormData form = new NotificationAttachmentUploadFormData();
+    form.setSendBy(SendBy.ELECTRONIC);
+    BindingResult errors = new BeanPropertyBindingResult(form, "attachmentUploadFormData");
+    attachmentUploadValidator.rejectFileSize(errors);
+    model.addAttribute("attachmentUploadFormData", form);
+    model.addAttribute(BindingResult.MODEL_KEY_PREFIX + "attachmentUploadFormData", errors);
+    Object pathVariables = request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
+    if (!(pathVariables instanceof Map<?, ?> variables)
+        || !(variables.get(NOTIFICATION_ID) instanceof String notificationId)) {
+      throw new IllegalStateException("Missing notification ID for attachment upload");
+    }
+    model.addAttribute("notificationId", notificationId);
+    populateNotificationAttachmentModel(model);
     return "notifications/upload-notification-attachment";
   }
 

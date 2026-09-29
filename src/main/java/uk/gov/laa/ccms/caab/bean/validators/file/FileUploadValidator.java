@@ -176,16 +176,9 @@ public abstract class FileUploadValidator extends AbstractValidator {
    * @param errors the Errors object to store validation errors.
    */
   private void validateFileSize(FileUploadFormData fileUploadFormData, Errors errors) {
-    try {
-      // Check the file size is within limits
-      final int fileSize = fileUploadFormData.getFile().getBytes().length;
-      final long maxSize = DataSize.parse(maxFileSize).toBytes();
-
-      if (fileSize > maxSize) {
-        rejectFileSize(errors);
-      }
-    } catch (IOException ioe) {
-      throw new CaabApplicationException("Failed to read file data", ioe);
+    final long maxSize = DataSize.parse(maxFileSize).toBytes();
+    if (fileUploadFormData.getFile().getSize() > maxSize) {
+      rejectFileSize(errors);
     }
   }
 

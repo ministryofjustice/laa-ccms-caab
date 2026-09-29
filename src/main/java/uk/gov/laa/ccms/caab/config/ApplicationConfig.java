@@ -50,9 +50,12 @@ public class ApplicationConfig implements WebMvcConfigurer {
 
   private final LoggingInterceptor loggingInterceptor;
 
+  private final UploadSizeErrorInterceptor uploadSizeErrorInterceptor;
+
   @Override
   public void addInterceptors(InterceptorRegistry registry) {
     registry.addInterceptor(loggingInterceptor);
+    registry.addInterceptor(uploadSizeErrorInterceptor);
   }
 
   @Override
@@ -80,7 +83,8 @@ public class ApplicationConfig implements WebMvcConfigurer {
       @Value("${av.api.hostname}") final String avApiHostName,
       @Value("${av.api.port}") final Integer avApiPort,
       @Value("${av.api.timeout}") final Integer avApiTimeout,
-      final LoggingInterceptor loggingInterceptor) {
+      final LoggingInterceptor loggingInterceptor,
+      final UploadSizeErrorInterceptor uploadSizeErrorInterceptor) {
     this.ebsApiProperties = ebsApiProperties;
     this.soaApiProperties = soaApiProperties;
     this.caabApiProperties = caabApiProperties;
@@ -91,6 +95,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
     this.avApiPort = avApiPort;
     this.avApiTimeout = avApiTimeout;
     this.loggingInterceptor = loggingInterceptor;
+    this.uploadSizeErrorInterceptor = uploadSizeErrorInterceptor;
   }
 
   /**
