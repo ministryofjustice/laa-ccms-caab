@@ -67,7 +67,7 @@ public class UploadSizeErrorFilter extends OncePerRequestFilter {
             + TOKEN_PARAMETER
             + "="
             + token;
-    response.sendRedirect(response.encodeRedirectURL(redirect));
+    response.sendRedirect(redirect);
   }
 
   private static boolean isSizeError(Throwable exception) {

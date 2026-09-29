@@ -25,7 +25,13 @@ class UploadSizeErrorFilterTest {
   void redirectsOversizedMultipartRequestToItsForm() throws Exception {
     MockHttpServletRequest request = request("/civil/case-provider-requests/documents");
     request.setQueryString("caseReferenceNumber=123");
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockHttpServletResponse response =
+        new MockHttpServletResponse() {
+          @Override
+          public String encodeRedirectURL(String url) {
+            return url + ";jsessionid=synthetic";
+          }
+        };
     FilterChain chain =
         (req, res) -> {
           throw new InvalidParameterException(

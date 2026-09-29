@@ -1268,7 +1268,13 @@ class ActionsAndNotificationsControllerTest {
           new MockHttpServletRequest("POST", "/civil/notifications/234/attachments/upload");
       request.setContextPath("/civil");
       request.setQueryString("sendBy=ELECTRONIC&attachmentId=567");
-      MockHttpServletResponse response = new MockHttpServletResponse();
+      MockHttpServletResponse response =
+          new MockHttpServletResponse() {
+            @Override
+            public String encodeRedirectURL(String url) {
+              return url + ";jsessionid=synthetic";
+            }
+          };
 
       actionsAndNotificationsController.handleAttachmentTooLarge(request, response);
 
