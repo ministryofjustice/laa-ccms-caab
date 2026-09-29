@@ -9,8 +9,8 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -23,7 +23,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
@@ -31,6 +30,8 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.util.ApplicationDetailUtils.buildFullApplicationDetail;
 
+import jakarta.servlet.http.HttpSession;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -57,11 +58,16 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.ui.ExtendedModelMap;
+import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.support.SessionFlashMapManager;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
@@ -1051,18 +1057,30 @@ class ActionsAndNotificationsControllerTest {
           .when(notificationAttachmentUploadValidator)
           .validate(any(), any());
 
-      oldmockMvc
-          .perform(
-              post("/notifications/234/attachments/upload")
-                  .queryParam("sendBy", "ELECTRONIC")
-                  .queryParam("attachmentId", "567")
-                  .sessionAttr("notification", buildNotification())
-                  .flashAttr("user", userDetails)
-                  .flashAttr("attachmentUploadFormData", form))
-          .andExpect(status().is3xxRedirection())
-          .andExpect(
-              redirectedUrl(
-                  "/notifications/234/attachments/upload?sendBy=ELECTRONIC&attachmentId=567"));
+      MvcResult failed =
+          oldmockMvc
+              .perform(
+                  post("/notifications/234/attachments/upload")
+                      .queryParam("sendBy", "ELECTRONIC")
+                      .queryParam("attachmentId", "567")
+                      .sessionAttr("notification", buildNotification())
+                      .flashAttr("user", userDetails)
+                      .flashAttr("attachmentUploadFormData", form))
+              .andExpect(status().is3xxRedirection())
+              .andReturn();
+      String redirect = failed.getResponse().getRedirectedUrl();
+      assertTrue(
+          redirect.matches(
+              "/notifications/234/attachments/upload\\?sendBy=ELECTRONIC"
+                  + "&attachmentId=567&uploadSizeErrorToken=[0-9a-f-]{36}"));
+      URI uri = URI.create(redirect);
+      MockHttpServletRequest redirectedRequest = new MockHttpServletRequest("GET", uri.getPath());
+      redirectedRequest.setQueryString(uri.getRawQuery());
+      redirectedRequest.setSession((MockHttpSession) failed.getRequest().getSession());
+      assertTrue(
+          new SessionFlashMapManager()
+              .retrieveAndUpdate(redirectedRequest, new MockHttpServletResponse())
+              .containsValue(Boolean.TRUE));
     }
 
     @Test
@@ -1093,6 +1111,7 @@ class ActionsAndNotificationsControllerTest {
 
       MockHttpSession session = new MockHttpSession();
       session.setAttribute("notification", buildNotification());
+      session.setAttribute("user", userDetails);
       MockHttpServletRequest oversizedPost =
           new MockHttpServletRequest("POST", "/civil/notifications/234/attachments/upload");
       oversizedPost.setContextPath("/civil");
@@ -1107,11 +1126,20 @@ class ActionsAndNotificationsControllerTest {
                 throw new InvalidParameterException(
                     new FileSizeLimitExceededException("too large", 8_388_609, 8_388_608));
               });
-      assertEquals(
-          "/civil/notifications/234/attachments/upload?sendBy=ELECTRONIC&attachmentId=567",
-          oversizedResponse.getRedirectedUrl());
+      assertTrue(
+          oversizedResponse
+              .getRedirectedUrl()
+              .matches(
+                  "/civil/notifications/234/attachments/upload\\?sendBy=ELECTRONIC"
+                      + "&attachmentId=567&uploadSizeErrorToken=[0-9a-f-]{36}"));
+      String token =
+          UriComponentsBuilder.fromUriString(oversizedResponse.getRedirectedUrl())
+              .build()
+              .getQueryParams()
+              .getFirst("uploadSizeErrorToken");
       MockMvc uploadMvc =
           standaloneSetup(actionsAndNotificationsController)
+              .setControllerAdvice(new SessionUserAdvice())
               .addInterceptors(
                   new UploadSizeErrorInterceptor(
                       new ProviderRequestDocumentUploadValidator(
@@ -1121,9 +1149,11 @@ class ActionsAndNotificationsControllerTest {
       MvcResult result =
           uploadMvc
               .perform(
-                  get("/notifications/234/attachments/upload")
+                  get("/civil/notifications/234/attachments/upload")
+                      .contextPath("/civil")
                       .queryParam("sendBy", "ELECTRONIC")
                       .queryParam("attachmentId", "567")
+                      .queryParam("uploadSizeErrorToken", token)
                       .session(session)
                       .flashAttr("user", userDetails))
               .andReturn();
@@ -1138,12 +1168,12 @@ class ActionsAndNotificationsControllerTest {
       assertEquals("Saved description", reloaded.getDocumentDescription());
       assertEquals("validation.error.maxFileSize", errors.getFieldError("file").getCode());
       assertEquals("notifications/upload-notification-attachment", view.getViewName());
-      assertNull(session.getAttribute(UploadSizeErrorFilter.SESSION_ATTRIBUTE));
 
       MvcResult refreshed =
           uploadMvc
               .perform(
-                  get("/notifications/234/attachments/upload")
+                  get("/civil/notifications/234/attachments/upload")
+                      .contextPath("/civil")
                       .queryParam("attachmentId", "567")
                       .session(session)
                       .flashAttr("user", userDetails))
@@ -1163,7 +1193,8 @@ class ActionsAndNotificationsControllerTest {
 
       uploadMvc
           .perform(
-              post("/notifications/234/attachments/upload")
+              post("/civil/notifications/234/attachments/upload")
+                  .contextPath("/civil")
                   .queryParam("sendBy", "ELECTRONIC")
                   .queryParam("attachmentId", "567")
                   .session(session)
@@ -1173,6 +1204,14 @@ class ActionsAndNotificationsControllerTest {
       verify(notificationService)
           .updateDraftNotificationAttachment(updated, userDetails.getLoginId());
       verify(notificationService, never()).addDraftNotificationAttachment(any(), any());
+    }
+
+    @ControllerAdvice
+    static class SessionUserAdvice {
+      @ModelAttribute
+      public void populateUser(Model model, HttpSession session) {
+        model.addAttribute("user", session.getAttribute("user"));
+      }
     }
 
     @Test
@@ -1233,12 +1272,12 @@ class ActionsAndNotificationsControllerTest {
 
       actionsAndNotificationsController.handleAttachmentTooLarge(request, response);
 
-      assertEquals(
-          "/civil/notifications/234/attachments/upload?sendBy=ELECTRONIC&attachmentId=567",
-          response.getRedirectedUrl());
-      assertEquals(
-          "/notifications/234/attachments/upload",
-          request.getSession().getAttribute(UploadSizeErrorFilter.SESSION_ATTRIBUTE));
+      assertTrue(
+          response
+              .getRedirectedUrl()
+              .matches(
+                  "/civil/notifications/234/attachments/upload\\?sendBy=ELECTRONIC"
+                      + "&attachmentId=567&uploadSizeErrorToken=[0-9a-f-]{36}"));
     }
 
     @Test

@@ -2,12 +2,13 @@ package uk.gov.laa.ccms.caab.config;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import java.util.Map;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.support.RequestContextUtils;
 import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestDocumentUploadValidator;
 
 /** Adds the file-size error after redirecting an over-limit multipart request to its form. */
@@ -26,15 +27,14 @@ public class UploadSizeErrorInterceptor implements HandlerInterceptor {
       HttpServletResponse response,
       Object handler,
       ModelAndView modelAndView) {
-    HttpSession session = request.getSession(false);
-    if (session == null || modelAndView == null || !"GET".equals(request.getMethod())) {
+    Map<String, ?> flashMap = RequestContextUtils.getInputFlashMap(request);
+    if (modelAndView == null
+        || !"GET".equals(request.getMethod())
+        || flashMap == null
+        || !Boolean.TRUE.equals(flashMap.get(UploadSizeErrorFilter.ERROR_ATTRIBUTE))) {
       return;
     }
     String path = request.getRequestURI().substring(request.getContextPath().length());
-    if (!path.equals(session.getAttribute(UploadSizeErrorFilter.SESSION_ATTRIBUTE))) {
-      return;
-    }
-
     String formName = UploadSizeErrorRoutes.formName(path);
     if (formName == null) {
       return;
@@ -43,7 +43,6 @@ public class UploadSizeErrorInterceptor implements HandlerInterceptor {
     if (form == null) {
       return;
     }
-    session.removeAttribute(UploadSizeErrorFilter.SESSION_ATTRIBUTE);
     BindingResult errors = new BeanPropertyBindingResult(form, formName);
     fileUploadValidator.rejectFileSize(errors);
     modelAndView.getModel().put(BindingResult.MODEL_KEY_PREFIX + formName, errors);

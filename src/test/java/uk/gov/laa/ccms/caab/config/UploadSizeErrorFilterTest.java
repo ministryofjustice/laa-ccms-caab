@@ -3,8 +3,10 @@ package uk.gov.laa.ccms.caab.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.servlet.FilterChain;
+import java.net.URI;
 import org.apache.tomcat.util.http.InvalidParameterException;
 import org.apache.tomcat.util.http.fileupload.impl.FileSizeLimitExceededException;
 import org.apache.tomcat.util.http.fileupload.impl.SizeLimitExceededException;
@@ -13,6 +15,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.web.servlet.support.SessionFlashMapManager;
 
 class UploadSizeErrorFilterTest {
 
@@ -31,12 +34,18 @@ class UploadSizeErrorFilterTest {
 
     filter.doFilter(request, response, chain);
 
+    assertTrue(
+        response
+            .getRedirectedUrl()
+            .matches(
+                "/civil/case-provider-requests/documents\\?caseReferenceNumber=123"
+                    + "&uploadSizeErrorToken=[0-9a-f-]{36}"));
+    MockHttpServletRequest redirected = redirectedRequest(response, request);
     assertEquals(
-        "/civil/case-provider-requests/documents?caseReferenceNumber=123",
-        response.getRedirectedUrl());
-    assertEquals(
-        "/case-provider-requests/documents",
-        request.getSession().getAttribute(UploadSizeErrorFilter.SESSION_ATTRIBUTE));
+        Boolean.TRUE,
+        new SessionFlashMapManager()
+            .retrieveAndUpdate(redirected, new MockHttpServletResponse())
+            .get(UploadSizeErrorFilter.ERROR_ATTRIBUTE));
   }
 
   @Test
@@ -52,9 +61,12 @@ class UploadSizeErrorFilterTest {
               new FileSizeLimitExceededException("too large", 8_388_609, 8_388_608));
         });
 
-    assertEquals(
-        "/civil/notifications/234/attachments/upload?sendBy=ELECTRONIC",
-        response.getRedirectedUrl());
+    assertTrue(
+        response
+            .getRedirectedUrl()
+            .matches(
+                "/civil/notifications/234/attachments/upload\\?sendBy=ELECTRONIC"
+                    + "&uploadSizeErrorToken=[0-9a-f-]{36}"));
   }
 
   @Test
@@ -71,9 +83,12 @@ class UploadSizeErrorFilterTest {
               new FileSizeLimitExceededException("too large", 8_388_609, 8_388_608));
         });
 
-    assertEquals(
-        "/civil/notifications/234/attachments/upload?sendBy=ELECTRONIC&attachmentId=567",
-        response.getRedirectedUrl());
+    assertTrue(
+        response
+            .getRedirectedUrl()
+            .matches(
+                "/civil/notifications/234/attachments/upload\\?sendBy=ELECTRONIC"
+                    + "&attachmentId=567&uploadSizeErrorToken=[0-9a-f-]{36}"));
   }
 
   @ParameterizedTest
@@ -97,7 +112,10 @@ class UploadSizeErrorFilterTest {
               new FileSizeLimitExceededException("too large", 8_388_609, 8_388_608));
         });
 
-    assertEquals("/civil" + path, response.getRedirectedUrl());
+    assertTrue(
+        response
+            .getRedirectedUrl()
+            .matches("/civil" + path + "\\?uploadSizeErrorToken=[0-9a-f-]{36}"));
   }
 
   @Test
@@ -140,6 +158,16 @@ class UploadSizeErrorFilterTest {
   private static MockHttpServletRequest request(String uri) {
     MockHttpServletRequest request = new MockHttpServletRequest("POST", uri);
     request.setContextPath("/civil");
+    return request;
+  }
+
+  private static MockHttpServletRequest redirectedRequest(
+      MockHttpServletResponse response, MockHttpServletRequest original) {
+    URI redirect = URI.create(response.getRedirectedUrl());
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", redirect.getPath());
+    request.setContextPath(original.getContextPath());
+    request.setQueryString(redirect.getRawQuery());
+    request.setSession(original.getSession());
     return request;
   }
 }
