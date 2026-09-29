@@ -34,11 +34,21 @@ public class UploadSizeErrorFilter extends OncePerRequestFilter {
         throw exception;
       }
 
-      request.getSession().setAttribute(SESSION_ATTRIBUTE, path);
-      String query = UploadSizeErrorRoutes.redirectQuery(path, request.getQueryString());
-      String redirect = request.getContextPath() + path + (query == null ? "" : "?" + query);
-      response.sendRedirect(response.encodeRedirectURL(redirect));
+      redirectToUploadForm(request, response);
     }
+  }
+
+  /** Uses the same form recovery for size failures raised before or inside MVC. */
+  public static void redirectToUploadForm(HttpServletRequest request, HttpServletResponse response)
+      throws IOException {
+    String path = request.getRequestURI().substring(request.getContextPath().length());
+    if (UploadSizeErrorRoutes.formName(path) == null) {
+      throw new IllegalArgumentException("Not an upload path: " + path);
+    }
+    request.getSession().setAttribute(SESSION_ATTRIBUTE, path);
+    String query = UploadSizeErrorRoutes.redirectQuery(path, request.getQueryString());
+    String redirect = request.getContextPath() + path + (query == null ? "" : "?" + query);
+    response.sendRedirect(response.encodeRedirectURL(redirect));
   }
 
   private static boolean isSizeError(Throwable exception) {

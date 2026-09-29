@@ -57,6 +57,25 @@ class UploadSizeErrorFilterTest {
         response.getRedirectedUrl());
   }
 
+  @Test
+  void preservesDraftIdOnOversizedNotificationReplacement() throws Exception {
+    MockHttpServletRequest request = request("/civil/notifications/234/attachments/upload");
+    request.setQueryString("sendBy=ELECTRONIC&attachmentId=567");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    filter.doFilter(
+        request,
+        response,
+        (req, res) -> {
+          throw new InvalidParameterException(
+              new FileSizeLimitExceededException("too large", 8_388_609, 8_388_608));
+        });
+
+    assertEquals(
+        "/civil/notifications/234/attachments/upload?sendBy=ELECTRONIC&attachmentId=567",
+        response.getRedirectedUrl());
+  }
+
   @ParameterizedTest
   @ValueSource(
       strings = {

@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.notifications;
 
+import static uk.gov.laa.ccms.caab.config.UploadSizeErrorFilter.redirectToUploadForm;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
@@ -8,7 +9,9 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -25,7 +28,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
-import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
@@ -39,8 +41,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
-import org.springframework.web.servlet.HandlerMapping;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.notification.NotificationAttachmentUploadFormData;
@@ -568,28 +568,16 @@ public class ActionsAndNotificationsController {
   /**
    * Display the edit notification attachment screen.
    *
-   * @param user the currently logged-in user.
    * @param notificationId the ID of the notification.
    * @param attachmentId the ID of the notification attachment.
    * @return the edit notification attachment screen.
    */
   @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/edit")
   public String editDraftNotificationAttachment(
-      @ModelAttribute(USER_DETAILS) UserDetail user,
       @PathVariable(NOTIFICATION_ID) String notificationId,
-      @PathVariable(ATTACHMENT_ID) Integer attachmentId,
-      RedirectAttributes redirectAttributes) {
-
-    NotificationAttachmentDetail notificationAttachment =
-        notificationService.getDraftNotificationAttachment(attachmentId).block();
-
-    NotificationAttachmentUploadFormData formData =
-        notificationAttachmentMapper.toNotificationAttachmentUploadFormData(notificationAttachment);
-
-    redirectAttributes.addFlashAttribute(formData);
-
-    return "redirect:/notifications/%s/attachments/upload?sendBy=%s"
-        .formatted(notificationId, formData.getSendBy());
+      @PathVariable(ATTACHMENT_ID) Integer attachmentId) {
+    return "redirect:/notifications/%s/attachments/upload?attachmentId=%s"
+        .formatted(notificationId, attachmentId);
   }
 
   /**
@@ -690,34 +678,56 @@ public class ActionsAndNotificationsController {
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @SessionAttribute(NOTIFICATION) Notification notification,
       @PathVariable(NOTIFICATION_ID) String notificationId,
-      @RequestParam(value = "sendBy") SendBy sendBy,
+      @RequestParam(value = "sendBy", required = false) SendBy sendBy,
+      @RequestParam(value = "attachmentId", required = false) Integer attachmentId,
       NotificationAttachmentUploadFormData attachmentUploadFormData,
       Model model) {
 
     populateNotificationAttachmentModel(model);
 
-    attachmentUploadFormData.setSendBy(sendBy);
+    if (attachmentId != null) {
+      boolean belongsToNotification =
+          notificationService
+              .getDraftNotificationAttachments(notificationId, user.getUserId())
+              .map(NotificationAttachmentDetails::getContent)
+              .blockOptional()
+              .orElseThrow(
+                  () -> new CaabApplicationException("Failed to retrieve draft attachments"))
+              .stream()
+              .anyMatch(attachment -> attachmentId.equals(attachment.getId()));
+      if (!belongsToNotification) {
+        throw new CaabApplicationException(
+            "Invalid notification attachment id: %s".formatted(attachmentId));
+      }
+
+      NotificationAttachmentDetail draft =
+          notificationService
+              .getDraftNotificationAttachment(attachmentId)
+              .blockOptional()
+              .orElseThrow(
+                  () ->
+                      new CaabApplicationException(
+                          "Invalid notification attachment id: %s".formatted(attachmentId)));
+      attachmentUploadFormData =
+          notificationAttachmentMapper.toNotificationAttachmentUploadFormData(draft);
+      if (!attachmentId.equals(attachmentUploadFormData.getDocumentId())) {
+        throw new CaabApplicationException(
+            "Invalid notification attachment id: %s".formatted(attachmentId));
+      }
+    } else if (sendBy != null) {
+      attachmentUploadFormData.setSendBy(sendBy);
+    } else {
+      throw new CaabApplicationException("Missing sendBy for new notification attachment");
+    }
     model.addAttribute("attachmentUploadFormData", attachmentUploadFormData);
     model.addAttribute("notificationId", notificationId);
     return "notifications/upload-notification-attachment";
   }
 
   @ExceptionHandler(MaxUploadSizeExceededException.class)
-  public String handleAttachmentTooLarge(HttpServletRequest request, Model model) {
-    NotificationAttachmentUploadFormData form = new NotificationAttachmentUploadFormData();
-    form.setSendBy(SendBy.ELECTRONIC);
-    BindingResult errors = new BeanPropertyBindingResult(form, "attachmentUploadFormData");
-    attachmentUploadValidator.rejectFileSize(errors);
-    model.addAttribute("attachmentUploadFormData", form);
-    model.addAttribute(BindingResult.MODEL_KEY_PREFIX + "attachmentUploadFormData", errors);
-    Object pathVariables = request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE);
-    if (!(pathVariables instanceof Map<?, ?> variables)
-        || !(variables.get(NOTIFICATION_ID) instanceof String notificationId)) {
-      throw new IllegalStateException("Missing notification ID for attachment upload");
-    }
-    model.addAttribute("notificationId", notificationId);
-    populateNotificationAttachmentModel(model);
-    return "notifications/upload-notification-attachment";
+  public void handleAttachmentTooLarge(HttpServletRequest request, HttpServletResponse response)
+      throws IOException {
+    redirectToUploadForm(request, response);
   }
 
   /**
