@@ -8,6 +8,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.AWARD_TYPE_FORM;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -22,19 +23,25 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.AwardTypeForm;
 import uk.gov.laa.ccms.caab.bean.award.FinancialAwardFormData;
+import uk.gov.laa.ccms.caab.bean.award.LandAwardFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.FinancialAwardValidator;
+import uk.gov.laa.ccms.caab.bean.validators.awards.LandAwardValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.CommonValueConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
+import uk.gov.laa.ccms.caab.mapper.LandAwardMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
+import uk.gov.laa.ccms.caab.model.LandAwardDetail;
+import uk.gov.laa.ccms.caab.model.LandAwardRequest;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -54,6 +61,8 @@ public class AwardController {
   private final AwardTypeValidator awardTypeValidator;
   private final FinancialAwardValidator financialAwardValidator;
   private final FinancialAwardMapper financialAwardMapper;
+  private final LandAwardValidator landAwardValidator;
+  private final LandAwardMapper landAwardMapper;
 
   /**
    * Displays the Select Award Type screen.
@@ -149,6 +158,7 @@ public class AwardController {
         log.warn("Financial award page requested without complete award type details");
         return "redirect:/case/outcome-and-awards";
       }
+
       formData = new FinancialAwardFormData();
       formData.setAwardCode(awardTypeForm.getAwardTypeCode());
       formData.setAwardType(awardTypeForm.getAwardType());
@@ -234,6 +244,112 @@ public class AwardController {
     return "redirect:/case/outcome-and-awards";
   }
 
+  /** Displays the land award screen for a new or existing award. */
+  @GetMapping(
+      value = {
+        "/case/outcome-and-awards/land-property",
+        "/case/outcome-and-awards/land-property/{awardId}"
+      })
+  public String landAward(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @SessionAttribute(value = AWARD_TYPE_FORM, required = false)
+          final AwardTypeForm awardTypeForm,
+      @PathVariable(value = "awardId", required = false) final Integer landAwardId,
+      final Model model) {
+    final LandAwardFormData formData;
+    if (landAwardId == null) {
+      if (awardTypeForm == null
+          || !StringUtils.hasText(awardTypeForm.getAwardTypeCode())
+          || !StringUtils.hasText(awardTypeForm.getAwardType())
+          || !AWARD_TYPE_LAND.equals(awardTypeForm.getAwardType())) {
+        log.warn("Land award page requested without complete land award type details");
+        return "redirect:/case/outcome-and-awards";
+      }
+      formData = new LandAwardFormData();
+      formData.setAwardCode(awardTypeForm.getAwardTypeCode());
+      formData.setAwardType(awardTypeForm.getAwardType());
+    } else {
+      final LandAwardDetail award =
+          caseOutcomeService
+              .getLandAward(
+                  ebsCase.getCaseReferenceNumber(),
+                  user.getProvider().getId().intValue(),
+                  landAwardId)
+              .orElseThrow(
+                  () ->
+                      new CaabApplicationException(
+                          "Could not find land award with id: " + landAwardId));
+      formData = landAwardMapper.toLandAwardFormData(award);
+    }
+
+    model.addAttribute("landAward", formData);
+    populateLandAwardDropdowns(model);
+    return "application/land-property";
+  }
+
+  /** Calculates or persists a land award. */
+  @PostMapping("/case/outcome-and-awards/land-property")
+  public String landAward(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @SessionAttribute(value = AWARD_TYPE_FORM, required = false)
+          final AwardTypeForm awardTypeForm,
+      @ModelAttribute("landAward") final LandAwardFormData landAward,
+      @RequestParam(value = "action", defaultValue = "next") final String action,
+      final BindingResult bindingResult,
+      final Model model) {
+    landAwardValidator.validate(landAward, bindingResult);
+
+    if (landAward.getId() == null
+        && (awardTypeForm == null
+            || !Objects.equals(landAward.getAwardCode(), awardTypeForm.getAwardTypeCode())
+            || !Objects.equals(landAward.getAwardType(), awardTypeForm.getAwardType())
+            || !AWARD_TYPE_LAND.equals(landAward.getAwardType()))) {
+      bindingResult.reject(
+          "landAward.awardType.mismatch",
+          "The award type details are invalid for your session. Please select an award type again.");
+    }
+
+    if (!bindingResult.hasErrors()) {
+      landAward.setEquity(
+          new BigDecimal(landAward.getValuationAmount())
+              .subtract(new BigDecimal(landAward.getMortgageAmountDue()))
+              .toPlainString());
+    }
+
+    if (bindingResult.hasErrors() || "calculate".equals(action)) {
+      populateLandAwardDropdowns(model);
+      return "application/land-property";
+    }
+
+    final LandAwardRequest request = landAwardMapper.toLandAwardRequest(landAward);
+    try {
+      if (landAward.getId() == null) {
+        caseOutcomeService.createLandAward(
+            ebsCase.getCaseReferenceNumber(),
+            user.getProvider().getId().intValue(),
+            request,
+            user.getLoginId());
+      } else {
+        caseOutcomeService.updateLandAward(
+            ebsCase.getCaseReferenceNumber(),
+            user.getProvider().getId().intValue(),
+            landAward.getId(),
+            request,
+            user.getLoginId());
+      }
+    } catch (CaabApiClientException | IllegalStateException ex) {
+      log.warn("Failed to save land award with id: {}", landAward.getId(), ex);
+      bindingResult.reject(
+          "landAward.save.failed", "We could not save the land award. Please try again.");
+      populateLandAwardDropdowns(model);
+      return "application/land-property";
+    }
+
+    return "redirect:/case/outcome-and-awards";
+  }
+
   private void populateFinancialAwardDropdowns(final Model model) {
     model.addAttribute(
         "interimAwardOptions",
@@ -249,6 +365,26 @@ public class AwardController {
                 lookupService.getCommonValues(CommonValueConstants.COMMON_VALUE_AWARDED_BY).block())
             .map(CommonLookupDetail::getContent)
             .orElse(Collections.emptyList()));
+  }
+
+  private void populateLandAwardDropdowns(final Model model) {
+    model.addAttribute(
+        "valuationBasisOptions",
+        getCommonValues(CommonValueConstants.COMMON_VALUE_VALUATION_BASIS));
+    model.addAttribute(
+        "awardedByOptions", getCommonValues(CommonValueConstants.COMMON_VALUE_AWARDED_BY));
+    model.addAttribute(
+        "recoveryOptions", getCommonValues(CommonValueConstants.COMMON_VALUE_LAND_RECOVERY));
+    model.addAttribute(
+        "landRegistrationOptions",
+        getCommonValues(CommonValueConstants.COMMON_VALUE_LAND_REGISTRATION));
+    model.addAttribute("yesNoOptions", getCommonValues(CommonValueConstants.COMMON_VALUE_YES_NO));
+  }
+
+  private List<?> getCommonValues(final String type) {
+    return Optional.ofNullable(lookupService.getCommonValues(type).block())
+        .map(CommonLookupDetail::getContent)
+        .orElse(Collections.emptyList());
   }
 
   private List<AwardTypeLookupValueDetail> getAwardTypes() {

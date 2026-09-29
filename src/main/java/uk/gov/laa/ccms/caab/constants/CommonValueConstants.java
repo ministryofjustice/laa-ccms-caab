@@ -87,6 +87,18 @@ public class CommonValueConstants {
   /** Type used to retrieve financial award decision-maker options. */
   public static final String COMMON_VALUE_AWARDED_BY = "XXCCMS_AWARDED_BY";
 
+  /** Type used to retrieve land award valuation basis options. */
+  public static final String COMMON_VALUE_VALUATION_BASIS = "XXCCMS_VALUATION_BASIS";
+
+  /** Type used to retrieve land award recovery options. */
+  public static final String COMMON_VALUE_LAND_RECOVERY = "XXCCMS_RECOVERY_LAND";
+
+  /** Type used to retrieve land charge registration options. */
+  public static final String COMMON_VALUE_LAND_REGISTRATION = "XXCCMS_PROV_LAND_REG";
+
+  /** Type used to retrieve yes/no options. */
+  public static final String COMMON_VALUE_YES_NO = "XXCCMS_YES_NO";
+
   /** Type used to retrieve the Progress status types. */
   public static final String COMMON_VALUE_PROGRESS_STATUS_TYPES = "XXCCMS_OPA_PROGRESS_STATUS";
 

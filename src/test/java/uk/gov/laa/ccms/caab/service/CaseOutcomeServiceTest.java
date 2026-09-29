@@ -31,6 +31,8 @@ import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
+import uk.gov.laa.ccms.caab.model.LandAwardDetail;
+import uk.gov.laa.ccms.caab.model.LandAwardRequest;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 
 @ExtendWith(MockitoExtension.class)
@@ -124,6 +126,125 @@ class CaseOutcomeServiceTest {
         caseReferenceNumber, providerId, financialAwardId, request, loginId);
 
     verify(caabApiClient).updateFinancialAward(caseOutcomeId, financialAwardId, loginId, request);
+  }
+
+  @Test
+  void getLandAward_existingCaseOutcome_returnsAward() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final Integer caseOutcomeId = 42;
+    final Integer landAwardId = 7;
+    final LandAwardDetail landAward = new LandAwardDetail().id(landAwardId);
+
+    doReturn(Optional.of(new CaseOutcomeDetail().id(caseOutcomeId)))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+    when(caabApiClient.getLandAward(caseOutcomeId, landAwardId)).thenReturn(Mono.just(landAward));
+
+    final Optional<LandAwardDetail> result =
+        caseOutcomeService.getLandAward(caseReferenceNumber, providerId, landAwardId);
+
+    assertEquals(landAward, result.orElseThrow());
+    verify(caabApiClient).getLandAward(caseOutcomeId, landAwardId);
+  }
+
+  @Test
+  void getLandAward_whenNoCaseOutcome_throwsWithoutGettingAward() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+
+    doReturn(Optional.empty())
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> caseOutcomeService.getLandAward(caseReferenceNumber, providerId, 7));
+
+    verify(caabApiClient, never()).getLandAward(any(), any());
+  }
+
+  @Test
+  void createLandAward_existingCaseOutcome_createsAward() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final Integer caseOutcomeId = 42;
+    final String loginId = "user1";
+    final LandAwardRequest request = new LandAwardRequest();
+
+    doReturn(Optional.of(new CaseOutcomeDetail().id(caseOutcomeId)))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+    when(caabApiClient.createLandAward(caseOutcomeId, loginId, request)).thenReturn(Mono.just("7"));
+
+    caseOutcomeService.createLandAward(caseReferenceNumber, providerId, request, loginId);
+
+    verify(caabApiClient).createLandAward(caseOutcomeId, loginId, request);
+  }
+
+  @Test
+  void createLandAward_whenNoCaseOutcome_throwsWithoutCreatingAward() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final LandAwardRequest request = new LandAwardRequest();
+
+    doReturn(Optional.empty())
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            caseOutcomeService.createLandAward(caseReferenceNumber, providerId, request, "user1"));
+
+    verify(caabApiClient, never()).createLandAward(any(), any(), any());
+  }
+
+  @Test
+  void updateLandAward_existingOwnedAward_updatesAward() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final Integer caseOutcomeId = 42;
+    final Integer landAwardId = 7;
+    final String loginId = "user1";
+    final LandAwardRequest request = new LandAwardRequest();
+    final CaseOutcomeDetail caseOutcome =
+        new CaseOutcomeDetail()
+            .id(caseOutcomeId)
+            .landAwards(List.of(new LandAwardDetail().id(landAwardId)));
+
+    doReturn(Optional.of(caseOutcome))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+    when(caabApiClient.updateLandAward(caseOutcomeId, landAwardId, loginId, request))
+        .thenReturn(Mono.empty());
+
+    caseOutcomeService.updateLandAward(
+        caseReferenceNumber, providerId, landAwardId, request, loginId);
+
+    verify(caabApiClient).updateLandAward(caseOutcomeId, landAwardId, loginId, request);
+  }
+
+  @Test
+  void updateLandAward_unownedAward_throwsWithoutUpdatingAward() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final Integer landAwardId = 7;
+    final LandAwardRequest request = new LandAwardRequest();
+    final CaseOutcomeDetail caseOutcome =
+        new CaseOutcomeDetail().id(42).landAwards(List.of(new LandAwardDetail().id(8)));
+
+    doReturn(Optional.of(caseOutcome))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            caseOutcomeService.updateLandAward(
+                caseReferenceNumber, providerId, landAwardId, request, "user1"));
+
+    verify(caabApiClient, never()).updateLandAward(any(), any(), any(), any());
   }
 
   @Test
