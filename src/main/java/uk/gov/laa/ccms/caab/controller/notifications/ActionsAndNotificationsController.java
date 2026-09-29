@@ -41,6 +41,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.notification.NotificationAttachmentUploadFormData;
@@ -686,19 +687,7 @@ public class ActionsAndNotificationsController {
     populateNotificationAttachmentModel(model);
 
     if (attachmentId != null) {
-      boolean belongsToNotification =
-          notificationService
-              .getDraftNotificationAttachments(notificationId, user.getUserId())
-              .map(NotificationAttachmentDetails::getContent)
-              .blockOptional()
-              .orElseThrow(
-                  () -> new CaabApplicationException("Failed to retrieve draft attachments"))
-              .stream()
-              .anyMatch(attachment -> attachmentId.equals(attachment.getId()));
-      if (!belongsToNotification) {
-        throw new CaabApplicationException(
-            "Invalid notification attachment id: %s".formatted(attachmentId));
-      }
+      validateDraftNotificationAttachment(notificationId, user, attachmentId);
 
       NotificationAttachmentDetail draft =
           notificationService
@@ -724,6 +713,45 @@ public class ActionsAndNotificationsController {
     return "notifications/upload-notification-attachment";
   }
 
+  private void validateDraftNotificationAttachment(
+      String notificationId, UserDetail user, Integer attachmentId) {
+    boolean belongsToNotification =
+        notificationService
+            .getDraftNotificationAttachments(notificationId, user.getUserId())
+            .map(NotificationAttachmentDetails::getContent)
+            .blockOptional()
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve draft attachments"))
+            .stream()
+            .anyMatch(attachment -> attachmentId.equals(attachment.getId()));
+    if (!belongsToNotification) {
+      throw new CaabApplicationException(
+          "Invalid notification attachment id: %s".formatted(attachmentId));
+    }
+  }
+
+  private Integer attachmentIdFromQuery(HttpServletRequest request) {
+    if (request.getQueryString() == null) {
+      return null;
+    }
+    List<String> values =
+        UriComponentsBuilder.fromPath("/")
+            .query(request.getQueryString())
+            .build()
+            .getQueryParams()
+            .get("attachmentId");
+    if (values == null) {
+      return null;
+    }
+    if (values.size() != 1) {
+      throw new CaabApplicationException("Invalid notification attachment id");
+    }
+    try {
+      return Integer.valueOf(values.getFirst());
+    } catch (NumberFormatException exception) {
+      throw new CaabApplicationException("Invalid notification attachment id", exception);
+    }
+  }
+
   @ExceptionHandler(MaxUploadSizeExceededException.class)
   public void handleAttachmentTooLarge(HttpServletRequest request, HttpServletResponse response)
       throws IOException {
@@ -745,10 +773,20 @@ public class ActionsAndNotificationsController {
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @SessionAttribute(NOTIFICATION) Notification notification,
       @PathVariable(NOTIFICATION_ID) String notificationId,
+      HttpServletRequest request,
       @ModelAttribute(value = "attachmentUploadFormData")
           NotificationAttachmentUploadFormData attachmentUploadFormData,
       BindingResult bindingResult,
       Model model) {
+
+    Integer attachmentId = attachmentIdFromQuery(request);
+    Integer documentId = attachmentUploadFormData.getDocumentId();
+    if (attachmentId != null || documentId != null) {
+      if (attachmentId == null || !attachmentId.equals(documentId)) {
+        throw new CaabApplicationException("Mismatched notification attachment id");
+      }
+      validateDraftNotificationAttachment(notificationId, user, attachmentId);
+    }
 
     attachmentUploadValidator.validate(attachmentUploadFormData, bindingResult);
 
@@ -780,10 +818,16 @@ public class ActionsAndNotificationsController {
     NotificationAttachmentDetail notificationAttachmentDetail =
         notificationAttachmentMapper.toNotificationAttachmentDetail(attachmentUploadFormData);
 
-    if (notificationAttachmentDetail.getId() != null) {
+    if (attachmentId != null) {
+      if (!attachmentId.equals(notificationAttachmentDetail.getId())) {
+        throw new CaabApplicationException("Mismatched notification attachment id");
+      }
       notificationService.updateDraftNotificationAttachment(
           notificationAttachmentDetail, user.getLoginId());
     } else {
+      if (notificationAttachmentDetail.getId() != null) {
+        throw new CaabApplicationException("Mismatched notification attachment id");
+      }
       Long attachmentNumber = getNextAttachmentNumber(notification, user.getUserId());
       notificationAttachmentDetail.setStatus(STATUS_READY_TO_SUBMIT);
       notificationAttachmentDetail.setNotificationReference(notificationId);

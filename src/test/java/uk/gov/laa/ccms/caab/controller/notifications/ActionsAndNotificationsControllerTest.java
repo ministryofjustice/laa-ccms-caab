@@ -60,6 +60,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
+import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -1053,6 +1054,12 @@ class ActionsAndNotificationsControllerTest {
       NotificationAttachmentUploadFormData form = new NotificationAttachmentUploadFormData();
       form.setDocumentId(567);
       form.setSendBy(SendBy.ELECTRONIC);
+      NotificationAttachmentDetails drafts = new NotificationAttachmentDetails();
+      BaseNotificationAttachmentDetail scopedDraft = new BaseNotificationAttachmentDetail();
+      scopedDraft.setId(567);
+      drafts.setContent(List.of(scopedDraft));
+      when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
+          .thenReturn(Mono.just(drafts));
       doThrow(new MaxUploadSizeExceededException(8 * 1024 * 1024))
           .when(notificationAttachmentUploadValidator)
           .validate(any(), any());
@@ -1388,6 +1395,7 @@ class ActionsAndNotificationsControllerTest {
 
       BaseNotificationAttachmentDetail baseNotificationAttachment =
           new BaseNotificationAttachmentDetail();
+      baseNotificationAttachment.setId(123);
       baseNotificationAttachment.setSendBy("P");
 
       NotificationAttachmentDetails notificationAttachmentDetails =
@@ -1396,6 +1404,8 @@ class ActionsAndNotificationsControllerTest {
 
       when(notificationAttachmentMapper.toNotificationAttachmentDetail(attachmentUploadFormData))
           .thenReturn(notificationAttachment);
+      when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
+          .thenReturn(Mono.just(notificationAttachmentDetails));
 
       Notification notification = buildNotification();
       Map<String, Object> flashMap = new HashMap<>();
@@ -1405,6 +1415,7 @@ class ActionsAndNotificationsControllerTest {
       assertThat(
               mockMvc.perform(
                   post("/notifications/234/attachments/upload")
+                      .queryParam("attachmentId", "123")
                       .sessionAttr("notification", notification)
                       .flashAttrs(flashMap)))
           .hasStatus3xxRedirection()
@@ -1412,6 +1423,97 @@ class ActionsAndNotificationsControllerTest {
 
       verify(notificationService)
           .updateDraftNotificationAttachment(notificationAttachment, userDetails.getLoginId());
+    }
+
+    @Test
+    void rejectsMismatchedDraftIdsBeforeUpdating() {
+      NotificationAttachmentUploadFormData form = new NotificationAttachmentUploadFormData();
+      form.setSendBy(SendBy.POSTAL);
+      form.setDocumentId(123);
+
+      assertThrows(CaabApplicationException.class, () -> submitDraft(form, 456));
+
+      verify(notificationService, never()).getDraftNotificationAttachments(any(), any());
+      verify(notificationService, never()).updateDraftNotificationAttachment(any(), any());
+      verify(notificationService, never()).addDraftNotificationAttachment(any(), any());
+      verify(avScanResultHandler, never()).isScanRejected(any(), any(), any());
+    }
+
+    @Test
+    void rejectsDraftIdMissingFromUrl() {
+      NotificationAttachmentUploadFormData form = new NotificationAttachmentUploadFormData();
+      form.setSendBy(SendBy.POSTAL);
+      form.setDocumentId(123);
+
+      MockHttpServletRequest request = new MockHttpServletRequest();
+      request.setParameter("attachmentId", "123");
+      assertThrows(CaabApplicationException.class, () -> submitDraft(form, request));
+
+      verify(notificationService, never()).updateDraftNotificationAttachment(any(), any());
+      verify(notificationService, never()).addDraftNotificationAttachment(any(), any());
+    }
+
+    @Test
+    void rejectsDraftIdMissingFromForm() {
+      NotificationAttachmentUploadFormData form = new NotificationAttachmentUploadFormData();
+      form.setSendBy(SendBy.POSTAL);
+
+      assertThrows(CaabApplicationException.class, () -> submitDraft(form, 123));
+
+      verify(notificationService, never()).updateDraftNotificationAttachment(any(), any());
+      verify(notificationService, never()).addDraftNotificationAttachment(any(), any());
+    }
+
+    @Test
+    void rejectsDraftOutsideCurrentNotification() {
+      NotificationAttachmentUploadFormData form = new NotificationAttachmentUploadFormData();
+      form.setSendBy(SendBy.POSTAL);
+      form.setDocumentId(123);
+      NotificationAttachmentDetails scopedDrafts = new NotificationAttachmentDetails();
+      BaseNotificationAttachmentDetail otherDraft = new BaseNotificationAttachmentDetail();
+      otherDraft.setId(456);
+      scopedDrafts.setContent(List.of(otherDraft));
+      when(notificationService.getDraftNotificationAttachments("234", userDetails.getUserId()))
+          .thenReturn(Mono.just(scopedDrafts));
+
+      assertThrows(CaabApplicationException.class, () -> submitDraft(form, 123));
+
+      verify(notificationService, never()).updateDraftNotificationAttachment(any(), any());
+      verify(notificationService, never()).addDraftNotificationAttachment(any(), any());
+      verify(avScanResultHandler, never()).isScanRejected(any(), any(), any());
+    }
+
+    @Test
+    void rejectsAmbiguousQueryIds() {
+      NotificationAttachmentUploadFormData form = new NotificationAttachmentUploadFormData();
+      form.setSendBy(SendBy.POSTAL);
+      form.setDocumentId(123);
+      MockHttpServletRequest request = new MockHttpServletRequest();
+      request.setQueryString("attachmentId=123&attachmentId=456");
+
+      assertThrows(CaabApplicationException.class, () -> submitDraft(form, request));
+
+      verify(notificationService, never()).updateDraftNotificationAttachment(any(), any());
+    }
+
+    private void submitDraft(NotificationAttachmentUploadFormData form, Integer attachmentId) {
+      MockHttpServletRequest request = new MockHttpServletRequest();
+      if (attachmentId != null) {
+        request.setQueryString("attachmentId=" + attachmentId);
+      }
+      submitDraft(form, request);
+    }
+
+    private void submitDraft(
+        NotificationAttachmentUploadFormData form, MockHttpServletRequest request) {
+      actionsAndNotificationsController.uploadNotificationAttachment(
+          userDetails,
+          buildNotification(),
+          "234",
+          request,
+          form,
+          new BeanPropertyBindingResult(form, "attachmentUploadFormData"),
+          new ExtendedModelMap());
     }
 
     @Test

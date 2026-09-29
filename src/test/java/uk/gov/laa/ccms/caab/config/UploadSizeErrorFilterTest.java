@@ -161,6 +161,58 @@ class UploadSizeErrorFilterTest {
     assertNull(request.getSession(false));
   }
 
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "/civil//outside.example/case-provider-requests/documents",
+        "/civil/notifications//outside.example/attachments/upload",
+        "/civil/notifications/234/attachments/upload/https://outside.example"
+      })
+  void rejectsUploadPathsThatCouldLeaveTheApplication(String uri) {
+    MockHttpServletRequest request = request(uri);
+    InvalidParameterException exception =
+        new InvalidParameterException(
+            new SizeLimitExceededException("too large", 13_000_000, 12_582_912));
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    assertThrows(
+        InvalidParameterException.class,
+        () ->
+            filter.doFilter(
+                request,
+                response,
+                (req, res) -> {
+                  throw exception;
+                }));
+    assertNull(response.getRedirectedUrl());
+    assertNull(request.getSession(false));
+  }
+
+  @Test
+  void remoteUrlInQueryCannotChangeRedirectHost() throws Exception {
+    MockHttpServletRequest request = request("/civil/notifications/234/attachments/upload");
+    request.setQueryString("sendBy=ELECTRONIC&next=https://outside.example/path");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    filter.doFilter(
+        request,
+        response,
+        (req, res) -> {
+          throw new InvalidParameterException(
+              new FileSizeLimitExceededException("too large", 8_388_609, 8_388_608));
+        });
+
+    URI redirect = URI.create(response.getRedirectedUrl());
+    assertNull(redirect.getHost());
+    assertEquals("/civil/notifications/234/attachments/upload", redirect.getPath());
+    assertTrue(redirect.getRawQuery().contains("next=https://outside.example/path"));
+    assertEquals(
+        Boolean.TRUE,
+        new SessionFlashMapManager()
+            .retrieveAndUpdate(redirectedRequest(response, request), new MockHttpServletResponse())
+            .get(UploadSizeErrorFilter.ERROR_ATTRIBUTE));
+  }
+
   private static MockHttpServletRequest request(String uri) {
     MockHttpServletRequest request = new MockHttpServletRequest("POST", uri);
     request.setContextPath("/civil");
