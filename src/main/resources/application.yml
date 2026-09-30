@@ -51,7 +51,7 @@ spring:
   servlet:
     multipart:
       max-file-size: 8MB
-      max-request-size: 10MB
+      max-request-size: 12MB
       resolve-lazily: true
   cloud:
     aws:

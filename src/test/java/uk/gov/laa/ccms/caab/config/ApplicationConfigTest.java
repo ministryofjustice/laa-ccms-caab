@@ -62,6 +62,8 @@ class ApplicationConfigTest {
 
   @MockitoBean private LoggingInterceptor loggingInterceptor;
 
+  @MockitoBean private UploadSizeErrorInterceptor uploadSizeErrorInterceptor;
+
   @Test
   void ebsApiWebClientBeanExists() {
     assertNotNull(ebsApiWebClient, "ebsApiWebClient bean should not be null");

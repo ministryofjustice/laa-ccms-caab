@@ -1246,6 +1246,54 @@ class ProviderRequestsControllerTest {
     verify(providerRequestDocumentUploadValidator).rejectFileSize(any(Errors.class));
   }
 
+  @ParameterizedTest
+  @CsvSource({
+    "GENERAL, -1",
+    "CASE, 123456789012",
+  })
+  void testHandleUploadFileTooLargeOnDetails(String requestType, String caseRef) {
+    ProviderRequestFlowType flowType = ProviderRequestFlowType.valueOf(requestType);
+    ProviderRequestFlowFormData flow = createFlowWithCaseRef(caseRef);
+    flow.getRequestTypeFormData().setProviderRequestType("testType");
+    ProviderRequestDetailsFormData details = flow.getRequestDetailsFormData();
+    ProviderRequestTypeLookupValueDetail dynamicForm = new ProviderRequestTypeLookupValueDetail();
+    dynamicForm.setIsClaimUploadEnabled(true);
+    ProviderRequestTypeLookupDetail lookupDetail = new ProviderRequestTypeLookupDetail();
+    lookupDetail.setContent(List.of(dynamicForm));
+    when(lookupService.getProviderRequestTypes(null, "testType"))
+        .thenReturn(Mono.just(lookupDetail));
+    when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+        .thenReturn(Mono.just(new CommonLookupDetail()));
+    doAnswer(
+            invocation -> {
+              Errors errors = invocation.getArgument(0);
+              errors.rejectValue("file", "validation.error.maxFileSize");
+              return null;
+            })
+        .when(providerRequestDetailsValidator)
+        .rejectFileSize(any(Errors.class));
+
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setRequestURI("/civil" + flowType.getBasePath() + "/details");
+    MockHttpSession session = new MockHttpSession();
+    session.setAttribute(flowType.getFlowSessionAttribute(), flow);
+    ExtendedModelMap model = new ExtendedModelMap();
+
+    String viewName = providerRequestsController.handleUploadFileTooLarge(request, session, model);
+
+    assertEquals("requests/provider-request-detail", viewName);
+    assertEquals(details, model.get("providerRequestDetails"));
+    assertEquals(dynamicForm, model.get("providerRequestDynamicForm"));
+    BindingResult errors =
+        (BindingResult) model.get(BindingResult.MODEL_KEY_PREFIX + "providerRequestDetails");
+    assertNotNull(errors);
+    assertEquals("validation.error.maxFileSize", errors.getFieldError("file").getCode());
+    assertEquals(flowType.getBasePath() + "/details", model.get(PROVIDER_REQUEST_SUBMIT_URL));
+    assertEquals(
+        buildExpectedUrl(flowType, "/types", caseRef), model.get(PROVIDER_REQUEST_BACK_URL));
+    verify(providerRequestDetailsValidator).rejectFileSize(any(Errors.class));
+  }
+
   @Test
   @DisplayName(
       "POST general provider request confirmed clears general-flow session state and redirects home")
