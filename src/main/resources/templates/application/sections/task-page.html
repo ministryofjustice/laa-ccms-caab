@@ -7,7 +7,8 @@
 <body>
 <div class="govuk-width-container">
   <div id="breadcrumbs">
-    <a th:href="@{/home}" class="govuk-back-link" th:text="#{site.returnToHome}"></a>
+    <a th:if="${backUrl != null}" th:href="${backUrl}" class="govuk-back-link" th:text="#{site.returnToSearchResults}"></a>
+    <a th:unless="${backUrl != null}" th:href="@{/home}" class="govuk-back-link" th:text="#{site.returnToHome}"></a>
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/application/sections}" th:object="${formData}" method="post">
