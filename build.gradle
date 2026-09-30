@@ -78,6 +78,11 @@ configurations.configureEach {
             details.useVersion '1.6.3'
             details.because 'Snyk override (SNYK-JAVA-CHQOSLOGBACK-19882330); directory traversal vulnerability in 1.5.38'
         }
+        if (details.requested.group == 'org.apache.tomcat.embed'
+                && details.requested.name in ['tomcat-embed-core', 'tomcat-embed-el', 'tomcat-embed-websocket']) {
+            details.useVersion '11.0.25'
+            details.because 'Snyk override (SNYK-JAVA-ORGAPACHETOMCATEMBED-20302842, SNYK-JAVA-ORGAPACHETOMCATEMBED-20302843, SNYK-JAVA-ORGAPACHETOMCATEMBED-20302874, SNYK-JAVA-ORGAPACHETOMCATEMBED-20302876, SNYK-JAVA-ORGAPACHETOMCATEMBED-20302886, SNYK-JAVA-ORGAPACHETOMCATEMBED-20302889, SNYK-JAVA-ORGAPACHETOMCATEMBED-20304748)'
+        }
     }
 }
 
