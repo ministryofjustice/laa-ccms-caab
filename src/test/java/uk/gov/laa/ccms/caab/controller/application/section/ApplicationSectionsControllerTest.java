@@ -115,6 +115,7 @@ class ApplicationSectionsControllerTest {
   void testCompleteApplication_ValidationError() throws Exception {
     final ApplicationSectionDisplay sectionData = ApplicationSectionDisplay.builder().build();
     final Object formData = new Object();
+    final String searchUrl = "http://localhost/application/search/results";
 
     // Simulate validation error using doAnswer
     doAnswer(
@@ -134,11 +135,13 @@ class ApplicationSectionsControllerTest {
         .perform(
             post("/application/sections")
                 .sessionAttr(SECTIONS_DATA, sectionData)
+                .sessionAttr(APPLICATION_SECTIONS_BACK_URL, searchUrl)
                 .flashAttr("formData", formData))
         .andDo(print())
         .andExpect(status().isOk())
         .andExpect(view().name("application/sections/task-page"))
-        .andExpect(model().attributeExists("summary"));
+        .andExpect(model().attributeExists("summary"))
+        .andExpect(model().attribute("backUrl", searchUrl));
   }
 
   @Test
