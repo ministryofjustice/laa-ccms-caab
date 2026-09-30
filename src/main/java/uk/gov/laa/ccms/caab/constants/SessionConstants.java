@@ -280,4 +280,7 @@ public class SessionConstants {
 
   /** Session attribute holding the selected award-type details. */
   public static final String AWARD_TYPE_FORM = "awardTypeForm";
+
+  /** Search results URL for the application sections back link; absent means home. */
+  public static final String APPLICATION_SECTIONS_BACK_URL = "applicationSectionsBackUrl";
 }

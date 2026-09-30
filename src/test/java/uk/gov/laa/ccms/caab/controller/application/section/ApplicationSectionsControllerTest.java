@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SECTIONS_BACK_URL;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SECTIONS_DATA;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 
@@ -87,6 +88,26 @@ class ApplicationSectionsControllerTest {
 
     verify(applicationService, times(1))
         .getApplicationSections(any(ApplicationDetail.class), any(UserDetail.class));
+  }
+
+  @Test
+  public void testGetApplicationSectionsAddsBackUrlFromSession() throws Exception {
+    final String searchUrl = "http://localhost/application/search/results";
+
+    when(applicationService.getApplication(anyString()))
+        .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
+    when(applicationService.getApplicationSections(
+            any(ApplicationDetail.class), any(UserDetail.class)))
+        .thenReturn(ApplicationSectionDisplay.builder().build());
+
+    this.mockMvc
+        .perform(
+            get("/application/sections")
+                .sessionAttr("applicationId", "123")
+                .sessionAttr("user", new UserDetail())
+                .sessionAttr(APPLICATION_SECTIONS_BACK_URL, searchUrl))
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("backUrl", searchUrl));
   }
 
   @Test

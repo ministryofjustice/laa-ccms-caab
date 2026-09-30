@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.application.search;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SECTIONS_BACK_URL;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
@@ -196,6 +197,7 @@ public class ApplicationSearchController {
    * Redirects to the correct endpoint to view a Case or Application.
    *
    * @param caseReferenceNumber The caseReferenceNumber of the application of case to view.
+   * @param fromSearch Whether the user followed a link from the case search results.
    * @return The appropriate redirect based on the type of application or case selected.
    */
   @GetMapping("/application/{case-reference-number}/view")
@@ -203,6 +205,7 @@ public class ApplicationSearchController {
       @SessionAttribute(USER_DETAILS) final UserDetail userDetails,
       @SessionAttribute(NOTIFICATION_ID) @Nullable final String notificationId,
       @PathVariable("case-reference-number") final String caseReferenceNumber,
+      @RequestParam(value = "fromSearch", defaultValue = "false") final boolean fromSearch,
       HttpSession session) {
 
     clearCaseScopedSession(session);
@@ -242,6 +245,8 @@ public class ApplicationSearchController {
 
     if (isDraftApplication) {
       session.setAttribute(APPLICATION_ID, tdsApplication.getId());
+      session.setAttribute(
+          APPLICATION_SECTIONS_BACK_URL, fromSearch ? session.getAttribute(SEARCH_URL) : null);
 
       return "redirect:/application/sections";
     }
