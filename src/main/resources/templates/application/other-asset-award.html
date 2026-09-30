@@ -57,7 +57,8 @@
           th:errorMessage="${#fields.hasErrors('valuationDate') ? #fields.errors('valuationDate').getFirst() : ''}">
       </moj:datepicker>
 
-      <section class="govuk-form-group">
+      <section th:fragment="awardAndRecovery"
+               class="govuk-form-group">
         <h2 class="govuk-heading-m"
             th:text="#{case.otherAssetAward.awardAndRecovery.title}">
         </h2>
@@ -84,22 +85,19 @@
           </div>
         </div>
 
-        <div th:replace="~{partials/forms :: percentageAmountRow(
-      'disputed',
+        <div th:replace="~{partials/forms :: awardRecoveryRow(
       #{case.otherAssetAward.awardAndRecovery.disputed},
       'disputedPercentage',
       'disputedAmount')}">
         </div>
 
-        <div th:replace="~{partials/forms :: percentageAmountRow(
-      'awarded',
+        <div th:replace="~{partials/forms :: awardRecoveryRow(
       #{case.otherAssetAward.awardAndRecovery.awarded},
       'awardedPercentage',
       'awardedAmount')}">
         </div>
 
-        <div th:replace="~{partials/forms :: percentageAmountRow(
-      'recovered',
+        <div th:replace="~{partials/forms :: awardRecoveryRow(
       #{case.otherAssetAward.awardAndRecovery.recovered},
       'recoveredPercentage',
       'recoveredAmount')}">

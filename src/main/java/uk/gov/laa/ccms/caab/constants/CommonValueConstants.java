@@ -90,10 +90,7 @@ public class CommonValueConstants {
   /** Type used to retrieve other asset award recovery options. */
   public static final String COMMON_VALUE_RECOVERY_ASSET = "XXCCMS_RECOVERY_ASSET";
 
-  /** Type used to retrieve other asset award valuation basis options. */
-  public static final String COMMON_VALUE_VALUATION_BASIS = "XXCCMS_VALUATION_BASIS";
-
-  /** Type used to retrieve land award valuation basis options. */
+  /** Type used to retrieve land award and other asset award valuation basis options. */
   public static final String COMMON_VALUE_VALUATION_BASIS = "XXCCMS_VALUATION_BASIS";
 
   /** Type used to retrieve land award recovery options. */
