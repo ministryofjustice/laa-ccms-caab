@@ -64,7 +64,6 @@ ignore:
     - '*':
         reason: "Temporary ignore pending upstream Ubuntu/Paketo libc6 update."
         expires: "2026-10-30T00:00:00.000Z"
-  SNYK-UBUNTU2404-GLIBC-15804597:
 patch: {}
 exclude:
   global:
