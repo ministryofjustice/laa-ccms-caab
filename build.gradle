@@ -82,6 +82,11 @@ configurations.configureEach {
             details.useVersion '1.6.3'
             details.because 'Snyk override (SNYK-JAVA-CHQOSLOGBACK-19882330); directory traversal vulnerability in 1.5.38'
         }
+        // Keep embedded Tomcat modules aligned on the patched release.
+        if (details.requested.group == 'org.apache.tomcat.embed') {
+            details.useVersion '11.0.25'
+            details.because 'Snyk remediation for vulnerabilities in Tomcat 11.0.24'
+            }
     }
 }
 
