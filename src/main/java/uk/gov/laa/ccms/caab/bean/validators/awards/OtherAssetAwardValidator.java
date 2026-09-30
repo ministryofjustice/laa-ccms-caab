@@ -19,7 +19,6 @@ import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 public class OtherAssetAwardValidator extends AbstractValidator {
 
   private static final BigDecimal MAX_AMOUNT = new BigDecimal("99999999.99");
-  private static final BigDecimal MAX_PERCENTAGE = new BigDecimal("100");
 
   @Override
   public boolean supports(final Class<?> clazz) {
@@ -104,6 +103,26 @@ public class OtherAssetAwardValidator extends AbstractValidator {
         "recoveredPercentage", formData.getRecoveredPercentage(), "Percentage Recovered", errors);
     validatePercentage(
         "disputedPercentage", formData.getDisputedPercentage(), "Percentage Disputed", errors);
+
+    validateAwardAndRecoveryValueTypes(formData, errors);
+  }
+
+  private void validateAwardAndRecoveryValueTypes(
+      final OtherAssetAwardFormData formData, final Errors errors) {
+    final boolean hasPercentage =
+        StringUtils.hasText(formData.getAwardedPercentage())
+            || StringUtils.hasText(formData.getRecoveredPercentage())
+            || StringUtils.hasText(formData.getDisputedPercentage());
+    final boolean hasAmount =
+        StringUtils.hasText(formData.getAwardedAmount())
+            || StringUtils.hasText(formData.getRecoveredAmount())
+            || StringUtils.hasText(formData.getDisputedAmount());
+
+    if (hasPercentage && hasAmount) {
+      errors.reject(
+          "invalid.awardRecovery.valueType",
+          "Enter award and recovery values as either percentages or amounts, not both.");
+    }
   }
 
   private String getAmountValue(final OtherAssetAwardFormData formData, final String field) {
@@ -138,7 +157,18 @@ public class OtherAssetAwardValidator extends AbstractValidator {
       return;
     }
     validateCurrencyField(field, value, displayName, errors);
-    if (!errors.hasFieldErrors(field) && new BigDecimal(value).compareTo(MAX_AMOUNT) > 0) {
+
+    if (errors.hasFieldErrors(field)) {
+      return;
+    }
+
+    final BigDecimal amount = new BigDecimal(value);
+    if ("valuationAmount".equals(field) && amount.compareTo(BigDecimal.ZERO) == 0) {
+      errors.rejectValue(
+          field, "value.must.be.positive", "'Valuation Amount' must be greater than zero.");
+    }
+
+    if (amount.compareTo(MAX_AMOUNT) > 0) {
       errors.rejectValue(
           field,
           "value.exceeds.max",
@@ -157,11 +187,6 @@ public class OtherAssetAwardValidator extends AbstractValidator {
           "invalid.percentage",
           "Please enter '%s' as a number with no more than 2 decimal places."
               .formatted(displayName));
-      return;
-    }
-    if (new BigDecimal(value).compareTo(MAX_PERCENTAGE) > 0) {
-      errors.rejectValue(
-          field, "value.exceeds.max", "'%s' must be no more than 100.".formatted(displayName));
     }
   }
 

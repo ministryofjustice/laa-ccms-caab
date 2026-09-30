@@ -507,7 +507,7 @@ public class AwardController {
     model.addAttribute(
         "awardedByOptions", getCommonValues(CommonValueConstants.COMMON_VALUE_AWARDED_BY));
     model.addAttribute(
-        "recoveryOptions", getCommonValues(CommonValueConstants.COMMON_VALUE_LAND_RECOVERY));
+        "recoveryOptions", getCommonValues(CommonValueConstants.COMMON_VALUE_RECOVERY_ASSET));
     model.addAttribute(
         "landRegistrationOptions",
         getCommonValues(CommonValueConstants.COMMON_VALUE_LAND_REGISTRATION));

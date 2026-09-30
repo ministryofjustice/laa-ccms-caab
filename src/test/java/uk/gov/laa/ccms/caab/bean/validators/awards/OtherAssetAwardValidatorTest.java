@@ -48,6 +48,35 @@ class OtherAssetAwardValidatorTest {
   }
 
   @Test
+  void acceptsAmountFieldsWithoutPercentageFields() {
+    final OtherAssetAwardFormData form = validForm();
+    form.setAwardedPercentage(null);
+    form.setRecoveredPercentage(null);
+    form.setDisputedPercentage(null);
+    form.setAwardedAmount("750.38");
+    form.setRecoveredAmount("100.00");
+    form.setDisputedAmount("200.00");
+    final BeanPropertyBindingResult errors = errorsFor(form);
+
+    validator.validate(form, errors);
+
+    assertThat(errors.hasErrors()).isFalse();
+  }
+
+  @Test
+  void rejectsMixtureOfPercentageAndAmountFields() {
+    final OtherAssetAwardFormData form = validForm();
+    form.setAwardedAmount("750.38");
+    final BeanPropertyBindingResult errors = errorsFor(form);
+
+    validator.validate(form, errors);
+
+    assertThat(errors.getGlobalErrors())
+        .extracting("code")
+        .contains("invalid.awardRecovery.valueType");
+  }
+
+  @Test
   void rejectsMissingRequiredAwardDetails() {
     final OtherAssetAwardFormData form = validForm();
     form.setDateOfOrder("");
@@ -103,6 +132,9 @@ class OtherAssetAwardValidatorTest {
   @Test
   void rejectsInvalidAndExcessiveAmounts() {
     final OtherAssetAwardFormData form = validForm();
+    form.setAwardedPercentage(null);
+    form.setRecoveredPercentage(null);
+    form.setDisputedPercentage(null);
     form.setValuationAmount("12.345");
     form.setRecoveredAmount("-1.00");
     form.setDisputedAmount("100000000.00");
@@ -117,9 +149,35 @@ class OtherAssetAwardValidatorTest {
   }
 
   @Test
-  void rejectsInvalidPercentages() {
+  void rejectsZeroValuationAmount() {
+    final OtherAssetAwardFormData form = validForm();
+    form.setValuationAmount("0.00");
+    final BeanPropertyBindingResult errors = errorsFor(form);
+
+    validator.validate(form, errors);
+
+    assertThat(errors.getFieldErrors("valuationAmount"))
+        .extracting("code")
+        .contains("value.must.be.positive");
+  }
+
+  @Test
+  void acceptsPercentagesAboveOneHundred() {
     final OtherAssetAwardFormData form = validForm();
     form.setAwardedPercentage("100.01");
+    form.setRecoveredPercentage("999999.99");
+    form.setDisputedPercentage("101");
+    final BeanPropertyBindingResult errors = errorsFor(form);
+
+    validator.validate(form, errors);
+
+    assertThat(errors.hasErrors()).isFalse();
+  }
+
+  @Test
+  void rejectsInvalidPercentages() {
+    final OtherAssetAwardFormData form = validForm();
+    form.setAwardedPercentage("not-a-number");
     form.setRecoveredPercentage("12.345");
     form.setDisputedPercentage("-1");
     final BeanPropertyBindingResult errors = errorsFor(form);
@@ -163,10 +221,7 @@ class OtherAssetAwardValidatorTest {
     form.setValuationCriteria("AGREED");
     form.setValuationDate("02/01/2025");
     form.setAwardedPercentage("75.25");
-    form.setRecoveredAmount("100.00");
     form.setRecoveredPercentage("10.00");
-    form.setDisputedAmount("200.00");
-    form.setAwardedAmount("750.38");
     form.setDisputedPercentage("20.00");
     form.setRecovery("Recovery details");
     form.setNoRecoveryDetails("No recovery details");
