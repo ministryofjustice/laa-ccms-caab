@@ -371,7 +371,8 @@ public class AwardController {
     if (otherAssetAwardId == null) {
       if (awardTypeForm == null
           || !StringUtils.hasText(awardTypeForm.getAwardTypeCode())
-          || !StringUtils.hasText(awardTypeForm.getAwardType())) {
+          || !StringUtils.hasText(awardTypeForm.getAwardType())
+          || !AWARD_TYPE_OTHER_ASSET.equals(awardTypeForm.getAwardType())) {
         log.warn("Other asset award page requested without complete award type details");
         return "redirect:/case/outcome-and-awards";
       }
