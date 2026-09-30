@@ -16,6 +16,14 @@ ignore:
           and there is no upgrade-only remediation path because the current
           renderer family remains LGPL/MPL licensed.
         expires: 2027-09-14T00:00:00.000Z
+  'snyk:lic:maven:org.xhtmlrenderer:flying-saucer-pdf:LGPL-2.1':
+    - '*':
+        reason: >-
+          LGPL-2.1 obligations attach on distribution. This PDF renderer stack
+          is used unmodified inside a deployed service that is not distributed,
+          and there is no upgrade-only remediation path because the current
+          renderer family remains LGPL/MPL licensed.
+        expires: 2027-09-14T00:00:00.000Z
   'snyk:lic:maven:org.xhtmlrenderer:flying-saucer-core:LGPL-2.1':
     - '*':
         reason: >-

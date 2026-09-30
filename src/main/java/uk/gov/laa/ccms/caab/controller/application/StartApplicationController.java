@@ -2,8 +2,10 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SECTIONS_BACK_URL;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -47,13 +49,15 @@ public class StartApplicationController {
    * @param model The model used to store attributes for rendering views.
    * @param caseContext The context indicating whether the process is for a new application or an
    *     amendment. It must match one of the predefined context values.
+   * @param session The http session.
    * @return A redirection string to the appropriate route based on the provided context.
    */
   @GetMapping("/{caseContext}/new")
   public String startNewApplication(
       Model model,
       @SessionAttribute(value = CASE, required = false) final ApplicationDetail caseDetail,
-      @PathVariable("caseContext") final CaseContext caseContext) {
+      @PathVariable("caseContext") final CaseContext caseContext,
+      final HttpSession session) {
     log.info("Starting application");
 
     final ApplicationFormData applicationFormData = getApplicationDetails();
@@ -70,6 +74,7 @@ public class StartApplicationController {
       return "redirect:/amendments/application-type";
     }
 
+    session.removeAttribute(APPLICATION_SECTIONS_BACK_URL);
     return "redirect:/application/office";
   }
 

@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.ACTIVE_CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SECTIONS_BACK_URL;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_CONTEXT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CORRESPONDENCE_ADDRESS_FLOW;
@@ -52,6 +53,8 @@ public class ApplicationSectionsController {
   public String applicationSections(
       @SessionAttribute(APPLICATION_ID) final String applicationId,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @SessionAttribute(value = APPLICATION_SECTIONS_BACK_URL, required = false)
+          final String backUrl,
       final HttpSession session,
       final Model model) {
 
@@ -68,6 +71,7 @@ public class ApplicationSectionsController {
                         "Failed to retrieve section for application summary"));
 
     model.addAttribute("summary", sections);
+    model.addAttribute("backUrl", backUrl);
 
     final ActiveCase activeCase =
         ActiveCase.builder()
@@ -139,6 +143,8 @@ public class ApplicationSectionsController {
   @PostMapping("/application/sections")
   public String completeApplication(
       @SessionAttribute(SECTIONS_DATA) final ApplicationSectionDisplay sectionData,
+      @SessionAttribute(value = APPLICATION_SECTIONS_BACK_URL, required = false)
+          final String backUrl,
       @ModelAttribute("formData") final Object formData,
       final BindingResult bindingResult,
       final Model model) {
@@ -148,6 +154,7 @@ public class ApplicationSectionsController {
 
     if (bindingResult.hasErrors()) {
       model.addAttribute("summary", sectionData);
+      model.addAttribute("backUrl", backUrl);
       return "application/sections/task-page";
     }
 

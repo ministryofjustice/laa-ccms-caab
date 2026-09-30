@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.STATUS_UNSUBMITTED_ACTUAL_VALUE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SECTIONS_BACK_URL;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMARY;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_SEARCH_CRITERIA;
@@ -329,6 +330,56 @@ public class ApplicationSearchControllerTest {
           .sessionAttributes()
           .hasEntrySatisfying(
               APPLICATION_ID, value -> assertThat(value).isEqualTo(Integer.parseInt(appRef)));
+    }
+
+    @Test
+    @DisplayName(
+        "Selecting an unsubmitted application from search results points the sections back link"
+            + " at the search results")
+    public void selectApplicationFromSearchSetsSectionsBackUrl() throws Exception {
+      final String searchUrl = "http://localhost/application/search/results?page=1";
+
+      when(applicationService.getTdsApplicationSummary(any(), any()))
+          .thenReturn(
+              new BaseApplicationDetail()
+                  .id(2)
+                  .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
+                  .caseReferenceNumber("1"));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/application/{case-reference-number}/view", "1")
+                      .param("fromSearch", "true")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr("SEARCH_URL", searchUrl)))
+          .hasRedirectedUrl("/application/sections")
+          .request()
+          .sessionAttributes()
+          .containsEntry(APPLICATION_SECTIONS_BACK_URL, searchUrl);
+    }
+
+    @Test
+    @DisplayName(
+        "Selecting an unsubmitted application from outside search clears any stale sections back"
+            + " link")
+    public void selectApplicationNotFromSearchClearsSectionsBackUrl() throws Exception {
+      when(applicationService.getTdsApplicationSummary(any(), any()))
+          .thenReturn(
+              new BaseApplicationDetail()
+                  .id(2)
+                  .status(new StringDisplayValue().id(STATUS_UNSUBMITTED_ACTUAL_VALUE))
+                  .caseReferenceNumber("1"));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/application/{case-reference-number}/view", "1")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr("SEARCH_URL", "http://localhost/application/search/results")
+                      .sessionAttr(APPLICATION_SECTIONS_BACK_URL, "stale")))
+          .hasRedirectedUrl("/application/sections")
+          .request()
+          .sessionAttributes()
+          .doesNotContainKey(APPLICATION_SECTIONS_BACK_URL);
     }
 
     @Test

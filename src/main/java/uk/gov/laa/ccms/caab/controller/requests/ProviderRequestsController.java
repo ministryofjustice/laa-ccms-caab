@@ -685,14 +685,25 @@ public class ProviderRequestsController {
   public String handleUploadFileTooLarge(
       final HttpServletRequest request, final HttpSession session, final Model model) {
     ProviderRequestFlowType flowType = getFlowType(request.getRequestURI());
-    final String evidenceUploadSessionAttribute = flowType.getEvidenceUploadSessionAttribute();
-    EvidenceUploadFormData evidenceUploadFormData =
-        (EvidenceUploadFormData) session.getAttribute(evidenceUploadSessionAttribute);
     ProviderRequestFlowFormData providerRequestFlow =
         (ProviderRequestFlowFormData) session.getAttribute(flowType.getFlowSessionAttribute());
     String caseRef =
         providerRequestFlow != null ? providerRequestFlow.getCaseReferenceNumber() : null;
 
+    if (request.getRequestURI().endsWith("/details")) {
+      ProviderRequestDetailsFormData details = providerRequestFlow.getRequestDetailsFormData();
+      BindingResult errors = new BeanPropertyBindingResult(details, "providerRequestDetails");
+      providerRequestDetailsValidator.rejectFileSize(errors);
+      addProviderRequestFlowModel(
+          model, flowType, providerRequestFlow, caseRef, "/details", "/types");
+      populateAddEvidenceModel(model);
+      model.addAttribute(BindingResult.MODEL_KEY_PREFIX + "providerRequestDetails", errors);
+      return providerRequestsDetails(providerRequestFlow, details, model, flowType);
+    }
+
+    final String evidenceUploadSessionAttribute = flowType.getEvidenceUploadSessionAttribute();
+    EvidenceUploadFormData evidenceUploadFormData =
+        (EvidenceUploadFormData) session.getAttribute(evidenceUploadSessionAttribute);
     // Manually construct a BindingResult to hold the file size error.
     final BindingResult bindingResult =
         new BeanPropertyBindingResult(evidenceUploadFormData, evidenceUploadSessionAttribute);

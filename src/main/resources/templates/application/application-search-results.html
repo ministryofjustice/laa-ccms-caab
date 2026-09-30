@@ -32,7 +32,7 @@
                             th:text="${case.caseReferenceNumber}"/>
                         <a class="govuk-link"
                            th:unless="${case.amendment != null && case.amendment && !amendmentsEnabled}"
-                           th:href="@{/application/{case-reference-number}/view(case-reference-number=${case.caseReferenceNumber})}"
+                           th:href="@{/application/{case-reference-number}/view(case-reference-number=${case.caseReferenceNumber},fromSearch=true)}"
                            th:text="${case.caseReferenceNumber}"></a>
                     </td>
                     <td class="govuk-table__cell" th:text="${case.providerDetails.providerCaseReference}"></td>

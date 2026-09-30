@@ -15,7 +15,10 @@
   <div id="main-content">
     <form
         action="#" method="post"
-        th:action="@{/notifications/{notification_id}/attachments/upload(notification_id=${notificationId})}" th:object="${attachmentUploadFormData}" enctype="multipart/form-data">
+        th:action="${attachmentUploadFormData.documentId != null}
+          ? @{/notifications/{notification_id}/attachments/upload(notification_id=${notificationId},sendBy=${attachmentUploadFormData.sendBy},attachmentId=${attachmentUploadFormData.documentId})}
+          : @{/notifications/{notification_id}/attachments/upload(notification_id=${notificationId},sendBy=${attachmentUploadFormData.sendBy})}"
+        th:object="${attachmentUploadFormData}" enctype="multipart/form-data">
       <h1 class="govuk-heading-l">
         <th:block th:if="*{sendBy.code == 'P'}" th:text="#{notifications.documents.send.postal.heading}"/>
         <th:block th:if="*{sendBy.code == 'E'}" th:text="#{notifications.documents.send.electronic.heading}"/>

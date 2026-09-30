@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.bean.validators.request;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -61,6 +62,26 @@ class ProviderRequestDocumentUploadValidatorTest {
     assertEquals(
         FileUploadValidator.MAX_FILESIZE_ERROR.formatted("5MB"),
         errors.getFieldError("file").getDefaultMessage());
+  }
+
+  @Test
+  void acceptsExactlyEightMiBAndRejectsOneByteMore() {
+    ProviderRequestDocumentUploadValidator validator =
+        new ProviderRequestDocumentUploadValidator(
+            Arrays.asList("pdf"), "8MB", Arrays.asList("application/pdf"));
+    byte[] content = new byte[8 * 1024 * 1024];
+    byte[] header = "%PDF-1.4\n".getBytes(StandardCharsets.US_ASCII);
+    System.arraycopy(header, 0, content, 0, header.length);
+    evidenceUploadFormData.setFile(
+        new MockMultipartFile("file", "valid.pdf", "application/pdf", content));
+    validator.validateFile(evidenceUploadFormData, errors);
+    assertFalse(errors.hasFieldErrors("file"));
+
+    evidenceUploadFormData.setFile(
+        new MockMultipartFile(
+            "file", "valid.pdf", "application/pdf", new byte[content.length + 1]));
+    validator.validateFile(evidenceUploadFormData, errors);
+    assertEquals("validation.error.maxFileSize", errors.getFieldError("file").getCode());
   }
 
   @Test

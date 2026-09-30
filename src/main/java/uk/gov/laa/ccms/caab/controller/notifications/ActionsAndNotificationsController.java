@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.notifications;
 
+import static uk.gov.laa.ccms.caab.config.UploadSizeErrorFilter.redirectToUploadForm;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_DOCUMENT_TYPES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.NOTIFICATIONS_SEARCH_RESULTS;
@@ -8,7 +9,9 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.DisplayUtil.getCommaDelimitedString;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -28,6 +31,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -36,7 +40,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.notification.NotificationAttachmentUploadFormData;
@@ -563,28 +568,16 @@ public class ActionsAndNotificationsController {
   /**
    * Display the edit notification attachment screen.
    *
-   * @param user the currently logged-in user.
    * @param notificationId the ID of the notification.
    * @param attachmentId the ID of the notification attachment.
    * @return the edit notification attachment screen.
    */
   @GetMapping("/notifications/{notification_id}/attachments/{attachment_id}/edit")
   public String editDraftNotificationAttachment(
-      @ModelAttribute(USER_DETAILS) UserDetail user,
       @PathVariable(NOTIFICATION_ID) String notificationId,
-      @PathVariable(ATTACHMENT_ID) Integer attachmentId,
-      RedirectAttributes redirectAttributes) {
-
-    NotificationAttachmentDetail notificationAttachment =
-        notificationService.getDraftNotificationAttachment(attachmentId).block();
-
-    NotificationAttachmentUploadFormData formData =
-        notificationAttachmentMapper.toNotificationAttachmentUploadFormData(notificationAttachment);
-
-    redirectAttributes.addFlashAttribute(formData);
-
-    return "redirect:/notifications/%s/attachments/upload?sendBy=%s"
-        .formatted(notificationId, formData.getSendBy());
+      @PathVariable(ATTACHMENT_ID) Integer attachmentId) {
+    return "redirect:/notifications/%s/attachments/upload?attachmentId=%s"
+        .formatted(notificationId, attachmentId);
   }
 
   /**
@@ -685,15 +678,83 @@ public class ActionsAndNotificationsController {
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @SessionAttribute(NOTIFICATION) Notification notification,
       @PathVariable(NOTIFICATION_ID) String notificationId,
-      @RequestParam(value = "sendBy") SendBy sendBy,
+      @RequestParam(value = "sendBy", required = false) SendBy sendBy,
+      @RequestParam(value = "attachmentId", required = false) Integer attachmentId,
       NotificationAttachmentUploadFormData attachmentUploadFormData,
       Model model) {
 
     populateNotificationAttachmentModel(model);
 
+    if (attachmentId != null) {
+      validateDraftNotificationAttachment(notificationId, user, attachmentId);
+
+      NotificationAttachmentDetail draft =
+          notificationService
+              .getDraftNotificationAttachment(attachmentId)
+              .blockOptional()
+              .orElseThrow(
+                  () ->
+                      new CaabApplicationException(
+                          "Invalid notification attachment id: %s".formatted(attachmentId)));
+      attachmentUploadFormData =
+          notificationAttachmentMapper.toNotificationAttachmentUploadFormData(draft);
+      if (!attachmentId.equals(attachmentUploadFormData.getDocumentId())) {
+        throw new CaabApplicationException(
+            "Invalid notification attachment id: %s".formatted(attachmentId));
+      }
+    } else if (sendBy != null) {
+      attachmentUploadFormData.setSendBy(sendBy);
+    } else {
+      throw new CaabApplicationException("Missing sendBy for new notification attachment");
+    }
     model.addAttribute("attachmentUploadFormData", attachmentUploadFormData);
     model.addAttribute("notificationId", notificationId);
     return "notifications/upload-notification-attachment";
+  }
+
+  private void validateDraftNotificationAttachment(
+      String notificationId, UserDetail user, Integer attachmentId) {
+    boolean belongsToNotification =
+        notificationService
+            .getDraftNotificationAttachments(notificationId, user.getUserId())
+            .map(NotificationAttachmentDetails::getContent)
+            .blockOptional()
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve draft attachments"))
+            .stream()
+            .anyMatch(attachment -> attachmentId.equals(attachment.getId()));
+    if (!belongsToNotification) {
+      throw new CaabApplicationException(
+          "Invalid notification attachment id: %s".formatted(attachmentId));
+    }
+  }
+
+  private Integer attachmentIdFromQuery(HttpServletRequest request) {
+    if (request.getQueryString() == null) {
+      return null;
+    }
+    List<String> values =
+        UriComponentsBuilder.fromPath("/")
+            .query(request.getQueryString())
+            .build()
+            .getQueryParams()
+            .get("attachmentId");
+    if (values == null) {
+      return null;
+    }
+    if (values.size() != 1) {
+      throw new CaabApplicationException("Invalid notification attachment id");
+    }
+    try {
+      return Integer.valueOf(values.getFirst());
+    } catch (NumberFormatException exception) {
+      throw new CaabApplicationException("Invalid notification attachment id", exception);
+    }
+  }
+
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public void handleAttachmentTooLarge(HttpServletRequest request, HttpServletResponse response)
+      throws IOException {
+    redirectToUploadForm(request, response);
   }
 
   /**
@@ -711,10 +772,20 @@ public class ActionsAndNotificationsController {
       @ModelAttribute(USER_DETAILS) UserDetail user,
       @SessionAttribute(NOTIFICATION) Notification notification,
       @PathVariable(NOTIFICATION_ID) String notificationId,
+      HttpServletRequest request,
       @ModelAttribute(value = "attachmentUploadFormData")
           NotificationAttachmentUploadFormData attachmentUploadFormData,
       BindingResult bindingResult,
       Model model) {
+
+    Integer attachmentId = attachmentIdFromQuery(request);
+    Integer documentId = attachmentUploadFormData.getDocumentId();
+    if (attachmentId != null || documentId != null) {
+      if (attachmentId == null || !attachmentId.equals(documentId)) {
+        throw new CaabApplicationException("Mismatched notification attachment id");
+      }
+      validateDraftNotificationAttachment(notificationId, user, attachmentId);
+    }
 
     attachmentUploadValidator.validate(attachmentUploadFormData, bindingResult);
 
@@ -746,10 +817,16 @@ public class ActionsAndNotificationsController {
     NotificationAttachmentDetail notificationAttachmentDetail =
         notificationAttachmentMapper.toNotificationAttachmentDetail(attachmentUploadFormData);
 
-    if (notificationAttachmentDetail.getId() != null) {
+    if (attachmentId != null) {
+      if (!attachmentId.equals(notificationAttachmentDetail.getId())) {
+        throw new CaabApplicationException("Mismatched notification attachment id");
+      }
       notificationService.updateDraftNotificationAttachment(
           notificationAttachmentDetail, user.getLoginId());
     } else {
+      if (notificationAttachmentDetail.getId() != null) {
+        throw new CaabApplicationException("Mismatched notification attachment id");
+      }
       Long attachmentNumber = getNextAttachmentNumber(notification, user.getUserId());
       notificationAttachmentDetail.setStatus(STATUS_READY_TO_SUBMIT);
       notificationAttachmentDetail.setNotificationReference(notificationId);
