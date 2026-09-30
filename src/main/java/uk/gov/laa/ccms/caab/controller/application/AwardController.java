@@ -443,7 +443,7 @@ public class AwardController {
             request,
             user.getLoginId());
       }
-    } catch (CaabApiClientException ex) {
+    } catch (CaabApiClientException | IllegalStateException ex) {
       log.warn("Failed to save other asset award with id: {}", otherAssetAward.getId(), ex);
       bindingResult.reject(
           "otherAssetAward.save.failed",
