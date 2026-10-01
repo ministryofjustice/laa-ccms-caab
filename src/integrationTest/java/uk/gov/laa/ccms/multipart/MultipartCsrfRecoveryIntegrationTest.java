@@ -19,7 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.security.saml2.autoconfigure.Saml2RelyingPartyAutoConfiguration;
+import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -129,7 +129,7 @@ class MultipartCsrfRecoveryIntegrationTest {
   }
 
   @SpringBootConfiguration
-  @EnableAutoConfiguration(exclude = Saml2RelyingPartyAutoConfiguration.class)
+  @EnableAutoConfiguration(exclude = OAuth2ClientAutoConfiguration.class)
   @EnableWebSecurity
   @Import({UploadSizeErrorFilter.class, UploadController.class})
   static class TestApplication {
