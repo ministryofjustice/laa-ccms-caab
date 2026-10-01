@@ -29,19 +29,24 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.AwardTypeForm;
 import uk.gov.laa.ccms.caab.bean.award.FinancialAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.LandAwardFormData;
+import uk.gov.laa.ccms.caab.bean.award.OtherAssetAwardFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.FinancialAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.LandAwardValidator;
+import uk.gov.laa.ccms.caab.bean.validators.awards.OtherAssetAwardValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.CommonValueConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.LandAwardMapper;
+import uk.gov.laa.ccms.caab.mapper.OtherAssetAwardMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.LandAwardRequest;
+import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
+import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -61,6 +66,8 @@ public class AwardController {
   private final AwardTypeValidator awardTypeValidator;
   private final FinancialAwardValidator financialAwardValidator;
   private final FinancialAwardMapper financialAwardMapper;
+  private final OtherAssetAwardValidator otherAssetAwardValidator;
+  private final OtherAssetAwardMapper otherAssetAwardMapper;
   private final LandAwardValidator landAwardValidator;
   private final LandAwardMapper landAwardMapper;
 
@@ -350,6 +357,105 @@ public class AwardController {
     return "redirect:/case/outcome-and-awards";
   }
 
+  /** Displays the other asset award screen for a new or existing award. */
+  @GetMapping(
+      value = {"/case/outcome-and-awards/asset", "/case/outcome-and-awards/asset/{awardId}"})
+  public String otherAssetAward(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @SessionAttribute(value = AWARD_TYPE_FORM, required = false)
+          final AwardTypeForm awardTypeForm,
+      @PathVariable(value = "awardId", required = false) final Integer otherAssetAwardId,
+      final Model model) {
+    final OtherAssetAwardFormData formData;
+    if (otherAssetAwardId == null) {
+      if (awardTypeForm == null
+          || !StringUtils.hasText(awardTypeForm.getAwardTypeCode())
+          || !StringUtils.hasText(awardTypeForm.getAwardType())
+          || !AWARD_TYPE_OTHER_ASSET.equals(awardTypeForm.getAwardType())) {
+        log.warn("Other asset award page requested without complete award type details");
+        return "redirect:/case/outcome-and-awards";
+      }
+      formData = new OtherAssetAwardFormData();
+      formData.setAwardCode(awardTypeForm.getAwardTypeCode());
+      formData.setAwardType(awardTypeForm.getAwardType());
+    } else {
+      final OtherAssetAwardDetail award =
+          caseOutcomeService
+              .getOtherAssetAward(
+                  ebsCase.getCaseReferenceNumber(),
+                  user.getProvider().getId().intValue(),
+                  otherAssetAwardId)
+              .orElseThrow(
+                  () ->
+                      new CaabApplicationException(
+                          "Could not find other asset award with id: " + otherAssetAwardId));
+      formData = otherAssetAwardMapper.toOtherAssetAwardFormData(award);
+    }
+
+    model.addAttribute("otherAssetAward", formData);
+    populateOtherAssetAwardDropdowns(model);
+    return "application/other-asset-award";
+  }
+
+  /** Creates or updates an other asset award and returns to the outcome and awards screen. */
+  @PostMapping("/case/outcome-and-awards/asset")
+  public String otherAssetAward(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @SessionAttribute(value = AWARD_TYPE_FORM, required = false)
+          final AwardTypeForm awardTypeForm,
+      @ModelAttribute("otherAssetAward") final OtherAssetAwardFormData otherAssetAward,
+      final BindingResult bindingResult,
+      final Model model) {
+    otherAssetAwardValidator.validate(otherAssetAward, bindingResult);
+
+    if (otherAssetAward.getId() == null
+        && (awardTypeForm == null
+            || !StringUtils.hasText(awardTypeForm.getAwardTypeCode())
+            || !StringUtils.hasText(awardTypeForm.getAwardType())
+            || !Objects.equals(awardTypeForm.getAwardType(), AWARD_TYPE_OTHER_ASSET)
+            || !Objects.equals(otherAssetAward.getAwardCode(), awardTypeForm.getAwardTypeCode())
+            || !Objects.equals(otherAssetAward.getAwardType(), awardTypeForm.getAwardType()))) {
+      bindingResult.reject(
+          "otherAssetAward.awardType.mismatch",
+          "The award type details are invalid for your session. Please select an award type again.");
+    }
+
+    if (bindingResult.hasErrors()) {
+      populateOtherAssetAwardDropdowns(model);
+      return "application/other-asset-award";
+    }
+
+    final OtherAssetAwardRequest request =
+        otherAssetAwardMapper.toOtherAssetAwardRequest(otherAssetAward);
+    try {
+      if (otherAssetAward.getId() == null) {
+        caseOutcomeService.createOtherAssetAward(
+            ebsCase.getCaseReferenceNumber(),
+            user.getProvider().getId().intValue(),
+            request,
+            user.getLoginId());
+      } else {
+        caseOutcomeService.updateOtherAssetAward(
+            ebsCase.getCaseReferenceNumber(),
+            user.getProvider().getId().intValue(),
+            otherAssetAward.getId(),
+            request,
+            user.getLoginId());
+      }
+    } catch (CaabApiClientException | IllegalStateException ex) {
+      log.warn("Failed to save other asset award with id: {}", otherAssetAward.getId(), ex);
+      bindingResult.reject(
+          "otherAssetAward.save.failed",
+          "We could not save the other asset award. Please try again.");
+      populateOtherAssetAwardDropdowns(model);
+      return "application/other-asset-award";
+    }
+
+    return "redirect:/case/outcome-and-awards";
+  }
+
   private void populateFinancialAwardDropdowns(final Model model) {
     model.addAttribute(
         "interimAwardOptions",
@@ -367,6 +473,33 @@ public class AwardController {
             .orElse(Collections.emptyList()));
   }
 
+  private void populateOtherAssetAwardDropdowns(final Model model) {
+    model.addAttribute(
+        "valuationBasisOptions",
+        Optional.ofNullable(
+                lookupService
+                    .getCommonValues(CommonValueConstants.COMMON_VALUE_VALUATION_BASIS)
+                    .block())
+            .map(CommonLookupDetail::getContent)
+            .orElse(Collections.emptyList()));
+
+    model.addAttribute(
+        "awardedByOptions",
+        Optional.ofNullable(
+                lookupService.getCommonValues(CommonValueConstants.COMMON_VALUE_AWARDED_BY).block())
+            .map(CommonLookupDetail::getContent)
+            .orElse(Collections.emptyList()));
+
+    model.addAttribute(
+        "recoveryOptions",
+        Optional.ofNullable(
+                lookupService
+                    .getCommonValues(CommonValueConstants.COMMON_VALUE_RECOVERY_ASSET)
+                    .block())
+            .map(CommonLookupDetail::getContent)
+            .orElse(Collections.emptyList()));
+  }
+
   private void populateLandAwardDropdowns(final Model model) {
     model.addAttribute(
         "valuationBasisOptions",
@@ -374,7 +507,7 @@ public class AwardController {
     model.addAttribute(
         "awardedByOptions", getCommonValues(CommonValueConstants.COMMON_VALUE_AWARDED_BY));
     model.addAttribute(
-        "recoveryOptions", getCommonValues(CommonValueConstants.COMMON_VALUE_LAND_RECOVERY));
+        "recoveryOptions", getCommonValues(CommonValueConstants.COMMON_VALUE_RECOVERY_ASSET));
     model.addAttribute(
         "landRegistrationOptions",
         getCommonValues(CommonValueConstants.COMMON_VALUE_LAND_REGISTRATION));

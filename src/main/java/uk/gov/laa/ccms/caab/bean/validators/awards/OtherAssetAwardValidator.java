@@ -1,0 +1,223 @@
+package uk.gov.laa.ccms.caab.bean.validators.awards;
+
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.STANDARD_CHARACTER_SET;
+import static uk.gov.laa.ccms.caab.util.DateUtils.COMPONENT_DATE_PATTERN;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.Map;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+import org.springframework.validation.Errors;
+import uk.gov.laa.ccms.caab.bean.award.OtherAssetAwardFormData;
+import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
+
+/** Validates other asset award input against the CAAB API constraints. */
+@Component
+public class OtherAssetAwardValidator extends AbstractValidator {
+
+  private static final BigDecimal MAX_AMOUNT = new BigDecimal("99999999.99");
+
+  @Override
+  public boolean supports(final Class<?> clazz) {
+    return OtherAssetAwardFormData.class.isAssignableFrom(clazz);
+  }
+
+  @Override
+  public void validate(final Object target, final Errors errors) {
+    final OtherAssetAwardFormData formData = (OtherAssetAwardFormData) target;
+
+    validateRequiredField("awardType", formData.getAwardType(), "Award type", errors);
+    validateRequiredField("description", formData.getDescription(), "Description of Asset", errors);
+    validateRequiredField("awardCode", formData.getAwardCode(), "Award code", errors);
+    validateRequiredField(
+        "dateOfOrder", formData.getDateOfOrder(), "Date of Order / Agreement", errors);
+    validateRequiredField("awardedBy", formData.getAwardedBy(), "Awarded By", errors);
+    validateRequiredField(
+        "valuationAmount", formData.getValuationAmount(), "Valuation Amount", errors);
+    validateRequiredField(
+        "valuationCriteria", formData.getValuationCriteria(), "Basis of validation", errors);
+    validateRequiredField(
+        "valuationDate", formData.getValuationDate(), "Date of validation", errors);
+    validateRequiredField("recovery", formData.getRecovery(), "Recovery", errors);
+    if (formData.getRecoveryOfAwardTimeRelated() == null) {
+      errors.rejectValue(
+          "recoveryOfAwardTimeRelated",
+          "required.recoveryOfAwardTimeRelated",
+          "Please complete 'Is recovery of the award time related?'.");
+    }
+
+    validateText(
+        "awardType", formData.getAwardType(), 50, "Award type", STANDARD_CHARACTER_SET, errors);
+    validateText(
+        "description",
+        formData.getDescription(),
+        50,
+        "Description of Asset",
+        STANDARD_CHARACTER_SET,
+        errors);
+    validateText(
+        "awardCode", formData.getAwardCode(), 30, "Award code", STANDARD_CHARACTER_SET, errors);
+    validateText(
+        "awardedBy", formData.getAwardedBy(), 50, "Awarded By", STANDARD_CHARACTER_SET, errors);
+    validateText(
+        "valuationCriteria",
+        formData.getValuationCriteria(),
+        50,
+        "Basis of validation",
+        STANDARD_CHARACTER_SET,
+        errors);
+    validateText(
+        "noRecoveryDetails",
+        formData.getNoRecoveryDetails(),
+        950,
+        "No Recovery Details",
+        STANDARD_CHARACTER_SET,
+        errors);
+    validateText(
+        "statutoryChargeExemptReason",
+        formData.getStatutoryChargeExemptReason(),
+        950,
+        "Reason for Statutory Charge Exemption",
+        STANDARD_CHARACTER_SET,
+        errors);
+
+    validateDate("dateOfOrder", formData.getDateOfOrder(), "Date of Order / Agreement", errors);
+    validateDate("valuationDate", formData.getValuationDate(), "Date of validation", errors);
+
+    final Map<String, String> amounts =
+        Map.of(
+            "valuationAmount", "Valuation Amount",
+            "recoveredAmount", "Amount Recovered",
+            "disputedAmount", "Amount Disputed",
+            "awardedAmount", "Amount Awarded");
+    amounts.forEach(
+        (field, displayName) ->
+            validateAmount(field, getAmountValue(formData, field), displayName, errors));
+
+    validatePercentage(
+        "awardedPercentage", formData.getAwardedPercentage(), "Percentage Awarded", errors);
+    validatePercentage(
+        "recoveredPercentage", formData.getRecoveredPercentage(), "Percentage Recovered", errors);
+    validatePercentage(
+        "disputedPercentage", formData.getDisputedPercentage(), "Percentage Disputed", errors);
+
+    validateExclusivePair(
+        "disputedPercentage",
+        formData.getDisputedPercentage(),
+        "disputedAmount",
+        formData.getDisputedAmount(),
+        "Disputed",
+        errors);
+    validateExclusivePair(
+        "awardedPercentage",
+        formData.getAwardedPercentage(),
+        "awardedAmount",
+        formData.getAwardedAmount(),
+        "Awarded",
+        errors);
+    validateExclusivePair(
+        "recoveredPercentage",
+        formData.getRecoveredPercentage(),
+        "recoveredAmount",
+        formData.getRecoveredAmount(),
+        "Recovered",
+        errors);
+  }
+
+  private void validateExclusivePair(
+      final String percentageField,
+      final String percentage,
+      final String amountField,
+      final String amount,
+      final String displayName,
+      final Errors errors) {
+    if (StringUtils.hasText(percentage) && StringUtils.hasText(amount)) {
+      final String message =
+          "Enter either a percentage or an amount for '%s', not both.".formatted(displayName);
+      errors.rejectValue(percentageField, "invalid.awardRecovery.valueType", message);
+      errors.rejectValue(amountField, "invalid.awardRecovery.valueType", message);
+    }
+  }
+
+  private String getAmountValue(final OtherAssetAwardFormData formData, final String field) {
+    return switch (field) {
+      case "valuationAmount" -> formData.getValuationAmount();
+      case "recoveredAmount" -> formData.getRecoveredAmount();
+      case "disputedAmount" -> formData.getDisputedAmount();
+      case "awardedAmount" -> formData.getAwardedAmount();
+      default -> throw new IllegalArgumentException("Unknown amount field: " + field);
+    };
+  }
+
+  private void validateDate(
+      final String field, final String value, final String displayName, final Errors errors) {
+    if (!StringUtils.hasText(value)) {
+      return;
+    }
+
+    final Date date =
+        validateValidDateField(value, field, displayName, COMPONENT_DATE_PATTERN, errors);
+    if (date != null
+        && date.after(
+            Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()))) {
+      errors.rejectValue(
+          field, "invalid.date.range", "'%s' must not be in the future.".formatted(displayName));
+    }
+  }
+
+  private void validateAmount(
+      final String field, final String value, final String displayName, final Errors errors) {
+    if (!StringUtils.hasText(value)) {
+      return;
+    }
+    validateCurrencyField(field, value, displayName, errors);
+
+    if (errors.hasFieldErrors(field)) {
+      return;
+    }
+
+    final BigDecimal amount = new BigDecimal(value);
+    if ("valuationAmount".equals(field) && amount.compareTo(BigDecimal.ZERO) == 0) {
+      errors.rejectValue(
+          field, "value.must.be.positive", "'Valuation Amount' must be greater than zero.");
+    }
+
+    if (amount.compareTo(MAX_AMOUNT) > 0) {
+      errors.rejectValue(
+          field,
+          "value.exceeds.max",
+          "'%s' must be no more than 99999999.99.".formatted(displayName));
+    }
+  }
+
+  private void validatePercentage(
+      final String field, final String value, final String displayName, final Errors errors) {
+    if (!StringUtils.hasText(value)) {
+      return;
+    }
+    if (!value.matches("\\d+(\\.\\d{1,2})?")) {
+      errors.rejectValue(
+          field,
+          "invalid.percentage",
+          "Please enter '%s' as a number with no more than 2 decimal places."
+              .formatted(displayName));
+    }
+  }
+
+  private void validateText(
+      final String field,
+      final String value,
+      final int maxLength,
+      final String displayName,
+      final String pattern,
+      final Errors errors) {
+    if (!StringUtils.hasText(value)) {
+      return;
+    }
+    validateFieldMaxLength(field, value, maxLength, displayName, errors);
+    validateFieldFormat(field, value, pattern, displayName, errors);
+  }
+}

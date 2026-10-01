@@ -229,12 +229,65 @@
   </div>
 </div>
 
+<div th:fragment="awardRecoveryRow(
+    rowLabel,
+    percentageField,
+    amountField)"
+     class="award-recovery-grid award-recovery-row govuk-!-margin-bottom-4">
+
+  <div class="award-recovery-percentage">
+    <div th:replace="~{partials/forms :: percentageInput(
+        fieldId=${percentageField},
+        label=${rowLabel},
+        inputWidth='5',
+        maxLength=6)}">
+    </div>
+  </div>
+
+  <div class="award-recovery-or">
+    <span class="govuk-body">or</span>
+  </div>
+
+  <div class="award-recovery-amount">
+    <div class="govuk-form-group"
+         th:classappend="${#fields.hasErrors(amountField)}
+             ? 'govuk-form-group--error' : ''">
+
+      <span th:if="${#fields.hasErrors(amountField)}"
+            th:errors="*{__${amountField}__}"
+            th:id="${amountField + '-error'}"
+            class="govuk-error-message">
+      </span>
+
+      <div class="govuk-input__wrapper">
+        <div class="govuk-input__prefix"
+             aria-hidden="true">
+          £
+        </div>
+
+        <input class="govuk-input govuk-input--width-10"
+               th:errorclass="govuk-input--error"
+               th:id="${amountField}"
+               th:name="${amountField}"
+               type="text"
+               inputmode="decimal"
+               spellcheck="false"
+               th:aria-label="${rowLabel + ' amount'}"
+               th:aria-describedby="${#fields.hasErrors(amountField)
+                   ? amountField + '-error' : null}"
+               th:field="*{__${amountField}__}">
+      </div>
+    </div>
+  </div>
+</div>
+
 <div th:fragment="percentageInput(fieldId, label, inputWidth, maxLength)"
      class="govuk-form-group"
      th:classappend="${#fields.hasErrors(fieldId)} ? 'govuk-form-group--error' : ''">
   <label class="govuk-label" th:for="${fieldId}" th:text="${label}"></label>
   <span th:if="${#fields.hasErrors(fieldId)}"
         th:errors="*{__${fieldId}__}"
+        th:id="${fieldId + '-error'}"
         class="govuk-error-message">
   </span>
   <div class="govuk-input__wrapper">
@@ -243,8 +296,10 @@
            th:id="${fieldId}"
            th:name="${fieldId}"
            type="text"
+           inputmode="decimal"
            spellcheck="false"
            th:maxlength="${maxLength}"
+           th:aria-describedby="${#fields.hasErrors(fieldId) ? fieldId + '-error' : null}"
            th:field="*{__${fieldId}__}">
     <div class="govuk-input__suffix" aria-hidden="true">%</div>
   </div>
