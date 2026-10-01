@@ -104,24 +104,41 @@ public class OtherAssetAwardValidator extends AbstractValidator {
     validatePercentage(
         "disputedPercentage", formData.getDisputedPercentage(), "Percentage Disputed", errors);
 
-    validateAwardAndRecoveryValueTypes(formData, errors);
+    validateExclusivePair(
+        "disputedPercentage",
+        formData.getDisputedPercentage(),
+        "disputedAmount",
+        formData.getDisputedAmount(),
+        "Disputed",
+        errors);
+    validateExclusivePair(
+        "awardedPercentage",
+        formData.getAwardedPercentage(),
+        "awardedAmount",
+        formData.getAwardedAmount(),
+        "Awarded",
+        errors);
+    validateExclusivePair(
+        "recoveredPercentage",
+        formData.getRecoveredPercentage(),
+        "recoveredAmount",
+        formData.getRecoveredAmount(),
+        "Recovered",
+        errors);
   }
 
-  private void validateAwardAndRecoveryValueTypes(
-      final OtherAssetAwardFormData formData, final Errors errors) {
-    final boolean hasPercentage =
-        StringUtils.hasText(formData.getAwardedPercentage())
-            || StringUtils.hasText(formData.getRecoveredPercentage())
-            || StringUtils.hasText(formData.getDisputedPercentage());
-    final boolean hasAmount =
-        StringUtils.hasText(formData.getAwardedAmount())
-            || StringUtils.hasText(formData.getRecoveredAmount())
-            || StringUtils.hasText(formData.getDisputedAmount());
-
-    if (hasPercentage && hasAmount) {
-      errors.reject(
-          "invalid.awardRecovery.valueType",
-          "Enter award and recovery values as either percentages or amounts, not both.");
+  private void validateExclusivePair(
+      final String percentageField,
+      final String percentage,
+      final String amountField,
+      final String amount,
+      final String displayName,
+      final Errors errors) {
+    if (StringUtils.hasText(percentage) && StringUtils.hasText(amount)) {
+      final String message =
+          "Enter either a percentage or an amount for '%s', not both.".formatted(displayName);
+      errors.rejectValue(percentageField, "invalid.awardRecovery.valueType", message);
+      errors.rejectValue(amountField, "invalid.awardRecovery.valueType", message);
     }
   }
 

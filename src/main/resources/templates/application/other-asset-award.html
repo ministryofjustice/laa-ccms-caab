@@ -19,7 +19,8 @@
     <form th:action="@{/case/outcome-and-awards/asset}"
           th:object="${otherAssetAward}"
           method="post">
-      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <div th:fragment="awardErrorSummary"
+           th:replace="~{partials/error-summary :: error-summary(deduplicateAwardPairs=true)}"></div>
 
       <h1 class="govuk-heading-l" th:text="#{case.otherAssetAward.title}"></h1>
       <p class="govuk-body" th:text="#{case.otherAssetAward.information}"></p>

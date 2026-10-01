@@ -16,11 +16,14 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.context.support.GenericWebApplicationContext;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import org.thymeleaf.templatemode.TemplateMode;
+import uk.gov.laa.ccms.caab.bean.award.OtherAssetAwardFormData;
+import uk.gov.laa.ccms.caab.bean.validators.awards.OtherAssetAwardValidator;
 
 @DisplayName("Other asset award template render tests")
 class OtherAssetAwardTemplateRenderTest {
@@ -100,6 +103,72 @@ class OtherAssetAwardTemplateRenderTest {
         .containsPattern(errorInputPattern("recoveredPercentage"));
   }
 
+  @Test
+  void rendersPairErrorsOnBothFieldsButOnlyOnceInTheSummary() throws Exception {
+    final String html =
+        mockMvc
+            .perform(get("/test/other-asset-award-pair-errors"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    final String summary = summaryHtml(html);
+
+    for (final String row : new String[] {"Disputed", "Awarded", "Recovered"}) {
+      final String fieldPrefix = row.toLowerCase(java.util.Locale.ROOT);
+      final String messagePattern =
+          "Enter either a percentage or an amount for [^<]*" + row + "[^<]*, not both\\.";
+      assertThat(html)
+          .containsPattern(errorMessagePattern(fieldPrefix + "Percentage", messagePattern))
+          .containsPattern(errorMessagePattern(fieldPrefix + "Amount", messagePattern))
+          .containsPattern(errorInputPattern(fieldPrefix + "Percentage"))
+          .containsPattern(errorInputPattern(fieldPrefix + "Amount"));
+      assertThat(summary)
+          .containsOnlyOnce(row)
+          .contains("href=\"#" + fieldPrefix + "Percentage\"")
+          .doesNotContain("href=\"#" + fieldPrefix + "Amount\"");
+    }
+  }
+
+  @Test
+  void retainsDistinctFieldAndGlobalErrorsInTheSummary() throws Exception {
+    final String html =
+        mockMvc
+            .perform(get("/test/other-asset-award-pair-errors").param("additionalErrors", "true"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    assertThat(summaryHtml(html))
+        .containsOnlyOnce("Awarded amount format error")
+        .containsOnlyOnce("Other form error")
+        .contains("href=\"#awardedAmount\"");
+  }
+
+  @Test
+  void leavesDefaultSummaryBehaviourUnchanged() throws Exception {
+    final String html =
+        mockMvc
+            .perform(get("/test/other-asset-award-pair-errors").param("defaultSummary", "true"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    for (final String row : new String[] {"disputed", "awarded", "recovered"}) {
+      assertThat(summaryHtml(html))
+          .contains("href=\"#" + row + "Percentage\"")
+          .contains("href=\"#" + row + "Amount\"");
+    }
+  }
+
+  private static String summaryHtml(final String html) {
+    final int start = html.indexOf("id=\"error-summary-list\"");
+    assertThat(start).isGreaterThanOrEqualTo(0);
+    return html.substring(start, html.indexOf("</ul>", start));
+  }
+
   private static String inputPattern(final String id, final String value, final String maxLength) {
     final String maxLengthLookahead =
         maxLength == null ? "" : "(?=[^>]*maxlength=\\\"" + maxLength + "\\\")";
@@ -148,6 +217,42 @@ class OtherAssetAwardTemplateRenderTest {
 
       model.addAttribute("otherAssetAward", formData);
       model.addAttribute(BindingResult.MODEL_KEY_PREFIX + "otherAssetAward", bindingResult);
+      return "test/other-asset-award-harness";
+    }
+
+    @GetMapping("/test/other-asset-award-pair-errors")
+    public String otherAssetAwardWithPairErrors(
+        final Model model,
+        @RequestParam(defaultValue = "false") final boolean defaultSummary,
+        @RequestParam(defaultValue = "false") final boolean additionalErrors) {
+      final OtherAssetAwardFormData form = new OtherAssetAwardFormData();
+      form.setAwardType("ASSET");
+      form.setAwardCode("OTH_ASSET");
+      form.setDescription("Asset");
+      form.setDateOfOrder("01/01/2025");
+      form.setAwardedBy("COURT");
+      form.setValuationAmount("1000.50");
+      form.setValuationCriteria("AGREED");
+      form.setValuationDate("02/01/2025");
+      form.setRecovery("UNKNOWN");
+      form.setRecoveryOfAwardTimeRelated(false);
+      form.setDisputedPercentage("10.25");
+      form.setDisputedAmount("100.00");
+      form.setAwardedPercentage("20.50");
+      form.setAwardedAmount("200.00");
+      form.setRecoveredPercentage("30.75");
+      form.setRecoveredAmount("300.00");
+      final BindingResult bindingResult = new BeanPropertyBindingResult(form, "otherAssetAward");
+      new OtherAssetAwardValidator().validate(form, bindingResult);
+      if (additionalErrors) {
+        bindingResult.rejectValue(
+            "awardedAmount", "invalid.currency", "Awarded amount format error");
+        bindingResult.reject("test.global", "Other form error");
+      }
+
+      model.addAttribute("otherAssetAward", form);
+      model.addAttribute(BindingResult.MODEL_KEY_PREFIX + "otherAssetAward", bindingResult);
+      model.addAttribute("defaultSummary", defaultSummary);
       return "test/other-asset-award-harness";
     }
 

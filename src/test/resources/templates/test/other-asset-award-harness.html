@@ -2,6 +2,12 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <body>
 <form th:object="${otherAssetAward}">
+  <th:block th:if="${defaultSummary != true}">
+    <div th:replace="~{application/other-asset-award :: awardErrorSummary}"></div>
+  </th:block>
+  <th:block th:if="${defaultSummary == true}">
+    <div th:replace="~{partials/error-summary :: error-summary}"></div>
+  </th:block>
   <section th:replace="~{application/other-asset-award :: awardAndRecovery}"></section>
 </form>
 </body>

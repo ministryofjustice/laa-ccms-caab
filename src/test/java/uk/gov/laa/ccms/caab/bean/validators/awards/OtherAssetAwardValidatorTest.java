@@ -6,6 +6,10 @@ import static org.assertj.core.api.Assertions.tuple;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.validation.BeanPropertyBindingResult;
 import uk.gov.laa.ccms.caab.bean.award.OtherAssetAwardFormData;
 
@@ -63,17 +67,96 @@ class OtherAssetAwardValidatorTest {
     assertThat(errors.hasErrors()).isFalse();
   }
 
-  @Test
-  void rejectsMixtureOfPercentageAndAmountFields() {
+  @ParameterizedTest
+  @CsvSource({
+    "false, false, false",
+    "false, false, true",
+    "false, true, false",
+    "false, true, true",
+    "true, false, false",
+    "true, false, true",
+    "true, true, false",
+    "true, true, true"
+  })
+  void acceptsIndependentValueTypesForEachRow(
+      final boolean disputedUsesAmount,
+      final boolean awardedUsesAmount,
+      final boolean recoveredUsesAmount) {
     final OtherAssetAwardFormData form = validForm();
-    form.setAwardedAmount("750.38");
+    if (disputedUsesAmount) {
+      form.setDisputedPercentage(null);
+      form.setDisputedAmount("200.00");
+    }
+    if (awardedUsesAmount) {
+      form.setAwardedPercentage(null);
+      form.setAwardedAmount("750.38");
+    }
+    if (recoveredUsesAmount) {
+      form.setRecoveredPercentage(null);
+      form.setRecoveredAmount("100.00");
+    }
     final BeanPropertyBindingResult errors = errorsFor(form);
 
     validator.validate(form, errors);
 
-    assertThat(errors.getGlobalErrors())
-        .extracting("code")
-        .contains("invalid.awardRecovery.valueType");
+    assertThat(errors.hasErrors()).isFalse();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"disputed", "awarded", "recovered"})
+  void reportsErrorsOnBothFieldsOnlyWithinTheConflictingPair(final String row) {
+    final OtherAssetAwardFormData form = validForm();
+    new BeanWrapperImpl(form).setPropertyValue(row + "Amount", "100.00");
+    final BeanPropertyBindingResult errors = errorsFor(form);
+
+    validator.validate(form, errors);
+
+    assertThat(errors.getGlobalErrors()).isEmpty();
+    assertThat(errors.getFieldErrors())
+        .extracting("field", "code")
+        .containsExactlyInAnyOrder(
+            tuple(row + "Percentage", "invalid.awardRecovery.valueType"),
+            tuple(row + "Amount", "invalid.awardRecovery.valueType"));
+    assertThat(errors.getFieldError(row + "Amount").getDefaultMessage())
+        .isEqualTo(errors.getFieldError(row + "Percentage").getDefaultMessage());
+  }
+
+  @Test
+  void acceptsBlankAlternativesWithinMixedRows() {
+    final OtherAssetAwardFormData form = validForm();
+    form.setDisputedAmount(" ");
+    form.setAwardedPercentage("");
+    form.setAwardedAmount("750.38");
+    form.setRecoveredAmount(null);
+    final BeanPropertyBindingResult errors = errorsFor(form);
+
+    validator.validate(form, errors);
+
+    assertThat(errors.hasErrors()).isFalse();
+  }
+
+  @Test
+  void rejectsBothZeroValuesInEveryPair() {
+    final OtherAssetAwardFormData form = validForm();
+    form.setDisputedPercentage("0");
+    form.setDisputedAmount("0.00");
+    form.setAwardedPercentage("0.00");
+    form.setAwardedAmount("0");
+    form.setRecoveredPercentage("0.0");
+    form.setRecoveredAmount("0.0");
+    final BeanPropertyBindingResult errors = errorsFor(form);
+
+    validator.validate(form, errors);
+
+    assertThat(errors.getFieldErrors())
+        .extracting("field", "code")
+        .containsExactlyInAnyOrder(
+            tuple("disputedPercentage", "invalid.awardRecovery.valueType"),
+            tuple("disputedAmount", "invalid.awardRecovery.valueType"),
+            tuple("awardedPercentage", "invalid.awardRecovery.valueType"),
+            tuple("awardedAmount", "invalid.awardRecovery.valueType"),
+            tuple("recoveredPercentage", "invalid.awardRecovery.valueType"),
+            tuple("recoveredAmount", "invalid.awardRecovery.valueType"));
   }
 
   @Test
