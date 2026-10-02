@@ -81,9 +81,18 @@ function copyGovukJs() {
   .pipe(gulp.dest('./src/main/resources/static/assets/govuk/'));
 }
 
+function copyAccessibleAutocomplete() {
+  return gulp.src([
+    './node_modules/accessible-autocomplete/dist/accessible-autocomplete.min.js',
+    './node_modules/accessible-autocomplete/dist/accessible-autocomplete.min.js.map',
+    './node_modules/accessible-autocomplete/dist/accessible-autocomplete.min.css'
+  ])
+  .pipe(gulp.dest('./src/main/resources/static/assets/accessible-autocomplete/'));
+}
+
 // As a default task, it should just run all other tasks, so defined as a series
 // by each other tasks name.
 gulp.task('default',
     parallel(compileCCMSStyleSheets, compileCCMSAssessmentStyleSheets,
       compileMOJStyleSheets, copyGovukAssets, copyMojAssets, copyMojJs,
-      copyGovukJs));
+      copyGovukJs, copyAccessibleAutocomplete));

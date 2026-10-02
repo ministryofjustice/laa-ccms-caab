@@ -39,8 +39,14 @@
       </moj:datepicker>
 
       <div th:replace="~{partials/forms :: currencyInput('awardAmount', #{case.financialAward.awardAmount}, '10')}"></div>
-      <div th:replace="~{partials/forms :: dropdown('interimAward', #{case.financialAward.interimAward}, ${interimAwardOptions}, 'code', 'description', false)}"></div>
-      <div th:replace="~{partials/forms :: dropdown('awardedBy', #{case.financialAward.awardedBy}, ${awardedByOptions}, 'code', 'description', false)}"></div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='interimAward',
+                                                                   label=#{case.financialAward.interimAward},
+                                                                   items=${interimAwardOptions}, itemValue='code',
+                                                                   itemLabel='description')}"/>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='awardedBy',
+                                                                   label=#{case.financialAward.awardedBy},
+                                                                   items=${awardedByOptions}, itemValue='code',
+                                                                   itemLabel='description')}"/>
       <div th:replace="~{partials/forms :: largeTextInput('awardJustifications', #{case.financialAward.awardJustifications}, 950)}"></div>
 
       <moj:datepicker

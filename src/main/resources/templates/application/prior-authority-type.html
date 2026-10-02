@@ -27,13 +27,11 @@
 
           <h1 class="govuk-heading-l" th:text="#{proceedings.addPriorAuthorities.step1.heading}"/>
           <p class="govuk-body-l" th:text="#{proceedings.addPriorAuthorities.step1.leadParagraph}"/>
-          <th:block th:replace="~{partials/forms ::
-                                    dropdownWithDisplayValue(
-                                        'priorAuthorityType',
-                                        #{proceedings.priorAuthorities.priorAuthorityType},
-                                        ${priorAuthorityTypes}, 'code', 'description'
-                                    )}"
-          />
+          <th:block th:replace="~{partials/forms :: autocompleteSelect(field='priorAuthorityType',
+                                                                       label=#{proceedings.priorAuthorities.priorAuthorityType},
+                                                                       items=${priorAuthorityTypes},
+                                                                       itemValue='code', itemLabel='description',
+                                                                       withDisplayValue=true)}"/>
           <div class="govuk-button-group">
               <govuk:button type="submit" th:text="#{site.next}"/>
               <a th:href="@{/{caseContext}/proceedings-and-costs#prior-authority(caseContext=${caseContext.pathValue})}"

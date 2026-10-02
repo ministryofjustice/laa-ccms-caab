@@ -21,9 +21,11 @@
         th:text="#{proceedings.scopeLimitationDetails.heading}"/>
       <p class="govuk-body-l"
         th:text="#{proceedings.scopeLimitationDetails.leadParagraph}"/>
-      <th:block th:replace="~{partials/forms :: dropdown('scopeLimitation',
-        #{proceedings.scopeLimitations.scopeLimitation},
-        ${scopeLimitationTypes}, 'scopeLimitations', 'description', false)}"/>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='scopeLimitation',
+                                                                   label=#{proceedings.scopeLimitations.scopeLimitation},
+                                                                   items=${scopeLimitationTypes},
+                                                                   itemValue='scopeLimitations',
+                                                                   itemLabel='description')}"/>
       <div class="govuk-button-group">
         <govuk:button type="submit" th:text="#{site.next}"/>
         <a th:href="@{/{caseContext}/proceedings/{action}/confirm(action=${proceedingFlow.action}, caseContext=${caseContext.pathValue})}"

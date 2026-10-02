@@ -31,12 +31,13 @@
 
       <div class="govuk-grid-row">
         <div class="govuk-grid-column-two-thirds">
-          <th:block th:replace="~{partials/forms :: dropdown('preferredAddress',
-            #{address.preferred},
-            ${caseAddressOptions}, 'code', 'description', false)}"/>
-          <th:block th:replace="~{partials/forms :: dropdown('country',
-            #{address.country},
-            ${countries}, 'code', 'description', false)}"/>
+          <th:block th:replace="~{partials/forms :: autocompleteSelect(field='preferredAddress',
+                                                                       label=#{address.preferred},
+                                                                       items=${caseAddressOptions},
+                                                                       itemValue='code', itemLabel='description')}"/>
+          <th:block th:replace="~{partials/forms :: autocompleteSelect(field='country', label=#{address.country},
+                                                                       items=${countries}, itemValue='code',
+                                                                       itemLabel='description')}"/>
           <th:block th:replace="~{partials/forms :: textInput('houseNameNumber',
             #{address.house},
             'govuk-input--width-20')}"/>

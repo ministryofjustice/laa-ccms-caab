@@ -26,22 +26,23 @@
 
           <h2 class="govuk-heading-m"
               th:text="#{notifications.search.responsibilityInformation.heading}"/>
-          <th:block
-              th:with="hint=${usersUnavailable} ? #{notifications.search.filterUnavailable} : null, disabled=${usersUnavailable}">
-            <div
-                th:replace="~{partials/forms :: dropdown('assignedToUserId', #{common.assignedTo}, ${users}, 'loginId', 'loginId', false)}"></div>
-          </th:block>
+          <th:block th:replace="~{partials/forms :: autocompleteSelect(field='assignedToUserId',
+                                                                       label=#{common.assignedTo},
+                                                                       items=${users}, itemValue='loginId',
+                                                                       itemLabel='loginId',
+                                                                       hint=(${usersUnavailable} ? #{notifications.search.filterUnavailable} : null),
+                                                                       disabled=${usersUnavailable})}"/>
 
           <div class="govuk-inset-text" id="primary-contact-inset-text"
                th:if="${notificationSearchCriteria.originatesFromCase
                  and !#strings.isEmpty(notificationSearchCriteria.primaryContactName)}"
                th:utext="#{notifications.search.specificCasePrimaryContactHintText(${#strings.escapeXml(notificationSearchCriteria.primaryContactName)})}"></div>
 
-          <th:block
-              th:with="hint=${feeEarnersUnavailable} ? #{notifications.search.filterUnavailable} : null, disabled=${feeEarnersUnavailable}">
-            <div
-                th:replace="~{partials/forms :: dropdown('feeEarnerId', #{common.feeEarner}, ${feeEarners}, 'id', 'name', false)}"></div>
-          </th:block>
+          <th:block th:replace="~{partials/forms :: autocompleteSelect(field='feeEarnerId', label=#{common.feeEarner},
+                                                                       items=${feeEarners}, itemValue='id',
+                                                                       itemLabel='name',
+                                                                       hint=(${feeEarnersUnavailable} ? #{notifications.search.filterUnavailable} : null),
+                                                                       disabled=${feeEarnersUnavailable})}"/>
 
           <h2 class="govuk-heading-m"
               th:text="#{notifications.search.notificationDates.heading}"/>
@@ -96,11 +97,12 @@
           <h2 class="govuk-heading-m"
               th:text="#{notifications.subHeading.notificationDetails}"/>
 
-          <th:block
-              th:with="hint=${notificationTypesUnavailable} ? #{notifications.search.filterUnavailable} : null, disabled=${notificationTypesUnavailable}">
-            <div
-                th:replace="~{partials/forms :: dropdown('notificationType', #{notifications.search.notificationDetails.actionType.label}, ${notificationTypes}, 'code', 'description', false)}"></div>
-          </th:block>
+          <th:block th:replace="~{partials/forms :: autocompleteSelect(field='notificationType',
+                                                                       label=#{notifications.search.notificationDetails.actionType.label},
+                                                                       items=${notificationTypes},
+                                                                       itemValue='code', itemLabel='description',
+                                                                       hint=(${notificationTypesUnavailable} ? #{notifications.search.filterUnavailable} : null),
+                                                                       disabled=${notificationTypesUnavailable})}"/>
           <div class="govuk-form-group">
             <fieldset class="govuk-fieldset">
               <legend class="govuk-fieldset__legend"

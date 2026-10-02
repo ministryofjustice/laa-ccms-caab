@@ -25,10 +25,19 @@
             <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{common.office}"></span>
             <span th:text="*{officeName}"></span>
           </p>
-          <div th:replace="~{partials/forms :: dropdown('feeEarnerId', #{site.optional(#{provider.feeEarner.detailed})}, ${feeEarners}, 'id', 'name', false)}"></div>
-          <div th:replace="~{partials/forms :: dropdown('supervisorId', #{site.optional(#{provider.supervisor})}, ${feeEarners}, 'id', 'name', false)}"></div>
+          <th:block th:replace="~{partials/forms :: autocompleteSelect(field='feeEarnerId',
+                                                                       label=#{site.optional(#{provider.feeEarner.detailed})},
+                                                                       items=${feeEarners}, itemValue='id',
+                                                                       itemLabel='name')}"/>
+          <th:block th:replace="~{partials/forms :: autocompleteSelect(field='supervisorId',
+                                                                       label=#{site.optional(#{provider.supervisor})},
+                                                                       items=${feeEarners}, itemValue='id',
+                                                                       itemLabel='name')}"/>
           <div th:replace="~{partials/forms :: textInput('providerCaseReference', #{site.optional(#{common.providerRef})}, 'govuk-input--width-20')}"></div>
-          <div th:replace="~{partials/forms :: dropdown('contactNameId', #{provider.contactName}, ${contactNames}, 'id', 'name', false)}"></div>
+          <th:block th:replace="~{partials/forms :: autocompleteSelect(field='contactNameId',
+                                                                       label=#{provider.contactName},
+                                                                       items=${contactNames}, itemValue='id',
+                                                                       itemLabel='name')}"/>
           <govuk:button type="submit" th:text="#{site.confirm}"/>
         </div>
       </div>

@@ -22,8 +22,10 @@
       <p class="govuk-body-l"
         th:text="#{proceedings.proceedingDetails.leadParagraph}"/>
 
-      <th:block th:replace="~{partials/forms :: dropdownWithDisplayValue('matterType',
-       #{proceedings.proceedingDetails.matterType}, ${matterTypes}, 'matterType', 'description')}"/>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='matterType',
+                                                                   label=#{proceedings.proceedingDetails.matterType},
+                                                                   items=${matterTypes}, itemValue='matterType',
+                                                                   itemLabel='description', withDisplayValue=true)}"/>
       <div class="govuk-button-group">
         <govuk:button type="submit" th:text="#{site.next}"/>
         <a th:href="@{/{caseContext}/proceedings-and-costs(caseContext=${caseContext.pathValue})}"

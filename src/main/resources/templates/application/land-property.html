@@ -48,7 +48,10 @@
       </fieldset>
 
       <div th:replace="~{partials/forms :: currencyInput('valuationAmount', #{case.landAward.valuationAmount}, '10')}"></div>
-      <div th:replace="~{partials/forms :: dropdown('valuationCriteria', #{case.landAward.valuationCriteria}, ${valuationBasisOptions}, 'code', 'description', false)}"></div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='valuationCriteria',
+                                                                   label=#{case.landAward.valuationCriteria},
+                                                                   items=${valuationBasisOptions}, itemValue='code',
+                                                                   itemLabel='description')}"/>
 
       <moj:datepicker
           id="valuation-date"
@@ -65,13 +68,23 @@
 
       <div th:replace="~{partials/forms :: readOnlyCurrencyInput('equity', #{case.landAward.equity}, '10')}"></div>
 
-      <div th:replace="~{partials/forms :: dropdown('awardedBy', #{case.landAward.awardedBy}, ${awardedByOptions}, 'code', 'description', false)}"></div>
-      <div th:replace="~{partials/forms :: dropdown('recovery', #{case.landAward.recovery}, ${recoveryOptions}, 'code', 'description', false)}"></div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='awardedBy', label=#{case.landAward.awardedBy},
+                                                                   items=${awardedByOptions}, itemValue='code',
+                                                                   itemLabel='description')}"/>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='recovery', label=#{case.landAward.recovery},
+                                                                   items=${recoveryOptions}, itemValue='code',
+                                                                   itemLabel='description')}"/>
       <div th:replace="~{partials/forms :: largeTextInput('noRecoveryDetails', #{case.landAward.noRecoveryDetails}, 950)}"></div>
       <div th:replace="~{partials/forms :: largeTextInput('statutoryChargeExemptReason', #{case.landAward.statutoryChargeExemptReason}, 950)}"></div>
-      <div th:replace="~{partials/forms :: dropdown('landChargeRegistration', #{case.landAward.landChargeRegistration}, ${landRegistrationOptions}, 'code', 'description', false)}"></div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='landChargeRegistration',
+                                                                   label=#{case.landAward.landChargeRegistration},
+                                                                   items=${landRegistrationOptions},
+                                                                   itemValue='code', itemLabel='description')}"/>
       <div th:replace="~{partials/forms :: textInput(fieldId='registrationReference', label=#{case.landAward.registrationReference}, inputClass='govuk-input--width-20', maxlengthParam=35)}"></div>
-      <div th:replace="~{partials/forms :: dropdown('recoveryOfAwardTimeRelated', #{case.landAward.recoveryOfAwardTimeRelated}, ${yesNoOptions}, 'code', 'description', false)}"></div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='recoveryOfAwardTimeRelated',
+                                                                   label=#{case.landAward.recoveryOfAwardTimeRelated},
+                                                                   items=${yesNoOptions}, itemValue='code',
+                                                                   itemLabel='description')}"/>
 
       <div class="govuk-button-group govuk-!-margin-top-6">
         <button type="submit"

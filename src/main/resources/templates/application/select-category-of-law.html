@@ -30,7 +30,12 @@
             </div>
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
-                    <div th:replace="~{partials/forms :: dropdown('categoryOfLawId', #{application.categoryOfLaw.select.category.label}, ${categoriesOfLaw}, 'code', 'matterTypeDescription', true)}"></div>
+                    <th:block th:replace="~{partials/forms :: autocompleteSelect(field='categoryOfLawId',
+                                                                                 label=#{application.categoryOfLaw.select.category.label},
+                                                                                 items=${categoriesOfLaw},
+                                                                                 itemValue='code',
+                                                                                 itemLabel='matterTypeDescription',
+                                                                                 labelAsHeading=true)}"/>
                     <govuk:button type="submit" th:text="#{site.continue}"/>
                 </div>
             </div>

@@ -13,10 +13,16 @@
         <div th:replace="~{partials/forms :: textInput(fieldId='caseReference', label=#{common.laaRef}, inputClass='govuk-input--width-20', maxlengthParam=35)}"/>
         <div th:replace="~{partials/forms :: textInput(fieldId='clientSurname', label=#{common.clientSurname}, inputClass='govuk-input--width-20', maxlengthParam=35)}"/>
         <div th:replace="~{partials/forms :: textInput(fieldId='providerCaseReference', label=#{common.providerRef}, inputClass='govuk-input--width-20', maxlengthParam=35)}"/>
-        <div th:replace="~{partials/forms :: dropdown('feeEarnerId', #{common.feeEarner}, ${feeEarners}, 'id', 'name', false)}"/>
-        <div th:replace="~{partials/forms :: dropdown('officeId', #{common.office}, ${offices}, 'id', 'name', false)}"/>
+        <th:block th:replace="~{partials/forms :: autocompleteSelect(field='feeEarnerId', label=#{common.feeEarner},
+                                                                     items=${feeEarners}, itemValue='id',
+                                                                     itemLabel='name')}"/>
+        <th:block th:replace="~{partials/forms :: autocompleteSelect(field='officeId', label=#{common.office},
+                                                                     items=${offices}, itemValue='id',
+                                                                     itemLabel='name')}"/>
         <div th:unless="${copyCase}">
-          <th:block th:replace="~{partials/forms :: dropdown('status', #{common.status}, ${statuses}, 'code', 'description', false)}"/>
+          <th:block th:replace="~{partials/forms :: autocompleteSelect(field='status', label=#{common.status},
+                                                                       items=${statuses}, itemValue='code',
+                                                                       itemLabel='description')}"/>
         </div>
         <govuk:button th:text="#{site.search}"/>
       </div>

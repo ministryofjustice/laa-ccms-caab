@@ -40,14 +40,10 @@
 
       <div th:replace="~{partials/forms :: textInput(fieldId='description', label=#{case.otherAssetAward.description}, inputClass='govuk-input--width-20', maxlengthParam=50)}"></div>
       <div th:replace="~{partials/forms :: currencyInput('valuationAmount', #{case.otherAssetAward.valuationAmount}, '10')}"></div>
-      <div th:replace="~{partials/forms :: dropdown(
-          'valuationCriteria',
-          #{case.otherAssetAward.valuationCriteria},
-          ${valuationBasisOptions},
-          'code',
-          'description',
-          false)}">
-      </div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='valuationCriteria',
+                                                                   label=#{case.otherAssetAward.valuationCriteria},
+                                                                   items=${valuationBasisOptions}, itemValue='code',
+                                                                   itemLabel='description')}"/>
 
       <moj:datepicker
           id="valuationDate"
@@ -104,15 +100,14 @@
       'recoveredAmount')}">
         </div>
       </section>
-      <div th:replace="~{partials/forms :: dropdown('awardedBy', #{case.otherAssetAward.awardedBy}, ${awardedByOptions}, 'code', 'description', false)}"></div>
-      <div th:replace="~{partials/forms :: dropdown(
-    'recovery',
-    #{case.otherAssetAward.recovery},
-    ${recoveryOptions},
-    'code',
-    'description',
-    false)}">
-      </div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='awardedBy',
+                                                                   label=#{case.otherAssetAward.awardedBy},
+                                                                   items=${awardedByOptions}, itemValue='code',
+                                                                   itemLabel='description')}"/>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='recovery',
+                                                                   label=#{case.otherAssetAward.recovery},
+                                                                   items=${recoveryOptions}, itemValue='code',
+                                                                   itemLabel='description')}"/>
       <div th:replace="~{partials/forms :: largeTextInput('noRecoveryDetails', #{case.otherAssetAward.noRecoveryDetails}, 950)}"></div>
       <div th:replace="~{partials/forms :: largeTextInput('statutoryChargeExemptReason', #{case.otherAssetAward.statutoryChargeExemptReason}, 950)}"></div>
 

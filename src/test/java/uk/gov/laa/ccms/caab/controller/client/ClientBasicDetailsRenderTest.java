@@ -101,6 +101,24 @@ class ClientBasicDetailsRenderTest {
         .andExpect(content().string(containsString(">United Kingdom<")));
   }
 
+  @Test
+  @DisplayName("Country of origin is an accessible autocomplete bound to the form when creating")
+  void countryOfOriginIsBoundAutocompleteWhenCreating() throws Exception {
+    mockMvc
+        .perform(get("/test/basic-details").param("action", ACTION_CREATE))
+        .andExpect(status().isOk())
+        .andExpect(
+            content()
+                .string(
+                    containsString(
+                        "<select class=\"govuk-select\" id=\"countryOfOrigin\""
+                            + " name=\"countryOfOrigin\" data-module=\"accessible-autocomplete\""
+                            + " data-show-all-values=\"true\">"
+                            + "<option value=\"\">Please select</option>"
+                            + "<option value=\"GBR\" selected>United Kingdom</option>"
+                            + "</select>")));
+  }
+
   /** Serves the render harness template with the model the basic details fragment expects. */
   @Controller
   static class HarnessController {
