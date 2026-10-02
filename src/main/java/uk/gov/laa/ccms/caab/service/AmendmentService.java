@@ -8,10 +8,12 @@ import static uk.gov.laa.ccms.caab.constants.CcmsModule.AMENDMENT;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
@@ -53,8 +57,13 @@ import uk.gov.laa.ccms.caab.util.AmendmentUtil;
 import uk.gov.laa.ccms.caab.util.AssessmentUtil;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.AssessmentResult;
+import uk.gov.laa.ccms.soa.gateway.model.AssessmentScreen;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
+import uk.gov.laa.ccms.soa.gateway.model.OpaEntity;
+import uk.gov.laa.ccms.soa.gateway.model.OpaInstance;
+import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
 
 /**
  * Service class responsible for handling amendments to existing legal aid cases.
@@ -495,7 +504,14 @@ public class AmendmentService {
             .caseDocs(caseDocs)
             .user(userDetail)
             .build();
+    logAssessmentHeld(
+        AssessmentRulebase.MEANS, amendment.getCaseReferenceNumber(), meansAssessment);
+    logAssessmentHeld(
+        AssessmentRulebase.MERITS, amendment.getCaseReferenceNumber(), meritsAssessment);
+
     CaseDetail caseToSubmit = soaApplicationMapper.toCaseDetail(caseMappingContext);
+
+    logCaseUpdateMapped(amendment.getCaseReferenceNumber(), caseToSubmit);
 
     Mono<CaseTransactionResponse> caseTransactionResponseMono =
         soaApiClient.updateCase(
@@ -705,7 +721,14 @@ public class AmendmentService {
             .caseDocs(caseDocs)
             .user(userDetail)
             .build();
+    logAssessmentHeld(
+        AssessmentRulebase.MEANS, amendment.getCaseReferenceNumber(), meansAssessment);
+    logAssessmentHeld(
+        AssessmentRulebase.MERITS, amendment.getCaseReferenceNumber(), meritsAssessment);
+
     CaseDetail caseToSubmit = soaApplicationMapper.toCaseDetail(caseMappingContext);
+
+    logCaseUpdateMapped(amendment.getCaseReferenceNumber(), caseToSubmit);
 
     Mono<CaseTransactionResponse> caseTransactionResponseMono =
         soaApiClient.updateCase(
@@ -742,5 +765,183 @@ public class AmendmentService {
         .mapNotNull(details -> AssessmentUtil.getMostRecentAssessmentDetail(details.getContent()))
         .blockOptional()
         .orElse(null);
+  }
+
+  /**
+   * Diagnostic tag for the submission logging. Grep the caab logs for this to see, for one
+   * submission, both what caab held and what it actually mapped into the case update, which
+   * distinguishes an assessment that was already empty in caab from one lost in the mapping.
+   *
+   * <p>TEMPORARY - remove once the means reassessment submission problem is resolved.
+   */
+  private static final String DIAG = "DIAG-SUBMIT";
+
+  /**
+   * Logs the shape of an assessment caab holds for submission. Only structure and counts are
+   * logged, never attribute values, because a means assessment carries the client's personal and
+   * financial details. The goal attribute's value is the one exception, as it is the completion
+   * outcome rather than client data.
+   *
+   * @param rulebase which assessment this is, for the log line
+   * @param caseReferenceNumber the case being submitted
+   * @param assessment the assessment caab is about to submit, possibly null
+   */
+  private void logAssessmentHeld(
+      final AssessmentRulebase rulebase,
+      final String caseReferenceNumber,
+      final AssessmentDetail assessment) {
+
+    if (!log.isInfoEnabled()) {
+      return;
+    }
+
+    if (assessment == null) {
+      log.info("{} case={} {} held: none", DIAG, caseReferenceNumber, rulebase.getName());
+      return;
+    }
+
+    final List<AssessmentEntityTypeDetail> entityTypes =
+        Optional.ofNullable(assessment.getEntityTypes()).orElseGet(Collections::emptyList);
+
+    int instances = 0;
+    int valuedAttributes = 0;
+    final StringJoiner breakdown = new StringJoiner(", ");
+
+    for (final AssessmentEntityTypeDetail entityType : entityTypes) {
+      final List<AssessmentEntityDetail> entities =
+          Optional.ofNullable(entityType.getEntities()).orElseGet(Collections::emptyList);
+      int entityTypeAttributes = 0;
+
+      for (final AssessmentEntityDetail entity : entities) {
+        entityTypeAttributes +=
+            (int)
+                Optional.ofNullable(entity.getAttributes())
+                    .orElseGet(Collections::emptyList)
+                    .stream()
+                    .filter(attribute -> attribute.getValue() != null)
+                    .count();
+      }
+
+      instances += entities.size();
+      valuedAttributes += entityTypeAttributes;
+      breakdown.add(
+          "%s[instances=%d,attrs=%d]"
+              .formatted(entityType.getName(), entities.size(), entityTypeAttributes));
+    }
+
+    log.info(
+        "{} case={} {} held: status={} entityTypes={} instances={} valuedAttrs={} goal {}={} | {}",
+        DIAG,
+        caseReferenceNumber,
+        rulebase.getName(),
+        assessment.getStatus(),
+        entityTypes.size(),
+        instances,
+        valuedAttributes,
+        rulebase.getGoalAttributeName(),
+        goalValue(assessment, rulebase),
+        breakdown);
+  }
+
+  /**
+   * Finds the value of the rulebase's goal attribute, which says whether the assessment actually
+   * reached its outcome.
+   *
+   * @param assessment the assessment caab holds
+   * @param rulebase the rulebase whose goal to look for
+   * @return the goal value, or "absent" when the assessment does not carry it
+   */
+  private String goalValue(final AssessmentDetail assessment, final AssessmentRulebase rulebase) {
+    return Optional.ofNullable(assessment.getEntityTypes())
+        .orElseGet(Collections::emptyList)
+        .stream()
+        .map(AssessmentEntityTypeDetail::getEntities)
+        .filter(Objects::nonNull)
+        .flatMap(Collection::stream)
+        .map(AssessmentEntityDetail::getAttributes)
+        .filter(Objects::nonNull)
+        .flatMap(Collection::stream)
+        .filter(attribute -> rulebase.getGoalAttributeName().equalsIgnoreCase(attribute.getName()))
+        .map(attribute -> String.valueOf(attribute.getValue()))
+        .findFirst()
+        .orElse("absent");
+  }
+
+  /**
+   * Logs what the case update actually carries after mapping. Read together with the "held" lines:
+   * populated there but empty here means the loss is in the mapping, empty in both means the
+   * assessment was already empty in caab, and populated in both means the data left caab intact.
+   *
+   * @param caseReferenceNumber the case being submitted
+   * @param caseToSubmit the mapped case update about to be sent
+   */
+  private void logCaseUpdateMapped(
+      final String caseReferenceNumber, final CaseDetail caseToSubmit) {
+    if (!log.isInfoEnabled() || caseToSubmit == null) {
+      return;
+    }
+
+    final SubmittedApplicationDetails details = caseToSubmit.getApplicationDetails();
+    if (details == null) {
+      log.info("{} case={} mapped: no application details", DIAG, caseReferenceNumber);
+      return;
+    }
+
+    log.info(
+        "{} case={} mapped: amendmentType={} meansAmended={} meritsAmended={} means={} merits={} "
+            + "proceedings={} priorAuthorities={} caseDocs={}",
+        DIAG,
+        caseReferenceNumber,
+        details.getApplicationAmendmentType(),
+        details.isMeansAssessmentAmended(),
+        details.isMeritsAssessmentAmended(),
+        describeMapped(details.getMeansAssessments()),
+        describeMapped(details.getMeritsAssessments()),
+        sizeOf(details.getProceedings()),
+        sizeOf(caseToSubmit.getPriorAuthorities()),
+        sizeOf(caseToSubmit.getCaseDocs()));
+  }
+
+  /**
+   * Summarises the assessment results mapped onto the case update, down to the attribute counts EBS
+   * will receive.
+   *
+   * @param results the mapped assessment results
+   * @return a compact description of what the case update carries
+   */
+  private String describeMapped(final List<AssessmentResult> results) {
+    if (results == null || results.isEmpty()) {
+      return "absent";
+    }
+
+    int screens = 0;
+    int entities = 0;
+    int attributes = 0;
+
+    for (final AssessmentResult result : results) {
+      final List<AssessmentScreen> assessmentScreens =
+          Optional.ofNullable(result.getAssessmentDetails()).orElseGet(Collections::emptyList);
+      screens += assessmentScreens.size();
+
+      for (final AssessmentScreen screen : assessmentScreens) {
+        final List<OpaEntity> screenEntities =
+            Optional.ofNullable(screen.getEntity()).orElseGet(Collections::emptyList);
+        entities += screenEntities.size();
+
+        for (final OpaEntity entity : screenEntities) {
+          for (final OpaInstance instance :
+              Optional.ofNullable(entity.getInstances()).orElseGet(Collections::emptyList)) {
+            attributes += sizeOf(instance.getAttributes());
+          }
+        }
+      }
+    }
+
+    return "results=%d,screens=%d,entities=%d,attrs=%d"
+        .formatted(results.size(), screens, entities, attributes);
+  }
+
+  private int sizeOf(final List<?> values) {
+    return values == null ? 0 : values.size();
   }
 }
