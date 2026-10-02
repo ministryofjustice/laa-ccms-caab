@@ -46,40 +46,18 @@
               th:errorMessage="${#fields.hasErrors('dateOfFinalWork') ? #fields.errors('dateOfFinalWork').getFirst() : ''}">
       </moj:datepicker>
 
-      <div class="govuk-form-group"
-           th:classappend="${#fields.hasErrors('stageEnd')} ? 'govuk-form-group--error' : ''">
-        <label class="govuk-label" for="stageEnd" th:text="#{case.recordOutcomes.stageEnd}"></label>
-        <span class="govuk-error-message" th:if="${#fields.hasErrors('stageEnd')}" th:errors="*{stageEnd}"></span>
-        <select id="stageEnd" class="govuk-select" th:field="*{stageEnd}" th:errorclass="govuk-select--error">
-          <option value="" th:text="#{site.select}"></option>
-          <option th:each="item : ${stageEnds}" th:value="${item['code']}" th:text="${item['description']}"></option>
-        </select>
-      </div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='stageEnd', label=#{case.recordOutcomes.stageEnd},
+                                                                   items=${stageEnds}, itemValue='code',
+                                                                   itemLabel='description')}"/>
 
-      <div class="govuk-form-group"
-           th:classappend="${#fields.hasErrors('resolutionMethod')} ? 'govuk-form-group--error' : ''">
-        <label class="govuk-label" for="resolutionMethod" th:text="#{case.recordOutcomes.resolutionMethod}"></label>
-        <span class="govuk-error-message"
-              th:if="${#fields.hasErrors('resolutionMethod')}"
-              th:errors="*{resolutionMethod}"></span>
-        <select id="resolutionMethod"
-                class="govuk-select"
-                th:field="*{resolutionMethod}"
-                th:errorclass="govuk-select--error">
-          <option value="" th:text="#{site.select}"></option>
-          <option th:each="item : ${resolutionMethods}" th:value="${item['code']}" th:text="${item['description']}"></option>
-        </select>
-      </div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='resolutionMethod',
+                                                                   label=#{case.recordOutcomes.resolutionMethod},
+                                                                   items=${resolutionMethods}, itemValue='code',
+                                                                   itemLabel='description')}"/>
 
-      <div class="govuk-form-group"
-           th:classappend="${#fields.hasErrors('result')} ? 'govuk-form-group--error' : ''">
-        <label class="govuk-label" for="result" th:text="#{case.recordOutcomes.result}"></label>
-        <span class="govuk-error-message" th:if="${#fields.hasErrors('result')}" th:errors="*{result}"></span>
-        <select id="result" class="govuk-select" th:field="*{result}" th:errorclass="govuk-select--error">
-          <option value="" th:text="#{site.select}"></option>
-          <option th:each="item : ${results}" th:value="${item['code']}" th:text="${item['description']}"></option>
-        </select>
-      </div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='result', label=#{case.recordOutcomes.result},
+                                                                   items=${results}, itemValue='code',
+                                                                   itemLabel='description')}"/>
 
       <div class="govuk-form-group"
            th:classappend="${#fields.hasErrors('resultInfo')} ? 'govuk-form-group--error' : ''">
@@ -94,20 +72,10 @@
                   maxlength="950"></textarea>
       </div>
 
-      <div class="govuk-form-group"
-           th:classappend="${#fields.hasErrors('alternativeResolution')} ? 'govuk-form-group--error' : ''">
-        <label class="govuk-label" for="alternativeResolution" th:text="#{case.recordOutcomes.alternativeDisputeResolution}"></label>
-        <span class="govuk-error-message"
-              th:if="${#fields.hasErrors('alternativeResolution')}"
-              th:errors="*{alternativeResolution}"></span>
-        <select id="alternativeResolution"
-                class="govuk-select"
-                th:field="*{alternativeResolution}"
-                th:errorclass="govuk-select--error">
-          <option value="" th:text="#{site.select}"></option>
-          <option th:each="item : ${alternativeDisputeResolutions}" th:value="${item['code']}" th:text="${item['description']}"></option>
-        </select>
-      </div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='alternativeResolution',
+                                                                   label=#{case.recordOutcomes.alternativeDisputeResolution},
+                                                                   items=${alternativeDisputeResolutions},
+                                                                   itemValue='code', itemLabel='description')}"/>
 
       <div class="govuk-form-group"
            th:classappend="${#fields.hasErrors('adrInfo')} ? 'govuk-form-group--error' : ''">
@@ -138,15 +106,10 @@
 
       <div th:replace="~{partials/forms :: textInput('outcomeCourtCaseNo', #{case.recordOutcomes.courtCaseNumber}, 'govuk-input--width-20')}"></div>
 
-      <div class="govuk-form-group"
-           th:classappend="${#fields.hasErrors('widerBenefits')} ? 'govuk-form-group--error' : ''">
-        <label class="govuk-label" for="widerBenefits" th:text="#{case.recordOutcomes.widerBenefits}"></label>
-        <span class="govuk-error-message" th:if="${#fields.hasErrors('widerBenefits')}" th:errors="*{widerBenefits}"></span>
-        <select id="widerBenefits" class="govuk-select" th:field="*{widerBenefits}" th:errorclass="govuk-select--error">
-          <option value="" th:text="#{site.select}"></option>
-          <option th:each="item : ${widerBenefitsOptions}" th:value="${item['code']}" th:text="${item['description']}"></option>
-        </select>
-      </div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='widerBenefits',
+                                                                   label=#{case.recordOutcomes.widerBenefits},
+                                                                   items=${widerBenefitsOptions}, itemValue='code',
+                                                                   itemLabel='description')}"/>
         <div class="govuk-button-group govuk-!-margin-top-6">
           <govuk:button type="submit" th:text="#{site.next}"/>
         </div>

@@ -21,7 +21,12 @@
             </div>
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds">
-                    <div th:replace="~{partials/forms :: dropdown('applicationTypeCategory', #{application.type.select.applicationType.label}, ${applicationTypes}, 'code', 'description', true)}"></div>
+                    <th:block th:replace="~{partials/forms :: autocompleteSelect(field='applicationTypeCategory',
+                                                                                 label=#{application.type.select.applicationType.label},
+                                                                                 items=${applicationTypes},
+                                                                                 itemValue='code',
+                                                                                 itemLabel='description',
+                                                                                 labelAsHeading=true)}"/>
                     <govuk:button type="submit" th:text="#{site.continue}"/>
                 </div>
             </div>

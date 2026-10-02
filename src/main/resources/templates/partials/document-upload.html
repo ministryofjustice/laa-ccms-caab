@@ -8,8 +8,9 @@
     </div>
     <input class="govuk-file-upload" id="file" name="file" type="file">
   </div>
-  <div
-      th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType', #{document.type}, ${documentTypes}, 'code', 'description')}"></div>
+  <th:block th:replace="~{partials/forms :: autocompleteSelect(field='documentType', label=#{document.type},
+                                                               items=${documentTypes}, itemValue='code',
+                                                               itemLabel='description', withDisplayValue=true)}"/>
   <div
       th:replace="~{partials/forms :: largeTextInput('documentDescription', #{site.optional(#{document.description})}, 255)}"></div>
 </div>

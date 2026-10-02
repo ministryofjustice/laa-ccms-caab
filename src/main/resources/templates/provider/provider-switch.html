@@ -15,9 +15,10 @@
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <h1 class="govuk-heading-l" th:text="#{yourFirm.heading}"/>
       <p class="govuk-body-l" th:text="#{yourFirm.leadParagraph}"/>
-      <div
-        th:replace="~{partials/forms :: dropdown('providerFirmId', #{yourFirm.availableFirms},
-          ${providerFirms}, 'id', 'name', true)}"></div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='providerFirmId',
+                                                                   label=#{yourFirm.availableFirms},
+                                                                   items=${providerFirms}, itemValue='id',
+                                                                   itemLabel='name', labelAsHeading=true)}"/>
       <div class="govuk-button-group">
         <govuk:button id="confirm-button" type="submit" th:text="#{site.confirm}"/>
       </div>
