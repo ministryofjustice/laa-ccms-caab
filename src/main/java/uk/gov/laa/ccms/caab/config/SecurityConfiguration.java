@@ -67,7 +67,7 @@ public class SecurityConfiguration {
     return http.authorizeHttpRequests(
             authorize ->
                 authorize
-                    .requestMatchers("/assets/**", "/ccms/**", "/favicon.ico")
+                    .requestMatchers("/assets/**", "/ccms/**", "/govuk-dialect/**", "/favicon.ico")
                     .permitAll()
                     .requestMatchers(
                         HttpMethod.GET,
