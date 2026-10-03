@@ -79,7 +79,13 @@ class UserFunctionAuthorizationTest {
     return Stream.of(
         route("GET", "/general-provider-requests/types", UserRole.CREATE_PROVIDER_REQUEST),
         route("POST", "/general-provider-requests/details", UserRole.CREATE_PROVIDER_REQUEST),
-        route("POST", "/case-provider-requests/details", UserRole.CREATE_PROVIDER_REQUEST),
+        route("POST", "/case-provider-requests/details", UserRole.CREATE_CASE_REQUEST),
+        route(
+            "POST",
+            "/application/submit-case-provider-request/confirmed",
+            UserRole.CREATE_CASE_REQUEST),
+        route("POST", "/application/client/details/summary", UserRole.SUBMIT_REGISTER_CLIENT),
+        route("GET", "/application/client/details/summary", UserRole.CREATE_APPLICATION),
         route(
             "POST",
             "/application/submit-general-provider-request/confirmed",
@@ -113,6 +119,12 @@ class UserFunctionAuthorizationTest {
         route("POST", "/amendments/summary", UserRole.SUBMIT_AMENDMENT),
         route("GET", "/amendments/validate", UserRole.SUBMIT_AMENDMENT),
         route("POST", "/amendments/submit/summary", UserRole.SUBMIT_AMENDMENT),
+        route("GET", "/amendments/new", UserRole.AMEND_CASE),
+        route("GET", "/amendments/create", UserRole.AMEND_CASE),
+        route("GET", "/amendments/summary", UserRole.AMEND_CASE),
+        route("GET", "/amendments/sections/client/details/summary", UserRole.VIEW_CLIENT_DETAILS),
+        route("POST", "/amendments/sections/client/details/basic", UserRole.VIEW_CLIENT_DETAILS),
+        route("POST", "/amendments/client-update/confirmed", UserRole.VIEW_CLIENT_DETAILS),
         route(
             "GET",
             "/notifications/7/attachments/3/retrieve",
@@ -131,11 +143,28 @@ class UserFunctionAuthorizationTest {
         route("GET", "/notifications/7", UserRole.VIEW_NOTIFICATIONS),
         route("GET", "/notifications/search-results", UserRole.VIEW_NOTIFICATIONS),
         route("GET", "/notifications", UserRole.VIEW_NOTIFICATIONS),
+        route("POST", "/case/billing/poa/submit", UserRole.SUBMIT_PAYMENT_ON_ACCOUNT),
+        route("POST", "/case/billing/poa/declaration", UserRole.SUBMIT_PAYMENT_ON_ACCOUNT),
         route("GET", "/case/billing/poa/summary", UserRole.CREATE_PAYMENT_ON_ACCOUNT),
         route("POST", "/case/billing/bill/submit", UserRole.SUBMIT_BILL),
         route("POST", "/case/billing/bill/remove", UserRole.DELETE_BILL),
         route("GET", "/case/billing/bill/copy", UserRole.CREATE_BILL),
         route("GET", "/case/billing/bill", UserRole.CREATE_BILL),
+        route("POST", "/case/billing/undertaking", UserRole.ENTER_UNDERTAKING),
+        route("GET", "/case/billing", UserRole.VIEW_CASE_BILL),
+        route(
+            "POST", "/case/outcome-and-awards/proceeding/0/outcome/clear", UserRole.CLEAR_OUTCOME),
+        route(
+            "POST",
+            "/case/outcome-and-awards/proceeding/0/outcome",
+            UserRole.UPDATE_PROCEEDING_OUTCOME),
+        route(
+            "POST",
+            "/case/outcome-and-awards/proceeding/0/outcome/court-search",
+            UserRole.UPDATE_PROCEEDING_OUTCOME),
+        route("GET", "/case/outcome-and-awards", UserRole.RECORD_OUTCOME),
+        route("GET", "/case/outcome-and-awards", UserRole.REQUEST_CASE_DISCHARGE),
+        route("POST", "/case/outcome-and-awards/asset", UserRole.RECORD_OUTCOME),
         route("GET", "/case/overview", UserRole.VIEW_CASE_DETAILS),
         route("GET", "/case/details", UserRole.VIEW_CASE_DETAILS));
   }

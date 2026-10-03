@@ -124,10 +124,13 @@ public class SecurityConfiguration {
     authorize
         .requestMatchers(
             "/general-provider-requests/**",
-            "/case-provider-requests/**",
-            "/application/submit-general-provider-request/confirmed",
-            "/application/submit-case-provider-request/confirmed")
+            "/application/submit-general-provider-request/confirmed")
         .hasAuthority(UserRole.CREATE_PROVIDER_REQUEST.getCode())
+        .requestMatchers(
+            "/case-provider-requests/**", "/application/submit-case-provider-request/confirmed")
+        .hasAuthority(UserRole.CREATE_CASE_REQUEST.getCode())
+        .requestMatchers(HttpMethod.POST, "/application/client/details/summary")
+        .hasAuthority(UserRole.SUBMIT_REGISTER_CLIENT.getCode())
         .requestMatchers(
             "/application/new",
             "/application/office",
@@ -161,6 +164,16 @@ public class SecurityConfiguration {
         .hasAuthority(UserRole.SUBMIT_AMENDMENT.getCode())
         .requestMatchers("/amendments/validate", "/amendments/submit/summary")
         .hasAuthority(UserRole.SUBMIT_AMENDMENT.getCode())
+        .requestMatchers(
+            "/amendments/new",
+            "/amendments/application-type",
+            "/amendments/delegated-functions",
+            "/amendments/create",
+            "/amendments/edit-delegated-functions",
+            "/amendments/summary")
+        .hasAuthority(UserRole.AMEND_CASE.getCode())
+        .requestMatchers("/amendments/sections/client/details/**", "/amendments/client-update/**")
+        .hasAuthority(UserRole.VIEW_CLIENT_DETAILS.getCode())
         .requestMatchers("/notifications/*/attachments/*/retrieve")
         .hasAuthority(UserRole.VIEW_NOTIFICATION_ATTACHMENT.getCode())
         .requestMatchers(HttpMethod.POST, "/notifications/*/provide-documents-or-evidence")
@@ -176,6 +189,11 @@ public class SecurityConfiguration {
         .hasAuthority(UserRole.SUBMIT_NOTIFICATION.getCode())
         .requestMatchers("/notifications", "/notifications/**")
         .hasAuthority(UserRole.VIEW_NOTIFICATIONS.getCode())
+        .requestMatchers(
+            "/case/billing/poa/submit",
+            "/case/billing/poa/declaration",
+            "/case/billing/poa/confirmation")
+        .hasAuthority(UserRole.SUBMIT_PAYMENT_ON_ACCOUNT.getCode())
         // Creating and deleting a payment on account both need the POA function, as
         // they do in the legacy PUI.
         .requestMatchers("/case/billing/poa", "/case/billing/poa/**")
@@ -197,6 +215,18 @@ public class SecurityConfiguration {
         .hasAuthority(UserRole.CREATE_BILL.getCode())
         .requestMatchers("/case/billing/bill")
         .hasAuthority(UserRole.CREATE_BILL.getCode())
+        .requestMatchers("/case/billing/undertaking")
+        .hasAuthority(UserRole.ENTER_UNDERTAKING.getCode())
+        .requestMatchers("/case/billing")
+        .hasAuthority(UserRole.VIEW_CASE_BILL.getCode())
+        .requestMatchers("/case/outcome-and-awards/proceeding/*/outcome/clear")
+        .hasAuthority(UserRole.CLEAR_OUTCOME.getCode())
+        .requestMatchers("/case/outcome-and-awards/proceeding/*/outcome/**")
+        .hasAuthority(UserRole.UPDATE_PROCEEDING_OUTCOME.getCode())
+        // The legacy PUI lets either outcome function record an outcome.
+        .requestMatchers("/case/outcome-and-awards", "/case/outcome-and-awards/**")
+        .hasAnyAuthority(
+            UserRole.RECORD_OUTCOME.getCode(), UserRole.REQUEST_CASE_DISCHARGE.getCode())
         // Every case page is reached by opening the case, which the legacy PUI checks.
         .requestMatchers("/case/**")
         .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode());
