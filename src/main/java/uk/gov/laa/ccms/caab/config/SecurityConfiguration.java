@@ -14,6 +14,7 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.saml2.provider.service.authentication.OpenSaml5AuthenticationProvider;
@@ -26,6 +27,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
 import uk.gov.laa.ccms.caab.security.CspNonceFilter;
+import uk.gov.laa.ccms.caab.security.NotAuthorisedAccessDeniedHandler;
 import uk.gov.laa.ccms.caab.service.UserService;
 
 /** Configuration class for customizing Spring Security settings. */
@@ -48,6 +50,8 @@ public class SecurityConfiguration {
   @Value("${laa.ccms.oracle-web-determination-server.url:}")
   private String owdUrl;
 
+  private static final String CASE_CONTEXT = "/{caseContext:application|amendments}";
+
   private final UserService userService;
 
   /**
@@ -65,87 +69,24 @@ public class SecurityConfiguration {
     authenticationProvider.setResponseAuthenticationConverter(groupsConverter());
 
     return http.authorizeHttpRequests(
-            authorize ->
-                authorize
-                    .requestMatchers("/assets/**", "/ccms/**", "/govuk-dialect/**", "/favicon.ico")
-                    .permitAll()
-                    .requestMatchers(
-                        HttpMethod.GET,
-                        "/actuator/prometheus",
-                        "/actuator/health/**",
-                        "/actuator/info",
-                        "/actuator/metrics")
-                    .permitAll() // Ensure Actuator endpoints are excluded
-                    .requestMatchers(HttpMethod.POST, "/csp/report")
-                    .permitAll()
-                    .requestMatchers(
-                        HttpMethod.GET, "/general-provider-requests/*", "/case-provider-requests/*")
-                    .hasAuthority(UserRole.CREATE_PROVIDER_REQUEST.getCode())
-                    .requestMatchers(
-                        HttpMethod.GET,
-                        "/application/office",
-                        "/application/category-of-law",
-                        "/application/application-type",
-                        "/application/delegated-functions",
-                        "/application/copy-case/search",
-                        "/application/client/search",
-                        "/application/client/*/confirm")
-                    .hasAuthority(UserRole.CREATE_APPLICATION.getCode())
-                    .requestMatchers(
-                        HttpMethod.GET, "/application/search", "/application/search/results")
-                    .hasAuthority(UserRole.VIEW_CASES_AND_APPLICATIONS.getCode())
-                    .requestMatchers(
-                        HttpMethod.GET,
-                        "/notifications/search",
-                        "/notifications/search-results",
-                        "/notifications/search-options/prefetch")
-                    .hasAuthority(UserRole.VIEW_NOTIFICATIONS.getCode())
-                    .requestMatchers(HttpMethod.GET, "/application/proceedings/add/matter-type")
-                    .hasAuthority(UserRole.ADD_PROCEEDING.getCode())
-                    .requestMatchers("/notifications/*/attachments/*")
-                    .hasAuthority(UserRole.VIEW_NOTIFICATION_ATTACHMENT.getCode())
-                    .requestMatchers("/application/proceedings/*/remove")
-                    .hasAuthority(UserRole.DELETE_PROCEEDING.getCode())
-                    .requestMatchers("/application/proceedings/*/summary")
-                    .hasAuthority(UserRole.VIEW_PROCEEDING.getCode())
-                    .requestMatchers(
-                        HttpMethod.GET, "/notifications/*/provide-documents-or-evidence")
-                    .hasAuthority(UserRole.UPLOAD_EVIDENCE.getCode())
-                    .requestMatchers(
-                        HttpMethod.POST, "/notifications/*/provide-documents-or-evidence")
-                    .hasAuthority(UserRole.SUBMIT_DOCUMENT_UPLOAD.getCode())
-                    .requestMatchers(
-                        HttpMethod.POST, "/application/sections/client/details/summary")
-                    .hasAuthority(UserRole.SUBMIT_UPDATE_CLIENT.getCode())
-                    .requestMatchers(HttpMethod.POST, "/application/sections")
-                    .hasAuthority(UserRole.SUBMIT_APPLICATION.getCode())
-                    .requestMatchers("/case/overview")
-                    .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode())
-                    .requestMatchers(HttpMethod.GET, "/case/details/costs/allocation")
-                    .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode())
-                    // Creating and deleting a payment on account both need the POA function, as
-                    // they do in the legacy PUI.
-                    .requestMatchers("/case/billing/poa", "/case/billing/poa/**")
-                    .hasAuthority(UserRole.CREATE_PAYMENT_ON_ACCOUNT.getCode())
-                    // Submitting and deleting a bill are separate permissions from creating one in
-                    // the legacy PUI, which gates them on the subbill and delete-bill functions.
-                    // The bill rules are exact paths, not a prefix, so every route that submits
-                    // a bill has to be listed - "/case/billing/bill" alone does not cover them.
-                    .requestMatchers(
-                        "/case/billing/bill/submit",
-                        "/case/billing/bill/declaration",
-                        "/case/billing/bill/confirmation")
-                    .hasAuthority(UserRole.SUBMIT_BILL.getCode())
-                    .requestMatchers("/case/billing/bill/remove")
-                    .hasAuthority(UserRole.DELETE_BILL.getCode())
-                    // Copying creates a bill, and the summary reports on the one being created, so
-                    // both take the create permission.
-                    .requestMatchers("/case/billing/bill/copy", "/case/billing/bill/summary")
-                    .hasAuthority(UserRole.CREATE_BILL.getCode())
-                    .requestMatchers("/case/billing/bill")
-                    .hasAuthority(UserRole.CREATE_BILL.getCode())
-                    .anyRequest()
-                    .authenticated())
+            authorize -> {
+              authorize
+                  .requestMatchers("/assets/**", "/ccms/**", "/govuk-dialect/**", "/favicon.ico")
+                  .permitAll()
+                  .requestMatchers(
+                      HttpMethod.GET,
+                      "/actuator/prometheus",
+                      "/actuator/health/**",
+                      "/actuator/info",
+                      "/actuator/metrics")
+                  .permitAll() // Ensure Actuator endpoints are excluded
+                  .requestMatchers(HttpMethod.POST, "/csp/report")
+                  .permitAll();
+              authorizeUserFunctions(authorize);
+              authorize.anyRequest().authenticated();
+            })
+        .exceptionHandling(
+            exceptions -> exceptions.accessDeniedHandler(new NotAuthorisedAccessDeniedHandler()))
         .csrf(csrf -> csrf.ignoringRequestMatchers("/csp/report"))
         .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))
         .addFilterBefore(
@@ -168,6 +109,97 @@ public class SecurityConfiguration {
         .saml2Login(
             saml2 -> saml2.authenticationManager(new ProviderManager(authenticationProvider)))
         .build();
+  }
+
+  /**
+   * Restricts each action to the users who hold its function, matching the actions the legacy PUI
+   * checks. The first matching rule applies, so specific paths come before the prefixes they sit
+   * under.
+   *
+   * @param authorize the request authorisation registry to add the rules to.
+   */
+  static void authorizeUserFunctions(
+      AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry
+          authorize) {
+    authorize
+        .requestMatchers(
+            "/general-provider-requests/**",
+            "/case-provider-requests/**",
+            "/application/submit-general-provider-request/confirmed",
+            "/application/submit-case-provider-request/confirmed")
+        .hasAuthority(UserRole.CREATE_PROVIDER_REQUEST.getCode())
+        .requestMatchers(
+            "/application/new",
+            "/application/office",
+            "/application/category-of-law",
+            "/application/application-type",
+            "/application/delegated-functions",
+            "/application/copy-case/**",
+            "/application/client/**",
+            "/application/client-create/**",
+            "/application/agreement/**")
+        .hasAuthority(UserRole.CREATE_APPLICATION.getCode())
+        .requestMatchers("/application/search", "/application/search/**")
+        .hasAuthority(UserRole.VIEW_CASES_AND_APPLICATIONS.getCode())
+        .requestMatchers(CASE_CONTEXT + "/proceedings/add/**")
+        .hasAuthority(UserRole.ADD_PROCEEDING.getCode())
+        .requestMatchers(CASE_CONTEXT + "/proceedings/*/remove")
+        .hasAuthority(UserRole.DELETE_PROCEEDING.getCode())
+        .requestMatchers(
+            CASE_CONTEXT + "/proceedings/*/summary",
+            CASE_CONTEXT + "/proceedings/edit/**",
+            "/case/details/proceeding/*")
+        .hasAuthority(UserRole.VIEW_PROCEEDING.getCode())
+        .requestMatchers(HttpMethod.POST, CASE_CONTEXT + "/sections/client/details/summary")
+        .hasAuthority(UserRole.SUBMIT_UPDATE_CLIENT.getCode())
+        .requestMatchers(HttpMethod.POST, "/application/sections")
+        .hasAuthority(UserRole.SUBMIT_APPLICATION.getCode())
+        .requestMatchers(
+            "/application/validate", "/application/submit/summary", "/application/declaration")
+        .hasAuthority(UserRole.SUBMIT_APPLICATION.getCode())
+        .requestMatchers(HttpMethod.POST, "/amendments/summary")
+        .hasAuthority(UserRole.SUBMIT_AMENDMENT.getCode())
+        .requestMatchers("/amendments/validate", "/amendments/submit/summary")
+        .hasAuthority(UserRole.SUBMIT_AMENDMENT.getCode())
+        .requestMatchers("/notifications/*/attachments/*/retrieve")
+        .hasAuthority(UserRole.VIEW_NOTIFICATION_ATTACHMENT.getCode())
+        .requestMatchers(HttpMethod.POST, "/notifications/*/provide-documents-or-evidence")
+        .hasAuthority(UserRole.SUBMIT_DOCUMENT_UPLOAD.getCode())
+        .requestMatchers(
+            "/notifications/*/provide-documents-or-evidence",
+            "/notifications/*/attachments/**",
+            "/application/notification-attachments/confirmed")
+        .hasAuthority(UserRole.UPLOAD_EVIDENCE.getCode())
+        .requestMatchers(HttpMethod.POST, "/notifications/search")
+        .hasAuthority(UserRole.VIEW_NOTIFICATIONS.getCode())
+        .requestMatchers(HttpMethod.POST, "/notifications/*")
+        .hasAuthority(UserRole.SUBMIT_NOTIFICATION.getCode())
+        .requestMatchers("/notifications", "/notifications/**")
+        .hasAuthority(UserRole.VIEW_NOTIFICATIONS.getCode())
+        // Creating and deleting a payment on account both need the POA function, as
+        // they do in the legacy PUI.
+        .requestMatchers("/case/billing/poa", "/case/billing/poa/**")
+        .hasAuthority(UserRole.CREATE_PAYMENT_ON_ACCOUNT.getCode())
+        // Submitting and deleting a bill are separate permissions from creating one in
+        // the legacy PUI, which gates them on the subbill and delete-bill functions.
+        // The bill rules are exact paths, not a prefix, so every route that submits
+        // a bill has to be listed - "/case/billing/bill" alone does not cover them.
+        .requestMatchers(
+            "/case/billing/bill/submit",
+            "/case/billing/bill/declaration",
+            "/case/billing/bill/confirmation")
+        .hasAuthority(UserRole.SUBMIT_BILL.getCode())
+        .requestMatchers("/case/billing/bill/remove")
+        .hasAuthority(UserRole.DELETE_BILL.getCode())
+        // Copying creates a bill, and the summary reports on the one being created, so
+        // both take the create permission.
+        .requestMatchers("/case/billing/bill/copy", "/case/billing/bill/summary")
+        .hasAuthority(UserRole.CREATE_BILL.getCode())
+        .requestMatchers("/case/billing/bill")
+        .hasAuthority(UserRole.CREATE_BILL.getCode())
+        // Every case page is reached by opening the case, which the legacy PUI checks.
+        .requestMatchers("/case/**")
+        .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode());
   }
 
   /**

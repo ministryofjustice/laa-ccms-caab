@@ -82,6 +82,10 @@ class PrivilegeTemplateRenderTest {
   }
 
   private String renderHome(final String... authorities) {
+    return renderHome(Map.of(), authorities);
+  }
+
+  private String renderHome(final Map<String, Object> extraVariables, final String... authorities) {
     SecurityContextHolder.getContext()
         .setAuthentication(new TestingAuthenticationToken("user", null, authorities));
 
@@ -106,6 +110,8 @@ class PrivilegeTemplateRenderTest {
     variables.put("showNotifications", true);
     variables.put("actionsMsg", "3 Outstanding Actions (none overdue)");
     variables.put("notificationsMsg", "View Notifications (2 outstanding)");
+
+    variables.putAll(extraVariables);
 
     return engine.process("home", new WebContext(exchange, Locale.UK, variables));
   }
@@ -150,6 +156,15 @@ class PrivilegeTemplateRenderTest {
         .contains("notification_type=A")
         .doesNotContain("create-general-request-link")
         .contains("create provider requests.");
+  }
+
+  @Test
+  @DisplayName("A refused action shows the not-authorised error on the returned-to page")
+  void showsNotAuthorisedError() {
+    assertThat(renderHome(Map.of("notAuthorised", true), "YCA"))
+        .contains("id=\"not-authorised-error\"")
+        .contains("You are not authorized to perform this function.");
+    assertThat(renderHome("YCA")).doesNotContain("not-authorised-error");
   }
 
   /** Stands in for the handler Spring Security's web configuration registers at runtime. */
