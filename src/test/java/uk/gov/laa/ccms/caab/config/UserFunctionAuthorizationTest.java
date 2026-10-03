@@ -77,19 +77,19 @@ class UserFunctionAuthorizationTest {
 
   static Stream<Arguments> protectedRoutes() {
     return Stream.of(
-        route("GET", "/general-provider-requests/types", UserRole.CREATE_PROVIDER_REQUEST),
-        route("POST", "/general-provider-requests/details", UserRole.CREATE_PROVIDER_REQUEST),
-        route("POST", "/case-provider-requests/details", UserRole.CREATE_CASE_REQUEST),
+        route("GET", "/general-provider-requests/types", UserRole.CREATE_GENERAL_REQUEST),
+        route("POST", "/general-provider-requests/details", UserRole.CREATE_GENERAL_REQUEST),
+        route("POST", "/case-provider-requests/details", UserRole.SUBMIT_CASE_QUERY),
         route(
             "POST",
             "/application/submit-case-provider-request/confirmed",
-            UserRole.CREATE_CASE_REQUEST),
+            UserRole.SUBMIT_CASE_QUERY),
         route("POST", "/application/client/details/summary", UserRole.SUBMIT_REGISTER_CLIENT),
         route("GET", "/application/client/details/summary", UserRole.CREATE_APPLICATION),
         route(
             "POST",
             "/application/submit-general-provider-request/confirmed",
-            UserRole.CREATE_PROVIDER_REQUEST),
+            UserRole.CREATE_GENERAL_REQUEST),
         route("GET", "/application/new", UserRole.CREATE_APPLICATION),
         route("POST", "/application/office", UserRole.CREATE_APPLICATION),
         route("GET", "/application/application-type", UserRole.CREATE_APPLICATION),
