@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"
-      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'home'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='YCA,NOT,CA,PRNC')}" xmlns:th="http://www.thymeleaf.org">
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'home'},breadcrumbs=~{::#breadcrumbs},pageRoles='VIEW_CASES_AND_APPLICATIONS,VIEW_NOTIFICATIONS,CREATE_APPLICATION,CREATE_PROVIDER_REQUEST')}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
     <head>
         <title>Homepage</title>
     </head>
@@ -12,7 +13,10 @@
                 <span class="govuk-caption-l">Civil legal aid applications, amendments and billing.</span>
             </h1>
 
-            <div th:replace="~{partials/actions :: restrictedActionLink(#{application.new}, ${user.functions}, 'CA', true, '', @{/application/new}, false)}"></div>
+            <a id="new-application-link" class="govuk-button" data-module="govuk-button"
+               sec:authorize="hasAuthority(@roles.createApplication)"
+               th:text="#{application.new}"
+               th:href="@{/application/new}"></a>
 
             <!--  Notifications  -->
             <h2 class="govuk-heading-m">
@@ -33,8 +37,11 @@
                     </div>
                     <div th:unless="${noActions}">
                         <li>
-                            <div
-                                th:replace="~{partials/actions :: restrictedActionLink(${actionsMsg}, ${user.functions}, 'NOT', false, '', @{/notifications/search?notification_type=A}, true)}"></div>
+                            <a class="govuk-link"
+                               sec:authorize="hasAuthority(@roles.viewNotifications)"
+                               th:text="${actionsMsg}"
+                               th:href="@{/notifications/search?notification_type=A}"></a>
+                            <span sec:authorize="!hasAuthority(@roles.viewNotifications)" th:text="${actionsMsg}"></span>
                         </li>
                     </div>
                     <div th:if="${noNotifications}">
@@ -44,8 +51,11 @@
                     </div>
                     <div th:unless="${noNotifications}">
                         <li>
-                            <div
-                                th:replace="~{partials/actions :: restrictedActionLink(${notificationsMsg}, ${user.functions}, 'NOT', false, '', @{/notifications/search?notification_type=N}, true)}"></div>
+                            <a class="govuk-link"
+                               sec:authorize="hasAuthority(@roles.viewNotifications)"
+                               th:text="${notificationsMsg}"
+                               th:href="@{/notifications/search?notification_type=N}"></a>
+                            <span sec:authorize="!hasAuthority(@roles.viewNotifications)" th:text="${notificationsMsg}"></span>
                         </li>
                     </div>
                 </ul>
@@ -70,7 +80,9 @@
 
             <p class="govuk-body">For non case related queries please create a general request.</p>
 
-            <div th:replace="~{partials/actions :: restrictedActionLink('Create general request', ${user.functions}, 'PRNC', true, 'govuk-button--secondary', @{/general-provider-requests/types}, false)}"></div>
+            <a id="create-general-request-link" class="govuk-button govuk-button--secondary" data-module="govuk-button"
+               sec:authorize="hasAuthority(@roles.createProviderRequest)"
+               th:href="@{/general-provider-requests/types}">Create general request</a>
 
         </div>
     </body>

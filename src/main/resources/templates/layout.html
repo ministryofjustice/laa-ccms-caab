@@ -13,8 +13,15 @@
 
     <div th:if="${breadcrumbs != null}" th:replace="${breadcrumbs}"></div>
 
-    <th:block th:if="${userRoles != null and pageRoles != null}">
-        <div th:replace="~{partials/actions :: restrictedActionsMessage(${userRoles}, ${pageRoles})}"></div>
+    <th:block th:if="${pageRoles != null}"
+              th:with="missingRoles=${userRoleUtil.findMissingRoles(#authentication.authorities, pageRoles)}">
+        <div th:unless="${#lists.isEmpty(missingRoles)}" class="govuk-inset-text">
+            <span>You cannot perform the following actions: </span>
+            <span th:each="role,iterStat : ${missingRoles}"
+                  th:text="${role.description} + ${!iterStat.last ? ', ' : '.'}"></span>
+            <span>This is because the provider you are currently acting on behalf of does not have
+                the authority to perform these actions.</span>
+        </div>
     </th:block>
 
     <main class="govuk-main-wrapper govuk-!-padding-top-0" id="main-content" role="main">
