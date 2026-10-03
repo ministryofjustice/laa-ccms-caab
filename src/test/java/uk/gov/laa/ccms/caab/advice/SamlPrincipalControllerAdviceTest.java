@@ -1,8 +1,11 @@
 package uk.gov.laa.ccms.caab.advice;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -19,8 +22,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.saml2.provider.service.authentication.Saml2AssertionAuthentication;
 import org.springframework.security.saml2.provider.service.authentication.Saml2ResponseAssertionAccessor;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.ui.Model;
@@ -144,6 +152,57 @@ class SamlPrincipalControllerAdviceTest {
       verify(model).addAttribute("userAttributes", attributes);
       verify(session).setAttribute("user", userDetails);
       verifyNoMoreInteractions(model);
+    }
+
+    @Test
+    @DisplayName(
+        "Reloading the user on the home page replaces their functions in the logged-in "
+            + "authentication and keeps their other authorities")
+    public void homePageReloadRefreshesUserFunctions() {
+      UserDetail previousUser = new UserDetail().loginId("test").functions(List.of("CA", "NOT"));
+      UserDetail reloadedUser = new UserDetail().loginId("test").functions(List.of("NOT", "VC"));
+      when(session.getAttribute("user")).thenReturn(previousUser);
+      when(userService.getUserByLoginId(any())).thenReturn(Mono.just(reloadedUser));
+      doReturn(
+              List.of(
+                  new SimpleGrantedAuthority("group1"),
+                  new SimpleGrantedAuthority("CA"),
+                  new SimpleGrantedAuthority("NOT")))
+          .when(authentication)
+          .getAuthorities();
+      when(authentication.getPrincipal()).thenReturn("test");
+      when(authentication.getRelyingPartyRegistrationId()).thenReturn("idp");
+
+      HandlerMethod handler = mock(HandlerMethod.class);
+      when(request.getAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE))
+          .thenReturn(handler);
+      doReturn(HomeController.class).when(handler).getBeanType();
+
+      try {
+        advice.addSamlPrincipalToModel(authentication, model, session, request);
+
+        SecurityContext context = SecurityContextHolder.getContext();
+        assertThat(context.getAuthentication().getAuthorities())
+            .extracting(GrantedAuthority::getAuthority)
+            .containsExactlyInAnyOrder("group1", "NOT", "VC");
+        verify(session)
+            .setAttribute(
+                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+      } finally {
+        SecurityContextHolder.clearContext();
+      }
+    }
+
+    @Test
+    @DisplayName("A first load of the user leaves the login authentication alone")
+    public void firstLoadDoesNotReplaceAuthentication() {
+      when(session.getAttribute("user")).thenReturn(null);
+
+      advice.addSamlPrincipalToModel(authentication, model, session, request);
+
+      verify(session, never())
+          .setAttribute(
+              eq(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY), any());
     }
   }
 }
