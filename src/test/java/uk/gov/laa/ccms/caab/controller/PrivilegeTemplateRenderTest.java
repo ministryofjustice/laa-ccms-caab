@@ -159,6 +159,17 @@ class PrivilegeTemplateRenderTest {
   }
 
   @Test
+  @DisplayName("Header navigation items follow the user's granted authorities")
+  void headerNavigationFollowsAuthorities() {
+    assertThat(renderHome("YCA", "NOT"))
+        .contains("href=\"/application/search\"")
+        .contains("href=\"/notifications/search?notification_type=all\"");
+    assertThat(renderHome("CA"))
+        .doesNotContain("href=\"/application/search\"")
+        .doesNotContain("notification_type=all");
+  }
+
+  @Test
   @DisplayName("A refused action shows the not-authorised error on the returned-to page")
   void showsNotAuthorisedError() {
     assertThat(renderHome(Map.of("notAuthorised", true), "YCA"))
