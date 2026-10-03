@@ -125,10 +125,10 @@ public class SecurityConfiguration {
         .requestMatchers(
             "/general-provider-requests/**",
             "/application/submit-general-provider-request/confirmed")
-        .hasAuthority(UserRole.CREATE_PROVIDER_REQUEST.getCode())
+        .hasAuthority(UserRole.CREATE_GENERAL_REQUEST.getCode())
         .requestMatchers(
             "/case-provider-requests/**", "/application/submit-case-provider-request/confirmed")
-        .hasAuthority(UserRole.CREATE_CASE_REQUEST.getCode())
+        .hasAuthority(UserRole.SUBMIT_CASE_QUERY.getCode())
         .requestMatchers(HttpMethod.POST, "/application/client/details/summary")
         .hasAuthority(UserRole.SUBMIT_REGISTER_CLIENT.getCode())
         .requestMatchers(

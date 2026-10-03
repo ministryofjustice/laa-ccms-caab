@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"
-      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'home'},breadcrumbs=~{::#breadcrumbs},pageRoles='VIEW_CASES_AND_APPLICATIONS,VIEW_NOTIFICATIONS,CREATE_APPLICATION,CREATE_PROVIDER_REQUEST')}"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'home'},breadcrumbs=~{::#breadcrumbs},pageRoles='VIEW_CASES_AND_APPLICATIONS,VIEW_NOTIFICATIONS,CREATE_APPLICATION,CREATE_GENERAL_REQUEST')}"
       xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
     <head>
         <title>Homepage</title>
@@ -81,7 +81,7 @@
             <p class="govuk-body">For non case related queries please create a general request.</p>
 
             <a id="create-general-request-link" class="govuk-button govuk-button--secondary" data-module="govuk-button"
-               sec:authorize="hasAuthority(@roles.createProviderRequest)"
+               sec:authorize="hasAuthority(@roles.createGeneralRequest)"
                th:href="@{/general-provider-requests/types}">Create general request</a>
 
         </div>
