@@ -8,7 +8,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,6 +20,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -29,10 +29,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.servlet.FlashMap;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import org.springframework.web.servlet.support.SessionFlashMapManager;
 import uk.gov.laa.ccms.caab.security.NotAuthorisedAccessDeniedHandler;
+import uk.gov.laa.ccms.caab.security.RefusedActionSession;
 
 /**
  * Runs requests through the user-function rules of {@link SecurityConfiguration}. No controllers
@@ -43,10 +42,9 @@ import uk.gov.laa.ccms.caab.security.NotAuthorisedAccessDeniedHandler;
 @DisplayName("User function authorisation rules")
 class UserFunctionAuthorizationTest {
 
-  private static final String FLASH_MAPS_SESSION_ATTRIBUTE =
-      SessionFlashMapManager.class.getName() + ".FLASH_MAPS";
+  private static final String PREVIOUS_PAGE = "/previous-page?tab=1";
 
-  private static final String REFERER = "http://localhost/previous-page?tab=1";
+  private static final String REFERER = "http://localhost" + PREVIOUS_PAGE;
 
   @Configuration
   @EnableWebMvc
@@ -169,18 +167,19 @@ class UserFunctionAuthorizationTest {
         route("GET", "/case/details", UserRole.VIEW_CASE_DETAILS));
   }
 
-  /** The handler saves its flash map to the session, outside the dispatcher MockMvc reads. */
-  @SuppressWarnings("unchecked")
-  private static ResultMatcher notAuthorisedFlashed() {
-    return result -> {
-      List<FlashMap> flashMaps =
-          (List<FlashMap>)
-              result.getRequest().getSession().getAttribute(FLASH_MAPS_SESSION_ATTRIBUTE);
-      assertThat(flashMaps).hasSize(1);
-      assertThat(
-              flashMaps.getFirst().get(NotAuthorisedAccessDeniedHandler.NOT_AUTHORISED_ATTRIBUTE))
-          .isEqualTo(true);
-    };
+  /** A session in which the referring page was shown by a plain page load. */
+  private static MockHttpSession sessionWithRenderedPages(String... pages) {
+    MockHttpSession session = new MockHttpSession();
+    for (String page : pages) {
+      RefusedActionSession.recordRenderedPage(session, page);
+    }
+    return session;
+  }
+
+  private static ResultMatcher notAuthorisedPending() {
+    return result ->
+        assertThat(RefusedActionSession.consumeNotAuthorised(result.getRequest().getSession()))
+            .isTrue();
   }
 
   private static Arguments route(String method, String path, UserRole role) {
@@ -193,11 +192,12 @@ class UserFunctionAuthorizationTest {
     mockMvc
         .perform(
             request(method, path)
+                .session(sessionWithRenderedPages(PREVIOUS_PAGE))
                 .header(HttpHeaders.REFERER, REFERER)
                 .with(user("user").authorities(() -> "OTHER"))
                 .with(csrf()))
-        .andExpect(redirectedUrl("/previous-page?tab=1"))
-        .andExpect(notAuthorisedFlashed());
+        .andExpect(redirectedUrl(PREVIOUS_PAGE))
+        .andExpect(notAuthorisedPending());
   }
 
   @ParameterizedTest(name = "{0} {1} is allowed with {2}")
@@ -217,26 +217,63 @@ class UserFunctionAuthorizationTest {
   }
 
   @Test
-  @DisplayName("A refused action without a usable referer returns the user home")
-  void refusedWithoutRefererGoesHome() throws Exception {
+  @DisplayName("A referer not shown by a plain page load is replaced by the last page that was")
+  void refererNotRenderedReturnsToLastRenderedPage() throws Exception {
+    mockMvc
+        .perform(
+            request(HttpMethod.GET, "/case/overview")
+                .session(sessionWithRenderedPages("/earlier-page", "/last-page?x=1"))
+                .header(HttpHeaders.REFERER, "http://localhost/form-posted-page")
+                .with(user("user").authorities(() -> "OTHER")))
+        .andExpect(redirectedUrl("/last-page?x=1"))
+        .andExpect(notAuthorisedPending());
+  }
+
+  @Test
+  @DisplayName("A refused action without a referer returns to the last page shown")
+  void refusedWithoutRefererReturnsToLastRenderedPage() throws Exception {
+    mockMvc
+        .perform(
+            request(HttpMethod.GET, "/case/overview")
+                .session(sessionWithRenderedPages("/last-page"))
+                .with(user("user").authorities(() -> "OTHER")))
+        .andExpect(redirectedUrl("/last-page"));
+  }
+
+  @Test
+  @DisplayName("With no page to return to, a refused action returns the user home")
+  void refusedWithNoPageToReturnToGoesHome() throws Exception {
     mockMvc
         .perform(
             request(HttpMethod.GET, "/case/overview")
                 .header(HttpHeaders.REFERER, "https://elsewhere.example/page")
                 .with(user("user").authorities(() -> "OTHER")))
         .andExpect(redirectedUrl("/home"))
-        .andExpect(notAuthorisedFlashed());
+        .andExpect(notAuthorisedPending());
   }
 
   @Test
-  @DisplayName("A refused action whose referer is the refused page returns the user home")
-  void refusedFromSamePageGoesHome() throws Exception {
+  @DisplayName("The refused page itself is never the page returned to")
+  void refusedPageIsNotReturnedTo() throws Exception {
     mockMvc
         .perform(
             request(HttpMethod.GET, "/case/overview")
+                .session(sessionWithRenderedPages("/last-page", "/case/overview"))
                 .header(HttpHeaders.REFERER, "http://localhost/case/overview")
                 .with(user("user").authorities(() -> "OTHER")))
         .andExpect(redirectedUrl("/home"));
+  }
+
+  @Test
+  @DisplayName("A refused background request gets a 403 rather than a redirect")
+  void refusedBackgroundRequestIsForbidden() throws Exception {
+    mockMvc
+        .perform(
+            request(HttpMethod.GET, "/notifications/search-options/prefetch")
+                .header("Sec-Fetch-Mode", "cors")
+                .header(HttpHeaders.ACCEPT, "application/json")
+                .with(user("user").authorities(() -> "OTHER")))
+        .andExpect(status().isForbidden());
   }
 
   @Test
