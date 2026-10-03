@@ -143,7 +143,7 @@ class PrivilegeTemplateRenderTest {
         .contains("You cannot perform the following actions")
         .contains("view notifications, ")
         .contains("create applications, ")
-        .contains("create provider requests.");
+        .contains("create general requests.");
   }
 
   @Test
@@ -155,7 +155,7 @@ class PrivilegeTemplateRenderTest {
         .contains("new-application-link")
         .contains("notification_type=A")
         .doesNotContain("create-general-request-link")
-        .contains("create provider requests.");
+        .contains("create general requests.");
   }
 
   @Test
