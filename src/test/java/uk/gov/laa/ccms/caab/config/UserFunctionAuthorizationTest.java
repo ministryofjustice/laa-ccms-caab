@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +24,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
 import org.springframework.test.web.servlet.MockMvc;
@@ -164,6 +167,8 @@ class UserFunctionAuthorizationTest {
         route("GET", "/case/outcome-and-awards", UserRole.REQUEST_CASE_DISCHARGE),
         route("POST", "/case/outcome-and-awards/asset", UserRole.RECORD_OUTCOME),
         route("GET", "/case/overview", UserRole.VIEW_CASE_DETAILS),
+        route("GET", "/application/2/view", UserRole.VIEW_CASES_AND_APPLICATIONS),
+        route("GET", "/application/2/view", UserRole.VIEW_CASE_DETAILS),
         route("GET", "/case/details", UserRole.VIEW_CASE_DETAILS));
   }
 
@@ -204,8 +209,37 @@ class UserFunctionAuthorizationTest {
   @MethodSource("protectedRoutes")
   void allowedWithFunction(HttpMethod method, String path, UserRole role) throws Exception {
     mockMvc
-        .perform(request(method, path).with(user("user").authorities(role::getCode)).with(csrf()))
+        .perform(
+            request(method, path)
+                .with(user("user").authorities(authoritiesFor(path, role)))
+                .with(csrf()))
         .andExpect(status().isNotFound());
+  }
+
+  @ParameterizedTest(name = "{0} {1} is refused with only {2}, without VC")
+  @MethodSource("caseActionRoutes")
+  void caseActionRefusedWithoutViewCaseDetails(HttpMethod method, String path, UserRole role)
+      throws Exception {
+    mockMvc
+        .perform(request(method, path).with(user("user").authorities(role::getCode)).with(csrf()))
+        .andExpect(redirectedUrl("/home"));
+  }
+
+  static Stream<Arguments> caseActionRoutes() {
+    return protectedRoutes()
+        .filter(
+            arguments ->
+                ((String) arguments.get()[1]).startsWith("/case/")
+                    && arguments.get()[2] != UserRole.VIEW_CASE_DETAILS);
+  }
+
+  /** Case pages need VC, to be in a case, as well as the action's own function. */
+  private static List<GrantedAuthority> authoritiesFor(String path, UserRole role) {
+    return path.startsWith("/case/")
+        ? List.of(
+            new SimpleGrantedAuthority(role.getCode()),
+            new SimpleGrantedAuthority(UserRole.VIEW_CASE_DETAILS.getCode()))
+        : List.of(new SimpleGrantedAuthority(role.getCode()));
   }
 
   @Test
