@@ -24,37 +24,7 @@ GET /court/search
 POST /court/search
 GET /court/select
 
-# Quick amendments, which the legacy PUI does not check against user functions
-GET /allocate-cost-limit
-POST /allocate-cost-limit
-GET /allocate-cost-limit/counsel/{index}/remove
-POST /allocate-cost-limit/counsel/{index}/remove
-GET /allocate-cost-limit/review
-POST /allocate-cost-limit/review
-GET /amendments/sections/correspondence-address
-POST /amendments/sections/correspondence-address
-GET /amendments/sections/correspondence-address/search
-POST /amendments/sections/correspondence-address/search
-GET /amendments/sections/provider-details
-POST /amendments/sections/provider-details
-GET /means-reassessment
-GET /means-reassessment/declaration
-POST /means-reassessment/declaration
-GET /means-reassessment/delete
-POST /means-reassessment/delete
-GET /means-reassessment/summary
-
 # Submission progress, confirmation and failure pages
-GET /amendments/submit-case
-POST /amendments/submit-case/confirmed
-GET /amendments/submit-case/undertaking
-GET /amendments/submit-case/undertaking/confirmed
-POST /amendments/submit-case/undertaking/confirmed
-GET /amendments/submit-case/undertaking/failed
-POST /amendments/submit-case/undertaking/failed
-GET /amendments/{submissionType}/confirmed
-GET /amendments/{submissionType}/failed
-POST /amendments/{submissionType}/failed
 GET /application/submit-case
 POST /application/submit-case/confirmed
 GET /application/submit-case/undertaking
@@ -66,55 +36,7 @@ GET /application/{submissionType}/confirmed
 GET /application/{submissionType}/failed
 POST /application/{submissionType}/failed
 
-# Sections of an application or amendment, which the legacy PUI does not check against user functions
-GET /amendments/assessments
-GET /amendments/assessments/confirm
-GET /amendments/assessments/confirm/caseSummary.do
-GET /amendments/assessments/{assessment}/remove
-POST /amendments/assessments/{assessment}/remove
-GET /amendments/case-costs
-POST /amendments/case-costs
-GET /amendments/evidence/add
-POST /amendments/evidence/add
-GET /amendments/evidence/{evidence-document-id}/remove
-GET /amendments/evidence/{evidence-document-id}/view
-GET /amendments/prior-authorities/add/details
-POST /amendments/prior-authorities/add/details
-GET /amendments/prior-authorities/add/type
-POST /amendments/prior-authorities/add/type
-GET /amendments/prior-authorities/edit/details
-POST /amendments/prior-authorities/edit/details
-POST /amendments/prior-authorities/edit/type
-GET /amendments/prior-authorities/{prior-authority-id}/confirm
-GET /amendments/prior-authorities/{prior-authority-id}/remove
-POST /amendments/prior-authorities/{prior-authority-id}/remove
-GET /amendments/proceedings-and-costs
-GET /amendments/proceedings/{proceeding-id}/make-lead
-GET /amendments/sections/evidence
-GET /amendments/sections/linked-cases
-POST /amendments/sections/linked-cases/add
-GET /amendments/sections/linked-cases/search
-POST /amendments/sections/linked-cases/search
-GET /amendments/sections/linked-cases/search/results
-GET /amendments/sections/linked-cases/{case-reference-id}/add
-GET /amendments/sections/linked-cases/{linked-case-id}/confirm
-POST /amendments/sections/linked-cases/{linked-case-id}/confirm
-GET /amendments/sections/linked-cases/{linked-case-id}/remove
-POST /amendments/sections/linked-cases/{linked-case-id}/remove
-GET /amendments/sections/opponents
-GET /amendments/sections/opponents/individual/create
-POST /amendments/sections/opponents/individual/create
-GET /amendments/sections/opponents/organisation/create
-POST /amendments/sections/opponents/organisation/create
-GET /amendments/sections/opponents/organisation/search
-POST /amendments/sections/opponents/organisation/search
-GET /amendments/sections/opponents/organisation/search/results
-POST /amendments/sections/opponents/organisation/shared/create
-GET /amendments/sections/opponents/organisation/{id}/select
-GET /amendments/sections/opponents/{opponent-id}/edit
-POST /amendments/sections/opponents/{opponent-id}/edit
-GET /amendments/sections/opponents/{opponent-id}/remove
-POST /amendments/sections/opponents/{opponent-id}/remove
+# Sections of an application, which the legacy PUI does not check against user functions
 GET /application/abandon
 POST /application/abandon/confirmed
 GET /application/assessments
