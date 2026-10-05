@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.APP_TYPE_EXCEPTIONAL_CASE_FUNDING;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SECTIONS_BACK_URL;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
 
@@ -44,6 +45,17 @@ class StartApplicationControllerTest {
     assertThat(mockMvc.perform(get("/application/new")))
         .hasStatus3xxRedirection()
         .hasRedirectedUrl("/application/office");
+  }
+
+  @Test
+  @DisplayName("GET: /application/new should keep the sections back link for browser back")
+  void shouldKeepSectionsBackUrlForNewApplication() {
+    assertThat(
+            mockMvc.perform(
+                get("/application/new").sessionAttr(APPLICATION_SECTIONS_BACK_URL, "searchUrl")))
+        .request()
+        .sessionAttributes()
+        .containsEntry(APPLICATION_SECTIONS_BACK_URL, "searchUrl");
   }
 
   @Test
