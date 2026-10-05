@@ -34,8 +34,10 @@ public class RefusedActionPageInterceptor implements HandlerInterceptor {
 
     if ("GET".equals(request.getMethod()) && RefusedActionSession.isPageNavigation(request)) {
       String query = request.getQueryString();
-      RefusedActionSession.recordRenderedPage(
-          session, query == null ? request.getRequestURI() : request.getRequestURI() + "?" + query);
+      String page = query == null ? request.getRequestURI() : request.getRequestURI() + "?" + query;
+      if (RefusedActionSession.isLocalPage(page, request.getContextPath())) {
+        RefusedActionSession.recordRenderedPage(session, page);
+      }
     }
   }
 

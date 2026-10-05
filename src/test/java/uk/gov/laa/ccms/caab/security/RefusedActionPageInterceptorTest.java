@@ -40,7 +40,7 @@ class RefusedActionPageInterceptorTest {
   void recordsRenderedGetPage() {
     render(request("GET", "/civil/case/details", "tab=costs"), new ModelAndView("details"));
 
-    assertThat(RefusedActionSession.wasRendered(session, "/civil/case/details")).isTrue();
+    assertThat(RefusedActionSession.findRenderedPage(session, "/civil/case/details")).isPresent();
     assertThat(RefusedActionSession.lastRenderedPage(session))
         .contains("/civil/case/details?tab=costs");
   }
@@ -98,6 +98,26 @@ class RefusedActionPageInterceptorTest {
   }
 
   @Test
+  @DisplayName("A page that could be read as another host is not recorded")
+  void doesNotRecordNonLocalPage() {
+    render(request("GET", "//evil.example/page", null), new ModelAndView("page"));
+
+    assertThat(RefusedActionSession.lastRenderedPage(session)).isEmpty();
+  }
+
+  @Test
+  @DisplayName("A referring page is matched to the recorded page, preferring the same query")
+  void findsRecordedPageForReferer() {
+    RefusedActionSession.recordRenderedPage(session, "/civil/search?page=1");
+    RefusedActionSession.recordRenderedPage(session, "/civil/search?page=2");
+
+    assertThat(RefusedActionSession.findRenderedPage(session, "/civil/search?page=1"))
+        .contains("/civil/search?page=1");
+    assertThat(RefusedActionSession.findRenderedPage(session, "/civil/search?page=9"))
+        .contains("/civil/search?page=2");
+  }
+
+  @Test
   @DisplayName("Only the most recent pages are kept, without duplicates")
   void keepsRecentPagesWithoutDuplicates() {
     for (int i = 0; i < 60; i++) {
@@ -105,8 +125,8 @@ class RefusedActionPageInterceptorTest {
     }
     RefusedActionSession.recordRenderedPage(session, "/civil/page/20");
 
-    assertThat(RefusedActionSession.wasRendered(session, "/civil/page/5")).isFalse();
-    assertThat(RefusedActionSession.wasRendered(session, "/civil/page/59")).isTrue();
+    assertThat(RefusedActionSession.findRenderedPage(session, "/civil/page/5")).isEmpty();
+    assertThat(RefusedActionSession.findRenderedPage(session, "/civil/page/59")).isPresent();
     assertThat(RefusedActionSession.lastRenderedPage(session)).contains("/civil/page/20");
   }
 }

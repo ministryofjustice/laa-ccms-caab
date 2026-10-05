@@ -35,9 +35,26 @@ public final class RefusedActionSession {
     session.setAttribute(RENDERED_PAGES, new ArrayList<>(pages));
   }
 
-  /** Whether a page at this path, with any query, has been shown by a plain page load. */
-  static boolean wasRendered(HttpSession session, String path) {
-    return renderedPages(session).stream().anyMatch(page -> pathOf(page).equals(path));
+  /**
+   * The recorded page matching a referring page: the same page and query if recorded, otherwise the
+   * most recent page at the same path.
+   */
+  static Optional<String> findRenderedPage(HttpSession session, String pathAndQuery) {
+    List<String> pages = renderedPages(session);
+    int exact = pages.indexOf(pathAndQuery);
+    if (exact >= 0) {
+      return Optional.of(pages.get(exact));
+    }
+    String path = pathOf(pathAndQuery);
+    return pages.reversed().stream().filter(page -> pathOf(page).equals(path)).findFirst();
+  }
+
+  /**
+   * Whether a page is a path within this application, so redirecting to it cannot leave the site. A
+   * leading {@code //} or a backslash would let a browser read it as another host.
+   */
+  static boolean isLocalPage(String page, String contextPath) {
+    return page.startsWith(contextPath + "/") && !page.startsWith("//") && !page.contains("\\");
   }
 
   /** The page most recently shown by a plain page load. */
