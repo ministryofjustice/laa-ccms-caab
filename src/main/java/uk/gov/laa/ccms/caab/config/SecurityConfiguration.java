@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.config;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -13,6 +14,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authorization.AuthorityAuthorizationManager;
+import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.authorization.AuthorizationManagers;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.core.GrantedAuthority;
@@ -24,6 +28,7 @@ import org.springframework.security.saml2.provider.service.authentication.Saml2A
 import org.springframework.security.saml2.provider.service.authentication.Saml2Authentication;
 import org.springframework.security.saml2.provider.service.authentication.Saml2ResponseAssertionAccessor;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
 import uk.gov.laa.ccms.caab.security.CspNonceFilter;
@@ -149,9 +154,7 @@ public class SecurityConfiguration {
         .requestMatchers(CASE_CONTEXT + "/proceedings/*/remove")
         .hasAuthority(UserRole.DELETE_PROCEEDING.getCode())
         .requestMatchers(
-            CASE_CONTEXT + "/proceedings/*/summary",
-            CASE_CONTEXT + "/proceedings/edit/**",
-            "/case/details/proceeding/*")
+            CASE_CONTEXT + "/proceedings/*/summary", CASE_CONTEXT + "/proceedings/edit/**")
         .hasAuthority(UserRole.VIEW_PROCEEDING.getCode())
         .requestMatchers(HttpMethod.POST, CASE_CONTEXT + "/sections/client/details/summary")
         .hasAuthority(UserRole.SUBMIT_UPDATE_CLIENT.getCode())
@@ -189,15 +192,24 @@ public class SecurityConfiguration {
         .hasAuthority(UserRole.SUBMIT_NOTIFICATION.getCode())
         .requestMatchers("/notifications", "/notifications/**")
         .hasAuthority(UserRole.VIEW_NOTIFICATIONS.getCode())
+        // Opening a case puts it in the session: a draft goes to its sections, a submitted case
+        // to the case overview. Users reach it from case search or a notification's case link.
+        .requestMatchers("/application/*/view")
+        .hasAnyAuthority(
+            UserRole.VIEW_CASES_AND_APPLICATIONS.getCode(), UserRole.VIEW_CASE_DETAILS.getCode())
+        // Every case page is reached by opening the case, which the legacy PUI checks, so each
+        // case action needs VC as well as its own function.
+        .requestMatchers("/case/details/proceeding/*")
+        .access(caseAction(UserRole.VIEW_PROCEEDING))
         .requestMatchers(
             "/case/billing/poa/submit",
             "/case/billing/poa/declaration",
             "/case/billing/poa/confirmation")
-        .hasAuthority(UserRole.SUBMIT_PAYMENT_ON_ACCOUNT.getCode())
+        .access(caseAction(UserRole.SUBMIT_PAYMENT_ON_ACCOUNT))
         // Creating and deleting a payment on account both need the POA function, as
         // they do in the legacy PUI.
         .requestMatchers("/case/billing/poa", "/case/billing/poa/**")
-        .hasAuthority(UserRole.CREATE_PAYMENT_ON_ACCOUNT.getCode())
+        .access(caseAction(UserRole.CREATE_PAYMENT_ON_ACCOUNT))
         // Submitting and deleting a bill are separate permissions from creating one in
         // the legacy PUI, which gates them on the subbill and delete-bill functions.
         // The bill rules are exact paths, not a prefix, so every route that submits
@@ -206,30 +218,37 @@ public class SecurityConfiguration {
             "/case/billing/bill/submit",
             "/case/billing/bill/declaration",
             "/case/billing/bill/confirmation")
-        .hasAuthority(UserRole.SUBMIT_BILL.getCode())
+        .access(caseAction(UserRole.SUBMIT_BILL))
         .requestMatchers("/case/billing/bill/remove")
-        .hasAuthority(UserRole.DELETE_BILL.getCode())
+        .access(caseAction(UserRole.DELETE_BILL))
         // Copying creates a bill, and the summary reports on the one being created, so
         // both take the create permission.
         .requestMatchers("/case/billing/bill/copy", "/case/billing/bill/summary")
-        .hasAuthority(UserRole.CREATE_BILL.getCode())
+        .access(caseAction(UserRole.CREATE_BILL))
         .requestMatchers("/case/billing/bill")
-        .hasAuthority(UserRole.CREATE_BILL.getCode())
+        .access(caseAction(UserRole.CREATE_BILL))
         .requestMatchers("/case/billing/undertaking")
-        .hasAuthority(UserRole.ENTER_UNDERTAKING.getCode())
+        .access(caseAction(UserRole.ENTER_UNDERTAKING))
         .requestMatchers("/case/billing")
-        .hasAuthority(UserRole.VIEW_CASE_BILL.getCode())
+        .access(caseAction(UserRole.VIEW_CASE_BILL))
         .requestMatchers("/case/outcome-and-awards/proceeding/*/outcome/clear")
-        .hasAuthority(UserRole.CLEAR_OUTCOME.getCode())
+        .access(caseAction(UserRole.CLEAR_OUTCOME))
         .requestMatchers("/case/outcome-and-awards/proceeding/*/outcome/**")
-        .hasAuthority(UserRole.UPDATE_PROCEEDING_OUTCOME.getCode())
+        .access(caseAction(UserRole.UPDATE_PROCEEDING_OUTCOME))
         // The legacy PUI lets either outcome function record an outcome.
         .requestMatchers("/case/outcome-and-awards", "/case/outcome-and-awards/**")
-        .hasAnyAuthority(
-            UserRole.RECORD_OUTCOME.getCode(), UserRole.REQUEST_CASE_DISCHARGE.getCode())
-        // Every case page is reached by opening the case, which the legacy PUI checks.
+        .access(caseAction(UserRole.RECORD_OUTCOME, UserRole.REQUEST_CASE_DISCHARGE))
         .requestMatchers("/case/**")
         .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode());
+  }
+
+  /** Requires VC, to be in a case, and any one of the action's functions. */
+  private static AuthorizationManager<RequestAuthorizationContext> caseAction(
+      UserRole... actionRoles) {
+    return AuthorizationManagers.allOf(
+        AuthorityAuthorizationManager.hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode()),
+        AuthorityAuthorizationManager.hasAnyAuthority(
+            Arrays.stream(actionRoles).map(UserRole::getCode).toArray(String[]::new)));
   }
 
   /**

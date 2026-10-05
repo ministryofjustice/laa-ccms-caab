@@ -34,6 +34,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.controller.application.ApplicationTestUtils;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -78,7 +79,8 @@ public class ApplicationSearchControllerTest {
   @BeforeEach
   public void setup() {
     mockMvc = MockMvcTester.of(applicationSearchController);
-    user = ApplicationTestUtils.buildUser();
+    user =
+        ApplicationTestUtils.buildUser().functions(List.of(UserRole.VIEW_CASE_DETAILS.getCode()));
   }
 
   @Nested
@@ -460,6 +462,27 @@ public class ApplicationSearchControllerTest {
           .request()
           .sessionAttributes()
           .hasEntrySatisfying(CASE, value -> assertThat(value).isEqualTo(applicationDetail));
+    }
+
+    @Test
+    @DisplayName("A user without VC opening a submitted case does not get the case in the session")
+    public void selectCaseWithoutViewCaseDetailsDoesNotStoreCase() throws Exception {
+      final String selectedCaseRef = "2";
+      when(applicationService.getTdsApplicationSummary(any(), any())).thenReturn(null);
+      when(applicationService.getCase(any(), any(Long.class), any()))
+          .thenReturn(new ApplicationDetail().caseReferenceNumber(selectedCaseRef));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/application/{case-reference-number}/view", selectedCaseRef)
+                      .sessionAttr(
+                          USER_DETAILS,
+                          user.functions(List.of(UserRole.VIEW_CASES_AND_APPLICATIONS.getCode())))))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/overview")
+          .request()
+          .sessionAttributes()
+          .doesNotContainKeys(CASE, APPLICATION_SUMMARY);
     }
   }
 }

@@ -44,9 +44,6 @@ GET /means-reassessment/delete
 POST /means-reassessment/delete
 GET /means-reassessment/summary
 
-# Opening a case from search: a submitted case redirects to the case overview, which needs VC
-GET /application/{case-reference-number}/view
-
 # Submission progress, confirmation and failure pages
 GET /amendments/submit-case
 POST /amendments/submit-case/confirmed
