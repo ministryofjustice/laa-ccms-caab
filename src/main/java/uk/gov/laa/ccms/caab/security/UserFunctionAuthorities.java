@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.security;
 
 import jakarta.servlet.http.HttpSession;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -12,6 +14,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.saml2.provider.service.authentication.Saml2AssertionAuthentication;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
@@ -23,8 +26,8 @@ public final class UserFunctionAuthorities {
   private UserFunctionAuthorities() {}
 
   /**
-   * Swaps the previous user's functions for the reloaded user's in the authentication, keeping
-   * authorities that are not functions, such as the SAML groups. Only a SAML login is updated.
+   * Swaps the functions in the authentication for the reloaded user's, keeping authorities that are
+   * not functions, such as the SAML groups. Only a SAML login is updated.
    *
    * @param authentication the logged-in authentication.
    * @param previousUser the user as loaded before.
@@ -39,11 +42,14 @@ public final class UserFunctionAuthorities {
     if (!(authentication instanceof Saml2AssertionAuthentication saml2Authentication)) {
       return;
     }
-    List<String> previousFunctions = functionsOf(previousUser);
+    // The authentication and the previous user are loaded separately, so the authentication may
+    // hold a function the previous user no longer has. Every known function is removed as well.
+    Set<String> functionCodes = new HashSet<>(functionsOf(previousUser));
+    Arrays.stream(UserRole.values()).map(UserRole::getCode).forEach(functionCodes::add);
 
     Set<GrantedAuthority> authorities = new LinkedHashSet<>();
     saml2Authentication.getAuthorities().stream()
-        .filter(authority -> !previousFunctions.contains(authority.getAuthority()))
+        .filter(authority -> !functionCodes.contains(authority.getAuthority()))
         .forEach(authorities::add);
     functionsOf(reloadedUser).stream().map(SimpleGrantedAuthority::new).forEach(authorities::add);
 
