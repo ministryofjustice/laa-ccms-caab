@@ -33,6 +33,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -211,7 +212,8 @@ public class BillingController {
   public String submitUndertaking(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @ModelAttribute("undertakingFormData") final UndertakingFormData undertakingFormData,
+      @Validated @ModelAttribute("undertakingFormData")
+          final UndertakingFormData undertakingFormData,
       final BindingResult bindingResult,
       final Model model,
       HttpSession session) {
