@@ -70,7 +70,7 @@ function toggleDiv() {
             const displayValueId = this.getAttribute('data-display-value-id');
             const displayValueInput = document.getElementById(displayValueId);
             if (displayValueInput) {
-                displayValueInput.value = this.options[this.selectedIndex].text;
+                displayValueInput.value = this.value ? this.options[this.selectedIndex].text : '';
             }
 
             // Specific handler for proceeding type dropdown

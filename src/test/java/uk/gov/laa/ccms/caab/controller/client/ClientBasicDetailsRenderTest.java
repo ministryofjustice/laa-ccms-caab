@@ -112,7 +112,8 @@ class ClientBasicDetailsRenderTest {
                 .string(
                     containsString(
                         "<select class=\"govuk-select\" id=\"countryOfOrigin\""
-                            + " name=\"countryOfOrigin\" data-module=\"accessible-autocomplete\""
+                            + " name=\"countryOfOrigin\" autocomplete=\"off\""
+                            + " data-module=\"accessible-autocomplete\""
                             + " data-show-all-values=\"true\">"
                             + "<option value=\"\">Please select</option>"
                             + "<option value=\"GBR\" selected>United Kingdom</option>"
