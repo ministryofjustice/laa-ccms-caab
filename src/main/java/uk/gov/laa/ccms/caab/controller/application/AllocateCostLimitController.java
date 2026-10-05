@@ -21,6 +21,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -104,7 +105,7 @@ public class AllocateCostLimitController {
    */
   @PostMapping("/allocate-cost-limit")
   public String calculateCost(
-      @ModelAttribute("costDetails") AllocateCostsFormData allocateCostsFormData,
+      @Validated @ModelAttribute("costDetails") AllocateCostsFormData allocateCostsFormData,
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @RequestParam(value = "action", required = false) final String action,
       @RequestParam(value = "removeCounsel", required = false) final Integer removeCounsel,

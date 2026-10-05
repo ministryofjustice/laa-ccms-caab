@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -94,7 +95,7 @@ public class CopyCaseSearchController {
    */
   @PostMapping("/application/copy-case/search")
   public String copyCaseSearch(
-      @ModelAttribute(CASE_SEARCH_CRITERIA) CaseSearchCriteria caseSearchCriteria,
+      @Validated @ModelAttribute(CASE_SEARCH_CRITERIA) CaseSearchCriteria caseSearchCriteria,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       BindingResult bindingResult,
       RedirectAttributes redirectAttributes,

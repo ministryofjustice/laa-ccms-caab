@@ -11,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.Assert;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -130,7 +131,7 @@ public class DelegatedFunctionsController {
   @PostMapping("/amendments/edit-delegated-functions")
   public String editDelegatedFunction(
       @SessionAttribute(APPLICATION) final ApplicationDetail tdsApplication,
-      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
+      @Validated @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       @SessionAttribute(USER_DETAILS) UserDetail user,
       BindingResult bindingResult,
       Model model) {

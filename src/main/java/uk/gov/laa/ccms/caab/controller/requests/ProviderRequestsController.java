@@ -34,6 +34,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -205,7 +206,7 @@ public class ProviderRequestsController {
   public String requestTypeGeneralPost(
       @SessionAttribute(GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
-      @ModelAttribute("providerRequestTypeDetails")
+      @Validated @ModelAttribute("providerRequestTypeDetails")
           final ProviderRequestTypeFormData providerRequestTypeDetails,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       final Model model,
@@ -224,7 +225,7 @@ public class ProviderRequestsController {
   public String requestTypeCasePost(
       @SessionAttribute(CASE_PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
-      @ModelAttribute("providerRequestTypeDetails")
+      @Validated @ModelAttribute("providerRequestTypeDetails")
           final ProviderRequestTypeFormData providerRequestTypeDetails,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       final Model model,
@@ -362,7 +363,7 @@ public class ProviderRequestsController {
       @SessionAttribute(GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
       @RequestParam final String action,
-      @ModelAttribute("providerRequestDetails")
+      @Validated @ModelAttribute("providerRequestDetails")
           final ProviderRequestDetailsFormData providerRequestDetailsForm,
       final Model model,
       final BindingResult bindingResult,
@@ -385,7 +386,7 @@ public class ProviderRequestsController {
       @SessionAttribute(CASE_PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
       @RequestParam final String action,
-      @ModelAttribute("providerRequestDetails")
+      @Validated @ModelAttribute("providerRequestDetails")
           final ProviderRequestDetailsFormData providerRequestDetailsForm,
       final Model model,
       final BindingResult bindingResult,
@@ -566,7 +567,7 @@ public class ProviderRequestsController {
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       @SessionAttribute(GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
-      @ModelAttribute(GENERAL_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA)
+      @Validated @ModelAttribute(GENERAL_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA)
           final EvidenceUploadFormData evidenceUploadFormData,
       final BindingResult bindingResult,
       final Model model) {
@@ -586,7 +587,7 @@ public class ProviderRequestsController {
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       @SessionAttribute(CASE_PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
-      @ModelAttribute(CASE_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA)
+      @Validated @ModelAttribute(CASE_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA)
           final EvidenceUploadFormData evidenceUploadFormData,
       @RequestParam(required = false) String caseReferenceNumber,
       final BindingResult bindingResult,
