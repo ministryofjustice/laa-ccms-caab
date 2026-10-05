@@ -20,9 +20,10 @@ import org.springframework.security.web.csrf.CsrfException;
  * does: the user is returned to the page they came from, which then shows "You are not authorized
  * to perform this function."
  *
- * <p>That page is the referring one if it was shown by a plain page load, so loading it again is
- * safe; otherwise the last page that was; otherwise the home page. CSRF failures and background
- * requests get the default 403.
+ * <p>That page is the recorded page matching the referring one, if it was shown by a plain page
+ * load, so loading it again is safe; otherwise the last page that was; otherwise the home page. The
+ * redirect always uses the recorded page, never the Referer header itself. CSRF failures and
+ * background requests get the default 403.
  */
 public class NotAuthorisedAccessDeniedHandler implements AccessDeniedHandler {
 
@@ -50,11 +51,10 @@ public class NotAuthorisedAccessDeniedHandler implements AccessDeniedHandler {
         page -> !RefusedActionSession.pathOf(page).equals(request.getRequestURI());
     String target =
         refererOnThisSite(request)
-            .filter(
-                referer ->
-                    RefusedActionSession.wasRendered(session, RefusedActionSession.pathOf(referer)))
+            .flatMap(referer -> RefusedActionSession.findRenderedPage(session, referer))
             .filter(notRefusedPage)
             .or(() -> RefusedActionSession.lastRenderedPage(session).filter(notRefusedPage))
+            .filter(page -> RefusedActionSession.isLocalPage(page, request.getContextPath()))
             .orElse(request.getContextPath() + HOME_PATH);
 
     RefusedActionSession.markNotAuthorised(session);

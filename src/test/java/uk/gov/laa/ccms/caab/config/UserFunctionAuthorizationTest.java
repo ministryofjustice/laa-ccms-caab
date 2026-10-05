@@ -265,6 +265,18 @@ class UserFunctionAuthorizationTest {
   }
 
   @Test
+  @DisplayName("A refused action never redirects to a page that could be read as another host")
+  void refusedNeverRedirectsOffSite() throws Exception {
+    mockMvc
+        .perform(
+            request(HttpMethod.GET, "/case/overview")
+                .session(sessionWithRenderedPages("//evil.example/page"))
+                .header(HttpHeaders.REFERER, "http://localhost//evil.example/page")
+                .with(user("user").authorities(() -> "OTHER")))
+        .andExpect(redirectedUrl("/home"));
+  }
+
+  @Test
   @DisplayName("A refused background request gets a 403 rather than a redirect")
   void refusedBackgroundRequestIsForbidden() throws Exception {
     mockMvc
