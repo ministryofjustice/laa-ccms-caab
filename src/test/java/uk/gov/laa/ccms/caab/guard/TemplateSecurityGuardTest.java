@@ -64,9 +64,6 @@ class TemplateSecurityGuardTest {
   private static final Map<String, Integer> LEGACY_RAW_INPUT_BUDGET =
       new LinkedHashMap<>(
           Map.of(
-              "requests/provider-request-detail.html", 4,
-              "application/prior-authority-details.html", 4,
-              "application/case-costs.html", 1,
               // The two textareas here still need the shared largeTextInput fragment, which would
               // add a visible GDS character counter - a UX change that wants sign-off first.
               "application/record-proceeding-outcome.html", 2));
