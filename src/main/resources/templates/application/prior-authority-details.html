@@ -82,42 +82,16 @@
                         </select>
                     </th:block>
                     <th:block th:if="${option.fieldType == 'FTS'}">
-                        <input class="govuk-input govuk-input--width-20"
-                            type="text"
-                            data-module="govuk-input"
-                            th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                            th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
-                            maxlength="30"
-                            th:errorclass="govuk-select--error"
-                        />
+                        <th:block th:replace="~{partials/forms :: bareInput(${'dynamicOptions[' + option.code + '].fieldValue'}, 'govuk-input--width-20', 30)}"/>
                     </th:block>
                     <th:block th:if="${option.fieldType == 'FTL'}">
-                        <input class="govuk-input"
-                            th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                            th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
-                            type="text"
-                            data-module="govuk-input"
-                            maxlength="80"
-                            th:errorclass="govuk-select--error"/>
+                        <th:block th:replace="~{partials/forms :: bareInput(${'dynamicOptions[' + option.code + '].fieldValue'}, '', 80)}"/>
                     </th:block>
                     <th:block th:if="${option.fieldType == 'AMT'}">
-                        <div class="govuk-input__wrapper">
-                        <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                        <input class="govuk-input govuk-input--width-10"
-                            th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                            th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
-                            type="text" spellcheck="false"
-                            th:errorclass="govuk-select--error"/>
-                        </div>
+                        <th:block th:replace="~{partials/forms :: bareCurrencyInput(${'dynamicOptions[' + option.code + '].fieldValue'})}"/>
                     </th:block>
                     <th:block th:if="${option.fieldType == 'INT'}">
-                        <input class="govuk-input govuk-date-input__input govuk-input--width-10"
-                            th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                            th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
-                            type="text"
-                            inputmode="numeric"
-                            maxlength="10"
-                            th:errorclass="govuk-select--error"/>
+                        <th:block th:replace="~{partials/forms :: bareNumericInput(${'dynamicOptions[' + option.code + '].fieldValue'})}"/>
                     </th:block>
                     </div>
                 </th:block>
