@@ -20,6 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
@@ -96,7 +97,9 @@ class UnrestrictedRoutesTest {
 
     List<Route> routes = new ArrayList<>();
     for (BeanDefinition candidate : scanner.findCandidateComponents(CONTROLLER_PACKAGE)) {
-      Class<?> controller = Class.forName(candidate.getBeanClassName());
+      Class<?> controller =
+          ((AbstractBeanDefinition) candidate)
+              .resolveBeanClass(UnrestrictedRoutesTest.class.getClassLoader());
       if (!isProductionClass(controller)) {
         continue;
       }
