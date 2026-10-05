@@ -74,7 +74,6 @@ GET /amendments/assessments/{assessment}/remove
 POST /amendments/assessments/{assessment}/remove
 GET /amendments/case-costs
 POST /amendments/case-costs
-POST /amendments/client-create/confirmed
 GET /amendments/evidence/add
 POST /amendments/evidence/add
 GET /amendments/evidence/{evidence-document-id}/remove
