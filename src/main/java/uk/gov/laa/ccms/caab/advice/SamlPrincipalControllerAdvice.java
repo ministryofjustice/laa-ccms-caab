@@ -2,24 +2,16 @@ package uk.gov.laa.ccms.caab.advice;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.saml2.provider.service.authentication.Saml2AssertionAuthentication;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerMapping;
 import uk.gov.laa.ccms.caab.controller.HomeController;
+import uk.gov.laa.ccms.caab.security.UserFunctionAuthorities;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -68,7 +60,7 @@ public class SamlPrincipalControllerAdvice {
         UserDetail previousUser = (UserDetail) session.getAttribute("user");
         user = userService.getUserByLoginId(loginId).block();
         if (previousUser != null && user != null) {
-          refreshUserFunctions(saml2Authentication, previousUser, user, session);
+          UserFunctionAuthorities.replace(saml2Authentication, previousUser, user, session);
         }
       }
 
@@ -77,40 +69,6 @@ public class SamlPrincipalControllerAdvice {
 
       session.setAttribute("user", user);
     }
-  }
-
-  /**
-   * Replaces the user's functions in the logged-in authentication with those just reloaded, as the
-   * legacy PUI reloads them on entering the home page, which includes after a provider switch.
-   * Authorities that are not functions, such as the SAML groups, are kept.
-   */
-  private static void refreshUserFunctions(
-      Saml2AssertionAuthentication authentication,
-      UserDetail previousUser,
-      UserDetail reloadedUser,
-      HttpSession session) {
-    List<String> previousFunctions = functionsOf(previousUser);
-    List<String> reloadedFunctions = functionsOf(reloadedUser);
-
-    Set<GrantedAuthority> authorities = new LinkedHashSet<>();
-    authentication.getAuthorities().stream()
-        .filter(authority -> !previousFunctions.contains(authority.getAuthority()))
-        .forEach(authorities::add);
-    reloadedFunctions.stream().map(SimpleGrantedAuthority::new).forEach(authorities::add);
-
-    SecurityContext context = SecurityContextHolder.createEmptyContext();
-    context.setAuthentication(
-        new Saml2AssertionAuthentication(
-            authentication.getPrincipal(),
-            authentication.getCredentials(),
-            authorities,
-            authentication.getRelyingPartyRegistrationId()));
-    SecurityContextHolder.setContext(context);
-    session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-  }
-
-  private static List<String> functionsOf(UserDetail user) {
-    return Optional.ofNullable(user.getFunctions()).orElse(List.of());
   }
 
   /**

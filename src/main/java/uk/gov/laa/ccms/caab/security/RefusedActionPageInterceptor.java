@@ -24,7 +24,8 @@ public class RefusedActionPageInterceptor implements HandlerInterceptor {
     if (session == null
         || modelAndView == null
         || isRedirectOrForward(modelAndView)
-        || response.getStatus() >= 300) {
+        || response.getStatus() >= 300
+        || !RefusedActionSession.isPageNavigation(request)) {
       return;
     }
 
@@ -32,7 +33,7 @@ public class RefusedActionPageInterceptor implements HandlerInterceptor {
       modelAndView.addObject(NotAuthorisedAccessDeniedHandler.NOT_AUTHORISED_ATTRIBUTE, true);
     }
 
-    if ("GET".equals(request.getMethod()) && RefusedActionSession.isPageNavigation(request)) {
+    if ("GET".equals(request.getMethod())) {
       String query = request.getQueryString();
       String page = query == null ? request.getRequestURI() : request.getRequestURI() + "?" + query;
       if (RefusedActionSession.isLocalPage(page, request.getContextPath())) {
