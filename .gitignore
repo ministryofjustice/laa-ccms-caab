@@ -107,3 +107,6 @@ localstack/
 
 # Snyk
 .dccache
+
+# playwright-cli browser session output
+.playwright-cli/
