@@ -1,7 +1,9 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SECTIONS_BACK_URL;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -39,17 +41,20 @@ public class PrivacyNoticeAgreementController {
    *
    * @param applicationFormData The application details.
    * @param bindingResult Validation result.
+   * @param session The http session.
    * @return Redirects to the appropriate page based on agreement acceptance.
    */
   @PostMapping("/application/agreement")
   public String privacyNoticeAgreement(
       @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
-      BindingResult bindingResult) {
+      BindingResult bindingResult,
+      HttpSession session) {
     applicationValidator.validate(applicationFormData, bindingResult);
 
     if (bindingResult.hasErrors()) {
       return "application/privacy-notice-agreement";
     } else {
+      session.removeAttribute(APPLICATION_SECTIONS_BACK_URL);
       if (applicationFormData.isApplicationCreated()) {
         // using an existing client
         return "redirect:/application/sections";

@@ -48,14 +48,14 @@ class StartApplicationControllerTest {
   }
 
   @Test
-  @DisplayName("GET: /application/new should reset the sections back link to home")
-  void shouldClearSectionsBackUrlForNewApplication() {
+  @DisplayName("GET: /application/new should keep the sections back link for browser back")
+  void shouldKeepSectionsBackUrlForNewApplication() {
     assertThat(
             mockMvc.perform(
-                get("/application/new").sessionAttr(APPLICATION_SECTIONS_BACK_URL, "stale")))
+                get("/application/new").sessionAttr(APPLICATION_SECTIONS_BACK_URL, "searchUrl")))
         .request()
         .sessionAttributes()
-        .doesNotContainKey(APPLICATION_SECTIONS_BACK_URL);
+        .containsEntry(APPLICATION_SECTIONS_BACK_URL, "searchUrl");
   }
 
   @Test
