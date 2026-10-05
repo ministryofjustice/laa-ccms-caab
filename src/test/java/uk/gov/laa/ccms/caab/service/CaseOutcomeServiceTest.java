@@ -28,7 +28,6 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.award.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
@@ -39,6 +38,7 @@ import uk.gov.laa.ccms.caab.model.LandAwardRequest;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 
 @ExtendWith(MockitoExtension.class)
 class CaseOutcomeServiceTest {
@@ -384,7 +384,7 @@ class CaseOutcomeServiceTest {
   @ParameterizedTest
   @ValueSource(strings = {"LAND", "ASSET"})
   void upsertTimeRecovery_usesCaseOutcomeIdAndScopedAwardPath(String awardType) {
-    final TimeRecoveryRequest request = new TimeRecoveryRequest("Sale", null, "When sold");
+    final TimeRecoveryRequest request = new TimeRecoveryRequest("Sale", "When sold");
     doReturn(Optional.of(new CaseOutcomeDetail().id(42)))
         .when(caseOutcomeService)
         .getCaseOutcome("300000001", 123);
@@ -409,7 +409,7 @@ class CaseOutcomeServiceTest {
                 123,
                 awardType,
                 7,
-                new TimeRecoveryRequest("Sale", null, "When sold"),
+                new TimeRecoveryRequest("Sale", "When sold"),
                 "user1"));
     verify(caabApiClient, never()).upsertTimeRecovery(any(), any(), any(), any(), any());
   }

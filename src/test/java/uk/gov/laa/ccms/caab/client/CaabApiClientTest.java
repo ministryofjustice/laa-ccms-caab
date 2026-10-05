@@ -59,6 +59,8 @@ import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
+import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
+import uk.gov.laa.ccms.caab.util.DateUtils;
 
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -1044,9 +1046,9 @@ class CaabApiClientTest {
 
   @Test
   void upsertTimeRecovery_success() {
-    final uk.gov.laa.ccms.caab.bean.award.TimeRecoveryRequest recovery =
-        new uk.gov.laa.ccms.caab.bean.award.TimeRecoveryRequest(
-            "Sale", java.time.LocalDate.of(2099, 12, 31), "When sold");
+    final TimeRecoveryRequest recovery =
+        new TimeRecoveryRequest("Sale", "When sold")
+            .effectiveDate(DateUtils.convertToDate("31/12/2099"));
     final String expectedUri =
         "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/time-recovery";
     when(caabApiWebClient.put()).thenReturn(requestBodyUriMock);

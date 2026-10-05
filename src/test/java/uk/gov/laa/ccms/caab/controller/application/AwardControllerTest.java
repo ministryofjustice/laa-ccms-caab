@@ -45,7 +45,6 @@ import uk.gov.laa.ccms.caab.bean.AwardTypeForm;
 import uk.gov.laa.ccms.caab.bean.award.FinancialAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.LandAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.OtherAssetAwardFormData;
-import uk.gov.laa.ccms.caab.bean.award.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.FinancialAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.LandAwardValidator;
@@ -63,6 +62,7 @@ import uk.gov.laa.ccms.caab.model.LandAwardRequest;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
+import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -923,11 +923,18 @@ class AwardControllerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"land, LAND", "asset, ASSET"})
-    void validPostUpsertsAndRedirects(String awardPath, String awardType) {
+    @CsvSource({
+      "land, LAND, 01/01/2030",
+      "asset, ASSET, 01/01/2030",
+      "land, LAND, 1/1/2030",
+      "asset, ASSET, 1/1/2030",
+      "land, LAND, ''",
+      "asset, ASSET, ''"
+    })
+    void validPostUpsertsAndRedirects(String awardPath, String awardType, String effectiveDate) {
       stubTimeRecoveryAward(awardPath, true, null);
 
-      assertThat(mockMvc.perform(validTimeRecoveryPost(awardPath)))
+      assertThat(mockMvc.perform(timeRecoveryPost(awardPath, "Triggered", effectiveDate)))
           .hasRedirectedUrl("/case/outcome-and-awards");
       verify(caseOutcomeService)
           .upsertTimeRecovery(
@@ -935,7 +942,15 @@ class AwardControllerTest {
               eq(user.getProvider().getId().intValue()),
               eq(awardType),
               eq(7),
-              eq(new TimeRecoveryRequest("Triggered", LocalDate.of(2030, 1, 1), "Details")),
+              eq(
+                  new TimeRecoveryRequest("Triggered", "Details")
+                      .effectiveDate(
+                          effectiveDate.isEmpty()
+                              ? null
+                              : Date.from(
+                                  LocalDate.of(2030, 1, 1)
+                                      .atStartOfDay(ZoneId.systemDefault())
+                                      .toInstant()))),
               eq(user.getLoginId()));
     }
 

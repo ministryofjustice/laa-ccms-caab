@@ -33,7 +33,6 @@ import uk.gov.laa.ccms.caab.bean.award.LandAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.OtherAssetAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.TimeRecoveryAward;
 import uk.gov.laa.ccms.caab.bean.award.TimeRecoveryFormData;
-import uk.gov.laa.ccms.caab.bean.award.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.FinancialAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.LandAwardValidator;
@@ -53,6 +52,7 @@ import uk.gov.laa.ccms.caab.model.LandAwardRequest;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
+import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.util.DateUtils;
@@ -534,12 +534,11 @@ public class AwardController {
     }
 
     final TimeRecoveryRequest request =
-        new TimeRecoveryRequest(
-            form.getTriggeringEvent(),
-            StringUtils.hasText(form.getEffectiveDate())
-                ? DateUtils.convertToLocalDate(form.getEffectiveDate())
-                : null,
-            form.getTimeRelatedRecoveryDetails());
+        new TimeRecoveryRequest(form.getTriggeringEvent(), form.getTimeRelatedRecoveryDetails())
+            .effectiveDate(
+                StringUtils.hasText(form.getEffectiveDate())
+                    ? DateUtils.convertToDate(form.getEffectiveDate())
+                    : null);
     try {
       caseOutcomeService.upsertTimeRecovery(
           ebsCase.getCaseReferenceNumber(),
