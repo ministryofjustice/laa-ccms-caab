@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.provider;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -25,6 +26,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -215,5 +217,39 @@ public class ProviderControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("provider/provider-switch"))
         .andExpect(model().attribute("providerFirms", List.of(providerFirm)));
+  }
+
+  @Test
+  public void switchingProviderEndsTheSessionWhenTheUserCannotBeReloaded() throws Exception {
+    String loginId = "testLoginId";
+    BaseProvider providerFirm1 = new BaseProvider().id(12345).name("providerFirm1");
+    BaseProvider providerFirm2 = new BaseProvider().id(67890).name("providerFirm2");
+    UserDetail userDetails =
+        new UserDetail()
+            .userId(1)
+            .userType("testUserType")
+            .loginId(loginId)
+            .firms(List.of(providerFirm1, providerFirm2))
+            .provider(providerFirm1)
+            .functions(List.of("CA"));
+    ProviderFirmFormData providerFirmFormData = new ProviderFirmFormData();
+    providerFirmFormData.setProviderFirmId(67890);
+
+    when(userService.updateUserOptions(67890, loginId, "testUserType"))
+        .thenReturn(Mono.just(new ClientTransactionResponse()));
+    when(userService.getUserByLoginId(loginId)).thenReturn(Mono.empty());
+
+    MockHttpSession session = new MockHttpSession();
+    session.setAttribute("user", userDetails);
+
+    this.mockMvc
+        .perform(
+            post("/provider-switch")
+                .session(session)
+                .flashAttr("providerFirmFormData", providerFirmFormData))
+        .andExpect(redirectedUrl("/home"));
+
+    assertTrue(session.isInvalid());
+    assertEquals(providerFirm1, userDetails.getProvider());
   }
 }

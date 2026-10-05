@@ -395,18 +395,46 @@ class UserFunctionAuthorizationTest {
         .andExpect(status().isNotFound());
   }
 
-  @ParameterizedTest(name = "{0} {1} is refused with only {2}, without {3}")
-  @MethodSource("routesWithFlowFunctions")
-  void refusedWithoutFlowFunction(
-      HttpMethod method, String path, UserRole role, List<UserRole> flowFunctions)
-      throws Exception {
+  @ParameterizedTest(name = "{0} {1} is refused without {3}")
+  @MethodSource("routesMissingOneFunction")
+  void refusedWithoutAnyOneRequiredFunction(
+      HttpMethod method, String path, List<UserRole> granted, UserRole omitted) throws Exception {
+    List<GrantedAuthority> authorities =
+        granted.stream()
+            .map(role -> (GrantedAuthority) new SimpleGrantedAuthority(role.getCode()))
+            .toList();
+
     mockMvc
-        .perform(request(method, path).with(user("user").authorities(role::getCode)).with(csrf()))
+        .perform(request(method, path).with(user("user").authorities(authorities)).with(csrf()))
         .andExpect(redirectedUrl("/home"));
   }
 
-  static Stream<Arguments> routesWithFlowFunctions() {
-    return protectedRoutes().filter(arguments -> !((List<?>) arguments.get()[3]).isEmpty());
+  /**
+   * For each route that needs more than one function, every required function in turn is left out
+   * while all the others are granted.
+   */
+  static Stream<Arguments> routesMissingOneFunction() {
+    return protectedRoutes()
+        .filter(arguments -> !((List<?>) arguments.get()[3]).isEmpty())
+        .flatMap(
+            arguments -> {
+              List<UserRole> required = new ArrayList<>();
+              required.add((UserRole) arguments.get()[2]);
+              required.addAll(flowFunctionsOf(arguments));
+              return required.stream()
+                  .map(
+                      omitted ->
+                          Arguments.of(
+                              arguments.get()[0],
+                              arguments.get()[1],
+                              required.stream().filter(role -> role != omitted).toList(),
+                              omitted));
+            });
+  }
+
+  @SuppressWarnings("unchecked")
+  private static List<UserRole> flowFunctionsOf(Arguments arguments) {
+    return (List<UserRole>) arguments.get()[3];
   }
 
   @Test

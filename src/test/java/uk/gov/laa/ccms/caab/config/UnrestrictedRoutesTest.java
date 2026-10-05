@@ -64,17 +64,16 @@ class UnrestrictedRoutesTest {
     TreeSet<String> unrestricted = new TreeSet<>();
     for (Route route : controllerRoutes()) {
       for (String path : expand(route.path())) {
-        int status =
-            mockMvc
-                .perform(
-                    request(route.method(), path)
-                        .with(user("user").authorities(() -> "NONE"))
-                        .with(csrf()))
-                .andReturn()
-                .getResponse()
-                .getStatus();
-        if (status == 404) {
-          unrestricted.add(route.method() + " " + displayPath(route.path(), path));
+        String listed = displayPath(route.path(), path);
+        boolean reached = reachesHandler(mockMvc, route.method(), path);
+        if (reached) {
+          unrestricted.add(route.method() + " " + listed);
+        }
+        // Spring MVC also serves HEAD through every GET mapping.
+        if (route.method() == HttpMethod.GET
+            && !reached
+            && reachesHandler(mockMvc, HttpMethod.HEAD, path)) {
+          unrestricted.add(HttpMethod.HEAD + " " + listed);
         }
       }
     }
@@ -86,6 +85,18 @@ class UnrestrictedRoutesTest {
                 + " is meant to be open",
             ALLOWLIST)
         .containsExactlyInAnyOrderElementsOf(allowlist());
+  }
+
+  /** No controllers are registered, so a request the rules let through ends in a 404. */
+  private static boolean reachesHandler(MockMvc mockMvc, HttpMethod method, String path)
+      throws Exception {
+    return mockMvc
+            .perform(
+                request(method, path).with(user("user").authorities(() -> "NONE")).with(csrf()))
+            .andReturn()
+            .getResponse()
+            .getStatus()
+        == 404;
   }
 
   private record Route(HttpMethod method, String path) {}
