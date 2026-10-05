@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -55,8 +56,6 @@ public class SecurityConfiguration {
 
   @Value("${laa.ccms.oracle-web-determination-server.url:}")
   private String owdUrl;
-
-  private static final String CASE_CONTEXT = "/{caseContext:application|amendments}";
 
   private final UserService userService;
 
@@ -132,12 +131,13 @@ public class SecurityConfiguration {
             "/general-provider-requests/**",
             "/application/submit-general-provider-request/confirmed")
         .hasAuthority(UserRole.CREATE_GENERAL_REQUEST.getCode())
-        // A case query is a case action, so it needs VC as well.
+        // A case query is raised from an open case.
         .requestMatchers(
             "/case-provider-requests/**", "/application/submit-case-provider-request/confirmed")
         .access(caseAction(UserRole.SUBMIT_CASE_QUERY))
+        // Registering a client is a step in creating an application.
         .requestMatchers(HttpMethod.POST, "/application/client/details/summary")
-        .hasAuthority(UserRole.SUBMIT_REGISTER_CLIENT.getCode())
+        .access(allFunctions(UserRole.CREATE_APPLICATION, UserRole.SUBMIT_REGISTER_CLIENT))
         .requestMatchers(
             "/application/new",
             "/application/office",
@@ -151,31 +151,41 @@ public class SecurityConfiguration {
         .hasAuthority(UserRole.CREATE_APPLICATION.getCode())
         .requestMatchers("/application/search", "/application/search/**")
         .hasAuthority(UserRole.VIEW_CASES_AND_APPLICATIONS.getCode())
-        .requestMatchers(CASE_CONTEXT + "/proceedings/add/**")
+        .requestMatchers("/application/proceedings/add/**")
         .hasAuthority(UserRole.ADD_PROCEEDING.getCode())
-        .requestMatchers(CASE_CONTEXT + "/proceedings/*/remove")
+        .requestMatchers("/application/proceedings/*/remove")
         .hasAuthority(UserRole.DELETE_PROCEEDING.getCode())
-        .requestMatchers(
-            CASE_CONTEXT + "/proceedings/*/summary", CASE_CONTEXT + "/proceedings/edit/**")
+        .requestMatchers("/application/proceedings/*/summary", "/application/proceedings/edit/**")
         .hasAuthority(UserRole.VIEW_PROCEEDING.getCode())
         // Scope limitations are edited inside both the add and the edit proceeding flows, which
         // share these URLs.
-        .requestMatchers(CASE_CONTEXT + "/proceedings/scope-limitations/**")
-        .hasAnyAuthority(UserRole.ADD_PROCEEDING.getCode(), UserRole.VIEW_PROCEEDING.getCode())
+        .requestMatchers("/application/proceedings/scope-limitations/**")
+        .access(anyFunction(UserRole.ADD_PROCEEDING, UserRole.VIEW_PROCEEDING))
         .requestMatchers(HttpMethod.POST, "/application/sections/client/details/summary")
         .hasAuthority(UserRole.SUBMIT_UPDATE_CLIENT.getCode())
-        // Submitting an amended client is the end of the amend client flow, which needs CD.
-        .requestMatchers(HttpMethod.POST, "/amendments/sections/client/details/summary")
-        .access(allFunctions(UserRole.VIEW_CLIENT_DETAILS, UserRole.SUBMIT_UPDATE_CLIENT))
         .requestMatchers(HttpMethod.POST, "/application/sections")
         .hasAuthority(UserRole.SUBMIT_APPLICATION.getCode())
         .requestMatchers(
             "/application/validate", "/application/submit/summary", "/application/declaration")
         .hasAuthority(UserRole.SUBMIT_APPLICATION.getCode())
+        // An amendment is made to an open case, so every amendment route needs VC.
+        .requestMatchers("/amendments/proceedings/add/**")
+        .access(caseAction(UserRole.ADD_PROCEEDING))
+        .requestMatchers("/amendments/proceedings/*/remove")
+        .access(caseAction(UserRole.DELETE_PROCEEDING))
+        .requestMatchers("/amendments/proceedings/*/summary", "/amendments/proceedings/edit/**")
+        .access(caseAction(UserRole.VIEW_PROCEEDING))
+        .requestMatchers("/amendments/proceedings/scope-limitations/**")
+        .access(
+            AuthorizationManagers.allOf(
+                caseAction(), anyFunction(UserRole.ADD_PROCEEDING, UserRole.VIEW_PROCEEDING)))
+        // Submitting an amended client is the end of the amend client flow, which needs CD.
+        .requestMatchers(HttpMethod.POST, "/amendments/sections/client/details/summary")
+        .access(caseAction(UserRole.VIEW_CLIENT_DETAILS, UserRole.SUBMIT_UPDATE_CLIENT))
         .requestMatchers(HttpMethod.POST, "/amendments/summary")
-        .hasAuthority(UserRole.SUBMIT_AMENDMENT.getCode())
+        .access(caseAction(UserRole.SUBMIT_AMENDMENT))
         .requestMatchers("/amendments/validate", "/amendments/submit/summary")
-        .hasAuthority(UserRole.SUBMIT_AMENDMENT.getCode())
+        .access(caseAction(UserRole.SUBMIT_AMENDMENT))
         .requestMatchers(
             "/amendments/new",
             "/amendments/application-type",
@@ -183,43 +193,57 @@ public class SecurityConfiguration {
             "/amendments/create",
             "/amendments/edit-delegated-functions",
             "/amendments/summary")
-        .hasAuthority(UserRole.AMEND_CASE.getCode())
+        .access(caseAction(UserRole.AMEND_CASE))
         .requestMatchers("/amendments/sections/client/details/**", "/amendments/client-update/**")
-        .hasAuthority(UserRole.VIEW_CLIENT_DETAILS.getCode())
+        .access(caseAction(UserRole.VIEW_CLIENT_DETAILS))
+        // The cost limit and means reassessment quick edits are also made to an open case.
+        .requestMatchers(
+            "/amendments/**",
+            "/allocate-cost-limit",
+            "/allocate-cost-limit/**",
+            "/means-reassessment",
+            "/means-reassessment/**")
+        .access(caseAction())
+        // Every notification page is reached by opening the notification, which needs NOT.
         .requestMatchers("/notifications/*/attachments/*/retrieve")
-        .hasAuthority(UserRole.VIEW_NOTIFICATION_ATTACHMENT.getCode())
+        .access(notificationAction(UserRole.VIEW_NOTIFICATION_ATTACHMENT))
         // Submitting documents is the end of the provide documents flow, which needs EVID.
         .requestMatchers(HttpMethod.POST, "/notifications/*/provide-documents-or-evidence")
-        .access(allFunctions(UserRole.UPLOAD_EVIDENCE, UserRole.SUBMIT_DOCUMENT_UPLOAD))
+        .access(notificationAction(UserRole.UPLOAD_EVIDENCE, UserRole.SUBMIT_DOCUMENT_UPLOAD))
         .requestMatchers(
             "/notifications/*/provide-documents-or-evidence",
             "/notifications/*/attachments/**",
             "/application/notification-attachments/confirmed")
-        .hasAuthority(UserRole.UPLOAD_EVIDENCE.getCode())
+        .access(notificationAction(UserRole.UPLOAD_EVIDENCE))
         .requestMatchers(HttpMethod.POST, "/notifications/search")
-        .hasAuthority(UserRole.VIEW_NOTIFICATIONS.getCode())
+        .access(notificationAction())
         .requestMatchers(HttpMethod.POST, "/notifications/*")
-        .hasAuthority(UserRole.SUBMIT_NOTIFICATION.getCode())
+        .access(notificationAction(UserRole.SUBMIT_NOTIFICATION))
         .requestMatchers("/notifications", "/notifications/**")
-        .hasAuthority(UserRole.VIEW_NOTIFICATIONS.getCode())
+        .access(notificationAction())
         // Opening a case puts it in the session: a draft goes to its sections, a submitted case
         // to the case overview. Users reach it from case search or a notification's case link.
         .requestMatchers("/application/*/view")
-        .hasAnyAuthority(
-            UserRole.VIEW_CASES_AND_APPLICATIONS.getCode(), UserRole.VIEW_CASE_DETAILS.getCode())
+        .access(anyFunction(UserRole.VIEW_CASES_AND_APPLICATIONS, UserRole.VIEW_CASE_DETAILS))
         // Every case page is reached by opening the case, which the legacy PUI checks, so each
         // case action needs VC as well as its own function.
         .requestMatchers("/case/details/proceeding/*")
         .access(caseAction(UserRole.VIEW_PROCEEDING))
+        // Billing actions are reached from the case's billing page, which needs CB, and a
+        // payment on account or bill is submitted from inside the flow that creates it.
         .requestMatchers(
             "/case/billing/poa/submit",
             "/case/billing/poa/declaration",
             "/case/billing/poa/confirmation")
-        .access(caseAction(UserRole.SUBMIT_PAYMENT_ON_ACCOUNT))
+        .access(
+            caseAction(
+                UserRole.VIEW_CASE_BILL,
+                UserRole.CREATE_PAYMENT_ON_ACCOUNT,
+                UserRole.SUBMIT_PAYMENT_ON_ACCOUNT))
         // Creating and deleting a payment on account both need the POA function, as
         // they do in the legacy PUI.
         .requestMatchers("/case/billing/poa", "/case/billing/poa/**")
-        .access(caseAction(UserRole.CREATE_PAYMENT_ON_ACCOUNT))
+        .access(caseAction(UserRole.VIEW_CASE_BILL, UserRole.CREATE_PAYMENT_ON_ACCOUNT))
         // Submitting and deleting a bill are separate permissions from creating one in
         // the legacy PUI, which gates them on the subbill and delete-bill functions.
         // The bill rules are exact paths, not a prefix, so every route that submits
@@ -228,28 +252,27 @@ public class SecurityConfiguration {
             "/case/billing/bill/submit",
             "/case/billing/bill/declaration",
             "/case/billing/bill/confirmation")
-        .access(caseAction(UserRole.SUBMIT_BILL))
+        .access(caseAction(UserRole.VIEW_CASE_BILL, UserRole.CREATE_BILL, UserRole.SUBMIT_BILL))
         .requestMatchers("/case/billing/bill/remove")
-        .access(caseAction(UserRole.DELETE_BILL))
+        .access(caseAction(UserRole.VIEW_CASE_BILL, UserRole.DELETE_BILL))
         // Copying creates a bill, and the summary reports on the one being created, so
         // both take the create permission.
         .requestMatchers("/case/billing/bill/copy", "/case/billing/bill/summary")
-        .access(caseAction(UserRole.CREATE_BILL))
+        .access(caseAction(UserRole.VIEW_CASE_BILL, UserRole.CREATE_BILL))
         .requestMatchers("/case/billing/bill")
-        .access(caseAction(UserRole.CREATE_BILL))
+        .access(caseAction(UserRole.VIEW_CASE_BILL, UserRole.CREATE_BILL))
         .requestMatchers("/case/billing/undertaking")
-        .access(caseAction(UserRole.ENTER_UNDERTAKING))
+        .access(caseAction(UserRole.VIEW_CASE_BILL, UserRole.ENTER_UNDERTAKING))
         .requestMatchers("/case/billing")
         .access(caseAction(UserRole.VIEW_CASE_BILL))
         .requestMatchers("/case/outcome-and-awards/proceeding/*/outcome/clear")
-        .access(caseAction(UserRole.CLEAR_OUTCOME))
+        .access(outcomeAction(UserRole.CLEAR_OUTCOME))
         .requestMatchers("/case/outcome-and-awards/proceeding/*/outcome/**")
-        .access(caseAction(UserRole.UPDATE_PROCEEDING_OUTCOME))
-        // The legacy PUI lets either outcome function record an outcome.
+        .access(outcomeAction(UserRole.UPDATE_PROCEEDING_OUTCOME))
         .requestMatchers("/case/outcome-and-awards", "/case/outcome-and-awards/**")
-        .access(caseAction(UserRole.RECORD_OUTCOME, UserRole.REQUEST_CASE_DISCHARGE))
+        .access(outcomeAction())
         .requestMatchers("/case/**")
-        .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode());
+        .access(caseAction());
   }
 
   /** Requires every one of the given functions. */
@@ -258,13 +281,35 @@ public class SecurityConfiguration {
         Arrays.stream(roles).map(UserRole::getCode).toList());
   }
 
-  /** Requires VC, to be in a case, and any one of the action's functions. */
-  private static AuthorizationManager<RequestAuthorizationContext> caseAction(
-      UserRole... actionRoles) {
+  /** Requires at least one of the given functions. */
+  private static AuthorizationManager<RequestAuthorizationContext> anyFunction(UserRole... roles) {
+    return AuthorityAuthorizationManager.hasAnyAuthority(
+        Arrays.stream(roles).map(UserRole::getCode).toArray(String[]::new));
+  }
+
+  /** Requires VC, to be in a case, and every one of the given functions. */
+  private static AuthorizationManager<RequestAuthorizationContext> caseAction(UserRole... roles) {
+    return allFunctions(withFunction(UserRole.VIEW_CASE_DETAILS, roles));
+  }
+
+  /** Requires NOT, to be in a notification, and every one of the given functions. */
+  private static AuthorizationManager<RequestAuthorizationContext> notificationAction(
+      UserRole... roles) {
+    return allFunctions(withFunction(UserRole.VIEW_NOTIFICATIONS, roles));
+  }
+
+  /**
+   * Requires a case action that is part of recording an outcome, which the legacy PUI allows with
+   * either outcome function.
+   */
+  private static AuthorizationManager<RequestAuthorizationContext> outcomeAction(
+      UserRole... roles) {
     return AuthorizationManagers.allOf(
-        AuthorityAuthorizationManager.hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode()),
-        AuthorityAuthorizationManager.hasAnyAuthority(
-            Arrays.stream(actionRoles).map(UserRole::getCode).toArray(String[]::new)));
+        caseAction(roles), anyFunction(UserRole.RECORD_OUTCOME, UserRole.REQUEST_CASE_DISCHARGE));
+  }
+
+  private static UserRole[] withFunction(UserRole first, UserRole... rest) {
+    return Stream.concat(Stream.of(first), Arrays.stream(rest)).toArray(UserRole[]::new);
   }
 
   /**
