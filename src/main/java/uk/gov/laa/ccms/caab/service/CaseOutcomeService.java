@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import uk.gov.laa.ccms.caab.bean.award.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
@@ -113,7 +114,7 @@ public class CaseOutcomeService {
   }
 
   /** Creates an other asset award without replacing the owning case outcome aggregate. */
-  public void createOtherAssetAward(
+  public Integer createOtherAssetAward(
       final String caseReferenceNumber,
       final Integer providerId,
       final OtherAssetAwardRequest otherAssetAward,
@@ -125,7 +126,12 @@ public class CaseOutcomeService {
                     new IllegalStateException(
                         "No case outcome exists for case reference number: " + caseReferenceNumber))
             .getId();
-    caabApiClient.createOtherAssetAward(caseOutcomeId, loginId, otherAssetAward).block();
+    final String id =
+        caabApiClient.createOtherAssetAward(caseOutcomeId, loginId, otherAssetAward).block();
+    if (id == null) {
+      throw new IllegalStateException("No id returned for the newly created other asset award");
+    }
+    return Integer.valueOf(id);
   }
 
   /** Updates an other asset award without replacing the owning case outcome aggregate. */
@@ -169,7 +175,7 @@ public class CaseOutcomeService {
   }
 
   /** Creates a land award without replacing the owning case outcome aggregate. */
-  public void createLandAward(
+  public Integer createLandAward(
       final String caseReferenceNumber,
       final Integer providerId,
       final LandAwardRequest landAward,
@@ -181,7 +187,11 @@ public class CaseOutcomeService {
                     new IllegalStateException(
                         "No case outcome exists for case reference number: " + caseReferenceNumber))
             .getId();
-    caabApiClient.createLandAward(caseOutcomeId, loginId, landAward).block();
+    final String id = caabApiClient.createLandAward(caseOutcomeId, loginId, landAward).block();
+    if (id == null) {
+      throw new IllegalStateException("No id returned for the newly created land award");
+    }
+    return Integer.valueOf(id);
   }
 
   /** Updates a land award without replacing the owning case outcome aggregate. */
@@ -207,6 +217,26 @@ public class CaseOutcomeService {
                     "Land award %s does not belong to case reference number: %s"
                         .formatted(landAwardId, caseReferenceNumber)));
     caabApiClient.updateLandAward(caseOutcome.getId(), landAwardId, loginId, landAward).block();
+  }
+
+  /**
+   * Saves a time-related recovery against a land or other asset award in the current case outcome.
+   */
+  public void upsertTimeRecovery(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final String awardType,
+      final Integer awardId,
+      final TimeRecoveryRequest recovery,
+      final String loginId) {
+    final Integer caseOutcomeId =
+        getCaseOutcome(caseReferenceNumber, providerId)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "No case outcome exists for case reference number: " + caseReferenceNumber))
+            .getId();
+    caabApiClient.upsertTimeRecovery(caseOutcomeId, awardType, awardId, loginId, recovery).block();
   }
 
   /**

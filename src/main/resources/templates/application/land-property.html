@@ -71,7 +71,7 @@
       <div th:replace="~{partials/forms :: largeTextInput('statutoryChargeExemptReason', #{case.landAward.statutoryChargeExemptReason}, 950)}"></div>
       <div th:replace="~{partials/forms :: dropdown('landChargeRegistration', #{case.landAward.landChargeRegistration}, ${landRegistrationOptions}, 'code', 'description', false)}"></div>
       <div th:replace="~{partials/forms :: textInput(fieldId='registrationReference', label=#{case.landAward.registrationReference}, inputClass='govuk-input--width-20', maxlengthParam=35)}"></div>
-      <div th:replace="~{partials/forms :: dropdown('recoveryOfAwardTimeRelated', #{case.landAward.recoveryOfAwardTimeRelated}, ${yesNoOptions}, 'code', 'description', false)}"></div>
+      <div th:replace="~{partials/forms :: radios('recoveryOfAwardTimeRelated', #{case.landAward.recoveryOfAwardTimeRelated}, ${yesNoOptions}, 'code', 'description', false)}"></div>
 
       <div class="govuk-button-group govuk-!-margin-top-6">
         <button type="submit"

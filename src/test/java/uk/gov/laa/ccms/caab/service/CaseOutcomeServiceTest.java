@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
@@ -26,6 +28,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.award.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
@@ -165,7 +168,10 @@ class CaseOutcomeServiceTest {
     when(caabApiClient.createOtherAssetAward(caseOutcomeId, loginId, request))
         .thenReturn(Mono.just("7"));
 
-    caseOutcomeService.createOtherAssetAward(caseReferenceNumber, providerId, request, loginId);
+    assertEquals(
+        7,
+        caseOutcomeService.createOtherAssetAward(
+            caseReferenceNumber, providerId, request, loginId));
 
     verify(caabApiClient).createOtherAssetAward(caseOutcomeId, loginId, request);
   }
@@ -187,6 +193,20 @@ class CaseOutcomeServiceTest {
                 caseReferenceNumber, providerId, request, "user1"));
 
     verify(caabApiClient, never()).createOtherAssetAward(any(), any(), any());
+  }
+
+  @Test
+  void createOtherAssetAward_withoutReturnedIdFailsExplicitly() {
+    doReturn(Optional.of(new CaseOutcomeDetail().id(42)))
+        .when(caseOutcomeService)
+        .getCaseOutcome("300000001", 123);
+    when(caabApiClient.createOtherAssetAward(eq(42), eq("user1"), any())).thenReturn(Mono.empty());
+
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            caseOutcomeService.createOtherAssetAward(
+                "300000001", 123, new OtherAssetAwardRequest(), "user1"));
   }
 
   @Test
@@ -290,7 +310,8 @@ class CaseOutcomeServiceTest {
         .getCaseOutcome(caseReferenceNumber, providerId);
     when(caabApiClient.createLandAward(caseOutcomeId, loginId, request)).thenReturn(Mono.just("7"));
 
-    caseOutcomeService.createLandAward(caseReferenceNumber, providerId, request, loginId);
+    assertEquals(
+        7, caseOutcomeService.createLandAward(caseReferenceNumber, providerId, request, loginId));
 
     verify(caabApiClient).createLandAward(caseOutcomeId, loginId, request);
   }
@@ -358,6 +379,39 @@ class CaseOutcomeServiceTest {
                 caseReferenceNumber, providerId, landAwardId, request, "user1"));
 
     verify(caabApiClient, never()).updateLandAward(any(), any(), any(), any());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"LAND", "ASSET"})
+  void upsertTimeRecovery_usesCaseOutcomeIdAndScopedAwardPath(String awardType) {
+    final TimeRecoveryRequest request = new TimeRecoveryRequest("Sale", null, "When sold");
+    doReturn(Optional.of(new CaseOutcomeDetail().id(42)))
+        .when(caseOutcomeService)
+        .getCaseOutcome("300000001", 123);
+    when(caabApiClient.upsertTimeRecovery(42, awardType, 7, "user1", request))
+        .thenReturn(Mono.empty());
+
+    caseOutcomeService.upsertTimeRecovery("300000001", 123, awardType, 7, request, "user1");
+
+    verify(caabApiClient).upsertTimeRecovery(42, awardType, 7, "user1", request);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"LAND", "ASSET"})
+  void upsertTimeRecovery_withoutCaseOutcomeDoesNotCallApi(String awardType) {
+    doReturn(Optional.empty()).when(caseOutcomeService).getCaseOutcome("300000001", 123);
+
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            caseOutcomeService.upsertTimeRecovery(
+                "300000001",
+                123,
+                awardType,
+                7,
+                new TimeRecoveryRequest("Sale", null, "When sold"),
+                "user1"));
+    verify(caabApiClient, never()).upsertTimeRecovery(any(), any(), any(), any(), any());
   }
 
   @Test

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:moj="http://www.thymeleaf.org">
+<head>
+  <title th:text="|#{service.name} - #{case.timeRecovery.title}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a class="govuk-back-link"
+       th:href="@{/case/outcome-and-awards}"
+       th:text="#{site.cancelAndReturnToOutcomeAndAwards}"></a>
+  </div>
+  <div id="main-content">
+    <form th:action="@{/case/outcome-and-awards/{path}/{id}/time-related-recovery(path=${awardPath},id=${awardId})}"
+          th:object="${timeRecovery}" method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <h1 class="govuk-heading-l" th:text="#{case.timeRecovery.title}"></h1>
+      <p class="govuk-body" th:text="#{case.timeRecovery.information}"></p>
+
+      <dl class="govuk-summary-list">
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key" th:text="#{case.timeRecovery.awardType}"></dt>
+          <dd class="govuk-summary-list__value" th:text="${award.awardType}"></dd>
+        </div>
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key" th:text="#{case.timeRecovery.description}"></dt>
+          <dd class="govuk-summary-list__value" th:text="${award.description}"></dd>
+        </div>
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key" th:text="#{case.timeRecovery.awardAmount}"></dt>
+          <dd class="govuk-summary-list__value"
+              th:text="${award.awardAmount == null ? '' : '£' + award.awardAmount}"></dd>
+        </div>
+      </dl>
+
+      <h2 class="govuk-heading-m" th:text="#{case.timeRecovery.effectiveHeading}"></h2>
+      <div th:replace="~{partials/forms :: largeTextInput('triggeringEvent', #{case.timeRecovery.triggeringEvent}, 950)}"></div>
+      <moj:datepicker
+          id="effective-date"
+          name="effectiveDate"
+          th:label="#{case.timeRecovery.effectiveDate}"
+          th:hint="#{case.timeRecovery.dateHint}"
+          th:attr="value=*{effectiveDate}"
+          th:errorMessage="${#fields.hasErrors('effectiveDate') ? #fields.errors('effectiveDate').getFirst() : ''}">
+      </moj:datepicker>
+      <div th:replace="~{partials/forms :: largeTextInput('timeRelatedRecoveryDetails', #{case.timeRecovery.otherDetails}, 950)}"></div>
+      <div class="govuk-button-group govuk-!-margin-top-6">
+        <button type="submit" class="govuk-button" data-module="govuk-button"
+                th:text="#{site.next}"></button>
+        <a class="govuk-link"
+           th:href="@{/case/outcome-and-awards/{path}/{id}(path=${awardPath == 'land' ? 'land-property' : 'asset'},id=${awardId})}"
+           th:text="#{site.back}"></a>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

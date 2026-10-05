@@ -1043,6 +1043,25 @@ class CaabApiClientTest {
   }
 
   @Test
+  void upsertTimeRecovery_success() {
+    final uk.gov.laa.ccms.caab.bean.award.TimeRecoveryRequest recovery =
+        new uk.gov.laa.ccms.caab.bean.award.TimeRecoveryRequest(
+            "Sale", java.time.LocalDate.of(2099, 12, 31), "When sold");
+    final String expectedUri =
+        "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/time-recovery";
+    when(caabApiWebClient.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(expectedUri, 42, "LAND", 7)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", "user789")).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(recovery)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    StepVerifier.create(caabApiClient.upsertTimeRecovery(42, "LAND", 7, "user789", recovery))
+        .verifyComplete();
+  }
+
+  @Test
   void deleteCaseOutcome_success() {
     final Integer caseOutcomeId = 123;
     final String loginId = "user123";

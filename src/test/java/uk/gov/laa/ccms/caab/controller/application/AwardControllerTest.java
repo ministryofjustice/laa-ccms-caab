@@ -16,6 +16,9 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.AWARD_TYPE_FORM;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Optional;
@@ -26,8 +29,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -40,10 +45,12 @@ import uk.gov.laa.ccms.caab.bean.AwardTypeForm;
 import uk.gov.laa.ccms.caab.bean.award.FinancialAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.LandAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.OtherAssetAwardFormData;
+import uk.gov.laa.ccms.caab.bean.award.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.FinancialAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.LandAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.OtherAssetAwardValidator;
+import uk.gov.laa.ccms.caab.bean.validators.awards.TimeRecoveryValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.LandAwardMapper;
@@ -55,6 +62,7 @@ import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.LandAwardRequest;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
+import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -74,6 +82,7 @@ class AwardControllerTest {
   @Mock private OtherAssetAwardMapper otherAssetAwardMapper;
   @Mock private LandAwardValidator landAwardValidator;
   @Mock private LandAwardMapper landAwardMapper;
+  @Spy private TimeRecoveryValidator timeRecoveryValidator = new TimeRecoveryValidator();
 
   @InjectMocks private AwardController controller;
 
@@ -489,8 +498,10 @@ class AwardControllerTest {
     class LandAwardPostTests {
 
       @Test
-      void postWithoutIdCalculatesEquityAndCreatesLandAward() {
-        assertThat(mockMvc.perform(validLandPost())).hasRedirectedUrl("/case/outcome-and-awards");
+      void postWithoutIdCalculatesEquityAndCreatesLandAwardThenOpensTimeRecovery() {
+        when(caseOutcomeService.createLandAward(any(), any(), any(), any())).thenReturn(7);
+        assertThat(mockMvc.perform(validLandPost()))
+            .hasRedirectedUrl("/case/outcome-and-awards/land/7/time-related-recovery");
 
         verify(landAwardMapper)
             .toLandAwardRequest(
@@ -519,8 +530,30 @@ class AwardControllerTest {
       @Test
       void postWithIdUpdatesLandAward() {
         assertThat(mockMvc.perform(validLandPost().param("id", "7")))
-            .hasRedirectedUrl("/case/outcome-and-awards");
+            .hasRedirectedUrl("/case/outcome-and-awards/land/7/time-related-recovery");
 
+        verify(caseOutcomeService)
+            .updateLandAward(
+                eq("300000001"),
+                eq(user.getProvider().getId().intValue()),
+                eq(7),
+                any(LandAwardRequest.class),
+                eq(user.getLoginId()));
+      }
+
+      @Test
+      void postWithoutTimeRecoveryReturnsToOutcomeAndAwards() {
+        when(caseOutcomeService.createLandAward(any(), any(), any(), any())).thenReturn(7);
+        assertThat(mockMvc.perform(validLandPost().param("recoveryOfAwardTimeRelated", "N")))
+            .hasRedirectedUrl("/case/outcome-and-awards");
+      }
+
+      @Test
+      void switchingExistingLandAwardToNoSkipsRecoveryPage() {
+        assertThat(
+                mockMvc.perform(
+                    validLandPost().param("id", "7").param("recoveryOfAwardTimeRelated", "N")))
+            .hasRedirectedUrl("/case/outcome-and-awards");
         verify(caseOutcomeService)
             .updateLandAward(
                 eq("300000001"),
@@ -693,6 +726,27 @@ class AwardControllerTest {
   class OtherAssetAwardPostTests {
 
     @Test
+    void newTimeRelatedAssetOpensRecoveryUsingCreatedId() {
+      when(caseOutcomeService.createOtherAssetAward(any(), any(), any(), any())).thenReturn(8);
+
+      assertThat(mockMvc.perform(validOtherAssetPost(true)))
+          .hasRedirectedUrl("/case/outcome-and-awards/asset/8/time-related-recovery");
+    }
+
+    @Test
+    void existingTimeRelatedAssetOpensRecoveryUsingExistingId() {
+      assertThat(mockMvc.perform(validOtherAssetPost(true).param("id", "8")))
+          .hasRedirectedUrl("/case/outcome-and-awards/asset/8/time-related-recovery");
+      verify(caseOutcomeService)
+          .updateOtherAssetAward(
+              eq("300000001"),
+              eq(123),
+              eq(8),
+              any(OtherAssetAwardRequest.class),
+              eq(user.getLoginId()));
+    }
+
+    @Test
     void postWithoutIdCreatesOtherAssetAward() {
       assertThat(mockMvc.perform(validOtherAssetPost()))
           .hasRedirectedUrl("/case/outcome-and-awards");
@@ -811,6 +865,168 @@ class AwardControllerTest {
     }
   }
 
+  @Nested
+  @DisplayName("Time-related recovery for land and asset awards")
+  class TimeRecoveryTests {
+    @ParameterizedTest
+    @CsvSource({"land, LAND", "asset, ASSET"})
+    void displaysNewRecoveryWithParentSummary(String awardPath, String awardType) {
+      stubTimeRecoveryAward(awardPath, true, null);
+
+      assertThat(mockMvc.perform(timeRecoveryGet(awardPath)))
+          .hasViewName("application/time-related-recovery")
+          .model()
+          .hasEntrySatisfying(
+              "award",
+              value ->
+                  assertThat(value)
+                      .extracting("awardType", "description", "awardAmount")
+                      .containsExactly(
+                          awardType, "Property or asset", new BigDecimal("150000.00")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"land", "asset"})
+    void prefillsExistingRecovery(String awardPath) {
+      stubTimeRecoveryAward(
+          awardPath,
+          true,
+          new TimeRecoveryDetail()
+              .triggeringEvent("Previous event")
+              .effectiveDate(
+                  Date.from(
+                      LocalDate.of(2027, 6, 15).atStartOfDay(ZoneId.systemDefault()).toInstant()))
+              .timeRelatedRecoveryDetails("Previous details"));
+
+      assertThat(mockMvc.perform(timeRecoveryGet(awardPath)))
+          .hasViewName("application/time-related-recovery")
+          .model()
+          .hasEntrySatisfying(
+              "timeRecovery",
+              value ->
+                  assertThat(value)
+                      .extracting("triggeringEvent", "effectiveDate", "timeRelatedRecoveryDetails")
+                      .containsExactly("Previous event", "15/06/2027", "Previous details"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"land, land-property", "asset, asset"})
+    void redirectsWhenParentFlagIsNotSet(String awardPath, String parentPath) {
+      stubTimeRecoveryAward(awardPath, false, null);
+
+      assertThat(mockMvc.perform(timeRecoveryGet(awardPath)))
+          .hasRedirectedUrl("/case/outcome-and-awards/" + parentPath + "/7");
+      assertThat(mockMvc.perform(validTimeRecoveryPost(awardPath)))
+          .hasRedirectedUrl("/case/outcome-and-awards/" + parentPath + "/7");
+      verify(caseOutcomeService, org.mockito.Mockito.never())
+          .upsertTimeRecovery(any(), any(), any(), any(), any(), any());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"land, LAND", "asset, ASSET"})
+    void validPostUpsertsAndRedirects(String awardPath, String awardType) {
+      stubTimeRecoveryAward(awardPath, true, null);
+
+      assertThat(mockMvc.perform(validTimeRecoveryPost(awardPath)))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+      verify(caseOutcomeService)
+          .upsertTimeRecovery(
+              eq("300000001"),
+              eq(user.getProvider().getId().intValue()),
+              eq(awardType),
+              eq(7),
+              eq(new TimeRecoveryRequest("Triggered", LocalDate.of(2030, 1, 1), "Details")),
+              eq(user.getLoginId()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"land", "asset"})
+    void invalidPostKeepsUserInputAndShowsErrors(String awardPath) {
+      stubTimeRecoveryAward(awardPath, true, null);
+
+      assertThat(mockMvc.perform(timeRecoveryPost(awardPath, "", "01/01/1899")))
+          .hasViewName("application/time-related-recovery")
+          .model()
+          .hasErrors()
+          .hasEntrySatisfying(
+              "timeRecovery",
+              value ->
+                  assertThat(value)
+                      .extracting("effectiveDate", "timeRelatedRecoveryDetails")
+                      .containsExactly("01/01/1899", "Details"));
+      verify(caseOutcomeService, org.mockito.Mockito.never())
+          .upsertTimeRecovery(any(), any(), any(), any(), any(), any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"land", "asset"})
+    void apiFailureRedisplaysRecoveryWithError(String awardPath) {
+      stubTimeRecoveryAward(awardPath, true, null);
+      doThrow(new CaabApiClientException("API failure"))
+          .when(caseOutcomeService)
+          .upsertTimeRecovery(any(), any(), any(), any(), any(), any());
+
+      assertThat(mockMvc.perform(validTimeRecoveryPost(awardPath)))
+          .hasViewName("application/time-related-recovery")
+          .model()
+          .hasErrors()
+          .containsKeys("award", "awardPath", "awardId");
+    }
+
+    @Test
+    void unsupportedAwardTypeHasNoRecoveryRoute() {
+      assertThat(mockMvc.perform(timeRecoveryGet("cost-award"))).hasStatus(404);
+      assertThat(mockMvc.perform(validTimeRecoveryPost("cost-award"))).hasStatus(404);
+      verifyNoInteractions(caseOutcomeService);
+    }
+  }
+
+  private void stubTimeRecoveryAward(
+      String awardPath, boolean timeRelated, TimeRecoveryDetail recovery) {
+    if ("land".equals(awardPath)) {
+      when(caseOutcomeService.getLandAward("300000001", 123, 7))
+          .thenReturn(
+              Optional.of(
+                  new LandAwardDetail()
+                      .id(7)
+                      .description("Property or asset")
+                      .valuationAmount(new BigDecimal("150000.00"))
+                      .recoveryOfAwardTimeRelated(timeRelated)
+                      .timeRecovery(recovery)));
+    } else {
+      when(caseOutcomeService.getOtherAssetAward("300000001", 123, 7))
+          .thenReturn(
+              Optional.of(
+                  new OtherAssetAwardDetail()
+                      .id(7)
+                      .description("Property or asset")
+                      .valuationAmount(new BigDecimal("150000.00"))
+                      .awardedAmount(new BigDecimal("20000.00"))
+                      .recoveryOfAwardTimeRelated(timeRelated)
+                      .timeRecovery(recovery)));
+    }
+  }
+
+  private MockHttpServletRequestBuilder timeRecoveryGet(String awardPath) {
+    return get("/case/outcome-and-awards/" + awardPath + "/7/time-related-recovery")
+        .sessionAttr(CASE, ebsCase)
+        .sessionAttr(USER_DETAILS, user);
+  }
+
+  private MockHttpServletRequestBuilder validTimeRecoveryPost(String awardPath) {
+    return timeRecoveryPost(awardPath, "Triggered", "01/01/2030");
+  }
+
+  private MockHttpServletRequestBuilder timeRecoveryPost(
+      String awardPath, String triggeringEvent, String effectiveDate) {
+    return post("/case/outcome-and-awards/" + awardPath + "/7/time-related-recovery")
+        .sessionAttr(CASE, ebsCase)
+        .sessionAttr(USER_DETAILS, user)
+        .param("triggeringEvent", triggeringEvent)
+        .param("effectiveDate", effectiveDate)
+        .param("timeRelatedRecoveryDetails", "Details");
+  }
+
   private MockHttpServletRequestBuilder validPost() {
     final AwardTypeForm selectedAwardType = new AwardTypeForm();
     selectedAwardType.setAwardTypeCode("DAMAGE_AGR");
@@ -860,6 +1076,10 @@ class AwardControllerTest {
   }
 
   private MockHttpServletRequestBuilder validOtherAssetPost() {
+    return validOtherAssetPost(false);
+  }
+
+  private MockHttpServletRequestBuilder validOtherAssetPost(boolean timeRelated) {
     return post("/case/outcome-and-awards/asset")
         .param("awardCode", "OTH_ASSET")
         .param("awardType", "ASSET")
@@ -871,7 +1091,7 @@ class AwardControllerTest {
         .param("valuationDate", "02/01/2025")
         .param("awardedPercentage", "75")
         .param("recovery", "UNKNOWN")
-        .param("recoveryOfAwardTimeRelated", "false")
+        .param("recoveryOfAwardTimeRelated", Boolean.toString(timeRelated))
         .sessionAttr(CASE, ebsCase)
         .sessionAttr(USER_DETAILS, user)
         .sessionAttr(AWARD_TYPE_FORM, otherAssetAwardType());
