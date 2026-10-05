@@ -54,11 +54,13 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.advice.GlobalBinderAdvice;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.request.ProviderRequestDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.request.ProviderRequestFlowFormData;
 import uk.gov.laa.ccms.caab.bean.request.ProviderRequestTypeFormData;
+import uk.gov.laa.ccms.caab.bean.validators.BaselineTextValidator;
 import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestDocumentUploadValidator;
 import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestTypesValidator;
@@ -1152,11 +1154,11 @@ class ProviderRequestsControllerTest {
     if (providerRequestFlowType.isCaseScoped()) {
       viewName =
           providerRequestsController.postCaseRequestDetail(
-              user, providerRequestFlow, "submit", details, model, binding, session);
+              user, providerRequestFlow, "submit", details, binding, model, session);
     } else {
       viewName =
           providerRequestsController.postGeneralRequestDetail(
-              user, providerRequestFlow, "submit", details, model, binding, session);
+              user, providerRequestFlow, "submit", details, binding, model, session);
     }
 
     verify(providerRequestService)
@@ -1460,5 +1462,41 @@ class ProviderRequestsControllerTest {
         .andExpect(model().attributeDoesNotExist("caseReference"));
 
     verify(lookupService).getProviderRequestTypes(eq(false), isNull());
+  }
+
+  @Test
+  @DisplayName("POST details with an invalid character does not redirect to document upload")
+  void testRequestDetailPost_DocumentUploadRejectsBaselineErrors() throws Exception {
+    // The advice is what registers the baseline validator, and standaloneSetup does not pick up
+    // controller advice on its own.
+    final MockMvc mvc =
+        standaloneSetup(providerRequestsController)
+            .setControllerAdvice(new GlobalBinderAdvice(new BaselineTextValidator()))
+            .build();
+
+    final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef("-1");
+    final ProviderRequestTypeFormData providerRequestType = new ProviderRequestTypeFormData();
+    providerRequestType.setProviderRequestType("testType");
+    providerRequestFlow.setRequestTypeFormData(providerRequestType);
+    providerRequestFlow.setRequestDetailsFormData(new ProviderRequestDetailsFormData());
+
+    // The error branch re-renders the details page, so it needs the same lookups that render does.
+    when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
+        .thenReturn(Mono.just(new CommonLookupDetail().content(List.of())));
+    when(lookupService.getProviderRequestTypes(null, "testType"))
+        .thenReturn(Mono.just(new ProviderRequestTypeLookupDetail().content(List.of())));
+    when(providerRequestDocumentUploadValidator.getValidExtensions()).thenReturn(List.of("pdf"));
+    when(providerRequestDocumentUploadValidator.getMaxFileSize()).thenReturn(MAX_FILE_SIZE);
+    when(providerRequestDetailsValidator.getValidExtensions()).thenReturn(List.of("xml"));
+    when(providerRequestDetailsValidator.getMaxFileSize()).thenReturn(MAX_FILE_SIZE);
+
+    mvc.perform(
+            post(ProviderRequestFlowType.GENERAL.getBasePath() + "/details")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(
+                    ProviderRequestFlowType.GENERAL.getFlowSessionAttribute(), providerRequestFlow)
+                .param("action", "document_upload")
+                .param("additionalInformation", "<script>alert(1)</script>"))
+        .andExpect(status().isOk());
   }
 }

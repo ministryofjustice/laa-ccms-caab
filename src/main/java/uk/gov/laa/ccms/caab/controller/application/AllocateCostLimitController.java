@@ -106,11 +106,11 @@ public class AllocateCostLimitController {
   @PostMapping("/allocate-cost-limit")
   public String calculateCost(
       @Validated @ModelAttribute("costDetails") AllocateCostsFormData allocateCostsFormData,
+      final BindingResult bindingResult,
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @RequestParam(value = "action", required = false) final String action,
       @RequestParam(value = "removeCounsel", required = false) final Integer removeCounsel,
       final Model model,
-      final BindingResult bindingResult,
       final HttpSession session) {
 
     ApplicationDetail appCopy =

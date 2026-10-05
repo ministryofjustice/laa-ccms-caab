@@ -304,8 +304,8 @@ public class AwardController {
       @SessionAttribute(value = AWARD_TYPE_FORM, required = false)
           final AwardTypeForm awardTypeForm,
       @Validated @ModelAttribute("landAward") final LandAwardFormData landAward,
-      @RequestParam(value = "action", defaultValue = "next") final String action,
       final BindingResult bindingResult,
+      @RequestParam(value = "action", defaultValue = "next") final String action,
       final Model model) {
     landAwardValidator.validate(landAward, bindingResult);
 
