@@ -311,6 +311,20 @@ class UserFunctionAuthorizationTest {
   }
 
   @Test
+  @DisplayName("A refused form post returns to the page it was posted from at the same path")
+  void refusedFormPostReturnsToSamePathPage() throws Exception {
+    mockMvc
+        .perform(
+            request(HttpMethod.POST, "/application/sections")
+                .session(sessionWithRenderedPages("/earlier-page", "/application/sections"))
+                .header(HttpHeaders.REFERER, "http://localhost/application/sections")
+                .with(user("user").authorities(() -> "OTHER"))
+                .with(csrf()))
+        .andExpect(redirectedUrl("/application/sections"))
+        .andExpect(notAuthorisedPending());
+  }
+
+  @Test
   @DisplayName("A refused background request gets a 403 rather than a redirect")
   void refusedBackgroundRequestIsForbidden() throws Exception {
     mockMvc
