@@ -28,6 +28,8 @@ import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import org.thymeleaf.templatemode.TemplateMode;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.validators.awards.LandAwardValidator;
+import uk.gov.laa.ccms.caab.bean.validators.awards.OtherAssetAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.TimeRecoveryValidator;
 import uk.gov.laa.ccms.caab.constants.CommonValueConstants;
 import uk.gov.laa.ccms.caab.mapper.LandAwardMapper;
@@ -102,9 +104,9 @@ class TimeRecoveryTemplateRenderTest {
                     null,
                     null,
                     null,
+                    new OtherAssetAwardValidator(),
                     null,
-                    null,
-                    null,
+                    new LandAwardValidator(),
                     Mappers.getMapper(LandAwardMapper.class),
                     new TimeRecoveryValidator()))
             .setViewResolvers(viewResolver)
@@ -173,6 +175,36 @@ class TimeRecoveryTemplateRenderTest {
                             "(?s).*<select[^>]*name=\"recoveryOfAwardTimeRelated\"[^>]*>.*"))));
     org.mockito.Mockito.verify(lookupService, org.mockito.Mockito.never())
         .getCommonValues(CommonValueConstants.COMMON_VALUE_YES_NO);
+  }
+
+  @ParameterizedTest
+  @CsvSource({"land-property, Y", "asset, true"})
+  void missingTimeRecoverySelectionLinksToFirstRadio(String awardPath, String yesValue)
+      throws Exception {
+    mockMvc
+        .perform(
+            post("/case/outcome-and-awards/" + awardPath)
+                .sessionAttr(CASE, new ApplicationDetail().caseReferenceNumber("300000001"))
+                .sessionAttr(USER_DETAILS, ApplicationTestUtils.buildUser())
+                .flashAttr("user", new UserDetail().functions(List.of()))
+                .param("id", "7"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString("href=\"#recoveryOfAwardTimeRelated\"")))
+        .andExpect(
+            content()
+                .string(
+                    matchesPattern(
+                        "(?s).*<input(?=[^>]*id=\"recoveryOfAwardTimeRelated\")"
+                            + "(?=[^>]*name=\"recoveryOfAwardTimeRelated\")"
+                            + "(?=[^>]*type=\"radio\")(?=[^>]*value=\""
+                            + yesValue
+                            + "\")[^>]*>.*")))
+        .andExpect(
+            content()
+                .string(
+                    matchesPattern(
+                        "(?s).*<label(?=[^>]*for=\"recoveryOfAwardTimeRelated\")[^>]*>"
+                            + "Yes</label>.*")));
   }
 
   @ParameterizedTest
