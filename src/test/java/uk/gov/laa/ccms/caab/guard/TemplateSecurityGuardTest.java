@@ -57,16 +57,11 @@ class TemplateSecurityGuardTest {
                   "${' &#x25B8;'}"));
 
   /**
-   * Free-text inputs still declared outside {@code partials/forms.html}, with the number each
-   * template is allowed. Adding one to a listed template pushes it over its budget and fails, as
-   * does introducing one anywhere unlisted. Numbers should only ever go down.
+   * Free-text inputs still declared outside {@code partials/forms.html}. Now empty: every text
+   * input and textarea in the service comes from the shared fragments, so any new one is a
+   * regression. Entries should only ever be removed.
    */
-  private static final Map<String, Integer> LEGACY_RAW_INPUT_BUDGET =
-      new LinkedHashMap<>(
-          Map.of(
-              // The two textareas here still need the shared largeTextInput fragment, which would
-              // add a visible GDS character counter - a UX change that wants sign-off first.
-              "application/record-proceeding-outcome.html", 2));
+  private static final Map<String, Integer> LEGACY_RAW_INPUT_BUDGET = new LinkedHashMap<>(Map.of());
 
   @Test
   @DisplayName("th:utext never renders an interpolated value without escaping it")
