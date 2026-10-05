@@ -8,6 +8,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -93,15 +94,20 @@ public class ProviderController {
         .updateUserOptions(newProvider.getId(), user.getLoginId(), user.getUserType())
         .block();
 
-    user.setProvider(newProvider);
-
     // The legacy PUI reloads the user's functions as part of the switch, so the new provider's
-    // functions apply to the very next request.
+    // functions apply to the very next request. Without them the old provider's functions would
+    // apply to the new provider, so the session is ended and the user logs in again.
     UserDetail reloadedUser = userService.getUserByLoginId(user.getLoginId()).block();
-    if (reloadedUser != null) {
-      UserFunctionAuthorities.replace(authentication, user, reloadedUser, session);
-      user.setFunctions(reloadedUser.getFunctions());
+    if (reloadedUser == null) {
+      log.error("User {} could not be reloaded after switching provider", user.getLoginId());
+      SecurityContextHolder.clearContext();
+      session.invalidate();
+      return "redirect:/home";
     }
+
+    user.setProvider(newProvider);
+    UserFunctionAuthorities.replace(authentication, user, reloadedUser, session);
+    user.setFunctions(reloadedUser.getFunctions());
     notificationSearchOptionsCache.clear();
 
     session.setAttribute("user", user);
