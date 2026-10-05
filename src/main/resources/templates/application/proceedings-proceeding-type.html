@@ -37,7 +37,8 @@
         <input type="hidden" th:id="proceedingDescription" th:name="proceedingDescription" th:value="*{proceedingDescription}"/>
         <label class="govuk-label" for="proceedingType" th:text="#{proceedings.proceedingDetails.proceeding}"/>
         <select class="govuk-select"
-                data-module="govuk-select"
+                data-module="accessible-autocomplete"
+                data-show-all-values="true"
                 th:field="*{__${'proceedingType'}__}"
                 th:errorclass="govuk-select--error"
                 id="proceedingType"

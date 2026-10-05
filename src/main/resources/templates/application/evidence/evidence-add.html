@@ -29,7 +29,12 @@
                 <input class="govuk-file-upload" id="file" name="file" type="file">
             </div>
 
-            <div th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType', ${#messages.msg('application.evidence.add.documentType')}, ${evidenceTypes}, 'code', 'description')}"></div>
+            <th:block th:replace="~{partials/forms :: autocompleteSelect(field='documentType',
+                                                                         label=${#messages.msg('application.evidence.add.documentType')},
+                                                                         items=${evidenceTypes},
+                                                                         itemValue='code',
+                                                                         itemLabel='description',
+                                                                         withDisplayValue=true)}"/>
             <div th:replace="~{partials/forms :: largeTextInput('documentDescription', ${#messages.msg('application.evidence.add.documentDescription')}, 255)}"></div>
 
             <div class="govuk-form-group"
