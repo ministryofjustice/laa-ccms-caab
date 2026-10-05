@@ -546,7 +546,7 @@ public class AwardController {
           awardId,
           request,
           user.getLoginId());
-    } catch (CaabApiClientException ex) {
+    } catch (CaabApiClientException | IllegalStateException ex) {
       log.warn("Failed to save time-related recovery for {} award {}", awardPath, awardId, ex);
       bindingResult.reject(
           "timeRecovery.save.failed",

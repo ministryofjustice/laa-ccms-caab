@@ -39,7 +39,7 @@
       <h2 class="govuk-heading-m" th:text="#{case.timeRecovery.effectiveHeading}"></h2>
       <div th:replace="~{partials/forms :: largeTextInput('triggeringEvent', #{case.timeRecovery.triggeringEvent}, 950)}"></div>
       <moj:datepicker
-          id="effective-date"
+          id="effectiveDate"
           name="effectiveDate"
           th:label="#{case.timeRecovery.effectiveDate}"
           th:hint="#{case.timeRecovery.dateHint}"

@@ -974,10 +974,13 @@ class AwardControllerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"land", "asset"})
-    void apiFailureRedisplaysRecoveryWithError(String awardPath) {
+    @CsvSource({"land, false", "asset, false", "land, true", "asset, true"})
+    void saveFailureRedisplaysRecoveryWithError(String awardPath, boolean missingCaseOutcome) {
       stubTimeRecoveryAward(awardPath, true, null);
-      doThrow(new CaabApiClientException("API failure"))
+      doThrow(
+              missingCaseOutcome
+                  ? new IllegalStateException("Case outcome unavailable")
+                  : new CaabApiClientException("API failure"))
           .when(caseOutcomeService)
           .upsertTimeRecovery(any(), any(), any(), any(), any(), any());
 
@@ -985,7 +988,13 @@ class AwardControllerTest {
           .hasViewName("application/time-related-recovery")
           .model()
           .hasErrors()
-          .containsKeys("award", "awardPath", "awardId");
+          .containsKeys("award", "awardPath", "awardId")
+          .hasEntrySatisfying(
+              "timeRecovery",
+              value ->
+                  assertThat(value)
+                      .extracting("triggeringEvent", "effectiveDate", "timeRelatedRecoveryDetails")
+                      .containsExactly("Triggered", "01/01/2030", "Details"));
     }
 
     @Test

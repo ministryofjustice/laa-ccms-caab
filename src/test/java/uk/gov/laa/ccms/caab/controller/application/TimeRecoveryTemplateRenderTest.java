@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
@@ -16,6 +17,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mapstruct.factory.Mappers;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.mock.web.MockServletContext;
@@ -171,6 +173,37 @@ class TimeRecoveryTemplateRenderTest {
                             "(?s).*<select[^>]*name=\"recoveryOfAwardTimeRelated\"[^>]*>.*"))));
     org.mockito.Mockito.verify(lookupService, org.mockito.Mockito.never())
         .getCommonValues(CommonValueConstants.COMMON_VALUE_YES_NO);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"land", "asset"})
+  void dateErrorSummaryLinksToDatepickerInput(String awardPath) throws Exception {
+    mockMvc
+        .perform(
+            post("/case/outcome-and-awards/" + awardPath + "/7/time-related-recovery")
+                .sessionAttr(CASE, new ApplicationDetail().caseReferenceNumber("300000001"))
+                .sessionAttr(USER_DETAILS, ApplicationTestUtils.buildUser())
+                .flashAttr("user", new UserDetail().functions(List.of()))
+                .param("triggeringEvent", "Sale")
+                .param("effectiveDate", "31/02/2026")
+                .param("timeRelatedRecoveryDetails", "When sold"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString("href=\"#effectiveDate\"")))
+        .andExpect(
+            content()
+                .string(
+                    matchesPattern(
+                        "(?s).*<input(?=[^>]*id=\"effectiveDate\")"
+                            + "(?=[^>]*name=\"effectiveDate\")"
+                            + "(?=[^>]*value=\"31/02/2026\")[^>]*>.*")));
+    org.mockito.Mockito.verify(caseOutcomeService, org.mockito.Mockito.never())
+        .upsertTimeRecovery(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any());
   }
 
   @ParameterizedTest
