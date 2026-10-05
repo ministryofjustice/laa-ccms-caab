@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.provider.ProviderFirmFormData;
 import uk.gov.laa.ccms.caab.bean.validators.provider.ProviderFirmValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.security.UserFunctionAuthorities;
 import uk.gov.laa.ccms.caab.service.NotificationSearchOptionsCache;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.BaseProvider;
@@ -71,7 +73,8 @@ public class ProviderController {
       @ModelAttribute("providerFirmFormData") ProviderFirmFormData providerFirmFormData,
       BindingResult bindingResult,
       Model model,
-      HttpSession session) {
+      HttpSession session,
+      Authentication authentication) {
 
     providerFirmValidator.validate(providerFirmFormData, bindingResult);
 
@@ -91,6 +94,14 @@ public class ProviderController {
         .block();
 
     user.setProvider(newProvider);
+
+    // The legacy PUI reloads the user's functions as part of the switch, so the new provider's
+    // functions apply to the very next request.
+    UserDetail reloadedUser = userService.getUserByLoginId(user.getLoginId()).block();
+    if (reloadedUser != null) {
+      UserFunctionAuthorities.replace(authentication, user, reloadedUser, session);
+      user.setFunctions(reloadedUser.getFunctions());
+    }
     notificationSearchOptionsCache.clear();
 
     session.setAttribute("user", user);

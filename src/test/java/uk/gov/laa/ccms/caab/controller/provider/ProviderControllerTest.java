@@ -1,8 +1,10 @@
 package uk.gov.laa.ccms.caab.controller.provider;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -23,6 +25,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.saml2.provider.service.authentication.Saml2AssertionAuthentication;
+import org.springframework.security.saml2.provider.service.authentication.Saml2ResponseAssertionAccessor;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -103,6 +110,8 @@ public class ProviderControllerTest {
 
     when(userService.updateUserOptions(67890, loginId, userType))
         .thenReturn(Mono.just(new ClientTransactionResponse()));
+    when(userService.getUserByLoginId(loginId))
+        .thenReturn(Mono.just(new UserDetail().loginId(loginId).functions(List.of("CA", "VC"))));
 
     HttpSession session =
         this.mockMvc
@@ -119,7 +128,55 @@ public class ProviderControllerTest {
 
     // Check session has been updated with new provider
     assertEquals(providerFirm2, ((UserDetail) session.getAttribute("user")).getProvider());
+    assertEquals(List.of("CA", "VC"), ((UserDetail) session.getAttribute("user")).getFunctions());
     verify(notificationSearchOptionsCache).clear();
+  }
+
+  @Test
+  public void switchingProviderReloadsFunctionsInTheLoggedInAuthentication() throws Exception {
+    String loginId = "testLoginId";
+    BaseProvider providerFirm1 = new BaseProvider().id(12345).name("providerFirm1");
+    BaseProvider providerFirm2 = new BaseProvider().id(67890).name("providerFirm2");
+    UserDetail userDetails =
+        new UserDetail()
+            .userId(1)
+            .userType("testUserType")
+            .loginId(loginId)
+            .firms(List.of(providerFirm1, providerFirm2))
+            .provider(providerFirm1)
+            .functions(List.of("CA", "NOT"));
+    ProviderFirmFormData providerFirmFormData = new ProviderFirmFormData();
+    providerFirmFormData.setProviderFirmId(67890);
+    Saml2AssertionAuthentication authentication =
+        new Saml2AssertionAuthentication(
+            loginId,
+            mock(Saml2ResponseAssertionAccessor.class),
+            List.of(
+                new SimpleGrantedAuthority("group1"),
+                new SimpleGrantedAuthority("CA"),
+                new SimpleGrantedAuthority("NOT")),
+            "idp");
+
+    when(userService.updateUserOptions(67890, loginId, "testUserType"))
+        .thenReturn(Mono.just(new ClientTransactionResponse()));
+    when(userService.getUserByLoginId(loginId))
+        .thenReturn(Mono.just(new UserDetail().loginId(loginId).functions(List.of("NOT", "VC"))));
+
+    try {
+      this.mockMvc
+          .perform(
+              post("/provider-switch")
+                  .principal(authentication)
+                  .sessionAttr("user", userDetails)
+                  .flashAttr("providerFirmFormData", providerFirmFormData))
+          .andExpect(redirectedUrl("/home"));
+
+      assertThat(SecurityContextHolder.getContext().getAuthentication().getAuthorities())
+          .extracting(GrantedAuthority::getAuthority)
+          .containsExactlyInAnyOrder("group1", "NOT", "VC");
+    } finally {
+      SecurityContextHolder.clearContext();
+    }
   }
 
   @Test

@@ -118,6 +118,20 @@ class RefusedActionPageInterceptorTest {
   }
 
   @Test
+  @DisplayName("A background request does not use up the waiting message")
+  void backgroundRequestKeepsMessageWaiting() {
+    RefusedActionSession.markNotAuthorised(session);
+    MockHttpServletRequest request = request("GET", "/civil/fragment", null);
+    request.addHeader("Sec-Fetch-Mode", "cors");
+
+    ModelAndView fragment = render(request, new ModelAndView("fragment"));
+
+    assertThat(fragment.getModel())
+        .doesNotContainKey(NotAuthorisedAccessDeniedHandler.NOT_AUTHORISED_ATTRIBUTE);
+    assertThat(RefusedActionSession.consumeNotAuthorised(session)).isTrue();
+  }
+
+  @Test
   @DisplayName("Only the most recent pages are kept, without duplicates")
   void keepsRecentPagesWithoutDuplicates() {
     for (int i = 0; i < 60; i++) {
