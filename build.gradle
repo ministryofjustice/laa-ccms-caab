@@ -73,7 +73,7 @@ configurations.configureEach {
         }
         // Not managed by the Spring Boot BOM; pulled in transitively via the SAML/opensaml stack.
         if (details.requested.group == 'org.bouncycastle') {
-            details.useVersion '1.85'
+            details.useVersion '1.86'
             details.because 'Override to remediate vulnerability; not covered by the Spring Boot dependency BOM'
         }
         // Logback classic pulled in by Spring Boot starter logging
