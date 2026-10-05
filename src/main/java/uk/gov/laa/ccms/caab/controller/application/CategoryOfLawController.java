@@ -78,8 +78,8 @@ public class CategoryOfLawController {
   @PostMapping("/application/category-of-law")
   public String categoryOfLaw(
       @Validated @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
-      @SessionAttribute(USER_DETAILS) UserDetail userDetails,
       BindingResult bindingResult,
+      @SessionAttribute(USER_DETAILS) UserDetail userDetails,
       Model model) {
     categoryOfLawValidator.validate(applicationFormData, bindingResult);
 

@@ -77,8 +77,8 @@ public class ClientAddressDetailsSearchController {
           AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow,
       @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
       @Validated @ModelAttribute("addressSearch") AddressSearchFormData addressSearch,
-      Model model,
       BindingResult bindingResult,
+      Model model,
       HttpSession session) {
 
     // validate if an address is selected

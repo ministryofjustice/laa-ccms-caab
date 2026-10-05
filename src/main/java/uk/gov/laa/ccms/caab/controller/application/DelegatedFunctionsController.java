@@ -132,8 +132,8 @@ public class DelegatedFunctionsController {
   public String editDelegatedFunction(
       @SessionAttribute(APPLICATION) final ApplicationDetail tdsApplication,
       @Validated @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
-      @SessionAttribute(USER_DETAILS) UserDetail user,
       BindingResult bindingResult,
+      @SessionAttribute(USER_DETAILS) UserDetail user,
       Model model) {
 
     applicationFormData.setDelegatedFunctionUsedDate(

@@ -208,9 +208,9 @@ public class ProviderRequestsController {
           final ProviderRequestFlowFormData providerRequestFlow,
       @Validated @ModelAttribute("providerRequestTypeDetails")
           final ProviderRequestTypeFormData providerRequestTypeDetails,
+      final BindingResult bindingResult,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
-      final Model model,
-      final BindingResult bindingResult) {
+      final Model model) {
     return requestTypePost(
         providerRequestFlow,
         providerRequestTypeDetails,
@@ -227,9 +227,9 @@ public class ProviderRequestsController {
           final ProviderRequestFlowFormData providerRequestFlow,
       @Validated @ModelAttribute("providerRequestTypeDetails")
           final ProviderRequestTypeFormData providerRequestTypeDetails,
+      final BindingResult bindingResult,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
-      final Model model,
-      final BindingResult bindingResult) {
+      final Model model) {
     return requestTypePost(
         providerRequestFlow,
         providerRequestTypeDetails,
@@ -365,8 +365,8 @@ public class ProviderRequestsController {
       @RequestParam final String action,
       @Validated @ModelAttribute("providerRequestDetails")
           final ProviderRequestDetailsFormData providerRequestDetailsForm,
-      final Model model,
       final BindingResult bindingResult,
+      final Model model,
       final HttpSession session) {
     return requestDetailPost(
         userDetail,
@@ -388,8 +388,8 @@ public class ProviderRequestsController {
       @RequestParam final String action,
       @Validated @ModelAttribute("providerRequestDetails")
           final ProviderRequestDetailsFormData providerRequestDetailsForm,
-      final Model model,
       final BindingResult bindingResult,
+      final Model model,
       final HttpSession session) {
     return requestDetailPost(
         userDetail,
@@ -416,6 +416,16 @@ public class ProviderRequestsController {
 
     String caseRef = providerRequestFlow.getCaseReferenceNumber();
     addCaseReferenceIfValid(model, caseRef);
+
+    // Binding, @Size and baseline errors are already present before any branch runs. The upload
+    // branch redirects and the delete branch re-renders, so without this they would be discarded
+    // and an invalid value carried into the session. Required-field checks still only run on
+    // final submission, below.
+    if (bindingResult.hasErrors()) {
+      populateAddEvidenceModel(model);
+      return providerRequestsDetails(
+          providerRequestFlow, providerRequestDetailsForm, model, flowType);
+    }
 
     if ("document_upload".equals(action)) {
       providerRequestFlow.setRequestDetailsFormData(providerRequestDetailsForm);
@@ -589,8 +599,8 @@ public class ProviderRequestsController {
           final ProviderRequestFlowFormData providerRequestFlow,
       @Validated @ModelAttribute(CASE_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA)
           final EvidenceUploadFormData evidenceUploadFormData,
-      @RequestParam(required = false) String caseReferenceNumber,
       final BindingResult bindingResult,
+      @RequestParam(required = false) String caseReferenceNumber,
       final Model model) {
     return addDocumentsToRequestPost(
         userDetail,

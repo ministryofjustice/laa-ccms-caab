@@ -96,8 +96,8 @@ public class CopyCaseSearchController {
   @PostMapping("/application/copy-case/search")
   public String copyCaseSearch(
       @Validated @ModelAttribute(CASE_SEARCH_CRITERIA) CaseSearchCriteria caseSearchCriteria,
-      @SessionAttribute(USER_DETAILS) UserDetail user,
       BindingResult bindingResult,
+      @SessionAttribute(USER_DETAILS) UserDetail user,
       RedirectAttributes redirectAttributes,
       Model model) {
 

@@ -907,9 +907,9 @@ public class ApplicationSubmissionController {
   public String applicationDeclarationPost(
       @Validated @ModelAttribute("summarySubmissionFormData")
           final SummarySubmissionFormData summarySubmissionFormData,
+      final BindingResult bindingResult,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(ACTIVE_CASE) final ActiveCase activeCase,
-      final BindingResult bindingResult,
       final Model model,
       final HttpSession session) {
 
