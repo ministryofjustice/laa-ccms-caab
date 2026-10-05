@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
@@ -67,9 +68,12 @@ public class PrivacyNoticeAgreementControllerTest {
     this.mockMvc
         .perform(
             post("/application/agreement")
-                .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData))
+                .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData)
+                .sessionAttr(SessionConstants.APPLICATION_SECTIONS_BACK_URL, "searchUrl"))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/client/details/basic"));
+        .andExpect(redirectedUrl("/application/client/details/basic"))
+        .andExpect(
+            request().sessionAttributeDoesNotExist(SessionConstants.APPLICATION_SECTIONS_BACK_URL));
 
     verify(privacyNoticeAgreementValidator, times(1)).validate(any(), any());
   }
@@ -83,9 +87,12 @@ public class PrivacyNoticeAgreementControllerTest {
     this.mockMvc
         .perform(
             post("/application/agreement")
-                .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData))
+                .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData)
+                .sessionAttr(SessionConstants.APPLICATION_SECTIONS_BACK_URL, "searchUrl"))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/sections"));
+        .andExpect(redirectedUrl("/application/sections"))
+        .andExpect(
+            request().sessionAttributeDoesNotExist(SessionConstants.APPLICATION_SECTIONS_BACK_URL));
 
     verify(privacyNoticeAgreementValidator, times(1)).validate(any(), any());
   }
@@ -110,9 +117,13 @@ public class PrivacyNoticeAgreementControllerTest {
     this.mockMvc
         .perform(
             post("/application/agreement")
-                .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData))
+                .sessionAttr(SessionConstants.APPLICATION_FORM_DATA, applicationFormData)
+                .sessionAttr(SessionConstants.APPLICATION_SECTIONS_BACK_URL, "searchUrl"))
         .andExpect(status().isOk())
-        .andExpect(view().name("application/privacy-notice-agreement"));
+        .andExpect(view().name("application/privacy-notice-agreement"))
+        .andExpect(
+            request()
+                .sessionAttribute(SessionConstants.APPLICATION_SECTIONS_BACK_URL, "searchUrl"));
 
     verify(privacyNoticeAgreementValidator, times(1)).validate(any(), any());
   }
