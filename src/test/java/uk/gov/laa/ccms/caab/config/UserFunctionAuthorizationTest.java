@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
@@ -80,11 +81,16 @@ class UserFunctionAuthorizationTest {
     return Stream.of(
         route("GET", "/general-provider-requests/types", UserRole.CREATE_GENERAL_REQUEST),
         route("POST", "/general-provider-requests/details", UserRole.CREATE_GENERAL_REQUEST),
-        route("POST", "/case-provider-requests/details", UserRole.SUBMIT_CASE_QUERY),
+        route(
+            "POST",
+            "/case-provider-requests/details",
+            UserRole.SUBMIT_CASE_QUERY,
+            UserRole.VIEW_CASE_DETAILS),
         route(
             "POST",
             "/application/submit-case-provider-request/confirmed",
-            UserRole.SUBMIT_CASE_QUERY),
+            UserRole.SUBMIT_CASE_QUERY,
+            UserRole.VIEW_CASE_DETAILS),
         route("POST", "/application/client/details/summary", UserRole.SUBMIT_REGISTER_CLIENT),
         route("GET", "/application/client/details/summary", UserRole.CREATE_APPLICATION),
         route(
@@ -109,10 +115,18 @@ class UserFunctionAuthorizationTest {
         route("GET", "/application/proceedings/12/summary", UserRole.VIEW_PROCEEDING),
         route("GET", "/amendments/proceedings/12/summary", UserRole.VIEW_PROCEEDING),
         route("POST", "/amendments/proceedings/edit/confirm", UserRole.VIEW_PROCEEDING),
-        route("GET", "/case/details/proceeding/0", UserRole.VIEW_PROCEEDING),
+        route(
+            "GET",
+            "/case/details/proceeding/0",
+            UserRole.VIEW_PROCEEDING,
+            UserRole.VIEW_CASE_DETAILS),
         route(
             "POST", "/application/sections/client/details/summary", UserRole.SUBMIT_UPDATE_CLIENT),
-        route("POST", "/amendments/sections/client/details/summary", UserRole.SUBMIT_UPDATE_CLIENT),
+        route(
+            "POST",
+            "/amendments/sections/client/details/summary",
+            UserRole.SUBMIT_UPDATE_CLIENT,
+            UserRole.VIEW_CLIENT_DETAILS),
         route("POST", "/application/sections", UserRole.SUBMIT_APPLICATION),
         route("GET", "/application/validate", UserRole.SUBMIT_APPLICATION),
         route("POST", "/application/submit/summary", UserRole.SUBMIT_APPLICATION),
@@ -133,7 +147,8 @@ class UserFunctionAuthorizationTest {
         route(
             "POST",
             "/notifications/7/provide-documents-or-evidence",
-            UserRole.SUBMIT_DOCUMENT_UPLOAD),
+            UserRole.SUBMIT_DOCUMENT_UPLOAD,
+            UserRole.UPLOAD_EVIDENCE),
         route("GET", "/notifications/7/provide-documents-or-evidence", UserRole.UPLOAD_EVIDENCE),
         route("POST", "/notifications/7/attachments/upload", UserRole.UPLOAD_EVIDENCE),
         route("GET", "/notifications/7/attachments/3/remove", UserRole.UPLOAD_EVIDENCE),
@@ -144,29 +159,64 @@ class UserFunctionAuthorizationTest {
         route("GET", "/notifications/7", UserRole.VIEW_NOTIFICATIONS),
         route("GET", "/notifications/search-results", UserRole.VIEW_NOTIFICATIONS),
         route("GET", "/notifications", UserRole.VIEW_NOTIFICATIONS),
-        route("POST", "/case/billing/poa/submit", UserRole.SUBMIT_PAYMENT_ON_ACCOUNT),
-        route("POST", "/case/billing/poa/declaration", UserRole.SUBMIT_PAYMENT_ON_ACCOUNT),
-        route("GET", "/case/billing/poa/summary", UserRole.CREATE_PAYMENT_ON_ACCOUNT),
-        route("POST", "/case/billing/bill/submit", UserRole.SUBMIT_BILL),
-        route("POST", "/case/billing/bill/remove", UserRole.DELETE_BILL),
-        route("GET", "/case/billing/bill/copy", UserRole.CREATE_BILL),
-        route("GET", "/case/billing/bill", UserRole.CREATE_BILL),
-        route("POST", "/case/billing/undertaking", UserRole.ENTER_UNDERTAKING),
-        route("GET", "/case/billing", UserRole.VIEW_CASE_BILL),
         route(
-            "POST", "/case/outcome-and-awards/proceeding/0/outcome/clear", UserRole.CLEAR_OUTCOME),
+            "POST",
+            "/case/billing/poa/submit",
+            UserRole.SUBMIT_PAYMENT_ON_ACCOUNT,
+            UserRole.VIEW_CASE_DETAILS),
+        route(
+            "POST",
+            "/case/billing/poa/declaration",
+            UserRole.SUBMIT_PAYMENT_ON_ACCOUNT,
+            UserRole.VIEW_CASE_DETAILS),
+        route(
+            "GET",
+            "/case/billing/poa/summary",
+            UserRole.CREATE_PAYMENT_ON_ACCOUNT,
+            UserRole.VIEW_CASE_DETAILS),
+        route(
+            "POST", "/case/billing/bill/submit", UserRole.SUBMIT_BILL, UserRole.VIEW_CASE_DETAILS),
+        route(
+            "POST", "/case/billing/bill/remove", UserRole.DELETE_BILL, UserRole.VIEW_CASE_DETAILS),
+        route("GET", "/case/billing/bill/copy", UserRole.CREATE_BILL, UserRole.VIEW_CASE_DETAILS),
+        route("GET", "/case/billing/bill", UserRole.CREATE_BILL, UserRole.VIEW_CASE_DETAILS),
+        route(
+            "POST",
+            "/case/billing/undertaking",
+            UserRole.ENTER_UNDERTAKING,
+            UserRole.VIEW_CASE_DETAILS),
+        route("GET", "/case/billing", UserRole.VIEW_CASE_BILL, UserRole.VIEW_CASE_DETAILS),
+        route(
+            "POST",
+            "/case/outcome-and-awards/proceeding/0/outcome/clear",
+            UserRole.CLEAR_OUTCOME,
+            UserRole.VIEW_CASE_DETAILS),
         route(
             "POST",
             "/case/outcome-and-awards/proceeding/0/outcome",
-            UserRole.UPDATE_PROCEEDING_OUTCOME),
+            UserRole.UPDATE_PROCEEDING_OUTCOME,
+            UserRole.VIEW_CASE_DETAILS),
         route(
             "POST",
             "/case/outcome-and-awards/proceeding/0/outcome/court-search",
-            UserRole.UPDATE_PROCEEDING_OUTCOME),
-        route("GET", "/case/outcome-and-awards", UserRole.RECORD_OUTCOME),
-        route("GET", "/case/outcome-and-awards", UserRole.REQUEST_CASE_DISCHARGE),
-        route("POST", "/case/outcome-and-awards/asset", UserRole.RECORD_OUTCOME),
+            UserRole.UPDATE_PROCEEDING_OUTCOME,
+            UserRole.VIEW_CASE_DETAILS),
+        route(
+            "GET", "/case/outcome-and-awards", UserRole.RECORD_OUTCOME, UserRole.VIEW_CASE_DETAILS),
+        route(
+            "GET",
+            "/case/outcome-and-awards",
+            UserRole.REQUEST_CASE_DISCHARGE,
+            UserRole.VIEW_CASE_DETAILS),
+        route(
+            "POST",
+            "/case/outcome-and-awards/asset",
+            UserRole.RECORD_OUTCOME,
+            UserRole.VIEW_CASE_DETAILS),
         route("GET", "/case/overview", UserRole.VIEW_CASE_DETAILS),
+        route("GET", "/application/proceedings/scope-limitations/confirm", UserRole.ADD_PROCEEDING),
+        route(
+            "POST", "/amendments/proceedings/scope-limitations/1/remove", UserRole.VIEW_PROCEEDING),
         route("GET", "/application/2/view", UserRole.VIEW_CASES_AND_APPLICATIONS),
         route("GET", "/application/2/view", UserRole.VIEW_CASE_DETAILS),
         route("GET", "/case/details", UserRole.VIEW_CASE_DETAILS));
@@ -187,13 +237,20 @@ class UserFunctionAuthorizationTest {
             .isTrue();
   }
 
-  private static Arguments route(String method, String path, UserRole role) {
-    return Arguments.of(HttpMethod.valueOf(method), path, role);
+  /**
+   * A protected route: the action's own function, and any further functions its flow needs, such as
+   * VC for a case action.
+   */
+  private static Arguments route(
+      String method, String path, UserRole role, UserRole... flowFunctions) {
+    return Arguments.of(HttpMethod.valueOf(method), path, role, List.of(flowFunctions));
   }
 
   @ParameterizedTest(name = "{0} {1} is refused without {2}")
   @MethodSource("protectedRoutes")
-  void refusedWithoutFunction(HttpMethod method, String path, UserRole role) throws Exception {
+  void refusedWithoutFunction(
+      HttpMethod method, String path, UserRole role, List<UserRole> flowFunctions)
+      throws Exception {
     mockMvc
         .perform(
             request(method, path)
@@ -205,41 +262,33 @@ class UserFunctionAuthorizationTest {
         .andExpect(notAuthorisedPending());
   }
 
-  @ParameterizedTest(name = "{0} {1} is allowed with {2}")
+  @ParameterizedTest(name = "{0} {1} is allowed with {2} and {3}")
   @MethodSource("protectedRoutes")
-  void allowedWithFunction(HttpMethod method, String path, UserRole role) throws Exception {
+  void allowedWithFunction(
+      HttpMethod method, String path, UserRole role, List<UserRole> flowFunctions)
+      throws Exception {
+    List<GrantedAuthority> authorities = new ArrayList<>();
+    authorities.add(new SimpleGrantedAuthority(role.getCode()));
+    flowFunctions.forEach(
+        flowFunction -> authorities.add(new SimpleGrantedAuthority(flowFunction.getCode())));
+
     mockMvc
-        .perform(
-            request(method, path)
-                .with(user("user").authorities(authoritiesFor(path, role)))
-                .with(csrf()))
+        .perform(request(method, path).with(user("user").authorities(authorities)).with(csrf()))
         .andExpect(status().isNotFound());
   }
 
-  @ParameterizedTest(name = "{0} {1} is refused with only {2}, without VC")
-  @MethodSource("caseActionRoutes")
-  void caseActionRefusedWithoutViewCaseDetails(HttpMethod method, String path, UserRole role)
+  @ParameterizedTest(name = "{0} {1} is refused with only {2}, without {3}")
+  @MethodSource("routesWithFlowFunctions")
+  void refusedWithoutFlowFunction(
+      HttpMethod method, String path, UserRole role, List<UserRole> flowFunctions)
       throws Exception {
     mockMvc
         .perform(request(method, path).with(user("user").authorities(role::getCode)).with(csrf()))
         .andExpect(redirectedUrl("/home"));
   }
 
-  static Stream<Arguments> caseActionRoutes() {
-    return protectedRoutes()
-        .filter(
-            arguments ->
-                ((String) arguments.get()[1]).startsWith("/case/")
-                    && arguments.get()[2] != UserRole.VIEW_CASE_DETAILS);
-  }
-
-  /** Case pages need VC, to be in a case, as well as the action's own function. */
-  private static List<GrantedAuthority> authoritiesFor(String path, UserRole role) {
-    return path.startsWith("/case/")
-        ? List.of(
-            new SimpleGrantedAuthority(role.getCode()),
-            new SimpleGrantedAuthority(UserRole.VIEW_CASE_DETAILS.getCode()))
-        : List.of(new SimpleGrantedAuthority(role.getCode()));
+  static Stream<Arguments> routesWithFlowFunctions() {
+    return protectedRoutes().filter(arguments -> !((List<?>) arguments.get()[3]).isEmpty());
   }
 
   @Test
