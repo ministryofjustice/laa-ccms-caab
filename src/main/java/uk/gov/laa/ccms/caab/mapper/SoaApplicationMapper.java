@@ -14,12 +14,14 @@ import static uk.gov.laa.ccms.caab.util.OpponentUtil.getAssessmentMappingId;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -34,6 +36,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
+import uk.gov.laa.ccms.caab.constants.ApplicationConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.SoaApplicationMappingContext;
@@ -760,7 +763,39 @@ public interface SoaApplicationMapper {
   // which decides whether a means reassessment is forced to SUBSTANTIVE. Leaving them unmapped sent
   // an empty list, making that flag unconditionally true.
   @Mapping(target = "availableFunctions", source = "tdsApplication.availableFunctions")
+  @Mapping(
+      target = "priorAuthorities",
+      source = "tdsApplication.priorAuthorities",
+      qualifiedByName = "mapSubmittablePriorAuthorities")
   CaseDetail toCaseDetail(CaseMappingContext context);
+
+  /**
+   * Selects the prior authorities to send to EBS. Old PUI omits any the LAA has already decided
+   * (`CaseToEBSCaseConverter.convertToEBSPriorAuthorities` on a new case and {@code
+   * addAmendmentPriorAuthorities} on an amendment both require {@code status != null &&
+   * !"Grant".equalsIgnoreCase(status)}), so granted authorities are never resubmitted. A newly
+   * added prior authority is created at status "Draft" in both UIs, so nothing the provider enters
+   * is lost to the null check.
+   *
+   * @param priorAuthorities the prior authorities held against the application
+   * @return the prior authorities to submit, or {@code null} when there are none to map
+   */
+  @Named("mapSubmittablePriorAuthorities")
+  default List<PriorAuthority> mapSubmittablePriorAuthorities(
+      final List<PriorAuthorityDetail> priorAuthorities) {
+    if (priorAuthorities == null) {
+      return null;
+    }
+
+    return priorAuthorities.stream()
+        .filter(
+            priorAuthority ->
+                priorAuthority.getStatus() != null
+                    && !ApplicationConstants.PRIOR_AUTHORITY_STATUS_GRANT.equalsIgnoreCase(
+                        priorAuthority.getStatus()))
+        .map(this::toSoaPriorAuthority)
+        .collect(Collectors.toCollection(ArrayList::new));
+  }
 
   @Mapping(target = "ccmsDocumentId", source = "registeredDocumentId")
   @Mapping(target = "documentSubject", source = "documentType.displayValue")
@@ -848,6 +883,36 @@ public interface SoaApplicationMapper {
     if (StringUtils.hasText(quickEditType)) {
       target.setApplicationAmendmentType(quickEditType);
     }
+  }
+
+  /**
+   * Clears delegated functions from every scope limitation on a substantive application, as old PUI
+   * does in {@code CaseToEBSCaseConverter.convertToEBSScopeLimitation} on both the new case and the
+   * amendment path. The test is against the application's own type and matches SUBSTANTIVE only, so
+   * substantive with devolved powers (SUBDP) keeps its delegated functions.
+   *
+   * @param context the case mapping context.
+   * @param target the target submitted application details.
+   */
+  @AfterMapping
+  default void clearDelegatedFunctionsOnSubstantive(
+      CaseMappingContext context, @MappingTarget SubmittedApplicationDetails target) {
+    if (context == null || context.getTdsApplication() == null || target == null) {
+      return;
+    }
+
+    final ApplicationType applicationType = context.getTdsApplication().getApplicationType();
+    if (applicationType == null
+        || !ApplicationConstants.APP_TYPE_SUBSTANTIVE.equalsIgnoreCase(applicationType.getId())) {
+      return;
+    }
+
+    Optional.ofNullable(target.getProceedings()).stream()
+        .flatMap(Collection::stream)
+        .map(uk.gov.laa.ccms.soa.gateway.model.ProceedingDetail::getScopeLimitations)
+        .filter(Objects::nonNull)
+        .flatMap(Collection::stream)
+        .forEach(scopeLimitation -> scopeLimitation.setDelegatedFunctionsApply(false));
   }
 
   /**

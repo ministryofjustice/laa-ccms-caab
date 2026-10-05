@@ -30,9 +30,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.billing.UndertakingFormData;
@@ -59,8 +64,13 @@ import uk.gov.laa.ccms.caab.model.sections.PriorAuthoritySectionDisplay;
 import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.AssessmentScreen;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
+import uk.gov.laa.ccms.soa.gateway.model.OpaAttribute;
+import uk.gov.laa.ccms.soa.gateway.model.OpaEntity;
+import uk.gov.laa.ccms.soa.gateway.model.OpaInstance;
+import uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails;
 
 @DisplayName("Amendment service test")
 @ExtendWith(MockitoExtension.class)
@@ -757,6 +767,124 @@ class AmendmentServiceTest {
                           && application.getProviderDetails().getFeeEarner() == null
                           && application.getProviderDetails().getSupervisor() == null));
       assertThat(transactionId).isEqualTo("12345");
+    }
+  }
+
+  @Nested
+  @DisplayName("submission diagnostic logging tests")
+  @ExtendWith(OutputCaptureExtension.class)
+  class SubmissionDiagnosticLoggingTests {
+
+    private UserDetail user() {
+      return new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
+    }
+
+    private void stubSubmission() {
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(new CaseDetail());
+      when(caabApiClient.createApplication(any(), any())).thenReturn(Mono.just("123"));
+      when(soaApiClient.updateCase(any(), any(), any(), any()))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TRANS123")));
+    }
+
+    @Test
+    @DisplayName("Should log the assessment shape without logging any attribute value")
+    void shouldLogAssessmentShapeWithoutAttributeValues(final CapturedOutput output) {
+      // Given - a completed means assessment carrying the client's financial data
+      final AssessmentDetail meansAssessment =
+          new AssessmentDetail()
+              .status("COMPLETE")
+              .entityTypes(
+                  List.of(
+                      new AssessmentEntityTypeDetail()
+                          .name("global")
+                          .entities(
+                              List.of(
+                                  new AssessmentEntityDetail()
+                                      .name("300000630332")
+                                      .attributes(
+                                          List.of(
+                                              new AssessmentAttributeDetail()
+                                                  .name("CLIENT_PROV_LA")
+                                                  .value("true"),
+                                              new AssessmentAttributeDetail()
+                                                  .name("BANK_ACCOUNT_BALANCE")
+                                                  .value("12345.67")))))));
+
+      final ApplicationDetail amendment = buildFullApplicationDetail();
+      amendment.setCaseReferenceNumber("300000630332");
+      stubSubmission();
+
+      // When
+      amendmentService.submitMeansReassessment(user(), amendment, meansAssessment);
+
+      // Then - the shape and the goal outcome are recorded
+      assertThat(output).contains("DIAG-SUBMIT");
+      assertThat(output).contains("300000630332");
+      assertThat(output).contains("valuedAttrs=2");
+      assertThat(output).contains("CLIENT_PROV_LA=true");
+
+      // ...but the client's financial data never reaches the log
+      assertThat(output).doesNotContain("12345.67");
+      assertThat(output).doesNotContain("BANK_ACCOUNT_BALANCE");
+    }
+
+    @Test
+    @DisplayName("Should count what the mapped case update actually carries")
+    void shouldCountMappedCaseUpdate(final CapturedOutput output) {
+      // Given - a mapped case update carrying a populated means assessment
+      final CaseDetail mapped =
+          new CaseDetail()
+              .applicationDetails(
+                  new SubmittedApplicationDetails()
+                      .applicationAmendmentType("SUB")
+                      .meansAssessmentAmended(true)
+                      .meansAssessments(
+                          List.of(
+                              new uk.gov.laa.ccms.soa.gateway.model.AssessmentResult()
+                                  .addAssessmentDetailsItem(
+                                      new AssessmentScreen()
+                                          .screenName("SUMMARY")
+                                          .addEntityItem(
+                                              new OpaEntity()
+                                                  .entityName("global")
+                                                  .addInstancesItem(
+                                                      new OpaInstance()
+                                                          .addAttributesItem(new OpaAttribute())
+                                                          .addAttributesItem(
+                                                              new OpaAttribute())))))));
+
+      final ApplicationDetail amendment = buildFullApplicationDetail();
+      amendment.setCaseReferenceNumber("300000630332");
+      when(soaApplicationMapper.toCaseDetail(any())).thenReturn(mapped);
+      when(caabApiClient.createApplication(any(), any())).thenReturn(Mono.just("123"));
+      when(soaApiClient.updateCase(any(), any(), any(), any()))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TRANS123")));
+
+      // When
+      amendmentService.submitMeansReassessment(user(), amendment, new AssessmentDetail());
+
+      // Then - the counts EBS will receive, and merits correctly reported as absent
+      assertThat(output)
+          .contains("mapped: amendmentType=SUB meansAmended=true")
+          .contains("means=results=1,screens=1,entities=1,attrs=2")
+          .contains("merits=absent");
+    }
+
+    @Test
+    @DisplayName("Should record an absent assessment rather than failing the submission")
+    void shouldRecordAbsentAssessment(final CapturedOutput output) {
+      // Given
+      final ApplicationDetail amendment = buildFullApplicationDetail();
+      amendment.setCaseReferenceNumber("300000630332");
+      stubSubmission();
+
+      // When - no means assessment at all
+      final String transactionId =
+          amendmentService.submitMeansReassessment(user(), amendment, null);
+
+      // Then
+      assertThat(output).contains("meansAssessment held: none");
+      assertThat(transactionId).isEqualTo("TRANS123");
     }
   }
 

@@ -1241,8 +1241,10 @@ class SoaApplicationMapperTest {
     final ApplicationDetail applicationDetail = buildApplicationDetail(1, false, new Date());
     final LinkedCaseDetail linkedCaseDetail =
         new LinkedCaseDetail().lscCaseReference("LC123").relationToCase("Related");
+    // A prior authority always carries a status - "Draft" when newly added, otherwise the EBS
+    // decision status - and only an undecided one is submitted.
     final PriorAuthorityDetail priorAuthorityDetail =
-        new PriorAuthorityDetail().summary("Test Prior Authority");
+        new PriorAuthorityDetail().summary("Test Prior Authority").status("Draft");
     final BaseEvidenceDocumentDetail caseDocDetail =
         new BaseEvidenceDocumentDetail().registeredDocumentId("DOC123");
     applicationDetail.setLinkedCases(Collections.singletonList(linkedCaseDetail));
@@ -1429,6 +1431,80 @@ class SoaApplicationMapperTest {
   @DisplayName("Test toSubmittedApplicationDetails with null CaseMappingContext")
   void testToSubmittedApplicationDetails_Null() {
     assertNull(applicationMapper.toSubmittedApplicationDetails(null));
+  }
+
+  @Test
+  @DisplayName("Prior authorities already granted are not resubmitted")
+  void testMapSubmittablePriorAuthorities_ExcludesGranted() {
+    final List<PriorAuthorityDetail> priorAuthorities =
+        List.of(
+            new PriorAuthorityDetail().summary("draft").status("Draft"),
+            new PriorAuthorityDetail().summary("granted").status("Grant"),
+            new PriorAuthorityDetail().summary("granted lowercase").status("grant"),
+            new PriorAuthorityDetail().summary("no status"));
+
+    final List<uk.gov.laa.ccms.soa.gateway.model.PriorAuthority> result =
+        applicationMapper.mapSubmittablePriorAuthorities(priorAuthorities);
+
+    assertEquals(1, result.size());
+    assertEquals("draft", result.getFirst().getDescription());
+  }
+
+  @Test
+  @DisplayName("Prior authorities map to null when the application has none")
+  void testMapSubmittablePriorAuthorities_Null() {
+    assertNull(applicationMapper.mapSubmittablePriorAuthorities(null));
+  }
+
+  @Test
+  @DisplayName("A substantive application sends its scope limitations without delegated functions")
+  void testToSubmittedApplicationDetails_SubstantiveClearsDelegatedFunctions() {
+    final SubmittedApplicationDetails result =
+        applicationMapper.toSubmittedApplicationDetails(
+            CaseMappingContext.builder()
+                .tdsApplication(applicationWithDelegatedScopeLimitation("SUB"))
+                .build());
+
+    assertEquals(
+        Boolean.FALSE,
+        result
+            .getProceedings()
+            .getFirst()
+            .getScopeLimitations()
+            .getFirst()
+            .isDelegatedFunctionsApply());
+  }
+
+  @Test
+  @DisplayName("Substantive with devolved powers keeps its delegated functions")
+  void testToSubmittedApplicationDetails_SubstantiveDevolvedPowersKeepsDelegatedFunctions() {
+    final SubmittedApplicationDetails result =
+        applicationMapper.toSubmittedApplicationDetails(
+            CaseMappingContext.builder()
+                .tdsApplication(applicationWithDelegatedScopeLimitation("SUBDP"))
+                .build());
+
+    assertEquals(
+        Boolean.TRUE,
+        result
+            .getProceedings()
+            .getFirst()
+            .getScopeLimitations()
+            .getFirst()
+            .isDelegatedFunctionsApply());
+  }
+
+  private ApplicationDetail applicationWithDelegatedScopeLimitation(final String applicationType) {
+    final ApplicationDetail applicationDetail = new ApplicationDetail();
+    applicationDetail.setApplicationType(new ApplicationType().id(applicationType));
+    applicationDetail.setProceedings(
+        List.of(
+            new ProceedingDetail()
+                .scopeLimitations(
+                    List.of(
+                        new ScopeLimitationDetail()
+                            .delegatedFuncApplyInd(new BooleanDisplayValue().flag(true))))));
+    return applicationDetail;
   }
 
   @Test
