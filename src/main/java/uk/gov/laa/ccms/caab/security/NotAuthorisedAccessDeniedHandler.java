@@ -47,8 +47,12 @@ public class NotAuthorisedAccessDeniedHandler implements AccessDeniedHandler {
     }
 
     HttpSession session = request.getSession();
+    // A refused page load must not return to itself. A refused form post may return to the page
+    // it was posted from, which was shown by a page load and so can be loaded again.
+    boolean refusedPageLoad = "GET".equals(request.getMethod());
     Predicate<String> notRefusedPage =
-        page -> !RefusedActionSession.pathOf(page).equals(request.getRequestURI());
+        page ->
+            !refusedPageLoad || !RefusedActionSession.pathOf(page).equals(request.getRequestURI());
     String target =
         refererOnThisSite(request)
             .flatMap(referer -> RefusedActionSession.findRenderedPage(session, referer))
