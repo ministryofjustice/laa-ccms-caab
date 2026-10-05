@@ -10,7 +10,6 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.math.BigDecimal;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -664,11 +663,6 @@ public class AwardController {
     model.addAttribute(
         "landRegistrationOptions",
         getCommonValues(CommonValueConstants.COMMON_VALUE_LAND_REGISTRATION));
-    model.addAttribute(
-        "yesNoOptions",
-        getCommonValues(CommonValueConstants.COMMON_VALUE_YES_NO).stream()
-            .sorted(Comparator.comparing(option -> !"Y".equals(option.getCode())))
-            .toList());
   }
 
   private List<CommonLookupValueDetail> getCommonValues(final String type) {

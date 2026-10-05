@@ -71,7 +71,38 @@
       <div th:replace="~{partials/forms :: largeTextInput('statutoryChargeExemptReason', #{case.landAward.statutoryChargeExemptReason}, 950)}"></div>
       <div th:replace="~{partials/forms :: dropdown('landChargeRegistration', #{case.landAward.landChargeRegistration}, ${landRegistrationOptions}, 'code', 'description', false)}"></div>
       <div th:replace="~{partials/forms :: textInput(fieldId='registrationReference', label=#{case.landAward.registrationReference}, inputClass='govuk-input--width-20', maxlengthParam=35)}"></div>
-      <div th:replace="~{partials/forms :: radios('recoveryOfAwardTimeRelated', #{case.landAward.recoveryOfAwardTimeRelated}, ${yesNoOptions}, 'code', 'description', false)}"></div>
+      <div class="govuk-form-group"
+           th:classappend="${#fields.hasErrors('recoveryOfAwardTimeRelated')} ? 'govuk-form-group--error' : ''">
+        <fieldset class="govuk-fieldset">
+          <legend class="govuk-fieldset__legend"
+                  th:text="#{case.landAward.recoveryOfAwardTimeRelated}"></legend>
+          <span th:if="${#fields.hasErrors('recoveryOfAwardTimeRelated')}"
+                th:errors="*{recoveryOfAwardTimeRelated}"
+                class="govuk-error-message"></span>
+          <div class="govuk-radios govuk-radios--inline" data-module="govuk-radios">
+            <div class="govuk-radios__item">
+              <input class="govuk-radios__input"
+                     id="recovery-of-award-time-related-yes"
+                     type="radio"
+                     th:field="*{recoveryOfAwardTimeRelated}"
+                     value="Y">
+              <label class="govuk-label govuk-radios__label"
+                     for="recovery-of-award-time-related-yes"
+                     th:text="#{site.yes}"></label>
+            </div>
+            <div class="govuk-radios__item">
+              <input class="govuk-radios__input"
+                     id="recovery-of-award-time-related-no"
+                     type="radio"
+                     th:field="*{recoveryOfAwardTimeRelated}"
+                     value="N">
+              <label class="govuk-label govuk-radios__label"
+                     for="recovery-of-award-time-related-no"
+                     th:text="#{site.no}"></label>
+            </div>
+          </div>
+        </fieldset>
+      </div>
 
       <div class="govuk-button-group govuk-!-margin-top-6">
         <button type="submit"

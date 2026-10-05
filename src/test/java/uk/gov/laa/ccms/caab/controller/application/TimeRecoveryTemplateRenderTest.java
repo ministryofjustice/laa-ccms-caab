@@ -35,7 +35,6 @@ import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
-import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.springboot.dialect.GovUkDialect;
 import uk.gov.laa.springboot.dialect.MojCustomDialect;
@@ -45,6 +44,7 @@ class TimeRecoveryTemplateRenderTest {
 
   private MockMvc mockMvc;
   private CaseOutcomeService caseOutcomeService;
+  private LookupService lookupService;
 
   @BeforeEach
   void setUp() {
@@ -70,18 +70,9 @@ class TimeRecoveryTemplateRenderTest {
     viewResolver.setCharacterEncoding("UTF-8");
 
     caseOutcomeService = org.mockito.Mockito.mock(CaseOutcomeService.class);
-    final LookupService lookupService = org.mockito.Mockito.mock(LookupService.class);
+    lookupService = org.mockito.Mockito.mock(LookupService.class);
     org.mockito.Mockito.when(lookupService.getCommonValues(org.mockito.ArgumentMatchers.any()))
         .thenReturn(Mono.just(new CommonLookupDetail().content(List.of())));
-    org.mockito.Mockito.when(
-            lookupService.getCommonValues(CommonValueConstants.COMMON_VALUE_YES_NO))
-        .thenReturn(
-            Mono.just(
-                new CommonLookupDetail()
-                    .content(
-                        List.of(
-                            new CommonLookupValueDetail().code("N").description("No"),
-                            new CommonLookupValueDetail().code("Y").description("Yes")))));
     org.mockito.Mockito.when(caseOutcomeService.getLandAward("300000001", 123, 7))
         .thenReturn(
             Optional.of(
@@ -141,6 +132,13 @@ class TimeRecoveryTemplateRenderTest {
             content()
                 .string(
                     matchesPattern(
+                        "(?s).*<fieldset class=\"govuk-fieldset\">\\s*"
+                            + "<legend class=\"govuk-fieldset__legend\">"
+                            + "Is recovery of the award time related\\?</legend>.*")))
+        .andExpect(
+            content()
+                .string(
+                    matchesPattern(
                         "(?s).*<input(?=[^>]*name=\"recoveryOfAwardTimeRelated\")"
                             + "(?=[^>]*value=\"Y\")[^>]*>.*"
                             + "<input(?=[^>]*name=\"recoveryOfAwardTimeRelated\")"
@@ -171,6 +169,8 @@ class TimeRecoveryTemplateRenderTest {
                     not(
                         matchesPattern(
                             "(?s).*<select[^>]*name=\"recoveryOfAwardTimeRelated\"[^>]*>.*"))));
+    org.mockito.Mockito.verify(lookupService, org.mockito.Mockito.never())
+        .getCommonValues(CommonValueConstants.COMMON_VALUE_YES_NO);
   }
 
   @ParameterizedTest
