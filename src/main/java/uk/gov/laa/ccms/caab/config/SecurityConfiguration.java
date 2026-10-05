@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authorization.AllAuthoritiesAuthorizationManager;
 import org.springframework.security.authorization.AuthorityAuthorizationManager;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.authorization.AuthorizationManagers;
@@ -131,9 +132,10 @@ public class SecurityConfiguration {
             "/general-provider-requests/**",
             "/application/submit-general-provider-request/confirmed")
         .hasAuthority(UserRole.CREATE_GENERAL_REQUEST.getCode())
+        // A case query is a case action, so it needs VC as well.
         .requestMatchers(
             "/case-provider-requests/**", "/application/submit-case-provider-request/confirmed")
-        .hasAuthority(UserRole.SUBMIT_CASE_QUERY.getCode())
+        .access(caseAction(UserRole.SUBMIT_CASE_QUERY))
         .requestMatchers(HttpMethod.POST, "/application/client/details/summary")
         .hasAuthority(UserRole.SUBMIT_REGISTER_CLIENT.getCode())
         .requestMatchers(
@@ -156,8 +158,15 @@ public class SecurityConfiguration {
         .requestMatchers(
             CASE_CONTEXT + "/proceedings/*/summary", CASE_CONTEXT + "/proceedings/edit/**")
         .hasAuthority(UserRole.VIEW_PROCEEDING.getCode())
-        .requestMatchers(HttpMethod.POST, CASE_CONTEXT + "/sections/client/details/summary")
+        // Scope limitations are edited inside both the add and the edit proceeding flows, which
+        // share these URLs.
+        .requestMatchers(CASE_CONTEXT + "/proceedings/scope-limitations/**")
+        .hasAnyAuthority(UserRole.ADD_PROCEEDING.getCode(), UserRole.VIEW_PROCEEDING.getCode())
+        .requestMatchers(HttpMethod.POST, "/application/sections/client/details/summary")
         .hasAuthority(UserRole.SUBMIT_UPDATE_CLIENT.getCode())
+        // Submitting an amended client is the end of the amend client flow, which needs CD.
+        .requestMatchers(HttpMethod.POST, "/amendments/sections/client/details/summary")
+        .access(allFunctions(UserRole.VIEW_CLIENT_DETAILS, UserRole.SUBMIT_UPDATE_CLIENT))
         .requestMatchers(HttpMethod.POST, "/application/sections")
         .hasAuthority(UserRole.SUBMIT_APPLICATION.getCode())
         .requestMatchers(
@@ -179,8 +188,9 @@ public class SecurityConfiguration {
         .hasAuthority(UserRole.VIEW_CLIENT_DETAILS.getCode())
         .requestMatchers("/notifications/*/attachments/*/retrieve")
         .hasAuthority(UserRole.VIEW_NOTIFICATION_ATTACHMENT.getCode())
+        // Submitting documents is the end of the provide documents flow, which needs EVID.
         .requestMatchers(HttpMethod.POST, "/notifications/*/provide-documents-or-evidence")
-        .hasAuthority(UserRole.SUBMIT_DOCUMENT_UPLOAD.getCode())
+        .access(allFunctions(UserRole.UPLOAD_EVIDENCE, UserRole.SUBMIT_DOCUMENT_UPLOAD))
         .requestMatchers(
             "/notifications/*/provide-documents-or-evidence",
             "/notifications/*/attachments/**",
@@ -240,6 +250,12 @@ public class SecurityConfiguration {
         .access(caseAction(UserRole.RECORD_OUTCOME, UserRole.REQUEST_CASE_DISCHARGE))
         .requestMatchers("/case/**")
         .hasAuthority(UserRole.VIEW_CASE_DETAILS.getCode());
+  }
+
+  /** Requires every one of the given functions. */
+  private static AuthorizationManager<RequestAuthorizationContext> allFunctions(UserRole... roles) {
+    return AllAuthoritiesAuthorizationManager.hasAllAuthorities(
+        Arrays.stream(roles).map(UserRole::getCode).toList());
   }
 
   /** Requires VC, to be in a case, and any one of the action's functions. */
