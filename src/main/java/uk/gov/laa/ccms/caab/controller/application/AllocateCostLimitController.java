@@ -161,14 +161,22 @@ public class AllocateCostLimitController {
     }
 
     allocateCostsFormData.setCostEntries(updatedCosts);
+    allocateCostsFormData.setTotalRemaining(getTotalRemaining(allocateCostsFormData));
+
+    // The remove branch below stores the form and redirects, so binding and baseline errors have
+    // to be handled first - otherwise an invalid hidden value reaches the session and the review
+    // endpoint submits it as-is.
+    if (bindingResult.hasErrors()) {
+      model.addAttribute("case", ebsCase);
+      model.addAttribute("costDetails", allocateCostsFormData);
+      return "application/cost-allocation";
+    }
 
     if (removeCounsel != null) {
-      allocateCostsFormData.setTotalRemaining(getTotalRemaining(allocateCostsFormData));
       session.setAttribute(COST_ALLOCATION_FORM_DATA, allocateCostsFormData);
       return "redirect:/allocate-cost-limit/counsel/%d/remove".formatted(removeCounsel);
     }
 
-    allocateCostsFormData.setTotalRemaining(getTotalRemaining(allocateCostsFormData));
     session.setAttribute(COST_ALLOCATION_FORM_DATA, allocateCostsFormData);
 
     allocateCostLimitValidator.validate(allocateCostsFormData, bindingResult);
