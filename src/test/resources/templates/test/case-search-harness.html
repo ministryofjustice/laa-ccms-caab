@@ -1,0 +1,7 @@
+<!DOCTYPE html>
+<!-- Renders the case search form fragment. Used by CaseSearchFormRenderTest. -->
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:replace="~{application/partials/search-fragments :: searchCaseFormFragment(caption='Cases', heading='Search for cases and applications', action='/search', copyCase=false)}"></th:block>
+</body>
+</html>

@@ -137,7 +137,8 @@
      class="govuk-grid-row">
   <input type="hidden" id="clientFlowFormAction" name="clientFlowFormAction" th:value="*{clientFlowFormAction}">
   <div class="govuk-grid-column-two-thirds">
-    <div th:replace="~{partials/forms :: dropdown('title', #{person.title}, ${titles}, 'code', 'description', false)}"></div>
+    <th:block th:replace="~{partials/forms :: autocompleteSelect(field='title', label=#{person.title}, items=${titles},
+                                                                 itemValue='code', itemLabel='description')}"/>
     <div th:replace="~{partials/forms :: textInput('surname', #{person.surname}, 'govuk-input--width-20')}"></div>
 
     <p th:if="*{clientFlowFormAction == 'create'}" class="govuk-body">
@@ -162,7 +163,10 @@
     </p>
 
     <div th:if="*{clientFlowFormAction == 'create'}">
-      <div th:replace="~{partials/forms :: dropdown('countryOfOrigin', #{person.countryOfOrigin}, ${countries}, 'code', 'description', false)}"></div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='countryOfOrigin',
+                                                                   label=#{person.countryOfOrigin},
+                                                                   items=${countries}, itemValue='code',
+                                                                   itemLabel='description')}"/>
     </div>
     <p th:if="*{clientFlowFormAction == 'edit'}" class="govuk-body">
       <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{person.countryOfOrigin}"></span>
@@ -210,10 +214,14 @@
     </p>
 
     <div th:unless="${genderDisplayValue}">
-      <div th:replace="~{partials/forms :: dropdown('gender', #{person.gender}, ${genders}, 'code', 'description', false)}"></div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='gender', label=#{person.gender},
+                                                                   items=${genders}, itemValue='code',
+                                                                   itemLabel='description')}"/>
     </div>
 
-    <div th:replace="~{partials/forms :: dropdown('maritalStatus', #{person.maritalStatus}, ${maritalStatusList}, 'code', 'description', false)}"></div>
+    <th:block th:replace="~{partials/forms :: autocompleteSelect(field='maritalStatus', label=#{person.maritalStatus},
+                                                                 items=${maritalStatusList}, itemValue='code',
+                                                                 itemLabel='description')}"/>
 
     <div class="govuk-form-group">
       <fieldset class="govuk-fieldset">
@@ -372,12 +380,18 @@
   </div>
   <div class="govuk-grid-row" th:unless="*{vulnerableClient}">
     <div class="govuk-grid-column-two-thirds">
-      <div th:replace="~{partials/forms :: dropdown('correspondenceMethod', #{contact.correspondenceMethod}, ${correspondenceMethods}, 'code', 'description', false)}"></div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='correspondenceMethod',
+                                                                   label=#{contact.correspondenceMethod},
+                                                                   items=${correspondenceMethods}, itemValue='code',
+                                                                   itemLabel='description')}"/>
     </div>
   </div>
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds">
-      <div th:replace="~{partials/forms :: dropdown('correspondenceLanguage', #{site.optional(#{contact.correspondenceLanguage})}, ${correspondenceLanguages}, 'code', 'description', false)}"></div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='correspondenceLanguage',
+                                                                   label=#{site.optional(#{contact.correspondenceLanguage})},
+                                                                   items=${correspondenceLanguages},
+                                                                   itemValue='code', itemLabel='description')}"/>
     </div>
   </div>
 </th:block>
@@ -469,7 +483,9 @@
           </div>
         </fieldset>
       </div>
-      <div th:replace="~{partials/forms :: dropdown('country', #{address.country}, ${countries}, 'code', 'description', false)}"></div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='country', label=#{address.country},
+                                                                   items=${countries}, itemValue='code',
+                                                                   itemLabel='description')}"/>
       <div th:replace="~{partials/forms :: textInput('houseNameNumber', #{address.house}, 'govuk-input--width-20')}"></div>
       <div th:replace="~{partials/forms :: textInput('postcode', #{address.postcode}, 'govuk-input--width-20')}"></div>
       <div class="govuk-form-group">
@@ -496,7 +512,10 @@
   <div class="govuk-grid-column-two-thirds">
     <div class="govuk-form-group">
       <h2 class="govuk-heading-m" th:text="#{client.opportunities.ethnicity}"></h2>
-      <div th:replace="~{partials/forms :: dropdown('ethnicOrigin', #{client.opportunities.ethnicity.question}, ${ethnicOrigins}, 'code', 'description', false)}"></div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='ethnicOrigin',
+                                                                   label=#{client.opportunities.ethnicity.question},
+                                                                   items=${ethnicOrigins}, itemValue='code',
+                                                                   itemLabel='description')}"/>
       <govuk:details classes="govuk-!-margin-top-2"
                      th:summaryText="#{details.ethnicMonitoring}"
                      th:text="#{details.ethnicMonitoring.text}"/>
@@ -504,7 +523,10 @@
     <div class="govuk-form-group">
       <h2 class="govuk-heading-m" th:text="#{client.opportunities.disability}"></h2>
       </h2>
-      <div th:replace="~{partials/forms :: dropdown('disability', #{client.opportunities.disability.question}, ${disabilities}, 'code', 'description', false)}"></div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='disability',
+                                                                   label=#{client.opportunities.disability.question},
+                                                                   items=${disabilities}, itemValue='code',
+                                                                   itemLabel='description')}"/>
       <govuk:details classes="govuk-!-margin-top-2"
                      th:summaryText="#{details.disabilityMonitoring}"
                      th:text="#{details.disabilityMonitoring.text}"/>

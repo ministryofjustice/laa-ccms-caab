@@ -122,7 +122,8 @@
       <div class="govuk-grid-row" th:if="${notification.notificationOpenIndicator}">
         <div class="govuk-grid-column-two-thirds">
           <h2 class="govuk-heading-m" th:text="#{notifications.subHeading.notificationResponse}"/>
-          <div th:replace="~{partials/forms :: simpleDropdown('action', #{notifications.response}, ${notification.availableResponses})}"></div>
+          <th:block th:replace="~{partials/forms :: autocompleteSelect(field='action', label=#{notifications.response},
+                                                                       items=${notification.availableResponses})}"/>
           <div th:if="${notification.notificationType != 'N'}">
             <div th:replace="~{partials/forms :: largeTextInput('message',  #{notifications.messageToLAA}, 2000)}"></div>
           </div>

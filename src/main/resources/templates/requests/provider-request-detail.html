@@ -45,11 +45,11 @@
             <input class="govuk-file-upload" id="file" name="file" type="file">
           </div>
 
-          <th:block th:each="option : ${providerRequestDynamicForm.dataItems}">
+          <th:block th:fragment="dynamicOptions" th:each="option : ${providerRequestDynamicForm.dataItems}">
 
               <th:block th:with="isDateField=${T(uk.gov.laa.ccms.caab.constants.ProviderRequestDateFields).isDateField(option.code)}">
                   <div class="govuk-form-group"
-                       th:unless="${option.type == 'DAT' or isDateField}"
+                       th:unless="${option.type == 'DAT' or option.type == 'LOV' or isDateField}"
                        th:classappend="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue')} ? 'govuk-form-group--error' : ''">
 
                       <label class="govuk-label"
@@ -61,23 +61,6 @@
                             th:errors="*{dynamicOptions[__${option.code}__].fieldValue}" class="govuk-error-message">
               </span>
 
-                      <th:block  th:if="${option.type == 'LOV'}">
-                          <input type="hidden" th:id="'dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'"
-                                 th:name="'dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'"
-                                 th:value="*{dynamicOptions[__${option.code}__].fieldValueDisplayValue}">
-                          <select class="govuk-select"
-                                  data-module="govuk-select"
-                                  th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                                  th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
-                                  th:errorclass="govuk-select--error"
-                                  th:attr="data-display-value-id='dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'">
-                              <option value="" th:text="#{site.select}"></option>
-                              <option th:each="item : ${__${option.code}__}"
-                                      th:value="${item['code']}"
-                                      th:text="${item['description']}">
-                              </option>
-                          </select>
-                      </th:block>
                       <th:block th:if="${option.type == 'FTS'}">
                           <input class="govuk-input govuk-input--width-20"
                                  type="text"
@@ -114,6 +97,14 @@
                                  th:errorclass="govuk-select--error">
                       </th:block>
                   </div>
+                  <th:block th:if="${option.type == 'LOV' and !isDateField}">
+                      <th:block th:replace="~{partials/forms :: autocompleteSelect(field=${'dynamicOptions[' + option.code + '].fieldValue'},
+                                                                                   label=(${option.mandatoryFlag} ? ${option.label} : #{site.optional(${option.label})}),
+                                                                                   items=${__${option.code}__},
+                                                                                   itemValue='code',
+                                                                                   itemLabel='description',
+                                                                                   withDisplayValue=true)}"/>
+                  </th:block>
                   <!--  Some date fields have been set up as a non DAT type, so to ensure consistent validation and no errors with the backend, an additional type has been created for this condition.  -->
                   <th:block th:if="${option.type == 'DAT' or isDateField}">
                       <moj:datepicker

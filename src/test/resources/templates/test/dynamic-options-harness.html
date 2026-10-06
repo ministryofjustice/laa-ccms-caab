@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<!-- Renders the provider request and prior authority dynamic options. Used by DynamicOptionsRenderTest. -->
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<form th:if="${page == 'providerRequest'}" th:object="${providerRequestDetails}">
+  <th:block th:replace="~{requests/provider-request-detail :: dynamicOptions}"/>
+</form>
+<form th:if="${page == 'priorAuthority'}" th:object="${priorAuthorityDetails}">
+  <th:block th:replace="~{application/prior-authority-details :: dynamicOptions}"/>
+</form>
+</body>
+</html>

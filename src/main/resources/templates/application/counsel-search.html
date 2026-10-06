@@ -37,7 +37,11 @@
                     </th:block>
                     <div th:replace="~{partials/forms :: textInput('name', #{counsel.search.name}, 'govuk-input--width-20')}"/>
                     <div th:replace="~{partials/forms :: textInput('company', #{counsel.search.company}, 'govuk-input--width-20')}"/>
-                    <div th:replace="~{partials/forms :: dropdown('category', #{counsel.search.category}, ${categoryList}, 'code', 'description', false)}"/>
+                    <th:block th:replace="~{partials/forms :: autocompleteSelect(field='category',
+                                                                                 label=#{counsel.search.category},
+                                                                                 items=${categoryList},
+                                                                                 itemValue='code',
+                                                                                 itemLabel='description')}"/>
                     <govuk:button th:text="#{site.search}"/>
                 </div>
             </div>
