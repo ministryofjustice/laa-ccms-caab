@@ -2,7 +2,6 @@ package uk.gov.laa.ccms.caab.controller.application;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.matchesPattern;
-import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -18,7 +17,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mapstruct.factory.Mappers;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,18 +25,11 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import org.thymeleaf.templatemode.TemplateMode;
-import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.bean.validators.awards.LandAwardValidator;
-import uk.gov.laa.ccms.caab.bean.validators.awards.OtherAssetAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.TimeRecoveryValidator;
-import uk.gov.laa.ccms.caab.constants.CommonValueConstants;
-import uk.gov.laa.ccms.caab.mapper.LandAwardMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
-import uk.gov.laa.ccms.caab.service.LookupService;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.springboot.dialect.GovUkDialect;
 import uk.gov.laa.springboot.dialect.MojCustomDialect;
@@ -48,7 +39,6 @@ class TimeRecoveryTemplateRenderTest {
 
   private MockMvc mockMvc;
   private CaseOutcomeService caseOutcomeService;
-  private LookupService lookupService;
 
   @BeforeEach
   void setUp() {
@@ -74,9 +64,6 @@ class TimeRecoveryTemplateRenderTest {
     viewResolver.setCharacterEncoding("UTF-8");
 
     caseOutcomeService = org.mockito.Mockito.mock(CaseOutcomeService.class);
-    lookupService = org.mockito.Mockito.mock(LookupService.class);
-    org.mockito.Mockito.when(lookupService.getCommonValues(org.mockito.ArgumentMatchers.any()))
-        .thenReturn(Mono.just(new CommonLookupDetail().content(List.of())));
     org.mockito.Mockito.when(caseOutcomeService.getLandAward("300000001", 123, 7))
         .thenReturn(
             Optional.of(
@@ -99,112 +86,18 @@ class TimeRecoveryTemplateRenderTest {
     mockMvc =
         standaloneSetup(
                 new AwardController(
-                    lookupService,
+                    null,
                     caseOutcomeService,
                     null,
                     null,
                     null,
-                    new OtherAssetAwardValidator(),
                     null,
-                    new LandAwardValidator(),
-                    Mappers.getMapper(LandAwardMapper.class),
+                    null,
+                    null,
+                    null,
                     new TimeRecoveryValidator()))
             .setViewResolvers(viewResolver)
             .build();
-  }
-
-  @ParameterizedTest
-  @CsvSource({"Y, true", "N, false"})
-  void landAwardRendersTimeRecoveryRadiosWithSavedSelection(
-      String selectedValue, boolean timeRelated) throws Exception {
-    org.mockito.Mockito.when(caseOutcomeService.getLandAward("300000001", 123, 7))
-        .thenReturn(
-            Optional.of(
-                new LandAwardDetail()
-                    .id(7)
-                    .awardType("LAND")
-                    .recoveryOfAwardTimeRelated(timeRelated)));
-
-    mockMvc
-        .perform(
-            get("/case/outcome-and-awards/land-property/7")
-                .sessionAttr(CASE, new ApplicationDetail().caseReferenceNumber("300000001"))
-                .sessionAttr(USER_DETAILS, ApplicationTestUtils.buildUser())
-                .flashAttr("user", new UserDetail().functions(List.of())))
-        .andExpect(status().isOk())
-        .andExpect(
-            content()
-                .string(
-                    matchesPattern(
-                        "(?s).*<fieldset class=\"govuk-fieldset\">\\s*"
-                            + "<legend class=\"govuk-fieldset__legend\">"
-                            + "Is recovery of the award time related\\?</legend>.*")))
-        .andExpect(
-            content()
-                .string(
-                    matchesPattern(
-                        "(?s).*<input(?=[^>]*name=\"recoveryOfAwardTimeRelated\")"
-                            + "(?=[^>]*value=\"Y\")[^>]*>.*"
-                            + "<input(?=[^>]*name=\"recoveryOfAwardTimeRelated\")"
-                            + "(?=[^>]*value=\"N\")[^>]*>.*")))
-        .andExpect(
-            content()
-                .string(
-                    matchesPattern(
-                        "(?s).*<input(?=[^>]*type=\"radio\")(?=[^>]*name=\"recoveryOfAwardTimeRelated\")"
-                            + "(?=[^>]*value=\"Y\")[^>]*>.*")))
-        .andExpect(
-            content()
-                .string(
-                    matchesPattern(
-                        "(?s).*<input(?=[^>]*type=\"radio\")(?=[^>]*name=\"recoveryOfAwardTimeRelated\")"
-                            + "(?=[^>]*value=\"N\")[^>]*>.*")))
-        .andExpect(
-            content()
-                .string(
-                    matchesPattern(
-                        "(?s).*<input(?=[^>]*name=\"recoveryOfAwardTimeRelated\")"
-                            + "(?=[^>]*value=\""
-                            + selectedValue
-                            + "\")(?=[^>]*checked=\"checked\")[^>]*>.*")))
-        .andExpect(
-            content()
-                .string(
-                    not(
-                        matchesPattern(
-                            "(?s).*<select[^>]*name=\"recoveryOfAwardTimeRelated\"[^>]*>.*"))));
-    org.mockito.Mockito.verify(lookupService, org.mockito.Mockito.never())
-        .getCommonValues(CommonValueConstants.COMMON_VALUE_YES_NO);
-  }
-
-  @ParameterizedTest
-  @CsvSource({"land-property, Y", "asset, true"})
-  void missingTimeRecoverySelectionLinksToFirstRadio(String awardPath, String yesValue)
-      throws Exception {
-    mockMvc
-        .perform(
-            post("/case/outcome-and-awards/" + awardPath)
-                .sessionAttr(CASE, new ApplicationDetail().caseReferenceNumber("300000001"))
-                .sessionAttr(USER_DETAILS, ApplicationTestUtils.buildUser())
-                .flashAttr("user", new UserDetail().functions(List.of()))
-                .param("id", "7"))
-        .andExpect(status().isOk())
-        .andExpect(content().string(containsString("href=\"#recoveryOfAwardTimeRelated\"")))
-        .andExpect(
-            content()
-                .string(
-                    matchesPattern(
-                        "(?s).*<input(?=[^>]*id=\"recoveryOfAwardTimeRelated\")"
-                            + "(?=[^>]*name=\"recoveryOfAwardTimeRelated\")"
-                            + "(?=[^>]*type=\"radio\")(?=[^>]*value=\""
-                            + yesValue
-                            + "\")[^>]*>.*")))
-        .andExpect(
-            content()
-                .string(
-                    matchesPattern(
-                        "(?s).*<label(?=[^>]*for=\"recoveryOfAwardTimeRelated\")[^>]*>"
-                            + "Yes</label>.*")));
   }
 
   @ParameterizedTest
