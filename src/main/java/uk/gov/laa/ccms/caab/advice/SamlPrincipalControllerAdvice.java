@@ -4,13 +4,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.saml2.provider.service.authentication.Saml2AssertionAuthentication;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerMapping;
 import uk.gov.laa.ccms.caab.controller.HomeController;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.security.UserFunctionAuthorities;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -64,11 +67,26 @@ public class SamlPrincipalControllerAdvice {
         }
       }
 
+      if (user == null) {
+        endLogin(session);
+        throw new CaabApplicationException("Unable to retrieve user details for " + loginId);
+      }
+
       model.addAttribute("user", user);
       model.addAttribute("userAttributes", saml2Authentication.getCredentials().getAttributes());
 
       session.setAttribute("user", user);
     }
+  }
+
+  /**
+   * Drops the logged-in authentication, so its functions cannot be used without a user to check
+   * them against, and the next request logs the user in again.
+   */
+  private static void endLogin(HttpSession session) {
+    SecurityContextHolder.clearContext();
+    session.removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+    session.removeAttribute("user");
   }
 
   /**

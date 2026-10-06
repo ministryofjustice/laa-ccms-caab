@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.advice;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
@@ -36,6 +37,7 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerMapping;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.controller.HomeController;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -203,6 +205,31 @@ class SamlPrincipalControllerAdviceTest {
       verify(session, never())
           .setAttribute(
               eq(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY), any());
+    }
+
+    @Test
+    @DisplayName("An empty user reload drops the logged-in authentication and fails")
+    public void emptyReloadEndsTheLogin() {
+      when(session.getAttribute("user")).thenReturn(userDetails);
+      when(userService.getUserByLoginId(any())).thenReturn(Mono.empty());
+      HandlerMethod handler = mock(HandlerMethod.class);
+      when(request.getAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE))
+          .thenReturn(handler);
+      doReturn(HomeController.class).when(handler).getBeanType();
+      SecurityContextHolder.getContext().setAuthentication(authentication);
+
+      try {
+        assertThrows(
+            CaabApplicationException.class,
+            () -> advice.addSamlPrincipalToModel(authentication, model, session, request));
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        verify(session)
+            .removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+        verify(session).removeAttribute("user");
+      } finally {
+        SecurityContextHolder.clearContext();
+      }
     }
   }
 }

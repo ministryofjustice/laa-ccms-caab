@@ -224,6 +224,11 @@ class UserFunctionAuthorizationTest {
         route("GET", "/notifications/search-results", UserRole.VIEW_NOTIFICATIONS),
         route("GET", "/notifications", UserRole.VIEW_NOTIFICATIONS),
         route(
+            "GET",
+            "/notifications/case-search",
+            UserRole.VIEW_NOTIFICATIONS,
+            UserRole.VIEW_CASE_DETAILS),
+        route(
             "POST",
             "/case/billing/poa/submit",
             UserRole.SUBMIT_PAYMENT_ON_ACCOUNT,
