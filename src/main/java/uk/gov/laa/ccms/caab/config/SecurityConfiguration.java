@@ -215,6 +215,9 @@ public class SecurityConfiguration {
             "/notifications/*/attachments/**",
             "/application/notification-attachments/confirmed")
         .access(notificationAction(UserRole.UPLOAD_EVIDENCE))
+        // Searching a case's notifications is an action on the open case.
+        .requestMatchers("/notifications/case-search")
+        .access(notificationAction(UserRole.VIEW_CASE_DETAILS))
         .requestMatchers(HttpMethod.POST, "/notifications/search")
         .access(notificationAction())
         .requestMatchers(HttpMethod.POST, "/notifications/*")
