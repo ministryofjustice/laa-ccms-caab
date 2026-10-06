@@ -31,9 +31,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import uk.gov.laa.ccms.caab.advice.GlobalBinderAdvice;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
+import uk.gov.laa.ccms.caab.bean.validators.BaselineTextValidator;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
@@ -707,5 +709,49 @@ public class AllocateCostLimitControllerTest {
         .containsEntry("case", ebsCase)
         .containsEntry("costDetails", formData)
         .containsKey("org.springframework.validation.BindingResult.costDetails");
+  }
+
+  @Test
+  @DisplayName("Should not carry an invalid value into the session when removing a counsel")
+  void shouldRejectInvalidValueBeforeRemoveBranch() {
+    // The advice registers the baseline validator; standaloneSetup does not pick up controller
+    // advice on its own.
+    final MockMvcTester mvc =
+        MockMvcTester.create(
+            MockMvcBuilders.standaloneSetup(allocateCostLimitController)
+                .setControllerAdvice(
+                    new GlobalExceptionHandler(),
+                    new GlobalBinderAdvice(new BaselineTextValidator()))
+                .build());
+
+    final ApplicationDetail ebsCase = new ApplicationDetail();
+    ebsCase.setId(1);
+    ebsCase.costs(
+        new CostStructureDetail()
+            .addCostEntriesItem(originalCounsel())
+            .grantedCostLimitation(new BigDecimal("25000"))
+            .requestedCostLimitation(new BigDecimal("25000")));
+    ebsCase.providerDetails(
+        new ApplicationProviderDetails().provider(new IntDisplayValue().displayValue("provider")));
+
+    final ApplicationDetail appCopy = new ApplicationDetail();
+    appCopy.costs(ebsCase.getCosts());
+    when(copyApplicationMapper.copyApplication(
+            any(ApplicationDetail.class), any(ApplicationDetail.class)))
+        .thenReturn(appCopy);
+
+    final MockHttpSession session = new MockHttpSession();
+
+    assertThat(
+            mvc.perform(
+                post("/allocate-cost-limit")
+                    .param("removeCounsel", "1")
+                    .param("costEntries[0].resourceName", "<script>alert(1)</script>")
+                    .param("costEntries[0].requestedCosts", "1.00")
+                    .sessionAttr(CASE, ebsCase)
+                    .session(session)))
+        .hasStatusOk();
+
+    assertThat(session.getAttribute(COST_ALLOCATION_FORM_DATA)).isNull();
   }
 }
