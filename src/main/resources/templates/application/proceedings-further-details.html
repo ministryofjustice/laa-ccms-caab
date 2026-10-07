@@ -36,19 +36,22 @@
           th:text="#{proceedings.proceedingDetails.proceedingDescription}"/>
         <span th:text="${proceedingFlow.proceedingDetails.proceedingDescription}"/>
       </p>
-      <th:block th:replace="~{partials/forms :: dropdownWithDisplayValue('clientInvolvementType',
-        #{proceedings.proceedingDetails.clientInvolvementType},
-        ${clientInvolvementTypes}, 'clientInvolvementType',
-        'clientInvolvementTypeName')}"/>
-      <th:block th:replace="~{partials/forms :: dropdownWithDisplayValue('levelOfService',
-        #{proceedings.proceedingDetails.formOfCivilLegalService},
-        ${levelOfServiceTypes},
-        'levelOfServiceCode', 'description')}"/>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='clientInvolvementType',
+                                                                   label=#{proceedings.proceedingDetails.clientInvolvementType},
+                                                                   items=${clientInvolvementTypes},
+                                                                   itemValue='clientInvolvementType',
+                                                                   itemLabel='clientInvolvementTypeName',
+                                                                   withDisplayValue=true)}"/>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='levelOfService',
+                                                                   label=#{proceedings.proceedingDetails.formOfCivilLegalService},
+                                                                   items=${levelOfServiceTypes},
+                                                                   itemValue='levelOfServiceCode',
+                                                                   itemLabel='description', withDisplayValue=true)}"/>
       <th:block th:if="${orderTypes}">
-        <th:block th:replace="~{partials/forms :: dropdownWithDisplayValue('typeOfOrder',
-          #{proceedings.proceedingDetails.typeOfOrder},
-          ${orderTypes},
-          'code', 'description')}"/>
+        <th:block th:replace="~{partials/forms :: autocompleteSelect(field='typeOfOrder',
+                                                                     label=#{proceedings.proceedingDetails.typeOfOrder},
+                                                                     items=${orderTypes}, itemValue='code',
+                                                                     itemLabel='description', withDisplayValue=true)}"/>
 
         <govuk:details th:summaryText="#{proceedings.furtherDetails.summaryText}"
                        th:text="#{proceedings.furtherDetails.text}"/>

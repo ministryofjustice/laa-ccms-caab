@@ -42,9 +42,10 @@
           </div>
         <input class="govuk-file-upload" id="file" name="file" type="file">
       </div>
-      <th:block th:replace="~{partials/forms :: dropdownWithDisplayValue('documentType',
-        #{notifications.documents.documentType},
-        ${documentTypes}, 'code', 'description')}"/>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='documentType',
+                                                                   label=#{notifications.documents.documentType},
+                                                                   items=${documentTypes}, itemValue='code',
+                                                                   itemLabel='description', withDisplayValue=true)}"/>
       <th:block th:replace="~{partials/forms :: largeTextInput('documentDescription',
         #{notifications.documents.documentDescription}, 255)}"/>
 

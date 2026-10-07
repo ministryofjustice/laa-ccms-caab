@@ -96,6 +96,22 @@
   </select>
 </div>
 
+<!--
+  Accessible autocomplete select bound to the form field.
+  Optional: hint, disabled, labelAsHeading (h2 label), withDisplayValue (posts {field}DisplayValue).
+-->
+<th:block th:fragment="autocompleteSelect">
+  <input th:if="${withDisplayValue}" type="hidden" th:id="${field + 'DisplayValue'}"
+         th:name="${field + 'DisplayValue'}" th:value="*{__${field}__DisplayValue}">
+  <govuk:select th:field="${field}" th:label="${label}" th:items="${items}"
+                th:itemValue="${itemValue}" th:itemLabel="${itemLabel}"
+                th:hint="${hint}" th:disabled="${disabled}"
+                th:labelHeading="${labelAsHeading} ? 'h2' : null"
+                th:labelClasses="${labelAsHeading} ? 'govuk-label--m' : null"
+                th:data-display-value-id="${withDisplayValue} ? ${field + 'DisplayValue'} : null"
+                th:placeholder="#{site.select}" showAllValues/>
+</th:block>
+
 <div th:fragment="textInput(fieldId, label, inputClass)"
      th:with="hideLabel=${hideLabel?:false}, hint=${hint}, maxlength=${maxlength ?: maxlengthParam}"
      class="govuk-form-group"
