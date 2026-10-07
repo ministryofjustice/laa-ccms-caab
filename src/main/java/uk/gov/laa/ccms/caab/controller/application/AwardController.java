@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.AwardTypeForm;
@@ -319,6 +320,7 @@ public class AwardController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(value = AWARD_TYPE_FORM, required = false)
           final AwardTypeForm awardTypeForm,
+      @RequestParam(value = "action", required = false) final String action,
       @ModelAttribute("costAward") final CostAwardFormData costAward,
       final BindingResult bindingResult,
       final Model model) {
@@ -334,7 +336,7 @@ public class AwardController {
           "The award type details are invalid for your session. Please select an award type again.");
     }
 
-    if (bindingResult.hasErrors()) {
+    if (bindingResult.hasErrors() || "calculate".equals(action)) {
       initialiseCostAwardAmounts(costAward);
       populateCostAwardPage(model, costAward);
       return "application/cost-award";

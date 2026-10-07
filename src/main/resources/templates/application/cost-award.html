@@ -94,7 +94,13 @@
       <div th:replace="~{partials/forms :: largeTextInput('otherDetails', #{case.costAward.anyOtherInformation}, 950)}"></div>
 
       <div class="govuk-button-group govuk-!-margin-top-6">
-        <govuk:button type="submit" th:text="#{site.next}"/>
+        <button type="submit"
+                name="action"
+                value="calculate"
+                class="govuk-button govuk-button--secondary"
+                data-module="govuk-button"
+                th:text="#{case.costAward.calculate}"></button>
+        <govuk:button type="submit" name="action" value="next" th:text="#{site.next}"/>
       </div>
     </form>
     <script th:nonce="${cspNonce}">

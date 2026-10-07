@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -460,6 +461,19 @@ class AwardControllerTest {
               eq(7),
               any(CostAwardFormData.class),
               eq(user.getLoginId()));
+    }
+
+    @Test
+    void postWithCalculateRedisplaysCostAwardPageWithoutSaving() {
+      assertThat(mockMvc.perform(validCostAwardPost().param("action", "calculate")))
+          .hasViewName("application/cost-award")
+          .model()
+          .containsEntry("totalPreCertificateCosts", "3.00")
+          .containsEntry("totalCertificateCostsAwarded", "7.00")
+          .containsEntry("totalCostsAwarded", "10.00");
+
+      verify(caseOutcomeService, never()).createCostAward(any(), any(), any(), any(), any());
+      verify(caseOutcomeService, never()).updateCostAward(any(), any(), any(), any(), any());
     }
 
     @Test
