@@ -1,6 +1,7 @@
 {
   "devDependencies": {
     "@ministryofjustice/frontend": "^9.0.0",
+    "accessible-autocomplete": "^3.0.2",
     "govuk-frontend": "^6.1.0",
     "gulp": "^5.0.0",
     "gulp-autoprefixer": "^10.0.0",

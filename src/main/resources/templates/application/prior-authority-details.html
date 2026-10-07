@@ -45,12 +45,21 @@
               #{proceedings.priorAuthorities.amountRequested},'10')}"/>
           </th:block>
 
-          <th:block th:each="groupEntry : ${groupedDynamicOptions}">
+          <th:block th:fragment="dynamicOptions" th:each="groupEntry : ${groupedDynamicOptions}">
               <th:block th:if="${!#lists.isEmpty(groupEntry.value)}">
                   <h2 class="govuk-heading-m"
                       th:text="${groupEntry.key.label}"></h2>
                   <th:block th:each="option : ${groupEntry.value}">
+                    <th:block th:if="${option.fieldType == 'LOV'}" th:with="lovItems=${#vars[option.code]}">
+                        <th:block th:replace="~{partials/forms :: autocompleteSelect(field=${'dynamicOptions[' + option.code + '].fieldValue'},
+                                                                                     label=(${option.mandatory} ? ${option.fieldDescription} : ${option.fieldDescription + ' (optional)'}),
+                                                                                     items=${lovItems},
+                                                                                     itemValue='code',
+                                                                                     itemLabel='description',
+                                                                                     withDisplayValue=true)}"/>
+                    </th:block>
                     <div class="govuk-form-group"
+                    th:unless="${option.fieldType == 'LOV'}"
                     th:classappend="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue')} ? 'govuk-form-group--error' : ''">
 
                     <th:block th:if="${option.mandatory}">
@@ -64,23 +73,6 @@
                     <span th:if="${#fields.hasErrors('dynamicOptions[__${option.code}__].fieldValue')}"
                         th:errors="*{dynamicOptions[__${option.code}__].fieldValue}" class="govuk-error-message">
                     </span>
-                    <th:block th:if="${option.fieldType == 'LOV'}">
-                        <input type="hidden" th:id="'dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'"
-                        th:name="'dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'"
-                        th:value="*{dynamicOptions[__${option.code}__].fieldValueDisplayValue}"/>
-                        <select class="govuk-select"
-                            data-module="govuk-select"
-                            th:id="'dynamicOptions[' + ${option.code} + '].fieldValue'"
-                            th:field="*{dynamicOptions[__${option.code}__].fieldValue}"
-                            th:errorclass="govuk-select--error"
-                            th:attr="data-display-value-id='dynamicOptions[' + ${option.code} + '].fieldValueDisplayValue'">
-                            <option value="" th:text="#{site.select}"></option>
-                            <option th:each="item : ${#vars[option.code]}"
-                                th:value="${item['code']}"
-                                th:text="${item['description']}">
-                            </option>
-                        </select>
-                    </th:block>
                     <th:block th:if="${option.fieldType == 'FTS'}">
                         <input class="govuk-input govuk-input--width-20"
                             type="text"

@@ -153,3 +153,15 @@ body.ccms-opa-page > .govuk-footer {
     padding-top: 0;
   }
 }
+// Accessible autocomplete: govuk-input--width-20 width (20.5em at 1.1875rem) and GOV.UK font.
+.autocomplete__wrapper {
+  max-width: 20.5 * 1.1875rem;
+}
+
+.autocomplete__input,
+.autocomplete__hint,
+.autocomplete__menu {
+  font-family: "GDS Transport", arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

@@ -28,8 +28,10 @@
           <span id="laa-case-reference-value" th:text="*{lscCaseReference}"/>
           <input type="hidden" id="lscCaseReference" name="lscCaseReference" th:value="*{lscCaseReference}">
         </p>
-        <div th:replace="~{partials/forms :: dropdown('relationToCase', #{application.generalDetails.linkCase.howCaseRelated.label},
-          ${caseLinkOptions}, 'code', 'description', false)}"/>
+        <th:block th:replace="~{partials/forms :: autocompleteSelect(field='relationToCase',
+                                                                     label=#{application.generalDetails.linkCase.howCaseRelated.label},
+                                                                     items=${caseLinkOptions}, itemValue='code',
+                                                                     itemLabel='description')}"/>
         <div class="govuk-button-group">
           <govuk:button th:text="#{site.next}"/>
         </div>
