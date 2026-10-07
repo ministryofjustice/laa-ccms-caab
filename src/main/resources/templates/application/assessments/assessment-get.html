@@ -92,12 +92,10 @@
     var cancelUrl = [[${cancelUrl}]];
 
     function doExit(url) {
-        // When the user leaves the interview before completing it, OWD calls this with its abort
-        // URL (.../assessments/confirm/abortIFrame.do), which the PUI has no handler for - hitting
-        // it shows a "No static resource" error. Send them back to the screen the interview was
-        // launched from instead. A normal submit redirect (.../confirm/caseSummary.do) is followed
-        // unchanged.
-        if (url && url.indexOf("abortIFrame") !== -1) {
+        // OWD's abort URL (.../assessments/confirm/abortIFrame.do) has no handler here, and an exit
+        // carrying no URL would reload the interview on the screen the user is trying to leave.
+        // Both return them to the screen it was launched from; a submit redirect is followed as is.
+        if (!url || url.indexOf("abortIFrame") !== -1) {
             window.location = cancelUrl;
         } else {
             window.location = url;
