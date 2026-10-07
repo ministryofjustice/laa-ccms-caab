@@ -84,12 +84,12 @@ configurations.configureEach {
         }
         // Keep embedded Tomcat modules aligned on the patched release.
         if (details.requested.group == 'org.apache.tomcat.embed') {
-            details.useVersion '11.0.25'
-            details.because 'Snyk remediation for vulnerabilities in Tomcat 11.0.24'
+            details.useVersion '11.0.26'
+            details.because 'Snyk remediation for vulnerabilities in Tomcat 11.0.26'
             }
         if (details.requested.group == 'org.apache.tomcat.embed'
                 && details.requested.name in ['tomcat-embed-core', 'tomcat-embed-el', 'tomcat-embed-websocket']) {
-            details.useVersion '11.0.25'
+            details.useVersion '11.0.26'
             details.because 'Snyk override (SNYK-JAVA-ORGAPACHETOMCATEMBED-20302842, SNYK-JAVA-ORGAPACHETOMCATEMBED-20302843, SNYK-JAVA-ORGAPACHETOMCATEMBED-20302874, SNYK-JAVA-ORGAPACHETOMCATEMBED-20302876, SNYK-JAVA-ORGAPACHETOMCATEMBED-20302886, SNYK-JAVA-ORGAPACHETOMCATEMBED-20302889, SNYK-JAVA-ORGAPACHETOMCATEMBED-20304748)'
         }
     }
