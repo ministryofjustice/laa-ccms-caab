@@ -97,8 +97,13 @@ class CaseOutcomeServiceTest {
     final CaseOutcomeDetail createdCaseOutcome = new CaseOutcomeDetail().id(caseOutcomeId);
     final FinancialAwardDetail bootstrapAward =
         new FinancialAwardDetail().id(9).awardType("DAMAGE");
+    final ProceedingOutcomeDetail bootstrapProceedingOutcome =
+        new ProceedingOutcomeDetail().proceedingCaseId("pc1");
     final CaseOutcomeDetail bootstrapCaseOutcome =
-        new CaseOutcomeDetail().id(88).financialAwards(List.of(bootstrapAward));
+        new CaseOutcomeDetail()
+            .id(88)
+            .financialAwards(List.of(bootstrapAward))
+            .proceedingOutcomes(List.of(bootstrapProceedingOutcome));
 
     doReturn(Optional.empty(), Optional.of(createdCaseOutcome))
         .when(caseOutcomeService)
@@ -120,6 +125,7 @@ class CaseOutcomeServiceTest {
     assertEquals(String.valueOf(providerId), caseOutcomeCaptor.getValue().getProviderId());
     assertEquals(1, caseOutcomeCaptor.getValue().getFinancialAwards().size());
     assertEquals("DAMAGE", caseOutcomeCaptor.getValue().getFinancialAwards().get(0).getAwardType());
+    assertNull(caseOutcomeCaptor.getValue().getProceedingOutcomes());
   }
 
   @Test
@@ -170,10 +176,14 @@ class CaseOutcomeServiceTest {
     final CostAwardDetail request = new CostAwardDetail();
     final String loginId = "user1";
     final CaseOutcomeDetail createdCaseOutcome = new CaseOutcomeDetail().id(caseOutcomeId);
+    final CostAwardDetail bootstrapAward = new CostAwardDetail().id(9).awardType("COST");
     final ProceedingOutcomeDetail bootstrapProceedingOutcome =
         new ProceedingOutcomeDetail().proceedingCaseId("pc1");
     final CaseOutcomeDetail bootstrapCaseOutcome =
-        new CaseOutcomeDetail().id(88).proceedingOutcomes(List.of(bootstrapProceedingOutcome));
+        new CaseOutcomeDetail()
+            .id(88)
+            .costAwards(List.of(bootstrapAward))
+            .proceedingOutcomes(List.of(bootstrapProceedingOutcome));
 
     doReturn(Optional.empty(), Optional.of(createdCaseOutcome))
         .when(caseOutcomeService)
@@ -192,9 +202,9 @@ class CaseOutcomeServiceTest {
     assertNull(caseOutcomeCaptor.getValue().getId());
     assertEquals(caseReferenceNumber, caseOutcomeCaptor.getValue().getCaseReferenceNumber());
     assertEquals(String.valueOf(providerId), caseOutcomeCaptor.getValue().getProviderId());
-    assertEquals(1, caseOutcomeCaptor.getValue().getProceedingOutcomes().size());
-    assertEquals(
-        "pc1", caseOutcomeCaptor.getValue().getProceedingOutcomes().get(0).getProceedingCaseId());
+    assertEquals(1, caseOutcomeCaptor.getValue().getCostAwards().size());
+    assertEquals("COST", caseOutcomeCaptor.getValue().getCostAwards().get(0).getAwardType());
+    assertNull(caseOutcomeCaptor.getValue().getProceedingOutcomes());
   }
 
   @Test

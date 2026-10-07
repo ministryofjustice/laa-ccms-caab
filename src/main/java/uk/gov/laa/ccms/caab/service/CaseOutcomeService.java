@@ -84,7 +84,11 @@ public class CaseOutcomeService {
       @Nullable final CaseOutcomeDetail bootstrapCaseOutcome) {
     final Integer caseOutcomeId =
         requireCaseOutcomeId(
-            getOrCreateCaseOutcome(caseReferenceNumber, providerId, loginId, bootstrapCaseOutcome),
+            getOrCreateCaseOutcome(
+                caseReferenceNumber,
+                providerId,
+                loginId,
+                sanitiseAwardBootstrapCaseOutcome(bootstrapCaseOutcome)),
             caseReferenceNumber);
     caabApiClient.createFinancialAward(caseOutcomeId, loginId, financialAward).block();
   }
@@ -141,7 +145,11 @@ public class CaseOutcomeService {
       @Nullable final CaseOutcomeDetail bootstrapCaseOutcome) {
     final Integer caseOutcomeId =
         requireCaseOutcomeId(
-            getOrCreateCaseOutcome(caseReferenceNumber, providerId, loginId, bootstrapCaseOutcome),
+            getOrCreateCaseOutcome(
+                caseReferenceNumber,
+                providerId,
+                loginId,
+                sanitiseAwardBootstrapCaseOutcome(bootstrapCaseOutcome)),
             caseReferenceNumber);
     caabApiClient.createCostAward(caseOutcomeId, loginId, costAward).block();
   }
@@ -376,6 +384,16 @@ public class CaseOutcomeService {
     caseOutcome.setCaseReferenceNumber(caseReferenceNumber);
     caseOutcome.setProviderId(String.valueOf(providerId));
     return caseOutcome;
+  }
+
+  private CaseOutcomeDetail sanitiseAwardBootstrapCaseOutcome(
+      @Nullable final CaseOutcomeDetail bootstrapCaseOutcome) {
+    if (bootstrapCaseOutcome == null) {
+      return null;
+    }
+    final CaseOutcomeDetail sanitised = copyCaseOutcomeForCreate(bootstrapCaseOutcome);
+    sanitised.setProceedingOutcomes(null);
+    return sanitised;
   }
 
   private Integer requireCaseOutcomeId(
