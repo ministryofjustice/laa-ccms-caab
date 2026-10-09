@@ -7,6 +7,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getMostRecentAssessmentDetail;
 
 import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
@@ -46,6 +47,7 @@ import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.BillingService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.util.AssessmentUtil;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -229,8 +231,7 @@ public class AssessmentController {
               .block();
 
       if (assessmentDetails != null && assessmentDetails.getContent() != null) {
-        assessmentDetails.getContent().stream()
-            .findFirst()
+        Optional.ofNullable(getMostRecentAssessmentDetail(assessmentDetails.getContent()))
             .ifPresent(
                 prepopAssessment -> {
                   // is deletion of checkpoint required
@@ -294,7 +295,7 @@ public class AssessmentController {
                     .block())
             .map(AssessmentDetails::getContent)
             .filter(content -> !content.isEmpty())
-            .flatMap(content -> content.stream().findFirst())
+            .map(AssessmentUtil::getMostRecentAssessmentDetail)
             .orElseThrow(
                 () -> new CaabApplicationException("Failed to retrieve assessment details"));
 
@@ -548,8 +549,7 @@ public class AssessmentController {
                     () -> new CaabApplicationException("Failed to retrieve assessment data"));
 
     final AssessmentDetail assessment =
-        assessmentDataMonos.getT1().getContent().stream()
-            .findFirst()
+        Optional.ofNullable(getMostRecentAssessmentDetail(assessmentDataMonos.getT1().getContent()))
             .orElseThrow(
                 () -> new CaabApplicationException("Failed to retrieve assessment details"));
     final List<AssessmentSummaryEntityLookupValueDetail> parentSummaryLookups =

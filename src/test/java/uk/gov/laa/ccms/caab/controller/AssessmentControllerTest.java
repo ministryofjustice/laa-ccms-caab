@@ -31,6 +31,7 @@ import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -199,6 +200,50 @@ public class AssessmentControllerTest {
         .andExpect(model().attributeExists("username"))
         .andExpect(model().attributeExists("resumeId"))
         .andExpect(model().attributeExists("assessmentType"));
+  }
+
+  @Test
+  public void assessmentGet_resumesTheMostRecentPrepopSession() throws Exception {
+    when(applicationService.getApplication(anyString()))
+        .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
+    when(contextSecurityUtil.createHubContext(
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyString()))
+        .thenReturn("contextToken");
+    when(clientService.getClient(anyString(), anyString(), anyString()))
+        .thenReturn(Mono.just(new ClientDetail()));
+    when(messageSource.getMessage(anyString(), any(), any(Locale.class)))
+        .thenReturn("returnLinkText");
+
+    // An abandoned attempt leaves more than one prepop session on the case. The stale one is
+    // returned first here, so resuming whichever came back first would pick the wrong session.
+    final AssessmentDetail stale =
+        buildAssessmentDetail(Date.from(Instant.parse("2026-01-01T00:00:00Z")));
+    stale.setId(1L);
+    final AssessmentDetail mostRecent =
+        buildAssessmentDetail(Date.from(Instant.parse("2026-06-01T00:00:00Z")));
+    mostRecent.setId(2L);
+
+    when(assessmentService.getAssessments(any(), anyString(), anyString()))
+        .thenReturn(
+            Mono.just(new AssessmentDetails().addContentItem(stale).addContentItem(mostRecent)));
+
+    mockMvc
+        .perform(
+            get("/application/assessments")
+                .param("assessment", "means")
+                .param("invoked-from", "summary")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(APPLICATION_ID, "applicationId")
+                .sessionAttr(ACTIVE_CASE, activeCase))
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("resumeId", "2"));
   }
 
   @Test
