@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"
-      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='SUBUC')}"
-      xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs},pageRoles='SUBMIT_UPDATE_CLIENT')}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" xmlns="http://www.w3.org/1999/html">
 <head>
   <title th:if="${caseContext.isApplication()}" th:text="#{service.name} + ' - ' + #{application.create}"/>
   <title th:if="${caseContext.isAmendment()}" th:text="#{service.name} + ' - ' + #{client.edit}"/>
@@ -30,8 +30,8 @@
       </p>
       <div th:replace="~{application/partials/client-fragments :: clientSummaryFragment}"></div>
       <div class="govuk-button-group">
-        <div th:replace="~{partials/actions :: restrictedSubmitButton('Submit amendments',
-              ${user.functions}, 'SUBUC')}"></div>
+        <button class="govuk-button" data-module="govuk-button" type="submit"
+                sec:authorize="hasAuthority(@roles.submitUpdateClient)">Submit amendments</button>
       </div>
     </form>
   </div>
