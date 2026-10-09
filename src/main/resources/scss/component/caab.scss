@@ -60,6 +60,14 @@
     display: inline-block;
 }
 
+// Row-action loader. Out of the layout until shown, so the cell reserves no space for it, and
+// centred on the text rather than the baseline so showing it cannot change the row height.
+.ccms-action-loader {
+    display: none;
+    margin: 0 0 0 5px;
+    vertical-align: middle;
+}
+
 // Chrome guard for the embedded OPA assessment page.
 // OPA's rulebase stylesheet (GDS.css, injected at runtime by interviews.js)
 // contains a page-global `body > div { max-width: 960px; margin: 0 auto }`

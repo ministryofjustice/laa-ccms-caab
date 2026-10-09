@@ -166,7 +166,7 @@
                   <a class="govuk-link ccms-copy-bill-link"
                      th:href="@{/case/billing/bill/copy(billing-id=${row.billingIncidentId})}"
                      th:text="#{billing.billsAndPoa.copy}"></a>
-                  <div class="loader-small ccms-hidden-inline-loader"></div>
+                  <div class="loader-small ccms-action-loader"></div>
                 </th:block>
               </td>
             </tr>
@@ -214,7 +214,7 @@
 
         var loader = this.closest('td').getElementsByClassName('loader-small')[0];
         if (loader) {
-          loader.style.visibility = 'visible';
+          loader.style.display = 'inline-block';
         }
       });
     }
