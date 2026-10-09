@@ -92,9 +92,8 @@
     var cancelUrl = [[${cancelUrl}]];
 
     function doExit(url) {
-        // OWD's abort URL (.../assessments/confirm/abortIFrame.do) has no handler here, and an exit
-        // carrying no URL would reload the interview on the screen the user is trying to leave.
-        // Both return them to the screen it was launched from; a submit redirect is followed as is.
+        // OWD's abort URL (.../confirm/abortIFrame.do) has no handler here, and an exit carrying
+        // no URL would reload the interview the user is trying to leave.
         if (!url || url.indexOf("abortIFrame") !== -1) {
             window.location = cancelUrl;
         } else {

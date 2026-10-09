@@ -649,10 +649,7 @@ public interface AssessmentMapper {
                   : context.getAllocatedCostLimit().toPlainString()));
     }
 
-    // Withheld from means and the billing rulebases, which declare none of these. This guard must
-    // stay in step with the one on LINKED_CASES in toAssessmentEntityTypeList.
-    // Withheld from means and the billing rulebases, which declare none of these. This guard
-    // must stay in step with the one on LINKED_CASES in toAssessmentEntityTypeList.
+    // Must stay in step with the LINKED_CASES guard in toAssessmentEntityTypeList.
     if (!isMeansAssessment(context) && !isFinancialAssessment(context)) {
       attributes.addAll(meritsDefaultAttributes());
     }

@@ -162,9 +162,12 @@
                 <a th:if="${editableBill}" class="govuk-link"
                    th:href="@{/case/billing/bill/remove}"
                    th:text="#{billing.billsAndPoa.delete}"></a>
-                <a th:if="${row.copyable and canMaintainBill}" class="govuk-link"
-                   th:href="@{/case/billing/bill/copy(billing-id=${row.billingIncidentId})}"
-                   th:text="#{billing.billsAndPoa.copy}"></a>
+                <th:block th:if="${row.copyable and canMaintainBill}">
+                  <a class="govuk-link ccms-copy-bill-link"
+                     th:href="@{/case/billing/bill/copy(billing-id=${row.billingIncidentId})}"
+                     th:text="#{billing.billsAndPoa.copy}"></a>
+                  <div class="loader-small ccms-hidden-inline-loader"></div>
+                </th:block>
               </td>
             </tr>
             <tr class="govuk-table__row"
@@ -196,3 +199,24 @@
 </div>
 </body>
 </html>
+<script th:nonce="${cspNonce}">
+  (function() {
+    var links = document.getElementsByClassName('ccms-copy-bill-link');
+    for (var i = 0; i < links.length; i++) {
+      links[i].addEventListener('click', function(event) {
+        // Copying builds the pre-population and a draft bill, so a second click would start a
+        // second copy against a case that has no draft yet.
+        if (this.getAttribute('aria-disabled') === 'true') {
+          event.preventDefault();
+          return;
+        }
+        this.setAttribute('aria-disabled', 'true');
+
+        var loader = this.closest('td').getElementsByClassName('loader-small')[0];
+        if (loader) {
+          loader.style.visibility = 'visible';
+        }
+      });
+    }
+  })();
+</script>

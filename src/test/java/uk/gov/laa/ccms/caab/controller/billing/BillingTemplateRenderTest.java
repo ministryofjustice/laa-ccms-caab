@@ -224,6 +224,8 @@ class BillingTemplateRenderTest {
     final String html =
         render("application/billing/case-statement-of-account", statementModel(true));
     assertThat(html).contains("/case/billing/bill/copy").contains("billing-id=222");
+    // Copying is slow enough to invite a second click, which would start a second copy.
+    assertThat(html).contains("ccms-copy-bill-link").contains("loader-small");
   }
 
   @Test

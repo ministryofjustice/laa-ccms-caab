@@ -488,9 +488,8 @@ public class BillingService {
       throw new CaabApplicationException("Failed to retrieve client details");
     }
 
-    // The pre-population is built from the case first and the copied answers written over it, as
-    // the legacy CopyBill does. Seeding the copied answers alone leaves it without the case's
-    // proceedings, which the assessment start reads as stale and rebuilds, discarding the copy.
+    // Built from the case first, as the legacy CopyBill does: a pre-population without the case's
+    // proceedings reads as stale on the next start, which rebuilds it and discards the copy.
     assessmentService.startAssessment(
         ebsCase,
         AssessmentRulebase.BILLING,
