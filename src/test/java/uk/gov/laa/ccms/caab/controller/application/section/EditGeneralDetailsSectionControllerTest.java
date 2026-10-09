@@ -371,7 +371,11 @@ class EditGeneralDetailsSectionControllerTest {
                   .flashAttr("addressDetails", addressDetails))
           .andDo(print())
           .andExpect(view().name("error"))
-          .andExpect(model().attribute("error", "Failed to retrieve EBS case"));
+          .andExpect(
+              model()
+                  .attribute(
+                      "error",
+                      "An unexpected error occurred. Please contact support if the problem continues."));
 
       verify(amendmentService, never())
           .submitQuickAmendmentCorrespondenceAddress(any(), any(), any());
