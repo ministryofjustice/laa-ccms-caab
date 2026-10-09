@@ -649,6 +649,14 @@ public interface AssessmentMapper {
                   : context.getAllocatedCostLimit().toPlainString()));
     }
 
+    // Withheld from means and the billing rulebases, which declare none of these. This guard must
+    // stay in step with the one on LINKED_CASES in toAssessmentEntityTypeList.
+    // Withheld from means and the billing rulebases, which declare none of these. This guard
+    // must stay in step with the one on LINKED_CASES in toAssessmentEntityTypeList.
+    if (!isMeansAssessment(context) && !isFinancialAssessment(context)) {
+      attributes.addAll(meritsDefaultAttributes());
+    }
+
     return attributes;
   }
 
@@ -723,8 +731,15 @@ public interface AssessmentMapper {
         toSurnameAttribute(client, SURNAME),
         toSurnameAtBirthAttribute(client, SURNAME_AT_BIRTH),
         toUserProviderFirmIdAttribute(user, USER_PROVIDER_FIRM_ID),
-        toUserTypeAttribute(user, USER_TYPE),
-        // merits "required non-mandatory evidence" / declaration flags, prepopulated false
+        toUserTypeAttribute(user, USER_TYPE));
+  }
+
+  /**
+   * Flags the merits rulebase defaults to false so it does not ask for them. The billing rulebases
+   * declare none of them, and the legacy PUI seeds them for no rulebase at all.
+   */
+  private List<AssessmentAttributeDetail> meritsDefaultAttributes() {
+    return List.of(
         toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_AMD_CORR),
         toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_AMD_COUNSEL),
         toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_AMD_CT_ORDE),
@@ -752,8 +767,8 @@ public interface AssessmentMapper {
         toFalseDefaultAttribute(AssessmentAttribute.HRA_ISSUES_SIGNIFICANT));
   }
 
-  // Shared mapping for attributes prepopulated with a constant "false" (e.g. the merits
-  // required-non-mandatory-evidence and declaration flags), mirroring old PUI's prepop.
+  // Shared mapping for attributes prepopulated with a constant "false" (the merits
+  // required-non-mandatory-evidence and declaration flags).
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", constant = "false")
   @Mapping(target = "name", source = "attribute")

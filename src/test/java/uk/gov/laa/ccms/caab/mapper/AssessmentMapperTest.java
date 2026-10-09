@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.mapper;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -18,6 +19,8 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
@@ -259,6 +262,39 @@ class AssessmentMapperTest {
 
     // Then
     assertGlobalAttributes(result);
+  }
+
+  @ParameterizedTest
+  @EnumSource(
+      value = AssessmentRulebase.class,
+      names = {"BILLING", "POA"})
+  public void globalToAttributeList_withholdsTheMeritsDefaults(final AssessmentRulebase rulebase) {
+    context.setRulebase(rulebase);
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    // The billing rulebases declare none of these, so seeding them puts merits fields in the
+    // billing interview.
+    assertThat(result)
+        .extracting(AssessmentAttributeDetail::getName)
+        .doesNotContain(
+            AssessmentAttribute.RNON_MAND_EVIDENCE_AMD_CORR.name(),
+            AssessmentAttribute.PDECLARATION_WILL_BE_SIGNED_EM.name(),
+            AssessmentAttribute.HRA_ISSUES_SIGNIFICANT.name());
+  }
+
+  @Test
+  public void globalToAttributeList_keepsTheMeritsDefaultsForMerits() {
+    context.setRulebase(AssessmentRulebase.MERITS);
+
+    final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
+
+    assertThat(result)
+        .extracting(AssessmentAttributeDetail::getName)
+        .contains(
+            AssessmentAttribute.RNON_MAND_EVIDENCE_AMD_CORR.name(),
+            AssessmentAttribute.PDECLARATION_WILL_BE_SIGNED_EM.name(),
+            AssessmentAttribute.HRA_ISSUES_SIGNIFICANT.name());
   }
 
   @Test
