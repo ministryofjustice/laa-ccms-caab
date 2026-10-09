@@ -1009,7 +1009,6 @@ class BillingServiceTest {
                                   .responseValue(value)))));
     }
 
-    /** The pre-population the case build leaves behind, which the copy is written over. */
     private void casePrepopExists() {
       when(clientService.getClient(any(), any(), any())).thenReturn(Mono.just(new ClientDetail()));
       when(assessmentService.deleteAssessments(any(), any(), any(), any()))
@@ -1137,6 +1136,42 @@ class BillingServiceTest {
       assertThat(captor.getValue())
           .extracting(uk.gov.laa.ccms.caab.model.OpaEntity::getEntityName)
           .containsExactly("GLOBAL");
+    }
+
+    @Test
+    @DisplayName("Carries a text-only answer through to the merge")
+    void carriesResponseTextThrough() {
+      final OpaEntity textOnly =
+          new OpaEntity()
+              .entityName("GLOBAL")
+              .instances(
+                  List.of(
+                      new OpaInstance()
+                          .instanceLabel("GLOBAL-1")
+                          .attributes(
+                              List.of(
+                                  new OpaAttribute()
+                                      .attribute("BILL_NARRATIVE")
+                                      .responseType("text")
+                                      .responseText("Counsel attended a hearing")))));
+      when(soaApiClient.getInvoiceData(any(), any(), any()))
+          .thenReturn(Mono.just(new InvoiceDataResponse().opaResponse(List.of(textOnly))));
+      casePrepopExists();
+      when(assessmentService.saveAssessment(any(), any())).thenReturn(Mono.empty());
+      when(caabApiClient.createBill(any(), any())).thenReturn(Mono.empty());
+
+      billingService.copyBill(ebsCase(), "10", "555", new StatementOfAccountDisplay(), user());
+
+      final ArgumentCaptor<List<uk.gov.laa.ccms.caab.model.OpaEntity>> captor =
+          ArgumentCaptor.forClass(List.class);
+      verify(assessmentService).mergeCopiedAssessmentData(any(), captor.capture());
+
+      assertThat(captor.getValue().getFirst().getInstances().getFirst().getAttributes())
+          .extracting(
+              uk.gov.laa.ccms.caab.model.OpaAttribute::getAttribute,
+              uk.gov.laa.ccms.caab.model.OpaAttribute::getResponseValue,
+              uk.gov.laa.ccms.caab.model.OpaAttribute::getResponseText)
+          .containsExactly(tuple("BILL_NARRATIVE", null, "Counsel attended a hearing"));
     }
 
     @Test

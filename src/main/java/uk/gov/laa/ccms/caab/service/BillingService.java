@@ -574,7 +574,8 @@ public class BillingService {
                         new OpaAttribute()
                             .attribute(attribute.getAttribute())
                             .responseType(attribute.getResponseType())
-                            .responseValue(attribute.getResponseValue())));
+                            .responseValue(attribute.getResponseValue())
+                            .responseText(attribute.getResponseText())));
       }
 
       merged.addInstancesItem(mergedInstance);
