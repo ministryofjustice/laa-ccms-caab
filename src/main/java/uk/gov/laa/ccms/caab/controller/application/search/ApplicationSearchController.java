@@ -217,7 +217,7 @@ public class ApplicationSearchController {
               caseReferenceNumber, userDetails.getProvider().getId(), userDetails.getLoginId());
     } catch (EbsApiClientException e) {
       if (!e.hasHttpStatus(HttpStatus.NOT_FOUND)) {
-        throw new CaabApplicationException("Failed to retrieve EBS case " + caseReferenceNumber);
+        throw new CaabApplicationException("Failed to retrieve EBS case " + caseReferenceNumber, e);
       }
       log.debug("Case not found in EBS.", e);
     }
