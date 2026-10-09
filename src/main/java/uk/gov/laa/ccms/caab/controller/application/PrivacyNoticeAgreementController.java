@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,7 +47,7 @@ public class PrivacyNoticeAgreementController {
    */
   @PostMapping("/application/agreement")
   public String privacyNoticeAgreement(
-      @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
+      @Validated @ModelAttribute(APPLICATION_FORM_DATA) ApplicationFormData applicationFormData,
       BindingResult bindingResult,
       HttpSession session) {
     applicationValidator.validate(applicationFormData, bindingResult);

@@ -19,6 +19,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -93,7 +94,7 @@ public class AwardController {
    */
   @PostMapping("/case/outcome-and-awards/award-type")
   public String selectAwardType(
-      @ModelAttribute(AWARD_TYPE_FORM) final AwardTypeForm awardTypeForm,
+      @Validated @ModelAttribute(AWARD_TYPE_FORM) final AwardTypeForm awardTypeForm,
       final BindingResult bindingResult,
       final Model model) {
     awardTypeValidator.validate(awardTypeForm, bindingResult);
@@ -200,7 +201,7 @@ public class AwardController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(value = AWARD_TYPE_FORM, required = false)
           final AwardTypeForm awardTypeForm,
-      @ModelAttribute("financialAward") final FinancialAwardFormData financialAward,
+      @Validated @ModelAttribute("financialAward") final FinancialAwardFormData financialAward,
       final BindingResult bindingResult,
       final Model model) {
     financialAwardValidator.validate(financialAward, bindingResult);
@@ -302,9 +303,9 @@ public class AwardController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(value = AWARD_TYPE_FORM, required = false)
           final AwardTypeForm awardTypeForm,
-      @ModelAttribute("landAward") final LandAwardFormData landAward,
-      @RequestParam(value = "action", defaultValue = "next") final String action,
+      @Validated @ModelAttribute("landAward") final LandAwardFormData landAward,
       final BindingResult bindingResult,
+      @RequestParam(value = "action", defaultValue = "next") final String action,
       final Model model) {
     landAwardValidator.validate(landAward, bindingResult);
 
@@ -405,7 +406,7 @@ public class AwardController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(value = AWARD_TYPE_FORM, required = false)
           final AwardTypeForm awardTypeForm,
-      @ModelAttribute("otherAssetAward") final OtherAssetAwardFormData otherAssetAward,
+      @Validated @ModelAttribute("otherAssetAward") final OtherAssetAwardFormData otherAssetAward,
       final BindingResult bindingResult,
       final Model model) {
     otherAssetAwardValidator.validate(otherAssetAward, bindingResult);
