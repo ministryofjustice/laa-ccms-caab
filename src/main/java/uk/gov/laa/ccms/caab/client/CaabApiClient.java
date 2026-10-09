@@ -47,6 +47,7 @@ import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
+import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 
 /** Client responsible for interactions with the CAAB API. */
 @Service
@@ -71,6 +72,7 @@ public class CaabApiClient {
   public static final String RESOURCE_TYPE_FINANCIAL_AWARD = "financial award";
   public static final String RESOURCE_TYPE_OTHER_ASSET_AWARD = "other asset award";
   public static final String RESOURCE_TYPE_LAND_AWARD = "land award";
+  public static final String RESOURCE_TYPE_TIME_RECOVERY = "time-related recovery";
   public static final String RESOURCE_TYPE_EVIDENCE = "evidence";
   public static final String RESOURCE_TYPE_NOTIFICATION_ATTACHMENTS = "notification attachments";
   public static final String RESOURCE_TYPE_BILL = "bill";
@@ -998,6 +1000,31 @@ public class CaabApiClient {
             e ->
                 caabApiClientErrorHandler.handleApiUpdateError(
                     e, RESOURCE_TYPE_LAND_AWARD, "id", String.valueOf(landAwardId)));
+  }
+
+  /** Creates or updates a time-related recovery on a land or other-asset award. */
+  public Mono<Void> upsertTimeRecovery(
+      final Integer caseOutcomeId,
+      final String awardType,
+      final Integer awardId,
+      final String loginId,
+      final TimeRecoveryRequest timeRecovery) {
+    return caabApiWebClient
+        .put()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/time-recovery",
+            caseOutcomeId,
+            awardType,
+            awardId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(timeRecovery)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiUpdateError(
+                    e, RESOURCE_TYPE_TIME_RECOVERY, "id", String.valueOf(awardId)));
   }
 
   /**
