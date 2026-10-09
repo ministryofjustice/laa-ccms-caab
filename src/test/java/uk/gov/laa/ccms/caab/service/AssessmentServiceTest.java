@@ -1750,7 +1750,7 @@ public class AssessmentServiceTest {
         .thenReturn(Mono.empty());
 
     assessmentService.startNewAssessment(
-        AssessmentRulebase.MEANS, application, null, user, false, null);
+        AssessmentRulebase.MEANS, application, null, user, false, null, List.of());
 
     // Only the working assessment is mapped; the unchanged prepop is left as-is.
     verify(assessmentMapper, never()).toAssessmentDetail(eq(existingPrepop), any());
@@ -1953,7 +1953,7 @@ public class AssessmentServiceTest {
         .thenReturn(Mono.empty());
 
     assessmentService.startNewAssessment(
-        AssessmentRulebase.MEANS, application, null, user, false, null);
+        AssessmentRulebase.MEANS, application, null, user, false, null, List.of());
 
     // The stale prepop is deleted and the regenerated (fresh) prepop is mapped along with the
     // working assessment.

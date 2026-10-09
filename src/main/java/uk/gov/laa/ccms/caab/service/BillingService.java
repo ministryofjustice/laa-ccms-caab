@@ -1,7 +1,5 @@
 package uk.gov.laa.ccms.caab.service;
 
-import static uk.gov.laa.ccms.caab.util.AssessmentUtil.getMostRecentAssessmentDetail;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
@@ -20,7 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
-import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.SoaFigureColumn;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
@@ -496,43 +493,14 @@ public class BillingService {
       throw new CaabApplicationException("Failed to retrieve client details");
     }
 
-    assessmentService
-        .deleteAssessments(
-            user,
-            List.of(
-                AssessmentRulebase.BILLING.getName(),
-                AssessmentRulebase.BILLING.getPrePopAssessmentName()),
-            caseReferenceNumber,
-            null)
-        .block();
-
     assessmentService.startAssessment(
         ebsCase,
         AssessmentRulebase.BILLING,
         client,
         user,
         false,
-        getAllocatedCostLimit(statementOfAccount, ebsCase));
-
-    final AssessmentDetail prepop =
-        getMostRecentAssessmentDetail(
-            Optional.ofNullable(
-                    assessmentService
-                        .getAssessments(
-                            List.of(AssessmentRulebase.BILLING.getPrePopAssessmentName()),
-                            providerId,
-                            caseReferenceNumber)
-                        .block())
-                .map(AssessmentDetails::getContent)
-                .orElse(List.of()));
-
-    if (prepop == null) {
-      throw new CaabApplicationException(
-          "Failed to retrieve the billing pre-population to copy the bill onto");
-    }
-
-    assessmentService.mergeCopiedAssessmentData(prepop, copiedEntities(invoiceData));
-    assessmentService.saveAssessment(user, prepop).block();
+        getAllocatedCostLimit(statementOfAccount, ebsCase),
+        copiedEntities(invoiceData));
 
     createDraftBillIfAbsent(caseReferenceNumber, providerId, user);
   }

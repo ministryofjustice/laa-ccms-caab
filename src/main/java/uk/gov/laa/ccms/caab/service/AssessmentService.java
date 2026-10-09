@@ -1290,6 +1290,36 @@ public class AssessmentService {
       final UserDetail user,
       final boolean isReassessment,
       final BigDecimal allocatedCostLimit) {
+    startAssessment(
+        application,
+        assessmentRulebase,
+        client,
+        user,
+        isReassessment,
+        allocatedCostLimit,
+        List.of());
+  }
+
+  /**
+   * Starts a new assessment, seeding it with the answers copied from another bill.
+   *
+   * @param application the application detail for the assessment
+   * @param assessmentRulebase the rulebase for the assessment
+   * @param client the client detail for the assessment
+   * @param user the user detail initiating the assessment
+   * @param isReassessment whether this is the standalone means reassessment journey
+   * @param allocatedCostLimit the cost limit allocated to the provider
+   * @param copiedAnswers the answers from a copied bill, written over the ones built from the case
+   *     before the assessment is run and saved
+   */
+  public void startAssessment(
+      final ApplicationDetail application,
+      final AssessmentRulebase assessmentRulebase,
+      final ClientDetail client,
+      final UserDetail user,
+      final boolean isReassessment,
+      final BigDecimal allocatedCostLimit,
+      final List<OpaEntity> copiedAnswers) {
 
     final String providerId = user.getProvider().getId().toString();
     final String referenceId = application.getCaseReferenceNumber();
@@ -1333,7 +1363,13 @@ public class AssessmentService {
 
     // start new assessment
     startNewAssessment(
-        assessmentRulebase, application, client, user, isReassessment, allocatedCostLimit);
+        assessmentRulebase,
+        application,
+        client,
+        user,
+        isReassessment,
+        allocatedCostLimit,
+        copiedAnswers);
   }
 
   /**
@@ -1390,7 +1426,8 @@ public class AssessmentService {
       final ClientDetail client,
       final UserDetail user,
       final boolean isReassessment,
-      final BigDecimal allocatedCostLimit) {
+      final BigDecimal allocatedCostLimit,
+      final List<OpaEntity> copiedAnswers) {
     log.debug("Name - {}, AssessmentType - {}", user.getUsername(), assessmentRulebase.getType());
     final String referenceId = application.getCaseReferenceNumber();
     final String providerId = user.getProvider().getId().toString();
@@ -1420,7 +1457,8 @@ public class AssessmentService {
     // stale one is deleted and rebuilt as a fresh insert. An unchanged prepop is left untouched so
     // its checkpoint continues to drive OPA RESUME.
     if (prepopAssessment.getId() != null
-        && isAssessmentCheckpointToBeDeleted(application, prepopAssessment)) {
+        && (!copiedAnswers.isEmpty()
+            || isAssessmentCheckpointToBeDeleted(application, prepopAssessment))) {
       deleteAssessments(
               user, List.of(assessmentRulebase.getPrePopAssessmentName()), referenceId, null)
           .block();
@@ -1469,6 +1507,8 @@ public class AssessmentService {
       mergeEbsAssessmentData(assessment, ebsAssessmentData, true);
       mergeEbsAssessmentData(assessment, ebsAssessmentData, false);
     }
+
+    mergeCopiedAssessmentData(prepopAssessment, copiedAnswers);
 
     // An amend-case assessment must not reuse the answers the rulebase marks "Do Not Reuse"
     // (merits)
@@ -1733,15 +1773,7 @@ public class AssessmentService {
     return null;
   }
 
-  /**
-   * Merges OPA entities EBS returned for a copied bill into an assessment already built from the
-   * case, leaving the entities it already holds in place so they are updated rather than inserted
-   * again.
-   *
-   * @param assessment the assessment to merge into
-   * @param opaEntities the OPA entities to merge
-   */
-  public void mergeCopiedAssessmentData(
+  private void mergeCopiedAssessmentData(
       final AssessmentDetail assessment, final List<OpaEntity> opaEntities) {
     if (opaEntities == null) {
       return;

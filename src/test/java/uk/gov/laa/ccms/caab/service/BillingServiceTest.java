@@ -4,9 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -15,7 +14,6 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,16 +22,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
-import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
-import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
-import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
-import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.SoaFigureColumn;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
@@ -994,6 +987,12 @@ class BillingServiceTest {
           .provider(new BaseProvider().id(10));
     }
 
+    private ApplicationDetail ebsCase() {
+      return new ApplicationDetail()
+          .caseReferenceNumber(CASE_REF)
+          .client(new uk.gov.laa.ccms.caab.model.ClientDetail().reference("C1"));
+    }
+
     private OpaEntity entity(final String name, final String attribute, final String value) {
       return new OpaEntity()
           .entityName(name)
@@ -1009,106 +1008,46 @@ class BillingServiceTest {
                                   .responseValue(value)))));
     }
 
-    private void casePrepopExists() {
+    private void noDraftBill() {
       when(clientService.getClient(any(), any(), any())).thenReturn(Mono.just(new ClientDetail()));
-      when(assessmentService.deleteAssessments(any(), any(), any(), any()))
-          .thenReturn(Mono.empty());
-      when(assessmentService.getAssessments(any(), any(), any()))
-          .thenReturn(
-              Mono.just(
-                  new AssessmentDetails()
-                      .addContentItem(
-                          new AssessmentDetail()
-                              .name(AssessmentRulebase.BILLING.getPrePopAssessmentName())
-                              .caseReferenceNumber(CASE_REF)
-                              .providerId("10")
-                              .auditDetail(new AuditDetail().lastSaved(new Date()))
-                              .entityTypes(
-                                  new ArrayList<>(
-                                      List.of(
-                                          new AssessmentEntityTypeDetail()
-                                              .name("GLOBAL")
-                                              .entities(new ArrayList<>(List.of())),
-                                          new AssessmentEntityTypeDetail()
-                                              .name("PROCEEDING")
-                                              .entities(
-                                                  new ArrayList<>(
-                                                      List.of(
-                                                          new AssessmentEntityDetail()
-                                                              .name("case-proceeding"))))))))));
+      when(caabApiClient.createBill(any(), any())).thenReturn(Mono.empty());
     }
 
-    private ApplicationDetail ebsCase() {
-      return new ApplicationDetail()
-          .caseReferenceNumber(CASE_REF)
-          .client(new uk.gov.laa.ccms.caab.model.ClientDetail().reference("C1"));
+    @SuppressWarnings("unchecked")
+    private List<uk.gov.laa.ccms.caab.model.OpaEntity> copiedAnswersHandedToTheStart() {
+      final ArgumentCaptor<List<uk.gov.laa.ccms.caab.model.OpaEntity>> captor =
+          ArgumentCaptor.forClass(List.class);
+      verify(assessmentService)
+          .startAssessment(
+              any(),
+              eq(AssessmentRulebase.BILLING),
+              any(),
+              eq(user()),
+              eq(false),
+              any(),
+              captor.capture());
+      return captor.getValue();
     }
 
     @Test
-    @DisplayName("Builds the pre-population from the case before merging the copy into it")
-    void buildsCasePrepopBeforeApplyingTheCopy() {
+    @DisplayName("Hands the copied answers to the assessment start, which builds and saves once")
+    void handsTheCopiedAnswersToTheStart() {
       when(soaApiClient.getInvoiceData("555", "user1", "EXTERNAL"))
           .thenReturn(
               Mono.just(
                   new InvoiceDataResponse()
                       .opaResponse(List.of(entity("GLOBAL", "BILL_TYPE", "CLAIM")))));
-      casePrepopExists();
-      when(assessmentService.saveAssessment(any(), any())).thenReturn(Mono.empty());
-      when(caabApiClient.createBill(any(), eq("user1"))).thenReturn(Mono.empty());
+      noDraftBill();
 
       billingService.copyBill(ebsCase(), "10", "555", new StatementOfAccountDisplay(), user());
 
-      verify(assessmentService)
-          .startAssessment(
-              any(), eq(AssessmentRulebase.BILLING), any(), eq(user()), eq(false), any());
-
-      final ArgumentCaptor<List<uk.gov.laa.ccms.caab.model.OpaEntity>> captor =
-          ArgumentCaptor.forClass(List.class);
-      verify(assessmentService).mergeCopiedAssessmentData(any(), captor.capture());
-
-      assertThat(captor.getValue())
+      assertThat(copiedAnswersHandedToTheStart())
           .extracting(uk.gov.laa.ccms.caab.model.OpaEntity::getEntityName)
           .containsExactly("GLOBAL");
-      assertThat(captor.getValue().getFirst().getInstances().getFirst().getAttributes())
-          .extracting(
-              uk.gov.laa.ccms.caab.model.OpaAttribute::getAttribute,
-              uk.gov.laa.ccms.caab.model.OpaAttribute::getResponseValue)
-          .containsExactly(tuple("BILL_TYPE", "CLAIM"));
 
-      verify(assessmentService).saveAssessment(eq(user()), any());
       verify(caabApiClient).createBill(any(), eq("user1"));
-    }
-
-    @Test
-    @DisplayName("Clears the previous billing session before building the copy")
-    void clearsThePreviousSessionFirst() {
-      when(soaApiClient.getInvoiceData(any(), any(), any()))
-          .thenReturn(
-              Mono.just(
-                  new InvoiceDataResponse()
-                      .opaResponse(List.of(entity("GLOBAL", "BILL_TYPE", "CLAIM")))));
-      casePrepopExists();
-      when(assessmentService.saveAssessment(any(), any())).thenReturn(Mono.empty());
-      when(caabApiClient.createBill(any(), any())).thenReturn(Mono.empty());
-
-      billingService.copyBill(ebsCase(), "10", "555", new StatementOfAccountDisplay(), user());
-
-      final InOrder inOrder = inOrder(assessmentService);
-      inOrder
-          .verify(assessmentService)
-          .deleteAssessments(
-              eq(user()),
-              eq(
-                  List.of(
-                      AssessmentRulebase.BILLING.getName(),
-                      AssessmentRulebase.BILLING.getPrePopAssessmentName())),
-              eq(CASE_REF),
-              isNull());
-      inOrder
-          .verify(assessmentService)
-          .startAssessment(any(), any(), any(), any(), eq(false), any());
-      inOrder.verify(assessmentService).mergeCopiedAssessmentData(any(), any());
-      inOrder.verify(assessmentService).saveAssessment(any(), any());
+      verify(assessmentService, never()).deleteAssessments(any(), any(), any(), any());
+      verify(assessmentService, never()).saveAssessment(any(), any());
     }
 
     @Test
@@ -1123,23 +1062,17 @@ class BillingServiceTest {
                               entity("GLOBAL", "BILL_TYPE", "CLAIM"),
                               entity("PROCEEDING", "PROCEEDING_ID", "P1"),
                               entity("OPPONENT_OTHER_PARTIES", "OPPONENT_ID", "O1")))));
-      casePrepopExists();
-      when(assessmentService.saveAssessment(any(), any())).thenReturn(Mono.empty());
-      when(caabApiClient.createBill(any(), any())).thenReturn(Mono.empty());
+      noDraftBill();
 
       billingService.copyBill(ebsCase(), "10", "555", new StatementOfAccountDisplay(), user());
 
-      final ArgumentCaptor<List<uk.gov.laa.ccms.caab.model.OpaEntity>> captor =
-          ArgumentCaptor.forClass(List.class);
-      verify(assessmentService).mergeCopiedAssessmentData(any(), captor.capture());
-
-      assertThat(captor.getValue())
+      assertThat(copiedAnswersHandedToTheStart())
           .extracting(uk.gov.laa.ccms.caab.model.OpaEntity::getEntityName)
           .containsExactly("GLOBAL");
     }
 
     @Test
-    @DisplayName("Carries a text-only answer through to the merge")
+    @DisplayName("Carries a text-only answer through to the start")
     void carriesResponseTextThrough() {
       final OpaEntity textOnly =
           new OpaEntity()
@@ -1156,22 +1089,29 @@ class BillingServiceTest {
                                       .responseText("Counsel attended a hearing")))));
       when(soaApiClient.getInvoiceData(any(), any(), any()))
           .thenReturn(Mono.just(new InvoiceDataResponse().opaResponse(List.of(textOnly))));
-      casePrepopExists();
-      when(assessmentService.saveAssessment(any(), any())).thenReturn(Mono.empty());
-      when(caabApiClient.createBill(any(), any())).thenReturn(Mono.empty());
+      noDraftBill();
 
       billingService.copyBill(ebsCase(), "10", "555", new StatementOfAccountDisplay(), user());
 
-      final ArgumentCaptor<List<uk.gov.laa.ccms.caab.model.OpaEntity>> captor =
-          ArgumentCaptor.forClass(List.class);
-      verify(assessmentService).mergeCopiedAssessmentData(any(), captor.capture());
-
-      assertThat(captor.getValue().getFirst().getInstances().getFirst().getAttributes())
+      assertThat(
+              copiedAnswersHandedToTheStart().getFirst().getInstances().getFirst().getAttributes())
           .extracting(
               uk.gov.laa.ccms.caab.model.OpaAttribute::getAttribute,
               uk.gov.laa.ccms.caab.model.OpaAttribute::getResponseValue,
               uk.gov.laa.ccms.caab.model.OpaAttribute::getResponseText)
           .containsExactly(tuple("BILL_NARRATIVE", null, "Counsel attended a hearing"));
+    }
+
+    @Test
+    @DisplayName("Still creates the draft when EBS holds no assessment data for the bill")
+    void handlesEmptyInvoiceData() {
+      when(soaApiClient.getInvoiceData(any(), any(), any()))
+          .thenReturn(Mono.just(new InvoiceDataResponse()));
+      noDraftBill();
+
+      billingService.copyBill(ebsCase(), "10", "555", new StatementOfAccountDisplay(), user());
+
+      verify(caabApiClient).createBill(any(), any());
     }
 
     @Test
@@ -1187,12 +1127,13 @@ class BillingServiceTest {
           .isInstanceOf(CaabApplicationException.class)
           .hasMessageContaining("already holds a draft bill");
 
-      verify(assessmentService, never()).deleteAssessments(any(), any(), any(), any());
+      verify(assessmentService, never())
+          .startAssessment(any(), any(), any(), any(), anyBoolean(), any(), any());
       verify(caabApiClient, never()).createBill(any(), any());
     }
 
     @Test
-    @DisplayName("Aborts rather than deleting anything when the draft lookup fails")
+    @DisplayName("Aborts rather than starting anything when the draft lookup fails")
     void abortsWhenTheDraftLookupFails() {
       when(caabApiClient.getBill(CASE_REF, "10"))
           .thenReturn(Mono.error(new CaabApplicationException("draft store unreachable")));
@@ -1204,47 +1145,9 @@ class BillingServiceTest {
       assertThatThrownBy(() -> billingService.copyBill(ebsCase, "10", "555", statement, user))
           .isInstanceOf(CaabApplicationException.class);
 
-      verify(assessmentService, never()).deleteAssessments(any(), any(), any(), any());
+      verify(assessmentService, never())
+          .startAssessment(any(), any(), any(), any(), anyBoolean(), any(), any());
       verify(caabApiClient, never()).createBill(any(), any());
-    }
-
-    @Test
-    @DisplayName("Throws without creating a draft when the fresh pre-population is not there")
-    void throwsWhenPrepopIsMissing() {
-      when(soaApiClient.getInvoiceData(any(), any(), any()))
-          .thenReturn(
-              Mono.just(
-                  new InvoiceDataResponse()
-                      .opaResponse(List.of(entity("GLOBAL", "BILL_TYPE", "CLAIM")))));
-      when(clientService.getClient(any(), any(), any())).thenReturn(Mono.just(new ClientDetail()));
-      when(assessmentService.deleteAssessments(any(), any(), any(), any()))
-          .thenReturn(Mono.empty());
-      when(assessmentService.getAssessments(any(), any(), any()))
-          .thenReturn(Mono.just(new AssessmentDetails()));
-
-      final StatementOfAccountDisplay statement = new StatementOfAccountDisplay();
-      final ApplicationDetail ebsCase = ebsCase();
-      final UserDetail user = user();
-
-      assertThatThrownBy(() -> billingService.copyBill(ebsCase, "10", "555", statement, user))
-          .isInstanceOf(CaabApplicationException.class)
-          .hasMessageContaining("pre-population");
-
-      verify(caabApiClient, never()).createBill(any(), any());
-    }
-
-    @Test
-    @DisplayName("Still creates the draft when EBS holds no assessment data for the bill")
-    void handlesEmptyInvoiceData() {
-      when(soaApiClient.getInvoiceData(any(), any(), any()))
-          .thenReturn(Mono.just(new InvoiceDataResponse()));
-      casePrepopExists();
-      when(assessmentService.saveAssessment(any(), any())).thenReturn(Mono.empty());
-      when(caabApiClient.createBill(any(), any())).thenReturn(Mono.empty());
-
-      billingService.copyBill(ebsCase(), "10", "555", new StatementOfAccountDisplay(), user());
-
-      verify(caabApiClient).createBill(any(), any());
     }
   }
 
