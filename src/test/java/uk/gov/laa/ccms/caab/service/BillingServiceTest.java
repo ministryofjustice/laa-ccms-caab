@@ -1140,6 +1140,31 @@ class BillingServiceTest {
     }
 
     @Test
+    @DisplayName("Throws without creating a draft when the fresh pre-population is not there")
+    void throwsWhenPrepopIsMissing() {
+      when(soaApiClient.getInvoiceData(any(), any(), any()))
+          .thenReturn(
+              Mono.just(
+                  new InvoiceDataResponse()
+                      .opaResponse(List.of(entity("GLOBAL", "BILL_TYPE", "CLAIM")))));
+      when(clientService.getClient(any(), any(), any())).thenReturn(Mono.just(new ClientDetail()));
+      when(assessmentService.deleteAssessments(any(), any(), any(), any()))
+          .thenReturn(Mono.empty());
+      when(assessmentService.getAssessments(any(), any(), any()))
+          .thenReturn(Mono.just(new AssessmentDetails()));
+
+      final StatementOfAccountDisplay statement = new StatementOfAccountDisplay();
+      final ApplicationDetail ebsCase = ebsCase();
+      final UserDetail user = user();
+
+      assertThatThrownBy(() -> billingService.copyBill(ebsCase, "10", "555", statement, user))
+          .isInstanceOf(CaabApplicationException.class)
+          .hasMessageContaining("pre-population");
+
+      verifyNoInteractions(caabApiClient);
+    }
+
+    @Test
     @DisplayName("Still creates the draft when EBS holds no assessment data for the bill")
     void handlesEmptyInvoiceData() {
       when(soaApiClient.getInvoiceData(any(), any(), any()))
