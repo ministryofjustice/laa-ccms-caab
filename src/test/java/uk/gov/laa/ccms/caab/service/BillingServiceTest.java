@@ -999,7 +999,7 @@ class BillingServiceTest {
           .instances(
               List.of(
                   new OpaInstance()
-                      .instanceLabel(name + "-1")
+                      .instanceLabel("global")
                       .attributes(
                           List.of(
                               new OpaAttribute()
@@ -1048,6 +1048,23 @@ class BillingServiceTest {
       verify(caabApiClient).createBill(any(), eq("user1"));
       verify(assessmentService, never()).deleteAssessments(any(), any(), any(), any());
       verify(assessmentService, never()).saveAssessment(any(), any());
+    }
+
+    @Test
+    @DisplayName("Relabels the copied global instance with the case reference")
+    void relabelsTheGlobalInstance() {
+      when(soaApiClient.getInvoiceData(any(), any(), any()))
+          .thenReturn(
+              Mono.just(
+                  new InvoiceDataResponse()
+                      .opaResponse(List.of(entity("global", "BILL_TYPE", "CLAIM")))));
+      noDraftBill();
+
+      billingService.copyBill(ebsCase(), "10", "555", new StatementOfAccountDisplay(), user());
+
+      assertThat(copiedAnswersHandedToTheStart().getFirst().getInstances())
+          .extracting(uk.gov.laa.ccms.caab.model.OpaInstance::getInstanceLabel)
+          .containsExactly(CASE_REF);
     }
 
     @Test

@@ -24,6 +24,7 @@ import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
@@ -500,7 +501,7 @@ public class BillingService {
         user,
         false,
         getAllocatedCostLimit(statementOfAccount, ebsCase),
-        copiedEntities(invoiceData));
+        copiedEntities(invoiceData, caseReferenceNumber));
 
     createDraftBillIfAbsent(caseReferenceNumber, providerId, user);
   }
@@ -509,7 +510,8 @@ public class BillingService {
    * The copied bill's entities, less the ones the legacy CopyBill empties: they belong to the case
    * as it stands now, so the pre-population keeps the ones built from it.
    */
-  private List<OpaEntity> copiedEntities(final InvoiceDataResponse invoiceData) {
+  private List<OpaEntity> copiedEntities(
+      final InvoiceDataResponse invoiceData, final String caseReferenceNumber) {
 
     if (invoiceData == null || invoiceData.getOpaResponse() == null) {
       return List.of();
@@ -518,7 +520,26 @@ public class BillingService {
     return invoiceData.getOpaResponse().stream()
         .filter(entity -> !isCopyExcluded(entity.getEntityName()))
         .map(BillingService::toMergeableEntity)
+        .map(entity -> withGlobalLabelledByCase(entity, caseReferenceNumber))
         .toList();
+  }
+
+  /**
+   * EBS labels the global instance "global" while the pre-population labels it by case reference,
+   * so the copied answers are relabelled to match or the merge finds nothing to write them onto.
+   * The legacy CopyBill resolves the same mismatch by routing a global entity straight to the
+   * session's global instance.
+   */
+  private static OpaEntity withGlobalLabelledByCase(
+      final OpaEntity entity, final String caseReferenceNumber) {
+
+    if (!AssessmentEntityType.GLOBAL.getType().equalsIgnoreCase(entity.getEntityName())
+        || entity.getInstances() == null) {
+      return entity;
+    }
+
+    entity.getInstances().forEach(instance -> instance.setInstanceLabel(caseReferenceNumber));
+    return entity;
   }
 
   private boolean isCopyExcluded(final String entityName) {
