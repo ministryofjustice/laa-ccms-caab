@@ -674,6 +674,27 @@ class BillingControllerTest {
     }
 
     @Test
+    @DisplayName("Copies once when the copy is requested twice on one session")
+    void doesNotCopyBillTwice() {
+      final StatementOfAccountDisplay withoutDraft = new StatementOfAccountDisplay();
+      final StatementOfAccountDisplay withDraft = new StatementOfAccountDisplay();
+      withDraft.setDraftBillExists(true);
+      when(billingService.getStatementOfAccountDisplay(any(), any(), any()))
+          .thenReturn(withoutDraft, withDraft);
+
+      final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(CASE, caseWithBillFunction());
+      session.setAttribute(USER_DETAILS, user);
+
+      for (int attempt = 0; attempt < 2; attempt++) {
+        mockMvc.perform(get("/case/billing/bill/copy").param("billing-id", "555").session(session));
+      }
+
+      // The draft the first copy creates is what refuses the second.
+      verify(billingService, times(1)).copyBill(any(), eq("10"), eq("555"), any(), eq(user));
+    }
+
+    @Test
     @DisplayName("Refuses the copy when no billing incident id is supplied")
     void refusesWithoutBillingId() {
       // A row EBS gave no id for renders the link with an empty billing-id, and the URL can be

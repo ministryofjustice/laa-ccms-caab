@@ -354,6 +354,7 @@ public class BillingController {
    * @param ebsCase the case details from EBS.
    * @param user the logged-in user.
    * @param billingId the billing incident id of the bill to copy.
+   * @param session the HTTP session, used to serialise concurrent copies.
    * @return a redirect to the bill details screen, or back to the statement when it cannot be
    *     copied.
    */
@@ -361,7 +362,8 @@ public class BillingController {
   public String copyBill(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @RequestParam("billing-id") final String billingId) {
+      @RequestParam("billing-id") final String billingId,
+      final HttpSession session) {
 
     // Nothing can be fetched from EBS without an invoice to address, so refuse rather than asking
     // it for a blank one. The action is already withheld from rows carrying no billing incident
@@ -370,14 +372,18 @@ public class BillingController {
       return CASE_STATEMENT_OF_ACCOUNT_URL;
     }
 
-    final StatementOfAccountDisplay statementOfAccount =
-        billingService.getStatementOfAccountDisplay(
-            ebsCase.getCaseReferenceNumber(), ebsCase, user);
-    if (statementOfAccount.isDraftBillExists()) {
-      return CASE_STATEMENT_OF_ACCOUNT_URL;
-    }
+    // The draft the copy creates is what stops any later copy, so the check and the copy have to
+    // be one step: two concurrent requests would otherwise both find no draft and both copy.
+    synchronized (WebUtils.getSessionMutex(session)) {
+      final StatementOfAccountDisplay statementOfAccount =
+          billingService.getStatementOfAccountDisplay(
+              ebsCase.getCaseReferenceNumber(), ebsCase, user);
+      if (statementOfAccount.isDraftBillExists()) {
+        return CASE_STATEMENT_OF_ACCOUNT_URL;
+      }
 
-    billingService.copyBill(ebsCase, providerId(user), billingId, statementOfAccount, user);
+      billingService.copyBill(ebsCase, providerId(user), billingId, statementOfAccount, user);
+    }
 
     return "redirect:/case/billing/bill";
   }
