@@ -60,8 +60,6 @@
     display: inline-block;
 }
 
-// Row-action loader. Out of the layout until shown, so the cell reserves no space for it, and
-// centred on the text rather than the baseline so showing it cannot change the row height.
 .ccms-link-disabled {
     color: #505a5f;
     pointer-events: none;

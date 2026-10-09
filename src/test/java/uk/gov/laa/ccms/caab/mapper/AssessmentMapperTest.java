@@ -273,8 +273,6 @@ class AssessmentMapperTest {
 
     final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
 
-    // Only merits declares these. The rulebase on the context decides, so an explicit MEANS is
-    // withheld even where the context carries no assessment to read the name from.
     assertThat(result)
         .extracting(AssessmentAttributeDetail::getName)
         .doesNotContain(

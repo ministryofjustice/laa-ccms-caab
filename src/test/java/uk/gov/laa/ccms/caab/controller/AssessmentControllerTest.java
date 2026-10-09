@@ -339,6 +339,64 @@ public class AssessmentControllerTest {
   }
 
   @Test
+  public void assessmentGet_billing_runsAgainstTheEbsCaseAndResumesTheCopiedPrepopulation()
+      throws Exception {
+    final ApplicationDetail ebsCase =
+        buildApplicationDetail(1, true, new Date())
+            .caseReferenceNumber("CASE123")
+            .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_BILL));
+
+    final StatementOfAccountDisplay statementOfAccount = new StatementOfAccountDisplay();
+    when(billingService.getStatementOfAccountDisplay(eq("CASE123"), any(), any()))
+        .thenReturn(statementOfAccount);
+    when(billingService.getAllocatedCostLimit(eq(statementOfAccount), any()))
+        .thenReturn(new BigDecimal("1750.00"));
+
+    when(contextSecurityUtil.createHubContext(
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyString()))
+        .thenReturn("contextToken");
+    when(clientService.getClient(anyString(), anyString(), anyString()))
+        .thenReturn(Mono.just(new ClientDetail()));
+
+    final AssessmentDetail copiedPrepop = buildAssessmentDetail(new Date());
+    copiedPrepop.setId(4242L);
+    when(assessmentService.getAssessments(any(), anyString(), anyString()))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(copiedPrepop)));
+
+    mockMvc
+        .perform(
+            get("/application/assessments")
+                .param("assessment", "billing")
+                .param("invoked-from", "CCMS_CB03")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(CASE, ebsCase)
+                .sessionAttr(ACTIVE_CASE, activeCase))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/assessments/assessment-get"))
+        .andExpect(model().attribute("assessmentType", "BILLING"))
+        .andExpect(model().attribute("cancelUrl", "/civil/case/billing/bill"))
+        .andExpect(model().attribute("returnLinkText", "Return to bill details"))
+        .andExpect(model().attribute("resumeId", "4242"));
+
+    verify(applicationService, never()).getApplication(anyString());
+    verify(assessmentService)
+        .startAssessment(
+            any(),
+            eq(AssessmentRulebase.BILLING),
+            any(),
+            any(),
+            eq(false),
+            eq(new BigDecimal("1750.00")));
+  }
+
+  @Test
   public void assessmentGet_poa_runsAgainstTheEbsCaseAndPrepopulatesTheAllocatedCostLimit()
       throws Exception {
     // The POA journey is started from the case statement of account, so it runs against the EBS

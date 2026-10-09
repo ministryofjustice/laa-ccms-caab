@@ -197,6 +197,21 @@ class BillingTemplateRenderTest {
    * decided in {@code BillingService} and covered by its tests; the view only gates on the
    * resulting flag and the user's function.
    */
+  private BillPoaRow copyableRejectedBill() {
+    return new BillPoaRow(
+            "Counsel Bill", "Rejected", null, null, new BigDecimal("100.00"), false, 222L)
+        .withCopyable();
+  }
+
+  private BillPoaRow uncopyableRejectedBill() {
+    return new BillPoaRow(
+        "Counsel Bill", "Rejected", null, null, new BigDecimal("100.00"), false, 222L);
+  }
+
+  private BillPoaRow draftBill() {
+    return new BillPoaRow("Counsel Bill", "Draft", null, null, new BigDecimal("50.00"), true, 333L);
+  }
+
   private Map<String, Object> statementModel(final boolean canMaintainBill) {
     final BillPoaRow rejected =
         new BillPoaRow(
@@ -223,9 +238,25 @@ class BillingTemplateRenderTest {
   void statementOffersCopy() {
     final String html =
         render("application/billing/case-statement-of-account", statementModel(true));
-    assertThat(html).contains("/case/billing/bill/copy").contains("billing-id=222");
-    // Copying is slow enough to invite a second click, which would start a second copy.
-    assertThat(html).contains("ccms-copy-bill-link").contains("loader-small");
+    assertThat(html)
+        .contains("/case/billing/bill/copy")
+        .contains("name=\"billing-id\" value=\"222\"")
+        .contains("ccms-copy-bill-link")
+        .contains("loader-small");
+  }
+
+  @Test
+  @DisplayName("Statement of account withholds the copy action while a draft is in progress")
+  void statementWithholdsCopyWhileDraftInProgress() {
+    final Map<String, Object> model = statementModel(true);
+    model.put("draftInProgress", true);
+    model.put("showCreateBill", false);
+    model.put("billsAndPoaPage", new PageImpl<>(List.of(draftBill(), uncopyableRejectedBill())));
+
+    final String html = render("application/billing/case-statement-of-account", model);
+
+    assertThat(html).doesNotContain("/case/billing/bill/copy");
+    assertThat(html).contains("draft-in-progress-message");
   }
 
   @Test

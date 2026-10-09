@@ -20,6 +20,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
@@ -358,7 +359,7 @@ public class BillingController {
    * @return a redirect to the bill details screen, or back to the statement when it cannot be
    *     copied.
    */
-  @GetMapping("/case/billing/bill/copy")
+  @PostMapping("/case/billing/bill/copy")
   public String copyBill(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
@@ -372,13 +373,11 @@ public class BillingController {
       return CASE_STATEMENT_OF_ACCOUNT_URL;
     }
 
-    // The draft the copy creates is what stops any later copy, so the check and the copy have to
-    // be one step: two concurrent requests would otherwise both find no draft and both copy.
     synchronized (WebUtils.getSessionMutex(session)) {
       final StatementOfAccountDisplay statementOfAccount =
           billingService.getStatementOfAccountDisplay(
               ebsCase.getCaseReferenceNumber(), ebsCase, user);
-      if (statementOfAccount.isDraftBillExists()) {
+      if (statementOfAccount.isDraftBillExists() || !isCopyable(statementOfAccount, billingId)) {
         return CASE_STATEMENT_OF_ACCOUNT_URL;
       }
 
@@ -386,6 +385,17 @@ public class BillingController {
     }
 
     return "redirect:/case/billing/bill";
+  }
+
+  private boolean isCopyable(
+      final StatementOfAccountDisplay statementOfAccount, final String billingId) {
+
+    return Optional.ofNullable(statementOfAccount.getBillsAndPoa()).orElse(List.of()).stream()
+        .anyMatch(
+            row ->
+                row.copyable()
+                    && row.billingIncidentId() != null
+                    && billingId.equals(row.billingIncidentId().toString()));
   }
 
   /**

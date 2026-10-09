@@ -23,6 +23,11 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -658,12 +663,28 @@ class BillingControllerTest {
           .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_BILL));
     }
 
+    private StatementOfAccountDisplay statementOfferingBill555() {
+      final StatementOfAccountDisplay display = new StatementOfAccountDisplay();
+      display.setBillsAndPoa(
+          List.of(
+              new BillPoaRow("Bill", "Rejected", null, null, null, false, true, 555L),
+              new BillPoaRow("Bill", "Rejected", null, null, null, false, true, 999L)));
+      return display;
+    }
+
+    private void caseOffersBill555() {
+      when(billingService.getStatementOfAccountDisplay(any(), any(), any()))
+          .thenReturn(statementOfferingBill555());
+    }
+
     @Test
     @DisplayName("Copies the rejected bill and opens the bill details screen")
     void copiesAndOpensBillDetails() {
+      caseOffersBill555();
+
       assertThat(
               mockMvc.perform(
-                  get("/case/billing/bill/copy")
+                  post("/case/billing/bill/copy")
                       .param("billing-id", "555")
                       .sessionAttr(CASE, caseWithBillFunction())
                       .sessionAttr(USER_DETAILS, user)))
@@ -676,8 +697,8 @@ class BillingControllerTest {
     @Test
     @DisplayName("Copies once when the copy is requested twice on one session")
     void doesNotCopyBillTwice() {
-      final StatementOfAccountDisplay withoutDraft = new StatementOfAccountDisplay();
-      final StatementOfAccountDisplay withDraft = new StatementOfAccountDisplay();
+      final StatementOfAccountDisplay withoutDraft = statementOfferingBill555();
+      final StatementOfAccountDisplay withDraft = statementOfferingBill555();
       withDraft.setDraftBillExists(true);
       when(billingService.getStatementOfAccountDisplay(any(), any(), any()))
           .thenReturn(withoutDraft, withDraft);
@@ -687,11 +708,55 @@ class BillingControllerTest {
       session.setAttribute(USER_DETAILS, user);
 
       for (int attempt = 0; attempt < 2; attempt++) {
-        mockMvc.perform(get("/case/billing/bill/copy").param("billing-id", "555").session(session));
+        mockMvc.perform(
+            post("/case/billing/bill/copy").param("billing-id", "555").session(session));
       }
 
-      // The draft the first copy creates is what refuses the second.
       verify(billingService, times(1)).copyBill(any(), eq("10"), eq("555"), any(), eq(user));
+    }
+
+    @Test
+    @DisplayName("Copies once when two requests arrive at the same time")
+    void doesNotCopyBillConcurrently() throws Exception {
+      final AtomicBoolean draftExists = new AtomicBoolean(false);
+      when(billingService.getStatementOfAccountDisplay(any(), any(), any()))
+          .thenAnswer(
+              invocation -> {
+                final StatementOfAccountDisplay display = statementOfferingBill555();
+                display.setDraftBillExists(draftExists.get());
+                Thread.sleep(150);
+                return display;
+              });
+      doAnswer(invocation -> draftExists.compareAndSet(false, true))
+          .when(billingService)
+          .copyBill(any(), any(), any(), any(), any());
+
+      final MockHttpSession session = new MockHttpSession();
+      session.setAttribute(CASE, caseWithBillFunction());
+      session.setAttribute(USER_DETAILS, user);
+
+      final ExecutorService pool = Executors.newFixedThreadPool(2);
+      try {
+        final List<Future<?>> attempts =
+            List.of(pool.submit(() -> copyOn(session)), pool.submit(() -> copyOn(session)));
+        for (final Future<?> attempt : attempts) {
+          attempt.get(10, TimeUnit.SECONDS);
+        }
+      } finally {
+        pool.shutdownNow();
+      }
+
+      verify(billingService, times(1)).copyBill(any(), eq("10"), eq("555"), any(), eq(user));
+    }
+
+    private Object copyOn(final MockHttpSession session) {
+      try {
+        mockMvc.perform(
+            post("/case/billing/bill/copy").param("billing-id", "555").session(session));
+      } catch (final Exception e) {
+        throw new IllegalStateException(e);
+      }
+      return null;
     }
 
     @Test
@@ -701,7 +766,7 @@ class BillingControllerTest {
       // reached directly; either way there is nothing to ask EBS for.
       assertThat(
               mockMvc.perform(
-                  get("/case/billing/bill/copy")
+                  post("/case/billing/bill/copy")
                       .param("billing-id", "")
                       .sessionAttr(CASE, caseWithBillFunction())
                       .sessionAttr(USER_DETAILS, user)))
@@ -721,14 +786,13 @@ class BillingControllerTest {
 
       assertThat(
               mockMvc.perform(
-                  get("/case/billing/bill/copy")
+                  post("/case/billing/bill/copy")
                       .param("billing-id", "555")
                       .sessionAttr(CASE, caseWithBillFunction())
                       .sessionAttr(USER_DETAILS, user)))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/case/billing");
 
-      // A case carries at most one draft bill, so the URL cannot be used to get a second.
       verify(billingService, never()).copyBill(any(), any(), any(), any(), any());
     }
 
@@ -742,7 +806,7 @@ class BillingControllerTest {
 
       assertThat(
               mockMvc.perform(
-                  get("/case/billing/bill/copy")
+                  post("/case/billing/bill/copy")
                       .param("billing-id", "555")
                       .sessionAttr(CASE, ebsCase)
                       .sessionAttr(USER_DETAILS, user)))

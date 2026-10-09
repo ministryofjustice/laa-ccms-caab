@@ -1059,14 +1059,10 @@ class BillingServiceTest {
 
       billingService.copyBill(ebsCase(), "10", "555", new StatementOfAccountDisplay(), user());
 
-      // Without the case build first the pre-population carries no proceedings, which the
-      // assessment start reads as stale and rebuilds, discarding the copy.
       verify(assessmentService)
           .startAssessment(
               any(), eq(AssessmentRulebase.BILLING), any(), eq(user()), eq(false), any());
 
-      // Merged into the persisted pre-population rather than replacing its entities, which would
-      // ask the assessment API to insert rows it already holds.
       final ArgumentCaptor<List<uk.gov.laa.ccms.caab.model.OpaEntity>> captor =
           ArgumentCaptor.forClass(List.class);
       verify(assessmentService).mergeCopiedAssessmentData(any(), captor.capture());
@@ -1098,8 +1094,6 @@ class BillingServiceTest {
 
       billingService.copyBill(ebsCase(), "10", "555", new StatementOfAccountDisplay(), user());
 
-      // The merge only fills empty answers, so the copy has to land on a pre-population built
-      // fresh: answers left by an earlier billing session would otherwise win over the copy.
       final InOrder inOrder = inOrder(assessmentService);
       inOrder
           .verify(assessmentService)
@@ -1140,7 +1134,6 @@ class BillingServiceTest {
           ArgumentCaptor.forClass(List.class);
       verify(assessmentService).mergeCopiedAssessmentData(any(), captor.capture());
 
-      // They belong to the case as it stands now, so the case build keeps them.
       assertThat(captor.getValue())
           .extracting(uk.gov.laa.ccms.caab.model.OpaEntity::getEntityName)
           .containsExactly("GLOBAL");

@@ -163,10 +163,13 @@
                    th:href="@{/case/billing/bill/remove}"
                    th:text="#{billing.billsAndPoa.delete}"></a>
                 <th:block th:if="${row.copyable and canMaintainBill}">
-                  <a class="govuk-link ccms-copy-bill-link"
-                     th:href="@{/case/billing/bill/copy(billing-id=${row.billingIncidentId})}"
-                     th:text="#{billing.billsAndPoa.copy}"></a>
-                  <div class="loader-small ccms-action-loader" aria-hidden="true"></div>
+                  <form th:action="@{/case/billing/bill/copy}" method="post" class="govuk-form">
+                    <input type="hidden" name="billing-id" th:value="${row.billingIncidentId}"/>
+                    <button type="submit"
+                            class="govuk-body govuk-!-margin-bottom-0 ccms-button-as-link ccms-copy-bill-link"
+                            th:text="#{billing.billsAndPoa.copy}"></button>
+                    <div class="loader-small ccms-action-loader" aria-hidden="true"></div>
+                  </form>
                 </th:block>
               </td>
             </tr>
@@ -201,20 +204,18 @@
   (function() {
     var links = document.getElementsByClassName('ccms-copy-bill-link');
     for (var i = 0; i < links.length; i++) {
-      links[i].addEventListener('click', function(event) {
-        // Copying builds the pre-population and a draft bill, so a second click would start a
-        // second copy against a case that has no draft yet.
-        if (this.getAttribute('aria-disabled') === 'true') {
-          event.preventDefault();
-          return;
-        }
-        this.setAttribute('aria-disabled', 'true');
-        this.classList.add('ccms-link-disabled');
+      links[i].addEventListener('click', function() {
+        var button = this;
+        button.classList.add('ccms-link-disabled');
 
-        var loader = this.closest('td').getElementsByClassName('loader-small')[0];
+        var loader = button.closest('td').getElementsByClassName('loader-small')[0];
         if (loader) {
           loader.style.display = 'inline-block';
         }
+
+        window.setTimeout(function() {
+          button.disabled = true;
+        }, 0);
       });
     }
   })();

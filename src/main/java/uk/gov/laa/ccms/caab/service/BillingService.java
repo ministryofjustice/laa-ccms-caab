@@ -35,6 +35,9 @@ import uk.gov.laa.ccms.caab.model.BillCreate;
 import uk.gov.laa.ccms.caab.model.Bills;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.OpaAttribute;
+import uk.gov.laa.ccms.caab.model.OpaEntity;
+import uk.gov.laa.ccms.caab.model.OpaInstance;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetail;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.data.model.BaseProvider;
@@ -53,8 +56,6 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceDataResponse;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceDetail;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceResponse;
-import uk.gov.laa.ccms.soa.gateway.model.OpaEntity;
-import uk.gov.laa.ccms.soa.gateway.model.OpaInstance;
 
 /**
  * Service responsible for building the Case Statement of Account display from the per-firm
@@ -489,9 +490,6 @@ public class BillingService {
       throw new CaabApplicationException("Failed to retrieve client details");
     }
 
-    // The copy supersedes any earlier billing session, which the legacy CopyBill gets by building
-    // a new one. Rebuild rather than top up: the merge only fills empty answers, so answers left
-    // by an earlier session would otherwise win over the bill being copied.
     assessmentService
         .deleteAssessments(
             user,
@@ -502,8 +500,6 @@ public class BillingService {
             null)
         .block();
 
-    // Built from the case first, as the legacy CopyBill does: a pre-population without the case's
-    // proceedings reads as stale on the next start, which rebuilds it and discards the copy.
     assessmentService.startAssessment(
         ebsCase,
         AssessmentRulebase.BILLING,
@@ -539,8 +535,7 @@ public class BillingService {
    * The copied bill's entities, less the ones the legacy CopyBill empties: they belong to the case
    * as it stands now, so the pre-population keeps the ones built from it.
    */
-  private List<uk.gov.laa.ccms.caab.model.OpaEntity> copiedEntities(
-      final InvoiceDataResponse invoiceData) {
+  private List<OpaEntity> copiedEntities(final InvoiceDataResponse invoiceData) {
 
     if (invoiceData == null || invoiceData.getOpaResponse() == null) {
       return List.of();
@@ -558,17 +553,17 @@ public class BillingService {
   }
 
   /** EBS returns the copied bill in the gateway's OPA shape; the merge consumes the caab one. */
-  private static uk.gov.laa.ccms.caab.model.OpaEntity toMergeableEntity(final OpaEntity entity) {
-    final uk.gov.laa.ccms.caab.model.OpaEntity merged =
-        new uk.gov.laa.ccms.caab.model.OpaEntity().entityName(entity.getEntityName());
+  private static OpaEntity toMergeableEntity(
+      final uk.gov.laa.ccms.soa.gateway.model.OpaEntity entity) {
+    final OpaEntity merged = new OpaEntity().entityName(entity.getEntityName());
 
     if (entity.getInstances() == null) {
       return merged;
     }
 
-    for (final OpaInstance instance : entity.getInstances()) {
-      final uk.gov.laa.ccms.caab.model.OpaInstance mergedInstance =
-          new uk.gov.laa.ccms.caab.model.OpaInstance().instanceLabel(instance.getInstanceLabel());
+    for (final uk.gov.laa.ccms.soa.gateway.model.OpaInstance instance : entity.getInstances()) {
+      final OpaInstance mergedInstance =
+          new OpaInstance().instanceLabel(instance.getInstanceLabel());
 
       if (instance.getAttributes() != null) {
         instance
@@ -576,7 +571,7 @@ public class BillingService {
             .forEach(
                 attribute ->
                     mergedInstance.addAttributesItem(
-                        new uk.gov.laa.ccms.caab.model.OpaAttribute()
+                        new OpaAttribute()
                             .attribute(attribute.getAttribute())
                             .responseType(attribute.getResponseType())
                             .responseValue(attribute.getResponseValue())));
