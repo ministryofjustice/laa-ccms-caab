@@ -377,7 +377,7 @@ public class BillingController {
       return CASE_STATEMENT_OF_ACCOUNT_URL;
     }
 
-    billingService.copyBill(ebsCase.getCaseReferenceNumber(), providerId(user), billingId, user);
+    billingService.copyBill(ebsCase, providerId(user), billingId, statementOfAccount, user);
 
     return "redirect:/case/billing/bill";
   }

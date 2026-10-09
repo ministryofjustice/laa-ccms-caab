@@ -670,7 +670,7 @@ class BillingControllerTest {
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/case/billing/bill");
 
-      verify(billingService).copyBill("300000123", "10", "555", user);
+      verify(billingService).copyBill(any(), eq("10"), eq("555"), any(), eq(user));
     }
 
     @Test
@@ -687,7 +687,7 @@ class BillingControllerTest {
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/case/billing");
 
-      verify(billingService, never()).copyBill(any(), any(), any(), any());
+      verify(billingService, never()).copyBill(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -708,7 +708,7 @@ class BillingControllerTest {
           .hasRedirectedUrl("/case/billing");
 
       // A case carries at most one draft bill, so the URL cannot be used to get a second.
-      verify(billingService, never()).copyBill(any(), any(), any(), any());
+      verify(billingService, never()).copyBill(any(), any(), any(), any(), any());
     }
 
     @Test

@@ -1733,6 +1733,24 @@ public class AssessmentService {
     return null;
   }
 
+  /**
+   * Merges OPA entities EBS returned for a copied bill into an assessment already built from the
+   * case, leaving the entities it already holds in place so they are updated rather than inserted
+   * again.
+   *
+   * @param assessment the assessment to merge into
+   * @param opaEntities the OPA entities to merge
+   */
+  public void mergeCopiedAssessmentData(
+      final AssessmentDetail assessment, final List<OpaEntity> opaEntities) {
+    if (opaEntities == null) {
+      return;
+    }
+    opaEntities.stream()
+        .filter(Objects::nonNull)
+        .forEach(opaEntity -> mergeOpaEntityIntoAssessment(assessment, opaEntity));
+  }
+
   private void mergeOpaEntityIntoAssessment(
       final AssessmentDetail assessment, final OpaEntity opaEntity) {
     if (opaEntity.getEntityName() == null || opaEntity.getInstances() == null) {

@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,9 +26,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.SoaFigureColumn;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
@@ -54,6 +57,7 @@ import uk.gov.laa.ccms.data.model.StatementOfAccountInvoiceList;
 import uk.gov.laa.ccms.data.model.TaxRateLookupDetail;
 import uk.gov.laa.ccms.data.model.TaxRateLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceDataResponse;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceDetail;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceResponse;
@@ -78,6 +82,8 @@ class BillingServiceTest {
   @Mock uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper soaApplicationMapper;
 
   @Mock AssessmentService assessmentService;
+
+  @Mock ClientService clientService;
 
   @InjectMocks BillingService billingService;
 
@@ -1000,40 +1006,81 @@ class BillingServiceTest {
                                   .responseValue(value)))));
     }
 
+    /** The pre-population the case build leaves behind, which the copy is written over. */
+    private void casePrepopExists() {
+      when(clientService.getClient(any(), any(), any())).thenReturn(Mono.just(new ClientDetail()));
+      when(assessmentService.getAssessments(any(), any(), any()))
+          .thenReturn(
+              Mono.just(
+                  new AssessmentDetails()
+                      .addContentItem(
+                          new AssessmentDetail()
+                              .name(AssessmentRulebase.BILLING.getPrePopAssessmentName())
+                              .caseReferenceNumber(CASE_REF)
+                              .providerId("10")
+                              .auditDetail(new AuditDetail().lastSaved(new Date()))
+                              .entityTypes(
+                                  new ArrayList<>(
+                                      List.of(
+                                          new AssessmentEntityTypeDetail()
+                                              .name("GLOBAL")
+                                              .entities(new ArrayList<>(List.of())),
+                                          new AssessmentEntityTypeDetail()
+                                              .name("PROCEEDING")
+                                              .entities(
+                                                  new ArrayList<>(
+                                                      List.of(
+                                                          new AssessmentEntityDetail()
+                                                              .name("case-proceeding"))))))))));
+    }
+
+    private ApplicationDetail ebsCase() {
+      return new ApplicationDetail()
+          .caseReferenceNumber(CASE_REF)
+          .client(new uk.gov.laa.ccms.caab.model.ClientDetail().reference("C1"));
+    }
+
     @Test
-    @DisplayName("Seeds the billing pre-population from the copied bill and creates a draft")
-    void seedsPrepopAndCreatesDraft() {
+    @DisplayName("Builds the pre-population from the case before merging the copy into it")
+    void buildsCasePrepopBeforeApplyingTheCopy() {
       when(soaApiClient.getInvoiceData("555", "user1", "EXTERNAL"))
           .thenReturn(
               Mono.just(
                   new InvoiceDataResponse()
                       .opaResponse(List.of(entity("GLOBAL", "BILL_TYPE", "CLAIM")))));
+      casePrepopExists();
       when(assessmentService.saveAssessment(any(), any())).thenReturn(Mono.empty());
       when(caabApiClient.createBill(any(), eq("user1"))).thenReturn(Mono.empty());
 
-      billingService.copyBill(CASE_REF, "10", "555", user());
+      billingService.copyBill(ebsCase(), "10", "555", new StatementOfAccountDisplay(), user());
 
-      final ArgumentCaptor<AssessmentDetail> captor =
-          ArgumentCaptor.forClass(AssessmentDetail.class);
-      verify(assessmentService).saveAssessment(eq(user()), captor.capture());
+      // Without the case build first the pre-population carries no proceedings, which the
+      // assessment start reads as stale and rebuilds, discarding the copy.
+      verify(assessmentService)
+          .startAssessment(
+              any(), eq(AssessmentRulebase.BILLING), any(), eq(user()), eq(false), any());
 
-      final AssessmentDetail prepop = captor.getValue();
-      // Seeded onto the pre-population, which the interview picks up when it starts.
-      assertThat(prepop.getName()).isEqualTo(AssessmentRulebase.BILLING.getPrePopAssessmentName());
-      assertThat(prepop.getCaseReferenceNumber()).isEqualTo(CASE_REF);
-      assertThat(prepop.getProviderId()).isEqualTo("10");
-      assertThat(prepop.getEntityTypes()).hasSize(1);
-      assertThat(prepop.getEntityTypes().get(0).getName()).isEqualTo("GLOBAL");
-      assertThat(prepop.getEntityTypes().get(0).getEntities().get(0).getAttributes())
-          .extracting(AssessmentAttributeDetail::getName, AssessmentAttributeDetail::getValue)
+      // Merged into the persisted pre-population rather than replacing its entities, which would
+      // ask the assessment API to insert rows it already holds.
+      final ArgumentCaptor<List<uk.gov.laa.ccms.caab.model.OpaEntity>> captor =
+          ArgumentCaptor.forClass(List.class);
+      verify(assessmentService).mergeCopiedAssessmentData(any(), captor.capture());
+
+      assertThat(captor.getValue())
+          .extracting(uk.gov.laa.ccms.caab.model.OpaEntity::getEntityName)
+          .containsExactly("GLOBAL");
+      assertThat(captor.getValue().getFirst().getInstances().getFirst().getAttributes())
+          .extracting(
+              uk.gov.laa.ccms.caab.model.OpaAttribute::getAttribute,
+              uk.gov.laa.ccms.caab.model.OpaAttribute::getResponseValue)
           .containsExactly(tuple("BILL_TYPE", "CLAIM"));
 
-      // The new draft bill gives the bill details screen something to work with.
+      verify(assessmentService).saveAssessment(eq(user()), any());
       verify(caabApiClient).createBill(any(), eq("user1"));
     }
 
     @Test
-    @DisplayName("Drops the copied proceedings and opponents so they re-populate from the case")
+    @DisplayName("Leaves the case's proceedings and opponents out of the copy")
     void dropsCaseSpecificEntities() {
       when(soaApiClient.getInvoiceData(any(), any(), any()))
           .thenReturn(
@@ -1044,21 +1091,20 @@ class BillingServiceTest {
                               entity("GLOBAL", "BILL_TYPE", "CLAIM"),
                               entity("PROCEEDING", "PROCEEDING_ID", "P1"),
                               entity("OPPONENT_OTHER_PARTIES", "OPPONENT_ID", "O1")))));
+      casePrepopExists();
       when(assessmentService.saveAssessment(any(), any())).thenReturn(Mono.empty());
       when(caabApiClient.createBill(any(), any())).thenReturn(Mono.empty());
 
-      billingService.copyBill(CASE_REF, "10", "555", user());
+      billingService.copyBill(ebsCase(), "10", "555", new StatementOfAccountDisplay(), user());
 
-      final ArgumentCaptor<AssessmentDetail> captor =
-          ArgumentCaptor.forClass(AssessmentDetail.class);
-      verify(assessmentService).saveAssessment(any(), captor.capture());
+      final ArgumentCaptor<List<uk.gov.laa.ccms.caab.model.OpaEntity>> captor =
+          ArgumentCaptor.forClass(List.class);
+      verify(assessmentService).mergeCopiedAssessmentData(any(), captor.capture());
 
-      // The entity types are kept so the assessment still has their shape, but carry nothing
-      // copied - the legacy CopyBill replaces their contents with an empty map.
-      assertThat(captor.getValue().getEntityTypes())
-          .extracting(AssessmentEntityTypeDetail::getName, type -> type.getEntities().size())
-          .containsExactlyInAnyOrder(
-              tuple("GLOBAL", 1), tuple("PROCEEDING", 0), tuple("OPPONENT_OTHER_PARTIES", 0));
+      // They belong to the case as it stands now, so the case build keeps them.
+      assertThat(captor.getValue())
+          .extracting(uk.gov.laa.ccms.caab.model.OpaEntity::getEntityName)
+          .containsExactly("GLOBAL");
     }
 
     @Test
@@ -1066,10 +1112,11 @@ class BillingServiceTest {
     void handlesEmptyInvoiceData() {
       when(soaApiClient.getInvoiceData(any(), any(), any()))
           .thenReturn(Mono.just(new InvoiceDataResponse()));
+      casePrepopExists();
       when(assessmentService.saveAssessment(any(), any())).thenReturn(Mono.empty());
       when(caabApiClient.createBill(any(), any())).thenReturn(Mono.empty());
 
-      billingService.copyBill(CASE_REF, "10", "555", user());
+      billingService.copyBill(ebsCase(), "10", "555", new StatementOfAccountDisplay(), user());
 
       verify(caabApiClient).createBill(any(), any());
     }
