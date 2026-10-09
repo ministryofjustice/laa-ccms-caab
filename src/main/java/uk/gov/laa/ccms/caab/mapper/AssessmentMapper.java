@@ -147,6 +147,10 @@ public interface AssessmentMapper {
    * @return true if the context is mapping the means rulebase
    */
   private boolean isMeansAssessment(final AssessmentMappingContext context) {
+    if (context.getRulebase() != null) {
+      return AssessmentRulebase.MEANS.equals(context.getRulebase());
+    }
+
     return Optional.ofNullable(context.getAssessment())
         .map(AssessmentDetail::getName)
         .filter(name -> name.equalsIgnoreCase(AssessmentRulebase.MEANS.getName()))
@@ -161,11 +165,6 @@ public interface AssessmentMapper {
    * @param context the assessment mapping context
    * @return true if the context is mapping a billing rulebase
    */
-  /** Merits alone. The data below is declared by neither the means nor the billing rulebases. */
-  private boolean isMeritsAssessment(final AssessmentMappingContext context) {
-    return !isMeansAssessment(context) && !isFinancialAssessment(context);
-  }
-
   private boolean isFinancialAssessment(final AssessmentMappingContext context) {
     if (context.getRulebase() != null) {
       return context.getRulebase().isFinancialAssessment();
@@ -176,6 +175,17 @@ public interface AssessmentMapper {
         .map(AssessmentRulebase::findByName)
         .filter(AssessmentRulebase::isFinancialAssessment)
         .isPresent();
+  }
+
+  /**
+   * Determines whether the assessment being mapped is the merits rulebase, which alone declares the
+   * linked cases and the default flags the other rulebases are not sent.
+   *
+   * @param context the assessment mapping context
+   * @return true if the context is mapping the merits rulebase
+   */
+  private boolean isMeritsAssessment(final AssessmentMappingContext context) {
+    return !isMeansAssessment(context) && !isFinancialAssessment(context);
   }
 
   /**

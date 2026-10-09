@@ -267,14 +267,14 @@ class AssessmentMapperTest {
   @ParameterizedTest
   @EnumSource(
       value = AssessmentRulebase.class,
-      names = {"BILLING", "POA"})
+      names = {"BILLING", "POA", "MEANS"})
   public void globalToAttributeList_withholdsTheMeritsDefaults(final AssessmentRulebase rulebase) {
     context.setRulebase(rulebase);
 
     final List<AssessmentAttributeDetail> result = assessmentMapper.globalToAttributeList(context);
 
-    // The billing rulebases declare none of these, so seeding them puts merits fields in the
-    // billing interview.
+    // Only merits declares these. The rulebase on the context decides, so an explicit MEANS is
+    // withheld even where the context carries no assessment to read the name from.
     assertThat(result)
         .extracting(AssessmentAttributeDetail::getName)
         .doesNotContain(
