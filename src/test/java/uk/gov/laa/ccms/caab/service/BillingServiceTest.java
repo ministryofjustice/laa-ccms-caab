@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -22,6 +24,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -1009,6 +1012,8 @@ class BillingServiceTest {
     /** The pre-population the case build leaves behind, which the copy is written over. */
     private void casePrepopExists() {
       when(clientService.getClient(any(), any(), any())).thenReturn(Mono.just(new ClientDetail()));
+      when(assessmentService.deleteAssessments(any(), any(), any(), any()))
+          .thenReturn(Mono.empty());
       when(assessmentService.getAssessments(any(), any(), any()))
           .thenReturn(
               Mono.just(
@@ -1077,6 +1082,40 @@ class BillingServiceTest {
 
       verify(assessmentService).saveAssessment(eq(user()), any());
       verify(caabApiClient).createBill(any(), eq("user1"));
+    }
+
+    @Test
+    @DisplayName("Clears the previous billing session before building the copy")
+    void clearsThePreviousSessionFirst() {
+      when(soaApiClient.getInvoiceData(any(), any(), any()))
+          .thenReturn(
+              Mono.just(
+                  new InvoiceDataResponse()
+                      .opaResponse(List.of(entity("GLOBAL", "BILL_TYPE", "CLAIM")))));
+      casePrepopExists();
+      when(assessmentService.saveAssessment(any(), any())).thenReturn(Mono.empty());
+      when(caabApiClient.createBill(any(), any())).thenReturn(Mono.empty());
+
+      billingService.copyBill(ebsCase(), "10", "555", new StatementOfAccountDisplay(), user());
+
+      // The merge only fills empty answers, so the copy has to land on a pre-population built
+      // fresh: answers left by an earlier billing session would otherwise win over the copy.
+      final InOrder inOrder = inOrder(assessmentService);
+      inOrder
+          .verify(assessmentService)
+          .deleteAssessments(
+              eq(user()),
+              eq(
+                  List.of(
+                      AssessmentRulebase.BILLING.getName(),
+                      AssessmentRulebase.BILLING.getPrePopAssessmentName())),
+              eq(CASE_REF),
+              isNull());
+      inOrder
+          .verify(assessmentService)
+          .startAssessment(any(), any(), any(), any(), eq(false), any());
+      inOrder.verify(assessmentService).mergeCopiedAssessmentData(any(), any());
+      inOrder.verify(assessmentService).saveAssessment(any(), any());
     }
 
     @Test

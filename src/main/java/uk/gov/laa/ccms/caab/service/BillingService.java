@@ -463,9 +463,10 @@ public class BillingService {
    * carrying another bill's copies forward would seed stale proceedings and opponents. Emptied,
    * they are re-populated from the case when the assessment starts.
    *
-   * @param caseReferenceNumber the case reference number.
+   * @param ebsCase the case the bill belongs to.
    * @param providerId the provider the new draft belongs to.
    * @param billingId the billing incident id of the bill being copied.
+   * @param statementOfAccount the statement of account the allocated cost limit comes from.
    * @param user the logged-in user.
    */
   public void copyBill(
@@ -487,6 +488,19 @@ public class BillingService {
     if (client == null) {
       throw new CaabApplicationException("Failed to retrieve client details");
     }
+
+    // The copy supersedes any earlier billing session, which the legacy CopyBill gets by building
+    // a new one. Rebuild rather than top up: the merge only fills empty answers, so answers left
+    // by an earlier session would otherwise win over the bill being copied.
+    assessmentService
+        .deleteAssessments(
+            user,
+            List.of(
+                AssessmentRulebase.BILLING.getName(),
+                AssessmentRulebase.BILLING.getPrePopAssessmentName()),
+            caseReferenceNumber,
+            null)
+        .block();
 
     // Built from the case first, as the legacy CopyBill does: a pre-population without the case's
     // proceedings reads as stale on the next start, which rebuilds it and discards the copy.
