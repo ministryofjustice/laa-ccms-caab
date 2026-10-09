@@ -166,7 +166,7 @@
                   <a class="govuk-link ccms-copy-bill-link"
                      th:href="@{/case/billing/bill/copy(billing-id=${row.billingIncidentId})}"
                      th:text="#{billing.billsAndPoa.copy}"></a>
-                  <div class="loader-small ccms-action-loader"></div>
+                  <div class="loader-small ccms-action-loader" aria-hidden="true"></div>
                 </th:block>
               </td>
             </tr>
@@ -197,8 +197,6 @@
     </div>
   </div>
 </div>
-</body>
-</html>
 <script th:nonce="${cspNonce}">
   (function() {
     var links = document.getElementsByClassName('ccms-copy-bill-link');
@@ -211,6 +209,7 @@
           return;
         }
         this.setAttribute('aria-disabled', 'true');
+        this.classList.add('ccms-link-disabled');
 
         var loader = this.closest('td').getElementsByClassName('loader-small')[0];
         if (loader) {
@@ -220,3 +219,5 @@
     }
   })();
 </script>
+</body>
+</html>

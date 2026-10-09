@@ -133,7 +133,7 @@ public interface AssessmentMapper {
     // sent them, and the billing rulebase (which the bill and POA journeys both run) does not
     // declare LINKED_CASE_ID / LINKED_CASE_OWNER at all - sending an entity it does not know
     // breaks the interview load.
-    if (!isMeansAssessment(context) && !isFinancialAssessment(context)) {
+    if (isMeritsAssessment(context)) {
       entityTypes.add(toAssessmentEntityTypeDetailLinkedCase(context));
     }
 
@@ -161,6 +161,11 @@ public interface AssessmentMapper {
    * @param context the assessment mapping context
    * @return true if the context is mapping a billing rulebase
    */
+  /** Merits alone. The data below is declared by neither the means nor the billing rulebases. */
+  private boolean isMeritsAssessment(final AssessmentMappingContext context) {
+    return !isMeansAssessment(context) && !isFinancialAssessment(context);
+  }
+
   private boolean isFinancialAssessment(final AssessmentMappingContext context) {
     if (context.getRulebase() != null) {
       return context.getRulebase().isFinancialAssessment();
@@ -236,7 +241,7 @@ public interface AssessmentMapper {
       // whose target table is absent fails the seed with OPA-DATA-108. This guard must stay in step
       // with the entity list in toAssessmentEntityTypeList: a link without its table, or a table
       // without its link, both break the load.
-      if (!isMeansAssessment(context) && !isFinancialAssessment(context)) {
+      if (isMeritsAssessment(context)) {
         final List<LinkedCaseDetail> linkedCases =
             getAssessmentLinkedCases(context.getApplication());
 
@@ -649,8 +654,7 @@ public interface AssessmentMapper {
                   : context.getAllocatedCostLimit().toPlainString()));
     }
 
-    // Must stay in step with the LINKED_CASES guard in toAssessmentEntityTypeList.
-    if (!isMeansAssessment(context) && !isFinancialAssessment(context)) {
+    if (isMeritsAssessment(context)) {
       attributes.addAll(meritsDefaultAttributes());
     }
 
