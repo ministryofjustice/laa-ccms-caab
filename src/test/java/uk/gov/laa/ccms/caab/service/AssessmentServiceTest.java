@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -9,6 +11,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -66,6 +70,7 @@ import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.mapper.AssessmentMapper;
 import uk.gov.laa.ccms.caab.mapper.context.AssessmentOpponentMappingContext;
@@ -1911,6 +1916,129 @@ public class AssessmentServiceTest {
 
     verify(caabApiClient, never()).patchApplication(any(), any(), any());
     assertEquals(Boolean.TRUE, application.getMeritsReassessmentRequired());
+  }
+
+  @Test
+  @DisplayName("startNewAssessment writes the copied answers onto the prepop it saves")
+  void startNewAssessmentAppliesCopiedAnswers() {
+    final String caseRef = "CASE-123";
+    final String providerId = String.valueOf(user.getProvider().getId());
+    final String prepopName = AssessmentRulebase.BILLING.getPrePopAssessmentName();
+
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .id(1)
+            .caseReferenceNumber(caseRef)
+            .amendment(false)
+            .proceedings(new ArrayList<>())
+            .opponents(new ArrayList<>());
+
+    when(assessmentApiClient.getAssessments(
+            List.of(AssessmentRulebase.BILLING.getName()), providerId, caseRef))
+        .thenReturn(just(new AssessmentDetails().content(new ArrayList<>())));
+    when(assessmentApiClient.getAssessments(List.of(prepopName), providerId, caseRef))
+        .thenReturn(just(new AssessmentDetails().content(new ArrayList<>())));
+    when(assessmentApiClient.createAssessment(any(), eq(user.getLoginId())))
+        .thenReturn(Mono.empty());
+
+    doAnswer(
+            invocation -> {
+              final AssessmentDetail target = invocation.getArgument(0);
+              target.setEntityTypes(
+                  new ArrayList<>(
+                      List.of(
+                          new AssessmentEntityTypeDetail()
+                              .name(AssessmentEntityType.GLOBAL.getType())
+                              .entities(
+                                  new ArrayList<>(
+                                      List.of(
+                                          new AssessmentEntityDetail()
+                                              .name(caseRef)
+                                              .attributes(new ArrayList<>())))))));
+              return null;
+            })
+        .when(assessmentMapper)
+        .toAssessmentDetail(any(), any());
+
+    final uk.gov.laa.ccms.caab.model.OpaEntity copied =
+        new uk.gov.laa.ccms.caab.model.OpaEntity()
+            .entityName("global")
+            .addInstancesItem(
+                new uk.gov.laa.ccms.caab.model.OpaInstance()
+                    .instanceLabel(caseRef)
+                    .addAttributesItem(
+                        new uk.gov.laa.ccms.caab.model.OpaAttribute()
+                            .attribute("BILL_TYPE")
+                            .responseType("text")
+                            .responseValue("CLAIM")));
+
+    assessmentService.startNewAssessment(
+        AssessmentRulebase.BILLING, application, null, user, false, null, List.of(copied));
+
+    final ArgumentCaptor<AssessmentDetail> captor = ArgumentCaptor.forClass(AssessmentDetail.class);
+    verify(assessmentApiClient, atLeastOnce())
+        .createAssessment(captor.capture(), eq(user.getLoginId()));
+
+    final AssessmentDetail savedPrepop =
+        captor.getAllValues().stream()
+            .filter(saved -> prepopName.equals(saved.getName()))
+            .findFirst()
+            .orElseThrow();
+
+    assertThat(getAssessmentEntitiesForEntityType(savedPrepop, AssessmentEntityType.GLOBAL))
+        .flatExtracting(AssessmentEntityDetail::getAttributes)
+        .extracting(AssessmentAttributeDetail::getName, AssessmentAttributeDetail::getValue)
+        .contains(tuple("BILL_TYPE", "CLAIM"));
+  }
+
+  @Test
+  @DisplayName("startNewAssessment rebuilds an unchanged prepop when answers are being copied")
+  void startNewAssessmentRebuildsPrepopForACopy() {
+    final String caseRef = "CASE-123";
+    final String providerId = String.valueOf(user.getProvider().getId());
+    final String prepopName = AssessmentRulebase.BILLING.getPrePopAssessmentName();
+
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .id(1)
+            .caseReferenceNumber(caseRef)
+            .amendment(false)
+            .proceedings(new ArrayList<>())
+            .opponents(new ArrayList<>());
+
+    when(assessmentApiClient.getAssessments(
+            List.of(AssessmentRulebase.BILLING.getName()), providerId, caseRef))
+        .thenReturn(just(new AssessmentDetails().content(new ArrayList<>())));
+
+    final AssessmentDetail unchangedPrepop =
+        new AssessmentDetail()
+            .id(99L)
+            .name(prepopName)
+            .caseReferenceNumber(caseRef)
+            .entityTypes(new ArrayList<>())
+            .auditDetail(new AuditDetail().lastSaved(auditDate));
+    when(assessmentApiClient.getAssessments(List.of(prepopName), providerId, caseRef))
+        .thenReturn(
+            just(new AssessmentDetails().content(new ArrayList<>(List.of(unchangedPrepop)))))
+        .thenReturn(just(new AssessmentDetails().content(new ArrayList<>())));
+
+    when(assessmentApiClient.deleteAssessments(
+            eq(List.of(prepopName)), eq(providerId), eq(caseRef), any(), eq(user.getLoginId())))
+        .thenReturn(Mono.empty());
+    when(assessmentApiClient.createAssessment(any(), eq(user.getLoginId())))
+        .thenReturn(Mono.empty());
+
+    final uk.gov.laa.ccms.caab.model.OpaEntity copied =
+        new uk.gov.laa.ccms.caab.model.OpaEntity()
+            .entityName("global")
+            .addInstancesItem(new uk.gov.laa.ccms.caab.model.OpaInstance().instanceLabel(caseRef));
+
+    assessmentService.startNewAssessment(
+        AssessmentRulebase.BILLING, application, null, user, false, null, List.of(copied));
+
+    verify(assessmentApiClient)
+        .deleteAssessments(
+            eq(List.of(prepopName)), eq(providerId), eq(caseRef), any(), eq(user.getLoginId()));
   }
 
   @Test
