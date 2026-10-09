@@ -479,6 +479,12 @@ public class BillingService {
 
     final String caseReferenceNumber = ebsCase.getCaseReferenceNumber();
 
+    if (getDraftBill(caseReferenceNumber, providerId) != null) {
+      throw new CaabApplicationException(
+          "Cannot copy onto case %s, which already holds a draft bill"
+              .formatted(caseReferenceNumber));
+    }
+
     final InvoiceDataResponse invoiceData =
         soaApiClient.getInvoiceData(billingId, user.getLoginId(), user.getUserType()).block();
 

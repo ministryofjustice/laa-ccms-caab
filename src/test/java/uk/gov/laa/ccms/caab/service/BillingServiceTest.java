@@ -1175,6 +1175,40 @@ class BillingServiceTest {
     }
 
     @Test
+    @DisplayName("Refuses to copy onto a case that already holds a draft bill")
+    void refusesWhenADraftBillAlreadyExists() {
+      when(caabApiClient.getBill(CASE_REF, "10")).thenReturn(Mono.just(new Bills()));
+
+      final StatementOfAccountDisplay statement = new StatementOfAccountDisplay();
+      final ApplicationDetail ebsCase = ebsCase();
+      final UserDetail user = user();
+
+      assertThatThrownBy(() -> billingService.copyBill(ebsCase, "10", "555", statement, user))
+          .isInstanceOf(CaabApplicationException.class)
+          .hasMessageContaining("already holds a draft bill");
+
+      verify(assessmentService, never()).deleteAssessments(any(), any(), any(), any());
+      verify(caabApiClient, never()).createBill(any(), any());
+    }
+
+    @Test
+    @DisplayName("Aborts rather than deleting anything when the draft lookup fails")
+    void abortsWhenTheDraftLookupFails() {
+      when(caabApiClient.getBill(CASE_REF, "10"))
+          .thenReturn(Mono.error(new CaabApplicationException("draft store unreachable")));
+
+      final StatementOfAccountDisplay statement = new StatementOfAccountDisplay();
+      final ApplicationDetail ebsCase = ebsCase();
+      final UserDetail user = user();
+
+      assertThatThrownBy(() -> billingService.copyBill(ebsCase, "10", "555", statement, user))
+          .isInstanceOf(CaabApplicationException.class);
+
+      verify(assessmentService, never()).deleteAssessments(any(), any(), any(), any());
+      verify(caabApiClient, never()).createBill(any(), any());
+    }
+
+    @Test
     @DisplayName("Throws without creating a draft when the fresh pre-population is not there")
     void throwsWhenPrepopIsMissing() {
       when(soaApiClient.getInvoiceData(any(), any(), any()))
@@ -1196,7 +1230,7 @@ class BillingServiceTest {
           .isInstanceOf(CaabApplicationException.class)
           .hasMessageContaining("pre-population");
 
-      verifyNoInteractions(caabApiClient);
+      verify(caabApiClient, never()).createBill(any(), any());
     }
 
     @Test
