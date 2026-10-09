@@ -113,7 +113,7 @@ public class ValidationPatternConstants {
 
   /** pattern to match what is known in provider-ui as 'characterSetA'. */
   public static final String CHARACTER_SET_A =
-      "^[A-Za-z0-9 \\.,\\-\\(\\)/=!\"%&\\*;<>'\\r\\n\\+:\\?]*$";
+      "^[A-Za-z0-9 \\.,\\-\\(\\)/=!\"%&\\*;'\\r\\n\\+:\\?]*$";
 
   /**
    * pattern to match what is known in provider-ui as 'characterSetC'. Valid characters are
@@ -138,5 +138,5 @@ public class ValidationPatternConstants {
    * not admitted, despite what this comment previously claimed.
    */
   public static final String CHARACTER_SET_F =
-      "^[A-Za-z0-9\\&\\'\\(\\)\\.\\*\\-/!#$%,;\\?\\@\\[\\]_+\\=\\>£:\\\\]*$";
+      "^[A-Za-z0-9\\&\\'\\(\\)\\.\\*\\-/!#$%,;\\?\\@\\[\\]_+\\=£:\\\\]*$";
 }
