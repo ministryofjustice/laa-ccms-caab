@@ -1755,7 +1755,7 @@ public class AssessmentServiceTest {
         .thenReturn(Mono.empty());
 
     assessmentService.startNewAssessment(
-        AssessmentRulebase.MEANS, application, null, user, false, null, List.of());
+        AssessmentRulebase.MEANS, application, null, user, false, null, null);
 
     // Only the working assessment is mapped; the unchanged prepop is left as-is.
     verify(assessmentMapper, never()).toAssessmentDetail(eq(existingPrepop), any());
@@ -2021,6 +2021,51 @@ public class AssessmentServiceTest {
   }
 
   @Test
+  @DisplayName("startNewAssessment rebuilds the prepop for a copy that carries no answers")
+  void startNewAssessmentRebuildsPrepopForACopyWithoutAnswers() {
+    final String caseRef = "CASE-123";
+    final String providerId = String.valueOf(user.getProvider().getId());
+    final String prepopName = AssessmentRulebase.BILLING.getPrePopAssessmentName();
+
+    final ApplicationDetail application =
+        new ApplicationDetail()
+            .id(1)
+            .caseReferenceNumber(caseRef)
+            .amendment(false)
+            .proceedings(new ArrayList<>())
+            .opponents(new ArrayList<>());
+
+    when(assessmentApiClient.getAssessments(
+            List.of(AssessmentRulebase.BILLING.getName()), providerId, caseRef))
+        .thenReturn(just(new AssessmentDetails().content(new ArrayList<>())));
+
+    final AssessmentDetail unchangedPrepop =
+        new AssessmentDetail()
+            .id(99L)
+            .name(prepopName)
+            .caseReferenceNumber(caseRef)
+            .entityTypes(new ArrayList<>())
+            .auditDetail(new AuditDetail().lastSaved(auditDate));
+    when(assessmentApiClient.getAssessments(List.of(prepopName), providerId, caseRef))
+        .thenReturn(
+            just(new AssessmentDetails().content(new ArrayList<>(List.of(unchangedPrepop)))))
+        .thenReturn(just(new AssessmentDetails().content(new ArrayList<>())));
+
+    when(assessmentApiClient.deleteAssessments(
+            eq(List.of(prepopName)), eq(providerId), eq(caseRef), any(), eq(user.getLoginId())))
+        .thenReturn(Mono.empty());
+    when(assessmentApiClient.createAssessment(any(), eq(user.getLoginId())))
+        .thenReturn(Mono.empty());
+
+    assessmentService.startNewAssessment(
+        AssessmentRulebase.BILLING, application, null, user, false, null, List.of());
+
+    verify(assessmentApiClient)
+        .deleteAssessments(
+            eq(List.of(prepopName)), eq(providerId), eq(caseRef), any(), eq(user.getLoginId()));
+  }
+
+  @Test
   @DisplayName("startNewAssessment rebuilds an unchanged prepop when answers are being copied")
   void startNewAssessmentRebuildsPrepopForACopy() {
     final String caseRef = "CASE-123";
@@ -2110,7 +2155,7 @@ public class AssessmentServiceTest {
         .thenReturn(Mono.empty());
 
     assessmentService.startNewAssessment(
-        AssessmentRulebase.MEANS, application, null, user, false, null, List.of());
+        AssessmentRulebase.MEANS, application, null, user, false, null, null);
 
     // The stale prepop is deleted and the regenerated (fresh) prepop is mapped along with the
     // working assessment.

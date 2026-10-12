@@ -1291,13 +1291,7 @@ public class AssessmentService {
       final boolean isReassessment,
       final BigDecimal allocatedCostLimit) {
     startAssessment(
-        application,
-        assessmentRulebase,
-        client,
-        user,
-        isReassessment,
-        allocatedCostLimit,
-        List.of());
+        application, assessmentRulebase, client, user, isReassessment, allocatedCostLimit, null);
   }
 
   /**
@@ -1309,8 +1303,10 @@ public class AssessmentService {
    * @param user the user detail initiating the assessment
    * @param isReassessment whether this is the standalone means reassessment journey
    * @param allocatedCostLimit the cost limit allocated to the provider
-   * @param copiedAnswers the answers from a copied bill, written over the ones built from the case
-   *     before the assessment is run and saved
+   * @param copiedAnswers the answers from a copied bill, or null when no bill is being copied. A
+   *     non-null list - empty included - means a copy, so the pre-population is rebuilt rather than
+   *     preserved and the answers fill the values the case build left empty, matching the legacy
+   *     CopyBill, which also keeps what the case supplied
    */
   public void startAssessment(
       final ApplicationDetail application,
@@ -1341,7 +1337,8 @@ public class AssessmentService {
         findOrCreate(providerId, referenceId, assessmentRulebase.getName());
     // Fetch the prepop only when the assessment is COMPLETE - it is only needed to decide
     // preservation, so skipping it on the common path avoids an extra assessment-api call.
-    if (existingAssessment.getId() != null
+    if (copiedAnswers == null
+        && existingAssessment.getId() != null
         && COMPLETE.getStatus().equalsIgnoreCase(existingAssessment.getStatus())) {
       final AssessmentDetail existingPrepop =
           findOrCreate(providerId, referenceId, assessmentRulebase.getPrePopAssessmentName());
@@ -1457,7 +1454,7 @@ public class AssessmentService {
     // stale one is deleted and rebuilt as a fresh insert. An unchanged prepop is left untouched so
     // its checkpoint continues to drive OPA RESUME.
     if (prepopAssessment.getId() != null
-        && (!copiedAnswers.isEmpty()
+        && (copiedAnswers != null
             || isAssessmentCheckpointToBeDeleted(application, prepopAssessment))) {
       deleteAssessments(
               user, List.of(assessmentRulebase.getPrePopAssessmentName()), referenceId, null)
