@@ -20,6 +20,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
@@ -354,14 +355,16 @@ public class BillingController {
    * @param ebsCase the case details from EBS.
    * @param user the logged-in user.
    * @param billingId the billing incident id of the bill to copy.
+   * @param session the HTTP session, used to serialise concurrent copies.
    * @return a redirect to the bill details screen, or back to the statement when it cannot be
    *     copied.
    */
-  @GetMapping("/case/billing/bill/copy")
+  @PostMapping("/case/billing/bill/copy")
   public String copyBill(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @RequestParam("billing-id") final String billingId) {
+      @RequestParam("billing-id") final String billingId,
+      final HttpSession session) {
 
     // Nothing can be fetched from EBS without an invoice to address, so refuse rather than asking
     // it for a blank one. The action is already withheld from rows carrying no billing incident
@@ -370,16 +373,29 @@ public class BillingController {
       return CASE_STATEMENT_OF_ACCOUNT_URL;
     }
 
-    final StatementOfAccountDisplay statementOfAccount =
-        billingService.getStatementOfAccountDisplay(
-            ebsCase.getCaseReferenceNumber(), ebsCase, user);
-    if (statementOfAccount.isDraftBillExists()) {
-      return CASE_STATEMENT_OF_ACCOUNT_URL;
+    synchronized (WebUtils.getSessionMutex(session)) {
+      final StatementOfAccountDisplay statementOfAccount =
+          billingService.getStatementOfAccountDisplay(
+              ebsCase.getCaseReferenceNumber(), ebsCase, user);
+      if (statementOfAccount.isDraftBillExists() || !isCopyable(statementOfAccount, billingId)) {
+        return CASE_STATEMENT_OF_ACCOUNT_URL;
+      }
+
+      billingService.copyBill(ebsCase, providerId(user), billingId, statementOfAccount, user);
     }
 
-    billingService.copyBill(ebsCase.getCaseReferenceNumber(), providerId(user), billingId, user);
-
     return "redirect:/case/billing/bill";
+  }
+
+  private boolean isCopyable(
+      final StatementOfAccountDisplay statementOfAccount, final String billingId) {
+
+    return Optional.ofNullable(statementOfAccount.getBillsAndPoa()).orElse(List.of()).stream()
+        .anyMatch(
+            row ->
+                row.copyable()
+                    && row.billingIncidentId() != null
+                    && billingId.equals(row.billingIncidentId().toString()));
   }
 
   /**
