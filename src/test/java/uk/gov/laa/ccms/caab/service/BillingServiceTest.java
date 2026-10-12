@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -1112,6 +1113,29 @@ class BillingServiceTest {
       billingService.copyBill(ebsCase(), "10", "555", new StatementOfAccountDisplay(), user());
 
       verify(caabApiClient).createBill(any(), any());
+    }
+
+    @Test
+    @DisplayName("Creates no draft bill when the assessment start fails")
+    void createsNoDraftWhenTheStartFails() {
+      when(soaApiClient.getInvoiceData(any(), any(), any()))
+          .thenReturn(
+              Mono.just(
+                  new InvoiceDataResponse()
+                      .opaResponse(List.of(entity("global", "BILL_TYPE", "CLAIM")))));
+      when(clientService.getClient(any(), any(), any())).thenReturn(Mono.just(new ClientDetail()));
+      doThrow(new CaabApplicationException("connector unreachable"))
+          .when(assessmentService)
+          .startAssessment(any(), any(), any(), any(), eq(false), any(), any());
+
+      final StatementOfAccountDisplay statement = new StatementOfAccountDisplay();
+      final ApplicationDetail ebsCase = ebsCase();
+      final UserDetail user = user();
+
+      assertThatThrownBy(() -> billingService.copyBill(ebsCase, "10", "555", statement, user))
+          .isInstanceOf(CaabApplicationException.class);
+
+      verify(caabApiClient, never()).createBill(any(), any());
     }
 
     @Test

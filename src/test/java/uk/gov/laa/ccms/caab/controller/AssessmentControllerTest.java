@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -681,6 +682,47 @@ public class AssessmentControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/assessments/assessment-confirm"))
         .andExpect(model().attributeExists("summary"));
+  }
+
+  @Test
+  public void assessmentConfirm_confirmsAgainstTheMostRecentAssessment() throws Exception {
+    final String token = "token";
+    final ContextToken contextToken = new ContextToken();
+    contextToken.setRulebaseId(1L);
+    contextToken.setProviderId("providerId");
+    contextToken.setCaseId("caseReferenceNumber");
+
+    when(lookupService.getAssessmentSummaryAttributes("PARENT"))
+        .thenReturn(Mono.just(new AssessmentSummaryEntityLookupDetail()));
+    when(lookupService.getAssessmentSummaryAttributes("CHILD"))
+        .thenReturn(Mono.just(new AssessmentSummaryEntityLookupDetail()));
+    when(contextSecurityUtil.createContextToken(anyString())).thenReturn(contextToken);
+
+    final AssessmentDetail stale =
+        buildAssessmentDetail(Date.from(Instant.parse("2026-01-01T00:00:00Z")));
+    stale.setId(1L);
+    final AssessmentDetail mostRecent =
+        buildAssessmentDetail(Date.from(Instant.parse("2026-06-01T00:00:00Z")));
+    mostRecent.setId(2L);
+
+    when(assessmentService.getAssessments(anyList(), anyString(), anyString()))
+        .thenReturn(
+            Mono.just(new AssessmentDetails().addContentItem(stale).addContentItem(mostRecent)));
+    when(assessmentService.getAssessmentSummaryToDisplay(any(), any(), any()))
+        .thenReturn(new ArrayList<>());
+
+    this.mockMvc
+        .perform(
+            get("/application/assessments/confirm/caseSummary.do")
+                .param("val", token)
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(APPLICATION_ID, "applicationId")
+                .sessionAttr(ACTIVE_CASE, activeCase))
+        .andExpect(status().isOk());
+
+    final ArgumentCaptor<AssessmentDetail> captor = ArgumentCaptor.forClass(AssessmentDetail.class);
+    verify(assessmentService).getAssessmentSummaryToDisplay(captor.capture(), any(), any());
+    assertThat(captor.getValue().getId()).isEqualTo(2L);
   }
 
   @Test
