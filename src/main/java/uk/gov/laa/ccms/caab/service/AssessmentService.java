@@ -1506,6 +1506,7 @@ public class AssessmentService {
     }
 
     mergeCopiedAssessmentData(prepopAssessment, copiedAnswers);
+    mergeCopiedAssessmentData(assessment, copiedAnswers);
 
     // An amend-case assessment must not reuse the answers the rulebase marks "Do Not Reuse"
     // (merits)

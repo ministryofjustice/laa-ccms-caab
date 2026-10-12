@@ -2008,16 +2008,18 @@ public class AssessmentServiceTest {
     verify(assessmentApiClient, atLeastOnce())
         .createAssessment(captor.capture(), eq(user.getLoginId()));
 
-    final AssessmentDetail savedPrepop =
-        captor.getAllValues().stream()
-            .filter(saved -> prepopName.equals(saved.getName()))
-            .findFirst()
-            .orElseThrow();
+    for (final String name : List.of(prepopName, AssessmentRulebase.BILLING.getName())) {
+      final AssessmentDetail saved =
+          captor.getAllValues().stream()
+              .filter(candidate -> name.equals(candidate.getName()))
+              .findFirst()
+              .orElseThrow();
 
-    assertThat(getAssessmentEntitiesForEntityType(savedPrepop, AssessmentEntityType.GLOBAL))
-        .flatExtracting(AssessmentEntityDetail::getAttributes)
-        .extracting(AssessmentAttributeDetail::getName, AssessmentAttributeDetail::getValue)
-        .contains(tuple("BILL_TYPE", "CLAIM"));
+      assertThat(getAssessmentEntitiesForEntityType(saved, AssessmentEntityType.GLOBAL))
+          .flatExtracting(AssessmentEntityDetail::getAttributes)
+          .extracting(AssessmentAttributeDetail::getName, AssessmentAttributeDetail::getValue)
+          .contains(tuple("BILL_TYPE", "CLAIM"));
+    }
   }
 
   @Test
