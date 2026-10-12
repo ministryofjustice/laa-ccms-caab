@@ -31,6 +31,7 @@ import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -202,6 +203,50 @@ public class AssessmentControllerTest {
   }
 
   @Test
+  public void assessmentGet_resumesTheMostRecentPrepopSession() throws Exception {
+    when(applicationService.getApplication(anyString()))
+        .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
+    when(contextSecurityUtil.createHubContext(
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyString()))
+        .thenReturn("contextToken");
+    when(clientService.getClient(anyString(), anyString(), anyString()))
+        .thenReturn(Mono.just(new ClientDetail()));
+    when(messageSource.getMessage(anyString(), any(), any(Locale.class)))
+        .thenReturn("returnLinkText");
+
+    // An abandoned attempt leaves more than one prepop session on the case. The stale one is
+    // returned first here, so resuming whichever came back first would pick the wrong session.
+    final AssessmentDetail stale =
+        buildAssessmentDetail(Date.from(Instant.parse("2026-01-01T00:00:00Z")));
+    stale.setId(1L);
+    final AssessmentDetail mostRecent =
+        buildAssessmentDetail(Date.from(Instant.parse("2026-06-01T00:00:00Z")));
+    mostRecent.setId(2L);
+
+    when(assessmentService.getAssessments(any(), anyString(), anyString()))
+        .thenReturn(
+            Mono.just(new AssessmentDetails().addContentItem(stale).addContentItem(mostRecent)));
+
+    mockMvc
+        .perform(
+            get("/application/assessments")
+                .param("assessment", "means")
+                .param("invoked-from", "summary")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(APPLICATION_ID, "applicationId")
+                .sessionAttr(ACTIVE_CASE, activeCase))
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("resumeId", "2"));
+  }
+
+  @Test
   public void assessmentGet_meansReassessment_usesInMemorySessionApplication() throws Exception {
     // The means reassessment holds its application in memory (no persisted draft / no id), so the
     // assessment uses the session application. The emergency application is re-typed as substantive
@@ -291,6 +336,64 @@ public class AssessmentControllerTest {
 
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
     assertEquals("Failed to retrieve application", exception.getCause().getMessage());
+  }
+
+  @Test
+  public void assessmentGet_billing_runsAgainstTheEbsCaseAndResumesTheCopiedPrepopulation()
+      throws Exception {
+    final ApplicationDetail ebsCase =
+        buildApplicationDetail(1, true, new Date())
+            .caseReferenceNumber("CASE123")
+            .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_BILL));
+
+    final StatementOfAccountDisplay statementOfAccount = new StatementOfAccountDisplay();
+    when(billingService.getStatementOfAccountDisplay(eq("CASE123"), any(), any()))
+        .thenReturn(statementOfAccount);
+    when(billingService.getAllocatedCostLimit(eq(statementOfAccount), any()))
+        .thenReturn(new BigDecimal("1750.00"));
+
+    when(contextSecurityUtil.createHubContext(
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyLong(),
+            anyString(),
+            anyString(),
+            anyString(),
+            anyString()))
+        .thenReturn("contextToken");
+    when(clientService.getClient(anyString(), anyString(), anyString()))
+        .thenReturn(Mono.just(new ClientDetail()));
+
+    final AssessmentDetail copiedPrepop = buildAssessmentDetail(new Date());
+    copiedPrepop.setId(4242L);
+    when(assessmentService.getAssessments(any(), anyString(), anyString()))
+        .thenReturn(Mono.just(new AssessmentDetails().addContentItem(copiedPrepop)));
+
+    mockMvc
+        .perform(
+            get("/application/assessments")
+                .param("assessment", "billing")
+                .param("invoked-from", "CCMS_CB03")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(CASE, ebsCase)
+                .sessionAttr(ACTIVE_CASE, activeCase))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/assessments/assessment-get"))
+        .andExpect(model().attribute("assessmentType", "BILLING"))
+        .andExpect(model().attribute("cancelUrl", "/civil/case/billing/bill"))
+        .andExpect(model().attribute("returnLinkText", "Return to bill details"))
+        .andExpect(model().attribute("resumeId", "4242"));
+
+    verify(applicationService, never()).getApplication(anyString());
+    verify(assessmentService)
+        .startAssessment(
+            any(),
+            eq(AssessmentRulebase.BILLING),
+            any(),
+            any(),
+            eq(false),
+            eq(new BigDecimal("1750.00")));
   }
 
   @Test
