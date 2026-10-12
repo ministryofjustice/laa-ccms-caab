@@ -79,8 +79,14 @@ configurations.configureEach {
         // Logback classic pulled in by Spring Boot starter logging
         if (details.requested.group == 'ch.qos.logback'
                 && details.requested.name in ['logback-classic', 'logback-core']) {
-            details.useVersion '1.6.3'
-            details.because 'Snyk override (SNYK-JAVA-CHQOSLOGBACK-19882330); directory traversal vulnerability in 1.5.38'
+            details.useVersion '1.6.5'
+            details.because 'Snyk override (SNYK-JAVA-CHQOSLOGBACK-20824362); directory traversal vulnerability in 1.6.3'
+        }
+        // Guava reaches us through the SAML stack (shib-networking <- opensaml-saml-impl).
+        if (details.requested.group == 'com.google.guava'
+                && details.requested.name == 'guava') {
+            details.useVersion '33.7.2-jre'
+            details.because 'Snyk override (SNYK-JAVA-COMGOOGLEGUAVA-20825054); unthrottled resource allocation in 33.0.0-jre'
         }
         // Keep embedded Tomcat modules aligned on the patched release.
         if (details.requested.group == 'org.apache.tomcat.embed') {
