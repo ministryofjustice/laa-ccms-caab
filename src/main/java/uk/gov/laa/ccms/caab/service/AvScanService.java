@@ -19,10 +19,10 @@ import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
 public class AvScanService {
 
   protected static final String VIRUS_FOUND_ERROR_FORMAT =
-      "Virus found while scanning %s: %s. File has not been uploaded";
+      "The file %s could not be uploaded because malware was detected.";
 
   protected static final String SCAN_ERROR_FORMAT =
-      "Error while scanning %s for viruses: %s. File has not been uploaded";
+      "The file %s could not be scanned and has not been uploaded.";
 
   /** A client which handles calls to the antivirus service. */
   private final AvApiClient avApiClient;
@@ -63,8 +63,7 @@ public class AvScanService {
         log.error(
             "********** Malware scan service reported virus found **********", virusFoundException);
         throw new AvVirusFoundException(
-            VIRUS_FOUND_ERROR_FORMAT.formatted(filename, virusFoundException.getMessage()),
-            virusFoundException);
+            VIRUS_FOUND_ERROR_FORMAT.formatted(filename), virusFoundException);
 
       } catch (AvApiClientException avApiClientException) {
         /*
@@ -74,9 +73,7 @@ public class AvScanService {
 
         log.error(
             "********** Malware scan service threw exception **********", avApiClientException);
-        throw new AvScanException(
-            SCAN_ERROR_FORMAT.formatted(filename, avApiClientException.getMessage()),
-            avApiClientException);
+        throw new AvScanException(SCAN_ERROR_FORMAT.formatted(filename), avApiClientException);
       }
     }
   }

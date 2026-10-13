@@ -79,18 +79,19 @@ configurations.configureEach {
         // Logback classic pulled in by Spring Boot starter logging
         if (details.requested.group == 'ch.qos.logback'
                 && details.requested.name in ['logback-classic', 'logback-core']) {
-            details.useVersion '1.6.3'
-            details.because 'Snyk override (SNYK-JAVA-CHQOSLOGBACK-19882330); directory traversal vulnerability in 1.5.38'
+            details.useVersion '1.6.5'
+            details.because 'Snyk override (SNYK-JAVA-CHQOSLOGBACK-20824362); directory traversal vulnerability in 1.6.3'
+        }
+        // Guava reaches us through the SAML stack (shib-networking <- opensaml-saml-impl).
+        if (details.requested.group == 'com.google.guava'
+                && details.requested.name == 'guava') {
+            details.useVersion '33.7.2-jre'
+            details.because 'Snyk override (SNYK-JAVA-COMGOOGLEGUAVA-20825054); unthrottled resource allocation in 33.0.0-jre'
         }
         // Keep embedded Tomcat modules aligned on the patched release.
         if (details.requested.group == 'org.apache.tomcat.embed') {
-            details.useVersion '11.0.25'
-            details.because 'Snyk remediation for vulnerabilities in Tomcat 11.0.24'
-            }
-        if (details.requested.group == 'org.apache.tomcat.embed'
-                && details.requested.name in ['tomcat-embed-core', 'tomcat-embed-el', 'tomcat-embed-websocket']) {
-            details.useVersion '11.0.25'
-            details.because 'Snyk override (SNYK-JAVA-ORGAPACHETOMCATEMBED-20302842, SNYK-JAVA-ORGAPACHETOMCATEMBED-20302843, SNYK-JAVA-ORGAPACHETOMCATEMBED-20302874, SNYK-JAVA-ORGAPACHETOMCATEMBED-20302876, SNYK-JAVA-ORGAPACHETOMCATEMBED-20302886, SNYK-JAVA-ORGAPACHETOMCATEMBED-20302889, SNYK-JAVA-ORGAPACHETOMCATEMBED-20304748)'
+            details.useVersion '11.0.26'
+            details.because 'Snyk override (SNYK-JAVA-ORGAPACHETOMCATEMBED-20552494, CVE-2026-76183)'
         }
     }
 }
@@ -120,7 +121,7 @@ dependencies {
     implementation 'org.mapstruct:mapstruct:1.6.3'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 
-    implementation 'org.apache.tika:tika-core:4.0.0'
+    implementation 'org.apache.tika:tika-core:4.1.0'
 
     // Starters
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
@@ -133,7 +134,7 @@ dependencies {
     implementation 'org.springframework.data:spring-data-commons'
 
 	// AWS S3 Integration
-	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.1.1')
+	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.2.0')
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
 	implementation 'software.amazon.awssdk:sts'

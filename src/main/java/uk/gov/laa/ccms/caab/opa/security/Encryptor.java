@@ -27,6 +27,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Encryptor {
 
+  static final String INITIALIZATION_FAILURE_MESSAGE = "Could not initialize crypto library";
+  static final String ENCRYPTION_FAILURE_MESSAGE = "Could not encrypt value";
+  static final String DECRYPTION_FAILURE_MESSAGE = "Could not decrypt value";
+
   private Cipher encryptCipher;
 
   private Cipher decryptCipher;
@@ -72,7 +76,7 @@ public class Encryptor {
       decryptCipher = Cipher.getInstance("PBEWithMD5AndDES/CBC/PKCS5Padding");
       decryptCipher.init(Cipher.DECRYPT_MODE, k, ps);
     } catch (final Exception e) {
-      throw new SecurityException("Could not initialize CryptoLibrary: " + e.getMessage());
+      throw new SecurityException(INITIALIZATION_FAILURE_MESSAGE, e);
     }
   }
 
@@ -91,7 +95,7 @@ public class Encryptor {
 
       return Base64.getEncoder().encodeToString(encryptedValue);
     } catch (final Exception e) {
-      throw new SecurityException("Could not encrypt: " + e.getMessage());
+      throw new SecurityException(ENCRYPTION_FAILURE_MESSAGE, e);
     }
   }
 
@@ -106,7 +110,7 @@ public class Encryptor {
     try {
       return decodetoken(str);
     } catch (final Exception e) {
-      throw new SecurityException("Could not decrypt: " + e.getMessage());
+      throw new SecurityException(DECRYPTION_FAILURE_MESSAGE, e);
     }
   }
 

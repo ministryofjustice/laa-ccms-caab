@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.opa.context.ContextToken;
 import uk.gov.laa.ccms.caab.opa.security.ContextUrlEncoder;
 import uk.gov.laa.ccms.caab.opa.security.Encryptor;
@@ -22,6 +23,7 @@ public class SecurityUtils {
       "error with createFeedbackHubContext";
   public static final String UTF_8 = "UTF-8";
   public static final String ERROR_WITH_CREATE_HUB_CONTEXT = "error with createHubContext";
+  static final String CREATE_CONTEXT_TOKEN_ERROR = "Failed to process assessment token";
 
   private String returnUrl;
   private Encryptor encryptor;
@@ -162,7 +164,7 @@ public class SecurityUtils {
       contextToken.parseJsonContextToken(jsonStr);
     } catch (final Exception e) {
       log.error("failed to createContextToken", e);
-      throw new RuntimeException(e);
+      throw new CaabApplicationException(CREATE_CONTEXT_TOKEN_ERROR, e);
     }
 
     return contextToken;

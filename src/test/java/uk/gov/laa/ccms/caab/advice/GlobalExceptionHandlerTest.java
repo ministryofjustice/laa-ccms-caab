@@ -31,7 +31,7 @@ class GlobalExceptionHandlerTest {
 
     globalExceptionHandler.handleException(model, session, ebsApiClientException);
 
-    verify(model).addAttribute("error", errorMsg);
+    verify(model).addAttribute("error", GlobalExceptionHandler.GENERIC_ERROR_MESSAGE);
   }
 
   @Test
@@ -41,7 +41,7 @@ class GlobalExceptionHandlerTest {
 
     globalExceptionHandler.handleException(model, session, caabApplicationException);
 
-    verify(model).addAttribute("error", errorMsg);
+    verify(model).addAttribute("error", GlobalExceptionHandler.GENERIC_ERROR_MESSAGE);
   }
 
   @Test
@@ -52,6 +52,6 @@ class GlobalExceptionHandlerTest {
 
     globalExceptionHandler.handleException(model, session, servletRequestBindingException);
 
-    verify(model).addAttribute("error", errorMsg);
+    verify(model).addAttribute("error", GlobalExceptionHandler.GENERIC_ERROR_MESSAGE);
   }
 }

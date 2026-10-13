@@ -45,17 +45,19 @@ class ValidationPatternCorpusTest {
   /** The classes that carry the baseline. Keyed by name so a failure says which one broke. */
   private static final Map<String, String> STRICT_CHARACTER_SETS =
       new LinkedHashMap<>(
-          Map.of(
-              "STANDARD_CHARACTER_SET", STANDARD_CHARACTER_SET,
-              "CHARACTER_SET_C", CHARACTER_SET_C,
-              "CHARACTER_SET_E", CHARACTER_SET_E,
-              "ADDRESS_CHARACTER_SET", ADDRESS_CHARACTER_SET,
-              "ALPHA_NUMERIC_SLASH_SPACE_STRING", ALPHA_NUMERIC_SLASH_SPACE_STRING,
-              "ALPHA_NUMERIC_SPACES_COMMAS", ALPHA_NUMERIC_SPACES_COMMAS,
-              "HOME_OFFICE_NUMBER_PATTERN", HOME_OFFICE_NUMBER_PATTERN,
-              "CASE_REFERENCE_NUMBER_PATTERN", CASE_REFERENCE_NUMBER_PATTERN,
-              "INTERNATIONAL_POSTCODE", INTERNATIONAL_POSTCODE,
-              "TELEPHONE_PATTERN", TELEPHONE_PATTERN));
+          Map.ofEntries(
+              Map.entry("STANDARD_CHARACTER_SET", STANDARD_CHARACTER_SET),
+              Map.entry("CHARACTER_SET_A", CHARACTER_SET_A),
+              Map.entry("CHARACTER_SET_C", CHARACTER_SET_C),
+              Map.entry("CHARACTER_SET_E", CHARACTER_SET_E),
+              Map.entry("CHARACTER_SET_F", CHARACTER_SET_F),
+              Map.entry("ADDRESS_CHARACTER_SET", ADDRESS_CHARACTER_SET),
+              Map.entry("ALPHA_NUMERIC_SLASH_SPACE_STRING", ALPHA_NUMERIC_SLASH_SPACE_STRING),
+              Map.entry("ALPHA_NUMERIC_SPACES_COMMAS", ALPHA_NUMERIC_SPACES_COMMAS),
+              Map.entry("HOME_OFFICE_NUMBER_PATTERN", HOME_OFFICE_NUMBER_PATTERN),
+              Map.entry("CASE_REFERENCE_NUMBER_PATTERN", CASE_REFERENCE_NUMBER_PATTERN),
+              Map.entry("INTERNATIONAL_POSTCODE", INTERNATIONAL_POSTCODE),
+              Map.entry("TELEPHONE_PATTERN", TELEPHONE_PATTERN)));
 
   @Test
   @DisplayName("no baseline character set admits markup")
@@ -110,25 +112,5 @@ class ValidationPatternCorpusTest {
   @DisplayName("real CCMS values are not caught by the baseline sets that should accept them")
   void addressSetAcceptsRealAddresses(final String value) {
     assertTrue(value.matches(ADDRESS_CHARACTER_SET), "ADDRESS_CHARACTER_SET rejected: " + value);
-  }
-
-  /**
-   * Characterises the two legacy sets that still admit markup, rather than asserting an ideal that
-   * is not true yet. This is finding F2 in the input validation spike, held back because narrowing
-   * them needs a DBA profile of the characters actually stored in the EBS columns behind these
-   * fields - tightening blind would block providers from re-submitting data they never typed.
-   *
-   * <p>When F2 is fixed, these assertions start failing: move the two sets into {@link
-   * #STRICT_CHARACTER_SETS} and delete this test.
-   */
-  @Test
-  @DisplayName("known gap (F2): the legacy provider-ui sets still admit markup")
-  void legacyCharacterSetsStillAdmitMarkup() {
-    assertTrue(
-        "<script>alert(1)</script>".matches(CHARACTER_SET_A),
-        "CHARACTER_SET_A no longer admits markup - fold it into STRICT_CHARACTER_SETS");
-    assertTrue(
-        ">".matches(CHARACTER_SET_F),
-        "CHARACTER_SET_F no longer admits '>' - fold it into STRICT_CHARACTER_SETS");
   }
 }
