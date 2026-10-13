@@ -48,10 +48,19 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.thymeleaf.spring6.SpringTemplateEngine;
+import org.thymeleaf.spring6.view.ThymeleafViewResolver;
+import org.thymeleaf.templatemode.TemplateMode;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
@@ -170,6 +179,44 @@ class CaseControllerTest {
     lenient()
         .when(lookupService.getDocumentTypeDescription(anyString()))
         .thenReturn(Mono.just("Document description"));
+  }
+
+  private ThymeleafViewResolver thymeleafViewResolver() {
+    final ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
+    resolver.setPrefix("templates/");
+    resolver.setSuffix(".html");
+    resolver.setTemplateMode(TemplateMode.HTML);
+    resolver.setCharacterEncoding("UTF-8");
+
+    final ResourceBundleMessageSource templateMessageSource = new ResourceBundleMessageSource();
+    templateMessageSource.setBasename("messages");
+    templateMessageSource.setDefaultEncoding("UTF-8");
+
+    final SpringTemplateEngine templateEngine = new SpringTemplateEngine();
+    templateEngine.setTemplateResolver(resolver);
+    templateEngine.setTemplateEngineMessageSource(templateMessageSource);
+
+    final ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
+    viewResolver.setTemplateEngine(templateEngine);
+    viewResolver.setCharacterEncoding("UTF-8");
+    return viewResolver;
+  }
+
+  private MockMvc renderedMockMvc() {
+    return MockMvcBuilders.standaloneSetup(caseController)
+        .setViewResolvers(thymeleafViewResolver())
+        .setControllerAdvice(
+            new GlobalExceptionHandler(), new ActiveCaseModelAdvice(), new TestUserModelAdvice())
+        .build();
+  }
+
+  @ControllerAdvice
+  static class TestUserModelAdvice {
+
+    @ModelAttribute
+    void addUser(final Model model) {
+      model.addAttribute("user", new UserDetail().functions(List.of()));
+    }
   }
 
   @Nested
@@ -2028,6 +2075,110 @@ class CaseControllerTest {
                       .sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/record-proceeding-outcome");
+    }
+
+    @Test
+    @DisplayName(
+        "Record proceeding outcome renders only a hidden court case number field when no court is selected")
+    public void recordProceedingOutcomeWithoutCourtRendersOnlyHiddenCourtCaseNumber()
+        throws Exception {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail ebsOutcome =
+          new ProceedingOutcomeDetail()
+              .proceedingCaseId("pc1")
+              .outcomeCourtCaseNo("CASE-123")
+              .resultInfo("EBS result info");
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .proceedingCaseId("pc1")
+                  .description("Proceeding 1")
+                  .proceedingType(new StringDisplayValue().id("P1").displayValue("Proceeding name"))
+                  .outcome(ebsOutcome)));
+
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(java.util.Optional.empty());
+      when(lookupService.getStageEnds("P1", null))
+          .thenReturn(Mono.just(new StageEndLookupDetail()));
+      when(lookupService.getOutcomeResults("P1", null))
+          .thenReturn(Mono.just(new OutcomeResultLookupDetail()));
+      when(lookupService.getCommonValues(anyString()))
+          .thenReturn(Mono.just(new CommonLookupDetail()));
+
+      final MockMvc renderedMockMvc = renderedMockMvc();
+      final UserDetail renderingUser = ApplicationTestUtils.buildUser();
+      renderingUser.setFunctions(List.of());
+
+      final var result =
+          renderedMockMvc
+              .perform(
+                  get("/case/outcome-and-awards/proceeding/0/outcome")
+                      .sessionAttr(USER_DETAILS, renderingUser)
+                      .sessionAttr(CASE, ebsCase))
+              .andReturn();
+
+      assertThat(result.getResponse().getStatus()).isEqualTo(200);
+      assertThat(result.getResponse().getContentAsString())
+          .contains("type=\"hidden\"")
+          .contains("id=\"outcomeCourtCaseNo\"")
+          .contains("name=\"outcomeCourtCaseNo\"")
+          .contains("value=\"CASE-123\"")
+          .doesNotContain("for=\"outcomeCourtCaseNo\"");
+    }
+
+    @Test
+    @DisplayName(
+        "Record proceeding outcome renders only the visible court case number field when a court is selected")
+    public void recordProceedingOutcomeWithCourtRendersOnlyVisibleCourtCaseNumber()
+        throws Exception {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail ebsOutcome =
+          new ProceedingOutcomeDetail()
+              .proceedingCaseId("pc1")
+              .courtCode("CT1")
+              .courtName("Court 1")
+              .outcomeCourtCaseNo("CASE-123")
+              .resultInfo("EBS result info");
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .proceedingCaseId("pc1")
+                  .description("Proceeding 1")
+                  .proceedingType(new StringDisplayValue().id("P1").displayValue("Proceeding name"))
+                  .outcome(ebsOutcome)));
+
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(java.util.Optional.empty());
+      when(lookupService.getStageEnds("P1", null))
+          .thenReturn(Mono.just(new StageEndLookupDetail()));
+      when(lookupService.getOutcomeResults("P1", null))
+          .thenReturn(Mono.just(new OutcomeResultLookupDetail()));
+      when(lookupService.getCommonValues(anyString()))
+          .thenReturn(Mono.just(new CommonLookupDetail()));
+
+      final MockMvc renderedMockMvc = renderedMockMvc();
+      final UserDetail renderingUser = ApplicationTestUtils.buildUser();
+      renderingUser.setFunctions(List.of());
+
+      final var result =
+          renderedMockMvc
+              .perform(
+                  get("/case/outcome-and-awards/proceeding/0/outcome")
+                      .sessionAttr(USER_DETAILS, renderingUser)
+                      .sessionAttr(CASE, ebsCase))
+              .andReturn();
+
+      assertThat(result.getResponse().getStatus()).isEqualTo(200);
+      assertThat(result.getResponse().getContentAsString())
+          .contains("for=\"outcomeCourtCaseNo\"")
+          .contains("type=\"text\"")
+          .contains("id=\"outcomeCourtCaseNo\"")
+          .contains("name=\"outcomeCourtCaseNo\"")
+          .doesNotContain("type=\"hidden\" id=\"outcomeCourtCaseNo\"");
     }
 
     @Test
