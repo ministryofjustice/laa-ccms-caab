@@ -116,6 +116,9 @@
       <th:block th:if="${proceedingOutcome.courtCode != null and !#strings.isEmpty(proceedingOutcome.courtCode)}">
         <div th:replace="~{partials/forms :: textInput('outcomeCourtCaseNo', #{case.recordOutcomes.courtCaseNumber}, 'govuk-input--width-20')}"></div>
       </th:block>
+      <input th:unless="${proceedingOutcome.courtCode != null and !#strings.isEmpty(proceedingOutcome.courtCode)}"
+             type="hidden"
+             th:field="*{outcomeCourtCaseNo}"/>
         <div class="govuk-button-group govuk-!-margin-top-6">
           <govuk:button type="submit" th:text="#{site.next}"/>
         </div>
