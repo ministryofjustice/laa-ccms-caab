@@ -133,8 +133,6 @@
                th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.table.preCertificateAmount}"></dd>
             <dd class="govuk-summary-list__value govuk-!-font-weight-bold"
                th:text="#{case.outcomeAndAwards.preCertificateAndLegalHelpCosts.table.legalHelpAmount}"></dd>
-            <dd class="govuk-summary-list__actions govuk-!-font-weight-bold"
-               th:text="#{site.action}"></dd>
           </div>
           <div class="govuk-summary-list__row">
             <dt class="govuk-summary-list__key" id="preCertificateAndLegalHelpCostsType">
@@ -149,7 +147,6 @@
             <dd class="govuk-summary-list__value"
                id="preCertificateAndLegalHelpCostsLegalHelpAmount"
                th:text="${#strings.isEmpty(preCertificateAndLegalHelpCostsSummary.legalHelpCosts) ? '£0' : '£' + preCertificateAndLegalHelpCostsSummary.legalHelpCosts}"></dd>
-            <dd class="govuk-summary-list__actions"></dd>
           </div>
         </dl>
       </div>
