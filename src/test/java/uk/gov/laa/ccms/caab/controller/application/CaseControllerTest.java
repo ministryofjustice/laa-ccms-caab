@@ -2130,6 +2130,59 @@ class CaseControllerTest {
 
     @Test
     @DisplayName(
+        "Record proceeding outcome treats legacy Not Available court values as no selected court")
+    public void recordProceedingOutcomeLegacyNotAvailableCourtRendersOnlyHiddenCourtCaseNumber()
+        throws Exception {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail ebsOutcome =
+          new ProceedingOutcomeDetail()
+              .proceedingCaseId("pc1")
+              .courtCode("Not Available")
+              .courtName("Not Available")
+              .outcomeCourtCaseNo("CASE-123")
+              .resultInfo("EBS result info");
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .proceedingCaseId("pc1")
+                  .description("Proceeding 1")
+                  .proceedingType(new StringDisplayValue().id("P1").displayValue("Proceeding name"))
+                  .outcome(ebsOutcome)));
+
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(java.util.Optional.empty());
+      when(lookupService.getStageEnds("P1", null))
+          .thenReturn(Mono.just(new StageEndLookupDetail()));
+      when(lookupService.getOutcomeResults("P1", null))
+          .thenReturn(Mono.just(new OutcomeResultLookupDetail()));
+      when(lookupService.getCommonValues(anyString()))
+          .thenReturn(Mono.just(new CommonLookupDetail()));
+
+      final MockMvc renderedMockMvc = renderedMockMvc();
+      final UserDetail renderingUser = ApplicationTestUtils.buildUser();
+      renderingUser.setFunctions(List.of());
+
+      final var result =
+          renderedMockMvc
+              .perform(
+                  get("/case/outcome-and-awards/proceeding/0/outcome")
+                      .sessionAttr(USER_DETAILS, renderingUser)
+                      .sessionAttr(CASE, ebsCase))
+              .andReturn();
+
+      assertThat(result.getResponse().getStatus()).isEqualTo(200);
+      assertThat(result.getResponse().getContentAsString())
+          .contains("type=\"hidden\"")
+          .contains("id=\"outcomeCourtCaseNo\"")
+          .contains("name=\"outcomeCourtCaseNo\"")
+          .contains("value=\"CASE-123\"")
+          .doesNotContain("for=\"outcomeCourtCaseNo\"");
+    }
+
+    @Test
+    @DisplayName(
         "Record proceeding outcome renders only the visible court case number field when a court is selected")
     public void recordProceedingOutcomeWithCourtRendersOnlyVisibleCourtCaseNumber()
         throws Exception {

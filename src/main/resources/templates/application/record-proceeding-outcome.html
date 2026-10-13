@@ -104,7 +104,7 @@
                  th:text="#{case.recordOutcomes.courtButton}"></button>
        </div>
 
-       <p class="govuk-body" th:if="${proceedingOutcome.courtCode != null and !#strings.isEmpty(proceedingOutcome.courtCode)}">
+       <p class="govuk-body" th:if="${proceedingOutcome.hasCourtSelection()}">
          <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{case.recordOutcomes.court}"></span>
          <span th:text="${proceedingOutcome.courtName != null ? proceedingOutcome.courtCode + ' ' + proceedingOutcome.courtName : proceedingOutcome.courtCode}"></span>
        </p>
@@ -113,10 +113,10 @@
       <input type="hidden" th:field="*{courtCode}"/>
       <input type="hidden" th:field="*{courtName}"/>
 
-      <th:block th:if="${proceedingOutcome.courtCode != null and !#strings.isEmpty(proceedingOutcome.courtCode)}">
+      <th:block th:if="${proceedingOutcome.hasCourtSelection()}">
         <div th:replace="~{partials/forms :: textInput('outcomeCourtCaseNo', #{case.recordOutcomes.courtCaseNumber}, 'govuk-input--width-20')}"></div>
       </th:block>
-      <input th:unless="${proceedingOutcome.courtCode != null and !#strings.isEmpty(proceedingOutcome.courtCode)}"
+      <input th:unless="${proceedingOutcome.hasCourtSelection()}"
              type="hidden"
              th:field="*{outcomeCourtCaseNo}"/>
         <div class="govuk-button-group govuk-!-margin-top-6">
