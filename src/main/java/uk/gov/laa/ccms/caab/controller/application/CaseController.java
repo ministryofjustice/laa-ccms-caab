@@ -959,6 +959,8 @@ public class CaseController {
 
   private ProceedingOutcomeDetail buildProceedingOutcome(
       final ProceedingDetail proceeding, final ProceedingOutcomeFormData proceedingOutcome) {
+    proceedingOutcome.normaliseLegacyCourtFields();
+
     final String proceedingCode =
         Optional.ofNullable(proceeding.getProceedingType()).map(item -> item.getId()).orElse(null);
     final Map<String, String> stageEndMap =
@@ -969,8 +971,6 @@ public class CaseController {
         StringUtils.hasText(proceedingOutcome.getCourtCode())
             ? buildOutcomeMap(lookupService.getCourt(proceedingOutcome.getCourtCode()).block())
             : Collections.emptyMap();
-
-    proceedingOutcome.normaliseLegacyCourtFields();
 
     final ProceedingOutcomeDetail outcome = new ProceedingOutcomeDetail();
     outcome.setDateOfFinalWork(
