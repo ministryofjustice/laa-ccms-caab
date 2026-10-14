@@ -34,7 +34,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -206,7 +205,7 @@ public class ProviderRequestsController {
   public String requestTypeGeneralPost(
       @SessionAttribute(GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
-      @Validated @ModelAttribute("providerRequestTypeDetails")
+      @ModelAttribute("providerRequestTypeDetails")
           final ProviderRequestTypeFormData providerRequestTypeDetails,
       final BindingResult bindingResult,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
@@ -225,7 +224,7 @@ public class ProviderRequestsController {
   public String requestTypeCasePost(
       @SessionAttribute(CASE_PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
-      @Validated @ModelAttribute("providerRequestTypeDetails")
+      @ModelAttribute("providerRequestTypeDetails")
           final ProviderRequestTypeFormData providerRequestTypeDetails,
       final BindingResult bindingResult,
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
@@ -363,7 +362,7 @@ public class ProviderRequestsController {
       @SessionAttribute(GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
       @RequestParam final String action,
-      @Validated @ModelAttribute("providerRequestDetails")
+      @ModelAttribute("providerRequestDetails")
           final ProviderRequestDetailsFormData providerRequestDetailsForm,
       final BindingResult bindingResult,
       final Model model,
@@ -386,7 +385,7 @@ public class ProviderRequestsController {
       @SessionAttribute(CASE_PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
       @RequestParam final String action,
-      @Validated @ModelAttribute("providerRequestDetails")
+      @ModelAttribute("providerRequestDetails")
           final ProviderRequestDetailsFormData providerRequestDetailsForm,
       final BindingResult bindingResult,
       final Model model,
@@ -417,10 +416,6 @@ public class ProviderRequestsController {
     String caseRef = providerRequestFlow.getCaseReferenceNumber();
     addCaseReferenceIfValid(model, caseRef);
 
-    // Binding, @Size and baseline errors are already present before any branch runs. The upload
-    // branch redirects and the delete branch re-renders, so without this they would be discarded
-    // and an invalid value carried into the session. Required-field checks still only run on
-    // final submission, below.
     if (bindingResult.hasErrors()) {
       populateAddEvidenceModel(model);
       return providerRequestsDetails(
@@ -577,7 +572,7 @@ public class ProviderRequestsController {
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       @SessionAttribute(GENERAL_PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
-      @Validated @ModelAttribute(GENERAL_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA)
+      @ModelAttribute(GENERAL_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA)
           final EvidenceUploadFormData evidenceUploadFormData,
       final BindingResult bindingResult,
       final Model model) {
@@ -597,7 +592,7 @@ public class ProviderRequestsController {
       @SessionAttribute(USER_DETAILS) final UserDetail userDetail,
       @SessionAttribute(CASE_PROVIDER_REQUEST_FLOW_FORM_DATA)
           final ProviderRequestFlowFormData providerRequestFlow,
-      @Validated @ModelAttribute(CASE_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA)
+      @ModelAttribute(CASE_PROVIDER_REQUEST_EVIDENCE_UPLOAD_FORM_DATA)
           final EvidenceUploadFormData evidenceUploadFormData,
       final BindingResult bindingResult,
       @RequestParam(required = false) String caseReferenceNumber,

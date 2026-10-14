@@ -35,7 +35,6 @@ import uk.gov.laa.ccms.caab.advice.GlobalBinderAdvice;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.costs.AllocateCostsFormData;
-import uk.gov.laa.ccms.caab.bean.validators.BaselineTextValidator;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationProviderDetails;
@@ -719,9 +718,7 @@ public class AllocateCostLimitControllerTest {
     final MockMvcTester mvc =
         MockMvcTester.create(
             MockMvcBuilders.standaloneSetup(allocateCostLimitController)
-                .setControllerAdvice(
-                    new GlobalExceptionHandler(),
-                    new GlobalBinderAdvice(new BaselineTextValidator()))
+                .setControllerAdvice(new GlobalExceptionHandler(), new GlobalBinderAdvice())
                 .build());
 
     final ApplicationDetail ebsCase = new ApplicationDetail();

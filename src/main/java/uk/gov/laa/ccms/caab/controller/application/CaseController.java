@@ -51,7 +51,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -469,7 +468,7 @@ public class CaseController {
   public String outcomeAndAwardsDocumentUploadPost(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @Validated @ModelAttribute("outcomeAndAwardsDocumentUploadForm")
+      @ModelAttribute("outcomeAndAwardsDocumentUploadForm")
           final EvidenceUploadFormData outcomeAndAwardsDocumentUploadForm,
       final BindingResult bindingResult,
       final Model model) {
@@ -824,7 +823,7 @@ public class CaseController {
   public String preCertificateAndLegalHelpCostsPost(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @Validated @ModelAttribute("preCertificateAndLegalHelpCosts")
+      @ModelAttribute("preCertificateAndLegalHelpCosts")
           final PreCertificateAndLegalHelpCostsFormData preCertificateAndLegalHelpCosts,
       final BindingResult bindingResult,
       final Model model,

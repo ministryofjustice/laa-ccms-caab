@@ -21,7 +21,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -105,7 +104,7 @@ public class AllocateCostLimitController {
    */
   @PostMapping("/allocate-cost-limit")
   public String calculateCost(
-      @Validated @ModelAttribute("costDetails") AllocateCostsFormData allocateCostsFormData,
+      @ModelAttribute("costDetails") AllocateCostsFormData allocateCostsFormData,
       final BindingResult bindingResult,
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @RequestParam(value = "action", required = false) final String action,
@@ -163,9 +162,6 @@ public class AllocateCostLimitController {
     allocateCostsFormData.setCostEntries(updatedCosts);
     allocateCostsFormData.setTotalRemaining(getTotalRemaining(allocateCostsFormData));
 
-    // The remove branch below stores the form and redirects, so binding and baseline errors have
-    // to be handled first - otherwise an invalid hidden value reaches the session and the review
-    // endpoint submits it as-is.
     if (bindingResult.hasErrors()) {
       model.addAttribute("case", ebsCase);
       model.addAttribute("costDetails", allocateCostsFormData);

@@ -1,10 +1,8 @@
 package uk.gov.laa.ccms.caab.advice;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.InitBinder;
-import uk.gov.laa.ccms.caab.bean.validators.BaselineTextValidator;
 import uk.gov.laa.ccms.caab.security.ControlCharacterStrippingEditor;
 
 /**
@@ -26,24 +24,15 @@ import uk.gov.laa.ccms.caab.security.ControlCharacterStrippingEditor;
  * field no restrictions at all until somebody wrote a validator for it.
  */
 @ControllerAdvice
-@RequiredArgsConstructor
 public class GlobalBinderAdvice {
 
-  private final BaselineTextValidator baselineTextValidator;
-
   /**
-   * Adds the baseline character rules to every data binder.
+   * Applies the input baseline to every data binder.
    *
    * @param binder the binder for the current request.
    */
   @InitBinder
   public void initBinder(final WebDataBinder binder) {
     binder.registerCustomEditor(String.class, new ControlCharacterStrippingEditor());
-
-    // Registered unconditionally and deliberately: Spring creates the binder with a null target and
-    // only constructs the model attribute afterwards, so guarding on getTarget() here would skip
-    // every form bean in the service. Registering against a null target is safe, and
-    // BaselineTextValidator.supports accepts any type.
-    binder.addValidators(baselineTextValidator);
   }
 }

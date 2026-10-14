@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
@@ -83,13 +84,20 @@ class ControlCharacterStrippingEditorTest {
   }
 
   @Test
-  void doesNotAlterAngleBrackets() {
-    // Angle brackets are a validation concern, reported to the user as a field error rather than
-    // silently removed here.
+  void rejectsAngleBrackets() {
     final ControlCharacterStrippingEditor editor = new ControlCharacterStrippingEditor();
 
-    editor.setAsText("<script>");
+    assertThrows(IllegalArgumentException.class, () -> editor.setAsText("<script>"));
+    assertThrows(IllegalArgumentException.class, () -> editor.setAsText("a < b"));
+    assertThrows(IllegalArgumentException.class, () -> editor.setAsText("closing >"));
+  }
 
-    assertEquals("<script>", editor.getValue());
+  @Test
+  void acceptsOrdinaryValues() {
+    final ControlCharacterStrippingEditor editor = new ControlCharacterStrippingEditor();
+
+    editor.setAsText("O'Brien & Co. (21-27 St Pauls St)");
+
+    assertEquals("O'Brien & Co. (21-27 St Pauls St)", editor.getValue());
   }
 }

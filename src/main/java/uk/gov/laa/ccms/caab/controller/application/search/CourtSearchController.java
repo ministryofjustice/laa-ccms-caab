@@ -13,7 +13,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -80,7 +79,7 @@ public class CourtSearchController {
   @PostMapping("/court/search")
   public String courtSearch(
       @RequestParam(value = "proceedingIndex") final int proceedingIndex,
-      @Validated @ModelAttribute(COURT_SEARCH_CRITERIA) final CourtSearchCriteria searchCriteria,
+      @ModelAttribute(COURT_SEARCH_CRITERIA) final CourtSearchCriteria searchCriteria,
       BindingResult bindingResult,
       final HttpSession session,
       Model model) {

@@ -15,7 +15,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import uk.gov.laa.ccms.caab.bean.validators.BaselineTextValidator;
 
 /**
  * Exercises the binder advice through a real request, which the rest of the suite does not - the
@@ -30,17 +29,46 @@ class GlobalBinderAdviceTest {
   void setUp() {
     mockMvc =
         MockMvcBuilders.standaloneSetup(new TestController())
-            .setControllerAdvice(new GlobalBinderAdvice(new BaselineTextValidator()))
+            .setControllerAdvice(new GlobalBinderAdvice())
             .build();
   }
 
   @Test
-  @DisplayName("control characters are stripped even when the handler does not opt in")
-  void controlCharactersAreStrippedWithoutValidated() throws Exception {
-    final String withControlCharacters = "Sm" + (char) 0x00 + (char) 0x07 + "ith";
-
+  @DisplayName("angle brackets are rejected without the handler opting in")
+  void angleBracketsRejectedWithoutValidated() throws Exception {
     mockMvc
-        .perform(post("/unvalidated").param("name", withControlCharacters))
+        .perform(post("/plain").param("name", "<script>alert(1)</script>"))
+        .andExpect(status().isOk())
+        .andExpect(content().string("rejected"));
+  }
+
+  @Test
+  @DisplayName("angle brackets are rejected on a handler that does opt in")
+  void angleBracketsRejectedWhenValidated() throws Exception {
+    mockMvc
+        .perform(post("/validated").param("name", "<script>alert(1)</script>"))
+        .andExpect(status().isOk())
+        .andExpect(content().string("rejected"));
+  }
+
+  /**
+   * The field that is not posted cannot be rejected, which is what makes this safe on the form
+   * beans that are carried across several pages of a journey.
+   */
+  @Test
+  @DisplayName("only submitted fields are checked")
+  void onlySubmittedFieldsAreChecked() throws Exception {
+    mockMvc
+        .perform(post("/plain").param("name", "fine"))
+        .andExpect(status().isOk())
+        .andExpect(content().string("fine"));
+  }
+
+  @Test
+  @DisplayName("control characters are stripped rather than rejected")
+  void controlCharactersAreStripped() throws Exception {
+    mockMvc
+        .perform(post("/plain").param("name", "Sm" + (char) 0x00 + (char) 0x07 + "ith"))
         .andExpect(status().isOk())
         .andExpect(content().string("Smith"));
   }
@@ -49,48 +77,28 @@ class GlobalBinderAdviceTest {
   @DisplayName("tabs and newlines survive binding, because textareas need them")
   void whitespaceIsPreserved() throws Exception {
     mockMvc
-        .perform(post("/unvalidated").param("name", "line one\nline two"))
+        .perform(post("/plain").param("name", "line one\nline two"))
         .andExpect(status().isOk())
         .andExpect(content().string("line one\nline two"));
   }
 
-  @Test
-  @DisplayName("angle brackets are rejected on a handler that opts in")
-  void angleBracketsRejectedWhenValidated() throws Exception {
-    mockMvc
-        .perform(post("/validated").param("name", "<script>alert(1)</script>"))
-        .andExpect(status().isOk())
-        .andExpect(content().string("invalid.character"));
-  }
-
-  @Test
-  @DisplayName("an ordinary value still binds cleanly on a handler that opts in")
-  void ordinaryValuePassesValidation() throws Exception {
-    mockMvc
-        .perform(post("/validated").param("name", "O'Brien & Co."))
-        .andExpect(status().isOk())
-        .andExpect(content().string("ok"));
-  }
-
   /**
-   * Documents the boundary of the runtime net rather than asserting an ideal. Spring only runs
-   * binder-registered validators for model attributes carrying {@code @Validated}, so a handler
-   * without it gets control-character stripping but no angle-bracket check. This is the gap {@code
-   * PostHandlerValidationGuardTest} stops from growing, and that {@code @Validated} rollout closes.
-   * When every handler is annotated, this test should start failing and can be deleted.
+   * A rejected bind needs somewhere to report to. A handler taking a form bean without a
+   * BindingResult gets a 400 rather than a re-rendered form, so one accepting typed input should
+   * always declare one.
    */
   @Test
-  @DisplayName("known gap: a handler that does not opt in gets no angle-bracket check")
-  void angleBracketsNotRejectedWithoutValidated() throws Exception {
+  @DisplayName("a handler with no BindingResult gets a 400 rather than a field error")
+  void noBindingResultGivesBadRequest() throws Exception {
     mockMvc
-        .perform(post("/unvalidated").param("name", "<script>"))
-        .andExpect(status().isOk())
-        .andExpect(content().string("<script>"));
+        .perform(post("/no-binding-result").param("name", "<script>"))
+        .andExpect(status().isBadRequest());
   }
 
   /** Plain accessors rather than Lombok: the annotation processor is main-source only. */
   public static class TestForm {
     private String name;
+    private String other;
 
     public String getName() {
       return name;
@@ -99,22 +107,36 @@ class GlobalBinderAdviceTest {
     public void setName(final String name) {
       this.name = name;
     }
+
+    public String getOther() {
+      return other;
+    }
+
+    public void setOther(final String other) {
+      this.other = other;
+    }
   }
 
   @Controller
   static class TestController {
 
-    @PostMapping("/unvalidated")
+    @PostMapping("/plain")
     @ResponseBody
-    String unvalidated(@ModelAttribute final TestForm form) {
-      return form.getName();
+    String plain(@ModelAttribute final TestForm form, final BindingResult bindingResult) {
+      return bindingResult.hasErrors() ? "rejected" : form.getName();
     }
 
     @PostMapping("/validated")
     @ResponseBody
     String validated(
         @Validated @ModelAttribute final TestForm form, final BindingResult bindingResult) {
-      return bindingResult.hasErrors() ? bindingResult.getFieldError("name").getCode() : "ok";
+      return bindingResult.hasErrors() ? "rejected" : form.getName();
+    }
+
+    @PostMapping("/no-binding-result")
+    @ResponseBody
+    String noBindingResult(@ModelAttribute final TestForm form) {
+      return form.getName();
     }
   }
 }

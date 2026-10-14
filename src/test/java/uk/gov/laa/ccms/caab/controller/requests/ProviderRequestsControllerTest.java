@@ -60,7 +60,6 @@ import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.request.ProviderRequestDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.request.ProviderRequestFlowFormData;
 import uk.gov.laa.ccms.caab.bean.request.ProviderRequestTypeFormData;
-import uk.gov.laa.ccms.caab.bean.validators.BaselineTextValidator;
 import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestDocumentUploadValidator;
 import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestTypesValidator;
@@ -1471,7 +1470,7 @@ class ProviderRequestsControllerTest {
     // controller advice on its own.
     final MockMvc mvc =
         standaloneSetup(providerRequestsController)
-            .setControllerAdvice(new GlobalBinderAdvice(new BaselineTextValidator()))
+            .setControllerAdvice(new GlobalBinderAdvice())
             .build();
 
     final ProviderRequestFlowFormData providerRequestFlow = createFlowWithCaseRef("-1");

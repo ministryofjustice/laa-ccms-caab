@@ -20,7 +20,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -92,8 +91,7 @@ public class CounselSearchController {
    */
   @PostMapping("/counsel/search")
   public String counselLookup(
-      @Validated @ModelAttribute(COUNSEL_SEARCH_CRITERIA)
-          final CounselSearchCriteria searchCriteria,
+      @ModelAttribute(COUNSEL_SEARCH_CRITERIA) final CounselSearchCriteria searchCriteria,
       BindingResult bindingResult,
       final HttpSession session,
       Model model) {

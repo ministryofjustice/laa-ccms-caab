@@ -32,7 +32,6 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.validation.Validator;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -905,7 +904,7 @@ public class ApplicationSubmissionController {
    */
   @PostMapping("/application/declaration")
   public String applicationDeclarationPost(
-      @Validated @ModelAttribute("summarySubmissionFormData")
+      @ModelAttribute("summarySubmissionFormData")
           final SummarySubmissionFormData summarySubmissionFormData,
       final BindingResult bindingResult,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
