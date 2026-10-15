@@ -792,7 +792,10 @@ public class BillingService {
    */
   private BigDecimal poaTotalCost(
       final PaymentOnAccountDetail poa, final Map<String, BigDecimal> taxRates) {
-    final BigDecimal net = orZero(poa.getActualNetCost());
+    final BigDecimal net = poa.getActualNetCost();
+    if (net == null) {
+      return null;
+    }
     final BigDecimal percent = taxRates.getOrDefault(poa.getVatRate(), BigDecimal.ZERO);
     return net.multiply(percent.divide(HUNDRED).add(BigDecimal.ONE)).setScale(2, RoundingMode.DOWN);
   }
