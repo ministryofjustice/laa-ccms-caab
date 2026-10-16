@@ -609,6 +609,43 @@ class BillingServiceTest {
   }
 
   @Test
+  @DisplayName("A draft POA with no net cost yet shows no amount, not zero")
+  void draftPoaWithoutNetCostHasNoAmount() {
+    UserDetail user =
+        new UserDetail().loginId("user1").userType("EXTERNAL").provider(new BaseProvider().id(10));
+    ApplicationDetail ebsCase =
+        new ApplicationDetail()
+            .caseReferenceNumber(CASE_REF)
+            .providerDetails(
+                new ApplicationProviderDetails().provider(new IntDisplayValue().id(10)));
+
+    when(ebsApiClient.getStatementOfAccount(CASE_REF, null))
+        .thenReturn(
+            Mono.just(
+                new StatementOfAccountDetails().addContentItem(statement("Provider", 10L, null))));
+    when(caabApiClient.getPaymentsOnAccount(CASE_REF, "10"))
+        .thenReturn(
+            Mono.just(
+                new PaymentOnAccountDetails()
+                    .addContentItem(
+                        new PaymentOnAccountDetail().lscCaseReference(CASE_REF).providerId("10"))));
+    when(caabApiClient.getBill(CASE_REF, "10")).thenReturn(Mono.empty());
+    when(lookupService.getTaxRates())
+        .thenReturn(
+            Mono.just(
+                new TaxRateLookupDetail()
+                    .addContentItem(new TaxRateLookupValueDetail().code("STD").taxRate("20"))));
+
+    StatementOfAccountDisplay display =
+        billingService.getStatementOfAccountDisplay(CASE_REF, ebsCase, user);
+
+    assertThat(display.getBillsAndPoa())
+        .extracting(BillPoaRow::type, BillPoaRow::status)
+        .containsExactly(tuple("POA", "Draft"));
+    assertThat(display.getBillsAndPoa().getFirst().amount()).isNull();
+  }
+
+  @Test
   @DisplayName("An unknown VAT code contributes no VAT; a load failure leaves the POA net only")
   void poaVatFallbacks() {
     UserDetail user =
