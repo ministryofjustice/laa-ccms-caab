@@ -137,7 +137,7 @@
      class="govuk-grid-row">
   <input type="hidden" id="clientFlowFormAction" name="clientFlowFormAction" th:value="*{clientFlowFormAction}">
   <div class="govuk-grid-column-two-thirds">
-    <th:block th:replace="~{partials/forms :: autocompleteSelect(field='title', label=#{person.title}, items=${titles},
+    <th:block th:replace="~{partials/forms :: autocompleteSelect(field='title', label=#{site.optional(#{person.title})}, items=${titles},
                                                                  itemValue='code', itemLabel='description')}"/>
     <div th:replace="~{partials/forms :: textInput('surname', #{person.surname}, 'govuk-input--width-20')}"></div>
 
