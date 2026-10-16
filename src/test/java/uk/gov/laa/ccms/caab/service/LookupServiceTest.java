@@ -1,8 +1,12 @@
 package uk.gov.laa.ccms.caab.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -701,6 +705,26 @@ public class LookupServiceTest {
 
     assertEquals("correspondenceLanguage", lookups.get(8).getLeft());
     assertEquals(correspondenceLanguageLookupValueDetail, lookups.get(8).getRight().block().get());
+  }
+
+  @Test
+  @DisplayName("getClientLookups returns an empty title without a lookup when no title is set")
+  void testGetClientLookups_noTitle() {
+    final ClientFlowFormData clientFlowFormData = new ClientFlowFormData(ACTION_VIEW);
+    clientFlowFormData.setBasicDetails(new ClientFormDataBasicDetails());
+    clientFlowFormData.setContactDetails(new ClientFormDataContactDetails());
+    clientFlowFormData.setMonitoringDetails(new ClientFormDataMonitoringDetails());
+    clientFlowFormData.setAddressDetails(new ClientFormDataAddressDetails());
+
+    when(ebsApiClient.getCommonValues(anyString(), any()))
+        .thenReturn(Mono.just(new CommonLookupDetail()));
+
+    final List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups =
+        lookupService.getClientLookups(clientFlowFormData);
+
+    assertEquals("contactTitle", lookups.getFirst().getLeft());
+    assertNull(lookups.getFirst().getRight().block().get().getDescription());
+    verify(ebsApiClient, never()).getCommonValues(COMMON_VALUE_CONTACT_TITLE, null);
   }
 
   @Test
