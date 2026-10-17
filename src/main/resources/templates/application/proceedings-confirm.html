@@ -14,7 +14,7 @@
   </div>
   <div id="main-content">
     <form action="#" th:action="@{/{caseContext}/proceedings/{action}/confirm(action=${proceedingFlow.action}, caseContext=${caseContext.pathValue})}"
-          th:object="${scopeDelegatedFunctionsApplyFormData}" method="post">
+          method="post">
       <span class="govuk-caption-l" th:text="#{proceedings.addEdit.caption}"></span>
       <h1 class="govuk-heading-l" th:text="#{proceedings.proceedingDetails.step4.heading}"></h1>
       <p class="govuk-body-l" th:text="#{proceedings.confirm.text}"></p>
@@ -84,12 +84,13 @@
           <td class="govuk-table__cell" th:text="${scopeLimitation.scopeLimitationWording}"/>
           <td class="govuk-table__cell" th:if="${isSubstantiveDevolvedPowersApp}">
             <div class="govuk-checkboxes__item govuk-checkboxes--small">
-              <input  type="hidden" th:field="*{scopeLimitationDataList[__${rowStat.index}__].id}"
-                      th:value="${scopeLimitation.id}"/>
-              <input type="checkbox" class="govuk-checkboxes__input" id="delegatedInd"
-                     th:name="'scopeLimitationDataList[' + ${rowStat.index} + '].delegatedFuncApplyInd'"
-                     th:checked="*{scopeLimitationDataList[__${rowStat.index}__]?.delegatedFuncApplyInd}"/>
-              <label class="govuk-label govuk-checkboxes__label" for="delegatedInd">
+              <input type="checkbox"
+                     class="govuk-checkboxes__input"
+                     th:id="|delegated-functions-${rowStat.index}|"
+                     th:checked="${scopeLimitation.delegatedFuncApplyInd != null and scopeLimitation.delegatedFuncApplyInd.flag}"
+                     disabled="disabled"/>
+              <label class="govuk-label govuk-checkboxes__label"
+                     th:for="|delegated-functions-${rowStat.index}|">
                 <span class="govuk-visually-hidden" th:text="#{proceedings.confirm.delegatedFunctionsApply}"/>
               </label>
             </div>
