@@ -102,17 +102,20 @@
                 <p class="govuk-body" th:text="${scopeLimitation.scopeLimitation.displayValue}"/>
               </td>
               <td class="govuk-table__cell" th:text="${scopeLimitation.scopeLimitationWording}"/>
-              <td class="govuk-table__cell"
-                  th:if="${isSubstantiveDevolvedPowersApp && scopeLimitation.delegatedFuncApplyInd.flag}">
-                <img id="delegatedInd" class="govuk-!-padding-left-2 govuk-!-padding-right-2"
-                     th:src="@{/assets/ccms/tick.gif}" alt="tick">
-                <label class="govuk-label govuk-checkboxes__label" for="delegatedInd">
+              <td class="govuk-table__cell" th:if="${isSubstantiveDevolvedPowersApp}">
+                <div class="govuk-checkboxes__item govuk-checkboxes--small">
+                  <input type="checkbox"
+                         class="govuk-checkboxes__input"
+                         th:id="|delegated-functions-${scopeLimitation.id}|"
+                         th:checked="${scopeLimitation.delegatedFuncApplyInd != null and scopeLimitation.delegatedFuncApplyInd.flag}"
+                         disabled="disabled"/>
+                  <label class="govuk-label govuk-checkboxes__label"
+                         th:for="|delegated-functions-${scopeLimitation.id}|">
                     <span class="govuk-visually-hidden"
                           th:text="#{proceedings.summary.delegatedFunctionsApply}"/>
-                </label>
+                  </label>
+                </div>
               </td>
-              <td class="govuk-table__cell"
-                  th:if="${isSubstantiveDevolvedPowersApp && !scopeLimitation.delegatedFuncApplyInd.flag}"></td>
             </tr>
             </tbody>
           </table>
@@ -123,4 +126,3 @@
 </div>
 </body>
 </html>
-
