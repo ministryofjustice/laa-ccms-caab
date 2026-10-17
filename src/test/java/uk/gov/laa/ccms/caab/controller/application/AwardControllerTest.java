@@ -6,11 +6,13 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_AWARD_ASSESSMENT_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_VALUATION_BASIS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.AWARD_TYPE_FORM;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
@@ -18,6 +20,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -37,18 +40,24 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.AwardTypeForm;
+import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.FinancialAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.LandAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.OtherAssetAwardFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
+import uk.gov.laa.ccms.caab.bean.validators.awards.CostAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.FinancialAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.LandAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.OtherAssetAwardValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
+import uk.gov.laa.ccms.caab.constants.FunctionConstants;
+import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.LandAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.OtherAssetAwardMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.model.LandAwardDetail;
@@ -68,7 +77,9 @@ class AwardControllerTest {
   @Mock private LookupService lookupService;
   @Mock private CaseOutcomeService caseOutcomeService;
   @Mock private AwardTypeValidator awardTypeValidator;
+  @Mock private CostAwardValidator costAwardValidator;
   @Mock private FinancialAwardValidator financialAwardValidator;
+  @Mock private CostAwardMapper costAwardMapper;
   @Mock private FinancialAwardMapper financialAwardMapper;
   @Mock private OtherAssetAwardValidator otherAssetAwardValidator;
   @Mock private OtherAssetAwardMapper otherAssetAwardMapper;
@@ -80,12 +91,17 @@ class AwardControllerTest {
   private MockMvcTester mockMvc;
   private ApplicationDetail ebsCase;
   private UserDetail user;
+  private CaseOutcomeDetail caseOutcome;
 
   @BeforeEach
   void setUp() {
     mockMvc = MockMvcTester.create(MockMvcBuilders.standaloneSetup(controller).build());
     ebsCase = new ApplicationDetail().caseReferenceNumber("300000001");
+    ebsCase.setAvailableFunctions(List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+    caseOutcome = new CaseOutcomeDetail().id(55);
+    ebsCase.setCaseOutcome(caseOutcome);
     user = ApplicationTestUtils.buildUser();
+    lenient().when(costAwardMapper.toCostAward(any())).thenReturn(new CostAwardDetail());
     lenient()
         .when(financialAwardMapper.toFinancialAwardRequest(any()))
         .thenReturn(new FinancialAwardRequest());
@@ -117,7 +133,9 @@ class AwardControllerTest {
 
       when(lookupService.getAwardTypes()).thenReturn(Mono.just(awardTypes));
 
-      assertThat(mockMvc.perform(get("/case/outcome-and-awards/award-type")))
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/award-type").sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/select-award-type")
           .model()
@@ -133,7 +151,9 @@ class AwardControllerTest {
     void shouldDisplayEmptyAwardTypesWhenLookupReturnsNoData() {
       when(lookupService.getAwardTypes()).thenReturn(Mono.empty());
 
-      assertThat(mockMvc.perform(get("/case/outcome-and-awards/award-type")))
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/award-type").sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/select-award-type")
           .model()
@@ -142,6 +162,37 @@ class AwardControllerTest {
               AWARD_TYPE_FORM, value -> assertThat(value).isInstanceOf(AwardTypeForm.class));
 
       verify(lookupService).getAwardTypes();
+    }
+
+    @Test
+    @DisplayName("Should redirect read-only cases away from award type management")
+    void shouldRedirectReadOnlyCaseFromAwardTypeManagement() {
+      ebsCase.setAvailableFunctions(List.of(FunctionConstants.VIEW_CASE_OUTCOME));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/award-type")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+    }
+
+    @Test
+    @DisplayName("Should redirect award type management when no case is in session")
+    void shouldRedirectAwardTypeManagementWithoutCase() {
+      assertThat(mockMvc.perform(get("/case/outcome-and-awards/award-type")))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/award-type")
+                      .sessionAttr(AWARD_TYPE_FORM, new AwardTypeForm())
+                      .param("awardTypeCode", "COST")))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verifyNoInteractions(lookupService, awardTypeValidator);
     }
   }
 
@@ -183,6 +234,7 @@ class AwardControllerTest {
       assertThat(
               mockMvc.perform(
                   post("/case/outcome-and-awards/award-type")
+                      .sessionAttr(CASE, ebsCase)
                       .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
                       .param("awardTypeCode", code)))
           .hasStatus3xxRedirection()
@@ -227,6 +279,7 @@ class AwardControllerTest {
       assertThat(
               mockMvc.perform(
                   post("/case/outcome-and-awards/award-type")
+                      .sessionAttr(CASE, ebsCase)
                       .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
                       .param("awardTypeCode", "")))
           .hasStatusOk()
@@ -268,6 +321,7 @@ class AwardControllerTest {
       assertThat(
               mockMvc.perform(
                   post("/case/outcome-and-awards/award-type")
+                      .sessionAttr(CASE, ebsCase)
                       .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
                       .param("awardTypeCode", "UNKNOWN")))
           .hasStatusOk()
@@ -313,6 +367,7 @@ class AwardControllerTest {
       assertThat(
               mockMvc.perform(
                   post("/case/outcome-and-awards/award-type")
+                      .sessionAttr(CASE, ebsCase)
                       .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
                       .param("awardTypeCode", "NEW_AWARD")))
           .hasStatusOk()
@@ -338,6 +393,241 @@ class AwardControllerTest {
 
       verify(awardTypeValidator).validate(any(AwardTypeForm.class), any());
       verify(lookupService).getAwardTypes();
+    }
+  }
+
+  @Nested
+  @DisplayName("GET: /case/outcome-and-awards/cost-award")
+  class CostAwardGetTests {
+
+    @Test
+    void getNewCostAwardPreservesSelectedAwardMetadataAndInitialisesTotals() {
+      final AwardTypeForm awardTypeForm = new AwardTypeForm();
+      awardTypeForm.setAwardTypeCode("COST_AGR");
+      awardTypeForm.setAwardType("COST");
+      awardTypeForm.setDescription("Cost");
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/cost-award")
+                      .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasViewName("application/cost-award")
+          .model()
+          .containsEntry("totalPreCertificateCosts", "0.00")
+          .containsEntry("totalCertificateCostsAwarded", "0.00")
+          .containsEntry("totalCostsAwarded", "0.00")
+          .hasEntrySatisfying(
+              "costAward",
+              value ->
+                  assertThat(value)
+                      .extracting(
+                          "awardCode",
+                          "awardType",
+                          "description",
+                          "laaFundedLegalCosts",
+                          "otherPreCertificateCosts",
+                          "laaRate",
+                          "marketRate",
+                          "interestRate")
+                      .containsExactly(
+                          "COST_AGR", "COST", "Cost", "0.00", "0.00", "0.00", "0.00", "0.00"));
+
+      verify(lookupService).getCommonValues(COMMON_VALUE_AWARD_ASSESSMENT_STATUS);
+    }
+
+    @Test
+    void getNewCostAwardWithNonCostSessionAwardTypeReturnsToOverview() {
+      final AwardTypeForm awardTypeForm = new AwardTypeForm();
+      awardTypeForm.setAwardTypeCode("DAMAGE_AGR");
+      awardTypeForm.setAwardType("DAMAGE");
+      awardTypeForm.setDescription("Financial Settlement");
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/cost-award")
+                      .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+    }
+
+    @Test
+    void getNewCostAwardWithoutSelectedAwardMetadataReturnsToOverview() {
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/cost-award")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+    }
+
+    @Test
+    void getExistingCostAwardLoadsPersistedValues() {
+      final CostAwardDetail award =
+          new CostAwardDetail()
+              .id(7)
+              .awardCode("COST")
+              .awardType("COST")
+              .description("Cost")
+              .dateOfOrder(new Date())
+              .awardAmount(new java.math.BigDecimal("123.45"))
+              .awardedBy("COURT");
+      when(caseOutcomeService.getCostAward("300000001", 123, 7)).thenReturn(Optional.of(award));
+      final CostAwardFormData formData = new CostAwardFormData();
+      formData.setId(7);
+      formData.setLaaFundedLegalCosts("123.45");
+      when(costAwardMapper.toCostAwardFormData(award)).thenReturn(formData);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/cost-award/7")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasViewName("application/cost-award")
+          .model()
+          .hasEntrySatisfying(
+              "costAward",
+              value ->
+                  assertThat(value)
+                      .extracting("id", "laaFundedLegalCosts", "otherPreCertificateCosts")
+                      .containsExactly(7, "123.45", "0.00"));
+    }
+  }
+
+  @Nested
+  @DisplayName("POST: /case/outcome-and-awards/cost-award")
+  class CostAwardPostTests {
+
+    @Test
+    void postWithoutIdCreatesCostAward() {
+      assertThat(mockMvc.perform(validCostAwardPost()))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(caseOutcomeService)
+          .createCostAward(
+              eq("300000001"),
+              eq(user.getProvider().getId().intValue()),
+              any(CostAwardDetail.class),
+              eq(user.getLoginId()),
+              eq(caseOutcome));
+    }
+
+    @Test
+    void postWithoutPermissionRedirectsForReadOnlyCase() {
+      ebsCase.setAvailableFunctions(List.of(FunctionConstants.VIEW_CASE_OUTCOME));
+
+      assertThat(mockMvc.perform(validCostAwardPost()))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(caseOutcomeService, never()).createCostAward(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void postWithIdUpdatesCostAward() {
+      assertThat(mockMvc.perform(validCostAwardPost().param("id", "7")))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(caseOutcomeService)
+          .updateCostAward(
+              eq("300000001"),
+              eq(user.getProvider().getId().intValue()),
+              eq(7),
+              any(CostAwardFormData.class),
+              eq(user.getLoginId()));
+    }
+
+    @Test
+    void postWithCalculateRedisplaysCostAwardPageWithoutSaving() {
+      assertThat(mockMvc.perform(validCostAwardPost().param("action", "calculate")))
+          .hasViewName("application/cost-award")
+          .model()
+          .containsEntry("totalPreCertificateCosts", "3.00")
+          .containsEntry("totalCertificateCostsAwarded", "7.00")
+          .containsEntry("totalCostsAwarded", "10.00");
+
+      verify(caseOutcomeService, never()).createCostAward(any(), any(), any(), any(), any());
+      verify(caseOutcomeService, never()).updateCostAward(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void postWithCalculateOnlyValidatesCostAmounts() {
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/cost-award")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("action", "calculate")
+                      .param("laaFundedLegalCosts", "1.50")
+                      .param("marketRate", "2.25")))
+          .hasViewName("application/cost-award")
+          .model()
+          .doesNotHaveErrors()
+          .containsEntry("totalPreCertificateCosts", "1.50")
+          .containsEntry("totalCertificateCostsAwarded", "2.25")
+          .containsEntry("totalCostsAwarded", "3.75");
+
+      verify(costAwardValidator).validateCostAmounts(any(CostAwardFormData.class), any());
+      verify(costAwardValidator, never()).validate(any(), any());
+    }
+
+    @Test
+    void invalidPostRedisplaysCostAwardPage() {
+      doAnswer(
+              invocation -> {
+                invocation
+                    .getArgument(1, Errors.class)
+                    .rejectValue("dateOfOrder", "invalid.format", "Invalid date");
+                return null;
+              })
+          .when(costAwardValidator)
+          .validate(any(), any());
+
+      assertThat(mockMvc.perform(validCostAwardPost()))
+          .hasViewName("application/cost-award")
+          .model()
+          .hasErrors();
+    }
+
+    @Test
+    void apiFailureRedisplaysCostAwardPageWithError() {
+      doThrow(new CaabApiClientException("API failure"))
+          .when(caseOutcomeService)
+          .createCostAward(any(), any(), any(), any(), any());
+
+      assertThat(mockMvc.perform(validCostAwardPost()))
+          .hasViewName("application/cost-award")
+          .model()
+          .hasErrors();
+    }
+
+    @Test
+    void postWithoutIdRejectsAwardTypeDetailsThatDoNotMatchTheSession() {
+      final AwardTypeForm selectedAwardType = new AwardTypeForm();
+      selectedAwardType.setAwardTypeCode("COST_AGR");
+      selectedAwardType.setAwardType("COST");
+      selectedAwardType.setDescription("Different");
+
+      assertThat(
+              mockMvc.perform(validCostAwardPost().sessionAttr(AWARD_TYPE_FORM, selectedAwardType)))
+          .hasViewName("application/cost-award")
+          .model()
+          .hasErrors();
+    }
+
+    @Test
+    void postWithoutIdRejectsNonCostSessionAwardType() {
+      final AwardTypeForm selectedAwardType = new AwardTypeForm();
+      selectedAwardType.setAwardTypeCode("DAMAGE_AGR");
+      selectedAwardType.setAwardType("DAMAGE");
+      selectedAwardType.setDescription("Financial Settlement");
+
+      assertThat(
+              mockMvc.perform(validCostAwardPost().sessionAttr(AWARD_TYPE_FORM, selectedAwardType)))
+          .hasViewName("application/cost-award")
+          .model()
+          .hasErrors();
     }
   }
 
@@ -424,7 +714,8 @@ class AwardControllerTest {
               eq("300000001"),
               eq(user.getProvider().getId().intValue()),
               any(FinancialAwardRequest.class),
-              eq(user.getLoginId()));
+              eq(user.getLoginId()),
+              eq(caseOutcome));
     }
 
     @Nested
@@ -593,10 +884,22 @@ class AwardControllerTest {
     }
 
     @Test
+    void missingCaseOutcomeRedisplaysFinancialAwardPageWithError() {
+      doThrow(new IllegalStateException("No case outcome"))
+          .when(caseOutcomeService)
+          .createFinancialAward(any(), any(), any(), any(), any());
+
+      assertThat(mockMvc.perform(validPost()))
+          .hasViewName("application/financial-award")
+          .model()
+          .hasErrors();
+    }
+
+    @Test
     void apiFailureRedisplaysFinancialAwardPageWithError() {
       doThrow(new CaabApiClientException("API failure"))
           .when(caseOutcomeService)
-          .createFinancialAward(any(), any(), any(), any());
+          .createFinancialAward(any(), any(), any(), any(), any());
 
       assertThat(mockMvc.perform(validPost()))
           .hasViewName("application/financial-award")
@@ -825,6 +1128,29 @@ class AwardControllerTest {
         .param("awardAmount", "123.45")
         .param("interimAward", "0")
         .param("awardedBy", "COURT")
+        .sessionAttr(CASE, ebsCase)
+        .sessionAttr(USER_DETAILS, user)
+        .sessionAttr(AWARD_TYPE_FORM, selectedAwardType);
+  }
+
+  private MockHttpServletRequestBuilder validCostAwardPost() {
+    final AwardTypeForm selectedAwardType = new AwardTypeForm();
+    selectedAwardType.setAwardTypeCode("COST_AGR");
+    selectedAwardType.setAwardType("COST");
+    selectedAwardType.setDescription("Cost");
+
+    return post("/case/outcome-and-awards/cost-award")
+        .param("awardCode", "COST_AGR")
+        .param("awardType", "COST")
+        .param("description", "Cost")
+        .param("dateOfOrder", "01/01/2025")
+        .param("courtAssessmentStatus", "A")
+        .param("laaFundedLegalCosts", "1.00")
+        .param("otherPreCertificateCosts", "2.00")
+        .param("laaRate", "3.00")
+        .param("marketRate", "4.00")
+        .param("awardedBy", "COURT")
+        .param("interestRate", "8.5")
         .sessionAttr(CASE, ebsCase)
         .sessionAttr(USER_DETAILS, user)
         .sessionAttr(AWARD_TYPE_FORM, selectedAwardType);

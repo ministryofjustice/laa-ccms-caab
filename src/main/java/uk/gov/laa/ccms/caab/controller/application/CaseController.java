@@ -71,6 +71,7 @@ import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
+import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.PriorAuthorityGroup;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.EvidenceMapper;
@@ -338,12 +339,17 @@ public class CaseController {
       HttpSession session,
       Model model) {
     final List<ProceedingDetail> proceedings = ebsCase.getProceedings();
-    final Optional<CaseOutcomeDetail> caseOutcomeOpt =
-        caseOutcomeService.getCaseOutcome(
-            ebsCase.getCaseReferenceNumber(), user.getProvider().getId().intValue());
+    final Optional<CaseOutcomeDetail> localCaseOutcome =
+        hasOutcomeEditPermission(ebsCase)
+            ? getOrCreateLocalCaseOutcome(ebsCase, user)
+            : caseOutcomeService.getCaseOutcome(
+                ebsCase.getCaseReferenceNumber(), user.getProvider().getId().intValue());
+    final CaseOutcomeDetail caseOutcome =
+        localCaseOutcome.orElseGet(
+            () -> Optional.ofNullable(ebsCase.getCaseOutcome()).orElse(new CaseOutcomeDetail()));
 
     final List<ProceedingOutcomeDetail> savedOutcomes =
-        caseOutcomeOpt
+        localCaseOutcome
             .map(CaseOutcomeDetail::getProceedingOutcomes)
             .orElse(Collections.emptyList());
 
@@ -381,6 +387,10 @@ public class CaseController {
     model.addAttribute("case", ebsCase);
     model.addAttribute("proceedings", proceedings);
     model.addAttribute("resolvedOutcomes", resolvedOutcomes);
+    // Award and proceeding actions need a persisted local outcome, so a failed bootstrap is
+    // rendered read-only until the page is reloaded.
+    model.addAttribute(
+        "awardEditAllowed", hasOutcomeEditPermission(ebsCase) && localCaseOutcome.isPresent());
     model.addAttribute(
         "outcomeDocumentActionAllowed", ActionViewHelper.isOutcomeDocumentActionAllowed(ebsCase));
     model.addAttribute("clearableOutcomes", clearableOutcomes);
@@ -388,8 +398,7 @@ public class CaseController {
         "preCertificateAndLegalHelpCostsSummary",
         getPreCertificateAndLegalHelpCostsFormData(session, ebsCase.getCaseReferenceNumber()));
 
-    model.addAttribute(
-        "awards", caseOutcomeOpt.map(this::getAwards).orElse(Collections.emptyList()));
+    model.addAttribute("awards", getAwards(caseOutcome));
 
     // Documents are retrieved using the generic evidence store, keyed by case reference
     // number and the OUTCOME ccms module.
@@ -401,6 +410,35 @@ public class CaseController {
             .orElse(Collections.emptyList());
     model.addAttribute("documents", documents);
     return "application/outcome-and-awards";
+  }
+
+  /**
+   * Bootstraps the local case outcome. A failed bootstrap must not take down the summary page, so
+   * the page falls back to a read-only view of the EBS outcome.
+   */
+  private Optional<CaseOutcomeDetail> getOrCreateLocalCaseOutcome(
+      final ApplicationDetail ebsCase, final UserDetail user) {
+    try {
+      return Optional.of(
+          caseOutcomeService.getOrCreateCaseOutcome(
+              ebsCase.getCaseReferenceNumber(),
+              user.getProvider().getId().intValue(),
+              user.getLoginId(),
+              ebsCase.getCaseOutcome()));
+    } catch (CaabApiClientException | IllegalStateException ex) {
+      log.warn(
+          "Failed to bootstrap local case outcome for case {}. Falling back to EBS outcome.",
+          ebsCase.getCaseReferenceNumber(),
+          ex);
+      return Optional.empty();
+    }
+  }
+
+  private boolean hasOutcomeEditPermission(final ApplicationDetail ebsCase) {
+    return ebsCase != null
+        && ebsCase.getAvailableFunctions() != null
+        && (ebsCase.getAvailableFunctions().contains(FunctionConstants.OUTCOME_WITH_DISCHARGE)
+            || ebsCase.getAvailableFunctions().contains(FunctionConstants.OUTCOME_NO_DISCHARGE));
   }
 
   private List<BaseAwardDetail> getAwards(final CaseOutcomeDetail caseOutcome) {
@@ -609,6 +647,13 @@ public class CaseController {
       @PathVariable("index") final int index,
       HttpSession session,
       Model model) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn(
+          "Rejecting proceeding outcome form load for read-only case {}",
+          ebsCase.getCaseReferenceNumber());
+      return "redirect:/case/outcome-and-awards";
+    }
+
     List<ProceedingDetail> proceedings = ebsCase.getProceedings();
     String errorMessage = "Could not find proceeding with index: %s".formatted(index);
     Assert.notEmpty(proceedings, () -> errorMessage);
@@ -658,6 +703,13 @@ public class CaseController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @PathVariable("index") final int index,
       Model model) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn(
+          "Rejecting proceeding outcome clear form load for read-only case {}",
+          ebsCase.getCaseReferenceNumber());
+      return "redirect:/case/outcome-and-awards";
+    }
+
     final ProceedingDetail proceeding = validateProceedingIndex(ebsCase, index);
     final ProceedingOutcomeDetail localOutcome =
         resolveLocalProceedingOutcomeForDisplay(ebsCase, user, proceeding);
@@ -699,9 +751,17 @@ public class CaseController {
    */
   @PostMapping("/case/outcome-and-awards/proceeding/{index}/outcome/court-search")
   public String recordProceedingOutcomeCourtSearch(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @PathVariable("index") final int index,
       @ModelAttribute("proceedingOutcome") final ProceedingOutcomeFormData proceedingOutcome,
       HttpSession session) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn(
+          "Rejecting proceeding outcome court search for read-only case {}",
+          ebsCase.getCaseReferenceNumber());
+      return "redirect:/case/outcome-and-awards";
+    }
+
     session.setAttribute(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome);
     session.setAttribute(COURT_SEARCH_CRITERIA, new CourtSearchCriteria());
     return "redirect:/court/search?proceedingIndex=" + index;
@@ -720,6 +780,12 @@ public class CaseController {
       @ModelAttribute("proceedingOutcome") final ProceedingOutcomeFormData proceedingOutcome,
       final BindingResult bindingResult,
       final Model model) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn(
+          "Rejecting proceeding outcome save for read-only case {}",
+          ebsCase.getCaseReferenceNumber());
+      return "redirect:/case/outcome-and-awards";
+    }
 
     final ProceedingDetail proceeding = validateProceedingIndex(ebsCase, index);
 
@@ -738,7 +804,8 @@ public class CaseController {
           ebsCase.getCaseReferenceNumber(),
           user.getProvider().getId().intValue(),
           outcome,
-          user.getLoginId());
+          user.getLoginId(),
+          ebsCase.getCaseOutcome());
     } catch (CaabApiClientException ex) {
       log.warn(
           "Failed to update proceeding outcome for proceeding caseId: {}",
@@ -769,6 +836,13 @@ public class CaseController {
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @PathVariable("index") final int index) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn(
+          "Rejecting proceeding outcome clear for read-only case {}",
+          ebsCase.getCaseReferenceNumber());
+      return "redirect:/case/outcome-and-awards";
+    }
+
     final ProceedingDetail proceeding = validateProceedingIndex(ebsCase, index);
     final ProceedingOutcomeDetail localOutcome =
         resolveLocalProceedingOutcomeForDisplay(ebsCase, user, proceeding);
@@ -828,7 +902,6 @@ public class CaseController {
       final BindingResult bindingResult,
       final Model model,
       HttpSession session) {
-
     preCertificateAndLegalHelpCostsValidator.validate(
         preCertificateAndLegalHelpCosts, bindingResult);
     if (bindingResult.hasErrors()) {

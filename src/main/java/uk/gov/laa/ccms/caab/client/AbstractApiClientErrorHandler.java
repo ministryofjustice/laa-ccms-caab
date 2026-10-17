@@ -41,6 +41,13 @@ public abstract class AbstractApiClientErrorHandler {
   public <T> Mono<T> handleApiCreateError(final Throwable e, final String resourceType) {
     final String message = "Failed to create %s".formatted(resourceType);
     log.error("{}{}", message, responseBody(e), e);
+    if (e instanceof WebClientResponseException webClientResponseException) {
+      final HttpStatus httpStatus =
+          HttpStatus.resolve(webClientResponseException.getStatusCode().value());
+      if (httpStatus != null) {
+        return Mono.error(createException(message, httpStatus));
+      }
+    }
     return Mono.error(createException(message, e));
   }
 
