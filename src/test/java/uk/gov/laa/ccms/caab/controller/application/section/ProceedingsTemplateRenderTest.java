@@ -56,13 +56,16 @@ class ProceedingsTemplateRenderTest {
         render(
             "application/proceedings-confirm",
             Map.of(
-                "caseContext", CaseContext.APPLICATION,
-                "proceedingFlow", proceedingFlow(),
+                "caseContext",
+                CaseContext.APPLICATION,
+                "proceedingFlow",
+                proceedingFlow(),
                 "scopeLimitations",
                 List.of(
                     scopeLimitation(1, "Emergency scope", "Emergency wording", true),
                     scopeLimitation(2, "Standard scope", "Standard wording", false)),
-                "isSubstantiveDevolvedPowersApp", true));
+                "isSubstantiveDevolvedPowersApp",
+                true));
 
     assertThat(html).contains("Delegated functions apply");
     assertThat(inputTag(html, "delegated-functions-0"))
@@ -80,10 +83,14 @@ class ProceedingsTemplateRenderTest {
         render(
             "application/proceedings-confirm",
             Map.of(
-                "caseContext", CaseContext.APPLICATION,
-                "proceedingFlow", proceedingFlow(),
-                "scopeLimitations", List.of(scopeLimitation(1, "Standard scope", "Standard wording", false)),
-                "isSubstantiveDevolvedPowersApp", false));
+                "caseContext",
+                CaseContext.APPLICATION,
+                "proceedingFlow",
+                proceedingFlow(),
+                "scopeLimitations",
+                List.of(scopeLimitation(1, "Standard scope", "Standard wording", false)),
+                "isSubstantiveDevolvedPowersApp",
+                false));
 
     assertThat(html).doesNotContain("Delegated functions apply");
     assertThat(html).doesNotContain("delegated-functions-0");
@@ -96,10 +103,14 @@ class ProceedingsTemplateRenderTest {
         render(
             "application/proceedings-confirm",
             Map.of(
-                "caseContext", CaseContext.APPLICATION,
-                "proceedingFlow", proceedingFlow(),
-                "scopeLimitations", List.of(scopeLimitation(1, "Only scope", "Only wording", true)),
-                "isSubstantiveDevolvedPowersApp", true));
+                "caseContext",
+                CaseContext.APPLICATION,
+                "proceedingFlow",
+                proceedingFlow(),
+                "scopeLimitations",
+                List.of(scopeLimitation(1, "Only scope", "Only wording", true)),
+                "isSubstantiveDevolvedPowersApp",
+                true));
 
     assertThat(html).doesNotContain("/application/proceedings/scope-limitations/0/remove");
   }
@@ -169,7 +180,10 @@ class ProceedingsTemplateRenderTest {
   }
 
   private static ScopeLimitationDetail scopeLimitation(
-      final int id, final String code, final String wording, final boolean delegatedFunctionsApply) {
+      final int id,
+      final String code,
+      final String wording,
+      final boolean delegatedFunctionsApply) {
     return new ScopeLimitationDetail()
         .id(id)
         .scopeLimitation(new StringDisplayValue().id(code).displayValue(code))
@@ -182,7 +196,7 @@ class ProceedingsTemplateRenderTest {
     final int idIndex = html.indexOf(marker);
     assertThat(idIndex).isGreaterThanOrEqualTo(0);
     final int start = html.lastIndexOf("<input", idIndex);
-    final int end = html.indexOf(">", idIndex);
+    final int end = html.indexOf('>', idIndex);
     return html.substring(start, end + 1);
   }
 }
