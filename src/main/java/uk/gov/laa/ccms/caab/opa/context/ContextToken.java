@@ -325,10 +325,9 @@ public class ContextToken {
               + (expiredByMillis / 1000)
               + " sec. )");
       log.error("isTTLExpired ** Expired................. : true");
-      log.error("isTTLExpired ** Context Details......... : " + this);
       log.error("isTTLExpired ********************************************");
     } else {
-      log.debug("isTTLExpired [true] for context " + this);
+      log.debug("Context token has not expired");
     }
 
     return expired;

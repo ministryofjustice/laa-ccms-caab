@@ -101,6 +101,16 @@ configurations.configureEach {
     }
 }
 
+// Replaces application.yml @version@ with the project version
+processResources {
+    inputs.property('applicationVersion', project.version.toString())
+    filesMatching('application.yml') {
+        filter {
+            it.replace('@version@', version.toString())
+        }
+    }
+}
+
 dependencies {
 
     // Renders the POA summary: an HTML template is built with Thymeleaf (already present) and
@@ -129,7 +139,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    implementation 'org.springframework.boot:spring-boot-micrometer-tracing-brave'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-aspectj'
     implementation 'org.springframework.data:spring-data-commons'
@@ -152,6 +161,10 @@ dependencies {
     implementation 'org.springframework.security:spring-security-saml2-service-provider'
 
     implementation 'uk.gov.justice.service.laa:laa-spring-boot-starter-govuk-dialect'
+
+    // Required for tracing information
+    implementation 'org.springframework.boot:spring-boot-micrometer-tracing-brave'
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
 
     // Metrics
     implementation 'org.springframework.boot:spring-boot-starter-actuator'

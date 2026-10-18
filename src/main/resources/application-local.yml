@@ -62,11 +62,11 @@ spring:
 
 logging:
   level:
-    uk.gov.laa.ccms.caab: DEBUG
+    uk.gov.laa.ccms.caab: ${APP_LOGGING_LEVEL:info}
     software:
       amazon:
         awssdk:
-          request: DEBUG
+          request: INFO
 
 os:
   api:
