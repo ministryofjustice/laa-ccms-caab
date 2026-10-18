@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.logging;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.ServletException;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
@@ -50,5 +51,28 @@ class SessionCorrelationFilterTest {
     } finally {
       MDC.remove("sessionID");
     }
+  }
+
+  @Test
+  void reusesRequestCorrelationOnAsyncRedispatchAndCleansEachThreadScope() throws Exception {
+    var request = new MockHttpServletRequest();
+    request.setAsyncSupported(true);
+    var response = new MockHttpServletResponse();
+    var filter = new SessionCorrelationFilter();
+    String[] ids = new String[2];
+    filter.doFilter(
+        request,
+        response,
+        (req, res) -> {
+          ids[0] = MDC.get("sessionID");
+          request.startAsync();
+        });
+    assertNull(MDC.get("sessionID"));
+    request.setDispatcherType(DispatcherType.ASYNC);
+    filter.doFilter(request, response, (req, res) -> ids[1] = MDC.get("sessionID"));
+    assertNotNull(ids[0]);
+    assertEquals(ids[0], ids[1]);
+    assertNull(MDC.get("sessionID"));
+    assertNull(request.getSession(false));
   }
 }

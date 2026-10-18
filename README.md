@@ -160,3 +160,7 @@ They use synthetic requests and write actual captured log lines to `build/loggin
 Do not enable request payload or SQL bind parameter logging with real personal data.
 
 Captured synthetic-request screenshots and validation scope: [logging evidence](docs/logging/README.md).
+
+Async MVC redispatches reuse the request logging ID. Micrometer context propagation and
+`spring.reactor.context-propagation=auto` carry only `sessionID` across Reactor callbacks;
+trace/span fields remain managed by tracing. Each scope restores its previous MDC values.

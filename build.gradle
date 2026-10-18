@@ -165,6 +165,7 @@ dependencies {
     // Required for tracing information
     implementation 'org.springframework.boot:spring-boot-micrometer-tracing-brave'
     implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.micrometer:context-propagation'
 
     // Metrics
     implementation 'org.springframework.boot:spring-boot-starter-actuator'

@@ -20,6 +20,8 @@ csp:
   upgrade-insecure-requests: ${CSP_UPGRADE_INSECURE_REQUESTS:true}
 
 spring:
+  reactor:
+    context-propagation: auto
   application:
     name: laa-ccms-caab
     version: "@version@"

@@ -26,7 +26,12 @@ public class SessionCorrelationFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
     String previous = MDC.get("sessionID");
     try {
-      MDC.put("sessionID", correlationId(request));
+      String id = (String) request.getAttribute(ATTRIBUTE);
+      if (id == null) {
+        id = correlationId(request);
+        request.setAttribute(ATTRIBUTE, id);
+      }
+      MDC.put("sessionID", id);
       chain.doFilter(request, response);
     } finally {
       if (previous == null) {
@@ -35,6 +40,11 @@ public class SessionCorrelationFilter extends OncePerRequestFilter {
         MDC.put("sessionID", previous);
       }
     }
+  }
+
+  @Override
+  protected boolean shouldNotFilterAsyncDispatch() {
+    return false;
   }
 
   private String correlationId(HttpServletRequest request) {

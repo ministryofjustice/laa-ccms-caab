@@ -2,24 +2,36 @@ package uk.gov.laa.ccms.caab.logging;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Map;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.logging.LogLevel;
+import org.springframework.boot.logging.LoggingInitializationContext;
 import org.springframework.boot.logging.LoggingSystem;
 import org.springframework.boot.micrometer.observation.autoconfigure.ObservationAutoConfiguration;
 import org.springframework.boot.micrometer.tracing.autoconfigure.MicrometerTracingAutoConfiguration;
 import org.springframework.boot.micrometer.tracing.brave.autoconfigure.BraveAutoConfiguration;
+import org.springframework.boot.reactor.autoconfigure.ReactorAutoConfiguration;
 import org.springframework.boot.test.context.TestComponent;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.system.CapturedOutput;
@@ -34,14 +46,37 @@ import org.springframework.core.env.StandardEnvironment;
 import org.springframework.core.env.SystemEnvironmentPropertySource;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.filter.OncePerRequestFilter;
+import reactor.core.publisher.Hooks;
+import reactor.core.publisher.Mono;
 
 /** Exercises the real logging lifecycle and HTTP tracing with the processed production YAML. */
 @ExtendWith(OutputCaptureExtension.class)
 class LoggingAcceptanceTest {
+  private boolean contextPropagationEnabled;
+
+  @BeforeEach
+  void rememberReactorHook() {
+    contextPropagationEnabled = Hooks.isAutomaticContextPropagationEnabled();
+  }
+
+  @AfterEach
+  void restoreReactorHook() {
+    if (!contextPropagationEnabled) {
+      Hooks.disableAutomaticContextPropagation();
+    }
+  }
 
   @ParameterizedTest
   @ValueSource(strings = {"default", "dev", "local"})
   void verifiesLoggingForRequest(String profile, CapturedOutput output) throws Exception {
+    LoggingSystem logging = LoggingSystem.get(getClass().getClassLoader());
+    // Reproduce an earlier Spring test context having initialized the shared Logback context.
+    logging.cleanUp();
+    logging.beforeInitialize();
+    logging.initialize(new LoggingInitializationContext(new StandardEnvironment()), null, null);
+    // Each probe must initialize logging from its own production YAML, not reuse that context.
+    logging.cleanUp();
     StandardEnvironment env = new StandardEnvironment();
     env.getPropertySources()
         .addFirst(
@@ -73,7 +108,6 @@ class LoggingAcceptanceTest {
       String version = context.getEnvironment().getRequiredProperty("spring.application.version");
       assertFalse(version.contains("@"));
       assertNotEquals("unspecified", version);
-      LoggingSystem logging = LoggingSystem.get(getClass().getClassLoader());
       assertEquals(LogLevel.WARN, logging.getLoggerConfiguration("ROOT").getEffectiveLevel());
       assertEquals(
           LogLevel.ERROR,
@@ -93,6 +127,42 @@ class LoggingAcceptanceTest {
                     .build(),
                 HttpResponse.BodyHandlers.ofString());
         assertEquals(200, response.statusCode());
+        for (String endpoint : new String[] {"async", "blocking"}) {
+          var asyncResponse =
+              client.send(
+                  HttpRequest.newBuilder(
+                          URI.create(
+                              "http://localhost:"
+                                  + context.getWebServer().getPort()
+                                  + "/logging-"
+                                  + endpoint))
+                      .GET()
+                      .build(),
+                  HttpResponse.BodyHandlers.ofString());
+          assertEquals(200, asyncResponse.statusCode(), asyncResponse.body());
+          String id = asyncResponse.body();
+          assertTrue(id.matches("[0-9a-f-]{36}"), id);
+          for (String stage : new String[] {"START", "CALLBACK"}) {
+            String callbackLine =
+                output
+                    .getOut()
+                    .lines()
+                    .filter(l -> l.contains("LOGGING_" + endpoint.toUpperCase() + "_" + stage))
+                    .findFirst()
+                    .orElseThrow();
+            assertTrue(callbackLine.contains(id), callbackLine);
+          }
+          if (endpoint.equals("async")) {
+            String redispatchLine =
+                output
+                    .getOut()
+                    .lines()
+                    .filter(l -> l.contains("LOGGING_ASYNC_REDISPATCH"))
+                    .findFirst()
+                    .orElseThrow();
+            assertTrue(redispatchLine.contains(id), redispatchLine);
+          }
+        }
       }
       String line =
           output
@@ -135,7 +205,8 @@ class LoggingAcceptanceTest {
     ObservationAutoConfiguration.class,
     BraveAutoConfiguration.class,
     MicrometerTracingAutoConfiguration.class,
-    WebMvcObservationAutoConfiguration.class
+    WebMvcObservationAutoConfiguration.class,
+    ReactorAutoConfiguration.class
   })
   static class ProbeConfiguration {
     @Bean
@@ -144,14 +215,63 @@ class LoggingAcceptanceTest {
     }
 
     @Bean
+    SessionCorrelationContext sessionCorrelationContext() {
+      return new SessionCorrelationContext();
+    }
+
+    @Bean
+    AsyncDispatchProbeFilter asyncDispatchProbeFilter() {
+      return new AsyncDispatchProbeFilter();
+    }
+
+    @Bean
     ProbeController probeController() {
       return new ProbeController();
+    }
+  }
+
+  static class AsyncDispatchProbeFilter extends OncePerRequestFilter {
+    @Override
+    protected boolean shouldNotFilterAsyncDispatch() {
+      return false;
+    }
+
+    @Override
+    protected void doFilterInternal(
+        HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+        throws ServletException, IOException {
+      if (request.getDispatcherType() == DispatcherType.ASYNC) {
+        LoggerFactory.getLogger("uk.gov.laa.ccms.caab.logging.Probe")
+            .info("LOGGING_ASYNC_REDISPATCH");
+      }
+      chain.doFilter(request, response);
     }
   }
 
   @TestComponent
   @RestController
   static class ProbeController {
+    @GetMapping("/logging-async")
+    Mono<String> asyncProbe() {
+      return completion("ASYNC");
+    }
+
+    @GetMapping("/logging-blocking")
+    String blockingProbe() {
+      return completion("BLOCKING").block();
+    }
+
+    private Mono<String> completion(String kind) {
+      String id = MDC.get("sessionID");
+      LoggerFactory.getLogger("uk.gov.laa.ccms.caab.logging.Probe").info("LOGGING_{}_START", kind);
+      return Mono.delay(Duration.ofMillis(20))
+          .map(tick -> id)
+          .doOnSuccess(
+              value ->
+                  LoggerFactory.getLogger("uk.gov.laa.ccms.caab.logging.Probe")
+                      .info("LOGGING_{}_CALLBACK", kind));
+    }
+
     @GetMapping("/logging-probe")
     String probe() {
       LoggerFactory.getLogger("uk.gov.laa.ccms.caab.logging.Probe")
