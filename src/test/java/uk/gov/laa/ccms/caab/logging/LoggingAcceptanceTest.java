@@ -55,7 +55,6 @@ import org.springframework.core.env.StandardEnvironment;
 import org.springframework.core.env.SystemEnvironmentPropertySource;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -348,7 +347,7 @@ class LoggingAcceptanceTest {
       response.sendError(500, "synthetic container error");
     }
 
-    @RequestMapping("/error")
+    @GetMapping("/error")
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     String handleError(HttpServletRequest request) {
       assertEquals(DispatcherType.ERROR, request.getDispatcherType());
