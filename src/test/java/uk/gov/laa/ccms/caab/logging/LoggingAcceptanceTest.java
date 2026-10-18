@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.logging;
 import static org.junit.jupiter.api.Assertions.*;
 
 import jakarta.servlet.DispatcherType;
+import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,6 +17,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,13 +42,21 @@ import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.tomcat.autoconfigure.servlet.TomcatServletWebServerAutoConfiguration;
 import org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration;
 import org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration;
 import org.springframework.boot.webmvc.autoconfigure.WebMvcObservationAutoConfiguration;
+import org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration;
+import org.springframework.boot.webmvc.error.ErrorController;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.core.Ordered;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.core.env.SystemEnvironmentPropertySource;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.filter.OncePerRequestFilter;
 import reactor.core.publisher.Hooks;
@@ -163,6 +175,43 @@ class LoggingAcceptanceTest {
             assertTrue(redispatchLine.contains(id), redispatchLine);
           }
         }
+        var errorResponse =
+            client.send(
+                HttpRequest.newBuilder(
+                        URI.create(
+                            "http://localhost:"
+                                + context.getWebServer().getPort()
+                                + "/logging-error"))
+                    .GET()
+                    .build(),
+                HttpResponse.BodyHandlers.ofString());
+        assertEquals(500, errorResponse.statusCode());
+        String errorId = errorResponse.body();
+        assertTrue(errorId.matches("[0-9a-f-]{36}"), errorId);
+        for (String marker : new String[] {"LOGGING_ERROR_START", "LOGGING_ERROR_HANDLER"}) {
+          String errorLine =
+              output.getOut().lines().filter(l -> l.contains(marker)).findFirst().orElseThrow();
+          assertTrue(errorLine.contains(errorId), errorLine);
+        }
+        var scopeProbe = context.getBean(DispatchScopeProbe.class);
+        assertTrue(scopeProbe.errorComplete.await(5, TimeUnit.SECONDS));
+        assertEquals(2, scopeProbe.scopes.size(), scopeProbe.scopes.toString());
+        assertTrue(
+            scopeProbe.scopes.stream()
+                .anyMatch(
+                    scope ->
+                        scope.dispatcher() == DispatcherType.REQUEST
+                            && scope.path().equals("/logging-error")));
+        assertTrue(
+            scopeProbe.scopes.stream()
+                .anyMatch(
+                    scope ->
+                        scope.dispatcher() == DispatcherType.ERROR
+                            && scope.path().equals("/error")));
+        for (var scope : scopeProbe.scopes) {
+          assertNull(scope.before(), scope.toString());
+          assertNull(scope.after(), scope.toString());
+        }
       }
       String line =
           output
@@ -197,6 +246,7 @@ class LoggingAcceptanceTest {
     }
   }
 
+  @Import(SessionCorrelationConfiguration.class)
   @TestConfiguration(proxyBeanMethods = false)
   @ImportAutoConfiguration({
     TomcatServletWebServerAutoConfiguration.class,
@@ -206,7 +256,8 @@ class LoggingAcceptanceTest {
     BraveAutoConfiguration.class,
     MicrometerTracingAutoConfiguration.class,
     WebMvcObservationAutoConfiguration.class,
-    ReactorAutoConfiguration.class
+    ReactorAutoConfiguration.class,
+    ErrorMvcAutoConfiguration.class
   })
   static class ProbeConfiguration {
     @Bean
@@ -225,9 +276,49 @@ class LoggingAcceptanceTest {
     }
 
     @Bean
+    DispatchScopeProbe dispatchScopeProbe() {
+      return new DispatchScopeProbe();
+    }
+
+    @Bean
+    FilterRegistrationBean<Filter> scopeProbeRegistration(DispatchScopeProbe probe) {
+      FilterRegistrationBean<Filter> registration =
+          new FilterRegistrationBean<>(
+              (request, response, chain) -> {
+                var http = (HttpServletRequest) request;
+                var dispatcher = http.getDispatcherType();
+                String path = http.getRequestURI();
+                String before = MDC.get("sessionID");
+                try {
+                  chain.doFilter(request, response);
+                } finally {
+                  if (path.equals("/logging-error") || dispatcher == DispatcherType.ERROR) {
+                    probe.scopes.add(
+                        new DispatchScope(path, dispatcher, before, MDC.get("sessionID")));
+                    if (dispatcher == DispatcherType.ERROR) {
+                      probe.errorComplete.countDown();
+                    }
+                  }
+                }
+              });
+      registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+      registration.setDispatcherTypes(
+          DispatcherType.REQUEST, DispatcherType.ASYNC, DispatcherType.ERROR);
+      registration.setAsyncSupported(true);
+      return registration;
+    }
+
+    @Bean
     ProbeController probeController() {
       return new ProbeController();
     }
+  }
+
+  record DispatchScope(String path, DispatcherType dispatcher, String before, String after) {}
+
+  static class DispatchScopeProbe {
+    final ConcurrentLinkedQueue<DispatchScope> scopes = new ConcurrentLinkedQueue<>();
+    final CountDownLatch errorComplete = new CountDownLatch(1);
   }
 
   static class AsyncDispatchProbeFilter extends OncePerRequestFilter {
@@ -250,7 +341,21 @@ class LoggingAcceptanceTest {
 
   @TestComponent
   @RestController
-  static class ProbeController {
+  static class ProbeController implements ErrorController {
+    @GetMapping("/logging-error")
+    void triggerError(HttpServletResponse response) throws IOException {
+      LoggerFactory.getLogger("uk.gov.laa.ccms.caab.logging.Probe").info("LOGGING_ERROR_START");
+      response.sendError(500, "synthetic container error");
+    }
+
+    @RequestMapping("/error")
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    String handleError(HttpServletRequest request) {
+      assertEquals(DispatcherType.ERROR, request.getDispatcherType());
+      LoggerFactory.getLogger("uk.gov.laa.ccms.caab.logging.Probe").info("LOGGING_ERROR_HANDLER");
+      return String.valueOf(MDC.get("sessionID"));
+    }
+
     @GetMapping("/logging-async")
     Mono<String> asyncProbe() {
       return completion("ASYNC");

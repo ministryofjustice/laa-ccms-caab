@@ -15,6 +15,8 @@ Verified with no active profile, `dev`, and `local`:
 - Build version substitution, including a version-only incremental rebuild to
   `9.8.7-logging-review` and restoration of the repository version.
 - Asynchronous Mono completions, blocking reactive callbacks and MVC async redispatch retain the request ID.
+- Real container ERROR dispatch to `/error` retains the ID and clears MDC in each dispatch scope.
+- Concurrent invalidation during session reads/writes falls back to a request-only ID.
 - Session correlation reuse, no session creation for stateless calls, and MDC cleanup
   on failures. Raw authentication session IDs are never logged by this filter.
 

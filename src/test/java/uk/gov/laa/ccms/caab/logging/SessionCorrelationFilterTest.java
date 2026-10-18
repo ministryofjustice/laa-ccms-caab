@@ -1,10 +1,15 @@
 package uk.gov.laa.ccms.caab.logging;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import jakarta.servlet.DispatcherType;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.MDC;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -74,5 +79,37 @@ class SessionCorrelationFilterTest {
     assertEquals(ids[0], ids[1]);
     assertNull(MDC.get("sessionID"));
     assertNull(request.getSession(false));
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void sessionInvalidatedDuringAttributeAccessDoesNotAbortRequest(boolean invalidateOnRead)
+      throws Exception {
+    HttpSession session = mock(HttpSession.class);
+    if (invalidateOnRead) {
+      when(session.getAttribute(anyString())).thenThrow(new IllegalStateException("invalidated"));
+    } else {
+      doThrow(new IllegalStateException("invalidated"))
+          .when(session)
+          .setAttribute(anyString(), any());
+    }
+    var request = spy(new MockHttpServletRequest());
+    request.setSession(session);
+    var response = new MockHttpServletResponse();
+    var filter = new SessionCorrelationFilter();
+    String[] ids = new String[2];
+    filter.doFilter(request, response, (req, res) -> ids[0] = MDC.get("sessionID"));
+    assertNotNull(ids[0]);
+    assertTrue(ids[0].matches("[0-9a-f-]{36}"));
+    assertNull(MDC.get("sessionID"));
+    request.setDispatcherType(DispatcherType.ERROR);
+    request.setAttribute(RequestDispatcher.ERROR_REQUEST_URI, "/logging-error");
+    filter.doFilter(request, response, (req, res) -> ids[1] = MDC.get("sessionID"));
+    assertEquals(ids[0], ids[1]);
+    assertNull(MDC.get("sessionID"));
+    verify(request, never()).getSession();
+    verify(request, never()).getSession(true);
+    // The redispatch reuses the request attribute, even though its session is invalid.
+    verify(request, times(1)).getSession(false);
   }
 }

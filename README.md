@@ -164,3 +164,7 @@ Captured synthetic-request screenshots and validation scope: [logging evidence](
 Async MVC redispatches reuse the request logging ID. Micrometer context propagation and
 `spring.reactor.context-propagation=auto` carry only `sessionID` across Reactor callbacks;
 trace/span fields remain managed by tracing. Each scope restores its previous MDC values.
+
+Correlation is reapplied for container `ERROR` dispatches as well as `REQUEST` and `ASYNC`.
+If a session is concurrently invalidated during logout, logging falls back to an opaque
+request-only ID without creating another session or aborting request processing.
