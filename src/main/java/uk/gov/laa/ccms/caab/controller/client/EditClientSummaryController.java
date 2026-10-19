@@ -30,8 +30,8 @@ import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
 /**
@@ -74,13 +74,12 @@ public class EditClientSummaryController extends AbstractClientSummaryController
       // if session contains clientDetails
       final ClientDetail clientInformation =
           clientService
-              .getClient(
-                  activeCase.getClientReferenceNumber(), user.getLoginId(), user.getUserType())
+              .getClient(activeCase.getClientReferenceNumber())
               .blockOptional()
               .orElseThrow(() -> new CaabApplicationException("Failed to retrieve client"));
 
       // map data to the view
-      clientFlowFormData = clientDetailsMapper.toClientFlowFormData(clientInformation.getDetails());
+      clientFlowFormData = clientDetailsMapper.toClientFlowFormData(clientInformation);
       clientFlowFormData.setAction(ACTION_EDIT);
       session.setAttribute(CLIENT_FLOW_CONTEXT, clientFlowContext);
       session.setAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);

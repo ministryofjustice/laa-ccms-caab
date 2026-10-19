@@ -51,7 +51,17 @@ public final class DateUtils {
    */
   public static String convertToComponentDate(Date date) {
     LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-    return localDate.format(COMPONENT_DATE_FORMATTER);
+    return convertToComponentDate(localDate);
+  }
+
+  /**
+   * Converts a {@link LocalDate} to a string in "dd/MM/yyyy" format.
+   *
+   * @param date the {@link LocalDate} to convert
+   * @return the corresponding date string in "dd/MM/yyyy" format
+   */
+  public static String convertToComponentDate(LocalDate date) {
+    return date.format(COMPONENT_DATE_FORMATTER);
   }
 
   /**

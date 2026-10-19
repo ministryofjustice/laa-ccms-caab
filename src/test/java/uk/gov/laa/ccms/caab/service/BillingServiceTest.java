@@ -46,6 +46,7 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetail;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.data.model.BaseProvider;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.StatementOfAccountBills;
 import uk.gov.laa.ccms.data.model.StatementOfAccountDetail;
 import uk.gov.laa.ccms.data.model.StatementOfAccountDetails;
@@ -54,7 +55,6 @@ import uk.gov.laa.ccms.data.model.StatementOfAccountInvoiceList;
 import uk.gov.laa.ccms.data.model.TaxRateLookupDetail;
 import uk.gov.laa.ccms.data.model.TaxRateLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceDataResponse;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceDetail;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceResponse;
@@ -1047,7 +1047,7 @@ class BillingServiceTest {
     }
 
     private void noDraftBill() {
-      when(clientService.getClient(any(), any(), any())).thenReturn(Mono.just(new ClientDetail()));
+      when(clientService.getClient(any())).thenReturn(Mono.just(new ClientDetail()));
       when(caabApiClient.createBill(any(), any())).thenReturn(Mono.empty());
     }
 
@@ -1160,7 +1160,7 @@ class BillingServiceTest {
               Mono.just(
                   new InvoiceDataResponse()
                       .opaResponse(List.of(entity("global", "BILL_TYPE", "CLAIM")))));
-      when(clientService.getClient(any(), any(), any())).thenReturn(Mono.just(new ClientDetail()));
+      when(clientService.getClient(any())).thenReturn(Mono.just(new ClientDetail()));
       doThrow(new CaabApplicationException("connector unreachable"))
           .when(assessmentService)
           .startAssessment(any(), any(), any(), any(), eq(false), any(), any());
