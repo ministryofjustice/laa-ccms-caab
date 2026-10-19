@@ -133,7 +133,7 @@ public interface AssessmentMapper {
     // sent them, and the billing rulebase (which the bill and POA journeys both run) does not
     // declare LINKED_CASE_ID / LINKED_CASE_OWNER at all - sending an entity it does not know
     // breaks the interview load.
-    if (!isMeansAssessment(context) && !isFinancialAssessment(context)) {
+    if (isMeritsAssessment(context)) {
       entityTypes.add(toAssessmentEntityTypeDetailLinkedCase(context));
     }
 
@@ -147,6 +147,10 @@ public interface AssessmentMapper {
    * @return true if the context is mapping the means rulebase
    */
   private boolean isMeansAssessment(final AssessmentMappingContext context) {
+    if (context.getRulebase() != null) {
+      return AssessmentRulebase.MEANS.equals(context.getRulebase());
+    }
+
     return Optional.ofNullable(context.getAssessment())
         .map(AssessmentDetail::getName)
         .filter(name -> name.equalsIgnoreCase(AssessmentRulebase.MEANS.getName()))
@@ -171,6 +175,17 @@ public interface AssessmentMapper {
         .map(AssessmentRulebase::findByName)
         .filter(AssessmentRulebase::isFinancialAssessment)
         .isPresent();
+  }
+
+  /**
+   * Determines whether the assessment being mapped is the merits rulebase, which alone declares the
+   * linked cases and the default flags the other rulebases are not sent.
+   *
+   * @param context the assessment mapping context
+   * @return true if the context is mapping the merits rulebase
+   */
+  private boolean isMeritsAssessment(final AssessmentMappingContext context) {
+    return !isMeansAssessment(context) && !isFinancialAssessment(context);
   }
 
   /**
@@ -236,7 +251,7 @@ public interface AssessmentMapper {
       // whose target table is absent fails the seed with OPA-DATA-108. This guard must stay in step
       // with the entity list in toAssessmentEntityTypeList: a link without its table, or a table
       // without its link, both break the load.
-      if (!isMeansAssessment(context) && !isFinancialAssessment(context)) {
+      if (isMeritsAssessment(context)) {
         final List<LinkedCaseDetail> linkedCases =
             getAssessmentLinkedCases(context.getApplication());
 
@@ -649,6 +664,10 @@ public interface AssessmentMapper {
                   : context.getAllocatedCostLimit().toPlainString()));
     }
 
+    if (isMeritsAssessment(context)) {
+      attributes.addAll(meritsDefaultAttributes());
+    }
+
     return attributes;
   }
 
@@ -723,8 +742,15 @@ public interface AssessmentMapper {
         toSurnameAttribute(client, SURNAME),
         toSurnameAtBirthAttribute(client, SURNAME_AT_BIRTH),
         toUserProviderFirmIdAttribute(user, USER_PROVIDER_FIRM_ID),
-        toUserTypeAttribute(user, USER_TYPE),
-        // merits "required non-mandatory evidence" / declaration flags, prepopulated false
+        toUserTypeAttribute(user, USER_TYPE));
+  }
+
+  /**
+   * Flags the merits rulebase defaults to false so it does not ask for them. The billing rulebases
+   * declare none of them, and the legacy PUI seeds them for no rulebase at all.
+   */
+  private List<AssessmentAttributeDetail> meritsDefaultAttributes() {
+    return List.of(
         toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_AMD_CORR),
         toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_AMD_COUNSEL),
         toFalseDefaultAttribute(AssessmentAttribute.RNON_MAND_EVIDENCE_AMD_CT_ORDE),
@@ -752,8 +778,8 @@ public interface AssessmentMapper {
         toFalseDefaultAttribute(AssessmentAttribute.HRA_ISSUES_SIGNIFICANT));
   }
 
-  // Shared mapping for attributes prepopulated with a constant "false" (e.g. the merits
-  // required-non-mandatory-evidence and declaration flags), mirroring old PUI's prepop.
+  // Shared mapping for attributes prepopulated with a constant "false" (the merits
+  // required-non-mandatory-evidence and declaration flags).
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", constant = "false")
   @Mapping(target = "name", source = "attribute")

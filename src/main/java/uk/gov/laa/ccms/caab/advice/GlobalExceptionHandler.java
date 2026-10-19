@@ -15,6 +15,9 @@ import uk.gov.laa.ccms.caab.constants.SessionConstants;
 @Slf4j
 public class GlobalExceptionHandler {
 
+  static final String GENERIC_ERROR_MESSAGE =
+      "An unexpected error occurred. Please contact support if the problem continues.";
+
   /**
    * Handles all exceptions globally and renders the default error page.
    *
@@ -25,10 +28,10 @@ public class GlobalExceptionHandler {
    */
   @ExceptionHandler(Exception.class)
   public String handleException(Model model, HttpSession session, Exception exception) {
-    log.error("Exception caught by GlobalExceptionHandler: {}", exception.getMessage(), exception);
+    log.error("Exception caught by GlobalExceptionHandler", exception);
     model.addAttribute(
         SessionConstants.USER_DETAILS, session.getAttribute(SessionConstants.USER_DETAILS));
-    model.addAttribute("error", exception.getLocalizedMessage());
+    model.addAttribute("error", GENERIC_ERROR_MESSAGE);
     model.addAttribute("errorTime", System.currentTimeMillis());
     return "error";
   }

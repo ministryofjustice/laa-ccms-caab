@@ -461,8 +461,10 @@ public class LookupService {
     return List.of(
         Pair.of(
             "contactTitle",
-            getCommonValue(
-                COMMON_VALUE_CONTACT_TITLE, clientFlowFormData.getBasicDetails().getTitle())),
+            StringUtils.hasText(clientFlowFormData.getBasicDetails().getTitle())
+                ? getCommonValue(
+                    COMMON_VALUE_CONTACT_TITLE, clientFlowFormData.getBasicDetails().getTitle())
+                : Mono.just(Optional.of(new CommonLookupValueDetail()))),
         Pair.of(
             "countryOfOrigin",
             getCountry(clientFlowFormData.getBasicDetails().getCountryOfOrigin())),

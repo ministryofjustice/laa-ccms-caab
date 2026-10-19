@@ -1290,6 +1290,32 @@ public class AssessmentService {
       final UserDetail user,
       final boolean isReassessment,
       final BigDecimal allocatedCostLimit) {
+    startAssessment(
+        application, assessmentRulebase, client, user, isReassessment, allocatedCostLimit, null);
+  }
+
+  /**
+   * Starts a new assessment, seeding it with the answers copied from another bill.
+   *
+   * @param application the application detail for the assessment
+   * @param assessmentRulebase the rulebase for the assessment
+   * @param client the client detail for the assessment
+   * @param user the user detail initiating the assessment
+   * @param isReassessment whether this is the standalone means reassessment journey
+   * @param allocatedCostLimit the cost limit allocated to the provider
+   * @param copiedAnswers the answers from a copied bill, or null when no bill is being copied. A
+   *     non-null list - empty included - means a copy, so the pre-population is rebuilt rather than
+   *     preserved and the answers fill the values the case build left empty, matching the legacy
+   *     CopyBill, which also keeps what the case supplied
+   */
+  public void startAssessment(
+      final ApplicationDetail application,
+      final AssessmentRulebase assessmentRulebase,
+      final ClientDetail client,
+      final UserDetail user,
+      final boolean isReassessment,
+      final BigDecimal allocatedCostLimit,
+      final List<OpaEntity> copiedAnswers) {
 
     final String providerId = user.getProvider().getId().toString();
     final String referenceId = application.getCaseReferenceNumber();
@@ -1311,7 +1337,8 @@ public class AssessmentService {
         findOrCreate(providerId, referenceId, assessmentRulebase.getName());
     // Fetch the prepop only when the assessment is COMPLETE - it is only needed to decide
     // preservation, so skipping it on the common path avoids an extra assessment-api call.
-    if (existingAssessment.getId() != null
+    if (copiedAnswers == null
+        && existingAssessment.getId() != null
         && COMPLETE.getStatus().equalsIgnoreCase(existingAssessment.getStatus())) {
       final AssessmentDetail existingPrepop =
           findOrCreate(providerId, referenceId, assessmentRulebase.getPrePopAssessmentName());
@@ -1333,7 +1360,13 @@ public class AssessmentService {
 
     // start new assessment
     startNewAssessment(
-        assessmentRulebase, application, client, user, isReassessment, allocatedCostLimit);
+        assessmentRulebase,
+        application,
+        client,
+        user,
+        isReassessment,
+        allocatedCostLimit,
+        copiedAnswers);
   }
 
   /**
@@ -1390,7 +1423,8 @@ public class AssessmentService {
       final ClientDetail client,
       final UserDetail user,
       final boolean isReassessment,
-      final BigDecimal allocatedCostLimit) {
+      final BigDecimal allocatedCostLimit,
+      final List<OpaEntity> copiedAnswers) {
     log.debug("Name - {}, AssessmentType - {}", user.getUsername(), assessmentRulebase.getType());
     final String referenceId = application.getCaseReferenceNumber();
     final String providerId = user.getProvider().getId().toString();
@@ -1420,7 +1454,8 @@ public class AssessmentService {
     // stale one is deleted and rebuilt as a fresh insert. An unchanged prepop is left untouched so
     // its checkpoint continues to drive OPA RESUME.
     if (prepopAssessment.getId() != null
-        && isAssessmentCheckpointToBeDeleted(application, prepopAssessment)) {
+        && (copiedAnswers != null
+            || isAssessmentCheckpointToBeDeleted(application, prepopAssessment))) {
       deleteAssessments(
               user, List.of(assessmentRulebase.getPrePopAssessmentName()), referenceId, null)
           .block();
@@ -1469,6 +1504,9 @@ public class AssessmentService {
       mergeEbsAssessmentData(assessment, ebsAssessmentData, true);
       mergeEbsAssessmentData(assessment, ebsAssessmentData, false);
     }
+
+    mergeCopiedAssessmentData(prepopAssessment, copiedAnswers);
+    mergeCopiedAssessmentData(assessment, copiedAnswers);
 
     // An amend-case assessment must not reuse the answers the rulebase marks "Do Not Reuse"
     // (merits)
@@ -1733,6 +1771,16 @@ public class AssessmentService {
     return null;
   }
 
+  private void mergeCopiedAssessmentData(
+      final AssessmentDetail assessment, final List<OpaEntity> opaEntities) {
+    if (opaEntities == null) {
+      return;
+    }
+    opaEntities.stream()
+        .filter(Objects::nonNull)
+        .forEach(opaEntity -> mergeOpaEntityIntoAssessment(assessment, opaEntity));
+  }
+
   private void mergeOpaEntityIntoAssessment(
       final AssessmentDetail assessment, final OpaEntity opaEntity) {
     if (opaEntity.getEntityName() == null || opaEntity.getInstances() == null) {
@@ -1948,9 +1996,12 @@ public class AssessmentService {
       return labelMatch;
     }
 
-    // caab labels a linked case by LSC reference, EBS by a different internal id, so labels never
-    // match. Reconcile a single linked case by position (multiple are left unmatched, not guessed).
-    if (LINKED_CASE.getType().equalsIgnoreCase(entityType.getName()) && entities.size() == 1) {
+    // caab labels a linked case by LSC reference and the global instance by case reference, where
+    // EBS labels them its own way, so labels need not match. Reconcile a single instance by
+    // position (multiple are left unmatched, not guessed).
+    if ((LINKED_CASE.getType().equalsIgnoreCase(entityType.getName())
+            || GLOBAL.getType().equalsIgnoreCase(entityType.getName()))
+        && entities.size() == 1) {
       return entities.getFirst();
     }
 

@@ -9,7 +9,8 @@ import org.springframework.stereotype.Component;
 public class AvApiClientErrorHandler {
 
   /** Message to return in an exception when a virus has been found. */
-  protected static final String VIRUS_FOUND_MSG = "Virus found by av scanning service: %s";
+  protected static final String VIRUS_FOUND_MSG =
+      "Virus found by av scanning service. File has not been uploaded.";
 
   /**
    * Message to return in an exception when an error has occurred while calling the external
@@ -38,8 +39,7 @@ public class AvApiClientErrorHandler {
    * @throws AvApiVirusFoundException wrapping the response from ClamAv.
    */
   public void handleVirusFoundError(final String responseMsg) throws AvApiVirusFoundException {
-    final String message = VIRUS_FOUND_MSG.formatted(responseMsg);
-    log.error(message);
-    throw new AvApiVirusFoundException(message);
+    log.error("Virus found by av scanning service with response: {}", responseMsg);
+    throw new AvApiVirusFoundException(VIRUS_FOUND_MSG);
   }
 }

@@ -17,10 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
-import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
-import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.SoaFigureColumn;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
@@ -28,7 +25,6 @@ import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
-import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -36,6 +32,9 @@ import uk.gov.laa.ccms.caab.model.BillCreate;
 import uk.gov.laa.ccms.caab.model.Bills;
 import uk.gov.laa.ccms.caab.model.CostEntryDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
+import uk.gov.laa.ccms.caab.model.OpaAttribute;
+import uk.gov.laa.ccms.caab.model.OpaEntity;
+import uk.gov.laa.ccms.caab.model.OpaInstance;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetail;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.data.model.BaseProvider;
@@ -50,11 +49,10 @@ import uk.gov.laa.ccms.data.model.TaxRateLookupDetail;
 import uk.gov.laa.ccms.data.model.TaxRateLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.BillDetail;
+import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceDataResponse;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceDetail;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceResponse;
-import uk.gov.laa.ccms.soa.gateway.model.OpaEntity;
-import uk.gov.laa.ccms.soa.gateway.model.OpaInstance;
 
 /**
  * Service responsible for building the Case Statement of Account display from the per-firm
@@ -98,6 +96,7 @@ public class BillingService {
   private final SoaApiClient soaApiClient;
   private final SoaApplicationMapper soaApplicationMapper;
   private final AssessmentService assessmentService;
+  private final ClientService clientService;
 
   /**
    * Retrieve and build the statement of account display for the supplied case.
@@ -462,54 +461,63 @@ public class BillingService {
    * carrying another bill's copies forward would seed stale proceedings and opponents. Emptied,
    * they are re-populated from the case when the assessment starts.
    *
-   * @param caseReferenceNumber the case reference number.
+   * @param ebsCase the case the bill belongs to.
    * @param providerId the provider the new draft belongs to.
    * @param billingId the billing incident id of the bill being copied.
+   * @param statementOfAccount the statement of account the allocated cost limit comes from.
    * @param user the logged-in user.
    */
   public void copyBill(
-      final String caseReferenceNumber,
+      final ApplicationDetail ebsCase,
       final String providerId,
       final String billingId,
+      final StatementOfAccountDisplay statementOfAccount,
       final UserDetail user) {
+
+    final String caseReferenceNumber = ebsCase.getCaseReferenceNumber();
+
+    if (getDraftBill(caseReferenceNumber, providerId) != null) {
+      throw new CaabApplicationException(
+          "Cannot copy onto case %s, which already holds a draft bill"
+              .formatted(caseReferenceNumber));
+    }
 
     final InvoiceDataResponse invoiceData =
         soaApiClient.getInvoiceData(billingId, user.getLoginId(), user.getUserType()).block();
 
-    final AssessmentDetail prepop =
-        new AssessmentDetail()
-            .name(AssessmentRulebase.BILLING.getPrePopAssessmentName())
-            .caseReferenceNumber(caseReferenceNumber)
-            .providerId(providerId)
-            .status(AssessmentStatus.INCOMPLETE.getStatus())
-            .entityTypes(toAssessmentEntityTypes(invoiceData));
+    final ClientDetail client =
+        clientService
+            .getClient(ebsCase.getClient().getReference(), user.getLoginId(), user.getUserType())
+            .block();
+    if (client == null) {
+      throw new CaabApplicationException("Failed to retrieve client details");
+    }
 
-    assessmentService.saveAssessment(user, prepop).block();
+    assessmentService.startAssessment(
+        ebsCase,
+        AssessmentRulebase.BILLING,
+        client,
+        user,
+        false,
+        getAllocatedCostLimit(statementOfAccount, ebsCase),
+        copiedEntities(invoiceData));
 
     createDraftBillIfAbsent(caseReferenceNumber, providerId, user);
   }
 
   /**
-   * Maps the OPA entities EBS returns for an invoice onto the assessment entity types the
-   * pre-population is held in. Entity types on the exclusion list keep their place but carry no
-   * entities, exactly as the legacy replaces their contents with an empty map.
+   * The copied bill's entities, less the ones the legacy CopyBill empties: they belong to the case
+   * as it stands now, so the pre-population keeps the ones built from it.
    */
-  private List<AssessmentEntityTypeDetail> toAssessmentEntityTypes(
-      final InvoiceDataResponse invoiceData) {
+  private List<OpaEntity> copiedEntities(final InvoiceDataResponse invoiceData) {
 
     if (invoiceData == null || invoiceData.getOpaResponse() == null) {
       return List.of();
     }
 
     return invoiceData.getOpaResponse().stream()
-        .map(
-            entity ->
-                new AssessmentEntityTypeDetail()
-                    .name(entity.getEntityName())
-                    .entities(
-                        isCopyExcluded(entity.getEntityName())
-                            ? List.of()
-                            : toAssessmentEntities(entity)))
+        .filter(entity -> !isCopyExcluded(entity.getEntityName()))
+        .map(BillingService::toMergeableEntity)
         .toList();
   }
 
@@ -518,37 +526,36 @@ public class BillingService {
         && COPY_EXCLUDED_ENTITY_TYPES.contains(entityName.trim().toUpperCase());
   }
 
-  private List<AssessmentEntityDetail> toAssessmentEntities(final OpaEntity entity) {
+  /** EBS returns the copied bill in the gateway's OPA shape; the merge consumes the caab one. */
+  private static OpaEntity toMergeableEntity(
+      final uk.gov.laa.ccms.soa.gateway.model.OpaEntity entity) {
+    final OpaEntity merged = new OpaEntity().entityName(entity.getEntityName());
+
     if (entity.getInstances() == null) {
-      return List.of();
+      return merged;
     }
 
-    return entity.getInstances().stream()
-        .map(
-            instance ->
-                new AssessmentEntityDetail()
-                    .name(instance.getInstanceLabel())
-                    .prepopulated(true)
-                    .attributes(toAssessmentAttributes(instance)))
-        .toList();
-  }
+    for (final uk.gov.laa.ccms.soa.gateway.model.OpaInstance instance : entity.getInstances()) {
+      final OpaInstance mergedInstance =
+          new OpaInstance().instanceLabel(instance.getInstanceLabel());
 
-  private List<AssessmentAttributeDetail> toAssessmentAttributes(final OpaInstance instance) {
-    if (instance.getAttributes() == null) {
-      return List.of();
+      if (instance.getAttributes() != null) {
+        instance
+            .getAttributes()
+            .forEach(
+                attribute ->
+                    mergedInstance.addAttributesItem(
+                        new OpaAttribute()
+                            .attribute(attribute.getAttribute())
+                            .responseType(attribute.getResponseType())
+                            .responseValue(attribute.getResponseValue())
+                            .responseText(attribute.getResponseText())));
+      }
+
+      merged.addInstancesItem(mergedInstance);
     }
 
-    return instance.getAttributes().stream()
-        .map(
-            attribute ->
-                new AssessmentAttributeDetail()
-                    .name(attribute.getAttribute())
-                    .type(attribute.getResponseType())
-                    .value(attribute.getResponseValue())
-                    // The copied answers are the user's own, carried forward as pre-populated
-                    // input, which is how the legacy seeds them onto the new session.
-                    .prepopulated(true))
-        .toList();
+    return merged;
   }
 
   /**
@@ -785,7 +792,10 @@ public class BillingService {
    */
   private BigDecimal poaTotalCost(
       final PaymentOnAccountDetail poa, final Map<String, BigDecimal> taxRates) {
-    final BigDecimal net = orZero(poa.getActualNetCost());
+    final BigDecimal net = poa.getActualNetCost();
+    if (net == null) {
+      return null;
+    }
     final BigDecimal percent = taxRates.getOrDefault(poa.getVatRate(), BigDecimal.ZERO);
     return net.multiply(percent.divide(HUNDRED).add(BigDecimal.ONE)).setScale(2, RoundingMode.DOWN);
   }

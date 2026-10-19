@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.opa.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
 
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +14,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.opa.context.ContextToken;
 import uk.gov.laa.ccms.caab.opa.security.Encryptor;
 
@@ -75,5 +77,20 @@ public class SecurityUtilsTest {
 
     assertEquals(expectedReturnUrl, contextToken.getReturnUrl());
     assertEquals("CCMS_MNA05", contextToken.getInvokedForm());
+  }
+
+  @Test
+  void createContextTokenThrowsSafeMessageWhenTokenProcessingFails() throws Exception {
+    securityUtils.setEncryptor(encryptor);
+    IllegalArgumentException cause = new IllegalArgumentException("raw decrypt failure");
+    when(encryptor.decrypt("decoded-token")).thenThrow(cause);
+
+    CaabApplicationException exception =
+        assertThrows(
+            CaabApplicationException.class,
+            () -> securityUtils.createContextToken("decoded-token"));
+
+    assertEquals(SecurityUtils.CREATE_CONTEXT_TOKEN_ERROR, exception.getMessage());
+    assertEquals(cause, exception.getCause());
   }
 }

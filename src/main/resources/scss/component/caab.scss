@@ -60,6 +60,12 @@
     display: inline-block;
 }
 
+.ccms-link-disabled {
+    color: #505a5f;
+    pointer-events: none;
+    text-decoration: none;
+}
+
 // Chrome guard for the embedded OPA assessment page.
 // OPA's rulebase stylesheet (GDS.css, injected at runtime by interviews.js)
 // contains a page-global `body > div { max-width: 960px; margin: 0 auto }`

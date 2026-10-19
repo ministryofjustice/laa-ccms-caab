@@ -33,6 +33,7 @@ import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
+import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.controller.application.ApplicationTestUtils;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -300,6 +301,25 @@ public class ApplicationSearchControllerTest {
           .hasRootCauseMessage(
               "Unable to find case in EBS or application in TDS with case reference "
                   + caseReference);
+    }
+
+    @Test
+    @DisplayName("Selecting an application preserves the EBS retrieval failure as the cause")
+    void selectApplicationPreservesEbsFailureCause() throws Exception {
+      final String caseReference = "12345";
+      final EbsApiClientException ebsFailure = new EbsApiClientException("ebs unavailable");
+
+      when(applicationService.getCase(any(), any(Long.class), any())).thenThrow(ebsFailure);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/application/{case-reference-number}/view", caseReference)
+                      .sessionAttr(USER_DETAILS, user)))
+          .failure()
+          .hasCauseInstanceOf(CaabApplicationException.class)
+          .cause()
+          .hasMessage("Failed to retrieve EBS case " + caseReference)
+          .hasCause(ebsFailure);
     }
 
     @Test

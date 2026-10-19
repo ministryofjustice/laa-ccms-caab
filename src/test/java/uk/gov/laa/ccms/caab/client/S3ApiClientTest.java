@@ -122,7 +122,12 @@ public class S3ApiClientTest {
 
     s3ApiClient.uploadDocument(DOCUMENT_ID, DOCUMENT_CONTENT, "xls");
 
-    verify(s3Template).upload(any(), eq(DOCUMENT_ID + ".xls"), any());
+    ArgumentCaptor<ObjectMetadata> metadataCaptor = ArgumentCaptor.forClass(ObjectMetadata.class);
+    verify(s3Template).upload(any(), eq(DOCUMENT_ID + ".xls"), any(), metadataCaptor.capture());
+    ContentDisposition disposition =
+        ContentDisposition.parse(metadataCaptor.getValue().getContentDisposition());
+    assertTrue(disposition.isAttachment());
+    assertEquals(DOCUMENT_ID + ".xls", disposition.getFilename());
   }
 
   @Test

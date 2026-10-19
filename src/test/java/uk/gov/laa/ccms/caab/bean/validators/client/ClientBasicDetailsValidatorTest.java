@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.bean.validators.client;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -97,14 +98,12 @@ class ClientBasicDetailsValidatorTest {
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_titleRequired(String title) {
+  public void validate_titleOptional(String title) {
     basicDetails = buildBasicDetails();
     basicDetails.setTitle(title);
 
     clientBasicDetailsValidator.validate(basicDetails, errors);
-    assertTrue(errors.hasErrors());
-    assertNotNull(errors.getFieldError("title"));
-    assertEquals("required.title", errors.getFieldError("title").getCode());
+    assertNull(errors.getFieldError("title"));
   }
 
   @ParameterizedTest
