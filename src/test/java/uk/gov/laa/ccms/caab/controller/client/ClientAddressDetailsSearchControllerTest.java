@@ -94,12 +94,12 @@ public class ClientAddressDetailsSearchControllerTest {
 
     doAnswer(
             invocation -> {
-              Errors errors = (Errors) invocation.getArguments()[1];
+              Errors errors = (Errors) invocation.getArguments()[2];
               errors.rejectValue("uprn", "required.uprn", "Please complete 'UPRN'.");
               return null;
             })
         .when(addressSearchValidator)
-        .validate(any(), any());
+        .validateSelection(any(), any(), any());
 
     mockMvc
         .perform(

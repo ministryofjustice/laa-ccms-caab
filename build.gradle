@@ -221,7 +221,10 @@ tasks.withType(Checkstyle).configureEach {
  */
 tasks.register('installGitHooks', Copy) {
     from "scripts/pre-commit"
-    into "${rootProject.rootDir}/.git/hooks"
+    into(providers.exec {
+        workingDir rootProject.rootDir
+        commandLine 'git', 'rev-parse', '--git-path', 'hooks'
+    }.standardOutput.asText.map { it.trim() })
 
     // Gradle 9.x replacement for fileMode
     filePermissions {

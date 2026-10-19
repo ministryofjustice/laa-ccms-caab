@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.client;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
@@ -13,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CREATE_CLIENT_ADDRESS_FLOW;
 
 import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.AddressLookupFlowData;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
@@ -144,6 +147,50 @@ public class ClientAddressDetailsControllerTest {
   }
 
   @Test
+  void testClientDetailsAddressPostNextNormalizesManualUkPostcode() throws Exception {
+    ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
+    addressDetails.setCountry("GBR");
+    addressDetails.setPostcode("sa58ab");
+    addressDetails.setAddressLine1("Address line 1");
+    addressDetails.setCityTown("Town");
+
+    this.mockMvc
+        .perform(
+            post("/application/client/details/address")
+                .param("action", "next")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                .flashAttr("addressDetails", addressDetails))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/details/equal-opportunities-monitoring"));
+
+    assertEquals("SA5 8AB", clientFlowFormData.getAddressDetails().getPostcode());
+  }
+
+  @Test
+  void testClientDetailsAddressPostNextPreservesSearchedPostcode() throws Exception {
+    ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
+    addressDetails.setCountry("GBR");
+    addressDetails.setPostcode("sa58ab");
+    addressDetails.setAddressLine1("Address line 1");
+    addressDetails.setCityTown("Town");
+    AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+        new AddressLookupFlowData<>("create-client");
+    addressFlow.setSource(AddressLookupFlowData.Source.SEARCHED);
+
+    this.mockMvc
+        .perform(
+            post("/application/client/details/address")
+                .param("action", "next")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                .sessionAttr(CREATE_CLIENT_ADDRESS_FLOW, addressFlow)
+                .flashAttr("addressDetails", addressDetails))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/details/equal-opportunities-monitoring"));
+
+    assertEquals("sa58ab", clientFlowFormData.getAddressDetails().getPostcode());
+  }
+
+  @Test
   void testClientDetailsAddressPostValidationError() throws Exception {
     ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
 
@@ -154,7 +201,7 @@ public class ClientAddressDetailsControllerTest {
               return null;
             })
         .when(clientAddressDetailsValidator)
-        .validate(any(), any());
+        .validateForAddressComponent(any(), any());
 
     when(lookupService.getCountries()).thenReturn(Mono.just(countryLookupDetail));
 

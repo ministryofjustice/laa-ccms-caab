@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
@@ -48,7 +49,7 @@ public class AddressServiceTest {
 
     ResultsDisplay<AddressResultRowDisplay> mockDisplay = new ResultsDisplay<>();
 
-    when(ordinanceSurveyApiClient.getAddresses(postcode)).thenReturn(mockResponseMono);
+    when(ordinanceSurveyApiClient.getAddresses("SW1A 1AA")).thenReturn(mockResponseMono);
 
     ResultsDisplay<AddressResultRowDisplay> result = addressService.getAddresses(postcode);
 
@@ -65,7 +66,7 @@ public class AddressServiceTest {
 
     ResultsDisplay<AddressResultRowDisplay> mockDisplay = buildClientAddressResultsDisplay();
 
-    when(ordinanceSurveyApiClient.getAddresses(postcode)).thenReturn(mockResponseMono);
+    when(ordinanceSurveyApiClient.getAddresses("SW1A 1AA")).thenReturn(mockResponseMono);
     when(clientAddressResultDisplayMapper.toClientAddressResultsDisplay(mockResponse))
         .thenReturn(mockDisplay);
 
@@ -93,7 +94,7 @@ public class AddressServiceTest {
   }
 
   @Test
-  void filterByHouseNumber_ReturnsOriginalResults_WhenNoAddressesMatchFilter() {
+  void filterByHouseNumber_ReturnsNoAddresses_WhenNoAddressesMatchFilter() {
     String houseNameNumber = "nonexistent";
     ResultsDisplay<AddressResultRowDisplay> initialResults = buildClientAddressResultsDisplay();
 
@@ -101,7 +102,28 @@ public class AddressServiceTest {
         addressService.filterByHouseNumber(houseNameNumber, initialResults);
 
     assertNotNull(filteredResults);
-    assertEquals(initialResults.getContent(), filteredResults.getContent());
+    assertEquals(Collections.emptyList(), filteredResults.getContent());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"'', 10", "'   ', 10"})
+  void filterByHouseNumber_ReturnsAllAddresses_WhenFilterIsBlank(
+      final String houseNameNumber, final int expectedCount) {
+    ResultsDisplay<AddressResultRowDisplay> initialResults = buildClientAddressResultsDisplay();
+
+    ResultsDisplay<AddressResultRowDisplay> filteredResults =
+        addressService.filterByHouseNumber(houseNameNumber, initialResults);
+
+    assertNotNull(filteredResults);
+    assertEquals(expectedCount, filteredResults.getContent().size());
+  }
+
+  @Test
+  void getAddresses_PropagatesLookupFailure() {
+    when(ordinanceSurveyApiClient.getAddresses("SW1A 1AA"))
+        .thenReturn(Mono.error(new IllegalStateException("lookup unavailable")));
+
+    assertThrows(IllegalStateException.class, () -> addressService.getAddresses("sw1a1aa"));
   }
 
   @Test

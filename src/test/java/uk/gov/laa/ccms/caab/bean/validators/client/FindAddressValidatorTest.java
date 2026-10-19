@@ -52,47 +52,60 @@ class FindAddressValidatorTest {
 
   @ParameterizedTest
   @NullAndEmptySource
-  public void validate_countryRequired(final String country) {
-    addressDetails.setCountry(country);
+  public void validate_postcodeRequired(final String postcode) {
+    addressDetails.setPostcode(postcode);
     findAddressValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
-    assertNotNull(errors.getFieldError("country"));
-    assertEquals("required.country", errors.getFieldError("country").getCode());
+    assertNotNull(errors.getFieldError("postcode"));
+    assertEquals("required.postcode", errors.getFieldError("postcode").getCode());
+    assertEquals(1, errors.getErrorCount());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"sa58ab", "SA58AB", "SA5 8AB"})
+  public void validate_acceptsFullPostcodeWithOrWithoutSpace(final String postcode) {
+    addressDetails.setPostcode(postcode);
+    findAddressValidator.validate(addressDetails, errors);
+    assertFalse(errors.hasErrors());
+  }
+
+  @Test
+  public void validate_rejectsInvalidPostcode() {
+    addressDetails.setPostcode("SA5");
+    findAddressValidator.validate(addressDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertNotNull(errors.getFieldError("postcode"));
+    assertEquals("invalid.postcode", errors.getFieldError("postcode").getCode());
+    assertEquals("Enter a full UK postcode", errors.getFieldError("postcode").getDefaultMessage());
     assertEquals(1, errors.getErrorCount());
   }
 
   @Test
-  public void validate_countryNotUnitedKingdom() {
+  public void validate_rejectsNonUkCountryForLookup() {
     addressDetails.setCountry("USA");
     findAddressValidator.validate(addressDetails, errors);
     assertTrue(errors.hasErrors());
-    assertNotNull(errors.getFieldError("country"));
     assertEquals("required.GBR", errors.getFieldError("country").getCode());
-    assertEquals(1, errors.getErrorCount());
   }
 
-  @ParameterizedTest
-  @NullAndEmptySource
-  public void validate_houseNameNumberRequired(String houseNameNumber) {
-    addressDetails.setHouseNameNumber(houseNameNumber);
+  @Test
+  public void validate_buildingNameNumberIsOptional() {
+    addressDetails.setHouseNameNumber(null);
     findAddressValidator.validate(addressDetails, errors);
-    assertTrue(errors.hasErrors());
-    assertNotNull(errors.getFieldError("houseNameNumber"));
-    assertEquals("required.houseNameNumber", errors.getFieldError("houseNameNumber").getCode());
-    assertEquals(1, errors.getErrorCount());
+    assertFalse(errors.hasErrors());
   }
 
   @ParameterizedTest
   @CsvSource({
-    "country, , 2",
+    "country, , 1",
     "country, test, 3",
-    "country, GBR, 3",
+    "country, GBR, 2",
     "houseNameNumber, test, 2",
-    "postcode, SW1A 1AA, 3",
-    "addressLine1, test, 3",
-    "addressLine2, test, 3",
-    "cityTown, test, 3",
-    "county, test, 3"
+    "postcode, SW1A 1AA, 1",
+    "addressLine1, test, 2",
+    "addressLine2, test, 2",
+    "cityTown, test, 2",
+    "county, test, 2"
   })
   public void validate_noFixedAbode_invalid(String field, String value, int numberOfErrors) {
     addressDetails = new ClientFormDataAddressDetails();

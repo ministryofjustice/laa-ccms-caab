@@ -36,11 +36,29 @@ public class ClientAddressDetailsValidator extends AbstractClientAddressValidato
   @Override
   public void validate(Object target, Errors errors) {
     ClientFormDataAddressDetails addressDetails = (ClientFormDataAddressDetails) target;
+    validateAddressDetails(addressDetails, errors, true, false);
+  }
 
+  /** Applies the new-PUI address-entry rules without requiring a separate building field. */
+  public void validateForAddressComponent(
+      final ClientFormDataAddressDetails addressDetails, final Errors errors) {
+    validateAddressDetails(addressDetails, errors, false, true);
+  }
+
+  private void validateAddressDetails(
+      final ClientFormDataAddressDetails addressDetails,
+      final Errors errors,
+      final boolean requireHouseNameNumber,
+      final boolean requirePostcodeForAllCountries) {
     if (!addressDetails.getVulnerableClient() && !addressDetails.getNoFixedAbode()) {
       validateRequiredField("country", addressDetails.getCountry(), "Country", errors);
-      validateRequiredField(
-          "houseNameNumber", addressDetails.getHouseNameNumber(), "House name / number", errors);
+      if (requireHouseNameNumber) {
+        validateRequiredField(
+            "houseNameNumber", addressDetails.getHouseNameNumber(), "House name / number", errors);
+      }
+      if (requirePostcodeForAllCountries && !"GBR".equals(addressDetails.getCountry())) {
+        validateRequiredField("postcode", addressDetails.getPostcode(), "Postcode", errors);
+      }
       validatePostcodeFormat(addressDetails.getCountry(), addressDetails.getPostcode(), errors);
       validateRequiredField(
           "addressLine1", addressDetails.getAddressLine1(), "Address line 1", errors);

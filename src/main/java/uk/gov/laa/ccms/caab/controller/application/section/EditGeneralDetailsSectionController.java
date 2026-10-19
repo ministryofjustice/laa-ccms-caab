@@ -27,6 +27,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -68,6 +69,7 @@ import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.caab.util.PaginationUtil;
+import uk.gov.laa.ccms.caab.util.UkPostcode;
 import uk.gov.laa.ccms.caab.util.UserRoleUtil;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
@@ -132,6 +134,8 @@ public class EditGeneralDetailsSectionController {
     if (addressFlow.getSelectedAddress() != null) {
       addressService.updateAddressFormData(addressDetails, addressFlow.getSelectedAddress());
       addressFlow.setSelectedAddress(null);
+    } else if (addressFlow.getAddressDetails() == null && hasSavedAddress(addressDetails)) {
+      addressFlow.showExistingAddress();
     }
 
     addressFlow.setAddressDetails(addressDetails);
@@ -229,18 +233,24 @@ public class EditGeneralDetailsSectionController {
     }
 
     if (ACTION_FIND_ADDRESS.equals(action)) {
+      addressFlow.beginSearch(addressDetails.getPostcode(), addressDetails.getHouseNameNumber());
+      addressFlow.setAddressDetails(addressDetails);
+      session.setAttribute(CORRESPONDENCE_ADDRESS_FLOW, addressFlow);
       ResultsDisplay<AddressResultRowDisplay> addressSearchResults =
           addressService.getAddresses(addressDetails.getPostcode());
+
+      if (addressSearchResults.getContent() != null
+          && !addressSearchResults.getContent().isEmpty()) {
+        addressSearchResults =
+            addressService.filterByHouseNumber(
+                addressDetails.getHouseNameNumber(), addressSearchResults);
+      }
+      addressFlow.setSearchResults(addressSearchResults);
 
       if (addressSearchResults.getContent() == null
           || addressSearchResults.getContent().isEmpty()) {
         bindingResult.reject(
             "address.none", "Your input for address details has not returned any results");
-      } else {
-        addressSearchResults =
-            addressService.filterByHouseNumber(
-                addressDetails.getHouseNameNumber(), addressSearchResults);
-        addressFlow.setSearchResults(addressSearchResults);
       }
 
       if (bindingResult.hasErrors()) {
@@ -256,6 +266,15 @@ public class EditGeneralDetailsSectionController {
           .formatted(caseContext.getPathValue());
 
     } else {
+      if (addressFlow.getSource() != AddressLookupFlowData.Source.SEARCHED
+          && addressFlow.getSource() != AddressLookupFlowData.Source.EXISTING) {
+        if ("GBR".equals(addressDetails.getCountry())) {
+          addressDetails.setPostcode(UkPostcode.normalize(addressDetails.getPostcode()));
+        }
+        addressFlow.setSource(AddressLookupFlowData.Source.MANUAL);
+      }
+      addressFlow.setAddressDetails(addressDetails);
+      session.setAttribute(CORRESPONDENCE_ADDRESS_FLOW, addressFlow);
       if (caseContext.isAmendment()) {
         final ApplicationDetail amendmentCase = requireEbsCase(ebsCase);
         if (!UserRoleUtil.hasRole(user, UserRole.SUBMIT_AMENDMENT)) {
@@ -284,6 +303,16 @@ public class EditGeneralDetailsSectionController {
         .addDropdown(
             "caseAddressOptions", lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
         .build();
+  }
+
+  private boolean hasSavedAddress(final AddressFormData addressDetails) {
+    return StringUtils.hasText(addressDetails.getCountry())
+        || StringUtils.hasText(addressDetails.getPostcode())
+        || StringUtils.hasText(addressDetails.getHouseNameNumber())
+        || StringUtils.hasText(addressDetails.getAddressLine1())
+        || StringUtils.hasText(addressDetails.getAddressLine2())
+        || StringUtils.hasText(addressDetails.getCityTown())
+        || StringUtils.hasText(addressDetails.getCounty());
   }
 
   /**
@@ -355,7 +384,8 @@ public class EditGeneralDetailsSectionController {
     }
 
     // validate if an address is selected
-    addressSearchValidator.validate(addressSearch, bindingResult);
+    addressSearchValidator.validateSelection(
+        addressSearch, addressFlow.getSearchResults(), bindingResult);
     if (bindingResult.hasErrors()) {
       model.addAttribute(ADDRESS_SEARCH_RESULTS, addressFlow.getSearchResults());
       model.addAttribute(

@@ -63,16 +63,12 @@ class CorrespondenceAddressValidatorTest {
     assertEquals(1, errors.getErrorCount());
   }
 
-  @ParameterizedTest
-  @NullAndEmptySource
-  @DisplayName("Returns false if the House name / number is null")
-  void validate_houseNameNumberRequired(String houseNameNumber) {
-    addressDetails.setHouseNameNumber(houseNameNumber);
+  @Test
+  @DisplayName("Does not require a separate house name or number")
+  void validate_houseNameNumberOptional() {
+    addressDetails.setHouseNameNumber(null);
     correspondenceAddressValidator.validate(addressDetails, errors);
-    assertTrue(errors.hasErrors());
-    assertNotNull(errors.getFieldError("houseNameNumber"));
-    assertEquals("required.houseNameNumber", errors.getFieldError("houseNameNumber").getCode());
-    assertEquals(1, errors.getErrorCount());
+    assertFalse(errors.hasErrors());
   }
 
   @ParameterizedTest

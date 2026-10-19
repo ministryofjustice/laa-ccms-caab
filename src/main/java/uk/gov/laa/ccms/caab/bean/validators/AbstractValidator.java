@@ -6,7 +6,6 @@ import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.INTERNAT
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.MONETARY_INPUT_2DP;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.NUMERIC_PATTERN;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.TELEPHONE_PATTERN;
-import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.UK_POSTCODE;
 import static uk.gov.laa.ccms.caab.util.DateUtils.COMPONENT_DATE_PATTERN;
 import static uk.gov.laa.ccms.caab.util.DateUtils.convertToDate;
 
@@ -28,6 +27,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 import uk.gov.laa.ccms.caab.bean.common.Individual;
+import uk.gov.laa.ccms.caab.util.UkPostcode;
 
 /** Abstract validator used for all form validation. */
 @Slf4j
@@ -236,8 +236,8 @@ public abstract class AbstractValidator implements Validator {
       validateRequiredField("postcode", postcode, "Postcode", errors);
     }
 
-    if (StringUtils.hasText(postcode)) {
-      validateFieldFormat("postcode", postcode, UK_POSTCODE, "Postcode", errors);
+    if (StringUtils.hasText(postcode) && !UkPostcode.isValid(postcode)) {
+      errors.rejectValue("postcode", "invalid.format", "Enter a full UK postcode");
     }
   }
 

@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
@@ -290,6 +291,84 @@ class EditGeneralDetailsSectionControllerTest {
     }
 
     @Test
+    void shouldNormalizeManualUkPostcodeBeforeSaving() throws Exception {
+      final String applicationId = "123";
+      final UserDetail user = new UserDetail();
+      final AddressFormData addressDetails = new AddressFormData();
+      addressDetails.setCountry("GBR");
+      addressDetails.setPostcode("sa58ab");
+      addressDetails.setAddressLine1("Address line 1");
+      addressDetails.setCityTown("Town");
+      final AddressLookupFlowData<AddressFormData> addressFlow =
+          new AddressLookupFlowData<>("application:123");
+
+      mockMvc
+          .perform(
+              post("/application/sections/correspondence-address")
+                  .param("action", "update")
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(USER_DETAILS, user)
+                  .sessionAttr(CASE, new ApplicationDetail())
+                  .sessionAttr(CORRESPONDENCE_ADDRESS_FLOW, addressFlow)
+                  .flashAttr("addressDetails", addressDetails))
+          .andExpect(redirectedUrl("/application/sections/linked-cases"));
+
+      assertEquals("SA5 8AB", addressDetails.getPostcode());
+      verify(applicationService).updateCorrespondenceAddress(applicationId, addressDetails, user);
+    }
+
+    @Test
+    void shouldPreserveExistingPostcodeBeforeSaving() throws Exception {
+      final String applicationId = "123";
+      final UserDetail user = new UserDetail();
+      final AddressFormData addressDetails = new AddressFormData();
+      addressDetails.setPostcode("sa58ab");
+      addressDetails.setAddressLine1("Address line 1");
+      addressDetails.setCityTown("Town");
+      final AddressLookupFlowData<AddressFormData> addressFlow =
+          new AddressLookupFlowData<>("application:123");
+      addressFlow.setSource(AddressLookupFlowData.Source.EXISTING);
+
+      mockMvc
+          .perform(
+              post("/application/sections/correspondence-address")
+                  .param("action", "update")
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(USER_DETAILS, user)
+                  .sessionAttr(CASE, new ApplicationDetail())
+                  .sessionAttr(CORRESPONDENCE_ADDRESS_FLOW, addressFlow)
+                  .flashAttr("addressDetails", addressDetails))
+          .andExpect(redirectedUrl("/application/sections/linked-cases"));
+
+      assertEquals("sa58ab", addressDetails.getPostcode());
+      verify(applicationService).updateCorrespondenceAddress(applicationId, addressDetails, user);
+    }
+
+    @Test
+    void shouldNotNormalizeNonUkPostcodeBeforeSaving() throws Exception {
+      final String applicationId = "123";
+      final UserDetail user = new UserDetail();
+      final AddressFormData addressDetails = new AddressFormData();
+      addressDetails.setCountry("USA");
+      addressDetails.setPostcode("AB-12 3CD");
+      addressDetails.setAddressLine1("Address line 1");
+      addressDetails.setCityTown("Town");
+
+      mockMvc
+          .perform(
+              post("/application/sections/correspondence-address")
+                  .param("action", "update")
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(USER_DETAILS, user)
+                  .sessionAttr(CASE, new ApplicationDetail())
+                  .flashAttr("addressDetails", addressDetails))
+          .andExpect(redirectedUrl("/application/sections/linked-cases"));
+
+      assertEquals("AB-12 3CD", addressDetails.getPostcode());
+      verify(applicationService).updateCorrespondenceAddress(applicationId, addressDetails, user);
+    }
+
+    @Test
     @DisplayName("Should redirect to amendments submission")
     void shouldRedirectToAmendmentsSubmission() throws Exception {
       final String applicationId = "123";
@@ -390,13 +469,17 @@ class EditGeneralDetailsSectionControllerTest {
       final String applicationId = "123";
       final UserDetail user = new UserDetail();
       final AddressFormData addressDetails = new AddressFormData();
+      addressDetails.setHouseNameNumber("1");
       final ResultsDisplay<AddressResultRowDisplay> addressSearchResults = new ResultsDisplay<>();
       final ApplicationDetail ebsCase = new ApplicationDetail();
 
-      addressSearchResults.setContent(Collections.singletonList(new AddressResultRowDisplay()));
+      final AddressResultRowDisplay addressResult = new AddressResultRowDisplay();
+      addressResult.setHouseNameNumber("1");
+      addressSearchResults.setContent(Collections.singletonList(addressResult));
 
       when(addressService.getAddresses(addressDetails.getPostcode()))
           .thenReturn(addressSearchResults);
+      when(addressService.filterByHouseNumber(any(), any())).thenReturn(addressSearchResults);
 
       mockMvc
           .perform(
@@ -674,12 +757,12 @@ class EditGeneralDetailsSectionControllerTest {
 
       doAnswer(
               invocation -> {
-                final Errors errors = (Errors) invocation.getArguments()[1];
+                final Errors errors = (Errors) invocation.getArguments()[2];
                 errors.reject("required.uprn", "Please select an address");
                 return null;
               })
           .when(addressSearchValidator)
-          .validate(any(), any());
+          .validateSelection(any(), any(), any());
 
       mockMvc
           .perform(

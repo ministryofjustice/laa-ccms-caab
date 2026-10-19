@@ -155,6 +155,31 @@ class ClientAddressDetailsValidatorTest {
     assertEquals(1, errors.getErrorCount());
   }
 
+  @ParameterizedTest
+  @CsvSource({"sa58ab, SA5 8AB", "SA58AB, SA5 8AB", "SA5 8AB, SA5 8AB"})
+  public void validate_acceptsUkPostcodeInputVariants(String postcode, String expected) {
+    addressDetails.setPostcode(postcode);
+    clientAddressDetailsValidator.validate(addressDetails, errors);
+    assertFalse(errors.hasErrors());
+    assertEquals(expected, uk.gov.laa.ccms.caab.util.UkPostcode.normalize(postcode));
+  }
+
+  @Test
+  public void validateForAddressComponent_postcodeRequiredForInternationalAddress() {
+    addressDetails.setCountry("USA");
+    addressDetails.setPostcode(null);
+    clientAddressDetailsValidator.validateForAddressComponent(addressDetails, errors);
+    assertTrue(errors.hasErrors());
+    assertEquals("required.postcode", errors.getFieldError("postcode").getCode());
+  }
+
+  @Test
+  public void validateForAddressComponent_houseNameNumberOptional() {
+    addressDetails.setHouseNameNumber(null);
+    clientAddressDetailsValidator.validateForAddressComponent(addressDetails, errors);
+    assertFalse(errors.hasErrors());
+  }
+
   private ClientFormDataAddressDetails buildClientFormDataAddressDetails() {
     ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
     addressDetails.setVulnerableClient(false);

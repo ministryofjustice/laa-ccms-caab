@@ -26,6 +26,7 @@ import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.util.UkPostcode;
 
 /** Controller for handling address client details selection during the new application process. */
 @Controller
@@ -115,7 +116,7 @@ public class ClientAddressDetailsController {
     if (ACTION_FIND_ADDRESS.equals(action)) {
       findAddressValidator.validate(addressDetails, bindingResult);
     } else {
-      clientAddressDetailsValidator.validate(addressDetails, bindingResult);
+      clientAddressDetailsValidator.validateForAddressComponent(addressDetails, bindingResult);
     }
 
     if (bindingResult.hasErrors()) {
@@ -127,29 +128,48 @@ public class ClientAddressDetailsController {
     model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
 
     if (ACTION_FIND_ADDRESS.equals(action)) {
+      final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+          getOrCreateCreateClientAddressFlow(session);
+      addressFlow.beginSearch(addressDetails.getPostcode(), addressDetails.getHouseNameNumber());
+      addressFlow.setAddressDetails(addressDetails);
+      session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
+
       // Search for addresses
       ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults =
           addressService.getAddresses(clientFlowFormData.getAddressDetails().getPostcode());
+
+      if (clientAddressSearchResults.getContent() != null
+          && !clientAddressSearchResults.getContent().isEmpty()) {
+        clientAddressSearchResults =
+            addressService.filterByHouseNumber(
+                addressDetails.getHouseNameNumber(), clientAddressSearchResults);
+      }
+      addressFlow.setSearchResults(clientAddressSearchResults);
 
       if (clientAddressSearchResults.getContent() == null
           || clientAddressSearchResults.getContent().isEmpty()) {
         bindingResult.reject(
             "address.none", "Your input for address details has not returned any results");
-      } else {
-        clientAddressSearchResults =
-            addressService.filterByHouseNumber(
-                clientFlowFormData.getAddressDetails().getHouseNameNumber(),
-                clientAddressSearchResults);
-        final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
-            getOrCreateCreateClientAddressFlow(session);
-        addressFlow.setSearchResults(clientAddressSearchResults);
-        session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
       }
+      session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
 
       if (bindingResult.hasErrors()) {
         populateDropdowns(model);
         return "application/client/address-client-details";
       }
+    } else {
+      final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+          getOrCreateCreateClientAddressFlow(session);
+      if (addressFlow.getSource() != AddressLookupFlowData.Source.SEARCHED
+          && addressFlow.getSource() != AddressLookupFlowData.Source.EXISTING) {
+        if ("GBR".equals(addressDetails.getCountry())) {
+          addressDetails.setPostcode(UkPostcode.normalize(addressDetails.getPostcode()));
+        }
+        addressFlow.setSource(AddressLookupFlowData.Source.MANUAL);
+      }
+      clientFlowFormData.setAddressDetails(addressDetails);
+      model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
+      session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
     }
 
     return ACTION_FIND_ADDRESS.equals(action)
