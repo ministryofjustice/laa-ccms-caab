@@ -89,7 +89,8 @@ public class EditClientAddressDetailsSearchController {
       final HttpSession session) {
 
     // validate if an address is selected
-    addressSearchValidator.validate(addressSearch, bindingResult);
+    addressSearchValidator.validateSelection(
+        addressSearch, addressFlow.getSearchResults(), bindingResult);
     if (bindingResult.hasErrors()) {
       model.addAttribute(ADDRESS_SEARCH_RESULTS, addressFlow.getSearchResults());
       return "application/sections/client-address-search-results";

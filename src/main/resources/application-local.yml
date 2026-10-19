@@ -73,12 +73,12 @@ logging:
         awssdk:
           request: INFO
 
-os:
-  api:
-    hostname: localhost
-    port: 8020
-    url: http://${os.api.hostname}:${os.api.port}
-    key: TEST_KEY
+#os:
+#  api:
+#    hostname: localhost
+#    port: 8020
+#    url: http://${os.api.hostname}:${os.api.port}
+#    key: TEST_KEY
 
 av:
   enabled: true

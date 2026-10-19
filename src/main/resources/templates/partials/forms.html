@@ -113,7 +113,7 @@
 </th:block>
 
 <div th:fragment="textInput(fieldId, label, inputClass)"
-     th:with="hideLabel=${hideLabel?:false}, hint=${hint}, maxlength=${maxlength ?: maxlengthParam}"
+     th:with="hideLabel=${hideLabel?:false}, hint=${hint}, maxlength=${maxlength ?: maxlengthParam}, autocomplete=${autocomplete}"
      class="govuk-form-group"
      th:classappend="${#fields.hasErrors(fieldId)} ? 'govuk-form-group--error' : ''">
   <label class="govuk-label" th:unless="${hideLabel}" th:for="${fieldId}" th:text="${label}"></label>
@@ -129,6 +129,7 @@
          th:name="${fieldId}"
          type="text"
          th:maxlength="${maxlength}"
+         th:autocomplete="${autocomplete}"
          th:attr="aria-label=${hideLabel ? label : null},
                   aria-describedby=${(hint != null ? fieldId + '-hint ' : '') + (#fields.hasErrors(fieldId) ? fieldId + '-error' : '')}"
          data-module="govuk-input"
