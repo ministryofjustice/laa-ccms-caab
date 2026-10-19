@@ -30,10 +30,13 @@ import uk.gov.laa.ccms.caab.bean.AwardTypeForm;
 import uk.gov.laa.ccms.caab.bean.award.FinancialAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.LandAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.OtherAssetAwardFormData;
+import uk.gov.laa.ccms.caab.bean.award.TimeRecoveryAward;
+import uk.gov.laa.ccms.caab.bean.award.TimeRecoveryFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.FinancialAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.LandAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.OtherAssetAwardValidator;
+import uk.gov.laa.ccms.caab.bean.validators.awards.TimeRecoveryValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.CommonValueConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -47,11 +50,15 @@ import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.LandAwardRequest;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
+import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
+import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /** Controller responsible for handling award-related requests. */
@@ -70,6 +77,7 @@ public class AwardController {
   private final OtherAssetAwardMapper otherAssetAwardMapper;
   private final LandAwardValidator landAwardValidator;
   private final LandAwardMapper landAwardMapper;
+  private final TimeRecoveryValidator timeRecoveryValidator;
 
   /**
    * Displays the Select Award Type screen.
@@ -332,12 +340,14 @@ public class AwardController {
 
     final LandAwardRequest request = landAwardMapper.toLandAwardRequest(landAward);
     try {
+      final Integer savedAwardId;
       if (landAward.getId() == null) {
-        caseOutcomeService.createLandAward(
-            ebsCase.getCaseReferenceNumber(),
-            user.getProvider().getId().intValue(),
-            request,
-            user.getLoginId());
+        savedAwardId =
+            caseOutcomeService.createLandAward(
+                ebsCase.getCaseReferenceNumber(),
+                user.getProvider().getId().intValue(),
+                request,
+                user.getLoginId());
       } else {
         caseOutcomeService.updateLandAward(
             ebsCase.getCaseReferenceNumber(),
@@ -345,6 +355,10 @@ public class AwardController {
             landAward.getId(),
             request,
             user.getLoginId());
+        savedAwardId = landAward.getId();
+      }
+      if ("Y".equalsIgnoreCase(landAward.getRecoveryOfAwardTimeRelated())) {
+        return "redirect:/case/outcome-and-awards/land/" + savedAwardId + "/time-related-recovery";
       }
     } catch (CaabApiClientException | IllegalStateException ex) {
       log.warn("Failed to save land award with id: {}", landAward.getId(), ex);
@@ -398,7 +412,7 @@ public class AwardController {
     return "application/other-asset-award";
   }
 
-  /** Creates or updates an other asset award and returns to the outcome and awards screen. */
+  /** Creates or updates an other asset award and opens time-related recovery when selected. */
   @PostMapping("/case/outcome-and-awards/asset")
   public String otherAssetAward(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
@@ -430,12 +444,14 @@ public class AwardController {
     final OtherAssetAwardRequest request =
         otherAssetAwardMapper.toOtherAssetAwardRequest(otherAssetAward);
     try {
+      final Integer savedAwardId;
       if (otherAssetAward.getId() == null) {
-        caseOutcomeService.createOtherAssetAward(
-            ebsCase.getCaseReferenceNumber(),
-            user.getProvider().getId().intValue(),
-            request,
-            user.getLoginId());
+        savedAwardId =
+            caseOutcomeService.createOtherAssetAward(
+                ebsCase.getCaseReferenceNumber(),
+                user.getProvider().getId().intValue(),
+                request,
+                user.getLoginId());
       } else {
         caseOutcomeService.updateOtherAssetAward(
             ebsCase.getCaseReferenceNumber(),
@@ -443,6 +459,10 @@ public class AwardController {
             otherAssetAward.getId(),
             request,
             user.getLoginId());
+        savedAwardId = otherAssetAward.getId();
+      }
+      if (Boolean.TRUE.equals(otherAssetAward.getRecoveryOfAwardTimeRelated())) {
+        return "redirect:/case/outcome-and-awards/asset/" + savedAwardId + "/time-related-recovery";
       }
     } catch (CaabApiClientException | IllegalStateException ex) {
       log.warn("Failed to save other asset award with id: {}", otherAssetAward.getId(), ex);
@@ -454,6 +474,138 @@ public class AwardController {
     }
 
     return "redirect:/case/outcome-and-awards";
+  }
+
+  /** Displays the saved or new time-related recovery for a land or other asset award. */
+  @GetMapping("/case/outcome-and-awards/{awardPath:land|asset}/{awardId}/time-related-recovery")
+  public String displayTimeRecovery(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @PathVariable final String awardPath,
+      @PathVariable final Integer awardId,
+      final Model model) {
+    final TimeRecoveryAward award = loadTimeRecoveryAward(ebsCase, user, awardPath, awardId);
+    if (!Boolean.TRUE.equals(award.recoveryOfAwardTimeRelated())) {
+      log.warn(
+          "Time-related recovery requested for {} award {} with flag not set", awardPath, awardId);
+      return redirectToRecoveryParent(awardPath, awardId);
+    }
+
+    final TimeRecoveryFormData form = new TimeRecoveryFormData();
+    final TimeRecoveryDetail existing = award.timeRecovery();
+    if (existing != null) {
+      form.setTriggeringEvent(existing.getTriggeringEvent());
+      form.setTimeRelatedRecoveryDetails(existing.getTimeRelatedRecoveryDetails());
+      if (existing.getEffectiveDate() != null) {
+        form.setEffectiveDate(DateUtils.convertToComponentDate(existing.getEffectiveDate()));
+      }
+    }
+    model.addAttribute("award", award);
+    model.addAttribute("awardPath", awardPath);
+    model.addAttribute("awardId", awardId);
+    model.addAttribute("timeRecovery", form);
+    return "application/time-related-recovery";
+  }
+
+  /** Saves time-related recovery against its owning land or other asset award. */
+  @PostMapping("/case/outcome-and-awards/{awardPath:land|asset}/{awardId}/time-related-recovery")
+  public String saveTimeRecovery(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @PathVariable final String awardPath,
+      @PathVariable final Integer awardId,
+      @ModelAttribute("timeRecovery") final TimeRecoveryFormData form,
+      final BindingResult bindingResult,
+      final Model model) {
+    final TimeRecoveryAward award = loadTimeRecoveryAward(ebsCase, user, awardPath, awardId);
+    if (!Boolean.TRUE.equals(award.recoveryOfAwardTimeRelated())) {
+      log.warn(
+          "Time-related recovery submitted for {} award {} with flag not set", awardPath, awardId);
+      return redirectToRecoveryParent(awardPath, awardId);
+    }
+
+    timeRecoveryValidator.validate(form, bindingResult);
+    if (bindingResult.hasErrors()) {
+      model.addAttribute("award", award);
+      model.addAttribute("awardPath", awardPath);
+      model.addAttribute("awardId", awardId);
+      return "application/time-related-recovery";
+    }
+
+    final TimeRecoveryRequest request =
+        new TimeRecoveryRequest(form.getTriggeringEvent(), form.getTimeRelatedRecoveryDetails())
+            .effectiveDate(
+                StringUtils.hasText(form.getEffectiveDate())
+                    ? DateUtils.convertToDate(form.getEffectiveDate())
+                    : null);
+    try {
+      caseOutcomeService.upsertTimeRecovery(
+          ebsCase.getCaseReferenceNumber(),
+          user.getProvider().getId().intValue(),
+          award.awardType(),
+          awardId,
+          request,
+          user.getLoginId());
+    } catch (CaabApiClientException | IllegalStateException ex) {
+      log.warn("Failed to save time-related recovery for {} award {}", awardPath, awardId, ex);
+      bindingResult.reject(
+          "timeRecovery.save.failed",
+          "We could not save the time-related recovery. Please try again.");
+      model.addAttribute("award", award);
+      model.addAttribute("awardPath", awardPath);
+      model.addAttribute("awardId", awardId);
+      return "application/time-related-recovery";
+    }
+    return "redirect:/case/outcome-and-awards";
+  }
+
+  private TimeRecoveryAward loadTimeRecoveryAward(
+      final ApplicationDetail ebsCase,
+      final UserDetail user,
+      final String awardPath,
+      final Integer awardId) {
+    final String caseReference = ebsCase.getCaseReferenceNumber();
+    final Integer providerId = user.getProvider().getId().intValue();
+    return switch (awardPath) {
+      case "land" -> {
+        final LandAwardDetail award =
+            caseOutcomeService
+                .getLandAward(caseReference, providerId, awardId)
+                .orElseThrow(
+                    () ->
+                        new CaabApplicationException(
+                            "Could not find land award with id: " + awardId));
+        yield new TimeRecoveryAward(
+            AWARD_TYPE_LAND,
+            award.getDescription(),
+            award.getValuationAmount(),
+            award.getRecoveryOfAwardTimeRelated(),
+            award.getTimeRecovery());
+      }
+      case "asset" -> {
+        final OtherAssetAwardDetail award =
+            caseOutcomeService
+                .getOtherAssetAward(caseReference, providerId, awardId)
+                .orElseThrow(
+                    () ->
+                        new CaabApplicationException(
+                            "Could not find other asset award with id: " + awardId));
+        yield new TimeRecoveryAward(
+            AWARD_TYPE_OTHER_ASSET,
+            award.getDescription(),
+            award.getValuationAmount(),
+            award.getRecoveryOfAwardTimeRelated(),
+            award.getTimeRecovery());
+      }
+      default ->
+          throw new CaabApplicationException(
+              "Unsupported time-related recovery award path: " + awardPath);
+    };
+  }
+
+  private String redirectToRecoveryParent(final String awardPath, final Integer awardId) {
+    final String parentPath = "land".equals(awardPath) ? "land-property" : awardPath;
+    return "redirect:/case/outcome-and-awards/" + parentPath + "/" + awardId;
   }
 
   private void populateFinancialAwardDropdowns(final Model model) {
@@ -511,10 +663,9 @@ public class AwardController {
     model.addAttribute(
         "landRegistrationOptions",
         getCommonValues(CommonValueConstants.COMMON_VALUE_LAND_REGISTRATION));
-    model.addAttribute("yesNoOptions", getCommonValues(CommonValueConstants.COMMON_VALUE_YES_NO));
   }
 
-  private List<?> getCommonValues(final String type) {
+  private List<CommonLookupValueDetail> getCommonValues(final String type) {
     return Optional.ofNullable(lookupService.getCommonValues(type).block())
         .map(CommonLookupDetail::getContent)
         .orElse(Collections.emptyList());
