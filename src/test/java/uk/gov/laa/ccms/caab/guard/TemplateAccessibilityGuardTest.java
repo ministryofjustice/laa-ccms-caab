@@ -65,7 +65,7 @@ class TemplateAccessibilityGuardTest {
   @Test
   @DisplayName("Each address result's label is tied to its own radio button")
   void addressResultLabelsPointAtTheirRadios() throws IOException {
-    String template = read("application/sections/address-search-results.html");
+    String template = read("application/partials/address-fragments.html");
 
     Matcher input =
         Pattern.compile("<input[^>]*name=\"uprn\"[^>]*th:id=\"([^\"]*)\"", Pattern.DOTALL)
@@ -76,6 +76,9 @@ class TemplateAccessibilityGuardTest {
     assertThat(input.find()).as("the result radio has a th:id").isTrue();
     assertThat(label.find()).as("the result label has a th:for").isTrue();
     assertThat(label.group(1)).isEqualTo(input.group(1));
+    assertThat(template)
+        .as("the address results fragment exists")
+        .contains("th:fragment=\"results(");
   }
 
   @Test
