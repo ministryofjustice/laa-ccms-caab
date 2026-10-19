@@ -203,29 +203,6 @@ public class SoaApiClient {
   }
 
   /**
-   * Retrieves the full detail of a single case based on the provided case reference.
-   *
-   * @param caseReferenceNumber The reference number for the case to fetch.
-   * @param loginId The login identifier for the user.
-   * @param userType Type of the user (e.g., admin, user).
-   * @return A Mono wrapping the CaseDetail.
-   */
-  public Mono<CaseDetail> getCase(
-      final String caseReferenceNumber, final String loginId, final String userType) {
-    return soaApiWebClient
-        .get()
-        .uri(builder -> builder.path("/cases/{case-reference}").build(caseReferenceNumber))
-        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
-        .header(SOA_GATEWAY_USER_ROLE, userType)
-        .retrieve()
-        .bodyToMono(CaseDetail.class)
-        .onErrorResume(
-            e ->
-                soaApiClientErrorHandler.handleApiRetrieveError(
-                    e, "Cases", "case reference", caseReferenceNumber));
-  }
-
-  /**
    * Creates a new case with the provided case details.
    *
    * @param loginId the login ID of the user creating the case
