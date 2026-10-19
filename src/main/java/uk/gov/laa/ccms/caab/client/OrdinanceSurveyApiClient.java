@@ -13,6 +13,8 @@ import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResponse;
 @Service
 public class OrdinanceSurveyApiClient {
 
+  private static final int MAX_RESULTS = 100;
+
   private final WebClient osApiWebClient;
   private final String osApiKey;
 
@@ -23,9 +25,9 @@ public class OrdinanceSurveyApiClient {
   }
 
   /**
-   * Returns a string of addresses.
+   * Returns the addresses from a single postcode lookup without requiring pagination metadata.
    *
-   * @param postcode the ID associated with the user login
+   * @param postcode the postcode to search for
    * @return a Mono signaling the returned address payload
    */
   public Mono<OrdinanceSurveyResponse> getAddresses(final String postcode) {
@@ -37,8 +39,19 @@ public class OrdinanceSurveyApiClient {
                     .path("/search/places/v1/postcode")
                     .queryParam("postcode", postcode)
                     .queryParam("key", osApiKey)
+                    .queryParam("maxresults", MAX_RESULTS)
                     .build())
         .retrieve()
-        .bodyToMono(OrdinanceSurveyResponse.class);
+        .bodyToMono(OrdinanceSurveyResponse.class)
+        .flatMap(
+            response -> {
+              if (response.getResults() == null) {
+                return Mono.error(
+                    new OrdinanceSurveyResponseException(
+                        "Address lookup response omitted the results collection"));
+              }
+
+              return Mono.just(response);
+            });
   }
 }
