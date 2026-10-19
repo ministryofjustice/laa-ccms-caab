@@ -344,6 +344,7 @@ public class EditGeneralDetailsSectionController {
     }
 
     model.addAttribute(ADDRESS_SEARCH_RESULTS, addressFlow.getSearchResults());
+    addAddressSearchTermsToModel(addressFlow, model);
     model.addAttribute(
         "formAction",
         "%s/sections/correspondence-address/search".formatted(caseContext.getPathValue()));
@@ -391,6 +392,7 @@ public class EditGeneralDetailsSectionController {
       model.addAttribute(
           "formAction",
           "%s/sections/correspondence-address/search".formatted(caseContext.getPathValue()));
+      addAddressSearchTermsToModel(addressFlow, model);
       return "application/sections/address-search-results";
     }
 
@@ -401,6 +403,12 @@ public class EditGeneralDetailsSectionController {
     session.setAttribute(CORRESPONDENCE_ADDRESS_FLOW, addressFlow);
 
     return "redirect:/%s/sections/correspondence-address".formatted(caseContext.getPathValue());
+  }
+
+  private void addAddressSearchTermsToModel(
+      final AddressLookupFlowData<AddressFormData> addressFlow, final Model model) {
+    model.addAttribute("originalPostcode", addressFlow.getOriginalPostcode());
+    model.addAttribute("originalBuildingSearch", addressFlow.getOriginalBuildingSearch());
   }
 
   private boolean isCurrentCorrespondenceAddressFlow(

@@ -55,6 +55,7 @@ public class ClientAddressDetailsSearchController {
       final Model model) {
 
     model.addAttribute(ADDRESS_SEARCH_RESULTS, addressFlow.getSearchResults());
+    addSearchTermsToModel(addressFlow, model);
 
     return "application/client/address-client-search-results";
   }
@@ -85,6 +86,7 @@ public class ClientAddressDetailsSearchController {
         addressSearch, addressFlow.getSearchResults(), bindingResult);
     if (bindingResult.hasErrors()) {
       model.addAttribute(ADDRESS_SEARCH_RESULTS, addressFlow.getSearchResults());
+      addSearchTermsToModel(addressFlow, model);
       return "application/client/address-client-search-results";
     }
 
@@ -98,5 +100,11 @@ public class ClientAddressDetailsSearchController {
     session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
 
     return "redirect:/application/client/details/address";
+  }
+
+  private void addSearchTermsToModel(
+      final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow, final Model model) {
+    model.addAttribute("originalPostcode", addressFlow.getOriginalPostcode());
+    model.addAttribute("originalBuildingSearch", addressFlow.getOriginalBuildingSearch());
   }
 }

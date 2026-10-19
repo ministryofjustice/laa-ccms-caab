@@ -13,32 +13,12 @@
         <form action="#" th:action="@{/application/client/details/address/search}" th:object="${addressSearch}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <span class="govuk-caption-l" th:text="#{client.about}"></span>
-            <h1 class="govuk-heading-l" th:text="#{client.address.search}"></h1>
-            <p class="govuk-body-l" th:text="${#messages.msg('client.address.search.returned', #lists.size(addressSearchResults.content))}"></p>
-            <div class="govuk-form-group">
-                <fieldset class="govuk-fieldset" aria-describedby="address-hint">
-                    <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
-                        <h2 class="govuk-fieldset__heading" th:text="#{client.address.search.question}"></h2>
-                    </legend>
-                    <div id="address-hint" class="govuk-hint" th:text="#{client.address.search.question.hint}"></div>
-                    <div class="govuk-radios" data-module="govuk-radios">
-                        <div class="govuk-radios__item" th:each="result : ${addressSearchResults.content}">
-                            <input class="govuk-radios__input" th:id="${result.uprn}" name="uprn" type="radio" th:value="${result.uprn}">
-                            <label class="govuk-label govuk-radios__label"
-                                   th:for="${result.uprn}"
-                                   th:text="${result.fullAddress}">
-                            </label>
-                        </div>
-                    </div>
-                </fieldset>
-            </div>
-            <div class="govuk-grid-row">
-                <div class="govuk-grid-column-two-thirds">
-                    <div class="govuk-button-group">
-                        <govuk:button type="submit" th:text="#{site.confirm}"/>
-                    </div>
-                </div>
-            </div>
+            <div th:replace="~{application/partials/address-fragments :: results(
+                ${originalPostcode},
+                ${originalBuildingSearch},
+                @{/application/client/details/address},
+                @{/application/client/details/address},
+                'client-address')}"></div>
         </form>
     </div>
 </div>

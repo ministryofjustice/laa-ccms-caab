@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:if="${view == 'search'}">
+  <form action="#" th:object="${addressDetails}" method="post">
+    <div th:replace="~{application/partials/address-fragments :: search(
+        'postcode', 'houseNameNumber', 'find_address', '/test/manual')}"></div>
+  </form>
+</div>
+<div th:if="${view == 'results'}">
+  <form action="#" th:object="${addressSearch}" method="post">
+    <div th:replace="~{application/partials/address-fragments :: results(
+        ${originalPostcode},
+        ${originalBuildingSearch},
+        '/test/search',
+        '/test/manual',
+        'test-address')}"></div>
+  </form>
+</div>
+<div th:if="${view == 'no-results'}">
+  <div th:replace="~{application/partials/address-fragments :: noResults(
+      ${originalPostcode},
+      ${originalBuildingSearch},
+      '/test/search',
+      '/test/manual')}"></div>
+</div>
+<div th:if="${view == 'confirmation'}">
+  <div th:replace="~{application/partials/address-fragments :: confirmation(
+      ${selectedAddress},
+      '/test/confirm',
+      '/test/change',
+      '/test/search',
+      '/test/manual')}"></div>
+</div>
+<div th:if="${view == 'manual'}">
+  <form action="#" th:object="${addressDetails}" method="post">
+    <div th:replace="~{application/partials/address-fragments :: manualEntry(${countries})}"></div>
+  </form>
+</div>
+<div th:if="${view == 'existing'}">
+  <div th:replace="~{application/partials/address-fragments :: existingAddress(
+      ${addressDetails}, ${countryName}, '/test/change')}"></div>
+</div>
+</body>
+</html>

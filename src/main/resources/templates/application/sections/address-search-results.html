@@ -16,37 +16,12 @@
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <span class="govuk-caption-l"
           th:text="#{application.generalDetails.correspondenceAddress.searchResults.caption}"/>
-      <h1 class="govuk-heading-l"
-          th:text="#{application.generalDetails.correspondenceAddress.searchResults.title}"/>
-      <p class="govuk-body" th:text="#{application.generalDetails.correspondenceAddress.searchResults.line1(${#lists.size(addressSearchResults.content)})}"/>
-      <p class="govuk-body" th:text="#{application.generalDetails.correspondenceAddress.searchResults.line2}"/>
-      <div class="govuk-form-group">
-        <fieldset class="govuk-fieldset" aria-describedby="address-hint">
-          <legend class="govuk-fieldset__legend govuk-fieldset__legend--l">
-            <legend class="govuk-fieldset__legend govuk-fieldset__legend--m"
-                th:text="#{application.generalDetails.correspondenceAddress.searchResults.whatIsTheCorrectAddress}"/>
-          </legend>
-          <div id="address-hint" class="govuk-hint" th:text="#{site.selectOne}"/>
-          <div class="govuk-radios" data-module="govuk-radios" id="search-results">
-            <div class="govuk-radios__item" th:each="result, idx : ${addressSearchResults.content}">
-              <input class="govuk-radios__input" name="uprn" type="radio"
-                     th:id="|search-result-${idx.index}|"
-                     th:value="${result.uprn}">
-              <label class="govuk-label govuk-radios__label"
-                     th:for="${result.uprn}"
-                     th:text="${result.fullAddress}">
-              </label>
-            </div>
-          </div>
-        </fieldset>
-      </div>
-      <div class="govuk-grid-row">
-        <div class="govuk-grid-column-two-thirds">
-          <div class="govuk-button-group">
-            <govuk:button th:text="#{site.confirm}"/>
-          </div>
-        </div>
-      </div>
+      <div th:replace="~{application/partials/address-fragments :: results(
+          ${originalPostcode},
+          ${originalBuildingSearch},
+          @{/{caseContext}/sections/correspondence-address(caseContext=${caseContext.getPathValue()})},
+          @{/{caseContext}/sections/correspondence-address(caseContext=${caseContext.getPathValue()})},
+          'correspondence-address')}"></div>
     </form>
   </div>
 </div>
