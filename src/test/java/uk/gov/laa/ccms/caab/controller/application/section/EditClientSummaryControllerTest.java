@@ -54,9 +54,9 @@ import uk.gov.laa.ccms.caab.controller.client.EditClientSummaryController;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
 @ExtendWith(MockitoExtension.class)
@@ -158,7 +158,7 @@ class EditClientSummaryControllerTest {
     verify(lookupService, times(1)).addCommonLookupsToModel(anyList(), any(Model.class));
     verify(lookupService, never()).getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_LANGUAGE), any());
 
-    verify(clientService, never()).getClient(any(), any(), any());
+    verify(clientService, never()).getClient(any());
     verify(clientDetailsMapper, never()).toClientFlowFormData(any());
   }
 
@@ -185,7 +185,7 @@ class EditClientSummaryControllerTest {
     when(lookupService.addCommonLookupsToModel(anyList(), any(Model.class)))
         .thenReturn(Mono.empty());
 
-    when(clientService.getClient(any(), any(), any())).thenReturn(Mono.just(new ClientDetail()));
+    when(clientService.getClient(any())).thenReturn(Mono.just(new ClientDetail()));
 
     when(clientDetailsMapper.toClientFlowFormData(any())).thenReturn(clientFlowFormData);
 
@@ -201,7 +201,7 @@ class EditClientSummaryControllerTest {
     verify(lookupService, times(1)).addCommonLookupsToModel(anyList(), any(Model.class));
     verify(lookupService, never()).getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_LANGUAGE), any());
 
-    verify(clientService, atLeastOnce()).getClient(any(), any(), any());
+    verify(clientService, atLeastOnce()).getClient(any());
     verify(clientDetailsMapper, atLeastOnce()).toClientFlowFormData(any());
   }
 

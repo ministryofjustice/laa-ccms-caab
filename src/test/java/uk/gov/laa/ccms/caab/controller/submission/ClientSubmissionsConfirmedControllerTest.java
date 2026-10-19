@@ -33,11 +33,9 @@ import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.BaseOffice;
 import uk.gov.laa.ccms.data.model.BaseProvider;
+import uk.gov.laa.ccms.data.model.ClientDetail;
+import uk.gov.laa.ccms.data.model.NameDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
-import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
-import uk.gov.laa.ccms.soa.gateway.model.RecordHistory;
 
 @ExtendWith(MockitoExtension.class)
 @ContextConfiguration
@@ -70,8 +68,7 @@ class ClientSubmissionsConfirmedControllerTest {
     final String clientReferenceNumber = "TEST-REF";
     final ClientDetail clientInformation = buildClientInformation();
 
-    when(clientService.getClient(clientReferenceNumber, user.getLoginId(), user.getUserType()))
-        .thenReturn(Mono.just(clientInformation));
+    when(clientService.getClient(clientReferenceNumber)).thenReturn(Mono.just(clientInformation));
 
     when(applicationService.createApplication(
             eq(mockApplicationFormData), eq(clientInformation), eq(user)))
@@ -132,9 +129,6 @@ class ClientSubmissionsConfirmedControllerTest {
 
   public ClientDetail buildClientInformation() {
     final String clientReferenceNumber = "12345";
-    return new ClientDetail()
-        .clientReferenceNumber(clientReferenceNumber)
-        .details(new ClientDetailDetails().name(new NameDetail()))
-        .recordHistory(new RecordHistory());
+    return new ClientDetail().clientReferenceNumber(clientReferenceNumber).name(new NameDetail());
   }
 }

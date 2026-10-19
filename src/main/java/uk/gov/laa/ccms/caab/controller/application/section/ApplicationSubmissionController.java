@@ -99,14 +99,13 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.util.AmendmentUtil;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 
 /** Controller for the application sections. */
 @Controller
@@ -657,10 +656,8 @@ public class ApplicationSubmissionController {
             .map(AssessmentSummaryEntityLookupDetail::getContent);
 
     // Pre-processing data - client data
-    final Mono<ClientDetailDetails> clientMono =
-        clientService
-            .getClient(activeCase.getClientReferenceNumber(), user.getLoginId(), user.getUserType())
-            .map(ClientDetail::getDetails);
+    final Mono<ClientDetail> clientMono =
+        clientService.getClient(activeCase.getClientReferenceNumber());
 
     // Pre-processing data - proceeding context data
     final Mono<ProceedingSubmissionSummaryMappingContext> proceedingContextMono =
@@ -678,7 +675,7 @@ public class ApplicationSubmissionController {
             AssessmentDetails,
             List<AssessmentSummaryEntityLookupValueDetail>,
             List<AssessmentSummaryEntityLookupValueDetail>,
-            ClientDetailDetails,
+            ClientDetail,
             ApplicationDetail,
             ProceedingSubmissionSummaryMappingContext,
             OpponentSubmissionSummaryMappingContext,

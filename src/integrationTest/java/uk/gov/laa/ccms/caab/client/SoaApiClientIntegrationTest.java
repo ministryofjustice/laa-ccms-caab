@@ -20,7 +20,6 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
@@ -69,28 +68,6 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
 
     assertNotNull(response);
     assertEquals(contractDetailsJson, objectMapper.writeValueAsString(response.block()));
-  }
-
-  @Test
-  public void testGetClient_returnData() throws Exception {
-    String clientReferenceNumber = "clientRef1";
-    String loginId = USER_1;
-    String userType = USER_TYPE;
-    ClientDetail clientDetail = new ClientDetail(); // Fill with appropriate data
-    String clientDetailJson = objectMapper.writeValueAsString(clientDetail);
-
-    wiremock.stubFor(
-        get("/clients/%s".formatted(clientReferenceNumber))
-            .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(loginId))
-            .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(userType))
-            .willReturn(okJson(clientDetailJson)));
-
-    Mono<ClientDetail> clientMono =
-        soaApiClient.getClient(clientReferenceNumber, loginId, userType);
-
-    ClientDetail response = clientMono.block();
-
-    assertEquals(clientDetail, response);
   }
 
   @Test

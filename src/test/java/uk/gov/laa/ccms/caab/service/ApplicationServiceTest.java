@@ -46,10 +46,10 @@ import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildCaseDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildCaseReferenceSummary;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildCategoryOfLawLookupValueDetail;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildClientDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildProviderDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildRelationshipToCaseLookupDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildClientDetail;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
@@ -538,7 +538,7 @@ class ApplicationServiceTest {
   @Test
   void createApplication_success() throws ParseException {
     final ApplicationFormData applicationFormData = buildApplicationFormData();
-    final uk.gov.laa.ccms.soa.gateway.model.ClientDetail clientInformation = buildClientDetail();
+    final uk.gov.laa.ccms.data.model.ClientDetail clientInformation = buildClientDetail();
     final UserDetail user = buildUserDetail();
 
     // Mocking dependencies
@@ -686,7 +686,7 @@ class ApplicationServiceTest {
 
     ApplicationFormData applicationFormData = buildApplicationFormData();
     applicationFormData.setCopyCaseReferenceNumber(copyCaseReference);
-    uk.gov.laa.ccms.soa.gateway.model.ClientDetail clientDetail = buildClientDetail();
+    uk.gov.laa.ccms.data.model.ClientDetail clientDetail = buildClientDetail();
     CaseReferenceSummary caseReferenceSummary = buildCaseReferenceSummary();
     UserDetail user = buildUserDetail();
 
@@ -780,7 +780,7 @@ class ApplicationServiceTest {
     ApplicationDetail applicationToCopy = buildApplicationDetail(2, Boolean.FALSE, new Date());
     UserDetail userDetail = buildUserDetail();
 
-    uk.gov.laa.ccms.soa.gateway.model.ClientDetail clientDetail = buildClientDetail();
+    uk.gov.laa.ccms.data.model.ClientDetail clientDetail = buildClientDetail();
     CaseReferenceSummary caseReferenceSummary = buildCaseReferenceSummary();
 
     // Update the cost limitations for this test

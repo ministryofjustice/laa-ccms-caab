@@ -21,8 +21,8 @@ import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ClientService;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 /** Controller for handling client confirmation operations. */
 @Controller
@@ -53,10 +53,7 @@ public class ClientConfirmationController {
       Model model,
       HttpSession session) {
 
-    ClientDetail clientInformation =
-        clientService
-            .getClient(clientReferenceNumber, user.getLoginId(), user.getUserType())
-            .block();
+    ClientDetail clientInformation = clientService.getClient(clientReferenceNumber).block();
 
     session.setAttribute(CLIENT_INFORMATION, clientInformation);
     model.addAttribute("clientReferenceNumber", clientReferenceNumber);

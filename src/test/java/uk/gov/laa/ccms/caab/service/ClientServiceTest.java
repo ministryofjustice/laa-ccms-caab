@@ -39,16 +39,14 @@ public class ClientServiceTest {
   @Test
   void getClient_returnsClientDetails_Successful() {
     String clientReferenceNumber = "CLIENT123";
-    String loginId = "user1";
-    String userType = "userType";
 
-    ClientDetail mockClientDetail = new ClientDetail();
+    uk.gov.laa.ccms.data.model.ClientDetail mockClientDetail =
+        new uk.gov.laa.ccms.data.model.ClientDetail();
 
-    when(soaApiClient.getClient(clientReferenceNumber, loginId, userType))
-        .thenReturn(Mono.just(mockClientDetail));
+    when(ebsApiClient.getClient(clientReferenceNumber)).thenReturn(Mono.just(mockClientDetail));
 
-    Mono<ClientDetail> clientDetailMono =
-        clientService.getClient(clientReferenceNumber, loginId, userType);
+    Mono<uk.gov.laa.ccms.data.model.ClientDetail> clientDetailMono =
+        clientService.getClient(clientReferenceNumber);
 
     StepVerifier.create(clientDetailMono)
         .expectNextMatches(clientDetail -> clientDetail == mockClientDetail)
