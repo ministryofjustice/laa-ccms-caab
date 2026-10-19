@@ -74,7 +74,6 @@ import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.ConnectorApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
-import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentAttribute;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
@@ -108,6 +107,7 @@ import uk.gov.laa.ccms.caab.util.ProceedingUtil;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CaseAssessmentDetail;
 import uk.gov.laa.ccms.data.model.CaseAssessmentDetails;
+import uk.gov.laa.ccms.data.model.CaseDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -128,7 +128,6 @@ public class AssessmentService {
 
   private final AssessmentApiClient assessmentApiClient;
   private final CaabApiClient caabApiClient;
-  private final SoaApiClient soaApiClient;
   private final EbsApiClient ebsApiClient;
   private final AssessmentMapper assessmentMapper;
   private final ConnectorApiClient connectorApiClient;
@@ -581,13 +580,13 @@ public class AssessmentService {
       final AssessmentDetail assessment,
       final UserDetail user) {
 
-    // The in-memory conditions first: the EBS case is a blocking SOA call, and this rule can only
+    // The in-memory conditions first: the EBS case is a blocking API call, and this rule can only
     // fire on a substantive amendment that has no assessment yet.
     if (assessment != null || !APP_TYPE_SUBSTANTIVE.equals(getApplicationTypeId(application))) {
       return false;
     }
 
-    final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase = getEbsCase(application, user);
+    final CaseDetail ebsCase = getEbsCase(application, user);
 
     return ebsCase != null
         && !hasEbsAmendments(ebsCase)
@@ -696,15 +695,14 @@ public class AssessmentService {
         .orElse(null);
   }
 
-  private uk.gov.laa.ccms.soa.gateway.model.CaseDetail getEbsCase(
-      final ApplicationDetail application, final UserDetail user) {
-    final Mono<uk.gov.laa.ccms.soa.gateway.model.CaseDetail> ebsCaseMono =
-        soaApiClient.getCase(
-            application.getCaseReferenceNumber(), user.getLoginId(), user.getUserType());
+  private CaseDetail getEbsCase(final ApplicationDetail application, final UserDetail user) {
+    final Mono<CaseDetail> ebsCaseMono =
+        ebsApiClient.getCase(
+            application.getCaseReferenceNumber(), user.getProvider().getId(), user.getLoginId());
     return ebsCaseMono == null ? null : ebsCaseMono.block();
   }
 
-  private boolean hasEbsAmendments(final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase) {
+  private boolean hasEbsAmendments(final CaseDetail ebsCase) {
     return ebsCase != null
         && ebsCase.getApplicationDetails() != null
         && ebsCase.getApplicationDetails().getProceedings() != null
