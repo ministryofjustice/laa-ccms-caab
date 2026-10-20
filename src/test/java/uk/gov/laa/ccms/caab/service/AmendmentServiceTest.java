@@ -49,6 +49,7 @@ import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapperImpl;
 import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -891,6 +892,68 @@ class AmendmentServiceTest {
   @Nested
   @DisplayName("submitMeansReassessment() tests")
   class SubmitMeansReassessmentTests {
+
+    @Test
+    @DisplayName("Should send completed means answers through the real mapper to the SOA client")
+    void shouldSendMeansAnswersWithRealMapper() {
+      final UserDetail user =
+          new UserDetail().loginId("123").userType("Type").provider(new BaseProvider().id(10));
+      final ApplicationDetail amendment = buildFullApplicationDetail();
+      amendment.setCaseReferenceNumber("12345");
+      amendment.setAvailableFunctions(List.of("MNLA", "MNSB"));
+      amendment.getApplicationType().setId("SUB");
+      final AssessmentDetail assessment =
+          new AssessmentDetail()
+              .status("COMPLETE")
+              .addEntityTypesItem(
+                  new AssessmentEntityTypeDetail()
+                      .name("global")
+                      .addEntitiesItem(
+                          new AssessmentEntityDetail()
+                              .name("12345")
+                              .addAttributesItem(
+                                  new AssessmentAttributeDetail()
+                                      .name("CLIENT_PROV_LA")
+                                      .type("boolean")
+                                      .value("true"))
+                              .addAttributesItem(
+                                  new AssessmentAttributeDetail()
+                                      .name("TEST_INCOME")
+                                      .type("number")
+                                      .value("123.45")
+                                      .prepopulated(false))));
+      final SoaApplicationMapper realMapper = new SoaApplicationMapperImpl();
+      when(soaApplicationMapper.toCaseDetail(any()))
+          .thenAnswer(invocation -> realMapper.toCaseDetail(invocation.getArgument(0)));
+      when(caabApiClient.createApplication(any(), any())).thenReturn(Mono.just("123"));
+      when(soaApiClient.updateCase(any(), any(), any(), any()))
+          .thenReturn(Mono.just(new CaseTransactionResponse().transactionId("TRANS123")));
+
+      assertThat(amendmentService.submitMeansReassessment(user, amendment, assessment))
+          .isEqualTo("TRANS123");
+
+      final ArgumentCaptor<CaseDetail> payload = ArgumentCaptor.forClass(CaseDetail.class);
+      verify(soaApiClient)
+          .updateCase(
+              eq("123"),
+              eq("Type"),
+              payload.capture(),
+              eq(QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT));
+      final SubmittedApplicationDetails details = payload.getValue().getApplicationDetails();
+      assertThat(details.getApplicationAmendmentType()).isEqualTo("SUB");
+      assertThat(details.isMeansAssessmentAmended()).isTrue();
+      assertThat(details.isMeritsAssessmentAmended()).isFalse();
+      assertThat(details.getMeritsAssessments()).isEmpty();
+      final var means = details.getMeansAssessments().getFirst();
+      assertThat(means.getResults().getFirst().getAttribute()).isEqualTo("CLIENT_PROV_LA");
+      final var instance =
+          means.getAssessmentDetails().getFirst().getEntity().getFirst().getInstances().getFirst();
+      assertThat(instance.getInstanceLabel()).isEqualTo("12345");
+      assertThat(instance.getAttributes())
+          .extracting(OpaAttribute::getResponseValue)
+          .containsExactly("true", "123.45");
+      assertThat(instance.getAttributes().get(1).isUserDefinedInd()).isTrue();
+    }
 
     @Test
     @DisplayName("Should submit means reassessment with completed means assessment")

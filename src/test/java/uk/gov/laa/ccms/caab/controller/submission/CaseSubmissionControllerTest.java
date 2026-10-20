@@ -38,6 +38,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -75,6 +77,41 @@ class CaseSubmissionControllerTest {
 
   private static final UserDetail userDetail = buildUserDetail();
 
+  @ParameterizedTest
+  @CsvSource({"ERROR, /amendments/submit-case/failed", "PENDING, in-progress", ", in-progress"})
+  void meansReassessmentDoesNotConfirmAnUnsuccessfulTransaction(
+      String transactionStatus, String expectedDestination) throws Exception {
+    final ApplicationDetail amendment = new ApplicationDetail().caseReferenceNumber("abc123");
+    when(applicationService.getCaseStatus("transaction1"))
+        .thenReturn(
+            Mono.just(
+                new TransactionStatus()
+                    .submissionStatus(transactionStatus)
+                    .referenceNumber("abc123")));
+
+    final var result =
+        mockMvc.perform(
+            get("/amendments/submit-case")
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction1")
+                .sessionAttr(SUBMISSION_QUICK_EDIT_TYPE, "MeansReassessment")
+                .sessionAttr(APPLICATION, amendment)
+                .sessionAttr(USER_DETAILS, userDetail)
+                .sessionAttr(
+                    ACTIVE_CASE, ActiveCase.builder().caseReferenceNumber("abc123").build()));
+
+    if ("in-progress".equals(expectedDestination)) {
+      result.andExpect(status().isOk()).andExpect(view().name("submissions/submissionInProgress"));
+    } else {
+      result
+          .andExpect(status().is3xxRedirection())
+          .andExpect(redirectedUrl(expectedDestination))
+          .andExpect(request().sessionAttribute(SUBMISSION_RESULT, "failed"));
+    }
+    result.andExpect(request().sessionAttribute(APPLICATION, amendment));
+    verify(applicationService, never()).removeSubmittedAmendment(any(), any(), any());
+    verify(applicationService, never()).getCase(any(), anyLong(), any());
+  }
+
   @Mock private Model model;
 
   @Mock private ClientService clientService;
@@ -104,6 +141,7 @@ class CaseSubmissionControllerTest {
   void testAddCaseSubmission_CaseConfirmed() throws Exception {
 
     final TransactionStatus mockStatus = new TransactionStatus();
+    mockStatus.setSubmissionStatus("SUCCESS");
     mockStatus.setReferenceNumber("ref123");
     when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
 
@@ -129,6 +167,7 @@ class CaseSubmissionControllerTest {
   void testAddCaseSubmission_AmendmentConfirmed() throws Exception {
     final String refNumber = "ref123";
     final TransactionStatus mockStatus = new TransactionStatus();
+    mockStatus.setSubmissionStatus("SUCCESS");
     mockStatus.setReferenceNumber(refNumber);
     when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
 
@@ -165,6 +204,7 @@ class CaseSubmissionControllerTest {
   void testAddCaseSubmission_UndertakingAmendmentConfirmed() throws Exception {
     final String refNumber = "ref123";
     final TransactionStatus mockStatus = new TransactionStatus();
+    mockStatus.setSubmissionStatus("SUCCESS");
     mockStatus.setReferenceNumber(refNumber);
     when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
 
@@ -195,6 +235,7 @@ class CaseSubmissionControllerTest {
   void testAddCaseSubmission_MeansReassessmentConfirmed() throws Exception {
     final String refNumber = "ref123";
     final TransactionStatus mockStatus = new TransactionStatus();
+    mockStatus.setSubmissionStatus("SUCCESS");
     mockStatus.setReferenceNumber(refNumber);
     when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
 
@@ -341,6 +382,7 @@ class CaseSubmissionControllerTest {
   void testAddCaseSubmission_AmendmentConfirmedDoesNotRemoveApplication() throws Exception {
     final String refNumber = "ref123";
     final TransactionStatus mockStatus = new TransactionStatus();
+    mockStatus.setSubmissionStatus("SUCCESS");
     mockStatus.setReferenceNumber(refNumber);
     when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
 

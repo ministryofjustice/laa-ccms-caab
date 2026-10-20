@@ -37,6 +37,8 @@ import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.constants.ApplicationConstants;
+import uk.gov.laa.ccms.caab.constants.FunctionConstants;
+import uk.gov.laa.ccms.caab.constants.QuickEditTypeConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.SoaApplicationMappingContext;
@@ -868,7 +870,8 @@ public interface SoaApplicationMapper {
   SubmittedApplicationDetails toSubmittedApplicationDetails(CaseMappingContext context);
 
   /**
-   * Applies the quick edit amendment type to the submitted application details.
+   * Applies the quick edit amendment type to the submitted application details. Means reassessments
+   * use the application's EBS type, with the legacy CR217 substantive override.
    *
    * @param context the case mapping context.
    * @param target the target submitted application details.
@@ -880,6 +883,18 @@ public interface SoaApplicationMapper {
       return;
     }
     String quickEditType = context.getTdsApplication().getQuickEditType();
+    if (QuickEditTypeConstants.MESSAGE_TYPE_MEANS_REASSESSMENT.equals(quickEditType)) {
+      // MeansReassessment selects the update route; it is not an EBS application type.
+      // Match old PUI's CaseToEBSCaseConverter.addAmendmentDetails (CR217): retain
+      // the application's type for a legal amendment, otherwise submit as substantive.
+      final List<String> functions = context.getTdsApplication().getAvailableFunctions();
+      if (Boolean.TRUE.equals(context.getTdsApplication().getMeansAssessmentAmended())
+          && (functions == null
+              || !functions.contains(FunctionConstants.MEANS_ASSESSMENT_LEGAL_AMENDMENT))) {
+        target.setApplicationAmendmentType(ApplicationConstants.APP_TYPE_SUBSTANTIVE);
+      }
+      return;
+    }
     if (StringUtils.hasText(quickEditType)) {
       target.setApplicationAmendmentType(quickEditType);
     }
