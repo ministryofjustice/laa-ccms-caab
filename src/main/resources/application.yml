@@ -91,12 +91,15 @@ laa:
           name: ${S3_DOCUMENT_BUCKET}
           url-duration: 20 # (minutes) - How long generated URLs remain accessible.
     entra:
-      # External (provider) users reach the service through SiLAS and are resolved through the
-      # User Details API; internal (caseworker) users are resolved through the EBS
-      # XXCCMS_ENTRA_ID_USERS mapping table. The legacy PUI is driven by the same two settings.
+      # External (provider) users reach the service through SiLAS, which supplies the CCMS
+      # username in a custom claim; internal (caseworker) users are resolved through the EBS
+      # XXCCMS_ENTRA_ID_USERS mapping table.
+      # In the Dev External tenant the claim is https://justice.org.uk/claims/USER_NAME.
       silas-enabled: ${IS_SILAS_ENABLED:false}
       custom-user-id-claim: ${ENTRA_CUSTOM_USER_ID_CLAIM:}
-    # Only used when IS_SILAS_ENABLED is true.
+    # The fallback for a tenant whose claim supplies an identifier rather than a username.
+    # USER_DETAILS_API_HOSTNAME carries the scheme, as the other hostnames here do.
+    # The token is sent as X-Authorization, not Authorization.
     user-details-api:
       hostname: ${USER_DETAILS_API_HOSTNAME:}
       url: ${laa.ccms.user-details-api.hostname}
