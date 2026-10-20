@@ -941,6 +941,14 @@ class SoaApplicationMapperTest {
             .getCertificateCostRateLsc()
             .add(soaAward.getCostAward().getCertificateCostRateMarket()),
         result.getTotalCertCostsAwarded());
+    assertEquals(
+        soaAward
+            .getCostAward()
+            .getPreCertificateAwardLsc()
+            .add(soaAward.getCostAward().getPreCertificateAwardOth())
+            .add(soaAward.getCostAward().getCertificateCostRateLsc())
+            .add(soaAward.getCostAward().getCertificateCostRateMarket()),
+        result.getAwardAmount());
 
     // afterMapping (baseAward)
     result
