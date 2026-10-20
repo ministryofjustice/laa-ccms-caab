@@ -39,6 +39,10 @@ spring:
 server:
   servlet:
     context-path: /civil
+    session:
+      timeout: 60m
+      cookie:
+        same-site: lax
 
 laa:
   ccms:
