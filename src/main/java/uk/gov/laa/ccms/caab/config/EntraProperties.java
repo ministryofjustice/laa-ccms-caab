@@ -20,9 +20,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * <p>The legacy PUI makes the same distinction, driven by the same two settings.
  *
  * @param silasEnabled whether users are external SiLAS identities rather than internal ones.
- * @param customUserIdClaim the token claim holding the SiLAS identifier. Only used when {@code
- *     silasEnabled} is true; when it is unset, or absent from the token, the authenticated identity
- *     is used as-is.
+ * @param customUserIdClaim the token claim SiLAS supplies the CCMS username in. Only used when
+ *     {@code silasEnabled} is true; when it is unset, or absent from the token, the authenticated
+ *     identity is exchanged through the User Details API instead.
  */
 @ConfigurationProperties(prefix = "laa.ccms.entra")
 public record EntraProperties(boolean silasEnabled, String customUserIdClaim) {}
