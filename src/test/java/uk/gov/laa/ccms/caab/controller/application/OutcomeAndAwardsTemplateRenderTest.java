@@ -62,6 +62,22 @@ class OutcomeAndAwardsTemplateRenderTest {
     assertThat(html).contains("£123.45").doesNotContain("£75.00");
   }
 
+  @Test
+  @DisplayName("Pre-certificate and legal help costs summary uses table headers")
+  void preCertificateAndLegalHelpCostsSummaryUsesTableHeaders() {
+    final String html = render(List.of());
+
+    assertThat(html)
+        .contains("id=\"preCertificateAndLegalHelpCostsTable\"")
+        .contains("class=\"govuk-table\"")
+        .contains("<th scope=\"col\" class=\"govuk-table__header\">Type</th>")
+        .contains("<th scope=\"col\" class=\"govuk-table__header\">Pre-certificate amount</th>")
+        .contains("<th scope=\"col\" class=\"govuk-table__header\">Legal help amount</th>")
+        .contains("id=\"preCertificateAndLegalHelpCostsLink\"")
+        .contains("id=\"preCertificateAndLegalHelpCostsPreCertificateAmount\"")
+        .contains("id=\"preCertificateAndLegalHelpCostsLegalHelpAmount\"");
+  }
+
   private String render(final List<OtherAssetAwardDetail> awards) {
     final MockServletContext servletContext = new MockServletContext();
     final JakartaServletWebApplication application =

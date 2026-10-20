@@ -702,6 +702,7 @@ public class CaseController {
       @PathVariable("index") final int index,
       @ModelAttribute("proceedingOutcome") final ProceedingOutcomeFormData proceedingOutcome,
       HttpSession session) {
+    proceedingOutcome.normaliseLegacyCourtFields();
     session.setAttribute(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome);
     session.setAttribute(COURT_SEARCH_CRITERIA, new CourtSearchCriteria());
     return "redirect:/court/search?proceedingIndex=" + index;
@@ -720,6 +721,8 @@ public class CaseController {
       @ModelAttribute("proceedingOutcome") final ProceedingOutcomeFormData proceedingOutcome,
       final BindingResult bindingResult,
       final Model model) {
+
+    proceedingOutcome.normaliseLegacyCourtFields();
 
     final ProceedingDetail proceeding = validateProceedingIndex(ebsCase, index);
 
@@ -939,10 +942,14 @@ public class CaseController {
         && !StringUtils.hasText(localOutcome.getResultInfo())
         && !StringUtils.hasText(localOutcome.getAlternativeResolution())
         && !StringUtils.hasText(localOutcome.getAdrInfo())
-        && !StringUtils.hasText(localOutcome.getCourtCode())
-        && !StringUtils.hasText(localOutcome.getCourtName())
+        && !hasSelectedCourt(localOutcome.getCourtCode(), localOutcome.getCourtName())
         && !StringUtils.hasText(localOutcome.getOutcomeCourtCaseNo())
         && !StringUtils.hasText(localOutcome.getWiderBenefits());
+  }
+
+  private boolean hasSelectedCourt(final String courtCode, final String courtName) {
+    return StringUtils.hasText(ProceedingOutcomeFormData.normaliseCourtValue(courtCode))
+        || StringUtils.hasText(ProceedingOutcomeFormData.normaliseCourtValue(courtName));
   }
 
   private boolean hasStringDisplayValue(final uk.gov.laa.ccms.caab.model.StringDisplayValue value) {
@@ -952,6 +959,8 @@ public class CaseController {
 
   private ProceedingOutcomeDetail buildProceedingOutcome(
       final ProceedingDetail proceeding, final ProceedingOutcomeFormData proceedingOutcome) {
+    proceedingOutcome.normaliseLegacyCourtFields();
+
     final String proceedingCode =
         Optional.ofNullable(proceeding.getProceedingType()).map(item -> item.getId()).orElse(null);
     final Map<String, String> stageEndMap =
@@ -1106,8 +1115,8 @@ public class CaseController {
     formData.setResultInfo(outcome.getResultInfo());
     formData.setAlternativeResolution(outcome.getAlternativeResolution());
     formData.setAdrInfo(outcome.getAdrInfo());
-    formData.setCourtCode(outcome.getCourtCode());
-    formData.setCourtName(outcome.getCourtName());
+    formData.setCourtCode(ProceedingOutcomeFormData.normaliseCourtValue(outcome.getCourtCode()));
+    formData.setCourtName(ProceedingOutcomeFormData.normaliseCourtValue(outcome.getCourtName()));
     formData.setOutcomeCourtCaseNo(outcome.getOutcomeCourtCaseNo());
     formData.setWiderBenefits(outcome.getWiderBenefits());
 
