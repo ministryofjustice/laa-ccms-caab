@@ -143,29 +143,37 @@ class CcmsUserIdentityResolverTest {
   class ExternalUsers {
 
     @Test
-    @DisplayName("Exchanges the custom claim for a CCMS username")
+    @DisplayName("Takes the CCMS username straight from the claim")
     void resolvesFromCustomClaim() {
-      when(oidcUser.getClaims()).thenReturn(Map.of(SILAS_CLAIM, "silas-uuid"));
-      when(oidcUser.getEmail()).thenReturn(ENTRA_EMAIL);
-      when(userService.getUserBySilasId("silas-uuid"))
-          .thenReturn(Mono.just(silasUser(CCMS_LOGIN_ID)));
+      when(oidcUser.getClaims()).thenReturn(Map.of(SILAS_CLAIM, CCMS_LOGIN_ID));
 
       assertEquals(CCMS_LOGIN_ID, resolver(true, SILAS_CLAIM).resolveCcmsLoginId(oidcUser));
+
+      verifyNoInteractions(userService);
     }
 
     @Test
     @DisplayName("Reads a claim issued as a single valued list")
     void resolvesFromListValuedClaim() {
-      when(oidcUser.getClaims()).thenReturn(Map.of(SILAS_CLAIM, List.of("silas-uuid")));
-      when(oidcUser.getEmail()).thenReturn(ENTRA_EMAIL);
-      when(userService.getUserBySilasId("silas-uuid"))
-          .thenReturn(Mono.just(silasUser(CCMS_LOGIN_ID)));
+      when(oidcUser.getClaims()).thenReturn(Map.of(SILAS_CLAIM, List.of(CCMS_LOGIN_ID)));
+
+      assertEquals(CCMS_LOGIN_ID, resolver(true, SILAS_CLAIM).resolveCcmsLoginId(oidcUser));
+
+      verifyNoInteractions(userService);
+    }
+
+    @Test
+    @DisplayName("Does not need an email address when the claim resolves the user")
+    void doesNotNeedEmailWhenClaimPresent() {
+      when(oidcUser.getClaims()).thenReturn(Map.of(SILAS_CLAIM, CCMS_LOGIN_ID));
+      lenient().when(oidcUser.getEmail()).thenReturn(null);
+      lenient().when(oidcUser.getPreferredUsername()).thenReturn(null);
 
       assertEquals(CCMS_LOGIN_ID, resolver(true, SILAS_CLAIM).resolveCcmsLoginId(oidcUser));
     }
 
     @Test
-    @DisplayName("Falls back to the authenticated identity when no claim is configured")
+    @DisplayName("Exchanges the identity through the API when no claim is configured")
     void fallsBackWhenClaimNotConfigured() {
       when(oidcUser.getEmail()).thenReturn(ENTRA_EMAIL);
       when(userService.getUserBySilasId(ENTRA_EMAIL))
@@ -175,7 +183,7 @@ class CcmsUserIdentityResolverTest {
     }
 
     @Test
-    @DisplayName("Falls back to the authenticated identity when the claim is absent")
+    @DisplayName("Exchanges the identity through the API when the claim is absent")
     void fallsBackWhenClaimAbsent() {
       when(oidcUser.getClaims()).thenReturn(Map.of("something-else", "value"));
       when(oidcUser.getEmail()).thenReturn(ENTRA_EMAIL);
@@ -186,27 +194,27 @@ class CcmsUserIdentityResolverTest {
     }
 
     @Test
-    @DisplayName("Fails when the SiLAS identity is not known")
+    @DisplayName("Fails when the fallback identity is not known to the API")
     void failsWhenUnknown() {
-      when(oidcUser.getClaims()).thenReturn(Map.of(SILAS_CLAIM, "silas-uuid"));
+      when(oidcUser.getClaims()).thenReturn(Map.of("something-else", "value"));
       when(oidcUser.getEmail()).thenReturn(ENTRA_EMAIL);
-      when(userService.getUserBySilasId("silas-uuid")).thenReturn(Mono.empty());
+      when(userService.getUserBySilasId(ENTRA_EMAIL)).thenReturn(Mono.empty());
 
       final CcmsUserResolutionException exception =
           assertThrows(
               CcmsUserResolutionException.class,
               () -> resolver(true, SILAS_CLAIM).resolveCcmsLoginId(oidcUser));
 
-      assertTrue(exception.getMessage().contains("silas-uuid"));
+      assertTrue(exception.getMessage().contains(ENTRA_EMAIL));
       assertTrue(exception.getMessage().contains("User Details API"));
     }
 
     @Test
     @DisplayName("Fails authentication when the User Details API cannot be reached")
     void failsWhenUserDetailsApiUnreachable() {
-      when(oidcUser.getClaims()).thenReturn(Map.of(SILAS_CLAIM, "silas-uuid"));
+      when(oidcUser.getClaims()).thenReturn(Map.of("something-else", "value"));
       when(oidcUser.getEmail()).thenReturn(ENTRA_EMAIL);
-      when(userService.getUserBySilasId("silas-uuid"))
+      when(userService.getUserBySilasId(ENTRA_EMAIL))
           .thenReturn(Mono.error(new UserDetailsApiClientException("boom")));
 
       final CcmsUserResolutionException exception =
@@ -220,9 +228,9 @@ class CcmsUserIdentityResolverTest {
     @Test
     @DisplayName("Fails when the API returns no CCMS user details")
     void failsWhenNoUserDetails() {
-      when(oidcUser.getClaims()).thenReturn(Map.of(SILAS_CLAIM, "silas-uuid"));
+      when(oidcUser.getClaims()).thenReturn(Map.of("something-else", "value"));
       when(oidcUser.getEmail()).thenReturn(ENTRA_EMAIL);
-      when(userService.getUserBySilasId("silas-uuid")).thenReturn(Mono.just(new UserViewModel()));
+      when(userService.getUserBySilasId(ENTRA_EMAIL)).thenReturn(Mono.just(new UserViewModel()));
 
       assertThrows(
           CcmsUserResolutionException.class,
