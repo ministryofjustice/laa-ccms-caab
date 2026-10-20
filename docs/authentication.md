@@ -18,7 +18,7 @@ against, and is chosen by `IS_SILAS_ENABLED`:
 |---|---|---|
 | Who | Caseworkers, signing in as themselves | Providers, federated in through SiLAS |
 | Identity on the token | `@justice.gov.uk` email address | SiLAS identifier in a custom claim |
-| Resolved by | EBS `XXCCMS_ENTRA_ID_USERS` mapping table | User Details API |
+| Resolved by | EBS `XXCCMS_ENTRA_ID_USERS` mapping table | the `CCMS_USERNAME` claim, or the User Details API if absent |
 | Call made | `GET /users/entra-mapping?entra-email=...` | `GET /api/v1/user-details/silas/{id}` |
 
 The legacy PUI makes exactly the same distinction off the same two settings, in
@@ -91,7 +91,7 @@ To run against a real EntraID tenant instead, override `OIDC_ISSUER_URI`, `AZURE
 | `AZURE_CLIENT_SECRET` | yes | App registration client secret. Hold in a secret, never in values. |
 | `POST_LOGOUT_REDIRECT_URI` | yes | Where EntraID returns the user after signing out. |
 | `IS_SILAS_ENABLED` | no (default `false`) | `true` for external/SiLAS tenants, `false` for internal. |
-| `ENTRA_CUSTOM_USER_ID_CLAIM` | when SiLAS is enabled | Name of the claim carrying the SiLAS identifier. When unset or absent from the token, the authenticated identity is used unchanged. |
+| `ENTRA_CUSTOM_USER_ID_CLAIM` | when SiLAS is enabled | Name of the claim SiLAS supplies the CCMS username in - `CCMS_USERNAME` in the Dev External tenant. When unset or absent from the token, the authenticated identity is exchanged through the User Details API instead. |
 | `USER_DETAILS_API_HOSTNAME` | when SiLAS is enabled | Base URL of the User Details API. |
 | `USER_DETAILS_API_ACCESS_TOKEN` | when SiLAS is enabled | Sent as `X-Authorization`, as the legacy PUI sends it. |
 
@@ -126,15 +126,11 @@ silas_custom_claims_provider_tenant = "ExternalTest" # "ExternalProd" for prod
 The claim name in the JWT is the value in the list, so `ENTRA_CUSTOM_USER_ID_CLAIM` is set to the
 same string.
 
-**Open question for IDAM and SiLAS.** The module's allowed claims are `LAA_ACCOUNTS`,
-`LAA_APP_ROLES`, `USER_EMAIL`, `USER_NAME`, `FIRM_NAME`, `FIRM_CODE` and `CCMS_USERNAME`. None of
-them is named as a SiLAS UUID, and `CCMS_USERNAME` looks like it would carry the CCMS username
-itself - which would make the User Details API call unnecessary for external users. This
-implementation follows the legacy PUI, which takes an identifier from the claim and exchanges it
-through the User Details API. Confirm with IDAM (John Nolan) and SiLAS (Callum Brett) which claim
-actually carries the SiLAS identifier before configuring `ENTRA_CUSTOM_USER_ID_CLAIM`; if the
-answer is that `CCMS_USERNAME` is the CCMS username, the external path can be shortened to read it
-straight off the token.
+**Configured in Dev External as `CCMS_USERNAME`,** sourced from
+`customclaimsprovider.ccms_username`. That claim carries the CCMS username itself, so there is
+nothing to exchange and the User Details API is not called. It remains the fallback for a tenant
+whose claim supplies an identifier rather than a username, which is the shape the legacy PUI
+assumes.
 
 ### Still to do
 

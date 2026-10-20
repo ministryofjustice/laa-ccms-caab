@@ -47,11 +47,9 @@ public class CcmsUserIdentityResolver {
    * @throws CcmsUserResolutionException if the identity does not map to a CCMS user.
    */
   public String resolveCcmsLoginId(final OidcUser oidcUser) {
-    final String entraIdentity = entraIdentity(oidcUser);
-
     return entraProperties.silasEnabled()
-        ? externalLoginId(oidcUser, entraIdentity)
-        : internalLoginId(entraIdentity);
+        ? externalLoginId(oidcUser)
+        : internalLoginId(entraIdentity(oidcUser));
   }
 
   /**
@@ -94,10 +92,33 @@ public class CcmsUserIdentityResolver {
     return loginId;
   }
 
-  /** Exchanges an external user's SiLAS identifier for a CCMS username. */
-  private String externalLoginId(final OidcUser oidcUser, final String entraIdentity) {
-    final String silasId = silasIdentifier(oidcUser, entraIdentity);
+  /**
+   * Resolves an external user from the SiLAS claim, falling back to the User Details API.
+   *
+   * <p>Which of the two applies depends on the tenant: the claim may carry the CCMS username
+   * outright, or an identifier that has to be exchanged for one.
+   */
+  private String externalLoginId(final OidcUser oidcUser) {
+    final String claimName = entraProperties.customUserIdClaim();
 
+    if (claimName != null && !claimName.isBlank()) {
+      final Optional<String> claimed = claimValue(oidcUser, claimName);
+      if (claimed.isPresent()) {
+        // The claim carries the CCMS username itself, so there is nothing to exchange.
+        log.info("Resolved CCMS user [{}] from the EntraID claim [{}]", claimed.get(), claimName);
+        return claimed.get();
+      }
+      log.warn(
+          "EntraID custom user id claim [{}] is absent from the token, falling back to the "
+              + "User Details API",
+          claimName);
+    }
+
+    return userDetailsApiLoginId(entraIdentity(oidcUser));
+  }
+
+  /** Exchanges a SiLAS identifier for a CCMS username through the User Details API. */
+  private String userDetailsApiLoginId(final String silasId) {
     final String loginId =
         lookup(() -> userService.getUserBySilasId(silasId).blockOptional(), "the User Details API")
             .map(UserViewModel::getCcmsUserDetails)
@@ -112,32 +133,6 @@ public class CcmsUserIdentityResolver {
 
     log.info("Resolved SiLAS identity to CCMS user [{}] from the User Details API", loginId);
     return loginId;
-  }
-
-  /**
-   * The SiLAS identifier for an external user.
-   *
-   * <p>SiLAS federates into EntraID and supplies its own identifier as a custom claim, whose name
-   * is configurable because it differs between tenants. Where the claim is not configured, or the
-   * token does not carry it, the authenticated identity is used unchanged - the same fallback the
-   * legacy PUI makes.
-   */
-  private String silasIdentifier(final OidcUser oidcUser, final String entraIdentity) {
-    final String claimName = entraProperties.customUserIdClaim();
-    if (claimName == null || claimName.isBlank()) {
-      log.debug("No EntraID custom user id claim configured, using the authenticated identity");
-      return entraIdentity;
-    }
-
-    return claimValue(oidcUser, claimName)
-        .orElseGet(
-            () -> {
-              log.warn(
-                  "EntraID custom user id claim [{}] is absent from the token, using the "
-                      + "authenticated identity",
-                  claimName);
-              return entraIdentity;
-            });
   }
 
   /**
