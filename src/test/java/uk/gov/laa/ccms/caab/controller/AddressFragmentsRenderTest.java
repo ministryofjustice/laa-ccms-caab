@@ -2,11 +2,13 @@ package uk.gov.laa.ccms.caab.controller;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +16,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.stereotype.Controller;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
@@ -32,6 +35,7 @@ import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.springboot.dialect.GovUkDialect;
 import uk.gov.laa.springboot.dialect.MojCustomDialect;
 
@@ -179,6 +183,60 @@ class AddressFragmentsRenderTest {
         .andExpect(content().string(not(containsString("id=\"postcode-hint\""))));
   }
 
+  @Test
+  void clientAddressHostTemplateRendersSearchManualAndConfirmedWithoutNestedForms()
+      throws Exception {
+    final MvcResult searchResult =
+        mockMvc
+            .perform(get("/test/address-client-page/search"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("name=\"postcode\"")))
+            .andExpect(content().string(containsString("Enter address manually")))
+            .andReturn();
+    assertEquals(1, formCount(searchResult));
+
+    final MvcResult manualResult =
+        mockMvc
+            .perform(get("/test/address-client-page/manual"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("id=\"addressLine1\"")))
+            .andExpect(content().string(not(containsString("id=\"find-address-button\""))))
+            .andReturn();
+    assertEquals(1, formCount(manualResult));
+
+    final MvcResult confirmedResult =
+        mockMvc
+            .perform(get("/test/address-client-page/confirmed"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("10 Example Street")))
+            .andExpect(content().string(not(containsString("name=\"postcode\""))))
+            .andExpect(content().string(not(containsString("name=\"addressLine1\""))))
+            .andReturn();
+    assertEquals(1, formCount(confirmedResult));
+
+    final MvcResult resultsPage =
+        mockMvc
+            .perform(get("/test/address-client-page/results"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("10 Example Street")))
+            .andExpect(content().string(containsString("Use this address")))
+            .andReturn();
+    assertEquals(1, formCount(resultsPage));
+
+    final MvcResult confirmationPage =
+        mockMvc
+            .perform(get("/test/address-client-page/confirmation"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("10 Example Street")))
+            .andExpect(content().string(containsString("Use a different address")))
+            .andReturn();
+    assertEquals(1, formCount(confirmationPage));
+  }
+
+  private int formCount(final MvcResult result) throws Exception {
+    return result.getResponse().getContentAsString().split("<form").length - 1;
+  }
+
   @Controller
   static class HarnessController {
 
@@ -258,6 +316,83 @@ class AddressFragmentsRenderTest {
           BindingResult.MODEL_KEY_PREFIX + "addressDetails",
           new BeanPropertyBindingResult(addressDetails, "addressDetails"));
       return "test/address-client-component-harness";
+    }
+
+    @GetMapping("/test/address-client-page/{state}")
+    public String renderClientAddressPage(@PathVariable final String state, final Model model) {
+      if ("results".equals(state)) {
+        final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+            new AddressLookupFlowData<>("create-client");
+        final AddressResultRowDisplay result = new AddressResultRowDisplay();
+        result.setUprn("1001");
+        result.setFullAddress("10 Example Street");
+        addressFlow.setSearchResults(new ResultsDisplay<>(List.of(result)));
+        model.addAttribute("addressSearch", new AddressSearchFormData());
+        model.addAttribute("addressSearchResults", addressFlow.getSearchResults());
+        model.addAttribute("addressFlow", addressFlow);
+        model.addAttribute("originalPostcode", "SA5 8AB");
+        model.addAttribute("originalBuildingSearch", "10");
+        model.addAttribute("searchAgainUrl", "/application/client/details/address/search-again");
+        model.addAttribute("manualEntryUrl", "/application/client/details/address/manual");
+        addLayoutAttributes(model);
+        model.addAttribute(
+            BindingResult.MODEL_KEY_PREFIX + "addressSearch",
+            new BeanPropertyBindingResult(new AddressSearchFormData(), "addressSearch"));
+        return "application/client/address-client-search-results";
+      }
+      if ("confirmation".equals(state)) {
+        final AddressResultRowDisplay selectedAddress = new AddressResultRowDisplay();
+        selectedAddress.setFullAddress("10 Example Street");
+        model.addAttribute("selectedAddress", selectedAddress);
+        model.addAttribute("showClientCaption", true);
+        model.addAttribute("backUrl", "/application/client/details/address");
+        model.addAttribute("confirmUrl", "/application/client/details/address/confirm");
+        model.addAttribute("changeUrl", "/application/client/details/address/search");
+        model.addAttribute("searchAgainUrl", "/application/client/details/address/search-again");
+        model.addAttribute("manualEntryUrl", "/application/client/details/address/manual");
+        addLayoutAttributes(model);
+        return "application/sections/address-confirmation";
+      }
+
+      final ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
+      addressDetails.setClientFlowFormAction("create");
+      addressDetails.setVulnerableClient(false);
+      addressDetails.setNoFixedAbode(false);
+      final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+          new AddressLookupFlowData<>("create-client");
+      final AddressResultRowDisplay selectedAddress = new AddressResultRowDisplay();
+      selectedAddress.setUprn("1001");
+      selectedAddress.setFullAddress("10 Example Street");
+
+      if ("confirmed".equals(state)) {
+        addressFlow.setSelectedAddress(selectedAddress);
+        addressFlow.confirmSelectedAddress();
+      } else if ("manual".equals(state)) {
+        addressFlow.enterManualEntry(addressDetails);
+      }
+
+      model.addAttribute("addressDetails", addressDetails);
+      model.addAttribute("addressFlow", addressFlow);
+      model.addAttribute("selectedAddress", selectedAddress);
+      model.addAttribute("componentEnabled", true);
+      model.addAttribute("manualEntryUrl", "/application/client/details/address/manual");
+      model.addAttribute("changeAddressUrl", "/application/client/details/address/search-again");
+      addLayoutAttributes(model);
+      model.addAttribute(
+          "countries",
+          List.of(new CommonLookupValueDetail().code("GBR").description("United Kingdom")));
+      model.addAttribute(
+          BindingResult.MODEL_KEY_PREFIX + "addressDetails",
+          new BeanPropertyBindingResult(addressDetails, "addressDetails"));
+      return "application/client/address-client-details";
+    }
+
+    private void addLayoutAttributes(final Model model) {
+      model.addAttribute("researchPanelLink", "/research");
+      model.addAttribute("cspNonce", "test-nonce");
+      final UserDetail user = new UserDetail();
+      user.setFunctions(Collections.emptyList());
+      model.addAttribute("user", user);
     }
   }
 }

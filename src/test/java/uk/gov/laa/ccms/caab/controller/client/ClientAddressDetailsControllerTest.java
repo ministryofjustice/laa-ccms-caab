@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -34,6 +35,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
+import uk.gov.laa.ccms.caab.mapper.ClientAddressResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
@@ -176,10 +178,10 @@ public class ClientAddressDetailsControllerTest {
   @Test
   void testClientDetailsAddressPostNextPreservesSearchedPostcode() throws Exception {
     ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
-    addressDetails.setCountry("GBR");
-    addressDetails.setPostcode("sa58ab");
-    addressDetails.setAddressLine1("Address line 1");
-    addressDetails.setCityTown("Town");
+    addressDetails.setCountry("TAMPERED");
+    addressDetails.setPostcode("TAMPERED");
+    addressDetails.setAddressLine1("Posted address");
+    addressDetails.setCityTown("Posted town");
     AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
         new AddressLookupFlowData<>("create-client");
     addressFlow.setSource(AddressLookupFlowData.Source.SEARCHED);
@@ -187,8 +189,23 @@ public class ClientAddressDetailsControllerTest {
     selected.setUprn("123");
     selected.setPostcode("sa58ab");
     selected.setCountry("GBR");
+    selected.setHouseNameNumber("10");
+    selected.setAddressLine1("Canonical line 1");
+    selected.setAddressLine2("Canonical line 2");
+    selected.setCityTown("Canonical town");
+    selected.setCounty("Canonical county");
     addressFlow.setSelectedAddress(selected);
     addressFlow.confirmSelectedAddress();
+    final ClientAddressResultDisplayMapper mapper =
+        Mappers.getMapper(ClientAddressResultDisplayMapper.class);
+    doAnswer(
+            invocation -> {
+              mapper.updateClientFormDataAddressDetails(
+                  invocation.getArgument(0), invocation.getArgument(1));
+              return null;
+            })
+        .when(addressService)
+        .updateClientFormDataAddressDetails(any(), any());
 
     this.mockMvc
         .perform(
@@ -200,7 +217,13 @@ public class ClientAddressDetailsControllerTest {
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/client/details/equal-opportunities-monitoring"));
 
+    assertEquals("GBR", clientFlowFormData.getAddressDetails().getCountry());
+    assertEquals("10", clientFlowFormData.getAddressDetails().getHouseNameNumber());
     assertEquals("sa58ab", clientFlowFormData.getAddressDetails().getPostcode());
+    assertEquals("Canonical line 1", clientFlowFormData.getAddressDetails().getAddressLine1());
+    assertEquals("Canonical line 2", clientFlowFormData.getAddressDetails().getAddressLine2());
+    assertEquals("Canonical town", clientFlowFormData.getAddressDetails().getCityTown());
+    assertEquals("Canonical county", clientFlowFormData.getAddressDetails().getCounty());
   }
 
   @Test

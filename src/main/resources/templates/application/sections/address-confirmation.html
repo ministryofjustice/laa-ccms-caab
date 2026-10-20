@@ -11,7 +11,6 @@
     <a th:href="${backUrl}" class="govuk-back-link" th:text="#{site.back}"></a>
   </div>
   <div id="main-content">
-    <div th:replace="~{partials/error-summary :: error-summary}"></div>
     <span th:if="${showClientCaption}" class="govuk-caption-l" th:text="#{client.about}"></span>
     <div th:replace="~{application/partials/address-fragments :: confirmation(
         ${selectedAddress},
