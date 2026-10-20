@@ -165,3 +165,5 @@ server:
     session:
       cookie:
         name: CAAB_JSESSIONID
+        # Local dev is plain http, so a Secure cookie would never be sent back.
+        secure: false
