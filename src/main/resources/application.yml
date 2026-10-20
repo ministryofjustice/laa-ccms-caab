@@ -73,6 +73,11 @@ server:
   servlet:
     session:
       timeout: 60m
+      cookie:
+        # Lax, not Strict: the IdP returns the user by a cross-site redirect, and Strict withholds
+        # the cookie on that hop, losing the authorization request mid sign-in.
+        same-site: lax
+        secure: ${SESSION_COOKIE_SECURE:true}
     # required to be on civil in order for OPA integration with OWD,
     # otherwise issues occur with the JSESSIONID cookie
     context-path: /civil
