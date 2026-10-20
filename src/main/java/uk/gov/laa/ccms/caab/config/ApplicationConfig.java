@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.config;
 
 import fi.solita.clamav.ClamAVClient;
 import java.util.Locale;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -10,6 +11,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.LocaleResolver;
@@ -54,6 +60,10 @@ public class ApplicationConfig implements WebMvcConfigurer {
 
   private final LoggingInterceptor loggingInterceptor;
 
+  private final ClientRegistrationRepository clientRegistrationRepository;
+
+  private final OAuth2AuthorizedClientManager authorizedClientManager;
+
   private final UploadSizeErrorInterceptor uploadSizeErrorInterceptor;
 
   @Override
@@ -78,6 +88,8 @@ public class ApplicationConfig implements WebMvcConfigurer {
    * @param userDetailsApiProperties The connection details for the User Details API.
    * @param osApiUrl The URL of the ordinance survey API.
    * @param loggingInterceptor A logging interceptor for the caab.
+   * @param clientRegistrationRepository The OAuth2 client registrations, absent when the OAuth2
+   *     client is not configured.
    */
   public ApplicationConfig(
       final EbsApiProperties ebsApiProperties,
@@ -91,7 +103,8 @@ public class ApplicationConfig implements WebMvcConfigurer {
       @Value("${av.api.port}") final Integer avApiPort,
       @Value("${av.api.timeout}") final Integer avApiTimeout,
       final LoggingInterceptor loggingInterceptor,
-      final UploadSizeErrorInterceptor uploadSizeErrorInterceptor) {
+      final UploadSizeErrorInterceptor uploadSizeErrorInterceptor,
+      final ObjectProvider<ClientRegistrationRepository> clientRegistrationRepository) {
     this.ebsApiProperties = ebsApiProperties;
     this.soaApiProperties = soaApiProperties;
     this.caabApiProperties = caabApiProperties;
@@ -104,6 +117,21 @@ public class ApplicationConfig implements WebMvcConfigurer {
     this.avApiTimeout = avApiTimeout;
     this.loggingInterceptor = loggingInterceptor;
     this.uploadSizeErrorInterceptor = uploadSizeErrorInterceptor;
+    this.clientRegistrationRepository = clientRegistrationRepository.getIfAvailable();
+    this.authorizedClientManager = authorizedClientManager(this.clientRegistrationRepository);
+  }
+
+  private static OAuth2AuthorizedClientManager authorizedClientManager(
+      final ClientRegistrationRepository registrations) {
+    if (registrations == null) {
+      return null;
+    }
+    final AuthorizedClientServiceOAuth2AuthorizedClientManager manager =
+        new AuthorizedClientServiceOAuth2AuthorizedClientManager(
+            registrations, new InMemoryOAuth2AuthorizedClientService(registrations));
+    manager.setAuthorizedClientProvider(
+        OAuth2AuthorizedClientProviderBuilder.builder().clientCredentials().build());
+    return manager;
   }
 
   /**
@@ -113,7 +141,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
    */
   @Bean("ebsApiWebClient")
   WebClient ebsApiWebClient() {
-    return createWebClient(ebsApiProperties);
+    return createWebClient(ebsApiProperties, "ebs-api");
   }
 
   /**
@@ -123,7 +151,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
    */
   @Bean("soaApiWebClient")
   WebClient soaApiWebClient() {
-    return createWebClient(soaApiProperties);
+    return createWebClient(soaApiProperties, "soa-api");
   }
 
   /**
@@ -133,7 +161,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
    */
   @Bean("caabApiWebClient")
   WebClient caabApiWebClient() {
-    return createWebClient(caabApiProperties);
+    return createWebClient(caabApiProperties, "caab-api");
   }
 
   /**
@@ -143,7 +171,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
    */
   @Bean("assessmentApiWebClient")
   WebClient assessmentApiWebClient() {
-    return createWebClient(assessmentApiProperties);
+    return createWebClient(assessmentApiProperties, "assessment-api");
   }
 
   /**
@@ -236,16 +264,35 @@ public class ApplicationConfig implements WebMvcConfigurer {
     return localeResolver;
   }
 
-  private WebClient createWebClient(final ApiProperties apiProperties) {
+  /**
+   * Builds a client for an API, authenticated by OAuth2 where the API has a client registration and
+   * by its static access token otherwise.
+   *
+   * <p>Each API therefore migrates on its own, which is what the APIs themselves support: while
+   * both are configured they accept a bearer token or an access token on the same endpoints.
+   */
+  private WebClient createWebClient(
+      final ApiProperties apiProperties, final String registrationId) {
     final int size = 16 * 1024 * 1024;
     final ExchangeStrategies strategies =
         ExchangeStrategies.builder()
             .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(size))
             .build();
-    return WebClient.builder()
-        .baseUrl(apiProperties.getUrl())
-        .defaultHeader(HttpHeaders.AUTHORIZATION, apiProperties.getAccessToken())
-        .exchangeStrategies(strategies)
-        .build();
+
+    final WebClient.Builder builder =
+        WebClient.builder().baseUrl(apiProperties.getUrl()).exchangeStrategies(strategies);
+
+    if (registered(registrationId)) {
+      builder.filter(new ClientCredentialsTokenFilter(authorizedClientManager, registrationId));
+    } else {
+      builder.defaultHeader(HttpHeaders.AUTHORIZATION, apiProperties.getAccessToken());
+    }
+
+    return builder.build();
+  }
+
+  private boolean registered(final String registrationId) {
+    return clientRegistrationRepository != null
+        && clientRegistrationRepository.findByRegistrationId(registrationId) != null;
   }
 }
