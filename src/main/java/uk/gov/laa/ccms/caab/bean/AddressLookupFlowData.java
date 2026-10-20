@@ -15,6 +15,7 @@ public class AddressLookupFlowData<T> {
     NO_RESULTS,
     LOOKUP_UNAVAILABLE,
     SELECTED_ADDRESS,
+    CONFIRMED_ADDRESS,
     MANUAL_ENTRY,
     EXISTING_ADDRESS
   }
@@ -47,6 +48,7 @@ public class AddressLookupFlowData<T> {
     normalizedPostcode = UkPostcode.normalize(postcode);
     searchResults = null;
     selectedAddress = null;
+    source = Source.UNKNOWN;
     step = Step.SEARCH;
   }
 
@@ -66,6 +68,20 @@ public class AddressLookupFlowData<T> {
       source = Source.SEARCHED;
       step = Step.SELECTED_ADDRESS;
     }
+  }
+
+  public void confirmSelectedAddress() {
+    if (selectedAddress != null && step == Step.SELECTED_ADDRESS) {
+      step = Step.CONFIRMED_ADDRESS;
+    }
+  }
+
+  /** Returns to the search step while retaining the original terms. */
+  public void searchAgain() {
+    searchResults = null;
+    selectedAddress = null;
+    source = Source.UNKNOWN;
+    step = Step.SEARCH;
   }
 
   /** Starts a blank manual-entry branch without carrying lookup candidates into it. */

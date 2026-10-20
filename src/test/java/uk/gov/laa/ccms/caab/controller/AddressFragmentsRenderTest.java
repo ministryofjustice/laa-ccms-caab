@@ -25,7 +25,9 @@ import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import org.thymeleaf.templatemode.TemplateMode;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
+import uk.gov.laa.ccms.caab.bean.AddressLookupFlowData;
 import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -147,6 +149,36 @@ class AddressFragmentsRenderTest {
         .andExpect(content().string(not(containsString("name=\"addressLine1\""))));
   }
 
+  @Test
+  void clientAddressComponentRendersOnlyTheControlsForItsCurrentState() throws Exception {
+    mockMvc
+        .perform(get("/test/address-client-component/confirmed"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString("10 Example Street")))
+        .andExpect(content().string(not(containsString("name=\"postcode\""))))
+        .andExpect(content().string(not(containsString("name=\"addressLine1\""))));
+
+    mockMvc
+        .perform(get("/test/address-client-component/manual"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString("id=\"addressLine1\"")))
+        .andExpect(content().string(containsString("name=\"addressLine1\"")))
+        .andExpect(content().string(not(containsString("id=\"find-address-button\""))));
+
+    mockMvc
+        .perform(get("/test/address-client-component/search"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString("name=\"postcode\"")))
+        .andExpect(content().string(not(containsString("name=\"addressLine1\""))));
+
+    mockMvc
+        .perform(get("/test/address-client-component/legacy"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString("name=\"postcode\"")))
+        .andExpect(content().string(containsString("name=\"addressLine1\"")))
+        .andExpect(content().string(not(containsString("id=\"postcode-hint\""))));
+  }
+
   @Controller
   static class HarnessController {
 
@@ -190,6 +222,42 @@ class AddressFragmentsRenderTest {
       }
 
       return "test/address-fragments-harness";
+    }
+
+    @GetMapping("/test/address-client-component/{state}")
+    public String renderClientAddressComponent(
+        @PathVariable final String state, final Model model) {
+      final ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
+      addressDetails.setVulnerableClient(false);
+      addressDetails.setNoFixedAbode(false);
+      final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+          new AddressLookupFlowData<>("create-client");
+      final AddressResultRowDisplay selectedAddress = new AddressResultRowDisplay();
+      selectedAddress.setUprn("1001");
+      selectedAddress.setFullAddress("10 Example Street");
+
+      if ("confirmed".equals(state)) {
+        addressFlow.setSelectedAddress(selectedAddress);
+        addressFlow.confirmSelectedAddress();
+      } else if ("manual".equals(state)) {
+        addressFlow.enterManualEntry(addressDetails);
+      } else if ("unavailable".equals(state)) {
+        addressFlow.markLookupUnavailable();
+      }
+
+      model.addAttribute("addressDetails", addressDetails);
+      model.addAttribute("addressFlow", addressFlow);
+      model.addAttribute("selectedAddress", selectedAddress);
+      model.addAttribute("componentEnabled", !"legacy".equals(state));
+      model.addAttribute("manualEntryUrl", "/test/manual");
+      model.addAttribute("changeAddressUrl", "/test/search");
+      model.addAttribute(
+          "countries",
+          List.of(new CommonLookupValueDetail().code("GBR").description("United Kingdom")));
+      model.addAttribute(
+          BindingResult.MODEL_KEY_PREFIX + "addressDetails",
+          new BeanPropertyBindingResult(addressDetails, "addressDetails"));
+      return "test/address-client-component-harness";
     }
   }
 }

@@ -6,6 +6,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CREATE_CLIENT_ADDR
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -24,6 +25,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
+import uk.gov.laa.ccms.caab.service.AddressLookupUnavailableException;
 import uk.gov.laa.ccms.caab.service.AddressService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.util.UkPostcode;
@@ -45,6 +47,7 @@ public class ClientAddressDetailsController {
   private final FindAddressValidator findAddressValidator;
 
   private static final String ACTION_FIND_ADDRESS = "find_address";
+  private static final String ADDRESS_URL = "/application/client/details/address";
 
   @ModelAttribute("addressDetails")
   public ClientFormDataAddressDetails getAddressDetails() {
@@ -70,27 +73,85 @@ public class ClientAddressDetailsController {
 
     final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
         getOrCreateCreateClientAddressFlow(session);
-    final AddressResultRowDisplay selectedAddress = addressFlow.getSelectedAddress();
+    session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
     final ClientFormDataAddressDetails currentAddressDetails =
-        selectedAddress != null && clientFlowFormData.getAddressDetails() != null
-            ? clientFlowFormData.getAddressDetails()
-            : addressDetails;
+        addressFlow.getAddressDetails() != null
+            ? addressFlow.getAddressDetails()
+            : clientFlowFormData.getAddressDetails() != null
+                ? clientFlowFormData.getAddressDetails()
+                : addressDetails;
     currentAddressDetails.setVulnerableClient(
         clientFlowFormData.getBasicDetails().getVulnerableClient());
     currentAddressDetails.setClientFlowFormAction(clientFlowFormData.getAction());
 
-    if (selectedAddress != null) {
-      addressService.updateClientFormDataAddressDetails(currentAddressDetails, selectedAddress);
-      clientFlowFormData.setAddressDetails(currentAddressDetails);
-      addressFlow.setSelectedAddress(null);
-      session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
-    }
-
-    if (clientFlowFormData.getAddressDetails() != null) {
-      model.addAttribute("addressDetails", clientFlowFormData.getAddressDetails());
-    }
+    model.addAttribute("addressDetails", currentAddressDetails);
+    model.addAttribute("addressFlow", addressFlow);
+    model.addAttribute("componentEnabled", true);
+    model.addAttribute("selectedAddress", addressFlow.getSelectedAddress());
+    model.addAttribute("changeAddressUrl", ADDRESS_URL + "/search-again");
+    model.addAttribute("manualEntryUrl", ADDRESS_URL + "/manual");
+    model.addAttribute("searchAgainUrl", ADDRESS_URL + "/search-again");
 
     return "application/client/address-client-details";
+  }
+
+  @GetMapping("/application/client/details/address/confirm")
+  public String confirmClientAddressSelection(
+      @SessionAttribute(name = CREATE_CLIENT_ADDRESS_FLOW, required = false) @Nullable
+          final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow,
+      final Model model) {
+    if (addressFlow == null
+        || addressFlow.getStep() != AddressLookupFlowData.Step.SELECTED_ADDRESS
+        || addressFlow.getSelectedAddress() == null) {
+      return "redirect:" + ADDRESS_URL;
+    }
+    addConfirmationModel(addressFlow, model);
+    model.addAttribute("showClientCaption", true);
+    model.addAttribute("backUrl", ADDRESS_URL);
+    model.addAttribute("confirmUrl", ADDRESS_URL + "/confirm");
+    model.addAttribute("changeUrl", ADDRESS_URL + "/search");
+    model.addAttribute("searchAgainUrl", ADDRESS_URL + "/search-again");
+    model.addAttribute("manualEntryUrl", ADDRESS_URL + "/manual");
+    return "application/sections/address-confirmation";
+  }
+
+  @PostMapping("/application/client/details/address/confirm")
+  public String confirmClientAddressSelection(
+      @SessionAttribute(name = CREATE_CLIENT_ADDRESS_FLOW, required = false) @Nullable
+          final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow) {
+    if (addressFlow == null) {
+      return "redirect:" + ADDRESS_URL;
+    }
+    addressFlow.confirmSelectedAddress();
+    return addressFlow.getStep() == AddressLookupFlowData.Step.CONFIRMED_ADDRESS
+        ? "redirect:" + ADDRESS_URL
+        : "redirect:" + ADDRESS_URL + "/search";
+  }
+
+  @GetMapping("/application/client/details/address/search-again")
+  public String searchAgain(
+      @SessionAttribute(name = CREATE_CLIENT_ADDRESS_FLOW, required = false) @Nullable
+          final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow) {
+    if (addressFlow == null) {
+      return "redirect:" + ADDRESS_URL;
+    }
+    addressFlow.searchAgain();
+    return "redirect:" + ADDRESS_URL;
+  }
+
+  @GetMapping("/application/client/details/address/manual")
+  public String enterManualAddress(
+      @SessionAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
+      @SessionAttribute(name = CREATE_CLIENT_ADDRESS_FLOW, required = false) @Nullable
+          final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow) {
+    if (addressFlow == null) {
+      return "redirect:" + ADDRESS_URL;
+    }
+    final ClientFormDataAddressDetails blankAddress = new ClientFormDataAddressDetails();
+    blankAddress.setVulnerableClient(clientFlowFormData.getBasicDetails().getVulnerableClient());
+    blankAddress.setClientFlowFormAction(clientFlowFormData.getAction());
+    addressFlow.enterManualEntry(blankAddress);
+    return "redirect:" + ADDRESS_URL;
   }
 
   /**
@@ -113,60 +174,90 @@ public class ClientAddressDetailsController {
       Model model,
       HttpSession session) {
 
+    final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+        getOrCreateCreateClientAddressFlow(session);
+    addressDetails.setVulnerableClient(clientFlowFormData.getBasicDetails().getVulnerableClient());
+    final boolean addressExempt =
+        Boolean.TRUE.equals(addressDetails.getVulnerableClient())
+            || Boolean.TRUE.equals(addressDetails.getNoFixedAbode());
+
+    if (ACTION_FIND_ADDRESS.equals(action) && addressExempt) {
+      clearAddressFields(addressDetails);
+      addressFlow.searchAgain();
+      addressFlow.setAddressDetails(addressDetails);
+      clientFlowFormData.setAddressDetails(addressDetails);
+      session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
+      return "redirect:/application/client/details/equal-opportunities-monitoring";
+    }
+
     if (ACTION_FIND_ADDRESS.equals(action)) {
+      addressFlow.beginSearch(addressDetails.getPostcode(), addressDetails.getHouseNameNumber());
+      addressFlow.setAddressDetails(addressDetails);
+      session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
       findAddressValidator.validate(addressDetails, bindingResult);
     } else {
-      clientAddressDetailsValidator.validateForAddressComponent(addressDetails, bindingResult);
+      if (!addressExempt && addressFlow.getSource() == AddressLookupFlowData.Source.SEARCHED) {
+        if (addressFlow.getStep() == AddressLookupFlowData.Step.SELECTED_ADDRESS
+            && addressFlow.getSelectedAddress() != null) {
+          return "redirect:" + ADDRESS_URL + "/confirm";
+        }
+        if (addressFlow.getStep() != AddressLookupFlowData.Step.CONFIRMED_ADDRESS
+            || addressFlow.getSelectedAddress() == null) {
+          bindingResult.reject("address.selection.invalid", "Select and confirm an address");
+        } else {
+          addressService.updateClientFormDataAddressDetails(
+              addressDetails, addressFlow.getSelectedAddress());
+        }
+      } else if (addressExempt) {
+        clearAddressFields(addressDetails);
+        addressFlow.searchAgain();
+      } else if (addressFlow.getSource() == AddressLookupFlowData.Source.MANUAL
+          && addressFlow.getStep() == AddressLookupFlowData.Step.MANUAL_ENTRY) {
+        clientAddressDetailsValidator.validateForAddressComponent(addressDetails, bindingResult);
+      } else {
+        bindingResult.reject("address.selection.invalid", "Enter an address manually");
+      }
     }
 
     if (bindingResult.hasErrors()) {
       populateDropdowns(model);
+      addressFlow.setAddressDetails(addressDetails);
+      session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
+      addAddressModel(model, addressFlow);
       return "application/client/address-client-details";
     }
 
-    clientFlowFormData.setAddressDetails(addressDetails);
-    model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
-
     if (ACTION_FIND_ADDRESS.equals(action)) {
-      final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
-          getOrCreateCreateClientAddressFlow(session);
-      addressFlow.beginSearch(addressDetails.getPostcode(), addressDetails.getHouseNameNumber());
-      addressFlow.setAddressDetails(addressDetails);
-      session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
-
       // Search for addresses
-      ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults =
-          addressService.getAddresses(clientFlowFormData.getAddressDetails().getPostcode());
+      final ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults;
+      try {
+        clientAddressSearchResults = addressService.getAddresses(addressDetails.getPostcode());
+      } catch (AddressLookupUnavailableException exception) {
+        addressFlow.markLookupUnavailable();
+        session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
+        return "redirect:/application/client/details/address/search";
+      }
 
+      ResultsDisplay<AddressResultRowDisplay> filteredAddressResults = clientAddressSearchResults;
       if (clientAddressSearchResults.getContent() != null
           && !clientAddressSearchResults.getContent().isEmpty()) {
-        clientAddressSearchResults =
+        filteredAddressResults =
             addressService.filterByHouseNumber(
                 addressDetails.getHouseNameNumber(), clientAddressSearchResults);
       }
-      addressFlow.setSearchResults(clientAddressSearchResults);
-
-      if (clientAddressSearchResults.getContent() == null
-          || clientAddressSearchResults.getContent().isEmpty()) {
-        bindingResult.reject(
-            "address.none", "Your input for address details has not returned any results");
-      }
+      addressFlow.setSearchResults(filteredAddressResults);
       session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
-
-      if (bindingResult.hasErrors()) {
-        populateDropdowns(model);
-        return "application/client/address-client-details";
-      }
     } else {
-      final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
-          getOrCreateCreateClientAddressFlow(session);
-      if (addressFlow.getSource() != AddressLookupFlowData.Source.SEARCHED
-          && addressFlow.getSource() != AddressLookupFlowData.Source.EXISTING) {
+      if (addressExempt) {
+        addressFlow.searchAgain();
+        addressFlow.setAddressDetails(addressDetails);
+      } else if (addressFlow.getSource() != AddressLookupFlowData.Source.SEARCHED) {
         if ("GBR".equals(addressDetails.getCountry())) {
           addressDetails.setPostcode(UkPostcode.normalize(addressDetails.getPostcode()));
         }
         addressFlow.setSource(AddressLookupFlowData.Source.MANUAL);
       }
+      addressFlow.setAddressDetails(addressDetails);
       clientFlowFormData.setAddressDetails(addressDetails);
       model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
       session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
@@ -177,8 +268,34 @@ public class ClientAddressDetailsController {
         : "redirect:/application/client/details/equal-opportunities-monitoring";
   }
 
+  private void addConfirmationModel(
+      final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow, final Model model) {
+    model.addAttribute("selectedAddress", addressFlow.getSelectedAddress());
+  }
+
+  private void addAddressModel(
+      final Model model, final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow) {
+    model.addAttribute("addressFlow", addressFlow);
+    model.addAttribute("componentEnabled", true);
+    model.addAttribute("selectedAddress", addressFlow.getSelectedAddress());
+    model.addAttribute("changeAddressUrl", ADDRESS_URL + "/search-again");
+    model.addAttribute("manualEntryUrl", ADDRESS_URL + "/manual");
+    model.addAttribute("searchAgainUrl", ADDRESS_URL + "/search-again");
+  }
+
   private void populateDropdowns(Model model) {
     new DropdownBuilder(model).addDropdown("countries", lookupService.getCountries()).build();
+  }
+
+  private void clearAddressFields(final ClientFormDataAddressDetails addressDetails) {
+    addressDetails.setCountry(null);
+    addressDetails.setHouseNameNumber(null);
+    addressDetails.setPostcode(null);
+    addressDetails.setAddressLine1(null);
+    addressDetails.setAddressLine2(null);
+    addressDetails.setCityTown(null);
+    addressDetails.setCounty(null);
+    addressDetails.setAddressSearch(null);
   }
 
   @SuppressWarnings("unchecked")

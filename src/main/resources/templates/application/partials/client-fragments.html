@@ -464,7 +464,7 @@
   </div>
   <div class="govuk-grid-row" th:unless="*{vulnerableClient}">
     <div class="govuk-grid-column-two-thirds">
-      <h2 class="govuk-heading-m" th:value="#{address.main}"></h2>
+      <h2 class="govuk-heading-m" th:text="#{address.main}"></h2>
       <div class="govuk-form-group">
         <fieldset class="govuk-fieldset">
           <legend class="govuk-fieldset__legend">
@@ -483,22 +483,47 @@
           </div>
         </fieldset>
       </div>
-      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='country', label=#{address.country},
-                                                                   items=${countries}, itemValue='code',
-                                                                   itemLabel='description')}"/>
-      <div th:replace="~{partials/forms :: textInput('houseNameNumber', #{address.house}, 'govuk-input--width-20')}"></div>
-      <div th:replace="~{partials/forms :: textInput('postcode', #{address.postcode}, 'govuk-input--width-20')}"></div>
-      <div class="govuk-form-group">
-        <govuk:button id="find-address-button"
-                      name="action"
-                      classes="govuk-button--secondary"
-                      value="find_address"
-                      th:text="#{address.find}"/>
-      </div>
-      <div th:replace="~{partials/forms :: textInput('addressLine1', #{address.address1}, 'govuk-input--width-20')}"></div>
-      <div th:replace="~{partials/forms :: textInput('addressLine2', #{site.optional(#{address.address2})}, 'govuk-input--width-20')}"></div>
-      <div th:replace="~{partials/forms :: textInput('cityTown', #{address.city}, 'govuk-input--width-20')}"></div>
-      <div th:replace="~{partials/forms :: textInput('county', #{site.optional(#{address.county})}, 'govuk-input--width-20')}"></div>
+        <th:block th:if="${!addressDetails.noFixedAbode}">
+          <th:block th:if="${componentEnabled}">
+            <th:block th:if="${addressFlow.step.name() == 'CONFIRMED_ADDRESS'}">
+              <h2 class="govuk-heading-m" th:text="#{address.component.existing.title}"></h2>
+              <div class="govuk-inset-text" th:text="${selectedAddress.fullAddress}"></div>
+              <a class="govuk-link" th:href="${changeAddressUrl}"
+                 th:text="#{address.component.change}"></a>
+              <span class="govuk-body"> | </span>
+              <a class="govuk-link" th:href="${manualEntryUrl}"
+                 th:text="#{address.component.enterManual}"></a>
+            </th:block>
+            <th:block th:if="${addressFlow.step.name() == 'MANUAL_ENTRY'}">
+              <div th:replace="~{application/partials/address-fragments :: manualEntry(${countries})}"></div>
+            </th:block>
+            <th:block th:if="${addressFlow.step.name() == 'SEARCH'
+                or addressFlow.step.name() == 'LOOKUP_UNAVAILABLE'}">
+              <div th:replace="~{application/partials/address-fragments :: search(
+                  'postcode', 'houseNameNumber', 'find_address', ${manualEntryUrl})}"></div>
+            </th:block>
+          </th:block>
+          <th:block th:unless="${componentEnabled}">
+            <p class="govuk-error-message" th:if="${addressLookupUnavailable}"
+               th:text="#{address.component.unavailable.message}"></p>
+            <th:block th:replace="~{partials/forms :: autocompleteSelect(field='country', label=#{address.country},
+                                                                         items=${countries}, itemValue='code',
+                                                                         itemLabel='description')}"/>
+            <div th:replace="~{partials/forms :: textInput('houseNameNumber', #{address.house}, 'govuk-input--width-20')}"></div>
+            <div th:replace="~{partials/forms :: textInput('postcode', #{address.postcode}, 'govuk-input--width-20')}"></div>
+            <div class="govuk-form-group">
+              <govuk:button id="find-address-button"
+                            name="action"
+                            classes="govuk-button--secondary"
+                            value="find_address"
+                            th:text="#{address.find}"/>
+            </div>
+            <div th:replace="~{partials/forms :: textInput('addressLine1', #{address.address1}, 'govuk-input--width-20')}"></div>
+            <div th:replace="~{partials/forms :: textInput('addressLine2', #{site.optional(#{address.address2})}, 'govuk-input--width-20')}"></div>
+            <div th:replace="~{partials/forms :: textInput('cityTown', #{address.city}, 'govuk-input--width-20')}"></div>
+            <div th:replace="~{partials/forms :: textInput('county', #{site.optional(#{address.county})}, 'govuk-input--width-20')}"></div>
+          </th:block>
+        </th:block>
     </div>
   </div>
 </th:block>
@@ -543,4 +568,3 @@
 
 </body>
 </html>
-

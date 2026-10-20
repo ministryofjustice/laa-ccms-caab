@@ -35,36 +35,65 @@
                                                                        label=#{address.preferred},
                                                                        items=${caseAddressOptions},
                                                                        itemValue='code', itemLabel='description')}"/>
-          <th:block th:replace="~{partials/forms :: autocompleteSelect(field='country', label=#{address.country},
-                                                                       items=${countries}, itemValue='code',
-                                                                       itemLabel='description')}"/>
-          <th:block th:replace="~{partials/forms :: textInput('houseNameNumber',
-            #{address.house},
-            'govuk-input--width-20')}"/>
-          <th:block th:replace="~{partials/forms :: textInput('postcode',
-            #{address.postcode},
-            'govuk-input--width-20')}"/>
-          <div class="govuk-form-group">
-            <button type="submit" name="action" id='find-address-button'
-                    value="find_address" class="govuk-button govuk-button--secondary"
-                    data-module="govuk-button"
-                    th:text="#{address.find}"/>
-          </div>
-          <th:block th:replace="~{partials/forms :: textInput('careOf',
-            #{address.careOf},
-            'govuk-input--width-20')}"/>
-          <th:block th:replace="~{partials/forms :: textInput('addressLine1',
-            #{address.address1},
-            'govuk-input--width-20')}"/>
-          <th:block th:replace="~{partials/forms :: textInput('addressLine2',
-            #{address.address2},
-            'govuk-input--width-20')}"/>
-          <th:block th:replace="~{partials/forms :: textInput('cityTown',
-            #{address.city},
-            'govuk-input--width-20')}"/>
-          <th:block th:replace="~{partials/forms :: textInput('county',
-            #{address.county},
-            'govuk-input--width-20')}"/>
+          <th:block th:if="${caseAddress}">
+            <th:block th:if="${addressFlow.step.name() == 'CONFIRMED_ADDRESS'}">
+              <h2 class="govuk-heading-m" th:text="#{address.component.existing.title}"></h2>
+              <div class="govuk-inset-text"
+                   th:text="${selectedAddress.fullAddress}"></div>
+              <p class="govuk-body" th:if="${addressDetails.careOf != null
+                  and !addressDetails.careOf.isEmpty()}">
+                <span th:text="#{address.careOf}"></span>:
+                <span th:text="${addressDetails.careOf}"></span>
+              </p>
+              <a class="govuk-link" th:href="${changeAddressUrl}"
+                 th:text="#{address.component.change}"></a>
+              <span class="govuk-body"> | </span>
+              <a class="govuk-link" th:href="${manualEntryUrl}"
+                 th:text="#{address.component.enterManual}"></a>
+            </th:block>
+            <th:block th:if="${addressFlow.step.name() == 'EXISTING_ADDRESS'}">
+              <div th:replace="~{application/partials/address-fragments :: existingAddress(
+                  ${addressDetails}, ${countryName}, ${changeAddressUrl})}"></div>
+            </th:block>
+            <th:block th:if="${addressFlow.step.name() == 'MANUAL_ENTRY'}">
+              <th:block th:replace="~{application/partials/address-fragments :: manualEntry(${countries})}"/>
+              <th:block th:replace="~{partials/forms :: textInput('careOf',
+                  #{address.careOf}, 'govuk-input--width-20')}"/>
+            </th:block>
+            <th:block th:if="${addressFlow.step.name() == 'SEARCH'
+                or addressFlow.step.name() == 'LOOKUP_UNAVAILABLE'}">
+              <th:block th:replace="~{application/partials/address-fragments :: search(
+                  'postcode', 'houseNameNumber', 'find_address', ${manualEntryUrl})}"/>
+              <th:block th:replace="~{partials/forms :: textInput('careOf',
+                  #{address.careOf}, 'govuk-input--width-20')}"/>
+            </th:block>
+          </th:block>
+          <th:block th:unless="${caseAddress}">
+            <th:block th:replace="~{partials/forms :: autocompleteSelect(field='country', label=#{address.country},
+                                                                         items=${countries}, itemValue='code',
+                                                                         itemLabel='description')}"/>
+            <th:block th:replace="~{partials/forms :: textInput('houseNameNumber',
+              #{address.house},
+              'govuk-input--width-20')}"/>
+            <th:block th:replace="~{partials/forms :: textInput('postcode',
+              #{address.postcode},
+              'govuk-input--width-20')}"/>
+            <th:block th:replace="~{partials/forms :: textInput('careOf',
+              #{address.careOf},
+              'govuk-input--width-20')}"/>
+            <th:block th:replace="~{partials/forms :: textInput('addressLine1',
+              #{address.address1},
+              'govuk-input--width-20')}"/>
+            <th:block th:replace="~{partials/forms :: textInput('addressLine2',
+              #{address.address2},
+              'govuk-input--width-20')}"/>
+            <th:block th:replace="~{partials/forms :: textInput('cityTown',
+              #{address.city},
+              'govuk-input--width-20')}"/>
+            <th:block th:replace="~{partials/forms :: textInput('county',
+              #{address.county},
+              'govuk-input--width-20')}"/>
+          </th:block>
         </div>
       </div>
       <div class="govuk-grid-row">

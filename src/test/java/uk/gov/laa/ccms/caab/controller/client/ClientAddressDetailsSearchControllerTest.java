@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.client;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -16,6 +17,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_D
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CREATE_CLIENT_ADDRESS_FLOW;
 
 import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,8 +56,11 @@ public class ClientAddressDetailsSearchControllerTest {
     mockMvc = standaloneSetup(clientAddressDetailsSearchController).build();
 
     addressSearch = new AddressSearchFormData();
+    addressSearch.setUprn("123");
     searchResults = new ResultsDisplay<>();
-    searchResults.setContent(new ArrayList<>());
+    AddressResultRowDisplay result = new AddressResultRowDisplay();
+    result.setUprn("123");
+    searchResults.setContent(new ArrayList<>(List.of(result)));
     addressFlow = new AddressLookupFlowData<>("create-client");
     addressFlow.setSearchResults(searchResults);
     clientFlowFormData = new ClientFlowFormData(ACTION_CREATE);
@@ -76,7 +81,23 @@ public class ClientAddressDetailsSearchControllerTest {
   }
 
   @Test
+  void addressSearchRedirectsWhenTheFlowHasExpired() throws Exception {
+    mockMvc
+        .perform(get("/application/client/details/address/search"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/details/address"));
+    mockMvc
+        .perform(
+            post("/application/client/details/address/search")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/details/address"));
+  }
+
+  @Test
   void testClientDetailsAddressSearchPost() throws Exception {
+    when(addressService.getSelectedAddress(any(), any()))
+        .thenReturn(searchResults.getContent().getFirst());
 
     mockMvc
         .perform(
@@ -86,7 +107,7 @@ public class ClientAddressDetailsSearchControllerTest {
                 .flashAttr("addressSearch", addressSearch))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/application/client/details/address"));
+        .andExpect(redirectedUrl("/application/client/details/address/confirm"));
   }
 
   @Test

@@ -13,12 +13,24 @@
         <form action="#" th:action="@{/application/client/details/address/search}" th:object="${addressSearch}" method="post">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <span class="govuk-caption-l" th:text="#{client.about}"></span>
-            <div th:replace="~{application/partials/address-fragments :: results(
-                ${originalPostcode},
-                ${originalBuildingSearch},
-                @{/application/client/details/address},
-                @{/application/client/details/address},
-                'client-address')}"></div>
+            <th:block th:if="${addressFlow.step.name() == 'RESULTS'}">
+              <div th:replace="~{application/partials/address-fragments :: results(
+                  ${originalPostcode},
+                  ${originalBuildingSearch},
+                  @{/application/client/details/address/search-again},
+                  @{/application/client/details/address/manual},
+                  'client-address')}"></div>
+            </th:block>
+            <div th:if="${addressFlow.step.name() == 'NO_RESULTS'}"
+                 th:replace="~{application/partials/address-fragments :: noResults(
+                     ${originalPostcode},
+                     ${originalBuildingSearch},
+                     @{/application/client/details/address/search-again},
+                     @{/application/client/details/address/manual})}"></div>
+            <div th:if="${addressFlow.step.name() == 'LOOKUP_UNAVAILABLE'}"
+                 th:replace="~{application/partials/address-fragments :: unavailable(
+                     @{/application/client/details/address/search-again},
+                     @{/application/client/details/address/manual})}"></div>
         </form>
     </div>
 </div>

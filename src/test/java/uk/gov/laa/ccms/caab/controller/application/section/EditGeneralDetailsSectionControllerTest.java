@@ -170,8 +170,8 @@ class EditGeneralDetailsSectionControllerTest {
     }
 
     @Test
-    @DisplayName("Should apply selected address from search result")
-    void shouldApplySelectedAddressFromSearchResult() throws Exception {
+    @DisplayName("Should keep an unconfirmed selection separate from the saved address")
+    void shouldKeepUnconfirmedSelectionSeparateFromSavedAddress() throws Exception {
       final String applicationId = "123";
       final AddressFormData addressFormData = new AddressFormData();
       final AddressResultRowDisplay selectedAddress = new AddressResultRowDisplay();
@@ -182,7 +182,6 @@ class EditGeneralDetailsSectionControllerTest {
       final MockHttpSession session = new MockHttpSession();
       session.setAttribute(APPLICATION_ID, applicationId);
       session.setAttribute(CORRESPONDENCE_ADDRESS_FLOW, addressFlow);
-
       when(lookupService.getCountries()).thenReturn(Mono.just(mockCommonLookupDetail));
       when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
           .thenReturn(Mono.just(mockCommonLookupDetail));
@@ -194,9 +193,10 @@ class EditGeneralDetailsSectionControllerTest {
           .andExpect(view().name("application/sections/correspondence-address-details"))
           .andExpect(model().attribute("addressDetails", addressFormData));
 
-      verify(addressService, times(1)).updateAddressFormData(addressFormData, selectedAddress);
+      verify(addressService, never()).updateAddressFormData(any(), any());
       verify(applicationService, never()).getCorrespondenceAddressFormData(anyString());
-      assertNull(
+      assertSame(
+          selectedAddress,
           ((AddressLookupFlowData<AddressFormData>)
                   session.getAttribute(CORRESPONDENCE_ADDRESS_FLOW))
               .getSelectedAddress());
@@ -295,12 +295,14 @@ class EditGeneralDetailsSectionControllerTest {
       final String applicationId = "123";
       final UserDetail user = new UserDetail();
       final AddressFormData addressDetails = new AddressFormData();
+      addressDetails.setPreferredAddress("CASE");
       addressDetails.setCountry("GBR");
       addressDetails.setPostcode("sa58ab");
       addressDetails.setAddressLine1("Address line 1");
       addressDetails.setCityTown("Town");
       final AddressLookupFlowData<AddressFormData> addressFlow =
           new AddressLookupFlowData<>("application:123");
+      addressFlow.enterManualEntry(addressDetails);
 
       mockMvc
           .perform(
@@ -318,16 +320,72 @@ class EditGeneralDetailsSectionControllerTest {
     }
 
     @Test
+    void caseAddressCannotBeSavedFromUntrustedPostedFieldsOutsideManualMode() throws Exception {
+      final String applicationId = "123";
+      final UserDetail user = new UserDetail();
+      final AddressFormData postedAddress = new AddressFormData();
+      postedAddress.setPreferredAddress("CASE");
+      postedAddress.setCountry("GBR");
+      postedAddress.setPostcode("SA5 8AB");
+      postedAddress.setAddressLine1("Forged address");
+      postedAddress.setCityTown("Town");
+      when(lookupService.getCountries()).thenReturn(Mono.just(mockCommonLookupDetail));
+      when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
+          .thenReturn(Mono.just(mockCommonLookupDetail));
+
+      mockMvc
+          .perform(
+              post("/application/sections/correspondence-address")
+                  .param("action", "update")
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(USER_DETAILS, user)
+                  .sessionAttr(CASE, new ApplicationDetail())
+                  .flashAttr("addressDetails", postedAddress))
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/correspondence-address-details"));
+
+      verify(applicationService, never()).updateCorrespondenceAddress(any(), any(), any());
+    }
+
+    @Test
+    void correspondenceNextFromUnconfirmedSelectionReturnsToConfirmation() throws Exception {
+      final String applicationId = "123";
+      final AddressFormData addressDetails = new AddressFormData();
+      addressDetails.setPreferredAddress("CASE");
+      final AddressLookupFlowData<AddressFormData> addressFlow =
+          new AddressLookupFlowData<>("application:123");
+      final AddressResultRowDisplay selectedAddress = new AddressResultRowDisplay();
+      selectedAddress.setUprn("123");
+      addressFlow.setSelectedAddress(selectedAddress);
+
+      mockMvc
+          .perform(
+              post("/application/sections/correspondence-address")
+                  .param("action", "update")
+                  .sessionAttr(APPLICATION_ID, applicationId)
+                  .sessionAttr(USER_DETAILS, new UserDetail())
+                  .sessionAttr(CASE, new ApplicationDetail())
+                  .sessionAttr(CORRESPONDENCE_ADDRESS_FLOW, addressFlow)
+                  .flashAttr("addressDetails", addressDetails))
+          .andExpect(status().is3xxRedirection())
+          .andExpect(redirectedUrl("/application/sections/correspondence-address/confirm"));
+
+      verify(applicationService, never()).updateCorrespondenceAddress(any(), any(), any());
+    }
+
+    @Test
     void shouldPreserveExistingPostcodeBeforeSaving() throws Exception {
       final String applicationId = "123";
       final UserDetail user = new UserDetail();
       final AddressFormData addressDetails = new AddressFormData();
+      addressDetails.setPreferredAddress("CASE");
       addressDetails.setPostcode("sa58ab");
       addressDetails.setAddressLine1("Address line 1");
       addressDetails.setCityTown("Town");
       final AddressLookupFlowData<AddressFormData> addressFlow =
           new AddressLookupFlowData<>("application:123");
       addressFlow.setSource(AddressLookupFlowData.Source.EXISTING);
+      addressFlow.setAddressDetails(addressDetails);
 
       mockMvc
           .perform(
@@ -469,6 +527,7 @@ class EditGeneralDetailsSectionControllerTest {
       final String applicationId = "123";
       final UserDetail user = new UserDetail();
       final AddressFormData addressDetails = new AddressFormData();
+      addressDetails.setPreferredAddress("CASE");
       addressDetails.setHouseNameNumber("1");
       final ResultsDisplay<AddressResultRowDisplay> addressSearchResults = new ResultsDisplay<>();
       final ApplicationDetail ebsCase = new ApplicationDetail();
@@ -506,15 +565,12 @@ class EditGeneralDetailsSectionControllerTest {
       final String applicationId = "123";
       final UserDetail user = new UserDetail();
       final AddressFormData addressDetails = new AddressFormData();
+      addressDetails.setPreferredAddress("CASE");
       final ResultsDisplay<AddressResultRowDisplay> addressSearchResults = new ResultsDisplay<>();
       final ApplicationDetail ebsCase = new ApplicationDetail();
 
       when(addressService.getAddresses(addressDetails.getPostcode()))
           .thenReturn(addressSearchResults);
-
-      when(lookupService.getCountries()).thenReturn(Mono.just(mockCommonLookupDetail));
-      when(lookupService.getCommonValues(COMMON_VALUE_CASE_ADDRESS_OPTION))
-          .thenReturn(Mono.just(mockCommonLookupDetail));
 
       mockMvc
           .perform(
@@ -525,7 +581,9 @@ class EditGeneralDetailsSectionControllerTest {
                   .sessionAttr(CASE, ebsCase)
                   .flashAttr("addressDetails", addressDetails))
           .andDo(print())
-          .andExpect(view().name("application/sections/correspondence-address-details"));
+          .andExpect(status().is3xxRedirection())
+          .andExpect(
+              redirectedUrl("/%s/sections/correspondence-address/search".formatted(caseContext)));
 
       verify(addressService, times(1)).getAddresses(any());
       verify(addressService, never()).filterByHouseNumber(any(), any());
@@ -668,6 +726,9 @@ class EditGeneralDetailsSectionControllerTest {
               : "application:%s".formatted(applicationId);
       final AddressLookupFlowData<AddressFormData> addressFlow =
           new AddressLookupFlowData<>(addressContext);
+      final AddressResultRowDisplay result = new AddressResultRowDisplay();
+      result.setUprn("selected-uprn");
+      results.setContent(Collections.singletonList(result));
       addressFlow.setSearchResults(results);
 
       mockMvc
@@ -707,8 +768,9 @@ class EditGeneralDetailsSectionControllerTest {
               : "application:%s".formatted(applicationId);
       final AddressLookupFlowData<AddressFormData> addressFlow =
           new AddressLookupFlowData<>(addressContext);
-      addressFlow.setSearchResults(results);
       addressFlow.setAddressDetails(new AddressFormData());
+      results.setContent(Collections.singletonList(selectedAddress));
+      addressFlow.setSearchResults(results);
       final MockHttpSession session = new MockHttpSession();
       session.setAttribute(APPLICATION_ID, applicationId);
       session.setAttribute(CASE, ebsCase);
@@ -723,7 +785,8 @@ class EditGeneralDetailsSectionControllerTest {
                   .session(session))
           .andDo(print())
           .andExpect(status().is3xxRedirection())
-          .andExpect(redirectedUrl("/%s/sections/correspondence-address".formatted(caseContext)));
+          .andExpect(
+              redirectedUrl("/%s/sections/correspondence-address/confirm".formatted(caseContext)));
 
       verify(addressService, times(1)).getSelectedAddress("selected-uprn", results);
       verify(addressService, never()).filterAndUpdateAddressFormData(any(), any(), any());
@@ -732,7 +795,8 @@ class EditGeneralDetailsSectionControllerTest {
           ((AddressLookupFlowData<AddressFormData>)
                   session.getAttribute(CORRESPONDENCE_ADDRESS_FLOW))
               .getSelectedAddress());
-      assertNull(
+      assertSame(
+          results,
           ((AddressLookupFlowData<AddressFormData>)
                   session.getAttribute(CORRESPONDENCE_ADDRESS_FLOW))
               .getSearchResults());
@@ -752,8 +816,11 @@ class EditGeneralDetailsSectionControllerTest {
               : "application:%s".formatted(applicationId);
       final AddressLookupFlowData<AddressFormData> addressFlow =
           new AddressLookupFlowData<>(addressContext);
-      addressFlow.setSearchResults(results);
       addressFlow.setAddressDetails(new AddressFormData());
+      final AddressResultRowDisplay result = new AddressResultRowDisplay();
+      result.setUprn("selected-uprn");
+      results.setContent(Collections.singletonList(result));
+      addressFlow.setSearchResults(results);
 
       doAnswer(
               invocation -> {

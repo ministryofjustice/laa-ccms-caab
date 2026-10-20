@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="#{service.name} + ' - ' + #{address.component.confirm.title}"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a th:href="${backUrl}" class="govuk-back-link" th:text="#{site.back}"></a>
+  </div>
+  <div id="main-content">
+    <div th:replace="~{partials/error-summary :: error-summary}"></div>
+    <span th:if="${showClientCaption}" class="govuk-caption-l" th:text="#{client.about}"></span>
+    <div th:replace="~{application/partials/address-fragments :: confirmation(
+        ${selectedAddress},
+        ${confirmUrl},
+        ${changeUrl},
+        ${searchAgainUrl},
+        ${manualEntryUrl})}"></div>
+  </div>
+</div>
+</body>
+</html>

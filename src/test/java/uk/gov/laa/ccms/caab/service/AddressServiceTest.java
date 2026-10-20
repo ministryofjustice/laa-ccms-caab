@@ -3,7 +3,6 @@ package uk.gov.laa.ccms.caab.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -22,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.client.OrdinanceSurveyApiClient;
+import uk.gov.laa.ccms.caab.client.OrdinanceSurveyResponseException;
 import uk.gov.laa.ccms.caab.mapper.ClientAddressResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
@@ -45,16 +45,20 @@ public class AddressServiceTest {
     String postcode = "SW1A1AA";
 
     OrdinanceSurveyResponse mockResponse = new OrdinanceSurveyResponse();
+    mockResponse.setResults(Collections.emptyList());
     Mono<OrdinanceSurveyResponse> mockResponseMono = Mono.just(mockResponse);
 
     ResultsDisplay<AddressResultRowDisplay> mockDisplay = new ResultsDisplay<>();
+    mockDisplay.setContent(Collections.emptyList());
 
     when(ordinanceSurveyApiClient.getAddresses("SW1A 1AA")).thenReturn(mockResponseMono);
+    when(clientAddressResultDisplayMapper.toClientAddressResultsDisplay(mockResponse))
+        .thenReturn(mockDisplay);
 
     ResultsDisplay<AddressResultRowDisplay> result = addressService.getAddresses(postcode);
 
     assertNotNull(result);
-    assertNull(result.getContent());
+    assertEquals(Collections.emptyList(), result.getContent());
   }
 
   @Test
@@ -124,6 +128,23 @@ public class AddressServiceTest {
         .thenReturn(Mono.error(new IllegalStateException("lookup unavailable")));
 
     assertThrows(IllegalStateException.class, () -> addressService.getAddresses("sw1a1aa"));
+  }
+
+  @Test
+  void getAddressesTreatsAnEmptyProviderBodyAsUnavailable() {
+    when(ordinanceSurveyApiClient.getAddresses("SW1A 1AA")).thenReturn(Mono.empty());
+
+    assertThrows(
+        AddressLookupUnavailableException.class, () -> addressService.getAddresses("sw1a1aa"));
+  }
+
+  @Test
+  void getAddressesConvertsIncompleteProviderPagesToUnavailable() {
+    when(ordinanceSurveyApiClient.getAddresses("SW1A 1AA"))
+        .thenReturn(Mono.error(new OrdinanceSurveyResponseException("incomplete page")));
+
+    assertThrows(
+        AddressLookupUnavailableException.class, () -> addressService.getAddresses("sw1a1aa"));
   }
 
   @Test

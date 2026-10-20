@@ -25,6 +25,7 @@ import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
+import uk.gov.laa.ccms.caab.service.AddressLookupUnavailableException;
 import uk.gov.laa.ccms.caab.service.AddressService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 
@@ -117,16 +118,27 @@ public class EditClientAddressDetailsController {
     if (bindingResult.hasErrors()) {
       populateDropdowns(model);
       setDraftAddressDetails(session, addressDetails);
+      model.addAttribute("componentEnabled", false);
       return "application/sections/client-address-details";
     }
 
     if (ACTION_FIND_ADDRESS.equals(action)) {
       final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
           getOrCreateEditClientAddressFlow(session);
+      addressFlow.beginSearch(addressDetails.getPostcode(), addressDetails.getHouseNameNumber());
       addressFlow.setAddressDetails(addressDetails);
       // Search for addresses
-      ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults =
-          addressService.getAddresses(addressDetails.getPostcode());
+      ResultsDisplay<AddressResultRowDisplay> clientAddressSearchResults;
+      try {
+        clientAddressSearchResults = addressService.getAddresses(addressDetails.getPostcode());
+      } catch (AddressLookupUnavailableException exception) {
+        addressFlow.markLookupUnavailable();
+        session.setAttribute(EDIT_CLIENT_ADDRESS_FLOW, addressFlow);
+        populateDropdowns(model);
+        model.addAttribute("componentEnabled", false);
+        model.addAttribute("addressLookupUnavailable", true);
+        return "application/sections/client-address-details";
+      }
 
       if (clientAddressSearchResults.getContent() == null) {
         bindingResult.reject(

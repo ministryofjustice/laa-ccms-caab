@@ -40,6 +40,27 @@ class AddressLookupFlowDataTest {
     assertNull(flow.getSelectedAddress());
   }
 
+  @Test
+  void confirmingSelectionKeepsCandidatesAndSearchAgainRetainsTerms() {
+    AddressLookupFlowData<String> flow = new AddressLookupFlowData<>("case:123");
+    flow.beginSearch("SW1A 1AA", "10");
+    flow.setSearchResults(results("123"));
+    flow.setSelectedAddress(address("123"));
+
+    flow.confirmSelectedAddress();
+    assertEquals(AddressLookupFlowData.Step.CONFIRMED_ADDRESS, flow.getStep());
+    assertEquals("123", flow.getSelectedAddress().getUprn());
+    assertEquals(1, flow.getSearchResults().getContent().size());
+
+    flow.searchAgain();
+    assertEquals(AddressLookupFlowData.Step.SEARCH, flow.getStep());
+    assertEquals("SW1A 1AA", flow.getOriginalPostcode());
+    assertEquals("10", flow.getOriginalBuildingSearch());
+    assertNull(flow.getSelectedAddress());
+    assertNull(flow.getSearchResults());
+    assertEquals(AddressLookupFlowData.Source.UNKNOWN, flow.getSource());
+  }
+
   private ResultsDisplay<AddressResultRowDisplay> results(String uprn) {
     ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
     results.setContent(List.of(address(uprn)));

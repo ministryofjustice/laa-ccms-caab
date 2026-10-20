@@ -16,12 +16,24 @@
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <span class="govuk-caption-l"
           th:text="#{application.generalDetails.correspondenceAddress.searchResults.caption}"/>
-      <div th:replace="~{application/partials/address-fragments :: results(
-          ${originalPostcode},
-          ${originalBuildingSearch},
-          @{/{caseContext}/sections/correspondence-address(caseContext=${caseContext.getPathValue()})},
-          @{/{caseContext}/sections/correspondence-address(caseContext=${caseContext.getPathValue()})},
-          'correspondence-address')}"></div>
+      <th:block th:if="${addressFlow.step.name() == 'RESULTS'}">
+        <div th:replace="~{application/partials/address-fragments :: results(
+            ${originalPostcode},
+            ${originalBuildingSearch},
+            ${searchAgainUrl},
+            ${manualEntryUrl},
+            'correspondence-address')}"></div>
+      </th:block>
+      <div th:if="${addressFlow.step.name() == 'NO_RESULTS'}"
+           th:replace="~{application/partials/address-fragments :: noResults(
+               ${originalPostcode},
+               ${originalBuildingSearch},
+               ${searchAgainUrl},
+               ${manualEntryUrl})}"></div>
+      <div th:if="${addressFlow.step.name() == 'LOOKUP_UNAVAILABLE'}"
+           th:replace="~{application/partials/address-fragments :: unavailable(
+               ${searchAgainUrl},
+               ${manualEntryUrl})}"></div>
     </form>
   </div>
 </div>

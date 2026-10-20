@@ -1,6 +1,6 @@
 <th:block xmlns:th="http://www.thymeleaf.org">
   <th:block th:fragment="search(postcodeField, buildingField, searchAction, manualEntryUrl)">
-    <h1 class="govuk-heading-l" th:text="#{address.component.search.title}"></h1>
+    <h2 class="govuk-heading-m" th:text="#{address.component.search.title}"></h2>
     <p class="govuk-body" th:text="#{address.component.search.ukOnly}"></p>
 
     <th:block th:with="autocomplete='postal-code', hint=#{address.component.search.postcode.hint}">
@@ -105,6 +105,18 @@
     </div>
   </th:block>
 
+  <th:block th:fragment="unavailable(searchAgainUrl, manualEntryUrl)">
+    <h1 class="govuk-heading-l" th:text="#{address.component.unavailable.title}"></h1>
+    <p class="govuk-body" th:text="#{address.component.unavailable.message}"></p>
+    <div class="govuk-button-group">
+      <a class="govuk-button" data-module="govuk-button"
+         th:href="${searchAgainUrl}"
+         th:text="#{address.component.searchAgain}"></a>
+      <a class="govuk-link" th:href="${manualEntryUrl}"
+         th:text="#{address.component.enterManual}"></a>
+    </div>
+  </th:block>
+
   <th:block th:fragment="confirmation(selectedAddress, confirmAction, changeUrl, searchAgainUrl, manualEntryUrl)">
     <h1 class="govuk-heading-l" th:text="#{address.component.confirm.title}"></h1>
     <div class="govuk-inset-text" th:text="${selectedAddress.fullAddress}"></div>
@@ -127,7 +139,7 @@
   </th:block>
 
   <th:block th:fragment="manualEntry(countries)">
-    <h1 class="govuk-heading-l" th:text="#{address.component.manual.title}"></h1>
+    <h2 class="govuk-heading-m" th:text="#{address.component.manual.title}"></h2>
     <th:block th:with="autocomplete='address-line1'">
       <div th:replace="~{partials/forms :: textInput(
           'addressLine1',
@@ -226,6 +238,9 @@
     </dl>
     <a class="govuk-link" th:href="${changeUrl}"
        th:text="#{address.component.change}"></a>
+    <a class="govuk-link" th:if="${manualEntryUrl != null}"
+       th:href="${manualEntryUrl}"
+       th:text="#{address.component.enterManual}"></a>
   </th:block>
 
 </th:block>

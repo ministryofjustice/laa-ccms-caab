@@ -3,12 +3,17 @@ package uk.gov.laa.ccms.caab.service;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.codec.DecodingException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.client.OrdinanceSurveyApiClient;
+import uk.gov.laa.ccms.caab.client.OrdinanceSurveyResponseException;
 import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ClientAddressResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
@@ -19,6 +24,7 @@ import uk.gov.laa.ccms.caab.util.UkPostcode;
 /** Service class to handle Addresses. */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AddressService {
 
   private final OrdinanceSurveyApiClient ordinanceSurveyApiClient;
@@ -63,12 +69,23 @@ public class AddressService {
    *     postcode.Returns an empty ClientAddressResultsDisplay if no results are found.
    */
   public ResultsDisplay<AddressResultRowDisplay> getAddresses(final String postcode) {
-    final OrdinanceSurveyResponse response =
-        ordinanceSurveyApiClient.getAddresses(UkPostcode.normalize(postcode)).block();
+    final OrdinanceSurveyResponse response;
+    try {
+      response = ordinanceSurveyApiClient.getAddresses(UkPostcode.normalize(postcode)).block();
+    } catch (WebClientRequestException
+        | WebClientResponseException
+        | DecodingException
+        | OrdinanceSurveyResponseException exception) {
+      log.warn("Address lookup failed with {}.", exception.getClass().getSimpleName());
+      throw new AddressLookupUnavailableException(exception);
+    }
 
-    return response != null && response.getResults() != null
-        ? clientAddressResultDisplayMapper.toClientAddressResultsDisplay(response)
-        : new ResultsDisplay<AddressResultRowDisplay>();
+    if (response == null || response.getResults() == null) {
+      log.warn("Address lookup returned no usable results payload.");
+      throw new AddressLookupUnavailableException(
+          new IllegalStateException("Address lookup response was empty or incomplete"));
+    }
+    return clientAddressResultDisplayMapper.toClientAddressResultsDisplay(response);
   }
 
   /**
