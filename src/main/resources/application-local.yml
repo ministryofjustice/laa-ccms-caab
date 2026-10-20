@@ -106,10 +106,12 @@ laa:
           url-duration: 20
     entra:
       # Local dev resolves users through the EBS XXCCMS_ENTRA_ID_USERS mapping table, as an
-      # internal user would. Set silas-enabled to true, and point user-details-api at a running
-      # User Details API, to exercise the external SiLAS path instead.
+      # internal user would. For the external SiLAS path set silas-enabled to true and name the
+      # claim carrying the CCMS username - https://justice.org.uk/claims/USER_NAME in Dev External.
       silas-enabled: false
       custom-user-id-claim: ""
+    # Bare hostname: the url below prepends the scheme. Only used as the fallback when the
+    # claim is absent.
     user-details-api:
       hostname: localhost
       port: 8090
