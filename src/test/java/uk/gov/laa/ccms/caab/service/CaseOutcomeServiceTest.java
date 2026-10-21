@@ -12,6 +12,7 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -316,6 +317,31 @@ class CaseOutcomeServiceTest {
     verify(costAwardMapper).updateCostAward(request, existingCostAward);
     verify(caabApiClient).getCostAward(caseOutcomeId, costAwardId);
     verify(caabApiClient).updateCostAward(caseOutcomeId, costAwardId, loginId, existingCostAward);
+  }
+
+  @Test
+  void updateCostAward_nonUpdateableAward_throwsWithoutMappingOrUpdating() {
+    final String caseReferenceNumber = "300000001";
+    final Integer providerId = 123;
+    final Integer costAwardId = 7;
+    final CaseOutcomeDetail caseOutcome =
+        new CaseOutcomeDetail()
+            .id(42)
+            .costAwards(List.of(new CostAwardDetail().id(costAwardId).updateAllowed(false)));
+
+    doReturn(Optional.of(caseOutcome))
+        .when(caseOutcomeService)
+        .getCaseOutcome(caseReferenceNumber, providerId);
+
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            caseOutcomeService.updateCostAward(
+                caseReferenceNumber, providerId, costAwardId, new CostAwardFormData(), "user1"));
+
+    verifyNoInteractions(costAwardMapper);
+    verify(caabApiClient, never()).getCostAward(any(), any());
+    verify(caabApiClient, never()).updateCostAward(any(), any(), any(), any());
   }
 
   @Test

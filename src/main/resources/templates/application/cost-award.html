@@ -31,7 +31,7 @@
       <input type="hidden" th:field="*{awardCode}">
 
       <moj:datepicker
-          id="date-of-order"
+          id="dateOfOrder"
           name="dateOfOrder"
           th:label="#{case.costAward.dateOfOrder}"
           th:hint="#{site.dateHint}"
@@ -70,7 +70,7 @@
       <div th:replace="~{partials/forms :: textInputWithSuffix(fieldId='interestRate', label=#{case.costAward.interestRate}, inputClass='govuk-input--width-5', suffix='%', maxlengthParam=6)}"></div>
 
       <moj:datepicker
-          id="interest-start-date"
+          id="interestStartDate"
           name="interestStartDate"
           th:label="#{case.costAward.interestStartDate}"
           th:hint="#{site.dateHint}"
@@ -79,7 +79,7 @@
       </moj:datepicker>
 
       <moj:datepicker
-          id="order-served-date"
+          id="orderServedDate"
           name="orderServedDate"
           th:label="#{case.costAward.dateOrderWasServed}"
           th:hint="#{site.dateHint}"

@@ -174,14 +174,20 @@ public class CaseOutcomeService {
                         "No case outcome exists for case reference number: "
                             + caseReferenceNumber));
     final Integer caseOutcomeId = requireCaseOutcomeId(caseOutcome, caseReferenceNumber);
-    Optional.ofNullable(caseOutcome.getCostAwards()).orElse(Collections.emptyList()).stream()
-        .filter(award -> costAwardId.equals(award.getId()))
-        .findFirst()
-        .orElseThrow(
-            () ->
-                new IllegalStateException(
-                    "Cost award %s does not belong to case reference number: %s"
-                        .formatted(costAwardId, caseReferenceNumber)));
+    final CostAwardDetail ownedCostAward =
+        Optional.ofNullable(caseOutcome.getCostAwards()).orElse(Collections.emptyList()).stream()
+            .filter(award -> costAwardId.equals(award.getId()))
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Cost award %s does not belong to case reference number: %s"
+                            .formatted(costAwardId, caseReferenceNumber)));
+    if (Boolean.FALSE.equals(ownedCostAward.getUpdateAllowed())) {
+      throw new IllegalStateException(
+          "Cost award %s cannot be updated for case reference number: %s"
+              .formatted(costAwardId, caseReferenceNumber));
+    }
     final CostAwardDetail existingCostAward =
         Optional.ofNullable(caabApiClient.getCostAward(caseOutcomeId, costAwardId).block())
             .orElseThrow(
