@@ -190,7 +190,7 @@
     </span>
     <textarea
             class="govuk-textarea govuk-js-character-count govuk-!-margin-bottom-2"
-            th:errorclass="govuk-input--error"
+            th:errorclass="govuk-textarea--error"
             th:id="${fieldId}"
             th:name="${fieldId}"
             rows="5"
@@ -200,6 +200,42 @@
     <div th:id="(${fieldId}) + '-info'" class="govuk-hint govuk-character-count__message"></div>
   </fieldset>
 </div>
+
+<!--
+  Input-only fragments, for fields whose label and error message are rendered by the surrounding
+  block rather than by the fragment. Used by the dynamic reference-data options on provider
+  requests and prior authorities, where one wrapper renders the label for every field type.
+-->
+<input th:fragment="bareInput(fieldId, inputClass, maxLength)"
+       th:errorclass="govuk-input--error"
+       th:class="${'govuk-input ' + inputClass}"
+       th:id="${fieldId}"
+       th:name="${fieldId}"
+       type="text"
+       th:maxlength="${maxLength}"
+       data-module="govuk-input"
+       th:field="*{__${fieldId}__}">
+
+<div th:fragment="bareCurrencyInput(fieldId)" class="govuk-input__wrapper">
+  <div class="govuk-input__prefix" aria-hidden="true">£</div>
+  <input th:errorclass="govuk-input--error"
+         class="govuk-input govuk-input--width-10"
+         th:id="${fieldId}"
+         th:name="${fieldId}"
+         type="text"
+         spellcheck="false"
+         th:field="*{__${fieldId}__}">
+</div>
+
+<input th:fragment="bareNumericInput(fieldId)"
+       th:errorclass="govuk-input--error"
+       class="govuk-input govuk-date-input__input govuk-input--width-10"
+       th:id="${fieldId}"
+       th:name="${fieldId}"
+       type="text"
+       inputmode="numeric"
+       maxlength="10"
+       th:field="*{__${fieldId}__}">
 
 <div th:fragment="numericInput(fieldId, label, maxLength)" class="govuk-date-input__item">
   <div class="govuk-form-group"
