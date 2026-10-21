@@ -13,7 +13,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Map;
@@ -238,10 +237,6 @@ class LoggingAcceptanceTest {
         assertTrue(line.matches(".*\"spanId\":\"[0-9a-f]{16}\".*"), line);
         assertTrue(line.matches(".*\"sessionID\":\"[0-9a-f-]{36}\".*"), line);
       }
-
-      Path evidence = Path.of("build/logging-evidence/" + profile + ".log");
-      Files.createDirectories(evidence.getParent());
-      Files.writeString(evidence, line + System.lineSeparator());
     }
   }
 

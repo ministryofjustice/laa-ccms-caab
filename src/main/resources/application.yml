@@ -184,17 +184,3 @@ logging:
         version: ${spring.application.version:default}
         environment: ${spring.profiles.active:default}
         node_name: ${HOSTNAME:unknown}
-
----
-# local profile configuration
-spring:
-  config:
-    activate:
-      on-profile: local
-
-logging:
-  structured:
-    format:
-      console: "" # disables structured logging locally
-  pattern:
-    console: "%clr(%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX}){faint} %clr(%5p) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr([%X{traceId:-},%X{spanId:-},%X{sessionID:-}]){yellow} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n"
