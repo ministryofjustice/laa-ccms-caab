@@ -33,6 +33,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -650,6 +653,141 @@ class BillingControllerTest {
           .hasRedirectedUrl("/case/billing");
 
       verifyNoInteractions(billingService);
+    }
+  }
+
+  @Nested
+  @DisplayName("Selected submitted Bill/POA details")
+  class SubmittedDetails {
+
+    private ApplicationDetail caseWithFunctions() {
+      return new ApplicationDetail()
+          .caseReferenceNumber("300000123")
+          .availableFunctions(
+              List.of(FunctionConstants.ADD_UPDATE_BILL, FunctionConstants.ADD_UPDATE_POA));
+    }
+
+    private void assessmentsAbsent() {
+      lenient()
+          .when(assessmentService.getAssessments(any(), any(), any()))
+          .thenReturn(Mono.just(new AssessmentDetails()));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+      "bill, Bill, Submitted",
+      "bill, Counsel Bill, Authorised",
+      "bill, Bill, Rejected",
+      "poa, POA, Submitted",
+      "poa, Counsel POA, Authorised",
+      "poa, POA, Rejected"
+    })
+    @DisplayName("An explicit invoice ID selects a read-only page with invoice status")
+    void selectedInvoiceIsReadOnly(final String context, final String type, final String status) {
+      assessmentsAbsent();
+      final StatementOfAccountDisplay statement = new StatementOfAccountDisplay();
+      statement.setBillsAndPoa(
+          List.of(new BillPoaRow(type, status, null, null, BigDecimal.TEN, false, 555L)));
+      when(billingService.getStatementOfAccountDisplay(any(), any(), any())).thenReturn(statement);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/" + context)
+                      .param("billing-id", "555")
+                      .sessionAttr(CASE, caseWithFunctions())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/billing/" + context + "-details")
+          .model()
+          .containsEntry("readOnly", true)
+          .containsEntry("billingId", "555")
+          .containsEntry("assessmentStatus", status);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"bill", "poa"})
+    @DisplayName("Viewing a submitted invoice never creates a replacement draft")
+    void selectedInvoiceDoesNotCreateDraft(final String context) {
+      assessmentsAbsent();
+      mockMvc.perform(
+          get("/case/billing/" + context)
+              .param("billing-id", "555")
+              .sessionAttr(CASE, caseWithFunctions())
+              .sessionAttr(USER_DETAILS, user));
+
+      verify(billingService, never()).createDraftBillIfAbsent(any(), any(), any());
+      verify(billingService, never()).createDraftPaymentOnAccountIfAbsent(any(), any(), any());
+      verify(assessmentService, never()).deleteAssessments(any(), any(), any(), any());
+      verify(assessmentService, never()).saveAssessment(any(), any());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"bill, poa", "poa, bill"})
+    @DisplayName("The other maintain function does not grant access to a selected invoice")
+    void selectedInvoiceRequiresMatchingPermission(final String context, final String other) {
+      final ApplicationDetail ebsCase =
+          new ApplicationDetail()
+              .caseReferenceNumber("300000123")
+              .availableFunctions(
+                  List.of(
+                      other.equals("bill")
+                          ? FunctionConstants.ADD_UPDATE_BILL
+                          : FunctionConstants.ADD_UPDATE_POA));
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/" + context)
+                      .param("billing-id", "555")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing");
+      verifyNoInteractions(billingService, assessmentService, billingSummaryPdfService);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+      "bill, '', ''",
+      "bill, '', /summary",
+      "bill, ' ', ''",
+      "bill, ' ', /summary",
+      "bill, invalid, ''",
+      "bill, invalid, /summary",
+      "bill, 0, ''",
+      "bill, 0, /summary",
+      "bill, -1, ''",
+      "bill, -1, /summary",
+      "bill, 99999999999999999999999, ''",
+      "bill, 99999999999999999999999, /summary",
+      "poa, '', ''",
+      "poa, '', /summary",
+      "poa, ' ', ''",
+      "poa, ' ', /summary",
+      "poa, invalid, ''",
+      "poa, invalid, /summary",
+      "poa, 0, ''",
+      "poa, 0, /summary",
+      "poa, -1, ''",
+      "poa, -1, /summary",
+      "poa, 99999999999999999999999, ''",
+      "poa, 99999999999999999999999, /summary"
+    })
+    @DisplayName("An invalid explicit ID is unavailable, never an implicit draft request")
+    void invalidSelectedIdIsUnavailable(
+        final String context, final String billingId, final String suffix) {
+      assessmentsAbsent();
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/" + context + suffix)
+                      .param("billing-id", billingId)
+                      .sessionAttr(CASE, caseWithFunctions())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/billing/" + context + "-details")
+          .model()
+          .containsEntry("readOnly", true)
+          .containsEntry("detailsUnavailable", true);
+      verify(billingService, never()).createDraftBillIfAbsent(any(), any(), any());
+      verify(billingService, never()).createDraftPaymentOnAccountIfAbsent(any(), any(), any());
     }
   }
 
