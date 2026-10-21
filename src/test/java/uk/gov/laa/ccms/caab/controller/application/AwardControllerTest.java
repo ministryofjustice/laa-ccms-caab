@@ -582,6 +582,25 @@ class AwardControllerTest {
     }
 
     @Test
+    void postWithCalculateTreatsInvalidAmountsAsZero() {
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/cost-award")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("action", "calculate")
+                      .param("laaFundedLegalCosts", "1.234")
+                      .param("otherPreCertificateCosts", "2.00")
+                      .param("laaRate", "abc")
+                      .param("marketRate", "3.50")))
+          .hasViewName("application/cost-award")
+          .model()
+          .containsEntry("totalPreCertificateCosts", "2.00")
+          .containsEntry("totalCertificateCostsAwarded", "3.50")
+          .containsEntry("totalCostsAwarded", "5.50");
+    }
+
+    @Test
     void invalidPostRedisplaysCostAwardPage() {
       doAnswer(
               invocation -> {
@@ -1171,6 +1190,19 @@ class AwardControllerTest {
   @Nested
   @DisplayName("Time-related recovery for land and asset awards")
   class TimeRecoveryTests {
+    @ParameterizedTest
+    @ValueSource(strings = {"land", "asset"})
+    void readOnlyCaseCannotDisplayOrSaveRecovery(String awardPath) {
+      ebsCase.setAvailableFunctions(List.of(FunctionConstants.VIEW_CASE_OUTCOME));
+
+      assertThat(mockMvc.perform(timeRecoveryGet(awardPath)))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+      assertThat(mockMvc.perform(validTimeRecoveryPost(awardPath)))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verifyNoInteractions(caseOutcomeService);
+    }
+
     @ParameterizedTest
     @CsvSource({"land, LAND", "asset, ASSET"})
     void displaysNewRecoveryWithParentSummary(String awardPath, String awardType) {

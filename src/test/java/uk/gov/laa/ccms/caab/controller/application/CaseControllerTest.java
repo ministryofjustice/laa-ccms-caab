@@ -2369,7 +2369,17 @@ class CaseControllerTest {
               .outcomeCourtCaseNo("CASE-123")
               .resultInfo("EBS result info");
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ebsCase.setProceedings(
           List.of(
               new ProceedingDetail()
@@ -2422,7 +2432,17 @@ class CaseControllerTest {
               .outcomeCourtCaseNo("CASE-123")
               .resultInfo("EBS result info");
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ebsCase.setProceedings(
           List.of(
               new ProceedingDetail()
@@ -2475,7 +2495,17 @@ class CaseControllerTest {
               .outcomeCourtCaseNo("CASE-123")
               .resultInfo("EBS result info");
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ebsCase.setProceedings(
           List.of(
               new ProceedingDetail()
@@ -2791,7 +2821,17 @@ class CaseControllerTest {
     public void recordProceedingOutcomePostNormalisesLegacyCourtPlaceholdersBeforeSaving() {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ebsCase.setProceedings(
           List.of(
               new ProceedingDetail()
@@ -2819,7 +2859,7 @@ class CaseControllerTest {
                               .outcomeResultDescription("Result 1"))));
       doNothing()
           .when(caseOutcomeService)
-          .updateProceedingOutcome(anyString(), anyInt(), any(), anyString());
+          .updateProceedingOutcome(anyString(), anyInt(), any(), anyString(), any());
 
       assertThat(
               mockMvc.perform(
@@ -2847,7 +2887,8 @@ class CaseControllerTest {
               eq(selectedCaseRef),
               eq(user.getProvider().getId().intValue()),
               outcomeCaptor.capture(),
-              eq(user.getLoginId()));
+              eq(user.getLoginId()),
+              any());
       assertThat(outcomeCaptor.getValue().getCourtCode()).isNull();
       assertThat(outcomeCaptor.getValue().getCourtName()).isNull();
     }
@@ -3343,7 +3384,17 @@ class CaseControllerTest {
         throws Exception {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ebsCase.setProceedings(
           List.of(
               new ProceedingDetail()

@@ -116,11 +116,11 @@
 
         // Mirrors server-side validation: invalid amounts count as zero, summed in pence.
         const parsePence = (value) => {
-          const trimmed = (value ?? '').trim();
-          if (!amountPattern.test(trimmed)) {
+          const amount = value ?? '';
+          if (!amountPattern.test(amount)) {
             return 0;
           }
-          const [pounds, pence = ''] = trimmed.split('.');
+          const [pounds, pence = ''] = amount.split('.');
           return Number(pounds) * 100 + Number(pence.padEnd(2, '0'));
         };
 

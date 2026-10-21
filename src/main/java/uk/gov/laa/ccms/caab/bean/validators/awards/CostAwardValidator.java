@@ -46,6 +46,16 @@ public class CostAwardValidator extends AbstractValidator {
     validateDate(
         "orderServedDate", formData.getOrderServedDate(), "Date Order was served", errors, true);
 
+    validateText(
+        "courtAssessmentStatus",
+        formData.getCourtAssessmentStatus(),
+        50,
+        "Court Assessment Status",
+        STANDARD_CHARACTER_SET,
+        errors);
+    validateText(
+        "awardedBy", formData.getAwardedBy(), 50, "Awarded By", STANDARD_CHARACTER_SET, errors);
+
     validateCostAmounts(formData, errors);
     validateInterestRate("interestRate", formData.getInterestRate(), "Interest Rate", errors);
 

@@ -7,6 +7,7 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTH
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.AWARD_TYPE_FORM;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CURRENCY_PATTERN;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -553,6 +554,13 @@ public class AwardController {
       @PathVariable final String awardPath,
       @PathVariable final Integer awardId,
       final Model model) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn(
+          "Rejecting time-related recovery for read-only case {}",
+          ebsCase.getCaseReferenceNumber());
+      return "redirect:/case/outcome-and-awards";
+    }
+
     final TimeRecoveryAward award = loadTimeRecoveryAward(ebsCase, user, awardPath, awardId);
     if (!Boolean.TRUE.equals(award.recoveryOfAwardTimeRelated())) {
       log.warn(
@@ -586,6 +594,13 @@ public class AwardController {
       @ModelAttribute("timeRecovery") final TimeRecoveryFormData form,
       final BindingResult bindingResult,
       final Model model) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn(
+          "Rejecting time-related recovery for read-only case {}",
+          ebsCase.getCaseReferenceNumber());
+      return "redirect:/case/outcome-and-awards";
+    }
+
     final TimeRecoveryAward award = loadTimeRecoveryAward(ebsCase, user, awardPath, awardId);
     if (!Boolean.TRUE.equals(award.recoveryOfAwardTimeRelated())) {
       log.warn(
@@ -930,13 +945,10 @@ public class AwardController {
   }
 
   private BigDecimal toAmount(final String value) {
-    try {
-      return StringUtils.hasText(value)
-          ? new BigDecimal(value).setScale(2, RoundingMode.HALF_UP)
-          : ZERO;
-    } catch (NumberFormatException ex) {
-      return ZERO;
-    }
+    // Invalid amounts count as zero so totals match validation and the client-side calculation.
+    return value != null && value.matches(CURRENCY_PATTERN)
+        ? new BigDecimal(value).setScale(2, RoundingMode.HALF_UP)
+        : ZERO;
   }
 
   private String formatAmount(final BigDecimal value) {

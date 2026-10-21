@@ -26,6 +26,7 @@ import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import org.thymeleaf.templatemode.TemplateMode;
 import uk.gov.laa.ccms.caab.bean.validators.awards.TimeRecoveryValidator;
+import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
@@ -108,7 +109,11 @@ class TimeRecoveryTemplateRenderTest {
     mockMvc
         .perform(
             post("/case/outcome-and-awards/" + awardPath + "/7/time-related-recovery")
-                .sessionAttr(CASE, new ApplicationDetail().caseReferenceNumber("300000001"))
+                .sessionAttr(
+                    CASE,
+                    new ApplicationDetail()
+                        .caseReferenceNumber("300000001")
+                        .availableFunctions(List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE)))
                 .sessionAttr(USER_DETAILS, ApplicationTestUtils.buildUser())
                 .flashAttr("user", new UserDetail().functions(List.of()))
                 .param("triggeringEvent", "Sale")
@@ -140,7 +145,11 @@ class TimeRecoveryTemplateRenderTest {
     mockMvc
         .perform(
             get("/case/outcome-and-awards/" + awardPath + "/7/time-related-recovery")
-                .sessionAttr(CASE, new ApplicationDetail().caseReferenceNumber("300000001"))
+                .sessionAttr(
+                    CASE,
+                    new ApplicationDetail()
+                        .caseReferenceNumber("300000001")
+                        .availableFunctions(List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE)))
                 .sessionAttr(USER_DETAILS, ApplicationTestUtils.buildUser())
                 .flashAttr("user", new UserDetail().functions(List.of())))
         .andExpect(status().isOk())

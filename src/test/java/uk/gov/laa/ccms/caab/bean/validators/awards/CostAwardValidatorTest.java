@@ -108,6 +108,20 @@ class CostAwardValidatorTest {
         .containsExactlyInAnyOrder("laaFundedLegalCosts", "marketRate");
   }
 
+  @Test
+  void rejectsInvalidCourtAssessmentStatusAndAwardedByValues() {
+    final CostAwardFormData form = validForm();
+    form.setCourtAssessmentStatus("A".repeat(51));
+    form.setAwardedBy("<script>");
+    final BeanPropertyBindingResult errors = new BeanPropertyBindingResult(form, "costAward");
+
+    validator.validate(form, errors);
+
+    assertThat(errors.getFieldErrors())
+        .extracting("field")
+        .containsExactlyInAnyOrder("courtAssessmentStatus", "awardedBy");
+  }
+
   private CostAwardFormData validForm() {
     final CostAwardFormData form = new CostAwardFormData();
     form.setAwardType("COST");
