@@ -45,11 +45,6 @@ configurations.configureEach {
     exclude group: 'io.netty', module: 'netty-codec-native-quic'
 
     resolutionStrategy.eachDependency { details ->
-        if (details.requested.group == 'org.hibernate.validator'
-                && details.requested.name == 'hibernate-validator') {
-            details.useVersion '9.1.5.Final'
-            details.because 'Remediate Expression Language Injection (SNYK-JAVA-ORGHIBERNATEVALIDATOR-20877468)'
-        }
         // Build-time only: reaches us via checkstyle's doxia transitives, never the app classpath.
         if (details.requested.group == 'org.codehaus.plexus'
                 && details.requested.name == 'plexus-utils') {
