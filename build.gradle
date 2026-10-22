@@ -77,6 +77,11 @@ configurations.configureEach {
             details.because 'Override to remediate vulnerability; not covered by the Spring Boot dependency BOM'
         }
         // Logback classic pulled in by Spring Boot starter logging
+        if (details.requested.group == 'org.hibernate.validator'
+                && details.requested.name == 'hibernate-validator') {
+            details.useVersion '9.1.5.Final'
+            details.because 'Remediate Expression Language Injection (SNYK-JAVA-ORGHIBERNATEVALIDATOR-20877468)'
+        }
         if (details.requested.group == 'ch.qos.logback'
                 && details.requested.name in ['logback-classic', 'logback-core']) {
             details.useVersion '1.6.5'
