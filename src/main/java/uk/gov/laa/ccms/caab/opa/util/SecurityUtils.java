@@ -109,19 +109,14 @@ public class SecurityUtils {
     final String jsonStr = contextToken.createJsonContextToken();
     String uriLegalTokenValue = "";
     try {
-      log.info("createHubContext() Json: ...........[{}]", jsonStr);
 
       final String encryptedJsonStr = encryptor.encrypt(jsonStr);
-      log.info("createHubContext() encrypted Json...[{}]", uriLegalTokenValue);
 
       uriLegalTokenValue = ContextUrlEncoder.encode(encryptedJsonStr, UTF_8);
-      log.info("createHubContext() UrlEncoded ......[{}]", uriLegalTokenValue);
 
     } catch (UnsupportedEncodingException | SecurityException e) {
       log.error(ERROR_WITH_CREATE_HUB_CONTEXT, e);
     }
-
-    log.debug("========> ContextToken ===========> {}", uriLegalTokenValue);
 
     return uriLegalTokenValue;
   }
