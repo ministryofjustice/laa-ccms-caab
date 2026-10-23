@@ -2,6 +2,8 @@ package uk.gov.laa.ccms.caab.controller.application.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -185,8 +187,6 @@ class CourtSearchControllerTest {
 
     when(lookupService.getCourts("CT", ""))
         .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
-    when(lookupService.getCourts("", "Test Court"))
-        .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
 
     mockMvc.perform(
         post("/court/search")
@@ -202,8 +202,8 @@ class CourtSearchControllerTest {
             .param("courtName", "Test Court")
             .session(session));
 
-    verify(lookupService).getCourts("CT", "");
-    verify(lookupService).getCourts("", "Test Court");
+    verify(lookupService, times(2)).getCourts("CT", "");
+    verify(lookupService, never()).getCourts("", "Test Court");
   }
 
   @Test

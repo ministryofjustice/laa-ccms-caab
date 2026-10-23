@@ -109,7 +109,6 @@ public class CourtSearchController {
     }
 
     clearStaleCourtFilter(searchCriteria, baselineCriteria);
-    session.setAttribute(COURT_SEARCH_BASELINE, copyCriteria(searchCriteria));
     if (searchCriteria.getCourtCode() == null) {
       searchCriteria.setCourtCode("");
     }
@@ -120,6 +119,7 @@ public class CourtSearchController {
     courtSearchValidator.validate(searchCriteria, bindingResult);
 
     if (bindingResult.hasErrors()) {
+      session.setAttribute(COURT_SEARCH_BASELINE, copyCriteria(searchCriteria));
       model.addAttribute("proceedingIndex", proceedingIndex);
       return "application/court-search";
     }
