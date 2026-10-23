@@ -549,8 +549,9 @@ class AwardControllerTest {
 
     @Test
     void postWithoutIdCreatesCostAward() {
+      when(caseOutcomeService.createCostAward(any(), any(), any(), any(), any())).thenReturn(19);
       assertThat(mockMvc.perform(validCostAwardPost()))
-          .hasRedirectedUrl("/case/outcome-and-awards");
+          .hasRedirectedUrl("/case/outcome-and-awards/cost-award/19/liable-parties");
 
       verify(caseOutcomeService)
           .createCostAward(
@@ -574,7 +575,7 @@ class AwardControllerTest {
     @Test
     void postWithIdUpdatesCostAward() {
       assertThat(mockMvc.perform(validCostAwardPost().param("id", "7")))
-          .hasRedirectedUrl("/case/outcome-and-awards");
+          .hasRedirectedUrl("/case/outcome-and-awards/cost-award/7/liable-parties");
 
       verify(caseOutcomeService)
           .updateCostAward(

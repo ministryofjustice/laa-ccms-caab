@@ -825,9 +825,9 @@ public class AwardController {
   }
 
   /**
-   * Creates or updates a cost award and returns to the outcome and awards screen.
+   * Creates or updates a cost award and continues to its liable parties.
    *
-   * @return redirect to the outcome and awards screen when successful
+   * @return redirect to the liable parties screen when successful
    */
   @PostMapping("/case/outcome-and-awards/cost-award")
   public String costAward(
@@ -877,13 +877,15 @@ public class AwardController {
 
     final CostAwardDetail request = costAwardMapper.toCostAward(costAward);
     try {
+      final Integer savedAwardId;
       if (costAward.getId() == null) {
-        caseOutcomeService.createCostAward(
-            ebsCase.getCaseReferenceNumber(),
-            user.getProvider().getId().intValue(),
-            request,
-            user.getLoginId(),
-            ebsCase.getCaseOutcome());
+        savedAwardId =
+            caseOutcomeService.createCostAward(
+                ebsCase.getCaseReferenceNumber(),
+                user.getProvider().getId().intValue(),
+                request,
+                user.getLoginId(),
+                ebsCase.getCaseOutcome());
       } else {
         caseOutcomeService.updateCostAward(
             ebsCase.getCaseReferenceNumber(),
@@ -891,7 +893,9 @@ public class AwardController {
             costAward.getId(),
             costAward,
             user.getLoginId());
+        savedAwardId = costAward.getId();
       }
+      return "redirect:/case/outcome-and-awards/cost-award/" + savedAwardId + "/liable-parties";
     } catch (CaabApiClientException | IllegalStateException ex) {
       log.warn("Failed to save cost award with id: {}", costAward.getId(), ex);
       bindingResult.reject(
@@ -900,8 +904,6 @@ public class AwardController {
       populateCostAwardPage(model, costAward);
       return "application/cost-award";
     }
-
-    return "redirect:/case/outcome-and-awards";
   }
 
   private void populateCostAwardPage(final Model model, final CostAwardFormData costAwardFormData) {
