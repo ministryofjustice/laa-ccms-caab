@@ -16,6 +16,8 @@ import java.util.function.Function;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -1109,6 +1111,78 @@ class CaabApiClientTest {
 
     // Assert the URI
     assertEquals(expectedUri, actualUri.toString());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"COST", "DAMAGE", "LAND", "ASSET"})
+  void getAwardLiableParties_deserializesPartyDetails(String awardType) {
+    final WebClient client =
+        WebClient.builder()
+            .exchangeFunction(
+                request -> {
+                  assertEquals(
+                      "/case-outcomes/42/awards/" + awardType + "/7/liable-parties",
+                      request.url().toString());
+                  return Mono.just(
+                      ClientResponse.create(HttpStatus.OK)
+                          .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                          .body(
+                              """
+                          [{
+                            "id":11,"type":"Organisation","organisation_name":"Acme Ltd",
+                            "relationship_to_case":"OWNER",
+                            "address":{"address_line_1":"1 High Street","postcode":"AB1 2CD"}
+                          }]
+                          """)
+                          .build());
+                })
+            .build();
+    final CaabApiClient api = new CaabApiClient(client, new CaabApiClientErrorHandler());
+
+    StepVerifier.create(api.getAwardLiableParties(42, awardType, 7))
+        .assertNext(
+            opponents -> {
+              final OpponentDetail opponent = opponents.getFirst();
+              assertEquals(11, opponent.getId());
+              assertEquals("Acme Ltd", opponent.getOrganisationName());
+              assertEquals("OWNER", opponent.getRelationshipToCase());
+              assertEquals("1 High Street", opponent.getAddress().getAddressLine1());
+              assertEquals("AB1 2CD", opponent.getAddress().getPostcode());
+            })
+        .verifyComplete();
+  }
+
+  @Test
+  void getAwardLiableParties_emptyList() {
+    final WebClient client =
+        WebClient.builder()
+            .exchangeFunction(
+                request ->
+                    Mono.just(
+                        ClientResponse.create(HttpStatus.OK)
+                            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                            .body("[]")
+                            .build()))
+            .build();
+    final CaabApiClient api = new CaabApiClient(client, new CaabApiClientErrorHandler());
+
+    StepVerifier.create(api.getAwardLiableParties(42, "LAND", 7))
+        .expectNext(List.of())
+        .verifyComplete();
+  }
+
+  @Test
+  void getAwardLiableParties_apiFailure() {
+    final WebClient client =
+        WebClient.builder()
+            .exchangeFunction(
+                request -> Mono.just(ClientResponse.create(HttpStatus.NOT_FOUND).build()))
+            .build();
+    final CaabApiClient api = new CaabApiClient(client, new CaabApiClientErrorHandler());
+
+    StepVerifier.create(api.getAwardLiableParties(42, "LAND", 7))
+        .expectError(CaabApiClientException.class)
+        .verify();
   }
 
   @Test

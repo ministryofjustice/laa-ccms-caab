@@ -82,9 +82,24 @@ class CaseOutcomeServiceTest {
     when(caabApiClient.createFinancialAward(caseOutcomeId, loginId, request))
         .thenReturn(Mono.just("7"));
 
-    caseOutcomeService.createFinancialAward(caseReferenceNumber, providerId, request, loginId);
+    assertEquals(
+        7,
+        caseOutcomeService.createFinancialAward(caseReferenceNumber, providerId, request, loginId));
 
     verify(caabApiClient).createFinancialAward(caseOutcomeId, loginId, request);
+  }
+
+  @Test
+  void createFinancialAward_whenNoIdReturned_throwsRatherThanOpeningInvalidPartySummary() {
+    final FinancialAwardRequest request = new FinancialAwardRequest();
+    doReturn(Optional.of(new CaseOutcomeDetail().id(42)))
+        .when(caseOutcomeService)
+        .getCaseOutcome("300000001", 123);
+    when(caabApiClient.createFinancialAward(42, "user1", request)).thenReturn(Mono.empty());
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> caseOutcomeService.createFinancialAward("300000001", 123, request, "user1"));
   }
 
   @Test

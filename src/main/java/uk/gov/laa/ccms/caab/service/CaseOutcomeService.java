@@ -2,13 +2,18 @@ package uk.gov.laa.ccms.caab.service;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.mapper.LiablePartiesDisplayMapper;
+import uk.gov.laa.ccms.caab.model.BaseAwardDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
@@ -18,6 +23,7 @@ import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
+import uk.gov.laa.ccms.caab.model.sections.LiablePartiesDisplay;
 
 /** Service class to handle Case Outcomes. */
 @Service
@@ -26,6 +32,8 @@ import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 public class CaseOutcomeService {
 
   private final CaabApiClient caabApiClient;
+  private final LookupService lookupService;
+  private final LiablePartiesDisplayMapper liablePartiesDisplayMapper;
 
   /**
    * Get a single Case Outcome based on the supplied case reference number and provider id.
@@ -40,6 +48,45 @@ public class CaseOutcomeService {
         .getCaseOutcomes(caseReferenceNumber, providerId)
         .mapNotNull(caseOutcomeDetails -> caseOutcomeDetails.getContent().stream().findFirst())
         .block();
+  }
+
+  /** Loads one award and its parties to build the liable or interested party summary. */
+  public LiablePartiesDisplay getLiablePartiesDisplay(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final String awardPath,
+      final Integer awardId) {
+    final CaseOutcomeDetail outcome =
+        getCaseOutcome(caseReferenceNumber, providerId)
+            .orElseThrow(() -> new CaabApplicationException("Could not find case outcome"));
+    final List<? extends BaseAwardDetail> awards =
+        switch (awardPath) {
+          case "cost-award" -> outcome.getCostAwards();
+          case "financial-award" -> outcome.getFinancialAwards();
+          case "land" -> outcome.getLandAwards();
+          case "asset" -> outcome.getOtherAssetAwards();
+          default -> throw new CaabApplicationException("Unsupported award path: " + awardPath);
+        };
+    final BaseAwardDetail award =
+        (awards == null ? List.<BaseAwardDetail>of() : awards)
+            .stream()
+                .filter(candidate -> awardId.equals(candidate.getId()))
+                .findFirst()
+                .orElseThrow(
+                    () -> new CaabApplicationException("Could not find award with id: " + awardId));
+    if (award.getLiableParties() == null || award.getLiableParties().isEmpty()) {
+      return liablePartiesDisplayMapper.toLiablePartiesDisplay(award, List.of(), null);
+    }
+    return Mono.zip(
+            caabApiClient.getAwardLiableParties(outcome.getId(), award.getAwardType(), awardId),
+            lookupService.getLiablePartiesMappingContext())
+        .map(
+            tuple ->
+                liablePartiesDisplayMapper.toLiablePartiesDisplay(
+                    award, tuple.getT1(), tuple.getT2()))
+        .blockOptional()
+        .orElseThrow(
+            () -> new CaabApplicationException("Failed to retrieve award parties or lookup data"));
   }
 
   /** Returns a financial award only when it belongs to the supplied case outcome. */
@@ -57,7 +104,7 @@ public class CaseOutcomeService {
   }
 
   /** Creates a financial award without replacing the owning case outcome aggregate. */
-  public void createFinancialAward(
+  public Integer createFinancialAward(
       final String caseReferenceNumber,
       final Integer providerId,
       final FinancialAwardRequest financialAward,
@@ -69,7 +116,12 @@ public class CaseOutcomeService {
                     new IllegalStateException(
                         "No case outcome exists for case reference number: " + caseReferenceNumber))
             .getId();
-    caabApiClient.createFinancialAward(caseOutcomeId, loginId, financialAward).block();
+    final String id =
+        caabApiClient.createFinancialAward(caseOutcomeId, loginId, financialAward).block();
+    if (id == null) {
+      throw new IllegalStateException("No id returned for the newly created financial award");
+    }
+    return Integer.valueOf(id);
   }
 
   /** Updates a financial award without replacing the owning case outcome aggregate. */

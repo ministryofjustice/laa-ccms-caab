@@ -8,6 +8,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -21,6 +22,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -63,6 +65,7 @@ import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
+import uk.gov.laa.ccms.caab.model.sections.LiablePartiesDisplay;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -105,6 +108,42 @@ class AwardControllerTest {
     lenient()
         .when(lookupService.getCommonValues(any()))
         .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
+  }
+
+  @Nested
+  @DisplayName("GET: award liable and interested parties")
+  class LiablePartiesTests {
+
+    @ParameterizedTest
+    @ValueSource(strings = {"cost-award", "financial-award", "land", "asset"})
+    void loadsSelectedAwardWithinCurrentCaseAndProvider(String awardPath) {
+      final var award =
+          new LiablePartiesDisplay("LAND", "Property", BigDecimal.TEN, false, List.of());
+      when(caseOutcomeService.getLiablePartiesDisplay("300000001", 123, awardPath, 7))
+          .thenReturn(award);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/" + awardPath + "/7/liable-parties")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/liable-parties")
+          .model()
+          .containsEntry("award", award)
+          .containsEntry("awardPath", awardPath)
+          .containsEntry("awardId", 7);
+
+      verify(caseOutcomeService).getLiablePartiesDisplay("300000001", 123, awardPath, 7);
+      verifyNoMoreInteractions(caseOutcomeService);
+    }
+
+    @Test
+    void unsupportedAwardHasNoRoute() {
+      assertThat(mockMvc.perform(get("/case/outcome-and-awards/unknown/7/liable-parties")))
+          .hasStatus(404);
+      verifyNoInteractions(caseOutcomeService);
+    }
   }
 
   @Nested
@@ -426,7 +465,9 @@ class AwardControllerTest {
 
     @Test
     void postWithoutIdCreatesFinancialAward() {
-      assertThat(mockMvc.perform(validPost())).hasRedirectedUrl("/case/outcome-and-awards");
+      when(caseOutcomeService.createFinancialAward(any(), any(), any(), any())).thenReturn(7);
+      assertThat(mockMvc.perform(validPost()))
+          .hasRedirectedUrl("/case/outcome-and-awards/financial-award/7/liable-parties");
 
       verify(caseOutcomeService)
           .createFinancialAward(
@@ -542,10 +583,10 @@ class AwardControllerTest {
       }
 
       @Test
-      void postWithoutTimeRecoveryReturnsToOutcomeAndAwards() {
+      void postWithoutTimeRecoveryOpensInterestedParties() {
         when(caseOutcomeService.createLandAward(any(), any(), any(), any())).thenReturn(7);
         assertThat(mockMvc.perform(validLandPost().param("recoveryOfAwardTimeRelated", "N")))
-            .hasRedirectedUrl("/case/outcome-and-awards");
+            .hasRedirectedUrl("/case/outcome-and-awards/land/7/liable-parties");
       }
 
       @Test
@@ -553,7 +594,7 @@ class AwardControllerTest {
         assertThat(
                 mockMvc.perform(
                     validLandPost().param("id", "7").param("recoveryOfAwardTimeRelated", "N")))
-            .hasRedirectedUrl("/case/outcome-and-awards");
+            .hasRedirectedUrl("/case/outcome-and-awards/land/7/liable-parties");
         verify(caseOutcomeService)
             .updateLandAward(
                 eq("300000001"),
@@ -596,7 +637,7 @@ class AwardControllerTest {
     @Test
     void postWithIdUpdatesFinancialAward() {
       assertThat(mockMvc.perform(validPost().param("id", "7")))
-          .hasRedirectedUrl("/case/outcome-and-awards");
+          .hasRedirectedUrl("/case/outcome-and-awards/financial-award/7/liable-parties");
 
       verify(caseOutcomeService)
           .updateFinancialAward(
@@ -748,8 +789,9 @@ class AwardControllerTest {
 
     @Test
     void postWithoutIdCreatesOtherAssetAward() {
+      when(caseOutcomeService.createOtherAssetAward(any(), any(), any(), any())).thenReturn(8);
       assertThat(mockMvc.perform(validOtherAssetPost()))
-          .hasRedirectedUrl("/case/outcome-and-awards");
+          .hasRedirectedUrl("/case/outcome-and-awards/asset/8/liable-parties");
 
       verify(caseOutcomeService)
           .createOtherAssetAward(
@@ -762,7 +804,7 @@ class AwardControllerTest {
     @Test
     void postWithIdUpdatesOtherAssetAward() {
       assertThat(mockMvc.perform(validOtherAssetPost().param("id", "8")))
-          .hasRedirectedUrl("/case/outcome-and-awards");
+          .hasRedirectedUrl("/case/outcome-and-awards/asset/8/liable-parties");
 
       verify(caseOutcomeService)
           .updateOtherAssetAward(
@@ -935,7 +977,7 @@ class AwardControllerTest {
       stubTimeRecoveryAward(awardPath, true, null);
 
       assertThat(mockMvc.perform(timeRecoveryPost(awardPath, "Triggered", effectiveDate)))
-          .hasRedirectedUrl("/case/outcome-and-awards");
+          .hasRedirectedUrl("/case/outcome-and-awards/" + awardPath + "/7/liable-parties");
       verify(caseOutcomeService)
           .upsertTimeRecovery(
               eq("300000001"),
