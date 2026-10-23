@@ -826,6 +826,42 @@ public class LookupServiceTest {
   }
 
   @Test
+  void getLiablePartiesMappingContext_combinesRequiredLookups() {
+    final CommonLookupDetail titles = new CommonLookupDetail();
+    final RelationshipToCaseLookupDetail organisations = new RelationshipToCaseLookupDetail();
+    final RelationshipToCaseLookupDetail individuals = new RelationshipToCaseLookupDetail();
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(Mono.just(titles));
+    when(ebsApiClient.getOrganisationToCaseRelationshipValues(null, null))
+        .thenReturn(Mono.just(organisations));
+    when(ebsApiClient.getPersonToCaseRelationships(null, null)).thenReturn(Mono.just(individuals));
+
+    StepVerifier.create(lookupService.getLiablePartiesMappingContext())
+        .expectNextMatches(
+            context ->
+                context.getContactTitle() == titles
+                    && context.getOrganisationRelationshipsToCase() == organisations
+                    && context.getIndividualRelationshipsToCase() == individuals)
+        .verifyComplete();
+    verify(ebsApiClient).getCommonValues(COMMON_VALUE_CONTACT_TITLE);
+    verify(ebsApiClient).getOrganisationToCaseRelationshipValues(null, null);
+    verify(ebsApiClient).getPersonToCaseRelationships(null, null);
+  }
+
+  @Test
+  void getLiablePartiesMappingContext_propagatesLookupFailures() {
+    final IllegalStateException failure = new IllegalStateException("Lookup unavailable");
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(Mono.error(failure));
+    when(ebsApiClient.getOrganisationToCaseRelationshipValues(null, null))
+        .thenReturn(Mono.just(new RelationshipToCaseLookupDetail()));
+    when(ebsApiClient.getPersonToCaseRelationships(null, null))
+        .thenReturn(Mono.just(new RelationshipToCaseLookupDetail()));
+
+    StepVerifier.create(lookupService.getLiablePartiesMappingContext())
+        .expectErrorMatches(error -> error == failure)
+        .verify();
+  }
+
+  @Test
   @DisplayName("getDeclarations with submissionType returns data successfully")
   void getDeclarations_success() {
     final String submissionType = "SUB_TYPE";

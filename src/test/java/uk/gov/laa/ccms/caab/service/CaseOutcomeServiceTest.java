@@ -89,10 +89,28 @@ class CaseOutcomeServiceTest {
     when(caabApiClient.createFinancialAward(caseOutcomeId, loginId, request))
         .thenReturn(Mono.just("7"));
 
-    caseOutcomeService.createFinancialAward(
-        caseReferenceNumber, providerId, request, loginId, bootstrapCaseOutcome);
+    assertEquals(
+        7,
+        caseOutcomeService.createFinancialAward(
+            caseReferenceNumber, providerId, request, loginId, bootstrapCaseOutcome));
 
     verify(caabApiClient).createFinancialAward(caseOutcomeId, loginId, request);
+  }
+
+  @Test
+  void createFinancialAward_whenNoIdReturned_throwsRatherThanOpeningInvalidPartySummary() {
+    final FinancialAwardRequest request = new FinancialAwardRequest();
+    doReturn(Optional.of(new CaseOutcomeDetail().id(42)))
+        .when(caseOutcomeService)
+        .getCaseOutcome("300000001", 123);
+    when(caabApiClient.createFinancialAward(42, "user1", request)).thenReturn(Mono.empty());
+
+    final IllegalStateException exception =
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                caseOutcomeService.createFinancialAward("300000001", 123, request, "user1", null));
+    assertEquals("No id returned for the newly created financial award", exception.getMessage());
   }
 
   @Test
@@ -121,8 +139,10 @@ class CaseOutcomeServiceTest {
     when(caabApiClient.createFinancialAward(caseOutcomeId, loginId, request))
         .thenReturn(Mono.just("7"));
 
-    caseOutcomeService.createFinancialAward(
-        caseReferenceNumber, providerId, request, loginId, bootstrapCaseOutcome);
+    assertEquals(
+        7,
+        caseOutcomeService.createFinancialAward(
+            caseReferenceNumber, providerId, request, loginId, bootstrapCaseOutcome));
 
     final ArgumentCaptor<CaseOutcomeDetail> caseOutcomeCaptor =
         ArgumentCaptor.forClass(CaseOutcomeDetail.class);
@@ -204,10 +224,27 @@ class CaseOutcomeServiceTest {
         .getCaseOutcome(caseReferenceNumber, providerId);
     when(caabApiClient.createCostAward(caseOutcomeId, loginId, request)).thenReturn(Mono.just("7"));
 
-    caseOutcomeService.createCostAward(
-        caseReferenceNumber, providerId, request, loginId, bootstrapCaseOutcome);
+    assertEquals(
+        7,
+        caseOutcomeService.createCostAward(
+            caseReferenceNumber, providerId, request, loginId, bootstrapCaseOutcome));
 
     verify(caabApiClient).createCostAward(caseOutcomeId, loginId, request);
+  }
+
+  @Test
+  void createCostAward_whenNoIdReturned_throws() {
+    final CostAwardDetail request = new CostAwardDetail();
+    doReturn(Optional.of(new CaseOutcomeDetail().id(42)))
+        .when(caseOutcomeService)
+        .getCaseOutcome("300000001", 123);
+    when(caabApiClient.createCostAward(42, "user1", request)).thenReturn(Mono.empty());
+
+    final IllegalStateException exception =
+        assertThrows(
+            IllegalStateException.class,
+            () -> caseOutcomeService.createCostAward("300000001", 123, request, "user1", null));
+    assertEquals("No id returned for the newly created cost award", exception.getMessage());
   }
 
   @Test
@@ -234,8 +271,10 @@ class CaseOutcomeServiceTest {
         .thenReturn(Mono.just(String.valueOf(caseOutcomeId)));
     when(caabApiClient.createCostAward(caseOutcomeId, loginId, request)).thenReturn(Mono.just("7"));
 
-    caseOutcomeService.createCostAward(
-        caseReferenceNumber, providerId, request, loginId, bootstrapCaseOutcome);
+    assertEquals(
+        7,
+        caseOutcomeService.createCostAward(
+            caseReferenceNumber, providerId, request, loginId, bootstrapCaseOutcome));
 
     final ArgumentCaptor<CaseOutcomeDetail> caseOutcomeCaptor =
         ArgumentCaptor.forClass(CaseOutcomeDetail.class);

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="|#{service.name} - #{case.outcomeAndAwards.title}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a class="govuk-back-link" th:href="@{/case/outcome-and-awards}"
+       th:text="#{site.cancelAndReturnToOutcomeAndAwards}"></a>
+  </div>
+  <div id="main-content" th:fragment="content">
+    <h1 class="govuk-heading-l" th:text="#{case.outcomeAndAwards.title}"></h1>
+    <h2 class="govuk-heading-m"
+        th:text="${award.costOrFinancial} ? #{case.liableParties.title} : #{case.liableParties.interestedTitle}"></h2>
+
+    <dl class="govuk-summary-list">
+      <div class="govuk-summary-list__row">
+        <dt class="govuk-summary-list__key" th:text="#{case.liableParties.awardType}"></dt>
+        <dd class="govuk-summary-list__value" th:text="${award.awardType}"></dd>
+      </div>
+      <div class="govuk-summary-list__row">
+        <dt class="govuk-summary-list__key" th:text="#{case.liableParties.description}"></dt>
+        <dd class="govuk-summary-list__value" th:text="${award.description}"></dd>
+      </div>
+      <div class="govuk-summary-list__row">
+        <dt class="govuk-summary-list__key" th:text="#{case.liableParties.awardAmount}"></dt>
+        <dd class="govuk-summary-list__value"
+            th:text="${award.awardAmount == null ? '' : '£' + #numbers.formatDecimal(award.awardAmount, 1, 'COMMA', 2, 'POINT')}"></dd>
+      </div>
+    </dl>
+
+    <table class="govuk-table" id="liable-parties">
+      <caption class="govuk-table__caption govuk-visually-hidden"
+               th:text="${award.costOrFinancial} ? #{case.liableParties.title} : #{case.liableParties.interestedTitle}"></caption>
+      <thead class="govuk-table__head">
+      <tr class="govuk-table__row">
+        <th scope="col" class="govuk-table__header" th:text="#{case.liableParties.name}"></th>
+        <th scope="col" class="govuk-table__header" th:text="#{case.liableParties.partyType}"></th>
+        <th scope="col" class="govuk-table__header" th:text="#{case.liableParties.relationshipToCase}"></th>
+        <th scope="col" class="govuk-table__header" th:text="#{case.liableParties.address}"></th>
+        <th scope="col" class="govuk-table__header" th:text="#{site.action}"></th>
+      </tr>
+      </thead>
+      <tbody class="govuk-table__body">
+      <tr class="govuk-table__row" th:if="${#lists.isEmpty(award.parties)}">
+        <td class="govuk-table__cell" colspan="5" th:text="#{case.liableParties.none}"></td>
+      </tr>
+      <tr class="govuk-table__row" th:each="party : ${award.parties}">
+        <td class="govuk-table__cell">
+          <a th:if="${party.editable}" class="govuk-link"
+             th:href="@{/case/outcome-and-awards/{path}/{id}/liable-parties/{opponentId}/{type}(path=${awardPath},id=${awardId},opponentId=${party.opponentId},type=${party.organisation ? 'organisation' : 'individual'})}"
+             th:text="${party.name}"></a>
+          <span th:unless="${party.editable}" th:text="${party.name}"></span>
+        </td>
+        <td class="govuk-table__cell" th:text="${party.partyType}"></td>
+        <td class="govuk-table__cell" th:text="${party.relationshipToCase}"></td>
+        <td class="govuk-table__cell" th:text="${party.address}"></td>
+        <td class="govuk-table__cell">
+          <a class="govuk-link"
+             th:href="@{/case/outcome-and-awards/{path}/{id}/liable-parties/{partyId}/remove(path=${awardPath},id=${awardId},partyId=${party.id})}">
+            <span th:text="#{case.liableParties.remove}"></span>
+            <span class="govuk-visually-hidden" th:text="${' ' + party.name}"></span>
+          </a>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+    <div class="govuk-button-group govuk-!-margin-top-3">
+      <a class="govuk-button govuk-button--secondary" data-module="govuk-button" role="button"
+         id="addPartyButton"
+         th:href="@{/case/outcome-and-awards/{path}/{id}/liable-parties/add(path=${awardPath},id=${awardId})}"
+         th:text="#{case.liableParties.addParty}"></a>
+    </div>
+    <div class="govuk-button-group govuk-!-margin-top-6">
+      <a class="govuk-button" data-module="govuk-button" role="button"
+         th:href="${award.costOrFinancial} ? @{/case/outcome-and-awards/{path}/{id}/recovery(path=${awardPath},id=${awardId})} : @{/case/outcome-and-awards}"
+         th:text="#{site.next}"></a>
+      <a class="govuk-link" th:href="@{/case/outcome-and-awards}" th:text="#{site.back}"></a>
+    </div>
+  </div>
+</div>
+</body>
+</html>
