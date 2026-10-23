@@ -6,8 +6,10 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,6 +39,7 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -45,13 +48,23 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.thymeleaf.spring6.SpringTemplateEngine;
+import org.thymeleaf.spring6.view.ThymeleafViewResolver;
+import org.thymeleaf.templatemode.TemplateMode;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
@@ -152,8 +165,18 @@ class CaseControllerTest {
     lenient()
         .when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
         .thenReturn(
-            java.util.Optional.of(
-                new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+            Optional.of(new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+    lenient()
+        .when(caseOutcomeService.getOrCreateCaseOutcome(anyString(), anyInt(), anyString(), any()))
+        .thenAnswer(
+            invocation -> {
+              String caseReferenceNumber = invocation.getArgument(0);
+              Integer providerId = invocation.getArgument(1);
+              return caseOutcomeService
+                  .getCaseOutcome(caseReferenceNumber, providerId)
+                  .orElseGet(
+                      () -> new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList()));
+            });
     lenient()
         .when(lookupService.getCommonValues(COMMON_VALUE_DOCUMENT_TYPES))
         .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
@@ -170,6 +193,44 @@ class CaseControllerTest {
     lenient()
         .when(lookupService.getDocumentTypeDescription(anyString()))
         .thenReturn(Mono.just("Document description"));
+  }
+
+  private ThymeleafViewResolver thymeleafViewResolver() {
+    final ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
+    resolver.setPrefix("templates/");
+    resolver.setSuffix(".html");
+    resolver.setTemplateMode(TemplateMode.HTML);
+    resolver.setCharacterEncoding("UTF-8");
+
+    final ResourceBundleMessageSource templateMessageSource = new ResourceBundleMessageSource();
+    templateMessageSource.setBasename("messages");
+    templateMessageSource.setDefaultEncoding("UTF-8");
+
+    final SpringTemplateEngine templateEngine = new SpringTemplateEngine();
+    templateEngine.setTemplateResolver(resolver);
+    templateEngine.setTemplateEngineMessageSource(templateMessageSource);
+
+    final ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
+    viewResolver.setTemplateEngine(templateEngine);
+    viewResolver.setCharacterEncoding("UTF-8");
+    return viewResolver;
+  }
+
+  private MockMvc renderedMockMvc() {
+    return MockMvcBuilders.standaloneSetup(caseController)
+        .setViewResolvers(thymeleafViewResolver())
+        .setControllerAdvice(
+            new GlobalExceptionHandler(), new ActiveCaseModelAdvice(), new TestUserModelAdvice())
+        .build();
+  }
+
+  @ControllerAdvice
+  static class TestUserModelAdvice {
+
+    @ModelAttribute
+    void addUser(final Model model) {
+      model.addAttribute("user", new UserDetail().functions(List.of()));
+    }
   }
 
   @Nested
@@ -321,6 +382,67 @@ class CaseControllerTest {
               .adrInfo("")
               .courtCode("")
               .courtName("")
+              .outcomeCourtCaseNo("")
+              .widerBenefits("");
+      ApplicationDetail ebsCase =
+          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+      ebsCase.setProceedings(
+          List.of(new ProceedingDetail().proceedingCaseId("pc1").outcome(ebsOutcome)));
+
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(
+              Optional.of(new CaseOutcomeDetail().proceedingOutcomes(List.of(legacyMarker))));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards")
+          .model()
+          .hasEntrySatisfying(
+              "resolvedOutcomes",
+              value -> {
+                @SuppressWarnings("unchecked")
+                Map<String, ProceedingOutcomeDetail> resolved =
+                    (Map<String, ProceedingOutcomeDetail>) value;
+                assertThat(resolved.get("pc1")).isNull();
+              })
+          .hasEntrySatisfying(
+              "clearableOutcomes",
+              value -> {
+                @SuppressWarnings("unchecked")
+                Map<String, ProceedingOutcomeDetail> clearable =
+                    (Map<String, ProceedingOutcomeDetail>) value;
+                assertThat(clearable).containsKey("pc1");
+                assertThat(clearable.get("pc1")).isNull();
+              });
+    }
+
+    @Test
+    @DisplayName(
+        "Outcome and awards treats Not Available court placeholders as cleared and not clearable")
+    public void outcomeAndAwardsIgnoresLegacyCourtPlaceholdersInClearMarker() {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail ebsOutcome =
+          new ProceedingOutcomeDetail()
+              .proceedingCaseId("pc1")
+              .result(new StringDisplayValue().id("R1").displayValue("EBS outcome"));
+      final ProceedingOutcomeDetail legacyMarker =
+          new ProceedingOutcomeDetail()
+              .id(99)
+              .proceedingCaseId("pc1")
+              .description("Proceeding 1")
+              .proceedingType(new StringDisplayValue().id("P1").displayValue("Type 1"))
+              .stageEnd(new StringDisplayValue().id("").displayValue(""))
+              .result(new StringDisplayValue().id("").displayValue(""))
+              .resolutionMethod("")
+              .resultInfo("")
+              .alternativeResolution("")
+              .adrInfo("")
+              .courtCode("Not Available")
+              .courtName("Not Available")
               .outcomeCourtCaseNo("")
               .widerBenefits("");
       ApplicationDetail ebsCase =
@@ -492,7 +614,17 @@ class CaseControllerTest {
               .description("Proceeding 1")
               .proceedingType(new StringDisplayValue().id("P1").displayValue("Type 1"));
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ebsCase.setProceedings(
           List.of(
               new ProceedingDetail()
@@ -890,7 +1022,25 @@ class CaseControllerTest {
     public void outcomeAndAwardsPageLoads() {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+      final ProceedingOutcomeDetail ebsOutcome =
+          new ProceedingOutcomeDetail()
+              .id(99)
+              .proceedingCaseId("pc1")
+              .result(new StringDisplayValue().id("R1").displayValue("EBS outcome"));
+      ebsCase.setProceedings(
+          List.of(new ProceedingDetail().proceedingCaseId("pc1").outcome(ebsOutcome)));
+      ebsCase.setCaseOutcome(new CaseOutcomeDetail().proceedingOutcomes(List.of(ebsOutcome)));
 
       assertThat(
               mockMvc.perform(
@@ -898,7 +1048,158 @@ class CaseControllerTest {
                       .sessionAttr(USER_DETAILS, user)
                       .sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
-          .hasViewName("application/outcome-and-awards");
+          .hasViewName("application/outcome-and-awards")
+          .model()
+          .hasEntrySatisfying(
+              "clearableOutcomes",
+              value -> {
+                @SuppressWarnings("unchecked")
+                Map<String, ProceedingOutcomeDetail> clearable =
+                    (Map<String, ProceedingOutcomeDetail>) value;
+                assertThat(clearable.get("pc1")).isNull();
+              });
+
+      verify(caseOutcomeService)
+          .getOrCreateCaseOutcome(
+              selectedCaseRef,
+              user.getProvider().getId().intValue(),
+              user.getLoginId(),
+              ebsCase.getCaseOutcome());
+    }
+
+    @Test
+    @DisplayName("Outcome and awards page falls back to EBS outcome when bootstrap create fails")
+    public void outcomeAndAwardsPageFallsBackToEbsWhenBootstrapFails() {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail ebsOutcome =
+          new ProceedingOutcomeDetail()
+              .id(99)
+              .proceedingCaseId("pc1")
+              .result(new StringDisplayValue().id("R1").displayValue("EBS outcome"));
+      final CostAwardDetail ebsCostAward = new CostAwardDetail().awardType("COST");
+      ApplicationDetail ebsCase =
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+      ebsCase.setProceedings(
+          List.of(new ProceedingDetail().proceedingCaseId("pc1").outcome(ebsOutcome)));
+      ebsCase.setCaseOutcome(
+          new CaseOutcomeDetail()
+              .proceedingOutcomes(List.of(ebsOutcome))
+              .costAwards(List.of(ebsCostAward)));
+      doThrow(new CaabApiClientException("CAAB unavailable"))
+          .when(caseOutcomeService)
+          .getOrCreateCaseOutcome(anyString(), anyInt(), anyString(), any());
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards")
+          .model()
+          .hasEntrySatisfying(
+              "resolvedOutcomes",
+              value -> {
+                @SuppressWarnings("unchecked")
+                Map<String, ProceedingOutcomeDetail> resolved =
+                    (Map<String, ProceedingOutcomeDetail>) value;
+                assertThat(resolved.get("pc1")).isSameAs(ebsOutcome);
+              })
+          .hasEntrySatisfying(
+              "clearableOutcomes",
+              value -> {
+                @SuppressWarnings("unchecked")
+                Map<String, ProceedingOutcomeDetail> clearable =
+                    (Map<String, ProceedingOutcomeDetail>) value;
+                assertThat(clearable.get("pc1")).isNull();
+              })
+          .hasEntrySatisfying(
+              "awards",
+              value ->
+                  assertThat(value)
+                      .asInstanceOf(InstanceOfAssertFactories.list(BaseAwardDetail.class))
+                      .containsExactly(ebsCostAward))
+          .containsEntry("awardEditAllowed", false);
+    }
+
+    @Test
+    @DisplayName("Outcome and awards page does not bootstrap local outcome for read-only access")
+    public void outcomeAndAwardsPageDoesNotBootstrapLocalOutcomeForReadOnlyAccess() {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail ebsOutcome =
+          new ProceedingOutcomeDetail()
+              .id(99)
+              .proceedingCaseId("pc1")
+              .result(new StringDisplayValue().id("R1").displayValue("EBS outcome"));
+      final CostAwardDetail ebsCostAward = new CostAwardDetail().id(7).awardType("COST");
+      ApplicationDetail ebsCase =
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.VIEW_CASE_OUTCOME));
+      ebsCase.setProceedings(
+          List.of(new ProceedingDetail().proceedingCaseId("pc1").outcome(ebsOutcome)));
+      ebsCase.setCaseOutcome(
+          new CaseOutcomeDetail()
+              .proceedingOutcomes(List.of(ebsOutcome))
+              .costAwards(List.of(ebsCostAward)));
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt())).thenReturn(Optional.empty());
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/outcome-and-awards")
+          .model()
+          .hasEntrySatisfying(
+              "resolvedOutcomes",
+              value -> {
+                @SuppressWarnings("unchecked")
+                Map<String, ProceedingOutcomeDetail> resolved =
+                    (Map<String, ProceedingOutcomeDetail>) value;
+                assertThat(resolved.get("pc1")).isSameAs(ebsOutcome);
+              })
+          .hasEntrySatisfying(
+              "clearableOutcomes",
+              value -> {
+                @SuppressWarnings("unchecked")
+                Map<String, ProceedingOutcomeDetail> clearable =
+                    (Map<String, ProceedingOutcomeDetail>) value;
+                assertThat(clearable.get("pc1")).isNull();
+              })
+          .hasEntrySatisfying(
+              "awards",
+              value ->
+                  assertThat(value)
+                      .asInstanceOf(InstanceOfAssertFactories.list(BaseAwardDetail.class))
+                      .containsExactly(ebsCostAward))
+          .hasEntrySatisfying(
+              "awardEditAllowed",
+              value -> assertThat(value).asInstanceOf(InstanceOfAssertFactories.BOOLEAN).isFalse());
+
+      verify(caseOutcomeService, times(0))
+          .getOrCreateCaseOutcome(anyString(), anyInt(), anyString(), any());
+      verify(caseOutcomeService)
+          .getCaseOutcome(selectedCaseRef, user.getProvider().getId().intValue());
     }
 
     @Test
@@ -906,7 +1207,17 @@ class CaseControllerTest {
     public void outcomeAndAwardsPageIncludesEveryAwardType() {
       final String selectedCaseRef = "8";
       final ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       final CostAwardDetail costAward = new CostAwardDetail();
       final FinancialAwardDetail financialAward = new FinancialAwardDetail();
       final LandAwardDetail landAward = new LandAwardDetail();
@@ -918,9 +1229,10 @@ class CaseControllerTest {
               .financialAwards(List.of(financialAward))
               .landAwards(List.of(landAward))
               .otherAssetAwards(List.of(otherAssetAward));
-      when(caseOutcomeService.getCaseOutcome(
-              selectedCaseRef, user.getProvider().getId().intValue()))
-          .thenReturn(java.util.Optional.of(caseOutcome));
+      doReturn(caseOutcome)
+          .when(caseOutcomeService)
+          .getOrCreateCaseOutcome(
+              selectedCaseRef, user.getProvider().getId().intValue(), user.getLoginId(), null);
 
       assertThat(
               mockMvc.perform(
@@ -942,7 +1254,17 @@ class CaseControllerTest {
     public void outcomeAndAwardsPageCalculatesCostAwardAmount() {
       final String selectedCaseRef = "8";
       final ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       final CostAwardDetail costAward =
           new CostAwardDetail()
               .preCertificateLscCost(new BigDecimal("10.25"))
@@ -958,9 +1280,10 @@ class CaseControllerTest {
           new CaseOutcomeDetail()
               .costAwards(List.of(costAward, partialCostAward))
               .financialAwards(List.of(financialAward));
-      when(caseOutcomeService.getCaseOutcome(
-              selectedCaseRef, user.getProvider().getId().intValue()))
-          .thenReturn(java.util.Optional.of(caseOutcome));
+      doReturn(caseOutcome)
+          .when(caseOutcomeService)
+          .getOrCreateCaseOutcome(
+              selectedCaseRef, user.getProvider().getId().intValue(), user.getLoginId(), null);
 
       assertThat(
               mockMvc.perform(
@@ -985,7 +1308,17 @@ class CaseControllerTest {
     public void outcomeAndAwardsPageOrdersEachAwardTypeByDescendingId() {
       final String selectedCaseRef = "8";
       final ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       final CostAwardDetail oldCost = new CostAwardDetail().id(10);
       final CostAwardDetail newCost = new CostAwardDetail().id(20);
       final CostAwardDetail unsavedCost = new CostAwardDetail();
@@ -1001,9 +1334,10 @@ class CaseControllerTest {
               .financialAwards(List.of(newFinancial, oldFinancial))
               .landAwards(List.of(oldLand, newLand))
               .otherAssetAwards(List.of(newAsset, oldAsset));
-      when(caseOutcomeService.getCaseOutcome(
-              selectedCaseRef, user.getProvider().getId().intValue()))
-          .thenReturn(java.util.Optional.of(caseOutcome));
+      doReturn(caseOutcome)
+          .when(caseOutcomeService)
+          .getOrCreateCaseOutcome(
+              selectedCaseRef, user.getProvider().getId().intValue(), user.getLoginId(), null);
 
       assertThat(
               mockMvc.perform(
@@ -1520,11 +1854,6 @@ class CaseControllerTest {
       final ApplicationDetail ebsCase =
           getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null, permissions);
 
-      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
-          .thenReturn(
-              java.util.Optional.of(
-                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
-
       assertThat(
               mockMvc.perform(
                   get("/case/outcome-and-awards")
@@ -1551,11 +1880,6 @@ class CaseControllerTest {
       final List<String> permissions = List.of(permissionCode);
       final ApplicationDetail ebsCase =
           getEbsCase("8", 1, "ref", "client", "smith", "clientRef", false, null, null, permissions);
-
-      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
-          .thenReturn(
-              java.util.Optional.of(
-                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
 
       assertThat(
               mockMvc.perform(
@@ -1863,9 +2187,6 @@ class CaseControllerTest {
 
       // No CAAB record at all means outcomes have never been managed for this case → fall back to
       // EBS.
-      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
-          .thenReturn(java.util.Optional.empty());
-
       assertThat(
               mockMvc.perform(
                   get("/case/outcome-and-awards")
@@ -1907,9 +2228,6 @@ class CaseControllerTest {
           getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
       ebsCase.setProceedings(
           List.of(new ProceedingDetail().proceedingCaseId("pc1").outcome(ebsOutcome)));
-
-      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
-          .thenReturn(java.util.Optional.empty());
 
       assertThat(
               mockMvc.perform(
@@ -1954,8 +2272,7 @@ class CaseControllerTest {
       // proceeding should still fall back to EBS.
       when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
           .thenReturn(
-              java.util.Optional.of(
-                  new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
+              Optional.of(new CaseOutcomeDetail().proceedingOutcomes(Collections.emptyList())));
 
       assertThat(
               mockMvc.perform(
@@ -1981,7 +2298,17 @@ class CaseControllerTest {
     public void recordProceedingOutcomePageLoads() {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ebsCase.setProceedings(
           List.of(
               new ProceedingDetail()
@@ -2031,13 +2358,210 @@ class CaseControllerTest {
     }
 
     @Test
+    @DisplayName(
+        "Record proceeding outcome renders only a hidden court case number field when no court is selected")
+    public void recordProceedingOutcomeWithoutCourtRendersOnlyHiddenCourtCaseNumber()
+        throws Exception {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail ebsOutcome =
+          new ProceedingOutcomeDetail()
+              .proceedingCaseId("pc1")
+              .outcomeCourtCaseNo("CASE-123")
+              .resultInfo("EBS result info");
+      ApplicationDetail ebsCase =
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .proceedingCaseId("pc1")
+                  .description("Proceeding 1")
+                  .proceedingType(new StringDisplayValue().id("P1").displayValue("Proceeding name"))
+                  .outcome(ebsOutcome)));
+
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(java.util.Optional.empty());
+      when(lookupService.getStageEnds("P1", null))
+          .thenReturn(Mono.just(new StageEndLookupDetail()));
+      when(lookupService.getOutcomeResults("P1", null))
+          .thenReturn(Mono.just(new OutcomeResultLookupDetail()));
+      when(lookupService.getCommonValues(anyString()))
+          .thenReturn(Mono.just(new CommonLookupDetail()));
+
+      final MockMvc renderedMockMvc = renderedMockMvc();
+      final UserDetail renderingUser = ApplicationTestUtils.buildUser();
+      renderingUser.setFunctions(List.of());
+
+      final var result =
+          renderedMockMvc
+              .perform(
+                  get("/case/outcome-and-awards/proceeding/0/outcome")
+                      .sessionAttr(USER_DETAILS, renderingUser)
+                      .sessionAttr(CASE, ebsCase))
+              .andReturn();
+
+      assertThat(result.getResponse().getStatus()).isEqualTo(200);
+      assertThat(result.getResponse().getContentAsString())
+          .contains("type=\"hidden\"")
+          .contains("id=\"outcomeCourtCaseNo\"")
+          .contains("name=\"outcomeCourtCaseNo\"")
+          .contains("value=\"CASE-123\"")
+          .doesNotContain("for=\"outcomeCourtCaseNo\"");
+    }
+
+    @Test
+    @DisplayName(
+        "Record proceeding outcome treats legacy Not Available court values as no selected court")
+    public void recordProceedingOutcomeLegacyNotAvailableCourtRendersOnlyHiddenCourtCaseNumber()
+        throws Exception {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail ebsOutcome =
+          new ProceedingOutcomeDetail()
+              .proceedingCaseId("pc1")
+              .courtCode("Not Available")
+              .courtName("Not Available")
+              .outcomeCourtCaseNo("CASE-123")
+              .resultInfo("EBS result info");
+      ApplicationDetail ebsCase =
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .proceedingCaseId("pc1")
+                  .description("Proceeding 1")
+                  .proceedingType(new StringDisplayValue().id("P1").displayValue("Proceeding name"))
+                  .outcome(ebsOutcome)));
+
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(java.util.Optional.empty());
+      when(lookupService.getStageEnds("P1", null))
+          .thenReturn(Mono.just(new StageEndLookupDetail()));
+      when(lookupService.getOutcomeResults("P1", null))
+          .thenReturn(Mono.just(new OutcomeResultLookupDetail()));
+      when(lookupService.getCommonValues(anyString()))
+          .thenReturn(Mono.just(new CommonLookupDetail()));
+
+      final MockMvc renderedMockMvc = renderedMockMvc();
+      final UserDetail renderingUser = ApplicationTestUtils.buildUser();
+      renderingUser.setFunctions(List.of());
+
+      final var result =
+          renderedMockMvc
+              .perform(
+                  get("/case/outcome-and-awards/proceeding/0/outcome")
+                      .sessionAttr(USER_DETAILS, renderingUser)
+                      .sessionAttr(CASE, ebsCase))
+              .andReturn();
+
+      assertThat(result.getResponse().getStatus()).isEqualTo(200);
+      assertThat(result.getResponse().getContentAsString())
+          .contains("type=\"hidden\"")
+          .contains("id=\"outcomeCourtCaseNo\"")
+          .contains("name=\"outcomeCourtCaseNo\"")
+          .contains("value=\"CASE-123\"")
+          .doesNotContain("for=\"outcomeCourtCaseNo\"");
+    }
+
+    @Test
+    @DisplayName(
+        "Record proceeding outcome renders only the visible court case number field when a court is selected")
+    public void recordProceedingOutcomeWithCourtRendersOnlyVisibleCourtCaseNumber()
+        throws Exception {
+      final String selectedCaseRef = "8";
+      final ProceedingOutcomeDetail ebsOutcome =
+          new ProceedingOutcomeDetail()
+              .proceedingCaseId("pc1")
+              .courtCode("CT1")
+              .courtName("Court 1")
+              .outcomeCourtCaseNo("CASE-123")
+              .resultInfo("EBS result info");
+      ApplicationDetail ebsCase =
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .proceedingCaseId("pc1")
+                  .description("Proceeding 1")
+                  .proceedingType(new StringDisplayValue().id("P1").displayValue("Proceeding name"))
+                  .outcome(ebsOutcome)));
+
+      when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
+          .thenReturn(java.util.Optional.empty());
+      when(lookupService.getStageEnds("P1", null))
+          .thenReturn(Mono.just(new StageEndLookupDetail()));
+      when(lookupService.getOutcomeResults("P1", null))
+          .thenReturn(Mono.just(new OutcomeResultLookupDetail()));
+      when(lookupService.getCommonValues(anyString()))
+          .thenReturn(Mono.just(new CommonLookupDetail()));
+
+      final MockMvc renderedMockMvc = renderedMockMvc();
+      final UserDetail renderingUser = ApplicationTestUtils.buildUser();
+      renderingUser.setFunctions(List.of());
+
+      final var result =
+          renderedMockMvc
+              .perform(
+                  get("/case/outcome-and-awards/proceeding/0/outcome")
+                      .sessionAttr(USER_DETAILS, renderingUser)
+                      .sessionAttr(CASE, ebsCase))
+              .andReturn();
+
+      assertThat(result.getResponse().getStatus()).isEqualTo(200);
+      assertThat(result.getResponse().getContentAsString())
+          .contains("for=\"outcomeCourtCaseNo\"")
+          .contains("type=\"text\"")
+          .contains("id=\"outcomeCourtCaseNo\"")
+          .contains("name=\"outcomeCourtCaseNo\"")
+          .doesNotContain("type=\"hidden\" id=\"outcomeCourtCaseNo\"");
+    }
+
+    @Test
     @DisplayName("Record proceeding outcome falls back to EBS outcome when no local save exists")
     public void recordProceedingOutcomeUsesEbsOutcomeWhenNoLocalSave() {
       final String selectedCaseRef = "8";
       final ProceedingOutcomeDetail ebsOutcome =
           new ProceedingOutcomeDetail().proceedingCaseId("pc1").resultInfo("EBS result info");
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ebsCase.setProceedings(
           List.of(
               new ProceedingDetail()
@@ -2073,6 +2597,41 @@ class CaseControllerTest {
     }
 
     @Test
+    @DisplayName("Record proceeding outcome page redirects for read-only case")
+    public void recordProceedingOutcomePageRedirectsForReadOnlyCase() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.VIEW_CASE_OUTCOME));
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .proceedingCaseId("pc1")
+                  .description("Proceeding 1")
+                  .proceedingType(
+                      new StringDisplayValue().id("P1").displayValue("Proceeding name"))));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/proceeding/0/outcome")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(caseOutcomeService, never()).getCaseOutcome(anyString(), anyInt());
+    }
+
+    @Test
     @DisplayName(
         "Record proceeding outcome falls back to EBS outcome when local case outcome has no matching proceeding")
     public void recordProceedingOutcomeShowsBlankWhenProceedingClearedInCaab() {
@@ -2080,7 +2639,17 @@ class CaseControllerTest {
       final ProceedingOutcomeDetail ebsOutcome =
           new ProceedingOutcomeDetail().proceedingCaseId("pc1").resultInfo("EBS result info");
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ebsCase.setProceedings(
           List.of(
               new ProceedingDetail()
@@ -2146,8 +2715,7 @@ class CaseControllerTest {
 
       when(caseOutcomeService.getCaseOutcome(anyString(), anyInt()))
           .thenReturn(
-              java.util.Optional.of(
-                  new CaseOutcomeDetail().proceedingOutcomes(List.of(localOutcomePc2))));
+              Optional.of(new CaseOutcomeDetail().proceedingOutcomes(List.of(localOutcomePc2))));
 
       assertThat(
               mockMvc.perform(
@@ -2182,7 +2750,17 @@ class CaseControllerTest {
     public void recordProceedingOutcomePostRedirectsToOutcomeAndAwards() {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ebsCase.setProceedings(
           List.of(
               new ProceedingDetail()
@@ -2208,8 +2786,7 @@ class CaseControllerTest {
                           new OutcomeResultLookupValueDetail()
                               .outcomeResult("R1")
                               .outcomeResultDescription("Result 1"))));
-      lenient()
-          .when(lookupService.getCourt(anyString()))
+      when(lookupService.getCourt(anyString()))
           .thenReturn(
               Mono.just(
                   new CommonLookupDetail()
@@ -2217,7 +2794,7 @@ class CaseControllerTest {
                           new CommonLookupValueDetail().code("CT1").description("Court 1"))));
       doNothing()
           .when(caseOutcomeService)
-          .updateProceedingOutcome(anyString(), anyInt(), any(), anyString());
+          .updateProceedingOutcome(anyString(), anyInt(), any(), anyString(), any());
 
       assertThat(
               mockMvc.perform(
@@ -2240,6 +2817,84 @@ class CaseControllerTest {
 
     @Test
     @DisplayName(
+        "Record proceeding outcome post normalises Not Available court placeholders before saving")
+    public void recordProceedingOutcomePostNormalisesLegacyCourtPlaceholdersBeforeSaving() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .id(77)
+                  .proceedingCaseId("pc1")
+                  .proceedingType(
+                      new StringDisplayValue().id("P1").displayValue("Proceeding name"))));
+
+      doNothing().when(proceedingOutcomeValidator).validate(any(), any());
+      when(lookupService.getStageEnds("P1", null))
+          .thenReturn(
+              Mono.just(
+                  new StageEndLookupDetail()
+                      .addContentItem(
+                          new StageEndLookupValueDetail()
+                              .stageEnd("SE1")
+                              .description("Stage End 1"))));
+      when(lookupService.getOutcomeResults("P1", null))
+          .thenReturn(
+              Mono.just(
+                  new OutcomeResultLookupDetail()
+                      .addContentItem(
+                          new OutcomeResultLookupValueDetail()
+                              .outcomeResult("R1")
+                              .outcomeResultDescription("Result 1"))));
+      doNothing()
+          .when(caseOutcomeService)
+          .updateProceedingOutcome(anyString(), anyInt(), any(), anyString(), any());
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/proceeding/0/outcome")
+                      .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr(CASE, ebsCase)
+                      .param("dateOfFinalWork", "01/01/2026")
+                      .param("stageEnd", "SE1")
+                      .param("resolutionMethod", "RM1")
+                      .param("result", "R1")
+                      .param("resultInfo", "Result info")
+                      .param("alternativeResolution", "ADR1")
+                      .param("adrInfo", "ADR info")
+                      .param("courtCode", "Not Available")
+                      .param("courtName", "Not Available")
+                      .param("outcomeCourtCaseNo", "123")
+                      .param("widerBenefits", "WB1")))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      final ArgumentCaptor<ProceedingOutcomeDetail> outcomeCaptor =
+          ArgumentCaptor.forClass(ProceedingOutcomeDetail.class);
+      verify(caseOutcomeService)
+          .updateProceedingOutcome(
+              eq(selectedCaseRef),
+              eq(user.getProvider().getId().intValue()),
+              outcomeCaptor.capture(),
+              eq(user.getLoginId()),
+              any());
+      assertThat(outcomeCaptor.getValue().getCourtCode()).isNull();
+      assertThat(outcomeCaptor.getValue().getCourtName()).isNull();
+    }
+
+    @Test
+    @DisplayName(
         "Clear proceeding outcome confirmation redirects when only legacy local clear marker exists")
     public void clearProceedingOutcomePageRedirectsWhenLegacyMarkerExists() {
       final String selectedCaseRef = "8";
@@ -2250,7 +2905,17 @@ class CaseControllerTest {
               .description("Proceeding 1")
               .proceedingType(new StringDisplayValue().id("P1").displayValue("Type 1"));
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ProceedingDetail proceeding =
           new ProceedingDetail()
               .description("1854553")
@@ -2282,7 +2947,17 @@ class CaseControllerTest {
               .proceedingCaseId("pc1")
               .result(new StringDisplayValue().id("R1").displayValue("Local outcome"));
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ProceedingDetail proceeding =
           new ProceedingDetail()
               .description("1854553")
@@ -2313,7 +2988,17 @@ class CaseControllerTest {
     public void clearProceedingOutcomePageRedirectsWhenActionNotAllowed() {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ProceedingDetail proceeding =
           new ProceedingDetail()
               .description("1854553")
@@ -2332,11 +3017,56 @@ class CaseControllerTest {
     }
 
     @Test
+    @DisplayName("Clear proceeding outcome confirmation redirects for read-only case")
+    public void clearProceedingOutcomePageRedirectsForReadOnlyCase() {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.VIEW_CASE_OUTCOME));
+      ProceedingDetail proceeding =
+          new ProceedingDetail()
+              .description("1854553")
+              .proceedingCaseId("pc1")
+              .availableFunctions(List.of(FunctionConstants.CLEAR_RECORDED_OUTCOME))
+              .outcome(new ProceedingOutcomeDetail().id(99));
+      ebsCase.setProceedings(List.of(proceeding));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/proceeding/0/outcome/clear")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(caseOutcomeService, never()).getCaseOutcome(anyString(), anyInt());
+    }
+
+    @Test
     @DisplayName("Clear proceeding outcome confirmation rejects negative proceeding index")
     public void clearProceedingOutcomePageRejectsNegativeIndex() {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ebsCase.setProceedings(List.of(new ProceedingDetail().proceedingCaseId("pc1")));
 
       assertThat(
@@ -2355,7 +3085,17 @@ class CaseControllerTest {
     public void clearProceedingOutcomePageRedirectsWhenNoLocalPersistedOutcome() {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ProceedingDetail proceeding =
           new ProceedingDetail()
               .description("1854553")
@@ -2384,7 +3124,17 @@ class CaseControllerTest {
       final ProceedingOutcomeDetail localOutcome =
           new ProceedingOutcomeDetail().id(99).proceedingCaseId("pc1").resultInfo("Local outcome");
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ProceedingDetail proceeding =
           new ProceedingDetail()
               .description("1854553")
@@ -2415,7 +3165,17 @@ class CaseControllerTest {
     public void clearProceedingOutcomeConfirmRedirectsWhenActionNotAllowed() {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ProceedingDetail proceeding =
           new ProceedingDetail()
               .description("1854553")
@@ -2442,7 +3202,17 @@ class CaseControllerTest {
     public void clearProceedingOutcomeConfirmRedirectsWhenNoLocalPersistedOutcome() {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ProceedingDetail proceeding =
           new ProceedingDetail()
               .description("1854553")
@@ -2463,7 +3233,7 @@ class CaseControllerTest {
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/case/outcome-and-awards");
 
-      verify(caseOutcomeService, times(0))
+      verify(caseOutcomeService, never())
           .clearProceedingOutcome(anyString(), anyInt(), anyString(), anyString());
     }
 
@@ -2474,7 +3244,17 @@ class CaseControllerTest {
       final ProceedingOutcomeDetail localOutcome =
           new ProceedingOutcomeDetail().id(99).proceedingCaseId("pc1").resultInfo("Local outcome");
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ProceedingDetail proceeding =
           new ProceedingDetail()
               .description("1854553")
@@ -2507,7 +3287,17 @@ class CaseControllerTest {
     public void recordProceedingOutcomeCourtSearchStartsTheSearchBlank() throws Exception {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ebsCase.setProceedings(
           List.of(
               new ProceedingDetail()
@@ -2549,13 +3339,116 @@ class CaseControllerTest {
     }
 
     @Test
+    @DisplayName("Record proceeding outcome court search redirects for read-only case")
+    public void recordProceedingOutcomeCourtSearchRedirectsForReadOnlyCase() throws Exception {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.VIEW_CASE_OUTCOME));
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .id(77)
+                  .proceedingCaseId("pc1")
+                  .proceedingType(
+                      new StringDisplayValue().id("P1").displayValue("Proceeding name"))));
+
+      var result =
+          mockMvc.perform(
+              post("/case/outcome-and-awards/proceeding/0/outcome/court-search")
+                  .sessionAttr(USER_DETAILS, user)
+                  .sessionAttr(CASE, ebsCase)
+                  .param("dateOfFinalWork", "01/01/2026")
+                  .param("courtCode", "CT1")
+                  .param("courtName", "Test Court"));
+
+      assertThat(result).hasStatus3xxRedirection().hasRedirectedUrl("/case/outcome-and-awards");
+      assertThat(result.getRequest().getSession().getAttribute(PROCEEDING_OUTCOME_FORM_DATA))
+          .isNull();
+      assertThat(result.getRequest().getSession().getAttribute(COURT_SEARCH_CRITERIA)).isNull();
+    }
+
+    @Test
+    @DisplayName(
+        "Record proceeding outcome court search normalises Not Available court placeholders before preserving")
+    public void recordProceedingOutcomeCourtSearchNormalisesLegacyCourtPlaceholders()
+        throws Exception {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .id(77)
+                  .proceedingCaseId("pc1")
+                  .proceedingType(
+                      new StringDisplayValue().id("P1").displayValue("Proceeding name"))));
+
+      var result =
+          mockMvc.perform(
+              post("/case/outcome-and-awards/proceeding/0/outcome/court-search")
+                  .sessionAttr(USER_DETAILS, user)
+                  .sessionAttr(CASE, ebsCase)
+                  .param("dateOfFinalWork", "01/01/2026")
+                  .param("courtCode", "Not Available")
+                  .param("courtName", "Not Available"));
+
+      assertThat(result)
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/court/search?proceedingIndex=0");
+
+      ProceedingOutcomeFormData savedFormData =
+          (ProceedingOutcomeFormData)
+              result.getRequest().getSession().getAttribute(PROCEEDING_OUTCOME_FORM_DATA);
+      assertThat(savedFormData)
+          .hasFieldOrPropertyWithValue("courtCode", null)
+          .hasFieldOrPropertyWithValue("courtName", null);
+
+      CourtSearchCriteria courtSearchCriteria =
+          (CourtSearchCriteria)
+              result.getRequest().getSession().getAttribute(COURT_SEARCH_CRITERIA);
+      assertThat(courtSearchCriteria)
+          .hasFieldOrPropertyWithValue("courtCode", null)
+          .hasFieldOrPropertyWithValue("courtName", null);
+    }
+
+    @Test
     @DisplayName(
         "Returning from court search keeps the in-progress outcome and applies the chosen court")
     public void recordProceedingOutcomeRestoresInProgressFormDataOnReturnFromCourtSearch()
         throws Exception {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
-          getEbsCase(selectedCaseRef, 1, "ref", "client", "smith", "clientRef", false, null, null);
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
       ebsCase.setProceedings(
           List.of(
               new ProceedingDetail()

@@ -40,7 +40,7 @@ public class ClientService {
    */
   public Mono<ClientDetails> getClients(
       final ClientSearchCriteria clientSearchCriteria, final Integer page, final Integer size) {
-    log.debug("EBS Clients to get using criteria: {}", clientSearchCriteria);
+    log.debug("Searching EBS clients");
     return ebsApiClient.getClients(clientSearchCriteria, page, size);
   }
 

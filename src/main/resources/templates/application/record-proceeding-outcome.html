@@ -59,57 +59,45 @@
                                                                    items=${results}, itemValue='code',
                                                                    itemLabel='description')}"/>
 
-      <div class="govuk-form-group"
-           th:classappend="${#fields.hasErrors('resultInfo')} ? 'govuk-form-group--error' : ''">
-        <label class="govuk-label" for="resultInfo" th:text="#{case.recordOutcomes.additionalResultInformation}">
-        </label>
-        <span class="govuk-error-message" th:if="${#fields.hasErrors('resultInfo')}" th:errors="*{resultInfo}"></span>
-        <textarea id="resultInfo"
-                  class="govuk-textarea"
-                  th:field="*{resultInfo}"
-                  th:errorclass="govuk-textarea--error"
-                  rows="5"
-                  maxlength="950"></textarea>
-      </div>
+      <div th:replace="~{partials/forms :: largeTextInput('resultInfo', #{case.recordOutcomes.additionalResultInformation}, 950)}"></div>
 
       <th:block th:replace="~{partials/forms :: autocompleteSelect(field='alternativeResolution',
                                                                    label=#{case.recordOutcomes.alternativeDisputeResolution},
                                                                    items=${alternativeDisputeResolutions},
                                                                    itemValue='code', itemLabel='description')}"/>
 
-      <div class="govuk-form-group"
-           th:classappend="${#fields.hasErrors('adrInfo')} ? 'govuk-form-group--error' : ''">
-        <label class="govuk-label" for="adrInfo" th:text="#{case.recordOutcomes.alternativeDisputeResolution.additionalInformation}"></label>
-        <span class="govuk-error-message" th:if="${#fields.hasErrors('adrInfo')}" th:errors="*{adrInfo}"></span>
-        <textarea id="adrInfo"
-                  class="govuk-textarea"
-                  th:field="*{adrInfo}"
-                  th:errorclass="govuk-textarea--error"
-                  rows="5"
-                  maxlength="950"></textarea>
-      </div>
-
-        <div class="govuk-button-group govuk-!-margin-top-3">
-            <button type="submit"
-                    class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
-                    th:formaction="@{/case/outcome-and-awards/proceeding/{index}/outcome/court-search(index=${proceedingIndex})}"
-                    th:text="#{case.recordOutcomes.courtButton}"></button>
-        </div>
-
-        <p class="govuk-body">
-            <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{case.recordOutcomes.court}"></span>
-            <span th:text="${proceedingOutcome.courtName != null ? proceedingOutcome.courtCode + ' ' + proceedingOutcome.courtName : proceedingOutcome.courtCode}"></span>
-        </p>
-
-        <input type="hidden" th:field="*{courtCode}"/>
-        <input type="hidden" th:field="*{courtName}"/>
-
-      <div th:replace="~{partials/forms :: textInput('outcomeCourtCaseNo', #{case.recordOutcomes.courtCaseNumber}, 'govuk-input--width-20')}"></div>
+      <div th:replace="~{partials/forms :: largeTextInput('adrInfo', #{case.recordOutcomes.alternativeDisputeResolution.additionalInformation}, 950)}"></div>
 
       <th:block th:replace="~{partials/forms :: autocompleteSelect(field='widerBenefits',
                                                                    label=#{case.recordOutcomes.widerBenefits},
                                                                    items=${widerBenefitsOptions}, itemValue='code',
                                                                    itemLabel='description')}"/>
+
+      <div class="govuk-form-group govuk-!-margin-top-6">
+       <h2 class="govuk-heading-m" th:text="#{case.recordOutcomes.court} + ' (optional)'"></h2>
+
+       <div class="govuk-button-group govuk-!-margin-top-3 govuk-!-margin-bottom-3">
+         <button type="submit"
+                 class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
+                 th:formaction="@{/case/outcome-and-awards/proceeding/{index}/outcome/court-search(index=${proceedingIndex})}"
+                 th:text="#{case.recordOutcomes.courtButton}"></button>
+       </div>
+
+       <p class="govuk-body" th:if="${proceedingOutcome.hasCourtSelection()}">
+         <span class="govuk-!-font-weight-bold govuk-!-padding-right-2" th:text="#{case.recordOutcomes.court}"></span>
+         <span th:text="${proceedingOutcome.courtName != null ? proceedingOutcome.courtCode + ' ' + proceedingOutcome.courtName : proceedingOutcome.courtCode}"></span>
+       </p>
+      </div>
+
+      <input type="hidden" th:field="*{courtCode}"/>
+      <input type="hidden" th:field="*{courtName}"/>
+
+      <th:block th:if="${proceedingOutcome.hasCourtSelection() or #fields.hasErrors('outcomeCourtCaseNo')}">
+        <div th:replace="~{partials/forms :: textInput('outcomeCourtCaseNo', #{case.recordOutcomes.courtCaseNumber}, 'govuk-input--width-20')}"></div>
+      </th:block>
+      <input th:unless="${proceedingOutcome.hasCourtSelection() or #fields.hasErrors('outcomeCourtCaseNo')}"
+             type="hidden"
+             th:field="*{outcomeCourtCaseNo}"/>
         <div class="govuk-button-group govuk-!-margin-top-6">
           <govuk:button type="submit" th:text="#{site.next}"/>
         </div>

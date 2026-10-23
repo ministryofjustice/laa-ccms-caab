@@ -21,7 +21,11 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.thymeleaf.web.IWebExchange;
 import org.thymeleaf.web.servlet.JakartaServletWebApplication;
 import uk.gov.laa.ccms.caab.bean.PreCertificateAndLegalHelpCostsFormData;
+import uk.gov.laa.ccms.caab.constants.FunctionConstants;
+import uk.gov.laa.ccms.caab.model.BaseAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @DisplayName("Outcome and awards template render tests")
@@ -62,7 +66,66 @@ class OutcomeAndAwardsTemplateRenderTest {
     assertThat(html).contains("£123.45").doesNotContain("£75.00");
   }
 
-  private String render(final List<OtherAssetAwardDetail> awards) {
+  @Test
+  @DisplayName("Pre-certificate and legal help costs summary uses table headers")
+  void preCertificateAndLegalHelpCostsSummaryUsesTableHeaders() {
+    final String html = render(List.of());
+
+    assertThat(html)
+        .contains("id=\"preCertificateAndLegalHelpCostsTable\"")
+        .contains("class=\"govuk-table\"")
+        .contains("<th scope=\"col\" class=\"govuk-table__header\">Type</th>")
+        .contains("<th scope=\"col\" class=\"govuk-table__header\">Pre-certificate amount</th>")
+        .contains("<th scope=\"col\" class=\"govuk-table__header\">Legal help amount</th>")
+        .contains("id=\"preCertificateAndLegalHelpCostsLink\"")
+        .contains("id=\"preCertificateAndLegalHelpCostsPreCertificateAmount\"")
+        .contains("id=\"preCertificateAndLegalHelpCostsLegalHelpAmount\"");
+  }
+
+  @Test
+  @DisplayName("Read-only EBS award shows type even when award id is null")
+  void readOnlyAwardShowsTypeWhenIdMissing() {
+    final OtherAssetAwardDetail asset =
+        new OtherAssetAwardDetail()
+            .awardType("ASSET")
+            .description("Antique jewellery")
+            .valuationAmount(new BigDecimal("123.45"));
+
+    final String html = render(List.of(asset), false, List.of(), Map.of(), Map.of());
+
+    assertThat(html).contains("ASSET");
+  }
+
+  @Test
+  @DisplayName("Read-only case hides proceeding edit and clear links")
+  void readOnlyCaseHidesProceedingActionLinks() {
+    final ProceedingDetail proceeding =
+        new ProceedingDetail()
+            .description("Proceeding 1")
+            .proceedingCaseId("pc1")
+            .availableFunctions(List.of(FunctionConstants.CLEAR_RECORDED_OUTCOME));
+    final ProceedingOutcomeDetail clearable =
+        new ProceedingOutcomeDetail().id(99).proceedingCaseId("pc1");
+
+    final String html =
+        render(List.of(), false, List.of(proceeding), Map.of(), Map.of("pc1", clearable));
+
+    assertThat(html)
+        .contains("Proceeding 1")
+        .doesNotContain("proceedingOutcomeSummaryLink-0")
+        .doesNotContain("clearProceedingOutcomeLink-0");
+  }
+
+  private String render(final List<? extends BaseAwardDetail> awards) {
+    return render(awards, true, List.of(), Map.of(), Map.of());
+  }
+
+  private String render(
+      final List<? extends BaseAwardDetail> awards,
+      final boolean awardEditAllowed,
+      final List<ProceedingDetail> proceedings,
+      final Map<String, ProceedingOutcomeDetail> resolvedOutcomes,
+      final Map<String, ProceedingOutcomeDetail> clearableOutcomes) {
     final MockServletContext servletContext = new MockServletContext();
     final JakartaServletWebApplication application =
         JakartaServletWebApplication.buildApplication(servletContext);
@@ -72,9 +135,10 @@ class OutcomeAndAwardsTemplateRenderTest {
 
     final Map<String, Object> variables = new HashMap<>();
     variables.put("awards", awards);
-    variables.put("proceedings", List.of());
-    variables.put("resolvedOutcomes", Map.of());
-    variables.put("clearableOutcomes", Map.of());
+    variables.put("awardEditAllowed", awardEditAllowed);
+    variables.put("proceedings", proceedings);
+    variables.put("resolvedOutcomes", resolvedOutcomes);
+    variables.put("clearableOutcomes", clearableOutcomes);
     variables.put("documents", List.of());
     variables.put("outcomeDocumentActionAllowed", false);
     variables.put(

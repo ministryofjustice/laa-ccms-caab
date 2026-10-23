@@ -77,6 +77,11 @@ configurations.configureEach {
             details.because 'Override to remediate vulnerability; not covered by the Spring Boot dependency BOM'
         }
         // Logback classic pulled in by Spring Boot starter logging
+        if (details.requested.group == 'org.hibernate.validator'
+                && details.requested.name == 'hibernate-validator') {
+            details.useVersion '9.1.5.Final'
+            details.because 'Remediate Expression Language Injection (SNYK-JAVA-ORGHIBERNATEVALIDATOR-20877468)'
+        }
         if (details.requested.group == 'ch.qos.logback'
                 && details.requested.name in ['logback-classic', 'logback-core']) {
             details.useVersion '1.6.5'
@@ -92,6 +97,16 @@ configurations.configureEach {
         if (details.requested.group == 'org.apache.tomcat.embed') {
             details.useVersion '11.0.26'
             details.because 'Snyk override (SNYK-JAVA-ORGAPACHETOMCATEMBED-20552494, CVE-2026-76183)'
+        }
+    }
+}
+
+// Replaces application.yml @version@ with the project version
+processResources {
+    inputs.property('applicationVersion', project.version.toString())
+    filesMatching('application.yml') {
+        filter {
+            it.replace('@version@', version.toString())
         }
     }
 }
@@ -124,7 +139,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    implementation 'org.springframework.boot:spring-boot-micrometer-tracing-brave'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-aspectj'
     implementation 'org.springframework.data:spring-data-commons'
@@ -147,6 +161,11 @@ dependencies {
     implementation 'org.springframework.security:spring-security-saml2-service-provider'
 
     implementation 'uk.gov.justice.service.laa:laa-spring-boot-starter-govuk-dialect'
+
+    // Required for tracing information
+    implementation 'org.springframework.boot:spring-boot-micrometer-tracing-brave'
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.micrometer:context-propagation'
 
     // Metrics
     implementation 'org.springframework.boot:spring-boot-starter-actuator'

@@ -441,7 +441,13 @@ public class AmendmentService {
     amendment.setMeansAssessmentAmended(Boolean.TRUE);
     amendment.setMeritsAssessmentAmended(Boolean.FALSE);
 
-    return updateCaseWithQuickAmendment(userDetail, amendment, meansAssessment, null);
+    final String transactionId =
+        updateCaseWithQuickAmendment(userDetail, amendment, meansAssessment, null);
+    log.info(
+        "Means reassessment update requested: case={} transaction={}",
+        amendment.getCaseReferenceNumber(),
+        transactionId);
+    return transactionId;
   }
 
   /**

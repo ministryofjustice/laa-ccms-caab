@@ -56,7 +56,6 @@ public class ClientSubmissionsConfirmedController {
         .doOnSuccess(
             applicationId -> {
               log.info("Application details submitted");
-              log.debug("Application details submitted: {}", applicationFormData);
               session.removeAttribute(APPLICATION_FORM_DATA);
               session.removeAttribute(CLIENT_REFERENCE);
               session.removeAttribute(SUBMISSION_RESULT);

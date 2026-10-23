@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.client;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.put;
@@ -13,6 +14,7 @@ import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,14 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
+import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
+import uk.gov.laa.ccms.caab.mapper.context.CaseMappingContext;
+import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
@@ -46,7 +56,65 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
 
   @Autowired private SoaApiClient soaApiClient;
 
+  @Autowired private SoaApplicationMapper applicationMapper;
+
   private final ObjectMapper objectMapper = new ObjectMapper();
+
+  @Test
+  public void meansReassessmentSendsAnswersAndApplicationTypeToGateway() {
+    final ApplicationDetail amendment =
+        new ApplicationDetail()
+            .caseReferenceNumber("12345")
+            .applicationType(new ApplicationType().id("SUB"))
+            .quickEditType("MeansReassessment")
+            .meansAssessmentAmended(true)
+            .meritsAssessmentAmended(false)
+            .availableFunctions(List.of("MNLA", "MNSB"));
+    final AssessmentDetail assessment =
+        new AssessmentDetail()
+            .status("COMPLETE")
+            .addEntityTypesItem(
+                new AssessmentEntityTypeDetail()
+                    .name("global")
+                    .addEntitiesItem(
+                        new AssessmentEntityDetail()
+                            .name("12345")
+                            .addAttributesItem(
+                                new AssessmentAttributeDetail()
+                                    .name("TEST_INCOME")
+                                    .type("number")
+                                    .value("123.45")
+                                    .prepopulated(false))));
+
+    wiremock.stubFor(
+        put("/cases?case-update-type=MeansReassessment")
+            .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(USER_1))
+            .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(USER_TYPE))
+            .withRequestBody(
+                matchingJsonPath(
+                    "$.application_details.application_amendment_type", equalTo("SUB")))
+            .withRequestBody(
+                matchingJsonPath(
+                    "$.application_details.means_assessments[0].assessment_details[0].entity[0].instances[0].attributes[0].response_value",
+                    equalTo("123.45")))
+            .withRequestBody(
+                matchingJsonPath(
+                    "$.application_details.means_assessments[0].assessment_details[0].entity[0].instances[0].attributes[0].user_defined_ind",
+                    equalTo("true")))
+            .willReturn(okJson("{\"transaction_id\":\"means-transaction\"}")));
+
+    final var payload =
+        applicationMapper.toCaseDetail(
+            CaseMappingContext.builder()
+                .tdsApplication(amendment)
+                .meansAssessment(assessment)
+                .build());
+    final var response =
+        soaApiClient.updateCase(USER_1, USER_TYPE, payload, "MeansReassessment").block();
+
+    assertNotNull(response);
+    assertEquals("means-transaction", response.getTransactionId());
+  }
 
   @Test
   public void testGetContractDetails_returnData() throws Exception {

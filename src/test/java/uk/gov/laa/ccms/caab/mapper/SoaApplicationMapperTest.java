@@ -126,6 +126,26 @@ class SoaApplicationMapperTest {
 
   private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
+  @ParameterizedTest
+  @CsvSource({"SUB, true, SUB", "SUBDP, true, SUBDP", "SUBDP, false, SUB"})
+  @DisplayName(
+      "Means reassessment sends an EBS application type, independently of the update route")
+  void meansReassessmentUsesApplicationType(
+      String originalType, boolean legalAmendmentAvailable, String expectedType) {
+    final ApplicationDetail application = buildApplicationDetail(1, false, new Date());
+    application.setApplicationType(new ApplicationType().id(originalType));
+    application.setQuickEditType("MeansReassessment");
+    application.setMeansAssessmentAmended(true);
+    application.setAvailableFunctions(legalAmendmentAvailable ? List.of("MNLA") : List.of("MNR"));
+
+    final CaseDetail result =
+        applicationMapper.toCaseDetail(
+            CaseMappingContext.builder().tdsApplication(application).build());
+
+    assertEquals(expectedType, result.getApplicationDetails().getApplicationAmendmentType());
+    assertEquals("MeansReassessment", application.getQuickEditType());
+  }
+
   @Test
   void testToApplicationDetailDevolvedPowers() {
     CaseDetail soaCaseDetail = buildCaseDetail(APP_TYPE_EMERGENCY_DEVOLVED_POWERS);
@@ -941,6 +961,14 @@ class SoaApplicationMapperTest {
             .getCertificateCostRateLsc()
             .add(soaAward.getCostAward().getCertificateCostRateMarket()),
         result.getTotalCertCostsAwarded());
+    assertEquals(
+        soaAward
+            .getCostAward()
+            .getPreCertificateAwardLsc()
+            .add(soaAward.getCostAward().getPreCertificateAwardOth())
+            .add(soaAward.getCostAward().getCertificateCostRateLsc())
+            .add(soaAward.getCostAward().getCertificateCostRateMarket()),
+        result.getAwardAmount());
 
     // afterMapping (baseAward)
     result
