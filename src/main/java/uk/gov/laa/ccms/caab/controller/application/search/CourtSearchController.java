@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.search;
 
 import static uk.gov.laa.ccms.caab.constants.CounselLookupConstants.TOO_MANY_RESULTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_BASELINE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
@@ -66,8 +67,10 @@ public class CourtSearchController {
   public String courtSearch(
       @RequestParam(value = "proceedingIndex") final int proceedingIndex,
       @ModelAttribute(COURT_SEARCH_CRITERIA) final CourtSearchCriteria searchCriteria,
+      final HttpSession session,
       Model model) {
 
+    session.setAttribute(COURT_SEARCH_BASELINE, copyCriteria(searchCriteria));
     model.addAttribute("proceedingIndex", proceedingIndex);
     return "application/court-search";
   }
@@ -88,15 +91,25 @@ public class CourtSearchController {
       final HttpSession session,
       Model model) {
 
-    final CourtSearchCriteria existingCriteria = new CourtSearchCriteria();
-    final ProceedingOutcomeFormData proceedingOutcomeFormData =
-        (ProceedingOutcomeFormData) session.getAttribute(PROCEEDING_OUTCOME_FORM_DATA);
-    if (proceedingOutcomeFormData != null) {
-      proceedingOutcomeFormData.normaliseLegacyCourtFields();
-      existingCriteria.setCourtCode(proceedingOutcomeFormData.getCourtCode());
-      existingCriteria.setCourtName(proceedingOutcomeFormData.getCourtName());
+    CourtSearchCriteria baselineCriteria =
+        (CourtSearchCriteria) session.getAttribute(COURT_SEARCH_BASELINE);
+    if (baselineCriteria == null) {
+      baselineCriteria =
+          copyCriteria((CourtSearchCriteria) session.getAttribute(COURT_SEARCH_CRITERIA));
+      final ProceedingOutcomeFormData proceedingOutcomeFormData =
+          (ProceedingOutcomeFormData) session.getAttribute(PROCEEDING_OUTCOME_FORM_DATA);
+      if (baselineCriteria == null || bothMissing(baselineCriteria)) {
+        baselineCriteria = new CourtSearchCriteria();
+      }
+      if (proceedingOutcomeFormData != null) {
+        proceedingOutcomeFormData.normaliseLegacyCourtFields();
+        baselineCriteria.setCourtCode(proceedingOutcomeFormData.getCourtCode());
+        baselineCriteria.setCourtName(proceedingOutcomeFormData.getCourtName());
+      }
     }
-    clearStaleCourtFilter(searchCriteria, existingCriteria);
+
+    clearStaleCourtFilter(searchCriteria, baselineCriteria);
+    session.setAttribute(COURT_SEARCH_BASELINE, copyCriteria(searchCriteria));
     if (searchCriteria.getCourtCode() == null) {
       searchCriteria.setCourtCode("");
     }
@@ -203,6 +216,21 @@ public class CourtSearchController {
         && Objects.equals(searchCriteria.getCourtCode(), existingCriteria.getCourtCode())) {
       searchCriteria.setCourtCode(null);
     }
+  }
+
+  private CourtSearchCriteria copyCriteria(final CourtSearchCriteria criteria) {
+    if (criteria == null) {
+      return null;
+    }
+    final CourtSearchCriteria copy = new CourtSearchCriteria();
+    copy.setCourtCode(criteria.getCourtCode());
+    copy.setCourtName(criteria.getCourtName());
+    return copy;
+  }
+
+  private boolean bothMissing(final CourtSearchCriteria criteria) {
+    return !StringUtils.hasText(criteria.getCourtCode())
+        && !StringUtils.hasText(criteria.getCourtName());
   }
 
   /**

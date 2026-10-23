@@ -175,6 +175,38 @@ class CourtSearchControllerTest {
   }
 
   @Test
+  @DisplayName("POST /court/search refreshes the stale-filter baseline after each search")
+  public void courtSearchPostRefreshesBaselineAfterEachSearch() throws Exception {
+    ProceedingOutcomeFormData proceedingOutcome = new ProceedingOutcomeFormData();
+    proceedingOutcome.setCourtCode("CT1");
+    proceedingOutcome.setCourtName("Test Court");
+    MockHttpSession session = new MockHttpSession();
+    session.setAttribute(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome);
+
+    when(lookupService.getCourts("CT", ""))
+        .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
+    when(lookupService.getCourts("", "Test Court"))
+        .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
+
+    mockMvc.perform(
+        post("/court/search")
+            .param("proceedingIndex", "0")
+            .param("courtCode", "CT")
+            .param("courtName", "Test Court")
+            .session(session));
+
+    mockMvc.perform(
+        post("/court/search")
+            .param("proceedingIndex", "0")
+            .param("courtCode", "CT")
+            .param("courtName", "Test Court")
+            .session(session));
+
+    verify(lookupService).getCourts("CT", "");
+    verify(lookupService).getCourts("", "Test Court");
+  }
+
+  @Test
   @DisplayName("POST /court/search with no results returns no results view")
   public void courtSearchPostWithNoResultsReturnsNoResultsView() throws Exception {
     CommonLookupDetail emptyResult = new CommonLookupDetail().content(Collections.emptyList());
