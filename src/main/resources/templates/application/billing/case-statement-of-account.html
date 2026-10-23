@@ -140,14 +140,22 @@
           </thead>
           <tbody class="govuk-table__body">
             <tr class="govuk-table__row" th:each="row : ${billsAndPoaPage?.content}"
-                th:with="editablePoa=${row.draft and row.type == 'POA' and canMaintainPoa},editableBill=${row.draft and row.type == 'Bill' and canMaintainBill}">
-              <!-- On a draft the type is a link to edit it; submitted rows show plain text. -->
+                th:with="editablePoa=${row.draft and row.type == 'POA' and canMaintainPoa},editableBill=${row.draft and row.type == 'Bill' and canMaintainBill},submittedPoa=${!row.draft and row.hasBillingIncidentId() and row.billingContext()?.pathValue == 'poa' and canMaintainPoa},submittedBill=${!row.draft and row.hasBillingIncidentId() and row.billingContext()?.pathValue == 'bill' and canMaintainBill}">
               <td class="govuk-table__cell">
                 <a th:if="${editablePoa}" class="govuk-link" th:href="@{/case/billing/poa}"
                    th:text="${row.type}"></a>
                 <a th:if="${editableBill}" class="govuk-link" th:href="@{/case/billing/bill}"
                    th:text="${row.type}"></a>
-                <span th:unless="${editablePoa or editableBill}" th:text="${row.type}"></span>
+                <a th:if="${submittedPoa}" class="govuk-link"
+                   th:href="@{/case/billing/poa(billing-id=${row.billingIncidentId})}"
+                   th:text="${row.type}"></a>
+                <a th:if="${submittedBill}" class="govuk-link"
+                   th:href="@{/case/billing/bill(billing-id=${row.billingIncidentId})}"
+                   th:text="${row.type}"></a>
+                <span th:unless="${editablePoa or editableBill or submittedPoa or submittedBill}"
+                      th:text="${row.type}"></span>
+                <span th:if="${!row.draft and !row.hasBillingIncidentId()}"
+                      class="govuk-hint" th:text="#{billing.detailsUnavailable}"></span>
               </td>
               <td class="govuk-table__cell" th:text="${row.status}"></td>
               <td class="govuk-table__cell" th:text="${row.dateSubmitted != null ? #temporals.format(row.dateSubmitted, 'dd/MM/yyyy') : ''}"></td>

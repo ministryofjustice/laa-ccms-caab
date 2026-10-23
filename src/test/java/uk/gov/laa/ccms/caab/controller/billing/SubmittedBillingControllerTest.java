@@ -28,7 +28,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
@@ -45,6 +47,8 @@ import uk.gov.laa.ccms.caab.bean.validators.declaration.PoaDeclarationSubmission
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.client.SoaApiClientException;
+import uk.gov.laa.ccms.caab.config.StringToBillingContextConverter;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
@@ -123,9 +127,13 @@ class SubmittedBillingControllerTest {
             poaDeclarationValidator,
             pdfService,
             undertakingValidator);
+    final DefaultFormattingConversionService conversionService =
+        new DefaultFormattingConversionService();
+    conversionService.addConverter(new StringToBillingContextConverter());
     mockMvc =
         MockMvcTester.create(
             MockMvcBuilders.standaloneSetup(controller)
+                .setConversionService(conversionService)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build());
 
@@ -244,7 +252,11 @@ class SubmittedBillingControllerTest {
                                         new OpaAttribute()
                                             .attribute("BILL_SUBMITTED_TOTAL_AMT")
                                             .responseType("number")
-                                            .responseValue(amount))))),
+                                            .responseValue(amount),
+                                        new OpaAttribute()
+                                            .attribute("BILL_SUBMITTED_TOTAL_VAT")
+                                            .responseType("number")
+                                            .responseValue("0.00"))))),
                 new OpaEntity()
                     .entityName("PROFIT_COST_BILL_LINE")
                     .instances(
@@ -256,7 +268,19 @@ class SubmittedBillingControllerTest {
                                         new OpaAttribute()
                                             .attribute("PROFIT_COST_TOTAL_CLAIM")
                                             .responseType("number")
-                                            .responseValue(amount)))))));
+                                            .responseValue(amount),
+                                        new OpaAttribute()
+                                            .attribute("PROFIT_COST_DATE")
+                                            .responseType("date")
+                                            .responseValue("01-01-2026"),
+                                        new OpaAttribute()
+                                            .attribute("PROFIT_COST_NET_CLAIM_INC_UPLFT")
+                                            .responseType("number")
+                                            .responseValue(amount),
+                                        new OpaAttribute()
+                                            .attribute("PROFIT_COST_VAT")
+                                            .responseType("number")
+                                            .responseValue("0.00")))))));
   }
 
   private void assertNoWrites() {
@@ -323,6 +347,30 @@ class SubmittedBillingControllerTest {
         .containsEntry("readOnly", true)
         .containsEntry("billingId", "555")
         .containsEntry("assessmentStatus", status);
+    assertNoWrites();
+  }
+
+  @ParameterizedTest
+  @CsvSource({"bill, ''", "bill, /summary", "poa, ''", "poa, /summary"})
+  @DisplayName("Invoice-data 404 renders unavailable without hiding the permitted invoice status")
+  void invoiceNotFoundIsUnavailable(final String context, final String suffix) {
+    invoices(context.equals("bill") ? "Bill" : "POA", "Authorised");
+    lenient()
+        .when(soaApiClient.getInvoiceData("555", "user1", "EXTERNAL"))
+        .thenReturn(Mono.error(new SoaApiClientException("missing", HttpStatus.NOT_FOUND)));
+    assertThat(
+            mockMvc.perform(
+                get("/case/billing/" + context + suffix)
+                    .param("billing-id", "555")
+                    .sessionAttr(CASE, ebsCase())
+                    .sessionAttr(USER_DETAILS, user)))
+        .hasStatusOk()
+        .hasViewName("application/billing/" + context + "-details")
+        .model()
+        .containsEntry("readOnly", true)
+        .containsEntry("detailsUnavailable", true)
+        .containsEntry("assessmentStatus", "Authorised");
+    verifyNoInteractions(pdfService);
     assertNoWrites();
   }
 
@@ -487,19 +535,48 @@ class SubmittedBillingControllerTest {
     "bill, empty-opa, ''",
     "bill, empty-opa, /summary",
     "poa, empty-opa, ''",
-    "poa, empty-opa, /summary"
+    "poa, empty-opa, /summary",
+    "bill, missing-total, ''",
+    "bill, missing-total, /summary",
+    "poa, missing-total, ''",
+    "poa, missing-total, /summary",
+    "bill, missing-date, ''",
+    "bill, missing-date, /summary",
+    "poa, missing-date, ''",
+    "poa, missing-date, /summary"
   })
   @DisplayName("Missing historical content is explicitly unavailable rather than a current PDF")
   void missingHistoricalContentIsUnavailable(
       final String context, final String missing, final String suffix) {
     invoices(context.equals("bill") ? "Bill" : "POA", "Authorised");
+    final InvoiceDataResponse incomplete = invoiceData("120.00");
+    if (missing.equals("missing-total")) {
+      incomplete
+          .getOpaResponse()
+          .getFirst()
+          .getInstances()
+          .getFirst()
+          .getAttributes()
+          .getFirst()
+          .setResponseValue(null);
+    } else if (missing.equals("missing-date")) {
+      incomplete
+          .getOpaResponse()
+          .get(1)
+          .getInstances()
+          .getFirst()
+          .getAttributes()
+          .get(1)
+          .setResponseValue(null);
+    }
     lenient()
         .when(soaApiClient.getInvoiceData("555", "user1", "EXTERNAL"))
         .thenReturn(
             switch (missing) {
               case "missing" -> Mono.empty();
               case "no-opa" -> Mono.just(new InvoiceDataResponse());
-              default -> Mono.just(new InvoiceDataResponse().opaResponse(List.of()));
+              case "empty-opa" -> Mono.just(new InvoiceDataResponse().opaResponse(List.of()));
+              default -> Mono.just(incomplete);
             });
     assertThat(
             mockMvc.perform(

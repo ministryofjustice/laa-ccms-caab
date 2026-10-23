@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.constants;
 
+import java.util.Locale;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 
 /**
@@ -58,6 +59,14 @@ public enum BillingContext {
 
   public boolean isBill() {
     return this == BILL;
+  }
+
+  /** EBS uses specific bill labels, such as Counsel Bill, and POA-containing POA labels. */
+  public static BillingContext forInvoiceType(final String invoiceType) {
+    if (invoiceType == null) {
+      return null;
+    }
+    return invoiceType.toUpperCase(Locale.UK).contains("POA") ? POA : BILL;
   }
 
   /**

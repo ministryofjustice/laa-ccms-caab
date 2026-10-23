@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.bean.billing;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import uk.gov.laa.ccms.caab.constants.BillingContext;
 
 /**
  * A single row in the "Bills and payment on account" table on the Case Statement of Account screen.
@@ -58,5 +59,13 @@ public record BillPoaRow(
   public BillPoaRow withCopyable() {
     return new BillPoaRow(
         type, status, dateSubmitted, dateAuthorised, amount, draft, true, billingIncidentId);
+  }
+
+  public BillingContext billingContext() {
+    return BillingContext.forInvoiceType(type);
+  }
+
+  public boolean hasBillingIncidentId() {
+    return billingIncidentId != null && billingIncidentId > 0;
   }
 }

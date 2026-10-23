@@ -218,6 +218,49 @@ public class BillingSummaryPdfService {
         .build();
   }
 
+  /**
+   * Historical reports must contain real totals and complete dated claim lines, rather than
+   * silently rendering the zero defaults and omitted lines used by draft reports.
+   */
+  public static boolean hasUsableHistoricalSummary(final AssessmentDetail assessment) {
+    if (assessment == null || assessment.getEntityTypes() == null) {
+      return false;
+    }
+    final List<AssessmentEntityDetail> globals =
+        getAssessmentEntitiesForEntityType(assessment, AssessmentEntityType.GLOBAL);
+    if (globals.size() != 1
+        || !isCurrency(attributeValue(globals.getFirst(), ATTR_SUBMITTED_TOTAL_AMOUNT))
+        || !isCurrency(attributeValue(globals.getFirst(), ATTR_SUBMITTED_TOTAL_VAT))) {
+      return false;
+    }
+    boolean hasLine = false;
+    for (final AssessmentEntityTypeDetail type : assessment.getEntityTypes()) {
+      if (type.getName() == null || !type.getName().endsWith(BILL_LINE_ENTITY_SUFFIX)) {
+        continue;
+      }
+      final String prefix =
+          type.getName().substring(0, type.getName().length() - BILL_LINE_ENTITY_SUFFIX.length());
+      for (final AssessmentEntityDetail entity : type.getEntities()) {
+        hasLine = true;
+        final String storedDate = attributeValue(entity, prefix + SUFFIX_DATE);
+        final LocalDate date = parseDate(storedDate);
+        // SMART parsing normalizes dates such as 31 February; historical reports must not.
+        if (date == null
+            || !STORED_DATE.format(date).equals(storedDate.trim())
+            || !isCurrency(attributeValue(entity, prefix + SUFFIX_NET_CLAIM))
+            || !isCurrency(attributeValue(entity, prefix + SUFFIX_VAT))
+            || !isCurrency(attributeValue(entity, prefix + SUFFIX_TOTAL_CLAIM))) {
+          return false;
+        }
+      }
+    }
+    return hasLine;
+  }
+
+  private static boolean isCurrency(final String value) {
+    return value != null && value.replace(",", "").trim().matches(CURRENCY_REGEX);
+  }
+
   private List<BillLine> buildBillLines(final AssessmentDetail assessment) {
     final List<BillLine> lines = new ArrayList<>();
     if (assessment == null || assessment.getEntityTypes() == null) {
@@ -293,7 +336,7 @@ public class BillingSummaryPdfService {
         .orElse(null);
   }
 
-  private String attributeValue(final AssessmentEntityDetail entity, final String name) {
+  private static String attributeValue(final AssessmentEntityDetail entity, final String name) {
     return Optional.ofNullable(getAssessmentAttribute(entity, name))
         .map(AssessmentAttributeDetail::getValue)
         .orElse("");
@@ -305,7 +348,7 @@ public class BillingSummaryPdfService {
         .orElse("");
   }
 
-  private LocalDate parseDate(final String value) {
+  private static LocalDate parseDate(final String value) {
     if (value == null || value.isBlank()) {
       return null;
     }
