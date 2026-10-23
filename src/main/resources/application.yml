@@ -40,7 +40,9 @@ spring:
             authorization-grant-type: authorization_code
         provider:
           silas-identity:
-            issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0
+            # Overridable so a feature environment can point at an OIDC mock; every other
+            # environment leaves it unset and gets the tenant named by AZURE_TENANT_ID.
+            issuer-uri: ${OIDC_ISSUER_URI:https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0}
 
   thymeleaf: # Thymeleaf
     cache: false
