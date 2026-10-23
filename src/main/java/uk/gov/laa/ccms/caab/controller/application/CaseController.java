@@ -727,22 +727,12 @@ public class CaseController {
   }
 
   /**
-   * Saves in-progress proceeding outcome form data to session and redirects to court search.
+   * Saves the in-progress proceeding outcome and carries the existing court values into the search
+   * form so the user can amend or re-run the lookup without losing context.
    *
-   * <p>The search starts blank. The court code and name are alternative ways of finding the same
-   * Court, but they reach EBS as separate query parameters and are combined with AND, so carrying
-   * the outcome's existing court over pre-fills both boxes and every subsequent search becomes "the
-   * court already recorded, and whatever was just typed". That matches nothing unless the user
-   * searches for the court they already have: entering a real code such as "127C1" against a stored
-   * name queries {@code code=*127C1*&description=*<stored name>*} and returns no rows, so the
-   * screen reports no results for a Court that plainly exists.
-   *
-   * <p>It is worse when the stored value is a placeholder rather than a court. Live cases carry
-   * "Not Available" in these fields, which is not a Court and never matches, so court search
-   * returns nothing for every term on those cases.
-   *
-   * <p>The in-progress outcome itself is still preserved, so nothing the user typed on the outcome
-   * screen is lost while they go and find a Court.
+   * <p>Legacy behaviour pre-populated the court search with the court already stored on the
+   * outcome, and the modern flow should do the same. Placeholder values such as "Not Available" are
+   * normalised away before they are carried into the search form.
    *
    * @param index The zero-based index of the proceeding.
    * @param proceedingOutcome The in-progress form data to preserve.
@@ -756,6 +746,7 @@ public class CaseController {
       @ModelAttribute("proceedingOutcome") final ProceedingOutcomeFormData proceedingOutcome,
       HttpSession session) {
     proceedingOutcome.normaliseLegacyCourtFields();
+    proceedingOutcome.normaliseLegacyCourtFields();
     if (!hasOutcomeEditPermission(ebsCase)) {
       log.warn(
           "Rejecting proceeding outcome court search for read-only case {}",
@@ -764,7 +755,11 @@ public class CaseController {
     }
 
     session.setAttribute(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome);
-    session.setAttribute(COURT_SEARCH_CRITERIA, new CourtSearchCriteria());
+
+    final CourtSearchCriteria courtSearchCriteria = new CourtSearchCriteria();
+    courtSearchCriteria.setCourtCode(proceedingOutcome.getCourtCode());
+    courtSearchCriteria.setCourtName(proceedingOutcome.getCourtName());
+    session.setAttribute(COURT_SEARCH_CRITERIA, courtSearchCriteria);
     return "redirect:/court/search?proceedingIndex=" + index;
   }
 
@@ -787,6 +782,8 @@ public class CaseController {
           ebsCase.getCaseReferenceNumber());
       return "redirect:/case/outcome-and-awards";
     }
+
+    proceedingOutcome.normaliseLegacyCourtFields();
 
     proceedingOutcome.normaliseLegacyCourtFields();
 
