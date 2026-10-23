@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.config;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -20,9 +21,11 @@ import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
+import uk.gov.laa.ccms.caab.security.AbsoluteSessionTimeoutFilter;
 import uk.gov.laa.ccms.caab.security.CcmsOidcUser;
 import uk.gov.laa.ccms.caab.security.CcmsUserIdentityResolver;
 import uk.gov.laa.ccms.caab.security.CcmsUserResolutionException;
@@ -41,6 +44,9 @@ public class SecurityConfiguration {
 
   @Value("${portal.logoutUrl}")
   private String logoutUrl;
+
+  @Value("${laa.ccms.session.absolute-timeout:12h}")
+  private Duration absoluteSessionTimeout;
 
   @Value("${csp.report-enabled:true}")
   private boolean cspReportEnabled;
@@ -161,6 +167,9 @@ public class SecurityConfiguration {
         .addFilterBefore(
             new CspNonceFilter(cspReportEnabled, cspReportOnly, cspUpgradeInsecureRequests, owdUrl),
             BasicAuthenticationFilter.class)
+        .addFilterBefore(
+            new AbsoluteSessionTimeoutFilter(absoluteSessionTimeout, "/home"),
+            AuthorizationFilter.class)
         .sessionManagement(
             sessionManagement ->
                 sessionManagement.invalidSessionStrategy(
