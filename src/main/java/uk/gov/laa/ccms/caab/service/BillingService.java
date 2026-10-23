@@ -15,15 +15,22 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.SoaFigureColumn;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.client.SoaApiClientException;
+import uk.gov.laa.ccms.caab.constants.BillingContext;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
@@ -256,7 +263,76 @@ public class BillingService {
   }
 
   private boolean isBillInvoice(final String invoiceType) {
-    return invoiceType != null && !invoiceType.toUpperCase(Locale.UK).contains(INVOICE_TYPE_POA);
+    return BillingContext.forInvoiceType(invoiceType) == BillingContext.BILL;
+  }
+
+  /**
+   * Reads a historical invoice already authorized against the visible statement. The projection
+   * exists only for rendering; no stored assessment or draft is created or changed.
+   */
+  public Optional<AssessmentDetail> getSubmittedAssessment(
+      final String billingId, final UserDetail user) {
+    final InvoiceDataResponse invoice;
+    try {
+      invoice =
+          soaApiClient.getInvoiceData(billingId, user.getLoginId(), user.getUserType()).block();
+    } catch (final SoaApiClientException e) {
+      if (!e.hasHttpStatus(HttpStatus.NOT_FOUND)
+          && !(e.getCause() instanceof WebClientResponseException response
+              && response.getStatusCode().value() == HttpStatus.NOT_FOUND.value())) {
+        throw e;
+      }
+      log.warn("Historical data not found for billing incident {}", billingId);
+      return Optional.empty();
+    }
+    final AssessmentDetail assessment = historicalAssessment(invoice);
+    if (!BillingSummaryPdfService.hasUsableHistoricalSummary(assessment)) {
+      log.warn("Historical summary unavailable for billing incident {}", billingId);
+      return Optional.empty();
+    }
+    return Optional.of(assessment);
+  }
+
+  private AssessmentDetail historicalAssessment(final InvoiceDataResponse invoice) {
+    if (invoice == null || invoice.getOpaResponse() == null) {
+      return null;
+    }
+    final AssessmentDetail assessment = new AssessmentDetail().entityTypes(new ArrayList<>());
+    for (final uk.gov.laa.ccms.soa.gateway.model.OpaEntity source : invoice.getOpaResponse()) {
+      if (source == null || source.getEntityName() == null || source.getInstances() == null) {
+        return null;
+      }
+      final AssessmentEntityTypeDetail type =
+          new AssessmentEntityTypeDetail()
+              .name(source.getEntityName().trim().toUpperCase(Locale.UK))
+              .entities(new ArrayList<>());
+      for (final uk.gov.laa.ccms.soa.gateway.model.OpaInstance instance : source.getInstances()) {
+        if (instance == null || instance.getAttributes() == null) {
+          return null;
+        }
+        final AssessmentEntityDetail entity =
+            new AssessmentEntityDetail()
+                .name(instance.getInstanceLabel())
+                .attributes(new ArrayList<>());
+        for (final uk.gov.laa.ccms.soa.gateway.model.OpaAttribute attribute :
+            instance.getAttributes()) {
+          if (attribute == null || attribute.getAttribute() == null) {
+            return null;
+          }
+          entity.addAttributesItem(
+              new AssessmentAttributeDetail()
+                  .name(attribute.getAttribute().trim().toUpperCase(Locale.UK))
+                  .type(attribute.getResponseType())
+                  .value(
+                      attribute.getResponseValue() != null
+                          ? attribute.getResponseValue()
+                          : attribute.getResponseText()));
+        }
+        type.addEntitiesItem(entity);
+      }
+      assessment.addEntityTypesItem(type);
+    }
+    return assessment;
   }
 
   /**

@@ -2,10 +2,12 @@ package uk.gov.laa.ccms.caab.client;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.notFound;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.put;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
@@ -13,11 +15,13 @@ import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -26,7 +30,9 @@ import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
 import uk.gov.laa.ccms.soa.gateway.model.CoverSheet;
 import uk.gov.laa.ccms.soa.gateway.model.Document;
+import uk.gov.laa.ccms.soa.gateway.model.InvoiceDataResponse;
 import uk.gov.laa.ccms.soa.gateway.model.Notification;
+import uk.gov.laa.ccms.soa.gateway.model.OpaEntity;
 import uk.gov.laa.ccms.soa.gateway.model.UserOptions;
 
 public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
@@ -48,6 +54,26 @@ public class SoaApiClientIntegrationTest extends AbstractIntegrationTest {
   @Autowired private SoaApiClient soaApiClient;
 
   private final ObjectMapper objectMapper = new ObjectMapper();
+
+  @Test
+  void invoiceDataUsesTheSelectedIdAndUserHeaders() throws Exception {
+    final InvoiceDataResponse expected =
+        new InvoiceDataResponse().opaResponse(List.of(new OpaEntity().entityName("GLOBAL")));
+    wiremock.stubFor(
+        get("/invoices/555")
+            .withHeader(SOA_GATEWAY_USER_LOGIN_ID, equalTo(USER_1))
+            .withHeader(SOA_GATEWAY_USER_ROLE, equalTo(USER_TYPE))
+            .willReturn(okJson(objectMapper.writeValueAsString(expected))));
+    assertEquals(expected, soaApiClient.getInvoiceData("555", USER_1, USER_TYPE).block());
+  }
+
+  @Test
+  void invoiceDataNotFoundRetainsTheHttpCauseForViewingOnlyRecovery() {
+    wiremock.stubFor(get("/invoices/555").willReturn(notFound()));
+    assertThatThrownBy(() -> soaApiClient.getInvoiceData("555", USER_1, USER_TYPE).block())
+        .isInstanceOf(SoaApiClientException.class)
+        .hasCauseInstanceOf(WebClientResponseException.NotFound.class);
+  }
 
   @Test
   public void testGetContractDetails_returnData() throws Exception {

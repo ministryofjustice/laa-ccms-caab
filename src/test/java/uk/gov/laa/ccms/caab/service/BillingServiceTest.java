@@ -9,11 +9,14 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -22,18 +25,29 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.thymeleaf.context.IContext;
+import org.thymeleaf.spring6.SpringTemplateEngine;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.SoaFigureColumn;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
+import uk.gov.laa.ccms.caab.bean.billing.pdf.BillLine;
+import uk.gov.laa.ccms.caab.bean.billing.pdf.TopSectionData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.client.SoaApiClientException;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -933,6 +947,316 @@ class BillingServiceTest {
       assertThat(billingService.createDraftBillIfAbsent(CASE_REF, "10", user)).isSameAs(existing);
 
       verify(caabApiClient, never()).createBill(any(), any());
+    }
+  }
+
+  @Nested
+  @DisplayName("Read-only historical invoice data")
+  class HistoricalInvoiceData {
+
+    private final UserDetail historicalUser =
+        new UserDetail().loginId("user1").userType("EXTERNAL").provider(new BaseProvider().id(10));
+
+    private OpaAttribute value(final String name, final String value) {
+      return new OpaAttribute().attribute(name).responseType("number").responseValue(value);
+    }
+
+    private InvoiceDataResponse invoice(final String amount) {
+      return new InvoiceDataResponse()
+          .opaResponse(
+              List.of(
+                  new OpaEntity()
+                      .entityName("gLoBaL")
+                      .instances(
+                          List.of(
+                              new OpaInstance()
+                                  .instanceLabel(CASE_REF)
+                                  .attributes(
+                                      List.of(
+                                          value("bill_submitted_total_amt", amount),
+                                          value("bill_submitted_total_vat", "0.00"))))),
+                  new OpaEntity()
+                      .entityName("profit_cost_bill_line")
+                      .instances(
+                          List.of(
+                              new OpaInstance()
+                                  .instanceLabel("historic-line")
+                                  .attributes(
+                                      List.of(
+                                          value("profit_cost_date", "01-01-2026")
+                                              .responseType("date"),
+                                          value("profit_cost_net_claim_inc_uplft", amount),
+                                          value("profit_cost_vat", "0.00"),
+                                          value("profit_cost_total_claim", amount)))))));
+    }
+
+    private void source(final InvoiceDataResponse invoice) {
+      when(soaApiClient.getInvoiceData("555", "user1", "EXTERNAL")).thenReturn(Mono.just(invoice));
+    }
+
+    private void assertReadOnly() {
+      verify(soaApiClient).getInvoiceData("555", "user1", "EXTERNAL");
+      verifyNoInteractions(
+          caabApiClient,
+          ebsApiClient,
+          lookupService,
+          assessmentService,
+          soaApplicationMapper,
+          clientService);
+    }
+
+    @Test
+    void mapsCanonicalNamesAndPreservesSourceAndInstances() {
+      final InvoiceDataResponse source = invoice("120.00");
+      final OpaInstance firstLine = source.getOpaResponse().get(1).getInstances().getFirst();
+      source
+          .getOpaResponse()
+          .get(1)
+          .setInstances(
+              List.of(
+                  firstLine,
+                  new OpaInstance()
+                      .instanceLabel("second-line")
+                      .attributes(firstLine.getAttributes())));
+      source(source);
+
+      final AssessmentDetail result =
+          billingService.getSubmittedAssessment("555", historicalUser).orElseThrow();
+      assertThat(result.getEntityTypes())
+          .extracting(type -> type.getName())
+          .containsExactly("GLOBAL", "PROFIT_COST_BILL_LINE");
+      assertThat(result.getEntityTypes().get(1).getEntities())
+          .extracting(entity -> entity.getName())
+          .containsExactly("historic-line", "second-line");
+      assertThat(result.getEntityTypes().get(1).getEntities().getFirst().getAttributes())
+          .extracting(attribute -> attribute.getName())
+          .contains("PROFIT_COST_DATE", "PROFIT_COST_TOTAL_CLAIM");
+      assertThat(
+              result
+                  .getEntityTypes()
+                  .get(1)
+                  .getEntities()
+                  .getFirst()
+                  .getAttributes()
+                  .getFirst()
+                  .getType())
+          .isEqualTo("date");
+      assertThat(source.getOpaResponse().getFirst().getEntityName()).isEqualTo("gLoBaL");
+      assertThat(firstLine.getAttributes().getFirst().getAttribute()).isEqualTo("profit_cost_date");
+      assertReadOnly();
+    }
+
+    @Test
+    void prefersResponseValueAndUsesTextOnlyWhenValueIsNull() {
+      final InvoiceDataResponse source = invoice("120.00");
+      source
+          .getOpaResponse()
+          .getFirst()
+          .getInstances()
+          .getFirst()
+          .getAttributes()
+          .getFirst()
+          .responseText("999.00");
+      source
+          .getOpaResponse()
+          .get(1)
+          .getInstances()
+          .getFirst()
+          .getAttributes()
+          .get(3)
+          .responseValue(null)
+          .responseText("120.00");
+      source(source);
+
+      final AssessmentDetail result =
+          billingService.getSubmittedAssessment("555", historicalUser).orElseThrow();
+      assertThat(
+              result
+                  .getEntityTypes()
+                  .getFirst()
+                  .getEntities()
+                  .getFirst()
+                  .getAttributes()
+                  .getFirst()
+                  .getValue())
+          .isEqualTo("120.00");
+      assertThat(
+              result
+                  .getEntityTypes()
+                  .get(1)
+                  .getEntities()
+                  .getFirst()
+                  .getAttributes()
+                  .get(3)
+                  .getValue())
+          .isEqualTo("120.00");
+      assertReadOnly();
+    }
+
+    @Test
+    void acceptsZeroValuedClaimsWithActualDatedLines() {
+      source(invoice("0.00"));
+      assertThat(billingService.getSubmittedAssessment("555", historicalUser)).isPresent();
+      assertReadOnly();
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+        strings = {
+          "no-types",
+          "null-type",
+          "no-instances",
+          "null-instance",
+          "no-attributes",
+          "null-attribute",
+          "no-global-total",
+          "bad-global-total",
+          "no-line-date",
+          "bad-line-date",
+          "invalid-calendar-date",
+          "no-line-total",
+          "no-lines",
+          "partial-second-line"
+        })
+    void rejectsMissingOrIncompleteSourceInsteadOfRenderingPartialReport(final String missing) {
+      final InvoiceDataResponse source = invoice("120.00");
+      final OpaEntity global = source.getOpaResponse().getFirst();
+      final OpaEntity lines = source.getOpaResponse().get(1);
+      final OpaInstance line = lines.getInstances().getFirst();
+      switch (missing) {
+        case "no-types" -> source.setOpaResponse(List.of());
+        case "null-type" -> source.setOpaResponse(java.util.Collections.singletonList(null));
+        case "no-instances" -> lines.setInstances(null);
+        case "null-instance" -> lines.setInstances(java.util.Collections.singletonList(null));
+        case "no-attributes" -> line.setAttributes(null);
+        case "null-attribute" -> line.setAttributes(java.util.Collections.singletonList(null));
+        case "no-global-total" ->
+            global.getInstances().getFirst().getAttributes().getFirst().setResponseValue(null);
+        case "bad-global-total" ->
+            global
+                .getInstances()
+                .getFirst()
+                .getAttributes()
+                .getFirst()
+                .setResponseValue("not a number");
+        case "no-line-date" -> line.getAttributes().getFirst().setResponseValue(null);
+        case "bad-line-date" -> line.getAttributes().getFirst().setResponseValue("not a date");
+        case "invalid-calendar-date" ->
+            line.getAttributes().getFirst().setResponseValue("31-02-2026");
+        case "no-line-total" -> line.getAttributes().get(3).setResponseValue(null);
+        case "no-lines" -> lines.setInstances(List.of());
+        case "partial-second-line" ->
+            lines.setInstances(
+                List.of(line, new OpaInstance().instanceLabel("incomplete").attributes(List.of())));
+        default -> throw new AssertionError(missing);
+      }
+      source(source);
+      assertThat(billingService.getSubmittedAssessment("555", historicalUser)).isEmpty();
+      assertReadOnly();
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void treatsOnlyIdentifiableNotFoundAsUnavailable(final boolean wrapped) {
+      final SoaApiClientException failure =
+          wrapped
+              ? new SoaApiClientException(
+                  "missing",
+                  WebClientResponseException.create(
+                      404, "Not found", HttpHeaders.EMPTY, new byte[0], StandardCharsets.UTF_8))
+              : new SoaApiClientException("missing", HttpStatus.NOT_FOUND);
+      when(soaApiClient.getInvoiceData("555", "user1", "EXTERNAL")).thenReturn(Mono.error(failure));
+      assertThat(billingService.getSubmittedAssessment("555", historicalUser)).isEmpty();
+      assertReadOnly();
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {403, 500})
+    void propagatesOtherHttpFailuresUnchanged(final int status) {
+      final SoaApiClientException failure =
+          new SoaApiClientException(
+              "upstream",
+              WebClientResponseException.create(
+                  status, "upstream", HttpHeaders.EMPTY, new byte[0], StandardCharsets.UTF_8));
+      when(soaApiClient.getInvoiceData("555", "user1", "EXTERNAL")).thenReturn(Mono.error(failure));
+      assertThatThrownBy(() -> billingService.getSubmittedAssessment("555", historicalUser))
+          .isSameAs(failure);
+      assertReadOnly();
+    }
+
+    @Test
+    void propagatesUnclassifiedFailuresUnchanged() {
+      final SoaApiClientException failure =
+          new SoaApiClientException(
+              "transport failure", new java.io.IOException("connection lost"));
+      when(soaApiClient.getInvoiceData("555", "user1", "EXTERNAL")).thenReturn(Mono.error(failure));
+      assertThatThrownBy(() -> billingService.getSubmittedAssessment("555", historicalUser))
+          .isSameAs(failure);
+      assertReadOnly();
+    }
+
+    @Test
+    void copyBillStillPropagatesNotFoundInsteadOfCreatingADraft() {
+      final SoaApiClientException failure =
+          new SoaApiClientException("missing", HttpStatus.NOT_FOUND);
+      when(soaApiClient.getInvoiceData("555", "user1", "EXTERNAL")).thenReturn(Mono.error(failure));
+      assertThatThrownBy(
+              () ->
+                  billingService.copyBill(
+                      new ApplicationDetail().caseReferenceNumber(CASE_REF),
+                      "10",
+                      "555",
+                      new StatementOfAccountDisplay(),
+                      historicalUser))
+          .isSameAs(failure);
+      verifyNoInteractions(assessmentService, clientService);
+      verify(caabApiClient, never()).createBill(any(), any());
+    }
+
+    @Test
+    void historicalProjectionRendersActualLinesAndUsesCurrentHeaderFigures() {
+      source(invoice("120.00"));
+      final AssessmentDetail historical =
+          billingService.getSubmittedAssessment("555", historicalUser).orElseThrow();
+      final ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
+      resolver.setPrefix("templates/");
+      resolver.setSuffix(".html");
+      final SpringTemplateEngine engine = spy(new SpringTemplateEngine());
+      engine.setTemplateResolver(resolver);
+      final SoaFigureColumn provider = new SoaFigureColumn();
+      provider.setBillsAuthorised(new BigDecimal("500.00"));
+      provider.setCostLimitationRemaining(new BigDecimal("1500.00"));
+      final StatementOfAccountDisplay statement = new StatementOfAccountDisplay();
+      statement.setProvider(provider);
+      final byte[] pdf =
+          new BillingSummaryPdfService(engine)
+              .generateBillSummary(
+                  new ApplicationDetail().caseReferenceNumber(CASE_REF),
+                  "Current Firm",
+                  historical,
+                  statement,
+                  new BigDecimal("2000.00"));
+      assertThat(new String(pdf, 0, 5, StandardCharsets.US_ASCII)).isEqualTo("%PDF-");
+      final ArgumentCaptor<IContext> context = ArgumentCaptor.forClass(IContext.class);
+      verify(engine).process(eq("pdf/billing-summary"), context.capture());
+      assertThat(context.getValue().getVariable("billLines"))
+          .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.list(BillLine.class))
+          .singleElement()
+          .satisfies(
+              line -> {
+                assertThat(line.getDate()).isEqualTo(LocalDate.of(2026, 1, 1));
+                assertThat(line.getTotalClaim()).isEqualByComparingTo("120.00");
+              });
+      assertThat(context.getValue().getVariable("topSectionData"))
+          .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.type(TopSectionData.class))
+          .satisfies(
+              top -> {
+                assertThat(top.getTotalValueOfClaim()).isEqualByComparingTo("120.00");
+                assertThat(top.getTotalBills()).isEqualByComparingTo("500.00");
+                assertThat(top.getCostLimit()).isEqualByComparingTo("2000.00");
+                assertThat(top.getAvailableCostLimit()).isEqualByComparingTo("1500.00");
+              });
+      assertReadOnly();
     }
   }
 
