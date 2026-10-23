@@ -11,6 +11,10 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.client.UserDetailsApiClient;
+import uk.gov.laa.ccms.caab.model.user.CcmsUserDetails;
+import uk.gov.laa.ccms.caab.model.user.EntraUserMapping;
+import uk.gov.laa.ccms.caab.model.user.UserViewModel;
 import uk.gov.laa.ccms.data.model.BaseUser;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.data.model.UserDetails;
@@ -22,6 +26,8 @@ public class UserServiceTest {
   @Mock private EbsApiClient ebsApiClient;
 
   @Mock private SoaApiClient soaApiClient;
+
+  @Mock private UserDetailsApiClient userDetailsApiClient;
 
   @InjectMocks private UserService userService;
 
@@ -105,6 +111,38 @@ public class UserServiceTest {
         userService.updateUserOptions(12345, loginId, userType);
     StepVerifier.create(responseMono)
         .expectNextMatches(userUpdated -> userUpdated == userUpdatedResponse)
+        .verifyComplete();
+  }
+
+  @Test
+  void getEntraUserMapping_returnData() {
+    String entraEmail = "a.user@justice.gov.uk";
+
+    EntraUserMapping mapping = new EntraUserMapping();
+    mapping.setEntraEmailAddress(entraEmail);
+    mapping.setCcmsLoginId("CCMSUSER");
+
+    when(ebsApiClient.getEntraUserMapping(entraEmail)).thenReturn(Mono.just(mapping));
+
+    StepVerifier.create(userService.getEntraUserMapping(entraEmail))
+        .expectNextMatches(result -> "CCMSUSER".equals(result.getCcmsLoginId()))
+        .verifyComplete();
+  }
+
+  @Test
+  void getUserBySilasId_returnData() {
+    String silasId = "a-silas-identifier";
+
+    CcmsUserDetails details = new CcmsUserDetails();
+    details.setUserLoginId("CCMSUSER");
+    UserViewModel user = new UserViewModel();
+    user.setCcmsUserDetails(details);
+
+    when(userDetailsApiClient.getUserBySilasId(silasId)).thenReturn(Mono.just(user));
+
+    StepVerifier.create(userService.getUserBySilasId(silasId))
+        .expectNextMatches(
+            result -> "CCMSUSER".equals(result.getCcmsUserDetails().getUserLoginId()))
         .verifyComplete();
   }
 }
