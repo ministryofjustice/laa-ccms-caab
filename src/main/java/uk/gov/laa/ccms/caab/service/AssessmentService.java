@@ -1423,7 +1423,7 @@ public class AssessmentService {
       final boolean isReassessment,
       final BigDecimal allocatedCostLimit,
       final List<OpaEntity> copiedAnswers) {
-    log.debug("Name - {}, AssessmentType - {}", user.getUsername(), assessmentRulebase.getType());
+    log.debug("AssessmentType - {}", assessmentRulebase.getType());
     final String referenceId = application.getCaseReferenceNumber();
     final String providerId = user.getProvider().getId().toString();
 

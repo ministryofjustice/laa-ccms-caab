@@ -13,7 +13,7 @@ public class SoaApiClientErrorHandler extends AbstractApiClientErrorHandler {
   }
 
   @Override
-  public AssessmentApiClientException createException(String message, HttpStatus httpStatus) {
-    return new AssessmentApiClientException(message, httpStatus);
+  public SoaApiClientException createException(String message, HttpStatus httpStatus) {
+    return new SoaApiClientException(message, httpStatus);
   }
 }
