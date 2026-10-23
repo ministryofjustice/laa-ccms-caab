@@ -111,6 +111,13 @@ public class ValidationPatternConstants {
   /** pattern to test that the first character in a string is alphabetic. */
   public static final String FIRST_CHARACTER_MUST_BE_ALPHA = "^[A-Za-z].*";
 
+  /** Legacy court search code validation uses the standard character set. */
+  public static final String COURT_SEARCH_CODE_CHARSET = STANDARD_CHARACTER_SET;
+
+  /** Legacy court search name validation uses the form-specific characterSetA rules. */
+  public static final String COURT_SEARCH_NAME_CHARSET =
+      "^[A-Za-z0-9 \\.\\,\\-\\(\\)/=!\"%&;<>\\*\\'\\r\\n\\+:\\?]*$";
+
   /** pattern to match what is known in provider-ui as 'characterSetA'. */
   public static final String CHARACTER_SET_A =
       "^[A-Za-z0-9 \\.,\\-\\(\\)/=!\"%&\\*;'\\r\\n\\+:\\?]*$";

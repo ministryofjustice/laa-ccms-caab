@@ -764,7 +764,15 @@ public class CaseController {
     }
 
     session.setAttribute(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome);
-    session.setAttribute(COURT_SEARCH_CRITERIA, new CourtSearchCriteria());
+
+    final CourtSearchCriteria courtSearchCriteria = new CourtSearchCriteria();
+    if (StringUtils.hasText(proceedingOutcome.getCourtCode())) {
+      courtSearchCriteria.setCourtCode(proceedingOutcome.getCourtCode());
+    }
+    if (StringUtils.hasText(proceedingOutcome.getCourtName())) {
+      courtSearchCriteria.setCourtName(proceedingOutcome.getCourtName());
+    }
+    session.setAttribute(COURT_SEARCH_CRITERIA, courtSearchCriteria);
     return "redirect:/court/search?proceedingIndex=" + index;
   }
 

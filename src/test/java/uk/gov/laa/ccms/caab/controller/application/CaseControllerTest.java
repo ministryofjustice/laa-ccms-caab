@@ -55,6 +55,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.http.HttpStatus;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -2894,6 +2895,49 @@ class CaseControllerTest {
     }
 
     @Test
+    @DisplayName("Record proceeding outcome court search pre-populates the existing court")
+    public void recordProceedingOutcomeCourtSearchPrePopulatesExistingCourt() throws Exception {
+      final String selectedCaseRef = "8";
+      ApplicationDetail ebsCase =
+          getEbsCase(
+              selectedCaseRef,
+              1,
+              "ref",
+              "client",
+              "smith",
+              "clientRef",
+              false,
+              null,
+              null,
+              List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+      ebsCase.setProceedings(
+          List.of(
+              new ProceedingDetail()
+                  .proceedingCaseId("pc1")
+                  .description("Proceeding 1")
+                  .proceedingType(
+                      new StringDisplayValue().id("P1").displayValue("Proceeding name"))));
+
+      MockHttpSession session = new MockHttpSession();
+      session.setAttribute(CASE, ebsCase);
+      session.setAttribute(USER_DETAILS, user);
+
+      mockMvc.perform(
+          post("/case/outcome-and-awards/proceeding/0/outcome/court-search")
+              .session(session)
+              .param("courtCode", "CT1")
+              .param("courtName", "Court 1")
+              .param("outcomeCourtCaseNo", "ABC123"));
+
+      CourtSearchCriteria courtSearchCriteria =
+          (CourtSearchCriteria) session.getAttribute(COURT_SEARCH_CRITERIA);
+
+      assertThat(courtSearchCriteria).isNotNull();
+      assertThat(courtSearchCriteria.getCourtCode()).isEqualTo("CT1");
+      assertThat(courtSearchCriteria.getCourtName()).isEqualTo("Court 1");
+    }
+
+    @Test
     @DisplayName(
         "Clear proceeding outcome confirmation redirects when only legacy local clear marker exists")
     public void clearProceedingOutcomePageRedirectsWhenLegacyMarkerExists() {
@@ -3282,9 +3326,8 @@ class CaseControllerTest {
     }
 
     @Test
-    @DisplayName(
-        "Record proceeding outcome court search preserves the outcome but starts the search blank")
-    public void recordProceedingOutcomeCourtSearchStartsTheSearchBlank() throws Exception {
+    @DisplayName("Record proceeding outcome court search pre-populates the saved court values")
+    public void recordProceedingOutcomeCourtSearchStartsWithExistingCourt() throws Exception {
       final String selectedCaseRef = "8";
       ApplicationDetail ebsCase =
           getEbsCase(
@@ -3326,16 +3369,12 @@ class CaseControllerTest {
           .hasFieldOrPropertyWithValue("courtCode", "CT1")
           .hasFieldOrPropertyWithValue("courtName", "Test Court");
 
-      // The court boxes reach EBS as separate query params combined with AND, so carrying the
-      // outcome's court over would make every search "the court already recorded, and whatever was
-      // just typed" - which matches nothing unless the user searches for the court they already
-      // have. The search therefore starts blank.
       CourtSearchCriteria courtSearchCriteria =
           (CourtSearchCriteria)
               result.getRequest().getSession().getAttribute(COURT_SEARCH_CRITERIA);
       assertThat(courtSearchCriteria)
-          .hasFieldOrPropertyWithValue("courtCode", null)
-          .hasFieldOrPropertyWithValue("courtName", null);
+          .hasFieldOrPropertyWithValue("courtCode", "CT1")
+          .hasFieldOrPropertyWithValue("courtName", "Test Court");
     }
 
     @Test
