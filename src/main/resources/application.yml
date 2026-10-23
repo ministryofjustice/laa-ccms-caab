@@ -95,6 +95,10 @@ laa:
         document-bucket:
           name: ${S3_DOCUMENT_BUCKET}
           url-duration: 20 # (minutes) - How long generated URLs remain accessible.
+    session:
+      # Caps how long a session lives once the user has signed in, however active they have been;
+      # server.servlet.session.timeout only measures idle time.
+      absolute-timeout: ${SESSION_ABSOLUTE_TIMEOUT:12h}
     entra:
       # External (provider) users reach the service through SiLAS, which supplies the CCMS
       # username in a custom claim; internal (caseworker) users are resolved through the EBS
