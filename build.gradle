@@ -117,7 +117,7 @@ dependencies {
     // converted to PDF, the same pairing the legacy PUI uses for its financial summaries.
     implementation 'org.xhtmlrenderer:flying-saucer-pdf-openpdf:9.4.0'
 
-    implementation 'uk.gov.laa.ccms.data:data-api:0.1.0'
+    implementation 'uk.gov.laa.ccms.data:data-api:0.3.0'
 
     // 0.1.3 carries GetInvoiceData, needed to copy a rejected bill.
     implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.1.3'

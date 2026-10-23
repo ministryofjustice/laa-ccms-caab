@@ -38,6 +38,7 @@ import uk.gov.laa.ccms.caab.model.OpaInstance;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetail;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.data.model.BaseProvider;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.StatementOfAccountBills;
 import uk.gov.laa.ccms.data.model.StatementOfAccountCostLimitation;
 import uk.gov.laa.ccms.data.model.StatementOfAccountDetail;
@@ -49,7 +50,6 @@ import uk.gov.laa.ccms.data.model.TaxRateLookupDetail;
 import uk.gov.laa.ccms.data.model.TaxRateLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 import uk.gov.laa.ccms.soa.gateway.model.BillDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceDataResponse;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceDetail;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceResponse;
@@ -485,10 +485,7 @@ public class BillingService {
     final InvoiceDataResponse invoiceData =
         soaApiClient.getInvoiceData(billingId, user.getLoginId(), user.getUserType()).block();
 
-    final ClientDetail client =
-        clientService
-            .getClient(ebsCase.getClient().getReference(), user.getLoginId(), user.getUserType())
-            .block();
+    final ClientDetail client = clientService.getClient(ebsCase.getClient().getReference()).block();
     if (client == null) {
       throw new CaabApplicationException("Failed to retrieve client details");
     }

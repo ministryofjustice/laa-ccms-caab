@@ -13,7 +13,6 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetails;
@@ -78,29 +77,6 @@ public class SoaApiClient {
             e ->
                 soaApiClientErrorHandler.handleApiRetrieveError(
                     e, "Contract details", queryParams));
-  }
-
-  /**
-   * Fetches detailed client information based on a given client reference number.
-   *
-   * @param clientReferenceNumber The client's reference number.
-   * @param loginId The login identifier for the user.
-   * @param userType Type of the user (e.g., admin, user).
-   * @return A Mono wrapping the ClientDetail.
-   */
-  public Mono<ClientDetail> getClient(
-      final String clientReferenceNumber, final String loginId, final String userType) {
-    return soaApiWebClient
-        .get()
-        .uri("/clients/{clientReferenceNumber}", clientReferenceNumber)
-        .header(SOA_GATEWAY_USER_LOGIN_ID, loginId)
-        .header(SOA_GATEWAY_USER_ROLE, userType)
-        .retrieve()
-        .bodyToMono(ClientDetail.class)
-        .onErrorResume(
-            e ->
-                soaApiClientErrorHandler.handleApiRetrieveError(
-                    e, "client", "reference number", clientReferenceNumber));
   }
 
   /**

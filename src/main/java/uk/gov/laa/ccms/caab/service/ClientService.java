@@ -48,14 +48,12 @@ public class ClientService {
    * Fetches detailed client information based on a given client reference number.
    *
    * @param clientReferenceNumber The client's reference number.
-   * @param loginId The login identifier for the user.
-   * @param userType Type of the user (e.g., admin, user).
    * @return A Mono wrapping the ClientDetail.
    */
-  public Mono<ClientDetail> getClient(
-      final String clientReferenceNumber, final String loginId, final String userType) {
-    log.debug("SOA Client to get using reference: {}", clientReferenceNumber);
-    return soaApiClient.getClient(clientReferenceNumber, loginId, userType);
+  public Mono<uk.gov.laa.ccms.data.model.ClientDetail> getClient(
+      final String clientReferenceNumber) {
+    log.debug("EBS Client to get using reference: {}", clientReferenceNumber);
+    return ebsApiClient.getClient(clientReferenceNumber);
   }
 
   /**

@@ -35,8 +35,8 @@ import static uk.gov.laa.ccms.caab.constants.SubmissionConstants.SUBMISSION_SUBM
 import static uk.gov.laa.ccms.caab.controller.application.section.ApplicationSubmissionController.CHILD_LOOKUP;
 import static uk.gov.laa.ccms.caab.controller.application.section.ApplicationSubmissionController.PARENT_LOOKUP;
 import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildApplicationDetail;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildClientDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildClientDetail;
 
 import java.util.Collections;
 import java.util.Date;
@@ -232,7 +232,7 @@ class ApplicationSubmissionControllerTest {
     when(applicationService.getApplication(any())).thenReturn(Mono.just(applicationDetail));
     when(assessmentService.getAssessments(any(), any(), any()))
         .thenReturn(Mono.just(assessmentDetails));
-    when(clientService.getClient(any(), any(), any())).thenReturn(Mono.just(buildClientDetail()));
+    when(clientService.getClient(any())).thenReturn(Mono.just(buildClientDetail()));
     when(lookupService.getAssessmentSummaryAttributes(any()))
         .thenReturn(Mono.just(assessmentSummaryEntityLookupDetail));
     when(lookupService.getProceedingSubmissionMappingContext())
@@ -266,7 +266,7 @@ class ApplicationSubmissionControllerTest {
 
     verify(applicationService, times(1)).getApplication(any());
     verify(assessmentService, times(1)).getAssessments(any(), any(), any());
-    verify(clientService, times(1)).getClient(any(), any(), any());
+    verify(clientService, times(1)).getClient(any());
     verify(lookupService, times(1)).getAssessmentSummaryAttributes(PARENT_LOOKUP);
     verify(lookupService, times(1)).getAssessmentSummaryAttributes(CHILD_LOOKUP);
     verify(lookupService, times(1)).getProceedingSubmissionMappingContext();

@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.mapper;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.time.LocalDate;
@@ -289,10 +288,9 @@ class ClientDetailMapperTest {
     // null out action as it's not mapped backwards
     expectedClientFlowFormData.setAction(null);
 
-    ClientDetailDetails clientDetailDetails = buildClientDetailDetails();
+    uk.gov.laa.ccms.data.model.ClientDetail clientDetail = buildEbsClientDetail();
 
-    ClientFlowFormData clientFlowFormData =
-        clientDetailMapper.toClientFlowFormData(clientDetailDetails);
+    ClientFlowFormData clientFlowFormData = clientDetailMapper.toClientFlowFormData(clientDetail);
 
     assertThat(clientFlowFormData).isEqualTo(expectedClientFlowFormData);
   }
@@ -305,84 +303,57 @@ class ClientDetailMapperTest {
 
   @Test
   void toClientFlowFormData_monitoringDetails_null() {
-    ClientDetailDetails clientDetailDetails = buildClientDetailDetails();
-    clientDetailDetails.setDisabilityMonitoring(null);
+    uk.gov.laa.ccms.data.model.ClientDetail clientDetail = buildEbsClientDetail();
+    clientDetail.setDisabilityMonitoring(null);
 
-    ClientFlowFormData clientFlowFormData =
-        clientDetailMapper.toClientFlowFormData(clientDetailDetails);
+    ClientFlowFormData clientFlowFormData = clientDetailMapper.toClientFlowFormData(clientDetail);
 
     assertNull(clientFlowFormData.getMonitoringDetails().getDisability());
   }
 
   @Test
-  void addClientFormDataBasicDetailsFromNameDetail() {
-    ClientFormDataBasicDetails expectedClientFormDataBasicDetails =
-        new ClientFormDataBasicDetails();
-    addNameDetailToClientFormDataBasicDetails(expectedClientFormDataBasicDetails);
+  void toClientFlowFormData_address_null() {
+    uk.gov.laa.ccms.data.model.ClientDetail clientDetail = buildEbsClientDetail();
+    clientDetail.setAddress(null);
 
-    NameDetail nameDetail = buildNameDetail();
-    ClientFormDataBasicDetails clientFormDataBasicDetails = new ClientFormDataBasicDetails();
+    ClientFlowFormData clientFlowFormData = clientDetailMapper.toClientFlowFormData(clientDetail);
 
-    clientDetailMapper.addClientFormDataBasicDetailsFromNameDetail(
-        clientFormDataBasicDetails, nameDetail);
-
-    assertThat(clientFormDataBasicDetails).isEqualTo(expectedClientFormDataBasicDetails);
+    assertThat(clientFlowFormData.getAddressDetails().getVulnerableClient()).isTrue();
+    assertNull(clientFlowFormData.getAddressDetails().getPostcode());
   }
 
   @Test
-  void addClientFormDataBasicDetailsFromNameDetail_null() {
-    ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
+  void toClientFormDataBasicDetails() {
+    ClientFormDataBasicDetails clientFormDataBasicDetails =
+        clientDetailMapper.toClientFormDataBasicDetails(buildEbsClientDetail());
 
-    clientDetailMapper.addClientFormDataBasicDetailsFromNameDetail(basicDetails, null);
+    assertThat(clientFormDataBasicDetails).isEqualTo(buildClientFormDataBasicDetails());
+  }
+
+  @Test
+  void toClientFormDataBasicDetails_nameAndDateOfBirth_null() {
+    uk.gov.laa.ccms.data.model.ClientDetail clientDetail = buildEbsClientDetail();
+    clientDetail.setName(null);
+    clientDetail.setDateOfBirth(null);
+
+    ClientFormDataBasicDetails basicDetails =
+        clientDetailMapper.toClientFormDataBasicDetails(clientDetail);
 
     assertNull(basicDetails.getTitle());
     assertNull(basicDetails.getFirstName());
     assertNull(basicDetails.getMiddleNames());
     assertNull(basicDetails.getSurname());
     assertNull(basicDetails.getSurnameAtBirth());
-  }
-
-  @Test
-  void addClientFormDataBasicDetailsFromClientPersonalDetail() {
-    ClientFormDataBasicDetails expectedClientFormDataBasicDetails =
-        new ClientFormDataBasicDetails();
-    addPersonalInformationToClientFormDataBasicDetails(expectedClientFormDataBasicDetails);
-
-    ClientPersonalDetail clientPersonalDetail = buildClientPersonalDetail();
-    ClientFormDataBasicDetails clientFormDataBasicDetails = new ClientFormDataBasicDetails();
-
-    clientDetailMapper.addClientFormDataBasicDetailsFromClientPersonalDetail(
-        clientFormDataBasicDetails, clientPersonalDetail);
-
-    assertThat(clientFormDataBasicDetails).isEqualTo(expectedClientFormDataBasicDetails);
-  }
-
-  @Test
-  void addClientFormDataBasicDetailsFromClientPersonalDetail_null() {
-    ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
-
-    clientDetailMapper.addClientFormDataBasicDetailsFromClientPersonalDetail(basicDetails, null);
-
     assertNull(basicDetails.getDateOfBirth());
-    assertNull(basicDetails.getCountryOfOrigin());
-    assertNull(basicDetails.getNationalInsuranceNumber());
-    assertNull(basicDetails.getHomeOfficeNumber());
-    assertNull(basicDetails.getGender());
-    assertNull(basicDetails.getMaritalStatus());
-    assertFalse(basicDetails.getVulnerableClient());
-    assertFalse(basicDetails.getHighProfileClient());
-    assertFalse(basicDetails.getVexatiousLitigant());
-    assertFalse(basicDetails.getMentalIncapacity());
   }
 
   @Test
   void testToClientFormDataContactDetails() {
     ClientFormDataContactDetails expectedClientFormDataContactDetails =
         buildClientFormDataContactDetails();
-    ContactDetail contactDetail = buildContactDetail();
 
     ClientFormDataContactDetails clientFormDataContactDetails =
-        clientDetailMapper.toClientFormDataContactDetails(contactDetail);
+        clientDetailMapper.toClientFormDataContactDetails(buildEbsContactDetails());
 
     assertThat(clientFormDataContactDetails).isEqualTo(expectedClientFormDataContactDetails);
   }
@@ -398,10 +369,9 @@ class ClientDetailMapperTest {
   void testToClientFormDataAddressDetails() {
     ClientFormDataAddressDetails expectedClientFormDataAddressDetails =
         buildClientFormDataAddressDetails();
-    AddressDetail addressDetail = buildAddressDetail();
 
     ClientFormDataAddressDetails clientFormDataAddressDetails =
-        clientDetailMapper.toClientFormDataAddressDetails(addressDetail);
+        clientDetailMapper.toClientFormDataAddressDetails(buildEbsAddressDetail());
 
     assertThat(clientFormDataAddressDetails).isEqualTo(expectedClientFormDataAddressDetails);
   }
@@ -417,6 +387,17 @@ class ClientDetailMapperTest {
   void testToClientFlowFormData_null() {
     ClientFlowFormData clientFlowFormData = clientDetailMapper.toClientFlowFormData(null);
     assertNull(clientFlowFormData);
+  }
+
+  @Test
+  void mapComponentDateFromLocalDate() {
+    assertThat(clientDetailMapper.mapComponentDateFromLocalDate(LocalDate.of(2000, 6, 10)))
+        .isEqualTo(dateofBirth);
+  }
+
+  @Test
+  void mapComponentDateFromLocalDate_null() {
+    assertNull(clientDetailMapper.mapComponentDateFromLocalDate(null));
   }
 
   // SOA Helper methods
@@ -496,6 +477,61 @@ class ClientDetailMapperTest {
     disabilities.add(disability);
     disabilityMonitoring.setDisabilityType(disabilities);
     return disabilityMonitoring;
+  }
+
+  // EBS Helper methods
+
+  private uk.gov.laa.ccms.data.model.ClientDetail buildEbsClientDetail() {
+    return new uk.gov.laa.ccms.data.model.ClientDetail()
+        .name(
+            new uk.gov.laa.ccms.data.model.NameDetail()
+                .title(title)
+                .firstName(firstname)
+                .middleName(middleNames)
+                .surname(surname)
+                .surnameAtBirth(surnameAtBirth)
+                .fullName(firstname + " " + middleNames + " " + surname))
+        .dateOfBirth(
+            LocalDate.of(Integer.parseInt(year), Integer.parseInt(month), Integer.parseInt(day)))
+        .countryOfOriginCode(countryOfOrigin)
+        .gender(gender)
+        .maritalStatus(maritalStatus)
+        .niNumber(nationalInsuranceNumber)
+        .homeOfficeNumber(homeOfficeNumber)
+        .vulnerableClient(clientStatuses)
+        .highProfileClient(clientStatuses)
+        .vexatiousLitigant(clientStatuses)
+        .mentalCapacityInd(clientStatuses)
+        .contacts(buildEbsContactDetails())
+        .address(buildEbsAddressDetail())
+        .noFixedAbode(noFixedAbode)
+        .disabilityMonitoring(
+            new uk.gov.laa.ccms.data.model.DisabilityMonitoringDetail()
+                .addDisabilityTypeItem(disability))
+        .ethnicMonitoring(ethnicOrigin)
+        .specialConsiderations(specialConsiderations);
+  }
+
+  private uk.gov.laa.ccms.data.model.ContactDetails buildEbsContactDetails() {
+    return new uk.gov.laa.ccms.data.model.ContactDetails()
+        .telephoneHome(telephoneHome)
+        .telephoneWork(telephoneWork)
+        .mobileNumber(telephoneMobile)
+        .emailAddress(emailAddress)
+        .password(password)
+        .passwordReminder(passwordReminder)
+        .correspondenceLanguage(correspondenceLanguage)
+        .correspondenceMethod(correspondenceMethod);
+  }
+
+  private uk.gov.laa.ccms.data.model.AddressDetail buildEbsAddressDetail() {
+    return new uk.gov.laa.ccms.data.model.AddressDetail()
+        .country(country)
+        .house(houseNameNumber)
+        .postalCode(postcode)
+        .addressLine1(addressLine1)
+        .addressLine2(addressLine2)
+        .city(cityTown);
   }
 
   // CAAB Helper methods
