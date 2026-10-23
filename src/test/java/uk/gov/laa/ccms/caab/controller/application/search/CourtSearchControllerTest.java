@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
+import org.springframework.validation.BindingResult;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
 import uk.gov.laa.ccms.caab.bean.validators.application.CourtSearchValidator;
@@ -97,6 +98,37 @@ class CourtSearchControllerTest {
     assertThat(modelAndView).isNotNull();
     assertThat(modelAndView.getViewName()).isEqualTo("application/court-search");
     assertThat(modelAndView.getModel().get("proceedingIndex")).isEqualTo(0);
+  }
+
+  @Test
+  @DisplayName(
+      "POST /court/search rejects characters outside the allowed court search character set")
+  public void courtSearchPostRejectsInvalidCharacters() throws Exception {
+    var modelAndView =
+        mockMvc
+            .perform(
+                post("/court/search")
+                    .param("proceedingIndex", "0")
+                    .param("courtCode", "A@B")
+                    .param("courtName", "A@B"))
+            .andReturn()
+            .getModelAndView();
+
+    assertThat(modelAndView).isNotNull();
+    assertThat(modelAndView.getViewName()).isEqualTo("application/court-search");
+    assertThat(modelAndView.getModel().get("proceedingIndex")).isEqualTo(0);
+    assertThat(
+            modelAndView
+                .getModel()
+                .containsKey("org.springframework.validation.BindingResult.courtSearchCriteria"))
+        .isTrue();
+    BindingResult bindingResult =
+        (BindingResult)
+            modelAndView
+                .getModel()
+                .get("org.springframework.validation.BindingResult.courtSearchCriteria");
+    assertThat(bindingResult.getFieldError("courtCode")).isNotNull();
+    assertThat(bindingResult.getFieldError("courtCode").getCode()).isEqualTo("invalid.character");
   }
 
   @Test
