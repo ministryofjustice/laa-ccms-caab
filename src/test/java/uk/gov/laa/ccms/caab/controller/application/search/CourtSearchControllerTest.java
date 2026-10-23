@@ -2,11 +2,13 @@ package uk.gov.laa.ccms.caab.controller.application.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_RESULTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COURT;
 
 import jakarta.servlet.http.HttpSession;
@@ -24,6 +26,7 @@ import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.validation.BindingResult;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
+import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.CourtSearchValidator;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -129,6 +132,46 @@ class CourtSearchControllerTest {
                 .get("org.springframework.validation.BindingResult.courtSearchCriteria");
     assertThat(bindingResult.getFieldError("courtCode")).isNotNull();
     assertThat(bindingResult.getFieldError("courtCode").getCode()).isEqualTo("invalid.character");
+  }
+
+  @Test
+  @DisplayName("POST /court/search clears the stale court name when the code changes")
+  public void courtSearchPostClearsStaleNameWhenCodeChanges() throws Exception {
+    ProceedingOutcomeFormData proceedingOutcome = new ProceedingOutcomeFormData();
+    proceedingOutcome.setCourtCode("CT1");
+    proceedingOutcome.setCourtName("Test Court");
+    CommonLookupDetail emptyResult = new CommonLookupDetail().content(Collections.emptyList());
+
+    when(lookupService.getCourts("CT2", "")).thenReturn(Mono.just(emptyResult));
+
+    mockMvc.perform(
+        post("/court/search")
+            .param("proceedingIndex", "0")
+            .param("courtCode", "CT2")
+            .param("courtName", "Test Court")
+            .sessionAttr(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome));
+
+    verify(lookupService).getCourts("CT2", "");
+  }
+
+  @Test
+  @DisplayName("POST /court/search clears the stale court code when the name changes")
+  public void courtSearchPostClearsStaleCodeWhenNameChanges() throws Exception {
+    ProceedingOutcomeFormData proceedingOutcome = new ProceedingOutcomeFormData();
+    proceedingOutcome.setCourtCode("CT1");
+    proceedingOutcome.setCourtName("Test Court");
+    CommonLookupDetail emptyResult = new CommonLookupDetail().content(Collections.emptyList());
+
+    when(lookupService.getCourts("", "New Court")).thenReturn(Mono.just(emptyResult));
+
+    mockMvc.perform(
+        post("/court/search")
+            .param("proceedingIndex", "0")
+            .param("courtCode", "CT1")
+            .param("courtName", "New Court")
+            .sessionAttr(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome));
+
+    verify(lookupService).getCourts("", "New Court");
   }
 
   @Test
