@@ -11,13 +11,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.LiablePartiesDisplayMapper;
 import uk.gov.laa.ccms.caab.model.BaseAwardDetail;
-import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
-import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
@@ -94,7 +94,7 @@ public class CaseOutcomeService {
         .orElseThrow(
             () -> new CaabApplicationException("Failed to retrieve award parties or lookup data"));
   }
-  
+
   /**
    * Loads the case outcome for Outcome and Awards, creating a bootstrap record when one does not
    * already exist.
@@ -142,7 +142,12 @@ public class CaseOutcomeService {
                 loginId,
                 sanitiseAwardBootstrapCaseOutcome(bootstrapCaseOutcome)),
             caseReferenceNumber);
-    caabApiClient.createFinancialAward(caseOutcomeId, loginId, financialAward).block();
+    final String id =
+        caabApiClient.createFinancialAward(caseOutcomeId, loginId, financialAward).block();
+    if (id == null) {
+      throw new IllegalStateException("No id returned for the newly created financial award");
+    }
+    return Integer.valueOf(id);
   }
 
   /** Updates a financial award without replacing the owning case outcome aggregate. */
@@ -189,7 +194,7 @@ public class CaseOutcomeService {
   }
 
   /** Creates a cost award without replacing the owning case outcome aggregate. */
-  public void createCostAward(
+  public Integer createCostAward(
       final String caseReferenceNumber,
       final Integer providerId,
       final CostAwardDetail costAward,
@@ -203,7 +208,11 @@ public class CaseOutcomeService {
                 loginId,
                 sanitiseAwardBootstrapCaseOutcome(bootstrapCaseOutcome)),
             caseReferenceNumber);
-    caabApiClient.createCostAward(caseOutcomeId, loginId, costAward).block();
+    final String id = caabApiClient.createCostAward(caseOutcomeId, loginId, costAward).block();
+    if (id == null) {
+      throw new IllegalStateException("No id returned for the newly created cost award");
+    }
+    return Integer.valueOf(id);
   }
 
   /** Updates a cost award without replacing the owning case outcome aggregate. */

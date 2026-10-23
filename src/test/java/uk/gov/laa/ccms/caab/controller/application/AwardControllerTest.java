@@ -773,7 +773,8 @@ class AwardControllerTest {
 
     @Test
     void postWithoutIdCreatesFinancialAward() {
-      when(caseOutcomeService.createFinancialAward(any(), any(), any(), any())).thenReturn(7);
+      when(caseOutcomeService.createFinancialAward(any(), any(), any(), any(), any()))
+          .thenReturn(7);
       assertThat(mockMvc.perform(validPost()))
           .hasRedirectedUrl("/case/outcome-and-awards/financial-award/7/liable-parties");
 
