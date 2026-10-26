@@ -131,9 +131,15 @@ class DelegatedFunctionsValidationRenderTest {
     verifyNoInteractions(applicationService);
   }
 
-  @Test
-  void errorSummaryLinkTargetsTheRenderedDateInput() throws Exception {
-    final MvcResult result = invalidSubmission("/application/delegated-functions", "abc123");
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "/application/delegated-functions",
+        "/amendments/delegated-functions",
+        "/amendments/edit-delegated-functions"
+      })
+  void errorSummaryLinkTargetsTheRenderedDateInput(String path) throws Exception {
+    final MvcResult result = invalidSubmission(path, "abc123");
     final String html = result.getResponse().getContentAsString();
     final String summary = summary(html);
     final String target = capture("<a\\b[^>]*href=\"#([^\"]+)\"", summary);
