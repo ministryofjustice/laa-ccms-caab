@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.util.ThymeleafTestUtils.createViewResolver;
 
 import java.util.List;
 import java.util.Map;
@@ -15,8 +16,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
-import org.springframework.context.support.ResourceBundleMessageSource;
-import org.springframework.mock.web.MockServletContext;
 import org.springframework.stereotype.Controller;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.ui.Model;
@@ -24,12 +23,7 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.context.support.GenericWebApplicationContext;
 import org.springframework.web.util.HtmlUtils;
-import org.thymeleaf.spring6.SpringTemplateEngine;
-import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
-import org.thymeleaf.spring6.view.ThymeleafViewResolver;
-import org.thymeleaf.templatemode.TemplateMode;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataDeceasedDetails;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
@@ -41,8 +35,6 @@ import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.springboot.dialect.GovUkDialect;
-import uk.gov.laa.springboot.dialect.MojCustomDialect;
 
 class DateValidationSummaryRenderTest {
 
@@ -50,27 +42,8 @@ class DateValidationSummaryRenderTest {
 
   @BeforeEach
   void setup() {
-    final GenericWebApplicationContext context =
-        new GenericWebApplicationContext(new MockServletContext());
-    context.refresh();
-    final SpringResourceTemplateResolver resolver = new SpringResourceTemplateResolver();
-    resolver.setApplicationContext(context);
-    resolver.setPrefix("classpath:/templates/");
-    resolver.setSuffix(".html");
-    resolver.setTemplateMode(TemplateMode.HTML);
-    resolver.setCharacterEncoding("UTF-8");
-    final ResourceBundleMessageSource messages = new ResourceBundleMessageSource();
-    messages.setBasename("messages");
-    messages.setDefaultEncoding("UTF-8");
-    final SpringTemplateEngine engine = new SpringTemplateEngine();
-    engine.setTemplateResolver(resolver);
-    engine.setTemplateEngineMessageSource(messages);
-    engine.addDialect(new GovUkDialect());
-    engine.addDialect(new MojCustomDialect());
-    final ThymeleafViewResolver views = new ThymeleafViewResolver();
-    views.setTemplateEngine(engine);
-    views.setCharacterEncoding("UTF-8");
-    mockMvc = standaloneSetup(new HarnessController()).setViewResolvers(views).build();
+    mockMvc =
+        standaloneSetup(new HarnessController()).setViewResolvers(createViewResolver()).build();
   }
 
   @ParameterizedTest

@@ -14,6 +14,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.util.ConversionServiceUtils.getConversionService;
+import static uk.gov.laa.ccms.caab.util.ThymeleafTestUtils.createViewResolver;
 
 import java.util.Date;
 import java.util.List;
@@ -25,19 +26,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.mock.web.MockHttpSession;
-import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-import org.springframework.web.context.support.GenericWebApplicationContext;
 import org.springframework.web.util.HtmlUtils;
-import org.thymeleaf.spring6.SpringTemplateEngine;
-import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
-import org.thymeleaf.templatemode.TemplateMode;
 import uk.gov.laa.ccms.caab.advice.GlobalBinderAdvice;
 import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.validators.BaselineTextValidator;
@@ -49,8 +44,6 @@ import uk.gov.laa.ccms.caab.model.DevolvedPowersDetail;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.springboot.dialect.GovUkDialect;
-import uk.gov.laa.springboot.dialect.MojCustomDialect;
 
 class DelegatedFunctionsValidationRenderTest {
 
@@ -70,28 +63,7 @@ class DelegatedFunctionsValidationRenderTest {
     final DelegatedFunctionsController controller =
         new DelegatedFunctionsController(new DelegatedFunctionsValidator(), applicationService);
 
-    final GenericWebApplicationContext context =
-        new GenericWebApplicationContext(new MockServletContext());
-    context.refresh();
-    final SpringResourceTemplateResolver resolver = new SpringResourceTemplateResolver();
-    resolver.setApplicationContext(context);
-    resolver.setPrefix("classpath:/templates/");
-    resolver.setSuffix(".html");
-    resolver.setTemplateMode(TemplateMode.HTML);
-    resolver.setCharacterEncoding("UTF-8");
-
-    final ResourceBundleMessageSource messages = new ResourceBundleMessageSource();
-    messages.setBasename("messages");
-    messages.setDefaultEncoding("UTF-8");
-    final SpringTemplateEngine engine = new SpringTemplateEngine();
-    engine.setTemplateResolver(resolver);
-    engine.setTemplateEngineMessageSource(messages);
-    engine.addDialect(new GovUkDialect());
-    engine.addDialect(new MojCustomDialect());
-
-    final ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
-    viewResolver.setTemplateEngine(engine);
-    viewResolver.setCharacterEncoding("UTF-8");
+    final ThymeleafViewResolver viewResolver = createViewResolver();
     viewResolver.setStaticVariables(
         Map.of(
             "cspNonce", "test-nonce",
