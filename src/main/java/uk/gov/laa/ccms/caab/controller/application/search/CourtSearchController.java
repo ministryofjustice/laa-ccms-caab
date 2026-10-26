@@ -70,7 +70,7 @@ public class CourtSearchController {
       final HttpSession session,
       Model model) {
 
-    session.setAttribute(baselineAttributeKey(proceedingIndex), copyCriteria(searchCriteria));
+    getOrCreateBaseline(session, proceedingIndex, searchCriteria);
     model.addAttribute("proceedingIndex", proceedingIndex);
     return "application/court-search";
   }
@@ -204,16 +204,25 @@ public class CourtSearchController {
 
   private CourtSearchCriteria resolveBaselineCriteria(
       final HttpSession session, final int proceedingIndex) {
-    final CourtSearchCriteria baselineCriteria =
-        (CourtSearchCriteria) session.getAttribute(baselineAttributeKey(proceedingIndex));
+    return getOrCreateBaseline(session, proceedingIndex, null);
+  }
+
+  private CourtSearchCriteria getOrCreateBaseline(
+      final HttpSession session,
+      final int proceedingIndex,
+      final CourtSearchCriteria searchCriteria) {
+    final String key = baselineAttributeKey(proceedingIndex);
+    CourtSearchCriteria baselineCriteria = (CourtSearchCriteria) session.getAttribute(key);
     if (baselineCriteria != null) {
       return baselineCriteria;
     }
 
-    CourtSearchCriteria result =
-        copyCriteria((CourtSearchCriteria) session.getAttribute(COURT_SEARCH_CRITERIA));
     final ProceedingOutcomeFormData proceedingOutcomeFormData =
         (ProceedingOutcomeFormData) session.getAttribute(PROCEEDING_OUTCOME_FORM_DATA);
+    CourtSearchCriteria result =
+        searchCriteria == null
+            ? copyCriteria((CourtSearchCriteria) session.getAttribute(COURT_SEARCH_CRITERIA))
+            : copyCriteria(searchCriteria);
     if (result == null || bothMissing(result)) {
       result = new CourtSearchCriteria();
     }
@@ -222,6 +231,8 @@ public class CourtSearchController {
       result.setCourtCode(proceedingOutcomeFormData.getCourtCode());
       result.setCourtName(proceedingOutcomeFormData.getCourtName());
     }
+
+    session.setAttribute(key, result);
     return result;
   }
 

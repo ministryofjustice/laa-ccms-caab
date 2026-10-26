@@ -211,6 +211,27 @@ class CourtSearchControllerTest {
   }
 
   @Test
+  @DisplayName("GET /court/search preserves the original baseline when returning to refine")
+  public void getCourtSearchPreservesOriginalBaselineWhenReturningToRefine() throws Exception {
+    MockHttpSession session = new MockHttpSession();
+    CourtSearchCriteria baseline = new CourtSearchCriteria();
+    baseline.setCourtCode("CT1");
+    baseline.setCourtName("Original Court");
+    session.setAttribute(COURT_SEARCH_BASELINE + ":0", baseline);
+
+    mockMvc.perform(get("/court/search").param("proceedingIndex", "0").session(session));
+
+    assertThat(
+            ((CourtSearchCriteria) session.getAttribute(COURT_SEARCH_BASELINE + ":0"))
+                .getCourtCode())
+        .isEqualTo("CT1");
+    assertThat(
+            ((CourtSearchCriteria) session.getAttribute(COURT_SEARCH_BASELINE + ":0"))
+                .getCourtName())
+        .isEqualTo("Original Court");
+  }
+
+  @Test
   @DisplayName("POST /court/search preserves the original baseline during validation retries")
   public void courtSearchPostPreservesOriginalBaselineOnValidationFailure() throws Exception {
     ProceedingOutcomeFormData proceedingOutcome = new ProceedingOutcomeFormData();
