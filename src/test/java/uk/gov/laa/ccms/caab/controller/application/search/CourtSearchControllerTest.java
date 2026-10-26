@@ -3,12 +3,12 @@ package uk.gov.laa.ccms.caab.controller.application.search;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_BASELINE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COURT;
@@ -28,6 +28,7 @@ import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.validation.BindingResult;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
+import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.CourtSearchValidator;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -177,33 +178,37 @@ class CourtSearchControllerTest {
   }
 
   @Test
-  @DisplayName("POST /court/search refreshes the stale-filter baseline after each search")
-  public void courtSearchPostRefreshesBaselineAfterEachSearch() throws Exception {
+  @DisplayName("POST /court/search scopes the stale-filter baseline to the originating form")
+  public void courtSearchPostScopesBaselineToOriginatingForm() throws Exception {
     ProceedingOutcomeFormData proceedingOutcome = new ProceedingOutcomeFormData();
     proceedingOutcome.setCourtCode("CT1");
     proceedingOutcome.setCourtName("Test Court");
     MockHttpSession session = new MockHttpSession();
     session.setAttribute(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome);
 
-    when(lookupService.getCourts("CT", ""))
+    CourtSearchCriteria firstFormBaseline = new CourtSearchCriteria();
+    firstFormBaseline.setCourtCode("CT1");
+    firstFormBaseline.setCourtName("First Court");
+    session.setAttribute(COURT_SEARCH_BASELINE + ":tab-a", firstFormBaseline);
+
+    CourtSearchCriteria secondFormBaseline = new CourtSearchCriteria();
+    secondFormBaseline.setCourtCode("CT2");
+    secondFormBaseline.setCourtName("Second Court");
+    session.setAttribute(COURT_SEARCH_BASELINE + ":tab-b", secondFormBaseline);
+
+    when(lookupService.getCourts("CT2", ""))
         .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
 
     mockMvc.perform(
         post("/court/search")
             .param("proceedingIndex", "0")
-            .param("courtCode", "CT")
-            .param("courtName", "Test Court")
+            .param("courtCode", "CT2")
+            .param("courtName", "First Court")
+            .param("searchToken", "tab-a")
             .session(session));
 
-    mockMvc.perform(
-        post("/court/search")
-            .param("proceedingIndex", "0")
-            .param("courtCode", "CT")
-            .param("courtName", "Test Court")
-            .session(session));
-
-    verify(lookupService, times(2)).getCourts("CT", "");
-    verify(lookupService, never()).getCourts("", "Test Court");
+    verify(lookupService).getCourts("CT2", "");
+    verify(lookupService, never()).getCourts("", "First Court");
   }
 
   @Test
