@@ -14,6 +14,9 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.thymeleaf.context.IContext;
 import org.thymeleaf.spring6.SpringTemplateEngine;
@@ -186,5 +189,36 @@ class BillingSummaryPdfServiceTest {
 
     assertThat(pdf).isNotEmpty();
     assertThat(new String(pdf, 0, 5, StandardCharsets.ISO_8859_1)).isEqualTo("%PDF-");
+  }
+
+  @Test
+  void completeHistoricalTotalsAndOptionalTimeAreUsable() {
+    assertThat(BillingSummaryPdfService.hasUsableHistoricalSummary(completedAssessment())).isTrue();
+  }
+
+  @ParameterizedTest
+  @CsvSource({"BILL_SUBMITTED_TOTAL_AMT,100.01", "BILL_SUBMITTED_TOTAL_VAT,20.01"})
+  void historicalAvailabilityRequiresReconciledSubmittedTotals(String name, String value) {
+    AssessmentDetail assessment = completedAssessment();
+    assessment.getEntityTypes().getFirst().getEntities().getFirst().getAttributes().stream()
+        .filter(attribute -> attribute.getName().equals(name))
+        .findFirst()
+        .orElseThrow()
+        .setValue(value);
+
+    assertThat(BillingSummaryPdfService.hasUsableHistoricalSummary(assessment)).isFalse();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"01:60", "01:00:01", "-1:00", "invalid"})
+  void historicalAvailabilityRejectsInvalidOrLossyTime(String value) {
+    AssessmentDetail assessment = completedAssessment();
+    assessment.getEntityTypes().get(1).getEntities().getFirst().getAttributes().stream()
+        .filter(attribute -> attribute.getName().equals("PROFIT_COST_TIME"))
+        .findFirst()
+        .orElseThrow()
+        .setValue(value);
+
+    assertThat(BillingSummaryPdfService.hasUsableHistoricalSummary(assessment)).isFalse();
   }
 }
