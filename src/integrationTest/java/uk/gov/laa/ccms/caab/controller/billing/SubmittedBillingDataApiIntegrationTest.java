@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.controller.billing;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
@@ -20,11 +22,13 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.http.Fault;
+import com.github.tomakehurst.wiremock.http.RequestMethod;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.lowagie.text.pdf.PdfReader;
 import com.lowagie.text.pdf.parser.PdfTextExtractor;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.json.JSONArray;
@@ -114,9 +118,11 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
 
   private MockMvc mvc;
   private MockHttpSession session;
+  private Set<String> requestedAssessmentPaths;
 
   @BeforeEach
   void setup() throws Exception {
+    requestedAssessmentPaths = new HashSet<>();
     lenient().when(caab.getBill(any(), any())).thenReturn(Mono.empty());
     lenient()
         .when(caab.getPaymentsOnAccount(any(), any()))
@@ -176,6 +182,17 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
     assertThat(mockingDetails(caab).getInvocations())
         .allMatch(i -> Set.of("getBill", "getPaymentsOnAccount").contains(i.getMethod().getName()));
     verifyNoInteractions(assessments, mapper, clients, amendments);
+    assertThat(data.findAll(anyRequestedFor(anyUrl())))
+        .as("only statement and selected-invoice GET requests are allowed")
+        .allSatisfy(
+            request -> {
+              assertThat(request.getMethod()).isEqualTo(RequestMethod.GET);
+              assertThat(
+                      request.getUrl().matches("/statementofaccount(?:\\?.*)?")
+                          || requestedAssessmentPaths.contains(request.getUrl()))
+                  .as("unexpected Data API request %s", request.getUrl())
+                  .isTrue();
+            });
   }
 
   private String endpoint(long id) {
@@ -183,6 +200,13 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
   }
 
   private void stub(JSONObject body) {
+    List<Long> attributeIds = new ArrayList<>();
+    for (Object item : body.getJSONArray("instances")) {
+      for (Object raw : ((JSONObject) item).getJSONArray("attributes")) {
+        attributeIds.add(((JSONObject) raw).getLong("id"));
+      }
+    }
+    assertThat(attributeIds).as("synthetic assessment attribute IDs").doesNotHaveDuplicates();
     data.stubFor(
         get(urlPathEqualTo(endpoint(body.getLong("billingIncidentId"))))
             .willReturn(okJson(body.toString())));
@@ -216,6 +240,12 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
   }
 
   private MvcResult request(String context, String suffix, String id) throws Exception {
+    requestedAssessmentPaths.add(
+        "/cases/"
+            + ((ApplicationDetail) session.getAttribute(CASE)).getCaseReferenceNumber()
+            + "/invoices/"
+            + id
+            + "/assessment");
     return mvc.perform(
             MockMvcRequestBuilders.get("/case/billing/" + context + suffix)
                 .param("billing-id", id)
@@ -223,10 +253,18 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
         .andReturn();
   }
 
-  private void selectedRead(long id) {
-    data.verify(
-        1,
-        getRequestedFor(urlPathEqualTo(endpoint(id))).withHeader("Authorization", matching(".+")));
+  private void selectedRead(long... ids) {
+    List<String> paths = new ArrayList<>();
+    for (long id : ids) {
+      paths.add(endpoint(id));
+      data.verify(
+          1,
+          getRequestedFor(urlPathEqualTo(endpoint(id)))
+              .withHeader("Authorization", matching(".+")));
+    }
+    assertThat(data.findAll(getRequestedFor(urlPathMatching("/cases/.*/invoices/.*/assessment"))))
+        .extracting(request -> request.getUrl())
+        .containsExactlyInAnyOrderElementsOf(paths);
     verifyNoInteractions(soa);
   }
 
@@ -308,8 +346,7 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
     String second = pdf(request(context, "/summary", "777"), context, "200.00", "240.00", "00:00");
     assertThat(first).contains("01-JAN-2026").doesNotContain("999.00", "240.00");
     assertThat(second).doesNotContain("999.00", "120.00");
-    selectedRead(555);
-    selectedRead(777);
+    selectedRead(555, 777);
   }
 
   @ParameterizedTest
@@ -434,11 +471,11 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
       throws Exception {
     String type = context.equals("poa") ? "Solicitor POA" : "Solicitor Final";
     statement(type, "Submitted");
-    JSONObject body = invoice(555, type, "110.00", "22.00");
+    JSONObject body = invoice(555, type, "82.50", "16.50");
     JSONObject claim = line(body);
     claim.put("entityName", entityType);
-    put(claim, "DISB_ITEM", "1");
-    put(claim, "DISB_RATE", "100.00");
+    put(claim, "DISB_ITEM", "3");
+    put(claim, "DISB_RATE", "25.00");
     put(claim, "DISB_UPLIFT", "10.00");
     put(claim, "DISB_TIME", "01:00:00");
     String prefix = entityType.substring(0, entityType.length() - "_BILL_LINE".length());
@@ -447,8 +484,8 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
       attribute.put("name", attribute.getString("name").replace("DISB_", prefix + "_"));
     }
     stub(body);
-    String text = pdf(request(context, "/summary", "555"), context, "110.00", "132.00", "01:00");
-    assertThat(text).contains("01-JAN-2026", "100.00", "10.00");
+    String text = pdf(request(context, "/summary", "555"), context, "82.50", "99.00", "01:00");
+    assertThat(text).contains("01-JAN-2026Disbursement01:00325.0010.0082.5020.0099.00");
     selectedRead(555);
   }
 
@@ -578,10 +615,25 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
     JSONObject description = put(global(body), "BILL_DESCRIPTION", null);
     description.put(source, "Chosen description");
     if (source.equals("responseValue")) description.put("responseText", "Wrong description");
+    if (!source.equals("extendedValue")) {
+      description.put("extendedValue", "Wrong extended description");
+    }
     stub(body);
     assertThat(pdf(request("bill", "/summary", "555"), "bill", "100.00", "120.00", "00:00"))
         .contains("Chosendescription")
-        .doesNotContain("Wrongdescription");
+        .doesNotContain("Wrongdescription", "Wrongextendeddescription");
+    selectedRead(555);
+  }
+
+  @ParameterizedTest
+  @CsvSource({"BILL_SUBMITTED_TOTAL_AMT,100.00", "DISB_DATE,01-01-2026"})
+  void invalidMandatoryValuesCannotUseValidLowerPrecedenceFallbacks(String name, String fallback)
+      throws Exception {
+    JSONObject body = invoice(555, "Solicitor Final", "100.00", "20.00");
+    JSONObject target = name.startsWith("BILL_") ? global(body) : line(body);
+    put(target, name, "invalid").put("responseText", fallback).put("extendedValue", fallback);
+    stub(body);
+    unavailable(request("bill", "/summary", "555"), "bill", "Submitted");
     selectedRead(555);
   }
 
@@ -652,8 +704,10 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
 
   private JSONObject put(JSONObject instance, String name, String value) {
     JSONArray attributes = instance.getJSONArray("attributes");
+    long nextId = instance.getLong("id") * 100 + 1;
     for (Object item : attributes) {
       JSONObject attribute = (JSONObject) item;
+      nextId = Math.max(nextId, attribute.getLong("id") + 1);
       if (attribute.getString("name").equals(name)) {
         attribute.put("responseValue", value == null ? JSONObject.NULL : value);
         return attribute;
@@ -661,7 +715,7 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
     }
     JSONObject attribute =
         new JSONObject()
-            .put("id", instance.getLong("id") * 100 + attributes.length() + 1)
+            .put("id", nextId)
             .put("name", name)
             .put("responseType", "text")
             .put("responseValue", value == null ? JSONObject.NULL : value)
