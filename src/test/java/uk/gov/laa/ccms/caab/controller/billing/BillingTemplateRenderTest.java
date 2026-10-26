@@ -7,9 +7,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.MatchResult;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -231,6 +235,88 @@ class BillingTemplateRenderTest {
     model.put("canMaintainBill", canMaintainBill);
     model.put("draftInProgress", false);
     return model;
+  }
+
+  private List<String> elements(final String html, final String tag) {
+    return Pattern.compile("<" + tag + "\\b[^>]*>.*?</" + tag + ">", Pattern.DOTALL)
+        .matcher(html)
+        .results()
+        .map(MatchResult::group)
+        .toList();
+  }
+
+  private String text(final String html) {
+    return html.replaceAll("<[^>]*>", "").replaceAll("\\s+", " ").strip();
+  }
+
+  private String billsAndPoaTable(final Map<String, Object> model) {
+    final List<String> tables =
+        elements(render("application/billing/case-statement-of-account", model), "table").stream()
+            .filter(table -> table.contains("id=\"bills-and-poa-table\""))
+            .toList();
+    assertThat(tables).hasSize(1);
+    return tables.get(0);
+  }
+
+  @Test
+  @DisplayName("Bills and POA table has separate net and grand total column headers")
+  void statementShowsNetAndGrandTotalHeaders() {
+    final List<String> headers = elements(billsAndPoaTable(statementModel(true)), "th");
+
+    assertThat(headers)
+        .extracting(this::text)
+        .containsExactly(
+            "Type",
+            "Status",
+            "Date submitted",
+            "Date authorised",
+            "Net total",
+            "Grand total",
+            "Action");
+    assertThat(headers).allSatisfy(header -> assertThat(header).contains("scope=\"col\""));
+    assertThat(headers.subList(4, 6))
+        .allSatisfy(header -> assertThat(header).contains("govuk-table__header--numeric"));
+  }
+
+  @Test
+  @DisplayName("Empty bills and POA table spans all seven columns without financial values")
+  void statementEmptyStateSpansNetAndGrandTotalColumns() {
+    final Map<String, Object> model = statementModel(true);
+    model.put("billsAndPoaPage", new PageImpl<BillPoaRow>(List.of()));
+
+    final String table = billsAndPoaTable(model);
+    final List<String> body = elements(table, "tbody");
+    assertThat(body).hasSize(1);
+    assertThat(elements(body.get(0), "tr")).hasSize(1);
+    final List<String> cells = elements(body.get(0), "td");
+    assertThat(cells).hasSize(1);
+    assertThat(text(cells.get(0))).isEqualTo("None");
+    assertThat(cells.get(0)).contains("colspan=\"7\"");
+    assertThat(body.get(0)).doesNotContain("\u00a3");
+  }
+
+  @ParameterizedTest(name = "{0} draft leaves both totals blank")
+  @ValueSource(strings = {"Bill", "POA"})
+  @DisplayName("Draft bills and POAs leave both totals blank even with a stored amount")
+  void statementDraftLeavesNetAndGrandTotalsBlank(final String type) {
+    final Map<String, Object> model = statementModel(true);
+    model.put(
+        "billsAndPoaPage",
+        new PageImpl<>(
+            List.of(new BillPoaRow(type, "Draft", null, null, new BigDecimal("123.45"), true))));
+
+    final List<String> body = elements(billsAndPoaTable(model), "tbody");
+    assertThat(body).hasSize(1);
+    final List<String> rows = elements(body.get(0), "tr");
+    assertThat(rows).hasSize(1);
+    final List<String> cells = elements(rows.get(0), "td");
+    assertThat(text(cells.get(0))).isEqualTo(type);
+    assertThat(text(cells.get(1))).isEqualTo("Draft");
+    final String editUrl = "/case/billing/" + type.toLowerCase(Locale.UK);
+    assertThat(cells.get(0)).contains("href=\"" + editUrl + "\"");
+    assertThat(rows.get(0)).contains("href=\"" + editUrl + "/remove\"");
+    assertThat(cells).hasSize(7);
+    assertThat(cells.subList(4, 6)).allSatisfy(cell -> assertThat(text(cell)).isEmpty());
   }
 
   @Test
