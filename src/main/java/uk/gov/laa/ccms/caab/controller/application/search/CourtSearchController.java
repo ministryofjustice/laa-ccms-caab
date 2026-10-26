@@ -217,14 +217,16 @@ public class CourtSearchController {
 
   @SuppressWarnings("unchecked")
   private Map<String, CourtSearchCriteria> getBaselineMap(final HttpSession session) {
-    Object baselines = session.getAttribute(COURT_SEARCH_BASELINES);
-    if (baselines instanceof Map<?, ?> map) {
-      return (Map<String, CourtSearchCriteria>) map;
-    }
+    synchronized (session) {
+      Object baselines = session.getAttribute(COURT_SEARCH_BASELINES);
+      if (baselines instanceof Map<?, ?> map) {
+        return (Map<String, CourtSearchCriteria>) map;
+      }
 
-    Map<String, CourtSearchCriteria> baselineMap = new LinkedHashMap<>();
-    session.setAttribute(COURT_SEARCH_BASELINES, baselineMap);
-    return baselineMap;
+      Map<String, CourtSearchCriteria> baselineMap = new LinkedHashMap<>();
+      session.setAttribute(COURT_SEARCH_BASELINES, baselineMap);
+      return baselineMap;
+    }
   }
 
   private void storeBaseline(
@@ -233,16 +235,18 @@ public class CourtSearchController {
       return;
     }
 
-    final CourtSearchCriteria storedCriteria = copyCriteria(criteria);
-    Map<String, CourtSearchCriteria> baselines = getBaselineMap(session);
-    baselines.put(searchToken, storedCriteria);
-    session.setAttribute(baselineAttributeKey(searchToken), storedCriteria);
-    while (baselines.size() > 10) {
-      Iterator<String> iterator = baselines.keySet().iterator();
-      if (iterator.hasNext()) {
-        String oldestKey = iterator.next();
-        iterator.remove();
-        session.removeAttribute(baselineAttributeKey(oldestKey));
+    synchronized (session) {
+      final CourtSearchCriteria storedCriteria = copyCriteria(criteria);
+      Map<String, CourtSearchCriteria> baselines = getBaselineMap(session);
+      baselines.put(searchToken, storedCriteria);
+      session.setAttribute(baselineAttributeKey(searchToken), storedCriteria);
+      while (baselines.size() > 10) {
+        Iterator<String> iterator = baselines.keySet().iterator();
+        if (iterator.hasNext()) {
+          String oldestKey = iterator.next();
+          iterator.remove();
+          session.removeAttribute(baselineAttributeKey(oldestKey));
+        }
       }
     }
   }
@@ -252,48 +256,54 @@ public class CourtSearchController {
       return;
     }
 
-    Map<String, CourtSearchCriteria> baselines = getBaselineMap(session);
-    baselines.remove(searchToken);
-    session.removeAttribute(baselineAttributeKey(searchToken));
-    if (baselines.isEmpty()) {
-      session.removeAttribute(COURT_SEARCH_BASELINES);
+    synchronized (session) {
+      Map<String, CourtSearchCriteria> baselines = getBaselineMap(session);
+      baselines.remove(searchToken);
+      session.removeAttribute(baselineAttributeKey(searchToken));
+      if (baselines.isEmpty()) {
+        session.removeAttribute(COURT_SEARCH_BASELINES);
+      }
     }
   }
 
   private CourtSearchCriteria resolveBaselineCriteria(
       final HttpSession session, final String searchToken) {
-    if (searchToken != null) {
-      final CourtSearchCriteria tokenBaseline =
-          (CourtSearchCriteria) session.getAttribute(baselineAttributeKey(searchToken));
-      if (tokenBaseline != null) {
-        return tokenBaseline;
+    synchronized (session) {
+      if (searchToken != null) {
+        final CourtSearchCriteria tokenBaseline =
+            (CourtSearchCriteria) session.getAttribute(baselineAttributeKey(searchToken));
+        if (tokenBaseline != null) {
+          return tokenBaseline;
+        }
+
+        final CourtSearchCriteria mapBaseline = getBaselineMap(session).get(searchToken);
+        if (mapBaseline != null) {
+          return mapBaseline;
+        }
+
+        return new CourtSearchCriteria();
       }
 
-      final CourtSearchCriteria mapBaseline = getBaselineMap(session).get(searchToken);
-      if (mapBaseline != null) {
-        return mapBaseline;
+      final CourtSearchCriteria legacyBaseline =
+          (CourtSearchCriteria) session.getAttribute(COURT_SEARCH_BASELINE);
+      if (legacyBaseline != null) {
+        return legacyBaseline;
       }
-    }
 
-    final CourtSearchCriteria legacyBaseline =
-        (CourtSearchCriteria) session.getAttribute(COURT_SEARCH_BASELINE);
-    if (legacyBaseline != null) {
-      return legacyBaseline;
+      CourtSearchCriteria baselineCriteria =
+          copyCriteria((CourtSearchCriteria) session.getAttribute(COURT_SEARCH_CRITERIA));
+      final ProceedingOutcomeFormData proceedingOutcomeFormData =
+          (ProceedingOutcomeFormData) session.getAttribute(PROCEEDING_OUTCOME_FORM_DATA);
+      if (baselineCriteria == null || bothMissing(baselineCriteria)) {
+        baselineCriteria = new CourtSearchCriteria();
+      }
+      if (proceedingOutcomeFormData != null) {
+        proceedingOutcomeFormData.normaliseLegacyCourtFields();
+        baselineCriteria.setCourtCode(proceedingOutcomeFormData.getCourtCode());
+        baselineCriteria.setCourtName(proceedingOutcomeFormData.getCourtName());
+      }
+      return baselineCriteria;
     }
-
-    CourtSearchCriteria baselineCriteria =
-        copyCriteria((CourtSearchCriteria) session.getAttribute(COURT_SEARCH_CRITERIA));
-    final ProceedingOutcomeFormData proceedingOutcomeFormData =
-        (ProceedingOutcomeFormData) session.getAttribute(PROCEEDING_OUTCOME_FORM_DATA);
-    if (baselineCriteria == null || bothMissing(baselineCriteria)) {
-      baselineCriteria = new CourtSearchCriteria();
-    }
-    if (proceedingOutcomeFormData != null) {
-      proceedingOutcomeFormData.normaliseLegacyCourtFields();
-      baselineCriteria.setCourtCode(proceedingOutcomeFormData.getCourtCode());
-      baselineCriteria.setCourtName(proceedingOutcomeFormData.getCourtName());
-    }
-    return baselineCriteria;
   }
 
   private String baselineAttributeKey(final String searchToken) {

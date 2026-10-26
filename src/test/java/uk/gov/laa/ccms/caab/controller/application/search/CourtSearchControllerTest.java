@@ -246,6 +246,29 @@ class CourtSearchControllerTest {
   }
 
   @Test
+  @DisplayName("POST /court/search treats unknown tokens as expired forms")
+  public void courtSearchPostTreatsUnknownTokenAsExpiredForm() throws Exception {
+    MockHttpSession session = new MockHttpSession();
+    ProceedingOutcomeFormData proceedingOutcome = new ProceedingOutcomeFormData();
+    proceedingOutcome.setCourtCode("CT2");
+    proceedingOutcome.setCourtName("Second Court");
+    session.setAttribute(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome);
+
+    when(lookupService.getCourts("CT2", "First Court"))
+        .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
+
+    mockMvc.perform(
+        post("/court/search")
+            .param("proceedingIndex", "0")
+            .param("courtCode", "CT2")
+            .param("courtName", "First Court")
+            .param("searchToken", "expired-token")
+            .session(session));
+
+    verify(lookupService).getCourts("CT2", "First Court");
+  }
+
+  @Test
   @DisplayName("GET /court/search bounds accumulated baseline entries")
   public void courtSearchGetBoundsAccumulatedBaselineEntries() throws Exception {
     MockHttpSession session = new MockHttpSession();
