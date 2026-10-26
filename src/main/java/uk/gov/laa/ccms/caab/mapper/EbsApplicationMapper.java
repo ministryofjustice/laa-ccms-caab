@@ -472,6 +472,13 @@ public interface EbsApplicationMapper {
       costAward.getRecovery().setDescription(AWARD_TYPE_COST_DESCRIPTION);
     }
 
+    costAward.setAwardAmount(
+        costAward
+            .getPreCertificateLscCost()
+            .add(costAward.getPreCertificateOtherCost())
+            .add(costAward.getCertificateCostLsc())
+            .add(costAward.getCertificateCostMarket()));
+
     // Calculate the total costs awarded by summing LSC and Market
     costAward.setTotalCertCostsAwarded(
         costAward.getCertificateCostLsc().add(costAward.getCertificateCostMarket()));
