@@ -2,19 +2,14 @@ package uk.gov.laa.ccms.caab.controller.application.search;
 
 import static uk.gov.laa.ccms.caab.constants.CounselLookupConstants.TOO_MANY_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_BASELINE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_BASELINES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COURT;
 
 import jakarta.servlet.http.HttpSession;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -75,10 +70,8 @@ public class CourtSearchController {
       final HttpSession session,
       Model model) {
 
-    final String searchToken = UUID.randomUUID().toString();
-    storeBaseline(session, searchToken, searchCriteria);
+    session.setAttribute(baselineAttributeKey(proceedingIndex), copyCriteria(searchCriteria));
     model.addAttribute("proceedingIndex", proceedingIndex);
-    model.addAttribute("searchToken", searchToken);
     return "application/court-search";
   }
 
@@ -93,13 +86,12 @@ public class CourtSearchController {
   @PostMapping("/court/search")
   public String courtSearch(
       @RequestParam(value = "proceedingIndex") final int proceedingIndex,
-      @RequestParam(value = "searchToken", required = false) final String searchToken,
       @ModelAttribute(COURT_SEARCH_CRITERIA) final CourtSearchCriteria searchCriteria,
       BindingResult bindingResult,
       final HttpSession session,
       Model model) {
 
-    CourtSearchCriteria baselineCriteria = resolveBaselineCriteria(session, searchToken);
+    CourtSearchCriteria baselineCriteria = resolveBaselineCriteria(session, proceedingIndex);
 
     clearStaleCourtFilter(searchCriteria, baselineCriteria);
     if (searchCriteria.getCourtCode() == null) {
@@ -113,7 +105,6 @@ public class CourtSearchController {
 
     if (bindingResult.hasErrors()) {
       model.addAttribute("proceedingIndex", proceedingIndex);
-      model.addAttribute("searchToken", searchToken);
       return "application/court-search";
     }
 
@@ -126,13 +117,11 @@ public class CourtSearchController {
               .block();
 
       if (result == null || result.getContent() == null || result.getContent().isEmpty()) {
-        clearBaseline(session, searchToken);
         model.addAttribute("proceedingIndex", proceedingIndex);
         return "application/court-search-no-results";
       }
 
       if (result.getContent().size() > MAX_COURT_RESULTS) {
-        clearBaseline(session, searchToken);
         model.addAttribute("proceedingIndex", proceedingIndex);
         return "application/court-search-too-many-results";
       }
@@ -140,14 +129,12 @@ public class CourtSearchController {
     } catch (EbsApiClientException e) {
       if (e.getMessage().contains(TOO_MANY_RESULTS)
           || (e.getCause() != null && e.getCause().getMessage().contains(TOO_MANY_RESULTS))) {
-        clearBaseline(session, searchToken);
         model.addAttribute("proceedingIndex", proceedingIndex);
         return "application/court-search-too-many-results";
       }
       throw new CaabApplicationException("Error performing court search.", e);
     }
 
-    clearBaseline(session, searchToken);
     session.setAttribute(COURT_SEARCH_RESULTS, result.getContent());
     return "redirect:/court/results?proceedingIndex=" + proceedingIndex;
   }
@@ -215,99 +202,31 @@ public class CourtSearchController {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  private Map<String, CourtSearchCriteria> getBaselineMap(final HttpSession session) {
-    synchronized (session) {
-      Object baselines = session.getAttribute(COURT_SEARCH_BASELINES);
-      if (baselines instanceof Map<?, ?> map) {
-        return (Map<String, CourtSearchCriteria>) map;
-      }
-
-      Map<String, CourtSearchCriteria> baselineMap = new LinkedHashMap<>();
-      session.setAttribute(COURT_SEARCH_BASELINES, baselineMap);
-      return baselineMap;
-    }
-  }
-
-  private void storeBaseline(
-      final HttpSession session, final String searchToken, final CourtSearchCriteria criteria) {
-    if (searchToken == null) {
-      return;
-    }
-
-    synchronized (session) {
-      final CourtSearchCriteria storedCriteria = copyCriteria(criteria);
-      Map<String, CourtSearchCriteria> baselines = getBaselineMap(session);
-      baselines.put(searchToken, storedCriteria);
-      session.setAttribute(baselineAttributeKey(searchToken), storedCriteria);
-      while (baselines.size() > 10) {
-        Iterator<String> iterator = baselines.keySet().iterator();
-        if (iterator.hasNext()) {
-          String oldestKey = iterator.next();
-          iterator.remove();
-          session.removeAttribute(baselineAttributeKey(oldestKey));
-        }
-      }
-    }
-  }
-
-  private void clearBaseline(final HttpSession session, final String searchToken) {
-    if (searchToken == null) {
-      return;
-    }
-
-    synchronized (session) {
-      Map<String, CourtSearchCriteria> baselines = getBaselineMap(session);
-      baselines.remove(searchToken);
-      session.removeAttribute(baselineAttributeKey(searchToken));
-      if (baselines.isEmpty()) {
-        session.removeAttribute(COURT_SEARCH_BASELINES);
-      }
-    }
-  }
-
   private CourtSearchCriteria resolveBaselineCriteria(
-      final HttpSession session, final String searchToken) {
-    synchronized (session) {
-      if (searchToken != null) {
-        final CourtSearchCriteria tokenBaseline =
-            (CourtSearchCriteria) session.getAttribute(baselineAttributeKey(searchToken));
-        if (tokenBaseline != null) {
-          return tokenBaseline;
-        }
-
-        final CourtSearchCriteria mapBaseline = getBaselineMap(session).get(searchToken);
-        if (mapBaseline != null) {
-          return mapBaseline;
-        }
-
-        return new CourtSearchCriteria();
-      }
-
-      final CourtSearchCriteria legacyBaseline =
-          (CourtSearchCriteria) session.getAttribute(COURT_SEARCH_BASELINE);
-      if (legacyBaseline != null) {
-        return legacyBaseline;
-      }
-
-      CourtSearchCriteria baselineCriteria =
-          copyCriteria((CourtSearchCriteria) session.getAttribute(COURT_SEARCH_CRITERIA));
-      final ProceedingOutcomeFormData proceedingOutcomeFormData =
-          (ProceedingOutcomeFormData) session.getAttribute(PROCEEDING_OUTCOME_FORM_DATA);
-      if (baselineCriteria == null || bothMissing(baselineCriteria)) {
-        baselineCriteria = new CourtSearchCriteria();
-      }
-      if (proceedingOutcomeFormData != null) {
-        proceedingOutcomeFormData.normaliseLegacyCourtFields();
-        baselineCriteria.setCourtCode(proceedingOutcomeFormData.getCourtCode());
-        baselineCriteria.setCourtName(proceedingOutcomeFormData.getCourtName());
-      }
+      final HttpSession session, final int proceedingIndex) {
+    final CourtSearchCriteria baselineCriteria =
+        (CourtSearchCriteria) session.getAttribute(baselineAttributeKey(proceedingIndex));
+    if (baselineCriteria != null) {
       return baselineCriteria;
     }
+
+    CourtSearchCriteria result =
+        copyCriteria((CourtSearchCriteria) session.getAttribute(COURT_SEARCH_CRITERIA));
+    final ProceedingOutcomeFormData proceedingOutcomeFormData =
+        (ProceedingOutcomeFormData) session.getAttribute(PROCEEDING_OUTCOME_FORM_DATA);
+    if (result == null || bothMissing(result)) {
+      result = new CourtSearchCriteria();
+    }
+    if (proceedingOutcomeFormData != null) {
+      proceedingOutcomeFormData.normaliseLegacyCourtFields();
+      result.setCourtCode(proceedingOutcomeFormData.getCourtCode());
+      result.setCourtName(proceedingOutcomeFormData.getCourtName());
+    }
+    return result;
   }
 
-  private String baselineAttributeKey(final String searchToken) {
-    return COURT_SEARCH_BASELINE + ":" + searchToken;
+  private String baselineAttributeKey(final int proceedingIndex) {
+    return COURT_SEARCH_BASELINE + ":" + proceedingIndex;
   }
 
   private CourtSearchCriteria copyCriteria(final CourtSearchCriteria criteria) {

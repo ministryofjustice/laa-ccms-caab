@@ -9,16 +9,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_BASELINE;
-import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_BASELINES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COURT;
 
 import jakarta.servlet.http.HttpSession;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -192,12 +189,12 @@ class CourtSearchControllerTest {
     CourtSearchCriteria firstFormBaseline = new CourtSearchCriteria();
     firstFormBaseline.setCourtCode("CT1");
     firstFormBaseline.setCourtName("First Court");
-    session.setAttribute(COURT_SEARCH_BASELINE + ":tab-a", firstFormBaseline);
+    session.setAttribute(COURT_SEARCH_BASELINE + ":0", firstFormBaseline);
 
     CourtSearchCriteria secondFormBaseline = new CourtSearchCriteria();
     secondFormBaseline.setCourtCode("CT2");
     secondFormBaseline.setCourtName("Second Court");
-    session.setAttribute(COURT_SEARCH_BASELINE + ":tab-b", secondFormBaseline);
+    session.setAttribute(COURT_SEARCH_BASELINE + ":1", secondFormBaseline);
 
     when(lookupService.getCourts("CT2", ""))
         .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
@@ -207,7 +204,6 @@ class CourtSearchControllerTest {
             .param("proceedingIndex", "0")
             .param("courtCode", "CT2")
             .param("courtName", "First Court")
-            .param("searchToken", "tab-a")
             .session(session));
 
     verify(lookupService).getCourts("CT2", "");
@@ -217,76 +213,32 @@ class CourtSearchControllerTest {
   @Test
   @DisplayName("POST /court/search preserves the original baseline during validation retries")
   public void courtSearchPostPreservesOriginalBaselineOnValidationFailure() throws Exception {
+    ProceedingOutcomeFormData proceedingOutcome = new ProceedingOutcomeFormData();
+    proceedingOutcome.setCourtCode("CT1");
+    proceedingOutcome.setCourtName("Old Court");
     MockHttpSession session = new MockHttpSession();
-    Map<String, CourtSearchCriteria> baselines = new LinkedHashMap<>();
-    CourtSearchCriteria originalBaseline = new CourtSearchCriteria();
-    originalBaseline.setCourtCode("CT1");
-    originalBaseline.setCourtName("Old Court");
-    baselines.put("tab-a", originalBaseline);
-    session.setAttribute(COURT_SEARCH_BASELINES, baselines);
+    session.setAttribute(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome);
+
+    session.setAttribute(COURT_SEARCH_BASELINE + ":0", new CourtSearchCriteria());
+    ((CourtSearchCriteria) session.getAttribute(COURT_SEARCH_BASELINE + ":0")).setCourtCode("CT1");
+    ((CourtSearchCriteria) session.getAttribute(COURT_SEARCH_BASELINE + ":0"))
+        .setCourtName("Old Court");
 
     mockMvc.perform(
         post("/court/search")
             .param("proceedingIndex", "0")
             .param("courtCode", "CT2")
             .param("courtName", "New@Court")
-            .param("searchToken", "tab-a")
             .session(session));
 
     assertThat(
-            ((Map<String, CourtSearchCriteria>) session.getAttribute(COURT_SEARCH_BASELINES))
-                .get("tab-a")
+            ((CourtSearchCriteria) session.getAttribute(COURT_SEARCH_BASELINE + ":0"))
                 .getCourtCode())
         .isEqualTo("CT1");
     assertThat(
-            ((Map<String, CourtSearchCriteria>) session.getAttribute(COURT_SEARCH_BASELINES))
-                .get("tab-a")
+            ((CourtSearchCriteria) session.getAttribute(COURT_SEARCH_BASELINE + ":0"))
                 .getCourtName())
         .isEqualTo("Old Court");
-  }
-
-  @Test
-  @DisplayName("POST /court/search treats unknown tokens as expired forms")
-  public void courtSearchPostTreatsUnknownTokenAsExpiredForm() throws Exception {
-    MockHttpSession session = new MockHttpSession();
-    ProceedingOutcomeFormData proceedingOutcome = new ProceedingOutcomeFormData();
-    proceedingOutcome.setCourtCode("CT2");
-    proceedingOutcome.setCourtName("Second Court");
-    session.setAttribute(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome);
-
-    when(lookupService.getCourts("CT2", "First Court"))
-        .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
-
-    mockMvc.perform(
-        post("/court/search")
-            .param("proceedingIndex", "0")
-            .param("courtCode", "CT2")
-            .param("courtName", "First Court")
-            .param("searchToken", "expired-token")
-            .session(session));
-
-    verify(lookupService).getCourts("CT2", "First Court");
-  }
-
-  @Test
-  @DisplayName("GET /court/search bounds accumulated baseline entries")
-  public void courtSearchGetBoundsAccumulatedBaselineEntries() throws Exception {
-    MockHttpSession session = new MockHttpSession();
-    Map<String, CourtSearchCriteria> baselines = new LinkedHashMap<>();
-    for (int i = 0; i < 10; i++) {
-      CourtSearchCriteria baseline = new CourtSearchCriteria();
-      baseline.setCourtCode("CT" + i);
-      baseline.setCourtName("Court " + i);
-      baselines.put("token-" + i, baseline);
-    }
-    session.setAttribute(COURT_SEARCH_BASELINES, baselines);
-
-    mockMvc.perform(get("/court/search").param("proceedingIndex", "0").session(session));
-
-    assertThat(
-            ((Map<String, CourtSearchCriteria>) session.getAttribute(COURT_SEARCH_BASELINES))
-                .size())
-        .isEqualTo(10);
   }
 
   @Test
