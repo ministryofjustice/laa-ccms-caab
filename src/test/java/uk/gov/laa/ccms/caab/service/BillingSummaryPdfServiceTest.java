@@ -8,6 +8,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.lowagie.text.pdf.PdfReader;
+import com.lowagie.text.pdf.parser.PdfTextExtractor;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -115,13 +118,22 @@ class BillingSummaryPdfServiceTest {
 
   @Test
   @DisplayName("Renders a valid bill PDF from a completed assessment with a bill line")
-  void rendersBillPdf() {
+  void rendersBillPdf() throws IOException {
     final byte[] pdf =
         service.generateBillSummary(
             ebsCase(), "Test Firm", completedAssessment(), statement(), new BigDecimal("2000.00"));
 
     assertThat(pdf).isNotEmpty();
     assertThat(new String(pdf, 0, 5, StandardCharsets.ISO_8859_1)).isEqualTo("%PDF-");
+    final PdfReader reader = new PdfReader(pdf);
+    try {
+      final String text = new PdfTextExtractor(reader).getTextFromPage(1).replaceAll("\\s+", "");
+      assertThat(text)
+          .contains(
+              "01-JAN-2026ProfitcostPreparationDrafting01:30150.000.00100.0020.00120.00ASolicitorN/A");
+    } finally {
+      reader.close();
+    }
   }
 
   @Test
