@@ -9,13 +9,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_BASELINE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_BASELINES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_RESULTS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COURT;
 
 import jakarta.servlet.http.HttpSession;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -209,6 +212,58 @@ class CourtSearchControllerTest {
 
     verify(lookupService).getCourts("CT2", "");
     verify(lookupService, never()).getCourts("", "First Court");
+  }
+
+  @Test
+  @DisplayName("POST /court/search preserves the original baseline during validation retries")
+  public void courtSearchPostPreservesOriginalBaselineOnValidationFailure() throws Exception {
+    MockHttpSession session = new MockHttpSession();
+    Map<String, CourtSearchCriteria> baselines = new LinkedHashMap<>();
+    CourtSearchCriteria originalBaseline = new CourtSearchCriteria();
+    originalBaseline.setCourtCode("CT1");
+    originalBaseline.setCourtName("Old Court");
+    baselines.put("tab-a", originalBaseline);
+    session.setAttribute(COURT_SEARCH_BASELINES, baselines);
+
+    mockMvc.perform(
+        post("/court/search")
+            .param("proceedingIndex", "0")
+            .param("courtCode", "CT2")
+            .param("courtName", "New@Court")
+            .param("searchToken", "tab-a")
+            .session(session));
+
+    assertThat(
+            ((Map<String, CourtSearchCriteria>) session.getAttribute(COURT_SEARCH_BASELINES))
+                .get("tab-a")
+                .getCourtCode())
+        .isEqualTo("CT1");
+    assertThat(
+            ((Map<String, CourtSearchCriteria>) session.getAttribute(COURT_SEARCH_BASELINES))
+                .get("tab-a")
+                .getCourtName())
+        .isEqualTo("Old Court");
+  }
+
+  @Test
+  @DisplayName("GET /court/search bounds accumulated baseline entries")
+  public void courtSearchGetBoundsAccumulatedBaselineEntries() throws Exception {
+    MockHttpSession session = new MockHttpSession();
+    Map<String, CourtSearchCriteria> baselines = new LinkedHashMap<>();
+    for (int i = 0; i < 10; i++) {
+      CourtSearchCriteria baseline = new CourtSearchCriteria();
+      baseline.setCourtCode("CT" + i);
+      baseline.setCourtName("Court " + i);
+      baselines.put("token-" + i, baseline);
+    }
+    session.setAttribute(COURT_SEARCH_BASELINES, baselines);
+
+    mockMvc.perform(get("/court/search").param("proceedingIndex", "0").session(session));
+
+    assertThat(
+            ((Map<String, CourtSearchCriteria>) session.getAttribute(COURT_SEARCH_BASELINES))
+                .size())
+        .isEqualTo(10);
   }
 
   @Test
