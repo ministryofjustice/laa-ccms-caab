@@ -95,8 +95,8 @@ configurations.configureEach {
         }
         // Keep embedded Tomcat modules aligned on the patched release.
         if (details.requested.group == 'org.apache.tomcat.embed') {
-            details.useVersion '11.0.26'
-            details.because 'Snyk override (SNYK-JAVA-ORGAPACHETOMCATEMBED-20552494, CVE-2026-76183)'
+            details.useVersion '11.0.27'
+            details.because 'Snyk override: remediate authentication bypass, access control and cleanup vulnerabilities in 11.0.26'
         }
     }
 }
