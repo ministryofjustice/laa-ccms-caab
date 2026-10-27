@@ -1,8 +1,10 @@
 package uk.gov.laa.ccms.caab.client;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.absent;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.notFound;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
@@ -10,6 +12,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.serverError;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -22,6 +26,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -29,6 +34,8 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -39,6 +46,8 @@ import uk.gov.laa.ccms.caab.AbstractIntegrationTest;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.CounselSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
+import uk.gov.laa.ccms.caab.service.BillingService;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.BaseClient;
@@ -76,11 +85,57 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Autowired private EbsApiClient ebsApiClient;
+  @Autowired private BillingService billingService;
 
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   private static final String USER_ERROR_MESSAGE = "Failed to retrieve User with user id: %s";
   private static final String CASE_REFERENCE_MESSAGE = "Failed to retrieve case reference";
+
+  @Test
+  void retainedInvoiceTotalsUseTheConfiguredDataClientAndRawGlobalValues() {
+    wiremock.stubFor(
+        get("/cases/300000123/invoices/555/assessment")
+            .willReturn(
+                okJson(
+                    """
+                    {"caseReference":"300000123","billingIncidentId":555,"assessmentId":501,
+                     "billingProviderId":"20","instances":[
+                       {"id":1,"entityName":"global","attributes":[
+                         {"id":1,"name":"BILL_SUBMITTED_TOTAL_AMT","responseValue":"718.00"},
+                         {"id":2,"name":"BILL_SUBMITTED_TOTAL_VAT","responseValue":"107.70"}
+                       ]}]}
+                    """)));
+    final BillPoaRow row =
+        new BillPoaRow("Counsel POA", "Authorised", null, null, BigDecimal.TEN, false, 555L);
+    final BillPoaRow result = billingService.withRetainedTotals("300000123", row);
+    assertThat(result.amount()).isEqualByComparingTo("718.00");
+    assertThat(result.grandTotal()).isEqualByComparingTo("825.70");
+    wiremock.verify(1, getRequestedFor(urlPathEqualTo("/cases/300000123/invoices/555/assessment")));
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {404, 500, 503})
+  void unavailableRetainedTotalsKeepTheKnownNet(final int status) {
+    wiremock.stubFor(
+        get("/cases/300000123/invoices/555/assessment").willReturn(aResponse().withStatus(status)));
+    final BillPoaRow row =
+        new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L);
+    assertThat(billingService.withRetainedTotals("300000123", row)).isEqualTo(row);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {401, 403})
+  void retainedTotalsDoNotHideAuthorizationFailures(final int status) {
+    wiremock.stubFor(
+        get("/cases/300000123/invoices/555/assessment").willReturn(aResponse().withStatus(status)));
+    final BillPoaRow row =
+        new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L);
+    assertThatThrownBy(() -> billingService.withRetainedTotals("300000123", row))
+        .isInstanceOfSatisfying(
+            EbsApiClientException.class,
+            error -> assertThat(error.getHttpStatus().value()).isEqualTo(status));
+  }
 
   @Test
   public void testGetUser_returnData() throws Exception {

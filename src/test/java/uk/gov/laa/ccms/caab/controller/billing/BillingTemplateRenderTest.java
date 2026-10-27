@@ -303,7 +303,9 @@ class BillingTemplateRenderTest {
     model.put(
         "billsAndPoaPage",
         new PageImpl<>(
-            List.of(new BillPoaRow(type, "Draft", null, null, new BigDecimal("123.45"), true))));
+            List.of(
+                new BillPoaRow(type, "Draft", null, null, new BigDecimal("123.45"), true)
+                    .withTotals(new BigDecimal("123.45"), new BigDecimal("148.14")))));
 
     final List<String> body = elements(billsAndPoaTable(model), "tbody");
     assertThat(body).hasSize(1);
@@ -317,6 +319,42 @@ class BillingTemplateRenderTest {
     assertThat(rows.get(0)).contains("href=\"" + editUrl + "/remove\"");
     assertThat(cells).hasSize(7);
     assertThat(cells.subList(4, 6)).allSatisfy(cell -> assertThat(text(cell)).isEmpty());
+  }
+
+  @Test
+  @DisplayName("Retained totals render in their own rows with UK currency and independent blanks")
+  void statementRendersNetAndGrandTotalsWithoutMixingRows() {
+    final Map<String, Object> model = statementModel(true);
+    model.put(
+        "billsAndPoaPage",
+        new PageImpl<>(
+            List.of(
+                new BillPoaRow("Bill", "Submitted", null, null, new BigDecimal("718.00"), false)
+                    .withTotals(new BigDecimal("718.00"), new BigDecimal("825.70")),
+                new BillPoaRow(
+                        "Counsel POA", "Authorised", null, null, new BigDecimal("1200"), false)
+                    .withTotals(new BigDecimal("1200"), new BigDecimal("1440")),
+                new BillPoaRow("POA", "Rejected", null, null, BigDecimal.ZERO, false)
+                    .withTotals(BigDecimal.ZERO, BigDecimal.ZERO),
+                new BillPoaRow("Bill", "Rejected", null, null, BigDecimal.TEN, false),
+                new BillPoaRow("POA", "Submitted", null, null, null, false),
+                new BillPoaRow("Bill", "Authorised", null, null, null, false)
+                    .withTotals(null, BigDecimal.ONE))));
+
+    final List<String> rows = elements(elements(billsAndPoaTable(model), "tbody").get(0), "tr");
+    assertThat(rows).hasSize(6);
+    final List<List<String>> totals =
+        rows.stream()
+            .map(row -> elements(row, "td").subList(4, 6).stream().map(this::text).toList())
+            .toList();
+    assertThat(totals)
+        .containsExactly(
+            List.of("\u00a3718.00", "\u00a3825.70"),
+            List.of("\u00a31,200.00", "\u00a31,440.00"),
+            List.of("\u00a30.00", "\u00a30.00"),
+            List.of("\u00a310.00", ""),
+            List.of("", ""),
+            List.of("", "\u00a31.00"));
   }
 
   @Test

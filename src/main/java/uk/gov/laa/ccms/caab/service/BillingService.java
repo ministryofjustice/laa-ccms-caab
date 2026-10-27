@@ -11,18 +11,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
+import uk.gov.laa.ccms.caab.bean.billing.InvoiceAssessment;
 import uk.gov.laa.ccms.caab.bean.billing.SoaFigureColumn;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
+import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -97,6 +101,87 @@ public class BillingService {
   private final SoaApplicationMapper soaApplicationMapper;
   private final AssessmentService assessmentService;
   private final ClientService clientService;
+
+  /** Enriches a visible non-draft row without changing the underlying statement or draft data. */
+  public BillPoaRow withRetainedTotals(final String caseReference, final BillPoaRow row) {
+    if (row.draft() || row.billingIncidentId() == null) {
+      return row;
+    }
+    if (row.billingIncidentId() <= 0) {
+      log.warn("Cannot retrieve totals for an invoice with a non-positive billing incident id");
+      return row;
+    }
+    final InvoiceAssessment assessment;
+    try {
+      assessment =
+          ebsApiClient.getInvoiceAssessment(caseReference, row.billingIncidentId()).block();
+    } catch (final EbsApiClientException error) {
+      if ((error.getHttpStatus() != null && error.getHttpStatus().is5xxServerError())
+          || error.getCause() instanceof WebClientRequestException) {
+        log.warn(
+            "Retained totals lookup unavailable for billing incident {}", row.billingIncidentId());
+        return row;
+      }
+      throw error;
+    }
+    if (assessment == null) {
+      log.warn("No retained assessment for billing incident {}", row.billingIncidentId());
+      return row;
+    }
+    if (!Objects.equals(caseReference, assessment.caseReference())
+        || !Objects.equals(row.billingIncidentId(), assessment.billingIncidentId())) {
+      log.warn(
+          "Retained assessment identity mismatch for billing incident {}", row.billingIncidentId());
+      return row;
+    }
+    final List<InvoiceAssessment.Instance> globals =
+        assessment.instances() == null
+            ? List.of()
+            : assessment.instances().stream()
+                .filter(Objects::nonNull)
+                .filter(instance -> isAttributeName(instance.entityName(), "GLOBAL"))
+                .toList();
+    if (globals.size() != 1) {
+      log.warn(
+          "Missing or ambiguous retained global totals for billing incident {}",
+          row.billingIncidentId());
+      return row;
+    }
+    final BigDecimal net =
+        retainedAmount(globals.get(0), "BILL_SUBMITTED_TOTAL_AMT", row.billingIncidentId());
+    final BigDecimal vat =
+        retainedAmount(globals.get(0), "BILL_SUBMITTED_TOTAL_VAT", row.billingIncidentId());
+    return row.withTotals(
+        net != null ? net : row.amount(), net != null && vat != null ? net.add(vat) : null);
+  }
+
+  private BigDecimal retainedAmount(
+      final InvoiceAssessment.Instance global, final String name, final Long billingId) {
+    final List<InvoiceAssessment.Attribute> attributes =
+        global.attributes() == null
+            ? List.of()
+            : global.attributes().stream()
+                .filter(Objects::nonNull)
+                .filter(attribute -> isAttributeName(attribute.name(), name))
+                .toList();
+    if (attributes.size() == 1) {
+      final String value = attributes.get(0).responseValue();
+      if (value != null && !value.isBlank()) {
+        try {
+          return new BigDecimal(value.trim());
+        } catch (final NumberFormatException error) {
+          log.warn("Invalid retained {} for billing incident {}", name, billingId);
+          return null;
+        }
+      }
+    }
+    log.warn("Missing or ambiguous retained {} for billing incident {}", name, billingId);
+    return null;
+  }
+
+  private boolean isAttributeName(final String actual, final String expected) {
+    return actual != null && expected.equalsIgnoreCase(actual.trim());
+  }
 
   /**
    * Retrieve and build the statement of account display for the supplied case.

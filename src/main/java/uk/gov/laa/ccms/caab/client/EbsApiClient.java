@@ -22,6 +22,7 @@ import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.CounselSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.billing.InvoiceAssessment;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -1129,6 +1130,31 @@ public class EbsApiClient extends BaseApiClient {
             e ->
                 ebsApiClientErrorHandler.handleApiRetrieveError(
                     e, "Statement of account", queryParams));
+  }
+
+  /**
+   * Retrieves retained entered and calculated data for one invoice, not the latest case assessment.
+   */
+  public Mono<InvoiceAssessment> getInvoiceAssessment(
+      final String caseReferenceNumber, final Long billingId) {
+    return ebsApiWebClient
+        .get()
+        .uri(
+            builder ->
+                builder
+                    .path("/cases/{caseReference}/invoices/{billingId}/assessment")
+                    .build(caseReferenceNumber, billingId))
+        .exchangeToMono(
+            response -> {
+              if (HttpStatus.NOT_FOUND.equals(response.statusCode())) {
+                return response.releaseBody().then(Mono.empty());
+              }
+              if (response.statusCode().isError()) {
+                return response.createException().flatMap(Mono::error);
+              }
+              return response.bodyToMono(InvoiceAssessment.class);
+            })
+        .onErrorResume(ebsApiClientErrorHandler::handleInvoiceAssessmentRetrieveError);
   }
 
   /** Query parameters which identify a person or a case, and so must not be written to logs. */

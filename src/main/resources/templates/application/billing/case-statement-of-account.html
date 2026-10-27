@@ -134,7 +134,8 @@
               <th scope="col" class="govuk-table__header" th:text="#{billing.billsAndPoa.col.status}"></th>
               <th scope="col" class="govuk-table__header" th:text="#{billing.billsAndPoa.col.dateSubmitted}"></th>
               <th scope="col" class="govuk-table__header" th:text="#{billing.billsAndPoa.col.dateAuthorised}"></th>
-              <th scope="col" class="govuk-table__header govuk-table__header--numeric" th:text="#{billing.billsAndPoa.col.amount}"></th>
+              <th scope="col" class="govuk-table__header govuk-table__header--numeric" th:text="#{billing.billsAndPoa.col.netTotal}"></th>
+              <th scope="col" class="govuk-table__header govuk-table__header--numeric" th:text="#{billing.billsAndPoa.col.grandTotal}"></th>
               <th scope="col" class="govuk-table__header" th:text="#{billing.billsAndPoa.col.action}"></th>
             </tr>
           </thead>
@@ -152,7 +153,8 @@
               <td class="govuk-table__cell" th:text="${row.status}"></td>
               <td class="govuk-table__cell" th:text="${row.dateSubmitted != null ? #temporals.format(row.dateSubmitted, 'dd/MM/yyyy') : ''}"></td>
               <td class="govuk-table__cell" th:text="${row.dateAuthorised != null ? #temporals.format(row.dateAuthorised, 'dd/MM/yyyy') : ''}"></td>
-              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${row.amount != null ? #numbers.formatCurrency(row.amount) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${!row.draft and row.amount != null ? #numbers.formatCurrency(row.amount) : ''}"></td>
+              <td class="govuk-table__cell govuk-table__cell--numeric" th:text="${!row.draft and row.grandTotal != null ? #numbers.formatCurrency(row.grandTotal) : ''}"></td>
               <!-- A draft Bill or POA can be deleted. A "Rejected" Bill can be copied, but only
                    when no draft Bill is already in progress, since a case carries at most one.
                    Every other status carries no action at all, matching the legacy PUI. -->
@@ -174,7 +176,7 @@
             </tr>
             <tr class="govuk-table__row"
                 th:if="${billsAndPoaPage == null or billsAndPoaPage.content.isEmpty()}">
-              <td class="govuk-table__cell" colspan="6" th:text="#{billing.billsAndPoa.none}"></td>
+              <td class="govuk-table__cell" colspan="7" th:text="#{billing.billsAndPoa.none}"></td>
             </tr>
           </tbody>
         </table>
