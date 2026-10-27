@@ -138,6 +138,30 @@ class CourtSearchControllerTest {
   }
 
   @Test
+  @DisplayName("POST /court/search rejects angle brackets in court name")
+  public void courtSearchPostRejectsAngleBracketsInCourtName() throws Exception {
+    var modelAndView =
+        mockMvc
+            .perform(
+                post("/court/search")
+                    .param("proceedingIndex", "0")
+                    .param("courtCode", "CT1")
+                    .param("courtName", "Test<Court>"))
+            .andReturn()
+            .getModelAndView();
+
+    assertThat(modelAndView).isNotNull();
+    assertThat(modelAndView.getViewName()).isEqualTo("application/court-search");
+    BindingResult bindingResult =
+        (BindingResult)
+            modelAndView
+                .getModel()
+                .get("org.springframework.validation.BindingResult.courtSearchCriteria");
+    assertThat(bindingResult.getFieldError("courtName")).isNotNull();
+    assertThat(bindingResult.getFieldError("courtName").getCode()).isEqualTo("invalid.character");
+  }
+
+  @Test
   @DisplayName("POST /court/search clears the stale court name when the code changes")
   public void courtSearchPostClearsStaleNameWhenCodeChanges() throws Exception {
     ProceedingOutcomeFormData proceedingOutcome = new ProceedingOutcomeFormData();

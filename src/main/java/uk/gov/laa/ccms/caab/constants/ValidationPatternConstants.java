@@ -114,9 +114,12 @@ public class ValidationPatternConstants {
   /** Legacy court search code validation uses the standard character set. */
   public static final String COURT_SEARCH_CODE_CHARSET = STANDARD_CHARACTER_SET;
 
-  /** Legacy court search name validation uses the form-specific characterSetA rules. */
+  /**
+   * Modernised court search name validation matches the legacy characterSetA rule except that angle
+   * brackets are rejected for the modern form.
+   */
   public static final String COURT_SEARCH_NAME_CHARSET =
-      "^[A-Za-z0-9 \\.\\,\\-\\(\\)/=!\"%&;<>\\*\\'\\r\\n\\+:\\?]*$";
+      "^[A-Za-z0-9 \\.\\,\\-\\(\\)/=!\"%&;\\*\\'\\r\\n\\+:\\?]*$";
 
   /** pattern to match what is known in provider-ui as 'characterSetA'. */
   public static final String CHARACTER_SET_A =
