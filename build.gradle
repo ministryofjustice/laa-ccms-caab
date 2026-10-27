@@ -95,8 +95,8 @@ configurations.configureEach {
         }
         // Keep embedded Tomcat modules aligned on the patched release.
         if (details.requested.group == 'org.apache.tomcat.embed') {
-            details.useVersion '11.0.26'
-            details.because 'Snyk override (SNYK-JAVA-ORGAPACHETOMCATEMBED-20552494, CVE-2026-76183)'
+            details.useVersion '11.0.27'
+            details.because 'Snyk override (CVE-2026-74048, CVE-2026-88041, CVE-2026-93446, CVE-2026-101296, CVE-2026-101356, CVE-2026-103119); fixed in 11.0.27'
         }
     }
 }
