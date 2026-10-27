@@ -162,6 +162,94 @@ class AwardControllerTest {
   }
 
   @Nested
+  @DisplayName("Award deletion")
+  class DeleteAwardTests {
+
+    @ParameterizedTest
+    @ValueSource(strings = {"COST", "DAMAGE", "LAND", "ASSET"})
+    void confirmationPassesOnlyAwardTypeAndIdWithoutDeleting(String type) {
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/awards/{type}/7/delete", type)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/delete-award")
+          .model()
+          .containsEntry("awardType", type)
+          .containsEntry("awardId", 7)
+          .doesNotContainKey("award");
+
+      verifyNoInteractions(caseOutcomeService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"COST", "DAMAGE", "LAND", "ASSET"})
+    void confirmDeletesSelectedAwardAndRedirects(String type) {
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/awards/{type}/7/delete", type)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(caseOutcomeService)
+          .deleteAward(
+              ebsCase.getCaseReferenceNumber(),
+              user.getProvider().getId().intValue(),
+              type,
+              7,
+              user.getLoginId());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"GET", "POST"})
+    void readOnlyCaseCannotLoadOrConfirmDeletion(String method) {
+      ebsCase.setAvailableFunctions(List.of(FunctionConstants.VIEW_CASE_OUTCOME));
+      MockHttpServletRequestBuilder request =
+          "GET".equals(method)
+              ? get("/case/outcome-and-awards/awards/COST/7/delete")
+              : post("/case/outcome-and-awards/awards/COST/7/delete");
+
+      assertThat(
+              mockMvc.perform(request.sessionAttr(CASE, ebsCase).sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+      verifyNoInteractions(caseOutcomeService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"GET", "POST"})
+    void missingCaseCannotLoadOrConfirmDeletion(String method) {
+      MockHttpServletRequestBuilder request =
+          "GET".equals(method)
+              ? get("/case/outcome-and-awards/awards/COST/7/delete")
+              : post("/case/outcome-and-awards/awards/COST/7/delete");
+
+      assertThat(mockMvc.perform(request.sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+      verifyNoInteractions(caseOutcomeService);
+    }
+
+    @Test
+    void deletionFailureDoesNotRedirectAsSuccess() {
+      doThrow(new IllegalStateException("Deletion failed"))
+          .when(caseOutcomeService)
+          .deleteAward(any(), any(), any(), any(), any());
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/awards/COST/7/delete")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasFailed()
+          .failure()
+          .hasCauseInstanceOf(IllegalStateException.class);
+    }
+  }
+
+  @Nested
   @DisplayName("GET: /case/outcome-and-awards/award-type")
   class SelectAwardTypeTests {
 

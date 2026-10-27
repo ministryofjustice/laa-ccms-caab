@@ -3,15 +3,18 @@ package uk.gov.laa.ccms.caab.controller.application;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -37,6 +40,78 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 class OutcomeAndAwardsTemplateRenderTest {
 
   private static SpringTemplateEngine engine;
+
+  @ParameterizedTest
+  @MethodSource("deletionAwards")
+  void deleteLinkAndConfirmationIdentifyAwardTypeWithoutDisplayingDetails(BaseAwardDetail award) {
+    final String type = award.getAwardType();
+    final String path = "/case/outcome-and-awards/awards/" + type + "/8/delete";
+    assertThat(render(List.of(award))).contains("href=\"" + path + "\"");
+    final String html =
+        render(
+            List.of(award), true, List.of(), Map.of(), Map.of(), "application/delete-award", award);
+
+    assertThat(html)
+        .contains("Delete " + type + " award")
+        .contains("this " + type + " award")
+        .contains("action=\"" + path + "\"")
+        .contains("method=\"post\"")
+        .contains("id=\"confirmDeleteAward\"")
+        .contains("id=\"cancelDeleteAward\"")
+        .containsPattern("id=\"cancelDeleteAward\"\\s+href=\"/case/outcome-and-awards\"")
+        .doesNotContain(
+            "null", "deleteAwardSummary", "12/02/2026", "Selected award", "£123.45", "£999.99");
+  }
+
+  @Test
+  void readOnlySummaryDoesNotLinkToDeletion() {
+    assertThat(
+            render(
+                List.of(new FinancialAwardDetail().id(8).awardType("DAMAGE")),
+                false,
+                List.of(),
+                Map.of(),
+                Map.of()))
+        .doesNotContain("/awards/DAMAGE/8/delete");
+  }
+
+  @Test
+  void confirmationOnlyRequiresAwardTypeAndId() {
+    final FinancialAwardDetail award = new FinancialAwardDetail().id(8).awardType("DAMAGE");
+    final String html =
+        render(
+            List.of(award), true, List.of(), Map.of(), Map.of(), "application/delete-award", award);
+
+    assertThat(html).contains("Delete DAMAGE award").doesNotContain("null");
+  }
+
+  private static Stream<BaseAwardDetail> deletionAwards() {
+    return Stream.<BaseAwardDetail>of(
+            new CostAwardDetail()
+                .awardType("COST")
+                .preCertificateLscCost(new BigDecimal("100.00"))
+                .certificateCostMarket(new BigDecimal("23.45"))
+                .awardAmount(new BigDecimal("999.99")),
+            new FinancialAwardDetail().awardType("DAMAGE").awardAmount(new BigDecimal("123.45")),
+            new LandAwardDetail()
+                .awardType("LAND")
+                .valuationAmount(new BigDecimal("123.45"))
+                .awardAmount(new BigDecimal("999.99")),
+            new OtherAssetAwardDetail()
+                .awardType("ASSET")
+                .valuationAmount(new BigDecimal("123.45"))
+                .awardAmount(new BigDecimal("999.99")))
+        .peek(
+            award -> {
+              award.setId(8);
+              award.setDescription("Selected award");
+              award.setDateOfOrder(
+                  Date.from(
+                      java.time.LocalDate.of(2026, 2, 12)
+                          .atStartOfDay(java.time.ZoneId.systemDefault())
+                          .toInstant()));
+            });
+  }
 
   @BeforeAll
   static void setUpEngine() {
@@ -147,6 +222,24 @@ class OutcomeAndAwardsTemplateRenderTest {
       final List<ProceedingDetail> proceedings,
       final Map<String, ProceedingOutcomeDetail> resolvedOutcomes,
       final Map<String, ProceedingOutcomeDetail> clearableOutcomes) {
+    return render(
+        awards,
+        awardEditAllowed,
+        proceedings,
+        resolvedOutcomes,
+        clearableOutcomes,
+        "application/outcome-and-awards",
+        null);
+  }
+
+  private String render(
+      final List<? extends BaseAwardDetail> awards,
+      final boolean awardEditAllowed,
+      final List<ProceedingDetail> proceedings,
+      final Map<String, ProceedingOutcomeDetail> resolvedOutcomes,
+      final Map<String, ProceedingOutcomeDetail> clearableOutcomes,
+      final String template,
+      final BaseAwardDetail award) {
     final MockServletContext servletContext = new MockServletContext();
     final JakartaServletWebApplication application =
         JakartaServletWebApplication.buildApplication(servletContext);
@@ -156,6 +249,10 @@ class OutcomeAndAwardsTemplateRenderTest {
 
     final Map<String, Object> variables = new HashMap<>();
     variables.put("awards", awards);
+    if (award != null) {
+      variables.put("awardType", award.getAwardType());
+      variables.put("awardId", award.getId());
+    }
     variables.put("awardEditAllowed", awardEditAllowed);
     variables.put("proceedings", proceedings);
     variables.put("resolvedOutcomes", resolvedOutcomes);
@@ -168,7 +265,6 @@ class OutcomeAndAwardsTemplateRenderTest {
     variables.put("researchPanelLink", "/research");
     variables.put("user", new UserDetail().functions(List.of()));
 
-    return engine.process(
-        "application/outcome-and-awards", new WebContext(exchange, Locale.UK, variables));
+    return engine.process(template, new WebContext(exchange, Locale.UK, variables));
   }
 }

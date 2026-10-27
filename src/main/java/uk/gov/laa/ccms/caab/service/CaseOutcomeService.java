@@ -41,6 +41,48 @@ public class CaseOutcomeService {
   private final LiablePartiesDisplayMapper liablePartiesDisplayMapper;
   private final CostAwardMapper costAwardMapper;
 
+  /** Deletes only the selected award, without replacing the case outcome aggregate. */
+  public void deleteAward(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final String awardType,
+      final Integer awardId,
+      final String loginId) {
+    final CaseOutcomeDetail caseOutcome = requireCaseOutcome(caseReferenceNumber, providerId);
+    requireAward(caseOutcome, awardType, awardId);
+    caabApiClient
+        .deleteAward(
+            requireCaseOutcomeId(caseOutcome, caseReferenceNumber), awardType, awardId, loginId)
+        .block();
+  }
+
+  private CaseOutcomeDetail requireCaseOutcome(
+      final String caseReferenceNumber, final Integer providerId) {
+    return getCaseOutcome(caseReferenceNumber, providerId)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "No case outcome exists for case reference number: " + caseReferenceNumber));
+  }
+
+  private void requireAward(
+      final CaseOutcomeDetail caseOutcome, final String awardType, final Integer awardId) {
+    final List<? extends BaseAwardDetail> awards =
+        switch (awardType) {
+          case "COST" -> caseOutcome.getCostAwards();
+          case "DAMAGE" -> caseOutcome.getFinancialAwards();
+          case "LAND" -> caseOutcome.getLandAwards();
+          case "ASSET" -> caseOutcome.getOtherAssetAwards();
+          default -> throw new IllegalArgumentException("Unsupported award type: " + awardType);
+        };
+    if (Optional.ofNullable(awards).orElse(Collections.emptyList()).stream()
+        .noneMatch(item -> awardId.equals(item.getId()))) {
+      throw new IllegalStateException(
+          "%s award %s does not belong to case outcome %s"
+              .formatted(awardType, awardId, caseOutcome.getId()));
+    }
+  }
+
   /**
    * Get a single Case Outcome based on the supplied case reference number and provider id.
    *
