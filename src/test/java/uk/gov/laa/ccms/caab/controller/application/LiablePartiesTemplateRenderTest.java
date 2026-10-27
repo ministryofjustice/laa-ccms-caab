@@ -54,16 +54,26 @@ class LiablePartiesTemplateRenderTest {
 
   @ParameterizedTest
   @CsvSource({
-    "cost-award, COST, Liable Parties, recovery",
-    "financial-award, DAMAGE, Liable Parties, recovery",
-    "land, LAND, Interested Parties, overview",
-    "asset, ASSET, Interested Parties, overview"
+    "cost-award, COST, Liable Parties, recovery, false, cost-award/7",
+    "financial-award, DAMAGE, Liable Parties, recovery, false, financial-award/7",
+    "land, LAND, Interested Parties, overview, false, land-property/7",
+    "asset, ASSET, Interested Parties, overview, false, asset/7",
+    "land, LAND, Interested Parties, overview, true, land/7/time-related-recovery",
+    "asset, ASSET, Interested Parties, overview, true, asset/7/time-related-recovery"
   })
   void rendersAwardContextAndNavigation(
-      String path, String type, String heading, String destination) throws Exception {
-    final String html = render(path, false);
+      String path,
+      String type,
+      String heading,
+      String destination,
+      boolean timeRelatedRecovery,
+      String backPath)
+      throws Exception {
+    final String backUrl = "/case/outcome-and-awards/" + backPath;
+    final String html = render(path, false, timeRelatedRecovery, backUrl);
     assertThat(html)
-        .contains(">Outcome and awards</h1>", ">" + heading + "</h2>", ">" + type + "</dd>")
+        .contains(">" + heading + "</h1>", ">" + type + "</dd>")
+        .doesNotContain(">Outcome and awards</h1>", "<h2", "no-parties-message")
         .contains("Award Amount or Value", "1,234.50")
         .contains("Name</th>", "Party Type</th>", "Relationship to Case</th>", "Address</th>")
         .contains("href=\"/case/outcome-and-awards/" + path + "/7/liable-parties/add\"");
@@ -74,9 +84,10 @@ class LiablePartiesTemplateRenderTest {
             : "/case/outcome-and-awards";
     assertThat(html).containsPattern("href=\"" + next + "\"[^>]*>Next</a>");
     assertThat(html)
-        .containsPattern("href=\"/case/outcome-and-awards\"[^>]*>Back</a>")
         .containsPattern(
-            "href=\"/case/outcome-and-awards\"[^>]*>Cancel and return to outcome and awards</a>")
+            "class=\"govuk-back-link\"[^>]*href=\"/case/outcome-and-awards\"[^>]*>"
+                + "Cancel and return to outcome and awards</a>")
+        .containsPattern("class=\"govuk-link\"[^>]*href=\"" + backUrl + "\"[^>]*>Back</a>")
         .doesNotContain("<input", "<form");
   }
 
@@ -94,10 +105,18 @@ class LiablePartiesTemplateRenderTest {
         .doesNotContain("<script>alert(1)</script>", "/13/individual");
   }
 
-  @Test
-  void emptyListShowsNoneAndRetainsAddAndNext() throws Exception {
-    final String html = render("financial-award", true);
-    assertThat(html).contains("colspan=\"5\">None</td>", ">Add Party</a>", ">Next</a>");
+  @ParameterizedTest
+  @CsvSource({"cost-award", "financial-award", "land", "asset"})
+  void emptyListShowsInsetMessageInsteadOfTableAndRetainsActions(String path) throws Exception {
+    final String html = render(path, true);
+    assertThat(html)
+        .containsPattern(
+            "class=\"govuk-inset-text\"[^>]*id=\"no-parties-message\"[^>]*>"
+                + "No parties have been added.</div>")
+        .contains(">Add Party</a>", ">Next</a>", ">Back</a>")
+        .doesNotContain("<table", "<thead", "Name</th>", "Party Type</th>", "None</td>");
+    assertThat(html.indexOf("id=\"no-parties-message\""))
+        .isLessThan(html.indexOf("id=\"addPartyButton\""));
     assertSingleAddPartyButtonAboveNavigation(html);
   }
 
@@ -113,8 +132,22 @@ class LiablePartiesTemplateRenderTest {
   }
 
   private String render(String path, boolean empty) throws Exception {
+    return render(
+        path,
+        empty,
+        false,
+        "/case/outcome-and-awards/" + ("land".equals(path) ? "land-property" : path) + "/7");
+  }
+
+  private String render(String path, boolean empty, boolean timeRelatedRecovery, String backUrl)
+      throws Exception {
     return mockMvc
-        .perform(get("/test/liable-parties").param("path", path).param("empty", "" + empty))
+        .perform(
+            get("/test/liable-parties")
+                .param("path", path)
+                .param("empty", "" + empty)
+                .param("timeRelatedRecovery", "" + timeRelatedRecovery)
+                .param("backUrl", backUrl))
         .andExpect(status().isOk())
         .andReturn()
         .getResponse()
@@ -124,7 +157,12 @@ class LiablePartiesTemplateRenderTest {
   @Controller
   static class HarnessController {
     @GetMapping("/test/liable-parties")
-    String display(@RequestParam String path, @RequestParam boolean empty, final Model model) {
+    String display(
+        @RequestParam String path,
+        @RequestParam boolean empty,
+        @RequestParam boolean timeRelatedRecovery,
+        @RequestParam String backUrl,
+        final Model model) {
       final String type =
           switch (path) {
             case "cost-award" -> "COST";
@@ -163,9 +201,11 @@ class LiablePartiesTemplateRenderTest {
               "Award",
               new BigDecimal("1234.50"),
               "COST".equals(type) || "DAMAGE".equals(type),
+              timeRelatedRecovery,
               parties));
       model.addAttribute("awardPath", path);
       model.addAttribute("awardId", 7);
+      model.addAttribute("backUrl", backUrl);
       return "test/liable-parties-harness";
     }
   }

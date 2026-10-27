@@ -48,7 +48,7 @@ class CaseOutcomeLiablePartiesTest {
     final List<OpponentDetail> opponents = List.of(new OpponentDetail().id(11));
     stubOutcome(outcome);
     final var context = LiablePartiesMappingContext.builder().build();
-    final var display = new LiablePartiesDisplay("LAND", "Property", null, false, List.of());
+    final var display = new LiablePartiesDisplay("LAND", "Property", null, false, false, List.of());
     when(lookupService.getLiablePartiesMappingContext()).thenReturn(Mono.just(context));
     when(caabApiClient.getAwardLiableParties(42, award.getAwardType(), 7))
         .thenReturn(Mono.just(opponents));
