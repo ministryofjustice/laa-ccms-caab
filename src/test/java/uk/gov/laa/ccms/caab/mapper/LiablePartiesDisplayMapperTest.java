@@ -4,9 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mapstruct.factory.Mappers;
@@ -55,7 +57,7 @@ class LiablePartiesDisplayMapperTest {
             .id(12)
             .type("Organisation")
             .organisationName("Acme Ltd")
-            .contactNameRole("Do not display")
+            .contactNameRole("Organisation contact")
             .relationshipToCase("OWNER");
     final var result =
         mapper.toLiablePartiesDisplay(
@@ -74,12 +76,81 @@ class LiablePartiesDisplayMapperTest {
     assertThat(individual.address()).isEqualTo("1 High Street AB1 2CD");
     assertThat(individual.editable()).isTrue();
     final var org = result.parties().getLast();
-    assertThat(org.name()).isEqualTo("Acme Ltd");
+    assertThat(org.name()).isEqualTo("Organisation contact");
     assertThat(org.relationshipToCase()).isEqualTo("Organisation owner");
     assertThat(org.organisation()).isTrue();
     assertThat(org.editable()).isFalse();
     assertThat(org.address()).isEmpty();
     assertThat(person.getConfirmed()).isFalse();
+  }
+
+  @Test
+  void editableOrganisationsUseOrganisationNameInsteadOfContactName() {
+    final var organisation =
+        person()
+            .type("Organisation")
+            .ebsId("aWaRd123")
+            .organisationName("Acme Ltd")
+            .contactNameRole("Organisation contact");
+
+    final var result =
+        mapper.toLiablePartiesDisplay(linkedAward(), List.of(organisation), context());
+
+    assertThat(result.parties().getFirst().name()).isEqualTo("Acme Ltd");
+    assertThat(result.parties().getFirst().editable()).isTrue();
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = {"123", "AWAR", "directory123"})
+  void nonEditableOrganisationsUseContactNameInsteadOfOrganisationName(String ebsId) {
+    final var organisation =
+        person()
+            .type("Organisation")
+            .ebsId(ebsId)
+            .organisationName("Acme Ltd")
+            .contactNameRole("Organisation contact");
+
+    final var result =
+        mapper.toLiablePartiesDisplay(linkedAward(), List.of(organisation), context());
+
+    assertThat(result.parties().getFirst().name()).isEqualTo("Organisation contact");
+    assertThat(result.parties().getFirst().editable()).isFalse();
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = {"   "})
+  void nonEditableOrganisationsWithNoContactNameDisplayOrganisationName(String contactName) {
+    final var organisation =
+        person().type("Organisation").organisationName("Acme Ltd").contactNameRole(contactName);
+
+    final var result =
+        mapper.toLiablePartiesDisplay(linkedAward(), List.of(organisation), context());
+
+    assertThat(result.parties().getFirst().name()).isEqualTo("Acme Ltd");
+    assertThat(result.parties().getFirst().editable()).isFalse();
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "AWARD123, MS, Ms Jane Smith",
+    "directory123, MS, Ms Jane Smith",
+    "AWARD123, UNKNOWN, UNKNOWN Jane Smith",
+    "directory123, UNKNOWN, UNKNOWN Jane Smith"
+  })
+  void individualNamesResolveTitlesRegardlessOfEditability(
+      String ebsId, String title, String expectedName) {
+    final var individual = person().ebsId(ebsId).title(title);
+
+    assertThat(mapper.partyName(individual, context())).isEqualTo(expectedName);
+  }
+
+  @Test
+  void emptyIndividualNamesAndUnknownPartyTypesDisplayUndefined() {
+    assertThat(mapper.partyName(person().title(null).firstName(null).surname(null), context()))
+        .isEqualTo("undefined");
+    assertThat(mapper.partyName(person().type("Unknown"), context())).isEqualTo("undefined");
   }
 
   @Test
@@ -132,6 +203,50 @@ class LiablePartiesDisplayMapperTest {
     assertThat(party.name()).isEqualTo("UNKNOWN Jane Smith");
     assertThat(party.relationshipToCase()).isEqualTo("UNKNOWN");
     assertThat(party.address()).isEqualTo("AB1 2CD");
+  }
+
+  @Test
+  void duplicateOpponentIdsKeepTheFirstOpponentWithoutDuplicatingOrMutatingLinks() {
+    final var award =
+        new FinancialAwardDetail()
+            .awardType("DAMAGE")
+            .liableParties(
+                List.of(
+                    new LiablePartyDetail().id(101).opponentId(11),
+                    new LiablePartyDetail().id(102).opponentId(11)));
+    final var first = person();
+    final var duplicate = person().firstName("Different");
+    final var opponents = List.of(first, duplicate);
+
+    final var result = mapper.toLiablePartiesDisplay(award, opponents, context());
+
+    assertThat(result.parties()).extracting(party -> party.id()).containsExactly(101, 102);
+    assertThat(result.parties())
+        .extracting(party -> party.name())
+        .containsExactly("Ms Jane Smith", "Ms Jane Smith");
+    assertThat(opponents).containsExactly(first, duplicate);
+    assertThat(award.getLiableParties()).hasSize(2);
+  }
+
+  @Test
+  void nullOpponentsAndNullIdsDoNotPreventResolvingValidLinks() {
+    final var result =
+        mapper.toLiablePartiesDisplay(
+            linkedAward(), Arrays.asList(null, person().id(null), person()), context());
+
+    assertThat(result.parties()).hasSize(1);
+    assertThat(result.parties().getFirst().name()).isEqualTo("Ms Jane Smith");
+  }
+
+  @Test
+  void nullOpponentIdCannotResolveALinkWithANullOpponentId() {
+    final var award = linkedAward();
+    award.getLiableParties().getFirst().setOpponentId(null);
+
+    assertThatThrownBy(
+            () -> mapper.toLiablePartiesDisplay(award, List.of(person().id(null)), context()))
+        .isInstanceOf(CaabApplicationException.class)
+        .hasMessageContaining("liable party: 101");
   }
 
   @Test

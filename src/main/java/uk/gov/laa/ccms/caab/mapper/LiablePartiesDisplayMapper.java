@@ -16,6 +16,7 @@ import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.context.LiablePartiesMappingContext;
@@ -40,7 +41,17 @@ public interface LiablePartiesDisplayMapper {
       @Context final LiablePartiesMappingContext context) {
     final Map<Integer, OpponentDetail> opponentIndex =
         Optional.ofNullable(opponents).orElse(List.of()).stream()
-            .collect(Collectors.toMap(OpponentDetail::getId, Function.identity()));
+            .filter(
+                opponent -> {
+                  if (opponent == null || opponent.getId() == null) {
+                    LoggerFactory.getLogger(LiablePartiesDisplayMapper.class)
+                        .warn("Ignoring liable party opponent with no id");
+                    return false;
+                  }
+                  return true;
+                })
+            .collect(
+                Collectors.toMap(OpponentDetail::getId, Function.identity(), (first, _) -> first));
     final List<LiablePartyDisplay> parties =
         Optional.ofNullable(award.getLiableParties()).orElse(List.of()).stream()
             .map(
@@ -81,6 +92,17 @@ public interface LiablePartiesDisplayMapper {
   @Named("partyName")
   default String partyName(
       final OpponentDetail opponent, @Context final LiablePartiesMappingContext context) {
+    if (OpponentUtil.isOrganisation(opponent)) {
+      if (awardPartyEditable(opponent.getEbsId())) {
+        return opponent.getOrganisationName();
+      }
+      return StringUtils.hasText(opponent.getContactNameRole())
+          ? opponent.getContactNameRole()
+          : opponent.getOrganisationName();
+    }
+    if (!OpponentUtil.INDIVIDUAL_OPPONENT.equalsIgnoreCase(opponent.getType())) {
+      return "undefined";
+    }
     return OpponentUtil.getPartyName(opponent, context.getContactTitle().getContent());
   }
 
