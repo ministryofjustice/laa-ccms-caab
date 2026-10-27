@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.net.URI;
@@ -10,6 +11,9 @@ import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -64,47 +68,60 @@ class OrdinanceSurveyApiClientTest {
     URI actualUri = uriFunction.apply(UriComponentsBuilder.newInstance());
 
     assertEquals(
-        "postcode=%s&key=%s&maxresults=100&offset=0".formatted(postcode, testKey),
-        actualUri.getQuery());
+        "postcode=%s&key=%s&maxresults=100".formatted(postcode, testKey), actualUri.getQuery());
   }
 
-  @Test
-  void getAddresses_fetchesEveryPage() {
-    final List<OrdinanceSurveyResult> firstPage = new ArrayList<>();
-    for (int i = 0; i < 100; i++) {
-      firstPage.add(new OrdinanceSurveyResult());
+  @ParameterizedTest
+  @ValueSource(ints = {0, 1, 25, 100, 101})
+  void getAddresses_acceptsAnyResultCountWithoutAHeader(final int count) {
+    final List<OrdinanceSurveyResult> results = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      results.add(new OrdinanceSurveyResult());
     }
-    final OrdinanceSurveyResponse firstResponse = response(101, firstPage);
-    final OrdinanceSurveyResponse secondResponse =
-        response(101, List.of(new OrdinanceSurveyResult()));
+    final OrdinanceSurveyResponse response = new OrdinanceSurveyResponse();
+    response.setResults(results);
 
     when(webClientMock.get()).thenReturn(requestHeadersUriMock);
     when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.bodyToMono(OrdinanceSurveyResponse.class))
-        .thenReturn(Mono.just(firstResponse), Mono.just(secondResponse));
+    when(responseMock.bodyToMono(OrdinanceSurveyResponse.class)).thenReturn(Mono.just(response));
 
     StepVerifier.create(ordinanceSurveyApiClient.getAddresses("AB12CD"))
-        .assertNext(response -> assertEquals(101, response.getResults().size()))
+        .assertNext(actual -> assertEquals(results, actual.getResults()))
         .verifyComplete();
 
-    final List<Function<UriBuilder, URI>> requestedUris = uriCaptor.getAllValues();
-    assertEquals(2, requestedUris.size());
+    verify(webClientMock).get();
     assertEquals(
-        "postcode=AB12CD&key=test&maxresults=100&offset=0",
-        requestedUris.get(0).apply(UriComponentsBuilder.newInstance()).getQuery());
-    assertEquals(
-        "postcode=AB12CD&key=test&maxresults=100&offset=100",
-        requestedUris.get(1).apply(UriComponentsBuilder.newInstance()).getQuery());
+        "postcode=AB12CD&key=test&maxresults=100",
+        uriCaptor.getValue().apply(UriComponentsBuilder.newInstance()).getQuery());
+  }
+
+  @ParameterizedTest
+  @NullSource
+  @ValueSource(ints = {-1, 0, 101})
+  void getAddresses_ignoresMissingOrInconsistentTotalResults(final Integer totalResults) {
+    final OrdinanceSurveyResponse response =
+        response(totalResults, List.of(new OrdinanceSurveyResult()));
+
+    when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(OrdinanceSurveyResponse.class)).thenReturn(Mono.just(response));
+
+    StepVerifier.create(ordinanceSurveyApiClient.getAddresses("AB12CD"))
+        .expectNext(response)
+        .verifyComplete();
+
+    verify(webClientMock).get();
   }
 
   @Test
-  void getAddressesRejectsAnIncompletePage() {
+  void getAddressesRejectsAMissingResultsCollection() {
     when(webClientMock.get()).thenReturn(requestHeadersUriMock);
     when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
     when(responseMock.bodyToMono(OrdinanceSurveyResponse.class))
-        .thenReturn(Mono.just(response(101, List.of(new OrdinanceSurveyResult()))));
+        .thenReturn(Mono.just(response(0, null)));
 
     StepVerifier.create(ordinanceSurveyApiClient.getAddresses("AB12CD"))
         .expectError(OrdinanceSurveyResponseException.class)
@@ -112,7 +129,7 @@ class OrdinanceSurveyApiClientTest {
   }
 
   private OrdinanceSurveyResponse response(
-      final int totalResults, final List<OrdinanceSurveyResult> results) {
+      final Integer totalResults, final List<OrdinanceSurveyResult> results) {
     final OrdinanceSurveyHeader header = new OrdinanceSurveyHeader();
     header.setTotalResults(totalResults);
     final OrdinanceSurveyResponse response = new OrdinanceSurveyResponse();

@@ -128,5 +128,7 @@ public class ClientAddressDetailsSearchController {
       final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow, final Model model) {
     model.addAttribute("originalPostcode", addressFlow.getOriginalPostcode());
     model.addAttribute("originalBuildingSearch", addressFlow.getOriginalBuildingSearch());
+    model.addAttribute("searchAgainUrl", "/application/client/details/address/search-again");
+    model.addAttribute("manualEntryUrl", "/application/client/details/address/manual");
   }
 }
