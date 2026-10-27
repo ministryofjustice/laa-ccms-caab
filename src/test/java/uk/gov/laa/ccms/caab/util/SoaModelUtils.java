@@ -21,10 +21,6 @@ import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDoc;
 import uk.gov.laa.ccms.soa.gateway.model.CaseStatus;
 import uk.gov.laa.ccms.soa.gateway.model.CategoryOfLaw;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetailsDisabilityMonitoring;
-import uk.gov.laa.ccms.soa.gateway.model.ClientPersonalDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContactDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ContractDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CostAward;
@@ -512,41 +508,6 @@ public final class SoaModelUtils {
         .clientReferenceNumber("clientref")
         .firstName("firstname")
         .surname("surn");
-  }
-
-  public static ClientDetail buildClientDetail() {
-    return new ClientDetail()
-        .clientReferenceNumber("12345")
-        .details(
-            new ClientDetailDetails()
-                .name(
-                    new NameDetail()
-                        .firstName("firstname")
-                        .surname("surname")
-                        .fullName("the full name")
-                        .title("mr")
-                        .middleName("middle")
-                        .surnameAtBirth("birth"))
-                .address(buildAddressDetail("client"))
-                .contacts(buildContactDetail("client"))
-                .disabilityMonitoring(
-                    new ClientDetailDetailsDisabilityMonitoring().addDisabilityTypeItem("item"))
-                .ethnicMonitoring("ethnic")
-                .noFixedAbode(Boolean.FALSE)
-                .personalInformation(
-                    new ClientPersonalDetail()
-                        .countryOfOrigin("origin")
-                        .dateOfBirth(new Date())
-                        .gender("gender")
-                        .highProfileClient(Boolean.FALSE)
-                        .homeOfficeNumber("123")
-                        .maritalStatus("status")
-                        .mentalCapacityInd(Boolean.FALSE)
-                        .nationalInsuranceNumber("nino")
-                        .vexatiousLitigant(Boolean.FALSE)
-                        .vulnerableClient(Boolean.FALSE))
-                .specialConsiderations("special"))
-        .recordHistory(new RecordHistory());
   }
 
   public static AwardTypeLookupDetail buildAwardTypeLookupDetail(CaseDetail soaCase) {

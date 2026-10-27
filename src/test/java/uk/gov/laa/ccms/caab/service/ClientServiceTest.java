@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.service;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildClientDetail;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,19 +40,11 @@ public class ClientServiceTest {
   @Test
   void getClient_returnsClientDetails_Successful() {
     String clientReferenceNumber = "CLIENT123";
-    String loginId = "user1";
-    String userType = "userType";
 
-    ClientDetail mockClientDetail = new ClientDetail();
+    when(ebsApiClient.getClient(clientReferenceNumber)).thenReturn(Mono.just(buildClientDetail()));
 
-    when(soaApiClient.getClient(clientReferenceNumber, loginId, userType))
-        .thenReturn(Mono.just(mockClientDetail));
-
-    Mono<ClientDetail> clientDetailMono =
-        clientService.getClient(clientReferenceNumber, loginId, userType);
-
-    StepVerifier.create(clientDetailMono)
-        .expectNextMatches(clientDetail -> clientDetail == mockClientDetail)
+    StepVerifier.create(clientService.getClient(clientReferenceNumber))
+        .expectNextMatches(clientDetail -> "12345".equals(clientDetail.getClientReferenceNumber()))
         .verifyComplete();
   }
 

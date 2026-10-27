@@ -87,8 +87,8 @@ import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.caab.util.ProceedingUtil;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
 
 /** Mapper for converting assessment mapping contexts to assessment details. */
 @Mapper(componentModel = "spring")
@@ -646,7 +646,7 @@ public interface AssessmentMapper {
       final AssessmentMappingContext context) {
 
     final ApplicationDetail application = context.getApplication();
-    final ClientDetailDetails client = context.getClient().getDetails();
+    final ClientDetail client = context.getClient();
     final UserDetail user = context.getUser();
     final AssessmentRulebase rulebase = context.getRulebase();
 
@@ -707,7 +707,7 @@ public interface AssessmentMapper {
 
   private List<AssessmentAttributeDetail> globalAttributes(
       final ApplicationDetail application,
-      final ClientDetailDetails client,
+      final ClientDetail client,
       final UserDetail user,
       final AssessmentRulebase rulebase) {
 
@@ -829,12 +829,12 @@ public interface AssessmentMapper {
       ApplicationDetail application, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "value", source = "client.personalInformation.vulnerableClient")
+  @Mapping(target = "value", source = "client.vulnerableClient")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toClientVulnerableAttribute(
-      ClientDetailDetails client, AssessmentAttribute attribute);
+      ClientDetail client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application.costLimit.changed")
@@ -849,16 +849,14 @@ public interface AssessmentMapper {
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)
-  AssessmentAttributeDetail toCountryAttribute(
-      ClientDetailDetails client, AssessmentAttribute attribute);
+  AssessmentAttributeDetail toCountryAttribute(ClientDetail client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "client.address.county")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)
-  AssessmentAttributeDetail toCountyAttribute(
-      ClientDetailDetails client, AssessmentAttribute attribute);
+  AssessmentAttributeDetail toCountyAttribute(ClientDetail client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(
@@ -877,15 +875,12 @@ public interface AssessmentMapper {
   }
 
   @Mapping(target = "id", ignore = true)
-  @Mapping(
-      target = "value",
-      source = "client.personalInformation.dateOfBirth",
-      dateFormat = "dd-MM-yyyy")
+  @Mapping(target = "value", source = "client.dateOfBirth", dateFormat = "dd-MM-yyyy")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toDateOfBirthAttribute(
-      ClientDetailDetails client, AssessmentAttribute attribute);
+      ClientDetail client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application.costs.defaultCostLimitation")
@@ -936,23 +931,23 @@ public interface AssessmentMapper {
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toFirstNameAttribute(
-      ClientDetailDetails client, AssessmentAttribute attribute);
+      ClientDetail client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "value", source = "client.personalInformation.highProfileClient")
+  @Mapping(target = "value", source = "client.highProfileClient")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toHighProfileAttribute(
-      ClientDetailDetails client, AssessmentAttribute attribute);
+      ClientDetail client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "value", source = "client.personalInformation.homeOfficeNumber")
+  @Mapping(target = "value", source = "client.homeOfficeNumber")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toHomeOfficeNoAttribute(
-      ClientDetailDetails client, AssessmentAttribute attribute);
+      ClientDetail client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application", qualifiedByName = "mapLarScopeFlag")
@@ -976,12 +971,12 @@ public interface AssessmentMapper {
       ApplicationDetail application, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "value", source = "client.personalInformation.maritalStatus")
+  @Mapping(target = "value", source = "client.maritalStatus")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toMaritalStatusAttribute(
-      ClientDetailDetails client, AssessmentAttribute attribute);
+      ClientDetail client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application", qualifiedByName = "mapNewApplOrAmendment")
@@ -997,20 +992,18 @@ public interface AssessmentMapper {
   }
 
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "value", source = "client.personalInformation.nationalInsuranceNumber")
+  @Mapping(target = "value", source = "client.niNumber")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)
-  AssessmentAttributeDetail toNiNoAttribute(
-      ClientDetailDetails client, AssessmentAttribute attribute);
+  AssessmentAttributeDetail toNiNoAttribute(ClientDetail client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "client.address.postalCode")
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)
-  AssessmentAttributeDetail toPostCodeAttribute(
-      ClientDetailDetails client, AssessmentAttribute attribute);
+  AssessmentAttributeDetail toPostCodeAttribute(ClientDetail client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "application.providerDetails.providerCaseReference")
@@ -1046,8 +1039,7 @@ public interface AssessmentMapper {
   @Mapping(target = "name", source = "attribute")
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)
-  AssessmentAttributeDetail toSurnameAttribute(
-      ClientDetailDetails client, AssessmentAttribute attribute);
+  AssessmentAttributeDetail toSurnameAttribute(ClientDetail client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "client.name.surnameAtBirth")
@@ -1055,7 +1047,7 @@ public interface AssessmentMapper {
   @Mapping(target = "type", source = "attribute.type")
   @Mapping(target = "inferencingType", ignore = true)
   AssessmentAttributeDetail toSurnameAtBirthAttribute(
-      ClientDetailDetails client, AssessmentAttribute attribute);
+      ClientDetail client, AssessmentAttribute attribute);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "value", source = "user.provider.id")
