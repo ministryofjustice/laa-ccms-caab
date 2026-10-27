@@ -30,7 +30,7 @@
       <input type="hidden" th:field="*{awardCode}">
 
       <moj:datepicker
-          id="date-of-order"
+          id="dateOfOrder"
           name="dateOfOrder"
           th:label="#{case.financialAward.dateOfOrder}"
           th:hint="#{case.financialAward.dateHint}"
@@ -50,7 +50,7 @@
       <div th:replace="~{partials/forms :: largeTextInput('awardJustifications', #{case.financialAward.awardJustifications}, 950)}"></div>
 
       <moj:datepicker
-          id="order-served-date"
+          id="orderServedDate"
           name="orderServedDate"
           th:label="#{case.financialAward.orderServedDate}"
           th:hint="#{case.financialAward.dateHint}"

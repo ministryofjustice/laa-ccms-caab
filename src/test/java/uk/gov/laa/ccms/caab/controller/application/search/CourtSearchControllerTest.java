@@ -2,11 +2,15 @@ package uk.gov.laa.ccms.caab.controller.application.search;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_BASELINE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_RESULTS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.SELECTED_COURT;
 
 import jakarta.servlet.http.HttpSession;
@@ -21,8 +25,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
+import org.springframework.validation.BindingResult;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.advice.ActiveCaseModelAdvice;
+import uk.gov.laa.ccms.caab.bean.CourtSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.CourtSearchValidator;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -97,6 +104,186 @@ class CourtSearchControllerTest {
     assertThat(modelAndView).isNotNull();
     assertThat(modelAndView.getViewName()).isEqualTo("application/court-search");
     assertThat(modelAndView.getModel().get("proceedingIndex")).isEqualTo(0);
+  }
+
+  @Test
+  @DisplayName(
+      "POST /court/search rejects characters outside the allowed court search character set")
+  public void courtSearchPostRejectsInvalidCharacters() throws Exception {
+    var modelAndView =
+        mockMvc
+            .perform(
+                post("/court/search")
+                    .param("proceedingIndex", "0")
+                    .param("courtCode", "A@B")
+                    .param("courtName", "A@B"))
+            .andReturn()
+            .getModelAndView();
+
+    assertThat(modelAndView).isNotNull();
+    assertThat(modelAndView.getViewName()).isEqualTo("application/court-search");
+    assertThat(modelAndView.getModel().get("proceedingIndex")).isEqualTo(0);
+    assertThat(
+            modelAndView
+                .getModel()
+                .containsKey("org.springframework.validation.BindingResult.courtSearchCriteria"))
+        .isTrue();
+    BindingResult bindingResult =
+        (BindingResult)
+            modelAndView
+                .getModel()
+                .get("org.springframework.validation.BindingResult.courtSearchCriteria");
+    assertThat(bindingResult.getFieldError("courtCode")).isNotNull();
+    assertThat(bindingResult.getFieldError("courtCode").getCode()).isEqualTo("invalid.character");
+  }
+
+  @Test
+  @DisplayName("POST /court/search rejects angle brackets in court name")
+  public void courtSearchPostRejectsAngleBracketsInCourtName() throws Exception {
+    var modelAndView =
+        mockMvc
+            .perform(
+                post("/court/search")
+                    .param("proceedingIndex", "0")
+                    .param("courtCode", "CT1")
+                    .param("courtName", "Test<Court>"))
+            .andReturn()
+            .getModelAndView();
+
+    assertThat(modelAndView).isNotNull();
+    assertThat(modelAndView.getViewName()).isEqualTo("application/court-search");
+    BindingResult bindingResult =
+        (BindingResult)
+            modelAndView
+                .getModel()
+                .get("org.springframework.validation.BindingResult.courtSearchCriteria");
+    assertThat(bindingResult.getFieldError("courtName")).isNotNull();
+    assertThat(bindingResult.getFieldError("courtName").getCode()).isEqualTo("invalid.character");
+  }
+
+  @Test
+  @DisplayName("POST /court/search clears the stale court name when the code changes")
+  public void courtSearchPostClearsStaleNameWhenCodeChanges() throws Exception {
+    ProceedingOutcomeFormData proceedingOutcome = new ProceedingOutcomeFormData();
+    proceedingOutcome.setCourtCode("CT1");
+    proceedingOutcome.setCourtName("Test Court");
+    CommonLookupDetail emptyResult = new CommonLookupDetail().content(Collections.emptyList());
+
+    when(lookupService.getCourts("CT2", "")).thenReturn(Mono.just(emptyResult));
+
+    mockMvc.perform(
+        post("/court/search")
+            .param("proceedingIndex", "0")
+            .param("courtCode", "CT2")
+            .param("courtName", "Test Court")
+            .sessionAttr(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome));
+
+    verify(lookupService).getCourts("CT2", "");
+  }
+
+  @Test
+  @DisplayName("POST /court/search clears the stale court code when the name changes")
+  public void courtSearchPostClearsStaleCodeWhenNameChanges() throws Exception {
+    ProceedingOutcomeFormData proceedingOutcome = new ProceedingOutcomeFormData();
+    proceedingOutcome.setCourtCode("CT1");
+    proceedingOutcome.setCourtName("Test Court");
+    CommonLookupDetail emptyResult = new CommonLookupDetail().content(Collections.emptyList());
+
+    when(lookupService.getCourts("", "New Court")).thenReturn(Mono.just(emptyResult));
+
+    mockMvc.perform(
+        post("/court/search")
+            .param("proceedingIndex", "0")
+            .param("courtCode", "CT1")
+            .param("courtName", "New Court")
+            .sessionAttr(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome));
+
+    verify(lookupService).getCourts("", "New Court");
+  }
+
+  @Test
+  @DisplayName("POST /court/search scopes the stale-filter baseline to the originating form")
+  public void courtSearchPostScopesBaselineToOriginatingForm() throws Exception {
+    ProceedingOutcomeFormData proceedingOutcome = new ProceedingOutcomeFormData();
+    proceedingOutcome.setCourtCode("CT1");
+    proceedingOutcome.setCourtName("Test Court");
+    MockHttpSession session = new MockHttpSession();
+    session.setAttribute(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome);
+
+    CourtSearchCriteria firstFormBaseline = new CourtSearchCriteria();
+    firstFormBaseline.setCourtCode("CT1");
+    firstFormBaseline.setCourtName("First Court");
+    session.setAttribute(COURT_SEARCH_BASELINE + ":0", firstFormBaseline);
+
+    CourtSearchCriteria secondFormBaseline = new CourtSearchCriteria();
+    secondFormBaseline.setCourtCode("CT2");
+    secondFormBaseline.setCourtName("Second Court");
+    session.setAttribute(COURT_SEARCH_BASELINE + ":1", secondFormBaseline);
+
+    when(lookupService.getCourts("CT2", ""))
+        .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
+
+    mockMvc.perform(
+        post("/court/search")
+            .param("proceedingIndex", "0")
+            .param("courtCode", "CT2")
+            .param("courtName", "First Court")
+            .session(session));
+
+    verify(lookupService).getCourts("CT2", "");
+    verify(lookupService, never()).getCourts("", "First Court");
+  }
+
+  @Test
+  @DisplayName("GET /court/search preserves the original baseline when returning to refine")
+  public void getCourtSearchPreservesOriginalBaselineWhenReturningToRefine() throws Exception {
+    MockHttpSession session = new MockHttpSession();
+    CourtSearchCriteria baseline = new CourtSearchCriteria();
+    baseline.setCourtCode("CT1");
+    baseline.setCourtName("Original Court");
+    session.setAttribute(COURT_SEARCH_BASELINE + ":0", baseline);
+
+    mockMvc.perform(get("/court/search").param("proceedingIndex", "0").session(session));
+
+    assertThat(
+            ((CourtSearchCriteria) session.getAttribute(COURT_SEARCH_BASELINE + ":0"))
+                .getCourtCode())
+        .isEqualTo("CT1");
+    assertThat(
+            ((CourtSearchCriteria) session.getAttribute(COURT_SEARCH_BASELINE + ":0"))
+                .getCourtName())
+        .isEqualTo("Original Court");
+  }
+
+  @Test
+  @DisplayName("POST /court/search preserves the original baseline during validation retries")
+  public void courtSearchPostPreservesOriginalBaselineOnValidationFailure() throws Exception {
+    ProceedingOutcomeFormData proceedingOutcome = new ProceedingOutcomeFormData();
+    proceedingOutcome.setCourtCode("CT1");
+    proceedingOutcome.setCourtName("Old Court");
+    MockHttpSession session = new MockHttpSession();
+    session.setAttribute(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome);
+
+    session.setAttribute(COURT_SEARCH_BASELINE + ":0", new CourtSearchCriteria());
+    ((CourtSearchCriteria) session.getAttribute(COURT_SEARCH_BASELINE + ":0")).setCourtCode("CT1");
+    ((CourtSearchCriteria) session.getAttribute(COURT_SEARCH_BASELINE + ":0"))
+        .setCourtName("Old Court");
+
+    mockMvc.perform(
+        post("/court/search")
+            .param("proceedingIndex", "0")
+            .param("courtCode", "CT2")
+            .param("courtName", "New@Court")
+            .session(session));
+
+    assertThat(
+            ((CourtSearchCriteria) session.getAttribute(COURT_SEARCH_BASELINE + ":0"))
+                .getCourtCode())
+        .isEqualTo("CT1");
+    assertThat(
+            ((CourtSearchCriteria) session.getAttribute(COURT_SEARCH_BASELINE + ":0"))
+                .getCourtName())
+        .isEqualTo("Old Court");
   }
 
   @Test

@@ -108,9 +108,9 @@ import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CaseAssessmentDetail;
 import uk.gov.laa.ccms.data.model.CaseAssessmentDetails;
 import uk.gov.laa.ccms.data.model.CaseDetail;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 /**
  * Service class for handling operations related to assessments. This class provides methods to

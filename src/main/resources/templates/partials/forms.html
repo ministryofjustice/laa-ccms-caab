@@ -435,7 +435,7 @@
 
 <div th:fragment="dateOfBirth(required, value)">
   <moj:datepicker
-      id="dob"
+      id="dateOfBirth"
       name="dateOfBirth"
       th:label="${required} ? #{person.dob} : #{site.optional(#{person.dob})}"
       th:hint="#{site.dateHint}"

@@ -112,6 +112,24 @@ class DynamicOptionsRenderTest {
         .contains("id=\"dynamicOptions[HRS].fieldValue\"");
   }
 
+  @Test
+  void providerRequestDateErrorLinksToTheInputWithItsLabelHintAndError() throws Exception {
+    final String html = render("/test/dynamic-options/providerRequest");
+    final String field = "dynamicOptions[DATE].fieldValue";
+
+    assertThat(html)
+        .contains("href=\"#" + field + "\"")
+        .contains("for=\"" + field + "\"")
+        .contains("id=\"" + field + "\"")
+        .contains("name=\"" + field + "\"")
+        .contains("value=\"abc123\"")
+        .contains("id=\"" + field + "-hint\"")
+        .contains("id=\"" + field + "-error\"")
+        .contains("aria-describedby=\"" + field + "-hint " + field + "-error\"");
+    assertThat(html.split("id=\"" + java.util.regex.Pattern.quote(field) + "\"", -1)).hasSize(2);
+    assertThat(html.split("Enter a valid request date", -1)).hasSize(3);
+  }
+
   private static DynamicOptionFormData opt(
       String code, String type, boolean mandatory, String desc, String value, String display) {
     DynamicOptionFormData o = new DynamicOptionFormData();
@@ -132,8 +150,12 @@ class DynamicOptionsRenderTest {
       ProviderRequestDetailsFormData form = new ProviderRequestDetailsFormData();
       form.getDynamicOptions().put("REL", opt("REL", null, false, null, "SIB", "Sibling"));
       form.getDynamicOptions().put("NOTE", opt("NOTE", null, true, null, "hello", null));
+      form.getDynamicOptions()
+          .put("DATE", opt("DATE", "DAT", true, "Request date", "abc123", null));
       BindingResult br = new BeanPropertyBindingResult(form, "providerRequestDetails");
       br.rejectValue("dynamicOptions[REL].fieldValue", "req", "Select a relationship");
+      br.rejectValue(
+          "dynamicOptions[DATE].fieldValue", "invalid.format", "Enter a valid request date");
       model.addAttribute("providerRequestDetails", form);
       model.addAttribute(BindingResult.MODEL_KEY_PREFIX + "providerRequestDetails", br);
       model.addAttribute(
@@ -150,7 +172,16 @@ class DynamicOptionsRenderTest {
                       "Relationship",
                       "mandatoryFlag",
                       false),
-                  Map.of("code", "NOTE", "type", "FTS", "label", "Note", "mandatoryFlag", true))));
+                  Map.of("code", "NOTE", "type", "FTS", "label", "Note", "mandatoryFlag", true),
+                  Map.of(
+                      "code",
+                      "DATE",
+                      "type",
+                      "DAT",
+                      "label",
+                      "Request date",
+                      "mandatoryFlag",
+                      true))));
       model.addAttribute(
           "REL",
           List.of(

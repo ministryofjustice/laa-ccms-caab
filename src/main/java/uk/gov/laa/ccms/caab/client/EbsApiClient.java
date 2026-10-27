@@ -31,6 +31,7 @@ import uk.gov.laa.ccms.data.model.CaseDetails;
 import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.ClientDetails;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -982,6 +983,24 @@ public class EbsApiClient extends BaseApiClient {
         .bodyToMono(ClientDetails.class)
         .onErrorResume(
             e -> ebsApiClientErrorHandler.handleApiRetrieveError(e, "Clients", queryParams));
+  }
+
+  /**
+   * Fetches the full details held against a single client.
+   *
+   * @param clientReferenceNumber The client's reference number.
+   * @return A Mono wrapping the ClientDetail.
+   */
+  public Mono<ClientDetail> getClient(final String clientReferenceNumber) {
+    return webClient
+        .get()
+        .uri("/clients/{clientReferenceNumber}", clientReferenceNumber)
+        .retrieve()
+        .bodyToMono(ClientDetail.class)
+        .onErrorResume(
+            e ->
+                ebsApiClientErrorHandler.handleApiRetrieveError(
+                    e, "Client", "reference number", clientReferenceNumber));
   }
 
   /**
