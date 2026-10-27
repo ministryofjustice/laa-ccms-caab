@@ -70,6 +70,12 @@ public interface LiablePartiesDisplayMapper {
         awardAmount(award),
         AWARD_TYPE_COST.equals(award.getAwardType())
             || AWARD_TYPE_FINANCIAL.equals(award.getAwardType()),
+        switch (award) {
+          case LandAwardDetail land -> Boolean.TRUE.equals(land.getRecoveryOfAwardTimeRelated());
+          case OtherAssetAwardDetail asset ->
+              Boolean.TRUE.equals(asset.getRecoveryOfAwardTimeRelated());
+          default -> false;
+        },
         parties);
   }
 

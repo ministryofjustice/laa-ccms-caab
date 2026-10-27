@@ -690,15 +690,23 @@ public class AwardController {
       @PathVariable final String awardPath,
       @PathVariable final Integer awardId,
       final Model model) {
-    model.addAttribute(
-        "award",
+    final var award =
         caseOutcomeService.getLiablePartiesDisplay(
             ebsCase.getCaseReferenceNumber(),
             user.getProvider().getId().intValue(),
             awardPath,
-            awardId));
+            awardId);
+    model.addAttribute("award", award);
     model.addAttribute("awardPath", awardPath);
     model.addAttribute("awardId", awardId);
+    model.addAttribute(
+        "backUrl",
+        award.recoveryOfAwardTimeRelated()
+            ? "/case/outcome-and-awards/" + awardPath + "/" + awardId + "/time-related-recovery"
+            : "/case/outcome-and-awards/"
+                + ("land".equals(awardPath) ? "land-property" : awardPath)
+                + "/"
+                + awardId);
     return "application/liable-parties";
   }
 

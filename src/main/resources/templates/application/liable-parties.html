@@ -3,7 +3,7 @@
       th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
       xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title th:text="|#{service.name} - #{case.outcomeAndAwards.title}|"></title>
+  <title th:text="${award.costOrFinancial} ? |#{service.name} - #{case.liableParties.title}| : |#{service.name} - #{case.liableParties.interestedTitle}|"></title>
 </head>
 <body>
 <div class="govuk-width-container">
@@ -12,9 +12,8 @@
        th:text="#{site.cancelAndReturnToOutcomeAndAwards}"></a>
   </div>
   <div id="main-content" th:fragment="content">
-    <h1 class="govuk-heading-l" th:text="#{case.outcomeAndAwards.title}"></h1>
-    <h2 class="govuk-heading-m"
-        th:text="${award.costOrFinancial} ? #{case.liableParties.title} : #{case.liableParties.interestedTitle}"></h2>
+    <h1 class="govuk-heading-l"
+        th:text="${award.costOrFinancial} ? #{case.liableParties.title} : #{case.liableParties.interestedTitle}"></h1>
 
     <dl class="govuk-summary-list">
       <div class="govuk-summary-list__row">
@@ -32,7 +31,9 @@
       </div>
     </dl>
 
-    <table class="govuk-table" id="liable-parties">
+    <div class="govuk-inset-text" th:if="${#lists.isEmpty(award.parties)}"
+         id="no-parties-message" th:text="#{case.liableParties.none}"></div>
+    <table class="govuk-table" id="liable-parties" th:unless="${#lists.isEmpty(award.parties)}">
       <caption class="govuk-table__caption govuk-visually-hidden"
                th:text="${award.costOrFinancial} ? #{case.liableParties.title} : #{case.liableParties.interestedTitle}"></caption>
       <thead class="govuk-table__head">
@@ -45,9 +46,6 @@
       </tr>
       </thead>
       <tbody class="govuk-table__body">
-      <tr class="govuk-table__row" th:if="${#lists.isEmpty(award.parties)}">
-        <td class="govuk-table__cell" colspan="5" th:text="#{case.liableParties.none}"></td>
-      </tr>
       <tr class="govuk-table__row" th:each="party : ${award.parties}">
         <td class="govuk-table__cell">
           <a th:if="${party.editable}" class="govuk-link"
@@ -78,7 +76,7 @@
       <a class="govuk-button" data-module="govuk-button" role="button"
          th:href="${award.costOrFinancial} ? @{/case/outcome-and-awards/{path}/{id}/recovery(path=${awardPath},id=${awardId})} : @{/case/outcome-and-awards}"
          th:text="#{site.next}"></a>
-      <a class="govuk-link" th:href="@{/case/outcome-and-awards}" th:text="#{site.back}"></a>
+      <a class="govuk-link" th:href="@{${backUrl}}" th:text="#{site.back}"></a>
     </div>
   </div>
 </div>

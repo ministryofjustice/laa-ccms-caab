@@ -52,11 +52,12 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
 import uk.gov.laa.ccms.caab.controller.client.EditClientSummaryController;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
+import uk.gov.laa.ccms.caab.mapper.EbsClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
 @ExtendWith(MockitoExtension.class)
@@ -75,6 +76,8 @@ class EditClientSummaryControllerTest {
   @Mock private ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator;
 
   @Mock private ClientDetailMapper clientDetailsMapper;
+
+  @Mock private EbsClientDetailMapper ebsClientDetailMapper;
 
   @InjectMocks private EditClientSummaryController editClientSummaryController;
 
@@ -158,8 +161,8 @@ class EditClientSummaryControllerTest {
     verify(lookupService, times(1)).addCommonLookupsToModel(anyList(), any(Model.class));
     verify(lookupService, never()).getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_LANGUAGE), any());
 
-    verify(clientService, never()).getClient(any(), any(), any());
-    verify(clientDetailsMapper, never()).toClientFlowFormData(any());
+    verify(clientService, never()).getClient(any());
+    verify(ebsClientDetailMapper, never()).toClientFlowFormData(any());
   }
 
   @Test
@@ -185,9 +188,9 @@ class EditClientSummaryControllerTest {
     when(lookupService.addCommonLookupsToModel(anyList(), any(Model.class)))
         .thenReturn(Mono.empty());
 
-    when(clientService.getClient(any(), any(), any())).thenReturn(Mono.just(new ClientDetail()));
+    when(clientService.getClient(any())).thenReturn(Mono.just(new ClientDetail()));
 
-    when(clientDetailsMapper.toClientFlowFormData(any())).thenReturn(clientFlowFormData);
+    when(ebsClientDetailMapper.toClientFlowFormData(any())).thenReturn(clientFlowFormData);
 
     mockMvc
         .perform(
@@ -201,8 +204,8 @@ class EditClientSummaryControllerTest {
     verify(lookupService, times(1)).addCommonLookupsToModel(anyList(), any(Model.class));
     verify(lookupService, never()).getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_LANGUAGE), any());
 
-    verify(clientService, atLeastOnce()).getClient(any(), any(), any());
-    verify(clientDetailsMapper, atLeastOnce()).toClientFlowFormData(any());
+    verify(clientService, atLeastOnce()).getClient(any());
+    verify(ebsClientDetailMapper, atLeastOnce()).toClientFlowFormData(any());
   }
 
   @Test

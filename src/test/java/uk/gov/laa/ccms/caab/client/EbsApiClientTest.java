@@ -37,6 +37,7 @@ import uk.gov.laa.ccms.data.model.CaseAssessmentDetails;
 import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupDetail;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.ClientDetails;
 import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -1804,6 +1805,57 @@ public class EbsApiClientTest {
       Mono<TransactionStatus> transactionStatusMono = ebsApiClient.getClientStatus(transactionId);
 
       StepVerifier.create(transactionStatusMono).verifyComplete();
+    }
+  }
+
+  @Nested
+  @DisplayName("getClient() Tests")
+  class GetClientTests {
+
+    @Test
+    @DisplayName("Should return successfully")
+    void getClient_Successful() {
+      String clientReferenceNumber = "123";
+      String expectedUri = "/clients/{clientReferenceNumber}";
+
+      ClientDetail mockClientDetail = new ClientDetail();
+
+      when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.uri(expectedUri, clientReferenceNumber))
+          .thenReturn(requestHeadersMock);
+      when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.bodyToMono(ClientDetail.class)).thenReturn(Mono.just(mockClientDetail));
+
+      Mono<ClientDetail> clientDetailMono = ebsApiClient.getClient(clientReferenceNumber);
+
+      StepVerifier.create(clientDetailMono)
+          .expectNextMatches(clientDetail -> clientDetail == mockClientDetail)
+          .verifyComplete();
+    }
+
+    @Test
+    @DisplayName("Should handle error")
+    void getClient_Error() {
+      String clientReferenceNumber = "123";
+      String expectedUri = "/clients/{clientReferenceNumber}";
+
+      when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.uri(expectedUri, clientReferenceNumber))
+          .thenReturn(requestHeadersMock);
+      when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.bodyToMono(ClientDetail.class))
+          .thenReturn(
+              Mono.error(
+                  new WebClientResponseException(
+                      HttpStatus.NOT_FOUND.value(), "", null, null, null)));
+
+      when(apiClientErrorHandler.handleApiRetrieveError(
+              any(), eq("Client"), eq("reference number"), eq(clientReferenceNumber)))
+          .thenReturn(Mono.empty());
+
+      Mono<ClientDetail> clientDetailMono = ebsApiClient.getClient(clientReferenceNumber);
+
+      StepVerifier.create(clientDetailMono).verifyComplete();
     }
   }
 
