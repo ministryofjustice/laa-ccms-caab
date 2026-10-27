@@ -10,6 +10,8 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -23,6 +25,9 @@ import org.thymeleaf.web.servlet.JakartaServletWebApplication;
 import uk.gov.laa.ccms.caab.bean.PreCertificateAndLegalHelpCostsFormData;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.model.BaseAwardDetail;
+import uk.gov.laa.ccms.caab.model.CostAwardDetail;
+import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
+import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
@@ -80,6 +85,22 @@ class OutcomeAndAwardsTemplateRenderTest {
         .contains("id=\"preCertificateAndLegalHelpCostsLink\"")
         .contains("id=\"preCertificateAndLegalHelpCostsPreCertificateAmount\"")
         .contains("id=\"preCertificateAndLegalHelpCostsLegalHelpAmount\"");
+  }
+
+  @ParameterizedTest
+  @CsvSource({"COST, cost-award", "DAMAGE, financial-award", "LAND, land-property", "ASSET, asset"})
+  void retainsAwardDetailsLinksWithoutDirectPartySummaryActions(String type, String path) {
+    final BaseAwardDetail award =
+        switch (type) {
+          case "COST" -> new CostAwardDetail().id(7).awardType(type);
+          case "DAMAGE" -> new FinancialAwardDetail().id(7).awardType(type);
+          case "LAND" -> new LandAwardDetail().id(7).awardType(type);
+          default -> new OtherAssetAwardDetail().id(7).awardType(type);
+        };
+    assertThat(render(List.of(award)))
+        .containsPattern("href=\"/case/outcome-and-awards/" + path + "/7\"[^>]*>" + type + "</a>")
+        .contains(">Delete</a>")
+        .doesNotContain("/liable-parties", ">Liable Parties</a>", ">Interested Parties</a>");
   }
 
   @Test

@@ -765,6 +765,24 @@ public class CaabApiClient {
                     e, RESOURCE_TYPE_CASE_OUTCOME, queryParams));
   }
 
+  /** Retrieves the opponents linked as liable or interested parties to one award. */
+  public Mono<List<OpponentDetail>> getAwardLiableParties(
+      final Integer caseOutcomeId, final String awardType, final Integer awardId) {
+    return caabApiWebClient
+        .get()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/liable-parties",
+            caseOutcomeId,
+            awardType,
+            awardId)
+        .retrieve()
+        .bodyToMono(new ParameterizedTypeReference<List<OpponentDetail>>() {})
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiRetrieveError(
+                    e, RESOURCE_TYPE_OPPONENTS, "award id", String.valueOf(awardId)));
+  }
+
   /**
    * Fetches the case outcome with the specified id. This method communicates with the CAAB API
    * client to fetch the case outcome.

@@ -233,9 +233,9 @@ public class AwardController {
   }
 
   /**
-   * Creates or updates a financial award and returns to the outcome and awards screen.
+   * Creates or updates a financial award and opens its liable parties.
    *
-   * @return redirect to the outcome and awards screen when successful
+   * @return redirect to the liable parties screen when successful
    */
   @PostMapping("/case/outcome-and-awards/financial-award")
   public String financialAward(
@@ -276,13 +276,15 @@ public class AwardController {
     final FinancialAwardRequest request =
         financialAwardMapper.toFinancialAwardRequest(financialAward);
     try {
+      final Integer savedAwardId;
       if (financialAward.getId() == null) {
-        caseOutcomeService.createFinancialAward(
-            ebsCase.getCaseReferenceNumber(),
-            user.getProvider().getId().intValue(),
-            request,
-            user.getLoginId(),
-            ebsCase.getCaseOutcome());
+        savedAwardId =
+            caseOutcomeService.createFinancialAward(
+                ebsCase.getCaseReferenceNumber(),
+                user.getProvider().getId().intValue(),
+                request,
+                user.getLoginId(),
+                ebsCase.getCaseOutcome());
       } else {
         caseOutcomeService.updateFinancialAward(
             ebsCase.getCaseReferenceNumber(),
@@ -290,7 +292,11 @@ public class AwardController {
             financialAward.getId(),
             request,
             user.getLoginId());
+        savedAwardId = financialAward.getId();
       }
+      return "redirect:/case/outcome-and-awards/financial-award/"
+          + savedAwardId
+          + "/liable-parties";
     } catch (CaabApiClientException | IllegalStateException ex) {
       log.warn("Failed to save financial award with id: {}", financialAward.getId(), ex);
       bindingResult.reject(
@@ -298,8 +304,6 @@ public class AwardController {
       populateFinancialAwardDropdowns(model);
       return "application/financial-award";
     }
-
-    return "redirect:/case/outcome-and-awards";
   }
 
   /** Displays the land award screen for a new or existing award. */
@@ -416,6 +420,7 @@ public class AwardController {
       if ("Y".equalsIgnoreCase(landAward.getRecoveryOfAwardTimeRelated())) {
         return "redirect:/case/outcome-and-awards/land/" + savedAwardId + "/time-related-recovery";
       }
+      return "redirect:/case/outcome-and-awards/land/" + savedAwardId + "/liable-parties";
     } catch (CaabApiClientException | IllegalStateException ex) {
       log.warn("Failed to save land award with id: {}", landAward.getId(), ex);
       bindingResult.reject(
@@ -423,8 +428,6 @@ public class AwardController {
       populateLandAwardDropdowns(model);
       return "application/land-property";
     }
-
-    return "redirect:/case/outcome-and-awards";
   }
 
   /** Displays the other asset award screen for a new or existing award. */
@@ -534,6 +537,7 @@ public class AwardController {
       if (Boolean.TRUE.equals(otherAssetAward.getRecoveryOfAwardTimeRelated())) {
         return "redirect:/case/outcome-and-awards/asset/" + savedAwardId + "/time-related-recovery";
       }
+      return "redirect:/case/outcome-and-awards/asset/" + savedAwardId + "/liable-parties";
     } catch (CaabApiClientException | IllegalStateException ex) {
       log.warn("Failed to save other asset award with id: {}", otherAssetAward.getId(), ex);
       bindingResult.reject(
@@ -542,8 +546,6 @@ public class AwardController {
       populateOtherAssetAwardDropdowns(model);
       return "application/other-asset-award";
     }
-
-    return "redirect:/case/outcome-and-awards";
   }
 
   /** Displays the saved or new time-related recovery for a land or other asset award. */
@@ -640,7 +642,28 @@ public class AwardController {
       model.addAttribute("awardId", awardId);
       return "application/time-related-recovery";
     }
-    return "redirect:/case/outcome-and-awards";
+    return "redirect:/case/outcome-and-awards/" + awardPath + "/" + awardId + "/liable-parties";
+  }
+
+  /** Displays the parties associated with one award in the current case outcome. */
+  @GetMapping(
+      "/case/outcome-and-awards/{awardPath:cost-award|financial-award|land|asset}/{awardId}/liable-parties")
+  public String displayLiableParties(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @PathVariable final String awardPath,
+      @PathVariable final Integer awardId,
+      final Model model) {
+    model.addAttribute(
+        "award",
+        caseOutcomeService.getLiablePartiesDisplay(
+            ebsCase.getCaseReferenceNumber(),
+            user.getProvider().getId().intValue(),
+            awardPath,
+            awardId));
+    model.addAttribute("awardPath", awardPath);
+    model.addAttribute("awardId", awardId);
+    return "application/liable-parties";
   }
 
   private TimeRecoveryAward loadTimeRecoveryAward(
@@ -802,9 +825,9 @@ public class AwardController {
   }
 
   /**
-   * Creates or updates a cost award and returns to the outcome and awards screen.
+   * Creates or updates a cost award and continues to its liable parties.
    *
-   * @return redirect to the outcome and awards screen when successful
+   * @return redirect to the liable parties screen when successful
    */
   @PostMapping("/case/outcome-and-awards/cost-award")
   public String costAward(
@@ -854,13 +877,15 @@ public class AwardController {
 
     final CostAwardDetail request = costAwardMapper.toCostAward(costAward);
     try {
+      final Integer savedAwardId;
       if (costAward.getId() == null) {
-        caseOutcomeService.createCostAward(
-            ebsCase.getCaseReferenceNumber(),
-            user.getProvider().getId().intValue(),
-            request,
-            user.getLoginId(),
-            ebsCase.getCaseOutcome());
+        savedAwardId =
+            caseOutcomeService.createCostAward(
+                ebsCase.getCaseReferenceNumber(),
+                user.getProvider().getId().intValue(),
+                request,
+                user.getLoginId(),
+                ebsCase.getCaseOutcome());
       } else {
         caseOutcomeService.updateCostAward(
             ebsCase.getCaseReferenceNumber(),
@@ -868,7 +893,9 @@ public class AwardController {
             costAward.getId(),
             costAward,
             user.getLoginId());
+        savedAwardId = costAward.getId();
       }
+      return "redirect:/case/outcome-and-awards/cost-award/" + savedAwardId + "/liable-parties";
     } catch (CaabApiClientException | IllegalStateException ex) {
       log.warn("Failed to save cost award with id: {}", costAward.getId(), ex);
       bindingResult.reject(
@@ -877,8 +904,6 @@ public class AwardController {
       populateCostAwardPage(model, costAward);
       return "application/cost-award";
     }
-
-    return "redirect:/case/outcome-and-awards";
   }
 
   private void populateCostAwardPage(final Model model, final CostAwardFormData costAwardFormData) {
