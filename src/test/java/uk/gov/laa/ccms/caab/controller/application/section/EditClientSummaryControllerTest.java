@@ -52,6 +52,7 @@ import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
 import uk.gov.laa.ccms.caab.controller.client.EditClientSummaryController;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
+import uk.gov.laa.ccms.caab.mapper.EbsClientDetailMapper;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.ClientDetail;
@@ -75,6 +76,8 @@ class EditClientSummaryControllerTest {
   @Mock private ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator;
 
   @Mock private ClientDetailMapper clientDetailsMapper;
+
+  @Mock private EbsClientDetailMapper ebsClientDetailMapper;
 
   @InjectMocks private EditClientSummaryController editClientSummaryController;
 
@@ -159,7 +162,7 @@ class EditClientSummaryControllerTest {
     verify(lookupService, never()).getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_LANGUAGE), any());
 
     verify(clientService, never()).getClient(any());
-    verify(clientDetailsMapper, never()).toClientFlowFormData(any());
+    verify(ebsClientDetailMapper, never()).toClientFlowFormData(any());
   }
 
   @Test
@@ -187,7 +190,7 @@ class EditClientSummaryControllerTest {
 
     when(clientService.getClient(any())).thenReturn(Mono.just(new ClientDetail()));
 
-    when(clientDetailsMapper.toClientFlowFormData(any())).thenReturn(clientFlowFormData);
+    when(ebsClientDetailMapper.toClientFlowFormData(any())).thenReturn(clientFlowFormData);
 
     mockMvc
         .perform(
@@ -202,7 +205,7 @@ class EditClientSummaryControllerTest {
     verify(lookupService, never()).getCommonValue(eq(COMMON_VALUE_CORRESPONDENCE_LANGUAGE), any());
 
     verify(clientService, atLeastOnce()).getClient(any());
-    verify(clientDetailsMapper, atLeastOnce()).toClientFlowFormData(any());
+    verify(ebsClientDetailMapper, atLeastOnce()).toClientFlowFormData(any());
   }
 
   @Test

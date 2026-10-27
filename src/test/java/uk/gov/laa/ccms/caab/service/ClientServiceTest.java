@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.service;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildClientDetail;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,16 +41,10 @@ public class ClientServiceTest {
   void getClient_returnsClientDetails_Successful() {
     String clientReferenceNumber = "CLIENT123";
 
-    uk.gov.laa.ccms.data.model.ClientDetail mockClientDetail =
-        new uk.gov.laa.ccms.data.model.ClientDetail();
+    when(ebsApiClient.getClient(clientReferenceNumber)).thenReturn(Mono.just(buildClientDetail()));
 
-    when(ebsApiClient.getClient(clientReferenceNumber)).thenReturn(Mono.just(mockClientDetail));
-
-    Mono<uk.gov.laa.ccms.data.model.ClientDetail> clientDetailMono =
-        clientService.getClient(clientReferenceNumber);
-
-    StepVerifier.create(clientDetailMono)
-        .expectNextMatches(clientDetail -> clientDetail == mockClientDetail)
+    StepVerifier.create(clientService.getClient(clientReferenceNumber))
+        .expectNextMatches(clientDetail -> "12345".equals(clientDetail.getClientReferenceNumber()))
         .verifyComplete();
   }
 

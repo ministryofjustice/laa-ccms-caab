@@ -12,10 +12,10 @@ import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
 import uk.gov.laa.ccms.caab.util.ReflectionUtils;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.ClientDetails;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
 /** Service class to handle Clients. */
@@ -50,8 +50,7 @@ public class ClientService {
    * @param clientReferenceNumber The client's reference number.
    * @return A Mono wrapping the ClientDetail.
    */
-  public Mono<uk.gov.laa.ccms.data.model.ClientDetail> getClient(
-      final String clientReferenceNumber) {
+  public Mono<ClientDetail> getClient(final String clientReferenceNumber) {
     log.debug("EBS Client to get using reference: {}", clientReferenceNumber);
     return ebsApiClient.getClient(clientReferenceNumber);
   }
@@ -81,10 +80,10 @@ public class ClientService {
     ReflectionUtils.nullifyStrings(clientFlowFormData.getContactDetails());
     ReflectionUtils.nullifyStrings(clientFlowFormData.getAddressDetails());
     ReflectionUtils.nullifyStrings(clientFlowFormData.getMonitoringDetails());
-    final ClientDetail clientDetail = clientDetailsMapper.toClientDetail(clientFlowFormData);
-
     return soaApiClient.postClient(
-        clientDetail.getDetails(), user.getLoginId(), user.getUserType());
+        clientDetailsMapper.toClientDetail(clientFlowFormData).getDetails(),
+        user.getLoginId(),
+        user.getUserType());
   }
 
   /**
@@ -103,10 +102,11 @@ public class ClientService {
     ReflectionUtils.nullifyStrings(clientFlowFormData.getContactDetails());
     ReflectionUtils.nullifyStrings(clientFlowFormData.getAddressDetails());
     ReflectionUtils.nullifyStrings(clientFlowFormData.getMonitoringDetails());
-    final ClientDetail clientDetail = clientDetailsMapper.toClientDetail(clientFlowFormData);
-
     return soaApiClient.putClient(
-        clientReferenceNumber, clientDetail.getDetails(), user.getLoginId(), user.getUserType());
+        clientReferenceNumber,
+        clientDetailsMapper.toClientDetail(clientFlowFormData).getDetails(),
+        user.getLoginId(),
+        user.getUserType());
   }
 
   /**

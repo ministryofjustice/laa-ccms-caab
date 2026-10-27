@@ -72,7 +72,7 @@ import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
-import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
+import uk.gov.laa.ccms.caab.mapper.EbsClientDetailMapper;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.mapper.SubmissionSummaryDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.context.submission.GeneralDetailsSubmissionSummaryMappingContext;
@@ -122,7 +122,7 @@ public class ApplicationSubmissionController {
   private final AmendmentService amendmentService;
 
   // mappers
-  private final ClientDetailMapper clientDetailsMapper;
+  private final EbsClientDetailMapper ebsClientDetailMapper;
   private final SubmissionSummaryDisplayMapper submissionSummaryDisplayMapper;
   private final ProceedingAndCostsMapper proceedingAndCostsMapper;
 
@@ -706,7 +706,7 @@ public class ApplicationSubmissionController {
         preprocessingData.getT3();
 
     final ClientFlowFormData clientFlowFormData =
-        clientDetailsMapper.toClientFlowFormData(preprocessingData.getT4());
+        ebsClientDetailMapper.toClientFlowFormData(preprocessingData.getT4());
 
     final ApplicationDetail application = preprocessingData.getT5();
 

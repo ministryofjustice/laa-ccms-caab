@@ -89,7 +89,7 @@ import uk.gov.laa.ccms.caab.bean.validators.proceedings.ProceedingMatterTypeDeta
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
-import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
+import uk.gov.laa.ccms.caab.mapper.EbsClientDetailMapper;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.mapper.SubmissionSummaryDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.context.submission.GeneralDetailsSubmissionSummaryMappingContext;
@@ -138,7 +138,7 @@ class ApplicationSubmissionControllerTest {
 
   @Mock private EvidenceService evidenceService;
 
-  @Mock private ClientDetailMapper clientDetailsMapper;
+  @Mock private EbsClientDetailMapper ebsClientDetailMapper;
 
   @Mock private SubmissionSummaryDisplayMapper submissionSummaryDisplayMapper;
 
@@ -241,7 +241,7 @@ class ApplicationSubmissionControllerTest {
         .thenReturn(Mono.just(opponentContext));
     when(lookupService.getGeneralDetailsSubmissionMappingContext())
         .thenReturn(Mono.just(generalDetailsContext));
-    when(clientDetailsMapper.toClientFlowFormData(any())).thenReturn(clientFlowFormData);
+    when(ebsClientDetailMapper.toClientFlowFormData(any())).thenReturn(clientFlowFormData);
 
     when(assessmentService.getAssessmentSummaryToDisplay(any(), any(), any()))
         .thenReturn(List.of());
