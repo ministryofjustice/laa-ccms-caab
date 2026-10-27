@@ -17,6 +17,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMAR
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_BASELINE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
@@ -746,7 +747,6 @@ public class CaseController {
       @ModelAttribute("proceedingOutcome") final ProceedingOutcomeFormData proceedingOutcome,
       HttpSession session) {
     proceedingOutcome.normaliseLegacyCourtFields();
-    proceedingOutcome.normaliseLegacyCourtFields();
     if (!hasOutcomeEditPermission(ebsCase)) {
       log.warn(
           "Rejecting proceeding outcome court search for read-only case {}",
@@ -760,6 +760,7 @@ public class CaseController {
     courtSearchCriteria.setCourtCode(proceedingOutcome.getCourtCode());
     courtSearchCriteria.setCourtName(proceedingOutcome.getCourtName());
     session.setAttribute(COURT_SEARCH_CRITERIA, courtSearchCriteria);
+    session.removeAttribute(COURT_SEARCH_BASELINE + ":" + index);
     return "redirect:/court/search?proceedingIndex=" + index;
   }
 
@@ -782,8 +783,6 @@ public class CaseController {
           ebsCase.getCaseReferenceNumber());
       return "redirect:/case/outcome-and-awards";
     }
-
-    proceedingOutcome.normaliseLegacyCourtFields();
 
     proceedingOutcome.normaliseLegacyCourtFields();
 
