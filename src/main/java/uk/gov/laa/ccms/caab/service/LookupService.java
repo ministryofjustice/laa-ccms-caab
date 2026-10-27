@@ -29,6 +29,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
+import uk.gov.laa.ccms.caab.mapper.context.LiablePartiesMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.submission.GeneralDetailsSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.submission.OpponentSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.submission.ProceedingSubmissionSummaryMappingContext;
@@ -654,6 +655,21 @@ public class LookupService {
                     .organisationRelationshipsToCase(tuple.getT2())
                     .individualRelationshipsToCase(tuple.getT3())
                     .relationshipToClient(tuple.getT4())
+                    .build());
+  }
+
+  /** Retrieves the independent reference-data sets required by the award party summary. */
+  public Mono<LiablePartiesMappingContext> getLiablePartiesMappingContext() {
+    return Mono.zip(
+            getCommonValues(COMMON_VALUE_CONTACT_TITLE),
+            getOrganisationToCaseRelationships(),
+            getPersonToCaseRelationships())
+        .map(
+            tuple ->
+                LiablePartiesMappingContext.builder()
+                    .contactTitle(tuple.getT1())
+                    .organisationRelationshipsToCase(tuple.getT2())
+                    .individualRelationshipsToCase(tuple.getT3())
                     .build());
   }
 
