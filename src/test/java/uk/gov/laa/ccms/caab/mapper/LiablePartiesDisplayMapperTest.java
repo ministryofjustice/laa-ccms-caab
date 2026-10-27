@@ -22,6 +22,7 @@ import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.LiablePartyDetail;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
+import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
@@ -30,6 +31,25 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 class LiablePartiesDisplayMapperTest {
   private final LiablePartiesDisplayMapper mapper =
       Mappers.getMapper(LiablePartiesDisplayMapper.class);
+
+  @ParameterizedTest
+  @CsvSource({"LAND,true", "LAND,false", "LAND,", "ASSET,true", "ASSET,false", "ASSET,"})
+  void mapsTimeRecoveryStepFromCurrentFlagRatherThanRetainedRecovery(
+      String type, Boolean timeRelatedRecovery) {
+    final BaseAwardDetail award =
+        "LAND".equals(type)
+            ? new LandAwardDetail()
+                .awardType(type)
+                .recoveryOfAwardTimeRelated(timeRelatedRecovery)
+                .timeRecovery(new TimeRecoveryDetail())
+            : new OtherAssetAwardDetail()
+                .awardType(type)
+                .recoveryOfAwardTimeRelated(timeRelatedRecovery)
+                .timeRecovery(new TimeRecoveryDetail());
+
+    assertThat(mapper.toLiablePartiesDisplay(award, List.of(), null).recoveryOfAwardTimeRelated())
+        .isEqualTo(Boolean.TRUE.equals(timeRelatedRecovery));
+  }
 
   @Test
   void mapsSelectedAwardLinksInOrderWithResolvedNamesAndCompactAddresses() {

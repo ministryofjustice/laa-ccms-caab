@@ -130,10 +130,19 @@ class AwardControllerTest {
   class LiablePartiesTests {
 
     @ParameterizedTest
-    @ValueSource(strings = {"cost-award", "financial-award", "land", "asset"})
-    void loadsSelectedAwardWithinCurrentCaseAndProvider(String awardPath) {
+    @CsvSource({
+      "cost-award, false, cost-award/7",
+      "financial-award, false, financial-award/7",
+      "land, false, land-property/7",
+      "asset, false, asset/7",
+      "land, true, land/7/time-related-recovery",
+      "asset, true, asset/7/time-related-recovery"
+    })
+    void loadsSelectedAwardWithinCurrentCaseAndProvider(
+        String awardPath, boolean timeRelatedRecovery, String backPath) {
       final var award =
-          new LiablePartiesDisplay("LAND", "Property", BigDecimal.TEN, false, List.of());
+          new LiablePartiesDisplay(
+              "LAND", "Property", BigDecimal.TEN, false, timeRelatedRecovery, List.of());
       when(caseOutcomeService.getLiablePartiesDisplay("300000001", 123, awardPath, 7))
           .thenReturn(award);
 
@@ -147,7 +156,8 @@ class AwardControllerTest {
           .model()
           .containsEntry("award", award)
           .containsEntry("awardPath", awardPath)
-          .containsEntry("awardId", 7);
+          .containsEntry("awardId", 7)
+          .containsEntry("backUrl", "/case/outcome-and-awards/" + backPath);
 
       verify(caseOutcomeService).getLiablePartiesDisplay("300000001", 123, awardPath, 7);
       verifyNoMoreInteractions(caseOutcomeService);

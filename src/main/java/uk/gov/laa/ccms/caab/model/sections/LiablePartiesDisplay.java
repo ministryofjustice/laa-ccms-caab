@@ -9,4 +9,5 @@ public record LiablePartiesDisplay(
     String description,
     BigDecimal awardAmount,
     boolean costOrFinancial,
+    boolean recoveryOfAwardTimeRelated,
     List<LiablePartyDisplay> parties) {}
