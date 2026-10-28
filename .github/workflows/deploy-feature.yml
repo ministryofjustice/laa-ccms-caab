@@ -21,7 +21,7 @@ jobs:
       feature_version: ${{ steps.get-feature-version.outputs.feature_version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ministryofjustice/laa-ccms-common-workflows/.github/actions/remove-prefix@035ee98ca0047659f865532ea6234abd69529ee8 # v2.5.0
+      - uses: ministryofjustice/laa-ccms-common-workflows/.github/actions/remove-prefix@57f8d08c0cf807ea64fc121500669c4d3dada733 # v2.5.1
         id: get-feature-name
         with:
           string: ${{ github.ref_name }}
