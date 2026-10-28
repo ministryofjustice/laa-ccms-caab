@@ -273,6 +273,20 @@ class EditClientBasicDetailsControllerTest {
     }
 
     @Test
+    @DisplayName("The description from the client is used when the lookup no longer has the code")
+    void usesClientCountryOfOriginDescription() throws Exception {
+      basicDetails.setCountryOfOrigin("SCG");
+      basicDetails.setCountryOfOriginDescription("Serbia and Montenegro");
+
+      mockMvc
+          .perform(
+              get("/amendments/sections/client/details/basic")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+          .andExpect(status().isOk())
+          .andExpect(model().attribute("countryOfOriginDisplayValue", "Serbia and Montenegro"));
+    }
+
+    @Test
     @DisplayName("An unknown country code falls back to the code itself")
     void unknownCountryCodeFallsBackToCode() throws Exception {
       basicDetails.setCountryOfOrigin("ZZZ");

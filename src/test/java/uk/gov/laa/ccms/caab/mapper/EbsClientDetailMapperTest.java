@@ -32,6 +32,7 @@ class EbsClientDetailMapperTest {
   private final String surnameAtBirth = "surnameAtBirth";
 
   private final String countryOfOrigin = "UK";
+  private final String countryOfOriginDescription = "United Kingdom";
   private final String gender = "MALE";
   private final String maritalStatus = "SINGLE";
 
@@ -197,6 +198,7 @@ class EbsClientDetailMapperTest {
         .dateOfBirth(
             LocalDate.of(Integer.parseInt(year), Integer.parseInt(month), Integer.parseInt(day)))
         .countryOfOriginCode(countryOfOrigin)
+        .countryOfOriginDescription(countryOfOriginDescription)
         .gender(gender)
         .maritalStatus(maritalStatus)
         .niNumber(nationalInsuranceNumber)
@@ -257,6 +259,7 @@ class EbsClientDetailMapperTest {
       ClientFormDataBasicDetails basicDetails) {
     basicDetails.setDateOfBirth(dateofBirth);
     basicDetails.setCountryOfOrigin(countryOfOrigin);
+    basicDetails.setCountryOfOriginDescription(countryOfOriginDescription);
     basicDetails.setGender(gender);
     basicDetails.setMaritalStatus(maritalStatus);
     basicDetails.setNationalInsuranceNumber(nationalInsuranceNumber);

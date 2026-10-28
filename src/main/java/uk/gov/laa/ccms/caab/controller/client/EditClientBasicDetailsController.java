@@ -130,6 +130,12 @@ public class EditClientBasicDetailsController {
       return;
     }
 
+    if (StringUtils.hasText(basicDetails.getCountryOfOriginDescription())) {
+      model.addAttribute(
+          "countryOfOriginDisplayValue", basicDetails.getCountryOfOriginDescription());
+      return;
+    }
+
     Optional.ofNullable((List<CommonLookupValueDetail>) model.getAttribute("countries"))
         .ifPresent(
             countries ->
