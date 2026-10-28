@@ -351,9 +351,9 @@ class BillingTemplateRenderTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"Bill", "POA"})
-  @DisplayName("An invoice without an ID remains visible with an unavailable indication")
-  void submittedRowWithoutIdExplainsUnavailability(final String type) {
+  @ValueSource(strings = {"Bill", "POA", "Counsel Bill", "Counsel POA"})
+  @DisplayName("An invoice without an ID retains its original type as plain text")
+  void submittedRowWithoutIdRetainsPlainTextType(final String type) {
     final Map<String, Object> model = statementModel(true);
     model.put(
         "billsAndPoaPage",
@@ -363,11 +363,11 @@ class BillingTemplateRenderTest {
     final String html = render("application/billing/case-statement-of-account", model);
     final String table =
         html.substring(html.indexOf("id=\"bills-and-poa-table\""), html.lastIndexOf("</table>"));
-    assertThat(visibleText(table))
-        .contains(type, "Submitted", "123.00")
-        .containsPattern("(?i)(unavailable|not available)");
-    assertThat(table)
-        .doesNotContain("billing-id=", "href=\"/case/billing/bill\"", "href=\"/case/billing/poa\"");
+    assertThat(visibleText(table)).contains(type, "Submitted", "123.00");
+    final Matcher firstCell = Pattern.compile("(?s)<td\\b[^>]*>(.*?)</td>").matcher(table);
+    assertThat(firstCell.find()).isTrue();
+    assertThat(visibleText(firstCell.group(1)).trim()).isEqualTo(type);
+    assertThat(table).doesNotContain("<a ", "billing-id=", "Details are unavailable");
   }
 
   @ParameterizedTest

@@ -219,11 +219,139 @@ public class BillingSummaryPdfService {
   }
 
   /**
+   * Normalises only a fresh historical projection; draft assessments retain their stored values.
+   *
+   * @param assessment the in-memory selected-invoice projection
+   * @return whether the complete submitted claim can be rendered faithfully
+   */
+  public static boolean prepareHistoricalSummary(final AssessmentDetail assessment) {
+    if (!validHistoricalStructure(assessment)) {
+      return false;
+    }
+    final List<AssessmentEntityDetail> globals =
+        getAssessmentEntitiesForEntityType(assessment, AssessmentEntityType.GLOBAL);
+    if (globals.size() != 1 || !normaliseCourtFlag(globals.getFirst())) {
+      return false;
+    }
+    for (final AssessmentEntityTypeDetail type : assessment.getEntityTypes()) {
+      if (!type.getName().endsWith(BILL_LINE_ENTITY_SUFFIX)) {
+        continue;
+      }
+      if (type.getName().equals("OVERALL_ADJ_BILL_LINE")) {
+        type.getEntities().removeIf(BillingSummaryPdfService::assessedOnlyAdjustment);
+      }
+      final String prefix =
+          type.getName().substring(0, type.getName().length() - BILL_LINE_ENTITY_SUFFIX.length());
+      for (final AssessmentEntityDetail entity : type.getEntities()) {
+        final AssessmentAttributeDetail time = getAssessmentAttribute(entity, prefix + SUFFIX_TIME);
+        if (time != null && time.getValue() != null && !time.getValue().isBlank()) {
+          final Long minutes = historicalMinutes(time.getValue());
+          if (minutes == null) {
+            return false;
+          }
+          time.setValue(String.format("%02d:%02d", minutes / 60, minutes % 60));
+        }
+        if (getAssessmentAttribute(entity, prefix + SUFFIX_VAT) == null) {
+          final String net = attributeValue(entity, prefix + SUFFIX_NET_CLAIM);
+          final String gross = attributeValue(entity, prefix + SUFFIX_TOTAL_CLAIM);
+          final String vatClaim = attributeValue(entity, prefix + "_VAT_CLAIM");
+          if (isCurrency(net)
+              && isCurrency(gross)
+              && isCurrency(vatClaim)
+              && currency(net).signum() > 0
+              && currency(net).compareTo(currency(gross)) == 0
+              && currency(vatClaim).signum() == 0) {
+            entity.addAttributesItem(
+                new AssessmentAttributeDetail()
+                    .name(prefix + SUFFIX_VAT)
+                    .type("number")
+                    .value("0"));
+          }
+        }
+      }
+    }
+    return hasUsableHistoricalSummary(assessment);
+  }
+
+  private static boolean assessedOnlyAdjustment(final AssessmentEntityDetail entity) {
+    return entity.getAttributes().stream().anyMatch(a -> a.getName().startsWith("ASSESSED_"))
+        && List.of(SUFFIX_DATE, SUFFIX_NET_CLAIM, SUFFIX_VAT, SUFFIX_TOTAL_CLAIM, "_VAT_CLAIM")
+            .stream()
+            .noneMatch(suffix -> getAssessmentAttribute(entity, "OVERALL_ADJ" + suffix) != null);
+  }
+
+  private static boolean normaliseCourtFlag(final AssessmentEntityDetail global) {
+    Boolean courtAssessed = null;
+    for (final String name :
+        List.of(ATTR_COURT_ASSESS_BILL, "COURT_ASSESSED_BILL", "GB_CLAIM_ASSESSED_BY_COURT")) {
+      final String value = attributeValue(global, name).trim();
+      if (value.isEmpty()) {
+        continue;
+      }
+      final boolean yes = value.equalsIgnoreCase("yes") || value.equalsIgnoreCase("true");
+      final boolean no = value.equalsIgnoreCase("no") || value.equalsIgnoreCase("false");
+      if ((!yes && !no) || (courtAssessed != null && courtAssessed != yes)) {
+        return false;
+      }
+      courtAssessed = yes;
+    }
+    if (courtAssessed != null) {
+      final AssessmentAttributeDetail canonical =
+          getAssessmentAttribute(global, ATTR_COURT_ASSESS_BILL);
+      final String value = courtAssessed ? "Yes" : "No";
+      if (canonical == null) {
+        global.addAttributesItem(
+            new AssessmentAttributeDetail().name(ATTR_COURT_ASSESS_BILL).type("text").value(value));
+      } else {
+        canonical.setValue(value);
+      }
+    }
+    return true;
+  }
+
+  private static boolean validHistoricalStructure(final AssessmentDetail assessment) {
+    return assessment != null
+        && assessment.getEntityTypes() != null
+        && assessment.getEntityTypes().stream()
+            .allMatch(
+                type ->
+                    type != null
+                        && type.getName() != null
+                        && type.getEntities() != null
+                        && type.getEntities().stream()
+                            .allMatch(
+                                entity ->
+                                    entity != null
+                                        && entity.getAttributes() != null
+                                        && entity.getAttributes().stream()
+                                            .allMatch(
+                                                attribute ->
+                                                    attribute != null
+                                                        && attribute.getName() != null)));
+  }
+
+  private static Long historicalMinutes(final String value) {
+    if (value == null || value.isBlank()) {
+      return 0L;
+    }
+    if (!value.trim().matches("\\d+:[0-5]\\d(?::00)?")) {
+      return null;
+    }
+    final String[] parts = value.trim().split(":");
+    try {
+      return Math.addExact(
+          Math.multiplyExact(Long.parseLong(parts[0]), 60), Long.parseLong(parts[1]));
+    } catch (final ArithmeticException | NumberFormatException error) {
+      return null;
+    }
+  }
+
+  /**
    * Historical reports must contain real totals and complete dated claim lines, rather than
    * silently rendering the zero defaults and omitted lines used by draft reports.
    */
   public static boolean hasUsableHistoricalSummary(final AssessmentDetail assessment) {
-    if (assessment == null || assessment.getEntityTypes() == null) {
+    if (!validHistoricalStructure(assessment)) {
       return false;
     }
     final List<AssessmentEntityDetail> globals =
@@ -234,6 +362,9 @@ public class BillingSummaryPdfService {
       return false;
     }
     boolean hasLine = false;
+    BigDecimal net = BigDecimal.ZERO;
+    BigDecimal gross = BigDecimal.ZERO;
+    long minutes = 0;
     for (final AssessmentEntityTypeDetail type : assessment.getEntityTypes()) {
       if (type.getName() == null || !type.getName().endsWith(BILL_LINE_ENTITY_SUFFIX)) {
         continue;
@@ -252,9 +383,22 @@ public class BillingSummaryPdfService {
             || !isCurrency(attributeValue(entity, prefix + SUFFIX_TOTAL_CLAIM))) {
           return false;
         }
+        final Long lineMinutes = historicalMinutes(attributeValue(entity, prefix + SUFFIX_TIME));
+        if (lineMinutes == null || lineMinutes > Long.MAX_VALUE - minutes) {
+          return false;
+        }
+        minutes += lineMinutes;
+        net = net.add(currency(attributeValue(entity, prefix + SUFFIX_NET_CLAIM)));
+        gross = gross.add(currency(attributeValue(entity, prefix + SUFFIX_TOTAL_CLAIM)));
       }
     }
-    return hasLine;
+    final AssessmentEntityDetail global = globals.getFirst();
+    return hasLine
+        && net.compareTo(currency(attributeValue(global, ATTR_SUBMITTED_TOTAL_AMOUNT))) == 0
+        && gross.compareTo(
+                currency(attributeValue(global, ATTR_SUBMITTED_TOTAL_AMOUNT))
+                    .add(currency(attributeValue(global, ATTR_SUBMITTED_TOTAL_VAT))))
+            == 0;
   }
 
   private static boolean isCurrency(final String value) {
@@ -362,7 +506,7 @@ public class BillingSummaryPdfService {
   /**
    * Parses an OPA currency value, mirroring the legacy PUI: commas stripped, non-numeric to zero.
    */
-  private BigDecimal currency(final String value) {
+  private static BigDecimal currency(final String value) {
     if (value == null) {
       return BigDecimal.ZERO;
     }

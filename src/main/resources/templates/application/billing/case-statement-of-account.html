@@ -154,8 +154,6 @@
                    th:text="${row.type}"></a>
                 <span th:unless="${editablePoa or editableBill or submittedPoa or submittedBill}"
                       th:text="${row.type}"></span>
-                <span th:if="${!row.draft and !row.hasBillingIncidentId()}"
-                      class="govuk-hint" th:text="#{billing.detailsUnavailable}"></span>
               </td>
               <td class="govuk-table__cell" th:text="${row.status}"></td>
               <td class="govuk-table__cell" th:text="${row.dateSubmitted != null ? #temporals.format(row.dateSubmitted, 'dd/MM/yyyy') : ''}"></td>

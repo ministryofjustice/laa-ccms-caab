@@ -443,7 +443,7 @@ public class BillingController {
         statement,
         row,
         billingService
-            .getSubmittedAssessment(row.billingIncidentId().toString(), user)
+            .getSubmittedAssessment(ebsCase.getCaseReferenceNumber(), row.billingIncidentId())
             .orElse(null));
   }
 

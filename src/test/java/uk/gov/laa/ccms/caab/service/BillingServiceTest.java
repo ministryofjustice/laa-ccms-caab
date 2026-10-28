@@ -13,6 +13,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static uk.gov.laa.ccms.caab.testutil.RetainedInvoiceFixture.retained;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -46,6 +47,7 @@ import uk.gov.laa.ccms.caab.bean.billing.pdf.BillLine;
 import uk.gov.laa.ccms.caab.bean.billing.pdf.TopSectionData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
+import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClientException;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
@@ -991,14 +993,15 @@ class BillingServiceTest {
     }
 
     private void source(final InvoiceDataResponse invoice) {
-      when(soaApiClient.getInvoiceData("555", "user1", "EXTERNAL")).thenReturn(Mono.just(invoice));
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L))
+          .thenReturn(Mono.just(retained(CASE_REF, 555L, invoice)));
     }
 
     private void assertReadOnly() {
-      verify(soaApiClient).getInvoiceData("555", "user1", "EXTERNAL");
+      verify(ebsApiClient).getInvoiceAssessment(CASE_REF, 555L);
       verifyNoInteractions(
           caabApiClient,
-          ebsApiClient,
+          soaApiClient,
           lookupService,
           assessmentService,
           soaApplicationMapper,
@@ -1018,10 +1021,18 @@ class BillingServiceTest {
                   new OpaInstance()
                       .instanceLabel("second-line")
                       .attributes(firstLine.getAttributes())));
+      source
+          .getOpaResponse()
+          .getFirst()
+          .getInstances()
+          .getFirst()
+          .getAttributes()
+          .getFirst()
+          .setResponseValue("240.00");
       source(source);
 
       final AssessmentDetail result =
-          billingService.getSubmittedAssessment("555", historicalUser).orElseThrow();
+          billingService.getSubmittedAssessment(CASE_REF, 555L).orElseThrow();
       assertThat(result.getEntityTypes())
           .extracting(type -> type.getName())
           .containsExactly("GLOBAL", "PROFIT_COST_BILL_LINE");
@@ -1069,7 +1080,7 @@ class BillingServiceTest {
       source(source);
 
       final AssessmentDetail result =
-          billingService.getSubmittedAssessment("555", historicalUser).orElseThrow();
+          billingService.getSubmittedAssessment(CASE_REF, 555L).orElseThrow();
       assertThat(
               result
                   .getEntityTypes()
@@ -1096,7 +1107,7 @@ class BillingServiceTest {
     @Test
     void acceptsZeroValuedClaimsWithActualDatedLines() {
       source(invoice("0.00"));
-      assertThat(billingService.getSubmittedAssessment("555", historicalUser)).isPresent();
+      assertThat(billingService.getSubmittedAssessment(CASE_REF, 555L)).isPresent();
       assertReadOnly();
     }
 
@@ -1151,46 +1162,46 @@ class BillingServiceTest {
         default -> throw new AssertionError(missing);
       }
       source(source);
-      assertThat(billingService.getSubmittedAssessment("555", historicalUser)).isEmpty();
+      assertThat(billingService.getSubmittedAssessment(CASE_REF, 555L)).isEmpty();
       assertReadOnly();
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void treatsOnlyIdentifiableNotFoundAsUnavailable(final boolean wrapped) {
-      final SoaApiClientException failure =
+      final EbsApiClientException failure =
           wrapped
-              ? new SoaApiClientException(
+              ? new EbsApiClientException(
                   "missing",
                   WebClientResponseException.create(
                       404, "Not found", HttpHeaders.EMPTY, new byte[0], StandardCharsets.UTF_8))
-              : new SoaApiClientException("missing", HttpStatus.NOT_FOUND);
-      when(soaApiClient.getInvoiceData("555", "user1", "EXTERNAL")).thenReturn(Mono.error(failure));
-      assertThat(billingService.getSubmittedAssessment("555", historicalUser)).isEmpty();
+              : new EbsApiClientException("missing", HttpStatus.NOT_FOUND);
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L)).thenReturn(Mono.error(failure));
+      assertThat(billingService.getSubmittedAssessment(CASE_REF, 555L)).isEmpty();
       assertReadOnly();
     }
 
     @ParameterizedTest
     @ValueSource(ints = {403, 500})
     void propagatesOtherHttpFailuresUnchanged(final int status) {
-      final SoaApiClientException failure =
-          new SoaApiClientException(
+      final EbsApiClientException failure =
+          new EbsApiClientException(
               "upstream",
               WebClientResponseException.create(
                   status, "upstream", HttpHeaders.EMPTY, new byte[0], StandardCharsets.UTF_8));
-      when(soaApiClient.getInvoiceData("555", "user1", "EXTERNAL")).thenReturn(Mono.error(failure));
-      assertThatThrownBy(() -> billingService.getSubmittedAssessment("555", historicalUser))
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L)).thenReturn(Mono.error(failure));
+      assertThatThrownBy(() -> billingService.getSubmittedAssessment(CASE_REF, 555L))
           .isSameAs(failure);
       assertReadOnly();
     }
 
     @Test
     void propagatesUnclassifiedFailuresUnchanged() {
-      final SoaApiClientException failure =
-          new SoaApiClientException(
+      final EbsApiClientException failure =
+          new EbsApiClientException(
               "transport failure", new java.io.IOException("connection lost"));
-      when(soaApiClient.getInvoiceData("555", "user1", "EXTERNAL")).thenReturn(Mono.error(failure));
-      assertThatThrownBy(() -> billingService.getSubmittedAssessment("555", historicalUser))
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L)).thenReturn(Mono.error(failure));
+      assertThatThrownBy(() -> billingService.getSubmittedAssessment(CASE_REF, 555L))
           .isSameAs(failure);
       assertReadOnly();
     }
@@ -1217,7 +1228,7 @@ class BillingServiceTest {
     void historicalProjectionRendersActualLinesAndUsesCurrentHeaderFigures() {
       source(invoice("120.00"));
       final AssessmentDetail historical =
-          billingService.getSubmittedAssessment("555", historicalUser).orElseThrow();
+          billingService.getSubmittedAssessment(CASE_REF, 555L).orElseThrow();
       final ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
       resolver.setPrefix("templates/");
       resolver.setSuffix(".html");
