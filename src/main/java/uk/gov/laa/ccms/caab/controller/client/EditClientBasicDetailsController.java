@@ -82,6 +82,7 @@ public class EditClientBasicDetailsController {
       final BindingResult bindingResult,
       final Model model) {
 
+    restoreCountryOfOriginDescription(clientFlowFormData.getBasicDetails(), basicDetails);
     clientBasicDetailsValidator.validate(basicDetails, bindingResult);
 
     if (bindingResult.hasErrors()) {
@@ -94,6 +95,16 @@ public class EditClientBasicDetailsController {
     model.addAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
 
     return "redirect:/%s/sections/client/details/summary".formatted(caseContext.getPathValue());
+  }
+
+  private void restoreCountryOfOriginDescription(
+      final ClientFormDataBasicDetails stored, final ClientFormDataBasicDetails submitted) {
+    if (stored != null
+        && !StringUtils.hasText(submitted.getCountryOfOriginDescription())
+        && StringUtils.hasText(stored.getCountryOfOrigin())
+        && stored.getCountryOfOrigin().equals(submitted.getCountryOfOrigin())) {
+      submitted.setCountryOfOriginDescription(stored.getCountryOfOriginDescription());
+    }
   }
 
   /**
