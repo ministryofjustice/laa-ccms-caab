@@ -25,6 +25,7 @@ public class ClientFormDataBasicDetails extends AbstractClientFormData implement
 
   private String dateOfBirth;
   private String countryOfOrigin;
+  private String countryOfOriginDescription;
 
   @Size(max = 9)
   private String nationalInsuranceNumber;

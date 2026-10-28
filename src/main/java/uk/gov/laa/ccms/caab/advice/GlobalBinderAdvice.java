@@ -45,5 +45,9 @@ public class GlobalBinderAdvice {
     // every form bean in the service. Registering against a null target is safe, and
     // BaselineTextValidator.supports accepts any type.
     binder.addValidators(baselineTextValidator);
+
+    // Descriptions come from the EBS API, never from the request; a leading wildcard also covers
+    // the nested path under a client flow bean.
+    binder.setDisallowedFields("*countryOfOriginDescription");
   }
 }

@@ -728,6 +728,34 @@ public class LookupServiceTest {
   }
 
   @Test
+  @DisplayName("getClientLookups uses the country of origin description without a country lookup")
+  void testGetClientLookups_countryOfOriginDescription() {
+    final ClientFlowFormData clientFlowFormData = new ClientFlowFormData(ACTION_VIEW);
+    final ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
+    basicDetails.setCountryOfOrigin("SCG");
+    basicDetails.setCountryOfOriginDescription("Serbia and Montenegro");
+    clientFlowFormData.setBasicDetails(basicDetails);
+    clientFlowFormData.setContactDetails(new ClientFormDataContactDetails());
+    clientFlowFormData.setMonitoringDetails(new ClientFormDataMonitoringDetails());
+    clientFlowFormData.setAddressDetails(new ClientFormDataAddressDetails());
+
+    when(ebsApiClient.getCommonValues(anyString(), any()))
+        .thenReturn(Mono.just(new CommonLookupDetail()));
+
+    final List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups =
+        lookupService.getClientLookups(clientFlowFormData);
+
+    final Pair<String, Mono<Optional<CommonLookupValueDetail>>> countryOfOrigin =
+        lookups.stream()
+            .filter(p -> "countryOfOrigin".equals(p.getLeft()))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(
+        "Serbia and Montenegro", countryOfOrigin.getRight().block().get().getDescription());
+    verify(ebsApiClient, never()).getCountries();
+  }
+
+  @Test
   @DisplayName(
       "addCommonLookupsToModel adds lookups to model and returns list of CommonLookupValueDetail")
   void addCommonLookupsToModel_success() {
