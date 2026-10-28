@@ -85,6 +85,40 @@ class CaabApiClientTest {
 
   @InjectMocks private CaabApiClient caabApiClient;
 
+  @ParameterizedTest
+  @ValueSource(strings = {"COST", "DAMAGE", "LAND", "ASSET"})
+  void deleteAwardSendsScopedDeleteAndUserHeader(String type) {
+    when(caabApiWebClient.delete()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}", 42, type, 7))
+        .thenReturn(requestHeadersMock);
+    when(requestHeadersMock.header("Caab-User-Login-Id", "user1")).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    StepVerifier.create(caabApiClient.deleteAward(42, type, 7, "user1")).verifyComplete();
+    verify(requestHeadersMock).header("Caab-User-Login-Id", "user1");
+  }
+
+  @Test
+  void deleteAwardPropagatesMappedFailure() {
+    final RuntimeException failure = new RuntimeException("Deletion failed");
+    when(caabApiWebClient.delete()).thenReturn(requestHeadersUriMock);
+    when(requestHeadersUriMock.uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}", 42, "COST", 7))
+        .thenReturn(requestHeadersMock);
+    when(requestHeadersMock.header("Caab-User-Login-Id", "user1")).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.error(failure));
+    when(apiClientErrorHandler.handleApiDeleteError(
+            failure, "award", "case outcome/type/id", "42/COST/7"))
+        .thenReturn(Mono.error(failure));
+
+    StepVerifier.create(caabApiClient.deleteAward(42, "COST", 7, "user1"))
+        .expectErrorMessage("Deletion failed")
+        .verify();
+  }
+
   @Test
   void createApplication_success() {
     final String loginId = "user1";

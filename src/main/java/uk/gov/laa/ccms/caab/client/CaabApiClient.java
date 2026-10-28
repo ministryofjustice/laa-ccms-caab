@@ -1145,6 +1145,31 @@ public class CaabApiClient {
                     e, RESOURCE_TYPE_CASE_OUTCOME, "id", String.valueOf(caseOutcomeId)));
   }
 
+  /** Deletes an award belonging to a case outcome, including its dependent records. */
+  public Mono<Void> deleteAward(
+      final Integer caseOutcomeId,
+      final String awardType,
+      final Integer awardId,
+      final String loginId) {
+    return caabApiWebClient
+        .delete()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}",
+            caseOutcomeId,
+            awardType,
+            awardId)
+        .header("Caab-User-Login-Id", loginId)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiDeleteError(
+                    e,
+                    "award",
+                    "case outcome/type/id",
+                    "%s/%s/%s".formatted(caseOutcomeId, awardType, awardId)));
+  }
+
   /**
    * Deletes all case outcomes with the specified case reference number and/or provider id. This
    * method communicates with the CAAB API client to delete the case outcomes.

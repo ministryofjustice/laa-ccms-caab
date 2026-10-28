@@ -109,7 +109,7 @@
             <td class="govuk-table__cell">
               <a class="govuk-link"
                  th:if="${award.id != null and awardEditAllowed != null and awardEditAllowed}"
-                 href="#"
+                 th:href="@{/case/outcome-and-awards/awards/{type}/{id}/delete(type=${award.awardType},id=${award.id})}"
                  th:text="#{site.delete}"></a>
             </td>
           </tr>

@@ -174,6 +174,42 @@ public class AwardController {
     };
   }
 
+  /** Displays the award type before confirming deletion. */
+  @GetMapping("/case/outcome-and-awards/awards/{awardType}/{awardId}/delete")
+  public String displayDeleteAward(
+      @SessionAttribute(value = CASE, required = false) final ApplicationDetail ebsCase,
+      @PathVariable final String awardType,
+      @PathVariable final Integer awardId,
+      final Model model) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn("Rejecting award deletion confirmation for a read-only or missing case");
+      return "redirect:/case/outcome-and-awards";
+    }
+    model.addAttribute("awardType", awardType);
+    model.addAttribute("awardId", awardId);
+    return "application/delete-award";
+  }
+
+  /** Deletes the selected award only after confirmation. */
+  @PostMapping("/case/outcome-and-awards/awards/{awardType}/{awardId}/delete")
+  public String deleteAward(
+      @SessionAttribute(value = CASE, required = false) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @PathVariable final String awardType,
+      @PathVariable final Integer awardId) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn("Rejecting award deletion for a read-only or missing case");
+      return "redirect:/case/outcome-and-awards";
+    }
+    caseOutcomeService.deleteAward(
+        ebsCase.getCaseReferenceNumber(),
+        user.getProvider().getId().intValue(),
+        awardType,
+        awardId,
+        user.getLoginId());
+    return "redirect:/case/outcome-and-awards";
+  }
+
   /**
    * Displays the financial award screen for a new or existing award.
    *

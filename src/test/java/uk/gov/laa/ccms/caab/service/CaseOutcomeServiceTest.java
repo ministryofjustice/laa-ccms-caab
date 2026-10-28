@@ -53,6 +53,79 @@ class CaseOutcomeServiceTest {
 
   @Spy @InjectMocks private CaseOutcomeService caseOutcomeService;
 
+  @ParameterizedTest
+  @ValueSource(strings = {"COST", "DAMAGE", "LAND", "ASSET"})
+  void deleteAwardDeletesOnlySelectedAwardWithoutReplacingOutcome(String type) {
+    doReturn(Optional.of(deletionOutcome()))
+        .when(caseOutcomeService)
+        .getCaseOutcome("caseRef", 123);
+    when(caabApiClient.deleteAward(42, type, 7, "user1")).thenReturn(Mono.empty());
+
+    caseOutcomeService.deleteAward("caseRef", 123, type, 7, "user1");
+
+    verify(caabApiClient).deleteAward(42, type, 7, "user1");
+    verifyNoMoreInteractions(caabApiClient);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"COST", "DAMAGE", "LAND", "ASSET", "INVALID"})
+  void missingAwardOrUnsupportedTypeDoesNotDelete(String type) {
+    doReturn(Optional.of(new CaseOutcomeDetail().id(42)))
+        .when(caseOutcomeService)
+        .getCaseOutcome("caseRef", 123);
+
+    final Class<? extends RuntimeException> expectedException =
+        "INVALID".equals(type) ? IllegalArgumentException.class : IllegalStateException.class;
+    assertThrows(
+        expectedException, () -> caseOutcomeService.deleteAward("caseRef", 123, type, 7, "user1"));
+
+    verifyNoMoreInteractions(caabApiClient);
+  }
+
+  @Test
+  void wrongAwardIdDoesNotDelete() {
+    doReturn(Optional.of(deletionOutcome()))
+        .when(caseOutcomeService)
+        .getCaseOutcome("caseRef", 123);
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> caseOutcomeService.deleteAward("caseRef", 123, "COST", 99, "user1"));
+    verifyNoMoreInteractions(caabApiClient);
+  }
+
+  @Test
+  void missingProviderCaseOutcomeDoesNotDeleteOrBootstrap() {
+    doReturn(Optional.empty()).when(caseOutcomeService).getCaseOutcome("caseRef", 123);
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> caseOutcomeService.deleteAward("caseRef", 123, "COST", 7, "user1"));
+    verifyNoMoreInteractions(caabApiClient);
+  }
+
+  @Test
+  void deleteAwardPropagatesApiFailure() {
+    doReturn(Optional.of(deletionOutcome()))
+        .when(caseOutcomeService)
+        .getCaseOutcome("caseRef", 123);
+    when(caabApiClient.deleteAward(42, "COST", 7, "user1"))
+        .thenReturn(Mono.error(new IllegalStateException("Deletion failed")));
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> caseOutcomeService.deleteAward("caseRef", 123, "COST", 7, "user1"));
+  }
+
+  private CaseOutcomeDetail deletionOutcome() {
+    return new CaseOutcomeDetail()
+        .id(42)
+        .costAwards(List.of(new CostAwardDetail().id(7)))
+        .financialAwards(List.of(new FinancialAwardDetail().id(7)))
+        .landAwards(List.of(new LandAwardDetail().id(7)))
+        .otherAssetAwards(List.of(new OtherAssetAwardDetail().id(7)));
+  }
+
   @Test
   void getFinancialAward_existingAward_returnsAward() {
     final String caseReferenceNumber = "300000001";
