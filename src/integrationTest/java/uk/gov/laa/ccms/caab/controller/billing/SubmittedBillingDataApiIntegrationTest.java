@@ -6,7 +6,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
@@ -94,6 +93,7 @@ import uk.gov.laa.ccms.soa.gateway.model.OpaInstance;
 class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
 
   private static final String CASE_REF = "300000123";
+  private static final String ACCESS_TOKEN = "synthetic-invoice-token";
 
   @RegisterExtension
   static WireMockExtension data =
@@ -102,6 +102,7 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
     registry.add("laa.ccms.ebs-api.port", data::getPort);
+    registry.add("laa.ccms.ebs-api.access-token", () -> ACCESS_TOKEN);
   }
 
   @Autowired private EbsApiClient ebsApiClient;
@@ -260,7 +261,7 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
       data.verify(
           1,
           getRequestedFor(urlPathEqualTo(endpoint(id)))
-              .withHeader("Authorization", matching(".+")));
+              .withHeader("Authorization", equalTo(ACCESS_TOKEN)));
     }
     assertThat(data.findAll(getRequestedFor(urlPathMatching("/cases/.*/invoices/.*/assessment"))))
         .extracting(request -> request.getUrl())
@@ -500,7 +501,7 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"01:60", "01:00:01", "-1:00", "invalid"})
+  @ValueSource(strings = {"01:60", "01:00:01", "-1:00", "invalid", "9223372036854775807:00"})
   void invalidOrLossyClaimedTimeIsUnavailable(String stored) throws Exception {
     JSONObject body = invoice(555, "Solicitor Final", "100.00", "20.00");
     put(line(body), "DISB_TIME", stored);
@@ -576,6 +577,55 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
     body.getJSONArray("instances").put(assessed);
     stub(body);
     pdf(request("bill", "/summary", "555"), "bill", "100.00", "120.00", "00:00");
+    selectedRead(555);
+  }
+
+  @Test
+  void adjustmentWithSubmittedClaimEvidenceCannotBeSilentlyDropped() throws Exception {
+    JSONObject body = invoice(555, "Solicitor Final", "100.00", "20.00");
+    JSONObject adjustment = instance(2000, "OVERALL_ADJ_BILL_LINE", "adjustment");
+    put(adjustment, "ASSESSED_LINE_INCL_VAT", "-12.00");
+    put(adjustment, "OVERALL_ADJ_DATE", "invalid");
+    body.getJSONArray("instances").put(adjustment);
+    stub(body);
+    unavailable(request("bill", "/summary", "555"), "bill", "Submitted");
+    selectedRead(555);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"instance", "attribute", "attribute-name"})
+  void ambiguousRetainedIdentitiesCannotProduceAReport(String duplicate) throws Exception {
+    JSONObject body = invoice(555, "Solicitor Final", "100.00", "20.00");
+    if (duplicate.equals("instance")) {
+      line(body).put("id", global(body).getLong("id"));
+    } else if (duplicate.equals("attribute")) {
+      line(body)
+          .getJSONArray("attributes")
+          .getJSONObject(0)
+          .put("id", global(body).getJSONArray("attributes").getJSONObject(0).getLong("id"));
+    } else {
+      JSONObject existing = global(body).getJSONArray("attributes").getJSONObject(1);
+      global(body)
+          .getJSONArray("attributes")
+          .put(new JSONObject(existing.toString()).put("id", 9999999));
+    }
+    // These intentionally corrupt transport identities cannot pass the normal fixture guard.
+    data.stubFor(get(urlPathEqualTo(endpoint(555))).willReturn(okJson(body.toString())));
+    unavailable(request("bill", "/summary", "555"), "bill", "Submitted");
+    selectedRead(555);
+  }
+
+  @Test
+  void cumulativeClaimedTimeOverflowIsUnavailableRatherThanWrapped() throws Exception {
+    JSONObject body = invoice(555, "Solicitor Final", "100.00", "20.00");
+    put(line(body), "DISB_NET_CLAIM_INC_UPLFT", "50");
+    put(line(body), "DISB_TOTAL_CLAIM", "60");
+    put(line(body), "DISB_TIME", "153722867280912930:07");
+    JSONObject second = claim(1003, "50", "60");
+    put(second, "DISB_TIME", "00:01");
+    body.getJSONArray("instances").put(second);
+    stub(body);
+    unavailable(request("bill", "/summary", "555"), "bill", "Submitted");
     selectedRead(555);
   }
 

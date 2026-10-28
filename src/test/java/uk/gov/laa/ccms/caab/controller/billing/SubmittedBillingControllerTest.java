@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
+import static uk.gov.laa.ccms.caab.testutil.RetainedInvoiceFixture.retained;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -30,7 +31,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
@@ -47,7 +47,6 @@ import uk.gov.laa.ccms.caab.bean.validators.declaration.PoaDeclarationSubmission
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
-import uk.gov.laa.ccms.caab.client.SoaApiClientException;
 import uk.gov.laa.ccms.caab.config.StringToBillingContextConverter;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -167,15 +166,16 @@ class SubmittedBillingControllerTest {
         .when(ebsApiClient.getStatementOfAccount(anyString(), nullable(Long.class)))
         .thenAnswer(invocation -> Mono.just(visibleStatements));
     lenient()
-        .when(soaApiClient.getInvoiceData(anyString(), anyString(), anyString()))
+        .when(ebsApiClient.getInvoiceAssessment(anyString(), any(Long.class)))
         .thenAnswer(
             invocation -> {
-              final String billingId = invocation.getArgument(0);
-              return switch (billingId) {
-                case "555" -> Mono.just(invoiceData("120.00"));
-                case "777" -> Mono.just(invoiceData("240.00"));
-                default -> Mono.empty();
-              };
+              final Long billingId = invocation.getArgument(1);
+              if (billingId == 555L || billingId == 777L) {
+                return Mono.just(
+                    retained(
+                        CASE_REF, billingId, invoiceData(billingId == 555L ? "120.00" : "240.00")));
+              }
+              return Mono.empty();
             });
     lenient()
         .when(pdfService.generateBillSummary(any(), any(), any(), any(), any()))
@@ -287,9 +287,7 @@ class SubmittedBillingControllerTest {
     assertThat(mockingDetails(caabApiClient).getInvocations())
         .extracting(invocation -> invocation.getMethod().getName())
         .allMatch(Set.of("getBill", "getPaymentsOnAccount")::contains);
-    assertThat(mockingDetails(soaApiClient).getInvocations())
-        .extracting(invocation -> invocation.getMethod().getName())
-        .allMatch("getInvoiceData"::equals);
+    verifyNoInteractions(soaApiClient);
     assertThat(mockingDetails(assessmentService).getInvocations())
         .extracting(invocation -> invocation.getMethod().getName())
         .allMatch("getAssessments"::equals);
@@ -355,9 +353,7 @@ class SubmittedBillingControllerTest {
   @DisplayName("Invoice-data 404 renders unavailable without hiding the permitted invoice status")
   void invoiceNotFoundIsUnavailable(final String context, final String suffix) {
     invoices(context.equals("bill") ? "Bill" : "POA", "Authorised");
-    lenient()
-        .when(soaApiClient.getInvoiceData("555", "user1", "EXTERNAL"))
-        .thenReturn(Mono.error(new SoaApiClientException("missing", HttpStatus.NOT_FOUND)));
+    lenient().when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L)).thenReturn(Mono.empty());
     assertThat(
             mockMvc.perform(
                 get("/case/billing/" + context + suffix)
@@ -392,7 +388,7 @@ class SubmittedBillingControllerTest {
         .startsWith("inline;")
         .contains(context + "-summary.pdf");
     assertThat(result.getResponse().getContentAsByteArray()).isEqualTo(PDF);
-    verify(soaApiClient).getInvoiceData("555", "user1", "EXTERNAL");
+    verify(ebsApiClient).getInvoiceAssessment(CASE_REF, 555L);
     assertSelectedPdf(context, "120.00");
     verify(assessmentService, never()).getAssessments(any(), any(), any());
     assertNoWrites();
@@ -416,8 +412,8 @@ class SubmittedBillingControllerTest {
           .hasContentType(MediaType.APPLICATION_PDF);
     }
     assertSelectedPdf(context, "120.00", "240.00");
-    verify(soaApiClient).getInvoiceData("555", "user1", "EXTERNAL");
-    verify(soaApiClient).getInvoiceData("777", "user1", "EXTERNAL");
+    verify(ebsApiClient).getInvoiceAssessment(CASE_REF, 555L);
+    verify(ebsApiClient).getInvoiceAssessment(CASE_REF, 777L);
     assertNoWrites();
   }
 
@@ -570,13 +566,15 @@ class SubmittedBillingControllerTest {
           .setResponseValue(null);
     }
     lenient()
-        .when(soaApiClient.getInvoiceData("555", "user1", "EXTERNAL"))
+        .when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L))
         .thenReturn(
             switch (missing) {
               case "missing" -> Mono.empty();
-              case "no-opa" -> Mono.just(new InvoiceDataResponse());
-              case "empty-opa" -> Mono.just(new InvoiceDataResponse().opaResponse(List.of()));
-              default -> Mono.just(incomplete);
+              case "no-opa" -> Mono.just(retained(CASE_REF, 555L, new InvoiceDataResponse()));
+              case "empty-opa" ->
+                  Mono.just(
+                      retained(CASE_REF, 555L, new InvoiceDataResponse().opaResponse(List.of())));
+              default -> Mono.just(retained(CASE_REF, 555L, incomplete));
             });
     assertThat(
             mockMvc.perform(
@@ -600,7 +598,7 @@ class SubmittedBillingControllerTest {
   void upstreamFailureIsNotDisguisedAsMissingHistory(final String context) {
     invoices(context.equals("bill") ? "Bill" : "POA", "Submitted");
     lenient()
-        .when(soaApiClient.getInvoiceData("555", "user1", "EXTERNAL"))
+        .when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L))
         .thenReturn(Mono.error(new CaabApplicationException("Invoice service unavailable")));
     assertThat(
             mockMvc.perform(
@@ -651,7 +649,7 @@ class SubmittedBillingControllerTest {
         .hasStatusOk()
         .hasContentType(MediaType.APPLICATION_PDF);
     verify(ebsApiClient, atLeastOnce()).getStatementOfAccount(CASE_REF, null);
-    verify(soaApiClient).getInvoiceData("555", "user1", "EXTERNAL");
+    verify(ebsApiClient).getInvoiceAssessment(CASE_REF, 555L);
     assertSelectedPdf(context, "120.00");
     assertNoWrites();
   }
