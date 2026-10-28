@@ -81,6 +81,10 @@ public class CspNonceFilter extends OncePerRequestFilter {
         .append(opaSources)
         .append("; ");
 
+    if (isAssessmentPath) {
+      policy.append("script-src-attr 'unsafe-inline'; ");
+    }
+
     policy.append("style-src ");
     if (isAssessmentPath) {
       policy.append("'self' 'unsafe-inline' ").append(opaSources);
