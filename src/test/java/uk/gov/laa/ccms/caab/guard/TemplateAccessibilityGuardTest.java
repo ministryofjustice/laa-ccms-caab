@@ -62,6 +62,59 @@ class TemplateAccessibilityGuardTest {
   }
 
   @Test
+  @DisplayName(
+      "Every summary list row sits inside its definition list, which closes after the last")
+  void summaryListRowsSitInsideTheirList() throws IOException {
+    List<String> violations = new ArrayList<>();
+    forEachTemplate(
+        (name, content) -> {
+          Matcher tag = TAG.matcher(content);
+          Deque<String> open = new ArrayDeque<>();
+          while (tag.find()) {
+            String element = tag.group(2).toLowerCase();
+            boolean closing = !tag.group(1).isEmpty();
+            boolean selfClosing = !tag.group(3).isEmpty() || VOID_ELEMENTS.contains(element);
+            if (closing) {
+              if (element.equals("dl") && !"dl".equals(open.peek())) {
+                violations.add(
+                    "%s line %d: </dl> while <%s> is still open"
+                        .formatted(name, lineOf(content, tag.start()), open.peek()));
+              }
+              while (!open.isEmpty() && !open.peek().equals(element)) {
+                open.pop();
+              }
+              if (!open.isEmpty()) {
+                open.pop();
+              }
+              continue;
+            }
+            // A row defined as a fragment has no list around it here: the page that uses it
+            // supplies one.
+            boolean isFragment = tag.group(0).contains("th:fragment");
+            if (!isFragment && hasClass(tag.group(0), "govuk-summary-list__row")) {
+              String parent =
+                  open.stream().filter(e -> !e.equals("th:block")).findFirst().orElse("nothing");
+              if (!parent.equals("dl")) {
+                violations.add(
+                    "%s line %d: a summary list row is inside <%s>, not <dl>"
+                        .formatted(name, lineOf(content, tag.start()), parent));
+              }
+            }
+            if (!selfClosing) {
+              open.push(element);
+            }
+          }
+        });
+
+    assertThat(violations).isEmpty();
+  }
+
+  private static boolean hasClass(String tag, String className) {
+    Matcher classes = Pattern.compile("\\sclass\\s*=\\s*\"([^\"]*)\"").matcher(tag);
+    return classes.find() && List.of(classes.group(1).trim().split("\\s+")).contains(className);
+  }
+
+  @Test
   @DisplayName("A ul or ol holds only list items, or blocks that render to nothing")
   void listsHoldOnlyListItems() throws IOException {
     List<String> violations = new ArrayList<>();
