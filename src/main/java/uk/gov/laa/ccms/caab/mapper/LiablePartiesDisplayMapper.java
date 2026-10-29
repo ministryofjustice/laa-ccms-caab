@@ -18,7 +18,6 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.context.LiablePartiesMappingContext;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.BaseAwardDetail;
@@ -30,6 +29,8 @@ import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.sections.LiablePartiesDisplay;
 import uk.gov.laa.ccms.caab.model.sections.LiablePartyDisplay;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 
 /** Maps award associations and outcome opponents to the party summary. */
 @Mapper(componentModel = "spring", imports = OpponentUtil.class)
@@ -54,15 +55,26 @@ public interface LiablePartiesDisplayMapper {
                 Collectors.toMap(OpponentDetail::getId, Function.identity(), (first, _) -> first));
     final List<LiablePartyDisplay> parties =
         Optional.ofNullable(award.getLiableParties()).orElse(List.of()).stream()
+            .filter(Objects::nonNull)
             .map(
                 link -> {
+                  if (link.getOpponentId() == null) {
+                    LoggerFactory.getLogger(LiablePartiesDisplayMapper.class)
+                        .warn("Ignoring liable party link with no opponent id: {}", link.getId());
+                    return null;
+                  }
                   final OpponentDetail opponent = opponentIndex.get(link.getOpponentId());
                   if (opponent == null) {
-                    throw new CaabApplicationException(
-                        "Could not resolve opponent for liable party: " + link.getId());
+                    LoggerFactory.getLogger(LiablePartiesDisplayMapper.class)
+                        .warn(
+                            "Ignoring liable party {} with unresolved opponent id {}",
+                            link.getId(),
+                            link.getOpponentId());
+                    return null;
                   }
                   return toLiablePartyDisplay(link, opponent, context);
                 })
+            .filter(Objects::nonNull)
             .toList();
     return new LiablePartiesDisplay(
         award.getAwardType(),
@@ -109,16 +121,28 @@ public interface LiablePartiesDisplayMapper {
     if (!OpponentUtil.INDIVIDUAL_OPPONENT.equalsIgnoreCase(opponent.getType())) {
       return "undefined";
     }
-    return OpponentUtil.getPartyName(opponent, context.getContactTitle().getContent());
+    final List<CommonLookupValueDetail> contactTitles =
+        context == null || context.getContactTitle() == null
+            ? List.of()
+            : Optional.ofNullable(context.getContactTitle().getContent()).orElse(List.of());
+    return OpponentUtil.getPartyName(opponent, contactTitles);
   }
 
   @Named("relationshipToCase")
   default String relationshipToCase(
       final OpponentDetail opponent, @Context final LiablePartiesMappingContext context) {
+    final List<RelationshipToCaseLookupValueDetail> organisationRelationships =
+        context == null || context.getOrganisationRelationshipsToCase() == null
+            ? List.of()
+            : Optional.ofNullable(context.getOrganisationRelationshipsToCase().getContent())
+                .orElse(List.of());
+    final List<RelationshipToCaseLookupValueDetail> individualRelationships =
+        context == null || context.getIndividualRelationshipsToCase() == null
+            ? List.of()
+            : Optional.ofNullable(context.getIndividualRelationshipsToCase().getContent())
+                .orElse(List.of());
     return OpponentUtil.getRelationshipToCase(
-            opponent,
-            context.getOrganisationRelationshipsToCase().getContent(),
-            context.getIndividualRelationshipsToCase().getContent())
+            opponent, organisationRelationships, individualRelationships)
         .getDescription();
   }
 

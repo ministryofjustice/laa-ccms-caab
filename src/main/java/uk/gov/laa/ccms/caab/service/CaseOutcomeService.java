@@ -3,7 +3,10 @@ package uk.gov.laa.ccms.caab.service;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -24,6 +27,7 @@ import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.LandAwardRequest;
+import uk.gov.laa.ccms.caab.model.LiablePartyDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
@@ -135,6 +139,104 @@ public class CaseOutcomeService {
         .blockOptional()
         .orElseThrow(
             () -> new CaabApplicationException("Failed to retrieve award parties or lookup data"));
+  }
+
+  /**
+   * Links the supplied opponents to an award as liable/interested parties, persisting the
+   * association through the CAAB API rather than holding it only in the user's session. Opponent
+   * ids already linked to the award are left untouched.
+   *
+   * @param caseReferenceNumber - the case reference number.
+   * @param providerId - the provider id.
+   * @param awardPath - the award path segment identifying the award type.
+   * @param awardId - the id of the award to link the parties to.
+   * @param opponentIds - the ids of the opponents to link to the award.
+   * @param loginId - the login ID of the user performing the update.
+   */
+  public void addLiableParties(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final String awardPath,
+      final Integer awardId,
+      final List<Integer> opponentIds,
+      final String loginId) {
+    if (opponentIds == null || opponentIds.isEmpty()) {
+      return;
+    }
+    final Integer caseOutcomeId =
+        requireCaseOutcomeId(
+            getCaseOutcome(caseReferenceNumber, providerId)
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "No case outcome exists for case reference number: "
+                                + caseReferenceNumber)),
+            caseReferenceNumber);
+    switch (awardPath) {
+      case "cost-award" -> {
+        final CostAwardDetail award =
+            Optional.ofNullable(caabApiClient.getCostAward(caseOutcomeId, awardId).block())
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "Cost award %s could not be loaded for case reference number: %s"
+                                .formatted(awardId, caseReferenceNumber)));
+        mergeLiableParties(award, opponentIds);
+        caabApiClient.updateCostAward(caseOutcomeId, awardId, loginId, award).block();
+      }
+      case "financial-award" -> {
+        final FinancialAwardDetail award =
+            Optional.ofNullable(caabApiClient.getFinancialAward(caseOutcomeId, awardId).block())
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "Financial award %s could not be loaded for case reference number: %s"
+                                .formatted(awardId, caseReferenceNumber)));
+        mergeLiableParties(award, opponentIds);
+        caabApiClient.updateFinancialAward(caseOutcomeId, awardId, loginId, award).block();
+      }
+      case "land" -> {
+        final LandAwardDetail award =
+            Optional.ofNullable(caabApiClient.getLandAward(caseOutcomeId, awardId).block())
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "Land award %s could not be loaded for case reference number: %s"
+                                .formatted(awardId, caseReferenceNumber)));
+        mergeLiableParties(award, opponentIds);
+        caabApiClient.updateLandAward(caseOutcomeId, awardId, loginId, award).block();
+      }
+      case "asset" -> {
+        final OtherAssetAwardDetail award =
+            Optional.ofNullable(caabApiClient.getOtherAssetAward(caseOutcomeId, awardId).block())
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "Other asset award %s could not be loaded for case reference number: %s"
+                                .formatted(awardId, caseReferenceNumber)));
+        mergeLiableParties(award, opponentIds);
+        caabApiClient.updateOtherAssetAward(caseOutcomeId, awardId, loginId, award).block();
+      }
+      default -> throw new CaabApplicationException("Unsupported award path: " + awardPath);
+    }
+  }
+
+  /** Adds any opponent ids not already linked to the award as new liable party associations. */
+  private void mergeLiableParties(final BaseAwardDetail award, final List<Integer> opponentIds) {
+    final List<LiablePartyDetail> liableParties =
+        new ArrayList<>(Optional.ofNullable(award.getLiableParties()).orElse(List.of()));
+    final Set<Integer> existingOpponentIds =
+        liableParties.stream()
+            .map(LiablePartyDetail::getOpponentId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+    for (final Integer opponentId : opponentIds) {
+      if (opponentId != null && existingOpponentIds.add(opponentId)) {
+        liableParties.add(
+            new LiablePartyDetail().awardType(award.getAwardType()).opponentId(opponentId));
+      }
+    }
+    award.setLiableParties(liableParties);
   }
 
   /**

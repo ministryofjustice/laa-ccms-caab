@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -14,7 +15,9 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_AWARD_ASSESSMENT_STATUS;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_VALUATION_BASIS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.AWARD_TYPE_FORM;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -62,6 +65,7 @@ import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.LandAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.OtherAssetAwardMapper;
+import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CostAwardDetail;
@@ -69,6 +73,7 @@ import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.LandAwardRequest;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
@@ -79,6 +84,9 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
@@ -164,10 +172,275 @@ class AwardControllerTest {
     }
 
     @Test
+    void selectingKnownOpponentsPersistsThemAndRedirectsToTheSummary() {
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(42)
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT"),
+              new OpponentDetail()
+                  .id(43)
+                  .type("ORGANISATION")
+                  .organisationName("Acme & Co")
+                  .organisationType("COMPANY")
+                  .relationshipToCase("OWNER")
+                  .relationshipToClient("CLIENT")));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("selectedPartyIds", "42", "43")))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards/land/7/liable-parties");
+
+      verify(caseOutcomeService)
+          .addLiableParties("300000001", 123, "land", 7, List.of(42, 43), user.getLoginId());
+    }
+
+    @Test
+    void selectingRowsWithoutAResolvableOpponentIdShowsAnError() {
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+      when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+          .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
+      when(lookupService.getPersonToCaseRelationships())
+          .thenReturn(
+              Mono.just(new RelationshipToCaseLookupDetail().content(Collections.emptyList())));
+      when(lookupService.getOrganisationToCaseRelationships())
+          .thenReturn(
+              Mono.just(new RelationshipToCaseLookupDetail().content(Collections.emptyList())));
+
+      // The opponent above has no real id and the case outcome has no opponentIds to resolve it
+      // against, so it is assigned a synthetic negative row id (-1) that cannot be persisted.
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("selectedPartyIds", "-1")))
+          .hasStatusOk()
+          .hasViewName("application/party-list-screen")
+          .model()
+          .containsEntry("partyListError", true)
+          .containsEntry("partyListUnresolvedError", true);
+
+      verify(caseOutcomeService, never())
+          .addLiableParties(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void selectingAnImportedOpponentResolvesItsIdFromTheCaseOutcomeOpponentIds() {
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+      when(caseOutcomeService.getCaseOutcome("300000001", 123))
+          .thenReturn(Optional.of(new CaseOutcomeDetail().opponentIds(List.of(501))));
+
+      // The opponent above has no real id, but it is the first (and only) entry in the opponents
+      // list, so it resolves to the case outcome's first opponentId (501) and is both the row id
+      // and the persisted opponent id.
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("selectedPartyIds", "501")))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards/land/7/liable-parties");
+
+      verify(caseOutcomeService)
+          .addLiableParties("300000001", 123, "land", 7, List.of(501), user.getLoginId());
+    }
+
+    @Test
     void unsupportedAwardHasNoRoute() {
       assertThat(mockMvc.perform(get("/case/outcome-and-awards/unknown/7/liable-parties")))
           .hasStatus(404);
       verifyNoInteractions(caseOutcomeService);
+    }
+
+    @Test
+    void partyListIncludesOnlyValidOpponentsIncludingDeletableOnes() {
+      final ApplicationDetail amendmentApplication = new ApplicationDetail();
+      amendmentApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .type("INDIVIDUAL")
+                  .title("Ms")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("OWNER")
+                  .relationshipToClient("CLIENT")
+                  .address(new AddressDetail().addressLine1("1 High Street").postcode("AB1 2CD")),
+              new OpponentDetail()
+                  .type("ORGANISATION")
+                  .organisationName("Acme & Co")
+                  .organisationType("COMPANY")
+                  .relationshipToCase("OWNER")
+                  .relationshipToClient("CLIENT"),
+              // deleteInd indicates the opponent is deletable, not already deleted, so a newly
+              // added, otherwise-valid opponent with deleteInd(true) must still be selectable.
+              new OpponentDetail()
+                  .id(99)
+                  .type("INDIVIDUAL")
+                  .deleteInd(true)
+                  .title("Mr")
+                  .firstName("New")
+                  .surname("Opponent")
+                  .relationshipToCase("OWNER")
+                  .relationshipToClient("CLIENT"),
+              new OpponentDetail().type("INDIVIDUAL").deleteInd(true).title("Mr"),
+              new OpponentDetail().type("ORGANISATION").organisationName("Ghost Ltd")));
+
+      ebsCase.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .type("INDIVIDUAL")
+                  .title("Old")
+                  .firstName("Legacy")
+                  .surname("Case")
+                  .relationshipToCase("OWNER")
+                  .relationshipToClient("CLIENT")));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, amendmentApplication)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name")
+                      .containsExactlyInAnyOrder("Ms Jane Smith", "Acme & Co", "Mr New Opponent"));
+    }
+
+    @Test
+    void partyListUsesLookupDescriptionsForNamesAndRelationships() {
+      ebsCase.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT"),
+              new OpponentDetail()
+                  .type("ORGANISATION")
+                  .organisationName("Acme & Co")
+                  .organisationType("COMPANY")
+                  .relationshipToCase("OPP")
+                  .relationshipToClient("CLIENT")));
+
+      when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+          .thenReturn(
+              Mono.just(
+                  new CommonLookupDetail()
+                      .content(
+                          List.of(
+                              new CommonLookupValueDetail().code("MISS").description("Miss")))));
+      when(lookupService.getPersonToCaseRelationships())
+          .thenReturn(
+              Mono.just(
+                  new RelationshipToCaseLookupDetail()
+                      .content(
+                          List.of(
+                              new RelationshipToCaseLookupValueDetail()
+                                  .code("CHILD")
+                                  .description("Child")))));
+      when(lookupService.getOrganisationToCaseRelationships())
+          .thenReturn(
+              Mono.just(
+                  new RelationshipToCaseLookupDetail()
+                      .content(
+                          List.of(
+                              new RelationshipToCaseLookupValueDetail()
+                                  .code("OPP")
+                                  .description("Opponent")))));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name", "relationshipToCase")
+                      .containsExactlyInAnyOrder(
+                          tuple("Miss Jane Smith", "Child"), tuple("Acme & Co", "Opponent")));
+    }
+
+    @Test
+    void partyListOnlyMarksAwardOpponentsAsEditable() {
+      ebsCase.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(10)
+                  .ebsId("AWARD-1")
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT"),
+              new OpponentDetail()
+                  .id(11)
+                  .ebsId("CASE-2")
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Sam")
+                  .surname("Jones")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name", "editable")
+                      .containsExactlyInAnyOrder(
+                          tuple("MISS Jane Smith", true), tuple("MISS Sam Jones", false)));
     }
   }
 
