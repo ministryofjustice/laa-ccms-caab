@@ -61,10 +61,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
     registry.addInterceptor(new RefusedActionPageInterceptor());
     registry
         .addInterceptor(new SubmittedCaseClientInterceptor())
-        .addPathPatterns(
-            "/application/sections/client/details/**",
-            "/application/client-update",
-            "/application/client-update/**");
+        .addPathPatterns("/application/sections/client/details/**");
   }
 
   @Override

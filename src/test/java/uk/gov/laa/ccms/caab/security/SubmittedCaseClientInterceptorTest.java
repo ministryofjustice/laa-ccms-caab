@@ -30,10 +30,18 @@ class SubmittedCaseClientInterceptorTest {
     response = new MockHttpServletResponse();
   }
 
+  private static ActiveCase draft() {
+    return ActiveCase.builder().caseReferenceNumber("DRAFT").draftApplication(true).build();
+  }
+
+  private static ActiveCase submitted() {
+    return ActiveCase.builder().caseReferenceNumber("SUBMITTED").build();
+  }
+
   @Test
   @DisplayName("A draft application's client is allowed")
   void allowsDraftApplication() throws Exception {
-    session.setAttribute(ACTIVE_CASE, ActiveCase.builder().caseReferenceNumber("DRAFT").build());
+    session.setAttribute(ACTIVE_CASE, draft());
 
     assertThat(interceptor.preHandle(request, response, new Object())).isTrue();
   }
@@ -42,7 +50,7 @@ class SubmittedCaseClientInterceptorTest {
   @DisplayName("A draft opened after a submitted case is still allowed")
   void allowsDraftAfterSubmittedCase() throws Exception {
     session.setAttribute(CASE, new ApplicationDetail().caseReferenceNumber("SUBMITTED"));
-    session.setAttribute(ACTIVE_CASE, ActiveCase.builder().caseReferenceNumber("DRAFT").build());
+    session.setAttribute(ACTIVE_CASE, draft());
 
     assertThat(interceptor.preHandle(request, response, new Object())).isTrue();
   }
@@ -51,12 +59,19 @@ class SubmittedCaseClientInterceptorTest {
   @DisplayName("The open submitted case's client is refused")
   void refusesSubmittedCase() throws Exception {
     session.setAttribute(CASE, new ApplicationDetail().caseReferenceNumber("SUBMITTED"));
-    session.setAttribute(
-        ACTIVE_CASE, ActiveCase.builder().caseReferenceNumber("SUBMITTED").build());
+    session.setAttribute(ACTIVE_CASE, submitted());
 
     assertThat(interceptor.preHandle(request, response, new Object())).isFalse();
     assertThat(response.getRedirectedUrl()).isEqualTo("/home");
     assertThat(RefusedActionSession.consumeNotAuthorised(session)).isTrue();
+  }
+
+  @Test
+  @DisplayName("A submitted active case is refused after the submitted case leaves the session")
+  void refusesSubmittedActiveCaseWithoutCase() throws Exception {
+    session.setAttribute(ACTIVE_CASE, submitted());
+
+    assertThat(interceptor.preHandle(request, response, new Object())).isFalse();
   }
 
   @Test

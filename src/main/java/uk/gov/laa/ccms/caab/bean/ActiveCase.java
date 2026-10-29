@@ -14,4 +14,7 @@ public class ActiveCase {
   private String caseReferenceNumber;
   private String providerCaseReferenceNumber;
   private Integer providerId;
+
+  /** Set only for a draft application, which has no submitted case behind it. */
+  private boolean draftApplication;
 }

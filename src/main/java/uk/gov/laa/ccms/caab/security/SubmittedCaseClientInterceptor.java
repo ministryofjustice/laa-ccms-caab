@@ -6,7 +6,6 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import java.util.Objects;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -25,14 +24,14 @@ public class SubmittedCaseClientInterceptor implements HandlerInterceptor {
   public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
       throws Exception {
     HttpSession session = request.getSession(false);
-    if (session == null
-        || !(session.getAttribute(CASE) instanceof ApplicationDetail submittedCase)) {
+    if (session == null) {
       return true;
     }
-    // With no active case set, ActiveCaseModelAdvice builds one from the submitted case.
-    if (session.getAttribute(ACTIVE_CASE) instanceof ActiveCase activeCase
-        && !Objects.equals(
-            activeCase.getCaseReferenceNumber(), submittedCase.getCaseReferenceNumber())) {
+    if (session.getAttribute(ACTIVE_CASE) instanceof ActiveCase activeCase) {
+      if (activeCase.isDraftApplication()) {
+        return true;
+      }
+    } else if (!submittedCaseInSession(session)) {
       return true;
     }
     refusal.handle(
@@ -41,5 +40,10 @@ public class SubmittedCaseClientInterceptor implements HandlerInterceptor {
         new AccessDeniedException(
             "A submitted case's client is amended through the amendment pages"));
     return false;
+  }
+
+  /** With no active case, ActiveCaseModelAdvice builds one from a submitted case in the session. */
+  private static boolean submittedCaseInSession(HttpSession session) {
+    return session.getAttribute(CASE) instanceof ApplicationDetail;
   }
 }
