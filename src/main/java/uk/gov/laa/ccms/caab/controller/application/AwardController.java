@@ -734,7 +734,7 @@ public class AwardController {
       @PathVariable final Integer awardId,
       final Model model) {
     final ApplicationDetail activeApplication =
-        currentApplication != null ? currentApplication : ebsCase;
+        resolveActiveApplication(ebsCase, currentApplication);
     final var titleLookups =
         safeLookupValues(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE));
     final var organisationRelationships =
@@ -784,11 +784,7 @@ public class AwardController {
 
     final List<Integer> selectedRowIds = normalizeSelectedPartyIds(selectedPartyIds);
     final ApplicationDetail activeApplication =
-        currentApplication != null
-                && Objects.equals(
-                    currentApplication.getCaseReferenceNumber(), ebsCase.getCaseReferenceNumber())
-            ? currentApplication
-            : ebsCase;
+        resolveActiveApplication(ebsCase, currentApplication);
     final List<Integer> caseOpponentIds = getCaseOpponentIds(ebsCase, user);
 
     final List<Integer> resolvedOpponentIds =
@@ -821,6 +817,21 @@ public class AwardController {
         user.getLoginId());
 
     return "redirect:/case/outcome-and-awards/" + awardPath + "/" + awardId + "/liable-parties";
+  }
+
+  /**
+   * Resolves the application whose opponents should be used to build the party-selection list. The
+   * in-session "current application" is only used when it genuinely relates to the case being
+   * viewed; otherwise it is a stale application left over from a previous screen, and falling back
+   * to it would expose (or try to resolve selections against) the wrong person's opponents.
+   */
+  private ApplicationDetail resolveActiveApplication(
+      final ApplicationDetail ebsCase, final ApplicationDetail currentApplication) {
+    return currentApplication != null
+            && Objects.equals(
+                currentApplication.getCaseReferenceNumber(), ebsCase.getCaseReferenceNumber())
+        ? currentApplication
+        : ebsCase;
   }
 
   /**

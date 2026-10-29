@@ -287,10 +287,8 @@ class LiablePartiesDisplayMapperTest {
 
   @Test
   void missingLinkedOpponentProducesAVisiblePlaceholder() {
-    final var emptyOpponents =
-        mapper.toLiablePartiesDisplay(linkedAward(), List.of(), context());
-    final var nullOpponents =
-        mapper.toLiablePartiesDisplay(linkedAward(), null, context());
+    final var emptyOpponents = mapper.toLiablePartiesDisplay(linkedAward(), List.of(), context());
+    final var nullOpponents = mapper.toLiablePartiesDisplay(linkedAward(), null, context());
 
     for (final var result : List.of(emptyOpponents, nullOpponents)) {
       assertThat(result.parties())

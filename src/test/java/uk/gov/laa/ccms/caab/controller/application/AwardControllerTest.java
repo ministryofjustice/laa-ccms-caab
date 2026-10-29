@@ -174,6 +174,7 @@ class AwardControllerTest {
     @Test
     void selectingKnownOpponentsPersistsThemAndRedirectsToTheSummary() {
       final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
       activeApplication.setOpponents(
           List.of(
               new OpponentDetail()
@@ -209,6 +210,7 @@ class AwardControllerTest {
     @Test
     void selectingRowsWithoutAResolvableOpponentIdShowsAnError() {
       final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
       activeApplication.setOpponents(
           List.of(
               new OpponentDetail()
@@ -249,6 +251,7 @@ class AwardControllerTest {
     @Test
     void selectingAnImportedOpponentResolvesItsIdFromTheCaseOutcomeOpponentIds() {
       final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
       activeApplication.setOpponents(
           List.of(
               new OpponentDetail()
@@ -288,6 +291,7 @@ class AwardControllerTest {
     @Test
     void partyListIncludesOnlyValidOpponentsIncludingDeletableOnes() {
       final ApplicationDetail amendmentApplication = new ApplicationDetail();
+      amendmentApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
       amendmentApplication.setOpponents(
           List.of(
               new OpponentDetail()
@@ -342,6 +346,43 @@ class AwardControllerTest {
                   assertThat((List<?>) parties)
                       .extracting("name")
                       .containsExactlyInAnyOrder("Ms Jane Smith", "Acme & Co", "Mr New Opponent"));
+    }
+
+    @Test
+    void partyListFallsBackToTheCaseWhenTheSessionApplicationBelongsToAnotherCase() {
+      // A stale "current application" left over from a previous, unrelated case must not be used
+      // to build the party list - doing so would show (or let selections resolve against) the
+      // wrong person's opponents.
+      final ApplicationDetail staleApplication = new ApplicationDetail();
+      staleApplication.setCaseReferenceNumber("999999999");
+      staleApplication.setOpponents(
+          List.of(
+              new OpponentDetail().id(1).type("INDIVIDUAL").firstName("Other").surname("Person")));
+
+      ebsCase.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .type("INDIVIDUAL")
+                  .title("Ms")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, staleApplication)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name")
+                      .containsExactly("Ms Jane Smith"));
     }
 
     @Test
