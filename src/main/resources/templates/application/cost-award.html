@@ -39,7 +39,10 @@
           th:errorMessage="${#fields.hasErrors('dateOfOrder') ? #fields.errors('dateOfOrder').getFirst() : ''}">
       </moj:datepicker>
 
-      <div th:replace="~{partials/forms :: dropdown('courtAssessmentStatus', #{case.costAward.courtAssessmentStatus}, ${courtAssessmentStatuses}, 'code', 'description', false)}"></div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='courtAssessmentStatus',
+                                                                   label=#{case.costAward.courtAssessmentStatus},
+                                                                   items=${courtAssessmentStatuses}, itemValue='code',
+                                                                   itemLabel='description')}"/>
 
       <h2 class="govuk-heading-m govuk-!-margin-top-6"
           th:text="#{case.costAward.preCertificateCostsAwarded}"></h2>
@@ -63,7 +66,10 @@
         <span id="totalCostsAwarded" aria-live="polite" th:text="| £ ${totalCostsAwarded}|"></span>
       </p>
 
-      <div th:replace="~{partials/forms :: dropdown('awardedBy', #{case.costAward.awardedBy}, ${awardedByOptions}, 'code', 'description', false)}"></div>
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='awardedBy',
+                                                                   label=#{case.costAward.awardedBy},
+                                                                   items=${awardedByOptions}, itemValue='code',
+                                                                   itemLabel='description')}"/>
 
       <h2 class="govuk-heading-m govuk-!-margin-top-6"
           th:text="#{case.costAward.interestAwarded}"></h2>
