@@ -784,7 +784,11 @@ public class AwardController {
 
     final List<Integer> selectedRowIds = normalizeSelectedPartyIds(selectedPartyIds);
     final ApplicationDetail activeApplication =
-        currentApplication != null ? currentApplication : ebsCase;
+        currentApplication != null
+                && Objects.equals(
+                    currentApplication.getCaseReferenceNumber(), ebsCase.getCaseReferenceNumber())
+            ? currentApplication
+            : ebsCase;
     final List<Integer> caseOpponentIds = getCaseOpponentIds(ebsCase, user);
 
     final List<Integer> resolvedOpponentIds =
