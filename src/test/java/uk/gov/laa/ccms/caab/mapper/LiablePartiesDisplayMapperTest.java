@@ -286,10 +286,23 @@ class LiablePartiesDisplayMapperTest {
   }
 
   @Test
-  void missingLinkedOpponentIsIgnoredRatherThanCrashing() {
-    assertThat(mapper.toLiablePartiesDisplay(linkedAward(), List.of(), context()).parties())
-        .isEmpty();
-    assertThat(mapper.toLiablePartiesDisplay(linkedAward(), null, context()).parties()).isEmpty();
+  void missingLinkedOpponentProducesAVisiblePlaceholder() {
+    final var emptyOpponents =
+        mapper.toLiablePartiesDisplay(linkedAward(), List.of(), context());
+    final var nullOpponents =
+        mapper.toLiablePartiesDisplay(linkedAward(), null, context());
+
+    for (final var result : List.of(emptyOpponents, nullOpponents)) {
+      assertThat(result.parties())
+          .singleElement()
+          .satisfies(
+              party -> {
+                assertThat(party.id()).isEqualTo(101);
+                assertThat(party.opponentId()).isEqualTo(11);
+                assertThat(party.name()).isEqualTo("Party details unavailable");
+                assertThat(party.editable()).isFalse();
+              });
+    }
   }
 
   @Test
