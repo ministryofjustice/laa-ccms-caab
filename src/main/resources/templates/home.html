@@ -26,28 +26,20 @@
                     You currently have:
                 </div>
                 <ul class="govuk-list">
-                   <div th:if="${noActions}">
-                        <li>
-                            <div th:text="${actionsMsg}"> </div>
-                        </li>
-                    </div>
-                    <div th:unless="${noActions}">
-                        <li>
-                            <div
+                    <li th:if="${noActions}">
+                        <div th:text="${actionsMsg}"> </div>
+                    </li>
+                    <li th:unless="${noActions}">
+                        <div
                                 th:replace="~{partials/actions :: restrictedActionLink(${actionsMsg}, ${user.functions}, 'NOT', false, '', @{/notifications/search?notification_type=A}, true)}"></div>
-                        </li>
-                    </div>
-                    <div th:if="${noNotifications}">
-                        <li>
-                            <div th:text="${notificationsMsg}"></div>
-                        </li>
-                    </div>
-                    <div th:unless="${noNotifications}">
-                        <li>
-                            <div
+                    </li>
+                    <li th:if="${noNotifications}">
+                        <div th:text="${notificationsMsg}"></div>
+                    </li>
+                    <li th:unless="${noNotifications}">
+                        <div
                                 th:replace="~{partials/actions :: restrictedActionLink(${notificationsMsg}, ${user.functions}, 'NOT', false, '', @{/notifications/search?notification_type=N}, true)}"></div>
-                        </li>
-                    </div>
+                    </li>
                 </ul>
             </div>
 

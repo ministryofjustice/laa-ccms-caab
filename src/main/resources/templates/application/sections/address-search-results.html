@@ -33,7 +33,7 @@
                      th:id="|search-result-${idx.index}|"
                      th:value="${result.uprn}">
               <label class="govuk-label govuk-radios__label"
-                     th:for="${result.uprn}"
+                     th:for="|search-result-${idx.index}|"
                      th:text="${result.fullAddress}">
               </label>
             </div>
