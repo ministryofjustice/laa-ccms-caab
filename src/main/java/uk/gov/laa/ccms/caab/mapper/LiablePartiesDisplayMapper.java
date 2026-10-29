@@ -65,12 +65,18 @@ public interface LiablePartiesDisplayMapper {
                   }
                   final OpponentDetail opponent = opponentIndex.get(link.getOpponentId());
                   if (opponent == null) {
+                    // The opponent record behind this link could not be loaded (for example, the
+                    // award's liable-parties lookup failed partially, or the opponent has since
+                    // been removed on the case). The association itself is still real, so it must
+                    // remain visible rather than being silently omitted from the summary - showing
+                    // nothing here would incorrectly present an existing liability as absent.
                     LoggerFactory.getLogger(LiablePartiesDisplayMapper.class)
                         .warn(
-                            "Ignoring liable party {} with unresolved opponent id {}",
+                            "Liable party {} has an unresolved opponent id {}; showing as"
+                                + " unavailable instead of omitting it",
                             link.getId(),
                             link.getOpponentId());
-                    return null;
+                    return unresolvedLiablePartyDisplay(link);
                   }
                   return toLiablePartyDisplay(link, opponent, context);
                 })
@@ -106,6 +112,24 @@ public interface LiablePartiesDisplayMapper {
       LiablePartyDetail party,
       OpponentDetail opponent,
       @Context LiablePartiesMappingContext context);
+
+  /**
+   * Builds a visible placeholder row for a liable party link whose opponent record could not be
+   * loaded. The association still exists against the award, so it is shown with an explanatory name
+   * rather than being dropped from the summary; it is not editable since there is no resolved
+   * opponent to edit.
+   */
+  default LiablePartyDisplay unresolvedLiablePartyDisplay(final LiablePartyDetail party) {
+    return new LiablePartyDisplay(
+        party.getId(),
+        party.getOpponentId(),
+        "Party details unavailable",
+        null,
+        null,
+        "",
+        false,
+        false);
+  }
 
   @Named("partyName")
   default String partyName(
