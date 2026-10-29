@@ -367,7 +367,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param session The HTTP session.
    * @return The name of the view to be rendered.
    */
-  @GetMapping("/{caseContext}/proceedings/{action}/matter-type")
+  @GetMapping("/{caseContext}/proceedings/{action:add|edit}/matter-type")
   public String proceedingsActionMatterType(
       @PathVariable("caseContext") final CaseContext caseContext,
       @PathVariable("action") final String action,
@@ -417,7 +417,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param session The HTTP session.
    * @return A redirect instruction to the proceeding type view.
    */
-  @PostMapping("/{caseContext}/proceedings/{action}/matter-type")
+  @PostMapping("/{caseContext}/proceedings/{action:add|edit}/matter-type")
   public String proceedingsActionMatterTypePost(
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
@@ -487,7 +487,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param model The Model object to add attributes to for the view.
    * @return The name of the view to be rendered.
    */
-  @GetMapping("/{caseContext}/proceedings/{action}/proceeding-type")
+  @GetMapping("/{caseContext}/proceedings/{action:add|edit}/proceeding-type")
   public String proceedingsActionProceedingType(
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) final ProceedingFlowFormData proceedingFlow,
@@ -519,7 +519,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param session The HTTP session.
    * @return A redirect instruction to the proceedings further details view.
    */
-  @PostMapping("/{caseContext}/proceedings/{action}/proceeding-type")
+  @PostMapping("/{caseContext}/proceedings/{action:add|edit}/proceeding-type")
   public String proceedingsActionProceedingTypePost(
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
@@ -621,7 +621,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param model The Model object to add attributes to for the view.
    * @return The name of the view to be rendered.
    */
-  @GetMapping("/{caseContext}/proceedings/{action}/further-details")
+  @GetMapping("/{caseContext}/proceedings/{action:add|edit}/further-details")
   public String proceedingsActionFurtherDetails(
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(PROCEEDING_FLOW_FORM_DATA) ProceedingFlowFormData proceedingFlow,
@@ -671,7 +671,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param session The HTTP session.
    * @return A redirect instruction to the proceedings confirm view.
    */
-  @PostMapping("/{caseContext}/proceedings/{action}/further-details")
+  @PostMapping("/{caseContext}/proceedings/{action:add|edit}/further-details")
   public String proceedingsActionFurtherDetailsPost(
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
@@ -807,7 +807,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param session The HTTP session.
    * @return The name of the view to be rendered.
    */
-  @GetMapping("/{caseContext}/proceedings/{action}/confirm")
+  @GetMapping("/{caseContext}/proceedings/{action:add|edit}/confirm")
   public String proceedingsActionConfirm(
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
@@ -924,7 +924,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param session The HTTP session.
    * @return A redirect instruction to the proceedings and costs view.
    */
-  @PostMapping("/{caseContext}/proceedings/{action}/confirm")
+  @PostMapping("/{caseContext}/proceedings/{action:add|edit}/confirm")
   public String proceedingsActionConfirmPost(
       @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(APPLICATION) final ApplicationDetail application,
@@ -1103,7 +1103,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param bindingResult the result of form validation.
    * @return the redirect URL for the prior authority details page.
    */
-  @PostMapping("/{caseContext}/prior-authorities/{action}/type")
+  @PostMapping("/{caseContext}/prior-authorities/{action:add|edit}/type")
   public String priorAuthorityTypePost(
       @PathVariable("caseContext") final CaseContext caseContext,
       @PathVariable("action") final String priorAuthorityAction,
@@ -1142,7 +1142,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param model the model for adding attributes to the view.
    * @return the view name for prior authority details.
    */
-  @GetMapping("/{caseContext}/prior-authorities/{action}/details")
+  @GetMapping("/{caseContext}/prior-authorities/{action:add|edit}/details")
   public String priorAuthorityDetails(
       @PathVariable("caseContext") final CaseContext caseContext,
       @PathVariable("action") final String priorAuthorityAction,
@@ -1182,7 +1182,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param bindingResult the result of form validation.
    * @return the redirect URL for the next step or back to details on error.
    */
-  @PostMapping("/{caseContext}/prior-authorities/{action}/details")
+  @PostMapping("/{caseContext}/prior-authorities/{action:add|edit}/details")
   public String priorAuthorityDetailsPost(
       @PathVariable("caseContext") final CaseContext caseContext,
       @PathVariable("action") final String priorAuthorityAction,

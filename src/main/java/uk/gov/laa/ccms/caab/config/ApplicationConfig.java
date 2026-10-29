@@ -19,6 +19,7 @@ import org.springframework.web.servlet.i18n.FixedLocaleResolver;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import uk.gov.laa.ccms.caab.security.RefusedActionPageInterceptor;
+import uk.gov.laa.ccms.caab.security.SubmittedCaseClientInterceptor;
 import uk.gov.laa.ccms.caab.util.UserRoleUtil;
 
 /** Configuration class for creating WebClient instances used for making HTTP requests. */
@@ -58,6 +59,12 @@ public class ApplicationConfig implements WebMvcConfigurer {
     registry.addInterceptor(loggingInterceptor);
     registry.addInterceptor(uploadSizeErrorInterceptor);
     registry.addInterceptor(new RefusedActionPageInterceptor());
+    registry
+        .addInterceptor(new SubmittedCaseClientInterceptor())
+        .addPathPatterns(
+            "/application/sections/client/details/**",
+            "/application/client-update",
+            "/application/client-update/**");
   }
 
   @Override
