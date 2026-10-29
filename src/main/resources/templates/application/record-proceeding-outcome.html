@@ -92,12 +92,9 @@
       <input type="hidden" th:field="*{courtCode}"/>
       <input type="hidden" th:field="*{courtName}"/>
 
-      <th:block th:if="${proceedingOutcome.hasCourtSelection() or #fields.hasErrors('outcomeCourtCaseNo')}">
-        <div th:replace="~{partials/forms :: textInput('outcomeCourtCaseNo', #{case.recordOutcomes.courtCaseNumber}, 'govuk-input--width-20')}"></div>
+      <th:block th:with="courtCaseNumberLabel=${proceedingOutcome.hasCourtSelection()} ? #{case.recordOutcomes.courtCaseNumber} : (#{case.recordOutcomes.courtCaseNumber} + ' (optional)')">
+        <div th:replace="~{partials/forms :: textInput(fieldId='outcomeCourtCaseNo', label=${courtCaseNumberLabel}, inputClass='govuk-input--width-20', maxlengthParam=15)}"></div>
       </th:block>
-      <input th:unless="${proceedingOutcome.hasCourtSelection() or #fields.hasErrors('outcomeCourtCaseNo')}"
-             type="hidden"
-             th:field="*{outcomeCourtCaseNo}"/>
         <div class="govuk-button-group govuk-!-margin-top-6">
           <govuk:button type="submit" th:text="#{site.next}"/>
         </div>
