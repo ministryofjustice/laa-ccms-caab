@@ -18,6 +18,8 @@ public class ProceedingOutcomeValidator extends AbstractValidator {
 
   private static final int MAX_ADDITIONAL_INFO_LENGTH = 950;
 
+  private static final int MAX_COURT_CASE_NO_LENGTH = 15;
+
   private static final String RESULT_INFO_DISPLAY_NAME = "Additional information about the Result";
 
   private static final String ADR_INFO_DISPLAY_NAME =
@@ -104,6 +106,12 @@ public class ProceedingOutcomeValidator extends AbstractValidator {
           "outcomeCourtCaseNo",
           formData.getOutcomeCourtCaseNo(),
           STANDARD_CHARACTER_SET,
+          "Court case number",
+          errors);
+      validateFieldMaxLength(
+          "outcomeCourtCaseNo",
+          formData.getOutcomeCourtCaseNo(),
+          MAX_COURT_CASE_NO_LENGTH,
           "Court case number",
           errors);
     }
