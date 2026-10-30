@@ -4,6 +4,8 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_COS
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FINANCIAL;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_LAND;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTHER_ASSET;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.AWARD_TYPE_FORM;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -15,6 +17,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -50,22 +55,28 @@ import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.LandAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.OtherAssetAwardMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.LandAwardRequest;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
+import uk.gov.laa.ccms.caab.model.sections.LiablePartyDisplay;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.util.DateUtils;
+import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /** Controller responsible for handling award-related requests. */
@@ -696,6 +707,7 @@ public class AwardController {
             user.getProvider().getId().intValue(),
             awardPath,
             awardId);
+
     model.addAttribute("award", award);
     model.addAttribute("awardPath", awardPath);
     model.addAttribute("awardId", awardId);
@@ -708,6 +720,271 @@ public class AwardController {
                 + "/"
                 + awardId);
     return "application/liable-parties";
+  }
+
+  /** Displays the party list used to select existing parties to add to the award. */
+  @GetMapping(
+      "/case/outcome-and-awards/{awardPath:cost-award|financial-award|land|asset}/{awardId}/liable-parties/add")
+  public String displayPartyList(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(value = APPLICATION, required = false)
+          final ApplicationDetail currentApplication,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @PathVariable final String awardPath,
+      @PathVariable final Integer awardId,
+      final Model model) {
+    final ApplicationDetail activeApplication =
+        resolveActiveApplication(ebsCase, currentApplication);
+    final var titleLookups =
+        safeLookupValues(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE));
+    final var organisationRelationships =
+        safeRelationshipValues(lookupService.getOrganisationToCaseRelationships());
+    final var personRelationships =
+        safeRelationshipValues(lookupService.getPersonToCaseRelationships());
+    final List<Integer> caseOpponentIds = getCaseOpponentIds(ebsCase, user);
+
+    final List<LiablePartyDisplay> parties =
+        buildCandidateOpponentRows(activeApplication, caseOpponentIds).stream()
+            .map(
+                row ->
+                    toPartyDisplay(
+                        row.opponent(),
+                        row.rowId(),
+                        row.persistableOpponentId(),
+                        titleLookups,
+                        organisationRelationships,
+                        personRelationships))
+            .toList();
+
+    model.addAttribute("awardPath", awardPath);
+    model.addAttribute("awardId", awardId);
+    model.addAttribute("parties", parties);
+    return "application/party-list-screen";
+  }
+
+  /** Persists the selected parties against the award before redirecting to the summary. */
+  @PostMapping(
+      "/case/outcome-and-awards/{awardPath:cost-award|financial-award|land|asset}/{awardId}/liable-parties/add")
+  public String addSelectedParties(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(value = APPLICATION, required = false)
+          final ApplicationDetail currentApplication,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @PathVariable final String awardPath,
+      @PathVariable final Integer awardId,
+      @RequestParam(value = "selectedPartyIds", required = false)
+          final List<String> selectedPartyIds,
+      final Model model) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn(
+          "Rejecting liable party selection for read-only case {}",
+          ebsCase.getCaseReferenceNumber());
+      return "redirect:/case/outcome-and-awards";
+    }
+
+    final List<Integer> selectedRowIds = normalizeSelectedPartyIds(selectedPartyIds);
+    final ApplicationDetail activeApplication =
+        resolveActiveApplication(ebsCase, currentApplication);
+    final List<Integer> caseOpponentIds = getCaseOpponentIds(ebsCase, user);
+
+    final List<Integer> resolvedOpponentIds =
+        buildCandidateOpponentRows(activeApplication, caseOpponentIds).stream()
+            .filter(row -> selectedRowIds.contains(row.rowId()))
+            .map(CandidateOpponentRow::persistableOpponentId)
+            .filter(Objects::nonNull)
+            .distinct()
+            .toList();
+
+    if (selectedRowIds.isEmpty()) {
+      model.addAttribute("partyListError", true);
+      displayPartyList(ebsCase, currentApplication, user, awardPath, awardId, model);
+      return "application/party-list-screen";
+    }
+
+    if (resolvedOpponentIds.size() != selectedRowIds.size()) {
+      model.addAttribute("partyListError", true);
+      model.addAttribute("partyListUnresolvedError", true);
+      displayPartyList(ebsCase, currentApplication, user, awardPath, awardId, model);
+      return "application/party-list-screen";
+    }
+
+    caseOutcomeService.addLiableParties(
+        ebsCase.getCaseReferenceNumber(),
+        user.getProvider().getId().intValue(),
+        awardPath,
+        awardId,
+        resolvedOpponentIds,
+        user.getLoginId());
+
+    return "redirect:/case/outcome-and-awards/" + awardPath + "/" + awardId + "/liable-parties";
+  }
+
+  /**
+   * Resolves the application whose opponents should be used to build the party-selection list. The
+   * in-session "current application" is only used when it genuinely relates to the case being
+   * viewed; otherwise it is a stale application left over from a previous screen, and falling back
+   * to it would expose (or try to resolve selections against) the wrong person's opponents.
+   */
+  private ApplicationDetail resolveActiveApplication(
+      final ApplicationDetail ebsCase, final ApplicationDetail currentApplication) {
+    return currentApplication != null
+            && Objects.equals(
+                currentApplication.getCaseReferenceNumber(), ebsCase.getCaseReferenceNumber())
+        ? currentApplication
+        : ebsCase;
+  }
+
+  /**
+   * Looks up the ids the case outcome has already assigned to the case's opponents. These line up
+   * positionally with {@code ApplicationDetail#getOpponents()} and are the only real, persistable
+   * identifiers available for opponents imported from the case (whose {@code
+   * OpponentDetail#getId()} is always {@code null} because they were never created through the
+   * application's own opponent screens).
+   */
+  private List<Integer> getCaseOpponentIds(final ApplicationDetail ebsCase, final UserDetail user) {
+    return caseOutcomeService
+        .getCaseOutcome(ebsCase.getCaseReferenceNumber(), user.getProvider().getId().intValue())
+        .map(CaseOutcomeDetail::getOpponentIds)
+        .orElse(List.of());
+  }
+
+  /**
+   * Builds the ordered, filtered list of opponents eligible for selection on the party list screen,
+   * pairing each with a stable row identifier and the real, persistable opponent id to send to the
+   * award update API. Opponents with a real CAAB id (for example, those added through the
+   * application's own opponent screens) use that id directly. Opponents without one (imported case
+   * opponents) are matched, by their position in the opponents list, against the case outcome's
+   * {@code opponentIds}, which the backend assigns when the case outcome is created. If neither id
+   * is available the row is still rendered with a synthetic negative row identifier, but it cannot
+   * be persisted and selecting it alone results in an error rather than being silently dropped.
+   */
+  private List<CandidateOpponentRow> buildCandidateOpponentRows(
+      final ApplicationDetail activeApplication, final List<Integer> caseOpponentIds) {
+    final List<OpponentDetail> opponents =
+        Optional.ofNullable(activeApplication.getOpponents()).orElse(List.of());
+    final AtomicInteger syntheticRowId = new AtomicInteger();
+    final List<CandidateOpponentRow> rows = new java.util.ArrayList<>();
+    for (int i = 0; i < opponents.size(); i++) {
+      final OpponentDetail opponent = opponents.get(i);
+      if (opponent == null || opponent.getType() == null || !isValidPartyListOpponent(opponent)) {
+        continue;
+      }
+      final Integer persistableOpponentId =
+          resolvePersistableOpponentId(opponent, i, caseOpponentIds);
+      final Integer rowId =
+          persistableOpponentId != null
+              ? persistableOpponentId
+              : -(syntheticRowId.incrementAndGet());
+      rows.add(new CandidateOpponentRow(rowId, opponent, persistableOpponentId));
+    }
+    return rows;
+  }
+
+  /**
+   * Resolves the real, persistable id for an opponent: its own CAAB id when present, otherwise the
+   * case outcome's opponent id at the same position in the opponents list.
+   */
+  private Integer resolvePersistableOpponentId(
+      final OpponentDetail opponent, final int index, final List<Integer> caseOpponentIds) {
+    if (opponent.getId() != null) {
+      return opponent.getId();
+    }
+    if (caseOpponentIds != null && index < caseOpponentIds.size()) {
+      return caseOpponentIds.get(index);
+    }
+    return null;
+  }
+
+  /**
+   * Pairs an opponent with the stable row identifier used to track it across the selection flow,
+   * and the real opponent id that can be persisted against the award.
+   */
+  private record CandidateOpponentRow(
+      Integer rowId, OpponentDetail opponent, Integer persistableOpponentId) {}
+
+  private List<Integer> normalizeSelectedPartyIds(final List<String> selectedPartyIds) {
+    if (selectedPartyIds == null || selectedPartyIds.isEmpty()) {
+      return List.of();
+    }
+    return selectedPartyIds.stream()
+        .filter(StringUtils::hasText)
+        .map(String::trim)
+        .filter(StringUtils::hasText)
+        .map(Integer::valueOf)
+        .distinct()
+        .toList();
+  }
+
+  private List<CommonLookupValueDetail> safeLookupValues(
+      final reactor.core.publisher.Mono<CommonLookupDetail> lookupMono) {
+    return lookupMono == null
+        ? List.of()
+        : lookupMono.blockOptional().map(CommonLookupDetail::getContent).orElse(List.of());
+  }
+
+  private List<RelationshipToCaseLookupValueDetail> safeRelationshipValues(
+      final reactor.core.publisher.Mono<RelationshipToCaseLookupDetail> lookupMono) {
+    return lookupMono == null
+        ? List.of()
+        : lookupMono
+            .blockOptional()
+            .map(RelationshipToCaseLookupDetail::getContent)
+            .orElse(List.of());
+  }
+
+  private LiablePartyDisplay toPartyDisplay(
+      final OpponentDetail opponent,
+      final Integer rowId,
+      final Integer opponentId,
+      final List<CommonLookupValueDetail> titleLookups,
+      final List<RelationshipToCaseLookupValueDetail> organisationRelationships,
+      final List<RelationshipToCaseLookupValueDetail> personRelationships) {
+    final String address =
+        opponent.getAddress() == null
+            ? ""
+            : Stream.of(
+                    opponent.getAddress().getAddressLine1(), opponent.getAddress().getPostcode())
+                .filter(StringUtils::hasText)
+                .collect(Collectors.joining(" "));
+    return new LiablePartyDisplay(
+        rowId,
+        opponentId,
+        OpponentUtil.getPartyName(opponent, titleLookups),
+        opponent.getType(),
+        OpponentUtil.getRelationshipToCase(opponent, organisationRelationships, personRelationships)
+            .getDescription(),
+        address,
+        isAwardPartyEditable(opponent),
+        OpponentUtil.isOrganisation(opponent));
+  }
+
+  private boolean isAwardPartyEditable(final OpponentDetail opponent) {
+    final String ebsId = opponent.getEbsId();
+    return ebsId != null && ebsId.toUpperCase(java.util.Locale.ROOT).startsWith("AWARD");
+  }
+
+  private boolean isValidPartyListOpponent(final OpponentDetail opponent) {
+    if (opponent == null) {
+      return false;
+    }
+
+    if (OpponentUtil.isOrganisation(opponent)) {
+      return StringUtils.hasText(opponent.getOrganisationName())
+          && StringUtils.hasText(opponent.getOrganisationType())
+          && StringUtils.hasText(opponent.getRelationshipToCase())
+          && StringUtils.hasText(opponent.getRelationshipToClient());
+    }
+
+    if (OpponentUtil.INDIVIDUAL_OPPONENT.equalsIgnoreCase(opponent.getType())
+        || "INDIVIDUAL".equalsIgnoreCase(opponent.getType())) {
+      return StringUtils.hasText(opponent.getTitle())
+          && (StringUtils.hasText(opponent.getFirstName())
+              || StringUtils.hasText(opponent.getSurname()))
+          && StringUtils.hasText(opponent.getRelationshipToCase())
+          && StringUtils.hasText(opponent.getRelationshipToClient());
+    }
+
+    return false;
   }
 
   private TimeRecoveryAward loadTimeRecoveryAward(

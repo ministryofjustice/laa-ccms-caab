@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="|#{service.name} - #{case.outcomeAndAwards.title}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a class="govuk-back-link"
+       th:href="@{/case/outcome-and-awards/{path}/{id}/liable-parties(path=${awardPath},id=${awardId})}"
+       th:text="#{site.cancelAndReturnToLiableInterestedParties}"></a>
+  </div>
+  <div id="main-content" th:fragment="content">
+    <h1 class="govuk-heading-l" th:text="#{case.partyListScreen.title}"></h1>
+    <p class="govuk-body" th:text="#{case.partyListScreen.text}"></p>
+
+    <div th:if="${partyListError}" class="govuk-error-summary" aria-labelledby="error-summary-title" role="alert" tabindex="-1" data-module="govuk-error-summary">
+      <h2 class="govuk-error-summary__title" id="error-summary-title" th:text="#{case.partyListScreen.errorHeading}"></h2>
+      <div class="govuk-error-summary__body">
+        <ul class="govuk-list govuk-error-summary__list">
+          <li>
+            <a href="#party-list-table"
+               th:text="${partyListUnresolvedError} ? #{case.partyListScreen.unresolvedSelectionErrorMessage} : #{case.partyListScreen.selectionErrorMessage}"></a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <form method="post"
+          th:action="@{/case/outcome-and-awards/{path}/{id}/liable-parties/add(path=${awardPath},id=${awardId})}">
+      <table class="govuk-table" id="party-list-table">
+        <thead class="govuk-table__head">
+        <tr class="govuk-table__row">
+            <th scope="col" class="govuk-table__header" th:text="#{case.partyListScreen.select}"></th>
+          <th scope="col" class="govuk-table__header" th:text="#{case.liableParties.name}"></th>
+          <th scope="col" class="govuk-table__header" th:text="#{case.liableParties.partyType}"></th>
+          <th scope="col" class="govuk-table__header" th:text="#{case.liableParties.relationshipToCase}"></th>
+          <th scope="col" class="govuk-table__header" th:text="#{case.liableParties.address}"></th>
+        </tr>
+        </thead>
+        <tbody class="govuk-table__body">
+        <tr class="govuk-table__row" th:if="${#lists.isEmpty(parties)}">
+          <td class="govuk-table__cell" colspan="5" th:text="#{case.liableParties.none}"></td>
+        </tr>
+        <tr class="govuk-table__row" th:each="party : ${parties}">
+          <td class="govuk-table__cell">
+            <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
+              <div class="govuk-checkboxes__item">
+                <input class="govuk-checkboxes__input"
+                       th:id="|selected-party-${party.id}|"
+                       type="checkbox"
+                       name="selectedPartyIds"
+                       th:value="${party.opponentId != null ? party.opponentId : party.id}"
+                       th:attr="aria-label=|Select ${party.name}|" />
+                <label class="govuk-checkboxes__label"
+                       th:for="|selected-party-${party.id}|"></label>
+              </div>
+            </div>
+          </td>
+          <td class="govuk-table__cell" th:text="${party.name}"></td>
+          <td class="govuk-table__cell" th:text="${party.partyType}"></td>
+          <td class="govuk-table__cell" th:text="${party.relationshipToCase}"></td>
+          <td class="govuk-table__cell" th:text="${party.address}"></td>
+        </tr>
+        </tbody>
+      </table>
+
+      <div class="govuk-button-group">
+        <button class="govuk-button" data-module="govuk-button" type="submit"
+                th:text="#{case.partyListScreen.addSelectedParties}"></button>
+      </div>
+    </form>
+
+    <div class="govuk-!-margin-top-6">
+      <h2 class="govuk-heading-m" th:text="#{case.partyListScreen.detailsSummary}"></h2>
+      <p class="govuk-body" th:text="#{case.partyListScreen.detailsText}"></p>
+      <!--
+        TODO (CCMSPUI-1489 follow-up): These buttons are intentionally not wired up yet.
+        The existing opponent creation flow (OpponentsSectionController) requires an
+        APPLICATION_ID session attribute that is only populated during an in-progress
+        application/amendment session, which is not guaranteed to exist on the
+        outcome-and-awards flow. Wiring these buttons needs a dedicated creation flow
+        (or session change) so a party created here can be linked back to this award.
+      -->
+      <div class="govuk-button-group">
+        <button class="govuk-button govuk-button--secondary" data-module="govuk-button" type="button"
+                disabled="disabled"
+                th:text="#{case.partyListScreen.addOrganisation}"></button>
+        <button class="govuk-button govuk-button--secondary" data-module="govuk-button" type="button"
+                disabled="disabled"
+                th:text="#{case.partyListScreen.addIndividual}"></button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

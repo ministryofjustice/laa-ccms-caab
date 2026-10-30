@@ -18,7 +18,6 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.context.LiablePartiesMappingContext;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.BaseAwardDetail;
@@ -30,6 +29,8 @@ import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.sections.LiablePartiesDisplay;
 import uk.gov.laa.ccms.caab.model.sections.LiablePartyDisplay;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 
 /** Maps award associations and outcome opponents to the party summary. */
 @Mapper(componentModel = "spring", imports = OpponentUtil.class)
@@ -54,15 +55,32 @@ public interface LiablePartiesDisplayMapper {
                 Collectors.toMap(OpponentDetail::getId, Function.identity(), (first, _) -> first));
     final List<LiablePartyDisplay> parties =
         Optional.ofNullable(award.getLiableParties()).orElse(List.of()).stream()
+            .filter(Objects::nonNull)
             .map(
                 link -> {
+                  if (link.getOpponentId() == null) {
+                    LoggerFactory.getLogger(LiablePartiesDisplayMapper.class)
+                        .warn("Ignoring liable party link with no opponent id: {}", link.getId());
+                    return null;
+                  }
                   final OpponentDetail opponent = opponentIndex.get(link.getOpponentId());
                   if (opponent == null) {
-                    throw new CaabApplicationException(
-                        "Could not resolve opponent for liable party: " + link.getId());
+                    // The opponent record behind this link could not be loaded (for example, the
+                    // award's liable-parties lookup failed partially, or the opponent has since
+                    // been removed on the case). The association itself is still real, so it must
+                    // remain visible rather than being silently omitted from the summary - showing
+                    // nothing here would incorrectly present an existing liability as absent.
+                    LoggerFactory.getLogger(LiablePartiesDisplayMapper.class)
+                        .warn(
+                            "Liable party {} has an unresolved opponent id {}; showing as"
+                                + " unavailable instead of omitting it",
+                            link.getId(),
+                            link.getOpponentId());
+                    return unresolvedLiablePartyDisplay(link);
                   }
                   return toLiablePartyDisplay(link, opponent, context);
                 })
+            .filter(Objects::nonNull)
             .toList();
     return new LiablePartiesDisplay(
         award.getAwardType(),
@@ -95,6 +113,24 @@ public interface LiablePartiesDisplayMapper {
       OpponentDetail opponent,
       @Context LiablePartiesMappingContext context);
 
+  /**
+   * Builds a visible placeholder row for a liable party link whose opponent record could not be
+   * loaded. The association still exists against the award, so it is shown with an explanatory name
+   * rather than being dropped from the summary; it is not editable since there is no resolved
+   * opponent to edit.
+   */
+  default LiablePartyDisplay unresolvedLiablePartyDisplay(final LiablePartyDetail party) {
+    return new LiablePartyDisplay(
+        party.getId(),
+        party.getOpponentId(),
+        "Party details unavailable",
+        null,
+        null,
+        "",
+        false,
+        false);
+  }
+
   @Named("partyName")
   default String partyName(
       final OpponentDetail opponent, @Context final LiablePartiesMappingContext context) {
@@ -109,16 +145,28 @@ public interface LiablePartiesDisplayMapper {
     if (!OpponentUtil.INDIVIDUAL_OPPONENT.equalsIgnoreCase(opponent.getType())) {
       return "undefined";
     }
-    return OpponentUtil.getPartyName(opponent, context.getContactTitle().getContent());
+    final List<CommonLookupValueDetail> contactTitles =
+        context == null || context.getContactTitle() == null
+            ? List.of()
+            : Optional.ofNullable(context.getContactTitle().getContent()).orElse(List.of());
+    return OpponentUtil.getPartyName(opponent, contactTitles);
   }
 
   @Named("relationshipToCase")
   default String relationshipToCase(
       final OpponentDetail opponent, @Context final LiablePartiesMappingContext context) {
+    final List<RelationshipToCaseLookupValueDetail> organisationRelationships =
+        context == null || context.getOrganisationRelationshipsToCase() == null
+            ? List.of()
+            : Optional.ofNullable(context.getOrganisationRelationshipsToCase().getContent())
+                .orElse(List.of());
+    final List<RelationshipToCaseLookupValueDetail> individualRelationships =
+        context == null || context.getIndividualRelationshipsToCase() == null
+            ? List.of()
+            : Optional.ofNullable(context.getIndividualRelationshipsToCase().getContent())
+                .orElse(List.of());
     return OpponentUtil.getRelationshipToCase(
-            opponent,
-            context.getOrganisationRelationshipsToCase().getContent(),
-            context.getIndividualRelationshipsToCase().getContent())
+            opponent, organisationRelationships, individualRelationships)
         .getDescription();
   }
 
