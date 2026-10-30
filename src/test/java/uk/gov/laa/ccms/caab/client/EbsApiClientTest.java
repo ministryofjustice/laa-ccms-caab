@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.function.Function;
@@ -20,8 +21,13 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -29,6 +35,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.billing.InvoiceAssessment;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -79,6 +86,89 @@ public class EbsApiClientTest {
   @InjectMocks private EbsApiClient ebsApiClient;
 
   ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+  @Nested
+  class SelectedInvoiceAssessment {
+    private EbsApiClient client(final HttpStatus status, final String body) {
+      return new EbsApiClient(
+          WebClient.builder()
+              .baseUrl("http://data.example")
+              .exchangeFunction(
+                  request -> {
+                    assertEquals(
+                        "/cases/300000123/invoices/555/assessment", request.url().getPath());
+                    return Mono.just(
+                        ClientResponse.create(status)
+                            .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                            .body(body)
+                            .build());
+                  })
+              .build(),
+          new EbsApiClientErrorHandler());
+    }
+
+    @Test
+    void decodesRetainedIdentityAndRawValuesWhileIgnoringUnneededMetadata() {
+      final InvoiceAssessment response =
+          client(
+                  HttpStatus.OK,
+                  """
+                  {"caseReference":"300000123","billingIncidentId":555,"assessmentId":501,
+                   "billingProviderId":"20","instances":[
+                     {"id":1,"entityName":"global","label":"global","attributes":[
+                       {"id":2,"name":"BILL_SUBMITTED_TOTAL_AMT","responseValue":"718.00",
+                        "responseText":"not the raw value","extendedValue":"ignored","userEntered":false}
+                     ]},
+                     {"id":3,"entityName":null,"attributes":null}
+                   ]}
+                  """)
+              .getInvoiceAssessment("300000123", 555L)
+              .block();
+      assertEquals("300000123", response.caseReference());
+      assertEquals(555L, response.billingIncidentId());
+      assertEquals("20", response.billingProviderId());
+      assertEquals("718.00", response.instances().get(0).attributes().get(0).responseValue());
+      assertEquals(null, response.instances().get(1).entityName());
+      assertEquals(null, response.instances().get(1).attributes());
+    }
+
+    @Test
+    void notFoundIsEmpty() {
+      StepVerifier.create(client(HttpStatus.NOT_FOUND, "").getInvoiceAssessment("300000123", 555L))
+          .verifyComplete();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"400", "401", "403", "500", "503"})
+    void preservesHttpErrorClassification(final int code) {
+      StepVerifier.create(
+              client(HttpStatus.valueOf(code), "not an assessment")
+                  .getInvoiceAssessment("300000123", 555L))
+          .expectErrorMatches(
+              error ->
+                  error instanceof EbsApiClientException apiError
+                      && apiError.hasHttpStatus(HttpStatus.valueOf(code)))
+          .verify();
+    }
+
+    @Test
+    void preservesTransportFailuresForPerRowRecovery() {
+      final WebClientRequestException failure =
+          new WebClientRequestException(
+              new IOException("connection closed"),
+              HttpMethod.GET,
+              URI.create("http://data.example"),
+              HttpHeaders.EMPTY);
+      final EbsApiClient client =
+          new EbsApiClient(
+              WebClient.builder().exchangeFunction(request -> Mono.error(failure)).build(),
+              new EbsApiClientErrorHandler());
+      StepVerifier.create(client.getInvoiceAssessment("300000123", 555L))
+          .expectErrorMatches(
+              error -> error instanceof EbsApiClientException && error.getCause() == failure)
+          .verify();
+    }
+  }
 
   @Nested
   @DisplayName("getUser() Tests")

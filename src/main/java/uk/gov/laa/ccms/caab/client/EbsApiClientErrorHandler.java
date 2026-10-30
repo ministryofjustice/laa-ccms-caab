@@ -11,6 +11,19 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class EbsApiClientErrorHandler extends AbstractApiClientErrorHandler {
 
+  /** Retains failure classification without logging assessment payloads or case identifiers. */
+  public <T> Mono<T> handleInvoiceAssessmentRetrieveError(final Throwable error) {
+    final String message = "Failed to retrieve retained invoice assessment";
+    if (error instanceof WebClientResponseException responseException) {
+      log.error("{} (HTTP {})", message, responseException.getStatusCode().value());
+      return Mono.error(
+          new EbsApiClientException(
+              message, HttpStatus.resolve(responseException.getStatusCode().value())));
+    }
+    log.error(message);
+    return Mono.error(new EbsApiClientException(message, error));
+  }
+
   /**
    * Handles targeted user lookup failures without exposing the login ID from the request or error.
    *

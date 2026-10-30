@@ -143,7 +143,8 @@ public class BillingController {
     model.addAttribute("statementOfAccount", statementOfAccount);
     model.addAttribute(
         "billsAndPoaPage",
-        PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), billsAndPoa));
+        PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), billsAndPoa)
+            .map(row -> billingService.withRetainedTotals(ebsCase.getCaseReferenceNumber(), row)));
     model.addAttribute("currentUrl", request.getRequestURL().toString());
     // Return the user to the bills/POA table (below the statement) after paging, rather than the
     // top of the page. The shared pagination fragment appends this as the link's anchor.

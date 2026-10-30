@@ -13,8 +13,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,17 +25,26 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
+import uk.gov.laa.ccms.caab.bean.billing.InvoiceAssessment;
 import uk.gov.laa.ccms.caab.bean.billing.SoaFigureColumn;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
+import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -93,6 +105,198 @@ class BillingServiceTest {
         .thenReturn(Mono.just(new PaymentOnAccountDetails()));
     // Tax rates are only fetched when a draft POA exists; default to none.
     lenient().when(lookupService.getTaxRates()).thenReturn(Mono.just(new TaxRateLookupDetail()));
+  }
+
+  @Nested
+  class RetainedTotals {
+    private BillPoaRow row(final String type, final Long id) {
+      return new BillPoaRow(type, "Rejected", null, null, new BigDecimal("90"), false, id)
+          .withCopyable();
+    }
+
+    private InvoiceAssessment.Instance global(final String net, final String vat) {
+      return new InvoiceAssessment.Instance(
+          1001L,
+          "global",
+          List.of(
+              new InvoiceAssessment.Attribute(1L, "BILL_SUBMITTED_TOTAL_AMT", net),
+              new InvoiceAssessment.Attribute(2L, "BILL_SUBMITTED_TOTAL_VAT", vat)));
+    }
+
+    private void returns(final InvoiceAssessment.Instance... instances) {
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L))
+          .thenReturn(
+              Mono.just(
+                  new InvoiceAssessment(CASE_REF, 555L, 501L, "20", Arrays.asList(instances))));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"Bill", "POA", "Counsel Bill", "Counsel POA"})
+    void usesRetainedNetAndVatWithoutChangingIdentityOrActions(final String type) {
+      returns(global("718.00", "107.70"));
+      final BillPoaRow original = row(type, 555L);
+      final BillPoaRow result = billingService.withRetainedTotals(CASE_REF, original);
+      assertThat(result.amount()).isEqualByComparingTo("718.00");
+      assertThat(result.grandTotal()).isEqualByComparingTo("825.70");
+      assertThat(result)
+          .isEqualTo(original.withTotals(new BigDecimal("718.00"), new BigDecimal("825.70")));
+      assertThat(result.withCopyable().grandTotal()).isEqualByComparingTo("825.70");
+      verifyNoInteractions(soaApiClient, assessmentService);
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        value = {
+          "0|0|0|0",
+          "100.25|0|100.25|100.25",
+          "100|NULL|100|NULL",
+          "NULL|20|90|NULL",
+          "invalid|20|90|NULL",
+          "100|invalid|100|NULL"
+        },
+        delimiter = '|',
+        nullValues = "NULL")
+    void preservesKnownValuesWithoutInventingMissingTotals(
+        final String net, final String vat, final String expectedNet, final String expectedGrand) {
+      returns(global(net, vat));
+      final BillPoaRow result = billingService.withRetainedTotals(CASE_REF, row("Bill", 555L));
+      assertThat(result.amount()).isEqualByComparingTo(expectedNet);
+      if (expectedGrand == null) {
+        assertThat(result.grandTotal()).isNull();
+      } else {
+        assertThat(result.grandTotal()).isEqualByComparingTo(expectedGrand);
+      }
+    }
+
+    @Test
+    void doesNotReadDraftsOrMissingOrInvalidIds() {
+      final BillPoaRow draft =
+          new BillPoaRow("Bill", "Draft", null, null, BigDecimal.TEN, true, 555L);
+      assertThat(billingService.withRetainedTotals(CASE_REF, draft)).isSameAs(draft);
+      billingService.withRetainedTotals(CASE_REF, row("POA", null));
+      billingService.withRetainedTotals(CASE_REF, row("POA", 0L));
+      verifyNoInteractions(ebsApiClient);
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+        strings = {"missing", "line-only", "duplicate-global", "duplicate-net", "null-instances"})
+    void refusesMissingOrAmbiguousGlobalNet(final String scenario) {
+      final InvoiceAssessment.Instance valid = global("100", "20");
+      switch (scenario) {
+        case "missing" -> returns();
+        case "line-only" ->
+            returns(new InvoiceAssessment.Instance(2L, "DISB_BILL_LINE", valid.attributes()));
+        case "duplicate-global" -> returns(valid, valid);
+        case "duplicate-net" ->
+            returns(
+                new InvoiceAssessment.Instance(
+                    1L,
+                    "global",
+                    List.of(
+                        valid.attributes().get(0),
+                        valid.attributes().get(0),
+                        valid.attributes().get(1))));
+        case "null-instances" ->
+            when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L))
+                .thenReturn(Mono.just(new InvoiceAssessment(CASE_REF, 555L, 501L, "10", null)));
+        default -> throw new AssertionError(scenario);
+      }
+      assertThat(billingService.withRetainedTotals(CASE_REF, row("Bill", 555L)))
+          .isEqualTo(row("Bill", 555L));
+    }
+
+    @Test
+    void ignoresLineTotalsAndNormalisesGlobalAttributeNames() {
+      final InvoiceAssessment.Instance values = global("100", "20");
+      returns(
+          new InvoiceAssessment.Instance(2L, "DISB_BILL_LINE", global("999", "999").attributes()),
+          new InvoiceAssessment.Instance(
+              1L,
+              " GLOBAL ",
+              List.of(
+                  new InvoiceAssessment.Attribute(1L, " bill_submitted_total_amt ", " 100 "),
+                  values.attributes().get(1))));
+      assertThat(billingService.withRetainedTotals(CASE_REF, row("POA", 555L)).grandTotal())
+          .isEqualByComparingTo("120");
+    }
+
+    @Test
+    void duplicateVatKeepsRetainedNetWithoutInventingGrandTotal() {
+      final InvoiceAssessment.Instance values = global("100", "20");
+      returns(
+          new InvoiceAssessment.Instance(
+              1L,
+              "global",
+              List.of(
+                  values.attributes().get(0),
+                  values.attributes().get(1),
+                  values.attributes().get(1))));
+      final BillPoaRow result = billingService.withRetainedTotals(CASE_REF, row("Bill", 555L));
+      assertThat(result.amount()).isEqualByComparingTo("100");
+      assertThat(result.grandTotal()).isNull();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"case", "invoice"})
+    void rejectsMismatchedIdentity(final String mismatch) {
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L))
+          .thenReturn(
+              Mono.just(
+                  new InvoiceAssessment(
+                      mismatch.equals("case") ? "other" : CASE_REF,
+                      mismatch.equals("invoice") ? 777L : 555L,
+                      501L,
+                      "10",
+                      List.of(global("100", "20")))));
+      assertThat(billingService.withRetainedTotals(CASE_REF, row("Bill", 555L)))
+          .isEqualTo(row("Bill", 555L));
+    }
+
+    @Test
+    void missingOrFailedAssessmentDoesNotPreventTheNextRowFromLoading() {
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 444L)).thenReturn(Mono.empty());
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 333L))
+          .thenReturn(
+              Mono.error(new EbsApiClientException("Unavailable", HttpStatus.SERVICE_UNAVAILABLE)));
+      returns(global("100", "20"));
+      assertThat(billingService.withRetainedTotals(CASE_REF, row("Bill", 444L)).grandTotal())
+          .isNull();
+      assertThat(billingService.withRetainedTotals(CASE_REF, row("Bill", 333L)).grandTotal())
+          .isNull();
+      assertThat(billingService.withRetainedTotals(CASE_REF, row("Bill", 555L)).grandTotal())
+          .isEqualByComparingTo("120");
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {400, 401, 403})
+    void propagatesClientErrors(final int status) {
+      final EbsApiClientException failure =
+          new EbsApiClientException("Rejected", HttpStatus.valueOf(status));
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L)).thenReturn(Mono.error(failure));
+      assertThatThrownBy(() -> billingService.withRetainedTotals(CASE_REF, row("Bill", 555L)))
+          .isSameAs(failure);
+    }
+
+    @Test
+    void transportFailuresKeepTheKnownNetButProgrammingErrorsPropagate() {
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L))
+          .thenReturn(
+              Mono.error(
+                  new EbsApiClientException(
+                      "Network failure",
+                      new WebClientRequestException(
+                          new IOException("connection closed"),
+                          HttpMethod.GET,
+                          URI.create("http://data.example"),
+                          HttpHeaders.EMPTY))));
+      final BillPoaRow original = row("Bill", 555L);
+      assertThat(billingService.withRetainedTotals(CASE_REF, original)).isEqualTo(original);
+      final IllegalStateException failure = new IllegalStateException("Unexpected failure");
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L)).thenReturn(Mono.error(failure));
+      assertThatThrownBy(() -> billingService.withRetainedTotals(CASE_REF, original))
+          .isSameAs(failure);
+    }
   }
 
   private StatementOfAccountDetail statement(

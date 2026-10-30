@@ -122,6 +122,9 @@ class BillingControllerTest {
     lenient()
         .when(billingService.getStatementOfAccountDisplay(any(), any(), any()))
         .thenReturn(new StatementOfAccountDisplay());
+    lenient()
+        .when(billingService.withRetainedTotals(any(), any()))
+        .thenAnswer(invocation -> invocation.getArgument(1));
   }
 
   @Nested
@@ -155,11 +158,17 @@ class BillingControllerTest {
       StatementOfAccountDisplay display = new StatementOfAccountDisplay();
       List<BillPoaRow> rows = new ArrayList<>();
       for (int i = 0; i < 25; i++) {
-        rows.add(new BillPoaRow("POA", "Authorised", null, null, new BigDecimal("1.00"), false));
+        rows.add(
+            new BillPoaRow(
+                "POA", "Authorised", null, null, new BigDecimal("1.00"), false, (long) i + 1));
       }
       display.setBillsAndPoa(rows);
       when(billingService.getStatementOfAccountDisplay(eq("300000123"), any(), any()))
           .thenReturn(display);
+
+      final BillPoaRow enriched =
+          rows.get(10).withTotals(new BigDecimal("100"), new BigDecimal("120"));
+      when(billingService.withRetainedTotals("300000123", rows.get(10))).thenReturn(enriched);
 
       assertThat(
               mockMvc.perform(
@@ -178,7 +187,13 @@ class BillingControllerTest {
                 assertThat(page.getTotalPages()).isEqualTo(3);
                 assertThat(page.getNumber()).isEqualTo(1);
                 assertThat(page.getContent()).hasSize(10);
+                assertThat(page.getContent().get(0)).isEqualTo(enriched);
               });
+      verify(billingService, times(10)).withRetainedTotals(eq("300000123"), any());
+      for (int i = 0; i < rows.size(); i++) {
+        verify(billingService, times(i >= 10 && i < 20 ? 1 : 0))
+            .withRetainedTotals("300000123", rows.get(i));
+      }
     }
 
     @Test
