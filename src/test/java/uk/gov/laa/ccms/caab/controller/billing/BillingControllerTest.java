@@ -1696,7 +1696,8 @@ class BillingControllerTest {
                               .status(AssessmentStatus.COMPLETE.getStatus())
                               .entityTypes(new ArrayList<>()))));
       when(billingService.getAllocatedCostLimit(any(), any())).thenReturn(new BigDecimal("100.00"));
-      when(billingSummaryPdfService.generatePoaSummary(any(), any(), any(), any(), any()))
+      when(billingSummaryPdfService.generatePoaSummary(
+              any(), any(), any(), any(), any(), eq("Draft")))
           .thenReturn("%PDF-1.4 stub".getBytes());
 
       assertThat(
@@ -1707,7 +1708,8 @@ class BillingControllerTest {
           .hasStatusOk()
           .hasContentType(MediaType.APPLICATION_PDF);
 
-      verify(billingSummaryPdfService).generatePoaSummary(any(), any(), any(), any(), any());
+      verify(billingSummaryPdfService)
+          .generatePoaSummary(any(), any(), any(), any(), any(), eq("Draft"));
     }
 
     @Test
@@ -1751,7 +1753,8 @@ class BillingControllerTest {
                               .status(AssessmentStatus.COMPLETE.getStatus())
                               .entityTypes(new ArrayList<>()))));
       when(billingService.getAllocatedCostLimit(any(), any())).thenReturn(new BigDecimal("100.00"));
-      when(billingSummaryPdfService.generateBillSummary(any(), any(), any(), any(), any()))
+      when(billingSummaryPdfService.generateBillSummary(
+              any(), any(), any(), any(), any(), eq("Draft")))
           .thenReturn("%PDF-1.4 stub".getBytes());
 
       assertThat(
@@ -1762,7 +1765,8 @@ class BillingControllerTest {
           .hasStatusOk()
           .hasContentType(MediaType.APPLICATION_PDF);
 
-      verify(billingSummaryPdfService).generateBillSummary(any(), any(), any(), any(), any());
+      verify(billingSummaryPdfService)
+          .generateBillSummary(any(), any(), any(), any(), any(), eq("Draft"));
     }
 
     @Test

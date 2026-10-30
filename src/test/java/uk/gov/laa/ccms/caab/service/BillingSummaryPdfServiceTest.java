@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -11,9 +12,13 @@ import static org.mockito.Mockito.when;
 import com.lowagie.text.pdf.PdfReader;
 import com.lowagie.text.pdf.parser.PdfTextExtractor;
 import java.io.IOException;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,6 +30,9 @@ import org.thymeleaf.context.IContext;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xhtmlrenderer.resource.XMLResource;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
@@ -38,6 +46,7 @@ import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 class BillingSummaryPdfServiceTest {
 
   private BillingSummaryPdfService service;
+  private SpringTemplateEngine templateEngine;
 
   @BeforeEach
   void setUp() {
@@ -45,9 +54,9 @@ class BillingSummaryPdfServiceTest {
     resolver.setPrefix("templates/");
     resolver.setSuffix(".html");
     resolver.setTemplateMode(TemplateMode.HTML);
-    final SpringTemplateEngine engine = new SpringTemplateEngine();
-    engine.setTemplateResolver(resolver);
-    service = new BillingSummaryPdfService(engine);
+    templateEngine = new SpringTemplateEngine();
+    templateEngine.setTemplateResolver(resolver);
+    service = new BillingSummaryPdfService(templateEngine);
   }
 
   private AssessmentAttributeDetail attr(final String name, final String value) {
@@ -108,7 +117,12 @@ class BillingSummaryPdfServiceTest {
   void rendersPdf() {
     final byte[] pdf =
         service.generatePoaSummary(
-            ebsCase(), "Test Firm", completedAssessment(), statement(), new BigDecimal("2000.00"));
+            ebsCase(),
+            "Test Firm",
+            completedAssessment(),
+            statement(),
+            new BigDecimal("2000.00"),
+            "Draft");
 
     assertThat(pdf).isNotEmpty();
     // A well-formed PDF starts with the %PDF magic bytes, proving the template rendered and Flying
@@ -121,7 +135,12 @@ class BillingSummaryPdfServiceTest {
   void rendersBillPdf() throws IOException {
     final byte[] pdf =
         service.generateBillSummary(
-            ebsCase(), "Test Firm", completedAssessment(), statement(), new BigDecimal("2000.00"));
+            ebsCase(),
+            "Test Firm",
+            completedAssessment(),
+            statement(),
+            new BigDecimal("2000.00"),
+            "Draft");
 
     assertThat(pdf).isNotEmpty();
     assertThat(new String(pdf, 0, 5, StandardCharsets.ISO_8859_1)).isEqualTo("%PDF-");
@@ -144,9 +163,19 @@ class BillingSummaryPdfServiceTest {
     for (final byte[] pdf :
         List.of(
             service.generateBillSummary(
-                ebsCase(), "Test Firm", completedAssessment(), statement(), BigDecimal.ZERO),
+                ebsCase(),
+                "Test Firm",
+                completedAssessment(),
+                statement(),
+                BigDecimal.ZERO,
+                "Draft"),
             service.generatePoaSummary(
-                ebsCase(), "Test Firm", completedAssessment(), statement(), BigDecimal.ZERO))) {
+                ebsCase(),
+                "Test Firm",
+                completedAssessment(),
+                statement(),
+                BigDecimal.ZERO,
+                "Draft"))) {
       assertThat(new String(pdf, StandardCharsets.ISO_8859_1))
           .as("the report should carry an embedded image XObject")
           .contains("/Image");
@@ -160,7 +189,12 @@ class BillingSummaryPdfServiceTest {
     final byte[] imageless =
         new BillingSummaryPdfService(imagelessEngine)
             .generateBillSummary(
-                ebsCase(), "Test Firm", completedAssessment(), statement(), BigDecimal.ZERO);
+                ebsCase(),
+                "Test Firm",
+                completedAssessment(),
+                statement(),
+                BigDecimal.ZERO,
+                "Draft");
     assertThat(new String(imageless, StandardCharsets.ISO_8859_1)).doesNotContain("/Image");
   }
 
@@ -175,14 +209,78 @@ class BillingSummaryPdfServiceTest {
     final BillingSummaryPdfService mockedService = new BillingSummaryPdfService(mockEngine);
 
     mockedService.generateBillSummary(
-        ebsCase(), "Test Firm", completedAssessment(), statement(), BigDecimal.ZERO);
+        ebsCase(), "Test Firm", completedAssessment(), statement(), BigDecimal.ZERO, "Draft");
     mockedService.generatePoaSummary(
-        ebsCase(), "Test Firm", completedAssessment(), statement(), BigDecimal.ZERO);
+        ebsCase(), "Test Firm", completedAssessment(), statement(), BigDecimal.ZERO, "Draft");
 
     final ArgumentCaptor<IContext> captor = ArgumentCaptor.forClass(IContext.class);
     verify(mockEngine, times(2)).process(eq("pdf/billing-summary"), captor.capture());
     assertThat(captor.getAllValues().get(0).getVariable("data")).isEqualTo("BILL REPORT");
     assertThat(captor.getAllValues().get(1).getVariable("data")).isEqualTo("POA REPORT");
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "bill, Draft", "poa, Draft", "bill, Under Assessment", "poa, Paid (Unrecouped)",
+    "bill,", "poa, ''", "bill, Part-Recouped", "poa, '   '"
+  })
+  void reportHeaderHasStatusAndCourtAssessedInTheirExactCells(String report, String status)
+      throws Exception {
+    final SpringTemplateEngine capturingEngine = spy(templateEngine);
+    final BillingSummaryPdfService capturingService = new BillingSummaryPdfService(capturingEngine);
+    final byte[] pdf =
+        report.equals("bill")
+            ? capturingService.generateBillSummary(
+                ebsCase(), "Test Firm", completedAssessment(), statement(), BigDecimal.ZERO, status)
+            : capturingService.generatePoaSummary(
+                ebsCase(),
+                "Test Firm",
+                completedAssessment(),
+                statement(),
+                BigDecimal.ZERO,
+                status);
+    final ArgumentCaptor<IContext> context = ArgumentCaptor.forClass(IContext.class);
+    verify(capturingEngine).process(eq("pdf/billing-summary"), context.capture());
+    final String html = templateEngine.process("pdf/billing-summary", context.getValue());
+    final NodeList cells =
+        (NodeList)
+            XPathFactory.newInstance()
+                .newXPath()
+                .evaluate(
+                    "//*[local-name()='table' and @id='top-section']"
+                        + "/*[local-name()='tr'][3]/*[local-name()='td']",
+                    XMLResource.load(new StringReader(html)).getDocument(),
+                    XPathConstants.NODESET);
+    final List<String> values = new ArrayList<>();
+    final List<String> classes = new ArrayList<>();
+    for (int index = 0; index < cells.getLength(); index++) {
+      final Element cell = (Element) cells.item(index);
+      values.add(cell.getTextContent().trim());
+      classes.add(cell.getAttribute("class"));
+    }
+    assertThat(values)
+        .containsExactly(
+            "Bill Type",
+            "Counsel POA",
+            "Bill Status",
+            status == null ? "" : status.trim(),
+            "Court Assessed Bill",
+            "No",
+            "Total Value of Claim (\u00a3)",
+            "120.00");
+    assertThat(classes)
+        .containsExactly(
+            "tcell", "value", "tcell", "value", "tcell", "value", "tcell", "value currency");
+    final PdfReader reader = new PdfReader(pdf);
+    try {
+      assertThat(new PdfTextExtractor(reader).getTextFromPage(1).replaceAll("\\s+", ""))
+          .contains(
+              "BillStatus" + (status == null ? "" : status.replaceAll("\\s+", "")),
+              "CourtAssessedBillNo",
+              "TotalValueofClaim(\u00a3)120.00");
+    } finally {
+      reader.close();
+    }
   }
 
   @Test
@@ -197,7 +295,7 @@ class BillingSummaryPdfServiceTest {
 
     final byte[] pdf =
         service.generatePoaSummary(
-            ebsCase(), "Test Firm", assessment, statement(), BigDecimal.ZERO);
+            ebsCase(), "Test Firm", assessment, statement(), BigDecimal.ZERO, "Draft");
 
     assertThat(pdf).isNotEmpty();
     assertThat(new String(pdf, 0, 5, StandardCharsets.ISO_8859_1)).isEqualTo("%PDF-");

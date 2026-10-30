@@ -32,6 +32,8 @@ public record BillPoaRow(
     boolean copyable,
     Long billingIncidentId) {
 
+  public static final String INVOICE_STATUS_DRAFT = "Draft";
+
   /** Creates a row that carries no copy action, which is every row bar a rejected bill. */
   public BillPoaRow(
       final String type,

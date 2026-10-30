@@ -1246,7 +1246,8 @@ class BillingServiceTest {
                   "Current Firm",
                   historical,
                   statement,
-                  new BigDecimal("2000.00"));
+                  new BigDecimal("2000.00"),
+                  "Authorised");
       assertThat(new String(pdf, 0, 5, StandardCharsets.US_ASCII)).isEqualTo("%PDF-");
       final ArgumentCaptor<IContext> context = ArgumentCaptor.forClass(IContext.class);
       verify(engine).process(eq("pdf/billing-summary"), context.capture());

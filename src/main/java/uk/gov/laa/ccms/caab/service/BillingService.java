@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.service;
 
+import static uk.gov.laa.ccms.caab.bean.billing.BillPoaRow.INVOICE_STATUS_DRAFT;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
@@ -84,7 +86,6 @@ public class BillingService {
   private static final String ENTITY_TYPE_PROVIDER = "PROVIDER";
   private static final String ENTITY_TYPE_COUNSEL = "COUNSEL";
   private static final String COST_CATEGORY_COUNSEL = "COUNSEL";
-  private static final String INVOICE_STATUS_DRAFT = "Draft";
   private static final String INVOICE_STATUS_REJECTED = "Rejected";
   private static final String INVOICE_TYPE_BILL = "Bill";
   // Entities a copied bill must not carry forward: they belong to the case as it stands now, and
