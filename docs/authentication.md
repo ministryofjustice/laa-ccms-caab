@@ -95,6 +95,31 @@ To run against a real EntraID tenant instead, override `OIDC_ISSUER_URI`, `AZURE
 | `USER_DETAILS_API_HOSTNAME` | fallback only | Base URL of the User Details API, **including the scheme** - the deployed `url` is the hostname unchanged. In `application-local.yml` and `application-secret.yml` the opposite holds: the `url` there prepends `https://`, so the hostname must be bare. Getting this wrong yields `http://https://host:443`, which fails on the first call rather than at startup. |
 | `USER_DETAILS_API_ACCESS_TOKEN` | fallback only | Sent as `X-Authorization`. Confirmed against the dev API: `Authorization` returns `401 No API access token provided`, and an invalid value returns `401 Invalid API access token provided`. |
 
+## Calling the backend APIs
+
+The four backend APIs each authenticate with a static access token by default. The
+`api-oauth2` profile replaces those with EntraID bearer tokens: it declares one
+`client_credentials` registration per API, and `ApplicationConfig` switches an API to bearer tokens
+only when a registration matching its id exists. So the profile is the whole switch - adding it to
+`SPRING_PROFILES_ACTIVE` moves all four at once, and leaving it off keeps the static tokens.
+
+Each registration needs the API's own `<audience>/.default` scope, because EntraID issues an app
+role only against the scope of the API that exposes it:
+
+| Variable | Description |
+|---|---|
+| `EBS_API_SCOPE` | e.g. `api://laa-ccms-data-api/.default` |
+| `SOA_API_SCOPE` | e.g. `api://laa-ccms-soa-gateway-api/.default` |
+| `CAAB_API_SCOPE` | e.g. `api://laa-ccms-caab-api/.default` |
+| `ASSESSMENT_API_SCOPE` | e.g. `api://laa-ccms-caab-assessment-api/.default` |
+
+`AZURE_CLIENT_ID` / `AZURE_CLIENT_SECRET` are reused - the same app registration holds the app role
+assignments, so there is no second credential to manage.
+
+**Do not enable the profile before the app roles exist.** A registration whose role has not been
+granted still produces a token, which the API then rejects as unauthorised, so turning this on early
+breaks every call to that API rather than falling back.
+
 ## EntraID app registration
 
 The application is registered as **LAA CCMS Modernised PUI**. Unlike the existing PUI registrations
@@ -144,6 +169,8 @@ failure.
   It still sets `SPRING_SECURITY_SAML2_*` and `SAML_PRIVATE_KEY` / `SAML_CERTIFICATE`, and sets
   none of the variables in the table above, so no deployed environment can authenticate until it
   is changed.
+- Enable the `api-oauth2` profile per environment, once each API exposes an app role and this
+  application has been assigned it. Nothing uses OAuth2 for the backend APIs until then.
 - The EBS `/users/entra-mapping` endpoint has to be released in
   [laa-ccms-data-api](https://github.com/ministryofjustice/laa-ccms-data-api) before the internal
   path works.
