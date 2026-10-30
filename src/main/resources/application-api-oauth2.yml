@@ -1,0 +1,33 @@
+# Opt an environment into OAuth2 for the backend APIs. Declaring a registration is what switches
+# that API from its static access token to a bearer token, so this profile is only enabled once the
+# matching Entra app role has been granted to this application.
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          ebs-api:
+            provider: silas-identity
+            client-id: ${AZURE_CLIENT_ID}
+            client-secret: ${AZURE_CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+            # Entra issues app roles only against the API's own <audience>/.default scope.
+            scope: ${EBS_API_SCOPE}
+          soa-api:
+            provider: silas-identity
+            client-id: ${AZURE_CLIENT_ID}
+            client-secret: ${AZURE_CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+            scope: ${SOA_API_SCOPE}
+          caab-api:
+            provider: silas-identity
+            client-id: ${AZURE_CLIENT_ID}
+            client-secret: ${AZURE_CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+            scope: ${CAAB_API_SCOPE}
+          assessment-api:
+            provider: silas-identity
+            client-id: ${AZURE_CLIENT_ID}
+            client-secret: ${AZURE_CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+            scope: ${ASSESSMENT_API_SCOPE}
