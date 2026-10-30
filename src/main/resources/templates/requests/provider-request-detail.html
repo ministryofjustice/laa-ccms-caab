@@ -35,7 +35,7 @@
           </dl>
 
           <div class="govuk-form-group" th:if="*{claimUploadEnabled}" th:classappend="${#fields.hasErrors('file')} ? 'govuk-form-group--error' : ''">
-            <label class="govuk-label" th:for="fileUpload"
+            <label class="govuk-label" for="file"
                    th:text="*{claimUploadLabel}">
             </label>
               <div class="govuk-hint">
