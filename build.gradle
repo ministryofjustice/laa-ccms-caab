@@ -84,7 +84,7 @@ configurations.configureEach {
             details.useVersion '1.6.5'
             details.because 'Snyk override (SNYK-JAVA-CHQOSLOGBACK-20824362); directory traversal vulnerability in 1.6.3'
         }
-        // Guava reaches us through the SAML stack (shib-networking <- opensaml-saml-impl).
+        // Declared directly, but still requested transitively at the vulnerable version.
         if (details.requested.group == 'com.google.guava'
                 && details.requested.name == 'guava') {
             details.useVersion '33.7.2-jre'
@@ -134,9 +134,9 @@ dependencies {
     // These were previously pulled in transitively via the SAML/opensaml stack; declared
     // explicitly now that SAML has been replaced by OIDC (see EvidenceService, CspReportController,
     // ConnectorApiClient and the various mapper context classes).
-    implementation 'com.google.guava:guava:33.0.0-jre'
+    implementation 'com.google.guava:guava:33.7.2-jre'
     implementation 'org.apache.commons:commons-lang3:3.20.0'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.21.6'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.21.8'
 
     // Starters
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
