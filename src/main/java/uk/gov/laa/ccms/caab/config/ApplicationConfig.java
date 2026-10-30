@@ -38,6 +38,13 @@ import uk.gov.laa.ccms.caab.util.UserRoleUtil;
 })
 public class ApplicationConfig implements WebMvcConfigurer {
 
+  // Must match the registration ids declared by the api-oauth2 profile; a mismatch silently
+  // leaves that API on its static access token.
+  static final String EBS_API_REGISTRATION = "ebs-api";
+  static final String SOA_API_REGISTRATION = "soa-api";
+  static final String CAAB_API_REGISTRATION = "caab-api";
+  static final String ASSESSMENT_API_REGISTRATION = "assessment-api";
+
   private final EbsApiProperties ebsApiProperties;
 
   private final SoaApiProperties soaApiProperties;
@@ -141,7 +148,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
    */
   @Bean("ebsApiWebClient")
   WebClient ebsApiWebClient() {
-    return createWebClient(ebsApiProperties, "ebs-api");
+    return createWebClient(ebsApiProperties, EBS_API_REGISTRATION);
   }
 
   /**
@@ -151,7 +158,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
    */
   @Bean("soaApiWebClient")
   WebClient soaApiWebClient() {
-    return createWebClient(soaApiProperties, "soa-api");
+    return createWebClient(soaApiProperties, SOA_API_REGISTRATION);
   }
 
   /**
@@ -161,7 +168,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
    */
   @Bean("caabApiWebClient")
   WebClient caabApiWebClient() {
-    return createWebClient(caabApiProperties, "caab-api");
+    return createWebClient(caabApiProperties, CAAB_API_REGISTRATION);
   }
 
   /**
@@ -171,7 +178,7 @@ public class ApplicationConfig implements WebMvcConfigurer {
    */
   @Bean("assessmentApiWebClient")
   WebClient assessmentApiWebClient() {
-    return createWebClient(assessmentApiProperties, "assessment-api");
+    return createWebClient(assessmentApiProperties, ASSESSMENT_API_REGISTRATION);
   }
 
   /**
