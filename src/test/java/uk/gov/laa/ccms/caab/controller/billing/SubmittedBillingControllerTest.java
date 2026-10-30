@@ -178,10 +178,10 @@ class SubmittedBillingControllerTest {
               return Mono.empty();
             });
     lenient()
-        .when(pdfService.generateBillSummary(any(), any(), any(), any(), any()))
+        .when(pdfService.generateBillSummary(any(), any(), any(), any(), any(), any()))
         .thenReturn(PDF);
     lenient()
-        .when(pdfService.generatePoaSummary(any(), any(), any(), any(), any()))
+        .when(pdfService.generatePoaSummary(any(), any(), any(), any(), any(), any()))
         .thenReturn(PDF);
     // Let accidental draft creation complete so the no-write assertion reports the real defect.
     lenient().when(caabApiClient.createBill(any(), any())).thenReturn(Mono.empty());
@@ -294,15 +294,19 @@ class SubmittedBillingControllerTest {
     verifyNoInteractions(clientService, soaApplicationMapper, amendmentService);
   }
 
-  private void assertSelectedPdf(final String context, final String... amounts) {
+  private void assertSelectedPdf(
+      final String context, final List<String> statuses, final String... amounts) {
     final ArgumentCaptor<AssessmentDetail> captor = ArgumentCaptor.forClass(AssessmentDetail.class);
+    final ArgumentCaptor<String> statusCaptor = ArgumentCaptor.forClass(String.class);
     if (context.equals("bill")) {
       verify(pdfService, times(amounts.length))
-          .generateBillSummary(any(), any(), captor.capture(), any(), any());
+          .generateBillSummary(
+              any(), any(), captor.capture(), any(), any(), statusCaptor.capture());
     } else {
       verify(pdfService, times(amounts.length))
-          .generatePoaSummary(any(), any(), captor.capture(), any(), any());
+          .generatePoaSummary(any(), any(), captor.capture(), any(), any(), statusCaptor.capture());
     }
+    assertThat(statusCaptor.getAllValues()).containsExactlyElementsOf(statuses);
     for (int index = 0; index < amounts.length; index++) {
       final List<AssessmentAttributeDetail> attributes =
           captor.getAllValues().get(index).getEntityTypes().stream()
@@ -389,7 +393,7 @@ class SubmittedBillingControllerTest {
         .contains(context + "-summary.pdf");
     assertThat(result.getResponse().getContentAsByteArray()).isEqualTo(PDF);
     verify(ebsApiClient).getInvoiceAssessment(CASE_REF, 555L);
-    assertSelectedPdf(context, "120.00");
+    assertSelectedPdf(context, List.of("Submitted"), "120.00");
     verify(assessmentService, never()).getAssessments(any(), any(), any());
     assertNoWrites();
   }
@@ -411,7 +415,7 @@ class SubmittedBillingControllerTest {
           .hasStatusOk()
           .hasContentType(MediaType.APPLICATION_PDF);
     }
-    assertSelectedPdf(context, "120.00", "240.00");
+    assertSelectedPdf(context, List.of("Submitted", "Authorised"), "120.00", "240.00");
     verify(ebsApiClient).getInvoiceAssessment(CASE_REF, 555L);
     verify(ebsApiClient).getInvoiceAssessment(CASE_REF, 777L);
     assertNoWrites();
@@ -434,7 +438,7 @@ class SubmittedBillingControllerTest {
                     .sessionAttr(USER_DETAILS, user)))
         .hasStatusOk()
         .hasContentType(MediaType.APPLICATION_PDF);
-    assertSelectedPdf(context, "120.00");
+    assertSelectedPdf(context, List.of("Authorised"), "120.00");
     assertNoWrites();
   }
 
@@ -650,7 +654,7 @@ class SubmittedBillingControllerTest {
         .hasContentType(MediaType.APPLICATION_PDF);
     verify(ebsApiClient, atLeastOnce()).getStatementOfAccount(CASE_REF, null);
     verify(ebsApiClient).getInvoiceAssessment(CASE_REF, 555L);
-    assertSelectedPdf(context, "120.00");
+    assertSelectedPdf(context, List.of("Authorised"), "120.00");
     assertNoWrites();
   }
 }

@@ -15,6 +15,7 @@ public class TopSectionData {
   private String caseReference;
   private String providerName;
   private String billType;
+  private String billStatus;
   private String description;
   private String caseStatus;
 

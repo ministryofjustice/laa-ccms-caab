@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.billing;
 
+import static uk.gov.laa.ccms.caab.bean.billing.BillPoaRow.INVOICE_STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.DECLARATION_BILL;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_COMPLETE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_NOT_STARTED;
@@ -387,13 +388,15 @@ public class BillingController {
                     providerName(user),
                     selected.assessment(),
                     statement,
-                    allocatedCostLimit)
+                    allocatedCostLimit,
+                    selected.row().status())
                 : billingSummaryPdfService.generatePoaSummary(
                     ebsCase,
                     providerName(user),
                     selected.assessment(),
                     statement,
-                    allocatedCostLimit),
+                    allocatedCostLimit,
+                    selected.row().status()),
         selected.statement(),
         ebsCase);
   }
@@ -843,7 +846,12 @@ public class BillingController {
         "poa-summary.pdf",
         (statement, allocatedCostLimit) ->
             billingSummaryPdfService.generatePoaSummary(
-                ebsCase, providerName(user), poaAssessment, statement, allocatedCostLimit),
+                ebsCase,
+                providerName(user),
+                poaAssessment,
+                statement,
+                allocatedCostLimit,
+                INVOICE_STATUS_DRAFT),
         ebsCase,
         user);
   }
@@ -872,7 +880,12 @@ public class BillingController {
         "bill-summary.pdf",
         (statement, allocatedCostLimit) ->
             billingSummaryPdfService.generateBillSummary(
-                ebsCase, providerName(user), billingAssessment, statement, allocatedCostLimit),
+                ebsCase,
+                providerName(user),
+                billingAssessment,
+                statement,
+                allocatedCostLimit,
+                INVOICE_STATUS_DRAFT),
         ebsCase,
         user);
   }

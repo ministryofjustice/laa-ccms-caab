@@ -103,6 +103,7 @@ public class BillingSummaryPdfService {
    * @param assessment the completed POA assessment.
    * @param statement the case statement of account, for the header cost figures.
    * @param allocatedCostLimit the provider's allocated cost limit.
+   * @param billStatus the invoice status displayed in the statement of account.
    * @return the rendered PDF bytes.
    */
   public byte[] generatePoaSummary(
@@ -110,10 +111,17 @@ public class BillingSummaryPdfService {
       final String providerName,
       final AssessmentDetail assessment,
       final StatementOfAccountDisplay statement,
-      final BigDecimal allocatedCostLimit) {
+      final BigDecimal allocatedCostLimit,
+      final String billStatus) {
 
     return generateSummary(
-        POA_REPORT_TITLE, ebsCase, providerName, assessment, statement, allocatedCostLimit);
+        POA_REPORT_TITLE,
+        ebsCase,
+        providerName,
+        assessment,
+        statement,
+        allocatedCostLimit,
+        billStatus);
   }
 
   /**
@@ -124,6 +132,7 @@ public class BillingSummaryPdfService {
    * @param assessment the completed billing assessment.
    * @param statement the case statement of account, for the header cost figures.
    * @param allocatedCostLimit the provider's allocated cost limit.
+   * @param billStatus the invoice status displayed in the statement of account.
    * @return the rendered PDF bytes.
    */
   public byte[] generateBillSummary(
@@ -131,10 +140,17 @@ public class BillingSummaryPdfService {
       final String providerName,
       final AssessmentDetail assessment,
       final StatementOfAccountDisplay statement,
-      final BigDecimal allocatedCostLimit) {
+      final BigDecimal allocatedCostLimit,
+      final String billStatus) {
 
     return generateSummary(
-        BILL_REPORT_TITLE, ebsCase, providerName, assessment, statement, allocatedCostLimit);
+        BILL_REPORT_TITLE,
+        ebsCase,
+        providerName,
+        assessment,
+        statement,
+        allocatedCostLimit,
+        billStatus);
   }
 
   private byte[] generateSummary(
@@ -143,11 +159,13 @@ public class BillingSummaryPdfService {
       final String providerName,
       final AssessmentDetail assessment,
       final StatementOfAccountDisplay statement,
-      final BigDecimal allocatedCostLimit) {
+      final BigDecimal allocatedCostLimit,
+      final String billStatus) {
 
     final List<BillLine> billLines = buildBillLines(assessment);
     final TopSectionData top =
-        buildTopSection(ebsCase, providerName, assessment, statement, allocatedCostLimit);
+        buildTopSection(
+            ebsCase, providerName, assessment, statement, allocatedCostLimit, billStatus);
     final BottomSectionData bottom = buildBottomSection(billLines);
 
     final Context context = new Context();
@@ -192,7 +210,8 @@ public class BillingSummaryPdfService {
       final String providerName,
       final AssessmentDetail assessment,
       final StatementOfAccountDisplay statement,
-      final BigDecimal allocatedCostLimit) {
+      final BigDecimal allocatedCostLimit,
+      final String billStatus) {
 
     final AssessmentEntityDetail global = globalEntity(assessment);
     final SoaFigureColumn providerColumn =
@@ -204,6 +223,7 @@ public class BillingSummaryPdfService {
         .caseReference(ebsCase.getCaseReferenceNumber())
         .providerName(providerName)
         .billType(attributeValue(global, ATTR_BILL_TYPE))
+        .billStatus(billStatus)
         .description(attributeValue(global, ATTR_BILL_DESCRIPTION))
         .caseStatus(caseStatus(ebsCase))
         // The legacy report leaves the total POA blank.

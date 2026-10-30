@@ -214,6 +214,10 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
   }
 
   private void statement(String type, String status) throws Exception {
+    statement(type, status, status);
+  }
+
+  private void statement(String type, String status, String previousStatus) throws Exception {
     StatementOfAccountDetails body = new StatementOfAccountDetails();
     for (int firm : List.of(10, 20)) {
       body.addContentItem(
@@ -232,7 +236,7 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
                           new StatementOfAccountInvoice()
                               .billingIncidentId(firm == 10 ? 555L : 777L)
                               .invoiceType(type)
-                              .invoiceStatus(status)
+                              .invoiceStatus(firm == 10 ? status : previousStatus)
                               .invoiceAmount(new BigDecimal(firm == 10 ? "120.00" : "240.00")))));
     }
     data.stubFor(
@@ -340,13 +344,17 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
   void selectedPdfsUseDistinctInvoicesInOneSessionIncludingThePreviousFirm(String context)
       throws Exception {
     String type = context.equals("poa") ? "Counsel POA" : "Solicitor Final";
-    statement(type, "Assessed");
+    statement(type, "Assessed", "Paid (Unrecouped)");
     stub(invoice(555, type, "100.00", "20.00"));
     stub(invoice(777, type, "200.00", "40.00"));
     String first = pdf(request(context, "/summary", "555"), context, "100.00", "120.00", "00:00");
     String second = pdf(request(context, "/summary", "777"), context, "200.00", "240.00", "00:00");
-    assertThat(first).contains("01-JAN-2026").doesNotContain("999.00", "240.00");
-    assertThat(second).doesNotContain("999.00", "120.00");
+    assertThat(first)
+        .contains("01-JAN-2026", "BillStatusAssessed")
+        .doesNotContain("999.00", "240.00", "Paid(Unrecouped)");
+    assertThat(second)
+        .contains("BillStatusPaid(Unrecouped)")
+        .doesNotContain("999.00", "120.00", "BillStatusAssessed");
     selectedRead(555, 777);
   }
 
