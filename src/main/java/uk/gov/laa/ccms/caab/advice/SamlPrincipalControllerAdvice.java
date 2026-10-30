@@ -2,7 +2,9 @@ package uk.gov.laa.ccms.caab.advice;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.saml2.provider.service.authentication.Saml2AssertionAuthentication;
@@ -24,6 +26,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
  */
 @ControllerAdvice
 @RequiredArgsConstructor
+@Slf4j
 public class SamlPrincipalControllerAdvice {
 
   private final UserService userService;
@@ -56,12 +59,13 @@ public class SamlPrincipalControllerAdvice {
         user = (UserDetail) session.getAttribute("user");
 
         if (!user.getLoginId().equals(loginId)) {
-          user = userService.getUser(user.getUserId()).block();
+          final Integer userId = user.getUserId();
+          user = loadUser(() -> userService.getUser(userId).block(), loginId);
         }
 
       } else {
         UserDetail previousUser = (UserDetail) session.getAttribute("user");
-        user = userService.getUserByLoginId(loginId).block();
+        user = loadUser(() -> userService.getUserByLoginId(loginId).block(), loginId);
         if (previousUser != null && user != null) {
           UserFunctionAuthorities.replace(saml2Authentication, previousUser, user, session);
         }
@@ -76,6 +80,16 @@ public class SamlPrincipalControllerAdvice {
       model.addAttribute("userAttributes", saml2Authentication.getCredentials().getAttributes());
 
       session.setAttribute("user", user);
+    }
+  }
+
+  /** Loads the user, treating a failed load like a missing user so that it fails closed. */
+  private static UserDetail loadUser(Supplier<UserDetail> load, String loginId) {
+    try {
+      return load.get();
+    } catch (RuntimeException e) {
+      log.error("Unable to load user {}", loginId, e);
+      return null;
     }
   }
 

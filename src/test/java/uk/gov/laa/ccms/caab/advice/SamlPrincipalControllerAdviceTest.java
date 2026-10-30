@@ -231,5 +231,31 @@ class SamlPrincipalControllerAdviceTest {
         SecurityContextHolder.clearContext();
       }
     }
+
+    @Test
+    @DisplayName("A failed user reload drops the logged-in authentication and fails")
+    public void failedReloadEndsTheLogin() {
+      when(session.getAttribute("user")).thenReturn(userDetails);
+      when(userService.getUserByLoginId(any()))
+          .thenReturn(Mono.error(new RuntimeException("User service unavailable")));
+      HandlerMethod handler = mock(HandlerMethod.class);
+      when(request.getAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE))
+          .thenReturn(handler);
+      doReturn(HomeController.class).when(handler).getBeanType();
+      SecurityContextHolder.getContext().setAuthentication(authentication);
+
+      try {
+        assertThrows(
+            CaabApplicationException.class,
+            () -> advice.addSamlPrincipalToModel(authentication, model, session, request));
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        verify(session)
+            .removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+        verify(session).removeAttribute("user");
+      } finally {
+        SecurityContextHolder.clearContext();
+      }
+    }
   }
 }

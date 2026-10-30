@@ -252,4 +252,39 @@ public class ProviderControllerTest {
     assertTrue(session.isInvalid());
     assertEquals(providerFirm1, userDetails.getProvider());
   }
+
+  @Test
+  public void switchingProviderEndsTheSessionWhenTheUserReloadFails() throws Exception {
+    String loginId = "testLoginId";
+    BaseProvider providerFirm1 = new BaseProvider().id(12345).name("providerFirm1");
+    BaseProvider providerFirm2 = new BaseProvider().id(67890).name("providerFirm2");
+    UserDetail userDetails =
+        new UserDetail()
+            .userId(1)
+            .userType("testUserType")
+            .loginId(loginId)
+            .firms(List.of(providerFirm1, providerFirm2))
+            .provider(providerFirm1)
+            .functions(List.of("CA"));
+    ProviderFirmFormData providerFirmFormData = new ProviderFirmFormData();
+    providerFirmFormData.setProviderFirmId(67890);
+
+    when(userService.updateUserOptions(67890, loginId, "testUserType"))
+        .thenReturn(Mono.just(new ClientTransactionResponse()));
+    when(userService.getUserByLoginId(loginId))
+        .thenReturn(Mono.error(new RuntimeException("User service unavailable")));
+
+    MockHttpSession session = new MockHttpSession();
+    session.setAttribute("user", userDetails);
+
+    this.mockMvc
+        .perform(
+            post("/provider-switch")
+                .session(session)
+                .flashAttr("providerFirmFormData", providerFirmFormData))
+        .andExpect(redirectedUrl("/home"));
+
+    assertTrue(session.isInvalid());
+    assertEquals(providerFirm1, userDetails.getProvider());
+  }
 }

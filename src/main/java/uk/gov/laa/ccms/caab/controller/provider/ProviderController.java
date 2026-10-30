@@ -97,7 +97,7 @@ public class ProviderController {
     // The legacy PUI reloads the user's functions as part of the switch, so the new provider's
     // functions apply to the very next request. Without them the old provider's functions would
     // apply to the new provider, so the session is ended and the user logs in again.
-    UserDetail reloadedUser = userService.getUserByLoginId(user.getLoginId()).block();
+    UserDetail reloadedUser = reloadUser(user.getLoginId());
     if (reloadedUser == null) {
       log.error("User {} could not be reloaded after switching provider", user.getLoginId());
       SecurityContextHolder.clearContext();
@@ -113,6 +113,15 @@ public class ProviderController {
     session.setAttribute("user", user);
 
     return "redirect:/home";
+  }
+
+  private UserDetail reloadUser(String loginId) {
+    try {
+      return userService.getUserByLoginId(loginId).block();
+    } catch (RuntimeException e) {
+      log.error("Unable to reload user {}", loginId, e);
+      return null;
+    }
   }
 
   /**
