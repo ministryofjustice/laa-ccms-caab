@@ -6,11 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -20,6 +23,8 @@ import uk.gov.laa.ccms.caab.bean.proceeding.ProceedingOutcomeFormData;
 
 @ExtendWith(MockitoExtension.class)
 class ProceedingOutcomeValidatorTest {
+
+  private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
   @InjectMocks private ProceedingOutcomeValidator validator;
 
@@ -158,5 +163,157 @@ class ProceedingOutcomeValidatorTest {
     validator.validate(formData, errors);
 
     assertFalse(errors.hasErrors());
+  }
+
+  @Test
+  @DisplayName("court case number at the maximum length (15 characters) is accepted")
+  public void validate_courtCaseNumberAtMaximumLength_passes() {
+    withMandatoryFields();
+    formData.setOutcomeCourtCaseNo("A".repeat(15));
+
+    validator.validate(formData, errors);
+
+    assertNull(errors.getFieldError("outcomeCourtCaseNo"));
+  }
+
+  @Test
+  @DisplayName("court case number above the maximum length (16 characters) is rejected")
+  public void validate_courtCaseNumberAboveMaximumLength_rejects() {
+    withMandatoryFields();
+    formData.setOutcomeCourtCaseNo("A".repeat(16));
+
+    validator.validate(formData, errors);
+
+    assertNotNull(errors.getFieldError("outcomeCourtCaseNo"));
+    assertEquals("length.exceeds.max", errors.getFieldError("outcomeCourtCaseNo").getCode());
+  }
+
+  @Test
+  @DisplayName("date of final work set to today passes")
+  public void validate_dateOfFinalWorkToday_passes() {
+    withMandatoryFields();
+    formData.setDateOfFinalWork(LocalDate.now().format(DATE_FORMAT));
+
+    validator.validate(formData, errors);
+
+    assertNull(errors.getFieldError("dateOfFinalWork"));
+  }
+
+  @Test
+  @DisplayName("date of final work set to a past date passes")
+  public void validate_dateOfFinalWorkInPast_passes() {
+    withMandatoryFields();
+    formData.setDateOfFinalWork(LocalDate.now().minusDays(1).format(DATE_FORMAT));
+
+    validator.validate(formData, errors);
+
+    assertNull(errors.getFieldError("dateOfFinalWork"));
+  }
+
+  @Test
+  @DisplayName("date of final work set to tomorrow is rejected as out of range")
+  public void validate_dateOfFinalWorkTomorrow_rejects() {
+    withMandatoryFields();
+    formData.setDateOfFinalWork(LocalDate.now().plusDays(1).format(DATE_FORMAT));
+
+    validator.validate(formData, errors);
+
+    assertNotNull(errors.getFieldError("dateOfFinalWork"));
+    assertEquals("invalid.date.range", errors.getFieldError("dateOfFinalWork").getCode());
+  }
+
+  @Test
+  @DisplayName("a malformed date of final work receives only a format error, not a range error")
+  public void validate_dateOfFinalWorkMalformed_rejectsFormatOnly() {
+    withMandatoryFields();
+    formData.setDateOfFinalWork("31/02/2026");
+
+    validator.validate(formData, errors);
+
+    assertNotNull(errors.getFieldError("dateOfFinalWork"));
+    assertEquals("invalid.format", errors.getFieldError("dateOfFinalWork").getCode());
+    assertEquals(1, errors.getFieldErrorCount("dateOfFinalWork"));
+  }
+
+  @ParameterizedTest
+  @NullSource
+  @ValueSource(strings = {"", "   "})
+  @DisplayName("a court selected by code requires a non-blank case number")
+  public void validate_courtCodeSelectedWithoutCaseNumber_rejects(final String value) {
+    withMandatoryFields();
+    formData.setCourtCode("CT1");
+    formData.setOutcomeCourtCaseNo(value);
+
+    validator.validate(formData, errors);
+
+    assertNotNull(errors.getFieldError("outcomeCourtCaseNo"));
+    assertTrue(errors.getFieldError("outcomeCourtCaseNo").getCode().startsWith("required"));
+  }
+
+  @ParameterizedTest
+  @NullSource
+  @ValueSource(strings = {"", "   "})
+  @DisplayName("a court selected by name requires a non-blank case number")
+  public void validate_courtNameSelectedWithoutCaseNumber_rejects(final String value) {
+    withMandatoryFields();
+    formData.setCourtName("Court 1");
+    formData.setOutcomeCourtCaseNo(value);
+
+    validator.validate(formData, errors);
+
+    assertNotNull(errors.getFieldError("outcomeCourtCaseNo"));
+    assertTrue(errors.getFieldError("outcomeCourtCaseNo").getCode().startsWith("required"));
+  }
+
+  @Test
+  @DisplayName("a court selected by code accepts a valid case number")
+  public void validate_courtCodeSelectedWithCaseNumber_passes() {
+    withMandatoryFields();
+    formData.setCourtCode("CT1");
+    formData.setOutcomeCourtCaseNo("AB123456");
+
+    validator.validate(formData, errors);
+
+    assertNull(errors.getFieldError("outcomeCourtCaseNo"));
+  }
+
+  @Test
+  @DisplayName("a court selected by name accepts a valid case number")
+  public void validate_courtNameSelectedWithCaseNumber_passes() {
+    withMandatoryFields();
+    formData.setCourtName("Court 1");
+    formData.setOutcomeCourtCaseNo("AB123456");
+
+    validator.validate(formData, errors);
+
+    assertNull(errors.getFieldError("outcomeCourtCaseNo"));
+  }
+
+  @ParameterizedTest
+  @NullSource
+  @ValueSource(strings = {"", "   "})
+  @DisplayName("no court selected keeps the case number optional")
+  public void validate_noCourtSelected_caseNumberOptional(final String value) {
+    withMandatoryFields();
+    formData.setOutcomeCourtCaseNo(value);
+
+    validator.validate(formData, errors);
+
+    assertNull(errors.getFieldError("outcomeCourtCaseNo"));
+  }
+
+  @ParameterizedTest
+  @NullSource
+  @ValueSource(strings = {"", "   "})
+  @DisplayName("legacy 'Not Available' court placeholders keep the case number optional")
+  public void validate_legacyNotAvailableCourt_caseNumberOptional(final String value) {
+    withMandatoryFields();
+    formData.setCourtCode("Not Available");
+    formData.setCourtName("Not Available");
+    formData.setOutcomeCourtCaseNo(value);
+
+    validator.validate(formData, errors);
+
+    assertNull(errors.getFieldError("outcomeCourtCaseNo"));
   }
 }
