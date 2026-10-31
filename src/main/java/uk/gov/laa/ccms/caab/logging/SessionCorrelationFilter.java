@@ -15,14 +15,27 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class SessionCorrelationFilter extends OncePerRequestFilter {
 
+  static final String REQUEST_ID = "request_id";
+  static final String REQUEST_ID_HEADER = "X-Request-Id";
+
   private static final String ATTRIBUTE = SessionCorrelationFilter.class.getName() + ".sessionID";
+  private static final String REQUEST_ATTRIBUTE =
+      SessionCorrelationFilter.class.getName() + ".requestId";
 
   @Override
   protected void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain chain)
       throws ServletException, IOException {
     String previous = MDC.get("sessionID");
+    String previousRequestId = MDC.get(REQUEST_ID);
     try {
+      String requestId = (String) request.getAttribute(REQUEST_ATTRIBUTE);
+      if (requestId == null) {
+        requestId = UUID.randomUUID().toString();
+        request.setAttribute(REQUEST_ATTRIBUTE, requestId);
+      }
+      MDC.put(REQUEST_ID, requestId);
+      response.setHeader(REQUEST_ID_HEADER, requestId);
       String id = (String) request.getAttribute(ATTRIBUTE);
       if (id == null) {
         id = correlationId(request);
@@ -35,6 +48,11 @@ public class SessionCorrelationFilter extends OncePerRequestFilter {
         MDC.remove("sessionID");
       } else {
         MDC.put("sessionID", previous);
+      }
+      if (previousRequestId == null) {
+        MDC.remove(REQUEST_ID);
+      } else {
+        MDC.put(REQUEST_ID, previousRequestId);
       }
     }
   }
