@@ -150,7 +150,11 @@ class SecurityEventsEndToEndTest {
   @Configuration
   @EnableWebMvc
   @EnableWebSecurity
-  @Import({SecurityConfiguration.class, SecurityEventLogger.class})
+  @Import({
+    SecurityConfiguration.class,
+    AuthorizationEventsConfiguration.class,
+    SecurityEventLogger.class
+  })
   static class Config {
 
     @Bean
