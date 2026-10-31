@@ -176,7 +176,7 @@ public class CounselSearchController {
 
     if (lookupValueDetails != null && index >= 0 && index < lookupValueDetails.size()) {
       CounselLookupValueDetail selectedCounsel = lookupValueDetails.get(index);
-      log.debug("Selecting counsel: {}", selectedCounsel.getName());
+      log.debug("Selecting counsel at index {}", index);
       session.setAttribute(SELECTED_COUNSEL, selectedCounsel);
     }
 

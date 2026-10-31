@@ -11,6 +11,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationSearchCriteria;
+import uk.gov.laa.ccms.caab.logging.LogMasker;
 import uk.gov.laa.ccms.soa.gateway.model.CaseDetail;
 import uk.gov.laa.ccms.soa.gateway.model.CaseTransactionResponse;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetailDetails;
@@ -239,7 +240,7 @@ public class SoaApiClient {
                 log.error(
                     "SOA updateCase failed with status {}. Response body: {}",
                     ex.getStatusCode(),
-                    ex.getResponseBodyAsString()))
+                    LogMasker.mask(ex.getResponseBodyAsString())))
         .onErrorResume(
             e ->
                 soaApiClientErrorHandler.handleApiUpdateError(
