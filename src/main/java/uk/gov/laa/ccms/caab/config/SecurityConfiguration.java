@@ -28,6 +28,8 @@ import org.springframework.security.saml2.provider.service.authentication.Saml2A
 import org.springframework.security.saml2.provider.service.authentication.Saml2ResponseAssertionAccessor;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
 import uk.gov.laa.ccms.caab.logging.UserContextFilter;
@@ -186,8 +188,26 @@ public class SecurityConfiguration {
                         throw new RuntimeException("Failed to redirect to Identity Provider.", e);
                       }
                     }))
-        .saml2Login(saml2 -> saml2.authenticationManager(authenticationManager))
+        .saml2Login(
+            saml2 ->
+                saml2
+                    .authenticationManager(authenticationManager)
+                    .failureHandler(authenticationFailureHandler()))
         .build();
+  }
+
+  /**
+   * Logs a failed SAML sign-in, then sends the user to the same page as Spring's default does.
+   *
+   * @return An AuthenticationFailureHandler for the SAML login.
+   */
+  private AuthenticationFailureHandler authenticationFailureHandler() {
+    AuthenticationFailureHandler redirect =
+        new SimpleUrlAuthenticationFailureHandler("/login?error");
+    return (request, response, exception) -> {
+      securityEventLogger.authenticationFailed(exception);
+      redirect.onAuthenticationFailure(request, response, exception);
+    };
   }
 
   /**

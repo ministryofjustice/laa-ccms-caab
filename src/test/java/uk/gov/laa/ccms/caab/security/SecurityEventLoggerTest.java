@@ -228,6 +228,29 @@ class SecurityEventLoggerTest {
     assertEquals(java.util.List.of("VIEW"), keyValue(appender.list.getFirst(), "privileges_added"));
   }
 
+  @Test
+  void aSamlFailureIsLoggedByItsErrorCodeNotItsMessage() {
+    logger.authenticationFailed(
+        new org.springframework.security.saml2.provider.service.authentication
+            .Saml2AuthenticationException(
+            new org.springframework.security.saml2.core.Saml2Error(
+                "invalid_signature", "bad signature for jane.doe@example.com")));
+
+    ILoggingEvent event = appender.list.getFirst();
+    assertEquals("AUTHENTICATION_FAILURE", keyValue(event, "event_type"));
+    assertEquals("FAILURE", keyValue(event, "outcome"));
+    assertEquals("invalid_signature", keyValue(event, "event_detail"));
+    assertEquals(ch.qos.logback.classic.Level.WARN, event.getLevel());
+    assertFalse(event.getFormattedMessage().contains("jane.doe"));
+  }
+
+  @Test
+  void otherFailuresAreLoggedByExceptionClass() {
+    logger.authenticationFailed(new BadCredentialsException("password was hunter2"));
+
+    assertEquals("BadCredentialsException", keyValue(appender.list.getFirst(), "event_detail"));
+  }
+
   private static Object keyValue(ILoggingEvent event, String key) {
     return event.getKeyValuePairs().stream()
         .filter(kv -> kv.key.equals(key))
