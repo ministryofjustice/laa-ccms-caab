@@ -128,6 +128,38 @@ class SecurityEventLoggerTest {
     assertEquals(ch.qos.logback.classic.Level.WARN, event.getLevel());
   }
 
+  @Test
+  void failuresAndDenialsLogAtWarnAndSuccessesAtInfo() {
+    logger.onAuthenticationSuccess(new AuthenticationSuccessEvent(user));
+    logger.onAuthenticationFailure(
+        new AuthenticationFailureBadCredentialsEvent(user, new BadCredentialsException("x")));
+    logger.logout(user);
+
+    assertEquals(ch.qos.logback.classic.Level.INFO, appender.list.get(0).getLevel());
+    assertEquals(ch.qos.logback.classic.Level.WARN, appender.list.get(1).getLevel());
+    assertEquals(ch.qos.logback.classic.Level.INFO, appender.list.get(2).getLevel());
+  }
+
+  @Test
+  void eventsRestoreTheUserAlreadyInTheLoggingContext() {
+    org.slf4j.MDC.put("user_id", "request-user");
+    try {
+      logger.logout(user);
+      logger.permissionsLoaded("someone.else@example.com", java.util.List.of("A"));
+
+      assertEquals("request-user", org.slf4j.MDC.get("user_id"));
+    } finally {
+      org.slf4j.MDC.remove("user_id");
+    }
+  }
+
+  @Test
+  void eventsLeaveNoUserBehindWhenNoneWasSet() {
+    logger.logout(user);
+
+    org.junit.jupiter.api.Assertions.assertNull(org.slf4j.MDC.get("user_id"));
+  }
+
   private static Object keyValue(ILoggingEvent event, String key) {
     return event.getKeyValuePairs().stream()
         .filter(kv -> kv.key.equals(key))
