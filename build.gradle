@@ -17,9 +17,6 @@ repositories {
 
     mavenCentral()
 
-    // Latest version of saml requires this
-    maven { url = 'https://build.shibboleth.net/nexus/content/repositories/releases/' }
-
     // Define the common configuration block for GitHub repositories
     def githubRepoConfig = { repoUrl ->
         maven {
@@ -71,11 +68,6 @@ configurations.configureEach {
             details.useVersion '4.2.18.Final'
             details.because 'Snyk override for HTTP and QUIC vulnerabilities in 4.2.17.Final'
         }
-        // Not managed by the Spring Boot BOM; pulled in transitively via the SAML/opensaml stack.
-        if (details.requested.group == 'org.bouncycastle') {
-            details.useVersion '1.86'
-            details.because 'Override to remediate vulnerability; not covered by the Spring Boot dependency BOM'
-        }
         // Logback classic pulled in by Spring Boot starter logging
         if (details.requested.group == 'org.hibernate.validator'
                 && details.requested.name == 'hibernate-validator') {
@@ -87,11 +79,11 @@ configurations.configureEach {
             details.useVersion '1.6.5'
             details.because 'Snyk override (SNYK-JAVA-CHQOSLOGBACK-20824362); directory traversal vulnerability in 1.6.3'
         }
-        // Guava reaches us through the SAML stack (shib-networking <- opensaml-saml-impl).
-        if (details.requested.group == 'com.google.guava'
-                && details.requested.name == 'guava') {
-            details.useVersion '33.7.2-jre'
-            details.because 'Snyk override (SNYK-JAVA-COMGOOGLEGUAVA-20825054); unthrottled resource allocation in 33.0.0-jre'
+        // Reaches us via the OIDC stack: oauth2-oidc-sdk -> json-smart -> accessors-smart.
+        if (details.requested.group == 'org.ow2.asm'
+                && details.requested.name == 'asm') {
+            details.useVersion '9.11.1'
+            details.because 'Snyk override (SNYK-JAVA-ORGOW2ASM-21715439 and five related); 9.11 still carries an infinite-loop issue'
         }
         // Keep embedded Tomcat modules aligned on the patched release.
         if (details.requested.group == 'org.apache.tomcat.embed') {
@@ -134,6 +126,13 @@ dependencies {
 
     implementation 'org.apache.tika:tika-core:4.1.0'
 
+    // These were previously pulled in transitively via the SAML/opensaml stack; declared
+    // explicitly now that SAML has been replaced by OIDC (see EvidenceService, CspReportController,
+    // ConnectorApiClient and the various mapper context classes).
+    implementation 'com.google.guava:guava:33.7.2-jre'
+    implementation 'org.apache.commons:commons-lang3:3.20.0'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.21.8'
+
     // Starters
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -155,10 +154,9 @@ dependencies {
 
     implementation 'io.swagger.core.v3:swagger-annotations:2.2.55'
 
-    //SAML security
-    implementation 'org.springframework.boot:spring-boot-starter-security-saml2'
+    //OIDC security (EntraID)
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
-    implementation 'org.springframework.security:spring-security-saml2-service-provider'
 
     implementation 'uk.gov.justice.service.laa:laa-spring-boot-starter-govuk-dialect'
 

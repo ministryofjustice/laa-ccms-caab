@@ -12,7 +12,7 @@ Please follow [first time setup](docs/first-time-setup.md).
 ### 1. Run dependencies
 
 This application depends on the following docker containers being run when running locally:
-- SAML Mock
+- OIDC Mock Server
 - Wiremock
 - ClamAV
 - LocalStack
@@ -22,6 +22,12 @@ This application depends on the following docker containers being run when runni
 ```shell
 docker-compose --compatibility -p laa-ccms-caab-development up -d
 ```
+
+Authentication is via OIDC. Locally this runs against the
+[OIDC mock server](https://github.com/ministryofjustice/laa-oidc-mock-server) started by
+docker-compose - sign in as `provider.user@provider.com` / `password`. No further configuration is
+needed. See [authentication](docs/authentication.md) for how a signed-in identity is turned into a
+CCMS user, and for running against a real EntraID tenant instead.
 
 Run the APIs locally. If you wish to use the APIs running in the DEV environment, you can make use of the `secret` profile
 by placing the `application-secret.yml` file in `./src/main/resources/`.
