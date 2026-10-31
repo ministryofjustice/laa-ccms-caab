@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.http.InvalidParameterException;
 import org.apache.tomcat.util.http.fileupload.impl.FileSizeLimitExceededException;
 import org.apache.tomcat.util.http.fileupload.impl.SizeLimitExceededException;
@@ -17,11 +18,15 @@ import org.springframework.web.servlet.FlashMap;
 import org.springframework.web.servlet.FlashMapManager;
 import org.springframework.web.servlet.support.RequestContextUtils;
 import org.springframework.web.servlet.support.SessionFlashMapManager;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 
 /** Returns multipart size failures raised during CSRF processing to the upload form. */
 @Component
+@RequiredArgsConstructor
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class UploadSizeErrorFilter extends OncePerRequestFilter {
+
+  private final SecurityEventLogger securityEventLogger;
 
   static final String ERROR_ATTRIBUTE = UploadSizeErrorFilter.class.getName() + ".error";
   private static final String TOKEN_PARAMETER = "uploadSizeErrorToken";
@@ -35,12 +40,14 @@ public class UploadSizeErrorFilter extends OncePerRequestFilter {
       chain.doFilter(request, response);
     } catch (InvalidParameterException exception) {
       String path = request.getRequestURI().substring(request.getContextPath().length());
+      Exception sizeCause = sizeCause(exception);
       if (!"POST".equals(request.getMethod())
           || UploadSizeErrorRoutes.formName(path) == null
-          || !isSizeError(exception)) {
+          || sizeCause == null) {
         throw exception;
       }
 
+      securityEventLogger.inputRejected(request.getMethod(), request.getRequestURI(), sizeCause);
       redirectToUploadForm(request, response);
     }
   }
@@ -70,13 +77,13 @@ public class UploadSizeErrorFilter extends OncePerRequestFilter {
     response.sendRedirect(redirect);
   }
 
-  private static boolean isSizeError(Throwable exception) {
+  private static Exception sizeCause(Throwable exception) {
     for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
       if (cause instanceof SizeLimitExceededException
           || cause instanceof FileSizeLimitExceededException) {
-        return true;
+        return (Exception) cause;
       }
     }
-    return false;
+    return null;
   }
 }

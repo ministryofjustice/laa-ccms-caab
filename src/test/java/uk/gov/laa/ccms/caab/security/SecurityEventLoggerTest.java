@@ -179,6 +179,17 @@ class SecurityEventLoggerTest {
     assertEquals(ch.qos.logback.classic.Level.WARN, event.getLevel());
   }
 
+  @Test
+  void fileRejectedLogsOnlyTheReasonCode() {
+    logger.fileRejected("validation.error.invalidMagicBytes");
+
+    ILoggingEvent event = appender.list.getFirst();
+    assertEquals("FILE_REJECTED", keyValue(event, "event_type"));
+    assertEquals("DENIED", keyValue(event, "outcome"));
+    assertEquals("validation.error.invalidMagicBytes", keyValue(event, "event_detail"));
+    assertEquals(ch.qos.logback.classic.Level.WARN, event.getLevel());
+  }
+
   private static Object keyValue(ILoggingEvent event, String key) {
     return event.getKeyValuePairs().stream()
         .filter(kv -> kv.key.equals(key))

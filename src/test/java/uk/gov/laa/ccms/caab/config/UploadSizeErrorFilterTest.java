@@ -4,6 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import jakarta.servlet.FilterChain;
 import java.net.URI;
@@ -16,10 +20,13 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.servlet.support.SessionFlashMapManager;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 
 class UploadSizeErrorFilterTest {
 
-  private final UploadSizeErrorFilter filter = new UploadSizeErrorFilter();
+  private final SecurityEventLogger securityEventLogger = mock(SecurityEventLogger.class);
+
+  private final UploadSizeErrorFilter filter = new UploadSizeErrorFilter(securityEventLogger);
 
   @Test
   void redirectsOversizedMultipartRequestToItsForm() throws Exception {
@@ -227,5 +234,24 @@ class UploadSizeErrorFilterTest {
     request.setQueryString(redirect.getRawQuery());
     request.setSession(original.getSession());
     return request;
+  }
+
+  @Test
+  void logsTheSizeFailureWithoutTheQueryString() throws Exception {
+    MockHttpServletRequest request = request("/civil/case-provider-requests/documents");
+    request.setQueryString("caseReferenceNumber=123");
+    FilterChain chain =
+        (req, res) -> {
+          throw new InvalidParameterException(
+              new SizeLimitExceededException("too large", 13_000_000, 12_582_912));
+        };
+
+    filter.doFilter(request, new MockHttpServletResponse(), chain);
+
+    verify(securityEventLogger)
+        .inputRejected(
+            eq("POST"),
+            eq("/civil/case-provider-requests/documents"),
+            any(SizeLimitExceededException.class));
   }
 }

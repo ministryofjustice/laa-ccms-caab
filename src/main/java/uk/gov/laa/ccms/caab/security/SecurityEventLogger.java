@@ -30,6 +30,7 @@ public class SecurityEventLogger {
     PERMISSIONS_LOADED,
     FILE_SCAN,
     INPUT_REJECTED,
+    FILE_REJECTED,
     CSRF_REJECTED,
     LOGOUT
   }
@@ -101,6 +102,21 @@ public class SecurityEventLogger {
         .addKeyValue("http_method", method)
         .addKeyValue("path", path)
         .log("Request input rejected");
+  }
+
+  /**
+   * Records an uploaded file refused by the file checks, such as a disallowed extension, a MIME
+   * type or content that does not match, or a file that is too large. Only the reason code is
+   * logged, as the file name and content are user supplied.
+   *
+   * @param reasonCode the validation error code that rejected the file
+   */
+  public void fileRejected(String reasonCode) {
+    log.atWarn()
+        .addKeyValue(EVENT_TYPE, EventType.FILE_REJECTED.name())
+        .addKeyValue(OUTCOME, Outcome.DENIED.name())
+        .addKeyValue("event_detail", reasonCode)
+        .log("Uploaded file rejected");
   }
 
   /**
