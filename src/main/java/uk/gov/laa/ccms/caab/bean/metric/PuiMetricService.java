@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
  *   <li>Applications Copied: Tracks the total number of applications which were copied.
  *   <li>Applications Submitted: Tracks the total number of applications which were submitted.
  *   <li>Applications Abondoned: Tracks the total number of applications which were abandoned.
+ *   <li>Security Events: Tracks the security events logged, by event type and outcome.
  * </ul>
  *
  * @author Jamie Briggs
@@ -31,6 +32,7 @@ public class PuiMetricService {
   private final Counter applicationsSubmittedCounter;
   private final Counter applicationsAbandonedCounter;
   private final Counter cspViolationReportsCounter;
+  private final Counter securityEventsCounter;
 
   /**
    * Constructs an instance of PuiMetricService, initializing various metrics that track the
@@ -64,6 +66,12 @@ public class PuiMetricService {
             .name("pui_csp_violation_reports")
             .help("Total number of Content Security Policy violation reports received")
             .register(meterRegistry);
+    this.securityEventsCounter =
+        Counter.builder()
+            .name("pui_security_events")
+            .help("Total number of security events logged, by event type and outcome")
+            .labelNames("event_type", "outcome")
+            .register(meterRegistry);
   }
 
   /** Increments the created applications counter by 1. */
@@ -94,5 +102,10 @@ public class PuiMetricService {
   /** Increments the CSP violation report counter by 1. */
   public void incrementCspViolationReportsCount() {
     cspViolationReportsCounter.inc();
+  }
+
+  /** Increments the security events counter for the given event type and outcome. */
+  public void incrementSecurityEvents(String eventType, String outcome) {
+    securityEventsCounter.labelValues(eventType, outcome).inc();
   }
 }

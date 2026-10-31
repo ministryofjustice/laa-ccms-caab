@@ -39,6 +39,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import uk.gov.laa.ccms.caab.bean.metric.PuiMetricService;
 import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.service.UserService;
 
@@ -48,6 +49,7 @@ class SecurityEventsEndToEndTest {
 
   @Autowired private WebApplicationContext context;
   @MockitoBean private UserService userService;
+  @MockitoBean private PuiMetricService puiMetricService;
 
   private final ListAppender<ILoggingEvent> appender = new ListAppender<>();
   private final Logger eventLogger = (Logger) LoggerFactory.getLogger(SecurityEventLogger.class);
@@ -76,6 +78,8 @@ class SecurityEventsEndToEndTest {
 
     assertThat(status).isEqualTo(403);
     assertThat(eventTypes()).contains("AUTHORIZATION_DENIED");
+    org.mockito.Mockito.verify(puiMetricService)
+        .incrementSecurityEvents("AUTHORIZATION_DENIED", "DENIED");
   }
 
   @Test
@@ -89,6 +93,8 @@ class SecurityEventsEndToEndTest {
     assertThat(result.getResponse().getRedirectedUrl()).isEqualTo("/login?error");
     assertThat(eventTypes()).contains("AUTHENTICATION_FAILURE");
     assertOnlyAnErrorCodeWasLogged("not-a-saml-response");
+    org.mockito.Mockito.verify(puiMetricService)
+        .incrementSecurityEvents("AUTHENTICATION_FAILURE", "FAILURE");
   }
 
   @Test
