@@ -155,6 +155,8 @@ av:
     timeout: ${AV_API_TIMEOUT}
 
 management:
+  server:
+    port: ${MANAGEMENT_PORT:8082}
   endpoint:
     health:
       show-details: always

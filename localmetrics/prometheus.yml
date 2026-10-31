@@ -3,10 +3,10 @@ global:
 scrape_configs:
 
   - job_name: 'laa-ccms-caab'
-    metrics_path: '/civil/actuator/prometheus'
+    metrics_path: '/actuator/prometheus'
     scrape_interval: 5s
     static_configs:
-      - targets: [ 'host.docker.internal:8010' ]
+      - targets: [ 'host.docker.internal:8082' ]
 
   - job_name: 'laa-ccms-caab-assessment-api'
     metrics_path: '/actuator/prometheus'
