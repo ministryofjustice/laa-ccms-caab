@@ -82,8 +82,8 @@ configurations.configureEach {
         // Reaches us via the OIDC stack: oauth2-oidc-sdk -> json-smart -> accessors-smart.
         if (details.requested.group == 'org.ow2.asm'
                 && details.requested.name == 'asm') {
-            details.useVersion '9.11'
-            details.because 'Snyk override (SNYK-JAVA-ORGOW2ASM-21715439 and four related); fixed in 9.11'
+            details.useVersion '9.11.1'
+            details.because 'Snyk override (SNYK-JAVA-ORGOW2ASM-21715439 and five related); 9.11 still carries an infinite-loop issue'
         }
         // Keep embedded Tomcat modules aligned on the patched release.
         if (details.requested.group == 'org.apache.tomcat.embed') {
