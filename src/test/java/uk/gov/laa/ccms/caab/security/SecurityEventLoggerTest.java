@@ -112,6 +112,22 @@ class SecurityEventLoggerTest {
     assertEquals(ch.qos.logback.classic.Level.WARN, event.getLevel());
   }
 
+  @Test
+  void inputRejectedLogsClassMethodAndPathOnly() {
+    logger.inputRejected(
+        "POST",
+        "/application/sections",
+        new org.springframework.web.multipart.MaxUploadSizeExceededException(1L));
+
+    ILoggingEvent event = appender.list.getFirst();
+    assertEquals("INPUT_REJECTED", keyValue(event, "event_type"));
+    assertEquals("DENIED", keyValue(event, "outcome"));
+    assertEquals("MaxUploadSizeExceededException", keyValue(event, "event_detail"));
+    assertEquals("POST", keyValue(event, "http_method"));
+    assertEquals("/application/sections", keyValue(event, "path"));
+    assertEquals(ch.qos.logback.classic.Level.WARN, event.getLevel());
+  }
+
   private static Object keyValue(ILoggingEvent event, String key) {
     return event.getKeyValuePairs().stream()
         .filter(kv -> kv.key.equals(key))

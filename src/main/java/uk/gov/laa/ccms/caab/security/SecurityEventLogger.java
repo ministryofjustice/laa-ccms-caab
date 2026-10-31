@@ -29,6 +29,7 @@ public class SecurityEventLogger {
     AUTHORIZATION_DENIED,
     PERMISSIONS_LOADED,
     FILE_SCAN,
+    INPUT_REJECTED,
     LOGOUT
   }
 
@@ -80,6 +81,25 @@ public class SecurityEventLogger {
    */
   public void logout(Authentication authentication) {
     log(EventType.LOGOUT, authentication, Outcome.SUCCESS, "User logged out", null);
+  }
+
+  /**
+   * Records a request the application refused as malformed or not allowed, such as an oversized
+   * upload, a wrong HTTP method or a parameter of the wrong type. Only the exception class, method
+   * and path are logged, as the values supplied are user input.
+   *
+   * @param method the HTTP method
+   * @param path the request path, without its query string
+   * @param exception the exception that described the rejection
+   */
+  public void inputRejected(String method, String path, Exception exception) {
+    log.atWarn()
+        .addKeyValue(EVENT_TYPE, EventType.INPUT_REJECTED.name())
+        .addKeyValue(OUTCOME, Outcome.DENIED.name())
+        .addKeyValue("event_detail", exception.getClass().getSimpleName())
+        .addKeyValue("http_method", method)
+        .addKeyValue("path", path)
+        .log("Request input rejected");
   }
 
   /**
