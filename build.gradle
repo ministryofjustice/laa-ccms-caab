@@ -90,6 +90,12 @@ configurations.configureEach {
             details.useVersion '33.7.2-jre'
             details.because 'Snyk override (SNYK-JAVA-COMGOOGLEGUAVA-20825054); unthrottled resource allocation in 33.0.0-jre'
         }
+        // Reaches us via the OIDC stack: oauth2-oidc-sdk -> json-smart -> accessors-smart.
+        if (details.requested.group == 'org.ow2.asm'
+                && details.requested.name == 'asm') {
+            details.useVersion '9.11'
+            details.because 'Snyk override (SNYK-JAVA-ORGOW2ASM-21715439 and four related); fixed in 9.11'
+        }
         // Keep embedded Tomcat modules aligned on the patched release.
         if (details.requested.group == 'org.apache.tomcat.embed') {
             details.useVersion '11.0.27'
