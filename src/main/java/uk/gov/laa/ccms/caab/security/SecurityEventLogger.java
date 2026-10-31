@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.security;
 import java.util.Collection;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
+import org.slf4j.event.Level;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.event.AbstractAuthenticationFailureEvent;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
@@ -10,6 +11,7 @@ import org.springframework.security.authorization.event.AuthorizationDeniedEvent
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.stereotype.Component;
+import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.logging.UserIdentifier;
 
 /** Writes authentication and authorisation outcomes as structured security events. */
@@ -26,6 +28,7 @@ public class SecurityEventLogger {
     AUTHENTICATION_FAILURE,
     AUTHORIZATION_DENIED,
     PERMISSIONS_LOADED,
+    FILE_SCAN,
     LOGOUT
   }
 
@@ -94,6 +97,29 @@ public class SecurityEventLogger {
           .addKeyValue("event_detail", permissions.stream().sorted().toList())
           .log("Permissions loaded at sign-in");
     }
+  }
+
+  /**
+   * Records the outcome of scanning an uploaded file for malware. The file name is not logged, as
+   * it is user supplied.
+   *
+   * @param outcome SUCCESS if clean, DENIED if malware was found, FAILURE if the scan errored
+   * @param caseReference the related case reference, which may be null
+   * @param module the source of the upload, which may be null
+   */
+  public void fileScanned(Outcome outcome, String caseReference, CcmsModule module) {
+    Level level =
+        switch (outcome) {
+          case SUCCESS -> Level.INFO;
+          case DENIED -> Level.WARN;
+          case FAILURE -> Level.ERROR;
+        };
+    log.atLevel(level)
+        .addKeyValue(EVENT_TYPE, EventType.FILE_SCAN.name())
+        .addKeyValue(OUTCOME, outcome.name())
+        .addKeyValue("case_reference", caseReference)
+        .addKeyValue("ccms_module", module == null ? null : module.name())
+        .log("Uploaded file scanned");
   }
 
   private void log(
