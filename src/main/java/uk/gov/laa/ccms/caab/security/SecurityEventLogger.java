@@ -12,6 +12,8 @@ import org.springframework.security.authentication.event.AbstractAuthenticationF
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.security.authorization.event.AuthorizationDeniedEvent;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.saml2.provider.service.authentication.Saml2AuthenticationException;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.stereotype.Component;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
@@ -163,6 +165,21 @@ public class SecurityEventLogger {
         .addKeyValue("http_method", method)
         .addKeyValue("path", path)
         .log("Request refused: CSRF token rejected");
+  }
+
+  /**
+   * Records a failed sign-in that Spring Security does not publish an event for, such as a SAML
+   * response that cannot be read or verified. Only an error code or the exception class is logged,
+   * as the exception message can carry the user's details.
+   *
+   * @param exception the authentication failure
+   */
+  public void authenticationFailed(AuthenticationException exception) {
+    String detail =
+        exception instanceof Saml2AuthenticationException saml2Exception
+            ? saml2Exception.getSaml2Error().getErrorCode()
+            : exception.getClass().getSimpleName();
+    log(EventType.AUTHENTICATION_FAILURE, null, Outcome.FAILURE, "Authentication failed", detail);
   }
 
   /**
