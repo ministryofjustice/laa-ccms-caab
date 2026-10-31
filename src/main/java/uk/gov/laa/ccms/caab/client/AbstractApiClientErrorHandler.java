@@ -7,6 +7,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.logging.LogMasker;
 
 /** Provides error-handling capabilities for the API client interactions. */
 @Slf4j
@@ -216,7 +217,7 @@ public abstract class AbstractApiClientErrorHandler {
     if (e instanceof WebClientResponseException webClientResponseException) {
       final String body = webClientResponseException.getResponseBodyAsString();
       if (!body.isBlank()) {
-        return " - the API responded: " + body;
+        return " - the API responded: " + LogMasker.mask(body);
       }
     }
     return "";
