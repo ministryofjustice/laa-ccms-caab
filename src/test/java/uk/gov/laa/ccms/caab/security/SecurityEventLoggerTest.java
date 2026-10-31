@@ -3,6 +3,9 @@ package uk.gov.laa.ccms.caab.security;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -19,11 +22,13 @@ import org.springframework.security.authentication.event.AuthenticationSuccessEv
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.event.AuthorizationDeniedEvent;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
+import uk.gov.laa.ccms.caab.bean.metric.PuiMetricService;
 import uk.gov.laa.ccms.caab.logging.UserIdentifier;
 
 class SecurityEventLoggerTest {
 
-  private final SecurityEventLogger logger = new SecurityEventLogger();
+  private final PuiMetricService metrics = mock(PuiMetricService.class);
+  private final SecurityEventLogger logger = new SecurityEventLogger(metrics);
   private final ListAppender<ILoggingEvent> appender = new ListAppender<>();
   private final Logger target = (Logger) LoggerFactory.getLogger(SecurityEventLogger.class);
   private final TestingAuthenticationToken user =
@@ -249,6 +254,45 @@ class SecurityEventLoggerTest {
     logger.authenticationFailed(new BadCredentialsException("password was hunter2"));
 
     assertEquals("BadCredentialsException", keyValue(appender.list.getFirst(), "event_detail"));
+  }
+
+  @Test
+  void everySecurityEventIsCountedByTypeAndOutcome() {
+    logger.onAuthenticationSuccess(new AuthenticationSuccessEvent(user));
+    logger.onAuthenticationFailure(
+        new AuthenticationFailureBadCredentialsEvent(user, new BadCredentialsException("x")));
+    logger.onAuthorizationDenied(
+        new AuthorizationDeniedEvent<>(
+            () -> user,
+            new RequestAuthorizationContext(new MockHttpServletRequest("GET", "/x")),
+            new AuthorizationDecision(false)));
+    logger.logout(user);
+    logger.permissionsLoaded("a", java.util.List.of("A"));
+    logger.fileScanned(SecurityEventLogger.Outcome.DENIED, "1", null);
+    logger.fileRejected("validation.error.invalidExtension");
+    logger.inputRejected("GET", "/x", new IllegalStateException());
+    logger.csrfRejected("POST", "/x", new IllegalStateException());
+    logger.privilegesReloaded(java.util.List.of("A"), java.util.List.of("A", "B"));
+    logger.authenticationFailed(new BadCredentialsException("x"));
+
+    verify(metrics).incrementSecurityEvents("AUTHENTICATION_SUCCESS", "SUCCESS");
+    verify(metrics, org.mockito.Mockito.times(2))
+        .incrementSecurityEvents("AUTHENTICATION_FAILURE", "FAILURE");
+    verify(metrics).incrementSecurityEvents("AUTHORIZATION_DENIED", "DENIED");
+    verify(metrics).incrementSecurityEvents("LOGOUT", "SUCCESS");
+    verify(metrics).incrementSecurityEvents("PERMISSIONS_LOADED", "SUCCESS");
+    verify(metrics).incrementSecurityEvents("FILE_SCAN", "DENIED");
+    verify(metrics).incrementSecurityEvents("FILE_REJECTED", "DENIED");
+    verify(metrics).incrementSecurityEvents("INPUT_REJECTED", "DENIED");
+    verify(metrics).incrementSecurityEvents("CSRF_REJECTED", "DENIED");
+    verify(metrics).incrementSecurityEvents("PRIVILEGES_CHANGED", "SUCCESS");
+  }
+
+  @Test
+  void unchangedFunctionsAreNotCounted() {
+    logger.privilegesReloaded(java.util.List.of("A"), java.util.List.of("A"));
+
+    verifyNoInteractions(metrics);
   }
 
   private static Object keyValue(ILoggingEvent event, String key) {

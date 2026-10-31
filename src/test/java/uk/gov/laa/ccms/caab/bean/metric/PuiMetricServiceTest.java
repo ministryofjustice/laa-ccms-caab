@@ -35,6 +35,7 @@ class PuiMetricServiceTest {
     verify(prometheusRegistry, times(1))
         .register(puiMetricService.getApplicationsAbandonedCounter());
     verify(prometheusRegistry, times(1)).register(puiMetricService.getCspViolationReportsCounter());
+    verify(prometheusRegistry, times(1)).register(puiMetricService.getSecurityEventsCounter());
   }
 
   @Test
@@ -122,5 +123,26 @@ class PuiMetricServiceTest {
     puiMetricService.incrementCspViolationReportsCount();
     // Then
     assertThat(puiMetricService.getCspViolationReportsCounter().get()).isEqualTo(1);
+  }
+
+  @Test
+  @DisplayName("Should count security events separately by event type and outcome")
+  void shouldCountSecurityEventsByTypeAndOutcome() {
+    PuiMetricService service = new PuiMetricService(new PrometheusRegistry());
+
+    service.incrementSecurityEvents("AUTHENTICATION_FAILURE", "FAILURE");
+    service.incrementSecurityEvents("AUTHENTICATION_FAILURE", "FAILURE");
+    service.incrementSecurityEvents("FILE_SCAN", "DENIED");
+
+    assertThat(
+            service
+                .getSecurityEventsCounter()
+                .labelValues("AUTHENTICATION_FAILURE", "FAILURE")
+                .get())
+        .isEqualTo(2);
+    assertThat(service.getSecurityEventsCounter().labelValues("FILE_SCAN", "DENIED").get())
+        .isEqualTo(1);
+    assertThat(service.getSecurityEventsCounter().labelValues("LOGOUT", "SUCCESS").get())
+        .isEqualTo(0);
   }
 }

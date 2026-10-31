@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
@@ -16,13 +17,17 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.saml2.provider.service.authentication.Saml2AuthenticationException;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.stereotype.Component;
+import uk.gov.laa.ccms.caab.bean.metric.PuiMetricService;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.logging.UserIdentifier;
 
 /** Writes authentication and authorisation outcomes as structured security events. */
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class SecurityEventLogger {
+
+  private final PuiMetricService puiMetricService;
 
   static final String EVENT_TYPE = "event_type";
   static final String OUTCOME = "outcome";
@@ -101,6 +106,7 @@ public class SecurityEventLogger {
    * @param exception the exception that described the rejection
    */
   public void inputRejected(String method, String path, Exception exception) {
+    count(EventType.INPUT_REJECTED, Outcome.DENIED);
     log.atWarn()
         .addKeyValue(EVENT_TYPE, EventType.INPUT_REJECTED.name())
         .addKeyValue(OUTCOME, Outcome.DENIED.name())
@@ -126,6 +132,7 @@ public class SecurityEventLogger {
     if (added.isEmpty() && removed.isEmpty()) {
       return;
     }
+    count(EventType.PRIVILEGES_CHANGED, Outcome.SUCCESS);
     log.atLevel(added.isEmpty() ? Level.INFO : Level.WARN)
         .addKeyValue(EVENT_TYPE, EventType.PRIVILEGES_CHANGED.name())
         .addKeyValue(OUTCOME, Outcome.SUCCESS.name())
@@ -142,6 +149,7 @@ public class SecurityEventLogger {
    * @param reasonCode the validation error code that rejected the file
    */
   public void fileRejected(String reasonCode) {
+    count(EventType.FILE_REJECTED, Outcome.DENIED);
     log.atWarn()
         .addKeyValue(EVENT_TYPE, EventType.FILE_REJECTED.name())
         .addKeyValue(OUTCOME, Outcome.DENIED.name())
@@ -158,6 +166,7 @@ public class SecurityEventLogger {
    * @param exception the CSRF exception
    */
   public void csrfRejected(String method, String path, Exception exception) {
+    count(EventType.CSRF_REJECTED, Outcome.DENIED);
     log.atWarn()
         .addKeyValue(EVENT_TYPE, EventType.CSRF_REJECTED.name())
         .addKeyValue(OUTCOME, Outcome.DENIED.name())
@@ -189,6 +198,7 @@ public class SecurityEventLogger {
    * @param permissions the EBS user functions loaded for the user
    */
   public void permissionsLoaded(String loginId, Collection<String> permissions) {
+    count(EventType.PERMISSIONS_LOADED, Outcome.SUCCESS);
     withUser(
         UserIdentifier.pseudonymise(loginId),
         () ->
@@ -208,6 +218,7 @@ public class SecurityEventLogger {
    * @param module the source of the upload, which may be null
    */
   public void fileScanned(Outcome outcome, String caseReference, CcmsModule module) {
+    count(EventType.FILE_SCAN, outcome);
     Level level =
         switch (outcome) {
           case SUCCESS -> Level.INFO;
@@ -228,6 +239,7 @@ public class SecurityEventLogger {
       Outcome outcome,
       String message,
       String detail) {
+    count(type, outcome);
     String userId =
         UserIdentifier.pseudonymise(authentication == null ? null : authentication.getName());
     Level level = outcome == Outcome.SUCCESS ? Level.INFO : Level.WARN;
@@ -253,5 +265,9 @@ public class SecurityEventLogger {
         MDC.put(UserIdentifier.MDC_KEY, previous);
       }
     }
+  }
+
+  private void count(EventType type, Outcome outcome) {
+    puiMetricService.incrementSecurityEvents(type.name(), outcome.name());
   }
 }
