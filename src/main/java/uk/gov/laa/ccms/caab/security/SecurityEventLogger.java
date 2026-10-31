@@ -109,14 +109,14 @@ public class SecurityEventLogger {
    * @param permissions the EBS user functions loaded for the user
    */
   public void permissionsLoaded(String loginId, Collection<String> permissions) {
-    String userId = UserIdentifier.pseudonymise(loginId);
-    try (MDC.MDCCloseable ignored = MDC.putCloseable(UserIdentifier.MDC_KEY, userId)) {
-      log.atInfo()
-          .addKeyValue(EVENT_TYPE, EventType.PERMISSIONS_LOADED.name())
-          .addKeyValue(OUTCOME, Outcome.SUCCESS.name())
-          .addKeyValue("event_detail", permissions.stream().sorted().toList())
-          .log("Permissions loaded at sign-in");
-    }
+    withUser(
+        UserIdentifier.pseudonymise(loginId),
+        () ->
+            log.atInfo()
+                .addKeyValue(EVENT_TYPE, EventType.PERMISSIONS_LOADED.name())
+                .addKeyValue(OUTCOME, Outcome.SUCCESS.name())
+                .addKeyValue("event_detail", permissions.stream().sorted().toList())
+                .log("Permissions loaded at sign-in"));
   }
 
   /**
@@ -150,12 +150,28 @@ public class SecurityEventLogger {
       String detail) {
     String userId =
         UserIdentifier.pseudonymise(authentication == null ? null : authentication.getName());
-    try (MDC.MDCCloseable ignored = MDC.putCloseable(UserIdentifier.MDC_KEY, userId)) {
-      log.atInfo()
-          .addKeyValue(EVENT_TYPE, type.name())
-          .addKeyValue(OUTCOME, outcome.name())
-          .addKeyValue("event_detail", detail)
-          .log(message);
+    Level level = outcome == Outcome.SUCCESS ? Level.INFO : Level.WARN;
+    withUser(
+        userId,
+        () ->
+            log.atLevel(level)
+                .addKeyValue(EVENT_TYPE, type.name())
+                .addKeyValue(OUTCOME, outcome.name())
+                .addKeyValue("event_detail", detail)
+                .log(message));
+  }
+
+  private static void withUser(String userId, Runnable logging) {
+    String previous = MDC.get(UserIdentifier.MDC_KEY);
+    MDC.put(UserIdentifier.MDC_KEY, userId);
+    try {
+      logging.run();
+    } finally {
+      if (previous == null) {
+        MDC.remove(UserIdentifier.MDC_KEY);
+      } else {
+        MDC.put(UserIdentifier.MDC_KEY, previous);
+      }
     }
   }
 }
