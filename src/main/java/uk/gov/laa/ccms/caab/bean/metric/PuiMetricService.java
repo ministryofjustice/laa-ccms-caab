@@ -108,4 +108,12 @@ public class PuiMetricService {
   public void incrementSecurityEvents(String eventType, String outcome) {
     securityEventsCounter.labelValues(eventType, outcome).inc();
   }
+
+  /**
+   * Registers a security event series at zero, so that the first event of that kind is visible to
+   * rate and increase queries, which need an earlier sample to compare with.
+   */
+  public void initSecurityEvents(String eventType, String outcome) {
+    securityEventsCounter.initLabelValues(eventType, outcome);
+  }
 }

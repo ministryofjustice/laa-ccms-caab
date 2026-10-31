@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -286,13 +285,37 @@ class SecurityEventLoggerTest {
     verify(metrics).incrementSecurityEvents("INPUT_REJECTED", "DENIED");
     verify(metrics).incrementSecurityEvents("CSRF_REJECTED", "DENIED");
     verify(metrics).incrementSecurityEvents("PRIVILEGES_CHANGED", "SUCCESS");
+
+    var invocations = org.mockito.Mockito.mockingDetails(metrics).getInvocations();
+    java.util.Set<String> counted = pairs(invocations, "incrementSecurityEvents");
+    java.util.Set<String> registered = pairs(invocations, "initSecurityEvents");
+    org.assertj.core.api.Assertions.assertThat(registered).containsAll(counted);
+  }
+
+  private static java.util.Set<String> pairs(
+      java.util.Collection<org.mockito.invocation.Invocation> invocations, String method) {
+    return invocations.stream()
+        .filter(invocation -> invocation.getMethod().getName().equals(method))
+        .map(invocation -> invocation.getArgument(0) + "/" + invocation.getArgument(1))
+        .collect(java.util.stream.Collectors.toSet());
+  }
+
+  @Test
+  void everyKindOfEventIsRegisteredAtZeroWhenTheLoggerStarts() {
+    verify(metrics).initSecurityEvents("FILE_SCAN", "DENIED");
+    verify(metrics).initSecurityEvents("FILE_SCAN", "FAILURE");
+    verify(metrics).initSecurityEvents("AUTHENTICATION_FAILURE", "FAILURE");
+    verify(metrics).initSecurityEvents("CSRF_REJECTED", "DENIED");
+    verify(metrics).initSecurityEvents("PRIVILEGES_CHANGED", "SUCCESS");
   }
 
   @Test
   void unchangedFunctionsAreNotCounted() {
     logger.privilegesReloaded(java.util.List.of("A"), java.util.List.of("A"));
 
-    verifyNoInteractions(metrics);
+    verify(metrics, org.mockito.Mockito.never())
+        .incrementSecurityEvents(
+            org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
   }
 
   private static Object keyValue(ILoggingEvent event, String key) {

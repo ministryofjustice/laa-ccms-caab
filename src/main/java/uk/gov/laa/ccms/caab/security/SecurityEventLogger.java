@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
@@ -24,10 +23,34 @@ import uk.gov.laa.ccms.caab.logging.UserIdentifier;
 /** Writes authentication and authorisation outcomes as structured security events. */
 @Component
 @Slf4j
-@RequiredArgsConstructor
 public class SecurityEventLogger {
 
+  private record Series(EventType type, Outcome outcome) {}
+
+  /** The event type and outcome pairs that are logged, each registered with the counter at zero. */
+  private static final List<Series> SERIES =
+      List.of(
+          new Series(EventType.AUTHENTICATION_SUCCESS, Outcome.SUCCESS),
+          new Series(EventType.AUTHENTICATION_FAILURE, Outcome.FAILURE),
+          new Series(EventType.AUTHORIZATION_DENIED, Outcome.DENIED),
+          new Series(EventType.LOGOUT, Outcome.SUCCESS),
+          new Series(EventType.PERMISSIONS_LOADED, Outcome.SUCCESS),
+          new Series(EventType.PRIVILEGES_CHANGED, Outcome.SUCCESS),
+          new Series(EventType.FILE_SCAN, Outcome.SUCCESS),
+          new Series(EventType.FILE_SCAN, Outcome.DENIED),
+          new Series(EventType.FILE_SCAN, Outcome.FAILURE),
+          new Series(EventType.FILE_REJECTED, Outcome.DENIED),
+          new Series(EventType.INPUT_REJECTED, Outcome.DENIED),
+          new Series(EventType.CSRF_REJECTED, Outcome.DENIED));
+
   private final PuiMetricService puiMetricService;
+
+  public SecurityEventLogger(PuiMetricService puiMetricService) {
+    this.puiMetricService = puiMetricService;
+    SERIES.forEach(
+        series ->
+            puiMetricService.initSecurityEvents(series.type().name(), series.outcome().name()));
+  }
 
   static final String EVENT_TYPE = "event_type";
   static final String OUTCOME = "outcome";
