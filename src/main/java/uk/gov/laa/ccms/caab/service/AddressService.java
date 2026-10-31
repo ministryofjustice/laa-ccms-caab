@@ -71,7 +71,8 @@ public class AddressService {
           ? clientAddressResultDisplayMapper.toClientAddressResultsDisplay(response)
           : new ResultsDisplay<AddressResultRowDisplay>();
     } catch (final Exception e) {
-      log.error("Error fetching addresses from Ordinance Survey API: {}", e.getMessage());
+      log.error(
+          "Error fetching addresses from Ordinance Survey API: {}", e.getClass().getSimpleName());
       return new ResultsDisplay<AddressResultRowDisplay>();
     }
   }

@@ -8,10 +8,12 @@ import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.GrantedAuthority;
@@ -23,9 +25,15 @@ import org.springframework.security.saml2.provider.service.authentication.Saml2A
 import org.springframework.security.saml2.provider.service.authentication.Saml2Authentication;
 import org.springframework.security.saml2.provider.service.authentication.Saml2ResponseAssertionAccessor;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
+import uk.gov.laa.ccms.caab.logging.UserContextFilter;
 import uk.gov.laa.ccms.caab.security.CspNonceFilter;
+import uk.gov.laa.ccms.caab.security.CsrfLoggingAccessDeniedHandler;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.service.UserService;
 
 /** Configuration class for customizing Spring Security settings. */
@@ -50,6 +58,10 @@ public class SecurityConfiguration {
 
   private final UserService userService;
 
+  private final SecurityEventLogger securityEventLogger;
+
+  private final ApplicationEventPublisher eventPublisher;
+
   /**
    * Configures Spring Security filters and settings, along with endpoint restrictions based on
    * granted user authorities (actions).
@@ -63,18 +75,16 @@ public class SecurityConfiguration {
 
     OpenSaml5AuthenticationProvider authenticationProvider = new OpenSaml5AuthenticationProvider();
     authenticationProvider.setResponseAuthenticationConverter(groupsConverter());
+    ProviderManager authenticationManager = new ProviderManager(authenticationProvider);
+    authenticationManager.setAuthenticationEventPublisher(
+        new DefaultAuthenticationEventPublisher(eventPublisher));
 
     return http.authorizeHttpRequests(
             authorize ->
                 authorize
                     .requestMatchers("/assets/**", "/ccms/**", "/govuk-dialect/**", "/favicon.ico")
                     .permitAll()
-                    .requestMatchers(
-                        HttpMethod.GET,
-                        "/actuator/prometheus",
-                        "/actuator/health/**",
-                        "/actuator/info",
-                        "/actuator/metrics")
+                    .requestMatchers(HttpMethod.GET, "/actuator/prometheus", "/actuator/health/**")
                     .permitAll() // Ensure Actuator endpoints are excluded
                     .requestMatchers(HttpMethod.POST, "/csp/report")
                     .permitAll()
@@ -147,10 +157,15 @@ public class SecurityConfiguration {
                     .anyRequest()
                     .authenticated())
         .csrf(csrf -> csrf.ignoringRequestMatchers("/csp/report"))
+        .exceptionHandling(
+            exceptions ->
+                exceptions.accessDeniedHandler(
+                    new CsrfLoggingAccessDeniedHandler(securityEventLogger)))
         .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))
         .addFilterBefore(
             new CspNonceFilter(cspReportEnabled, cspReportOnly, cspUpgradeInsecureRequests, owdUrl),
             BasicAuthenticationFilter.class)
+        .addFilterAfter(new UserContextFilter(), AnonymousAuthenticationFilter.class)
         .sessionManagement(
             sessionManagement ->
                 sessionManagement.invalidSessionStrategy(
@@ -159,6 +174,7 @@ public class SecurityConfiguration {
             logout ->
                 logout.addLogoutHandler(
                     (req, res, auth) -> {
+                      securityEventLogger.logout(auth);
                       try {
                         res.sendRedirect(logoutUrl);
                       } catch (IOException e) {
@@ -166,8 +182,25 @@ public class SecurityConfiguration {
                       }
                     }))
         .saml2Login(
-            saml2 -> saml2.authenticationManager(new ProviderManager(authenticationProvider)))
+            saml2 ->
+                saml2
+                    .authenticationManager(authenticationManager)
+                    .failureHandler(authenticationFailureHandler()))
         .build();
+  }
+
+  /**
+   * Logs a failed SAML sign-in, then sends the user to the same page as Spring's default does.
+   *
+   * @return An AuthenticationFailureHandler for the SAML login.
+   */
+  private AuthenticationFailureHandler authenticationFailureHandler() {
+    AuthenticationFailureHandler redirect =
+        new SimpleUrlAuthenticationFailureHandler("/login?error");
+    return (request, response, exception) -> {
+      securityEventLogger.authenticationFailed(exception);
+      redirect.onAuthenticationFailure(request, response, exception);
+    };
   }
 
   /**
@@ -198,7 +231,10 @@ public class SecurityConfiguration {
 
       // authentication.getPrincipal() is going to be email address here....
       String principal = authentication.getName();
-      authorities.addAll(getUserFunctions(principal));
+      Collection<? extends GrantedAuthority> userFunctions = getUserFunctions(principal);
+      authorities.addAll(userFunctions);
+      securityEventLogger.permissionsLoaded(
+          principal, userFunctions.stream().map(GrantedAuthority::getAuthority).toList());
       return new Saml2AssertionAuthentication(
           principal,
           authentication.getCredentials(),

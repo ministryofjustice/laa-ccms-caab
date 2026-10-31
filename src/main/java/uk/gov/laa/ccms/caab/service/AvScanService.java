@@ -11,6 +11,8 @@ import uk.gov.laa.ccms.caab.client.AvApiVirusFoundException;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.exception.AvScanException;
 import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger.Outcome;
 
 /** Service class to handle calls to an external Antivirus Scanning facility. */
 @Service
@@ -30,6 +32,8 @@ public class AvScanService {
   /** Flag to indicate whether the antivirus scanning service is enabled. */
   @Value("${av.enabled}")
   private final Boolean enabled;
+
+  private final SecurityEventLogger securityEventLogger;
 
   /**
    * Perform an antivirus scan on the provided input stream.
@@ -55,22 +59,16 @@ public class AvScanService {
     } else {
       try {
         avApiClient.scan(inputStream);
+        securityEventLogger.fileScanned(Outcome.SUCCESS, caseReferenceNumber, ccmsModule);
       } catch (AvApiVirusFoundException virusFoundException) {
-        /*
-         * todo: CCLS-2228 - Log common audit event to record the scan failure once audit
-         *  microservice in place. Include caseReferenceNumber etc in audit log.
-         */
+        securityEventLogger.fileScanned(Outcome.DENIED, caseReferenceNumber, ccmsModule);
         log.error(
             "********** Malware scan service reported virus found **********", virusFoundException);
         throw new AvVirusFoundException(
             VIRUS_FOUND_ERROR_FORMAT.formatted(filename), virusFoundException);
 
       } catch (AvApiClientException avApiClientException) {
-        /*
-         * todo: CCLS-2228 - Log common audit event to record the scan failure once audit
-         *  microservice in place. Include caseReferenceNumber etc in audit log.
-         */
-
+        securityEventLogger.fileScanned(Outcome.FAILURE, caseReferenceNumber, ccmsModule);
         log.error(
             "********** Malware scan service threw exception **********", avApiClientException);
         throw new AvScanException(SCAN_ERROR_FORMAT.formatted(filename), avApiClientException);

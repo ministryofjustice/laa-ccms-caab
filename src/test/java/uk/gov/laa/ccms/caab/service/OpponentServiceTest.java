@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -71,6 +72,37 @@ public class OpponentServiceTest {
         opponentService.getOrganisations(organisationSearchCriteria, loginId, userType, page, size);
 
     assertEquals(expectedResults, result);
+  }
+
+  @Test
+  void getOrganisations_doesNotLogSearchCriteria() {
+    var logger =
+        (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(OpponentService.class);
+    var appender =
+        new ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent>();
+    appender.start();
+    logger.addAppender(appender);
+    var previousLevel = logger.getLevel();
+    logger.setLevel(ch.qos.logback.classic.Level.DEBUG);
+    try {
+      OrganisationSearchCriteria criteria = new OrganisationSearchCriteria();
+      criteria.setName("Jane Doe Holdings");
+      OrganisationDetails organisationDetails = new OrganisationDetails().totalElements(1);
+      when(searchConstants.getMaxSearchResultsOrganisations()).thenReturn(10);
+      when(soaApiClient.getOrganisations(criteria, "login", "test", 1, 20))
+          .thenReturn(Mono.just(organisationDetails));
+      when(lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES))
+          .thenReturn(Mono.just(new CommonLookupDetail()));
+      when(resultDisplayMapper.toOrganisationResultsDisplay(any(), any()))
+          .thenReturn(new ResultsDisplay<>());
+
+      opponentService.getOrganisations(criteria, "login", "test", 1, 20);
+
+      assertTrue(appender.list.stream().noneMatch(e -> e.getFormattedMessage().contains("Jane")));
+    } finally {
+      logger.detachAppender(appender);
+      logger.setLevel(previousLevel);
+    }
   }
 
   @Test

@@ -92,7 +92,6 @@ public class SecurityUtils {
         "createHubContext() based on supplied details caseId:[{}], ruleBaseName:[{}]",
         lscCaseReference,
         ruleBaseId);
-    log.debug("returnURL: {}", hubReturnUrl);
 
     // Establish ContextToken POJO
     contextToken.setCaseId(lscCaseReference);

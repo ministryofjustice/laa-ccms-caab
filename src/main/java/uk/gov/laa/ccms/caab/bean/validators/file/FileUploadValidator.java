@@ -8,15 +8,19 @@ import static uk.gov.laa.ccms.caab.util.FileUtil.sanitiseFileName;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.tika.Tika;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.util.unit.DataSize;
 import org.springframework.validation.Errors;
+import org.springframework.validation.FieldError;
 import uk.gov.laa.ccms.caab.bean.file.FileUploadFormData;
 import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 
 /** Validate the evidence document details provided by evidence upload flow. */
 @Getter
@@ -75,6 +79,14 @@ public abstract class FileUploadValidator extends AbstractValidator {
 
   private static final Tika tika = new Tika();
 
+  @Getter(AccessLevel.NONE)
+  private SecurityEventLogger securityEventLogger;
+
+  @Autowired
+  void setSecurityEventLogger(SecurityEventLogger securityEventLogger) {
+    this.securityEventLogger = securityEventLogger;
+  }
+
   /**
    * Validate generic file upload details such as file data, extension, type, description and size.
    *
@@ -82,6 +94,21 @@ public abstract class FileUploadValidator extends AbstractValidator {
    * @param errors the Errors object to store validation errors.
    */
   public void validateFile(FileUploadFormData fileUploadFormData, Errors errors) {
+    checkFile(fileUploadFormData, errors);
+    logRejection(errors);
+  }
+
+  private void logRejection(Errors errors) {
+    FieldError error = errors.getFieldError("file");
+    if (securityEventLogger != null
+        && error != null
+        && error.getCode() != null
+        && !FILE_REQUIRED_ERROR_CODE.equals(error.getCode())) {
+      securityEventLogger.fileRejected(error.getCode());
+    }
+  }
+
+  private void checkFile(FileUploadFormData fileUploadFormData, Errors errors) {
 
     if (fileUploadFormData.getFile() == null || fileUploadFormData.getFile().isEmpty()) {
       errors.rejectValue("file", FILE_REQUIRED_ERROR_CODE, FILE_REQUIRED_ERROR);

@@ -1125,7 +1125,8 @@ class ActionsAndNotificationsControllerTest {
       oversizedPost.setQueryString("sendBy=ELECTRONIC&attachmentId=567");
       oversizedPost.setSession(session);
       MockHttpServletResponse oversizedResponse = new MockHttpServletResponse();
-      new UploadSizeErrorFilter()
+      new UploadSizeErrorFilter(
+              org.mockito.Mockito.mock(uk.gov.laa.ccms.caab.security.SecurityEventLogger.class))
           .doFilter(
               oversizedPost,
               oversizedResponse,

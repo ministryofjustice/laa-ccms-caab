@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.config;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -22,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.method.HandlerMethod;
@@ -44,6 +47,66 @@ public class LoggingInterceptorTest {
     request = mock(HttpServletRequest.class);
     response = mock(HttpServletResponse.class);
     session = mock(HttpSession.class);
+  }
+
+  @Test
+  public void afterCompletionLogsDataAccessWithIdentifiersOnly() throws Exception {
+    var auditLogger = new ch.qos.logback.classic.Logger[1];
+    var appender =
+        new ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent>();
+    appender.start();
+    auditLogger[0] =
+        (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("uk.gov.laa.ccms.caab.audit.test");
+    auditLogger[0].addAppender(appender);
+    loggingInterceptor.setAuditLog(auditLogger[0]);
+
+    var mockSession = new org.springframework.mock.web.MockHttpSession();
+    mockSession.setAttribute(
+        "activeCase",
+        uk.gov.laa.ccms.caab.bean.ActiveCase.builder()
+            .caseReferenceNumber("300001")
+            .clientReferenceNumber("CL1")
+            .client("Jane Doe")
+            .build());
+    var req = new org.springframework.mock.web.MockHttpServletRequest("GET", "/case/overview");
+    req.setSession(mockSession);
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        null);
+
+    var event = appender.list.getFirst();
+    var pairs = new java.util.HashMap<String, Object>();
+    event.getKeyValuePairs().forEach(kv -> pairs.put(kv.key, kv.value));
+    assertEquals("DATA_ACCESS", pairs.get("event_type"));
+    assertEquals("VIEW", pairs.get("action"));
+    assertEquals("SUCCESS", pairs.get("outcome"));
+    assertEquals("300001", pairs.get("case_reference"));
+    assertEquals("CL1", pairs.get("client_reference"));
+    assertFalse(pairs.values().toString().contains("Jane"));
+  }
+
+  @Test
+  public void afterCompletionLogsNothingWithoutACaseOrClient() throws Exception {
+    var appender =
+        new ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent>();
+    appender.start();
+    var auditLogger =
+        (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("uk.gov.laa.ccms.caab.audit.test2");
+    auditLogger.addAppender(appender);
+    loggingInterceptor.setAuditLog(auditLogger);
+    var req = new org.springframework.mock.web.MockHttpServletRequest("GET", "/home");
+    req.setSession(new org.springframework.mock.web.MockHttpSession());
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        null);
+
+    assertTrue(appender.list.isEmpty());
   }
 
   @Test

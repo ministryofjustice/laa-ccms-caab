@@ -12,6 +12,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
+import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.constants.SessionConstants;
 
 /**
  * Interceptor class responsible for logging incoming requests and redirects after POST requests.
@@ -23,6 +25,8 @@ import org.springframework.web.servlet.ModelAndView;
 public class LoggingInterceptor implements HandlerInterceptor {
 
   @Setter private Logger log = LoggerFactory.getLogger(LoggingInterceptor.class);
+
+  @Setter private Logger auditLog = LoggerFactory.getLogger("uk.gov.laa.ccms.caab.audit");
 
   /**
    * Logs the request method and URI before the controller method is invoked.
@@ -75,6 +79,46 @@ public class LoggingInterceptor implements HandlerInterceptor {
         log.debug("[DISPLAY] {}", modelAndView.getViewName());
       }
     }
+  }
+
+  /**
+   * Logs which client and case a controller request touched, as identifiers only.
+   *
+   * @param request The incoming HTTP request.
+   * @param response The outgoing HTTP response.
+   * @param handler The object that handled the request.
+   * @param ex Any exception thrown by the handler, or null.
+   */
+  @Override
+  public void afterCompletion(
+      HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+    if (!(handler instanceof HandlerMethod handlerMethod)
+        || !handlerMethod.getBeanType().isAnnotationPresent(Controller.class)) {
+      return;
+    }
+    HttpSession session = request.getSession(false);
+    if (session == null) {
+      return;
+    }
+    String caseReference = (String) session.getAttribute(SessionConstants.CASE_REFERENCE_NUMBER);
+    String clientReference = (String) session.getAttribute(SessionConstants.CLIENT_REFERENCE);
+    if (session.getAttribute(SessionConstants.ACTIVE_CASE) instanceof ActiveCase activeCase) {
+      caseReference = activeCase.getCaseReferenceNumber();
+      clientReference = activeCase.getClientReferenceNumber();
+    }
+    if (caseReference == null && clientReference == null) {
+      return;
+    }
+    boolean succeeded = ex == null && response.getStatus() < 400;
+    auditLog
+        .atInfo()
+        .addKeyValue("event_type", "DATA_ACCESS")
+        .addKeyValue("action", "GET".equals(request.getMethod()) ? "VIEW" : "CHANGE")
+        .addKeyValue("outcome", succeeded ? "SUCCESS" : "FAILURE")
+        .addKeyValue("case_reference", caseReference)
+        .addKeyValue("client_reference", clientReference)
+        .addKeyValue("path", request.getRequestURI())
+        .log("Case or client data accessed");
   }
 
   /**

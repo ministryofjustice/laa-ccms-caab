@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.laa.ccms.caab.bean.metric.PuiMetricService;
+import uk.gov.laa.ccms.caab.logging.LogMasker;
 import uk.gov.laa.ccms.caab.model.csp.CspReport;
 
 /** Receives browser Content Security Policy violation reports. */
@@ -48,27 +49,28 @@ public class CspReportController {
       CspReport report = objectMapper.readValue(reportBody, CspReport.class);
       CspReport.Violation violation = report.getViolation();
       if (violation == null) {
-        log.warn("CSP violation report received without recognised body: {}", reportBody);
+        log.warn(
+            "CSP violation report received without recognised body, length {}",
+            reportBody.length());
         return;
       }
 
       log.warn(
           "CSP violation: effectiveDirective=[{}], violatedDirective=[{}], blockedUri=[{}], "
               + "documentUri=[{}], sourceFile=[{}], lineNumber=[{}], columnNumber=[{}], "
-              + "statusCode=[{}], disposition=[{}], scriptSample=[{}], originalPolicy=[{}]",
+              + "statusCode=[{}], disposition=[{}], originalPolicy=[{}]",
           violation.getEffectiveDirective(),
           violation.getViolatedDirective(),
-          violation.getBlockedUri(),
-          violation.getDocumentUri(),
-          violation.getSourceFile(),
+          LogMasker.withoutQuery(violation.getBlockedUri()),
+          LogMasker.withoutQuery(violation.getDocumentUri()),
+          LogMasker.withoutQuery(violation.getSourceFile()),
           violation.getLineNumber(),
           violation.getColumnNumber(),
           violation.getStatusCode(),
           violation.getDisposition(),
-          violation.getScriptSample(),
           violation.getOriginalPolicy());
     } catch (JsonProcessingException e) {
-      log.warn("CSP violation report could not be parsed: {}", reportBody);
+      log.warn("CSP violation report could not be parsed, length {}", reportBody.length());
     }
   }
 }
