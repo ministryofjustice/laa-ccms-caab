@@ -171,8 +171,6 @@ management:
       exposure:
         include:
           - health
-          - info
-          - metrics
           - prometheus
 
 # ECS structured logging

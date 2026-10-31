@@ -1,0 +1,115 @@
+package uk.gov.laa.ccms.caab.security;
+
+import java.util.Collection;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
+import org.springframework.context.event.EventListener;
+import org.springframework.security.authentication.event.AbstractAuthenticationFailureEvent;
+import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
+import org.springframework.security.authorization.event.AuthorizationDeniedEvent;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
+import org.springframework.stereotype.Component;
+import uk.gov.laa.ccms.caab.logging.UserIdentifier;
+
+/** Writes authentication and authorisation outcomes as structured security events. */
+@Component
+@Slf4j
+public class SecurityEventLogger {
+
+  static final String EVENT_TYPE = "event_type";
+  static final String OUTCOME = "outcome";
+
+  /** The values of the {@code event_type} log field that the SOC use cases match on. */
+  public enum EventType {
+    AUTHENTICATION_SUCCESS,
+    AUTHENTICATION_FAILURE,
+    AUTHORIZATION_DENIED,
+    PERMISSIONS_LOADED,
+    LOGOUT
+  }
+
+  /** The values of the {@code outcome} log field. */
+  public enum Outcome {
+    SUCCESS,
+    FAILURE,
+    DENIED
+  }
+
+  @EventListener
+  void onAuthenticationSuccess(AuthenticationSuccessEvent event) {
+    log(
+        EventType.AUTHENTICATION_SUCCESS,
+        event.getAuthentication(),
+        Outcome.SUCCESS,
+        "Authentication succeeded",
+        null);
+  }
+
+  @EventListener
+  void onAuthenticationFailure(AbstractAuthenticationFailureEvent event) {
+    log(
+        EventType.AUTHENTICATION_FAILURE,
+        event.getAuthentication(),
+        Outcome.FAILURE,
+        "Authentication failed",
+        event.getException().getClass().getSimpleName());
+  }
+
+  @EventListener
+  void onAuthorizationDenied(AuthorizationDeniedEvent<?> event) {
+    String target = null;
+    if (event.getObject() instanceof RequestAuthorizationContext context) {
+      target = context.getRequest().getMethod() + " " + context.getRequest().getRequestURI();
+    }
+    log(
+        EventType.AUTHORIZATION_DENIED,
+        event.getAuthentication().get(),
+        Outcome.DENIED,
+        "Access denied",
+        target);
+  }
+
+  /**
+   * Records a user logging out.
+   *
+   * @param authentication the user's authentication, which may be null if the session had expired
+   */
+  public void logout(Authentication authentication) {
+    log(EventType.LOGOUT, authentication, Outcome.SUCCESS, "User logged out", null);
+  }
+
+  /**
+   * Records the permissions granted to a user at sign-in, so changes between sign-ins can be seen.
+   *
+   * @param loginId the signed-in user's login id
+   * @param permissions the EBS user functions loaded for the user
+   */
+  public void permissionsLoaded(String loginId, Collection<String> permissions) {
+    String userId = UserIdentifier.pseudonymise(loginId);
+    try (MDC.MDCCloseable ignored = MDC.putCloseable(UserIdentifier.MDC_KEY, userId)) {
+      log.atInfo()
+          .addKeyValue(EVENT_TYPE, EventType.PERMISSIONS_LOADED.name())
+          .addKeyValue(OUTCOME, Outcome.SUCCESS.name())
+          .addKeyValue("event_detail", permissions.stream().sorted().toList())
+          .log("Permissions loaded at sign-in");
+    }
+  }
+
+  private void log(
+      EventType type,
+      Authentication authentication,
+      Outcome outcome,
+      String message,
+      String detail) {
+    String userId =
+        UserIdentifier.pseudonymise(authentication == null ? null : authentication.getName());
+    try (MDC.MDCCloseable ignored = MDC.putCloseable(UserIdentifier.MDC_KEY, userId)) {
+      log.atInfo()
+          .addKeyValue(EVENT_TYPE, type.name())
+          .addKeyValue(OUTCOME, outcome.name())
+          .addKeyValue("event_detail", detail)
+          .log(message);
+    }
+  }
+}

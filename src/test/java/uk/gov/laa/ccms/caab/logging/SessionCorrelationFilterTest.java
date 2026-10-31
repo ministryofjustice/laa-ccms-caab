@@ -112,4 +112,21 @@ class SessionCorrelationFilterTest {
     // The redispatch reuses the request attribute, even though its session is invalid.
     verify(request, times(1)).getSession(false);
   }
+
+  @Test
+  void eachRequestGetsItsOwnRequestIdEvenWithinOneSession() throws Exception {
+    var session = new MockHttpSession();
+    String[] ids = new String[2];
+    for (int i = 0; i < 2; i++) {
+      int index = i;
+      var request = new MockHttpServletRequest();
+      request.setSession(session);
+      var response = new MockHttpServletResponse();
+      new SessionCorrelationFilter()
+          .doFilter(request, response, (req, res) -> ids[index] = MDC.get("request_id"));
+      assertEquals(ids[index], response.getHeader("X-Request-Id"));
+      assertNull(MDC.get("request_id"));
+    }
+    assertNotEquals(ids[0], ids[1]);
+  }
 }
