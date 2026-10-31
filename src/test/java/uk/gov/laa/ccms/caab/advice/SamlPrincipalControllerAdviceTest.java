@@ -28,6 +28,7 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerMapping;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.controller.HomeController;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -36,6 +37,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 class SamlPrincipalControllerAdviceTest {
 
   @MockitoBean private UserService userService;
+  @MockitoBean private SecurityEventLogger securityEventLogger;
 
   @MockitoBean private HttpSession session;
 
@@ -144,6 +146,44 @@ class SamlPrincipalControllerAdviceTest {
       verify(model).addAttribute("userAttributes", attributes);
       verify(session).setAttribute("user", userDetails);
       verifyNoMoreInteractions(model);
+    }
+
+    @Test
+    @DisplayName("Functions are compared with the session copy when the home page reloads the user")
+    public void privilegesComparedWhenHomePageReloadsTheUser() {
+      UserDetail sessionUser = new UserDetail();
+      sessionUser.setLoginId("test");
+      sessionUser.setFunctions(List.of("VIEW"));
+      userDetails.setFunctions(List.of("VIEW", "DELETE"));
+      when(session.getAttribute("user")).thenReturn(sessionUser);
+      HandlerMethod handler = mock(HandlerMethod.class);
+      when(request.getAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE))
+          .thenReturn(handler);
+      doReturn(HomeController.class).when(handler).getBeanType();
+
+      advice.addSamlPrincipalToModel(authentication, model, session, request);
+
+      verify(securityEventLogger).privilegesReloaded(List.of("VIEW"), List.of("VIEW", "DELETE"));
+    }
+
+    @Test
+    @DisplayName("Functions are not compared when the user is taken from the session")
+    public void privilegesNotComparedWhenUserComesFromTheSession() {
+      when(session.getAttribute("user")).thenReturn(userDetails);
+
+      advice.addSamlPrincipalToModel(authentication, model, session, request);
+
+      verifyNoInteractions(securityEventLogger);
+    }
+
+    @Test
+    @DisplayName("Functions are not compared on the first load, when the session has no user")
+    public void privilegesNotComparedOnTheFirstLoad() {
+      when(session.getAttribute("user")).thenReturn(null);
+
+      advice.addSamlPrincipalToModel(authentication, model, session, request);
+
+      verifyNoInteractions(securityEventLogger);
     }
   }
 }

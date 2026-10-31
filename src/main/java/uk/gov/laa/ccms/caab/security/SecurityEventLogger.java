@@ -1,6 +1,9 @@
 package uk.gov.laa.ccms.caab.security;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
@@ -28,6 +31,7 @@ public class SecurityEventLogger {
     AUTHENTICATION_FAILURE,
     AUTHORIZATION_DENIED,
     PERMISSIONS_LOADED,
+    PRIVILEGES_CHANGED,
     FILE_SCAN,
     INPUT_REJECTED,
     FILE_REJECTED,
@@ -102,6 +106,30 @@ public class SecurityEventLogger {
         .addKeyValue("http_method", method)
         .addKeyValue("path", path)
         .log("Request input rejected");
+  }
+
+  /**
+   * Records a change to the user's functions between two loads within one session, which happens
+   * when they are edited in EBS or the legacy PUI. Nothing is logged if they are unchanged. Gaining
+   * a function is logged at WARN, as it may be an escalation; only losing one is logged at INFO.
+   *
+   * @param before the functions the session held, which may be null
+   * @param after the functions just loaded, which may be null
+   */
+  public void privilegesReloaded(Collection<String> before, Collection<String> after) {
+    Set<String> previous = before == null ? Set.of() : new TreeSet<>(before);
+    Set<String> current = after == null ? Set.of() : new TreeSet<>(after);
+    List<String> added = current.stream().filter(f -> !previous.contains(f)).sorted().toList();
+    List<String> removed = previous.stream().filter(f -> !current.contains(f)).sorted().toList();
+    if (added.isEmpty() && removed.isEmpty()) {
+      return;
+    }
+    log.atLevel(added.isEmpty() ? Level.INFO : Level.WARN)
+        .addKeyValue(EVENT_TYPE, EventType.PRIVILEGES_CHANGED.name())
+        .addKeyValue(OUTCOME, Outcome.SUCCESS.name())
+        .addKeyValue("privileges_added", added)
+        .addKeyValue("privileges_removed", removed)
+        .log("User privileges changed within a session");
   }
 
   /**
