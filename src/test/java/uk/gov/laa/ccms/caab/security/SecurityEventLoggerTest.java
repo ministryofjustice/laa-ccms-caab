@@ -190,6 +190,44 @@ class SecurityEventLoggerTest {
     assertEquals(ch.qos.logback.classic.Level.WARN, event.getLevel());
   }
 
+  @Test
+  void gainingAFunctionIsLoggedAtWarnWithTheDifference() {
+    logger.privilegesReloaded(
+        java.util.List.of("VIEW", "EDIT"), java.util.List.of("VIEW", "DELETE"));
+
+    ILoggingEvent event = appender.list.getFirst();
+    assertEquals("PRIVILEGES_CHANGED", keyValue(event, "event_type"));
+    assertEquals("SUCCESS", keyValue(event, "outcome"));
+    assertEquals(java.util.List.of("DELETE"), keyValue(event, "privileges_added"));
+    assertEquals(java.util.List.of("EDIT"), keyValue(event, "privileges_removed"));
+    assertEquals(ch.qos.logback.classic.Level.WARN, event.getLevel());
+  }
+
+  @Test
+  void onlyLosingAFunctionIsLoggedAtInfo() {
+    logger.privilegesReloaded(java.util.List.of("VIEW", "EDIT"), java.util.List.of("VIEW"));
+
+    ILoggingEvent event = appender.list.getFirst();
+    assertEquals(java.util.List.of(), keyValue(event, "privileges_added"));
+    assertEquals(java.util.List.of("EDIT"), keyValue(event, "privileges_removed"));
+    assertEquals(ch.qos.logback.classic.Level.INFO, event.getLevel());
+  }
+
+  @Test
+  void unchangedOrReorderedFunctionsLogNothing() {
+    logger.privilegesReloaded(java.util.List.of("B", "A"), java.util.List.of("A", "B"));
+    logger.privilegesReloaded(null, null);
+
+    org.junit.jupiter.api.Assertions.assertTrue(appender.list.isEmpty());
+  }
+
+  @Test
+  void aMissingBeforeListCountsEverythingAsAdded() {
+    logger.privilegesReloaded(null, java.util.List.of("VIEW"));
+
+    assertEquals(java.util.List.of("VIEW"), keyValue(appender.list.getFirst(), "privileges_added"));
+  }
+
   private static Object keyValue(ILoggingEvent event, String key) {
     return event.getKeyValuePairs().stream()
         .filter(kv -> kv.key.equals(key))
