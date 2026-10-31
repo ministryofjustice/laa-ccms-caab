@@ -32,6 +32,7 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
 import uk.gov.laa.ccms.caab.logging.UserContextFilter;
 import uk.gov.laa.ccms.caab.security.CspNonceFilter;
+import uk.gov.laa.ccms.caab.security.CsrfLoggingAccessDeniedHandler;
 import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.service.UserService;
 
@@ -161,6 +162,10 @@ public class SecurityConfiguration {
                     .anyRequest()
                     .authenticated())
         .csrf(csrf -> csrf.ignoringRequestMatchers("/csp/report"))
+        .exceptionHandling(
+            exceptions ->
+                exceptions.accessDeniedHandler(
+                    new CsrfLoggingAccessDeniedHandler(securityEventLogger)))
         .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))
         .addFilterBefore(
             new CspNonceFilter(cspReportEnabled, cspReportOnly, cspUpgradeInsecureRequests, owdUrl),
