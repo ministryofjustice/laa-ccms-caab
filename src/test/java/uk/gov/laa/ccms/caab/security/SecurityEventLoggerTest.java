@@ -97,6 +97,21 @@ class SecurityEventLoggerTest {
     assertEquals(java.util.List.of("A_FUNC", "B_FUNC"), keyValue(event, "event_detail"));
   }
 
+  @Test
+  void fileScannedLogsOutcomeAtMatchingLevelWithoutFileName() {
+    logger.fileScanned(
+        SecurityEventLogger.Outcome.DENIED,
+        "300001",
+        uk.gov.laa.ccms.caab.constants.CcmsModule.APPLICATION);
+
+    ILoggingEvent event = appender.list.getFirst();
+    assertEquals("FILE_SCAN", keyValue(event, "event_type"));
+    assertEquals("DENIED", keyValue(event, "outcome"));
+    assertEquals("300001", keyValue(event, "case_reference"));
+    assertEquals("APPLICATION", keyValue(event, "ccms_module"));
+    assertEquals(ch.qos.logback.classic.Level.WARN, event.getLevel());
+  }
+
   private static Object keyValue(ILoggingEvent event, String key) {
     return event.getKeyValuePairs().stream()
         .filter(kv -> kv.key.equals(key))
