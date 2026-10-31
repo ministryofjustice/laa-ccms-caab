@@ -68,11 +68,6 @@ configurations.configureEach {
             details.useVersion '4.2.18.Final'
             details.because 'Snyk override for HTTP and QUIC vulnerabilities in 4.2.17.Final'
         }
-        // Not managed by the Spring Boot BOM; pulled in transitively by other dependencies.
-        if (details.requested.group == 'org.bouncycastle') {
-            details.useVersion '1.86'
-            details.because 'Override to remediate vulnerability; not covered by the Spring Boot dependency BOM'
-        }
         // Logback classic pulled in by Spring Boot starter logging
         if (details.requested.group == 'org.hibernate.validator'
                 && details.requested.name == 'hibernate-validator') {
@@ -83,12 +78,6 @@ configurations.configureEach {
                 && details.requested.name in ['logback-classic', 'logback-core']) {
             details.useVersion '1.6.5'
             details.because 'Snyk override (SNYK-JAVA-CHQOSLOGBACK-20824362); directory traversal vulnerability in 1.6.3'
-        }
-        // Declared directly, but still requested transitively at the vulnerable version.
-        if (details.requested.group == 'com.google.guava'
-                && details.requested.name == 'guava') {
-            details.useVersion '33.7.2-jre'
-            details.because 'Snyk override (SNYK-JAVA-COMGOOGLEGUAVA-20825054); unthrottled resource allocation in 33.0.0-jre'
         }
         // Reaches us via the OIDC stack: oauth2-oidc-sdk -> json-smart -> accessors-smart.
         if (details.requested.group == 'org.ow2.asm'
