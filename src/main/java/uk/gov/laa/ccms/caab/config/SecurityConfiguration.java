@@ -15,8 +15,6 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.authentication.ProviderManager;
-import org.springframework.security.authorization.AuthorizationEventPublisher;
-import org.springframework.security.authorization.SpringAuthorizationEventPublisher;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -63,11 +61,6 @@ public class SecurityConfiguration {
   private final SecurityEventLogger securityEventLogger;
 
   private final ApplicationEventPublisher eventPublisher;
-
-  @Bean
-  AuthorizationEventPublisher authorizationEventPublisher() {
-    return new SpringAuthorizationEventPublisher(eventPublisher);
-  }
 
   /**
    * Configures Spring Security filters and settings, along with endpoint restrictions based on
