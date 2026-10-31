@@ -30,6 +30,7 @@ public class SecurityEventLogger {
     PERMISSIONS_LOADED,
     FILE_SCAN,
     INPUT_REJECTED,
+    CSRF_REJECTED,
     LOGOUT
   }
 
@@ -100,6 +101,24 @@ public class SecurityEventLogger {
         .addKeyValue("http_method", method)
         .addKeyValue("path", path)
         .log("Request input rejected");
+  }
+
+  /**
+   * Records a state-changing request refused because its CSRF token was wrong, which is what a
+   * forged cross-site request looks like. Only the exception class, method and path are logged.
+   *
+   * @param method the HTTP method
+   * @param path the request path, without its query string
+   * @param exception the CSRF exception
+   */
+  public void csrfRejected(String method, String path, Exception exception) {
+    log.atWarn()
+        .addKeyValue(EVENT_TYPE, EventType.CSRF_REJECTED.name())
+        .addKeyValue(OUTCOME, Outcome.DENIED.name())
+        .addKeyValue("event_detail", exception.getClass().getSimpleName())
+        .addKeyValue("http_method", method)
+        .addKeyValue("path", path)
+        .log("Request refused: CSRF token rejected");
   }
 
   /**

@@ -160,6 +160,25 @@ class SecurityEventLoggerTest {
     org.junit.jupiter.api.Assertions.assertNull(org.slf4j.MDC.get("user_id"));
   }
 
+  @Test
+  void csrfRejectedLogsClassMethodAndPathOnly() {
+    logger.csrfRejected(
+        "POST",
+        "/application/sections",
+        new org.springframework.security.web.csrf.InvalidCsrfTokenException(
+            new org.springframework.security.web.csrf.DefaultCsrfToken("h", "p", "secret"),
+            "actual-secret"));
+
+    ILoggingEvent event = appender.list.getFirst();
+    assertEquals("CSRF_REJECTED", keyValue(event, "event_type"));
+    assertEquals("DENIED", keyValue(event, "outcome"));
+    assertEquals("InvalidCsrfTokenException", keyValue(event, "event_detail"));
+    assertEquals("POST", keyValue(event, "http_method"));
+    assertEquals("/application/sections", keyValue(event, "path"));
+    assertFalse(event.getFormattedMessage().contains("secret"));
+    assertEquals(ch.qos.logback.classic.Level.WARN, event.getLevel());
+  }
+
   private static Object keyValue(ILoggingEvent event, String key) {
     return event.getKeyValuePairs().stream()
         .filter(kv -> kv.key.equals(key))
