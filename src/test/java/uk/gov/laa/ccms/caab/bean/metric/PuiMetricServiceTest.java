@@ -145,4 +145,26 @@ class PuiMetricServiceTest {
     assertThat(service.getSecurityEventsCounter().labelValues("LOGOUT", "SUCCESS").get())
         .isEqualTo(0);
   }
+
+  @Test
+  @DisplayName("Should expose a registered security event series at zero before it occurs")
+  void shouldExposeARegisteredSeriesAtZero() {
+    PrometheusRegistry registry = new PrometheusRegistry();
+    PuiMetricService service = new PuiMetricService(registry);
+
+    service.initSecurityEvents("FILE_SCAN", "DENIED");
+
+    io.prometheus.metrics.model.snapshots.MetricSnapshot snapshot =
+        registry.scrape().stream()
+            .filter(metric -> metric.getMetadata().getName().equals("pui_security_events"))
+            .findFirst()
+            .orElseThrow();
+    assertThat(
+            snapshot.getDataPoints().stream()
+                .anyMatch(
+                    point ->
+                        "FILE_SCAN".equals(point.getLabels().get("event_type"))
+                            && "DENIED".equals(point.getLabels().get("outcome"))))
+        .isTrue();
+  }
 }
