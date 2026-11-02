@@ -6,18 +6,25 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_AWARD_ASSESSMENT_STATUS;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_VALUATION_BASIS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.AWARD_TYPE_FORM;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,8 +33,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -37,24 +46,34 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.AwardTypeForm;
+import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.FinancialAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.LandAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.OtherAssetAwardFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
+import uk.gov.laa.ccms.caab.bean.validators.awards.CostAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.FinancialAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.LandAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.OtherAssetAwardValidator;
+import uk.gov.laa.ccms.caab.bean.validators.awards.TimeRecoveryValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
+import uk.gov.laa.ccms.caab.constants.FunctionConstants;
+import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.LandAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.OtherAssetAwardMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.LandAwardRequest;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
+import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
+import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
+import uk.gov.laa.ccms.caab.model.sections.LiablePartiesDisplay;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -68,24 +87,32 @@ class AwardControllerTest {
   @Mock private LookupService lookupService;
   @Mock private CaseOutcomeService caseOutcomeService;
   @Mock private AwardTypeValidator awardTypeValidator;
+  @Mock private CostAwardValidator costAwardValidator;
   @Mock private FinancialAwardValidator financialAwardValidator;
+  @Mock private CostAwardMapper costAwardMapper;
   @Mock private FinancialAwardMapper financialAwardMapper;
   @Mock private OtherAssetAwardValidator otherAssetAwardValidator;
   @Mock private OtherAssetAwardMapper otherAssetAwardMapper;
   @Mock private LandAwardValidator landAwardValidator;
   @Mock private LandAwardMapper landAwardMapper;
+  @Spy private TimeRecoveryValidator timeRecoveryValidator = new TimeRecoveryValidator();
 
   @InjectMocks private AwardController controller;
 
   private MockMvcTester mockMvc;
   private ApplicationDetail ebsCase;
   private UserDetail user;
+  private CaseOutcomeDetail caseOutcome;
 
   @BeforeEach
   void setUp() {
     mockMvc = MockMvcTester.create(MockMvcBuilders.standaloneSetup(controller).build());
     ebsCase = new ApplicationDetail().caseReferenceNumber("300000001");
+    ebsCase.setAvailableFunctions(List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
+    caseOutcome = new CaseOutcomeDetail().id(55);
+    ebsCase.setCaseOutcome(caseOutcome);
     user = ApplicationTestUtils.buildUser();
+    lenient().when(costAwardMapper.toCostAward(any())).thenReturn(new CostAwardDetail());
     lenient()
         .when(financialAwardMapper.toFinancialAwardRequest(any()))
         .thenReturn(new FinancialAwardRequest());
@@ -96,6 +123,140 @@ class AwardControllerTest {
     lenient()
         .when(lookupService.getCommonValues(any()))
         .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
+  }
+
+  @Nested
+  @DisplayName("GET: award liable and interested parties")
+  class LiablePartiesTests {
+
+    @ParameterizedTest
+    @CsvSource({
+      "cost-award, false, cost-award/7",
+      "financial-award, false, financial-award/7",
+      "land, false, land-property/7",
+      "asset, false, asset/7",
+      "land, true, land/7/time-related-recovery",
+      "asset, true, asset/7/time-related-recovery"
+    })
+    void loadsSelectedAwardWithinCurrentCaseAndProvider(
+        String awardPath, boolean timeRelatedRecovery, String backPath) {
+      final var award =
+          new LiablePartiesDisplay(
+              "LAND", "Property", BigDecimal.TEN, false, timeRelatedRecovery, List.of());
+      when(caseOutcomeService.getLiablePartiesDisplay("300000001", 123, awardPath, 7))
+          .thenReturn(award);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/" + awardPath + "/7/liable-parties")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/liable-parties")
+          .model()
+          .containsEntry("award", award)
+          .containsEntry("awardPath", awardPath)
+          .containsEntry("awardId", 7)
+          .containsEntry("backUrl", "/case/outcome-and-awards/" + backPath);
+
+      verify(caseOutcomeService).getLiablePartiesDisplay("300000001", 123, awardPath, 7);
+      verifyNoMoreInteractions(caseOutcomeService);
+    }
+
+    @Test
+    void unsupportedAwardHasNoRoute() {
+      assertThat(mockMvc.perform(get("/case/outcome-and-awards/unknown/7/liable-parties")))
+          .hasStatus(404);
+      verifyNoInteractions(caseOutcomeService);
+    }
+  }
+
+  @Nested
+  @DisplayName("Award deletion")
+  class DeleteAwardTests {
+
+    @ParameterizedTest
+    @ValueSource(strings = {"COST", "DAMAGE", "LAND", "ASSET"})
+    void confirmationPassesOnlyAwardTypeAndIdWithoutDeleting(String type) {
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/awards/{type}/7/delete", type)
+                      .sessionAttr(CASE, ebsCase)))
+          .hasStatusOk()
+          .hasViewName("application/delete-award")
+          .model()
+          .containsEntry("awardType", type)
+          .containsEntry("awardId", 7)
+          .doesNotContainKey("award");
+
+      verifyNoInteractions(caseOutcomeService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"COST", "DAMAGE", "LAND", "ASSET"})
+    void confirmDeletesSelectedAwardAndRedirects(String type) {
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/awards/{type}/7/delete", type)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(caseOutcomeService)
+          .deleteAward(
+              ebsCase.getCaseReferenceNumber(),
+              user.getProvider().getId().intValue(),
+              type,
+              7,
+              user.getLoginId());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"GET", "POST"})
+    void readOnlyCaseCannotLoadOrConfirmDeletion(String method) {
+      ebsCase.setAvailableFunctions(List.of(FunctionConstants.VIEW_CASE_OUTCOME));
+      MockHttpServletRequestBuilder request =
+          "GET".equals(method)
+              ? get("/case/outcome-and-awards/awards/COST/7/delete")
+              : post("/case/outcome-and-awards/awards/COST/7/delete");
+
+      assertThat(
+              mockMvc.perform(request.sessionAttr(CASE, ebsCase).sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+      verifyNoInteractions(caseOutcomeService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"GET", "POST"})
+    void missingCaseCannotLoadOrConfirmDeletion(String method) {
+      MockHttpServletRequestBuilder request =
+          "GET".equals(method)
+              ? get("/case/outcome-and-awards/awards/COST/7/delete")
+              : post("/case/outcome-and-awards/awards/COST/7/delete");
+
+      assertThat(mockMvc.perform(request.sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+      verifyNoInteractions(caseOutcomeService);
+    }
+
+    @Test
+    void deletionFailureDoesNotRedirectAsSuccess() {
+      doThrow(new IllegalStateException("Deletion failed"))
+          .when(caseOutcomeService)
+          .deleteAward(any(), any(), any(), any(), any());
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/awards/COST/7/delete")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasFailed()
+          .failure()
+          .hasCauseInstanceOf(IllegalStateException.class);
+    }
   }
 
   @Nested
@@ -117,7 +278,9 @@ class AwardControllerTest {
 
       when(lookupService.getAwardTypes()).thenReturn(Mono.just(awardTypes));
 
-      assertThat(mockMvc.perform(get("/case/outcome-and-awards/award-type")))
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/award-type").sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/select-award-type")
           .model()
@@ -133,7 +296,9 @@ class AwardControllerTest {
     void shouldDisplayEmptyAwardTypesWhenLookupReturnsNoData() {
       when(lookupService.getAwardTypes()).thenReturn(Mono.empty());
 
-      assertThat(mockMvc.perform(get("/case/outcome-and-awards/award-type")))
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/award-type").sessionAttr(CASE, ebsCase)))
           .hasStatusOk()
           .hasViewName("application/select-award-type")
           .model()
@@ -142,6 +307,37 @@ class AwardControllerTest {
               AWARD_TYPE_FORM, value -> assertThat(value).isInstanceOf(AwardTypeForm.class));
 
       verify(lookupService).getAwardTypes();
+    }
+
+    @Test
+    @DisplayName("Should redirect read-only cases away from award type management")
+    void shouldRedirectReadOnlyCaseFromAwardTypeManagement() {
+      ebsCase.setAvailableFunctions(List.of(FunctionConstants.VIEW_CASE_OUTCOME));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/award-type")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+    }
+
+    @Test
+    @DisplayName("Should redirect award type management when no case is in session")
+    void shouldRedirectAwardTypeManagementWithoutCase() {
+      assertThat(mockMvc.perform(get("/case/outcome-and-awards/award-type")))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/award-type")
+                      .sessionAttr(AWARD_TYPE_FORM, new AwardTypeForm())
+                      .param("awardTypeCode", "COST")))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verifyNoInteractions(lookupService, awardTypeValidator);
     }
   }
 
@@ -183,6 +379,7 @@ class AwardControllerTest {
       assertThat(
               mockMvc.perform(
                   post("/case/outcome-and-awards/award-type")
+                      .sessionAttr(CASE, ebsCase)
                       .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
                       .param("awardTypeCode", code)))
           .hasStatus3xxRedirection()
@@ -227,6 +424,7 @@ class AwardControllerTest {
       assertThat(
               mockMvc.perform(
                   post("/case/outcome-and-awards/award-type")
+                      .sessionAttr(CASE, ebsCase)
                       .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
                       .param("awardTypeCode", "")))
           .hasStatusOk()
@@ -268,6 +466,7 @@ class AwardControllerTest {
       assertThat(
               mockMvc.perform(
                   post("/case/outcome-and-awards/award-type")
+                      .sessionAttr(CASE, ebsCase)
                       .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
                       .param("awardTypeCode", "UNKNOWN")))
           .hasStatusOk()
@@ -313,6 +512,7 @@ class AwardControllerTest {
       assertThat(
               mockMvc.perform(
                   post("/case/outcome-and-awards/award-type")
+                      .sessionAttr(CASE, ebsCase)
                       .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
                       .param("awardTypeCode", "NEW_AWARD")))
           .hasStatusOk()
@@ -338,6 +538,261 @@ class AwardControllerTest {
 
       verify(awardTypeValidator).validate(any(AwardTypeForm.class), any());
       verify(lookupService).getAwardTypes();
+    }
+  }
+
+  @Nested
+  @DisplayName("GET: /case/outcome-and-awards/cost-award")
+  class CostAwardGetTests {
+
+    @Test
+    void getNewCostAwardPreservesSelectedAwardMetadataAndInitialisesTotals() {
+      final AwardTypeForm awardTypeForm = new AwardTypeForm();
+      awardTypeForm.setAwardTypeCode("COST_AGR");
+      awardTypeForm.setAwardType("COST");
+      awardTypeForm.setDescription("Cost");
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/cost-award")
+                      .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasViewName("application/cost-award")
+          .model()
+          .containsEntry("totalPreCertificateCosts", "0.00")
+          .containsEntry("totalCertificateCostsAwarded", "0.00")
+          .containsEntry("totalCostsAwarded", "0.00")
+          .hasEntrySatisfying(
+              "costAward",
+              value ->
+                  assertThat(value)
+                      .extracting(
+                          "awardCode",
+                          "awardType",
+                          "description",
+                          "laaFundedLegalCosts",
+                          "otherPreCertificateCosts",
+                          "laaRate",
+                          "marketRate",
+                          "interestRate")
+                      .containsExactly(
+                          "COST_AGR", "COST", "Cost", "0.00", "0.00", "0.00", "0.00", "0.00"));
+
+      verify(lookupService).getCommonValues(COMMON_VALUE_AWARD_ASSESSMENT_STATUS);
+    }
+
+    @Test
+    void getNewCostAwardWithNonCostSessionAwardTypeReturnsToOverview() {
+      final AwardTypeForm awardTypeForm = new AwardTypeForm();
+      awardTypeForm.setAwardTypeCode("DAMAGE_AGR");
+      awardTypeForm.setAwardType("DAMAGE");
+      awardTypeForm.setDescription("Financial Settlement");
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/cost-award")
+                      .sessionAttr(AWARD_TYPE_FORM, awardTypeForm)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+    }
+
+    @Test
+    void getNewCostAwardWithoutSelectedAwardMetadataReturnsToOverview() {
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/cost-award")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+    }
+
+    @Test
+    void getExistingCostAwardLoadsPersistedValues() {
+      final CostAwardDetail award =
+          new CostAwardDetail()
+              .id(7)
+              .awardCode("COST")
+              .awardType("COST")
+              .description("Cost")
+              .dateOfOrder(new Date())
+              .awardAmount(new java.math.BigDecimal("123.45"))
+              .awardedBy("COURT");
+      when(caseOutcomeService.getCostAward("300000001", 123, 7)).thenReturn(Optional.of(award));
+      final CostAwardFormData formData = new CostAwardFormData();
+      formData.setId(7);
+      formData.setLaaFundedLegalCosts("123.45");
+      when(costAwardMapper.toCostAwardFormData(award)).thenReturn(formData);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/cost-award/7")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasViewName("application/cost-award")
+          .model()
+          .hasEntrySatisfying(
+              "costAward",
+              value ->
+                  assertThat(value)
+                      .extracting("id", "laaFundedLegalCosts", "otherPreCertificateCosts")
+                      .containsExactly(7, "123.45", "0.00"));
+    }
+  }
+
+  @Nested
+  @DisplayName("POST: /case/outcome-and-awards/cost-award")
+  class CostAwardPostTests {
+
+    @Test
+    void postWithoutIdCreatesCostAward() {
+      when(caseOutcomeService.createCostAward(any(), any(), any(), any(), any())).thenReturn(19);
+      assertThat(mockMvc.perform(validCostAwardPost()))
+          .hasRedirectedUrl("/case/outcome-and-awards/cost-award/19/liable-parties");
+
+      verify(caseOutcomeService)
+          .createCostAward(
+              eq("300000001"),
+              eq(user.getProvider().getId().intValue()),
+              any(CostAwardDetail.class),
+              eq(user.getLoginId()),
+              eq(caseOutcome));
+    }
+
+    @Test
+    void postWithoutPermissionRedirectsForReadOnlyCase() {
+      ebsCase.setAvailableFunctions(List.of(FunctionConstants.VIEW_CASE_OUTCOME));
+
+      assertThat(mockMvc.perform(validCostAwardPost()))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verify(caseOutcomeService, never()).createCostAward(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void postWithIdUpdatesCostAward() {
+      assertThat(mockMvc.perform(validCostAwardPost().param("id", "7")))
+          .hasRedirectedUrl("/case/outcome-and-awards/cost-award/7/liable-parties");
+
+      verify(caseOutcomeService)
+          .updateCostAward(
+              eq("300000001"),
+              eq(user.getProvider().getId().intValue()),
+              eq(7),
+              any(CostAwardFormData.class),
+              eq(user.getLoginId()));
+    }
+
+    @Test
+    void postWithCalculateRedisplaysCostAwardPageWithoutSaving() {
+      assertThat(mockMvc.perform(validCostAwardPost().param("action", "calculate")))
+          .hasViewName("application/cost-award")
+          .model()
+          .containsEntry("totalPreCertificateCosts", "3.00")
+          .containsEntry("totalCertificateCostsAwarded", "7.00")
+          .containsEntry("totalCostsAwarded", "10.00");
+
+      verify(caseOutcomeService, never()).createCostAward(any(), any(), any(), any(), any());
+      verify(caseOutcomeService, never()).updateCostAward(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void postWithCalculateOnlyValidatesCostAmounts() {
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/cost-award")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("action", "calculate")
+                      .param("laaFundedLegalCosts", "1.50")
+                      .param("marketRate", "2.25")))
+          .hasViewName("application/cost-award")
+          .model()
+          .doesNotHaveErrors()
+          .containsEntry("totalPreCertificateCosts", "1.50")
+          .containsEntry("totalCertificateCostsAwarded", "2.25")
+          .containsEntry("totalCostsAwarded", "3.75");
+
+      verify(costAwardValidator).validateCostAmounts(any(CostAwardFormData.class), any());
+      verify(costAwardValidator, never()).validate(any(), any());
+    }
+
+    @Test
+    void postWithCalculateTreatsInvalidAmountsAsZero() {
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/cost-award")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("action", "calculate")
+                      .param("laaFundedLegalCosts", "1.234")
+                      .param("otherPreCertificateCosts", "2.00")
+                      .param("laaRate", "abc")
+                      .param("marketRate", "3.50")))
+          .hasViewName("application/cost-award")
+          .model()
+          .containsEntry("totalPreCertificateCosts", "2.00")
+          .containsEntry("totalCertificateCostsAwarded", "3.50")
+          .containsEntry("totalCostsAwarded", "5.50");
+    }
+
+    @Test
+    void invalidPostRedisplaysCostAwardPage() {
+      doAnswer(
+              invocation -> {
+                invocation
+                    .getArgument(1, Errors.class)
+                    .rejectValue("dateOfOrder", "invalid.format", "Invalid date");
+                return null;
+              })
+          .when(costAwardValidator)
+          .validate(any(), any());
+
+      assertThat(mockMvc.perform(validCostAwardPost()))
+          .hasViewName("application/cost-award")
+          .model()
+          .hasErrors();
+    }
+
+    @Test
+    void apiFailureRedisplaysCostAwardPageWithError() {
+      doThrow(new CaabApiClientException("API failure"))
+          .when(caseOutcomeService)
+          .createCostAward(any(), any(), any(), any(), any());
+
+      assertThat(mockMvc.perform(validCostAwardPost()))
+          .hasViewName("application/cost-award")
+          .model()
+          .hasErrors();
+    }
+
+    @Test
+    void postWithoutIdRejectsAwardTypeDetailsThatDoNotMatchTheSession() {
+      final AwardTypeForm selectedAwardType = new AwardTypeForm();
+      selectedAwardType.setAwardTypeCode("COST_AGR");
+      selectedAwardType.setAwardType("COST");
+      selectedAwardType.setDescription("Different");
+
+      assertThat(
+              mockMvc.perform(validCostAwardPost().sessionAttr(AWARD_TYPE_FORM, selectedAwardType)))
+          .hasViewName("application/cost-award")
+          .model()
+          .hasErrors();
+    }
+
+    @Test
+    void postWithoutIdRejectsNonCostSessionAwardType() {
+      final AwardTypeForm selectedAwardType = new AwardTypeForm();
+      selectedAwardType.setAwardTypeCode("DAMAGE_AGR");
+      selectedAwardType.setAwardType("DAMAGE");
+      selectedAwardType.setDescription("Financial Settlement");
+
+      assertThat(
+              mockMvc.perform(validCostAwardPost().sessionAttr(AWARD_TYPE_FORM, selectedAwardType)))
+          .hasViewName("application/cost-award")
+          .model()
+          .hasErrors();
     }
   }
 
@@ -417,14 +872,18 @@ class AwardControllerTest {
 
     @Test
     void postWithoutIdCreatesFinancialAward() {
-      assertThat(mockMvc.perform(validPost())).hasRedirectedUrl("/case/outcome-and-awards");
+      when(caseOutcomeService.createFinancialAward(any(), any(), any(), any(), any()))
+          .thenReturn(7);
+      assertThat(mockMvc.perform(validPost()))
+          .hasRedirectedUrl("/case/outcome-and-awards/financial-award/7/liable-parties");
 
       verify(caseOutcomeService)
           .createFinancialAward(
               eq("300000001"),
               eq(user.getProvider().getId().intValue()),
               any(FinancialAwardRequest.class),
-              eq(user.getLoginId()));
+              eq(user.getLoginId()),
+              eq(caseOutcome));
     }
 
     @Nested
@@ -489,8 +948,10 @@ class AwardControllerTest {
     class LandAwardPostTests {
 
       @Test
-      void postWithoutIdCalculatesEquityAndCreatesLandAward() {
-        assertThat(mockMvc.perform(validLandPost())).hasRedirectedUrl("/case/outcome-and-awards");
+      void postWithoutIdCalculatesEquityAndCreatesLandAwardThenOpensTimeRecovery() {
+        when(caseOutcomeService.createLandAward(any(), any(), any(), any())).thenReturn(7);
+        assertThat(mockMvc.perform(validLandPost()))
+            .hasRedirectedUrl("/case/outcome-and-awards/land/7/time-related-recovery");
 
         verify(landAwardMapper)
             .toLandAwardRequest(
@@ -519,8 +980,30 @@ class AwardControllerTest {
       @Test
       void postWithIdUpdatesLandAward() {
         assertThat(mockMvc.perform(validLandPost().param("id", "7")))
-            .hasRedirectedUrl("/case/outcome-and-awards");
+            .hasRedirectedUrl("/case/outcome-and-awards/land/7/time-related-recovery");
 
+        verify(caseOutcomeService)
+            .updateLandAward(
+                eq("300000001"),
+                eq(user.getProvider().getId().intValue()),
+                eq(7),
+                any(LandAwardRequest.class),
+                eq(user.getLoginId()));
+      }
+
+      @Test
+      void postWithoutTimeRecoveryOpensInterestedParties() {
+        when(caseOutcomeService.createLandAward(any(), any(), any(), any())).thenReturn(7);
+        assertThat(mockMvc.perform(validLandPost().param("recoveryOfAwardTimeRelated", "N")))
+            .hasRedirectedUrl("/case/outcome-and-awards/land/7/liable-parties");
+      }
+
+      @Test
+      void switchingExistingLandAwardToNoSkipsRecoveryPage() {
+        assertThat(
+                mockMvc.perform(
+                    validLandPost().param("id", "7").param("recoveryOfAwardTimeRelated", "N")))
+            .hasRedirectedUrl("/case/outcome-and-awards/land/7/liable-parties");
         verify(caseOutcomeService)
             .updateLandAward(
                 eq("300000001"),
@@ -563,7 +1046,7 @@ class AwardControllerTest {
     @Test
     void postWithIdUpdatesFinancialAward() {
       assertThat(mockMvc.perform(validPost().param("id", "7")))
-          .hasRedirectedUrl("/case/outcome-and-awards");
+          .hasRedirectedUrl("/case/outcome-and-awards/financial-award/7/liable-parties");
 
       verify(caseOutcomeService)
           .updateFinancialAward(
@@ -593,10 +1076,22 @@ class AwardControllerTest {
     }
 
     @Test
+    void missingCaseOutcomeRedisplaysFinancialAwardPageWithError() {
+      doThrow(new IllegalStateException("No case outcome"))
+          .when(caseOutcomeService)
+          .createFinancialAward(any(), any(), any(), any(), any());
+
+      assertThat(mockMvc.perform(validPost()))
+          .hasViewName("application/financial-award")
+          .model()
+          .hasErrors();
+    }
+
+    @Test
     void apiFailureRedisplaysFinancialAwardPageWithError() {
       doThrow(new CaabApiClientException("API failure"))
           .when(caseOutcomeService)
-          .createFinancialAward(any(), any(), any(), any());
+          .createFinancialAward(any(), any(), any(), any(), any());
 
       assertThat(mockMvc.perform(validPost()))
           .hasViewName("application/financial-award")
@@ -693,9 +1188,31 @@ class AwardControllerTest {
   class OtherAssetAwardPostTests {
 
     @Test
+    void newTimeRelatedAssetOpensRecoveryUsingCreatedId() {
+      when(caseOutcomeService.createOtherAssetAward(any(), any(), any(), any())).thenReturn(8);
+
+      assertThat(mockMvc.perform(validOtherAssetPost(true)))
+          .hasRedirectedUrl("/case/outcome-and-awards/asset/8/time-related-recovery");
+    }
+
+    @Test
+    void existingTimeRelatedAssetOpensRecoveryUsingExistingId() {
+      assertThat(mockMvc.perform(validOtherAssetPost(true).param("id", "8")))
+          .hasRedirectedUrl("/case/outcome-and-awards/asset/8/time-related-recovery");
+      verify(caseOutcomeService)
+          .updateOtherAssetAward(
+              eq("300000001"),
+              eq(123),
+              eq(8),
+              any(OtherAssetAwardRequest.class),
+              eq(user.getLoginId()));
+    }
+
+    @Test
     void postWithoutIdCreatesOtherAssetAward() {
+      when(caseOutcomeService.createOtherAssetAward(any(), any(), any(), any())).thenReturn(8);
       assertThat(mockMvc.perform(validOtherAssetPost()))
-          .hasRedirectedUrl("/case/outcome-and-awards");
+          .hasRedirectedUrl("/case/outcome-and-awards/asset/8/liable-parties");
 
       verify(caseOutcomeService)
           .createOtherAssetAward(
@@ -708,7 +1225,7 @@ class AwardControllerTest {
     @Test
     void postWithIdUpdatesOtherAssetAward() {
       assertThat(mockMvc.perform(validOtherAssetPost().param("id", "8")))
-          .hasRedirectedUrl("/case/outcome-and-awards");
+          .hasRedirectedUrl("/case/outcome-and-awards/asset/8/liable-parties");
 
       verify(caseOutcomeService)
           .updateOtherAssetAward(
@@ -811,6 +1328,205 @@ class AwardControllerTest {
     }
   }
 
+  @Nested
+  @DisplayName("Time-related recovery for land and asset awards")
+  class TimeRecoveryTests {
+    @ParameterizedTest
+    @ValueSource(strings = {"land", "asset"})
+    void readOnlyCaseCannotDisplayOrSaveRecovery(String awardPath) {
+      ebsCase.setAvailableFunctions(List.of(FunctionConstants.VIEW_CASE_OUTCOME));
+
+      assertThat(mockMvc.perform(timeRecoveryGet(awardPath)))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+      assertThat(mockMvc.perform(validTimeRecoveryPost(awardPath)))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verifyNoInteractions(caseOutcomeService);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"land, LAND", "asset, ASSET"})
+    void displaysNewRecoveryWithParentSummary(String awardPath, String awardType) {
+      stubTimeRecoveryAward(awardPath, true, null);
+
+      assertThat(mockMvc.perform(timeRecoveryGet(awardPath)))
+          .hasViewName("application/time-related-recovery")
+          .model()
+          .hasEntrySatisfying(
+              "award",
+              value ->
+                  assertThat(value)
+                      .extracting("awardType", "description", "awardAmount")
+                      .containsExactly(
+                          awardType, "Property or asset", new BigDecimal("150000.00")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"land", "asset"})
+    void prefillsExistingRecovery(String awardPath) {
+      stubTimeRecoveryAward(
+          awardPath,
+          true,
+          new TimeRecoveryDetail()
+              .triggeringEvent("Previous event")
+              .effectiveDate(
+                  Date.from(
+                      LocalDate.of(2027, 6, 15).atStartOfDay(ZoneId.systemDefault()).toInstant()))
+              .timeRelatedRecoveryDetails("Previous details"));
+
+      assertThat(mockMvc.perform(timeRecoveryGet(awardPath)))
+          .hasViewName("application/time-related-recovery")
+          .model()
+          .hasEntrySatisfying(
+              "timeRecovery",
+              value ->
+                  assertThat(value)
+                      .extracting("triggeringEvent", "effectiveDate", "timeRelatedRecoveryDetails")
+                      .containsExactly("Previous event", "15/06/2027", "Previous details"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"land, land-property", "asset, asset"})
+    void redirectsWhenParentFlagIsNotSet(String awardPath, String parentPath) {
+      stubTimeRecoveryAward(awardPath, false, null);
+
+      assertThat(mockMvc.perform(timeRecoveryGet(awardPath)))
+          .hasRedirectedUrl("/case/outcome-and-awards/" + parentPath + "/7");
+      assertThat(mockMvc.perform(validTimeRecoveryPost(awardPath)))
+          .hasRedirectedUrl("/case/outcome-and-awards/" + parentPath + "/7");
+      verify(caseOutcomeService, org.mockito.Mockito.never())
+          .upsertTimeRecovery(any(), any(), any(), any(), any(), any());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+      "land, LAND, 01/01/2030",
+      "asset, ASSET, 01/01/2030",
+      "land, LAND, 1/1/2030",
+      "asset, ASSET, 1/1/2030",
+      "land, LAND, ''",
+      "asset, ASSET, ''"
+    })
+    void validPostUpsertsAndRedirects(String awardPath, String awardType, String effectiveDate) {
+      stubTimeRecoveryAward(awardPath, true, null);
+
+      assertThat(mockMvc.perform(timeRecoveryPost(awardPath, "Triggered", effectiveDate)))
+          .hasRedirectedUrl("/case/outcome-and-awards/" + awardPath + "/7/liable-parties");
+      verify(caseOutcomeService)
+          .upsertTimeRecovery(
+              eq("300000001"),
+              eq(user.getProvider().getId().intValue()),
+              eq(awardType),
+              eq(7),
+              eq(
+                  new TimeRecoveryRequest("Triggered", "Details")
+                      .effectiveDate(
+                          effectiveDate.isEmpty()
+                              ? null
+                              : Date.from(
+                                  LocalDate.of(2030, 1, 1)
+                                      .atStartOfDay(ZoneId.systemDefault())
+                                      .toInstant()))),
+              eq(user.getLoginId()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"land", "asset"})
+    void invalidPostKeepsUserInputAndShowsErrors(String awardPath) {
+      stubTimeRecoveryAward(awardPath, true, null);
+
+      assertThat(mockMvc.perform(timeRecoveryPost(awardPath, "", "01/01/1899")))
+          .hasViewName("application/time-related-recovery")
+          .model()
+          .hasErrors()
+          .hasEntrySatisfying(
+              "timeRecovery",
+              value ->
+                  assertThat(value)
+                      .extracting("effectiveDate", "timeRelatedRecoveryDetails")
+                      .containsExactly("01/01/1899", "Details"));
+      verify(caseOutcomeService, org.mockito.Mockito.never())
+          .upsertTimeRecovery(any(), any(), any(), any(), any(), any());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"land, false", "asset, false", "land, true", "asset, true"})
+    void saveFailureRedisplaysRecoveryWithError(String awardPath, boolean missingCaseOutcome) {
+      stubTimeRecoveryAward(awardPath, true, null);
+      doThrow(
+              missingCaseOutcome
+                  ? new IllegalStateException("Case outcome unavailable")
+                  : new CaabApiClientException("API failure"))
+          .when(caseOutcomeService)
+          .upsertTimeRecovery(any(), any(), any(), any(), any(), any());
+
+      assertThat(mockMvc.perform(validTimeRecoveryPost(awardPath)))
+          .hasViewName("application/time-related-recovery")
+          .model()
+          .hasErrors()
+          .containsKeys("award", "awardPath", "awardId")
+          .hasEntrySatisfying(
+              "timeRecovery",
+              value ->
+                  assertThat(value)
+                      .extracting("triggeringEvent", "effectiveDate", "timeRelatedRecoveryDetails")
+                      .containsExactly("Triggered", "01/01/2030", "Details"));
+    }
+
+    @Test
+    void unsupportedAwardTypeHasNoRecoveryRoute() {
+      assertThat(mockMvc.perform(timeRecoveryGet("cost-award"))).hasStatus(404);
+      assertThat(mockMvc.perform(validTimeRecoveryPost("cost-award"))).hasStatus(404);
+      verifyNoInteractions(caseOutcomeService);
+    }
+  }
+
+  private void stubTimeRecoveryAward(
+      String awardPath, boolean timeRelated, TimeRecoveryDetail recovery) {
+    if ("land".equals(awardPath)) {
+      when(caseOutcomeService.getLandAward("300000001", 123, 7))
+          .thenReturn(
+              Optional.of(
+                  new LandAwardDetail()
+                      .id(7)
+                      .description("Property or asset")
+                      .valuationAmount(new BigDecimal("150000.00"))
+                      .recoveryOfAwardTimeRelated(timeRelated)
+                      .timeRecovery(recovery)));
+    } else {
+      when(caseOutcomeService.getOtherAssetAward("300000001", 123, 7))
+          .thenReturn(
+              Optional.of(
+                  new OtherAssetAwardDetail()
+                      .id(7)
+                      .description("Property or asset")
+                      .valuationAmount(new BigDecimal("150000.00"))
+                      .awardedAmount(new BigDecimal("20000.00"))
+                      .recoveryOfAwardTimeRelated(timeRelated)
+                      .timeRecovery(recovery)));
+    }
+  }
+
+  private MockHttpServletRequestBuilder timeRecoveryGet(String awardPath) {
+    return get("/case/outcome-and-awards/" + awardPath + "/7/time-related-recovery")
+        .sessionAttr(CASE, ebsCase)
+        .sessionAttr(USER_DETAILS, user);
+  }
+
+  private MockHttpServletRequestBuilder validTimeRecoveryPost(String awardPath) {
+    return timeRecoveryPost(awardPath, "Triggered", "01/01/2030");
+  }
+
+  private MockHttpServletRequestBuilder timeRecoveryPost(
+      String awardPath, String triggeringEvent, String effectiveDate) {
+    return post("/case/outcome-and-awards/" + awardPath + "/7/time-related-recovery")
+        .sessionAttr(CASE, ebsCase)
+        .sessionAttr(USER_DETAILS, user)
+        .param("triggeringEvent", triggeringEvent)
+        .param("effectiveDate", effectiveDate)
+        .param("timeRelatedRecoveryDetails", "Details");
+  }
+
   private MockHttpServletRequestBuilder validPost() {
     final AwardTypeForm selectedAwardType = new AwardTypeForm();
     selectedAwardType.setAwardTypeCode("DAMAGE_AGR");
@@ -825,6 +1541,29 @@ class AwardControllerTest {
         .param("awardAmount", "123.45")
         .param("interimAward", "0")
         .param("awardedBy", "COURT")
+        .sessionAttr(CASE, ebsCase)
+        .sessionAttr(USER_DETAILS, user)
+        .sessionAttr(AWARD_TYPE_FORM, selectedAwardType);
+  }
+
+  private MockHttpServletRequestBuilder validCostAwardPost() {
+    final AwardTypeForm selectedAwardType = new AwardTypeForm();
+    selectedAwardType.setAwardTypeCode("COST_AGR");
+    selectedAwardType.setAwardType("COST");
+    selectedAwardType.setDescription("Cost");
+
+    return post("/case/outcome-and-awards/cost-award")
+        .param("awardCode", "COST_AGR")
+        .param("awardType", "COST")
+        .param("description", "Cost")
+        .param("dateOfOrder", "01/01/2025")
+        .param("courtAssessmentStatus", "A")
+        .param("laaFundedLegalCosts", "1.00")
+        .param("otherPreCertificateCosts", "2.00")
+        .param("laaRate", "3.00")
+        .param("marketRate", "4.00")
+        .param("awardedBy", "COURT")
+        .param("interestRate", "8.5")
         .sessionAttr(CASE, ebsCase)
         .sessionAttr(USER_DETAILS, user)
         .sessionAttr(AWARD_TYPE_FORM, selectedAwardType);
@@ -860,6 +1599,10 @@ class AwardControllerTest {
   }
 
   private MockHttpServletRequestBuilder validOtherAssetPost() {
+    return validOtherAssetPost(false);
+  }
+
+  private MockHttpServletRequestBuilder validOtherAssetPost(boolean timeRelated) {
     return post("/case/outcome-and-awards/asset")
         .param("awardCode", "OTH_ASSET")
         .param("awardType", "ASSET")
@@ -871,7 +1614,7 @@ class AwardControllerTest {
         .param("valuationDate", "02/01/2025")
         .param("awardedPercentage", "75")
         .param("recovery", "UNKNOWN")
-        .param("recoveryOfAwardTimeRelated", "false")
+        .param("recoveryOfAwardTimeRelated", Boolean.toString(timeRelated))
         .sessionAttr(CASE, ebsCase)
         .sessionAttr(USER_DETAILS, user)
         .sessionAttr(AWARD_TYPE_FORM, otherAssetAwardType());

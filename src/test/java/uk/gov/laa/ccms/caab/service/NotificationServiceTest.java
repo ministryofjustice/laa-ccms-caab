@@ -12,6 +12,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,7 @@ import uk.gov.laa.ccms.caab.mapper.NotificationAttachmentMapper;
 import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
+import uk.gov.laa.ccms.data.model.Note;
 import uk.gov.laa.ccms.data.model.NotificationInfo;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.Notifications;
@@ -57,6 +59,24 @@ class NotificationServiceTest {
   @Mock private S3ApiClient s3ApiClient;
 
   @InjectMocks private NotificationService notificationService;
+
+  @Test
+  void getNotification_sortsNotesNewestFirst() {
+    Note oldest = new Note().message("oldest").date(LocalDateTime.of(2025, 1, 1, 9, 0));
+    Note newest = new Note().message("newest").date(LocalDateTime.of(2025, 3, 1, 9, 0));
+    Note middle = new Note().message("middle").date(LocalDateTime.of(2025, 2, 1, 9, 0));
+    Note undated = new Note().message("undated");
+    uk.gov.laa.ccms.data.model.Notification notification =
+        new uk.gov.laa.ccms.data.model.Notification()
+            .notes(List.of(oldest, undated, newest, middle));
+
+    when(ebsApiClient.getNotification("1", 2, 3)).thenReturn(Mono.just(notification));
+
+    StepVerifier.create(notificationService.getNotification("1", 2, 3))
+        .assertNext(
+            result -> assertEquals(List.of(newest, middle, oldest, undated), result.getNotes()))
+        .verifyComplete();
+  }
 
   @Test
   void getNotificationsSummary_returnData() {

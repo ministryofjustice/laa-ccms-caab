@@ -101,7 +101,16 @@ public class CaseSubmissionController {
 
     final TransactionStatus caseStatus = applicationService.getCaseStatus(transactionId).block();
 
-    if (caseStatus != null && StringUtils.hasText(caseStatus.getReferenceNumber())) {
+    if (caseStatus != null && "ERROR".equalsIgnoreCase(caseStatus.getSubmissionStatus())) {
+      log.warn("Case submission transaction {} failed in EBS", transactionId);
+      return handleFailedSubmission(session, caseContext, submissionContext);
+    }
+
+    // An amendment already has a case reference, including when EBS rejects the update.
+    // Only a successful transaction permits confirmation and deletion of the local assessment.
+    if (caseStatus != null
+        && "SUCCESS".equalsIgnoreCase(caseStatus.getSubmissionStatus())
+        && StringUtils.hasText(caseStatus.getReferenceNumber())) {
       return handleConfirmedSubmission(
           caseContext, user, session, caseStatus.getReferenceNumber(), submissionContext);
     }
@@ -252,16 +261,21 @@ public class CaseSubmissionController {
     if (session.getAttribute(SUBMISSION_POLL_COUNT) != null) {
       submissionPollCount = (int) session.getAttribute(SUBMISSION_POLL_COUNT);
       if (submissionPollCount >= submissionConstants.getMaxPollCount()) {
-        session.removeAttribute(SUBMISSION_POLL_COUNT);
-        session.removeAttribute(SUBMISSION_TRANSACTION_ID);
-        session.removeAttribute(SUBMISSION_QUICK_EDIT_TYPE);
-        session.setAttribute(SUBMISSION_RESULT, SUBMISSION_FAILED);
-        return "redirect:" + submissionStatusUrl(caseContext, submissionContext) + "/failed";
+        return handleFailedSubmission(session, caseContext, submissionContext);
       }
     }
     submissionPollCount += 1;
     session.setAttribute(SUBMISSION_POLL_COUNT, submissionPollCount);
     model.addAttribute("caseContext", caseContext);
     return "submissions/submissionInProgress";
+  }
+
+  private String handleFailedSubmission(
+      final HttpSession session, final CaseContext caseContext, final String submissionContext) {
+    session.removeAttribute(SUBMISSION_POLL_COUNT);
+    session.removeAttribute(SUBMISSION_TRANSACTION_ID);
+    session.removeAttribute(SUBMISSION_QUICK_EDIT_TYPE);
+    session.setAttribute(SUBMISSION_RESULT, SUBMISSION_FAILED);
+    return "redirect:" + submissionStatusUrl(caseContext, submissionContext) + "/failed";
   }
 }

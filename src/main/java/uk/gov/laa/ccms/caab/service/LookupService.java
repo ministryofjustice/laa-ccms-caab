@@ -28,7 +28,9 @@ import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
+import uk.gov.laa.ccms.caab.mapper.context.LiablePartiesMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.submission.GeneralDetailsSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.submission.OpponentSubmissionSummaryMappingContext;
 import uk.gov.laa.ccms.caab.mapper.context.submission.ProceedingSubmissionSummaryMappingContext;
@@ -106,6 +108,18 @@ public class LookupService {
                     .filter(Objects::nonNull)
                     .filter(countryDetail -> code.equals(countryDetail.getCode()))
                     .findFirst());
+  }
+
+  private Mono<Optional<CommonLookupValueDetail>> getCountryOfOrigin(
+      final ClientFormDataBasicDetails basicDetails) {
+    if (StringUtils.hasText(basicDetails.getCountryOfOriginDescription())) {
+      return Mono.just(
+          Optional.of(
+              new CommonLookupValueDetail()
+                  .code(basicDetails.getCountryOfOrigin())
+                  .description(basicDetails.getCountryOfOriginDescription())));
+    }
+    return getCountry(basicDetails.getCountryOfOrigin());
   }
 
   /**
@@ -461,11 +475,11 @@ public class LookupService {
     return List.of(
         Pair.of(
             "contactTitle",
-            getCommonValue(
-                COMMON_VALUE_CONTACT_TITLE, clientFlowFormData.getBasicDetails().getTitle())),
-        Pair.of(
-            "countryOfOrigin",
-            getCountry(clientFlowFormData.getBasicDetails().getCountryOfOrigin())),
+            StringUtils.hasText(clientFlowFormData.getBasicDetails().getTitle())
+                ? getCommonValue(
+                    COMMON_VALUE_CONTACT_TITLE, clientFlowFormData.getBasicDetails().getTitle())
+                : Mono.just(Optional.of(new CommonLookupValueDetail()))),
+        Pair.of("countryOfOrigin", getCountryOfOrigin(clientFlowFormData.getBasicDetails())),
         Pair.of(
             "maritalStatus",
             getCommonValue(
@@ -652,6 +666,21 @@ public class LookupService {
                     .organisationRelationshipsToCase(tuple.getT2())
                     .individualRelationshipsToCase(tuple.getT3())
                     .relationshipToClient(tuple.getT4())
+                    .build());
+  }
+
+  /** Retrieves the independent reference-data sets required by the award party summary. */
+  public Mono<LiablePartiesMappingContext> getLiablePartiesMappingContext() {
+    return Mono.zip(
+            getCommonValues(COMMON_VALUE_CONTACT_TITLE),
+            getOrganisationToCaseRelationships(),
+            getPersonToCaseRelationships())
+        .map(
+            tuple ->
+                LiablePartiesMappingContext.builder()
+                    .contactTitle(tuple.getT1())
+                    .organisationRelationshipsToCase(tuple.getT2())
+                    .individualRelationshipsToCase(tuple.getT3())
                     .build());
   }
 

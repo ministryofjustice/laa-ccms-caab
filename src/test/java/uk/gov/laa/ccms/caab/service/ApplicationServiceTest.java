@@ -46,10 +46,10 @@ import static uk.gov.laa.ccms.caab.util.CaabModelUtils.buildOpponent;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildCaseDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildCaseReferenceSummary;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildCategoryOfLawLookupValueDetail;
+import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildClientDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildProviderDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildRelationshipToCaseLookupDetail;
 import static uk.gov.laa.ccms.caab.util.EbsModelUtils.buildUserDetail;
-import static uk.gov.laa.ccms.caab.util.SoaModelUtils.buildClientDetail;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
@@ -538,7 +538,6 @@ class ApplicationServiceTest {
   @Test
   void createApplication_success() throws ParseException {
     final ApplicationFormData applicationFormData = buildApplicationFormData();
-    final uk.gov.laa.ccms.soa.gateway.model.ClientDetail clientInformation = buildClientDetail();
     final UserDetail user = buildUserDetail();
 
     // Mocking dependencies
@@ -568,7 +567,7 @@ class ApplicationServiceTest {
     when(caabApiClient.createApplication(anyString(), any())).thenReturn(Mono.empty());
 
     final Mono<String> applicationMono =
-        applicationService.createApplication(applicationFormData, clientInformation, user);
+        applicationService.createApplication(applicationFormData, buildClientDetail(), user);
 
     StepVerifier.create(applicationMono).verifyComplete();
 
@@ -686,7 +685,6 @@ class ApplicationServiceTest {
 
     ApplicationFormData applicationFormData = buildApplicationFormData();
     applicationFormData.setCopyCaseReferenceNumber(copyCaseReference);
-    uk.gov.laa.ccms.soa.gateway.model.ClientDetail clientDetail = buildClientDetail();
     CaseReferenceSummary caseReferenceSummary = buildCaseReferenceSummary();
     UserDetail user = buildUserDetail();
 
@@ -746,7 +744,7 @@ class ApplicationServiceTest {
 
     // Call the method under test
     Mono<String> applicationMono =
-        applicationService.createApplication(applicationFormData, clientDetail, user);
+        applicationService.createApplication(applicationFormData, buildClientDetail(), user);
 
     StepVerifier.create(applicationMono).verifyComplete();
 
@@ -780,7 +778,6 @@ class ApplicationServiceTest {
     ApplicationDetail applicationToCopy = buildApplicationDetail(2, Boolean.FALSE, new Date());
     UserDetail userDetail = buildUserDetail();
 
-    uk.gov.laa.ccms.soa.gateway.model.ClientDetail clientDetail = buildClientDetail();
     CaseReferenceSummary caseReferenceSummary = buildCaseReferenceSummary();
 
     // Update the cost limitations for this test
@@ -833,7 +830,7 @@ class ApplicationServiceTest {
 
     /* Call the method under test */
     Mono<ApplicationDetail> resultMono =
-        applicationService.copyApplication(applicationToCopy, clientDetail, userDetail);
+        applicationService.copyApplication(applicationToCopy, buildClientDetail(), userDetail);
 
     // If the opponent is an INDIVIDUAL, it is not shared, and the opponents relationship
     // to the case is set to 'Copy Party' then the ebsId should be null.

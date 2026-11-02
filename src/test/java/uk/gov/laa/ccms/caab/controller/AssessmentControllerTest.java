@@ -75,8 +75,8 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryAttributeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 @ExtendWith(MockitoExtension.class)
 @WebAppConfiguration
@@ -162,8 +162,7 @@ public class AssessmentControllerTest {
             anyString(),
             anyString()))
         .thenReturn("contextToken");
-    when(clientService.getClient(anyString(), anyString(), anyString()))
-        .thenReturn(Mono.just(new ClientDetail()));
+    when(clientService.getClient(anyString())).thenReturn(Mono.just(new ClientDetail()));
 
     final AssessmentDetail assessmentDetail = buildAssessmentDetail(new Date());
     assessmentDetail.setId(1L);
@@ -217,8 +216,7 @@ public class AssessmentControllerTest {
             anyString(),
             anyString()))
         .thenReturn("contextToken");
-    when(clientService.getClient(anyString(), anyString(), anyString()))
-        .thenReturn(Mono.just(new ClientDetail()));
+    when(clientService.getClient(anyString())).thenReturn(Mono.just(new ClientDetail()));
     when(messageSource.getMessage(anyString(), any(), any(Locale.class)))
         .thenReturn("returnLinkText");
 
@@ -268,8 +266,7 @@ public class AssessmentControllerTest {
             anyString(),
             anyString()))
         .thenReturn("contextToken");
-    when(clientService.getClient(anyString(), anyString(), anyString()))
-        .thenReturn(Mono.just(new ClientDetail()));
+    when(clientService.getClient(anyString())).thenReturn(Mono.just(new ClientDetail()));
 
     final AssessmentDetail assessmentDetail = buildAssessmentDetail(new Date());
     assessmentDetail.setId(1L);
@@ -363,8 +360,7 @@ public class AssessmentControllerTest {
             anyString(),
             anyString()))
         .thenReturn("contextToken");
-    when(clientService.getClient(anyString(), anyString(), anyString()))
-        .thenReturn(Mono.just(new ClientDetail()));
+    when(clientService.getClient(anyString())).thenReturn(Mono.just(new ClientDetail()));
 
     final AssessmentDetail copiedPrepop = buildAssessmentDetail(new Date());
     copiedPrepop.setId(4242L);
@@ -424,8 +420,7 @@ public class AssessmentControllerTest {
             anyString(),
             anyString()))
         .thenReturn("contextToken");
-    when(clientService.getClient(anyString(), anyString(), anyString()))
-        .thenReturn(Mono.just(new ClientDetail()));
+    when(clientService.getClient(anyString())).thenReturn(Mono.just(new ClientDetail()));
 
     final AssessmentDetail assessmentDetail = buildAssessmentDetail(new Date());
     assessmentDetail.setId(1L);
@@ -506,7 +501,7 @@ public class AssessmentControllerTest {
         .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
     when(assessmentService.getAssessments(any(), anyString(), anyString()))
         .thenReturn(Mono.empty());
-    when(clientService.getClient(anyString(), anyString(), anyString())).thenReturn(Mono.empty());
+    when(clientService.getClient(anyString())).thenReturn(Mono.empty());
 
     final MockHttpServletRequestBuilder request =
         get("/application/assessments")
@@ -526,8 +521,7 @@ public class AssessmentControllerTest {
   public void assessmentGet_assessmentDetailsNotFound() {
     when(applicationService.getApplication(anyString()))
         .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
-    when(clientService.getClient(anyString(), anyString(), anyString()))
-        .thenReturn(Mono.just(new ClientDetail()));
+    when(clientService.getClient(anyString())).thenReturn(Mono.just(new ClientDetail()));
     when(assessmentService.getAssessments(any(), anyString(), anyString()))
         .thenReturn(Mono.empty());
 
@@ -564,8 +558,7 @@ public class AssessmentControllerTest {
             anyString(),
             anyString()))
         .thenReturn("contextToken");
-    when(clientService.getClient(anyString(), anyString(), anyString()))
-        .thenReturn(Mono.just(new ClientDetail()));
+    when(clientService.getClient(anyString())).thenReturn(Mono.just(new ClientDetail()));
     when(assessmentService.getAssessments(any(), anyString(), anyString()))
         .thenReturn(Mono.just(new AssessmentDetails().addContentItem(assessmentDetail)));
     when(assessmentService.isAssessmentCheckpointToBeDeleted(any(), any())).thenReturn(true);
@@ -593,8 +586,7 @@ public class AssessmentControllerTest {
   public void assessmentGet_prepopAssessmentNotFound() {
     when(applicationService.getApplication(anyString()))
         .thenReturn(Mono.just(buildApplicationDetail(1, true, new Date())));
-    when(clientService.getClient(anyString(), anyString(), anyString()))
-        .thenReturn(Mono.just(new ClientDetail()));
+    when(clientService.getClient(anyString())).thenReturn(Mono.just(new ClientDetail()));
     when(assessmentService.getAssessments(any(), anyString(), anyString()))
         .thenReturn(Mono.just(new AssessmentDetails()));
 
@@ -823,8 +815,7 @@ public class AssessmentControllerTest {
     assessmentDetail.setCheckpoint(new AssessmentCheckpointDetail());
 
     when(applicationService.getApplication(anyString())).thenReturn(Mono.just(applicationDetail));
-    when(clientService.getClient(anyString(), anyString(), anyString()))
-        .thenReturn(Mono.just(new ClientDetail()));
+    when(clientService.getClient(anyString())).thenReturn(Mono.just(new ClientDetail()));
     when(contextSecurityUtil.createHubContext(
             anyString(),
             anyLong(),

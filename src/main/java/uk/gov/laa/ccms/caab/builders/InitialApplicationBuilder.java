@@ -86,11 +86,11 @@ public class InitialApplicationBuilder {
    * @return The builder instance.
    */
   public InitialApplicationBuilder client(
-      final uk.gov.laa.ccms.soa.gateway.model.ClientDetail clientInformation) {
+      final uk.gov.laa.ccms.data.model.ClientDetail clientInformation) {
     final ClientDetail client =
         new ClientDetail()
-            .firstName(clientInformation.getDetails().getName().getFirstName())
-            .surname(clientInformation.getDetails().getName().getSurname())
+            .firstName(clientInformation.getName().getFirstName())
+            .surname(clientInformation.getName().getSurname())
             .reference(clientInformation.getClientReferenceNumber());
     application.setClient(client);
     return this;

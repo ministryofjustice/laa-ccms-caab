@@ -50,11 +50,13 @@ import uk.gov.laa.ccms.data.model.CaseReferenceSummary;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CaseSummary;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.CounselLookupDetail;
 import uk.gov.laa.ccms.data.model.CounselLookupValueDetail;
+import uk.gov.laa.ccms.data.model.NameDetail;
 import uk.gov.laa.ccms.data.model.NotificationInfo;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.Notifications;
@@ -533,6 +535,38 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     // Then
     assertNotNull(response);
     assertEquals(expected, response);
+  }
+
+  @Test
+  @DisplayName("Get client should return data")
+  public void testGetClient_returnData() throws JsonProcessingException {
+    // Given
+    ClientDetail expected =
+        new ClientDetail()
+            .clientReferenceNumber("12345")
+            .name(new NameDetail().firstName("John").surname("Doe"))
+            .vulnerableClient(true);
+    wiremock.stubFor(
+        get("/clients/12345").willReturn(okJson(objectMapper.writeValueAsString(expected))));
+    // When
+    ClientDetail response = ebsApiClient.getClient("12345").block();
+    // Then
+    assertEquals(expected, response);
+  }
+
+  @Test
+  @DisplayName("Get client should error when the client is not found")
+  public void testGetClient_notFound() {
+    wiremock.stubFor(get("/clients/12345").willReturn(notFound()));
+
+    StepVerifier.create(ebsApiClient.getClient("12345"))
+        .expectErrorMatches(
+            throwable ->
+                throwable instanceof EbsApiClientException
+                    && throwable
+                        .getMessage()
+                        .equals("Failed to retrieve Client with reference number: 12345"))
+        .verify();
   }
 
   // You may need to build the AmendmentTypeLookupDetail for the test

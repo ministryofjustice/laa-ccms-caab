@@ -1,5 +1,8 @@
 package uk.gov.laa.ccms.caab.bean.validators.application;
 
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.COURT_SEARCH_CODE_CHARSET;
+import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.COURT_SEARCH_NAME_CHARSET;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -35,12 +38,31 @@ public class CourtSearchValidator extends AbstractValidator {
     validateAtLeastOneSearchCriteria(target, errors);
 
     if (!errors.hasErrors()) {
-      if (org.springframework.util.StringUtils.hasText(courtCode)) {
+      if (StringUtils.hasText(courtCode)) {
+        validateAllowedCharacters(
+            "courtCode", courtCode, COURT_SEARCH_CODE_CHARSET, "Court Code", errors);
         validateFieldMaxLength("courtCode", courtCode, 35, "Court Code", errors);
       }
-      if (org.springframework.util.StringUtils.hasText(courtName)) {
+      if (StringUtils.hasText(courtName)) {
+        validateAllowedCharacters(
+            "courtName", courtName, COURT_SEARCH_NAME_CHARSET, "Court Name", errors);
         validateFieldMaxLength("courtName", courtName, 35, "Court Name", errors);
       }
+    }
+  }
+
+  private void validateAllowedCharacters(
+      final String field,
+      final String fieldValue,
+      final String regex,
+      final String displayValue,
+      final Errors errors) {
+    if (!fieldValue.matches(regex)) {
+      errors.rejectValue(
+          field,
+          "invalid.character",
+          "Your input for '%s' contains an invalid character. Please amend your entry."
+              .formatted(displayValue));
     }
   }
 

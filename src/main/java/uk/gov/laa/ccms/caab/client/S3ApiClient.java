@@ -168,7 +168,7 @@ public class S3ApiClient {
   }
 
   /**
-   * Upload a document to S3.
+   * Upload a document to S3, named after its object key so that browsers download it.
    *
    * @param documentId the ID of the document.
    * @param fileData the content of the document.
@@ -176,7 +176,7 @@ public class S3ApiClient {
    */
   public void uploadDocument(String documentId, String fileData, String extension) {
     String objectKey = getFilename(documentId, extension);
-    uploadDocumentToS3(objectKey, fileData, null);
+    uploadDocumentToS3(objectKey, fileData, objectKey);
   }
 
   /**
