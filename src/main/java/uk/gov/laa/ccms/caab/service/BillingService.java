@@ -17,6 +17,7 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.codec.DecodingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
@@ -127,7 +128,11 @@ public class BillingService {
               .block();
     } catch (final EbsApiClientException error) {
       if ((error.getHttpStatus() != null && error.getHttpStatus().is5xxServerError())
-          || error.getCause() instanceof WebClientRequestException) {
+          || error.hasHttpStatus(HttpStatus.REQUEST_TIMEOUT)
+          || error.hasHttpStatus(HttpStatus.TOO_MANY_REQUESTS)
+          || (error.getHttpStatus() == null
+              && (error.getCause() instanceof WebClientRequestException
+                  || error.getCause() instanceof DecodingException))) {
         log.warn(
             "Retained totals lookup unavailable for billing incident {}", row.billingIncidentId());
         return row;

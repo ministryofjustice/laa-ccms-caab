@@ -24,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -89,7 +90,7 @@ public class EbsApiClientTest {
 
   @Nested
   class SelectedInvoiceAssessment {
-    private EbsApiClient client(final HttpStatus status, final String body) {
+    private EbsApiClient client(final HttpStatusCode status, final String body) {
       return new EbsApiClient(
           WebClient.builder()
               .baseUrl("http://data.example")
@@ -148,6 +149,19 @@ public class EbsApiClientTest {
               error ->
                   error instanceof EbsApiClientException apiError
                       && apiError.hasHttpStatus(HttpStatus.valueOf(code)))
+          .verify();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"520", "529"})
+    void classifiesUnknownServerStatusesAsUpstreamFailures(final int code) {
+      StepVerifier.create(
+              client(HttpStatusCode.valueOf(code), "not an assessment")
+                  .getInvoiceAssessment("300000123", 555L))
+          .expectErrorMatches(
+              error ->
+                  error instanceof EbsApiClientException apiError
+                      && apiError.hasHttpStatus(HttpStatus.BAD_GATEWAY))
           .verify();
     }
 

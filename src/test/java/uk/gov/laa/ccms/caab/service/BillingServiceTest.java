@@ -35,6 +35,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.codec.DecodingException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -257,12 +258,13 @@ class BillingServiceTest {
           .isEqualTo(row("Bill", 555L));
     }
 
-    @Test
-    void missingOrFailedAssessmentDoesNotPreventTheNextRowFromLoading() {
+    @ParameterizedTest
+    @ValueSource(ints = {408, 429, 500, 503})
+    void missingOrFailedAssessmentDoesNotPreventTheNextRowFromLoading(final int status) {
       when(ebsApiClient.getInvoiceAssessment(CASE_REF, 444L)).thenReturn(Mono.empty());
       when(ebsApiClient.getInvoiceAssessment(CASE_REF, 333L))
           .thenReturn(
-              Mono.error(new EbsApiClientException("Unavailable", HttpStatus.SERVICE_UNAVAILABLE)));
+              Mono.error(new EbsApiClientException("Unavailable", HttpStatus.valueOf(status))));
       returns(global("100", "20"));
       assertThat(billingService.withRetainedTotals(CASE_REF, row("Bill", 444L)).grandTotal())
           .isNull();
@@ -270,6 +272,22 @@ class BillingServiceTest {
           .isNull();
       assertThat(billingService.withRetainedTotals(CASE_REF, row("Bill", 555L)).grandTotal())
           .isEqualByComparingTo("120");
+    }
+
+    @Test
+    void decodingFailureKeepsTheOriginalRowAndAllowsTheNextRowToLoad() {
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 444L))
+          .thenReturn(
+              Mono.error(
+                  new EbsApiClientException(
+                      "Invalid assessment", new DecodingException("Invalid JSON"))));
+      returns(global("100", "20"));
+      final BillPoaRow original = row("Bill", 444L);
+
+      assertThat(billingService.withRetainedTotals(CASE_REF, original)).isSameAs(original);
+      assertThat(billingService.withRetainedTotals(CASE_REF, row("POA", 555L)).grandTotal())
+          .isEqualByComparingTo("120");
+      verifyNoInteractions(soaApiClient, assessmentService);
     }
 
     @Test
@@ -313,6 +331,7 @@ class BillingServiceTest {
     void propagatesClientErrors(final int status) {
       final EbsApiClientException failure =
           new EbsApiClientException("Rejected", HttpStatus.valueOf(status));
+      failure.initCause(new DecodingException("Invalid error response"));
       when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L)).thenReturn(Mono.error(failure));
       assertThatThrownBy(() -> billingService.withRetainedTotals(CASE_REF, row("Bill", 555L)))
           .isSameAs(failure);
@@ -336,6 +355,12 @@ class BillingServiceTest {
       when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L)).thenReturn(Mono.error(failure));
       assertThatThrownBy(() -> billingService.withRetainedTotals(CASE_REF, original))
           .isSameAs(failure);
+      final EbsApiClientException wrappedFailure =
+          new EbsApiClientException("Unexpected failure", failure);
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L))
+          .thenReturn(Mono.error(wrappedFailure));
+      assertThatThrownBy(() -> billingService.withRetainedTotals(CASE_REF, original))
+          .isSameAs(wrappedFailure);
     }
   }
 

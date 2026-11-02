@@ -117,26 +117,60 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @ParameterizedTest
-  @ValueSource(ints = {404, 500, 503})
+  @ValueSource(ints = {404, 408, 429, 500, 503, 520, 529})
   void unavailableRetainedTotalsKeepTheKnownNet(final int status) {
     wiremock.stubFor(
         get("/cases/300000123/invoices/555/assessment").willReturn(aResponse().withStatus(status)));
     final BillPoaRow row =
         new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L);
-    assertThat(billingService.withRetainedTotals("300000123", row)).isEqualTo(row);
+    assertThat(billingService.withRetainedTotals("300000123", row)).isSameAs(row);
   }
 
   @ParameterizedTest
-  @ValueSource(ints = {401, 403})
-  void retainedTotalsDoNotHideAuthorizationFailures(final int status) {
+  @ValueSource(
+      strings = {
+        "{",
+        """
+        {"caseReference":"300000123","billingIncidentId":555,"instances":[
+          {"entityName":"global","attributes":[
+            {"name":"BILL_SUBMITTED_TOTAL_AMT","responseValue":{"amount":"100"}}
+          ]}
+        ]}
+        """
+      })
+  void undecodableRetainedTotalsKeepTheOriginalRow(final String body) {
+    wiremock.stubFor(get("/cases/300000123/invoices/555/assessment").willReturn(okJson(body)));
+    final BillPoaRow row =
+        new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L);
+    assertThat(billingService.withRetainedTotals("300000123", row)).isSameAs(row);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {400, 401, 403})
+  void retainedTotalsDoNotHideClientOrAuthorizationFailures(final int status) {
     wiremock.stubFor(
-        get("/cases/300000123/invoices/555/assessment").willReturn(aResponse().withStatus(status)));
+        get("/cases/300000123/invoices/555/assessment")
+            .willReturn(
+                aResponse()
+                    .withStatus(status)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{not-an-assessment")));
     final BillPoaRow row =
         new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L);
     assertThatThrownBy(() -> billingService.withRetainedTotals("300000123", row))
         .isInstanceOfSatisfying(
             EbsApiClientException.class,
             error -> assertThat(error.getHttpStatus().value()).isEqualTo(status));
+  }
+
+  @Test
+  void unknownClientStatusDoesNotBecomeAnOptionalLookupFallback() {
+    wiremock.stubFor(
+        get("/cases/300000123/invoices/555/assessment").willReturn(aResponse().withStatus(499)));
+    final BillPoaRow row =
+        new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L);
+    assertThatThrownBy(() -> billingService.withRetainedTotals("300000123", row))
+        .isInstanceOf(EbsApiClientException.class);
   }
 
   @Test

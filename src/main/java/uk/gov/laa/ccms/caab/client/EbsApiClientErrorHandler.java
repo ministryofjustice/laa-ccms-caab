@@ -15,10 +15,12 @@ public class EbsApiClientErrorHandler extends AbstractApiClientErrorHandler {
   public <T> Mono<T> handleInvoiceAssessmentRetrieveError(final Throwable error) {
     final String message = "Failed to retrieve retained invoice assessment";
     if (error instanceof WebClientResponseException responseException) {
+      HttpStatus status = HttpStatus.resolve(responseException.getStatusCode().value());
+      if (status == null && responseException.getStatusCode().is5xxServerError()) {
+        status = HttpStatus.BAD_GATEWAY;
+      }
       log.error("{} (HTTP {})", message, responseException.getStatusCode().value());
-      return Mono.error(
-          new EbsApiClientException(
-              message, HttpStatus.resolve(responseException.getStatusCode().value())));
+      return Mono.error(new EbsApiClientException(message, status));
     }
     log.error(message);
     return Mono.error(new EbsApiClientException(message, error));
