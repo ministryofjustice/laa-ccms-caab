@@ -551,6 +551,19 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
   }
 
   @ParameterizedTest
+  @CsvSource({"bill,DISB_RATE", "bill,DISB_UPLIFT", "poa,DISB_RATE", "poa,DISB_UPLIFT"})
+  void invalidOptionalFinancialValuesCannotProduceHistoricalPdfs(String context, String name)
+      throws Exception {
+    String type = context.equals("bill") ? "Solicitor Final" : "Solicitor POA";
+    statement(type, "Submitted");
+    JSONObject body = invoice(555, type, "100.00", "20.00");
+    put(line(body), name, "unknown");
+    stub(body);
+    unavailable(request(context, "/summary", "555"), context, "Submitted");
+    selectedRead(555);
+  }
+
+  @ParameterizedTest
   @CsvSource({
     "COURT_ASSESS_BILL,Yes,Yes",
     "COURT_ASSESSED_BILL,true,Yes",

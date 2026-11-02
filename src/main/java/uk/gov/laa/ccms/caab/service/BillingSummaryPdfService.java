@@ -400,7 +400,9 @@ public class BillingSummaryPdfService {
             || !STORED_DATE.format(date).equals(storedDate.trim())
             || !isCurrency(attributeValue(entity, prefix + SUFFIX_NET_CLAIM))
             || !isCurrency(attributeValue(entity, prefix + SUFFIX_VAT))
-            || !isCurrency(attributeValue(entity, prefix + SUFFIX_TOTAL_CLAIM))) {
+            || !isCurrency(attributeValue(entity, prefix + SUFFIX_TOTAL_CLAIM))
+            || !isOptionalCurrency(attributeValue(entity, prefix + SUFFIX_RATE))
+            || !isOptionalCurrency(attributeValue(entity, prefix + SUFFIX_UPLIFT))) {
           return false;
         }
         final Long lineMinutes = historicalMinutes(attributeValue(entity, prefix + SUFFIX_TIME));
@@ -423,6 +425,10 @@ public class BillingSummaryPdfService {
 
   private static boolean isCurrency(final String value) {
     return value != null && value.replace(",", "").trim().matches(CURRENCY_REGEX);
+  }
+
+  private static boolean isOptionalCurrency(final String value) {
+    return value == null || value.isBlank() || isCurrency(value);
   }
 
   private List<BillLine> buildBillLines(final AssessmentDetail assessment) {
