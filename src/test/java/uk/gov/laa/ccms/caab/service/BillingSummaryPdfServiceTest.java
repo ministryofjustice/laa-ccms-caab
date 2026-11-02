@@ -24,6 +24,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.thymeleaf.context.IContext;
@@ -304,6 +305,56 @@ class BillingSummaryPdfServiceTest {
   @Test
   void completeHistoricalTotalsAndOptionalTimeAreUsable() {
     assertThat(BillingSummaryPdfService.hasUsableHistoricalSummary(completedAssessment())).isTrue();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"PROFIT_COST_RATE", "PROFIT_COST_UPLIFT"})
+  void historicalAvailabilityRejectsInvalidOptionalFinancialValues(String name) {
+    AssessmentDetail assessment = completedAssessment();
+    assessment.getEntityTypes().get(1).getEntities().getFirst().getAttributes().stream()
+        .filter(attribute -> attribute.getName().equals(name))
+        .findFirst()
+        .orElseThrow()
+        .setValue("unknown");
+
+    assertThat(BillingSummaryPdfService.hasUsableHistoricalSummary(assessment)).isFalse();
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = {"   ", "0", "1,250.50"})
+  void historicalAvailabilityAllowsBlankOrNumericOptionalFinancialValues(String value) {
+    AssessmentDetail assessment = completedAssessment();
+    assessment
+        .getEntityTypes()
+        .get(1)
+        .getEntities()
+        .getFirst()
+        .getAttributes()
+        .forEach(
+            attribute -> {
+              if (List.of("PROFIT_COST_RATE", "PROFIT_COST_UPLIFT").contains(attribute.getName())) {
+                attribute.setValue(value);
+              }
+            });
+
+    assertThat(BillingSummaryPdfService.hasUsableHistoricalSummary(assessment)).isTrue();
+  }
+
+  @Test
+  void historicalAvailabilityAllowsAbsentOptionalFinancialFields() {
+    AssessmentDetail assessment = completedAssessment();
+    assessment
+        .getEntityTypes()
+        .get(1)
+        .getEntities()
+        .getFirst()
+        .getAttributes()
+        .removeIf(
+            attribute ->
+                List.of("PROFIT_COST_RATE", "PROFIT_COST_UPLIFT").contains(attribute.getName()));
+
+    assertThat(BillingSummaryPdfService.hasUsableHistoricalSummary(assessment)).isTrue();
   }
 
   @ParameterizedTest
