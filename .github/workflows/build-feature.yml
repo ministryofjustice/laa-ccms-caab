@@ -43,6 +43,7 @@ jobs:
     needs: [ get-branch-ref ]
     uses: ministryofjustice/laa-ccms-common-workflows/.github/workflows/ecr-publish-image.yml@v2
     permissions:
+      actions: read
       contents: read
       id-token: write
       security-events: write
