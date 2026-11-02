@@ -40,6 +40,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Mono;
+import reactor.test.scheduler.VirtualTimeScheduler;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.InvoiceAssessment;
@@ -273,21 +274,38 @@ class BillingServiceTest {
 
     @Test
     void stalledAssessmentIsCancelledAndDoesNotPreventTheNextRowFromLoading() {
-      final AtomicBoolean cancelled = new AtomicBoolean();
-      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 444L))
-          .thenReturn(Mono.<InvoiceAssessment>never().doOnCancel(() -> cancelled.set(true)));
-      returns(global("100", "20"));
-      final BillPoaRow original = row("Bill", 444L);
+      final VirtualTimeScheduler clock = VirtualTimeScheduler.getOrSet();
+      try {
+        final AtomicBoolean cancelled = new AtomicBoolean();
+        final AtomicBoolean cancelledBeforeDeadline = new AtomicBoolean();
+        final AtomicBoolean cancelledAtDeadline = new AtomicBoolean();
+        when(ebsApiClient.getInvoiceAssessment(CASE_REF, 444L))
+            .thenReturn(
+                Mono.create(
+                    sink -> {
+                      sink.onCancel(() -> cancelled.set(true));
+                      // The timeout is subscribed before this source callback runs.
+                      clock.advanceTimeBy(Duration.ofSeconds(5).minusNanos(1));
+                      cancelledBeforeDeadline.set(cancelled.get());
+                      clock.advanceTimeBy(Duration.ofNanos(1));
+                      cancelledAtDeadline.set(cancelled.get());
+                    }));
+        returns(global("100", "20"));
+        final BillPoaRow original = row("Bill", 444L);
 
-      assertTimeoutPreemptively(
-          Duration.ofSeconds(10),
-          () -> {
-            assertThat(billingService.withRetainedTotals(CASE_REF, original)).isSameAs(original);
-            assertThat(cancelled).isTrue();
-            assertThat(billingService.withRetainedTotals(CASE_REF, row("POA", 555L)).grandTotal())
-                .isEqualByComparingTo("120");
-          });
-      verifyNoInteractions(soaApiClient, assessmentService);
+        assertTimeoutPreemptively(
+            Duration.ofSeconds(10),
+            () -> {
+              assertThat(billingService.withRetainedTotals(CASE_REF, original)).isSameAs(original);
+              assertThat(cancelledBeforeDeadline).isFalse();
+              assertThat(cancelledAtDeadline).isTrue();
+              assertThat(billingService.withRetainedTotals(CASE_REF, row("POA", 555L)).grandTotal())
+                  .isEqualByComparingTo("120");
+            });
+        verifyNoInteractions(soaApiClient, assessmentService);
+      } finally {
+        VirtualTimeScheduler.reset();
+      }
     }
 
     @ParameterizedTest
