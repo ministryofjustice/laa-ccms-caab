@@ -55,12 +55,12 @@ configurations.configureEach {
         // behind. Bump databind with core to keep the pair in lockstep.
         if (details.requested.group == 'com.fasterxml.jackson.core'
                 && details.requested.name in ['jackson-databind', 'jackson-core']) {
-            details.useVersion '2.21.7'
+            details.useVersion '2.21.8'
             details.because 'Snyk override: upgrade Jackson 2.x to remediate current vulnerabilities'
         }
         if (details.requested.group == 'tools.jackson.core'
                 && details.requested.name in ['jackson-databind', 'jackson-core']) {
-            details.useVersion '3.1.7'
+            details.useVersion '3.1.8'
             details.because 'Snyk override: upgrade Jackson 3.x to remediate current vulnerabilities'
         }
         // Keep this override narrow: touching every io.netty module can drag native SSL artifacts
@@ -76,6 +76,11 @@ configurations.configureEach {
             details.useVersion '1.86'
             details.because 'Override to remediate vulnerability; not covered by the Spring Boot dependency BOM'
         }
+        if (details.requested.group == 'org.hibernate.validator'
+                && details.requested.name == 'hibernate-validator') {
+            details.useVersion '9.1.5.Final'
+            details.because 'Remediate Expression Language Injection (SNYK-JAVA-ORGHIBERNATEVALIDATOR-20877468)'
+        }
         // Logback classic pulled in by Spring Boot starter logging
         if (details.requested.group == 'ch.qos.logback'
                 && details.requested.name in ['logback-classic', 'logback-core']) {
@@ -90,8 +95,8 @@ configurations.configureEach {
         }
         // Keep embedded Tomcat modules aligned on the patched release.
         if (details.requested.group == 'org.apache.tomcat.embed') {
-            details.useVersion '11.0.26'
-            details.because 'Snyk override (SNYK-JAVA-ORGAPACHETOMCATEMBED-20552494, CVE-2026-76183)'
+            details.useVersion '11.0.27'
+            details.because 'Snyk override (CVE-2026-74048, CVE-2026-88041, CVE-2026-93446, CVE-2026-101296, CVE-2026-101356, CVE-2026-103119); fixed in 11.0.27'
         }
     }
 }
