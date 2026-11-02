@@ -15,6 +15,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.validators.BaselineTextValidator;
 
 /**
@@ -88,6 +89,30 @@ class GlobalBinderAdviceTest {
         .andExpect(content().string("<script>"));
   }
 
+  @Test
+  @DisplayName("a submitted country of origin description is not bound")
+  void countryOfOriginDescriptionIsNotBound() throws Exception {
+    mockMvc
+        .perform(
+            post("/country")
+                .param("countryOfOrigin", "SCG")
+                .param("countryOfOriginDescription", "United Kingdom"))
+        .andExpect(status().isOk())
+        .andExpect(content().string("SCG:null"));
+  }
+
+  @Test
+  @DisplayName("a submitted country of origin description is not bound on a nested path")
+  void nestedCountryOfOriginDescriptionIsNotBound() throws Exception {
+    mockMvc
+        .perform(
+            post("/nested-country")
+                .param("basicDetails.countryOfOrigin", "SCG")
+                .param("basicDetails.countryOfOriginDescription", "United Kingdom"))
+        .andExpect(status().isOk())
+        .andExpect(content().string("SCG:null"));
+  }
+
   /** Plain accessors rather than Lombok: the annotation processor is main-source only. */
   public static class TestForm {
     private String name;
@@ -101,8 +126,34 @@ class GlobalBinderAdviceTest {
     }
   }
 
+  public static class NestedForm {
+    private ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
+
+    public ClientFormDataBasicDetails getBasicDetails() {
+      return basicDetails;
+    }
+
+    public void setBasicDetails(final ClientFormDataBasicDetails basicDetails) {
+      this.basicDetails = basicDetails;
+    }
+  }
+
   @Controller
   static class TestController {
+
+    @PostMapping("/country")
+    @ResponseBody
+    String country(@ModelAttribute final ClientFormDataBasicDetails form) {
+      return form.getCountryOfOrigin() + ":" + form.getCountryOfOriginDescription();
+    }
+
+    @PostMapping("/nested-country")
+    @ResponseBody
+    String nestedCountry(@ModelAttribute final NestedForm form) {
+      return form.getBasicDetails().getCountryOfOrigin()
+          + ":"
+          + form.getBasicDetails().getCountryOfOriginDescription();
+    }
 
     @PostMapping("/unvalidated")
     @ResponseBody

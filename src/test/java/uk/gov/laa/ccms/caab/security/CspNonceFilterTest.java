@@ -22,7 +22,8 @@ class CspNonceFilterTest {
     String nonce = (String) request.getAttribute(CspNonceFilter.CSP_NONCE_ATTRIBUTE);
     assertThat(response.getHeader("Content-Security-Policy-Report-Only"))
         .contains("style-src 'self' 'unsafe-inline' https://opa.oraclecloud.com")
-        .doesNotContain("style-src 'nonce-" + nonce + "'");
+        .doesNotContain("style-src 'nonce-" + nonce + "'")
+        .contains("script-src-attr 'unsafe-inline';");
   }
 
   @Test
@@ -39,7 +40,8 @@ class CspNonceFilterTest {
     String nonce = (String) request.getAttribute(CspNonceFilter.CSP_NONCE_ATTRIBUTE);
     assertThat(response.getHeader("Content-Security-Policy-Report-Only"))
         .contains("style-src 'nonce-" + nonce + "' 'self' https://opa.oraclecloud.com")
-        .doesNotContain("'unsafe-inline'");
+        .doesNotContain("'unsafe-inline'")
+        .doesNotContain("script-src-attr");
   }
 
   @Test

@@ -13,10 +13,10 @@ import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.OrganisationResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.ClientDetails;
 import uk.gov.laa.ccms.data.model.ClientSummary;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetails;
 import uk.gov.laa.ccms.soa.gateway.model.OrganisationSummary;
 
@@ -24,10 +24,10 @@ import uk.gov.laa.ccms.soa.gateway.model.OrganisationSummary;
 @Mapper(componentModel = "spring", uses = CommonMapper.class)
 public interface ResultDisplayMapper {
 
-  @Mapping(target = "firstName", source = "details.name.firstName")
-  @Mapping(target = "surname", source = "details.name.surname")
-  @Mapping(target = "surnameAtBirth", source = "details.name.surnameAtBirth")
-  @Mapping(target = "postalCode", source = "details.address.postalCode")
+  @Mapping(target = "firstName", source = "name.firstName")
+  @Mapping(target = "surname", source = "name.surname")
+  @Mapping(target = "surnameAtBirth", source = "name.surnameAtBirth")
+  @Mapping(target = "postalCode", source = "address.postalCode")
   @Mapping(target = "clientReferenceNumber", ignore = true)
   ClientResultRowDisplay toClientResultRowDisplay(ClientDetail clientDetail);
 

@@ -1,6 +1,6 @@
 plugins {
     id 'uk.gov.justice.service.laa.laa-spring-boot-gradle-plugin' version '3.1.3'
-    id 'com.diffplug.spotless' version '8.10.3'
+    id 'com.diffplug.spotless' version '8.10.4'
 }
 
 configurations {
@@ -32,13 +32,7 @@ repositories {
     }
 
     // Configure repositories using the defined GitHub config
-    def dataApiRepository = githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-data-api')
-    exclusiveContent {
-        forRepositories(dataApiRepository)
-        filter {
-            includeModule('uk.gov.laa.ccms.data', 'data-api')
-        }
-    }
+    githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-data-api')
     githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-caab-api')
     githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-soa-gateway-api')
     githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-caab-assessment-api')
@@ -61,12 +55,12 @@ configurations.configureEach {
         // behind. Bump databind with core to keep the pair in lockstep.
         if (details.requested.group == 'com.fasterxml.jackson.core'
                 && details.requested.name in ['jackson-databind', 'jackson-core']) {
-            details.useVersion '2.21.7'
+            details.useVersion '2.21.8'
             details.because 'Snyk override: upgrade Jackson 2.x to remediate current vulnerabilities'
         }
         if (details.requested.group == 'tools.jackson.core'
                 && details.requested.name in ['jackson-databind', 'jackson-core']) {
-            details.useVersion '3.1.7'
+            details.useVersion '3.1.8'
             details.because 'Snyk override: upgrade Jackson 3.x to remediate current vulnerabilities'
         }
         // Keep this override narrow: touching every io.netty module can drag native SSL artifacts
@@ -83,6 +77,11 @@ configurations.configureEach {
             details.because 'Override to remediate vulnerability; not covered by the Spring Boot dependency BOM'
         }
         // Logback classic pulled in by Spring Boot starter logging
+        if (details.requested.group == 'org.hibernate.validator'
+                && details.requested.name == 'hibernate-validator') {
+            details.useVersion '9.1.5.Final'
+            details.because 'Remediate Expression Language Injection (SNYK-JAVA-ORGHIBERNATEVALIDATOR-20877468)'
+        }
         if (details.requested.group == 'ch.qos.logback'
                 && details.requested.name in ['logback-classic', 'logback-core']) {
             details.useVersion '1.6.5'
@@ -96,8 +95,18 @@ configurations.configureEach {
         }
         // Keep embedded Tomcat modules aligned on the patched release.
         if (details.requested.group == 'org.apache.tomcat.embed') {
-            details.useVersion '11.0.26'
-            details.because 'Snyk override (SNYK-JAVA-ORGAPACHETOMCATEMBED-20552494, CVE-2026-76183)'
+            details.useVersion '11.0.27'
+            details.because 'Snyk override (CVE-2026-74048, CVE-2026-88041, CVE-2026-93446, CVE-2026-101296, CVE-2026-101356, CVE-2026-103119); fixed in 11.0.27'
+        }
+    }
+}
+
+// Replaces application.yml @version@ with the project version
+processResources {
+    inputs.property('applicationVersion', project.version.toString())
+    filesMatching('application.yml') {
+        filter {
+            it.replace('@version@', version.toString())
         }
     }
 }
@@ -108,17 +117,12 @@ dependencies {
     // converted to PDF, the same pairing the legacy PUI uses for its financial summaries.
     implementation 'org.xhtmlrenderer:flying-saucer-pdf-openpdf:9.4.0'
 
-    implementation 'uk.gov.laa.ccms.data:data-api:0.4.0-d9576f5-SNAPSHOT'
-    implementation 'org.openapitools:jackson-databind-nullable:0.2.12'
+    implementation 'uk.gov.laa.ccms.data:data-api:0.3.0'
 
     // 0.1.3 carries GetInvoiceData, needed to copy a rejected bill.
     implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.1.3'
 
-    // 0.11.0 carries the Other Asset Award request model and CRUD endpoints.
-    implementation 'uk.gov.laa.ccms.caab:caab-api:0.11.0'
-
-    // 0.7.0 carries the bill id needed to delete a draft (PR #175).
-    implementation 'uk.gov.laa.ccms.caab:caab-api:0.13.0'
+    implementation 'uk.gov.laa.ccms.caab:caab-api:0.14.0'
 
     implementation 'uk.gov.laa.ccms.caab:assessment-api:0.0.57'
 
@@ -135,7 +139,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    implementation 'org.springframework.boot:spring-boot-micrometer-tracing-brave'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-aspectj'
     implementation 'org.springframework.data:spring-data-commons'
@@ -159,6 +162,11 @@ dependencies {
 
     implementation 'uk.gov.justice.service.laa:laa-spring-boot-starter-govuk-dialect'
 
+    // Required for tracing information
+    implementation 'org.springframework.boot:spring-boot-micrometer-tracing-brave'
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.micrometer:context-propagation'
+
     // Metrics
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'io.micrometer:micrometer-registry-prometheus'
@@ -170,7 +178,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-    testImplementation 'io.projectreactor:reactor-test:3.8.7'
+    testImplementation 'io.projectreactor:reactor-test:3.8.8'
 
     integrationTestImplementation 'org.wiremock:wiremock-standalone:3.13.2'
 

@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.client;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
@@ -116,6 +117,24 @@ class EditClientBasicDetailsControllerTest {
                   .flashAttr("maritalStatusList", Collections.emptyList()))
           .andExpect(status().is3xxRedirection())
           .andExpect(redirectedUrl("/application/sections/client/details/summary"));
+    }
+
+    @Test
+    @DisplayName("A successful form POST keeps the stored description in the session")
+    void successfulPostKeepsStoredCountryOfOriginDescription() throws Exception {
+      basicDetails.setCountryOfOrigin("SCG");
+      basicDetails.setCountryOfOriginDescription("Serbia and Montenegro");
+
+      mockMvc
+          .perform(
+              post("/amendments/sections/client/details/basic")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .param("countryOfOrigin", "SCG"))
+          .andExpect(status().is3xxRedirection());
+
+      assertEquals(
+          "Serbia and Montenegro",
+          clientFlowFormData.getBasicDetails().getCountryOfOriginDescription());
     }
 
     @Test
@@ -270,6 +289,44 @@ class EditClientBasicDetailsControllerTest {
                   .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
           .andExpect(status().isOk())
           .andExpect(model().attribute("countryOfOriginDisplayValue", "Norfolk Island"));
+    }
+
+    @Test
+    @DisplayName("The description from the client is used when the lookup no longer has the code")
+    void usesClientCountryOfOriginDescription() throws Exception {
+      basicDetails.setCountryOfOrigin("SCG");
+      basicDetails.setCountryOfOriginDescription("Serbia and Montenegro");
+
+      mockMvc
+          .perform(
+              get("/amendments/sections/client/details/basic")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+          .andExpect(status().isOk())
+          .andExpect(model().attribute("countryOfOriginDisplayValue", "Serbia and Montenegro"));
+    }
+
+    @Test
+    @DisplayName("A form POST keeps the stored description when the country code is unchanged")
+    void postKeepsStoredCountryOfOriginDescription() throws Exception {
+      basicDetails.setCountryOfOrigin("SCG");
+      basicDetails.setCountryOfOriginDescription("Serbia and Montenegro");
+
+      doAnswer(
+              invocation -> {
+                Errors errors = (Errors) invocation.getArguments()[1];
+                errors.rejectValue("title", "required.title", "Please complete 'Title'.");
+                return null;
+              })
+          .when(clientBasicDetailsValidator)
+          .validate(any(), any());
+
+      mockMvc
+          .perform(
+              post("/amendments/sections/client/details/basic")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .param("countryOfOrigin", "SCG"))
+          .andExpect(status().isOk())
+          .andExpect(model().attribute("countryOfOriginDisplayValue", "Serbia and Montenegro"));
     }
 
     @Test

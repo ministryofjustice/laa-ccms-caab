@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org" xmlns:govuk="http://www.thymeleaf.org">
+<head>
+  <title th:text="|#{service.name} - #{case.deleteAward.heading(${awardType})}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a class="govuk-back-link" th:href="@{/case/outcome-and-awards}"
+       th:text="#{case.recordOutcomes.backLink}"></a>
+  </div>
+  <div id="main-content">
+    <h1 class="govuk-heading-l" th:text="#{case.deleteAward.heading(${awardType})}"></h1>
+    <p class="govuk-body-l" th:text="#{case.deleteAward.lead(${awardType})}"></p>
+    <form th:action="@{/case/outcome-and-awards/awards/{type}/{id}/delete(type=${awardType},id=${awardId})}"
+          method="post">
+      <div class="govuk-button-group">
+        <govuk:button type="submit" id="confirmDeleteAward" th:text="#{site.confirm}"></govuk:button>
+        <a class="govuk-button govuk-button--secondary" id="cancelDeleteAward"
+           th:href="@{/case/outcome-and-awards}" th:text="#{site.cancel}"></a>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

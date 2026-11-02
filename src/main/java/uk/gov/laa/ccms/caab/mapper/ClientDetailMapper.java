@@ -5,11 +5,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.mapstruct.AfterMapping;
-import org.mapstruct.BeforeMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
@@ -25,8 +22,8 @@ import uk.gov.laa.ccms.soa.gateway.model.ContactDetail;
 import uk.gov.laa.ccms.soa.gateway.model.NameDetail;
 
 /**
- * Maps between Client details form bean and the soa-api client detail. Requires the {@link
- * uk.gov.laa.ccms.caab.mapper.IgnoreUnmappedMapperConfig}.
+ * Maps the client details form bean to the soa-api client detail sent on create and update.
+ * Requires the {@link uk.gov.laa.ccms.caab.mapper.IgnoreUnmappedMapperConfig}.
  */
 @Mapper(componentModel = "spring", config = IgnoreUnmappedMapperConfig.class)
 public interface ClientDetailMapper {
@@ -114,111 +111,5 @@ public interface ClientDetailMapper {
       return null;
     }
     return DateUtils.convertToDate(basicDetails.getDateOfBirth());
-  }
-
-  @Mapping(target = "contactDetails", source = "contacts")
-  @Mapping(target = "addressDetails", source = "address")
-  @Mapping(target = "monitoringDetails.ethnicOrigin", source = "ethnicMonitoring")
-  @Mapping(
-      target = "monitoringDetails.disability",
-      source = "disabilityMonitoring.disabilityType",
-      qualifiedByName = "mapListToString")
-  @Mapping(target = "monitoringDetails.specialConsiderations", source = "specialConsiderations")
-  ClientFlowFormData toClientFlowFormData(ClientDetailDetails clientDetailDetails);
-
-  /**
-   * Adds the basic details to the client flow form data from soa client details, using nameDetails
-   * and personal information.
-   *
-   * @param clientFlowFormData The client flow form data with basic details to be amended.
-   * @param clientDetailDetails The returned soa client details to map from.
-   */
-  @BeforeMapping
-  default void addClientFormDataBasicDetails(
-      @MappingTarget final ClientFlowFormData clientFlowFormData,
-      final ClientDetailDetails clientDetailDetails) {
-    clientFlowFormData.setBasicDetails(new ClientFormDataBasicDetails());
-    addClientFormDataBasicDetailsFromNameDetail(
-        clientFlowFormData.getBasicDetails(), clientDetailDetails.getName());
-    addClientFormDataBasicDetailsFromClientPersonalDetail(
-        clientFlowFormData.getBasicDetails(), clientDetailDetails.getPersonalInformation());
-  }
-
-  /**
-   * Adds address details to the client flow form data, overriding the vulnerable client state.
-   *
-   * @param clientFlowFormData The client flow form data with basic details to be amended.
-   */
-  @AfterMapping
-  default void setAddressDetailsIfNull(@MappingTarget final ClientFlowFormData clientFlowFormData) {
-    if (clientFlowFormData.getAddressDetails() == null) {
-      final ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
-      addressDetails.setVulnerableClient(
-          clientFlowFormData.getBasicDetails().getVulnerableClient());
-      clientFlowFormData.setAddressDetails(addressDetails);
-    }
-  }
-
-  @Mapping(
-      target = "basicDetails.dateOfBirth",
-      source = "personalInformation.dateOfBirth",
-      qualifiedByName = "mapComponentDateFromDate")
-  @Mapping(
-      target = "basicDetails.mentalIncapacity",
-      source = "personalInformation.mentalCapacityInd")
-  void addClientFormDataBasicDetailsFromClientPersonalDetail(
-      @MappingTarget ClientFormDataBasicDetails basicDetails,
-      ClientPersonalDetail personalInformation);
-
-  @Mapping(target = "middleNames", source = "name.middleName")
-  void addClientFormDataBasicDetailsFromNameDetail(
-      @MappingTarget ClientFormDataBasicDetails basicDetails, NameDetail name);
-
-  @Mapping(target = "telephoneMobile", source = "mobileNumber")
-  @Mapping(
-      target = "telephoneHomePresent",
-      expression =
-          "java(contacts.getTelephoneHome() != null && !contacts.getTelephoneHome().isEmpty())")
-  @Mapping(
-      target = "telephoneWorkPresent",
-      expression =
-          "java(contacts.getTelephoneWork() != null && !contacts.getTelephoneWork().isEmpty())")
-  @Mapping(
-      target = "telephoneMobilePresent",
-      expression =
-          "java(contacts.getMobileNumber() != null && !contacts.getMobileNumber().isEmpty())")
-  ClientFormDataContactDetails toClientFormDataContactDetails(ContactDetail contacts);
-
-  @Mapping(target = "houseNameNumber", source = "house")
-  @Mapping(target = "cityTown", source = "city")
-  @Mapping(target = "postcode", source = "postalCode")
-  ClientFormDataAddressDetails toClientFormDataAddressDetails(AddressDetail address);
-
-  /**
-   * Translates a list to a sting, using the first element.
-   *
-   * @param values The list of strings to convert
-   * @return Translated String value.
-   */
-  @Named("mapListToString")
-  default String mapListToString(List<String> values) {
-    if (values != null && !values.isEmpty()) {
-      return values.getFirst();
-    }
-    return null;
-  }
-
-  /**
-   * Translates a Date and extracts the day.
-   *
-   * @param date The date to convert
-   * @return Translated String value.
-   */
-  @Named("mapComponentDateFromDate")
-  default String mapComponentDateFromDate(Date date) {
-    if (date == null) {
-      return null;
-    }
-    return DateUtils.convertToComponentDate(date);
   }
 }

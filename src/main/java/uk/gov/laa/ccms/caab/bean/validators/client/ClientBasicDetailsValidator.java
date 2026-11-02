@@ -48,7 +48,6 @@ public class ClientBasicDetailsValidator extends AbstractValidator {
   public void validate(Object target, Errors errors) {
     ClientFormDataBasicDetails basicDetails = (ClientFormDataBasicDetails) target;
 
-    validateRequiredField("title", basicDetails.getTitle(), "Title", errors);
     validateRequiredField("surname", basicDetails.getSurname(), "Surname", errors);
     validateRequiredField(
         "countryOfOrigin", basicDetails.getCountryOfOrigin(), "Country of origin", errors);

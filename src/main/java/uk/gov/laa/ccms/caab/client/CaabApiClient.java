@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.client;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_COST;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FINANCIAL;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_LAND;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTHER_ASSET;
@@ -29,6 +30,7 @@ import uk.gov.laa.ccms.caab.model.BillCreate;
 import uk.gov.laa.ccms.caab.model.Bills;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetails;
+import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.CostStructureDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetails;
@@ -47,6 +49,7 @@ import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
+import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 
 /** Client responsible for interactions with the CAAB API. */
 @Service
@@ -68,9 +71,11 @@ public class CaabApiClient {
   public static final String RESOURCE_TYPE_CLIENT = "client";
   public static final String RESOURCE_TYPE_OPPONENTS = "opponents";
   public static final String RESOURCE_TYPE_CASE_OUTCOME = "case outcome";
+  public static final String RESOURCE_TYPE_COST_AWARD = "cost award";
   public static final String RESOURCE_TYPE_FINANCIAL_AWARD = "financial award";
   public static final String RESOURCE_TYPE_OTHER_ASSET_AWARD = "other asset award";
   public static final String RESOURCE_TYPE_LAND_AWARD = "land award";
+  public static final String RESOURCE_TYPE_TIME_RECOVERY = "time-related recovery";
   public static final String RESOURCE_TYPE_EVIDENCE = "evidence";
   public static final String RESOURCE_TYPE_NOTIFICATION_ATTACHMENTS = "notification attachments";
   public static final String RESOURCE_TYPE_BILL = "bill";
@@ -760,6 +765,24 @@ public class CaabApiClient {
                     e, RESOURCE_TYPE_CASE_OUTCOME, queryParams));
   }
 
+  /** Retrieves the opponents linked as liable or interested parties to one award. */
+  public Mono<List<OpponentDetail>> getAwardLiableParties(
+      final Integer caseOutcomeId, final String awardType, final Integer awardId) {
+    return caabApiWebClient
+        .get()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/liable-parties",
+            caseOutcomeId,
+            awardType,
+            awardId)
+        .retrieve()
+        .bodyToMono(new ParameterizedTypeReference<List<OpponentDetail>>() {})
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiRetrieveError(
+                    e, RESOURCE_TYPE_OPPONENTS, "award id", String.valueOf(awardId)));
+  }
+
   /**
    * Fetches the case outcome with the specified id. This method communicates with the CAAB API
    * client to fetch the case outcome.
@@ -824,6 +847,83 @@ public class CaabApiClient {
         .exchangeToMono(CaabApiClient::getIdResponse)
         .onErrorResume(
             e -> caabApiClientErrorHandler.handleApiCreateError(e, RESOURCE_TYPE_FINANCIAL_AWARD));
+  }
+
+  /**
+   * Creates a cost award for an existing case outcome.
+   *
+   * @param caseOutcomeId the owning case outcome id
+   * @param loginId the ID associated with the user login
+   * @param costAward the cost award values
+   * @return the created cost award id
+   */
+  public Mono<String> createCostAward(
+      final Integer caseOutcomeId, final String loginId, final CostAwardDetail costAward) {
+    return caabApiWebClient
+        .post()
+        .uri("/case-outcomes/{case-outcome-id}/awards/{award-type}", caseOutcomeId, AWARD_TYPE_COST)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(costAward)
+        .exchangeToMono(CaabApiClient::getIdResponse)
+        .onErrorResume(
+            e -> caabApiClientErrorHandler.handleApiCreateError(e, RESOURCE_TYPE_COST_AWARD));
+  }
+
+  /**
+   * Gets a cost award by id and owning case outcome id.
+   *
+   * @param caseOutcomeId the owning case outcome id
+   * @param costAwardId the cost award id
+   * @return the cost award
+   */
+  public Mono<CostAwardDetail> getCostAward(
+      final Integer caseOutcomeId, final Integer costAwardId) {
+    return caabApiWebClient
+        .get()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{cost-award-id}",
+            caseOutcomeId,
+            AWARD_TYPE_COST,
+            costAwardId)
+        .retrieve()
+        .bodyToMono(CostAwardDetail.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiRetrieveError(
+                    e, RESOURCE_TYPE_COST_AWARD, "id", String.valueOf(costAwardId)));
+  }
+
+  /**
+   * Updates a cost award belonging to a case outcome.
+   *
+   * @param caseOutcomeId the owning case outcome id
+   * @param costAwardId the cost award id
+   * @param loginId the ID associated with the user login
+   * @param costAward the replacement cost award values
+   * @return completion signal
+   */
+  public Mono<Void> updateCostAward(
+      final Integer caseOutcomeId,
+      final Integer costAwardId,
+      final String loginId,
+      final CostAwardDetail costAward) {
+    return caabApiWebClient
+        .put()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{cost-award-id}",
+            caseOutcomeId,
+            AWARD_TYPE_COST,
+            costAwardId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(costAward)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiUpdateError(
+                    e, RESOURCE_TYPE_COST_AWARD, "id", String.valueOf(costAwardId)));
   }
 
   /**
@@ -1000,6 +1100,31 @@ public class CaabApiClient {
                     e, RESOURCE_TYPE_LAND_AWARD, "id", String.valueOf(landAwardId)));
   }
 
+  /** Creates or updates a time-related recovery on a land or other-asset award. */
+  public Mono<Void> upsertTimeRecovery(
+      final Integer caseOutcomeId,
+      final String awardType,
+      final Integer awardId,
+      final String loginId,
+      final TimeRecoveryRequest timeRecovery) {
+    return caabApiWebClient
+        .put()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/time-recovery",
+            caseOutcomeId,
+            awardType,
+            awardId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(timeRecovery)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiUpdateError(
+                    e, RESOURCE_TYPE_TIME_RECOVERY, "id", String.valueOf(awardId)));
+  }
+
   /**
    * Deletes a case outcome from the CAAB API.
    *
@@ -1018,6 +1143,31 @@ public class CaabApiClient {
             e ->
                 caabApiClientErrorHandler.handleApiDeleteError(
                     e, RESOURCE_TYPE_CASE_OUTCOME, "id", String.valueOf(caseOutcomeId)));
+  }
+
+  /** Deletes an award belonging to a case outcome, including its dependent records. */
+  public Mono<Void> deleteAward(
+      final Integer caseOutcomeId,
+      final String awardType,
+      final Integer awardId,
+      final String loginId) {
+    return caabApiWebClient
+        .delete()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}",
+            caseOutcomeId,
+            awardType,
+            awardId)
+        .header("Caab-User-Login-Id", loginId)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiDeleteError(
+                    e,
+                    "award",
+                    "case outcome/type/id",
+                    "%s/%s/%s".formatted(caseOutcomeId, awardType, awardId)));
   }
 
   /**

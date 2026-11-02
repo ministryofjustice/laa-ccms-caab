@@ -2,6 +2,8 @@ package uk.gov.laa.ccms.caab.service;
 
 import static uk.gov.laa.ccms.caab.constants.SendBy.ELECTRONIC;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +27,7 @@ import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
 import uk.gov.laa.ccms.caab.util.FileUtil;
 import uk.gov.laa.ccms.caab.util.NotificationSearchUtil;
+import uk.gov.laa.ccms.data.model.Note;
 import uk.gov.laa.ccms.data.model.Notification;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.Notifications;
@@ -68,7 +71,19 @@ public class NotificationService {
    */
   public Mono<Notification> getNotification(
       final String notificationId, final int userId, final int providerId) {
-    return ebsApiClient.getNotification(notificationId, userId, providerId);
+    return ebsApiClient
+        .getNotification(notificationId, userId, providerId)
+        .map(NotificationService::sortNotesNewestFirst);
+  }
+
+  private static Notification sortNotesNewestFirst(Notification notification) {
+    if (notification.getNotes() != null) {
+      List<Note> notes = new ArrayList<>(notification.getNotes());
+      notes.sort(
+          Comparator.comparing(Note::getDate, Comparator.nullsLast(Comparator.reverseOrder())));
+      notification.setNotes(notes);
+    }
+    return notification;
   }
 
   /**

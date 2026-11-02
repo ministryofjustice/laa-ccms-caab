@@ -1,8 +1,12 @@
 package uk.gov.laa.ccms.caab.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -704,6 +708,54 @@ public class LookupServiceTest {
   }
 
   @Test
+  @DisplayName("getClientLookups returns an empty title without a lookup when no title is set")
+  void testGetClientLookups_noTitle() {
+    final ClientFlowFormData clientFlowFormData = new ClientFlowFormData(ACTION_VIEW);
+    clientFlowFormData.setBasicDetails(new ClientFormDataBasicDetails());
+    clientFlowFormData.setContactDetails(new ClientFormDataContactDetails());
+    clientFlowFormData.setMonitoringDetails(new ClientFormDataMonitoringDetails());
+    clientFlowFormData.setAddressDetails(new ClientFormDataAddressDetails());
+
+    when(ebsApiClient.getCommonValues(anyString(), any()))
+        .thenReturn(Mono.just(new CommonLookupDetail()));
+
+    final List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups =
+        lookupService.getClientLookups(clientFlowFormData);
+
+    assertEquals("contactTitle", lookups.getFirst().getLeft());
+    assertNull(lookups.getFirst().getRight().block().get().getDescription());
+    verify(ebsApiClient, never()).getCommonValues(COMMON_VALUE_CONTACT_TITLE, null);
+  }
+
+  @Test
+  @DisplayName("getClientLookups uses the country of origin description without a country lookup")
+  void testGetClientLookups_countryOfOriginDescription() {
+    final ClientFlowFormData clientFlowFormData = new ClientFlowFormData(ACTION_VIEW);
+    final ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
+    basicDetails.setCountryOfOrigin("SCG");
+    basicDetails.setCountryOfOriginDescription("Serbia and Montenegro");
+    clientFlowFormData.setBasicDetails(basicDetails);
+    clientFlowFormData.setContactDetails(new ClientFormDataContactDetails());
+    clientFlowFormData.setMonitoringDetails(new ClientFormDataMonitoringDetails());
+    clientFlowFormData.setAddressDetails(new ClientFormDataAddressDetails());
+
+    when(ebsApiClient.getCommonValues(anyString(), any()))
+        .thenReturn(Mono.just(new CommonLookupDetail()));
+
+    final List<Pair<String, Mono<Optional<CommonLookupValueDetail>>>> lookups =
+        lookupService.getClientLookups(clientFlowFormData);
+
+    final Pair<String, Mono<Optional<CommonLookupValueDetail>>> countryOfOrigin =
+        lookups.stream()
+            .filter(p -> "countryOfOrigin".equals(p.getLeft()))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(
+        "Serbia and Montenegro", countryOfOrigin.getRight().block().get().getDescription());
+    verify(ebsApiClient, never()).getCountries();
+  }
+
+  @Test
   @DisplayName(
       "addCommonLookupsToModel adds lookups to model and returns list of CommonLookupValueDetail")
   void addCommonLookupsToModel_success() {
@@ -799,6 +851,42 @@ public class LookupServiceTest {
                         .equals(mockIndividualRelationshipsToCase)
                     && context.getRelationshipToClient().equals(mockRelationshipToClient))
         .verifyComplete();
+  }
+
+  @Test
+  void getLiablePartiesMappingContext_combinesRequiredLookups() {
+    final CommonLookupDetail titles = new CommonLookupDetail();
+    final RelationshipToCaseLookupDetail organisations = new RelationshipToCaseLookupDetail();
+    final RelationshipToCaseLookupDetail individuals = new RelationshipToCaseLookupDetail();
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(Mono.just(titles));
+    when(ebsApiClient.getOrganisationToCaseRelationshipValues(null, null))
+        .thenReturn(Mono.just(organisations));
+    when(ebsApiClient.getPersonToCaseRelationships(null, null)).thenReturn(Mono.just(individuals));
+
+    StepVerifier.create(lookupService.getLiablePartiesMappingContext())
+        .expectNextMatches(
+            context ->
+                context.getContactTitle() == titles
+                    && context.getOrganisationRelationshipsToCase() == organisations
+                    && context.getIndividualRelationshipsToCase() == individuals)
+        .verifyComplete();
+    verify(ebsApiClient).getCommonValues(COMMON_VALUE_CONTACT_TITLE);
+    verify(ebsApiClient).getOrganisationToCaseRelationshipValues(null, null);
+    verify(ebsApiClient).getPersonToCaseRelationships(null, null);
+  }
+
+  @Test
+  void getLiablePartiesMappingContext_propagatesLookupFailures() {
+    final IllegalStateException failure = new IllegalStateException("Lookup unavailable");
+    when(ebsApiClient.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(Mono.error(failure));
+    when(ebsApiClient.getOrganisationToCaseRelationshipValues(null, null))
+        .thenReturn(Mono.just(new RelationshipToCaseLookupDetail()));
+    when(ebsApiClient.getPersonToCaseRelationships(null, null))
+        .thenReturn(Mono.just(new RelationshipToCaseLookupDetail()));
+
+    StepVerifier.create(lookupService.getLiablePartiesMappingContext())
+        .expectErrorMatches(error -> error == failure)
+        .verify();
   }
 
   @Test

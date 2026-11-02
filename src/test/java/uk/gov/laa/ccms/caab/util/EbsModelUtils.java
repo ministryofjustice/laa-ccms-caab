@@ -27,10 +27,12 @@ import uk.gov.laa.ccms.data.model.CaseStatus;
 import uk.gov.laa.ccms.data.model.CaseSummary;
 import uk.gov.laa.ccms.data.model.CategoryOfLaw;
 import uk.gov.laa.ccms.data.model.CategoryOfLawLookupValueDetail;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.ContactDetail;
 import uk.gov.laa.ccms.data.model.ContactDetails;
 import uk.gov.laa.ccms.data.model.CostAward;
 import uk.gov.laa.ccms.data.model.CostLimitation;
+import uk.gov.laa.ccms.data.model.DisabilityMonitoringDetail;
 import uk.gov.laa.ccms.data.model.Discharge;
 import uk.gov.laa.ccms.data.model.ExternalResource;
 import uk.gov.laa.ccms.data.model.FinancialAward;
@@ -175,6 +177,35 @@ public final class EbsModelUtils {
         .clientReferenceNumber("clientref")
         .firstName("firstname")
         .surname("surn");
+  }
+
+  public static ClientDetail buildClientDetail() {
+    return new ClientDetail()
+        .clientReferenceNumber("12345")
+        .name(
+            new NameDetail()
+                .firstName("firstname")
+                .surname("surname")
+                .fullName("the full name")
+                .title("mr")
+                .middleName("middle")
+                .surnameAtBirth("birth"))
+        .dateOfBirth(LocalDate.now())
+        .gender("gender")
+        .maritalStatus("status")
+        .niNumber("nino")
+        .homeOfficeNumber("123")
+        .vulnerableClient(Boolean.FALSE)
+        .highProfileClient(Boolean.FALSE)
+        .vexatiousLitigant(Boolean.FALSE)
+        .countryOfOriginCode("origin")
+        .mentalCapacityInd(Boolean.FALSE)
+        .contacts(buildContactDetail("client"))
+        .disabilityMonitoring(new DisabilityMonitoringDetail().addDisabilityTypeItem("item"))
+        .ethnicMonitoring("ethnic")
+        .noFixedAbode(Boolean.FALSE)
+        .address(buildAddressDetail("client"))
+        .specialConsiderations("special");
   }
 
   // Case Detail stuff below this line
