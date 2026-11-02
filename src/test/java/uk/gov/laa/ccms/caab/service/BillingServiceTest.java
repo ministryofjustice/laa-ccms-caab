@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
@@ -16,10 +17,12 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -266,6 +269,25 @@ class BillingServiceTest {
           .isNull();
       assertThat(billingService.withRetainedTotals(CASE_REF, row("Bill", 555L)).grandTotal())
           .isEqualByComparingTo("120");
+    }
+
+    @Test
+    void stalledAssessmentIsCancelledAndDoesNotPreventTheNextRowFromLoading() {
+      final AtomicBoolean cancelled = new AtomicBoolean();
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 444L))
+          .thenReturn(Mono.<InvoiceAssessment>never().doOnCancel(() -> cancelled.set(true)));
+      returns(global("100", "20"));
+      final BillPoaRow original = row("Bill", 444L);
+
+      assertTimeoutPreemptively(
+          Duration.ofSeconds(10),
+          () -> {
+            assertThat(billingService.withRetainedTotals(CASE_REF, original)).isSameAs(original);
+            assertThat(cancelled).isTrue();
+            assertThat(billingService.withRetainedTotals(CASE_REF, row("POA", 555L)).grandTotal())
+                .isEqualByComparingTo("120");
+          });
+      verifyNoInteractions(soaApiClient, assessmentService);
     }
 
     @ParameterizedTest

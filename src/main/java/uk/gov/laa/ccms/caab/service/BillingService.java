@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -16,6 +17,7 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Mono;
@@ -82,6 +84,7 @@ public class BillingService {
   private static final Set<String> COPY_EXCLUDED_ENTITY_TYPES =
       Set.of("PROCEEDING", "OPPONENT_OTHER_PARTIES");
   private static final String INVOICE_TYPE_POA = "POA";
+  private static final Duration RETAINED_TOTALS_TIMEOUT = Duration.ofSeconds(5);
   private static final BigDecimal HUNDRED = new BigDecimal("100");
   private static final ZoneId EBS_ZONE = ZoneId.of("Europe/London");
 
@@ -114,7 +117,14 @@ public class BillingService {
     final InvoiceAssessment assessment;
     try {
       assessment =
-          ebsApiClient.getInvoiceAssessment(caseReference, row.billingIncidentId()).block();
+          ebsApiClient
+              .getInvoiceAssessment(caseReference, row.billingIncidentId())
+              .timeout(
+                  RETAINED_TOTALS_TIMEOUT,
+                  Mono.error(
+                      new EbsApiClientException(
+                          "Retained totals lookup timed out", HttpStatus.GATEWAY_TIMEOUT)))
+              .block();
     } catch (final EbsApiClientException error) {
       if ((error.getHttpStatus() != null && error.getHttpStatus().is5xxServerError())
           || error.getCause() instanceof WebClientRequestException) {
