@@ -17,6 +17,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_SUMMAR
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE_REFERENCE_NUMBER;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COST_ALLOCATION_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_BASELINE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.COURT_SEARCH_CRITERIA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PRE_CERTIFICATE_AND_LEGAL_HELP_COSTS_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.PROCEEDING_OUTCOME_FORM_DATA;
@@ -71,6 +72,7 @@ import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
+import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.PriorAuthorityGroup;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.EvidenceMapper;
@@ -338,12 +340,17 @@ public class CaseController {
       HttpSession session,
       Model model) {
     final List<ProceedingDetail> proceedings = ebsCase.getProceedings();
-    final Optional<CaseOutcomeDetail> caseOutcomeOpt =
-        caseOutcomeService.getCaseOutcome(
-            ebsCase.getCaseReferenceNumber(), user.getProvider().getId().intValue());
+    final Optional<CaseOutcomeDetail> localCaseOutcome =
+        hasOutcomeEditPermission(ebsCase)
+            ? getOrCreateLocalCaseOutcome(ebsCase, user)
+            : caseOutcomeService.getCaseOutcome(
+                ebsCase.getCaseReferenceNumber(), user.getProvider().getId().intValue());
+    final CaseOutcomeDetail caseOutcome =
+        localCaseOutcome.orElseGet(
+            () -> Optional.ofNullable(ebsCase.getCaseOutcome()).orElse(new CaseOutcomeDetail()));
 
     final List<ProceedingOutcomeDetail> savedOutcomes =
-        caseOutcomeOpt
+        localCaseOutcome
             .map(CaseOutcomeDetail::getProceedingOutcomes)
             .orElse(Collections.emptyList());
 
@@ -381,6 +388,10 @@ public class CaseController {
     model.addAttribute("case", ebsCase);
     model.addAttribute("proceedings", proceedings);
     model.addAttribute("resolvedOutcomes", resolvedOutcomes);
+    // Award and proceeding actions need a persisted local outcome, so a failed bootstrap is
+    // rendered read-only until the page is reloaded.
+    model.addAttribute(
+        "awardEditAllowed", hasOutcomeEditPermission(ebsCase) && localCaseOutcome.isPresent());
     model.addAttribute(
         "outcomeDocumentActionAllowed", ActionViewHelper.isOutcomeDocumentActionAllowed(ebsCase));
     model.addAttribute("clearableOutcomes", clearableOutcomes);
@@ -388,8 +399,7 @@ public class CaseController {
         "preCertificateAndLegalHelpCostsSummary",
         getPreCertificateAndLegalHelpCostsFormData(session, ebsCase.getCaseReferenceNumber()));
 
-    model.addAttribute(
-        "awards", caseOutcomeOpt.map(this::getAwards).orElse(Collections.emptyList()));
+    model.addAttribute("awards", getAwards(caseOutcome));
 
     // Documents are retrieved using the generic evidence store, keyed by case reference
     // number and the OUTCOME ccms module.
@@ -401,6 +411,35 @@ public class CaseController {
             .orElse(Collections.emptyList());
     model.addAttribute("documents", documents);
     return "application/outcome-and-awards";
+  }
+
+  /**
+   * Bootstraps the local case outcome. A failed bootstrap must not take down the summary page, so
+   * the page falls back to a read-only view of the EBS outcome.
+   */
+  private Optional<CaseOutcomeDetail> getOrCreateLocalCaseOutcome(
+      final ApplicationDetail ebsCase, final UserDetail user) {
+    try {
+      return Optional.of(
+          caseOutcomeService.getOrCreateCaseOutcome(
+              ebsCase.getCaseReferenceNumber(),
+              user.getProvider().getId().intValue(),
+              user.getLoginId(),
+              ebsCase.getCaseOutcome()));
+    } catch (CaabApiClientException | IllegalStateException ex) {
+      log.warn(
+          "Failed to bootstrap local case outcome for case {}. Falling back to EBS outcome.",
+          ebsCase.getCaseReferenceNumber(),
+          ex);
+      return Optional.empty();
+    }
+  }
+
+  private boolean hasOutcomeEditPermission(final ApplicationDetail ebsCase) {
+    return ebsCase != null
+        && ebsCase.getAvailableFunctions() != null
+        && (ebsCase.getAvailableFunctions().contains(FunctionConstants.OUTCOME_WITH_DISCHARGE)
+            || ebsCase.getAvailableFunctions().contains(FunctionConstants.OUTCOME_NO_DISCHARGE));
   }
 
   private List<BaseAwardDetail> getAwards(final CaseOutcomeDetail caseOutcome) {
@@ -609,6 +648,13 @@ public class CaseController {
       @PathVariable("index") final int index,
       HttpSession session,
       Model model) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn(
+          "Rejecting proceeding outcome form load for read-only case {}",
+          ebsCase.getCaseReferenceNumber());
+      return "redirect:/case/outcome-and-awards";
+    }
+
     List<ProceedingDetail> proceedings = ebsCase.getProceedings();
     String errorMessage = "Could not find proceeding with index: %s".formatted(index);
     Assert.notEmpty(proceedings, () -> errorMessage);
@@ -658,6 +704,13 @@ public class CaseController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @PathVariable("index") final int index,
       Model model) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn(
+          "Rejecting proceeding outcome clear form load for read-only case {}",
+          ebsCase.getCaseReferenceNumber());
+      return "redirect:/case/outcome-and-awards";
+    }
+
     final ProceedingDetail proceeding = validateProceedingIndex(ebsCase, index);
     final ProceedingOutcomeDetail localOutcome =
         resolveLocalProceedingOutcomeForDisplay(ebsCase, user, proceeding);
@@ -675,22 +728,12 @@ public class CaseController {
   }
 
   /**
-   * Saves in-progress proceeding outcome form data to session and redirects to court search.
+   * Saves the in-progress proceeding outcome and carries the existing court values into the search
+   * form so the user can amend or re-run the lookup without losing context.
    *
-   * <p>The search starts blank. The court code and name are alternative ways of finding the same
-   * Court, but they reach EBS as separate query parameters and are combined with AND, so carrying
-   * the outcome's existing court over pre-fills both boxes and every subsequent search becomes "the
-   * court already recorded, and whatever was just typed". That matches nothing unless the user
-   * searches for the court they already have: entering a real code such as "127C1" against a stored
-   * name queries {@code code=*127C1*&description=*<stored name>*} and returns no rows, so the
-   * screen reports no results for a Court that plainly exists.
-   *
-   * <p>It is worse when the stored value is a placeholder rather than a court. Live cases carry
-   * "Not Available" in these fields, which is not a Court and never matches, so court search
-   * returns nothing for every term on those cases.
-   *
-   * <p>The in-progress outcome itself is still preserved, so nothing the user typed on the outcome
-   * screen is lost while they go and find a Court.
+   * <p>Legacy behaviour pre-populated the court search with the court already stored on the
+   * outcome, and the modern flow should do the same. Placeholder values such as "Not Available" are
+   * normalised away before they are carried into the search form.
    *
    * @param index The zero-based index of the proceeding.
    * @param proceedingOutcome The in-progress form data to preserve.
@@ -699,11 +742,25 @@ public class CaseController {
    */
   @PostMapping("/case/outcome-and-awards/proceeding/{index}/outcome/court-search")
   public String recordProceedingOutcomeCourtSearch(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @PathVariable("index") final int index,
       @ModelAttribute("proceedingOutcome") final ProceedingOutcomeFormData proceedingOutcome,
       HttpSession session) {
+    proceedingOutcome.normaliseLegacyCourtFields();
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn(
+          "Rejecting proceeding outcome court search for read-only case {}",
+          ebsCase.getCaseReferenceNumber());
+      return "redirect:/case/outcome-and-awards";
+    }
+
     session.setAttribute(PROCEEDING_OUTCOME_FORM_DATA, proceedingOutcome);
-    session.setAttribute(COURT_SEARCH_CRITERIA, new CourtSearchCriteria());
+
+    final CourtSearchCriteria courtSearchCriteria = new CourtSearchCriteria();
+    courtSearchCriteria.setCourtCode(proceedingOutcome.getCourtCode());
+    courtSearchCriteria.setCourtName(proceedingOutcome.getCourtName());
+    session.setAttribute(COURT_SEARCH_CRITERIA, courtSearchCriteria);
+    session.removeAttribute(COURT_SEARCH_BASELINE + ":" + index);
     return "redirect:/court/search?proceedingIndex=" + index;
   }
 
@@ -720,6 +777,14 @@ public class CaseController {
       @ModelAttribute("proceedingOutcome") final ProceedingOutcomeFormData proceedingOutcome,
       final BindingResult bindingResult,
       final Model model) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn(
+          "Rejecting proceeding outcome save for read-only case {}",
+          ebsCase.getCaseReferenceNumber());
+      return "redirect:/case/outcome-and-awards";
+    }
+
+    proceedingOutcome.normaliseLegacyCourtFields();
 
     final ProceedingDetail proceeding = validateProceedingIndex(ebsCase, index);
 
@@ -738,7 +803,8 @@ public class CaseController {
           ebsCase.getCaseReferenceNumber(),
           user.getProvider().getId().intValue(),
           outcome,
-          user.getLoginId());
+          user.getLoginId(),
+          ebsCase.getCaseOutcome());
     } catch (CaabApiClientException ex) {
       log.warn(
           "Failed to update proceeding outcome for proceeding caseId: {}",
@@ -769,6 +835,13 @@ public class CaseController {
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @PathVariable("index") final int index) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn(
+          "Rejecting proceeding outcome clear for read-only case {}",
+          ebsCase.getCaseReferenceNumber());
+      return "redirect:/case/outcome-and-awards";
+    }
+
     final ProceedingDetail proceeding = validateProceedingIndex(ebsCase, index);
     final ProceedingOutcomeDetail localOutcome =
         resolveLocalProceedingOutcomeForDisplay(ebsCase, user, proceeding);
@@ -828,7 +901,6 @@ public class CaseController {
       final BindingResult bindingResult,
       final Model model,
       HttpSession session) {
-
     preCertificateAndLegalHelpCostsValidator.validate(
         preCertificateAndLegalHelpCosts, bindingResult);
     if (bindingResult.hasErrors()) {
@@ -939,10 +1011,14 @@ public class CaseController {
         && !StringUtils.hasText(localOutcome.getResultInfo())
         && !StringUtils.hasText(localOutcome.getAlternativeResolution())
         && !StringUtils.hasText(localOutcome.getAdrInfo())
-        && !StringUtils.hasText(localOutcome.getCourtCode())
-        && !StringUtils.hasText(localOutcome.getCourtName())
+        && !hasSelectedCourt(localOutcome.getCourtCode(), localOutcome.getCourtName())
         && !StringUtils.hasText(localOutcome.getOutcomeCourtCaseNo())
         && !StringUtils.hasText(localOutcome.getWiderBenefits());
+  }
+
+  private boolean hasSelectedCourt(final String courtCode, final String courtName) {
+    return StringUtils.hasText(ProceedingOutcomeFormData.normaliseCourtValue(courtCode))
+        || StringUtils.hasText(ProceedingOutcomeFormData.normaliseCourtValue(courtName));
   }
 
   private boolean hasStringDisplayValue(final uk.gov.laa.ccms.caab.model.StringDisplayValue value) {
@@ -952,6 +1028,8 @@ public class CaseController {
 
   private ProceedingOutcomeDetail buildProceedingOutcome(
       final ProceedingDetail proceeding, final ProceedingOutcomeFormData proceedingOutcome) {
+    proceedingOutcome.normaliseLegacyCourtFields();
+
     final String proceedingCode =
         Optional.ofNullable(proceeding.getProceedingType()).map(item -> item.getId()).orElse(null);
     final Map<String, String> stageEndMap =
@@ -1106,8 +1184,8 @@ public class CaseController {
     formData.setResultInfo(outcome.getResultInfo());
     formData.setAlternativeResolution(outcome.getAlternativeResolution());
     formData.setAdrInfo(outcome.getAdrInfo());
-    formData.setCourtCode(outcome.getCourtCode());
-    formData.setCourtName(outcome.getCourtName());
+    formData.setCourtCode(ProceedingOutcomeFormData.normaliseCourtValue(outcome.getCourtCode()));
+    formData.setCourtName(ProceedingOutcomeFormData.normaliseCourtValue(outcome.getCourtName()));
     formData.setOutcomeCourtCaseNo(outcome.getOutcomeCourtCaseNo());
     formData.setWiderBenefits(outcome.getWiderBenefits());
 

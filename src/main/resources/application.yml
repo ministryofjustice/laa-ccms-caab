@@ -20,8 +20,11 @@ csp:
   upgrade-insecure-requests: ${CSP_UPGRADE_INSECURE_REQUESTS:true}
 
 spring:
+  reactor:
+    context-propagation: auto
   application:
     name: laa-ccms-caab
+    version: "@version@"
   security:
     saml2:
       relyingparty:
@@ -165,3 +168,19 @@ management:
           - info
           - metrics
           - prometheus
+
+# ECS structured logging
+logging:
+  level:
+    root: ${ROOT_LOGGING_LEVEL:info}
+    org.springframework: ${SPRING_LOGGING_LEVEL:info}
+    uk.gov.laa.ccms.caab: ${APP_LOGGING_LEVEL:info}
+  structured:
+    format:
+      console: ecs
+    ecs:
+      service:
+        name: ${spring.application.name:default}
+        version: ${spring.application.version:default}
+        environment: ${spring.profiles.active:default}
+        node_name: ${HOSTNAME:unknown}

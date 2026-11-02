@@ -61,6 +61,7 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetail;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.data.model.BaseProvider;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.StatementOfAccountBills;
 import uk.gov.laa.ccms.data.model.StatementOfAccountDetail;
 import uk.gov.laa.ccms.data.model.StatementOfAccountDetails;
@@ -69,7 +70,6 @@ import uk.gov.laa.ccms.data.model.StatementOfAccountInvoiceList;
 import uk.gov.laa.ccms.data.model.TaxRateLookupDetail;
 import uk.gov.laa.ccms.data.model.TaxRateLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceDataResponse;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceDetail;
 import uk.gov.laa.ccms.soa.gateway.model.InvoiceResponse;
@@ -835,6 +835,43 @@ class BillingServiceTest {
   }
 
   @Test
+  @DisplayName("A draft POA with no net cost yet shows no amount, not zero")
+  void draftPoaWithoutNetCostHasNoAmount() {
+    UserDetail user =
+        new UserDetail().loginId("user1").userType("EXTERNAL").provider(new BaseProvider().id(10));
+    ApplicationDetail ebsCase =
+        new ApplicationDetail()
+            .caseReferenceNumber(CASE_REF)
+            .providerDetails(
+                new ApplicationProviderDetails().provider(new IntDisplayValue().id(10)));
+
+    when(ebsApiClient.getStatementOfAccount(CASE_REF, null))
+        .thenReturn(
+            Mono.just(
+                new StatementOfAccountDetails().addContentItem(statement("Provider", 10L, null))));
+    when(caabApiClient.getPaymentsOnAccount(CASE_REF, "10"))
+        .thenReturn(
+            Mono.just(
+                new PaymentOnAccountDetails()
+                    .addContentItem(
+                        new PaymentOnAccountDetail().lscCaseReference(CASE_REF).providerId("10"))));
+    when(caabApiClient.getBill(CASE_REF, "10")).thenReturn(Mono.empty());
+    when(lookupService.getTaxRates())
+        .thenReturn(
+            Mono.just(
+                new TaxRateLookupDetail()
+                    .addContentItem(new TaxRateLookupValueDetail().code("STD").taxRate("20"))));
+
+    StatementOfAccountDisplay display =
+        billingService.getStatementOfAccountDisplay(CASE_REF, ebsCase, user);
+
+    assertThat(display.getBillsAndPoa())
+        .extracting(BillPoaRow::type, BillPoaRow::status)
+        .containsExactly(tuple("POA", "Draft"));
+    assertThat(display.getBillsAndPoa().getFirst().amount()).isNull();
+  }
+
+  @Test
   @DisplayName("An unknown VAT code contributes no VAT; a load failure leaves the POA net only")
   void poaVatFallbacks() {
     UserDetail user =
@@ -1236,7 +1273,7 @@ class BillingServiceTest {
     }
 
     private void noDraftBill() {
-      when(clientService.getClient(any(), any(), any())).thenReturn(Mono.just(new ClientDetail()));
+      when(clientService.getClient(any())).thenReturn(Mono.just(new ClientDetail()));
       when(caabApiClient.createBill(any(), any())).thenReturn(Mono.empty());
     }
 
@@ -1349,7 +1386,7 @@ class BillingServiceTest {
               Mono.just(
                   new InvoiceDataResponse()
                       .opaResponse(List.of(entity("global", "BILL_TYPE", "CLAIM")))));
-      when(clientService.getClient(any(), any(), any())).thenReturn(Mono.just(new ClientDetail()));
+      when(clientService.getClient(any())).thenReturn(Mono.just(new ClientDetail()));
       doThrow(new CaabApplicationException("connector unreachable"))
           .when(assessmentService)
           .startAssessment(any(), any(), any(), any(), eq(false), any(), any());

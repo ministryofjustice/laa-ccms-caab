@@ -50,8 +50,8 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.util.AssessmentUtil;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupValueDetail;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 /** Controller handling assessment requests. */
 @Controller
@@ -249,12 +249,8 @@ public class AssessmentController {
       }
     }
 
-    // get full client details from soa
     final ClientDetail client =
-        clientService
-            .getClient(
-                application.getClient().getReference(), user.getLoginId(), user.getUserType())
-            .block();
+        clientService.getClient(application.getClient().getReference()).block();
 
     if (client == null) {
       throw new CaabApplicationException("Failed to retrieve client details");

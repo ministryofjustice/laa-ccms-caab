@@ -18,8 +18,8 @@ import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.ClientService;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 
 /** Controller for confirmed create client submissions. */
 @Controller
@@ -49,15 +49,13 @@ public class ClientSubmissionsConfirmedController {
       final HttpSession session)
       throws ParseException {
 
-    final ClientDetail clientInformation =
-        clientService.getClient(clientReference, user.getLoginId(), user.getUserType()).block();
+    final ClientDetail clientInformation = clientService.getClient(clientReference).block();
 
     return applicationService
         .createApplication(applicationFormData, clientInformation, user)
         .doOnSuccess(
             applicationId -> {
               log.info("Application details submitted");
-              log.debug("Application details submitted: {}", applicationFormData);
               session.removeAttribute(APPLICATION_FORM_DATA);
               session.removeAttribute(CLIENT_REFERENCE);
               session.removeAttribute(SUBMISSION_RESULT);

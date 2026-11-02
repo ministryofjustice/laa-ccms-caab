@@ -87,6 +87,9 @@ public class CommonValueConstants {
   /** Type used to retrieve financial award decision-maker options. */
   public static final String COMMON_VALUE_AWARDED_BY = "XXCCMS_AWARDED_BY";
 
+  /** Lookup type for cost award court assessment statuses. */
+  public static final String COMMON_VALUE_AWARD_ASSESSMENT_STATUS = "XXCCMS_AWARD_ASSESS_STATUS";
+
   /** Type used to retrieve other asset award recovery options. */
   public static final String COMMON_VALUE_RECOVERY_ASSET = "XXCCMS_RECOVERY_ASSET";
 

@@ -257,6 +257,9 @@ public class SessionConstants {
   /** Session attribute for keeping track of court search criteria. */
   public static final String COURT_SEARCH_CRITERIA = "courtSearchCriteria";
 
+  /** Session attribute for keeping track of the court search baseline in the active form. */
+  public static final String COURT_SEARCH_BASELINE = "courtSearchBaseline";
+
   public static final String COURT_SEARCH_RESULTS = "courtSearchResults";
 
   /** Session attribute used to keep track of the selected court for confirmation. */

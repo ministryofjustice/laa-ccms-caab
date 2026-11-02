@@ -69,7 +69,6 @@ import uk.gov.laa.ccms.caab.assessment.model.AuditDetail;
 import uk.gov.laa.ccms.caab.client.AssessmentApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
-import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.mapper.AssessmentMapper;
@@ -102,7 +101,6 @@ public class AssessmentServiceTest {
 
   @Mock private AssessmentApiClient assessmentApiClient;
   @Mock private EbsApiClient ebsApiClient;
-  @Mock private SoaApiClient soaApiClient;
   @Mock private LookupService lookupService;
   @Mock private AssessmentMapper assessmentMapper;
   @Mock private CaabApiClient caabApiClient;
@@ -607,15 +605,14 @@ public class AssessmentServiceTest {
             .applicationType(
                 new uk.gov.laa.ccms.caab.model.ApplicationType().id(APP_TYPE_SUBSTANTIVE));
 
-    final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase =
-        new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()
+    final uk.gov.laa.ccms.data.model.CaseDetail ebsCase =
+        new uk.gov.laa.ccms.data.model.CaseDetail()
             .applicationDetails(
-                new uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails()
+                new uk.gov.laa.ccms.data.model.SubmittedApplicationDetails()
                     .proceedings(Collections.emptyList()))
             .certificateType(APP_TYPE_EMERGENCY);
 
-    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
-        .thenReturn(Mono.just(ebsCase));
+    when(ebsApiClient.getCase("CASE-123", 123L, "test-user")).thenReturn(Mono.just(ebsCase));
 
     // No merits assessment + substantive amendment of an emergency certificate => reassessment
     // required (old PUI keys this off assessment == null, not the checkpoint).
@@ -727,15 +724,14 @@ public class AssessmentServiceTest {
             .caseReferenceNumber("CASE-123")
             .applicationType(new ApplicationType().id(APP_TYPE_SUBSTANTIVE));
 
-    final uk.gov.laa.ccms.soa.gateway.model.CaseDetail ebsCase =
-        new uk.gov.laa.ccms.soa.gateway.model.CaseDetail()
+    final uk.gov.laa.ccms.data.model.CaseDetail ebsCase =
+        new uk.gov.laa.ccms.data.model.CaseDetail()
             .applicationDetails(
-                new uk.gov.laa.ccms.soa.gateway.model.SubmittedApplicationDetails()
+                new uk.gov.laa.ccms.data.model.SubmittedApplicationDetails()
                     .proceedings(Collections.emptyList()))
             .certificateType(APP_TYPE_EMERGENCY);
 
-    when(soaApiClient.getCase(eq("CASE-123"), anyString(), anyString()))
-        .thenReturn(Mono.just(ebsCase));
+    when(ebsApiClient.getCase("CASE-123", 123L, "test-user")).thenReturn(Mono.just(ebsCase));
     stubProgressStatusDescriptions();
 
     assessmentService.calculateAssessmentStatuses(application, null, null, user);
@@ -1182,7 +1178,7 @@ public class AssessmentServiceTest {
 
     assertFalse(assessmentService.isMeansReassessmentRequired(application, meansAssessment, user));
 
-    verify(soaApiClient, never()).getCase(anyString(), anyString(), anyString());
+    verify(ebsApiClient, never()).getCase(anyString(), anyLong(), anyString());
   }
 
   @Test

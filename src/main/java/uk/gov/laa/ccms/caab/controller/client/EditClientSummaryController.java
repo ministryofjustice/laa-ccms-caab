@@ -27,11 +27,12 @@ import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
+import uk.gov.laa.ccms.caab.mapper.EbsClientDetailMapper;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.data.model.ClientDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
-import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 
 /**
@@ -42,12 +43,16 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 @SessionAttributes({CLIENT_FLOW_FORM_DATA, AMEND_CLIENT_ORIGIN})
 public class EditClientSummaryController extends AbstractClientSummaryController {
 
+  private final EbsClientDetailMapper ebsClientDetailMapper;
+
   /** Default constructor method implementing the abstract controller's constructor. */
   public EditClientSummaryController(
       final LookupService lookupService,
       final ClientService clientService,
-      final ClientDetailMapper clientDetailsMapper) {
+      final ClientDetailMapper clientDetailsMapper,
+      final EbsClientDetailMapper ebsClientDetailMapper) {
     super(lookupService, clientService, clientDetailsMapper);
+    this.ebsClientDetailMapper = ebsClientDetailMapper;
   }
 
   /**
@@ -74,13 +79,12 @@ public class EditClientSummaryController extends AbstractClientSummaryController
       // if session contains clientDetails
       final ClientDetail clientInformation =
           clientService
-              .getClient(
-                  activeCase.getClientReferenceNumber(), user.getLoginId(), user.getUserType())
+              .getClient(activeCase.getClientReferenceNumber())
               .blockOptional()
               .orElseThrow(() -> new CaabApplicationException("Failed to retrieve client"));
 
       // map data to the view
-      clientFlowFormData = clientDetailsMapper.toClientFlowFormData(clientInformation.getDetails());
+      clientFlowFormData = ebsClientDetailMapper.toClientFlowFormData(clientInformation);
       clientFlowFormData.setAction(ACTION_EDIT);
       session.setAttribute(CLIENT_FLOW_CONTEXT, clientFlowContext);
       session.setAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
