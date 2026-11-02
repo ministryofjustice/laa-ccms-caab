@@ -21,7 +21,7 @@ public class EbsApiClientErrorHandler extends AbstractApiClientErrorHandler {
               message, HttpStatus.resolve(responseException.getStatusCode().value())));
     }
     log.error(message);
-    return Mono.error(new EbsApiClientException(message, error));
+    return Mono.error(new EbsApiClientException(message));
   }
 
   /**

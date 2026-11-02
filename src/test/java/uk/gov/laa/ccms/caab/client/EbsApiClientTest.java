@@ -23,10 +23,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.ui.ExtendedModelMap;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
@@ -35,6 +39,7 @@ import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
@@ -89,6 +94,7 @@ public class EbsApiClientTest {
   ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
 
   @Nested
+  @ExtendWith(OutputCaptureExtension.class)
   class SelectedInvoiceAssessment {
     private EbsApiClient client(final HttpStatus status, final String body) {
       return new EbsApiClient(
@@ -175,29 +181,52 @@ public class EbsApiClientTest {
           .verify();
     }
 
-    @Test
-    void malformedJsonIsAnErrorRatherThanMissingData() {
-      StepVerifier.create(client(HttpStatus.OK, "{broken").getInvoiceAssessment("300000123", 555L))
-          .expectError(EbsApiClientException.class)
+    @ParameterizedTest
+    @ValueSource(strings = {"{broken", "{\"assessmentId\":\"retained-field-value\"}"})
+    void malformedJsonIsAnErrorWithoutLoggingRetainedData(
+        final String body, final CapturedOutput output) {
+      StepVerifier.create(client(HttpStatus.OK, body).getInvoiceAssessment("300000123", 555L))
+          .expectErrorSatisfies(this::logSanitizedError)
           .verify();
+      assertThat(output)
+          .contains("Exception caught by GlobalExceptionHandler")
+          .doesNotContain("retained-field-value", "300000123");
     }
 
     @Test
-    void preservesTransportFailuresWithoutInventingAnEmptyResult() {
+    void preservesTransportFailuresWithoutLoggingRetainedData(final CapturedOutput output) {
       final WebClientRequestException failure =
           new WebClientRequestException(
-              new IOException("connection closed"),
+              new IOException("retained-field-value"),
               HttpMethod.GET,
-              URI.create("http://data.example"),
+              URI.create("http://data.example/cases/300000123/invoices/555/assessment"),
               HttpHeaders.EMPTY);
       final EbsApiClient client =
           new EbsApiClient(
-              WebClient.builder().exchangeFunction(request -> Mono.error(failure)).build(),
+              WebClient.builder()
+                  .baseUrl("http://data.example")
+                  .exchangeFunction(request -> Mono.error(failure))
+                  .build(),
               new EbsApiClientErrorHandler());
       StepVerifier.create(client.getInvoiceAssessment("300000123", 555L))
-          .expectErrorMatches(
-              error -> error instanceof EbsApiClientException && error.getCause() == failure)
+          .expectErrorSatisfies(this::logSanitizedError)
           .verify();
+      assertThat(output)
+          .contains("Exception caught by GlobalExceptionHandler")
+          .doesNotContain("retained-field-value", "300000123");
+    }
+
+    private void logSanitizedError(final Throwable error) {
+      assertThat(error)
+          .isInstanceOfSatisfying(
+              EbsApiClientException.class,
+              failure -> {
+                assertThat(failure)
+                    .hasMessage("Failed to retrieve retained invoice assessment")
+                    .hasNoCause();
+                new GlobalExceptionHandler()
+                    .handleException(new ExtendedModelMap(), new MockHttpSession(), failure);
+              });
     }
   }
 
