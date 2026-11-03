@@ -39,6 +39,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.codec.DecodingException;
+import org.springframework.core.io.buffer.DataBufferLimitException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -317,6 +318,12 @@ class BillingServiceTest {
           "0|0|0|0",
           "100.25|0|100.25|100.25",
           "100|NULL|100|NULL",
+          "1,200.00|240.00|1200.00|1440.00",
+          "1,234,567.89|1,000.11|1234567.89|1235568.00",
+          "12,00.00|20|90|NULL",
+          "1,,200.00|20|90|NULL",
+          "1234,567.00|20|90|NULL",
+          "100|2,0|100|NULL",
           "NULL|20|90|NULL",
           "invalid|20|90|NULL",
           "100|invalid|100|NULL"
@@ -452,6 +459,23 @@ class BillingServiceTest {
       verifyNoInteractions(soaApiClient, assessmentService);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"read", "limit"})
+    void readOrBufferFailureKeepsTheOriginalRowAndAllowsTheNextRowToLoad(final String failureType) {
+      final Throwable cause =
+          failureType.equals("read")
+              ? new IOException("Response body interrupted")
+              : new DataBufferLimitException("Response too large");
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 444L))
+          .thenReturn(Mono.error(new EbsApiClientException("Read failed", cause)));
+      returns(global("100", "20"));
+      final BillPoaRow original = row("Bill", 444L);
+
+      assertThat(billingService.withRetainedTotals(CASE_REF, original)).isSameAs(original);
+      assertThat(billingService.withRetainedTotals(CASE_REF, row("POA", 555L)).grandTotal())
+          .isEqualByComparingTo("120");
+    }
+
     @Test
     void stalledAssessmentIsCancelledAndDoesNotPreventTheNextRowFromLoading() {
       final VirtualTimeScheduler clock = VirtualTimeScheduler.getOrSet();
@@ -491,12 +515,18 @@ class BillingServiceTest {
     @ParameterizedTest
     @ValueSource(ints = {400, 401, 403})
     void propagatesClientErrors(final int status) {
-      final EbsApiClientException failure =
-          new EbsApiClientException("Rejected", HttpStatus.valueOf(status));
-      failure.initCause(new DecodingException("Invalid error response"));
-      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L)).thenReturn(Mono.error(failure));
-      assertThatThrownBy(() -> billingService.withRetainedTotals(CASE_REF, row("Bill", 555L)))
-          .isSameAs(failure);
+      for (final Throwable cause :
+          List.of(
+              new DecodingException("Invalid error response"),
+              new IOException("Response body interrupted"),
+              new DataBufferLimitException("Response too large"))) {
+        final EbsApiClientException failure =
+            new EbsApiClientException("Rejected", HttpStatus.valueOf(status));
+        failure.initCause(cause);
+        when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L)).thenReturn(Mono.error(failure));
+        assertThatThrownBy(() -> billingService.withRetainedTotals(CASE_REF, row("Bill", 555L)))
+            .isSameAs(failure);
+      }
     }
 
     @Test

@@ -18,7 +18,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
-import org.springframework.web.reactive.function.UnsupportedMediaTypeException;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.BaseSubscriber;
@@ -1203,8 +1202,7 @@ public class EbsApiClient extends BaseApiClient {
         .onErrorMap(
             WebClientResponseException.class,
             error ->
-                error.getStatusCode().is2xxSuccessful()
-                        && error.getCause() instanceof UnsupportedMediaTypeException
+                error.getStatusCode().is2xxSuccessful() && error.getCause() != null
                     ? error.getCause()
                     : error)
         .onErrorResume(ebsApiClientErrorHandler::handleInvoiceAssessmentRetrieveError);

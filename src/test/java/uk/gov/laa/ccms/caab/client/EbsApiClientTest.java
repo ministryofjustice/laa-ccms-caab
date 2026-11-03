@@ -25,6 +25,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferLimitException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -95,6 +96,37 @@ public class EbsApiClientTest {
 
   @Nested
   class SelectedInvoiceAssessment {
+    @ParameterizedTest
+    @CsvSource({"read", "limit", "unexpected"})
+    void preservesSuccessfulResponseBodyFailures(final String failureType) {
+      final Throwable failure =
+          switch (failureType) {
+            case "read" -> new IOException("Response body interrupted");
+            case "limit" -> new DataBufferLimitException("Response too large");
+            default -> new IllegalStateException("Unexpected failure");
+          };
+      final EbsApiClient client =
+          new EbsApiClient(
+              WebClient.builder()
+                  .exchangeFunction(
+                      request ->
+                          Mono.just(
+                              ClientResponse.create(HttpStatus.OK)
+                                  .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                                  .body(Flux.error(failure))
+                                  .build()))
+                  .build(),
+              new EbsApiClientErrorHandler());
+
+      StepVerifier.create(client.getInvoiceAssessment("300000123", 555L))
+          .expectErrorMatches(
+              error ->
+                  error instanceof EbsApiClientException apiError
+                      && apiError.getHttpStatus() == null
+                      && apiError.getCause() == failure)
+          .verify();
+    }
+
     @ParameterizedTest
     @CsvSource({"401", "403"})
     void stalledAuthorizationBodyIsCancelledWithoutDelayingTheError(final int code) {

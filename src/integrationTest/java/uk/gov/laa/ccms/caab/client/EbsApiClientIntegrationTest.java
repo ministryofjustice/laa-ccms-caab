@@ -25,6 +25,7 @@ import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
+import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.buffer.DataBufferLimitException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -192,6 +194,36 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
         new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L);
     assertThatThrownBy(() -> billingService.withRetainedTotals("300000123", row))
         .isInstanceOf(EbsApiClientException.class);
+  }
+
+  @Test
+  void interruptedResponseBodyKeepsTheOriginalRow() {
+    wiremock.stubFor(
+        get("/cases/300000123/invoices/555/assessment")
+            .willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
+    final BillPoaRow row =
+        new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L);
+    assertThat(billingService.withRetainedTotals("300000123", row)).isSameAs(row);
+  }
+
+  @Test
+  void assessmentExceedingConfiguredCodecLimitKeepsTheOriginalRow() {
+    wiremock.stubFor(
+        get("/cases/300000123/invoices/555/assessment")
+            .willReturn(
+                okJson(
+                    "{\"caseReference\":\"300000123\",\"billingIncidentId\":555,"
+                        + "\"instances\":[{\"entityName\":\"global\",\"attributes\":["
+                        + ("{\"name\":\"ignored\",\"responseValue\":\"" + "x".repeat(1024) + "\"},")
+                            .repeat(17000)
+                        + "{\"name\":\"last\",\"responseValue\":\"0\"}]}]}")));
+    StepVerifier.create(ebsApiClient.getInvoiceAssessment("300000123", 555L))
+        .expectErrorSatisfies(
+            error -> assertThat(error).hasCauseInstanceOf(DataBufferLimitException.class))
+        .verify();
+    final BillPoaRow row =
+        new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L);
+    assertThat(billingService.withRetainedTotals("300000123", row)).isSameAs(row);
   }
 
   @ParameterizedTest

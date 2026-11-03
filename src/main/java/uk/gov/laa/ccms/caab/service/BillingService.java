@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.service;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
@@ -18,6 +19,7 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.codec.DecodingException;
+import org.springframework.core.io.buffer.DataBufferLimitException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
@@ -181,6 +183,8 @@ public class BillingService {
                   || (error.getHttpStatus() == null
                       && (error.getCause() instanceof WebClientRequestException
                           || error.getCause() instanceof DecodingException
+                          || error.getCause() instanceof IOException
+                          || error.getCause() instanceof DataBufferLimitException
                           || error.getCause() instanceof UnsupportedMediaTypeException))) {
                 log.warn(
                     "Retained totals lookup unavailable for billing incident {}",
@@ -233,7 +237,12 @@ public class BillingService {
       final String value = attributes.get(0).responseValue();
       if (value != null && !value.isBlank()) {
         try {
-          return new BigDecimal(value.trim());
+          final String trimmed = value.trim();
+          if (trimmed.contains(",")
+              && !trimmed.matches("[+-]?[0-9]{1,3}(?:,[0-9]{3})+(?:\\.[0-9]+)?")) {
+            throw new NumberFormatException("Invalid currency grouping");
+          }
+          return new BigDecimal(trimmed.replace(",", ""));
         } catch (final NumberFormatException error) {
           log.warn("Invalid retained {} for billing incident {}", name, billingId);
           return null;
