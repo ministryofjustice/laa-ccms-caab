@@ -133,6 +133,10 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
       strings = {
         "{",
         """
+        [{"caseReference":"300000123","billingIncidentId":555},
+         {"caseReference":"300000123","billingIncidentId":555}]
+        """,
+        """
         {"caseReference":"300000123","billingIncidentId":555,"instances":[
           {"entityName":"global","attributes":[
             {"name":"BILL_SUBMITTED_TOTAL_AMT","responseValue":{"amount":"100"}}

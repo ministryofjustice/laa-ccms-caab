@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Subscription;
+import org.springframework.core.codec.DecodingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
@@ -1188,7 +1189,16 @@ public class EbsApiClient extends BaseApiClient {
                         new byte[0],
                         null));
               }
-              return response.getBody().singleOrEmpty();
+              return response
+                  .getBody()
+                  .take(2)
+                  .collectList()
+                  .flatMap(
+                      assessments ->
+                          assessments.size() > 1
+                              ? Mono.error(
+                                  new DecodingException("Multiple retained invoice assessments"))
+                              : Mono.justOrEmpty(assessments.stream().findFirst()));
             })
         .onErrorMap(
             WebClientResponseException.class,
