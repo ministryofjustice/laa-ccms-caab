@@ -139,6 +139,9 @@ public class SessionConstants {
   /** Session attribute used to keep track of the current opponent being processed or viewed. */
   public static final String CURRENT_OPPONENT = "opponent";
 
+  /** Isolated draft for adding an individual to an award. */
+  public static final String INDIVIDUAL_LIABLE_PARTY_FLOW = "individualLiablePartyFlow";
+
   /** Session attribute used to keep track of the costs associated with the application. */
   public static final String APPLICATION_COSTS = "costs";
 

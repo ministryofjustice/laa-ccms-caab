@@ -1,5 +1,10 @@
 package uk.gov.laa.ccms.caab.service;
 
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_COST;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FINANCIAL;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_LAND;
+import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTHER_ASSET;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -10,13 +15,18 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.IndividualLiablePartyFlow;
+import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentOtherDetailsFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.LiablePartiesDisplayMapper;
+import uk.gov.laa.ccms.caab.mapper.OpponentMapper;
 import uk.gov.laa.ccms.caab.model.BaseAwardDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CostAwardDetail;
@@ -24,6 +34,7 @@ import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.LandAwardRequest;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
@@ -40,6 +51,134 @@ public class CaseOutcomeService {
   private final LookupService lookupService;
   private final LiablePartiesDisplayMapper liablePartiesDisplayMapper;
   private final CostAwardMapper costAwardMapper;
+  private final OpponentMapper opponentMapper;
+
+  /** Loads both pages of an editable individual linked to the requested award. */
+  public IndividualLiablePartyFlow getIndividualLiableParty(
+      final String caseReference,
+      final Integer providerId,
+      final String awardPath,
+      final Integer awardId,
+      final Integer opponentId) {
+    final var opponent =
+        requireIndividualLiableParty(caseReference, providerId, awardPath, awardId, opponentId)
+            .opponent();
+    final var flow =
+        new IndividualLiablePartyFlow(caseReference, providerId, awardPath, awardId, opponentId);
+    flow.setContactDetails(
+        opponentMapper.toIndividualOpponentFormData(opponent, null, null, null, null, true));
+    flow.setOtherDetails(opponentMapper.toIndividualOpponentOtherDetailsFormData(opponent));
+    return flow;
+  }
+
+  /** Saves contact changes on Next without persisting draft changes from Other Details. */
+  public void updateIndividualLiablePartyContactDetails(
+      final String caseReference,
+      final Integer providerId,
+      final String awardPath,
+      final Integer awardId,
+      final Integer opponentId,
+      final String loginId,
+      final IndividualOpponentFormData contact) {
+    final var party =
+        requireIndividualLiableParty(caseReference, providerId, awardPath, awardId, opponentId);
+    final var updated = opponentMapper.toIndividualOpponent(contact);
+    opponentMapper.updateIndividualOtherDetails(
+        opponentMapper.toIndividualOpponentOtherDetailsFormData(party.opponent()), updated);
+    updateIndividualLiableParty(party, loginId, updated);
+  }
+
+  /** Saves Other Details while retaining the latest persisted contact details. */
+  public void updateIndividualLiablePartyOtherDetails(
+      final String caseReference,
+      final Integer providerId,
+      final String awardPath,
+      final Integer awardId,
+      final Integer opponentId,
+      final String loginId,
+      final IndividualOpponentOtherDetailsFormData other) {
+    final var party =
+        requireIndividualLiableParty(caseReference, providerId, awardPath, awardId, opponentId);
+    opponentMapper.updateIndividualOtherDetails(other, party.opponent());
+    updateIndividualLiableParty(party, loginId, party.opponent());
+  }
+
+  private record AwardParty(
+      CaseOutcomeDetail outcome, BaseAwardDetail award, OpponentDetail opponent) {}
+
+  private AwardParty requireIndividualLiableParty(
+      final String caseReference,
+      final Integer providerId,
+      final String awardPath,
+      final Integer awardId,
+      final Integer opponentId) {
+    final var outcome = requireCaseOutcome(caseReference, providerId);
+    final var award = requireAward(outcome, awardTypeForPath(awardPath), awardId);
+    final var opponents =
+        caabApiClient
+            .getAwardLiableParties(
+                requireCaseOutcomeId(outcome, caseReference), award.getAwardType(), awardId)
+            .blockOptional()
+            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve award parties"));
+    final var opponent =
+        opponents.stream()
+            .filter(candidate -> opponentId.equals(candidate.getId()))
+            .findFirst()
+            .orElseThrow(
+                () -> new CaabApplicationException("Opponent is not linked to the selected award"));
+    if (!"Individual".equals(opponent.getType())
+        || !StringUtils.startsWithIgnoreCase(opponent.getEbsId(), "AWARD")
+        || Boolean.TRUE.equals(opponent.getSharedInd())) {
+      throw new CaabApplicationException("This individual party cannot be edited");
+    }
+    return new AwardParty(outcome, award, opponent);
+  }
+
+  private void updateIndividualLiableParty(
+      final AwardParty party, final String loginId, final OpponentDetail opponent) {
+    caabApiClient
+        .updateAwardLiableParty(
+            party.outcome().getId(),
+            party.award().getAwardType(),
+            party.award().getId(),
+            party.opponent().getId(),
+            loginId,
+            opponent)
+        .block();
+  }
+
+  /** Checks the case/provider and award scope without loading unrelated opponent forms. */
+  public void validatePartyAward(
+      final String caseReference,
+      final Integer providerId,
+      final String awardPath,
+      final Integer awardId) {
+    requireAward(
+        requireCaseOutcome(caseReference, providerId), awardTypeForPath(awardPath), awardId);
+  }
+
+  /** Saves all individual details through the atomic outcome/award endpoint. */
+  public void createIndividualLiableParty(
+      final String caseReference,
+      final Integer providerId,
+      final String awardPath,
+      final Integer awardId,
+      final String loginId,
+      final IndividualOpponentFormData contact,
+      final IndividualOpponentOtherDetailsFormData other) {
+    final CaseOutcomeDetail outcome = requireCaseOutcome(caseReference, providerId);
+    final BaseAwardDetail award = requireAward(outcome, awardTypeForPath(awardPath), awardId);
+    final var opponent = opponentMapper.toIndividualOpponent(contact);
+    opponentMapper.updateIndividualOtherDetails(other, opponent);
+    caabApiClient
+        .createAwardLiableParty(
+            requireCaseOutcomeId(outcome, caseReference),
+            award.getAwardType(),
+            awardId,
+            loginId,
+            opponent)
+        .block();
+  }
 
   /** Deletes only the selected award, without replacing the case outcome aggregate. */
   public void deleteAward(
@@ -65,22 +204,34 @@ public class CaseOutcomeService {
                     "No case outcome exists for case reference number: " + caseReferenceNumber));
   }
 
-  private void requireAward(
+  private BaseAwardDetail requireAward(
       final CaseOutcomeDetail caseOutcome, final String awardType, final Integer awardId) {
     final List<? extends BaseAwardDetail> awards =
         switch (awardType) {
-          case "COST" -> caseOutcome.getCostAwards();
-          case "DAMAGE" -> caseOutcome.getFinancialAwards();
-          case "LAND" -> caseOutcome.getLandAwards();
-          case "ASSET" -> caseOutcome.getOtherAssetAwards();
+          case AWARD_TYPE_COST -> caseOutcome.getCostAwards();
+          case AWARD_TYPE_FINANCIAL -> caseOutcome.getFinancialAwards();
+          case AWARD_TYPE_LAND -> caseOutcome.getLandAwards();
+          case AWARD_TYPE_OTHER_ASSET -> caseOutcome.getOtherAssetAwards();
           default -> throw new IllegalArgumentException("Unsupported award type: " + awardType);
         };
-    if (Optional.ofNullable(awards).orElse(Collections.emptyList()).stream()
-        .noneMatch(item -> awardId.equals(item.getId()))) {
-      throw new IllegalStateException(
-          "%s award %s does not belong to case outcome %s"
-              .formatted(awardType, awardId, caseOutcome.getId()));
-    }
+    return Optional.ofNullable(awards).orElse(Collections.emptyList()).stream()
+        .filter(award -> awardId.equals(award.getId()))
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new CaabApplicationException(
+                    "Could not find award with id: %s for case outcome: %s"
+                        .formatted(awardId, caseOutcome.getId())));
+  }
+
+  private String awardTypeForPath(final String awardPath) {
+    return switch (awardPath) {
+      case "cost-award" -> AWARD_TYPE_COST;
+      case "financial-award" -> AWARD_TYPE_FINANCIAL;
+      case "land" -> AWARD_TYPE_LAND;
+      case "asset" -> AWARD_TYPE_OTHER_ASSET;
+      default -> throw new CaabApplicationException("Unsupported award path: " + awardPath);
+    };
   }
 
   /**
@@ -107,21 +258,7 @@ public class CaseOutcomeService {
     final CaseOutcomeDetail outcome =
         getCaseOutcome(caseReferenceNumber, providerId)
             .orElseThrow(() -> new CaabApplicationException("Could not find case outcome"));
-    final List<? extends BaseAwardDetail> awards =
-        switch (awardPath) {
-          case "cost-award" -> outcome.getCostAwards();
-          case "financial-award" -> outcome.getFinancialAwards();
-          case "land" -> outcome.getLandAwards();
-          case "asset" -> outcome.getOtherAssetAwards();
-          default -> throw new CaabApplicationException("Unsupported award path: " + awardPath);
-        };
-    final BaseAwardDetail award =
-        (awards == null ? List.<BaseAwardDetail>of() : awards)
-            .stream()
-                .filter(candidate -> awardId.equals(candidate.getId()))
-                .findFirst()
-                .orElseThrow(
-                    () -> new CaabApplicationException("Could not find award with id: " + awardId));
+    final BaseAwardDetail award = requireAward(outcome, awardTypeForPath(awardPath), awardId);
     if (award.getLiableParties() == null || award.getLiableParties().isEmpty()) {
       return liablePartiesDisplayMapper.toLiablePartiesDisplay(award, List.of(), null);
     }

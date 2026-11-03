@@ -76,7 +76,11 @@
   </div>
 </div>
 
-<div th:fragment="createIndividual"
+<th:block th:fragment="createIndividual">
+  <div th:replace="~{application/partials/opponent-fragments :: individualContactDetails(false)}"></div>
+</th:block>
+
+<div th:fragment="individualContactDetails(award)"
      class="govuk-grid-row">
   <div class="govuk-grid-column-two-thirds">
     <input type="hidden" id="type" name="type" th:value="Individual"/>
@@ -109,12 +113,43 @@
     <div th:replace="~{partials/forms :: textInput('telephoneMobile', 'Telephone - mobile (optional)', 'govuk-input--width-20')}"></div>
     <div th:replace="~{partials/forms :: textInput('faxNumber', 'Fax (optional)', 'govuk-input--width-20')}"></div>
     <div th:replace="~{partials/forms :: textInput('emailAddress', 'Email address (optional)', 'govuk-input--width-20')}"></div>
-    <div th:replace="~{partials/forms :: radios('legalAided', 'Party is legal aided? (optional)', ${legalAidedOptions}, 'code', 'description', false)}"></div>
+    <th:block th:if="${award}">
+      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='legalAided', label='Party is legal aided? (optional)',
+                                                                 items=${legalAidedOptions}, itemValue='code',
+                                                                 itemLabel='description')}"/>
+    </th:block>
+    <th:block th:unless="${award}">
+      <div th:replace="~{partials/forms :: radios('legalAided', 'Party is legal aided? (optional)', ${legalAidedOptions}, 'code', 'description', false)}"></div>
+    </th:block>
     <div th:replace="~{partials/forms :: textInput('certificateNumber', 'Certificate number (optional)', 'govuk-input--width-20')}"></div>
 
     <govuk:details classes="govuk-!-margin-top-2"
                    th:summaryText="#{opponent.individual.certificate.summaryText}"
                    th:text="#{opponent.individual.certificate.text}"/>
+  </div>
+</div>
+
+<div th:fragment="individualOtherDetails" class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+    <th:block th:replace="~{partials/forms :: autocompleteSelect(field='employmentStatus', label='Employment status (optional)',
+                                                               items=${employmentStatuses}, itemValue='code',
+                                                               itemLabel='description')}"/>
+    <div th:replace="~{partials/forms :: textInput('employerName', #{opponent.individual.employerName}, 'govuk-input--width-20')}"></div>
+    <div th:replace="~{partials/forms :: largeTextInput('employerAddress', #{opponent.individual.employerAddress}, 200)}"></div>
+    <th:block th:replace="~{partials/forms :: autocompleteSelect(field='courtOrderedMeansAssessment',
+        label='Party has had a Court-ordered Means Assessment for Cost Liability determination (optional)',
+        items=${meansAssessmentOptions}, itemValue='code', itemLabel='description')}"/>
+    <div th:replace="~{partials/forms :: textInput('assessedIncome', 'Assessed income (optional)', 'govuk-input--width-20')}"></div>
+    <th:block th:replace="~{partials/forms :: autocompleteSelect(field='assessedIncomeFrequency', label='Assessed income frequency (optional)',
+                                                               items=${incomeFrequencies}, itemValue='code',
+                                                               itemLabel='description')}"/>
+    <div th:replace="~{partials/forms :: textInput('assessedAssets', 'Assessed assets (optional)', 'govuk-input--width-20')}"></div>
+    <moj:datepicker xmlns:moj="http://www.thymeleaf.org"
+                    id="assessmentDate" name="assessmentDate" label="Assessment date (optional)"
+                    hint="For example, 31/01/2025" th:attr="value=*{assessmentDate}"
+                    th:errorMessage="${#fields.hasErrors('assessmentDate') ? #fields.errors('assessmentDate').getFirst() : ''}">
+    </moj:datepicker>
+    <div th:replace="~{partials/forms :: largeTextInput('otherInformation', 'Any other information about the Liable Party (optional)', 2000)}"></div>
   </div>
 </div>
 

@@ -96,13 +96,13 @@ class LiablePartiesTemplateRenderTest {
     final String html = render("land", false);
     assertThat(html)
         .contains("Ms Jane Smith", "Acme &amp; Co", "Owner", "1 High Street AB1 2CD")
-        .contains("href=\"/case/outcome-and-awards/land/7/liable-parties/11/individual\"")
+        .contains("href=\"/case/outcome-and-awards/land/7/liable-parties/individual/11/edit\"")
         .contains("href=\"/case/outcome-and-awards/land/7/liable-parties/12/organisation\"")
         .contains("href=\"/case/outcome-and-awards/land/7/liable-parties/101/remove\"")
         .contains("href=\"/case/outcome-and-awards/land/7/liable-parties/102/remove\"")
         .contains("<span>Imported party</span>")
         .contains("&lt;script&gt;alert(1)&lt;/script&gt;")
-        .doesNotContain("<script>alert(1)</script>", "/13/individual");
+        .doesNotContain("<script>alert(1)</script>", "/individual/13/edit");
   }
 
   @ParameterizedTest
