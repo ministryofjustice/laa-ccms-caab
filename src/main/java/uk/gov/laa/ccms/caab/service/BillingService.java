@@ -22,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.UnsupportedMediaTypeException;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -179,7 +180,8 @@ public class BillingService {
                   || error.hasHttpStatus(HttpStatus.TOO_MANY_REQUESTS)
                   || (error.getHttpStatus() == null
                       && (error.getCause() instanceof WebClientRequestException
-                          || error.getCause() instanceof DecodingException))) {
+                          || error.getCause() instanceof DecodingException
+                          || error.getCause() instanceof UnsupportedMediaTypeException))) {
                 log.warn(
                     "Retained totals lookup unavailable for billing incident {}",
                     row.billingIncidentId());

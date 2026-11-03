@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -10,6 +11,8 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.time.Duration;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -21,6 +24,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -32,6 +36,7 @@ import org.springframework.web.reactive.function.client.WebClientRequestExceptio
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
@@ -90,6 +95,33 @@ public class EbsApiClientTest {
 
   @Nested
   class SelectedInvoiceAssessment {
+    @ParameterizedTest
+    @CsvSource({"401", "403"})
+    void stalledAuthorizationBodyIsCancelledWithoutDelayingTheError(final int code) {
+      final AtomicBoolean cancelled = new AtomicBoolean();
+      final EbsApiClient client =
+          new EbsApiClient(
+              WebClient.builder()
+                  .exchangeFunction(
+                      request ->
+                          Mono.just(
+                              ClientResponse.create(HttpStatus.valueOf(code))
+                                  .body(
+                                      Flux.<DataBuffer>never()
+                                          .doOnCancel(() -> cancelled.set(true)))
+                                  .build()))
+                  .build(),
+              new EbsApiClientErrorHandler());
+
+      StepVerifier.withVirtualTime(() -> client.getInvoiceAssessment("300000123", 555L))
+          .expectErrorMatches(
+              error ->
+                  error instanceof EbsApiClientException apiError
+                      && apiError.hasHttpStatus(HttpStatus.valueOf(code)))
+          .verify(Duration.ofSeconds(2));
+      assertTrue(cancelled.get());
+    }
+
     private EbsApiClient client(final HttpStatusCode status, final String body) {
       return new EbsApiClient(
           WebClient.builder()

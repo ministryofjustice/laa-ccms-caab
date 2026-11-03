@@ -38,6 +38,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import reactor.core.publisher.Mono;
@@ -146,6 +148,21 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @ParameterizedTest
+  @ValueSource(strings = {"text/plain", "application/octet-stream", ""})
+  void unsupportedRetainedTotalsMediaTypeKeepsTheOriginalRow(final String contentType) {
+    wiremock.stubFor(
+        get("/cases/300000123/invoices/555/assessment")
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", contentType)
+                    .withBody("{\"caseReference\":\"300000123\",\"billingIncidentId\":555}")));
+    final BillPoaRow row =
+        new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L);
+    assertThat(billingService.withRetainedTotals("300000123", row)).isSameAs(row);
+  }
+
+  @ParameterizedTest
   @ValueSource(ints = {400, 401, 403})
   void retainedTotalsDoNotHideClientOrAuthorizationFailures(final int status) {
     wiremock.stubFor(
@@ -171,6 +188,26 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
         new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L);
     assertThatThrownBy(() -> billingService.withRetainedTotals("300000123", row))
         .isInstanceOf(EbsApiClientException.class);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {401, 403})
+  void stalledAuthorizationBodyDoesNotBecomeAPageDeadlineFallback(final int status) {
+    wiremock.stubFor(
+        get("/cases/300000123/invoices/555/assessment")
+            .willReturn(
+                aResponse()
+                    .withStatus(status)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"error\":\"unauthorized\"}")
+                    .withChunkedDribbleDelay(20, 10000)));
+    final BillPoaRow row =
+        new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L);
+    final Page<BillPoaRow> page = new PageImpl<>(java.util.List.of(row));
+    assertThatThrownBy(() -> billingService.withRetainedTotals("300000123", page))
+        .isInstanceOfSatisfying(
+            EbsApiClientException.class,
+            error -> assertThat(error.getHttpStatus().value()).isEqualTo(status));
   }
 
   @Test
