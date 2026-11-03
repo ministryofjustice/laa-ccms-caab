@@ -76,7 +76,8 @@ class LiablePartiesTemplateRenderTest {
         .doesNotContain(">Outcome and awards</h1>", "<h2", "no-parties-message")
         .contains("Award Amount or Value", "1,234.50")
         .contains("Name</th>", "Party Type</th>", "Relationship to Case</th>", "Address</th>")
-        .contains("href=\"/case/outcome-and-awards/" + path + "/7/liable-parties/add\"");
+        .contains("href=\"/case/outcome-and-awards/" + path + "/7/liable-parties/individual/add\"")
+        .doesNotContain("href=\"/case/outcome-and-awards/" + path + "/7/liable-parties/add\"");
     assertSingleAddPartyButtonAboveNavigation(html);
     final String next =
         "recovery".equals(destination)

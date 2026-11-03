@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.util.WebUtils;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualLiablePartyFlow;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentOtherDetailsFormData;
@@ -45,6 +46,9 @@ import uk.gov.laa.ccms.data.model.UserDetail;
  *
  * <p>Editing saves validated contacts on Next, and other details on Confirm. Back discards
  * unsubmitted other details; Cancel does not revert contacts already saved on Next.
+ *
+ * <p>Draft access and persistence share the session mutex so confirmation cannot save the same
+ * draft twice or discard a draft started by another request.
  */
 @Controller
 @RequestMapping(
@@ -70,8 +74,7 @@ public class LiablePartyController {
     model.addAttribute("individualFormUrl", individualBasePath(awardPath, awardId, opponentId));
     final String partyListUrl =
         "/case/outcome-and-awards/" + awardPath + "/" + awardId + "/liable-parties";
-    model.addAttribute(
-        "individualBackUrl", opponentId == null ? partyListUrl + "/add" : partyListUrl);
+    model.addAttribute("individualBackUrl", partyListUrl);
   }
 
   @InitBinder("liablePartyIndividual")
@@ -128,36 +131,38 @@ public class LiablePartyController {
       @RequestParam(value = "back", defaultValue = "false") final boolean back,
       final HttpSession session,
       final Model model) {
-    final IndividualLiablePartyFlow flow;
-    if (back) {
-      flow = requireIndividualFlow(ebsCase, user, awardPath, awardId, opponentId, session);
-    } else {
-      requireEditPermission(ebsCase);
-      if (opponentId != null) {
-        flow =
-            caseOutcomeService.getIndividualLiableParty(
-                ebsCase.getCaseReferenceNumber(),
-                user.getProvider().getId().intValue(),
-                awardPath,
-                awardId,
-                opponentId);
+    synchronized (WebUtils.getSessionMutex(session)) {
+      final IndividualLiablePartyFlow flow;
+      if (back) {
+        flow = requireIndividualFlow(ebsCase, user, awardPath, awardId, opponentId, session);
       } else {
-        caseOutcomeService.validatePartyAward(
-            ebsCase.getCaseReferenceNumber(),
-            user.getProvider().getId().intValue(),
-            awardPath,
-            awardId);
-        flow =
-            new IndividualLiablePartyFlow(
-                ebsCase.getCaseReferenceNumber(),
-                user.getProvider().getId().intValue(),
-                awardPath,
-                awardId);
+        requireEditPermission(ebsCase);
+        if (opponentId != null) {
+          flow =
+              caseOutcomeService.getIndividualLiableParty(
+                  ebsCase.getCaseReferenceNumber(),
+                  user.getProvider().getId().intValue(),
+                  awardPath,
+                  awardId,
+                  opponentId);
+        } else {
+          caseOutcomeService.validatePartyAward(
+              ebsCase.getCaseReferenceNumber(),
+              user.getProvider().getId().intValue(),
+              awardPath,
+              awardId);
+          flow =
+              new IndividualLiablePartyFlow(
+                  ebsCase.getCaseReferenceNumber(),
+                  user.getProvider().getId().intValue(),
+                  awardPath,
+                  awardId);
+        }
+        session.setAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW, flow);
       }
-      session.setAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW, flow);
+      model.addAttribute("liablePartyIndividual", flow.getContactDetails());
+      return individualContactPage(model);
     }
-    model.addAttribute("liablePartyIndividual", flow.getContactDetails());
-    return individualContactPage(model);
   }
 
   @PostMapping({"/individual/add", "/individual/{opponentId}/edit"})
@@ -171,32 +176,36 @@ public class LiablePartyController {
       final BindingResult errors,
       final HttpSession session,
       final Model model) {
-    final var flow = requireIndividualFlow(ebsCase, user, awardPath, awardId, opponentId, session);
-    flow.setContactDetails(form);
-    flow.setContactDetailsComplete(false);
-    individualOpponentFormService.prepareForValidation(form);
-    individualOpponentValidator.validateLiableParty(form, errors);
-    if (!errors.hasErrors() && flow.isEditing()) {
-      try {
-        caseOutcomeService.updateIndividualLiablePartyContactDetails(
-            flow.getCaseReference(),
-            flow.getProviderId(),
-            awardPath,
-            awardId,
-            flow.getOpponentId(),
-            user.getLoginId(),
-            form);
-      } catch (CaabApiClientException | IllegalStateException ex) {
-        log.warn("Failed to update contact details for individual party {}", opponentId, ex);
-        errors.reject("liableParty.save.failed", "We could not save the party. Please try again.");
+    synchronized (WebUtils.getSessionMutex(session)) {
+      final var flow =
+          requireIndividualFlow(ebsCase, user, awardPath, awardId, opponentId, session);
+      flow.setContactDetails(form);
+      flow.setContactDetailsComplete(false);
+      individualOpponentFormService.prepareForValidation(form);
+      individualOpponentValidator.validateLiableParty(form, errors);
+      if (!errors.hasErrors() && flow.isEditing()) {
+        try {
+          caseOutcomeService.updateIndividualLiablePartyContactDetails(
+              flow.getCaseReference(),
+              flow.getProviderId(),
+              awardPath,
+              awardId,
+              flow.getOpponentId(),
+              user.getLoginId(),
+              form);
+        } catch (CaabApiClientException | IllegalStateException ex) {
+          log.warn("Failed to update contact details for individual party {}", opponentId, ex);
+          errors.reject(
+              "liableParty.save.failed", "We could not save the party. Please try again.");
+        }
       }
+      flow.setContactDetailsComplete(!errors.hasErrors());
+      session.setAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW, flow);
+      if (errors.hasErrors()) {
+        return individualContactPage(model);
+      }
+      return "redirect:" + individualBasePath(awardPath, awardId, opponentId) + "/other-details";
     }
-    flow.setContactDetailsComplete(!errors.hasErrors());
-    session.setAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW, flow);
-    if (errors.hasErrors()) {
-      return individualContactPage(model);
-    }
-    return "redirect:" + individualBasePath(awardPath, awardId, opponentId) + "/other-details";
   }
 
   @GetMapping({"/individual/add/other-details", "/individual/{opponentId}/edit/other-details"})
@@ -208,13 +217,16 @@ public class LiablePartyController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final HttpSession session,
       final Model model) {
-    final var flow = requireIndividualFlow(ebsCase, user, awardPath, awardId, opponentId, session);
-    if (!flow.isContactDetailsComplete()) {
-      log.warn("Individual party other details requested before contact details were completed");
-      return "redirect:" + individualBasePath(awardPath, awardId, opponentId) + "?back=true";
+    synchronized (WebUtils.getSessionMutex(session)) {
+      final var flow =
+          requireIndividualFlow(ebsCase, user, awardPath, awardId, opponentId, session);
+      if (!flow.isContactDetailsComplete()) {
+        log.warn("Individual party other details requested before contact details were completed");
+        return "redirect:" + individualBasePath(awardPath, awardId, opponentId) + "?back=true";
+      }
+      model.addAttribute("liablePartyOtherDetails", flow.getOtherDetails());
+      return individualOtherPage(model);
     }
-    model.addAttribute("liablePartyOtherDetails", flow.getOtherDetails());
-    return individualOtherPage(model);
   }
 
   @PostMapping({"/individual/add/other-details", "/individual/{opponentId}/edit/other-details"})
@@ -224,77 +236,83 @@ public class LiablePartyController {
       @PathVariable(value = "opponentId", required = false) final Integer opponentId,
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
-      @ModelAttribute("liablePartyOtherDetails") final IndividualOpponentOtherDetailsFormData form,
+      @Validated @ModelAttribute("liablePartyOtherDetails")
+          final IndividualOpponentOtherDetailsFormData form,
       final BindingResult errors,
       @RequestParam(defaultValue = "confirm") final String action,
       final HttpSession session,
       final Model model) {
-    final var flow = requireIndividualFlow(ebsCase, user, awardPath, awardId, opponentId, session);
-    if ("back".equals(action)) {
-      try {
-        flow.setOtherDetails(
-            flow.isEditing()
-                ? caseOutcomeService
-                    .getIndividualLiableParty(
-                        flow.getCaseReference(),
-                        flow.getProviderId(),
-                        awardPath,
-                        awardId,
-                        flow.getOpponentId())
-                    .getOtherDetails()
-                : new IndividualOpponentOtherDetailsFormData());
-      } catch (CaabApiClientException | IllegalStateException ex) {
-        log.warn("Failed to reload saved other details for individual party {}", opponentId, ex);
-        errors.reject(
-            "liableParty.load.failed",
-            "We could not load the saved party details. Please try again.");
+    synchronized (WebUtils.getSessionMutex(session)) {
+      final var flow =
+          requireIndividualFlow(ebsCase, user, awardPath, awardId, opponentId, session);
+      if ("back".equals(action)) {
+        try {
+          flow.setOtherDetails(
+              flow.isEditing()
+                  ? caseOutcomeService
+                      .getIndividualLiableParty(
+                          flow.getCaseReference(),
+                          flow.getProviderId(),
+                          awardPath,
+                          awardId,
+                          flow.getOpponentId())
+                      .getOtherDetails()
+                  : new IndividualOpponentOtherDetailsFormData());
+        } catch (CaabApiClientException | IllegalStateException ex) {
+          log.warn("Failed to reload saved other details for individual party {}", opponentId, ex);
+          errors.reject(
+              "liableParty.load.failed",
+              "We could not load the saved party details. Please try again.");
+          return individualOtherPage(model);
+        }
+        session.setAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW, flow);
+        return "redirect:" + individualBasePath(awardPath, awardId, opponentId) + "?back=true";
+      }
+      if (!"confirm".equals(action)) {
+        throw new CaabApplicationException("Invalid individual party action");
+      }
+      flow.setOtherDetails(form);
+      if (!flow.isContactDetailsComplete()) {
+        log.warn("Rejecting individual party confirmation without completed contact details");
+        session.setAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW, flow);
+        return "redirect:" + individualBasePath(awardPath, awardId, opponentId) + "?back=true";
+      }
+      form.setAssessmentDate(DateUtils.normaliseComponentDateIfValid(form.getAssessmentDate()));
+      otherDetailsValidator.validate(form, errors);
+      session.setAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW, flow);
+      if (errors.hasErrors()) {
         return individualOtherPage(model);
       }
-      session.setAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW, flow);
-      return "redirect:" + individualBasePath(awardPath, awardId, opponentId) + "?back=true";
-    }
-    if (!"confirm".equals(action)) {
-      throw new CaabApplicationException("Invalid individual party action");
-    }
-    flow.setOtherDetails(form);
-    if (!flow.isContactDetailsComplete()) {
-      log.warn("Rejecting individual party confirmation without completed contact details");
-      session.setAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW, flow);
-      return "redirect:" + individualBasePath(awardPath, awardId, opponentId) + "?back=true";
-    }
-    form.setAssessmentDate(DateUtils.normaliseComponentDateIfValid(form.getAssessmentDate()));
-    otherDetailsValidator.validate(form, errors);
-    session.setAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW, flow);
-    if (errors.hasErrors()) {
-      return individualOtherPage(model);
-    }
-    try {
-      if (flow.isEditing()) {
-        caseOutcomeService.updateIndividualLiablePartyOtherDetails(
-            flow.getCaseReference(),
-            flow.getProviderId(),
-            awardPath,
-            awardId,
-            flow.getOpponentId(),
-            user.getLoginId(),
-            form);
-      } else {
-        caseOutcomeService.createIndividualLiableParty(
-            flow.getCaseReference(),
-            flow.getProviderId(),
-            awardPath,
-            awardId,
-            user.getLoginId(),
-            flow.getContactDetails(),
-            form);
+      try {
+        if (flow.isEditing()) {
+          caseOutcomeService.updateIndividualLiablePartyOtherDetails(
+              flow.getCaseReference(),
+              flow.getProviderId(),
+              awardPath,
+              awardId,
+              flow.getOpponentId(),
+              user.getLoginId(),
+              form);
+        } else {
+          caseOutcomeService.createIndividualLiableParty(
+              flow.getCaseReference(),
+              flow.getProviderId(),
+              awardPath,
+              awardId,
+              user.getLoginId(),
+              flow.getContactDetails(),
+              form);
+        }
+      } catch (CaabApiClientException | IllegalStateException ex) {
+        log.warn("Failed to save individual party for {} award {}", awardPath, awardId, ex);
+        errors.reject("liableParty.save.failed", "We could not save the party. Please try again.");
+        return individualOtherPage(model);
       }
-    } catch (CaabApiClientException | IllegalStateException ex) {
-      log.warn("Failed to save individual party for {} award {}", awardPath, awardId, ex);
-      errors.reject("liableParty.save.failed", "We could not save the party. Please try again.");
-      return individualOtherPage(model);
+      if (session.getAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW) == flow) {
+        session.removeAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW);
+      }
+      return "redirect:/case/outcome-and-awards/" + awardPath + "/" + awardId + "/liable-parties";
     }
-    session.removeAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW);
-    return "redirect:/case/outcome-and-awards/" + awardPath + "/" + awardId + "/liable-parties";
   }
 
   @GetMapping({"/individual/add/cancel", "/individual/{opponentId}/edit/cancel"})
@@ -305,9 +323,11 @@ public class LiablePartyController {
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final HttpSession session) {
-    requireIndividualFlow(ebsCase, user, awardPath, awardId, opponentId, session);
-    session.removeAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW);
-    return "redirect:/case/outcome-and-awards/" + awardPath + "/" + awardId + "/liable-parties";
+    synchronized (WebUtils.getSessionMutex(session)) {
+      requireIndividualFlow(ebsCase, user, awardPath, awardId, opponentId, session);
+      session.removeAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW);
+      return "redirect:/case/outcome-and-awards/" + awardPath + "/" + awardId + "/liable-parties";
+    }
   }
 
   private IndividualLiablePartyFlow requireIndividualFlow(

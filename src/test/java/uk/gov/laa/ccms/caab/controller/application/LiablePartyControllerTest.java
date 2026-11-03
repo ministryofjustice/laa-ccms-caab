@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -25,6 +26,11 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,9 +42,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.web.util.WebUtils;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.advice.GlobalBinderAdvice;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualLiablePartyFlow;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
+import uk.gov.laa.ccms.caab.bean.validators.BaselineTextValidator;
 import uk.gov.laa.ccms.caab.bean.validators.opponent.IndividualOpponentOtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.opponent.IndividualOpponentValidator;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
@@ -73,6 +82,7 @@ class LiablePartyControllerTest {
                     new IndividualOpponentValidator(),
                     new IndividualOpponentOtherDetailsValidator(),
                     lookupService))
+            .setControllerAdvice(new GlobalBinderAdvice(new BaselineTextValidator()))
             .build();
     session = new MockHttpSession();
     session.setAttribute(
@@ -81,6 +91,152 @@ class LiablePartyControllerTest {
             .caseReferenceNumber("300000001")
             .availableFunctions(List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE)));
     session.setAttribute(USER_DETAILS, ApplicationTestUtils.buildUser());
+  }
+
+  @Test
+  void concurrentConfirmationsSaveTheDraftOnlyOnce() throws Exception {
+    draft().setContactDetailsComplete(true);
+    final var saving = new CountDownLatch(1);
+    final var releaseSave = new CountDownLatch(1);
+    doAnswer(
+            invocation -> {
+              assertThat(Thread.holdsLock(WebUtils.getSessionMutex(session))).isTrue();
+              saving.countDown();
+              assertThat(releaseSave.await(5, TimeUnit.SECONDS)).isTrue();
+              return null;
+            })
+        .when(caseOutcomeService)
+        .createIndividualLiableParty(any(), any(), any(), any(), any(), any(), any());
+
+    try (final var pool = Executors.newFixedThreadPool(2)) {
+      final var first =
+          pool.submit(() -> mvc.perform(post(BASE + "/other-details").session(session)));
+      try {
+        assertThat(saving.await(5, TimeUnit.SECONDS)).isTrue();
+        final var started = new CountDownLatch(1);
+        final var second =
+            pool.submit(
+                () -> {
+                  started.countDown();
+                  return mvc.perform(post(BASE + "/other-details").session(session));
+                });
+        assertThat(started.await(5, TimeUnit.SECONDS)).isTrue();
+        assertThatThrownBy(() -> second.get(200, TimeUnit.MILLISECONDS))
+            .isInstanceOf(TimeoutException.class);
+        releaseSave.countDown();
+        first
+            .get(5, TimeUnit.SECONDS)
+            .andExpect(redirectedUrl("/case/outcome-and-awards/cost-award/7/liable-parties"));
+        assertThatThrownBy(() -> second.get(5, TimeUnit.SECONDS))
+            .isInstanceOf(ExecutionException.class)
+            .hasRootCauseMessage("No individual party draft exists for this case and award");
+      } finally {
+        releaseSave.countDown();
+      }
+    }
+    verify(caseOutcomeService, times(1))
+        .createIndividualLiableParty(any(), any(), any(), any(), any(), any(), any());
+    assertThat(session.getAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW)).isNull();
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void startingAnotherJourneyDuringSaveRetainsTheNewDraft(boolean editing) throws Exception {
+    final var original = draft();
+    original.setContactDetailsComplete(true);
+    final var replacement = new IndividualLiablePartyFlow("300000001", 123, "cost-award", 7, 11);
+    if (editing) {
+      when(caseOutcomeService.getIndividualLiableParty("300000001", 123, "cost-award", 7, 11))
+          .thenReturn(replacement);
+    }
+    stubContactDropdowns();
+    final var saving = new CountDownLatch(1);
+    final var releaseSave = new CountDownLatch(1);
+    doAnswer(
+            invocation -> {
+              saving.countDown();
+              assertThat(releaseSave.await(5, TimeUnit.SECONDS)).isTrue();
+              return null;
+            })
+        .when(caseOutcomeService)
+        .createIndividualLiableParty(any(), any(), any(), any(), any(), any(), any());
+
+    try (final var pool = Executors.newFixedThreadPool(2)) {
+      final var confirmation =
+          pool.submit(() -> mvc.perform(post(BASE + "/other-details").session(session)));
+      try {
+        assertThat(saving.await(5, TimeUnit.SECONDS)).isTrue();
+        final var started = new CountDownLatch(1);
+        final var newJourney =
+            pool.submit(
+                () -> {
+                  started.countDown();
+                  return mvc.perform(get(editing ? EDIT : BASE).session(session));
+                });
+        assertThat(started.await(5, TimeUnit.SECONDS)).isTrue();
+        assertThatThrownBy(() -> newJourney.get(200, TimeUnit.MILLISECONDS))
+            .isInstanceOf(TimeoutException.class);
+        releaseSave.countDown();
+        confirmation
+            .get(5, TimeUnit.SECONDS)
+            .andExpect(redirectedUrl("/case/outcome-and-awards/cost-award/7/liable-parties"));
+        newJourney.get(5, TimeUnit.SECONDS).andExpect(view().name(CONTACT_VIEW));
+      } finally {
+        releaseSave.countDown();
+      }
+    }
+    assertThat(flow()).isNotSameAs(original);
+    if (editing) {
+      assertThat(flow()).isSameAs(replacement);
+    }
+    mvc.perform(get(editing ? EDIT : BASE).session(session).param("back", "true"))
+        .andExpect(view().name(CONTACT_VIEW))
+        .andExpect(model().attribute("liablePartyIndividual", flow().getContactDetails()));
+    verify(caseOutcomeService, times(1))
+        .createIndividualLiableParty(any(), any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void saveCleanupDoesNotRemoveAReplacementDraft() throws Exception {
+    draft().setContactDetailsComplete(true);
+    final var replacement = new IndividualLiablePartyFlow("300000001", 123, "land", 8);
+    doAnswer(
+            invocation -> {
+              session.setAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW, replacement);
+              return null;
+            })
+        .when(caseOutcomeService)
+        .createIndividualLiableParty(any(), any(), any(), any(), any(), any(), any());
+    mvc.perform(post(BASE + "/other-details").session(session))
+        .andExpect(redirectedUrl("/case/outcome-and-awards/cost-award/7/liable-parties"));
+    assertThat(flow()).isSameAs(replacement);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "add, employmentStatus",
+    "add, assessedIncomeFrequency",
+    "11/edit, employmentStatus",
+    "11/edit, assessedIncomeFrequency"
+  })
+  void baselineRejectsMarkupInOtherDetailsForAddAndEdit(String journey, String field)
+      throws Exception {
+    final var draft = "add".equals(journey) ? draft() : editDraft();
+    draft.setContactDetailsComplete(true);
+    stubOtherDropdowns();
+    mvc.perform(
+            post(BASE.replace("/individual/add", "/individual/" + journey) + "/other-details")
+                .session(session)
+                .param(field, "<markup>"))
+        .andExpect(view().name(OTHER_VIEW))
+        .andExpect(
+            model()
+                .attributeHasFieldErrorCode(
+                    "liablePartyOtherDetails",
+                    field,
+                    BaselineTextValidator.INVALID_CHARACTER_CODE));
+    assertThat(flow()).isSameAs(draft);
+    verifyNotSaved();
   }
 
   @ParameterizedTest
@@ -351,7 +507,11 @@ class LiablePartyControllerTest {
         .andExpect(handler().handlerType(LiablePartyController.class))
         .andExpect(view().name(CONTACT_VIEW))
         .andExpect(model().attribute("awardPath", path))
-        .andExpect(model().attribute("awardId", 7));
+        .andExpect(model().attribute("awardId", 7))
+        .andExpect(
+            model()
+                .attribute(
+                    "individualBackUrl", "/case/outcome-and-awards/" + path + "/7/liable-parties"));
 
     assertThat(session.getAttribute(CURRENT_OPPONENT)).isSameAs(applicationOpponent);
     assertThat(flow().getContactDetails()).isNotSameAs(applicationOpponent);
