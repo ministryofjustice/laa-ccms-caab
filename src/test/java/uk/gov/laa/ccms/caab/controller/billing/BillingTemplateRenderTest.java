@@ -89,6 +89,48 @@ class BillingTemplateRenderTest {
   }
 
   @Test
+  void billingNavigationPreservesEffectiveSizeSortAndAnchor() {
+    final Map<String, Object> model = statementModel(true);
+    model.put(
+        "billsAndPoaPage",
+        new PageImpl<>(
+            List.of(uncopyableRejectedBill()),
+            org.springframework.data.domain.PageRequest.of(1, 25),
+            100));
+    model.put("paginationSize", 25);
+    model.put("sortField", "dateSubmitted");
+    model.put("sortDirection", "desc");
+    final String html = render("application/billing/case-statement-of-account", model);
+    assertThat(html)
+        .contains("page=0", "page=2", "size=25", "pageSort=dateSubmitted,desc", "#bills-and-poa");
+    final List<String> navigation =
+        elements(html, "nav").stream().filter(nav -> nav.contains("govuk-pagination")).toList();
+    assertThat(navigation).hasSize(1);
+    assertThat(
+            elements(navigation.getFirst(), "a").stream()
+                .filter(link -> !link.contains("href=\"#\""))
+                .toList())
+        .allSatisfy(link -> assertThat(link).contains("size=25", "pageSort=", "#bills-and-poa"));
+  }
+
+  @Test
+  void otherPaginationCallersDoNotGainSizeParameters() {
+    final String html =
+        render(
+            "partials/pagination",
+            Map.of(
+                "page",
+                    new PageImpl<>(
+                        List.of("row"), org.springframework.data.domain.PageRequest.of(1, 25), 100),
+                "currentUrl", "/other",
+                "sortField", "name",
+                "sortDirection", "asc"));
+    assertThat(elements(html, "nav").getFirst())
+        .contains("page=0", "page=2", "pageSort=name,asc")
+        .doesNotContain("size=");
+  }
+
+  @Test
   @DisplayName("POA confirmation renders through the layout in the shared submission shape")
   void poaConfirmationRenders() {
     final String html =

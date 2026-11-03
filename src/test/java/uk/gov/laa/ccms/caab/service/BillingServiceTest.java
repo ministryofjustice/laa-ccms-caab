@@ -19,10 +19,13 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.LongStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -36,11 +39,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.codec.DecodingException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 import reactor.test.scheduler.VirtualTimeScheduler;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
@@ -114,6 +121,161 @@ class BillingServiceTest {
 
   @Nested
   class RetainedTotals {
+    @Test
+    void pageDeadlineKeepsOutOfOrderResultsCancelsWorkAndNeverStartsQueuedRows() {
+      final List<BillPoaRow> rows =
+          LongStream.rangeClosed(1, 8).mapToObj(id -> row("Bill", id)).toList();
+      final AtomicInteger active = new AtomicInteger();
+      final AtomicInteger maximum = new AtomicInteger();
+      final List<Long> started = new ArrayList<>();
+      final List<Long> cancelled = new ArrayList<>();
+      when(ebsApiClient.getInvoiceAssessment(eq(CASE_REF), any()))
+          .thenAnswer(
+              invocation -> {
+                final Long id = invocation.getArgument(1);
+                return Mono.defer(
+                    () -> {
+                      started.add(id);
+                      maximum.accumulateAndGet(active.incrementAndGet(), Math::max);
+                      final Mono<InvoiceAssessment> result =
+                          id == 2L
+                              ? Mono.delay(Duration.ofSeconds(1))
+                                  .map(
+                                      ignored ->
+                                          new InvoiceAssessment(
+                                              CASE_REF,
+                                              id,
+                                              501L,
+                                              "20",
+                                              List.of(global("100", "20"))))
+                              : Mono.never();
+                      return result
+                          .doOnSuccess(ignored -> active.decrementAndGet())
+                          .doOnCancel(
+                              () -> {
+                                cancelled.add(id);
+                                active.decrementAndGet();
+                              });
+                    });
+              });
+
+      StepVerifier.withVirtualTime(() -> billingService.retainedTotalsForPage(CASE_REF, rows))
+          .then(() -> assertThat(started).containsExactly(1L, 2L, 3L, 4L))
+          .thenAwait(Duration.ofSeconds(1))
+          .then(() -> assertThat(started).containsExactly(1L, 2L, 3L, 4L, 5L))
+          .thenAwait(Duration.ofSeconds(4).minusNanos(1))
+          .then(() -> assertThat(cancelled).isEmpty())
+          .thenAwait(Duration.ofNanos(1))
+          .assertNext(
+              result -> {
+                assertThat(result).hasSize(8);
+                assertThat(result.get(1).grandTotal()).isEqualByComparingTo("120");
+                for (int i = 0; i < rows.size(); i++) {
+                  if (i != 1) {
+                    assertThat(result.get(i)).isSameAs(rows.get(i));
+                  }
+                }
+              })
+          .verifyComplete();
+      assertThat(maximum).hasValue(4);
+      assertThat(cancelled).containsExactlyInAnyOrder(1L, 3L, 4L, 5L);
+      assertThat(started).doesNotContain(6L, 7L, 8L);
+    }
+
+    @Test
+    void pageReconstructsDuplicateInvoiceIdsByPositionNotCompletionOrder() {
+      final BillPoaRow first = row("Bill", 555L);
+      final BillPoaRow second = row("POA", 555L);
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L))
+          .thenReturn(
+              Mono.delay(Duration.ofSeconds(2))
+                  .map(
+                      ignored ->
+                          new InvoiceAssessment(
+                              CASE_REF, 555L, 501L, "20", List.of(global("100", "20")))),
+              Mono.delay(Duration.ofSeconds(1))
+                  .map(
+                      ignored ->
+                          new InvoiceAssessment(
+                              CASE_REF, 555L, 501L, "20", List.of(global("200", "40")))));
+
+      StepVerifier.withVirtualTime(
+              () -> billingService.retainedTotalsForPage(CASE_REF, List.of(first, second)))
+          .thenAwait(Duration.ofSeconds(2))
+          .assertNext(
+              result -> {
+                assertThat(result.get(0).type()).isEqualTo(first.type());
+                assertThat(result.get(0).grandTotal()).isEqualByComparingTo("120");
+                assertThat(result.get(1).type()).isEqualTo(second.type());
+                assertThat(result.get(1).grandTotal()).isEqualByComparingTo("240");
+              })
+          .verifyComplete();
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {400, 401, 403})
+    void pagePropagatesObservedClientErrorsAndCancelsOtherWork(final int status) {
+      final AtomicBoolean cancelled = new AtomicBoolean();
+      final EbsApiClientException failure =
+          new EbsApiClientException("Unavailable", HttpStatus.valueOf(status));
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 444L))
+          .thenReturn(Mono.<InvoiceAssessment>never().doOnCancel(() -> cancelled.set(true)));
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L))
+          .thenReturn(Mono.delay(Duration.ofSeconds(1)).then(Mono.error(failure)));
+      StepVerifier.withVirtualTime(
+              () ->
+                  billingService.retainedTotalsForPage(
+                      CASE_REF, List.of(row("Bill", 444L), row("Bill", 555L))))
+          .thenAwait(Duration.ofSeconds(1))
+          .expectErrorMatches(error -> error == failure)
+          .verify();
+      assertThat(cancelled).isTrue();
+    }
+
+    @Test
+    void pagePropagatesProgrammingErrors() {
+      final IllegalStateException failure = new IllegalStateException("broken invariant");
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L)).thenThrow(failure);
+      StepVerifier.create(
+              billingService.retainedTotalsForPage(CASE_REF, List.of(row("Bill", 555L))))
+          .expectErrorMatches(error -> error == failure)
+          .verify();
+    }
+
+    @Test
+    void pageDoesNotReadDraftsInvalidIdsOrEmptyPagesAndKeepsOriginalObjects() {
+      final List<BillPoaRow> rows =
+          List.of(
+              new BillPoaRow("Bill", "Draft", null, null, BigDecimal.TEN, true),
+              row("Bill", null),
+              row("Bill", 0L),
+              row("Bill", -1L));
+      StepVerifier.create(billingService.retainedTotalsForPage(CASE_REF, rows))
+          .assertNext(
+              result -> {
+                for (int i = 0; i < rows.size(); i++) {
+                  assertThat(result.get(i)).isSameAs(rows.get(i));
+                }
+              })
+          .verifyComplete();
+      StepVerifier.create(billingService.retainedTotalsForPage(CASE_REF, List.of()))
+          .assertNext(result -> assertThat(result).isEmpty())
+          .verifyComplete();
+      verifyNoInteractions(ebsApiClient);
+    }
+
+    @Test
+    void pageBoundaryPreservesMetadataAndReadsOnlyVisibleRows() {
+      final BillPoaRow original = row("Bill", 555L);
+      returns(global("100", "20"));
+      final Page<BillPoaRow> page = new PageImpl<>(List.of(original), PageRequest.of(2, 1), 20);
+      final Page<BillPoaRow> result = billingService.withRetainedTotals(CASE_REF, page);
+      assertThat(result.getPageable()).isEqualTo(page.getPageable());
+      assertThat(result.getTotalElements()).isEqualTo(20);
+      assertThat(result.getContent().getFirst().grandTotal()).isEqualByComparingTo("120");
+      verify(ebsApiClient).getInvoiceAssessment(CASE_REF, 555L);
+    }
+
     private BillPoaRow row(final String type, final Long id) {
       return new BillPoaRow(type, "Rejected", null, null, new BigDecimal("90"), false, id)
           .withCopyable();

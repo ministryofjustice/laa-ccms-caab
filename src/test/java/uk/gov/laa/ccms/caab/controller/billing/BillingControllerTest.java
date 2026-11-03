@@ -33,6 +33,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -123,13 +125,95 @@ class BillingControllerTest {
         .when(billingService.getStatementOfAccountDisplay(any(), any(), any()))
         .thenReturn(new StatementOfAccountDisplay());
     lenient()
-        .when(billingService.withRetainedTotals(any(), any()))
+        .when(billingService.withRetainedTotals(any(), any(Page.class)))
         .thenAnswer(invocation -> invocation.getArgument(1));
   }
 
   @Nested
   @DisplayName("GET: /case/billing")
   class CaseStatementOfAccount {
+
+    @ParameterizedTest
+    @CsvSource({"1,0,1", "25,1,26", "50,2,101"})
+    void preservesPositiveNonDefaultSizes(final int size, final int number, final long firstId) {
+      final ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("300000123");
+      final StatementOfAccountDisplay display = new StatementOfAccountDisplay();
+      display.setBillsAndPoa(
+          java.util.stream.LongStream.rangeClosed(1, 150)
+              .mapToObj(
+                  id -> new BillPoaRow("POA", "Authorised", null, null, BigDecimal.ONE, false, id))
+              .toList());
+      when(billingService.getStatementOfAccountDisplay(eq("300000123"), any(), any()))
+          .thenReturn(display);
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing")
+                      .param("page", Integer.toString(number))
+                      .param("size", Integer.toString(size))
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .containsEntry("paginationSize", size)
+          .extractingByKey("billsAndPoaPage")
+          .isInstanceOfSatisfying(
+              Page.class,
+              result -> {
+                assertThat(result.getSize()).isEqualTo(size);
+                assertThat(result.getNumber()).isEqualTo(number);
+                assertThat(result.getTotalElements()).isEqualTo(150);
+                assertThat(((BillPoaRow) result.getContent().getFirst()).billingIncidentId())
+                    .isEqualTo(firstId);
+              });
+    }
+
+    @ParameterizedTest
+    @CsvSource({"0,0", "-1,0", "10,-1", "10,100"})
+    void invalidPaginationRetainsExistingErrorHandling(final int size, final int number) {
+      final ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("300000123");
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing")
+                      .param("page", Integer.toString(number))
+                      .param("size", Integer.toString(size))
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasViewName("error");
+      verify(billingService, never()).withRetainedTotals(any(), any(Page.class));
+    }
+
+    @Test
+    void capsRequestedPageSizeBeforeSelectingVisibleRows() {
+      final ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("300000123");
+      final StatementOfAccountDisplay display = new StatementOfAccountDisplay();
+      display.setBillsAndPoa(
+          java.util.stream.LongStream.rangeClosed(1, 120)
+              .mapToObj(
+                  id -> new BillPoaRow("POA", "Authorised", null, null, BigDecimal.ONE, false, id))
+              .toList());
+      when(billingService.getStatementOfAccountDisplay(eq("300000123"), any(), any()))
+          .thenReturn(display);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing")
+                      .param("page", "0")
+                      .param("size", "500")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .extractingByKey("billsAndPoaPage")
+          .isInstanceOfSatisfying(
+              Page.class,
+              result -> {
+                assertThat(result.getSize()).isEqualTo(50);
+                assertThat(result.getTotalElements()).isEqualTo(120);
+                assertThat(result.getContent()).hasSize(50);
+                assertThat(((BillPoaRow) result.getContent().get(0)).billingIncidentId())
+                    .isEqualTo(1L);
+              });
+    }
 
     @Test
     @DisplayName("Returns the statement of account view with the case reference number and figures")
@@ -168,7 +252,12 @@ class BillingControllerTest {
 
       final BillPoaRow enriched =
           rows.get(10).withTotals(new BigDecimal("100"), new BigDecimal("120"));
-      when(billingService.withRetainedTotals("300000123", rows.get(10))).thenReturn(enriched);
+      when(billingService.withRetainedTotals(eq("300000123"), any(Page.class)))
+          .thenAnswer(
+              invocation -> {
+                final Page<BillPoaRow> visible = invocation.getArgument(1);
+                return visible.map(row -> row == rows.get(10) ? enriched : row);
+              });
 
       assertThat(
               mockMvc.perform(
@@ -189,11 +278,11 @@ class BillingControllerTest {
                 assertThat(page.getContent()).hasSize(10);
                 assertThat(page.getContent().get(0)).isEqualTo(enriched);
               });
-      verify(billingService, times(10)).withRetainedTotals(eq("300000123"), any());
-      for (int i = 0; i < rows.size(); i++) {
-        verify(billingService, times(i >= 10 && i < 20 ? 1 : 0))
-            .withRetainedTotals("300000123", rows.get(i));
-      }
+      verify(billingService)
+          .withRetainedTotals(
+              eq("300000123"),
+              argThat(
+                  (Page<BillPoaRow> visible) -> visible.getContent().equals(rows.subList(10, 20))));
     }
 
     @Test

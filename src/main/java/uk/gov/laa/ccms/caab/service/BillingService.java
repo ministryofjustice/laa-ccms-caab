@@ -18,10 +18,14 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.codec.DecodingException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuples;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.InvoiceAssessment;
@@ -86,6 +90,8 @@ public class BillingService {
       Set.of("PROCEEDING", "OPPONENT_OTHER_PARTIES");
   private static final String INVOICE_TYPE_POA = "POA";
   private static final Duration RETAINED_TOTALS_TIMEOUT = Duration.ofSeconds(5);
+  private static final Duration RETAINED_TOTALS_PAGE_TIMEOUT = Duration.ofSeconds(5);
+  private static final int RETAINED_TOTALS_CONCURRENCY = 4;
   private static final BigDecimal HUNDRED = new BigDecimal("100");
   private static final ZoneId EBS_ZONE = ZoneId.of("Europe/London");
 
@@ -106,43 +112,85 @@ public class BillingService {
   private final AssessmentService assessmentService;
   private final ClientService clientService;
 
+  /** Enriches only visible rows, blocking once at the MVC boundary and retaining page metadata. */
+  public Page<BillPoaRow> withRetainedTotals(
+      final String caseReference, final Page<BillPoaRow> page) {
+    final List<BillPoaRow> rows = retainedTotalsForPage(caseReference, page.getContent()).block();
+    return new PageImpl<>(rows, page.getPageable(), page.getTotalElements());
+  }
+
+  /**
+   * Keeps completed results by position, even when an earlier lookup stalls. The deadline cancels
+   * unfinished work; errors not observed before cancellation cannot be propagated.
+   */
+  public Mono<List<BillPoaRow>> retainedTotalsForPage(
+      final String caseReference, final List<BillPoaRow> rows) {
+    return Flux.fromIterable(rows)
+        .index()
+        .flatMap(
+            indexed ->
+                retainedTotals(caseReference, indexed.getT2())
+                    .map(row -> Tuples.of(indexed.getT1(), row)),
+            RETAINED_TOTALS_CONCURRENCY)
+        .take(RETAINED_TOTALS_PAGE_TIMEOUT)
+        .collectList()
+        .map(
+            completed -> {
+              final List<BillPoaRow> result = new ArrayList<>(rows);
+              completed.forEach(
+                  indexed -> result.set(Math.toIntExact(indexed.getT1()), indexed.getT2()));
+              return result;
+            });
+  }
+
   /** Enriches a visible non-draft row without changing the underlying statement or draft data. */
   public BillPoaRow withRetainedTotals(final String caseReference, final BillPoaRow row) {
+    return retainedTotals(caseReference, row).block();
+  }
+
+  private Mono<BillPoaRow> retainedTotals(final String caseReference, final BillPoaRow row) {
     if (row.draft() || row.billingIncidentId() == null) {
-      return row;
+      return Mono.just(row);
     }
     if (row.billingIncidentId() <= 0) {
       log.warn("Cannot retrieve totals for an invoice with a non-positive billing incident id");
-      return row;
+      return Mono.just(row);
     }
-    final InvoiceAssessment assessment;
-    try {
-      assessment =
-          ebsApiClient
-              .getInvoiceAssessment(caseReference, row.billingIncidentId())
-              .timeout(
-                  RETAINED_TOTALS_TIMEOUT,
-                  Mono.error(
-                      new EbsApiClientException(
-                          "Retained totals lookup timed out", HttpStatus.GATEWAY_TIMEOUT)))
-              .block();
-    } catch (final EbsApiClientException error) {
-      if ((error.getHttpStatus() != null && error.getHttpStatus().is5xxServerError())
-          || error.hasHttpStatus(HttpStatus.REQUEST_TIMEOUT)
-          || error.hasHttpStatus(HttpStatus.TOO_MANY_REQUESTS)
-          || (error.getHttpStatus() == null
-              && (error.getCause() instanceof WebClientRequestException
-                  || error.getCause() instanceof DecodingException))) {
-        log.warn(
-            "Retained totals lookup unavailable for billing incident {}", row.billingIncidentId());
-        return row;
-      }
-      throw error;
-    }
-    if (assessment == null) {
-      log.warn("No retained assessment for billing incident {}", row.billingIncidentId());
-      return row;
-    }
+    return Mono.defer(
+            () -> ebsApiClient.getInvoiceAssessment(caseReference, row.billingIncidentId()))
+        .timeout(
+            RETAINED_TOTALS_TIMEOUT,
+            Mono.error(
+                new EbsApiClientException(
+                    "Retained totals lookup timed out", HttpStatus.GATEWAY_TIMEOUT)))
+        .map(assessment -> retainedTotals(caseReference, row, assessment))
+        .switchIfEmpty(
+            Mono.fromSupplier(
+                () -> {
+                  log.warn(
+                      "No retained assessment for billing incident {}", row.billingIncidentId());
+                  return row;
+                }))
+        .onErrorResume(
+            EbsApiClientException.class,
+            error -> {
+              if ((error.getHttpStatus() != null && error.getHttpStatus().is5xxServerError())
+                  || error.hasHttpStatus(HttpStatus.REQUEST_TIMEOUT)
+                  || error.hasHttpStatus(HttpStatus.TOO_MANY_REQUESTS)
+                  || (error.getHttpStatus() == null
+                      && (error.getCause() instanceof WebClientRequestException
+                          || error.getCause() instanceof DecodingException))) {
+                log.warn(
+                    "Retained totals lookup unavailable for billing incident {}",
+                    row.billingIncidentId());
+                return Mono.just(row);
+              }
+              return Mono.error(error);
+            });
+  }
+
+  private BillPoaRow retainedTotals(
+      final String caseReference, final BillPoaRow row, final InvoiceAssessment assessment) {
     if (!Objects.equals(caseReference, assessment.caseReference())
         || !Objects.equals(row.billingIncidentId(), assessment.billingIncidentId())) {
       log.warn(
