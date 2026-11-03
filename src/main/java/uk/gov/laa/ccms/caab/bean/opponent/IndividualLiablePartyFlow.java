@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.bean.opponent;
 
+import java.util.UUID;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -8,6 +9,7 @@ import lombok.Setter;
 @Getter
 @RequiredArgsConstructor
 public class IndividualLiablePartyFlow {
+  private final String journeyToken = UUID.randomUUID().toString();
   private final String caseReference;
   private final Integer providerId;
   private final String awardPath;

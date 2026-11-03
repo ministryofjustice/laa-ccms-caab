@@ -48,7 +48,8 @@ import uk.gov.laa.ccms.data.model.UserDetail;
  * unsubmitted other details; Cancel does not revert contacts already saved on Next.
  *
  * <p>Draft access and persistence share the session mutex so confirmation cannot save the same
- * draft twice or discard a draft started by another request.
+ * draft twice or discard a draft started by another request. Journey tokens reject stale tabs even
+ * when a replacement draft belongs to the same award and opponent.
  */
 @Controller
 @RequestMapping(
@@ -129,12 +130,15 @@ public class LiablePartyController {
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @RequestParam(value = "back", defaultValue = "false") final boolean back,
+      @RequestParam(required = false) final String journeyToken,
       final HttpSession session,
       final Model model) {
     synchronized (WebUtils.getSessionMutex(session)) {
       final IndividualLiablePartyFlow flow;
       if (back) {
-        flow = requireIndividualFlow(ebsCase, user, awardPath, awardId, opponentId, session);
+        flow =
+            requireIndividualFlow(
+                ebsCase, user, awardPath, awardId, opponentId, journeyToken, session);
       } else {
         requireEditPermission(ebsCase);
         if (opponentId != null) {
@@ -160,6 +164,7 @@ public class LiablePartyController {
         }
         session.setAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW, flow);
       }
+      model.addAttribute("journeyToken", flow.getJourneyToken());
       model.addAttribute("liablePartyIndividual", flow.getContactDetails());
       return individualContactPage(model);
     }
@@ -174,11 +179,14 @@ public class LiablePartyController {
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @Validated @ModelAttribute("liablePartyIndividual") final IndividualOpponentFormData form,
       final BindingResult errors,
+      @RequestParam(required = false) final String journeyToken,
       final HttpSession session,
       final Model model) {
     synchronized (WebUtils.getSessionMutex(session)) {
       final var flow =
-          requireIndividualFlow(ebsCase, user, awardPath, awardId, opponentId, session);
+          requireIndividualFlow(
+              ebsCase, user, awardPath, awardId, opponentId, journeyToken, session);
+      model.addAttribute("journeyToken", flow.getJourneyToken());
       flow.setContactDetails(form);
       flow.setContactDetailsComplete(false);
       individualOpponentFormService.prepareForValidation(form);
@@ -204,7 +212,10 @@ public class LiablePartyController {
       if (errors.hasErrors()) {
         return individualContactPage(model);
       }
-      return "redirect:" + individualBasePath(awardPath, awardId, opponentId) + "/other-details";
+      return "redirect:"
+          + individualBasePath(awardPath, awardId, opponentId)
+          + "/other-details?journeyToken="
+          + flow.getJourneyToken();
     }
   }
 
@@ -215,14 +226,20 @@ public class LiablePartyController {
       @PathVariable(value = "opponentId", required = false) final Integer opponentId,
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @RequestParam(required = false) final String journeyToken,
       final HttpSession session,
       final Model model) {
     synchronized (WebUtils.getSessionMutex(session)) {
       final var flow =
-          requireIndividualFlow(ebsCase, user, awardPath, awardId, opponentId, session);
+          requireIndividualFlow(
+              ebsCase, user, awardPath, awardId, opponentId, journeyToken, session);
+      model.addAttribute("journeyToken", flow.getJourneyToken());
       if (!flow.isContactDetailsComplete()) {
         log.warn("Individual party other details requested before contact details were completed");
-        return "redirect:" + individualBasePath(awardPath, awardId, opponentId) + "?back=true";
+        return "redirect:"
+            + individualBasePath(awardPath, awardId, opponentId)
+            + "?back=true&journeyToken="
+            + flow.getJourneyToken();
       }
       model.addAttribute("liablePartyOtherDetails", flow.getOtherDetails());
       return individualOtherPage(model);
@@ -240,11 +257,14 @@ public class LiablePartyController {
           final IndividualOpponentOtherDetailsFormData form,
       final BindingResult errors,
       @RequestParam(defaultValue = "confirm") final String action,
+      @RequestParam(required = false) final String journeyToken,
       final HttpSession session,
       final Model model) {
     synchronized (WebUtils.getSessionMutex(session)) {
       final var flow =
-          requireIndividualFlow(ebsCase, user, awardPath, awardId, opponentId, session);
+          requireIndividualFlow(
+              ebsCase, user, awardPath, awardId, opponentId, journeyToken, session);
+      model.addAttribute("journeyToken", flow.getJourneyToken());
       if ("back".equals(action)) {
         try {
           flow.setOtherDetails(
@@ -266,7 +286,10 @@ public class LiablePartyController {
           return individualOtherPage(model);
         }
         session.setAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW, flow);
-        return "redirect:" + individualBasePath(awardPath, awardId, opponentId) + "?back=true";
+        return "redirect:"
+            + individualBasePath(awardPath, awardId, opponentId)
+            + "?back=true&journeyToken="
+            + flow.getJourneyToken();
       }
       if (!"confirm".equals(action)) {
         throw new CaabApplicationException("Invalid individual party action");
@@ -275,7 +298,10 @@ public class LiablePartyController {
       if (!flow.isContactDetailsComplete()) {
         log.warn("Rejecting individual party confirmation without completed contact details");
         session.setAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW, flow);
-        return "redirect:" + individualBasePath(awardPath, awardId, opponentId) + "?back=true";
+        return "redirect:"
+            + individualBasePath(awardPath, awardId, opponentId)
+            + "?back=true&journeyToken="
+            + flow.getJourneyToken();
       }
       form.setAssessmentDate(DateUtils.normaliseComponentDateIfValid(form.getAssessmentDate()));
       otherDetailsValidator.validate(form, errors);
@@ -322,9 +348,10 @@ public class LiablePartyController {
       @PathVariable(value = "opponentId", required = false) final Integer opponentId,
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @RequestParam(required = false) final String journeyToken,
       final HttpSession session) {
     synchronized (WebUtils.getSessionMutex(session)) {
-      requireIndividualFlow(ebsCase, user, awardPath, awardId, opponentId, session);
+      requireIndividualFlow(ebsCase, user, awardPath, awardId, opponentId, journeyToken, session);
       session.removeAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW);
       return "redirect:/case/outcome-and-awards/" + awardPath + "/" + awardId + "/liable-parties";
     }
@@ -336,6 +363,7 @@ public class LiablePartyController {
       final String awardPath,
       final Integer awardId,
       final Integer opponentId,
+      final String journeyToken,
       final HttpSession session) {
     requireEditPermission(ebsCase);
     if (!(session.getAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW)
@@ -344,7 +372,8 @@ public class LiablePartyController {
         || !Objects.equals(flow.getProviderId(), user.getProvider().getId().intValue())
         || !Objects.equals(flow.getAwardPath(), awardPath)
         || !Objects.equals(flow.getAwardId(), awardId)
-        || !Objects.equals(flow.getOpponentId(), opponentId)) {
+        || !Objects.equals(flow.getOpponentId(), opponentId)
+        || !Objects.equals(flow.getJourneyToken(), journeyToken)) {
       throw new CaabApplicationException(
           "No individual party draft exists for this case and award");
     }

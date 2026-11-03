@@ -102,8 +102,9 @@ class LiablePartiesTemplateRenderTest {
         .contains("href=\"/case/outcome-and-awards/land/7/liable-parties/101/remove\"")
         .contains("href=\"/case/outcome-and-awards/land/7/liable-parties/102/remove\"")
         .contains("<span>Imported party</span>")
+        .contains("<span>Shared individual</span>")
         .contains("&lt;script&gt;alert(1)&lt;/script&gt;")
-        .doesNotContain("<script>alert(1)</script>", "/individual/13/edit");
+        .doesNotContain("<script>alert(1)</script>", "/individual/13/edit", "/individual/14/edit");
   }
 
   @ParameterizedTest
@@ -194,7 +195,9 @@ class LiablePartiesTemplateRenderTest {
                       "",
                       "<script>alert(1)</script>",
                       false,
-                      false));
+                      false),
+                  new LiablePartyDisplay(
+                      104, 14, "Shared individual", "Individual", "", "", false, false));
       model.addAttribute(
           "award",
           new LiablePartiesDisplay(

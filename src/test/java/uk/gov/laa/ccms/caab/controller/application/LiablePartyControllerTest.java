@@ -94,6 +94,70 @@ class LiablePartyControllerTest {
   }
 
   @Test
+  void staleConfirmationCannotCombineOneJourneysOtherDetailsWithAnotherJourneysContacts()
+      throws Exception {
+    stubContactDropdowns();
+    stubRelationship(false);
+    mvc.perform(get(BASE).session(session));
+    final String originalToken = journeyToken();
+    mvc.perform(validContact());
+    mvc.perform(get(BASE).session(session));
+    mvc.perform(validContact().param("middleNames", "Replacement"));
+    final var replacement = flow();
+    assertThat(replacement.getJourneyToken()).isNotEqualTo(originalToken);
+
+    assertThatThrownBy(
+            () ->
+                mvc.perform(
+                    post(BASE + "/other-details")
+                        .session(session)
+                        .param("journeyToken", originalToken)
+                        .param("employerName", "Original employer")))
+        .hasRootCauseMessage("No individual party draft exists for this case and award");
+
+    assertThat(flow()).isSameAs(replacement);
+    assertThat(flow().getContactDetails().getMiddleNames()).isEqualTo("Replacement");
+    assertThat(flow().getOtherDetails().getEmployerName()).isNull();
+    assertThat(flow().isContactDetailsComplete()).isTrue();
+    verifyNotSaved();
+  }
+
+  @ParameterizedTest
+  @CsvSource({"false,false", "false,true", "true,false", "true,true"})
+  void missingAndStaleTokensCannotAccessOrChangeReplacementDrafts(
+      boolean editing, boolean missingToken) {
+    final var original = editing ? editDraft() : draft();
+    final String originalToken = original.getJourneyToken();
+    final var replacement = editing ? editDraft() : draft();
+    replacement.setContactDetailsComplete(true);
+    replacement.getContactDetails().setFirstName("Replacement");
+    replacement.getOtherDetails().setEmployerName("Replacement employer");
+    final String base = editing ? EDIT : BASE;
+    final var requests =
+        List.of(
+            get(base).param("back", "true"),
+            post(base).param("firstName", "Stale contact"),
+            get(base + "/other-details"),
+            post(base + "/other-details").param("employerName", "Stale employer"),
+            post(base + "/other-details").param("action", "back"),
+            get(base + "/cancel"));
+
+    for (final var request : requests) {
+      request.session(session);
+      if (!missingToken) {
+        request.param("journeyToken", originalToken);
+      }
+      assertThatThrownBy(() -> mvc.perform(request))
+          .hasRootCauseMessage("No individual party draft exists for this case and award");
+      assertThat(flow()).isSameAs(replacement);
+      assertThat(flow().getContactDetails().getFirstName()).isEqualTo("Replacement");
+      assertThat(flow().getOtherDetails().getEmployerName()).isEqualTo("Replacement employer");
+      assertThat(flow().isContactDetailsComplete()).isTrue();
+    }
+    verifyNotSaved();
+  }
+
+  @Test
   void concurrentConfirmationsSaveTheDraftOnlyOnce() throws Exception {
     draft().setContactDetailsComplete(true);
     final var saving = new CountDownLatch(1);
@@ -110,7 +174,12 @@ class LiablePartyControllerTest {
 
     try (final var pool = Executors.newFixedThreadPool(2)) {
       final var first =
-          pool.submit(() -> mvc.perform(post(BASE + "/other-details").session(session)));
+          pool.submit(
+              () ->
+                  mvc.perform(
+                      post(BASE + "/other-details")
+                          .session(session)
+                          .param("journeyToken", journeyToken())));
       try {
         assertThat(saving.await(5, TimeUnit.SECONDS)).isTrue();
         final var started = new CountDownLatch(1);
@@ -118,7 +187,10 @@ class LiablePartyControllerTest {
             pool.submit(
                 () -> {
                   started.countDown();
-                  return mvc.perform(post(BASE + "/other-details").session(session));
+                  return mvc.perform(
+                      post(BASE + "/other-details")
+                          .session(session)
+                          .param("journeyToken", journeyToken()));
                 });
         assertThat(started.await(5, TimeUnit.SECONDS)).isTrue();
         assertThatThrownBy(() -> second.get(200, TimeUnit.MILLISECONDS))
@@ -163,7 +235,12 @@ class LiablePartyControllerTest {
 
     try (final var pool = Executors.newFixedThreadPool(2)) {
       final var confirmation =
-          pool.submit(() -> mvc.perform(post(BASE + "/other-details").session(session)));
+          pool.submit(
+              () ->
+                  mvc.perform(
+                      post(BASE + "/other-details")
+                          .session(session)
+                          .param("journeyToken", journeyToken())));
       try {
         assertThat(saving.await(5, TimeUnit.SECONDS)).isTrue();
         final var started = new CountDownLatch(1);
@@ -171,7 +248,10 @@ class LiablePartyControllerTest {
             pool.submit(
                 () -> {
                   started.countDown();
-                  return mvc.perform(get(editing ? EDIT : BASE).session(session));
+                  return mvc.perform(
+                      get(editing ? EDIT : BASE)
+                          .session(session)
+                          .param("journeyToken", journeyToken()));
                 });
         assertThat(started.await(5, TimeUnit.SECONDS)).isTrue();
         assertThatThrownBy(() -> newJourney.get(200, TimeUnit.MILLISECONDS))
@@ -189,7 +269,11 @@ class LiablePartyControllerTest {
     if (editing) {
       assertThat(flow()).isSameAs(replacement);
     }
-    mvc.perform(get(editing ? EDIT : BASE).session(session).param("back", "true"))
+    mvc.perform(
+            get(editing ? EDIT : BASE)
+                .session(session)
+                .param("journeyToken", journeyToken())
+                .param("back", "true"))
         .andExpect(view().name(CONTACT_VIEW))
         .andExpect(model().attribute("liablePartyIndividual", flow().getContactDetails()));
     verify(caseOutcomeService, times(1))
@@ -207,7 +291,8 @@ class LiablePartyControllerTest {
             })
         .when(caseOutcomeService)
         .createIndividualLiableParty(any(), any(), any(), any(), any(), any(), any());
-    mvc.perform(post(BASE + "/other-details").session(session))
+    mvc.perform(
+            post(BASE + "/other-details").session(session).param("journeyToken", journeyToken()))
         .andExpect(redirectedUrl("/case/outcome-and-awards/cost-award/7/liable-parties"));
     assertThat(flow()).isSameAs(replacement);
   }
@@ -227,6 +312,7 @@ class LiablePartyControllerTest {
     mvc.perform(
             post(BASE.replace("/individual/add", "/individual/" + journey) + "/other-details")
                 .session(session)
+                .param("journeyToken", journeyToken())
                 .param(field, "<markup>"))
         .andExpect(view().name(OTHER_VIEW))
         .andExpect(
@@ -253,12 +339,14 @@ class LiablePartyControllerTest {
         mvc.perform(
             post(BASE + "/other-details")
                 .session(session)
+                .param("journeyToken", journeyToken())
                 .param("employerName", "invalid".equals(outcome) ? "<invalid>" : "Employer"));
     switch (outcome) {
       case "valid" ->
           response.andExpect(redirectedUrl("/case/outcome-and-awards/cost-award/7/liable-parties"));
       case "invalid" -> response.andExpect(view().name(OTHER_VIEW));
-      case "incomplete" -> response.andExpect(redirectedUrl(BASE + "?back=true"));
+      case "incomplete" ->
+          response.andExpect(redirectedUrl(BASE + "?back=true&journeyToken=" + journeyToken()));
       default -> throw new IllegalArgumentException(outcome);
     }
 
@@ -274,7 +362,10 @@ class LiablePartyControllerTest {
     when(caseOutcomeService.getIndividualLiableParty("300000001", 123, path, 7, 11))
         .thenReturn(existing);
     stubContactDropdowns();
-    mvc.perform(get(EDIT.replace("cost-award", path)).session(session))
+    mvc.perform(
+            get(EDIT.replace("cost-award", path))
+                .session(session)
+                .param("journeyToken", journeyToken()))
         .andExpect(view().name(CONTACT_VIEW))
         .andExpect(model().attribute("liablePartyIndividual", existing.getContactDetails()))
         .andExpect(model().attribute("individualFormUrl", EDIT.replace("cost-award", path)))
@@ -293,7 +384,7 @@ class LiablePartyControllerTest {
     editDraft();
     stubRelationship(false);
     mvc.perform(validEditContact().param("id", "999").param("opponentId", "999"))
-        .andExpect(redirectedUrl(EDIT + "/other-details"));
+        .andExpect(redirectedUrl(EDIT + "/other-details?journeyToken=" + journeyToken()));
     verify(caseOutcomeService)
         .updateIndividualLiablePartyContactDetails(
             eq("300000001"),
@@ -315,7 +406,7 @@ class LiablePartyControllerTest {
   void invalidEditContactsAreNotSaved() throws Exception {
     editDraft();
     stubContactDropdowns();
-    mvc.perform(post(EDIT).session(session))
+    mvc.perform(post(EDIT).session(session).param("journeyToken", journeyToken()))
         .andExpect(view().name(CONTACT_VIEW))
         .andExpect(model().attributeHasFieldErrors("liablePartyIndividual", "firstName"))
         .andExpect(model().attribute("individualFormUrl", EDIT));
@@ -352,10 +443,11 @@ class LiablePartyControllerTest {
     mvc.perform(
             post(EDIT + "/other-details")
                 .session(session)
+                .param("journeyToken", journeyToken())
                 .param("action", "back")
                 .param("employerName", "Changed employer")
                 .param("assessedIncome", "invalid"))
-        .andExpect(redirectedUrl(EDIT + "?back=true"));
+        .andExpect(redirectedUrl(EDIT + "?back=true&journeyToken=" + journeyToken()));
     assertThat(flow()).isSameAs(draft);
     assertThat(flow().getOtherDetails().getAssessedIncome()).isEqualTo("123.45");
     assertThat(flow().getOtherDetails().getEmployerName()).isEqualTo("Saved employer");
@@ -363,10 +455,11 @@ class LiablePartyControllerTest {
     assertThat(flow().getContactDetails().getFirstName()).isEqualTo("Saved contact");
     assertThat(flow().isContactDetailsComplete()).isTrue();
     stubContactDropdowns();
-    mvc.perform(get(EDIT).session(session).param("back", "true"))
+    mvc.perform(
+            get(EDIT).session(session).param("journeyToken", journeyToken()).param("back", "true"))
         .andExpect(model().attribute("liablePartyIndividual", flow().getContactDetails()))
         .andExpect(model().attribute("individualFormUrl", EDIT));
-    mvc.perform(get(EDIT + "/other-details").session(session))
+    mvc.perform(get(EDIT + "/other-details").session(session).param("journeyToken", journeyToken()))
         .andExpect(model().attribute("liablePartyOtherDetails", saved.getOtherDetails()));
     verifyNotSaved();
   }
@@ -382,6 +475,7 @@ class LiablePartyControllerTest {
     mvc.perform(
             post(EDIT + "/other-details")
                 .session(session)
+                .param("journeyToken", journeyToken())
                 .param("action", "back")
                 .param("employerName", "Unsaved change"))
         .andExpect(view().name(OTHER_VIEW))
@@ -396,6 +490,7 @@ class LiablePartyControllerTest {
     mvc.perform(
             post(EDIT + "/other-details")
                 .session(session)
+                .param("journeyToken", journeyToken())
                 .param("employerName", "Changed employer")
                 .param("assessmentDate", "1/2/2020"))
         .andExpect(redirectedUrl("/case/outcome-and-awards/cost-award/7/liable-parties"));
@@ -423,6 +518,7 @@ class LiablePartyControllerTest {
     mvc.perform(
             post(EDIT + "/other-details")
                 .session(session)
+                .param("journeyToken", journeyToken())
                 .param("assessmentDate", "01/01/1899")
                 .param("assessedAssets", "-1"))
         .andExpect(view().name(OTHER_VIEW))
@@ -442,7 +538,11 @@ class LiablePartyControllerTest {
     doThrow(new IllegalStateException("Save failed"))
         .when(caseOutcomeService)
         .updateIndividualLiablePartyOtherDetails(any(), any(), any(), any(), any(), any(), any());
-    mvc.perform(post(EDIT + "/other-details").session(session).param("employerName", "Changed"))
+    mvc.perform(
+            post(EDIT + "/other-details")
+                .session(session)
+                .param("journeyToken", journeyToken())
+                .param("employerName", "Changed"))
         .andExpect(view().name(OTHER_VIEW))
         .andExpect(model().attributeHasErrors("liablePartyOtherDetails"));
     assertThat(flow().getOtherDetails().getEmployerName()).isEqualTo("Changed");
@@ -453,8 +553,9 @@ class LiablePartyControllerTest {
   void cancellingAfterEditNextDoesNotRevertSavedContactsOrSaveOtherDetails() throws Exception {
     editDraft();
     stubRelationship(false);
-    mvc.perform(validEditContact()).andExpect(redirectedUrl(EDIT + "/other-details"));
-    mvc.perform(get(EDIT + "/cancel").session(session))
+    mvc.perform(validEditContact())
+        .andExpect(redirectedUrl(EDIT + "/other-details?journeyToken=" + journeyToken()));
+    mvc.perform(get(EDIT + "/cancel").session(session).param("journeyToken", journeyToken()))
         .andExpect(redirectedUrl("/case/outcome-and-awards/cost-award/7/liable-parties"));
     verify(caseOutcomeService)
         .updateIndividualLiablePartyContactDetails(
@@ -467,14 +568,27 @@ class LiablePartyControllerTest {
   @Test
   void addAndEditRoutesCannotConsumeEachOthersDraftsOrAnotherOpponentId() {
     draft().setContactDetailsComplete(true);
-    assertThatThrownBy(() -> mvc.perform(post(EDIT + "/other-details").session(session)))
+    assertThatThrownBy(
+            () ->
+                mvc.perform(
+                    post(EDIT + "/other-details")
+                        .session(session)
+                        .param("journeyToken", journeyToken())))
         .hasRootCauseInstanceOf(uk.gov.laa.ccms.caab.exception.CaabApplicationException.class);
     editDraft().setContactDetailsComplete(true);
-    assertThatThrownBy(() -> mvc.perform(post(BASE + "/other-details").session(session)))
+    assertThatThrownBy(
+            () ->
+                mvc.perform(
+                    post(BASE + "/other-details")
+                        .session(session)
+                        .param("journeyToken", journeyToken())))
         .hasRootCauseInstanceOf(uk.gov.laa.ccms.caab.exception.CaabApplicationException.class);
     assertThatThrownBy(
             () ->
-                mvc.perform(post(EDIT.replace("/11/", "/12/") + "/other-details").session(session)))
+                mvc.perform(
+                    post(EDIT.replace("/11/", "/12/") + "/other-details")
+                        .session(session)
+                        .param("journeyToken", journeyToken())))
         .hasRootCauseInstanceOf(uk.gov.laa.ccms.caab.exception.CaabApplicationException.class);
     verifyNotSaved();
   }
@@ -488,6 +602,7 @@ class LiablePartyControllerTest {
   private MockHttpServletRequestBuilder validEditContact() {
     return post(EDIT)
         .session(session)
+        .param("journeyToken", journeyToken())
         .param("title", "MS")
         .param("surname", "Smith")
         .param("firstName", "Jane")
@@ -503,7 +618,10 @@ class LiablePartyControllerTest {
     applicationOpponent.setFirstName("Application opponent");
     session.setAttribute(CURRENT_OPPONENT, applicationOpponent);
 
-    mvc.perform(get(BASE.replace("cost-award", path)).session(session))
+    mvc.perform(
+            get(BASE.replace("cost-award", path))
+                .session(session)
+                .param("journeyToken", journeyToken()))
         .andExpect(handler().handlerType(LiablePartyController.class))
         .andExpect(view().name(CONTACT_VIEW))
         .andExpect(model().attribute("awardPath", path))
@@ -528,7 +646,7 @@ class LiablePartyControllerTest {
     existing.getOtherDetails().setEmployerName("Acme");
     existing.setContactDetailsComplete(true);
     stubContactDropdowns();
-    final var request = get(BASE).session(session);
+    final var request = get(BASE).session(session).param("journeyToken", journeyToken());
     if (explicitBack) {
       request.param("back", "false");
     }
@@ -552,7 +670,11 @@ class LiablePartyControllerTest {
     session.setAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW, existing);
     stubContactDropdowns();
 
-    mvc.perform(get(BASE.replace("cost-award", path)).session(session).param("back", "true"))
+    mvc.perform(
+            get(BASE.replace("cost-award", path))
+                .session(session)
+                .param("journeyToken", journeyToken())
+                .param("back", "true"))
         .andExpect(view().name(CONTACT_VIEW))
         .andExpect(model().attribute("liablePartyIndividual", existing.getContactDetails()));
 
@@ -565,7 +687,13 @@ class LiablePartyControllerTest {
 
   @Test
   void backTrueRequiresAnExistingDraft() {
-    assertThatThrownBy(() -> mvc.perform(get(BASE).session(session).param("back", "true")))
+    assertThatThrownBy(
+            () ->
+                mvc.perform(
+                    get(BASE)
+                        .session(session)
+                        .param("journeyToken", journeyToken())
+                        .param("back", "true")))
         .hasRootCauseMessage("No individual party draft exists for this case and award");
     assertThat(session.getAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW)).isNull();
     verifyNotSaved();
@@ -574,14 +702,19 @@ class LiablePartyControllerTest {
   @Test
   void separateContactDetailsMappingIsRemoved() throws Exception {
     final var existing = draft();
-    mvc.perform(get(BASE + "/contact-details").session(session)).andExpect(status().isNotFound());
+    mvc.perform(
+            get(BASE + "/contact-details").session(session).param("journeyToken", journeyToken()))
+        .andExpect(status().isNotFound());
     assertThat(flow()).isSameAs(existing);
     verifyNotSaved();
   }
 
   @Test
   void organisationJourneyRemainsUnimplemented() throws Exception {
-    mvc.perform(get(BASE.replace("/individual", "/organisation")).session(session))
+    mvc.perform(
+            get(BASE.replace("/individual", "/organisation"))
+                .session(session)
+                .param("journeyToken", journeyToken()))
         .andExpect(status().isNotFound());
     verifyNotSaved();
   }
@@ -591,7 +724,7 @@ class LiablePartyControllerTest {
     draft();
     stubRelationship(false);
     mvc.perform(validContact().param("dateOfBirth", "1/2/2000"))
-        .andExpect(redirectedUrl(BASE + "/other-details"));
+        .andExpect(redirectedUrl(BASE + "/other-details?journeyToken=" + journeyToken()));
     assertThat(flow().getContactDetails().getDateOfBirth()).isEqualTo("01/02/2000");
     assertThat(flow().isContactDetailsComplete()).isTrue();
     verifyNotSaved();
@@ -601,7 +734,7 @@ class LiablePartyControllerTest {
   void nextShowsRequiredContactErrorsAndCannotSkipAhead() throws Exception {
     draft();
     stubContactDropdowns();
-    mvc.perform(post(BASE).session(session))
+    mvc.perform(post(BASE).session(session).param("journeyToken", journeyToken()))
         .andExpect(view().name(CONTACT_VIEW))
         .andExpect(
             model()
@@ -612,8 +745,8 @@ class LiablePartyControllerTest {
                     "surname",
                     "relationshipToCase",
                     "relationshipToClient"));
-    mvc.perform(get(BASE + "/other-details").session(session))
-        .andExpect(redirectedUrl(BASE + "?back=true"));
+    mvc.perform(get(BASE + "/other-details").session(session).param("journeyToken", journeyToken()))
+        .andExpect(redirectedUrl(BASE + "?back=true&journeyToken=" + journeyToken()));
     verifyNotSaved();
   }
 
@@ -670,7 +803,7 @@ class LiablePartyControllerTest {
                 .param("appMode", "true")
                 .param("amendment", "true")
                 .param("otherInformation", "unexpected"))
-        .andExpect(redirectedUrl(BASE + "/other-details"));
+        .andExpect(redirectedUrl(BASE + "/other-details?journeyToken=" + journeyToken()));
     final var contact = flow().getContactDetails();
     assertThat(contact.getId()).isNull();
     assertThat(contact.getPartyId()).isNull();
@@ -688,20 +821,22 @@ class LiablePartyControllerTest {
     mvc.perform(
             post(BASE + "/other-details")
                 .session(session)
+                .param("journeyToken", journeyToken())
                 .param("action", "back")
                 .param("employerAddress", "x".repeat(201))
                 .param("assessedIncome", "not a number")
                 .param("assessmentDate", "not a date"))
-        .andExpect(redirectedUrl(BASE + "?back=true"));
+        .andExpect(redirectedUrl(BASE + "?back=true&journeyToken=" + journeyToken()));
     assertThat(flow().getOtherDetails().getAssessedIncome()).isNull();
     assertThat(flow().getOtherDetails().getEmployerAddress()).isNull();
     assertThat(flow().getOtherDetails().getAssessmentDate()).isNull();
     assertThat(flow().getOtherDetails().getOtherInformation()).isNull();
     assertThat(flow().getContactDetails().getFirstName()).isEqualTo("Jane");
     stubContactDropdowns();
-    mvc.perform(get(BASE).session(session).param("back", "true"))
+    mvc.perform(
+            get(BASE).session(session).param("journeyToken", journeyToken()).param("back", "true"))
         .andExpect(model().attribute("liablePartyIndividual", flow().getContactDetails()));
-    mvc.perform(get(BASE + "/other-details").session(session))
+    mvc.perform(get(BASE + "/other-details").session(session).param("journeyToken", journeyToken()))
         .andExpect(model().attribute("liablePartyOtherDetails", flow().getOtherDetails()));
     verifyNotSaved();
   }
@@ -713,6 +848,7 @@ class LiablePartyControllerTest {
     mvc.perform(
             post(BASE + "/other-details")
                 .session(session)
+                .param("journeyToken", journeyToken())
                 .param("employerAddress", "a".repeat(201))
                 .param("assessedIncome", "-1")
                 .param("assessedAssets", "1.234")
@@ -742,11 +878,13 @@ class LiablePartyControllerTest {
     stubRelationship(false);
     final var applicationOpponent = new IndividualOpponentFormData();
     session.setAttribute(CURRENT_OPPONENT, applicationOpponent);
-    mvc.perform(validContact()).andExpect(redirectedUrl(BASE + "/other-details"));
+    mvc.perform(validContact())
+        .andExpect(redirectedUrl(BASE + "/other-details?journeyToken=" + journeyToken()));
     final var contact = flow().getContactDetails();
     mvc.perform(
             post(BASE + "/other-details")
                 .session(session)
+                .param("journeyToken", journeyToken())
                 .param("employmentStatus", "EMPLOYED")
                 .param("employerName", "Acme")
                 .param("employerAddress", "High Street")
@@ -775,14 +913,20 @@ class LiablePartyControllerTest {
     assertThat(contact.getFirstName()).isEqualTo("Jane");
     assertThat(session.getAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW)).isNull();
     assertThat(session.getAttribute(CURRENT_OPPONENT)).isSameAs(applicationOpponent);
-    assertThatThrownBy(() -> mvc.perform(post(BASE + "/other-details").session(session)))
+    assertThatThrownBy(
+            () ->
+                mvc.perform(
+                    post(BASE + "/other-details")
+                        .session(session)
+                        .param("journeyToken", journeyToken())))
         .hasRootCauseMessage("No individual party draft exists for this case and award");
   }
 
   @Test
   void confirmAllowsEmptyOptionalOtherDetails() throws Exception {
     draft().setContactDetailsComplete(true);
-    mvc.perform(post(BASE + "/other-details").session(session))
+    mvc.perform(
+            post(BASE + "/other-details").session(session).param("journeyToken", journeyToken()))
         .andExpect(redirectedUrl("/case/outcome-and-awards/cost-award/7/liable-parties"));
     verify(caseOutcomeService)
         .createIndividualLiableParty(
@@ -796,7 +940,11 @@ class LiablePartyControllerTest {
     doThrow(new IllegalStateException("API unavailable"))
         .when(caseOutcomeService)
         .createIndividualLiableParty(any(), any(), any(), any(), any(), any(), any());
-    mvc.perform(post(BASE + "/other-details").session(session).param("employerName", "Acme"))
+    mvc.perform(
+            post(BASE + "/other-details")
+                .session(session)
+                .param("journeyToken", journeyToken())
+                .param("employerName", "Acme"))
         .andExpect(view().name(OTHER_VIEW))
         .andExpect(model().attributeHasErrors("liablePartyOtherDetails"));
     assertThat(flow().getOtherDetails().getEmployerName()).isEqualTo("Acme");
@@ -806,8 +954,9 @@ class LiablePartyControllerTest {
   @Test
   void confirmationCannotBypassContactDetails() throws Exception {
     draft();
-    mvc.perform(post(BASE + "/other-details").session(session))
-        .andExpect(redirectedUrl(BASE + "?back=true"));
+    mvc.perform(
+            post(BASE + "/other-details").session(session).param("journeyToken", journeyToken()))
+        .andExpect(redirectedUrl(BASE + "?back=true&journeyToken=" + journeyToken()));
     verifyNotSaved();
   }
 
@@ -832,9 +981,20 @@ class LiablePartyControllerTest {
           case "type" -> BASE.replace("cost-award", "land");
           default -> BASE;
         };
-    assertThatThrownBy(() -> mvc.perform(get(path).session(session).param("back", "true")))
+    assertThatThrownBy(
+            () ->
+                mvc.perform(
+                    get(path)
+                        .session(session)
+                        .param("journeyToken", journeyToken())
+                        .param("back", "true")))
         .hasRootCauseInstanceOf(uk.gov.laa.ccms.caab.exception.CaabApplicationException.class);
-    assertThatThrownBy(() -> mvc.perform(post(path + "/other-details").session(session)))
+    assertThatThrownBy(
+            () ->
+                mvc.perform(
+                    post(path + "/other-details")
+                        .session(session)
+                        .param("journeyToken", journeyToken())))
         .hasRootCauseInstanceOf(uk.gov.laa.ccms.caab.exception.CaabApplicationException.class);
     verifyNotSaved();
   }
@@ -853,7 +1013,10 @@ class LiablePartyControllerTest {
     session.setAttribute(CURRENT_OPPONENT, applicationOpponent);
     final String partyList = "/case/outcome-and-awards/" + path + "/7/liable-parties";
     final String individual = opponentId == null ? "add" : opponentId + "/edit";
-    mvc.perform(get(partyList + "/individual/" + individual + "/cancel").session(session))
+    mvc.perform(
+            get(partyList + "/individual/" + individual + "/cancel")
+                .session(session)
+                .param("journeyToken", journeyToken()))
         .andExpect(redirectedUrl(partyList));
     assertThat(session.getAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW)).isNull();
     assertThat(session.getAttribute(CURRENT_OPPONENT)).isSameAs(applicationOpponent);
@@ -863,6 +1026,7 @@ class LiablePartyControllerTest {
   private MockHttpServletRequestBuilder validContact() {
     return post(BASE)
         .session(session)
+        .param("journeyToken", journeyToken())
         .param("title", "MS")
         .param("surname", "Smith")
         .param("firstName", "Jane")
@@ -878,6 +1042,10 @@ class LiablePartyControllerTest {
 
   private IndividualLiablePartyFlow flow() {
     return (IndividualLiablePartyFlow) session.getAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW);
+  }
+
+  private String journeyToken() {
+    return flow() == null ? "" : flow().getJourneyToken();
   }
 
   private void stubContactDropdowns() {

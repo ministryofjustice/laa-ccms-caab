@@ -8,12 +8,13 @@
 <div class="govuk-width-container">
   <div id="breadcrumbs">
     <a class="govuk-back-link"
-       th:href="@{${individualFormUrl + '/cancel'}}"
+       th:href="@{${individualFormUrl + '/cancel'}(journeyToken=${journeyToken})}"
        th:text="${awardPath == 'land' or awardPath == 'asset'} ? #{site.cancelAndReturnToInterestedParties} : #{site.cancelAndReturnToLiableParties}"></a>
   </div>
   <div id="main-content" th:fragment="content">
     <form th:action="@{${individualFormUrl + '/other-details'}}"
           th:object="${liablePartyOtherDetails}" method="post">
+      <input type="hidden" name="journeyToken" th:value="${journeyToken}">
       <div th:replace="~{partials/error-summary :: error-summary}"></div>
       <h1 class="govuk-heading-l">Opponents and other parties</h1>
       <p class="govuk-body-l" th:text="#{application.opponents.leadParagraph}"></p>

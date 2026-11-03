@@ -131,7 +131,10 @@ class LiablePartyTemplateRenderTest {
     final String edit = base(path).replace("/individual/add", "/individual/11/edit");
     final String html =
         mvc.perform(
-                get(edit).session(session).flashAttr("user", new UserDetail().functions(List.of())))
+                get(edit)
+                    .session(session)
+                    .param("journeyToken", journeyToken())
+                    .flashAttr("user", new UserDetail().functions(List.of())))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -140,7 +143,7 @@ class LiablePartyTemplateRenderTest {
         .contains(
             "action=\"" + edit + "\"",
             "value=\"Existing party\"",
-            "href=\"" + edit + "/cancel\"",
+            "href=\"" + edit + "/cancel?journeyToken=" + journeyToken() + "\"",
             ">Next</button>",
             "href=\"/case/outcome-and-awards/" + path + "/7/liable-parties\"")
         .doesNotContain("action=\"" + base(path) + "\"");
@@ -162,6 +165,7 @@ class LiablePartyTemplateRenderTest {
         mvc.perform(
                 get(edit + "/other-details")
                     .session(session)
+                    .param("journeyToken", journeyToken())
                     .flashAttr("user", new UserDetail().functions(List.of())))
             .andExpect(status().isOk())
             .andReturn()
@@ -175,7 +179,7 @@ class LiablePartyTemplateRenderTest {
             "value=\"01/02/2020\"",
             "value=\"confirm\"",
             "value=\"back\"",
-            "href=\"" + edit + "/cancel\"")
+            "href=\"" + edit + "/cancel?journeyToken=" + journeyToken() + "\"")
         .doesNotContain("action=\"" + base(path) + "/other-details\"");
     assertCaseBanner(html);
     assertCancelLink(html, path, edit);
@@ -192,6 +196,7 @@ class LiablePartyTemplateRenderTest {
                 get(edit)
                     .param("back", "true")
                     .session(session)
+                    .param("journeyToken", journeyToken())
                     .flashAttr("user", new UserDetail().functions(List.of())))
             .andExpect(status().isOk())
             .andReturn()
@@ -201,6 +206,7 @@ class LiablePartyTemplateRenderTest {
         mvc.perform(
                 get(edit + "/other-details")
                     .session(session)
+                    .param("journeyToken", journeyToken())
                     .flashAttr("user", new UserDetail().functions(List.of())))
             .andExpect(status().isOk())
             .andReturn()
@@ -227,6 +233,7 @@ class LiablePartyTemplateRenderTest {
         mvc.perform(
                 get("/application/sections/opponents/individual/create")
                     .session(session)
+                    .param("journeyToken", journeyToken())
                     .flashAttr("user", new UserDetail().functions(List.of())))
             .andExpect(status().isOk())
             .andReturn()
@@ -248,7 +255,10 @@ class LiablePartyTemplateRenderTest {
     final String base = base(path);
     final String html =
         mvc.perform(
-                get(base).session(session).flashAttr("user", new UserDetail().functions(List.of())))
+                get(base)
+                    .session(session)
+                    .param("journeyToken", journeyToken())
+                    .flashAttr("user", new UserDetail().functions(List.of())))
             .andExpect(status().isOk())
             .andReturn()
             .getResponse()
@@ -258,7 +268,7 @@ class LiablePartyTemplateRenderTest {
             "Individual contact details",
             "action=\"" + base + "\"",
             ">Next</button>",
-            "href=\"" + base + "/cancel\"");
+            "href=\"" + base + "/cancel?journeyToken=" + journeyToken() + "\"");
     for (String field :
         List.of(
             "title",
@@ -303,6 +313,7 @@ class LiablePartyTemplateRenderTest {
                 get(base("cost-award"))
                     .param("back", "true")
                     .session(session)
+                    .param("journeyToken", journeyToken())
                     .flashAttr("user", new UserDetail().functions(List.of())))
             .andExpect(status().isOk())
             .andReturn()
@@ -327,6 +338,7 @@ class LiablePartyTemplateRenderTest {
         mvc.perform(
                 get(base(path) + "/other-details")
                     .session(session)
+                    .param("journeyToken", journeyToken())
                     .flashAttr("user", new UserDetail().functions(List.of())))
             .andExpect(status().isOk())
             .andReturn()
@@ -370,6 +382,7 @@ class LiablePartyTemplateRenderTest {
         mvc.perform(
                 post(base("cost-award") + "/other-details")
                     .session(session)
+                    .param("journeyToken", journeyToken())
                     .flashAttr("user", new UserDetail().functions(List.of()))
                     .param(field, value))
             .andExpect(status().isOk())
@@ -394,6 +407,7 @@ class LiablePartyTemplateRenderTest {
         mvc.perform(
                 post(base("cost-award"))
                     .session(session)
+                    .param("journeyToken", journeyToken())
                     .flashAttr("user", new UserDetail().functions(List.of())))
             .andExpect(status().isOk())
             .andReturn()
@@ -421,6 +435,7 @@ class LiablePartyTemplateRenderTest {
         mvc.perform(
                 get(base("cost-award") + suffix)
                     .session(session)
+                    .param("journeyToken", journeyToken())
                     .flashAttr("user", new UserDetail().functions(List.of())))
             .andExpect(status().isOk())
             .andReturn()
@@ -447,12 +462,19 @@ class LiablePartyTemplateRenderTest {
     assertThat(html)
         .containsPattern(
             "(?s)<a\\b[^>]*href=\""
-                + Pattern.quote(formUrl + "/cancel")
+                + Pattern.quote(formUrl + "/cancel?journeyToken=" + journeyToken())
                 + "\"[^>]*>\\s*"
                 + "Cancel and return to "
                 + parties
                 + "\\s*</a>")
         .doesNotContain("Cancel and return to outcome and awards");
+    assertThat(html)
+        .contains("type=\"hidden\" name=\"journeyToken\" value=\"" + journeyToken() + "\"");
+  }
+
+  private String journeyToken() {
+    final var flow = (IndividualLiablePartyFlow) session.getAttribute(INDIVIDUAL_LIABLE_PARTY_FLOW);
+    return flow == null ? "" : flow.getJourneyToken();
   }
 
   private String base(String path) {
