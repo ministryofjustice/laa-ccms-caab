@@ -2359,8 +2359,8 @@ class CaseControllerTest {
 
     @Test
     @DisplayName(
-        "Record proceeding outcome renders only a hidden court case number field when no court is selected")
-    public void recordProceedingOutcomeWithoutCourtRendersOnlyHiddenCourtCaseNumber()
+        "Record proceeding outcome renders a visible optional court case number field when no court is selected")
+    public void recordProceedingOutcomeWithoutCourtRendersVisibleOptionalCourtCaseNumber()
         throws Exception {
       final String selectedCaseRef = "8";
       final ProceedingOutcomeDetail ebsOutcome =
@@ -2411,18 +2411,21 @@ class CaseControllerTest {
 
       assertThat(result.getResponse().getStatus()).isEqualTo(200);
       assertThat(result.getResponse().getContentAsString())
-          .contains("type=\"hidden\"")
+          .contains("for=\"outcomeCourtCaseNo\"")
+          .contains("type=\"text\"")
           .contains("id=\"outcomeCourtCaseNo\"")
           .contains("name=\"outcomeCourtCaseNo\"")
           .contains("value=\"CASE-123\"")
-          .doesNotContain("for=\"outcomeCourtCaseNo\"");
+          .contains("Court case number (optional)")
+          .doesNotContain("type=\"hidden\" id=\"outcomeCourtCaseNo\"");
     }
 
     @Test
     @DisplayName(
         "Record proceeding outcome treats legacy Not Available court values as no selected court")
-    public void recordProceedingOutcomeLegacyNotAvailableCourtRendersOnlyHiddenCourtCaseNumber()
-        throws Exception {
+    public void
+        recordProceedingOutcomeLegacyNotAvailableCourtRendersVisibleOptionalCourtCaseNumber()
+            throws Exception {
       final String selectedCaseRef = "8";
       final ProceedingOutcomeDetail ebsOutcome =
           new ProceedingOutcomeDetail()
@@ -2474,11 +2477,13 @@ class CaseControllerTest {
 
       assertThat(result.getResponse().getStatus()).isEqualTo(200);
       assertThat(result.getResponse().getContentAsString())
-          .contains("type=\"hidden\"")
+          .contains("for=\"outcomeCourtCaseNo\"")
+          .contains("type=\"text\"")
           .contains("id=\"outcomeCourtCaseNo\"")
           .contains("name=\"outcomeCourtCaseNo\"")
           .contains("value=\"CASE-123\"")
-          .doesNotContain("for=\"outcomeCourtCaseNo\"");
+          .contains("Court case number (optional)")
+          .doesNotContain("type=\"hidden\" id=\"outcomeCourtCaseNo\"");
     }
 
     @Test

@@ -144,7 +144,7 @@ dependencies {
     implementation 'org.springframework.data:spring-data-commons'
 
 	// AWS S3 Integration
-	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.2.0')
+	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.2.1')
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
 	implementation 'software.amazon.awssdk:sts'
@@ -178,7 +178,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-    testImplementation 'io.projectreactor:reactor-test:3.8.7'
+    testImplementation 'io.projectreactor:reactor-test:3.8.8'
 
     integrationTestImplementation 'org.wiremock:wiremock-standalone:3.13.2'
 
