@@ -555,7 +555,8 @@ class CaseOutcomeServiceTest {
     assertEquals(
         "Other asset award 7 does not belong to case reference number: 300000001",
         exception.getMessage());
-    verify(caabApiClient, never()).updateOtherAssetAward(any(), any(), any(), any());
+    verify(caabApiClient, never())
+        .updateOtherAssetAward(any(), any(), any(), any(OtherAssetAwardRequest.class));
   }
 
   @Test
@@ -675,7 +676,8 @@ class CaseOutcomeServiceTest {
             caseOutcomeService.updateLandAward(
                 caseReferenceNumber, providerId, landAwardId, request, "user1"));
 
-    verify(caabApiClient, never()).updateLandAward(any(), any(), any(), any());
+    verify(caabApiClient, never())
+        .updateLandAward(any(), any(), any(), any(LandAwardRequest.class));
   }
 
   @ParameterizedTest
