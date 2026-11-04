@@ -108,6 +108,7 @@ public interface LiablePartiesDisplayMapper {
   @Mapping(target = "address", source = "opponent.address", qualifiedByName = "compactAddress")
   @Mapping(target = "editable", source = "opponent.ebsId", qualifiedByName = "awardPartyEditable")
   @Mapping(target = "organisation", expression = "java(OpponentUtil.isOrganisation(opponent))")
+  @Mapping(target = "alreadyAdded", constant = "false")
   LiablePartyDisplay toLiablePartyDisplay(
       LiablePartyDetail party,
       OpponentDetail opponent,
@@ -128,6 +129,7 @@ public interface LiablePartiesDisplayMapper {
         null,
         "",
         false,
+        false,
         false);
   }
 
@@ -135,12 +137,18 @@ public interface LiablePartiesDisplayMapper {
   default String partyName(
       final OpponentDetail opponent, @Context final LiablePartiesMappingContext context) {
     if (OpponentUtil.isOrganisation(opponent)) {
-      if (awardPartyEditable(opponent.getEbsId())) {
+      // The organisation name is the primary identifier regardless of whether the opponent is
+      // editable; contact name is only ever a fallback for when no organisation name is held.
+      if (StringUtils.hasText(opponent.getOrganisationName())) {
         return opponent.getOrganisationName();
       }
-      return StringUtils.hasText(opponent.getContactNameRole())
-          ? opponent.getContactNameRole()
-          : opponent.getOrganisationName();
+      if (StringUtils.hasText(opponent.getContactNameRole())) {
+        return opponent.getContactNameRole();
+      }
+      // Some organisation opponents (particularly legacy/imported records) have neither an
+      // organisation name nor a contact name populated. Fall back to the same placeholder used
+      // for individuals with no resolvable name, rather than silently rendering a blank cell.
+      return "undefined";
     }
     if (!OpponentUtil.INDIVIDUAL_OPPONENT.equalsIgnoreCase(opponent.getType())) {
       return "undefined";

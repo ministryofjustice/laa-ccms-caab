@@ -9,4 +9,5 @@ public record LiablePartyDisplay(
     String relationshipToCase,
     String address,
     boolean editable,
-    boolean organisation) {}
+    boolean organisation,
+    boolean alreadyAdded) {}

@@ -17,7 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
@@ -742,6 +742,8 @@ public class AwardController {
     final var personRelationships =
         safeRelationshipValues(lookupService.getPersonToCaseRelationships());
     final List<Integer> caseOpponentIds = getCaseOpponentIds(ebsCase, user);
+    final Set<Integer> alreadyAddedOpponentIds =
+        getAlreadyAddedOpponentIds(ebsCase, user, awardPath, awardId);
 
     final List<LiablePartyDisplay> parties =
         buildCandidateOpponentRows(activeApplication, caseOpponentIds).stream()
@@ -753,7 +755,8 @@ public class AwardController {
                         row.persistableOpponentId(),
                         titleLookups,
                         organisationRelationships,
-                        personRelationships))
+                        personRelationships,
+                        alreadyAddedOpponentIds.contains(row.persistableOpponentId())))
             .toList();
 
     model.addAttribute("awardPath", awardPath);
@@ -786,10 +789,13 @@ public class AwardController {
     final ApplicationDetail activeApplication =
         resolveActiveApplication(ebsCase, currentApplication);
     final List<Integer> caseOpponentIds = getCaseOpponentIds(ebsCase, user);
+    final Set<Integer> alreadyAddedOpponentIds =
+        getAlreadyAddedOpponentIds(ebsCase, user, awardPath, awardId);
 
     final List<Integer> resolvedOpponentIds =
         buildCandidateOpponentRows(activeApplication, caseOpponentIds).stream()
             .filter(row -> selectedRowIds.contains(row.rowId()))
+            .filter(row -> !alreadyAddedOpponentIds.contains(row.persistableOpponentId()))
             .map(CandidateOpponentRow::persistableOpponentId)
             .filter(Objects::nonNull)
             .distinct()
@@ -849,20 +855,47 @@ public class AwardController {
   }
 
   /**
+   * Looks up the opponent ids already linked as a liable party on this specific award. Once an
+   * opponent has been added, legacy removes its checkbox from the party list (while still showing
+   * the row) so it cannot be selected again; this mirrors that behaviour by marking those rows as
+   * already-added so the checkbox is omitted, and by rejecting them server-side if a stale
+   * selection is resubmitted anyway.
+   */
+  private Set<Integer> getAlreadyAddedOpponentIds(
+      final ApplicationDetail ebsCase,
+      final UserDetail user,
+      final String awardPath,
+      final Integer awardId) {
+    return caseOutcomeService
+        .getLiablePartiesDisplay(
+            ebsCase.getCaseReferenceNumber(),
+            user.getProvider().getId().intValue(),
+            awardPath,
+            awardId)
+        .parties()
+        .stream()
+        .map(LiablePartyDisplay::opponentId)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toSet());
+  }
+
+  /**
    * Builds the ordered, filtered list of opponents eligible for selection on the party list screen,
    * pairing each with a stable row identifier and the real, persistable opponent id to send to the
    * award update API. Opponents with a real CAAB id (for example, those added through the
    * application's own opponent screens) use that id directly. Opponents without one (imported case
    * opponents) are matched, by their position in the opponents list, against the case outcome's
-   * {@code opponentIds}, which the backend assigns when the case outcome is created. If neither id
-   * is available the row is still rendered with a synthetic negative row identifier, but it cannot
-   * be persisted and selecting it alone results in an error rather than being silently dropped.
+   * {@code opponentIds}, which the backend only populates for opponents already linked as a liable
+   * party on this case outcome. Opponents with no resolvable, persistable id are omitted entirely
+   * rather than shown as a selectable-but-unaddable row: the backend currently has no way to link
+   * an opponent that has never been linked before, so showing them would only invite a selection
+   * that cannot be persisted. This matches legacy, which never surfaces such opponents as
+   * candidates in the first place.
    */
   private List<CandidateOpponentRow> buildCandidateOpponentRows(
       final ApplicationDetail activeApplication, final List<Integer> caseOpponentIds) {
     final List<OpponentDetail> opponents =
         Optional.ofNullable(activeApplication.getOpponents()).orElse(List.of());
-    final AtomicInteger syntheticRowId = new AtomicInteger();
     final List<CandidateOpponentRow> rows = new java.util.ArrayList<>();
     for (int i = 0; i < opponents.size(); i++) {
       final OpponentDetail opponent = opponents.get(i);
@@ -871,11 +904,10 @@ public class AwardController {
       }
       final Integer persistableOpponentId =
           resolvePersistableOpponentId(opponent, i, caseOpponentIds);
-      final Integer rowId =
-          persistableOpponentId != null
-              ? persistableOpponentId
-              : -(syntheticRowId.incrementAndGet());
-      rows.add(new CandidateOpponentRow(rowId, opponent, persistableOpponentId));
+      if (persistableOpponentId == null) {
+        continue;
+      }
+      rows.add(new CandidateOpponentRow(persistableOpponentId, opponent, persistableOpponentId));
     }
     return rows;
   }
@@ -938,7 +970,8 @@ public class AwardController {
       final Integer opponentId,
       final List<CommonLookupValueDetail> titleLookups,
       final List<RelationshipToCaseLookupValueDetail> organisationRelationships,
-      final List<RelationshipToCaseLookupValueDetail> personRelationships) {
+      final List<RelationshipToCaseLookupValueDetail> personRelationships,
+      final boolean alreadyAdded) {
     final String address =
         opponent.getAddress() == null
             ? ""
@@ -955,7 +988,8 @@ public class AwardController {
             .getDescription(),
         address,
         isAwardPartyEditable(opponent),
-        OpponentUtil.isOrganisation(opponent));
+        OpponentUtil.isOrganisation(opponent),
+        alreadyAdded);
   }
 
   private boolean isAwardPartyEditable(final OpponentDetail opponent) {

@@ -46,7 +46,7 @@
         </tr>
         <tr class="govuk-table__row" th:each="party : ${parties}">
           <td class="govuk-table__cell">
-            <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
+            <div th:if="${!party.alreadyAdded}" class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
               <div class="govuk-checkboxes__item">
                 <input class="govuk-checkboxes__input"
                        th:id="|selected-party-${party.id}|"
@@ -58,6 +58,7 @@
                        th:for="|selected-party-${party.id}|"></label>
               </div>
             </div>
+            <span th:if="${party.alreadyAdded}" class="govuk-visually-hidden" th:text="#{case.partyListScreen.alreadyAdded}"></span>
           </td>
           <td class="govuk-table__cell" th:text="${party.name}"></td>
           <td class="govuk-table__cell" th:text="${party.partyType}"></td>

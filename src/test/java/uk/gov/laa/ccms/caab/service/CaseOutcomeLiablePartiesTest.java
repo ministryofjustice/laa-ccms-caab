@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -230,66 +229,25 @@ class CaseOutcomeLiablePartiesTest {
     }
 
     @Test
-    void costAwardMergesDedupesAndPersistsNewOpponentsPreservingExistingLinks() {
+    void costAwardLinksEachDistinctOpponentViaTheLiablePartiesEndpoint() {
       stubOutcome(outcome());
-      final CostAwardDetail award =
-          new CostAwardDetail()
-              .id(7)
-              .awardType("COST")
-              .liableParties(
-                  List.of(new LiablePartyDetail().id(101).awardType("COST").opponentId(11)));
-      when(caabApiClient.getCostAward(42, 7)).thenReturn(Mono.just(award));
-      when(caabApiClient.updateCostAward(eq(42), eq(7), eq("login"), any(CostAwardDetail.class)))
+      when(caabApiClient.addAwardLiableParty(eq(42), eq("COST"), eq(7), any(), eq("login")))
           .thenReturn(Mono.empty());
 
-      // Opponent 11 is already linked (should be left untouched) and 11 is repeated in the
-      // request, alongside a new opponent 22, to prove both existing-link preservation and
-      // de-duplication of the newly added ids.
+      // Opponent 11 is repeated in the request, alongside a new opponent 22, to prove
+      // de-duplication of the ids sent to the API.
       service.addLiableParties("300000001", 123, "cost-award", 7, List.of(11, 11, 22), "login");
 
-      final ArgumentCaptor<CostAwardDetail> captor = ArgumentCaptor.forClass(CostAwardDetail.class);
-      verify(caabApiClient).updateCostAward(eq(42), eq(7), eq("login"), captor.capture());
-      final List<LiablePartyDetail> savedLinks = captor.getValue().getLiableParties();
-      assertThat(savedLinks).hasSize(2);
-      assertThat(savedLinks)
-          .filteredOn(link -> link.getOpponentId().equals(11))
-          .singleElement()
-          .satisfies(
-              link -> {
-                // The existing link's id and metadata must be preserved, not replaced.
-                assertThat(link.getId()).isEqualTo(101);
-                assertThat(link.getAwardType()).isEqualTo("COST");
-              });
-      assertThat(savedLinks)
-          .filteredOn(link -> link.getOpponentId().equals(22))
-          .singleElement()
-          .satisfies(
-              link -> {
-                assertThat(link.getId()).isNull();
-                assertThat(link.getAwardType()).isEqualTo("COST");
-              });
+      verify(caabApiClient).addAwardLiableParty(42, "COST", 7, 11, "login");
+      verify(caabApiClient).addAwardLiableParty(42, "COST", 7, 22, "login");
+      org.mockito.Mockito.verifyNoMoreInteractions(caabApiClient);
     }
 
     @Test
-    void costAwardRetrievalFailurePropagates() {
+    void costAwardLinkFailurePropagates() {
       stubOutcome(outcome());
       final CaabApiClientException failure = new CaabApiClientException("502 Bad Gateway");
-      when(caabApiClient.getCostAward(42, 7)).thenReturn(Mono.error(failure));
-      assertThatThrownBy(
-              () ->
-                  service.addLiableParties("300000001", 123, "cost-award", 7, List.of(11), "login"))
-          .isSameAs(failure);
-      verify(caabApiClient, org.mockito.Mockito.never())
-          .updateCostAward(any(), any(), any(), any(CostAwardDetail.class));
-    }
-
-    @Test
-    void costAwardUpdateFailurePropagates() {
-      stubOutcome(outcome());
-      when(caabApiClient.getCostAward(42, 7))
-          .thenReturn(Mono.just(new CostAwardDetail().id(7).awardType("COST")));
-      final CaabApiClientException failure = new CaabApiClientException("502 Bad Gateway");
-      when(caabApiClient.updateCostAward(eq(42), eq(7), eq("login"), any(CostAwardDetail.class)))
+      when(caabApiClient.addAwardLiableParty(42, "COST", 7, 11, "login"))
           .thenReturn(Mono.error(failure));
       assertThatThrownBy(
               () ->
@@ -298,58 +256,22 @@ class CaseOutcomeLiablePartiesTest {
     }
 
     @Test
-    void financialAwardMergesDedupesAndPersistsNewOpponentsPreservingExistingLinks() {
+    void financialAwardLinksEachDistinctOpponentViaTheLiablePartiesEndpoint() {
       stubOutcome(outcome());
-      final FinancialAwardDetail award =
-          new FinancialAwardDetail()
-              .id(7)
-              .awardType("DAMAGE")
-              .liableParties(
-                  List.of(new LiablePartyDetail().id(201).awardType("DAMAGE").opponentId(11)));
-      when(caabApiClient.getFinancialAward(42, 7)).thenReturn(Mono.just(award));
-      when(caabApiClient.updateFinancialAward(
-              eq(42), eq(7), eq("login"), any(FinancialAwardDetail.class)))
+      when(caabApiClient.addAwardLiableParty(eq(42), eq("DAMAGE"), eq(7), any(), eq("login")))
           .thenReturn(Mono.empty());
 
       service.addLiableParties("300000001", 123, "financial-award", 7, List.of(11, 22), "login");
 
-      final ArgumentCaptor<FinancialAwardDetail> captor =
-          ArgumentCaptor.forClass(FinancialAwardDetail.class);
-      verify(caabApiClient).updateFinancialAward(eq(42), eq(7), eq("login"), captor.capture());
-      final List<LiablePartyDetail> savedLinks = captor.getValue().getLiableParties();
-      assertThat(savedLinks).hasSize(2);
-      assertThat(savedLinks)
-          .filteredOn(link -> link.getOpponentId().equals(11))
-          .singleElement()
-          .satisfies(link -> assertThat(link.getId()).isEqualTo(201));
-      assertThat(savedLinks)
-          .filteredOn(link -> link.getOpponentId().equals(22))
-          .singleElement()
-          .satisfies(link -> assertThat(link.getId()).isNull());
+      verify(caabApiClient).addAwardLiableParty(42, "DAMAGE", 7, 11, "login");
+      verify(caabApiClient).addAwardLiableParty(42, "DAMAGE", 7, 22, "login");
     }
 
     @Test
-    void financialAwardRetrievalFailurePropagates() {
+    void financialAwardLinkFailurePropagates() {
       stubOutcome(outcome());
       final CaabApiClientException failure = new CaabApiClientException("502 Bad Gateway");
-      when(caabApiClient.getFinancialAward(42, 7)).thenReturn(Mono.error(failure));
-      assertThatThrownBy(
-              () ->
-                  service.addLiableParties(
-                      "300000001", 123, "financial-award", 7, List.of(11), "login"))
-          .isSameAs(failure);
-      verify(caabApiClient, org.mockito.Mockito.never())
-          .updateFinancialAward(any(), any(), any(), any(FinancialAwardDetail.class));
-    }
-
-    @Test
-    void financialAwardUpdateFailurePropagates() {
-      stubOutcome(outcome());
-      when(caabApiClient.getFinancialAward(42, 7))
-          .thenReturn(Mono.just(new FinancialAwardDetail().id(7).awardType("DAMAGE")));
-      final CaabApiClientException failure = new CaabApiClientException("502 Bad Gateway");
-      when(caabApiClient.updateFinancialAward(
-              eq(42), eq(7), eq("login"), any(FinancialAwardDetail.class)))
+      when(caabApiClient.addAwardLiableParty(42, "DAMAGE", 7, 11, "login"))
           .thenReturn(Mono.error(failure));
       assertThatThrownBy(
               () ->
@@ -359,53 +281,22 @@ class CaseOutcomeLiablePartiesTest {
     }
 
     @Test
-    void landAwardMergesDedupesAndPersistsNewOpponentsPreservingExistingLinks() {
+    void landAwardLinksEachDistinctOpponentViaTheLiablePartiesEndpoint() {
       stubOutcome(outcome());
-      final LandAwardDetail award =
-          new LandAwardDetail()
-              .id(7)
-              .awardType("LAND")
-              .liableParties(
-                  List.of(new LiablePartyDetail().id(301).awardType("LAND").opponentId(11)));
-      when(caabApiClient.getLandAward(42, 7)).thenReturn(Mono.just(award));
-      when(caabApiClient.updateLandAward(eq(42), eq(7), eq("login"), any(LandAwardDetail.class)))
+      when(caabApiClient.addAwardLiableParty(eq(42), eq("LAND"), eq(7), any(), eq("login")))
           .thenReturn(Mono.empty());
 
       service.addLiableParties("300000001", 123, "land", 7, List.of(11, 22), "login");
 
-      final ArgumentCaptor<LandAwardDetail> captor = ArgumentCaptor.forClass(LandAwardDetail.class);
-      verify(caabApiClient).updateLandAward(eq(42), eq(7), eq("login"), captor.capture());
-      final List<LiablePartyDetail> savedLinks = captor.getValue().getLiableParties();
-      assertThat(savedLinks).hasSize(2);
-      assertThat(savedLinks)
-          .filteredOn(link -> link.getOpponentId().equals(11))
-          .singleElement()
-          .satisfies(link -> assertThat(link.getId()).isEqualTo(301));
-      assertThat(savedLinks)
-          .filteredOn(link -> link.getOpponentId().equals(22))
-          .singleElement()
-          .satisfies(link -> assertThat(link.getId()).isNull());
+      verify(caabApiClient).addAwardLiableParty(42, "LAND", 7, 11, "login");
+      verify(caabApiClient).addAwardLiableParty(42, "LAND", 7, 22, "login");
     }
 
     @Test
-    void landAwardRetrievalFailurePropagates() {
+    void landAwardLinkFailurePropagates() {
       stubOutcome(outcome());
       final CaabApiClientException failure = new CaabApiClientException("502 Bad Gateway");
-      when(caabApiClient.getLandAward(42, 7)).thenReturn(Mono.error(failure));
-      assertThatThrownBy(
-              () -> service.addLiableParties("300000001", 123, "land", 7, List.of(11), "login"))
-          .isSameAs(failure);
-      verify(caabApiClient, org.mockito.Mockito.never())
-          .updateLandAward(any(), any(), any(), any(LandAwardDetail.class));
-    }
-
-    @Test
-    void landAwardUpdateFailurePropagates() {
-      stubOutcome(outcome());
-      when(caabApiClient.getLandAward(42, 7))
-          .thenReturn(Mono.just(new LandAwardDetail().id(7).awardType("LAND")));
-      final CaabApiClientException failure = new CaabApiClientException("502 Bad Gateway");
-      when(caabApiClient.updateLandAward(eq(42), eq(7), eq("login"), any(LandAwardDetail.class)))
+      when(caabApiClient.addAwardLiableParty(42, "LAND", 7, 11, "login"))
           .thenReturn(Mono.error(failure));
       assertThatThrownBy(
               () -> service.addLiableParties("300000001", 123, "land", 7, List.of(11), "login"))
@@ -413,56 +304,22 @@ class CaseOutcomeLiablePartiesTest {
     }
 
     @Test
-    void otherAssetAwardMergesDedupesAndPersistsNewOpponentsPreservingExistingLinks() {
+    void otherAssetAwardLinksEachDistinctOpponentViaTheLiablePartiesEndpoint() {
       stubOutcome(outcome());
-      final OtherAssetAwardDetail award =
-          new OtherAssetAwardDetail()
-              .id(7)
-              .awardType("ASSET")
-              .liableParties(
-                  List.of(new LiablePartyDetail().id(401).awardType("ASSET").opponentId(11)));
-      when(caabApiClient.getOtherAssetAward(42, 7)).thenReturn(Mono.just(award));
-      when(caabApiClient.updateOtherAssetAward(
-              eq(42), eq(7), eq("login"), any(OtherAssetAwardDetail.class)))
+      when(caabApiClient.addAwardLiableParty(eq(42), eq("ASSET"), eq(7), any(), eq("login")))
           .thenReturn(Mono.empty());
 
       service.addLiableParties("300000001", 123, "asset", 7, List.of(11, 22), "login");
 
-      final ArgumentCaptor<OtherAssetAwardDetail> captor =
-          ArgumentCaptor.forClass(OtherAssetAwardDetail.class);
-      verify(caabApiClient).updateOtherAssetAward(eq(42), eq(7), eq("login"), captor.capture());
-      final List<LiablePartyDetail> savedLinks = captor.getValue().getLiableParties();
-      assertThat(savedLinks).hasSize(2);
-      assertThat(savedLinks)
-          .filteredOn(link -> link.getOpponentId().equals(11))
-          .singleElement()
-          .satisfies(link -> assertThat(link.getId()).isEqualTo(401));
-      assertThat(savedLinks)
-          .filteredOn(link -> link.getOpponentId().equals(22))
-          .singleElement()
-          .satisfies(link -> assertThat(link.getId()).isNull());
+      verify(caabApiClient).addAwardLiableParty(42, "ASSET", 7, 11, "login");
+      verify(caabApiClient).addAwardLiableParty(42, "ASSET", 7, 22, "login");
     }
 
     @Test
-    void otherAssetAwardRetrievalFailurePropagates() {
+    void otherAssetAwardLinkFailurePropagates() {
       stubOutcome(outcome());
       final CaabApiClientException failure = new CaabApiClientException("502 Bad Gateway");
-      when(caabApiClient.getOtherAssetAward(42, 7)).thenReturn(Mono.error(failure));
-      assertThatThrownBy(
-              () -> service.addLiableParties("300000001", 123, "asset", 7, List.of(11), "login"))
-          .isSameAs(failure);
-      verify(caabApiClient, org.mockito.Mockito.never())
-          .updateOtherAssetAward(any(), any(), any(), any(OtherAssetAwardDetail.class));
-    }
-
-    @Test
-    void otherAssetAwardUpdateFailurePropagates() {
-      stubOutcome(outcome());
-      when(caabApiClient.getOtherAssetAward(42, 7))
-          .thenReturn(Mono.just(new OtherAssetAwardDetail().id(7).awardType("ASSET")));
-      final CaabApiClientException failure = new CaabApiClientException("502 Bad Gateway");
-      when(caabApiClient.updateOtherAssetAward(
-              eq(42), eq(7), eq("login"), any(OtherAssetAwardDetail.class)))
+      when(caabApiClient.addAwardLiableParty(42, "ASSET", 7, 11, "login"))
           .thenReturn(Mono.error(failure));
       assertThatThrownBy(
               () -> service.addLiableParties("300000001", 123, "asset", 7, List.of(11), "login"))

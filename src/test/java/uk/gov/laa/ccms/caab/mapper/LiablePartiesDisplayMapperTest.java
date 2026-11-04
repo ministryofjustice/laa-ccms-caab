@@ -94,7 +94,7 @@ class LiablePartiesDisplayMapperTest {
     assertThat(individual.address()).isEqualTo("1 High Street AB1 2CD");
     assertThat(individual.editable()).isTrue();
     final var org = result.parties().getLast();
-    assertThat(org.name()).isEqualTo("Organisation contact");
+    assertThat(org.name()).isEqualTo("Acme Ltd");
     assertThat(org.relationshipToCase()).isEqualTo("Organisation owner");
     assertThat(org.organisation()).isTrue();
     assertThat(org.editable()).isFalse();
@@ -140,7 +140,8 @@ class LiablePartiesDisplayMapperTest {
   @ParameterizedTest
   @NullAndEmptySource
   @ValueSource(strings = {"123", "AWAR", "directory123"})
-  void nonEditableOrganisationsUseContactNameInsteadOfOrganisationName(String ebsId) {
+  void organisationsAlwaysPreferOrganisationNameOverContactNameRegardlessOfEditability(
+      String ebsId) {
     final var organisation =
         person()
             .type("Organisation")
@@ -151,7 +152,7 @@ class LiablePartiesDisplayMapperTest {
     final var result =
         mapper.toLiablePartiesDisplay(linkedAward(), List.of(organisation), context());
 
-    assertThat(result.parties().getFirst().name()).isEqualTo("Organisation contact");
+    assertThat(result.parties().getFirst().name()).isEqualTo("Acme Ltd");
     assertThat(result.parties().getFirst().editable()).isFalse();
   }
 
@@ -167,6 +168,51 @@ class LiablePartiesDisplayMapperTest {
 
     assertThat(result.parties().getFirst().name()).isEqualTo("Acme Ltd");
     assertThat(result.parties().getFirst().editable()).isFalse();
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = {"   "})
+  void organisationsWithNoOrganisationNameOrContactNameDisplayUndefined(String organisationName) {
+    final var nonEditableOrganisation =
+        person()
+            .type("Organisation")
+            .ebsId("directory123")
+            .organisationName(organisationName)
+            .contactNameRole(null);
+    final var editableOrganisation =
+        person()
+            .type("Organisation")
+            .ebsId("aWaRd123")
+            .organisationName(organisationName)
+            .contactNameRole(null);
+
+    assertThat(mapper.partyName(nonEditableOrganisation, context())).isEqualTo("undefined");
+    assertThat(mapper.partyName(editableOrganisation, context())).isEqualTo("undefined");
+  }
+
+  @Test
+  void editableOrganisationWithNoOrganisationNameFallsBackToContactName() {
+    final var organisation =
+        person()
+            .type("Organisation")
+            .ebsId("aWaRd123")
+            .organisationName(null)
+            .contactNameRole("Organisation contact");
+
+    assertThat(mapper.partyName(organisation, context())).isEqualTo("Organisation contact");
+  }
+
+  @Test
+  void nonEditableOrganisationWithNoOrganisationNameFallsBackToContactName() {
+    final var organisation =
+        person()
+            .type("Organisation")
+            .ebsId("directory123")
+            .organisationName(null)
+            .contactNameRole("Organisation contact");
+
+    assertThat(mapper.partyName(organisation, context())).isEqualTo("Organisation contact");
   }
 
   @ParameterizedTest

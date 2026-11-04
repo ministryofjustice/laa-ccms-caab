@@ -143,6 +143,8 @@ class LiablePartiesTemplateRenderTest {
         .contains("aria-label=\"Select Ms Jane Smith\"")
         .contains("class=\"govuk-checkboxes__label\"")
         .doesNotContain("Sheffield City Council")
+        .doesNotContain("aria-label=\"Select Acme & Co\"")
+        .contains("Already added")
         .containsPattern(
             "href=\"/case/outcome-and-awards/land/7/liable-parties\"[^>]*>Cancel and return to liable / interested parties</a>")
         .contains("name=\"selectedPartyIds\"");
@@ -210,9 +212,10 @@ class LiablePartiesTemplateRenderTest {
                       "Owner",
                       "1 High Street AB1 2CD",
                       true,
+                      false,
                       false),
                   new LiablePartyDisplay(
-                      102, 12, "Acme & Co", "Organisation", "Owner", "", true, true),
+                      102, 12, "Acme & Co", "Organisation", "Owner", "", true, true, false),
                   new LiablePartyDisplay(
                       103,
                       13,
@@ -220,6 +223,7 @@ class LiablePartiesTemplateRenderTest {
                       "Individual",
                       "",
                       "<script>alert(1)</script>",
+                      false,
                       false,
                       false));
       model.addAttribute(
@@ -252,9 +256,10 @@ class LiablePartiesTemplateRenderTest {
                       "Owner",
                       "1 High Street AB1 2CD",
                       true,
+                      false,
                       false),
                   new LiablePartyDisplay(
-                      102, 12, "Acme & Co", "Organisation", "Owner", "", true, true));
+                      102, 12, "Acme & Co", "Organisation", "Owner", "", true, true, true));
       model.addAttribute("parties", parties);
       model.addAttribute("awardPath", path);
       model.addAttribute("awardId", 7);

@@ -79,6 +79,7 @@ import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.model.sections.LiablePartiesDisplay;
+import uk.gov.laa.ccms.caab.model.sections.LiablePartyDisplay;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -131,6 +132,11 @@ class AwardControllerTest {
     lenient()
         .when(lookupService.getCommonValues(any()))
         .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
+    // Default: no parties already added to the award, so party-list candidates are unaffected
+    // unless a test overrides this to verify the already-added exclusion.
+    lenient()
+        .when(caseOutcomeService.getLiablePartiesDisplay(any(), any(), any(), any()))
+        .thenReturn(new LiablePartiesDisplay(null, null, null, false, false, List.of()));
   }
 
   @Nested
@@ -230,7 +236,9 @@ class AwardControllerTest {
               Mono.just(new RelationshipToCaseLookupDetail().content(Collections.emptyList())));
 
       // The opponent above has no real id and the case outcome has no opponentIds to resolve it
-      // against, so it is assigned a synthetic negative row id (-1) that cannot be persisted.
+      // against, so it is omitted from the candidate list entirely; selecting row id "-1" (which
+      // was never offered to the user) still cannot resolve to any opponent and surfaces the
+      // same unresolved error as a defensive fallback.
       assertThat(
               mockMvc.perform(
                   post("/case/outcome-and-awards/land/7/liable-parties/add")
@@ -332,6 +340,11 @@ class AwardControllerTest {
                   .relationshipToCase("OWNER")
                   .relationshipToClient("CLIENT")));
 
+      // The first two opponents have no real CAAB id, so they only resolve (and are therefore
+      // shown) because the case outcome already has opponent ids for their positions.
+      when(caseOutcomeService.getCaseOutcome(ebsCase.getCaseReferenceNumber(), 123))
+          .thenReturn(Optional.of(new CaseOutcomeDetail().opponentIds(List.of(501, 502))));
+
       assertThat(
               mockMvc.perform(
                   get("/case/outcome-and-awards/land/7/liable-parties/add")
@@ -368,6 +381,8 @@ class AwardControllerTest {
                   .surname("Smith")
                   .relationshipToCase("CHILD")
                   .relationshipToClient("CLIENT")));
+      when(caseOutcomeService.getCaseOutcome(ebsCase.getCaseReferenceNumber(), 123))
+          .thenReturn(Optional.of(new CaseOutcomeDetail().opponentIds(List.of(501))));
 
       assertThat(
               mockMvc.perform(
@@ -402,6 +417,8 @@ class AwardControllerTest {
                   .organisationType("COMPANY")
                   .relationshipToCase("OPP")
                   .relationshipToClient("CLIENT")));
+      when(caseOutcomeService.getCaseOutcome(ebsCase.getCaseReferenceNumber(), 123))
+          .thenReturn(Optional.of(new CaseOutcomeDetail().opponentIds(List.of(501, 502))));
 
       when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
           .thenReturn(
@@ -482,6 +499,112 @@ class AwardControllerTest {
                       .extracting("name", "editable")
                       .containsExactlyInAnyOrder(
                           tuple("MISS Jane Smith", true), tuple("MISS Sam Jones", false)));
+    }
+
+    @Test
+    void partyListMarksOpponentsAlreadyAddedToTheAwardWithoutHidingTheRow() {
+      ebsCase.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(10)
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT"),
+              new OpponentDetail()
+                  .id(11)
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Sam")
+                  .surname("Jones")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+      when(caseOutcomeService.getLiablePartiesDisplay("300000001", 123, "land", 7))
+          .thenReturn(
+              new LiablePartiesDisplay(
+                  null,
+                  null,
+                  null,
+                  false,
+                  false,
+                  List.of(
+                      new LiablePartyDisplay(
+                          1,
+                          10,
+                          "MISS Jane Smith",
+                          "Individual",
+                          "Child",
+                          "",
+                          false,
+                          false,
+                          false))));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name", "alreadyAdded")
+                      .containsExactlyInAnyOrder(
+                          tuple("MISS Jane Smith", true), tuple("MISS Sam Jones", false)));
+    }
+
+    @Test
+    void reselectingAnAlreadyAddedOpponentIsRejected() {
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(42)
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+      when(caseOutcomeService.getLiablePartiesDisplay("300000001", 123, "land", 7))
+          .thenReturn(
+              new LiablePartiesDisplay(
+                  null,
+                  null,
+                  null,
+                  false,
+                  false,
+                  List.of(
+                      new LiablePartyDisplay(
+                          1,
+                          42,
+                          "MISS Jane Smith",
+                          "Individual",
+                          "Child",
+                          "",
+                          false,
+                          false,
+                          false))));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("selectedPartyIds", "42")))
+          .hasStatusOk()
+          .hasViewName("application/party-list-screen")
+          .model()
+          .containsEntry("partyListError", true);
+
+      verify(caseOutcomeService, never())
+          .addLiableParties(any(), any(), any(), any(), any(), any());
     }
   }
 
