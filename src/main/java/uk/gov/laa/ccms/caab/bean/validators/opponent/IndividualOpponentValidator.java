@@ -26,6 +26,17 @@ public class IndividualOpponentValidator extends AbstractOpponentValidator {
   }
 
   /**
+   * Applies the legacy certificate spacing rule without changing application opponent behaviour.
+   */
+  public void validateLiableParty(final IndividualOpponentFormData form, final Errors errors) {
+    validate(form, errors);
+    if (StringUtils.hasText(form.getCertificateNumber())) {
+      validateDoubleSpaces(
+          "certificateNumber", form.getCertificateNumber(), "Certificate number", errors);
+    }
+  }
+
+  /**
    * Validate the given target object.
    *
    * @param target the target object to validate

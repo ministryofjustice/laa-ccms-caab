@@ -765,6 +765,56 @@ public class CaabApiClient {
                     e, RESOURCE_TYPE_CASE_OUTCOME, queryParams));
   }
 
+  /** Updates the same opponent while retaining its award associations. */
+  public Mono<Void> updateAwardLiableParty(
+      final Integer caseOutcomeId,
+      final String awardType,
+      final Integer awardId,
+      final Integer opponentId,
+      final String loginId,
+      final OpponentDetail opponent) {
+    return caabApiWebClient
+        .put()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/liable-parties/{opponent-id}",
+            caseOutcomeId,
+            awardType,
+            awardId,
+            opponentId)
+        .header("Caab-User-Login-Id", loginId)
+        .bodyValue(opponent)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiUpdateError(
+                    e, RESOURCE_TYPE_OPPONENTS, "opponent id", String.valueOf(opponentId)));
+  }
+
+  /** Atomically creates an opponent and links it to the selected award. */
+  public Mono<Void> createAwardLiableParty(
+      final Integer caseOutcomeId,
+      final String awardType,
+      final Integer awardId,
+      final String loginId,
+      final OpponentDetail opponent) {
+    return caabApiWebClient
+        .post()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/liable-parties",
+            caseOutcomeId,
+            awardType,
+            awardId)
+        .header("Caab-User-Login-Id", loginId)
+        .bodyValue(opponent)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiUpdateError(
+                    e, RESOURCE_TYPE_OPPONENTS, "award id", String.valueOf(awardId)));
+  }
+
   /** Retrieves the opponents linked as liable or interested parties to one award. */
   public Mono<List<OpponentDetail>> getAwardLiableParties(
       final Integer caseOutcomeId, final String awardType, final Integer awardId) {

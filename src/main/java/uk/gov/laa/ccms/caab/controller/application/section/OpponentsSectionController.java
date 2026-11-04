@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
-import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_ORGANISATION_TYPES;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_RELATIONSHIP_TO_CLIENT;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION_ID;
@@ -44,11 +43,10 @@ import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.security.ControlCharacterStrippingEditor;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.IndividualOpponentFormService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.OpponentService;
-import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
-import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /** Controller for the application's opponents and other parties section. */
@@ -77,6 +75,8 @@ public class OpponentsSectionController {
   private final OrganisationOpponentValidator organisationOpponentValidator;
 
   private final IndividualOpponentValidator individualOpponentValidator;
+
+  private final IndividualOpponentFormService individualOpponentFormService;
 
   /**
    * Provides an instance of {@link OrganisationSearchCriteria} for use in the model.
@@ -380,7 +380,7 @@ public class OpponentsSectionController {
       final Model model) {
 
     addCaseContext(model, resolveCaseContext(caseContext, request));
-    populateIndividualCreateDropdowns(model);
+    individualOpponentFormService.populateContactDropdowns(model);
 
     model.addAttribute(CURRENT_OPPONENT, new IndividualOpponentFormData());
 
@@ -409,12 +409,12 @@ public class OpponentsSectionController {
       final Model model) {
 
     CaseContext resolvedCaseContext = resolveCaseContext(caseContext, request);
-    prepareIndividualOpponentForValidation(opponentFormData);
+    individualOpponentFormService.prepareForValidation(opponentFormData);
     individualOpponentValidator.validate(opponentFormData, bindingResult);
 
     if (bindingResult.hasErrors()) {
       addCaseContext(model, resolvedCaseContext);
-      populateIndividualCreateDropdowns(model);
+      individualOpponentFormService.populateContactDropdowns(model);
       return "application/opponents/opponents-individual-create";
     }
 
@@ -463,7 +463,7 @@ public class OpponentsSectionController {
         return "application/opponents/opponents-organisation-edit";
       }
     } else {
-      populateIndividualCreateDropdowns(model);
+      individualOpponentFormService.populateContactDropdowns(model);
 
       return "application/opponents/opponents-individual-edit";
     }
@@ -508,13 +508,13 @@ public class OpponentsSectionController {
     } else {
       // Validate individual opponent.
       if (currentOpponent instanceof IndividualOpponentFormData individualOpponent) {
-        prepareIndividualOpponentForValidation(individualOpponent);
+        individualOpponentFormService.prepareForValidation(individualOpponent);
       }
       individualOpponentValidator.validate(currentOpponent, bindingResult);
 
       if (bindingResult.hasErrors()) {
         addCaseContext(model, resolvedCaseContext);
-        populateIndividualCreateDropdowns(model);
+        individualOpponentFormService.populateContactDropdowns(model);
         return "application/opponents/opponents-individual-edit";
       }
     }
@@ -681,36 +681,6 @@ public class OpponentsSectionController {
         : Boolean.TRUE.equals(opponent.getDeletable());
   }
 
-  private void prepareIndividualOpponentForValidation(
-      final IndividualOpponentFormData individualOpponent) {
-    // If the user has selected a relationship to case, we need to lookup this
-    // record again to determine if date of birth is mandatory.
-    individualOpponent.setDateOfBirthMandatory(false);
-    if (StringUtils.hasText(individualOpponent.getRelationshipToCase())) {
-      RelationshipToCaseLookupValueDetail relationshipToCase =
-          lookupService
-              .getPersonToCaseRelationship(individualOpponent.getRelationshipToCase())
-              .map(
-                  relationshipToCaseLookupValueDetail ->
-                      relationshipToCaseLookupValueDetail.orElse(
-                          new RelationshipToCaseLookupValueDetail()
-                              .code(individualOpponent.getRelationshipToCase())
-                              .description(individualOpponent.getRelationshipToCase())))
-              .blockOptional()
-              .orElseThrow(
-                  () ->
-                      new CaabApplicationException(
-                          "Failed to retrieve relationship to case with code: %s"
-                              .formatted(individualOpponent.getRelationshipToCase())));
-
-      individualOpponent.setDateOfBirthMandatory(
-          Boolean.TRUE.equals(relationshipToCase.getDateOfBirthMandatory()));
-    }
-
-    individualOpponent.setDateOfBirth(
-        DateUtils.normaliseComponentDateIfValid(individualOpponent.getDateOfBirth()));
-  }
-
   private void populateOrganisationSearchDropdowns(final Model model) {
     new DropdownBuilder(model)
         .addDropdown(
@@ -749,27 +719,6 @@ public class OpponentsSectionController {
     new DropdownBuilder(model)
         .addDropdown(
             "organisationTypes", lookupService.getCommonValues(COMMON_VALUE_ORGANISATION_TYPES))
-        .addDropdown(
-            "relationshipsToClient",
-            lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
-        .addDropdown("countries", lookupService.getCountries())
-        .build();
-  }
-
-  private void populateIndividualCreateDropdowns(final Model model) {
-    RelationshipToCaseLookupDetail relationshipToCaseLookupDetail =
-        lookupService
-            .getPersonToCaseRelationships()
-            .blockOptional()
-            .orElseThrow(() -> new CaabApplicationException("Failed to retrieve lookup data"));
-    model.addAttribute("relationshipsToCase", relationshipToCaseLookupDetail.getContent());
-
-    List<BooleanDropdownOption> legalAidedOptions =
-        List.of(new BooleanDropdownOption("false", "No"), new BooleanDropdownOption("true", "Yes"));
-    model.addAttribute("legalAidedOptions", legalAidedOptions);
-
-    new DropdownBuilder(model)
-        .addDropdown("contactTitles", lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
         .addDropdown(
             "relationshipsToClient",
             lookupService.getCommonValues(COMMON_VALUE_RELATIONSHIP_TO_CLIENT))
