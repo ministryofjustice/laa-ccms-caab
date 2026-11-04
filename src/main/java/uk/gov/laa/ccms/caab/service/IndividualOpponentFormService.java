@@ -20,6 +20,12 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 public class IndividualOpponentFormService {
   private final LookupService lookupService;
 
+  /**
+   * Derives the date-of-birth requirement from the case relationship and normalises valid dates.
+   *
+   * @param individual the contact form to prepare in place
+   * @throws CaabApplicationException if the relationship lookup produces no response
+   */
   public void prepareForValidation(final IndividualOpponentFormData individual) {
     individual.setDateOfBirthMandatory(false);
     if (StringUtils.hasText(individual.getRelationshipToCase())) {
@@ -44,6 +50,12 @@ public class IndividualOpponentFormService {
     individual.setDateOfBirth(DateUtils.normaliseComponentDateIfValid(individual.getDateOfBirth()));
   }
 
+  /**
+   * Adds relationship, title, country and legal-aid options to a contact form's model.
+   *
+   * @param model the model to populate
+   * @throws CaabApplicationException if the relationship list cannot be retrieved
+   */
   public void populateContactDropdowns(final Model model) {
     final var relationships =
         lookupService
@@ -61,6 +73,11 @@ public class IndividualOpponentFormService {
         .build();
   }
 
+  /**
+   * Supplies the values and labels for optional boolean dropdowns.
+   *
+   * @return the No and Yes options, in display order
+   */
   public List<BooleanDropdownOption> yesNoOptions() {
     return List.of(
         new BooleanDropdownOption("false", "No"), new BooleanDropdownOption("true", "Yes"));

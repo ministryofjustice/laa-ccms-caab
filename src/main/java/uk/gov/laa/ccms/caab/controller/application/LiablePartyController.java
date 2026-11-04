@@ -64,6 +64,14 @@ public class LiablePartyController {
   private final IndividualOpponentOtherDetailsValidator otherDetailsValidator;
   private final LookupService lookupService;
 
+  /**
+   * Adds award identifiers and journey navigation URLs to every request's model.
+   *
+   * @param awardPath the award type's URL path segment
+   * @param awardId the selected award
+   * @param opponentId the opponent being edited, or null when adding
+   * @param model the model to populate
+   */
   @ModelAttribute
   public void awardContext(
       @PathVariable final String awardPath,
@@ -78,6 +86,11 @@ public class LiablePartyController {
     model.addAttribute("individualBackUrl", partyListUrl);
   }
 
+  /**
+   * Restricts contact form binding to editable fields and strips control characters.
+   *
+   * @param binder the contact form binder
+   */
   @InitBinder("liablePartyIndividual")
   public void bindIndividualContactDetails(final WebDataBinder binder) {
     binder.registerCustomEditor(String.class, new ControlCharacterStrippingEditor(true));
@@ -106,6 +119,11 @@ public class LiablePartyController {
         "certificateNumber");
   }
 
+  /**
+   * Restricts other-details binding to editable fields and strips control characters.
+   *
+   * @param binder the other-details form binder
+   */
   @InitBinder("liablePartyOtherDetails")
   public void bindIndividualOtherDetails(final WebDataBinder binder) {
     binder.registerCustomEditor(String.class, new ControlCharacterStrippingEditor(true));
@@ -170,6 +188,22 @@ public class LiablePartyController {
     }
   }
 
+  /**
+   * Validates contact details and advances to other details, saving contacts only when editing.
+   *
+   * @param awardPath the award type's URL path segment
+   * @param awardId the selected award
+   * @param opponentId the opponent being edited, or null when adding
+   * @param ebsCase the current case
+   * @param user the current provider user
+   * @param form the submitted contact details
+   * @param errors the binding and validation result
+   * @param journeyToken the token identifying the active draft
+   * @param session the session holding the draft
+   * @param model the model to populate on validation or save failure
+   * @return the contact view on failure, otherwise a redirect to other details
+   * @throws CaabApplicationException if the draft context is invalid or the case is read-only
+   */
   @PostMapping({"/individual/add", "/individual/{opponentId}/edit"})
   public String nextIndividual(
       @PathVariable final String awardPath,
@@ -219,6 +253,20 @@ public class LiablePartyController {
     }
   }
 
+  /**
+   * Displays the draft's other details after its contact details have been completed.
+   *
+   * @param awardPath the award type's URL path segment
+   * @param awardId the selected award
+   * @param opponentId the opponent being edited, or null when adding
+   * @param ebsCase the current case
+   * @param user the current provider user
+   * @param journeyToken the token identifying the active draft
+   * @param session the session holding the draft
+   * @param model the model to populate
+   * @return the other-details view, or a redirect to incomplete contact details
+   * @throws CaabApplicationException if the draft context is invalid or the case is read-only
+   */
   @GetMapping({"/individual/add/other-details", "/individual/{opponentId}/edit/other-details"})
   public String individualOtherDetails(
       @PathVariable final String awardPath,
@@ -246,6 +294,26 @@ public class LiablePartyController {
     }
   }
 
+  /**
+   * Confirms validated other details, or discards unsaved other details when returning Back.
+   *
+   * <p>Confirmation creates a new party with both forms or updates an existing party's other
+   * details, then removes only the confirmed draft.
+   *
+   * @param awardPath the award type's URL path segment
+   * @param awardId the selected award
+   * @param opponentId the opponent being edited, or null when adding
+   * @param ebsCase the current case
+   * @param user the current provider user
+   * @param form the submitted other details
+   * @param errors the binding and validation result
+   * @param action the confirm or back action
+   * @param journeyToken the token identifying the active draft
+   * @param session the session holding the draft
+   * @param model the model to populate on validation, load or save failure
+   * @return the other-details view on failure, or a redirect to contacts or the party list
+   * @throws CaabApplicationException if the action or draft is invalid, or the case is read-only
+   */
   @PostMapping({"/individual/add/other-details", "/individual/{opponentId}/edit/other-details"})
   public String confirmIndividual(
       @PathVariable final String awardPath,
@@ -341,6 +409,19 @@ public class LiablePartyController {
     }
   }
 
+  /**
+   * Discards the active draft without reverting contact details already saved during an edit.
+   *
+   * @param awardPath the award type's URL path segment
+   * @param awardId the selected award
+   * @param opponentId the opponent being edited, or null when adding
+   * @param ebsCase the current case
+   * @param user the current provider user
+   * @param journeyToken the token identifying the active draft
+   * @param session the session holding the draft
+   * @return a redirect to the selected award's party list
+   * @throws CaabApplicationException if the draft context is invalid or the case is read-only
+   */
   @GetMapping({"/individual/add/cancel", "/individual/{opponentId}/edit/cancel"})
   public String cancelIndividual(
       @PathVariable final String awardPath,
@@ -357,6 +438,19 @@ public class LiablePartyController {
     }
   }
 
+  /**
+   * Requires edit permission and a draft matching the current case, provider, award and journey.
+   *
+   * @param ebsCase the current case
+   * @param user the current provider user
+   * @param awardPath the award type's URL path segment
+   * @param awardId the selected award
+   * @param opponentId the opponent being edited, or null when adding
+   * @param journeyToken the token identifying the active draft
+   * @param session the session holding the draft
+   * @return the matching active draft
+   * @throws CaabApplicationException if the draft context is invalid or the case is read-only
+   */
   private IndividualLiablePartyFlow requireIndividualFlow(
       final ApplicationDetail ebsCase,
       final UserDetail user,
@@ -380,6 +474,12 @@ public class LiablePartyController {
     return flow;
   }
 
+  /**
+   * Requires an outcome function that permits changes to the case.
+   *
+   * @param ebsCase the case whose available functions are checked
+   * @throws CaabApplicationException if neither outcome edit function is available
+   */
   private void requireEditPermission(final ApplicationDetail ebsCase) {
     if (ebsCase.getAvailableFunctions() == null
         || !(ebsCase.getAvailableFunctions().contains(FunctionConstants.OUTCOME_WITH_DISCHARGE)
@@ -388,11 +488,23 @@ public class LiablePartyController {
     }
   }
 
+  /**
+   * Populates contact dropdowns and selects the individual contact-details view.
+   *
+   * @param model the model to populate
+   * @return the contact-details view name
+   */
   private String individualContactPage(final Model model) {
     individualOpponentFormService.populateContactDropdowns(model);
     return "application/liable-parties/individual-contact-details";
   }
 
+  /**
+   * Populates employment and assessment options and selects the other-details view.
+   *
+   * @param model the model to populate
+   * @return the other-details view name
+   */
   private String individualOtherPage(final Model model) {
     model.addAttribute("meansAssessmentOptions", individualOpponentFormService.yesNoOptions());
     new DropdownBuilder(model)
@@ -405,6 +517,14 @@ public class LiablePartyController {
     return "application/liable-parties/individual-other-details";
   }
 
+  /**
+   * Builds the award-scoped add or edit URL for an individual.
+   *
+   * @param awardPath the award type's URL path segment
+   * @param awardId the selected award
+   * @param opponentId the opponent being edited, or null when adding
+   * @return the individual journey's base URL
+   */
   private String individualBasePath(
       final String awardPath, final Integer awardId, final Integer opponentId) {
     return "/case/outcome-and-awards/"

@@ -103,9 +103,28 @@ public class CaseOutcomeService {
     updateIndividualLiableParty(party, loginId, party.opponent());
   }
 
+  /**
+   * Validated ownership context for updating an award-linked individual.
+   *
+   * @param outcome the owning case outcome
+   * @param award the award to which the opponent is linked
+   * @param opponent the editable individual
+   */
   private record AwardParty(
       CaseOutcomeDetail outcome, BaseAwardDetail award, OpponentDetail opponent) {}
 
+  /**
+   * Loads an award-linked individual and checks that it is award-created and not shared.
+   *
+   * @param caseReference the case reference number
+   * @param providerId the provider owning the case
+   * @param awardPath the award type's URL path segment
+   * @param awardId the award containing the party
+   * @param opponentId the individual to load
+   * @return the owning case outcome, award and editable opponent
+   * @throws CaabApplicationException if the award or party is unavailable or not editable
+   * @throws IllegalStateException if the case has no outcome
+   */
   private AwardParty requireIndividualLiableParty(
       final String caseReference,
       final Integer providerId,
@@ -134,6 +153,13 @@ public class CaseOutcomeService {
     return new AwardParty(outcome, award, opponent);
   }
 
+  /**
+   * Persists an opponent's details using its validated case-outcome and award scope.
+   *
+   * @param party the validated ownership and opponent identity
+   * @param loginId the user performing the update
+   * @param opponent the updated opponent payload
+   */
   private void updateIndividualLiableParty(
       final AwardParty party, final String loginId, final OpponentDetail opponent) {
     caabApiClient
@@ -224,6 +250,13 @@ public class CaseOutcomeService {
                         .formatted(awardId, caseOutcome.getId())));
   }
 
+  /**
+   * Resolves an award URL path segment to its API award type.
+   *
+   * @param awardPath the award type's URL path segment
+   * @return the corresponding API award type
+   * @throws CaabApplicationException if the path does not identify a supported award type
+   */
   private String awardTypeForPath(final String awardPath) {
     return switch (awardPath) {
       case "cost-award" -> AWARD_TYPE_COST;

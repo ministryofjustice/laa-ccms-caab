@@ -162,6 +162,12 @@ public interface OpponentMapper {
   @Mapping(target = "certificateNumber", source = "certificateNumber")
   OpponentDetail toIndividualOpponent(IndividualOpponentFormData opponentFormData);
 
+  /**
+   * Copies other-details fields into an opponent without changing its contact details.
+   *
+   * @param formData the submitted other details, including values to clear
+   * @param opponent the opponent to update in place
+   */
   @BeanMapping(ignoreByDefault = true)
   @Mapping(target = "employmentStatus", source = "employmentStatus")
   @Mapping(target = "employerName", source = "employerName")
@@ -175,6 +181,12 @@ public interface OpponentMapper {
   void updateIndividualOtherDetails(
       IndividualOpponentOtherDetailsFormData formData, @MappingTarget OpponentDetail opponent);
 
+  /**
+   * Maps persisted employment and assessment details to the individual other-details form.
+   *
+   * @param opponent the opponent containing the saved details
+   * @return the form data with its assessment date formatted as dd/MM/yyyy
+   */
   @Mapping(target = "assessmentDate", source = "assessmentDate", dateFormat = "dd/MM/yyyy")
   IndividualOpponentOtherDetailsFormData toIndividualOpponentOtherDetailsFormData(
       OpponentDetail opponent);

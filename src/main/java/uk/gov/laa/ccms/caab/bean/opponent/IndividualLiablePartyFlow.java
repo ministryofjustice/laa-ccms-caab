@@ -16,6 +16,14 @@ public class IndividualLiablePartyFlow {
   private final Integer awardId;
   private final Integer opponentId;
 
+  /**
+   * Creates an empty draft for adding an individual to an award.
+   *
+   * @param caseReference the case reference number
+   * @param providerId the provider owning the case
+   * @param awardPath the award type's URL path segment
+   * @param awardId the award receiving the new party
+   */
   public IndividualLiablePartyFlow(
       final String caseReference,
       final Integer providerId,
@@ -24,6 +32,11 @@ public class IndividualLiablePartyFlow {
     this(caseReference, providerId, awardPath, awardId, null);
   }
 
+  /**
+   * Indicates whether this draft represents an existing opponent.
+   *
+   * @return true when the draft has an opponent ID
+   */
   public boolean isEditing() {
     return opponentId != null;
   }

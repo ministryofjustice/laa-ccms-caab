@@ -122,6 +122,12 @@ public interface LiablePartiesDisplayMapper {
         .getDescription();
   }
 
+  /**
+   * Checks whether a party is award-created and, for individuals, not shared.
+   *
+   * @param opponent the party whose edit link is being determined
+   * @return true for award-created organisations and non-shared award-created individuals
+   */
   @Named("awardPartyEditable")
   default boolean awardPartyEditable(final OpponentDetail opponent) {
     final String ebsId = opponent.getEbsId();
