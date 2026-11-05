@@ -132,7 +132,7 @@ dependencies {
     implementation 'org.mapstruct:mapstruct:1.6.3'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 
-    implementation 'org.apache.tika:tika-core:4.1.0'
+    implementation 'org.apache.tika:tika-core:4.2.0'
 
     // Starters
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
@@ -153,7 +153,7 @@ dependencies {
 
     implementation 'org.json:json:20260814'
 
-    implementation 'io.swagger.core.v3:swagger-annotations:2.2.55'
+    implementation 'io.swagger.core.v3:swagger-annotations:3.0.0'
 
     //SAML security
     implementation 'org.springframework.boot:spring-boot-starter-security-saml2'
