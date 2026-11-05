@@ -11,6 +11,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataDeceasedDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataMonitoringDetails;
 import uk.gov.laa.ccms.data.model.AddressDetail;
 import uk.gov.laa.ccms.data.model.ClientDetail;
@@ -197,6 +198,7 @@ class EbsClientDetailMapperTest {
                 .fullName(firstname + " " + middleNames + " " + surname))
         .dateOfBirth(
             LocalDate.of(Integer.parseInt(year), Integer.parseInt(month), Integer.parseInt(day)))
+        .dateOfDeath(LocalDate.of(2024, 7, 15))
         .countryOfOriginCode(countryOfOrigin)
         .countryOfOriginDescription(countryOfOriginDescription)
         .gender(gender)
@@ -242,10 +244,17 @@ class EbsClientDetailMapperTest {
   private ClientFlowFormData buildClientFlowFormData() {
     ClientFlowFormData clientFlowFormData = new ClientFlowFormData("create");
     clientFlowFormData.setBasicDetails(buildClientFormDataBasicDetails());
+    clientFlowFormData.setDeceasedDetails(buildClientFormDataDeceasedDetails());
     clientFlowFormData.setContactDetails(buildClientFormDataContactDetails());
     clientFlowFormData.setAddressDetails(buildClientFormDataAddressDetails());
     clientFlowFormData.setMonitoringDetails(buildClientFormDataMonitoringDetails());
     return clientFlowFormData;
+  }
+
+  private ClientFormDataDeceasedDetails buildClientFormDataDeceasedDetails() {
+    ClientFormDataDeceasedDetails deceasedDetails = new ClientFormDataDeceasedDetails();
+    deceasedDetails.setDateOfDeath("15/07/2024");
+    return deceasedDetails;
   }
 
   private ClientFormDataBasicDetails buildClientFormDataBasicDetails() {
