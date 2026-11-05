@@ -1,7 +1,9 @@
 package uk.gov.laa.ccms.caab.controller.client;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -24,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataDeceasedDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientDeceasedDetailsValidator;
 
@@ -102,6 +105,42 @@ class EditClientDeceasedDetailsControllerTest {
   @Nested
   @DisplayName("Amendments tests")
   class AmendmentsTests {
+
+    @Test
+    void testEditClientDetailsDeceasedPostChecksDateOfBirth() throws Exception {
+      ClientFormDataBasicDetails basicDetails = new ClientFormDataBasicDetails();
+      clientFlowFormData.setBasicDetails(basicDetails);
+
+      mockMvc
+          .perform(
+              post("/amendments/sections/client/details/deceased")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("deceasedDetails", deceasedDetails))
+          .andExpect(status().is3xxRedirection());
+
+      verify(clientDeceasedDetailsValidator)
+          .validateNotBeforeDateOfBirth(eq(deceasedDetails), eq(basicDetails), any());
+    }
+
+    @Test
+    void testEditClientDetailsDeceasedPostBeforeDateOfBirth() throws Exception {
+      doAnswer(
+              invocation -> {
+                Errors errors = (Errors) invocation.getArguments()[2];
+                errors.rejectValue("dateOfDeath", "invalid.input", "Date before date of birth");
+                return null;
+              })
+          .when(clientDeceasedDetailsValidator)
+          .validateNotBeforeDateOfBirth(any(), any(), any());
+
+      mockMvc
+          .perform(
+              post("/amendments/sections/client/details/deceased")
+                  .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                  .flashAttr("deceasedDetails", deceasedDetails))
+          .andExpect(status().isOk())
+          .andExpect(view().name("application/sections/client-deceased-details"));
+    }
 
     @Test
     void testEditClientDetailsDeceased() throws Exception {
