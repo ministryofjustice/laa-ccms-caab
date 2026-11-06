@@ -54,7 +54,7 @@ public class ClientDeceasedDetailsValidator extends AbstractValidator {
    * Rejects a date of death before the client's date of birth. A death on the date of birth is
    * allowed.
    *
-   * @param deceasedDetails The already validated deceased details.
+   * @param deceasedDetails The deceased details, which may hold no date.
    * @param basicDetails The client's basic details holding the date of birth.
    * @param errors The Errors object to store validation errors.
    */
@@ -63,6 +63,7 @@ public class ClientDeceasedDetailsValidator extends AbstractValidator {
       ClientFormDataBasicDetails basicDetails,
       Errors errors) {
     if (errors.hasErrors()
+        || !StringUtils.hasText(deceasedDetails.getDateOfDeath())
         || basicDetails == null
         || !StringUtils.hasText(basicDetails.getDateOfBirth())) {
       return;

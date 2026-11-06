@@ -89,6 +89,13 @@ class ClientDeceasedDetailsValidatorTest {
   }
 
   @Test
+  void validateNotBeforeDateOfBirth_noDateOfDeath_skipped() {
+    validator.validateNotBeforeDateOfBirth(deceasedDetails, basicDetails("15/06/2000"), errors);
+
+    assertFalse(errors.hasErrors());
+  }
+
+  @Test
   void validateNotBeforeDateOfBirth_noBasicDetails_skipped() {
     deceasedDetails.setDateOfDeath("01/01/2000");
 
