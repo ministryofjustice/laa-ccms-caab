@@ -15,7 +15,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataDeceasedDetails;
 import uk.gov.laa.ccms.caab.bean.validators.BaselineTextValidator;
 
 /**
@@ -113,6 +115,36 @@ class GlobalBinderAdviceTest {
         .andExpect(content().string("SCG:null"));
   }
 
+  @Test
+  @DisplayName("a date of death is not bound onto the client flow form")
+  void dateOfDeathIsNotBoundOntoClientFlowForm() throws Exception {
+    mockMvc
+        .perform(
+            post("/client-flow")
+                .param("action", "edit")
+                .param("deceasedDetails.dateOfDeath", "01/01/1900"))
+        .andExpect(status().isOk())
+        .andExpect(content().string("edit:null:null"));
+  }
+
+  @Test
+  @DisplayName("the deceased flag is not bound onto the client flow form")
+  void deceasedFlagIsNotBoundOntoClientFlowForm() throws Exception {
+    mockMvc
+        .perform(post("/client-flow").param("action", "edit").param("deceasedFlag", "true"))
+        .andExpect(status().isOk())
+        .andExpect(content().string("edit:null:null"));
+  }
+
+  @Test
+  @DisplayName("the deceased details form still binds its date of death")
+  void deceasedDetailsFormStillBindsDateOfDeath() throws Exception {
+    mockMvc
+        .perform(post("/deceased-details").param("dateOfDeath", "15/07/2024"))
+        .andExpect(status().isOk())
+        .andExpect(content().string("15/07/2024"));
+  }
+
   /** Plain accessors rather than Lombok: the annotation processor is main-source only. */
   public static class TestForm {
     private String name;
@@ -153,6 +185,23 @@ class GlobalBinderAdviceTest {
       return form.getBasicDetails().getCountryOfOrigin()
           + ":"
           + form.getBasicDetails().getCountryOfOriginDescription();
+    }
+
+    @PostMapping("/client-flow")
+    @ResponseBody
+    String clientFlow(@ModelAttribute final ClientFlowFormData form) {
+      final ClientFormDataDeceasedDetails deceasedDetails = form.getDeceasedDetails();
+      return form.getAction()
+          + ":"
+          + (deceasedDetails == null ? null : deceasedDetails.getDateOfDeath())
+          + ":"
+          + form.getDeceasedFlag();
+    }
+
+    @PostMapping("/deceased-details")
+    @ResponseBody
+    String deceasedDetails(@ModelAttribute final ClientFormDataDeceasedDetails form) {
+      return form.getDateOfDeath();
     }
 
     @PostMapping("/unvalidated")
