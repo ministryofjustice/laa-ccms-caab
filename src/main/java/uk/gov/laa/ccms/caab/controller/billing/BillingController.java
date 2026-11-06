@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.billing;
 
+import static uk.gov.laa.ccms.caab.bean.billing.BillPoaRow.INVOICE_STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.DECLARATION_BILL;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_COMPLETE;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.SECTION_STATUS_NOT_STARTED;
@@ -40,6 +41,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.WebUtils;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
@@ -277,7 +279,7 @@ public class BillingController {
    * @param model the model used to pass data to the view.
    * @return the POA details view.
    */
-  @GetMapping("/case/billing/poa")
+  @GetMapping(value = "/case/billing/poa", params = "!billing-id")
   public String createPoa(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
@@ -318,7 +320,7 @@ public class BillingController {
    * @param model the model used to pass data to the view.
    * @return the bill details view.
    */
-  @GetMapping("/case/billing/bill")
+  @GetMapping(value = "/case/billing/bill", params = "!billing-id")
   public String createBill(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
@@ -342,6 +344,125 @@ public class BillingController {
     model.addAttribute("printDraftBill", assessmentComplete);
 
     return "application/billing/bill-details";
+  }
+
+  @GetMapping(value = "/case/billing/{billingContext:bill|poa}", params = "billing-id")
+  public String submittedDetails(
+      @PathVariable final BillingContext billingContext,
+      @RequestParam("billing-id") final String billingId,
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      final Model model) {
+    final String denied = notAuthorised(billingContext, ebsCase);
+    if (denied != null) {
+      return denied;
+    }
+    final SubmittedInvoice selected = submittedInvoice(billingContext, billingId, ebsCase, user);
+    submittedModel(model, selected);
+    return "application/billing/" + billingContext.getPathValue() + "-details";
+  }
+
+  @GetMapping(value = "/case/billing/{billingContext:bill|poa}/summary", params = "billing-id")
+  public ResponseEntity<byte[]> submittedSummary(
+      @PathVariable final BillingContext billingContext,
+      @RequestParam("billing-id") final String billingId,
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user) {
+    final String denied = notAuthorised(billingContext, ebsCase);
+    if (denied != null) {
+      return summaryUnavailable();
+    }
+    final SubmittedInvoice selected = submittedInvoice(billingContext, billingId, ebsCase, user);
+    if (selected.assessment() == null) {
+      return ResponseEntity.status(HttpStatus.FOUND)
+          .location(
+              UriComponentsBuilder.fromPath("/case/billing/" + billingContext.getPathValue())
+                  .queryParam("billing-id", billingId)
+                  .build()
+                  .encode()
+                  .toUri())
+          .build();
+    }
+    return summaryPdf(
+        billingContext.getPathValue() + "-summary.pdf",
+        (statement, allocatedCostLimit) ->
+            billingContext.isBill()
+                ? billingSummaryPdfService.generateBillSummary(
+                    ebsCase,
+                    providerName(user),
+                    selected.assessment(),
+                    statement,
+                    allocatedCostLimit,
+                    selected.row().status())
+                : billingSummaryPdfService.generatePoaSummary(
+                    ebsCase,
+                    providerName(user),
+                    selected.assessment(),
+                    statement,
+                    allocatedCostLimit,
+                    selected.row().status()),
+        selected.statement(),
+        ebsCase);
+  }
+
+  private record SubmittedInvoice(
+      StatementOfAccountDisplay statement, BillPoaRow row, AssessmentDetail assessment) {}
+
+  private SubmittedInvoice submittedInvoice(
+      final BillingContext billingContext,
+      final String billingId,
+      final ApplicationDetail ebsCase,
+      final UserDetail user) {
+    final SubmittedInvoice unavailable = new SubmittedInvoice(null, null, null);
+    final long id;
+    try {
+      if (billingId == null || !billingId.matches("[0-9]+")) {
+        log.warn("Invalid historical billing selection");
+        return unavailable;
+      }
+      id = Long.parseLong(billingId);
+    } catch (final NumberFormatException e) {
+      log.warn("Historical billing selection exceeds the supported identifier range");
+      return unavailable;
+    }
+    if (id <= 0) {
+      log.warn("Invalid non-positive historical billing selection");
+      return unavailable;
+    }
+    final StatementOfAccountDisplay statement =
+        billingService.getStatementOfAccountDisplay(
+            ebsCase.getCaseReferenceNumber(), ebsCase, user);
+    final BillPoaRow row =
+        Optional.ofNullable(statement.getBillsAndPoa()).orElse(List.of()).stream()
+            .filter(
+                candidate ->
+                    !candidate.draft()
+                        && candidate.hasBillingIncidentId()
+                        && candidate.billingIncidentId() == id
+                        && candidate.billingContext() == billingContext)
+            .findFirst()
+            .orElse(null);
+    if (row == null) {
+      log.warn("Historical billing selection is not in the permitted statement");
+      return unavailable;
+    }
+    return new SubmittedInvoice(
+        statement,
+        row,
+        billingService
+            .getSubmittedAssessment(ebsCase.getCaseReferenceNumber(), row.billingIncidentId())
+            .orElse(null));
+  }
+
+  private void submittedModel(final Model model, final SubmittedInvoice selected) {
+    model.addAttribute("readOnly", true);
+    model.addAttribute("detailsUnavailable", selected.assessment() == null);
+    model.addAttribute(
+        "billingId", selected.row() == null ? null : selected.row().billingIncidentId().toString());
+    model.addAttribute("assessmentStatus", selected.row() == null ? null : selected.row().status());
+    model.addAttribute("assessmentComplete", selected.assessment() != null);
+    model.addAttribute("printDraftBill", selected.assessment() != null);
+    model.addAttribute("viewPoaSummary", selected.assessment() != null);
   }
 
   /**
@@ -714,7 +835,7 @@ public class BillingController {
    * @param user the logged-in user.
    * @return the PDF response, or a redirect when the POA summary cannot be shown.
    */
-  @GetMapping("/case/billing/poa/summary")
+  @GetMapping(value = "/case/billing/poa/summary", params = "!billing-id")
   public ResponseEntity<byte[]> poaSummary(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user) {
@@ -729,7 +850,12 @@ public class BillingController {
         "poa-summary.pdf",
         (statement, allocatedCostLimit) ->
             billingSummaryPdfService.generatePoaSummary(
-                ebsCase, providerName(user), poaAssessment, statement, allocatedCostLimit),
+                ebsCase,
+                providerName(user),
+                poaAssessment,
+                statement,
+                allocatedCostLimit,
+                INVOICE_STATUS_DRAFT),
         ebsCase,
         user);
   }
@@ -743,7 +869,7 @@ public class BillingController {
    * @param user the logged-in user.
    * @return the PDF response, or a redirect when the bill summary cannot be shown.
    */
-  @GetMapping("/case/billing/bill/summary")
+  @GetMapping(value = "/case/billing/bill/summary", params = "!billing-id")
   public ResponseEntity<byte[]> billSummary(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
       @SessionAttribute(USER_DETAILS) final UserDetail user) {
@@ -758,7 +884,12 @@ public class BillingController {
         "bill-summary.pdf",
         (statement, allocatedCostLimit) ->
             billingSummaryPdfService.generateBillSummary(
-                ebsCase, providerName(user), billingAssessment, statement, allocatedCostLimit),
+                ebsCase,
+                providerName(user),
+                billingAssessment,
+                statement,
+                allocatedCostLimit,
+                INVOICE_STATUS_DRAFT),
         ebsCase,
         user);
   }
@@ -776,6 +907,14 @@ public class BillingController {
     final StatementOfAccountDisplay statement =
         billingService.getStatementOfAccountDisplay(
             ebsCase.getCaseReferenceNumber(), ebsCase, user);
+    return summaryPdf(filename, render, statement, ebsCase);
+  }
+
+  private ResponseEntity<byte[]> summaryPdf(
+      final String filename,
+      final BiFunction<StatementOfAccountDisplay, BigDecimal, byte[]> render,
+      final StatementOfAccountDisplay statement,
+      final ApplicationDetail ebsCase) {
     final BigDecimal allocatedCostLimit = billingService.getAllocatedCostLimit(statement, ebsCase);
 
     final String contentDisposition =
