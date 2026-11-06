@@ -304,7 +304,10 @@ class BillingSummaryPdfServiceTest {
 
   @Test
   void completeHistoricalTotalsAndOptionalTimeAreUsable() {
-    assertThat(BillingSummaryPdfService.hasUsableHistoricalSummary(completedAssessment())).isTrue();
+    assertThat(
+            new HistoricalBillingAssessmentValidator()
+                .hasUsableHistoricalSummary(completedAssessment()))
+        .isTrue();
   }
 
   @ParameterizedTest
@@ -317,7 +320,8 @@ class BillingSummaryPdfServiceTest {
         .orElseThrow()
         .setValue("unknown");
 
-    assertThat(BillingSummaryPdfService.hasUsableHistoricalSummary(assessment)).isFalse();
+    assertThat(new HistoricalBillingAssessmentValidator().hasUsableHistoricalSummary(assessment))
+        .isFalse();
   }
 
   @ParameterizedTest
@@ -338,7 +342,8 @@ class BillingSummaryPdfServiceTest {
               }
             });
 
-    assertThat(BillingSummaryPdfService.hasUsableHistoricalSummary(assessment)).isTrue();
+    assertThat(new HistoricalBillingAssessmentValidator().hasUsableHistoricalSummary(assessment))
+        .isTrue();
   }
 
   @Test
@@ -354,7 +359,8 @@ class BillingSummaryPdfServiceTest {
             attribute ->
                 List.of("PROFIT_COST_RATE", "PROFIT_COST_UPLIFT").contains(attribute.getName()));
 
-    assertThat(BillingSummaryPdfService.hasUsableHistoricalSummary(assessment)).isTrue();
+    assertThat(new HistoricalBillingAssessmentValidator().hasUsableHistoricalSummary(assessment))
+        .isTrue();
   }
 
   @ParameterizedTest
@@ -367,7 +373,8 @@ class BillingSummaryPdfServiceTest {
         .orElseThrow()
         .setValue(value);
 
-    assertThat(BillingSummaryPdfService.hasUsableHistoricalSummary(assessment)).isFalse();
+    assertThat(new HistoricalBillingAssessmentValidator().hasUsableHistoricalSummary(assessment))
+        .isFalse();
   }
 
   @ParameterizedTest
@@ -380,6 +387,7 @@ class BillingSummaryPdfServiceTest {
         .orElseThrow()
         .setValue(value);
 
-    assertThat(BillingSummaryPdfService.hasUsableHistoricalSummary(assessment)).isFalse();
+    assertThat(new HistoricalBillingAssessmentValidator().hasUsableHistoricalSummary(assessment))
+        .isFalse();
   }
 }

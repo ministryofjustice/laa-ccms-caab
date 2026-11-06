@@ -21,9 +21,7 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openapitools.jackson.nullable.JsonNullable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
@@ -34,7 +32,6 @@ import uk.gov.laa.ccms.caab.bean.billing.SoaFigureColumn;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
-import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
 import uk.gov.laa.ccms.caab.constants.BillingContext;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
@@ -112,6 +109,7 @@ public class BillingService {
   private final SoaApplicationMapper soaApplicationMapper;
   private final AssessmentService assessmentService;
   private final ClientService clientService;
+  private final HistoricalBillingAssessmentValidator historicalBillingAssessmentValidator;
 
   /**
    * Retrieve and build the statement of account display for the supplied case.
@@ -280,18 +278,8 @@ public class BillingService {
    */
   public Optional<AssessmentDetail> getSubmittedAssessment(
       final String caseReference, final Long billingId) {
-    final InvoiceAssessmentDetails invoice;
-    try {
-      invoice = ebsApiClient.getInvoiceAssessment(caseReference, billingId).block();
-    } catch (final EbsApiClientException e) {
-      if (!e.hasHttpStatus(HttpStatus.NOT_FOUND)
-          && !(e.getCause() instanceof WebClientResponseException response
-              && response.getStatusCode().value() == HttpStatus.NOT_FOUND.value())) {
-        throw e;
-      }
-      log.warn("Historical data not found for billing incident {}", billingId);
-      return Optional.empty();
-    }
+    final InvoiceAssessmentDetails invoice =
+        ebsApiClient.getInvoiceAssessment(caseReference, billingId).block();
     if (invoice == null) {
       log.warn("Historical data not found for billing incident {}", billingId);
       return Optional.empty();
@@ -302,7 +290,7 @@ public class BillingService {
       return Optional.empty();
     }
     final AssessmentDetail assessment = historicalAssessment(invoice);
-    if (!BillingSummaryPdfService.prepareHistoricalSummary(assessment)) {
+    if (!historicalBillingAssessmentValidator.prepareHistoricalSummary(assessment)) {
       log.warn("Historical summary unavailable for billing incident {}", billingId);
       return Optional.empty();
     }

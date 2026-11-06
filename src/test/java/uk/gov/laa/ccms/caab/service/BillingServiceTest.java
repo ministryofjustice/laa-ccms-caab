@@ -31,6 +31,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -97,6 +98,10 @@ class BillingServiceTest {
   @Mock AssessmentService assessmentService;
 
   @Mock ClientService clientService;
+
+  @Spy
+  private HistoricalBillingAssessmentValidator historicalBillingAssessmentValidator =
+      new HistoricalBillingAssessmentValidator();
 
   @InjectMocks BillingService billingService;
 
@@ -1203,17 +1208,9 @@ class BillingServiceTest {
       assertReadOnly();
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void treatsOnlyIdentifiableNotFoundAsUnavailable(final boolean wrapped) {
-      final EbsApiClientException failure =
-          wrapped
-              ? new EbsApiClientException(
-                  "missing",
-                  WebClientResponseException.create(
-                      404, "Not found", HttpHeaders.EMPTY, new byte[0], StandardCharsets.UTF_8))
-              : new EbsApiClientException("missing", HttpStatus.NOT_FOUND);
-      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L)).thenReturn(Mono.error(failure));
+    @Test
+    void missingAssessmentIsUnavailable() {
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L)).thenReturn(Mono.empty());
       assertThat(billingService.getSubmittedAssessment(CASE_REF, 555L)).isEmpty();
       assertReadOnly();
     }

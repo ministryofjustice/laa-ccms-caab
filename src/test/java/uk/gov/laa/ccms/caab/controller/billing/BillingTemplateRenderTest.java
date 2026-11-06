@@ -325,7 +325,9 @@ class BillingTemplateRenderTest {
         .as("the selected invoice's own row")
         .isNotNull()
         .contains("/case/billing/" + context + "?billing-id=555")
-        .contains(">" + type + "</a>")
+        .contains(">" + type + "</span>")
+        .contains("class=\"govuk-visually-hidden\"")
+        .contains("invoice 555, " + status)
         .contains(">" + status + "</td>")
         .doesNotContain("/remove", "/copy");
     assertThat(html)

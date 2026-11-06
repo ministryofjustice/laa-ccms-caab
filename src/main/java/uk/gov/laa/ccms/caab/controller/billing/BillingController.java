@@ -41,7 +41,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
-import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.WebUtils;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
@@ -363,21 +363,25 @@ public class BillingController {
   }
 
   @GetMapping(value = "/case/billing/{billingContext:bill|poa}/summary", params = "billing-id")
-  public Object submittedSummary(
+  public ResponseEntity<byte[]> submittedSummary(
       @PathVariable final BillingContext billingContext,
       @RequestParam("billing-id") final String billingId,
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
-      @SessionAttribute(USER_DETAILS) final UserDetail user,
-      final Model model) {
+      @SessionAttribute(USER_DETAILS) final UserDetail user) {
     final String denied = notAuthorised(billingContext, ebsCase);
     if (denied != null) {
-      return new ModelAndView(denied);
+      return summaryUnavailable();
     }
     final SubmittedInvoice selected = submittedInvoice(billingContext, billingId, ebsCase, user);
     if (selected.assessment() == null) {
-      submittedModel(model, selected);
-      return new ModelAndView(
-          "application/billing/" + billingContext.getPathValue() + "-details", model.asMap());
+      return ResponseEntity.status(HttpStatus.FOUND)
+          .location(
+              UriComponentsBuilder.fromPath("/case/billing/" + billingContext.getPathValue())
+                  .queryParam("billing-id", billingId)
+                  .build()
+                  .encode()
+                  .toUri())
+          .build();
     }
     return summaryPdf(
         billingContext.getPathValue() + "-summary.pdf",

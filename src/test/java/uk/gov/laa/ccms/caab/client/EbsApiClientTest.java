@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.client;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -11,6 +12,8 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.time.Duration;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -25,6 +28,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferLimitException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -37,6 +42,7 @@ import org.springframework.web.reactive.function.client.WebClientRequestExceptio
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
@@ -96,6 +102,64 @@ public class EbsApiClientTest {
   @Nested
   @ExtendWith(OutputCaptureExtension.class)
   class SelectedInvoiceAssessment {
+    @ParameterizedTest
+    @CsvSource({"read", "limit", "unexpected"})
+    void preservesSuccessfulResponseBodyFailures(final String failureType) {
+      final Throwable failure =
+          switch (failureType) {
+            case "read" -> new IOException("Response body interrupted");
+            case "limit" -> new DataBufferLimitException("Response too large");
+            default -> new IllegalStateException("Unexpected failure");
+          };
+      final EbsApiClient client =
+          new EbsApiClient(
+              WebClient.builder()
+                  .exchangeFunction(
+                      request ->
+                          Mono.just(
+                              ClientResponse.create(HttpStatus.OK)
+                                  .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                                  .body(Flux.error(failure))
+                                  .build()))
+                  .build(),
+              new EbsApiClientErrorHandler());
+
+      StepVerifier.create(client.getInvoiceAssessment("300000123", 555L))
+          .expectErrorMatches(
+              error ->
+                  error instanceof EbsApiClientException apiError
+                      && apiError.getHttpStatus() == null
+                      && apiError.getCause() == failure)
+          .verify();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"401", "403"})
+    void stalledAuthorizationBodyIsCancelledWithoutDelayingTheError(final int code) {
+      final AtomicBoolean cancelled = new AtomicBoolean();
+      final EbsApiClient client =
+          new EbsApiClient(
+              WebClient.builder()
+                  .exchangeFunction(
+                      request ->
+                          Mono.just(
+                              ClientResponse.create(HttpStatus.valueOf(code))
+                                  .body(
+                                      Flux.<DataBuffer>never()
+                                          .doOnCancel(() -> cancelled.set(true)))
+                                  .build()))
+                  .build(),
+              new EbsApiClientErrorHandler());
+
+      StepVerifier.withVirtualTime(() -> client.getInvoiceAssessment("300000123", 555L))
+          .expectErrorMatches(
+              error ->
+                  error instanceof EbsApiClientException apiError
+                      && apiError.hasHttpStatus(HttpStatus.valueOf(code)))
+          .verify(Duration.ofSeconds(2));
+      assertTrue(cancelled.get());
+    }
+
     private EbsApiClient client(final HttpStatus status, final String body) {
       return new EbsApiClient(
           WebClient.builder()
@@ -186,7 +250,9 @@ public class EbsApiClientTest {
     void malformedJsonIsAnErrorWithoutLoggingRetainedData(
         final String body, final CapturedOutput output) {
       StepVerifier.create(client(HttpStatus.OK, body).getInvoiceAssessment("300000123", 555L))
-          .expectErrorSatisfies(this::logSanitizedError)
+          .expectErrorSatisfies(
+              error ->
+                  logSanitizedError(error, org.springframework.core.codec.DecodingException.class))
           .verify();
       assertThat(output)
           .contains("Exception caught by GlobalExceptionHandler")
@@ -209,21 +275,23 @@ public class EbsApiClientTest {
                   .build(),
               new EbsApiClientErrorHandler());
       StepVerifier.create(client.getInvoiceAssessment("300000123", 555L))
-          .expectErrorSatisfies(this::logSanitizedError)
+          .expectErrorSatisfies(error -> logSanitizedError(error, WebClientRequestException.class))
           .verify();
       assertThat(output)
           .contains("Exception caught by GlobalExceptionHandler")
           .doesNotContain("retained-field-value", "300000123");
     }
 
-    private void logSanitizedError(final Throwable error) {
+    private void logSanitizedError(
+        final Throwable error, final Class<? extends Throwable> causeType) {
       assertThat(error)
           .isInstanceOfSatisfying(
               EbsApiClientException.class,
               failure -> {
                 assertThat(failure)
                     .hasMessage("Failed to retrieve retained invoice assessment")
-                    .hasNoCause();
+                    .isInstanceOf(InvoiceAssessmentReadException.class)
+                    .hasCauseInstanceOf(causeType);
                 new GlobalExceptionHandler()
                     .handleException(new ExtendedModelMap(), new MockHttpSession(), failure);
               });
