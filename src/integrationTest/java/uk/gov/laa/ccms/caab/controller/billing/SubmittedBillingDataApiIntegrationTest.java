@@ -75,6 +75,7 @@ import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.BillingService;
 import uk.gov.laa.ccms.caab.service.BillingSummaryPdfService;
 import uk.gov.laa.ccms.caab.service.ClientService;
+import uk.gov.laa.ccms.caab.service.HistoricalBillingAssessmentValidator;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.StatementOfAccountBills;
@@ -133,7 +134,15 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
         .when(soa.getInvoiceData(anyString(), anyString(), anyString()))
         .thenReturn(Mono.just(legacyInvoice()));
     BillingService billing =
-        new BillingService(ebsApiClient, caab, lookups, soa, mapper, assessments, clients);
+        new BillingService(
+            ebsApiClient,
+            caab,
+            lookups,
+            soa,
+            mapper,
+            assessments,
+            clients,
+            new HistoricalBillingAssessmentValidator());
     ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
     resolver.setPrefix("templates/");
     resolver.setSuffix(".html");
@@ -274,6 +283,17 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
   }
 
   private void unavailable(MvcResult result, String context, String status) {
+    if (result.getRequest().getRequestURI().endsWith("/summary")) {
+      assertThat(result.getResponse().getStatus()).isEqualTo(302);
+      assertThat(result.getResponse().getRedirectedUrl())
+          .isEqualTo(
+              "/case/billing/"
+                  + context
+                  + "?billing-id="
+                  + result.getRequest().getParameter("billing-id"));
+      assertThat(result.getResponse().getContentType()).isNotEqualTo("application/pdf");
+      return;
+    }
     assertThat(result.getResponse().getStatus()).isEqualTo(200);
     assertThat(result.getModelAndView()).isNotNull();
     assertThat(result.getModelAndView().getViewName())

@@ -63,6 +63,7 @@ import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.BillingService;
 import uk.gov.laa.ccms.caab.service.BillingSummaryPdfService;
 import uk.gov.laa.ccms.caab.service.ClientService;
+import uk.gov.laa.ccms.caab.service.HistoricalBillingAssessmentValidator;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.StatementOfAccountDetail;
@@ -115,7 +116,8 @@ class SubmittedBillingControllerTest {
             soaApiClient,
             soaApplicationMapper,
             assessmentService,
-            clientService);
+            clientService,
+            new HistoricalBillingAssessmentValidator());
     final BillingController controller =
         new BillingController(
             billingService,
@@ -358,18 +360,25 @@ class SubmittedBillingControllerTest {
   void invoiceNotFoundIsUnavailable(final String context, final String suffix) {
     invoices(context.equals("bill") ? "Bill" : "POA", "Authorised");
     lenient().when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L)).thenReturn(Mono.empty());
-    assertThat(
-            mockMvc.perform(
-                get("/case/billing/" + context + suffix)
-                    .param("billing-id", "555")
-                    .sessionAttr(CASE, ebsCase())
-                    .sessionAttr(USER_DETAILS, user)))
-        .hasStatusOk()
-        .hasViewName("application/billing/" + context + "-details")
-        .model()
-        .containsEntry("readOnly", true)
-        .containsEntry("detailsUnavailable", true)
-        .containsEntry("assessmentStatus", "Authorised");
+    final var result =
+        mockMvc.perform(
+            get("/case/billing/" + context + suffix)
+                .param("billing-id", "555")
+                .sessionAttr(CASE, ebsCase())
+                .sessionAttr(USER_DETAILS, user));
+    if (suffix.equals("/summary")) {
+      assertThat(result)
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing/" + context + "?billing-id=555");
+    } else {
+      assertThat(result)
+          .hasStatusOk()
+          .hasViewName("application/billing/" + context + "-details")
+          .model()
+          .containsEntry("readOnly", true)
+          .containsEntry("detailsUnavailable", true)
+          .containsEntry("assessmentStatus", "Authorised");
+    }
     verifyNoInteractions(pdfService);
     assertNoWrites();
   }
@@ -501,18 +510,25 @@ class SubmittedBillingControllerTest {
           new StatementOfAccountDetails()
               .addContentItem(new StatementOfAccountDetail().entityType("Provider").firmId(77L));
     }
-    assertThat(
-            mockMvc.perform(
-                get("/case/billing/" + context + suffix)
-                    .param("billing-id", billingId)
-                    .sessionAttr(CASE, selectedCase)
-                    .sessionAttr(USER_DETAILS, selectedUser)))
-        .hasStatusOk()
-        .hasViewName("application/billing/" + context + "-details")
-        .model()
-        .containsEntry("readOnly", true)
-        .containsEntry("detailsUnavailable", true)
-        .doesNotContainEntry("assessmentStatus", "Submitted");
+    final var result =
+        mockMvc.perform(
+            get("/case/billing/" + context + suffix)
+                .param("billing-id", billingId)
+                .sessionAttr(CASE, selectedCase)
+                .sessionAttr(USER_DETAILS, selectedUser));
+    if (suffix.equals("/summary")) {
+      assertThat(result)
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing/" + context + "?billing-id=" + billingId);
+    } else {
+      assertThat(result)
+          .hasStatusOk()
+          .hasViewName("application/billing/" + context + "-details")
+          .model()
+          .containsEntry("readOnly", true)
+          .containsEntry("detailsUnavailable", true)
+          .doesNotContainEntry("assessmentStatus", "Submitted");
+    }
     if (scenario.equals("other-provider")) {
       verify(ebsApiClient, atLeastOnce()).getStatementOfAccount(CASE_REF, 77L);
     } else if (scenario.equals("other-case")) {
@@ -580,18 +596,25 @@ class SubmittedBillingControllerTest {
                       retained(CASE_REF, 555L, new InvoiceDataResponse().opaResponse(List.of())));
               default -> Mono.just(retained(CASE_REF, 555L, incomplete));
             });
-    assertThat(
-            mockMvc.perform(
-                get("/case/billing/" + context + suffix)
-                    .param("billing-id", "555")
-                    .sessionAttr(CASE, ebsCase())
-                    .sessionAttr(USER_DETAILS, user)))
-        .hasStatusOk()
-        .hasViewName("application/billing/" + context + "-details")
-        .model()
-        .containsEntry("readOnly", true)
-        .containsEntry("detailsUnavailable", true)
-        .containsEntry("assessmentStatus", "Authorised");
+    final var result =
+        mockMvc.perform(
+            get("/case/billing/" + context + suffix)
+                .param("billing-id", "555")
+                .sessionAttr(CASE, ebsCase())
+                .sessionAttr(USER_DETAILS, user));
+    if (suffix.equals("/summary")) {
+      assertThat(result)
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing/" + context + "?billing-id=555");
+    } else {
+      assertThat(result)
+          .hasStatusOk()
+          .hasViewName("application/billing/" + context + "-details")
+          .model()
+          .containsEntry("readOnly", true)
+          .containsEntry("detailsUnavailable", true)
+          .containsEntry("assessmentStatus", "Authorised");
+    }
     verifyNoInteractions(pdfService);
     assertNoWrites();
   }

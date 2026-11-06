@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.reactivestreams.Subscription;
+import org.springframework.core.codec.DecodingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,9 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.BaseSubscriber;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
@@ -1151,7 +1156,9 @@ public class EbsApiClient extends BaseApiClient {
                     e, "Statement of account", queryParams));
   }
 
-  /** Retrieves retained entered and calculated data for one selected case and invoice. */
+  /**
+   * Retrieves retained entered and calculated data for one invoice, not the latest case assessment.
+   */
   public Mono<InvoiceAssessmentDetails> getInvoiceAssessment(
       final String caseReferenceNumber, final Long billingId) {
     return ebsApiWebClient
@@ -1161,17 +1168,54 @@ public class EbsApiClient extends BaseApiClient {
                 builder
                     .path("/cases/{caseReference}/invoices/{billingId}/assessment")
                     .build(caseReferenceNumber, billingId))
-        .exchangeToMono(
+        .retrieve()
+        .onStatus(HttpStatusCode::isError, response -> Mono.empty())
+        .toEntityFlux(InvoiceAssessmentDetails.class)
+        .flatMap(
             response -> {
-              if (HttpStatus.NOT_FOUND.equals(response.statusCode())) {
-                return response.releaseBody().then(Mono.empty());
+              if (HttpStatus.NOT_FOUND.equals(response.getStatusCode())) {
+                cancelInvoiceAssessmentBody(response.getBody());
+                return Mono.empty();
               }
-              if (response.statusCode().isError()) {
-                return response.createException().flatMap(Mono::error);
+              if (response.getStatusCode().isError()) {
+                // Cancel the body immediately: a stalled error body must not hide its status.
+                cancelInvoiceAssessmentBody(response.getBody());
+                return Mono.error(
+                    WebClientResponseException.create(
+                        response.getStatusCode().value(),
+                        "Retained invoice assessment request failed",
+                        response.getHeaders(),
+                        new byte[0],
+                        null));
               }
-              return response.bodyToMono(InvoiceAssessmentDetails.class);
+              return response
+                  .getBody()
+                  .take(2)
+                  .collectList()
+                  .flatMap(
+                      assessments ->
+                          assessments.size() > 1
+                              ? Mono.error(
+                                  new DecodingException("Multiple retained invoice assessments"))
+                              : Mono.justOrEmpty(assessments.stream().findFirst()));
             })
+        .onErrorMap(
+            WebClientResponseException.class,
+            error ->
+                error.getStatusCode().is2xxSuccessful() && error.getCause() != null
+                    ? error.getCause()
+                    : error)
         .onErrorResume(ebsApiClientErrorHandler::handleInvoiceAssessmentRetrieveError);
+  }
+
+  private void cancelInvoiceAssessmentBody(final Flux<InvoiceAssessmentDetails> body) {
+    body.subscribe(
+        new BaseSubscriber<>() {
+          @Override
+          protected void hookOnSubscribe(final Subscription subscription) {
+            cancel();
+          }
+        });
   }
 
   /** Query parameters which identify a person or a case, and so must not be written to logs. */

@@ -147,11 +147,17 @@
                 <a th:if="${editableBill}" class="govuk-link" th:href="@{/case/billing/bill}"
                    th:text="${row.type}"></a>
                 <a th:if="${submittedPoa}" class="govuk-link"
-                   th:href="@{/case/billing/poa(billing-id=${row.billingIncidentId})}"
-                   th:text="${row.type}"></a>
+                   th:href="@{/case/billing/poa(billing-id=${row.billingIncidentId})}">
+                  <span th:text="${row.type}"></span>
+                  <span class="govuk-visually-hidden"
+                        th:text="#{billing.submitted.linkContext(${row.billingIncidentId},${row.status})}"></span>
+                </a>
                 <a th:if="${submittedBill}" class="govuk-link"
-                   th:href="@{/case/billing/bill(billing-id=${row.billingIncidentId})}"
-                   th:text="${row.type}"></a>
+                   th:href="@{/case/billing/bill(billing-id=${row.billingIncidentId})}">
+                  <span th:text="${row.type}"></span>
+                  <span class="govuk-visually-hidden"
+                        th:text="#{billing.submitted.linkContext(${row.billingIncidentId},${row.status})}"></span>
+                </a>
                 <span th:unless="${editablePoa or editableBill or submittedPoa or submittedBill}"
                       th:text="${row.type}"></span>
               </td>

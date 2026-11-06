@@ -775,9 +775,25 @@ class BillingControllerTest {
     void invalidSelectedIdIsUnavailable(
         final String context, final String billingId, final String suffix) {
       assessmentsAbsent();
+      if (!suffix.isEmpty()) {
+        assertThat(
+                mockMvc.perform(
+                    get("/case/billing/" + context + suffix)
+                        .param("billing-id", billingId)
+                        .sessionAttr(CASE, caseWithFunctions())
+                        .sessionAttr(USER_DETAILS, user)))
+            .hasStatus3xxRedirection()
+            .hasRedirectedUrl(
+                org.springframework.web.util.UriComponentsBuilder.fromPath(
+                        "/case/billing/" + context)
+                    .queryParam("billing-id", billingId)
+                    .build()
+                    .encode()
+                    .toUriString());
+      }
       assertThat(
               mockMvc.perform(
-                  get("/case/billing/" + context + suffix)
+                  get("/case/billing/" + context)
                       .param("billing-id", billingId)
                       .sessionAttr(CASE, caseWithFunctions())
                       .sessionAttr(USER_DETAILS, user)))
