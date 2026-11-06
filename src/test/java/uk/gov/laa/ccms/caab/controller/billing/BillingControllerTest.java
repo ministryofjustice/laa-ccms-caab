@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -168,7 +169,7 @@ class BillingControllerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"0,0", "-1,0", "10,-1", "10,100"})
+    @CsvSource({"10,-1", "10,100"})
     void invalidPaginationRetainsExistingErrorHandling(final int size, final int number) {
       final ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("300000123");
       assertThat(
@@ -180,6 +181,33 @@ class BillingControllerTest {
                       .sessionAttr(USER_DETAILS, user)))
           .hasViewName("error");
       verify(billingService, never()).withRetainedTotals(any(), any(Page.class));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1, Integer.MIN_VALUE})
+    void clampsNonPositivePageSizes(final int size) {
+      final ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("300000123");
+      final StatementOfAccountDisplay display = new StatementOfAccountDisplay();
+      display.setBillsAndPoa(
+          List.of(new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L)));
+      when(billingService.getStatementOfAccountDisplay(eq("300000123"), any(), any()))
+          .thenReturn(display);
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing")
+                      .param("size", Integer.toString(size))
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .containsEntry("paginationSize", 1)
+          .extractingByKey("billsAndPoaPage")
+          .isInstanceOfSatisfying(
+              Page.class,
+              result -> {
+                assertThat(result.getSize()).isEqualTo(1);
+                assertThat(result.getContent()).hasSize(1);
+              });
     }
 
     @Test
@@ -771,8 +799,8 @@ class BillingControllerTest {
       final StatementOfAccountDisplay display = new StatementOfAccountDisplay();
       display.setBillsAndPoa(
           List.of(
-              new BillPoaRow("Bill", "Rejected", null, null, null, false, true, 555L),
-              new BillPoaRow("Bill", "Rejected", null, null, null, false, true, 999L)));
+              new BillPoaRow("Bill", "Rejected", null, null, null, false, true, 555L, null),
+              new BillPoaRow("Bill", "Rejected", null, null, null, false, true, 999L, null)));
       return display;
     }
 

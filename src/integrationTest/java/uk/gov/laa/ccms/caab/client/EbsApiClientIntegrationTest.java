@@ -114,20 +114,29 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
                     """)));
     final BillPoaRow row =
         new BillPoaRow("Counsel POA", "Authorised", null, null, BigDecimal.TEN, false, 555L);
-    final BillPoaRow result = billingService.withRetainedTotals("300000123", row);
+    final BillPoaRow result =
+        billingService
+            .withRetainedTotals("300000123", new PageImpl<>(List.of(row)))
+            .getContent()
+            .getFirst();
     assertThat(result.amount()).isEqualByComparingTo("718.00");
     assertThat(result.grandTotal()).isEqualByComparingTo("825.70");
     wiremock.verify(1, getRequestedFor(urlPathEqualTo("/cases/300000123/invoices/555/assessment")));
   }
 
   @ParameterizedTest
-  @ValueSource(ints = {404, 408, 429, 500, 503, 520, 529})
+  @ValueSource(ints = {400, 404, 408, 409, 422, 429, 500, 503, 520, 529})
   void unavailableRetainedTotalsKeepTheKnownNet(final int status) {
     wiremock.stubFor(
         get("/cases/300000123/invoices/555/assessment").willReturn(aResponse().withStatus(status)));
     final BillPoaRow row =
         new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L);
-    assertThat(billingService.withRetainedTotals("300000123", row)).isSameAs(row);
+    assertThat(
+            billingService
+                .withRetainedTotals("300000123", new PageImpl<>(List.of(row)))
+                .getContent()
+                .getFirst())
+        .isSameAs(row);
   }
 
   @ParameterizedTest
@@ -150,7 +159,12 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
     wiremock.stubFor(get("/cases/300000123/invoices/555/assessment").willReturn(okJson(body)));
     final BillPoaRow row =
         new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L);
-    assertThat(billingService.withRetainedTotals("300000123", row)).isSameAs(row);
+    assertThat(
+            billingService
+                .withRetainedTotals("300000123", new PageImpl<>(List.of(row)))
+                .getContent()
+                .getFirst())
+        .isSameAs(row);
   }
 
   @ParameterizedTest
@@ -165,12 +179,17 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
                     .withBody("{\"caseReference\":\"300000123\",\"billingIncidentId\":555}")));
     final BillPoaRow row =
         new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L);
-    assertThat(billingService.withRetainedTotals("300000123", row)).isSameAs(row);
+    assertThat(
+            billingService
+                .withRetainedTotals("300000123", new PageImpl<>(List.of(row)))
+                .getContent()
+                .getFirst())
+        .isSameAs(row);
   }
 
   @ParameterizedTest
-  @ValueSource(ints = {400, 401, 403})
-  void retainedTotalsDoNotHideClientOrAuthorizationFailures(final int status) {
+  @ValueSource(ints = {401, 403})
+  void retainedTotalsDoNotHideAuthorizationFailures(final int status) {
     wiremock.stubFor(
         get("/cases/300000123/invoices/555/assessment")
             .willReturn(
@@ -180,20 +199,29 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
                     .withBody("{not-an-assessment")));
     final BillPoaRow row =
         new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L);
-    assertThatThrownBy(() -> billingService.withRetainedTotals("300000123", row))
+    assertThatThrownBy(
+            () ->
+                billingService
+                    .withRetainedTotals("300000123", new PageImpl<>(List.of(row)))
+                    .getContent()
+                    .getFirst())
         .isInstanceOfSatisfying(
             EbsApiClientException.class,
             error -> assertThat(error.getHttpStatus().value()).isEqualTo(status));
   }
 
   @Test
-  void unknownClientStatusDoesNotBecomeAnOptionalLookupFallback() {
+  void unknownClientStatusKeepsTheOriginalRow() {
     wiremock.stubFor(
         get("/cases/300000123/invoices/555/assessment").willReturn(aResponse().withStatus(499)));
     final BillPoaRow row =
         new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L);
-    assertThatThrownBy(() -> billingService.withRetainedTotals("300000123", row))
-        .isInstanceOf(EbsApiClientException.class);
+    assertThat(
+            billingService
+                .withRetainedTotals("300000123", new PageImpl<>(List.of(row)))
+                .getContent()
+                .getFirst())
+        .isSameAs(row);
   }
 
   @Test
@@ -203,7 +231,12 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
             .willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
     final BillPoaRow row =
         new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L);
-    assertThat(billingService.withRetainedTotals("300000123", row)).isSameAs(row);
+    assertThat(
+            billingService
+                .withRetainedTotals("300000123", new PageImpl<>(List.of(row)))
+                .getContent()
+                .getFirst())
+        .isSameAs(row);
   }
 
   @Test
@@ -223,7 +256,12 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
         .verify();
     final BillPoaRow row =
         new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L);
-    assertThat(billingService.withRetainedTotals("300000123", row)).isSameAs(row);
+    assertThat(
+            billingService
+                .withRetainedTotals("300000123", new PageImpl<>(List.of(row)))
+                .getContent()
+                .getFirst())
+        .isSameAs(row);
   }
 
   @ParameterizedTest

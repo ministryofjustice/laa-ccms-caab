@@ -27,7 +27,6 @@ import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.CounselSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.billing.InvoiceAssessment;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -44,6 +43,7 @@ import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CounselLookupDetail;
 import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.InvoiceAssessmentDetails;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.Notification;
@@ -1159,7 +1159,7 @@ public class EbsApiClient extends BaseApiClient {
   /**
    * Retrieves retained entered and calculated data for one invoice, not the latest case assessment.
    */
-  public Mono<InvoiceAssessment> getInvoiceAssessment(
+  public Mono<InvoiceAssessmentDetails> getInvoiceAssessment(
       final String caseReferenceNumber, final Long billingId) {
     return ebsApiWebClient
         .get()
@@ -1170,7 +1170,7 @@ public class EbsApiClient extends BaseApiClient {
                     .build(caseReferenceNumber, billingId))
         .retrieve()
         .onStatus(HttpStatusCode::isError, response -> Mono.empty())
-        .toEntityFlux(InvoiceAssessment.class)
+        .toEntityFlux(InvoiceAssessmentDetails.class)
         .flatMap(
             response -> {
               if (HttpStatus.NOT_FOUND.equals(response.getStatusCode())) {
@@ -1208,7 +1208,7 @@ public class EbsApiClient extends BaseApiClient {
         .onErrorResume(ebsApiClientErrorHandler::handleInvoiceAssessmentRetrieveError);
   }
 
-  private void cancelInvoiceAssessmentBody(final Flux<InvoiceAssessment> body) {
+  private void cancelInvoiceAssessmentBody(final Flux<InvoiceAssessmentDetails> body) {
     body.subscribe(
         new BaseSubscriber<>() {
           @Override

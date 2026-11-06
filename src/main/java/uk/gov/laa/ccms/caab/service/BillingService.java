@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.service;
 
-import java.io.IOException;
+import static uk.gov.laa.ccms.caab.client.EbsApiClientErrorHandler.isRecoverableInvoiceAssessmentFailure;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
@@ -18,20 +19,16 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.codec.DecodingException;
-import org.springframework.core.io.buffer.DataBufferLimitException;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.UnsupportedMediaTypeException;
-import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuples;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
-import uk.gov.laa.ccms.caab.bean.billing.InvoiceAssessment;
 import uk.gov.laa.ccms.caab.bean.billing.SoaFigureColumn;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
@@ -53,6 +50,9 @@ import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetail;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.ClientDetail;
+import uk.gov.laa.ccms.data.model.InvoiceAssessmentAttribute;
+import uk.gov.laa.ccms.data.model.InvoiceAssessmentDetails;
+import uk.gov.laa.ccms.data.model.InvoiceAssessmentInstance;
 import uk.gov.laa.ccms.data.model.StatementOfAccountBills;
 import uk.gov.laa.ccms.data.model.StatementOfAccountCostLimitation;
 import uk.gov.laa.ccms.data.model.StatementOfAccountDetail;
@@ -146,11 +146,6 @@ public class BillingService {
             });
   }
 
-  /** Enriches a visible non-draft row without changing the underlying statement or draft data. */
-  public BillPoaRow withRetainedTotals(final String caseReference, final BillPoaRow row) {
-    return retainedTotals(caseReference, row).block();
-  }
-
   private Mono<BillPoaRow> retainedTotals(final String caseReference, final BillPoaRow row) {
     if (row.draft() || row.billingIncidentId() == null) {
       return Mono.just(row);
@@ -177,15 +172,7 @@ public class BillingService {
         .onErrorResume(
             EbsApiClientException.class,
             error -> {
-              if ((error.getHttpStatus() != null && error.getHttpStatus().is5xxServerError())
-                  || error.hasHttpStatus(HttpStatus.REQUEST_TIMEOUT)
-                  || error.hasHttpStatus(HttpStatus.TOO_MANY_REQUESTS)
-                  || (error.getHttpStatus() == null
-                      && (error.getCause() instanceof WebClientRequestException
-                          || error.getCause() instanceof DecodingException
-                          || error.getCause() instanceof IOException
-                          || error.getCause() instanceof DataBufferLimitException
-                          || error.getCause() instanceof UnsupportedMediaTypeException))) {
+              if (isRecoverableInvoiceAssessmentFailure(error)) {
                 log.warn(
                     "Retained totals lookup unavailable for billing incident {}",
                     row.billingIncidentId());
@@ -196,19 +183,20 @@ public class BillingService {
   }
 
   private BillPoaRow retainedTotals(
-      final String caseReference, final BillPoaRow row, final InvoiceAssessment assessment) {
-    if (!Objects.equals(caseReference, assessment.caseReference())
-        || !Objects.equals(row.billingIncidentId(), assessment.billingIncidentId())) {
+      final String caseReference, final BillPoaRow row, final InvoiceAssessmentDetails assessment) {
+    if (!Objects.equals(caseReference, assessment.getCaseReference())
+        || !Objects.equals(row.billingIncidentId(), assessment.getBillingIncidentId())) {
       log.warn(
           "Retained assessment identity mismatch for billing incident {}", row.billingIncidentId());
       return row;
     }
-    final List<InvoiceAssessment.Instance> globals =
-        assessment.instances() == null
+    final List<InvoiceAssessmentInstance> globals =
+        assessment.getInstances() == null
             ? List.of()
-            : assessment.instances().stream()
+            : assessment.getInstances().stream()
                 .filter(Objects::nonNull)
-                .filter(instance -> isAttributeName(instance.entityName(), "GLOBAL"))
+                .filter(
+                    instance -> isAttributeName(nullableValue(instance.getEntityName()), "GLOBAL"))
                 .toList();
     if (globals.size() != 1) {
       log.warn(
@@ -225,16 +213,16 @@ public class BillingService {
   }
 
   private BigDecimal retainedAmount(
-      final InvoiceAssessment.Instance global, final String name, final Long billingId) {
-    final List<InvoiceAssessment.Attribute> attributes =
-        global.attributes() == null
+      final InvoiceAssessmentInstance global, final String name, final Long billingId) {
+    final List<InvoiceAssessmentAttribute> attributes =
+        global.getAttributes() == null
             ? List.of()
-            : global.attributes().stream()
+            : global.getAttributes().stream()
                 .filter(Objects::nonNull)
-                .filter(attribute -> isAttributeName(attribute.name(), name))
+                .filter(attribute -> isAttributeName(nullableValue(attribute.getName()), name))
                 .toList();
     if (attributes.size() == 1) {
-      final String value = attributes.get(0).responseValue();
+      final String value = nullableValue(attributes.get(0).getResponseValue());
       if (value != null && !value.isBlank()) {
         try {
           final String trimmed = value.trim();
@@ -255,6 +243,10 @@ public class BillingService {
 
   private boolean isAttributeName(final String actual, final String expected) {
     return actual != null && expected.equalsIgnoreCase(actual.trim());
+  }
+
+  private static <T> T nullableValue(final JsonNullable<T> value) {
+    return value == null ? null : value.orElse(null);
   }
 
   /**

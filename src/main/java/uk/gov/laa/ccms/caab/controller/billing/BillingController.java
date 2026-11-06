@@ -142,7 +142,7 @@ public class BillingController {
 
     model.addAttribute("caseReferenceNumber", ebsCase.getCaseReferenceNumber());
     model.addAttribute("statementOfAccount", statementOfAccount);
-    final int effectiveSize = Math.min(size, MAX_BILLING_PAGE_SIZE);
+    final int effectiveSize = Math.clamp(size, 1, MAX_BILLING_PAGE_SIZE);
     model.addAttribute(
         "billsAndPoaPage",
         billingService.withRetainedTotals(

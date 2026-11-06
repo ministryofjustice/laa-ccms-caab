@@ -34,28 +34,6 @@ public record BillPoaRow(
     Long billingIncidentId,
     BigDecimal grandTotal) {
 
-  /** Preserves existing row creation without a retained grand total. */
-  public BillPoaRow(
-      final String type,
-      final String status,
-      final LocalDateTime dateSubmitted,
-      final LocalDateTime dateAuthorised,
-      final BigDecimal amount,
-      final boolean draft,
-      final boolean copyable,
-      final Long billingIncidentId) {
-    this(
-        type,
-        status,
-        dateSubmitted,
-        dateAuthorised,
-        amount,
-        draft,
-        copyable,
-        billingIncidentId,
-        null);
-  }
-
   /** Creates a row that carries no copy action, which is every row bar a rejected bill. */
   public BillPoaRow(
       final String type,
@@ -64,7 +42,7 @@ public record BillPoaRow(
       final LocalDateTime dateAuthorised,
       final BigDecimal amount,
       final boolean draft) {
-    this(type, status, dateSubmitted, dateAuthorised, amount, draft, false, null);
+    this(type, status, dateSubmitted, dateAuthorised, amount, draft, false, null, null);
   }
 
   /** Creates a row for an invoice EBS holds, which can be addressed by its billing incident id. */
@@ -76,7 +54,8 @@ public record BillPoaRow(
       final BigDecimal amount,
       final boolean draft,
       final Long billingIncidentId) {
-    this(type, status, dateSubmitted, dateAuthorised, amount, draft, false, billingIncidentId);
+    this(
+        type, status, dateSubmitted, dateAuthorised, amount, draft, false, billingIncidentId, null);
   }
 
   /** Returns a copy of this row with the copy action enabled. */
