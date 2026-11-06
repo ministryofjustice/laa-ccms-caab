@@ -38,6 +38,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.core.codec.DecodingException;
 import org.springframework.core.io.buffer.DataBufferLimitException;
 import org.springframework.data.domain.Page;
@@ -123,9 +125,11 @@ class BillingServiceTest {
   }
 
   @Nested
+  @ExtendWith(OutputCaptureExtension.class)
   class RetainedTotals {
     @Test
-    void pageDeadlineKeepsOutOfOrderResultsCancelsWorkAndNeverStartsQueuedRows() {
+    void pageDeadlineKeepsOutOfOrderResultsCancelsWorkAndNeverStartsQueuedRows(
+        final CapturedOutput output) {
       final List<BillPoaRow> rows =
           LongStream.rangeClosed(1, 8).mapToObj(id -> row("Bill", id)).toList();
       final AtomicInteger active = new AtomicInteger();
@@ -178,6 +182,69 @@ class BillingServiceTest {
       assertThat(maximum).hasValue(4);
       assertThat(cancelled).containsExactlyInAnyOrder(1L, 3L, 4L, 5L);
       assertThat(started).doesNotContain(6L, 7L, 8L);
+      assertThat(pageDiagnostics(output))
+          .singleElement()
+          .satisfies(
+              message ->
+                  assertThat(message)
+                      .contains(
+                          "WARN",
+                          "rows=8 eligible=8 attempted=5 completed=1 unavailable=0 unfinished=7",
+                          "elapsedMs=")
+                      .doesNotContain(CASE_REF, "billing incident", "responseValue"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"success", "missing", "partial", "failed"})
+    void pageDiagnosticsCountLookupOutcomesIndependentlyForEachSubscription(
+        final String scenario, final CapturedOutput output) {
+      final Mono<InvoiceAssessmentDetails> response =
+          switch (scenario) {
+            case "success" ->
+                Mono.just(assessment(CASE_REF, 555L, List.of(global("1234.56", "0"))));
+            case "partial" ->
+                Mono.just(assessment(CASE_REF, 555L, List.of(global("1234.56", null))));
+            case "missing" -> Mono.empty();
+            case "failed" ->
+                Mono.error(
+                    new EbsApiClientException("Unavailable", HttpStatus.SERVICE_UNAVAILABLE));
+            default -> throw new AssertionError(scenario);
+          };
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L)).thenReturn(response);
+      final List<BillPoaRow> rows =
+          List.of(
+              row("Bill", 555L),
+              new BillPoaRow("Bill", "Draft", null, null, BigDecimal.TEN, true),
+              row("Bill", null),
+              row("Bill", 0L));
+      final Mono<List<BillPoaRow>> result = billingService.retainedTotalsForPage(CASE_REF, rows);
+      for (int subscription = 0; subscription < 2; subscription++) {
+        StepVerifier.create(result)
+            .assertNext(page -> assertThat(page).hasSize(4))
+            .verifyComplete();
+      }
+
+      final boolean available = scenario.equals("success");
+      assertThat(pageDiagnostics(output))
+          .hasSize(2)
+          .allSatisfy(
+              message ->
+                  assertThat(message)
+                      .contains(
+                          available ? "INFO" : "WARN",
+                          "rows=4 eligible=1 attempted=1 completed=1 unavailable="
+                              + (available ? 0 : 1)
+                              + " unfinished=0",
+                          "elapsedMs=")
+                      .doesNotContain(CASE_REF, "1234.56", "billing incident", "responseValue"));
+    }
+
+    private List<String> pageDiagnostics(final CapturedOutput output) {
+      return output
+          .getOut()
+          .lines()
+          .filter(line -> line.contains("Retained totals page enrichment:"))
+          .toList();
     }
 
     @Test
@@ -495,7 +562,7 @@ class BillingServiceTest {
                 Mono.create(
                     sink -> {
                       sink.onCancel(() -> cancelled.set(true));
-                      // The timeout is subscribed before this source callback runs.
+                      // The page deadline is subscribed before this source callback runs.
                       clock.advanceTimeBy(Duration.ofSeconds(5).minusNanos(1));
                       cancelledBeforeDeadline.set(cancelled.get());
                       clock.advanceTimeBy(Duration.ofNanos(1));

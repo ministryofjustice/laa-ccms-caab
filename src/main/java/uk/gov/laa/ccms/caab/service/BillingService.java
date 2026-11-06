@@ -17,12 +17,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openapitools.jackson.nullable.JsonNullable;
+import org.slf4j.event.Level;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -92,7 +94,6 @@ public class BillingService {
   private static final Set<String> COPY_EXCLUDED_ENTITY_TYPES =
       Set.of("PROCEEDING", "OPPONENT_OTHER_PARTIES");
   private static final String INVOICE_TYPE_POA = "POA";
-  private static final Duration RETAINED_TOTALS_TIMEOUT = Duration.ofSeconds(5);
   private static final Duration RETAINED_TOTALS_PAGE_TIMEOUT = Duration.ofSeconds(5);
   private static final int RETAINED_TOTALS_CONCURRENCY = 4;
   private static final BigDecimal HUNDRED = new BigDecimal("100");
@@ -128,22 +129,62 @@ public class BillingService {
    */
   public Mono<List<BillPoaRow>> retainedTotalsForPage(
       final String caseReference, final List<BillPoaRow> rows) {
-    return Flux.fromIterable(rows)
-        .index()
-        .flatMap(
-            indexed ->
-                retainedTotals(caseReference, indexed.getT2())
-                    .map(row -> Tuples.of(indexed.getT1(), row)),
-            RETAINED_TOTALS_CONCURRENCY)
-        .take(RETAINED_TOTALS_PAGE_TIMEOUT)
-        .collectList()
-        .map(
-            completed -> {
-              final List<BillPoaRow> result = new ArrayList<>(rows);
-              completed.forEach(
-                  indexed -> result.set(Math.toIntExact(indexed.getT1()), indexed.getT2()));
-              return result;
-            });
+    return Mono.defer(
+        () -> {
+          final long started = System.nanoTime();
+          final long eligible = rows.stream().filter(this::canReadRetainedTotals).count();
+          final AtomicInteger attempted = new AtomicInteger();
+          return Flux.fromIterable(rows)
+              .index()
+              .flatMap(
+                  indexed ->
+                      retainedTotals(caseReference, indexed.getT2())
+                          .doOnSubscribe(
+                              subscription -> {
+                                if (canReadRetainedTotals(indexed.getT2())) {
+                                  attempted.incrementAndGet();
+                                }
+                              })
+                          .map(row -> Tuples.of(indexed.getT1(), row)),
+                  RETAINED_TOTALS_CONCURRENCY)
+              .take(RETAINED_TOTALS_PAGE_TIMEOUT)
+              .collectList()
+              .map(
+                  completed -> {
+                    final List<BillPoaRow> result = new ArrayList<>(rows);
+                    long finished = 0;
+                    long unavailable = 0;
+                    for (final var indexed : completed) {
+                      final int index = Math.toIntExact(indexed.getT1());
+                      final BillPoaRow enriched = indexed.getT2();
+                      result.set(index, enriched);
+                      if (canReadRetainedTotals(enriched)) {
+                        finished++;
+                        if (enriched.grandTotal() == null || enriched == rows.get(index)) {
+                          unavailable++;
+                        }
+                      }
+                    }
+                    // Unfinished includes queued rows; completed includes recovered failures.
+                    final long unfinished = eligible - finished;
+                    log.atLevel(unfinished > 0 || unavailable > 0 ? Level.WARN : Level.INFO)
+                        .log(
+                            "Retained totals page enrichment: rows={} eligible={} attempted={} "
+                                + "completed={} unavailable={} unfinished={} elapsedMs={}",
+                            rows.size(),
+                            eligible,
+                            attempted.get(),
+                            finished,
+                            unavailable,
+                            unfinished,
+                            TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started));
+                    return result;
+                  });
+        });
+  }
+
+  private boolean canReadRetainedTotals(final BillPoaRow row) {
+    return !row.draft() && row.billingIncidentId() != null && row.billingIncidentId() > 0;
   }
 
   private Mono<BillPoaRow> retainedTotals(final String caseReference, final BillPoaRow row) {
@@ -156,11 +197,6 @@ public class BillingService {
     }
     return Mono.defer(
             () -> ebsApiClient.getInvoiceAssessment(caseReference, row.billingIncidentId()))
-        .timeout(
-            RETAINED_TOTALS_TIMEOUT,
-            Mono.error(
-                new EbsApiClientException(
-                    "Retained totals lookup timed out", HttpStatus.GATEWAY_TIMEOUT)))
         .map(assessment -> retainedTotals(caseReference, row, assessment))
         .switchIfEmpty(
             Mono.fromSupplier(
