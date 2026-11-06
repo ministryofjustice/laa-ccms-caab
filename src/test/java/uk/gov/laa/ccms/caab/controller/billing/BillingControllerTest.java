@@ -33,6 +33,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -122,11 +125,123 @@ class BillingControllerTest {
     lenient()
         .when(billingService.getStatementOfAccountDisplay(any(), any(), any()))
         .thenReturn(new StatementOfAccountDisplay());
+    lenient()
+        .when(billingService.withRetainedTotals(any(), any(Page.class)))
+        .thenAnswer(invocation -> invocation.getArgument(1));
   }
 
   @Nested
   @DisplayName("GET: /case/billing")
   class CaseStatementOfAccount {
+
+    @ParameterizedTest
+    @CsvSource({"1,0,1", "25,1,26", "50,2,101"})
+    void preservesPositiveNonDefaultSizes(final int size, final int number, final long firstId) {
+      final ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("300000123");
+      final StatementOfAccountDisplay display = new StatementOfAccountDisplay();
+      display.setBillsAndPoa(
+          java.util.stream.LongStream.rangeClosed(1, 150)
+              .mapToObj(
+                  id -> new BillPoaRow("POA", "Authorised", null, null, BigDecimal.ONE, false, id))
+              .toList());
+      when(billingService.getStatementOfAccountDisplay(eq("300000123"), any(), any()))
+          .thenReturn(display);
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing")
+                      .param("page", Integer.toString(number))
+                      .param("size", Integer.toString(size))
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .containsEntry("paginationSize", size)
+          .extractingByKey("billsAndPoaPage")
+          .isInstanceOfSatisfying(
+              Page.class,
+              result -> {
+                assertThat(result.getSize()).isEqualTo(size);
+                assertThat(result.getNumber()).isEqualTo(number);
+                assertThat(result.getTotalElements()).isEqualTo(150);
+                assertThat(((BillPoaRow) result.getContent().getFirst()).billingIncidentId())
+                    .isEqualTo(firstId);
+              });
+    }
+
+    @ParameterizedTest
+    @CsvSource({"10,-1", "10,100"})
+    void invalidPaginationRetainsExistingErrorHandling(final int size, final int number) {
+      final ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("300000123");
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing")
+                      .param("page", Integer.toString(number))
+                      .param("size", Integer.toString(size))
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasViewName("error");
+      verify(billingService, never()).withRetainedTotals(any(), any(Page.class));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1, Integer.MIN_VALUE})
+    void clampsNonPositivePageSizes(final int size) {
+      final ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("300000123");
+      final StatementOfAccountDisplay display = new StatementOfAccountDisplay();
+      display.setBillsAndPoa(
+          List.of(new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L)));
+      when(billingService.getStatementOfAccountDisplay(eq("300000123"), any(), any()))
+          .thenReturn(display);
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing")
+                      .param("size", Integer.toString(size))
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .containsEntry("paginationSize", 1)
+          .extractingByKey("billsAndPoaPage")
+          .isInstanceOfSatisfying(
+              Page.class,
+              result -> {
+                assertThat(result.getSize()).isEqualTo(1);
+                assertThat(result.getContent()).hasSize(1);
+              });
+    }
+
+    @Test
+    void capsRequestedPageSizeBeforeSelectingVisibleRows() {
+      final ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("300000123");
+      final StatementOfAccountDisplay display = new StatementOfAccountDisplay();
+      display.setBillsAndPoa(
+          java.util.stream.LongStream.rangeClosed(1, 120)
+              .mapToObj(
+                  id -> new BillPoaRow("POA", "Authorised", null, null, BigDecimal.ONE, false, id))
+              .toList());
+      when(billingService.getStatementOfAccountDisplay(eq("300000123"), any(), any()))
+          .thenReturn(display);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing")
+                      .param("page", "0")
+                      .param("size", "500")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .extractingByKey("billsAndPoaPage")
+          .isInstanceOfSatisfying(
+              Page.class,
+              result -> {
+                assertThat(result.getSize()).isEqualTo(50);
+                assertThat(result.getTotalElements()).isEqualTo(120);
+                assertThat(result.getContent()).hasSize(50);
+                assertThat(((BillPoaRow) result.getContent().get(0)).billingIncidentId())
+                    .isEqualTo(1L);
+              });
+    }
 
     @Test
     @DisplayName("Returns the statement of account view with the case reference number and figures")
@@ -155,11 +270,22 @@ class BillingControllerTest {
       StatementOfAccountDisplay display = new StatementOfAccountDisplay();
       List<BillPoaRow> rows = new ArrayList<>();
       for (int i = 0; i < 25; i++) {
-        rows.add(new BillPoaRow("POA", "Authorised", null, null, new BigDecimal("1.00"), false));
+        rows.add(
+            new BillPoaRow(
+                "POA", "Authorised", null, null, new BigDecimal("1.00"), false, (long) i + 1));
       }
       display.setBillsAndPoa(rows);
       when(billingService.getStatementOfAccountDisplay(eq("300000123"), any(), any()))
           .thenReturn(display);
+
+      final BillPoaRow enriched =
+          rows.get(10).withTotals(new BigDecimal("100"), new BigDecimal("120"));
+      when(billingService.withRetainedTotals(eq("300000123"), any(Page.class)))
+          .thenAnswer(
+              invocation -> {
+                final Page<BillPoaRow> visible = invocation.getArgument(1);
+                return visible.map(row -> row == rows.get(10) ? enriched : row);
+              });
 
       assertThat(
               mockMvc.perform(
@@ -178,7 +304,13 @@ class BillingControllerTest {
                 assertThat(page.getTotalPages()).isEqualTo(3);
                 assertThat(page.getNumber()).isEqualTo(1);
                 assertThat(page.getContent()).hasSize(10);
+                assertThat(page.getContent().get(0)).isEqualTo(enriched);
               });
+      verify(billingService)
+          .withRetainedTotals(
+              eq("300000123"),
+              argThat(
+                  (Page<BillPoaRow> visible) -> visible.getContent().equals(rows.subList(10, 20))));
     }
 
     @Test
@@ -667,8 +799,8 @@ class BillingControllerTest {
       final StatementOfAccountDisplay display = new StatementOfAccountDisplay();
       display.setBillsAndPoa(
           List.of(
-              new BillPoaRow("Bill", "Rejected", null, null, null, false, true, 555L),
-              new BillPoaRow("Bill", "Rejected", null, null, null, false, true, 999L)));
+              new BillPoaRow("Bill", "Rejected", null, null, null, false, true, 555L, null),
+              new BillPoaRow("Bill", "Rejected", null, null, null, false, true, 999L, null)));
       return display;
     }
 

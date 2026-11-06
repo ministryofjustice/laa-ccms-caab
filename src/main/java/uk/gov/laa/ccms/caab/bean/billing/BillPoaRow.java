@@ -15,11 +15,13 @@ import java.time.LocalDateTime;
  * @param status the invoice status, e.g. "Draft", "Submitted", "Authorised" or "Rejected".
  * @param dateSubmitted the date the invoice was submitted, if any.
  * @param dateAuthorised the date the invoice was authorised, if any.
- * @param amount the invoice amount.
+ * @param amount the retained net total or statement amount fallback; drafts retain their stored
+ *     amount.
  * @param draft whether the row is an unsubmitted draft held in the CAAB store.
  * @param copyable whether the row is a rejected bill the user may copy into a new draft.
  * @param billingIncidentId the EBS id the invoice is addressed by, needed to copy it. Drafts carry
  *     none, as they have never reached EBS.
+ * @param grandTotal the retained net plus VAT total, if available.
  */
 public record BillPoaRow(
     String type,
@@ -29,7 +31,8 @@ public record BillPoaRow(
     BigDecimal amount,
     boolean draft,
     boolean copyable,
-    Long billingIncidentId) {
+    Long billingIncidentId,
+    BigDecimal grandTotal) {
 
   /** Creates a row that carries no copy action, which is every row bar a rejected bill. */
   public BillPoaRow(
@@ -39,7 +42,7 @@ public record BillPoaRow(
       final LocalDateTime dateAuthorised,
       final BigDecimal amount,
       final boolean draft) {
-    this(type, status, dateSubmitted, dateAuthorised, amount, draft, false, null);
+    this(type, status, dateSubmitted, dateAuthorised, amount, draft, false, null, null);
   }
 
   /** Creates a row for an invoice EBS holds, which can be addressed by its billing incident id. */
@@ -51,12 +54,35 @@ public record BillPoaRow(
       final BigDecimal amount,
       final boolean draft,
       final Long billingIncidentId) {
-    this(type, status, dateSubmitted, dateAuthorised, amount, draft, false, billingIncidentId);
+    this(
+        type, status, dateSubmitted, dateAuthorised, amount, draft, false, billingIncidentId, null);
   }
 
   /** Returns a copy of this row with the copy action enabled. */
   public BillPoaRow withCopyable() {
     return new BillPoaRow(
-        type, status, dateSubmitted, dateAuthorised, amount, draft, true, billingIncidentId);
+        type,
+        status,
+        dateSubmitted,
+        dateAuthorised,
+        amount,
+        draft,
+        true,
+        billingIncidentId,
+        grandTotal);
+  }
+
+  /** Replaces only the display totals, preserving the invoice's identity and actions. */
+  public BillPoaRow withTotals(final BigDecimal net, final BigDecimal grand) {
+    return new BillPoaRow(
+        type,
+        status,
+        dateSubmitted,
+        dateAuthorised,
+        net,
+        draft,
+        copyable,
+        billingIncidentId,
+        grand);
   }
 }
