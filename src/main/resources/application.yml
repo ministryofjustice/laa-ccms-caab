@@ -47,6 +47,11 @@ spring:
     prefix: classpath:/templates/
     suffix: .html
   web:
+    error:
+      include-message: never
+      include-binding-errors: never
+      include-stacktrace: never
+      include-exception: false
     resources:
       static-locations: classpath:/static/
       cache:
@@ -157,7 +162,8 @@ av:
 management:
   endpoint:
     health:
-      show-details: always
+      show-details: never
+      show-components: never
       probes:
         enabled: true
   endpoints:

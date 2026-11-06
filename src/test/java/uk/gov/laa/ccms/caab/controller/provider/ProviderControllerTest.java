@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.provider;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -26,10 +27,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.advice.GlobalBinderAdvice;
 import uk.gov.laa.ccms.caab.bean.provider.ProviderFirmFormData;
+import uk.gov.laa.ccms.caab.bean.validators.BaselineTextValidator;
 import uk.gov.laa.ccms.caab.bean.validators.provider.ProviderFirmValidator;
 import uk.gov.laa.ccms.caab.service.NotificationSearchOptionsCache;
 import uk.gov.laa.ccms.caab.service.UserService;
@@ -56,7 +60,33 @@ public class ProviderControllerTest {
 
   @BeforeEach
   public void setup() {
-    mockMvc = standaloneSetup(providerController).build();
+    mockMvc =
+        standaloneSetup(providerController)
+            .setControllerAdvice(new GlobalBinderAdvice(new BaselineTextValidator()))
+            .build();
+  }
+
+  @Test
+  void malformedProviderIdentifierHasSafeBindingMessage() throws Exception {
+    final BaseProvider provider = new BaseProvider().id(12345).name("Provider").isPrimary(true);
+    final UserDetail user = new UserDetail().provider(provider).firms(List.of(provider));
+    final var result =
+        mockMvc
+            .perform(
+                post("/provider-switch")
+                    .sessionAttr("user", user)
+                    .param("providerFirmId", "AUDIT_DIAGNOSTIC"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("provider/provider-switch"))
+            .andReturn();
+    final BindingResult errors =
+        (BindingResult)
+            result
+                .getModelAndView()
+                .getModel()
+                .get(BindingResult.MODEL_KEY_PREFIX + "providerFirmFormData");
+    assertThat(errors.getFieldError("providerFirmId").getDefaultMessage())
+        .isEqualTo("Enter a valid value.");
   }
 
   @Test
