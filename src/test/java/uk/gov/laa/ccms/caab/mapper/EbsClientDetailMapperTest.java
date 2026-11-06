@@ -199,6 +199,7 @@ class EbsClientDetailMapperTest {
         .dateOfBirth(
             LocalDate.of(Integer.parseInt(year), Integer.parseInt(month), Integer.parseInt(day)))
         .dateOfDeath(LocalDate.of(2024, 7, 15))
+        .deceasedFlag(true)
         .countryOfOriginCode(countryOfOrigin)
         .countryOfOriginDescription(countryOfOriginDescription)
         .gender(gender)
@@ -245,6 +246,7 @@ class EbsClientDetailMapperTest {
     ClientFlowFormData clientFlowFormData = new ClientFlowFormData("create");
     clientFlowFormData.setBasicDetails(buildClientFormDataBasicDetails());
     clientFlowFormData.setDeceasedDetails(buildClientFormDataDeceasedDetails());
+    clientFlowFormData.setDeceasedFlag(true);
     clientFlowFormData.setContactDetails(buildClientFormDataContactDetails());
     clientFlowFormData.setAddressDetails(buildClientFormDataAddressDetails());
     clientFlowFormData.setMonitoringDetails(buildClientFormDataMonitoringDetails());
