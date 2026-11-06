@@ -19,11 +19,15 @@ import uk.gov.laa.ccms.caab.client.AvApiVirusFoundException;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.exception.AvScanException;
 import uk.gov.laa.ccms.caab.exception.AvVirusFoundException;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger.Outcome;
 
 @ExtendWith(MockitoExtension.class)
 public class AvScanServiceTest {
 
   @Mock private AvApiClient avApiClient;
+
+  @Mock private SecurityEventLogger securityEventLogger;
 
   private AvScanService avScanService;
 
@@ -39,18 +43,19 @@ public class AvScanServiceTest {
 
   @Test
   void scanInputStream_noClientExceptionThrown() {
-    avScanService = new AvScanService(avApiClient, Boolean.TRUE);
+    avScanService = new AvScanService(avApiClient, Boolean.TRUE, securityEventLogger);
     InputStream inputStream = InputStream.nullInputStream();
 
     avScanService.performAvScan(
         caseReferenceNumber, providerId, userId, source, filename, inputStream);
 
     verify(avApiClient).scan(inputStream);
+    verify(securityEventLogger).fileScanned(Outcome.SUCCESS, caseReferenceNumber, source);
   }
 
   @Test
   void scanInputStream_handlesAvApiClientExceptionThrown() {
-    avScanService = new AvScanService(avApiClient, Boolean.TRUE);
+    avScanService = new AvScanService(avApiClient, Boolean.TRUE, securityEventLogger);
     InputStream inputStream = InputStream.nullInputStream();
     AvApiClientException avApiClientException = new AvApiClientException("error");
 
@@ -64,11 +69,12 @@ public class AvScanServiceTest {
                     caseReferenceNumber, providerId, userId, source, filename, inputStream));
 
     assertEquals(SCAN_ERROR_FORMAT.formatted(filename), e.getMessage());
+    verify(securityEventLogger).fileScanned(Outcome.FAILURE, caseReferenceNumber, source);
   }
 
   @Test
   void scanInputStream_handlesAvVirusFoundExceptionThrown() {
-    avScanService = new AvScanService(avApiClient, Boolean.TRUE);
+    avScanService = new AvScanService(avApiClient, Boolean.TRUE, securityEventLogger);
     InputStream inputStream = InputStream.nullInputStream();
     AvApiVirusFoundException avApiVirusFoundException = new AvApiVirusFoundException("error");
 
@@ -82,12 +88,13 @@ public class AvScanServiceTest {
                     caseReferenceNumber, providerId, userId, source, filename, inputStream));
 
     assertEquals(VIRUS_FOUND_ERROR_FORMAT.formatted(filename), e.getMessage());
+    verify(securityEventLogger).fileScanned(Outcome.DENIED, caseReferenceNumber, source);
   }
 
   @Test
   void avScanNotEnabled_scanNotPerformed() {
-    avScanService = new AvScanService(avApiClient, Boolean.FALSE);
+    avScanService = new AvScanService(avApiClient, Boolean.FALSE, securityEventLogger);
 
-    verifyNoInteractions(avApiClient);
+    verifyNoInteractions(avApiClient, securityEventLogger);
   }
 }

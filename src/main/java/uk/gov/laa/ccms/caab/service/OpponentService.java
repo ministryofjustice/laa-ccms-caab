@@ -61,7 +61,7 @@ public class OpponentService {
       final String userType,
       final Integer page,
       final Integer size) {
-    log.debug("SOA Organisations to get using criteria: {}", searchCriteria);
+    log.debug("Searching SOA organisations");
 
     OrganisationDetails organisationDetails =
         Optional.ofNullable(

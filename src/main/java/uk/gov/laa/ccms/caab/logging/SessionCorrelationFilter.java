@@ -6,6 +6,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
@@ -15,27 +17,58 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class SessionCorrelationFilter extends OncePerRequestFilter {
 
+  static final String REQUEST_ID = "request_id";
+  static final String REQUEST_ID_HEADER = "X-Request-Id";
+  static final String SESSION_ID = "sessionID";
+  static final String SOURCE_IP = "source.ip";
+  static final String FORWARDED_IP = "network.forwarded_ip";
+
+  private static final String FORWARDED_FOR = "X-Forwarded-For";
+
   private static final String ATTRIBUTE = SessionCorrelationFilter.class.getName() + ".sessionID";
+  private static final String REQUEST_ATTRIBUTE =
+      SessionCorrelationFilter.class.getName() + ".requestId";
 
   @Override
   protected void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain chain)
       throws ServletException, IOException {
-    String previous = MDC.get("sessionID");
+    Map<String, String> previous = new HashMap<>();
     try {
+      String requestId = (String) request.getAttribute(REQUEST_ATTRIBUTE);
+      if (requestId == null) {
+        requestId = UUID.randomUUID().toString();
+        request.setAttribute(REQUEST_ATTRIBUTE, requestId);
+      }
+      response.setHeader(REQUEST_ID_HEADER, requestId);
       String id = (String) request.getAttribute(ATTRIBUTE);
       if (id == null) {
         id = correlationId(request);
         request.setAttribute(ATTRIBUTE, id);
       }
-      MDC.put("sessionID", id);
+      put(previous, REQUEST_ID, requestId);
+      put(previous, SESSION_ID, id);
+      put(previous, SOURCE_IP, request.getRemoteAddr());
+      put(previous, FORWARDED_IP, SourceAddress.forwardedIp(request.getHeader(FORWARDED_FOR)));
       chain.doFilter(request, response);
     } finally {
-      if (previous == null) {
-        MDC.remove("sessionID");
-      } else {
-        MDC.put("sessionID", previous);
-      }
+      previous.forEach(
+          (key, value) -> {
+            if (value == null) {
+              MDC.remove(key);
+            } else {
+              MDC.put(key, value);
+            }
+          });
+    }
+  }
+
+  private static void put(Map<String, String> previous, String key, String value) {
+    if (!previous.containsKey(key)) {
+      previous.put(key, MDC.get(key));
+    }
+    if (value != null) {
+      MDC.put(key, value);
     }
   }
 
