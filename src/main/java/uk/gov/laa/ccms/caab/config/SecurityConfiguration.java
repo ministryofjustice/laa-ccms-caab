@@ -1,40 +1,52 @@
 package uk.gov.laa.ccms.caab.config;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.saml2.provider.service.authentication.OpenSaml5AuthenticationProvider;
-import org.springframework.security.saml2.provider.service.authentication.OpenSaml5AuthenticationProvider.ResponseAuthenticationConverter;
-import org.springframework.security.saml2.provider.service.authentication.OpenSaml5AuthenticationProvider.ResponseToken;
-import org.springframework.security.saml2.provider.service.authentication.Saml2AssertionAuthentication;
-import org.springframework.security.saml2.provider.service.authentication.Saml2Authentication;
-import org.springframework.security.saml2.provider.service.authentication.Saml2ResponseAssertionAccessor;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
+import uk.gov.laa.ccms.caab.security.AbsoluteSessionTimeoutFilter;
+import uk.gov.laa.ccms.caab.security.CcmsOidcUser;
+import uk.gov.laa.ccms.caab.security.CcmsUserIdentityResolver;
+import uk.gov.laa.ccms.caab.security.CcmsUserResolutionException;
 import uk.gov.laa.ccms.caab.security.CspNonceFilter;
 import uk.gov.laa.ccms.caab.service.UserService;
+import uk.gov.laa.ccms.data.model.UserDetail;
 
 /** Configuration class for customizing Spring Security settings. */
 @Configuration
 @RequiredArgsConstructor
+@Slf4j
 public class SecurityConfiguration {
+
+  /** Where a user is sent when EntraID authenticates them but CCMS will not admit them. */
+  static final String AUTHENTICATION_ERROR_PATH = "/authentication-error";
 
   @Value("${portal.logoutUrl}")
   private String logoutUrl;
+
+  @Value("${laa.ccms.session.absolute-timeout:12h}")
+  private Duration absoluteSessionTimeout;
 
   @Value("${csp.report-enabled:true}")
   private boolean cspReportEnabled;
@@ -50,6 +62,8 @@ public class SecurityConfiguration {
 
   private final UserService userService;
 
+  private final CcmsUserIdentityResolver ccmsUserIdentityResolver;
+
   /**
    * Configures Spring Security filters and settings, along with endpoint restrictions based on
    * granted user authorities (actions).
@@ -61,13 +75,15 @@ public class SecurityConfiguration {
   @Bean
   SecurityFilterChain configure(HttpSecurity http) throws Exception {
 
-    OpenSaml5AuthenticationProvider authenticationProvider = new OpenSaml5AuthenticationProvider();
-    authenticationProvider.setResponseAuthenticationConverter(groupsConverter());
-
     return http.authorizeHttpRequests(
             authorize ->
                 authorize
-                    .requestMatchers("/assets/**", "/ccms/**", "/govuk-dialect/**", "/favicon.ico")
+                    .requestMatchers(
+                        "/assets/**",
+                        "/ccms/**",
+                        "/govuk-dialect/**",
+                        "/favicon.ico",
+                        AUTHENTICATION_ERROR_PATH)
                     .permitAll()
                     .requestMatchers(
                         HttpMethod.GET,
@@ -151,6 +167,9 @@ public class SecurityConfiguration {
         .addFilterBefore(
             new CspNonceFilter(cspReportEnabled, cspReportOnly, cspUpgradeInsecureRequests, owdUrl),
             BasicAuthenticationFilter.class)
+        .addFilterBefore(
+            new AbsoluteSessionTimeoutFilter(absoluteSessionTimeout, "/home"),
+            AuthorizationFilter.class)
         .sessionManagement(
             sessionManagement ->
                 sessionManagement.invalidSessionStrategy(
@@ -165,56 +184,85 @@ public class SecurityConfiguration {
                         throw new RuntimeException("Failed to redirect to Identity Provider.", e);
                       }
                     }))
-        .saml2Login(
-            saml2 -> saml2.authenticationManager(new ProviderManager(authenticationProvider)))
+        .oauth2Login(
+            oauth2 ->
+                oauth2
+                    .userInfoEndpoint(userInfo -> userInfo.oidcUserService(oidcUserService()))
+                    .failureHandler(authenticationFailureHandler()))
         .build();
   }
 
   /**
-   * Creates a custom converter for processing SAML response tokens.
+   * Creates a custom {@link OAuth2UserService} for processing the OIDC ID token / userinfo response
+   * returned by EntraID.
    *
-   * @return A Converter for processing SAML response tokens into authenticated principals.
+   * <p>EntraID authenticates a user as an email address, which is not a CCMS username, so the
+   * identity it returns is first resolved to the CCMS user behind it. Everything the application
+   * does afterwards - the functions that gate each route, the user details on the model and
+   * session, every EBS and SOA call made on the user's behalf - is done as that CCMS user.
+   *
+   * @return An OAuth2UserService for loading an authenticated OidcUser.
    */
-  private Converter<ResponseToken, Saml2Authentication> groupsConverter() {
-    ResponseAuthenticationConverter delegate = new ResponseAuthenticationConverter();
-    return responseToken -> {
-      Saml2AssertionAuthentication authentication =
-          (Saml2AssertionAuthentication) delegate.convert(responseToken);
+  @Bean
+  OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService() {
+    OidcUserService delegate = new OidcUserService();
+    return userRequest -> {
+      OidcUser oidcUser = delegate.loadUser(userRequest);
 
-      Saml2ResponseAssertionAccessor accessor = authentication.getCredentials();
+      String ccmsLoginId = ccmsUserIdentityResolver.resolveCcmsLoginId(oidcUser);
 
-      Map<String, List<Object>> attributes = accessor.getAttributes();
-
-      List<Object> groups = attributes.get("groups");
+      List<String> groups = oidcUser.getClaimAsStringList("groups");
       Set<GrantedAuthority> authorities = new HashSet<>();
       if (groups != null) {
-        groups.stream()
-            .map(Object::toString)
-            .map(SimpleGrantedAuthority::new)
-            .forEach(authorities::add);
+        groups.stream().map(SimpleGrantedAuthority::new).forEach(authorities::add);
       } else {
-        authorities.addAll(authentication.getAuthorities());
+        authorities.addAll(oidcUser.getAuthorities());
       }
 
-      // authentication.getPrincipal() is going to be email address here....
-      String principal = authentication.getName();
-      authorities.addAll(getUserFunctions(principal));
-      return new Saml2AssertionAuthentication(
-          principal,
-          authentication.getCredentials(),
-          authorities,
-          authentication.getRelyingPartyRegistrationId());
+      authorities.addAll(getUserFunctions(ccmsLoginId));
+
+      return new CcmsOidcUser(oidcUser, ccmsLoginId, authorities);
     };
   }
 
+  /**
+   * Sends a user EntraID authenticated but CCMS would not admit to the authentication error page,
+   * leaving them unauthenticated.
+   *
+   * @return An AuthenticationFailureHandler that reports the failure and denies access.
+   */
+  @Bean
+  AuthenticationFailureHandler authenticationFailureHandler() {
+    return (request, response, exception) -> {
+      log.error("EntraID authentication failed: {}", exception.getMessage(), exception);
+      response.sendRedirect(request.getContextPath() + AUTHENTICATION_ERROR_PATH);
+    };
+  }
+
+  /**
+   * The functions the CCMS user holds, which gate what they can reach in the application.
+   *
+   * @param loginId the CCMS username the EntraID identity resolved to.
+   * @return the user's functions as granted authorities.
+   */
   private Collection<? extends GrantedAuthority> getUserFunctions(String loginId) {
-    return userService
-        .getUserByLoginId(loginId)
-        .blockOptional()
-        .orElseThrow(() -> new RuntimeException("Failed to retrieve user functions."))
-        .getFunctions()
-        .stream()
-        .map(SimpleGrantedAuthority::new)
-        .toList();
+    final Optional<UserDetail> user;
+    try {
+      user = userService.getUserByLoginId(loginId).blockOptional();
+    } catch (RuntimeException e) {
+      // Spring's login filter only acts on an AuthenticationException.
+      throw new CcmsUserResolutionException(
+          "Unable to reach EBS to retrieve CCMS user [%s] - access denied".formatted(loginId), e);
+    }
+
+    List<String> functions =
+        user.map(details -> Optional.ofNullable(details.getFunctions()).orElseGet(List::of))
+            .orElseThrow(
+                () ->
+                    new CcmsUserResolutionException(
+                        "Unable to retrieve CCMS user [%s] from EBS - access denied"
+                            .formatted(loginId)));
+
+    return functions.stream().map(SimpleGrantedAuthority::new).toList();
   }
 }
