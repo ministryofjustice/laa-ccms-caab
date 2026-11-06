@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -114,6 +115,19 @@ class ClientDeceasedDetailsValidatorTest {
 
     assertEquals(1, errors.getErrorCount());
     assertEquals("invalid.format", errors.getFieldError("dateOfDeath").getCode());
+  }
+
+  @ParameterizedTest
+  @NullSource
+  @ValueSource(strings = {"", "  "})
+  void validate_missingDateOfDeath_requiredErrorThenDateOfBirthCheckSkipped(String dateOfDeath) {
+    deceasedDetails.setDateOfDeath(dateOfDeath);
+
+    validator.validate(deceasedDetails, errors);
+    validator.validateNotBeforeDateOfBirth(deceasedDetails, basicDetails("15/06/2000"), errors);
+
+    assertEquals(1, errors.getErrorCount());
+    assertEquals("required.dod", errors.getFieldError("dateOfDeath").getCode());
   }
 
   @Test

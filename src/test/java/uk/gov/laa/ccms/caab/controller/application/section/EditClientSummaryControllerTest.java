@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
@@ -225,5 +226,25 @@ class EditClientSummaryControllerTest {
         .andExpect(redirectedUrl("/application/client-update"));
 
     verify(clientService).updateClient(any(), any(), any());
+  }
+
+  @Test
+  void testPostClientDetailsSummaryIgnoresRequestParameters() throws Exception {
+    final ClientFlowFormData clientFlowFormData = new ClientFlowFormData("edit");
+
+    when(clientService.updateClient(any(), any(), any()))
+        .thenReturn(Mono.just(new ClientTransactionResponse()));
+
+    mockMvc
+        .perform(
+            post("/application/sections/client/details/summary")
+                .param("deceasedDetails.dateOfDeath", "14/06/2000")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+        .andExpect(status().is3xxRedirection());
+
+    verify(clientService)
+        .updateClient(any(), argThat(form -> form.getDeceasedDetails() == null), any());
   }
 }

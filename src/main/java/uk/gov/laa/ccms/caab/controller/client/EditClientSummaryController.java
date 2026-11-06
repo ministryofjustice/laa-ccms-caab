@@ -123,7 +123,8 @@ public class EditClientSummaryController extends AbstractClientSummaryController
   @PostMapping("/{caseContext}/sections/client/details/summary")
   public String postClientDetailsSummary(
       final @PathVariable("caseContext") CaseContext caseContext,
-      final @ModelAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
+      final @ModelAttribute(value = CLIENT_FLOW_FORM_DATA, binding = false) ClientFlowFormData
+              clientFlowFormData,
       final @SessionAttribute(USER_DETAILS) UserDetail user,
       final @SessionAttribute(ACTIVE_CASE) ActiveCase activeCase,
       final HttpSession session) {

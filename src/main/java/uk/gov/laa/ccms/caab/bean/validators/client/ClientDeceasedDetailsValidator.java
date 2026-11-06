@@ -78,10 +78,10 @@ public class ClientDeceasedDetailsValidator extends AbstractValidator {
       ClientFormDataDeceasedDetails deceasedDetails, Errors errors) {
 
     String fieldName = "dateOfDeath";
-    ValidationUtils.rejectIfEmpty(
+    ValidationUtils.rejectIfEmptyOrWhitespace(
         errors, fieldName, "required.dod", "Please complete 'date of death'");
 
-    if (!deceasedDetails.getDateOfDeath().isBlank()) {
+    if (StringUtils.hasText(deceasedDetails.getDateOfDeath())) {
       Date date =
           validateValidDateField(
               deceasedDetails.getDateOfDeath(),
