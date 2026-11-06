@@ -32,6 +32,10 @@ public interface EbsClientDetailMapper {
       source = "disabilityMonitoring.disabilityType",
       qualifiedByName = "mapListToString")
   @Mapping(target = "monitoringDetails.specialConsiderations", source = "specialConsiderations")
+  @Mapping(
+      target = "deceasedDetails.dateOfDeath",
+      source = "dateOfDeath",
+      qualifiedByName = "mapComponentDateFromLocalDate")
   ClientFlowFormData toClientFlowFormData(ClientDetail clientDetail);
 
   @Mapping(target = "title", source = "name.title")
