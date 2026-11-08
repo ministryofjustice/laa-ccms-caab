@@ -14,7 +14,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
@@ -36,7 +35,10 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.web.context.support.GenericWebApplicationContext;
+import org.springframework.web.util.HtmlUtils;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
@@ -50,6 +52,8 @@ import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
 import uk.gov.laa.ccms.caab.client.OrdinanceSurveyApiClient;
+import uk.gov.laa.ccms.caab.config.CreateClientRegistrationInterceptor;
+import uk.gov.laa.ccms.caab.config.SessionStateLockFilter;
 import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ClientAddressResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.os.DeliveryPointAddress;
@@ -92,6 +96,24 @@ class ClientAddressJourneyTest {
                     new FindAddressValidator()),
                 new ClientAddressDetailsSearchController(
                     addressService, new AddressSearchValidator()))
+            .addInterceptors(new CreateClientRegistrationInterceptor())
+            .addFilters(new SessionStateLockFilter())
+            .defaultRequest(
+                get("/")
+                    .with(
+                        request -> {
+                          if (request.getParameterValues("registrationId") == null) {
+                            request.addParameter(
+                                "registrationId", clientFlowFormData.getRegistrationId());
+                          }
+                          if (session.getAttribute(CREATE_CLIENT_ADDRESS_FLOW)
+                                  instanceof AddressLookupFlowData<?> flow
+                              && request.getParameterValues("flowId") == null) {
+                            request.addParameter("flowId", flow.getFlowId());
+                            request.addParameter("revision", Long.toString(flow.getRevision()));
+                          }
+                          return request;
+                        }))
             .setViewResolvers(templateViewResolver())
             .build();
 
@@ -145,7 +167,7 @@ class ClientAddressJourneyTest {
                 .param("houseNameNumber", buildingSearch)
                 .param("noFixedAbode", "false"))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl(ADDRESS_PATH + "/search"));
+        .andExpect(redirectTo(ADDRESS_PATH + "/search"));
     final AddressLookupFlowData<?> flow =
         (AddressLookupFlowData<?>) session.getAttribute(CREATE_CLIENT_ADDRESS_FLOW);
     assertNotNull(flow);
@@ -163,7 +185,7 @@ class ClientAddressJourneyTest {
                 .session(session)
                 .param("uprn", "10".equals(buildingSearch) ? "1001" : "1002"))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl(ADDRESS_PATH));
+        .andExpect(redirectTo(ADDRESS_PATH));
     assertEquals(AddressLookupFlowData.Step.CONFIRMED_ADDRESS, flow.getStep());
     assertEquals(
         "10".equals(buildingSearch) ? "10A" : "100",
@@ -182,12 +204,14 @@ class ClientAddressJourneyTest {
     mockMvc
         .perform(get(addressUrl + "/manual").contextPath(contextPath).session(session))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl(addressUrl));
+        .andExpect(redirectTo(addressUrl));
     mockMvc
         .perform(get(addressUrl).contextPath(contextPath).session(session))
         .andExpect(status().isOk())
         .andExpect(content().string(containsString("Search for an address")))
-        .andExpect(content().string(containsString("href=\"" + addressUrl + "/search-again\"")));
+        .andExpect(
+            content()
+                .string(containsString("href=\"" + addressUrl + "/search-again?registrationId=")));
 
     final MvcResult invalidManualEntry =
         mockMvc
@@ -204,11 +228,15 @@ class ClientAddressJourneyTest {
         Pattern.compile("<a[^>]*href=\"([^\"]+)\"[^>]*>Search for an address</a>")
             .matcher(invalidManualEntry.getResponse().getContentAsString());
     assertTrue(searchLink.find(), "Manual entry must retain the search link after validation");
-    assertEquals(addressUrl + "/search-again", searchLink.group(1));
+    String searchAgainUrl = HtmlUtils.htmlUnescape(searchLink.group(1));
+    assertEquals(
+        addressUrl + "/search-again",
+        UriComponentsBuilder.fromUriString(searchAgainUrl).build().getPath());
+    assertTrue(searchAgainUrl.contains("registrationId=" + clientFlowFormData.getRegistrationId()));
     mockMvc
-        .perform(get(searchLink.group(1)).contextPath(contextPath).session(session))
+        .perform(get(searchAgainUrl).contextPath(contextPath).session(session))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl(addressUrl));
+        .andExpect(redirectTo(addressUrl));
     mockMvc
         .perform(get(addressUrl).contextPath(contextPath).session(session))
         .andExpect(status().isOk())
@@ -230,7 +258,8 @@ class ClientAddressJourneyTest {
         .perform(get(addressUrl).contextPath(contextPath).session(session))
         .andExpect(status().isOk())
         .andExpect(content().string(containsString("action=\"" + addressUrl + "\"")))
-        .andExpect(content().string(containsString("href=\"" + addressUrl + "/manual\"")));
+        .andExpect(
+            content().string(containsString("href=\"" + addressUrl + "/manual?registrationId=")));
 
     final DeliveryPointAddress address = new DeliveryPointAddress();
     address.setUprn("1001");
@@ -256,7 +285,7 @@ class ClientAddressJourneyTest {
                 .param("houseNameNumber", "10")
                 .param("noFixedAbode", "false"))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl(addressUrl + "/search"));
+        .andExpect(redirectTo(addressUrl + "/search"));
     final AddressLookupFlowData<?> addressFlow =
         (AddressLookupFlowData<?>) session.getAttribute(CREATE_CLIENT_ADDRESS_FLOW);
     assertNotNull(addressFlow);
@@ -287,7 +316,7 @@ class ClientAddressJourneyTest {
                 .session(session)
                 .param("uprn", "1001"))
         .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl(addressUrl));
+        .andExpect(redirectTo(addressUrl));
     assertEquals(AddressLookupFlowData.Step.CONFIRMED_ADDRESS, addressFlow.getStep());
     final ClientFormDataAddressDetails confirmedAddress = clientFlowFormData.getAddressDetails();
     assertNotNull(confirmedAddress);
@@ -302,7 +331,10 @@ class ClientAddressJourneyTest {
             .andExpect(status().isOk())
             .andExpect(model().attribute("addressDetails", confirmedAddress))
             .andExpect(content().string(containsString("action=\"" + addressUrl + "\"")))
-            .andExpect(content().string(containsString("href=\"" + addressUrl + "/search-again\"")))
+            .andExpect(
+                content()
+                    .string(
+                        containsString("href=\"" + addressUrl + "/search-again?registrationId=")))
             .andReturn();
     final String html = addressPage.getResponse().getContentAsString();
     for (final var field :
@@ -341,11 +373,25 @@ class ClientAddressJourneyTest {
                 .param("clientFlowFormAction", ACTION_CREATE))
         .andExpect(status().is3xxRedirection())
         .andExpect(
-            redirectedUrl(
-                contextPath + "/application/client/details/equal-opportunities-monitoring"));
+            redirectTo(contextPath + "/application/client/details/equal-opportunities-monitoring"));
     assertEquals(confirmedAddress, clientFlowFormData.getAddressDetails());
     assertSame(clientFlowFormData.getAddressDetails(), addressFlow.getAddressDetails());
     verify(ordinanceSurveyApiClient).getAddresses("SA5 8AB");
+  }
+
+  private ResultMatcher redirectTo(String path) {
+    return result -> {
+      var uri = UriComponentsBuilder.fromUriString(result.getResponse().getRedirectedUrl()).build();
+      assertEquals(path, uri.getPath());
+      assertEquals(
+          clientFlowFormData.getRegistrationId(), uri.getQueryParams().getFirst("registrationId"));
+      assertEquals(1, uri.getQueryParams().get("registrationId").size());
+      if (path.contains(ADDRESS_PATH)) {
+        AddressLookupFlowData<?> flow =
+            (AddressLookupFlowData<?>) session.getAttribute(CREATE_CLIENT_ADDRESS_FLOW);
+        assertEquals(flow.getFlowId(), uri.getQueryParams().getFirst("flowId"));
+      }
+    };
   }
 
   private ThymeleafViewResolver templateViewResolver() {

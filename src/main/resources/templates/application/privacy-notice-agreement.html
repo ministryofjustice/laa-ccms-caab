@@ -11,6 +11,7 @@
     </div>
     <div id="main-content">
         <form action="#" th:action="@{/application/agreement}" th:object="${applicationFormData}" method="post">
+            <input th:if="${!applicationFormData.applicationCreated}" type="hidden" name="registrationId" th:value="${registrationId}">
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <span class="govuk-caption-l" th:text="#{application.about}"></span>
             <h1 class="govuk-heading-l" th:text="#{application.privacyNoticeAgreement}"></h1>

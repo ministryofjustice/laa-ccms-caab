@@ -1,4 +1,9 @@
 <th:block xmlns:th="http://www.thymeleaf.org">
+  <th:block th:fragment="flowIdentity(flow)" th:if="${flow != null and flow.owner != null}">
+    <input type="hidden" name="flowId" th:value="${flow.flowId}">
+    <input type="hidden" name="revision" th:value="${flow.revision}">
+  </th:block>
+
   <th:block th:fragment="search(postcodeField, buildingField, searchAction, manualEntryUrl)">
     <h2 class="govuk-heading-m" th:text="#{address.component.search.title}"></h2>
     <p class="govuk-body" th:text="#{address.component.search.ukOnly}"></p>

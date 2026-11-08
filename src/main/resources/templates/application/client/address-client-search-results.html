@@ -7,10 +7,12 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/application/client/details/address}" class="govuk-back-link" th:text="#{site.cancelAndReturnToAddress}"></a>
+        <a th:href="@{/application/client/details/address(registrationId=${registrationId},flowId=${addressFlowId})}" class="govuk-back-link" th:text="#{site.cancelAndReturnToAddress}"></a>
     </div>
     <div id="main-content">
         <form action="#" th:action="@{/application/client/details/address/search}" th:object="${addressSearch}" method="post">
+            <input type="hidden" name="registrationId" th:value="${registrationId}">
+            <div th:replace="~{application/partials/address-fragments :: flowIdentity(${addressFlow})}"></div>
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <span class="govuk-caption-l" th:text="#{client.about}"></span>
           <th:block th:switch="${addressFlow.step.name()}">

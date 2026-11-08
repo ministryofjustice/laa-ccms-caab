@@ -7,10 +7,12 @@
 <body>
 <div class="govuk-width-container">
     <div id="breadcrumbs">
-        <a th:href="@{/application/client/details/cancel}" class="govuk-back-link" th:text="#{site.cancelAndReturnToClientSearch}"></a>
+        <a th:href="@{/application/client/details/cancel(registrationId=${registrationId})}" class="govuk-back-link" th:text="#{site.cancelAndReturnToClientSearch}"></a>
     </div>
     <div id="main-content">
         <form action="#" th:action="@{/application/client/details/address}" th:object="${addressDetails}" method="post">
+            <input type="hidden" name="registrationId" th:value="${registrationId}">
+            <div th:replace="~{application/partials/address-fragments :: flowIdentity(${addressFlow})}"></div>
             <div th:replace="~{partials/error-summary :: error-summary}"></div>
             <span class="govuk-caption-l" th:text="#{client.about}"></span>
             <h1 class="govuk-heading-l" th:text="#{client.address}"></h1>
@@ -20,7 +22,7 @@
                 <div class="govuk-grid-column-two-thirds">
                     <div class="govuk-button-group">
                         <govuk:button type="submit" th:text="#{site.next}"/>
-                        <a th:href="@{/application/client/details/contact}" class="govuk-link" th:text="#{site.back}"></a>
+                        <a th:href="@{/application/client/details/contact(registrationId=${registrationId})}" class="govuk-link" th:text="#{site.back}"></a>
                     </div>
                 </div>
             </div>

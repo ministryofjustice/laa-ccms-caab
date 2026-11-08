@@ -35,6 +35,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
+import uk.gov.laa.ccms.caab.config.CreateClientRegistrationInterceptor;
 import uk.gov.laa.ccms.caab.mapper.ClientAddressResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
@@ -183,7 +184,7 @@ public class ClientAddressDetailsControllerTest {
     addressDetails.setAddressLine1("Posted address");
     addressDetails.setCityTown("Posted town");
     AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
-        new AddressLookupFlowData<>("create-client");
+        new AddressLookupFlowData<>(CreateClientRegistrationInterceptor.owner(clientFlowFormData));
     addressFlow.setSource(AddressLookupFlowData.Source.SEARCHED);
     AddressResultRowDisplay selected = new AddressResultRowDisplay();
     selected.setUprn("123");
@@ -272,7 +273,7 @@ public class ClientAddressDetailsControllerTest {
   @Test
   void clientNextCannotBypassTheResultsSubmission() throws Exception {
     AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
-        new AddressLookupFlowData<>("create-client");
+        new AddressLookupFlowData<>(CreateClientRegistrationInterceptor.owner(clientFlowFormData));
     AddressResultRowDisplay selectedAddress = new AddressResultRowDisplay();
     selectedAddress.setUprn("123");
     addressFlow.setSelectedAddress(selectedAddress);
@@ -373,7 +374,7 @@ public class ClientAddressDetailsControllerTest {
 
   private AddressLookupFlowData<ClientFormDataAddressDetails> newManualAddressFlow() {
     AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
-        new AddressLookupFlowData<>("create-client");
+        new AddressLookupFlowData<>(CreateClientRegistrationInterceptor.owner(clientFlowFormData));
     addressFlow.enterManualEntry(new ClientFormDataAddressDetails());
     return addressFlow;
   }
