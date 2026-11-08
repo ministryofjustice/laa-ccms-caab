@@ -23,11 +23,13 @@ import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
 import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
+import uk.gov.laa.ccms.caab.config.CreateClientRegistrationInterceptor;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressLookupUnavailableException;
 import uk.gov.laa.ccms.caab.service.AddressService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.util.AddressFlowIdentity;
 import uk.gov.laa.ccms.caab.util.UkPostcode;
 
 /** Controller for handling address client details selection during the new application process. */
@@ -72,7 +74,7 @@ public class ClientAddressDetailsController {
     populateDropdowns(model);
 
     final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
-        getOrCreateCreateClientAddressFlow(session);
+        getOrCreateCreateClientAddressFlow(session, clientFlowFormData);
     session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
     final ClientFormDataAddressDetails currentAddressDetails =
         addressFlow.getAddressDetails() != null
@@ -142,7 +144,7 @@ public class ClientAddressDetailsController {
       HttpSession session) {
 
     final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
-        getOrCreateCreateClientAddressFlow(session);
+        getOrCreateCreateClientAddressFlow(session, clientFlowFormData);
     addressDetails.setVulnerableClient(clientFlowFormData.getBasicDetails().getVulnerableClient());
     final boolean addressExempt =
         Boolean.TRUE.equals(addressDetails.getVulnerableClient())
@@ -258,11 +260,14 @@ public class ClientAddressDetailsController {
 
   @SuppressWarnings("unchecked")
   private AddressLookupFlowData<ClientFormDataAddressDetails> getOrCreateCreateClientAddressFlow(
-      final HttpSession session) {
+      final HttpSession session, final ClientFlowFormData clientFlowFormData) {
     final Object sessionValue = session.getAttribute(CREATE_CLIENT_ADDRESS_FLOW);
-    if (sessionValue instanceof AddressLookupFlowData<?> addressFlow) {
+    if (sessionValue instanceof AddressLookupFlowData<?> addressFlow
+        && AddressFlowIdentity.belongsTo(
+            addressFlow, CreateClientRegistrationInterceptor.owner(clientFlowFormData))) {
       return (AddressLookupFlowData<ClientFormDataAddressDetails>) addressFlow;
     }
-    return new AddressLookupFlowData<>("create-client");
+    return new AddressLookupFlowData<>(
+        CreateClientRegistrationInterceptor.owner(clientFlowFormData));
   }
 }

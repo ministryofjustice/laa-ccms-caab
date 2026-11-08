@@ -22,7 +22,7 @@
           </li>
           <li class="govuk-summary-card__action">
             <a class="govuk-link"
-               th:href="@{${baseLinkUrl} + '/details/basic'}"
+               th:href="*{action == 'edit'} ? @{${baseLinkUrl} + '/details/basic'} : @{/application/client/details/basic(registrationId=${registrationId})}"
                th:text="#{client.summary.basic}"></a>
           </li>
         </ul>
@@ -56,7 +56,7 @@
         <ul class="govuk-summary-card__actions">
           <li class="govuk-summary-card__action">
             <a class="govuk-link"
-               th:href="@{${baseLinkUrl} + '/details/contact'}"
+               th:href="*{action == 'edit'} ? @{${baseLinkUrl} + '/details/contact'} : @{/application/client/details/contact(registrationId=${registrationId})}"
                th:text="#{client.summary.contact}">
             </a>
           </li>
@@ -95,7 +95,7 @@
         <ul class="govuk-summary-card__actions">
           <li class="govuk-summary-card__action">
             <a class="govuk-link"
-               th:href="@{${baseLinkUrl} + '/details/address'}"
+               th:href="*{action == 'edit'} ? @{${baseLinkUrl} + '/details/address'} : @{/application/client/details/address(registrationId=${registrationId},flowId=${addressFlowId})}"
                th:text="#{client.summary.address}">
             </a>
           </li>
@@ -119,7 +119,7 @@
         <ul class="govuk-summary-card__actions">
           <li class="govuk-summary-card__action">
             <a class="govuk-link"
-               th:href="@{${baseLinkUrl} + '/details/equal-opportunities-monitoring'}"
+               th:href="*{action == 'edit'} ? @{${baseLinkUrl} + '/details/equal-opportunities-monitoring'} : @{/application/client/details/equal-opportunities-monitoring(registrationId=${registrationId})}"
                th:text="#{client.summary.opportunities}">
             </a>
           </li>
