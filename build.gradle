@@ -85,6 +85,12 @@ configurations.configureEach {
             details.useVersion '1.6.5'
             details.because 'Snyk override (SNYK-JAVA-CHQOSLOGBACK-20824362); directory traversal vulnerability in 1.6.3'
         }
+        // Same OIDC stack path as asm below; 2.6.0 was unfixed when it first appeared.
+        if (details.requested.group == 'net.minidev'
+                && details.requested.name == 'json-smart') {
+            details.useVersion '2.6.1'
+            details.because 'Snyk override (SNYK-JAVA-NETMINIDEV-21715438, CVE-2026-113602); fixed in 2.6.1'
+        }
         // Reaches us via the OIDC stack: oauth2-oidc-sdk -> json-smart -> accessors-smart.
         if (details.requested.group == 'org.ow2.asm'
                 && details.requested.name == 'asm') {
