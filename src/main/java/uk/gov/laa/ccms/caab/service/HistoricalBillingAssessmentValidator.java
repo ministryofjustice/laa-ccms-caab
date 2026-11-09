@@ -66,23 +66,6 @@ public class HistoricalBillingAssessmentValidator {
           }
           time.setValue(String.format("%02d:%02d", minutes / 60, minutes % 60));
         }
-        if (getAssessmentAttribute(entity, prefix + SUFFIX_VAT) == null) {
-          final String net = attributeValue(entity, prefix + SUFFIX_NET_CLAIM);
-          final String gross = attributeValue(entity, prefix + SUFFIX_TOTAL_CLAIM);
-          final String vatClaim = attributeValue(entity, prefix + "_VAT_CLAIM");
-          if (isCurrency(net)
-              && isCurrency(gross)
-              && isCurrency(vatClaim)
-              && currency(net).signum() > 0
-              && currency(net).compareTo(currency(gross)) == 0
-              && currency(vatClaim).signum() == 0) {
-            entity.addAttributesItem(
-                new AssessmentAttributeDetail()
-                    .name(prefix + SUFFIX_VAT)
-                    .type("number")
-                    .value("0"));
-          }
-        }
       }
     }
     return hasUsableHistoricalSummary(assessment);

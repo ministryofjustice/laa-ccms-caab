@@ -539,34 +539,43 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
   }
 
   @ParameterizedTest
-  @CsvSource({
-    "100.00,100.00,0.00,true",
-    "100.00,100.01,0.00,false",
-    "100.00,100.00,1.00,false",
-    "0.00,0.00,0.00,false",
-    "100.00,100.00,NULL,false"
-  })
-  void zeroVatInferenceRequiresExactPositiveEvidence(
-      String net, String gross, String vatClaim, boolean usable) throws Exception {
-    String submittedVat = new BigDecimal(gross).subtract(new BigDecimal(net)).toPlainString();
-    JSONObject body = invoice(555, "Solicitor Final", net, submittedVat);
+  @CsvSource({"bill,''", "bill,/summary", "poa,''", "poa,/summary"})
+  void missingVatPercentageIsUnavailableEvenWithExplicitZeroVatAmount(String context, String suffix)
+      throws Exception {
+    String type = context.equals("bill") ? "Solicitor Final" : "Solicitor POA";
+    statement(type, "Submitted");
+    JSONObject body = invoice(555, type, "100.00", "0.00");
     remove(line(body), "DISB_VAT");
-    put(line(body), "DISB_TOTAL_CLAIM", gross);
-    if (!vatClaim.equals("NULL")) put(line(body), "DISB_VAT_CLAIM", vatClaim);
+    put(line(body), "DISB_VAT_CLAIM", "0.00");
     stub(body);
-    MvcResult result = request("bill", "/summary", "555");
-    if (usable) pdf(result, "bill", "100.00", "100.00", "00:00");
-    else unavailable(result, "bill", "Submitted");
+    unavailable(request(context, suffix, "555"), context, "Submitted");
     selectedRead(555);
   }
 
-  @Test
-  void invalidExplicitVatIsNotReplacedByZeroInference() throws Exception {
-    JSONObject body = invoice(555, "Solicitor Final", "100.00", "0.00");
-    put(line(body), "DISB_VAT", "unknown");
-    put(line(body), "DISB_VAT_CLAIM", "0");
+  @ParameterizedTest
+  @CsvSource(
+      value = {"bill,NULL", "bill,''", "bill,unknown", "poa,NULL", "poa,''", "poa,unknown"},
+      nullValues = "NULL")
+  void nullBlankOrInvalidVatPercentagesAreUnavailable(String context, String percentage)
+      throws Exception {
+    String type = context.equals("bill") ? "Solicitor Final" : "Solicitor POA";
+    statement(type, "Submitted");
+    JSONObject body = invoice(555, type, "100.00", "0.00");
+    put(line(body), "DISB_VAT", percentage);
+    put(line(body), "DISB_VAT_CLAIM", "0.00");
     stub(body);
-    unavailable(request("bill", "/summary", "555"), "bill", "Submitted");
+    unavailable(request(context, "/summary", "555"), context, "Submitted");
+    selectedRead(555);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"bill", "poa"})
+  void explicitZeroVatPercentageProducesAZeroVatPdf(String context) throws Exception {
+    String type = context.equals("bill") ? "Solicitor Final" : "Solicitor POA";
+    statement(type, "Submitted");
+    stub(invoice(555, type, "100.00", "0.00"));
+    assertThat(pdf(request(context, "/summary", "555"), context, "100.00", "100.00", "00:00"))
+        .contains("01-JAN-2026Disbursement0.000.00100.000.00100.00");
     selectedRead(555);
   }
 
