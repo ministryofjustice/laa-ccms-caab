@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.controller.application.section;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
@@ -10,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
@@ -35,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -45,10 +48,12 @@ import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataDeceasedDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataMonitoringDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientBasicDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.client.ClientDeceasedDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientEqualOpportunitiesMonitoringDetailsValidator;
 import uk.gov.laa.ccms.caab.controller.client.EditClientSummaryController;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
@@ -74,6 +79,8 @@ class EditClientSummaryControllerTest {
   @Mock private ClientAddressDetailsValidator addressValidator;
 
   @Mock private ClientEqualOpportunitiesMonitoringDetailsValidator opportunitiesValidator;
+
+  @Spy private ClientDeceasedDetailsValidator clientDeceasedDetailsValidator;
 
   @Mock private ClientDetailMapper clientDetailsMapper;
 
@@ -225,5 +232,64 @@ class EditClientSummaryControllerTest {
         .andExpect(redirectedUrl("/application/client-update"));
 
     verify(clientService).updateClient(any(), any(), any());
+  }
+
+  @Test
+  void testPostClientDetailsSummaryDateOfBirthChangedToAfterDateOfDeath() throws Exception {
+    final ClientFormDataDeceasedDetails deceasedDetails = new ClientFormDataDeceasedDetails();
+    deceasedDetails.setDateOfDeath("16/06/2000");
+    clientFlowFormData.setDeceasedDetails(deceasedDetails);
+    clientFlowFormData.getBasicDetails().setDateOfBirth("17/06/2000");
+
+    mockMvc
+        .perform(
+            post("/amendments/sections/client/details/summary")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/sections/client-deceased-details"))
+        .andExpect(model().attributeHasFieldErrors("deceasedDetails", "dateOfDeath"));
+
+    verify(clientService, never()).updateClient(any(), any(), any());
+  }
+
+  @Test
+  void testPostClientDetailsSummaryNoDateOfDeathSkipsDateOfBirthCheck() throws Exception {
+    clientFlowFormData.setDeceasedDetails(new ClientFormDataDeceasedDetails());
+    clientFlowFormData.getBasicDetails().setDateOfBirth("17/06/2000");
+
+    when(clientService.updateClient(any(), any(), any()))
+        .thenReturn(Mono.just(new ClientTransactionResponse()));
+
+    mockMvc
+        .perform(
+            post("/amendments/sections/client/details/summary")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+        .andExpect(status().is3xxRedirection());
+
+    verify(clientService).updateClient(any(), any(), any());
+  }
+
+  @Test
+  void testPostClientDetailsSummaryIgnoresRequestParameters() throws Exception {
+    final ClientFlowFormData clientFlowFormData = new ClientFlowFormData("edit");
+
+    when(clientService.updateClient(any(), any(), any()))
+        .thenReturn(Mono.just(new ClientTransactionResponse()));
+
+    mockMvc
+        .perform(
+            post("/application/sections/client/details/summary")
+                .param("deceasedDetails.dateOfDeath", "14/06/2000")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(ACTIVE_CASE, activeCase)
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+        .andExpect(status().is3xxRedirection());
+
+    verify(clientService)
+        .updateClient(any(), argThat(form -> form.getDeceasedDetails() == null), any());
   }
 }

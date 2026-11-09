@@ -49,7 +49,9 @@
       <tr class="govuk-table__row" th:each="party : ${award.parties}">
         <td class="govuk-table__cell">
           <a th:if="${party.editable}" class="govuk-link"
-             th:href="@{/case/outcome-and-awards/{path}/{id}/liable-parties/{opponentId}/{type}(path=${awardPath},id=${awardId},opponentId=${party.opponentId},type=${party.organisation ? 'organisation' : 'individual'})}"
+             th:href="${party.organisation}
+               ? @{/case/outcome-and-awards/{path}/{id}/liable-parties/{opponentId}/organisation(path=${awardPath},id=${awardId},opponentId=${party.opponentId})}
+               : @{/case/outcome-and-awards/{path}/{id}/liable-parties/individual/{opponentId}/edit(path=${awardPath},id=${awardId},opponentId=${party.opponentId})}"
              th:text="${party.name}"></a>
           <span th:unless="${party.editable}" th:text="${party.name}"></span>
         </td>
@@ -69,7 +71,7 @@
     <div class="govuk-button-group govuk-!-margin-top-3">
       <a class="govuk-button govuk-button--secondary" data-module="govuk-button" role="button"
          id="addPartyButton"
-         th:href="@{/case/outcome-and-awards/{path}/{id}/liable-parties/add(path=${awardPath},id=${awardId})}"
+         th:href="@{/case/outcome-and-awards/{path}/{id}/liable-parties/individual/add(path=${awardPath},id=${awardId})}"
          th:text="#{case.liableParties.addParty}"></a>
     </div>
     <div class="govuk-button-group govuk-!-margin-top-6">

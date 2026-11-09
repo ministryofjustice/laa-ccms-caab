@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.controller.client;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
@@ -197,5 +198,39 @@ public class ClientSummaryControllerTest {
         .andExpect(redirectedUrl("/application/client-create"));
 
     verify(clientService).createClient(any(), any());
+  }
+
+  @Test
+  @DisplayName("Client details summary GET ignores request parameters")
+  void testClientDetailsSummary_GetIgnoresRequestParameters() throws Exception {
+    when(lookupService.getClientLookups(any())).thenReturn(List.of());
+    when(lookupService.addCommonLookupsToModel(anyList(), any(Model.class)))
+        .thenReturn(Mono.empty());
+
+    mockMvc
+        .perform(
+            get("/application/client/details/summary")
+                .param("basicDetails.dateOfBirth", "17/06/2000")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+        .andExpect(status().isOk());
+
+    assertNull(clientFlowFormData.getBasicDetails().getDateOfBirth());
+  }
+
+  @Test
+  @DisplayName("Client details summary POST ignores request parameters")
+  void testClientDetailsSummary_PostIgnoresRequestParameters() throws Exception {
+    when(clientService.createClient(any(), any()))
+        .thenReturn(Mono.just(new ClientTransactionResponse()));
+
+    mockMvc
+        .perform(
+            post("/application/client/details/summary")
+                .param("basicDetails.dateOfBirth", "17/06/2000")
+                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+        .andExpect(status().is3xxRedirection());
+
+    assertNull(clientFlowFormData.getBasicDetails().getDateOfBirth());
   }
 }

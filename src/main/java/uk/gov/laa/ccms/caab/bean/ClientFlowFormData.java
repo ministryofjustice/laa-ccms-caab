@@ -12,6 +12,8 @@ public class ClientFlowFormData {
 
   private ClientFormDataDeceasedDetails deceasedDetails;
 
+  private Boolean deceasedFlag;
+
   private ClientFormDataContactDetails contactDetails;
 
   private ClientFormDataAddressDetails addressDetails;

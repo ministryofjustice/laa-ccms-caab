@@ -2,11 +2,14 @@ package uk.gov.laa.ccms.caab.mapper;
 
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.OPPONENT_TYPE_ORGANISATION;
 
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentOtherDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
 import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
@@ -158,6 +161,35 @@ public interface OpponentMapper {
   @Mapping(target = "legalAided", source = "legalAided")
   @Mapping(target = "certificateNumber", source = "certificateNumber")
   OpponentDetail toIndividualOpponent(IndividualOpponentFormData opponentFormData);
+
+  /**
+   * Copies other-details fields into an opponent without changing its contact details.
+   *
+   * @param formData the submitted other details, including values to clear
+   * @param opponent the opponent to update in place
+   */
+  @BeanMapping(ignoreByDefault = true)
+  @Mapping(target = "employmentStatus", source = "employmentStatus")
+  @Mapping(target = "employerName", source = "employerName")
+  @Mapping(target = "employerAddress", source = "employerAddress")
+  @Mapping(target = "courtOrderedMeansAssessment", source = "courtOrderedMeansAssessment")
+  @Mapping(target = "assessedIncome", source = "assessedIncome")
+  @Mapping(target = "assessedIncomeFrequency", source = "assessedIncomeFrequency")
+  @Mapping(target = "assessedAssets", source = "assessedAssets")
+  @Mapping(target = "assessmentDate", source = "assessmentDate", dateFormat = "dd/MM/yyyy")
+  @Mapping(target = "otherInformation", source = "otherInformation")
+  void updateIndividualOtherDetails(
+      IndividualOpponentOtherDetailsFormData formData, @MappingTarget OpponentDetail opponent);
+
+  /**
+   * Maps persisted employment and assessment details to the individual other-details form.
+   *
+   * @param opponent the opponent containing the saved details
+   * @return the form data with its assessment date formatted as dd/MM/yyyy
+   */
+  @Mapping(target = "assessmentDate", source = "assessmentDate", dateFormat = "dd/MM/yyyy")
+  IndividualOpponentOtherDetailsFormData toIndividualOpponentOtherDetailsFormData(
+      OpponentDetail opponent);
 
   /**
    * Convert form data to an opponent, depending on opponent type.

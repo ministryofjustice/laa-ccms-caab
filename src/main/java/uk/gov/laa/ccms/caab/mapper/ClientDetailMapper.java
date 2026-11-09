@@ -5,13 +5,17 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
+import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataDeceasedDetails;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
 import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
@@ -47,6 +51,27 @@ public interface ClientDetailMapper {
   @Mapping(target = "address", source = "addressDetails")
   @Mapping(target = "noFixedAbode", source = "addressDetails.noFixedAbode")
   ClientDetailDetails toClientDetailDetails(ClientFlowFormData clientFlowFormData);
+
+  /**
+   * Adds the reported date of death to the personal information, which is otherwise built from the
+   * basic details alone.
+   *
+   * @param clientDetailDetails The client details to be sent to soa.
+   * @param clientFlowFormData The client flow form data holding the deceased details.
+   */
+  @AfterMapping
+  default void addDateOfDeath(
+      @MappingTarget final ClientDetailDetails clientDetailDetails,
+      final ClientFlowFormData clientFlowFormData) {
+    final ClientFormDataDeceasedDetails deceasedDetails = clientFlowFormData.getDeceasedDetails();
+    if (clientDetailDetails.getPersonalInformation() != null
+        && deceasedDetails != null
+        && StringUtils.hasText(deceasedDetails.getDateOfDeath())) {
+      clientDetailDetails
+          .getPersonalInformation()
+          .setDateOfDeath(DateUtils.convertToDate(deceasedDetails.getDateOfDeath()));
+    }
+  }
 
   @Mapping(target = "middleName", source = "middleNames")
   @Mapping(target = "fullName", source = ".", qualifiedByName = "mapFullName")

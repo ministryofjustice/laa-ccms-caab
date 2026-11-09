@@ -43,7 +43,8 @@ public class ClientSummaryController extends AbstractClientSummaryController {
    */
   @GetMapping("/application/client/details/summary")
   public String clientDetailsSummary(
-      @ModelAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
+      @ModelAttribute(value = CLIENT_FLOW_FORM_DATA, binding = false)
+          final ClientFlowFormData clientFlowFormData,
       final Model model) {
 
     populateSummaryListLookups(clientFlowFormData, model).block();
@@ -58,7 +59,8 @@ public class ClientSummaryController extends AbstractClientSummaryController {
    */
   @PostMapping("/application/client/details/summary")
   public String clientDetailsSummary(
-      @ModelAttribute(CLIENT_FLOW_FORM_DATA) final ClientFlowFormData clientFlowFormData,
+      @ModelAttribute(value = CLIENT_FLOW_FORM_DATA, binding = false)
+          final ClientFlowFormData clientFlowFormData,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       final HttpSession session) {
 

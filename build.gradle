@@ -1,5 +1,5 @@
 plugins {
-    id 'uk.gov.justice.service.laa.laa-spring-boot-gradle-plugin' version '3.1.3'
+    id 'uk.gov.justice.service.laa.laa-spring-boot-gradle-plugin' version '3.1.4'
     id 'com.diffplug.spotless' version '8.10.4'
 }
 
@@ -117,8 +117,7 @@ dependencies {
     // converted to PDF, the same pairing the legacy PUI uses for its financial summaries.
     implementation 'org.xhtmlrenderer:flying-saucer-pdf-openpdf:9.4.0'
 
-    implementation 'uk.gov.laa.ccms.data:data-api:0.5.1'
-    implementation 'org.openapitools:jackson-databind-nullable:0.2.12'
+    implementation 'uk.gov.laa.ccms.data:data-api:0.5.0'
 
     // 0.1.3 carries GetInvoiceData, needed to copy a rejected bill.
     implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.1.3'
@@ -133,7 +132,7 @@ dependencies {
     implementation 'org.mapstruct:mapstruct:1.6.3'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 
-    implementation 'org.apache.tika:tika-core:4.1.0'
+    implementation 'org.apache.tika:tika-core:4.2.0'
 
     // Starters
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
@@ -154,7 +153,7 @@ dependencies {
 
     implementation 'org.json:json:20260814'
 
-    implementation 'io.swagger.core.v3:swagger-annotations:2.2.55'
+    implementation 'io.swagger.core.v3:swagger-annotations:3.0.0'
 
     //SAML security
     implementation 'org.springframework.boot:spring-boot-starter-security-saml2'
