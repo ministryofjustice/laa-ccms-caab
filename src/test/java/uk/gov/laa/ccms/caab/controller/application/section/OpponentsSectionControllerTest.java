@@ -33,7 +33,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,6 +59,7 @@ import uk.gov.laa.ccms.caab.model.OrganisationResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
+import uk.gov.laa.ccms.caab.service.IndividualOpponentFormService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.OpponentService;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -87,7 +87,7 @@ class OpponentsSectionControllerTest {
 
   @Mock private IndividualOpponentValidator individualOpponentValidator;
 
-  @InjectMocks private OpponentsSectionController controller;
+  private OpponentsSectionController controller;
 
   private MockMvc mockMvc;
 
@@ -95,6 +95,16 @@ class OpponentsSectionControllerTest {
 
   @BeforeEach
   void setUp() {
+    controller =
+        new OpponentsSectionController(
+            applicationService,
+            amendmentService,
+            opponentService,
+            lookupService,
+            organisationSearchCriteriaValidator,
+            organisationOpponentValidator,
+            individualOpponentValidator,
+            new IndividualOpponentFormService(lookupService));
     mockMvc =
         MockMvcBuilders.standaloneSetup(controller)
             .setControllerAdvice(new GlobalExceptionHandler())

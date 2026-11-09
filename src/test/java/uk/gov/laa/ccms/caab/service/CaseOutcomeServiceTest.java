@@ -33,6 +33,7 @@ import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CostAwardDetail;
@@ -75,7 +76,7 @@ class CaseOutcomeServiceTest {
         .getCaseOutcome("caseRef", 123);
 
     final Class<? extends RuntimeException> expectedException =
-        "INVALID".equals(type) ? IllegalArgumentException.class : IllegalStateException.class;
+        "INVALID".equals(type) ? IllegalArgumentException.class : CaabApplicationException.class;
     assertThrows(
         expectedException, () -> caseOutcomeService.deleteAward("caseRef", 123, type, 7, "user1"));
 
@@ -89,7 +90,7 @@ class CaseOutcomeServiceTest {
         .getCaseOutcome("caseRef", 123);
 
     assertThrows(
-        IllegalStateException.class,
+        CaabApplicationException.class,
         () -> caseOutcomeService.deleteAward("caseRef", 123, "COST", 99, "user1"));
     verifyNoMoreInteractions(caabApiClient);
   }

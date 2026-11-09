@@ -87,6 +87,74 @@ class CaabApiClientTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"COST", "DAMAGE", "LAND", "ASSET"})
+  void updateAwardPartyUsesScopedPutAndUserHeader(String type) {
+    final var opponent = new OpponentDetail().type("Individual").firstName("Changed");
+    when(caabApiWebClient.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/liable-parties/{opponent-id}",
+            42,
+            type,
+            7,
+            11))
+        .thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", "user1")).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(opponent)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    StepVerifier.create(caabApiClient.updateAwardLiableParty(42, type, 7, 11, "user1", opponent))
+        .verifyComplete();
+    verify(requestBodyMock).bodyValue(opponent);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"COST", "DAMAGE", "LAND", "ASSET"})
+  void createAwardPartySendsBothPagesToAwardScopedEndpoint(String type) {
+    final var opponent =
+        new OpponentDetail().type("Individual").firstName("Jane").employerName("Acme");
+    when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/liable-parties",
+            42,
+            type,
+            7))
+        .thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", "user1")).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(opponent)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+
+    StepVerifier.create(caabApiClient.createAwardLiableParty(42, type, 7, "user1", opponent))
+        .verifyComplete();
+    verify(requestBodyMock).bodyValue(opponent);
+    verify(requestBodyMock).header("Caab-User-Login-Id", "user1");
+  }
+
+  @Test
+  void createAwardPartyPropagatesMappedFailure() {
+    final var opponent = new OpponentDetail().type("Individual");
+    final var failure = new IllegalStateException("Party save failed");
+    when(caabApiWebClient.post()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/liable-parties",
+            42,
+            "COST",
+            7))
+        .thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", "user1")).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(opponent)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.error(failure));
+    when(apiClientErrorHandler.handleApiUpdateError(failure, "opponents", "award id", "7"))
+        .thenReturn(Mono.error(failure));
+
+    StepVerifier.create(caabApiClient.createAwardLiableParty(42, "COST", 7, "user1", opponent))
+        .expectErrorMatches(error -> error == failure)
+        .verify();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"COST", "DAMAGE", "LAND", "ASSET"})
   void deleteAwardSendsScopedDeleteAndUserHeader(String type) {
     when(caabApiWebClient.delete()).thenReturn(requestHeadersUriMock);
     when(requestHeadersUriMock.uri(

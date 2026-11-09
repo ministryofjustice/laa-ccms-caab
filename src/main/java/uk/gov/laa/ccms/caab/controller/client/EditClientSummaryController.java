@@ -16,6 +16,8 @@ import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,6 +26,8 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataDeceasedDetails;
+import uk.gov.laa.ccms.caab.bean.validators.client.ClientDeceasedDetailsValidator;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.ClientDetailMapper;
@@ -43,16 +47,22 @@ import uk.gov.laa.ccms.soa.gateway.model.ClientTransactionResponse;
 @SessionAttributes({CLIENT_FLOW_FORM_DATA, AMEND_CLIENT_ORIGIN})
 public class EditClientSummaryController extends AbstractClientSummaryController {
 
+  private static final String DECEASED_DETAILS = "deceasedDetails";
+
   private final EbsClientDetailMapper ebsClientDetailMapper;
+
+  private final ClientDeceasedDetailsValidator clientDeceasedDetailsValidator;
 
   /** Default constructor method implementing the abstract controller's constructor. */
   public EditClientSummaryController(
       final LookupService lookupService,
       final ClientService clientService,
       final ClientDetailMapper clientDetailsMapper,
-      final EbsClientDetailMapper ebsClientDetailMapper) {
+      final EbsClientDetailMapper ebsClientDetailMapper,
+      final ClientDeceasedDetailsValidator clientDeceasedDetailsValidator) {
     super(lookupService, clientService, clientDetailsMapper);
     this.ebsClientDetailMapper = ebsClientDetailMapper;
+    this.clientDeceasedDetailsValidator = clientDeceasedDetailsValidator;
   }
 
   /**
@@ -123,10 +133,16 @@ public class EditClientSummaryController extends AbstractClientSummaryController
   @PostMapping("/{caseContext}/sections/client/details/summary")
   public String postClientDetailsSummary(
       final @PathVariable("caseContext") CaseContext caseContext,
-      final @ModelAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
+      final @ModelAttribute(value = CLIENT_FLOW_FORM_DATA, binding = false) ClientFlowFormData
+              clientFlowFormData,
       final @SessionAttribute(USER_DETAILS) UserDetail user,
       final @SessionAttribute(ACTIVE_CASE) ActiveCase activeCase,
+      final Model model,
       final HttpSession session) {
+
+    if (dateOfDeathBeforeDateOfBirth(clientFlowFormData, model)) {
+      return "application/sections/client-deceased-details";
+    }
 
     final ClientTransactionResponse response =
         clientService
@@ -143,5 +159,29 @@ public class EditClientSummaryController extends AbstractClientSummaryController
     clearEditClientFlowSession(session);
 
     return "redirect:/%s/%s".formatted(caseContext.getPathValue(), SUBMISSION_UPDATE_CLIENT);
+  }
+
+  /**
+   * Rechecks the dates at submission, as the date of birth can change after the date of death is
+   * confirmed. Any error is added to the model for the deceased details page.
+   */
+  private boolean dateOfDeathBeforeDateOfBirth(
+      final ClientFlowFormData clientFlowFormData, final Model model) {
+    final ClientFormDataDeceasedDetails deceasedDetails = clientFlowFormData.getDeceasedDetails();
+    if (deceasedDetails == null) {
+      return false;
+    }
+
+    final BindingResult bindingResult =
+        new BeanPropertyBindingResult(deceasedDetails, DECEASED_DETAILS);
+    clientDeceasedDetailsValidator.validateNotBeforeDateOfBirth(
+        deceasedDetails, clientFlowFormData.getBasicDetails(), bindingResult);
+
+    if (bindingResult.hasErrors()) {
+      model.addAttribute(DECEASED_DETAILS, deceasedDetails);
+      model.addAttribute(BindingResult.MODEL_KEY_PREFIX + DECEASED_DETAILS, bindingResult);
+      return true;
+    }
+    return false;
   }
 }

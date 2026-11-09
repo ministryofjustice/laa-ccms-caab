@@ -105,11 +105,41 @@ class LiablePartiesDisplayMapperTest {
   }
 
   @Test
+  void sharedIndividualsAreNotEditableEvenWithAnAwardPrefix() {
+    final var individual = person().ebsId("aWaRd123").sharedInd(true);
+    final var party =
+        mapper
+            .toLiablePartiesDisplay(linkedAward(), List.of(individual), context())
+            .parties()
+            .getFirst();
+
+    assertThat(party.editable()).isFalse();
+    assertThat(party.name()).isEqualTo("Ms Jane Smith");
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+      value = {"false", "null"},
+      nullValues = "null")
+  void nonSharedIndividualsWithAnAwardPrefixRemainEditable(Boolean shared) {
+    final var individual = person().ebsId("AWARD123").sharedInd(shared);
+
+    assertThat(
+            mapper
+                .toLiablePartiesDisplay(linkedAward(), List.of(individual), context())
+                .parties()
+                .getFirst()
+                .editable())
+        .isTrue();
+  }
+
+  @Test
   void editableOrganisationsUseOrganisationNameInsteadOfContactName() {
     final var organisation =
         person()
             .type("Organisation")
             .ebsId("aWaRd123")
+            .sharedInd(true)
             .organisationName("Acme Ltd")
             .contactNameRole("Organisation contact");
 

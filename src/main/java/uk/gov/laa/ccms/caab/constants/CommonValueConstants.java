@@ -18,6 +18,13 @@ public class CommonValueConstants {
   /** Type used to retrieve the title values for contact details. */
   public static final String COMMON_VALUE_CONTACT_TITLE = "CONTACT_TITLE";
 
+  /** Legacy individual opponent employment status options. */
+  public static final String COMMON_VALUE_EMPLOYMENT_STATUS = "XXCCMS_EMPLOYMENT_STATUS";
+
+  /** Legacy individual opponent assessed income frequencies. */
+  public static final String COMMON_VALUE_ASSESSED_INCOME_FREQUENCY =
+      "XXCCMS_ASSESSED_INCOME_FREQS";
+
   /** Type used to retrieve the marital values for contact details. */
   public static final String COMMON_VALUE_MARITAL_STATUS = "MARITAL_STATUS";
 
