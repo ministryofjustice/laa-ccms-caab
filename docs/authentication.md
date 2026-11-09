@@ -91,7 +91,7 @@ To run against a real EntraID tenant instead, override `OIDC_ISSUER_URI`, `AZURE
 | `AZURE_CLIENT_SECRET` | yes | App registration client secret. Hold in a secret, never in values. |
 | `POST_LOGOUT_REDIRECT_URI` | yes | Where EntraID returns the user after signing out. |
 | `IS_SILAS_ENABLED` | no (default `false`) | `true` for external/SiLAS tenants, `false` for internal. |
-| `ENTRA_CUSTOM_USER_ID_CLAIM` | when SiLAS is enabled | Name of the claim SiLAS supplies the CCMS username in - `https://justice.org.uk/claims/USER_NAME` in the Dev External tenant. When unset or absent from the token, the authenticated identity is exchanged through the User Details API instead. |
+| `ENTRA_CUSTOM_USER_ID_CLAIM` | when SiLAS is enabled | Name of the claim SiLAS supplies the CCMS username in - `https://justice.org.uk/claims/CCMS_USERNAME` in the Dev External tenant. When unset or absent from the token, the authenticated identity is exchanged through the User Details API instead. |
 | `USER_DETAILS_API_HOSTNAME` | fallback only | Base URL of the User Details API, **including the scheme** - the deployed `url` is the hostname unchanged. In `application-local.yml` and `application-secret.yml` the opposite holds: the `url` there prepends `https://`, so the hostname must be bare. Getting this wrong yields `http://https://host:443`, which fails on the first call rather than at startup. |
 | `USER_DETAILS_API_ACCESS_TOKEN` | fallback only | Sent as `X-Authorization`. Confirmed against the dev API: `Authorization` returns `401 No API access token provided`, and an invalid value returns `401 Invalid API access token provided`. |
 
@@ -151,10 +151,11 @@ silas_custom_claims_provider_tenant = "ExternalTest" # "ExternalProd" for prod
 The claim name in the JWT is the value in the list, so `ENTRA_CUSTOM_USER_ID_CLAIM` is set to the
 same string.
 
-**Configured in Dev External as `https://justice.org.uk/claims/USER_NAME`.** The claim carries the
-CCMS username itself, so there is nothing to exchange and the User Details API is not called. It
-remains the fallback for a tenant whose claim supplies an identifier rather than a username, which
-is the shape the legacy PUI assumes.
+**Configured in Dev External as `https://justice.org.uk/claims/CCMS_USERNAME`.** The claim carries
+the CCMS username itself - confirmed by the SiLAS team, who hold `USER_NAME` and `CCMS_USERNAME` as
+the same data and are retiring `USER_NAME` because its purpose is unclear. So there is nothing to
+exchange and the User Details API is not called. It remains the fallback for a tenant whose claim
+supplies an identifier rather than a username, which is the shape the legacy PUI assumes.
 
 The dev User Details API has been verified reachable and authenticating
 (`https://laa-ccms-user-details-api-dev.apps.live.cloud-platform.service.justice.gov.uk`), with an
