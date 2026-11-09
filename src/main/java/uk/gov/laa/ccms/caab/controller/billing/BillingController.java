@@ -298,9 +298,8 @@ public class BillingController {
 
     model.addAttribute("assessmentStatus", displayStatus(poaAssessment));
     model.addAttribute("assessmentComplete", assessmentComplete);
-    // The legacy PUI only reveals the "POA summary" link, and the Action column holding it, once
-    // the assessment is complete (PreparePOADetails' viewPOASummary flag).
-    model.addAttribute("viewPoaSummary", assessmentComplete);
+    // The legacy PUI only reveals the "POA summary" link once the assessment is complete.
+    model.addAttribute("summaryAvailable", assessmentComplete);
 
     return "application/billing/poa-details";
   }
@@ -339,9 +338,8 @@ public class BillingController {
 
     model.addAttribute("assessmentStatus", displayStatus(billingAssessment));
     model.addAttribute("assessmentComplete", assessmentComplete);
-    // The legacy PUI only reveals the "Bill summary" link, and the Action column holding it, once
-    // the assessment is complete (PrepareBillClaimSummary's printDraftBill flag).
-    model.addAttribute("printDraftBill", assessmentComplete);
+    // The legacy PUI only reveals the "Bill summary" link once the assessment is complete.
+    model.addAttribute("summaryAvailable", assessmentComplete);
 
     return "application/billing/bill-details";
   }
@@ -460,9 +458,7 @@ public class BillingController {
     model.addAttribute(
         "billingId", selected.row() == null ? null : selected.row().billingIncidentId().toString());
     model.addAttribute("assessmentStatus", selected.row() == null ? null : selected.row().status());
-    model.addAttribute("assessmentComplete", selected.assessment() != null);
-    model.addAttribute("printDraftBill", selected.assessment() != null);
-    model.addAttribute("viewPoaSummary", selected.assessment() != null);
+    model.addAttribute("summaryAvailable", selected.assessment() != null);
   }
 
   /**
@@ -767,7 +763,7 @@ public class BillingController {
     final boolean assessmentComplete = isComplete(billingAssessment);
     model.addAttribute("assessmentStatus", displayStatus(billingAssessment));
     model.addAttribute("assessmentComplete", assessmentComplete);
-    model.addAttribute("printDraftBill", assessmentComplete);
+    model.addAttribute("summaryAvailable", assessmentComplete);
     model.addAttribute("submissionError", errorMessageCode);
 
     return "application/billing/bill-details";

@@ -17,7 +17,7 @@
 
     <p class="govuk-body" th:if="${readOnly != true}" th:text="#{billing.poa.introText}"></p>
     <!-- The breakdown is only there to be viewed once the interview has been completed. -->
-    <p class="govuk-body" th:if="${viewPoaSummary and readOnly != true}" th:text="#{billing.poa.introText2}"></p>
+    <p class="govuk-body" th:if="${summaryAvailable and readOnly != true}" th:text="#{billing.poa.introText2}"></p>
     <p class="govuk-body" th:if="${readOnly == true and detailsUnavailable != true}"
        th:text="#{billing.submitted.introText}"></p>
     <p class="govuk-body" th:if="${readOnly == true and detailsUnavailable == true}"
@@ -34,7 +34,7 @@
                th:href="@{/application/assessments(assessment='poa',invoked-from='CCMS_POA01')}"
                th:text="#{billing.poa.details}"></a>
           </li>
-          <li class="govuk-summary-card__action" th:if="${viewPoaSummary}">
+          <li class="govuk-summary-card__action" th:if="${summaryAvailable}">
             <!-- Opens the generated POA summary PDF in a new tab, as the legacy PUI did. -->
             <a class="govuk-link govuk-link--no-visited-state"
                id="poa-summary-link"

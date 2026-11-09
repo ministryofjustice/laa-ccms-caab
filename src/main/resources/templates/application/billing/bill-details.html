@@ -30,7 +30,7 @@
 
     <p class="govuk-body" th:if="${readOnly != true}" th:text="#{billing.bill.introText}"></p>
     <!-- The breakdown is only there to be viewed once the interview has been completed. -->
-    <p class="govuk-body" th:if="${printDraftBill and readOnly != true}" th:text="#{billing.bill.introText2}"></p>
+    <p class="govuk-body" th:if="${summaryAvailable and readOnly != true}" th:text="#{billing.bill.introText2}"></p>
     <p class="govuk-body" th:if="${readOnly == true and detailsUnavailable != true}"
        th:text="#{billing.submitted.introText}"></p>
     <p class="govuk-body" th:if="${readOnly == true and detailsUnavailable == true}"
@@ -47,7 +47,7 @@
                th:href="@{/application/assessments(assessment='billing',invoked-from='CCMS_CB03')}"
                th:text="#{billing.bill.details}"></a>
           </li>
-          <li class="govuk-summary-card__action" th:if="${printDraftBill}">
+          <li class="govuk-summary-card__action" th:if="${summaryAvailable}">
             <a class="govuk-link govuk-link--no-visited-state"
                id="bill-summary-link"
                target="_blank"

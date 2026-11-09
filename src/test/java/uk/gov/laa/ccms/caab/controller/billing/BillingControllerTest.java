@@ -517,7 +517,7 @@ class BillingControllerTest {
           // Nothing started yet, so no summary link is offered.
           .containsEntry("assessmentStatus", "Not started")
           .containsEntry("assessmentComplete", false)
-          .containsEntry("viewPoaSummary", false);
+          .containsEntry("summaryAvailable", false);
 
       verify(billingService).createDraftPaymentOnAccountIfAbsent("300000123", "10", user);
     }
@@ -542,7 +542,7 @@ class BillingControllerTest {
           .hasStatusOk()
           .model()
           .containsEntry("assessmentComplete", true)
-          .containsEntry("viewPoaSummary", true);
+          .containsEntry("summaryAvailable", true);
     }
 
     @Test
@@ -592,7 +592,7 @@ class BillingControllerTest {
           // Nothing started yet, so no bill summary link is offered.
           .containsEntry("assessmentStatus", "Not started")
           .containsEntry("assessmentComplete", false)
-          .containsEntry("printDraftBill", false);
+          .containsEntry("summaryAvailable", false);
 
       verify(billingService).createDraftBillIfAbsent("300000123", "10", user);
     }
@@ -617,7 +617,7 @@ class BillingControllerTest {
           .hasStatusOk()
           .model()
           .containsEntry("assessmentComplete", true)
-          .containsEntry("printDraftBill", true);
+          .containsEntry("summaryAvailable", true);
     }
 
     @Test
@@ -1108,6 +1108,7 @@ class BillingControllerTest {
           // The legacy PUI returns the user to the bill details screen carrying the reason.
           .hasViewName("application/billing/bill-details")
           .model()
+          .containsEntry("summaryAvailable", false)
           .containsEntry("submissionError", "billing.bill.error.notComplete");
     }
 
@@ -1126,6 +1127,7 @@ class BillingControllerTest {
           .hasStatusOk()
           .hasViewName("application/billing/bill-details")
           .model()
+          .containsEntry("summaryAvailable", true)
           .containsEntry("submissionError", "billing.bill.error.notAssessed");
     }
 

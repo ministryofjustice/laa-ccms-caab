@@ -301,7 +301,9 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
     assertThat(result.getModelAndView().getModel())
         .containsEntry("readOnly", true)
         .containsEntry("detailsUnavailable", true)
-        .containsEntry("assessmentStatus", status);
+        .containsEntry("assessmentStatus", status)
+        .containsEntry("summaryAvailable", false)
+        .doesNotContainKey("assessmentComplete");
     assertThat(result.getResponse().getContentType()).isNotEqualTo("application/pdf");
   }
 
@@ -355,7 +357,9 @@ class SubmittedBillingDataApiIntegrationTest extends AbstractIntegrationTest {
         .containsEntry("readOnly", true)
         .containsEntry("assessmentStatus", status)
         .containsEntry("detailsUnavailable", false)
-        .containsEntry("billingId", "555");
+        .containsEntry("billingId", "555")
+        .containsEntry("summaryAvailable", true)
+        .doesNotContainKey("assessmentComplete");
     selectedRead(555);
   }
 

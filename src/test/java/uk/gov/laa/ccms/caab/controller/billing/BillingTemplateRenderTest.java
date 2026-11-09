@@ -122,7 +122,7 @@ class BillingTemplateRenderTest {
     final Map<String, Object> model = new HashMap<>();
     model.put("assessmentStatus", "Complete");
     model.put("assessmentComplete", true);
-    model.put("viewPoaSummary", true);
+    model.put("summaryAvailable", true);
 
     final String html = render("application/billing/poa-details", model);
     assertThat(html).contains("poa-summary-link").contains("submit-poa-button");
@@ -134,7 +134,7 @@ class BillingTemplateRenderTest {
     final Map<String, Object> model = new HashMap<>();
     model.put("assessmentStatus", "Complete");
     model.put("assessmentComplete", true);
-    model.put("printDraftBill", true);
+    model.put("summaryAvailable", true);
 
     final String html = render("application/billing/bill-details", model);
     assertThat(html)
@@ -170,7 +170,7 @@ class BillingTemplateRenderTest {
     final Map<String, Object> model = new HashMap<>();
     model.put("assessmentStatus", "In progress");
     model.put("assessmentComplete", false);
-    model.put("printDraftBill", false);
+    model.put("summaryAvailable", false);
     model.put("submissionError", "billing.bill.error.notComplete");
 
     final String html = render("application/billing/bill-details", model);
@@ -185,7 +185,7 @@ class BillingTemplateRenderTest {
     final Map<String, Object> model = new HashMap<>();
     model.put("assessmentStatus", "Not started");
     model.put("assessmentComplete", false);
-    model.put("printDraftBill", false);
+    model.put("summaryAvailable", false);
 
     final String html = render("application/billing/bill-details", model);
     assertThat(html).contains("bill-details-link").doesNotContain("bill-summary-link");
@@ -278,9 +278,7 @@ class BillingTemplateRenderTest {
     model.put("billingId", "555");
     model.put("detailsUnavailable", false);
     model.put("assessmentStatus", status);
-    model.put("assessmentComplete", true);
-    model.put("printDraftBill", true);
-    model.put("viewPoaSummary", true);
+    model.put("summaryAvailable", true);
     return model;
   }
 
@@ -424,8 +422,7 @@ class BillingTemplateRenderTest {
   void unavailableSubmittedDetailsRender(final String context) {
     final Map<String, Object> model = submittedDetailsModel("Authorised");
     model.put("detailsUnavailable", true);
-    model.put("printDraftBill", false);
-    model.put("viewPoaSummary", false);
+    model.put("summaryAvailable", false);
     final String html = render("application/billing/" + context + "-details", model);
     assertThat(visibleText(html))
         .contains("Authorised", "Cancel and return to case statement of account")

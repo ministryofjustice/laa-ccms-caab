@@ -350,7 +350,9 @@ class SubmittedBillingControllerTest {
         .model()
         .containsEntry("readOnly", true)
         .containsEntry("billingId", "555")
-        .containsEntry("assessmentStatus", status);
+        .containsEntry("assessmentStatus", status)
+        .containsEntry("summaryAvailable", true)
+        .doesNotContainKey("assessmentComplete");
     assertNoWrites();
   }
 
@@ -377,7 +379,9 @@ class SubmittedBillingControllerTest {
           .model()
           .containsEntry("readOnly", true)
           .containsEntry("detailsUnavailable", true)
-          .containsEntry("assessmentStatus", "Authorised");
+          .containsEntry("assessmentStatus", "Authorised")
+          .containsEntry("summaryAvailable", false)
+          .doesNotContainKey("assessmentComplete");
     }
     verifyNoInteractions(pdfService);
     assertNoWrites();
@@ -527,6 +531,8 @@ class SubmittedBillingControllerTest {
           .model()
           .containsEntry("readOnly", true)
           .containsEntry("detailsUnavailable", true)
+          .containsEntry("summaryAvailable", false)
+          .doesNotContainKey("assessmentComplete")
           .doesNotContainEntry("assessmentStatus", "Submitted");
     }
     if (scenario.equals("other-provider")) {
