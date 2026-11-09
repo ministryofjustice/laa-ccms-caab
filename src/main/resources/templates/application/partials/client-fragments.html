@@ -35,13 +35,9 @@
           <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{person.middleName}, *{basicDetails.middleNames})}"></div>
           <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{person.surnameAtBirth}, *{basicDetails.surnameAtBirth})}"></div>
           <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{person.dob}, *{basicDetails.dateOfBirth})}"></div>
-          <th:block th:if="*{action == 'edit'}"
-                    th:with="dateOfDeath=*{deceasedDetails?.dateOfDeath},
-                             isDeceased=*{deceasedFlag == true or !#strings.isEmpty(deceasedDetails?.dateOfDeath)}">
-            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayYesNo(#{person.deceased}, ${isDeceased})}"></div>
-            <th:block th:unless="${#strings.isEmpty(dateOfDeath)}">
-              <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{person.dod}, ${dateOfDeath})}"></div>
-            </th:block>
+          <th:block th:if="*{action == 'edit' and !#strings.isEmpty(deceasedDetails?.dateOfDeath)}">
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplayYesNo(#{person.deceased}, true)}"></div>
+            <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{person.dod}, *{deceasedDetails.dateOfDeath})}"></div>
           </th:block>
           <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{person.nsi}, *{basicDetails.nationalInsuranceNumber})}"></div>
           <div th:replace="~{application/partials/summary-fragments :: summaryListDisplay(#{person.homeOfficeNumber}, *{basicDetails.homeOfficeNumber})}"></div>

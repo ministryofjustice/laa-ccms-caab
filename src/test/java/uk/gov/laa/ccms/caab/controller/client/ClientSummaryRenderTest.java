@@ -41,12 +41,11 @@ class ClientSummaryRenderTest {
   }
 
   @Test
-  @DisplayName("Client not deceased shows No without a date of death")
+  @DisplayName("Client not deceased shows neither deceased row")
   void notDeceased() throws Exception {
     final String html = render(ACTION_EDIT, "false", null);
 
-    assertThat(html).containsPattern(DECEASED_ROW + "No");
-    assertThat(html).doesNotContain("Date of death");
+    assertThat(html).doesNotContain(">Deceased<").doesNotContain("Date of death");
   }
 
   @Test
@@ -59,12 +58,11 @@ class ClientSummaryRenderTest {
   }
 
   @Test
-  @DisplayName("Deceased flag without a date shows Yes and no date row")
+  @DisplayName("Deceased flag without a date shows neither deceased row")
   void deceasedFlagWithoutDate() throws Exception {
     final String html = render(ACTION_EDIT, "true", null);
 
-    assertThat(html).containsPattern(DECEASED_ROW + "Yes");
-    assertThat(html).doesNotContain("Date of death");
+    assertThat(html).doesNotContain(">Deceased<").doesNotContain("Date of death");
   }
 
   @ParameterizedTest
@@ -73,8 +71,15 @@ class ClientSummaryRenderTest {
   void blankDateOfDeath(String dateOfDeath) throws Exception {
     final String html = render(ACTION_EDIT, "false", dateOfDeath);
 
-    assertThat(html).containsPattern(DECEASED_ROW + "No");
-    assertThat(html).doesNotContain("Date of death");
+    assertThat(html).doesNotContain(">Deceased<").doesNotContain("Date of death");
+  }
+
+  @Test
+  @DisplayName("Client with no deceased flag loaded shows neither deceased row")
+  void noDeceasedFlagLoaded() throws Exception {
+    final String html = render(ACTION_EDIT, null, null);
+
+    assertThat(html).doesNotContain(">Deceased<").doesNotContain("Date of death");
   }
 
   @Test
