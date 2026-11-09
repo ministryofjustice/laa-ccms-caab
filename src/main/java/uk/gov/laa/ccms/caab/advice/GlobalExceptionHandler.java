@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import uk.gov.laa.ccms.caab.client.InvoiceAssessmentReadException;
 import uk.gov.laa.ccms.caab.constants.SessionConstants;
 
 /**
@@ -28,7 +29,13 @@ public class GlobalExceptionHandler {
    */
   @ExceptionHandler(Exception.class)
   public String handleException(Model model, HttpSession session, Exception exception) {
-    log.error("Exception caught by GlobalExceptionHandler", exception);
+    if (exception instanceof InvoiceAssessmentReadException invoiceError) {
+      log.error(
+          "Exception caught by GlobalExceptionHandler: retained invoice read failed (HTTP {})",
+          invoiceError.getHttpStatus());
+    } else {
+      log.error("Exception caught by GlobalExceptionHandler", exception);
+    }
     model.addAttribute(
         SessionConstants.USER_DETAILS, session.getAttribute(SessionConstants.USER_DETAILS));
     model.addAttribute("error", GENERIC_ERROR_MESSAGE);

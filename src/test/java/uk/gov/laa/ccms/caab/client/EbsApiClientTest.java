@@ -1,14 +1,19 @@
 package uk.gov.laa.ccms.caab.client;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.time.Duration;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -16,17 +21,31 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferLimitException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.ui.ExtendedModelMap;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
@@ -79,6 +98,205 @@ public class EbsApiClientTest {
   @InjectMocks private EbsApiClient ebsApiClient;
 
   ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor = ArgumentCaptor.forClass(Function.class);
+
+  @Nested
+  @ExtendWith(OutputCaptureExtension.class)
+  class SelectedInvoiceAssessment {
+    @ParameterizedTest
+    @CsvSource({"read", "limit", "unexpected"})
+    void preservesSuccessfulResponseBodyFailures(final String failureType) {
+      final Throwable failure =
+          switch (failureType) {
+            case "read" -> new IOException("Response body interrupted");
+            case "limit" -> new DataBufferLimitException("Response too large");
+            default -> new IllegalStateException("Unexpected failure");
+          };
+      final EbsApiClient client =
+          new EbsApiClient(
+              WebClient.builder()
+                  .exchangeFunction(
+                      request ->
+                          Mono.just(
+                              ClientResponse.create(HttpStatus.OK)
+                                  .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                                  .body(Flux.error(failure))
+                                  .build()))
+                  .build(),
+              new EbsApiClientErrorHandler());
+
+      StepVerifier.create(client.getInvoiceAssessment("300000123", 555L))
+          .expectErrorMatches(
+              error ->
+                  error instanceof EbsApiClientException apiError
+                      && apiError.getHttpStatus() == null
+                      && apiError.getCause() == failure)
+          .verify();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"401", "403"})
+    void stalledAuthorizationBodyIsCancelledWithoutDelayingTheError(final int code) {
+      final AtomicBoolean cancelled = new AtomicBoolean();
+      final EbsApiClient client =
+          new EbsApiClient(
+              WebClient.builder()
+                  .exchangeFunction(
+                      request ->
+                          Mono.just(
+                              ClientResponse.create(HttpStatus.valueOf(code))
+                                  .body(
+                                      Flux.<DataBuffer>never()
+                                          .doOnCancel(() -> cancelled.set(true)))
+                                  .build()))
+                  .build(),
+              new EbsApiClientErrorHandler());
+
+      StepVerifier.withVirtualTime(() -> client.getInvoiceAssessment("300000123", 555L))
+          .expectErrorMatches(
+              error ->
+                  error instanceof EbsApiClientException apiError
+                      && apiError.hasHttpStatus(HttpStatus.valueOf(code)))
+          .verify(Duration.ofSeconds(2));
+      assertTrue(cancelled.get());
+    }
+
+    private EbsApiClient client(final HttpStatus status, final String body) {
+      return new EbsApiClient(
+          WebClient.builder()
+              .baseUrl("http://data.example")
+              .exchangeFunction(
+                  request -> {
+                    assertEquals(
+                        "/cases/300000123/invoices/555/assessment", request.url().getPath());
+                    return Mono.just(
+                        ClientResponse.create(status)
+                            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                            .body(body)
+                            .build());
+                  })
+              .build(),
+          new EbsApiClientErrorHandler());
+    }
+
+    @Test
+    void decodesFullRawValuesAndDistinctInstancesWithoutTruncation() {
+      final String extended = "Retained long description ".repeat(250);
+      final var response =
+          client(
+                  HttpStatus.OK,
+                  """
+          {"caseReference":"300000123","billingIncidentId":555,"assessmentId":501,
+           "billingProviderId":"20","instances":[
+             {"id":1,"entityName":"GLOBAL","label":"repeated","attributes":[
+               {"id":10,"name":"BILL_DESCRIPTION","responseType":"text",
+                "responseValue":"Stored value","responseText":"Text fallback",
+                "extendedValue":"%s","userEntered":false}]},
+             {"id":2,"entityName":null,"label":"repeated","attributes":[
+               {"id":11,"name":null,"responseType":null,"responseValue":null,
+                "responseText":"Text only","extendedValue":"Extended fallback","userEntered":null}]}
+           ]}
+          """
+                      .formatted(extended))
+              .getInvoiceAssessment("300000123", 555L)
+              .block();
+      assertThat(response.getCaseReference()).isEqualTo("300000123");
+      assertThat(response.getBillingIncidentId()).isEqualTo(555L);
+      assertThat(response.getAssessmentId()).isEqualTo(501L);
+      assertThat(response.getBillingProviderId().orElse(null)).isEqualTo("20");
+      assertThat(response.getInstances()).extracting(i -> i.getId()).containsExactly(1L, 2L);
+      assertThat(response.getInstances())
+          .allSatisfy(i -> assertThat(i.getLabel().orElse(null)).isEqualTo("repeated"));
+      final var raw = response.getInstances().getFirst().getAttributes().getFirst();
+      assertThat(raw.getId()).isEqualTo(10L);
+      assertThat(raw.getName().orElse(null)).isEqualTo("BILL_DESCRIPTION");
+      assertThat(raw.getResponseType().orElse(null)).isEqualTo("text");
+      assertThat(raw.getResponseValue().orElse(null)).isEqualTo("Stored value");
+      assertThat(raw.getResponseText().orElse(null)).isEqualTo("Text fallback");
+      assertThat(raw.getExtendedValue().orElse(null)).isEqualTo(extended);
+      assertThat(raw.getUserEntered().orElse(null)).isFalse();
+      final var nullable = response.getInstances().get(1);
+      assertThat(nullable.getEntityName().orElse(null)).isNull();
+      final var attribute = nullable.getAttributes().getFirst();
+      assertThat(attribute.getId()).isEqualTo(11L);
+      assertThat(attribute.getName().orElse(null)).isNull();
+      assertThat(attribute.getResponseType().orElse(null)).isNull();
+      assertThat(attribute.getResponseValue().orElse(null)).isNull();
+      assertThat(attribute.getResponseText().orElse(null)).isEqualTo("Text only");
+      assertThat(attribute.getExtendedValue().orElse(null)).isEqualTo("Extended fallback");
+      assertThat(attribute.getUserEntered().orElse(null)).isNull();
+    }
+
+    @Test
+    void notFoundIsEmpty() {
+      StepVerifier.create(client(HttpStatus.NOT_FOUND, "").getInvoiceAssessment("300000123", 555L))
+          .verifyComplete();
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {400, 401, 403, 500, 503})
+    void preservesHttpErrorClassification(final int code) {
+      StepVerifier.create(
+              client(HttpStatus.valueOf(code), "not an assessment")
+                  .getInvoiceAssessment("300000123", 555L))
+          .expectErrorMatches(
+              error ->
+                  error instanceof EbsApiClientException apiError
+                      && apiError.hasHttpStatus(HttpStatus.valueOf(code)))
+          .verify();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"{broken", "{\"assessmentId\":\"retained-field-value\"}"})
+    void malformedJsonIsAnErrorWithoutLoggingRetainedData(
+        final String body, final CapturedOutput output) {
+      StepVerifier.create(client(HttpStatus.OK, body).getInvoiceAssessment("300000123", 555L))
+          .expectErrorSatisfies(
+              error ->
+                  logSanitizedError(error, org.springframework.core.codec.DecodingException.class))
+          .verify();
+      assertThat(output)
+          .contains("Exception caught by GlobalExceptionHandler")
+          .doesNotContain("retained-field-value", "300000123");
+    }
+
+    @Test
+    void preservesTransportFailuresWithoutLoggingRetainedData(final CapturedOutput output) {
+      final WebClientRequestException failure =
+          new WebClientRequestException(
+              new IOException("retained-field-value"),
+              HttpMethod.GET,
+              URI.create("http://data.example/cases/300000123/invoices/555/assessment"),
+              HttpHeaders.EMPTY);
+      final EbsApiClient client =
+          new EbsApiClient(
+              WebClient.builder()
+                  .baseUrl("http://data.example")
+                  .exchangeFunction(request -> Mono.error(failure))
+                  .build(),
+              new EbsApiClientErrorHandler());
+      StepVerifier.create(client.getInvoiceAssessment("300000123", 555L))
+          .expectErrorSatisfies(error -> logSanitizedError(error, WebClientRequestException.class))
+          .verify();
+      assertThat(output)
+          .contains("Exception caught by GlobalExceptionHandler")
+          .doesNotContain("retained-field-value", "300000123");
+    }
+
+    private void logSanitizedError(
+        final Throwable error, final Class<? extends Throwable> causeType) {
+      assertThat(error)
+          .isInstanceOfSatisfying(
+              EbsApiClientException.class,
+              failure -> {
+                assertThat(failure)
+                    .hasMessage("Failed to retrieve retained invoice assessment")
+                    .isInstanceOf(InvoiceAssessmentReadException.class)
+                    .hasCauseInstanceOf(causeType);
+                new GlobalExceptionHandler()
+                    .handleException(new ExtendedModelMap(), new MockHttpSession(), failure);
+              });
+    }
+  }
 
   @Nested
   @DisplayName("getUser() Tests")
