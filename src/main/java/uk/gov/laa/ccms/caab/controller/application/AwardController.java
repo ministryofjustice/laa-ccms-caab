@@ -4,17 +4,31 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_COS
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_FINANCIAL;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_LAND;
 import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTHER_ASSET;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.ADDED_LIABLE_PARTY_OPPONENT_IDS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.AWARD_TYPE_FORM;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CREATED_LIABLE_PARTY_EBS_IDS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.PARTY_LIST_ROW_IDENTITIES;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import static uk.gov.laa.ccms.caab.constants.ValidationPatternConstants.CURRENCY_PATTERN;
 
+import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -55,17 +69,22 @@ import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.LandAwardRequest;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
+import uk.gov.laa.ccms.caab.model.sections.LiablePartyDisplay;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.util.DateUtils;
+import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /** Controller responsible for handling award-related requests. */
@@ -696,6 +715,7 @@ public class AwardController {
             user.getProvider().getId().intValue(),
             awardPath,
             awardId);
+
     model.addAttribute("award", award);
     model.addAttribute("awardPath", awardPath);
     model.addAttribute("awardId", awardId);
@@ -708,6 +728,554 @@ public class AwardController {
                 + "/"
                 + awardId);
     return "application/liable-parties";
+  }
+
+  /** Displays the party list used to select existing parties to add to the award. */
+  @GetMapping(
+      "/case/outcome-and-awards/{awardPath:cost-award|financial-award|land|asset}/{awardId}/liable-parties/add")
+  public String displayPartyList(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(value = APPLICATION, required = false)
+          final ApplicationDetail currentApplication,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @PathVariable final String awardPath,
+      @PathVariable final Integer awardId,
+      final HttpSession session,
+      final Model model) {
+    final ApplicationDetail activeApplication =
+        resolveActiveApplication(ebsCase, currentApplication);
+    final var titleLookups =
+        safeLookupValues(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE));
+    final var organisationRelationships =
+        safeRelationshipValues(lookupService.getOrganisationToCaseRelationships());
+    final var personRelationships =
+        safeRelationshipValues(lookupService.getPersonToCaseRelationships());
+    final Set<String> alreadyAddedEbsIds = new HashSet<>();
+    final Set<Integer> alreadyAddedOpponentIds = new HashSet<>();
+    final Set<String> alreadyAddedPersonalKeys = new HashSet<>();
+    collectAlreadyAddedIdentities(
+        ebsCase,
+        user,
+        awardPath,
+        awardId,
+        session,
+        alreadyAddedOpponentIds,
+        alreadyAddedEbsIds,
+        alreadyAddedPersonalKeys);
+
+    final List<CandidateOpponentRow> rows =
+        buildCandidateOpponentRows(
+            activeApplication,
+            alreadyAddedOpponentIds,
+            alreadyAddedEbsIds,
+            alreadyAddedPersonalKeys);
+    recordPartyListRowIdentities(session, ebsCase, awardPath, awardId, rows);
+
+    final List<LiablePartyDisplay> parties =
+        rows.stream()
+            .map(
+                row ->
+                    toPartyDisplay(
+                        row.opponent(),
+                        row.rowId(),
+                        titleLookups,
+                        organisationRelationships,
+                        personRelationships,
+                        row.alreadyAdded()))
+            .toList();
+
+    final Integer firstSelectablePartyId =
+        parties.stream()
+            .filter(party -> !party.alreadyAdded())
+            .map(LiablePartyDisplay::id)
+            .findFirst()
+            .orElse(null);
+
+    model.addAttribute("awardPath", awardPath);
+    model.addAttribute("awardId", awardId);
+    model.addAttribute("parties", parties);
+    model.addAttribute("firstSelectablePartyId", firstSelectablePartyId);
+    return "application/party-list-screen";
+  }
+
+  /** Persists the selected parties against the award before redirecting to the summary. */
+  @PostMapping(
+      "/case/outcome-and-awards/{awardPath:cost-award|financial-award|land|asset}/{awardId}/liable-parties/add")
+  public String addSelectedParties(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(value = APPLICATION, required = false)
+          final ApplicationDetail currentApplication,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @PathVariable final String awardPath,
+      @PathVariable final Integer awardId,
+      @RequestParam(value = "selectedPartyIds", required = false)
+          final List<String> selectedPartyIds,
+      final HttpSession session,
+      final Model model) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn(
+          "Rejecting liable party selection for read-only case {}",
+          ebsCase.getCaseReferenceNumber());
+      return "redirect:/case/outcome-and-awards";
+    }
+
+    final List<Integer> selectedRowIds = normalizeSelectedPartyIds(selectedPartyIds);
+    final ApplicationDetail activeApplication =
+        resolveActiveApplication(ebsCase, currentApplication);
+    final Set<String> alreadyAddedEbsIds = new HashSet<>();
+    final Set<Integer> alreadyAddedOpponentIds = new HashSet<>();
+    final Set<String> alreadyAddedPersonalKeys = new HashSet<>();
+    collectAlreadyAddedIdentities(
+        ebsCase,
+        user,
+        awardPath,
+        awardId,
+        session,
+        alreadyAddedOpponentIds,
+        alreadyAddedEbsIds,
+        alreadyAddedPersonalKeys);
+
+    final List<CandidateOpponentRow> selectedRows =
+        buildCandidateOpponentRows(
+                activeApplication,
+                alreadyAddedOpponentIds,
+                alreadyAddedEbsIds,
+                alreadyAddedPersonalKeys)
+            .stream()
+            .filter(row -> selectedRowIds.contains(row.rowId()))
+            .filter(row -> !row.alreadyAdded())
+            .filter(row -> rowIdentityIsStable(session, ebsCase, awardPath, awardId, row))
+            .toList();
+
+    if (selectedRowIds.isEmpty()) {
+      model.addAttribute("partyListError", true);
+      displayPartyList(ebsCase, currentApplication, user, awardPath, awardId, session, model);
+      return "application/party-list-screen";
+    }
+
+    if (selectedRows.size() != selectedRowIds.size()) {
+      model.addAttribute("partyListError", true);
+      model.addAttribute("partyListUnresolvedError", true);
+      displayPartyList(ebsCase, currentApplication, user, awardPath, awardId, session, model);
+      return "application/party-list-screen";
+    }
+
+    final List<Integer> existingOpponentIds =
+        selectedRows.stream()
+            .map(CandidateOpponentRow::existingOpponentId)
+            .filter(Objects::nonNull)
+            .distinct()
+            .toList();
+    final List<OpponentDetail> newOpponents =
+        selectedRows.stream()
+            .filter(row -> row.existingOpponentId() == null)
+            .map(CandidateOpponentRow::opponent)
+            .toList();
+
+    caseOutcomeService.addLiableParties(
+        ebsCase.getCaseReferenceNumber(),
+        user.getProvider().getId().intValue(),
+        awardPath,
+        awardId,
+        existingOpponentIds,
+        newOpponents,
+        user.getLoginId(),
+        // The award's own liable parties are re-fetched fresh from the backend on every page
+        // load, but that read can lag behind the write that just linked the opponent. Recording
+        // the id here as soon as the link succeeds keeps the checkbox hidden for the rest of this
+        // session even if an immediate subsequent page load still reflects the pre-link state.
+        opponentId ->
+            recordAddedLiablePartyOpponentIds(
+                session, ebsCase, awardPath, awardId, List.of(opponentId)),
+        // The backend's create-and-link endpoint assigns a synthetic ebsId to non-shared new
+        // opponents rather than preserving their real one (see
+        // AwardsService#createAwardLiableParty), so the real ebsId would no longer be recognised
+        // as already-added on a later page load. Remembering it here, against the original EBS
+        // opponent's real ebsId, keeps the checkbox hidden for the rest of this session even
+        // though the backend itself cannot confirm the match. Recording each creation as soon as
+        // it succeeds - rather than only after the whole batch completes - means an earlier
+        // opponent in this same selection is still correctly recognised as already-added even if
+        // creating a later one in the batch then fails.
+        created ->
+            recordCreatedLiableParties(session, ebsCase, awardPath, awardId, List.of(created)));
+
+    return "redirect:/case/outcome-and-awards/" + awardPath + "/" + awardId + "/liable-parties";
+  }
+
+  /**
+   * Resolves the application whose opponents should be used to build the party-selection list. The
+   * in-session "current application" is only used when it genuinely relates to the case being
+   * viewed; otherwise it is a stale application left over from a previous screen, and falling back
+   * to it would expose (or try to resolve selections against) the wrong person's opponents.
+   */
+  private ApplicationDetail resolveActiveApplication(
+      final ApplicationDetail ebsCase, final ApplicationDetail currentApplication) {
+    return currentApplication != null
+            && Objects.equals(
+                currentApplication.getCaseReferenceNumber(), ebsCase.getCaseReferenceNumber())
+        ? currentApplication
+        : ebsCase;
+  }
+
+  /**
+   * Looks up the opponents already linked as a liable party on this specific award, and collects
+   * both their real CAAB opponent ids and their EBS ids into the supplied sets. Legacy opponents
+   * have no real CAAB id until they are first linked to an award, so EBS id is the only reliable,
+   * non-positional way to recognise that an EBS-sourced candidate on the party list has already
+   * been added: matching by list position (as the case outcome's flat, cross-award opponentIds list
+   * previously did) can silently pair the wrong person once opponents are added or removed. Once an
+   * opponent has been added, legacy removes its checkbox from the party list (while still showing
+   * the row) so it cannot be selected again; this mirrors that behaviour by marking those rows as
+   * already-added so the checkbox is omitted, and by rejecting them server-side if a stale
+   * selection is resubmitted anyway.
+   *
+   * <p>The ebsIds recorded in-session for opponents created via the party list this session are
+   * also merged in, since the backend's create-and-link endpoint does not preserve a non-shared
+   * opponent's real ebsId and so cannot report them back as already-added itself. Likewise, the
+   * real CAAB opponent ids recorded in-session for opponents linked via the party list this session
+   * are merged in too, so an opponent linked moments ago is still recognised as already-added even
+   * if the backend's own read of the award's liable parties has not yet caught up with that write.
+   */
+  private void collectAlreadyAddedIdentities(
+      final ApplicationDetail ebsCase,
+      final UserDetail user,
+      final String awardPath,
+      final Integer awardId,
+      final HttpSession session,
+      final Set<Integer> alreadyAddedOpponentIds,
+      final Set<String> alreadyAddedEbsIds,
+      final Set<String> alreadyAddedPersonalKeys) {
+    for (final OpponentDetail linked :
+        caseOutcomeService.getAwardLiableParties(
+            ebsCase.getCaseReferenceNumber(),
+            user.getProvider().getId().intValue(),
+            awardPath,
+            awardId)) {
+      if (linked.getId() != null) {
+        alreadyAddedOpponentIds.add(linked.getId());
+      }
+      if (StringUtils.hasText(linked.getEbsId())) {
+        alreadyAddedEbsIds.add(linked.getEbsId());
+      }
+      final String personalKey = personalIdentityKey(linked);
+      if (personalKey != null) {
+        alreadyAddedPersonalKeys.add(personalKey);
+      }
+    }
+    final String key = awardSessionKey(ebsCase, awardPath, awardId);
+    alreadyAddedEbsIds.addAll(readCreatedLiablePartyEbsIds(session, key));
+    alreadyAddedOpponentIds.addAll(readAddedLiablePartyOpponentIds(session, key));
+  }
+
+  /**
+   * Builds a durable identity key from personal/organisation details that do not change when an
+   * opponent is created and linked to an award, used as a last-resort match between a case-level
+   * candidate opponent and an already-linked opponent when neither a real CAAB id nor a matching
+   * EBS id is available. This is necessary because the backend's create-and-link endpoint assigns a
+   * brand new, synthetic EBS id to a non-shared opponent rather than preserving the original case
+   * opponent's real one (see {@link #collectAlreadyAddedIdentities}), so once that opponent has
+   * been linked, its real EBS id can never again be matched back to it on a later page load -
+   * including in a new session, where there is no in-session record of the link either. Without
+   * this fallback, such an opponent's checkbox would remain visible indefinitely and it could be
+   * linked to the same award a second time. Returns {@code null} if there is not enough identifying
+   * detail on the opponent to build a reasonably distinguishing key.
+   */
+  private String personalIdentityKey(final OpponentDetail opponent) {
+    if (opponent == null || opponent.getType() == null) {
+      return null;
+    }
+    final String relationship =
+        Optional.ofNullable(opponent.getRelationshipToCase()).orElse("").toUpperCase(Locale.ROOT);
+    if (OpponentUtil.isOrganisation(opponent)) {
+      if (!StringUtils.hasText(opponent.getOrganisationName())) {
+        return null;
+      }
+      return String.join(
+          "|", "ORG", opponent.getOrganisationName().trim().toUpperCase(Locale.ROOT), relationship);
+    }
+    if (!StringUtils.hasText(opponent.getFirstName())
+        || !StringUtils.hasText(opponent.getSurname())) {
+      return null;
+    }
+    final String dateOfBirth =
+        opponent.getDateOfBirth() == null ? "" : opponent.getDateOfBirth().toInstant().toString();
+    return String.join(
+        "|",
+        "IND",
+        opponent.getFirstName().trim().toUpperCase(Locale.ROOT),
+        opponent.getSurname().trim().toUpperCase(Locale.ROOT),
+        dateOfBirth,
+        relationship);
+  }
+
+  /** Builds the session map key scoping per-award tracking to one case and award. */
+  private String awardSessionKey(
+      final ApplicationDetail ebsCase, final String awardPath, final Integer awardId) {
+    return ebsCase.getCaseReferenceNumber() + ":" + awardPath + ":" + awardId;
+  }
+
+  @SuppressWarnings("unchecked")
+  private Set<String> readCreatedLiablePartyEbsIds(final HttpSession session, final String key) {
+    final Object stored = session.getAttribute(CREATED_LIABLE_PARTY_EBS_IDS);
+    if (!(stored instanceof Map<?, ?> storedMap)) {
+      return Set.of();
+    }
+    final Object ebsIds = ((Map<String, Set<String>>) storedMap).get(key);
+    return ebsIds instanceof Set<?> set ? (Set<String>) set : Set.of();
+  }
+
+  @SuppressWarnings("unchecked")
+  private Set<Integer> readAddedLiablePartyOpponentIds(
+      final HttpSession session, final String key) {
+    final Object stored = session.getAttribute(ADDED_LIABLE_PARTY_OPPONENT_IDS);
+    if (!(stored instanceof Map<?, ?> storedMap)) {
+      return Set.of();
+    }
+    final Object opponentIds = ((Map<String, Set<Integer>>) storedMap).get(key);
+    return opponentIds instanceof Set<?> set ? (Set<Integer>) set : Set.of();
+  }
+
+  @SuppressWarnings("unchecked")
+  private void recordAddedLiablePartyOpponentIds(
+      final HttpSession session,
+      final ApplicationDetail ebsCase,
+      final String awardPath,
+      final Integer awardId,
+      final List<Integer> opponentIds) {
+    if (opponentIds.isEmpty()) {
+      return;
+    }
+    final Object stored = session.getAttribute(ADDED_LIABLE_PARTY_OPPONENT_IDS);
+    final Map<String, Set<Integer>> addedByAward =
+        stored instanceof Map<?, ?> existing
+            ? (Map<String, Set<Integer>>) existing
+            : new HashMap<>();
+    final String key = awardSessionKey(ebsCase, awardPath, awardId);
+    addedByAward.computeIfAbsent(key, unused -> new HashSet<>()).addAll(opponentIds);
+    session.setAttribute(ADDED_LIABLE_PARTY_OPPONENT_IDS, addedByAward);
+  }
+
+  @SuppressWarnings("unchecked")
+  private void recordCreatedLiableParties(
+      final HttpSession session,
+      final ApplicationDetail ebsCase,
+      final String awardPath,
+      final Integer awardId,
+      final List<OpponentDetail> newOpponents) {
+    final List<String> newEbsIds =
+        newOpponents.stream().map(OpponentDetail::getEbsId).filter(StringUtils::hasText).toList();
+    if (newEbsIds.isEmpty()) {
+      return;
+    }
+    final Object stored = session.getAttribute(CREATED_LIABLE_PARTY_EBS_IDS);
+    final Map<String, Set<String>> createdByAward =
+        stored instanceof Map<?, ?> existing
+            ? (Map<String, Set<String>>) existing
+            : new HashMap<>();
+    final String key = awardSessionKey(ebsCase, awardPath, awardId);
+    createdByAward.computeIfAbsent(key, unused -> new HashSet<>()).addAll(newEbsIds);
+    session.setAttribute(CREATED_LIABLE_PARTY_EBS_IDS, createdByAward);
+  }
+
+  /**
+   * Records, for this award, which stable opponent identity each rendered row id corresponds to, so
+   * a later submission can be checked against the same identity rather than trusting the row id
+   * alone (see {@link #rowIdentityIsStable}).
+   */
+  private void recordPartyListRowIdentities(
+      final HttpSession session,
+      final ApplicationDetail ebsCase,
+      final String awardPath,
+      final Integer awardId,
+      final List<CandidateOpponentRow> rows) {
+    final Map<Integer, String> identitiesByRowId = new HashMap<>();
+    for (final CandidateOpponentRow row : rows) {
+      identitiesByRowId.put(row.rowId(), rowIdentityKey(row));
+    }
+    final Map<String, Map<Integer, String>> rowIdentitiesByAward =
+        readPartyListRowIdentities(session);
+    rowIdentitiesByAward.put(awardSessionKey(ebsCase, awardPath, awardId), identitiesByRowId);
+    session.setAttribute(PARTY_LIST_ROW_IDENTITIES, rowIdentitiesByAward);
+  }
+
+  /**
+   * Returns {@code true} only if this row id was last rendered against the very same opponent
+   * identity it currently resolves to. Row ids for opponents without a real CAAB id are only a
+   * position in the opponents list, so if that list has changed since the party list was last
+   * rendered for this award (for example, edited concurrently in another tab), the same row id
+   * submitted here could now resolve to a different opponent; rejecting it rather than trusting the
+   * position prevents linking the wrong person.
+   */
+  private boolean rowIdentityIsStable(
+      final HttpSession session,
+      final ApplicationDetail ebsCase,
+      final String awardPath,
+      final Integer awardId,
+      final CandidateOpponentRow row) {
+    final Map<Integer, String> identitiesByRowId =
+        readPartyListRowIdentities(session).get(awardSessionKey(ebsCase, awardPath, awardId));
+    return identitiesByRowId != null
+        && rowIdentityKey(row).equals(identitiesByRowId.get(row.rowId()));
+  }
+
+  /** Builds the stable identity key a party list row id is expected to still resolve to. */
+  private String rowIdentityKey(final CandidateOpponentRow row) {
+    return row.existingOpponentId() != null
+        ? "ID:" + row.existingOpponentId()
+        : "EBS:" + row.opponent().getEbsId();
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String, Map<Integer, String>> readPartyListRowIdentities(final HttpSession session) {
+    final Object stored = session.getAttribute(PARTY_LIST_ROW_IDENTITIES);
+    return stored instanceof Map<?, ?> existing
+        ? (Map<String, Map<Integer, String>>) existing
+        : new HashMap<>();
+  }
+
+  /**
+   * Builds the ordered, filtered list of opponents eligible for selection on the party list screen,
+   * pairing each with a stable row identifier. Opponents with a real CAAB id (for example, those
+   * added through the application's own opponent screens, or imported opponents already linked to
+   * another award) use that id directly as their row id and are linked by id when selected.
+   * Opponents without one (legacy case opponents never linked to any award) are assigned a
+   * synthetic, negative row id derived from their position in this request's own opponents list -
+   * safe because both the GET (render) and POST (submit) requests independently rebuild this same
+   * list, in the same order, from the same session data - and are created and linked by their full
+   * details when selected, since there is no existing id to link against. "Already added" is
+   * determined by real CAAB id when available, or by EBS id otherwise, never by position.
+   */
+  private List<CandidateOpponentRow> buildCandidateOpponentRows(
+      final ApplicationDetail activeApplication,
+      final Set<Integer> alreadyAddedOpponentIds,
+      final Set<String> alreadyAddedEbsIds,
+      final Set<String> alreadyAddedPersonalKeys) {
+    final List<OpponentDetail> opponents =
+        Optional.ofNullable(activeApplication.getOpponents()).orElse(List.of());
+    final List<CandidateOpponentRow> rows = new ArrayList<>();
+    for (int i = 0; i < opponents.size(); i++) {
+      final OpponentDetail opponent = opponents.get(i);
+      if (opponent == null || opponent.getType() == null || !isValidPartyListOpponent(opponent)) {
+        continue;
+      }
+      final Integer existingOpponentId = opponent.getId();
+      final String ebsId = opponent.getEbsId();
+      if (existingOpponentId == null && !StringUtils.hasText(ebsId)) {
+        // No reliable identity at all: cannot be linked, nor recognised as already added.
+        continue;
+      }
+      final Integer rowId = existingOpponentId != null ? existingOpponentId : -(i + 1);
+      // Check every identity rather than picking one based on which id happens to be present:
+      // a same-case amendment can assign a real CAAB id to an opponent whose EBS id was already
+      // recorded as added, and only matching on the id that happens to be set would let it be
+      // selected and linked a second time. The personal-details key is checked last, as a
+      // fallback for opponents whose real EBS id can never again be matched once linked (see
+      // {@link #personalIdentityKey}).
+      final String personalKey = personalIdentityKey(opponent);
+      final boolean alreadyAdded =
+          (existingOpponentId != null && alreadyAddedOpponentIds.contains(existingOpponentId))
+              || (StringUtils.hasText(ebsId) && alreadyAddedEbsIds.contains(ebsId))
+              || (personalKey != null && alreadyAddedPersonalKeys.contains(personalKey));
+      rows.add(new CandidateOpponentRow(rowId, opponent, existingOpponentId, alreadyAdded));
+    }
+    return rows;
+  }
+
+  /**
+   * Pairs an opponent with the stable row identifier used to track it across the selection flow,
+   * the real CAAB opponent id to link directly when already known (or {@code null} when the
+   * opponent must be created first), and whether it is already linked to this award.
+   */
+  private record CandidateOpponentRow(
+      Integer rowId, OpponentDetail opponent, Integer existingOpponentId, boolean alreadyAdded) {}
+
+  private List<Integer> normalizeSelectedPartyIds(final List<String> selectedPartyIds) {
+    if (selectedPartyIds == null || selectedPartyIds.isEmpty()) {
+      return List.of();
+    }
+    return selectedPartyIds.stream()
+        .filter(StringUtils::hasText)
+        .map(String::trim)
+        .filter(StringUtils::hasText)
+        .map(Integer::valueOf)
+        .distinct()
+        .toList();
+  }
+
+  private List<CommonLookupValueDetail> safeLookupValues(
+      final reactor.core.publisher.Mono<CommonLookupDetail> lookupMono) {
+    return lookupMono == null
+        ? List.of()
+        : lookupMono.blockOptional().map(CommonLookupDetail::getContent).orElse(List.of());
+  }
+
+  private List<RelationshipToCaseLookupValueDetail> safeRelationshipValues(
+      final reactor.core.publisher.Mono<RelationshipToCaseLookupDetail> lookupMono) {
+    return lookupMono == null
+        ? List.of()
+        : lookupMono
+            .blockOptional()
+            .map(RelationshipToCaseLookupDetail::getContent)
+            .orElse(List.of());
+  }
+
+  private LiablePartyDisplay toPartyDisplay(
+      final OpponentDetail opponent,
+      final Integer rowId,
+      final List<CommonLookupValueDetail> titleLookups,
+      final List<RelationshipToCaseLookupValueDetail> organisationRelationships,
+      final List<RelationshipToCaseLookupValueDetail> personRelationships,
+      final boolean alreadyAdded) {
+    final String address =
+        opponent.getAddress() == null
+            ? ""
+            : Stream.of(
+                    opponent.getAddress().getAddressLine1(), opponent.getAddress().getPostcode())
+                .filter(StringUtils::hasText)
+                .collect(Collectors.joining(" "));
+    return new LiablePartyDisplay(
+        rowId,
+        opponent.getId(),
+        OpponentUtil.getPartyName(opponent, titleLookups),
+        opponent.getType(),
+        OpponentUtil.getRelationshipToCase(opponent, organisationRelationships, personRelationships)
+            .getDescription(),
+        address,
+        isAwardPartyEditable(opponent),
+        OpponentUtil.isOrganisation(opponent),
+        alreadyAdded);
+  }
+
+  private boolean isAwardPartyEditable(final OpponentDetail opponent) {
+    final String ebsId = opponent.getEbsId();
+    return ebsId != null && ebsId.toUpperCase(java.util.Locale.ROOT).startsWith("AWARD");
+  }
+
+  private boolean isValidPartyListOpponent(final OpponentDetail opponent) {
+    if (opponent == null) {
+      return false;
+    }
+
+    if (OpponentUtil.isOrganisation(opponent)) {
+      // Shared organisations are valid without an organisation type - see
+      // OrganisationOpponentValidator, which only requires it for non-shared organisations.
+      final boolean organisationTypeRequired = !Boolean.TRUE.equals(opponent.getSharedInd());
+      return StringUtils.hasText(opponent.getOrganisationName())
+          && (!organisationTypeRequired || StringUtils.hasText(opponent.getOrganisationType()))
+          && StringUtils.hasText(opponent.getRelationshipToCase())
+          && StringUtils.hasText(opponent.getRelationshipToClient());
+    }
+
+    if (OpponentUtil.INDIVIDUAL_OPPONENT.equalsIgnoreCase(opponent.getType())
+        || "INDIVIDUAL".equalsIgnoreCase(opponent.getType())) {
+      return StringUtils.hasText(opponent.getTitle())
+          && StringUtils.hasText(opponent.getFirstName())
+          && StringUtils.hasText(opponent.getSurname())
+          && StringUtils.hasText(opponent.getRelationshipToCase())
+          && StringUtils.hasText(opponent.getRelationshipToClient());
+    }
+
+    return false;
   }
 
   private TimeRecoveryAward loadTimeRecoveryAward(

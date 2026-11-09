@@ -38,6 +38,7 @@ import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.LandAwardRequest;
+import uk.gov.laa.ccms.caab.model.LiablePartyDetail;
 import uk.gov.laa.ccms.caab.model.LinkedCaseDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
@@ -70,6 +71,7 @@ public class CaabApiClient {
   public static final String RESOURCE_TYPE_SCOPE_LIMITATIONS = "scope limitations";
   public static final String RESOURCE_TYPE_CLIENT = "client";
   public static final String RESOURCE_TYPE_OPPONENTS = "opponents";
+  public static final String RESOURCE_TYPE_LIABLE_PARTY = "liable party";
   public static final String RESOURCE_TYPE_CASE_OUTCOME = "case outcome";
   public static final String RESOURCE_TYPE_COST_AWARD = "cost award";
   public static final String RESOURCE_TYPE_FINANCIAL_AWARD = "financial award";
@@ -828,9 +830,80 @@ public class CaabApiClient {
         .retrieve()
         .bodyToMono(new ParameterizedTypeReference<List<OpponentDetail>>() {})
         .onErrorResume(
+            WebClientResponseException.NotFound.class,
+            // Some award records do not yet expose a liable-parties endpoint; treat this as an
+            // empty collection rather than a fatal API error.
+            e -> Mono.just(List.of()))
+        .onErrorResume(
             e ->
                 caabApiClientErrorHandler.handleApiRetrieveError(
                     e, RESOURCE_TYPE_OPPONENTS, "award id", String.valueOf(awardId)));
+  }
+
+  /**
+   * Links an existing opponent to an award as a liable or interested party, without creating a new
+   * opponent. If the opponent is already linked to the award, the CAAB API returns the existing
+   * link rather than creating a duplicate.
+   *
+   * @param caseOutcomeId the owning case outcome id
+   * @param awardType the award type path segment (COST, DAMAGE, LAND, ASSET)
+   * @param awardId the award id
+   * @param opponentId the existing opponent to link to the award
+   * @param loginId the ID associated with the user login
+   * @return the created, or already existing, liable party link
+   */
+  public Mono<LiablePartyDetail> addAwardLiableParty(
+      final Integer caseOutcomeId,
+      final String awardType,
+      final Integer awardId,
+      final Integer opponentId,
+      final String loginId) {
+    return caabApiWebClient
+        .post()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/liable-parties/{opponent-id}",
+            caseOutcomeId,
+            awardType,
+            awardId,
+            opponentId)
+        .header("Caab-User-Login-Id", loginId)
+        .retrieve()
+        .bodyToMono(LiablePartyDetail.class)
+        .onErrorResume(
+            e -> caabApiClientErrorHandler.handleApiCreateError(e, RESOURCE_TYPE_LIABLE_PARTY));
+  }
+
+  /**
+   * Creates a brand new opponent and links it to an award as a liable or interested party in one
+   * atomic step, for case opponents that have no existing CAAB opponent id to link against (for
+   * example, opponents imported from EBS that have never been added to any award before).
+   *
+   * @param caseOutcomeId the owning case outcome id
+   * @param awardType the award type path segment (COST, DAMAGE, LAND, ASSET)
+   * @param awardId the award id
+   * @param opponentDetail the full details of the new opponent to create and link
+   * @param loginId the ID associated with the user login
+   * @return the created liable party link
+   */
+  public Mono<LiablePartyDetail> createAwardLiableParty(
+      final Integer caseOutcomeId,
+      final String awardType,
+      final Integer awardId,
+      final OpponentDetail opponentDetail,
+      final String loginId) {
+    return caabApiWebClient
+        .post()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/liable-parties",
+            caseOutcomeId,
+            awardType,
+            awardId)
+        .header("Caab-User-Login-Id", loginId)
+        .bodyValue(opponentDetail)
+        .retrieve()
+        .bodyToMono(LiablePartyDetail.class)
+        .onErrorResume(
+            e -> caabApiClientErrorHandler.handleApiCreateError(e, RESOURCE_TYPE_LIABLE_PARTY));
   }
 
   /**
@@ -1032,6 +1105,38 @@ public class CaabApiClient {
                     e, RESOURCE_TYPE_FINANCIAL_AWARD, "id", String.valueOf(financialAwardId)));
   }
 
+  /**
+   * Updates a financial award belonging to a case outcome, including its liable party links.
+   *
+   * @param caseOutcomeId the owning case outcome id
+   * @param financialAwardId the financial award id
+   * @param loginId the ID associated with the user login
+   * @param financialAward the replacement financial award values
+   * @return completion signal
+   */
+  public Mono<Void> updateFinancialAward(
+      final Integer caseOutcomeId,
+      final Integer financialAwardId,
+      final String loginId,
+      final FinancialAwardDetail financialAward) {
+    return caabApiWebClient
+        .put()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{financial-award-id}",
+            caseOutcomeId,
+            AWARD_TYPE_FINANCIAL,
+            financialAwardId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(financialAward)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiUpdateError(
+                    e, RESOURCE_TYPE_FINANCIAL_AWARD, "id", String.valueOf(financialAwardId)));
+  }
+
   /** Creates an other asset award for an existing case outcome. */
   public Mono<String> createOtherAssetAward(
       final Integer caseOutcomeId,
@@ -1094,6 +1199,30 @@ public class CaabApiClient {
                     e, RESOURCE_TYPE_OTHER_ASSET_AWARD, "id", String.valueOf(otherAssetAwardId)));
   }
 
+  /** Updates an other asset award belonging to a case outcome, including its liable party links. */
+  public Mono<Void> updateOtherAssetAward(
+      final Integer caseOutcomeId,
+      final Integer otherAssetAwardId,
+      final String loginId,
+      final OtherAssetAwardDetail otherAssetAward) {
+    return caabApiWebClient
+        .put()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{other-asset-award-id}",
+            caseOutcomeId,
+            AWARD_TYPE_OTHER_ASSET,
+            otherAssetAwardId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(otherAssetAward)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiUpdateError(
+                    e, RESOURCE_TYPE_OTHER_ASSET_AWARD, "id", String.valueOf(otherAssetAwardId)));
+  }
+
   /** Creates a land award for an existing case outcome. */
   public Mono<String> createLandAward(
       final Integer caseOutcomeId, final String loginId, final LandAwardRequest landAward) {
@@ -1132,6 +1261,30 @@ public class CaabApiClient {
       final Integer landAwardId,
       final String loginId,
       final LandAwardRequest landAward) {
+    return caabApiWebClient
+        .put()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{land-award-id}",
+            caseOutcomeId,
+            AWARD_TYPE_LAND,
+            landAwardId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(landAward)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiUpdateError(
+                    e, RESOURCE_TYPE_LAND_AWARD, "id", String.valueOf(landAwardId)));
+  }
+
+  /** Updates a land award belonging to a case outcome, including its liable party links. */
+  public Mono<Void> updateLandAward(
+      final Integer caseOutcomeId,
+      final Integer landAwardId,
+      final String loginId,
+      final LandAwardDetail landAward) {
     return caabApiWebClient
         .put()
         .uri(

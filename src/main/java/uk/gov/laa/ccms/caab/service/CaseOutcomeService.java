@@ -7,8 +7,11 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTH
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -291,7 +294,7 @@ public class CaseOutcomeService {
     final CaseOutcomeDetail outcome =
         getCaseOutcome(caseReferenceNumber, providerId)
             .orElseThrow(() -> new CaabApplicationException("Could not find case outcome"));
-    final BaseAwardDetail award = requireAward(outcome, awardTypeForPath(awardPath), awardId);
+    final BaseAwardDetail award = requireAwardByPath(outcome, awardPath, awardId);
     if (award.getLiableParties() == null || award.getLiableParties().isEmpty()) {
       return liablePartiesDisplayMapper.toLiablePartiesDisplay(award, List.of(), null);
     }
@@ -305,6 +308,181 @@ public class CaseOutcomeService {
         .blockOptional()
         .orElseThrow(
             () -> new CaabApplicationException("Failed to retrieve award parties or lookup data"));
+  }
+
+  /**
+   * Loads the raw opponents already linked as liable/interested parties to one award, including
+   * each opponent's {@code ebsId}. Unlike {@link #getLiablePartiesDisplay}, this is not shaped for
+   * display and is intended for identity matching (for example, deciding whether an EBS-sourced
+   * case opponent has already been added to a specific award) rather than rendering.
+   *
+   * @param caseReferenceNumber - the case reference number.
+   * @param providerId - the provider id.
+   * @param awardPath - the award path segment identifying the award type.
+   * @param awardId - the id of the award whose linked opponents should be loaded.
+   * @return the opponents currently linked to the award, or an empty list if none are linked.
+   */
+  public List<OpponentDetail> getAwardLiableParties(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final String awardPath,
+      final Integer awardId) {
+    final CaseOutcomeDetail outcome = requireCaseOutcome(caseReferenceNumber, providerId);
+    final BaseAwardDetail award = requireAwardByPath(outcome, awardPath, awardId);
+    if (award.getLiableParties() == null || award.getLiableParties().isEmpty()) {
+      return List.of();
+    }
+    return caabApiClient
+        .getAwardLiableParties(outcome.getId(), award.getAwardType(), awardId)
+        .blockOptional()
+        .orElse(List.of());
+  }
+
+  /** Finds the award, of any type, identified by the given award path and id. */
+  private BaseAwardDetail requireAwardByPath(
+      final CaseOutcomeDetail outcome, final String awardPath, final Integer awardId) {
+    final List<? extends BaseAwardDetail> awards =
+        switch (awardPath) {
+          case "cost-award" -> outcome.getCostAwards();
+          case "financial-award" -> outcome.getFinancialAwards();
+          case "land" -> outcome.getLandAwards();
+          case "asset" -> outcome.getOtherAssetAwards();
+          default -> throw new CaabApplicationException("Unsupported award path: " + awardPath);
+        };
+    return (awards == null ? List.<BaseAwardDetail>of() : awards)
+        .stream()
+            .filter(candidate -> awardId.equals(candidate.getId()))
+            .findFirst()
+            .orElseThrow(
+                () -> new CaabApplicationException("Could not find award with id: " + awardId));
+  }
+
+  /**
+   * Links the supplied opponents to an award as liable/interested parties. Equivalent to {@link
+   * #addLiableParties(String, Integer, String, Integer, List, List, String, Consumer, Consumer)}
+   * with no-op callbacks, for callers that do not need to react to each individual link as it
+   * succeeds (for example, as each one succeeds, in case a later one in the same batch fails).
+   *
+   * @param caseReferenceNumber - the case reference number.
+   * @param providerId - the provider id.
+   * @param awardPath - the award path segment identifying the award type.
+   * @param awardId - the id of the award to link the parties to.
+   * @param existingOpponentIds - the ids of already-known opponents to link to the award.
+   * @param newOpponents - the full details of opponents with no existing CAAB id, to create and
+   *     link to the award.
+   * @param loginId - the login ID of the user performing the update.
+   */
+  public void addLiableParties(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final String awardPath,
+      final Integer awardId,
+      final List<Integer> existingOpponentIds,
+      final List<OpponentDetail> newOpponents,
+      final String loginId) {
+    addLiableParties(
+        caseReferenceNumber,
+        providerId,
+        awardPath,
+        awardId,
+        existingOpponentIds,
+        newOpponents,
+        loginId,
+        opponentId -> {},
+        created -> {});
+  }
+
+  /**
+   * Links the supplied opponents to an award as liable/interested parties, persisting each
+   * association through the CAAB API's liable-parties endpoint rather than merging it into the
+   * award aggregate (the award update endpoints do not persist liable party links). Opponent ids
+   * already linked to the award are left untouched by the API as a no-op.
+   *
+   * <p>Opponents that already have a real CAAB opponent id (for example, those already linked to
+   * another award on this case) are linked directly via {@code existingOpponentIds}. Opponents that
+   * have never been linked before (for example, an EBS-sourced case opponent with no CAAB id yet)
+   * are supplied in full via {@code newOpponents} and are created and linked in one atomic step,
+   * since there is no existing id to link against.
+   *
+   * <p>{@code newOpponents} are created one at a time rather than in a single batch call, so if one
+   * creation fails partway through, any opponents already created and linked before it remain
+   * persisted. {@code onNewOpponentCreated} is invoked immediately after each individual creation
+   * succeeds (not after the whole batch completes), so a caller tracking created opponents (for
+   * example, to recognise them as already-added on a later page load) still records each success
+   * even if a later creation in the same batch then fails and the exception propagates. Similarly,
+   * {@code onExistingOpponentLinked} is invoked immediately after each existing opponent id is
+   * successfully linked, so a caller can recognise it as already-added without waiting for (or
+   * depending on) a subsequent read of the award's liable parties, which may not yet reflect a link
+   * that was only just written.
+   *
+   * @param caseReferenceNumber - the case reference number.
+   * @param providerId - the provider id.
+   * @param awardPath - the award path segment identifying the award type.
+   * @param awardId - the id of the award to link the parties to.
+   * @param existingOpponentIds - the ids of already-known opponents to link to the award.
+   * @param newOpponents - the full details of opponents with no existing CAAB id, to create and
+   *     link to the award.
+   * @param loginId - the login ID of the user performing the update.
+   * @param onExistingOpponentLinked - invoked with each existing opponent's id immediately after it
+   *     has been successfully linked.
+   * @param onNewOpponentCreated - invoked with each new opponent's original details immediately
+   *     after it has been successfully created and linked.
+   */
+  public void addLiableParties(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final String awardPath,
+      final Integer awardId,
+      final List<Integer> existingOpponentIds,
+      final List<OpponentDetail> newOpponents,
+      final String loginId,
+      final Consumer<Integer> onExistingOpponentLinked,
+      final Consumer<OpponentDetail> onNewOpponentCreated) {
+    final boolean hasExistingOpponents =
+        existingOpponentIds != null && !existingOpponentIds.isEmpty();
+    final boolean hasNewOpponents = newOpponents != null && !newOpponents.isEmpty();
+    if (!hasExistingOpponents && !hasNewOpponents) {
+      return;
+    }
+    final Integer caseOutcomeId =
+        requireCaseOutcomeId(
+            requireCaseOutcome(caseReferenceNumber, providerId), caseReferenceNumber);
+    final String awardType = resolveAwardType(awardPath);
+    if (hasExistingOpponents) {
+      final Set<Integer> distinctOpponentIds = new LinkedHashSet<>();
+      for (final Integer opponentId : existingOpponentIds) {
+        if (opponentId != null) {
+          distinctOpponentIds.add(opponentId);
+        }
+      }
+      for (final Integer opponentId : distinctOpponentIds) {
+        caabApiClient
+            .addAwardLiableParty(caseOutcomeId, awardType, awardId, opponentId, loginId)
+            .block();
+        onExistingOpponentLinked.accept(opponentId);
+      }
+    }
+    if (hasNewOpponents) {
+      for (final OpponentDetail opponent : newOpponents) {
+        if (opponent != null) {
+          caabApiClient
+              .createAwardLiableParty(caseOutcomeId, awardType, awardId, opponent, loginId)
+              .block();
+          onNewOpponentCreated.accept(opponent);
+        }
+      }
+    }
+  }
+
+  /** Maps the award path segment used in URLs to the award type expected by the CAAB API. */
+  private String resolveAwardType(final String awardPath) {
+    return switch (awardPath) {
+      case "cost-award" -> AWARD_TYPE_COST;
+      case "financial-award" -> AWARD_TYPE_FINANCIAL;
+      case "land" -> AWARD_TYPE_LAND;
+      case "asset" -> AWARD_TYPE_OTHER_ASSET;
+      default -> throw new CaabApplicationException("Unsupported award path: " + awardPath);
+    };
   }
 
   /**

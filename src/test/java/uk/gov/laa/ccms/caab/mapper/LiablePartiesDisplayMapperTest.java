@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.mapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -12,7 +11,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mapstruct.factory.Mappers;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.context.LiablePartiesMappingContext;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.BaseAwardDetail;
@@ -96,12 +94,31 @@ class LiablePartiesDisplayMapperTest {
     assertThat(individual.address()).isEqualTo("1 High Street AB1 2CD");
     assertThat(individual.editable()).isTrue();
     final var org = result.parties().getLast();
-    assertThat(org.name()).isEqualTo("Organisation contact");
+    assertThat(org.name()).isEqualTo("Acme Ltd");
     assertThat(org.relationshipToCase()).isEqualTo("Organisation owner");
     assertThat(org.organisation()).isTrue();
     assertThat(org.editable()).isFalse();
     assertThat(org.address()).isEmpty();
     assertThat(person.getConfirmed()).isFalse();
+  }
+
+  @Test
+  void usesRawValuesWhenLookupContextIsMissing() {
+    final var award =
+        new FinancialAwardDetail()
+            .awardType("DAMAGE")
+            .description("Award")
+            .awardAmount(new BigDecimal("10.00"))
+            .liableParties(List.of(new LiablePartyDetail().id(101).opponentId(11)));
+    final var opponent =
+        person().id(11).title("MS").relationshipToCase("OWNER").address(new AddressDetail());
+
+    final var result = mapper.toLiablePartiesDisplay(award, List.of(opponent), null);
+
+    assertThat(result.parties()).hasSize(1);
+    assertThat(result.parties().getFirst().name()).isEqualTo("MS Jane Smith");
+    assertThat(result.parties().getFirst().relationshipToCase()).isEqualTo("OWNER");
+    assertThat(result.parties().getFirst().address()).isEmpty();
   }
 
   @Test
@@ -153,7 +170,8 @@ class LiablePartiesDisplayMapperTest {
   @ParameterizedTest
   @NullAndEmptySource
   @ValueSource(strings = {"123", "AWAR", "directory123"})
-  void nonEditableOrganisationsUseContactNameInsteadOfOrganisationName(String ebsId) {
+  void organisationsAlwaysPreferOrganisationNameOverContactNameRegardlessOfEditability(
+      String ebsId) {
     final var organisation =
         person()
             .type("Organisation")
@@ -164,7 +182,7 @@ class LiablePartiesDisplayMapperTest {
     final var result =
         mapper.toLiablePartiesDisplay(linkedAward(), List.of(organisation), context());
 
-    assertThat(result.parties().getFirst().name()).isEqualTo("Organisation contact");
+    assertThat(result.parties().getFirst().name()).isEqualTo("Acme Ltd");
     assertThat(result.parties().getFirst().editable()).isFalse();
   }
 
@@ -180,6 +198,51 @@ class LiablePartiesDisplayMapperTest {
 
     assertThat(result.parties().getFirst().name()).isEqualTo("Acme Ltd");
     assertThat(result.parties().getFirst().editable()).isFalse();
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = {"   "})
+  void organisationsWithNoOrganisationNameOrContactNameDisplayUndefined(String organisationName) {
+    final var nonEditableOrganisation =
+        person()
+            .type("Organisation")
+            .ebsId("directory123")
+            .organisationName(organisationName)
+            .contactNameRole(null);
+    final var editableOrganisation =
+        person()
+            .type("Organisation")
+            .ebsId("aWaRd123")
+            .organisationName(organisationName)
+            .contactNameRole(null);
+
+    assertThat(mapper.partyName(nonEditableOrganisation, context())).isEqualTo("undefined");
+    assertThat(mapper.partyName(editableOrganisation, context())).isEqualTo("undefined");
+  }
+
+  @Test
+  void editableOrganisationWithNoOrganisationNameFallsBackToContactName() {
+    final var organisation =
+        person()
+            .type("Organisation")
+            .ebsId("aWaRd123")
+            .organisationName(null)
+            .contactNameRole("Organisation contact");
+
+    assertThat(mapper.partyName(organisation, context())).isEqualTo("Organisation contact");
+  }
+
+  @Test
+  void nonEditableOrganisationWithNoOrganisationNameFallsBackToContactName() {
+    final var organisation =
+        person()
+            .type("Organisation")
+            .ebsId("directory123")
+            .organisationName(null)
+            .contactNameRole("Organisation contact");
+
+    assertThat(mapper.partyName(organisation, context())).isEqualTo("Organisation contact");
   }
 
   @ParameterizedTest
@@ -289,24 +352,31 @@ class LiablePartiesDisplayMapperTest {
   }
 
   @Test
-  void nullOpponentIdCannotResolveALinkWithANullOpponentId() {
+  void nullOpponentIdLinkIsIgnored() {
     final var award = linkedAward();
     award.getLiableParties().getFirst().setOpponentId(null);
 
-    assertThatThrownBy(
-            () -> mapper.toLiablePartiesDisplay(award, List.of(person().id(null)), context()))
-        .isInstanceOf(CaabApplicationException.class)
-        .hasMessageContaining("liable party: 101");
+    assertThat(
+            mapper.toLiablePartiesDisplay(award, List.of(person().id(null)), context()).parties())
+        .isEmpty();
   }
 
   @Test
-  void missingLinkedOpponentIsNotSilentlyHidden() {
-    assertThatThrownBy(() -> mapper.toLiablePartiesDisplay(linkedAward(), List.of(), context()))
-        .isInstanceOf(CaabApplicationException.class)
-        .hasMessageContaining("liable party: 101");
-    assertThatThrownBy(() -> mapper.toLiablePartiesDisplay(linkedAward(), null, context()))
-        .isInstanceOf(CaabApplicationException.class)
-        .hasMessageContaining("liable party: 101");
+  void missingLinkedOpponentProducesAVisiblePlaceholder() {
+    final var emptyOpponents = mapper.toLiablePartiesDisplay(linkedAward(), List.of(), context());
+    final var nullOpponents = mapper.toLiablePartiesDisplay(linkedAward(), null, context());
+
+    for (final var result : List.of(emptyOpponents, nullOpponents)) {
+      assertThat(result.parties())
+          .singleElement()
+          .satisfies(
+              party -> {
+                assertThat(party.id()).isEqualTo(101);
+                assertThat(party.opponentId()).isEqualTo(11);
+                assertThat(party.name()).isEqualTo("Party details unavailable");
+                assertThat(party.editable()).isFalse();
+              });
+    }
   }
 
   @Test

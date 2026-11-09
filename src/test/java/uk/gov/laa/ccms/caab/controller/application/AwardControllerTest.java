@@ -1,12 +1,14 @@
 package uk.gov.laa.ccms.caab.controller.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -14,7 +16,9 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_AWARD_ASSESSMENT_STATUS;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CONTACT_TITLE;
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_VALUATION_BASIS;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.APPLICATION;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.AWARD_TYPE_FORM;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
@@ -26,6 +30,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -62,6 +67,7 @@ import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.LandAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.OtherAssetAwardMapper;
+import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
 import uk.gov.laa.ccms.caab.model.CostAwardDetail;
@@ -69,6 +75,7 @@ import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.LandAwardRequest;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
@@ -79,6 +86,9 @@ import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
+import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(MockitoExtension.class)
@@ -123,6 +133,35 @@ class AwardControllerTest {
     lenient()
         .when(lookupService.getCommonValues(any()))
         .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
+    // Default: no parties already added to the award, so party-list candidates are unaffected
+    // unless a test overrides this to verify the already-added exclusion.
+    lenient()
+        .when(caseOutcomeService.getLiablePartiesDisplay(any(), any(), any(), any()))
+        .thenReturn(new LiablePartiesDisplay(null, null, null, false, false, List.of()));
+    lenient()
+        .when(caseOutcomeService.getAwardLiableParties(any(), any(), any(), any()))
+        .thenReturn(List.of());
+    // Default: simulate the real service's behaviour of invoking the per-opponent callbacks as
+    // soon as each existing opponent is "linked" and each new opponent is "created", so tests
+    // exercising the checkbox-hidden / already-added tracking behaviour don't each need to restub
+    // this themselves.
+    lenient()
+        .doAnswer(
+            invocation -> {
+              final List<Integer> existingOpponentIds = invocation.getArgument(4);
+              final List<OpponentDetail> newOpponents = invocation.getArgument(5);
+              final Consumer<Integer> onExistingOpponentLinked = invocation.getArgument(7);
+              final Consumer<OpponentDetail> onNewOpponentCreated = invocation.getArgument(8);
+              if (existingOpponentIds != null) {
+                existingOpponentIds.forEach(onExistingOpponentLinked);
+              }
+              if (newOpponents != null) {
+                newOpponents.forEach(onNewOpponentCreated);
+              }
+              return null;
+            })
+        .when(caseOutcomeService)
+        .addLiableParties(any(), any(), any(), any(), any(), any(), any(), any(), any());
   }
 
   @Nested
@@ -164,10 +203,828 @@ class AwardControllerTest {
     }
 
     @Test
+    void selectingKnownOpponentsPersistsThemAndRedirectsToTheSummary() {
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(42)
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT"),
+              new OpponentDetail()
+                  .id(43)
+                  .type("ORGANISATION")
+                  .organisationName("Acme & Co")
+                  .organisationType("COMPANY")
+                  .relationshipToCase("OWNER")
+                  .relationshipToClient("CLIENT")));
+      final org.springframework.mock.web.MockHttpSession httpSession =
+          new org.springframework.mock.web.MockHttpSession();
+
+      // The party list must be rendered (GET) before a selection from it is submitted (POST), so
+      // that the rows' identities are recorded in-session and can be confirmed stable at POST time.
+      mockMvc.perform(
+          get("/case/outcome-and-awards/land/7/liable-parties/add")
+              .session(httpSession)
+              .sessionAttr(CASE, ebsCase)
+              .sessionAttr(APPLICATION, activeApplication)
+              .sessionAttr(USER_DETAILS, user));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .session(httpSession)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("selectedPartyIds", "42", "43")))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards/land/7/liable-parties");
+
+      verify(caseOutcomeService)
+          .addLiableParties(
+              eq("300000001"),
+              eq(123),
+              eq("land"),
+              eq(7),
+              eq(List.of(42, 43)),
+              eq(List.of()),
+              eq(user.getLoginId()),
+              any(),
+              any());
+    }
+
+    @Test
+    void
+        knownOpponentStaysMarkedAsAlreadyAddedEvenWhenTheBackendsLiablePartiesReadHasNotYetCaughtUp() {
+      // The backend's own read of the award's liable parties (getAwardLiableParties) is re-fetched
+      // fresh on every page load, but it is not guaranteed to immediately reflect a link that was
+      // only just written (for example, due to eventual consistency). Without in-session tracking
+      // of the opponent id as soon as it is linked, the checkbox would reappear on an immediate
+      // subsequent page load and risk the same opponent being linked again.
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(42)
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+      final org.springframework.mock.web.MockHttpSession httpSession =
+          new org.springframework.mock.web.MockHttpSession();
+
+      mockMvc.perform(
+          get("/case/outcome-and-awards/land/7/liable-parties/add")
+              .session(httpSession)
+              .sessionAttr(CASE, ebsCase)
+              .sessionAttr(APPLICATION, activeApplication)
+              .sessionAttr(USER_DETAILS, user));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .session(httpSession)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("selectedPartyIds", "42")))
+          .hasStatus3xxRedirection();
+
+      // getAwardLiableParties is left stubbed to its default empty response (see setUp), simulating
+      // the backend not yet reflecting the just-written link on this immediate subsequent read.
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .session(httpSession)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name", "alreadyAdded")
+                      .containsExactly(tuple("MISS Jane Smith", true)));
+    }
+
+    @Test
+    void selectingRowsWithoutAResolvableOpponentIdShowsAnError() {
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+      when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+          .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
+      when(lookupService.getPersonToCaseRelationships())
+          .thenReturn(
+              Mono.just(new RelationshipToCaseLookupDetail().content(Collections.emptyList())));
+      when(lookupService.getOrganisationToCaseRelationships())
+          .thenReturn(
+              Mono.just(new RelationshipToCaseLookupDetail().content(Collections.emptyList())));
+
+      // The opponent above has no real CAAB id and no ebsId either, so it has no reliable
+      // identity at all and is omitted from the candidate list entirely; selecting row id "-1"
+      // (which was never offered to the user) still cannot resolve to any row and surfaces the
+      // same unresolved error as a defensive fallback.
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("selectedPartyIds", "-1")))
+          .hasStatusOk()
+          .hasViewName("application/party-list-screen")
+          .model()
+          .containsEntry("partyListError", true)
+          .containsEntry("partyListUnresolvedError", true);
+
+      verify(caseOutcomeService, never())
+          .addLiableParties(any(), any(), any(), any(), any(), any(), any());
+      verify(caseOutcomeService, never())
+          .addLiableParties(any(), any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void selectingAnImportedOpponentWithNoExistingIdCreatesAndLinksANewOpponent() {
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      final OpponentDetail importedOpponent =
+          new OpponentDetail()
+              .ebsId("61700985")
+              .type("INDIVIDUAL")
+              .title("MISS")
+              .firstName("Jane")
+              .surname("Smith")
+              .relationshipToCase("CHILD")
+              .relationshipToClient("CLIENT");
+      activeApplication.setOpponents(List.of(importedOpponent));
+      final org.springframework.mock.web.MockHttpSession httpSession =
+          new org.springframework.mock.web.MockHttpSession();
+
+      // The party list must be rendered (GET) before a selection from it is submitted (POST), so
+      // that the rows' identities are recorded in-session and can be confirmed stable at POST time.
+      mockMvc.perform(
+          get("/case/outcome-and-awards/land/7/liable-parties/add")
+              .session(httpSession)
+              .sessionAttr(CASE, ebsCase)
+              .sessionAttr(APPLICATION, activeApplication)
+              .sessionAttr(USER_DETAILS, user));
+
+      // The opponent above has a real ebsId but no CAAB id, so it cannot be linked by id; it is
+      // the first (and only) entry in the opponents list, so it is assigned the synthetic row id
+      // "-1", and selecting it creates and links a brand new opponent from its full details
+      // rather than guessing at (and potentially reusing) another opponent's real id.
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .session(httpSession)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("selectedPartyIds", "-1")))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/outcome-and-awards/land/7/liable-parties");
+
+      verify(caseOutcomeService)
+          .addLiableParties(
+              eq("300000001"),
+              eq(123),
+              eq("land"),
+              eq(7),
+              eq(List.of()),
+              eq(List.of(importedOpponent)),
+              eq(user.getLoginId()),
+              any(),
+              any());
+    }
+
+    @Test
+    void createdOpponentStaysMarkedAsAlreadyAddedEvenThoughTheBackendAssignsItASyntheticEbsId() {
+      // The backend's create-and-link endpoint assigns non-shared opponents a synthetic ebsId
+      // rather than preserving their real one (see AwardsService#createAwardLiableParty), so the
+      // award's own liable parties can no longer be matched back to this opponent's real ebsId on
+      // a later page load. The checkbox must still be hidden for the rest of this session.
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      final OpponentDetail importedOpponent =
+          new OpponentDetail()
+              .ebsId("61700985")
+              .type("INDIVIDUAL")
+              .title("MISS")
+              .firstName("Jane")
+              .surname("Smith")
+              .relationshipToCase("CHILD")
+              .relationshipToClient("CLIENT");
+      activeApplication.setOpponents(List.of(importedOpponent));
+      final org.springframework.mock.web.MockHttpSession httpSession =
+          new org.springframework.mock.web.MockHttpSession();
+
+      // The party list must be rendered (GET) before a selection from it is submitted (POST), so
+      // that the rows' identities are recorded in-session and can be confirmed stable at POST time.
+      mockMvc.perform(
+          get("/case/outcome-and-awards/land/7/liable-parties/add")
+              .session(httpSession)
+              .sessionAttr(CASE, ebsCase)
+              .sessionAttr(APPLICATION, activeApplication)
+              .sessionAttr(USER_DETAILS, user));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .session(httpSession)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("selectedPartyIds", "-1")))
+          .hasStatus3xxRedirection();
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .session(httpSession)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name", "alreadyAdded")
+                      .containsExactly(tuple("MISS Jane Smith", true)));
+    }
+
+    @Test
+    void selectingARowWhoseIdentityChangedSinceItWasRenderedIsRejected() {
+      // The party is rendered with no real CAAB id, so its row id is a synthetic position ("-1")
+      // in the opponents list rather than a stable identity. Before the selection is submitted,
+      // the same position in the (shared, session-held) opponents list is reassigned to a
+      // different opponent - simulating a concurrent edit in another tab - so the submission must
+      // be rejected rather than silently linking the new occupant of that position.
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      final OpponentDetail renderedOpponent =
+          new OpponentDetail()
+              .ebsId("61700985")
+              .type("INDIVIDUAL")
+              .title("MISS")
+              .firstName("Jane")
+              .surname("Smith")
+              .relationshipToCase("CHILD")
+              .relationshipToClient("CLIENT");
+      activeApplication.setOpponents(List.of(renderedOpponent));
+      final org.springframework.mock.web.MockHttpSession httpSession =
+          new org.springframework.mock.web.MockHttpSession();
+
+      mockMvc.perform(
+          get("/case/outcome-and-awards/land/7/liable-parties/add")
+              .session(httpSession)
+              .sessionAttr(CASE, ebsCase)
+              .sessionAttr(APPLICATION, activeApplication)
+              .sessionAttr(USER_DETAILS, user));
+
+      final OpponentDetail replacementOpponent =
+          new OpponentDetail()
+              .ebsId("99999999")
+              .type("INDIVIDUAL")
+              .title("MR")
+              .firstName("John")
+              .surname("Doe")
+              .relationshipToCase("OPP")
+              .relationshipToClient("EX_PARTNER");
+      activeApplication.setOpponents(List.of(replacementOpponent));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .session(httpSession)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("selectedPartyIds", "-1")))
+          .hasStatusOk()
+          .hasViewName("application/party-list-screen")
+          .model()
+          .containsEntry("partyListError", true)
+          .containsEntry("partyListUnresolvedError", true);
+
+      verify(caseOutcomeService, never())
+          .addLiableParties(any(), any(), any(), any(), any(), any(), any());
+      verify(caseOutcomeService, never())
+          .addLiableParties(any(), any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void alreadyAddedIsDetectedByEitherIdOrEbsIdRegardlessOfWhichIsPresent() {
+      // An amendment can give an opponent a real CAAB id even though its EBS id was already
+      // recorded as added to this award - both identities must be checked, not just whichever one
+      // happens to be set on the candidate row, or it would be offered for selection again.
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(42)
+                  .ebsId("61700985")
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+      when(caseOutcomeService.getAwardLiableParties("300000001", 123, "land", 7))
+          .thenReturn(List.of(new OpponentDetail().ebsId("61700985")));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name", "alreadyAdded")
+                      .containsExactly(tuple("MISS Jane Smith", true)));
+    }
+
+    @Test
+    void alreadyAddedIsDetectedByPersonalDetailsWhenNeitherIdNorEbsIdMatchInABrandNewSession() {
+      // A legacy case opponent with no real CAAB id was linked to this award in an earlier,
+      // separate session (so there is no in-session record of it), and the backend's
+      // create-and-link endpoint assigned it a brand new, synthetic EBS id rather than
+      // preserving the original one - so neither id nor EBS id can match it back to the
+      // already-linked opponent returned by getAwardLiableParties on this fresh page load. The
+      // personal-details fallback must still recognise it as already-added so its checkbox stays
+      // hidden and it cannot be linked to the award a second time.
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .ebsId("61700985")
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+      when(caseOutcomeService.getAwardLiableParties("300000001", 123, "land", 7))
+          .thenReturn(
+              List.of(
+                  new OpponentDetail()
+                      .id(99)
+                      .ebsId("SYNTHETIC-1")
+                      .type("INDIVIDUAL")
+                      .title("MISS")
+                      .firstName("Jane")
+                      .surname("Smith")
+                      .relationshipToCase("CHILD")
+                      .relationshipToClient("CLIENT")));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name", "alreadyAdded")
+                      .containsExactly(tuple("MISS Jane Smith", true)));
+    }
+
+    @Test
+    void anOpponentCreatedBeforeALaterOneInTheSameBatchFailsIsStillRecordedAsAlreadyAdded() {
+      // If a batch of newly-selected opponents is only partially created before a later one
+      // fails, the earlier successes must still be remembered as already-added for the rest of
+      // this session, since the backend has genuinely linked them - a retry must not re-create
+      // them a second time.
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      final OpponentDetail firstOpponent =
+          new OpponentDetail()
+              .ebsId("61700985")
+              .type("INDIVIDUAL")
+              .title("MISS")
+              .firstName("Jane")
+              .surname("Smith")
+              .relationshipToCase("CHILD")
+              .relationshipToClient("CLIENT");
+      final OpponentDetail secondOpponent =
+          new OpponentDetail()
+              .ebsId("61700986")
+              .type("INDIVIDUAL")
+              .title("MR")
+              .firstName("John")
+              .surname("Doe")
+              .relationshipToCase("CHILD")
+              .relationshipToClient("CLIENT");
+      activeApplication.setOpponents(List.of(firstOpponent, secondOpponent));
+      final org.springframework.mock.web.MockHttpSession httpSession =
+          new org.springframework.mock.web.MockHttpSession();
+
+      // The party list must be rendered (GET) before a selection from it is submitted (POST), so
+      // that the rows' identities are recorded in-session and can be confirmed stable at POST
+      // time.
+      mockMvc.perform(
+          get("/case/outcome-and-awards/land/7/liable-parties/add")
+              .session(httpSession)
+              .sessionAttr(CASE, ebsCase)
+              .sessionAttr(APPLICATION, activeApplication)
+              .sessionAttr(USER_DETAILS, user));
+
+      // Simulate the backend creating the first opponent successfully (invoking the callback for
+      // it), then failing on the second.
+      doAnswer(
+              invocation -> {
+                final Consumer<OpponentDetail> onNewOpponentCreated = invocation.getArgument(8);
+                onNewOpponentCreated.accept(firstOpponent);
+                throw new RuntimeException("backend failure creating second opponent");
+              })
+          .when(caseOutcomeService)
+          .addLiableParties(any(), any(), any(), any(), any(), any(), any(), any(), any());
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .session(httpSession)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("selectedPartyIds", "-1", "-2")))
+          .failure()
+          .isNotNull();
+
+      // Reset the mock's addLiableParties stub back to the default no-op-success behaviour for
+      // the follow-up GET, which does not itself attempt to create anything.
+      reset(caseOutcomeService);
+      lenient()
+          .when(caseOutcomeService.getLiablePartiesDisplay(any(), any(), any(), any()))
+          .thenReturn(new LiablePartiesDisplay(null, null, null, false, false, List.of()));
+      lenient()
+          .when(caseOutcomeService.getAwardLiableParties(any(), any(), any(), any()))
+          .thenReturn(List.of());
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .session(httpSession)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name", "alreadyAdded")
+                      .containsExactly(
+                          tuple("MISS Jane Smith", true), tuple("MR John Doe", false)));
+    }
+
+    @Test
     void unsupportedAwardHasNoRoute() {
       assertThat(mockMvc.perform(get("/case/outcome-and-awards/unknown/7/liable-parties")))
           .hasStatus(404);
       verifyNoInteractions(caseOutcomeService);
+    }
+
+    @Test
+    void partyListIncludesOnlyValidOpponentsIncludingDeletableOnes() {
+      final ApplicationDetail amendmentApplication = new ApplicationDetail();
+      amendmentApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      amendmentApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .ebsId("61700001")
+                  .type("INDIVIDUAL")
+                  .title("Ms")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("OWNER")
+                  .relationshipToClient("CLIENT")
+                  .address(new AddressDetail().addressLine1("1 High Street").postcode("AB1 2CD")),
+              new OpponentDetail()
+                  .ebsId("61700002")
+                  .type("ORGANISATION")
+                  .organisationName("Acme & Co")
+                  .organisationType("COMPANY")
+                  .relationshipToCase("OWNER")
+                  .relationshipToClient("CLIENT"),
+              // deleteInd indicates the opponent is deletable, not already deleted, so a newly
+              // added, otherwise-valid opponent with deleteInd(true) must still be selectable.
+              new OpponentDetail()
+                  .id(99)
+                  .type("INDIVIDUAL")
+                  .deleteInd(true)
+                  .title("Mr")
+                  .firstName("New")
+                  .surname("Opponent")
+                  .relationshipToCase("OWNER")
+                  .relationshipToClient("CLIENT"),
+              new OpponentDetail().type("INDIVIDUAL").deleteInd(true).title("Mr"),
+              new OpponentDetail().type("ORGANISATION").organisationName("Ghost Ltd")));
+
+      ebsCase.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .type("INDIVIDUAL")
+                  .title("Old")
+                  .firstName("Legacy")
+                  .surname("Case")
+                  .relationshipToCase("OWNER")
+                  .relationshipToClient("CLIENT")));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, amendmentApplication)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name")
+                      .containsExactlyInAnyOrder("Ms Jane Smith", "Acme & Co", "Mr New Opponent"));
+    }
+
+    @Test
+    void partyListIncludesSharedOrganisationsWithoutAnOrganisationType() {
+      ebsCase.setOpponents(
+          List.of(
+              // Shared organisations are valid without an organisation type - see
+              // OrganisationOpponentValidator, which only requires it for non-shared
+              // organisations - so this opponent must still be shown and selectable.
+              new OpponentDetail()
+                  .ebsId("61700003")
+                  .type("ORGANISATION")
+                  .organisationName("Shared Org Ltd")
+                  .sharedInd(true)
+                  .relationshipToCase("OWNER")
+                  .relationshipToClient("CLIENT")));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name")
+                      .containsExactly("Shared Org Ltd"));
+    }
+
+    @Test
+    void partyListFallsBackToTheCaseWhenTheSessionApplicationBelongsToAnotherCase() {
+      // A stale "current application" left over from a previous, unrelated case must not be used
+      // to build the party list - doing so would show (or let selections resolve against) the
+      // wrong person's opponents.
+      final ApplicationDetail staleApplication = new ApplicationDetail();
+      staleApplication.setCaseReferenceNumber("999999999");
+      staleApplication.setOpponents(
+          List.of(
+              new OpponentDetail().id(1).type("INDIVIDUAL").firstName("Other").surname("Person")));
+
+      ebsCase.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .ebsId("61700004")
+                  .type("INDIVIDUAL")
+                  .title("Ms")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, staleApplication)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name")
+                      .containsExactly("Ms Jane Smith"));
+    }
+
+    @Test
+    void partyListUsesLookupDescriptionsForNamesAndRelationships() {
+      ebsCase.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .ebsId("61700005")
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT"),
+              new OpponentDetail()
+                  .ebsId("61700006")
+                  .type("ORGANISATION")
+                  .organisationName("Acme & Co")
+                  .organisationType("COMPANY")
+                  .relationshipToCase("OPP")
+                  .relationshipToClient("CLIENT")));
+
+      when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE))
+          .thenReturn(
+              Mono.just(
+                  new CommonLookupDetail()
+                      .content(
+                          List.of(
+                              new CommonLookupValueDetail().code("MISS").description("Miss")))));
+      when(lookupService.getPersonToCaseRelationships())
+          .thenReturn(
+              Mono.just(
+                  new RelationshipToCaseLookupDetail()
+                      .content(
+                          List.of(
+                              new RelationshipToCaseLookupValueDetail()
+                                  .code("CHILD")
+                                  .description("Child")))));
+      when(lookupService.getOrganisationToCaseRelationships())
+          .thenReturn(
+              Mono.just(
+                  new RelationshipToCaseLookupDetail()
+                      .content(
+                          List.of(
+                              new RelationshipToCaseLookupValueDetail()
+                                  .code("OPP")
+                                  .description("Opponent")))));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name", "relationshipToCase")
+                      .containsExactlyInAnyOrder(
+                          tuple("Miss Jane Smith", "Child"), tuple("Acme & Co", "Opponent")));
+    }
+
+    @Test
+    void partyListOnlyMarksAwardOpponentsAsEditable() {
+      ebsCase.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(10)
+                  .ebsId("AWARD-1")
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT"),
+              new OpponentDetail()
+                  .id(11)
+                  .ebsId("CASE-2")
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Sam")
+                  .surname("Jones")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name", "editable")
+                      .containsExactlyInAnyOrder(
+                          tuple("MISS Jane Smith", true), tuple("MISS Sam Jones", false)));
+    }
+
+    @Test
+    void partyListMarksOpponentsAlreadyAddedToTheAwardWithoutHidingTheRow() {
+      ebsCase.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(10)
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT"),
+              new OpponentDetail()
+                  .id(11)
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Sam")
+                  .surname("Jones")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+      when(caseOutcomeService.getAwardLiableParties("300000001", 123, "land", 7))
+          .thenReturn(List.of(new OpponentDetail().id(10)));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name", "alreadyAdded")
+                      .containsExactlyInAnyOrder(
+                          tuple("MISS Jane Smith", true), tuple("MISS Sam Jones", false)))
+          // The checkbox for row 10 (Jane Smith) is hidden since she is already added, so the
+          // error-summary link must target the next selectable row (Sam Jones, row 11) rather
+          // than a row whose checkbox no longer exists.
+          .containsEntry("firstSelectablePartyId", 11);
+    }
+
+    @Test
+    void reselectingAnAlreadyAddedOpponentIsRejected() {
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(42)
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+      when(caseOutcomeService.getAwardLiableParties("300000001", 123, "land", 7))
+          .thenReturn(List.of(new OpponentDetail().id(42)));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("selectedPartyIds", "42")))
+          .hasStatusOk()
+          .hasViewName("application/party-list-screen")
+          .model()
+          .containsEntry("partyListError", true);
+
+      verify(caseOutcomeService, never())
+          .addLiableParties(any(), any(), any(), any(), any(), any(), any());
+      verify(caseOutcomeService, never())
+          .addLiableParties(any(), any(), any(), any(), any(), any(), any(), any(), any());
     }
   }
 

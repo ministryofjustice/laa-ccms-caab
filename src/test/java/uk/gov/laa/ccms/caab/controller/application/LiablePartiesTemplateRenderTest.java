@@ -122,6 +122,77 @@ class LiablePartiesTemplateRenderTest {
     assertSingleAddPartyButtonAboveNavigation(html);
   }
 
+  @Test
+  void rendersPartyListSelectionScreen() throws Exception {
+    final String html =
+        mockMvc
+            .perform(get("/test/party-list").param("path", "land").param("empty", "false"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    assertThat(html)
+        .contains("Party list")
+        .contains("Add selected parties")
+        .contains("Individual or Organisation not in the list")
+        .contains(
+            "If an individual or organisation is not in the list, you could add a new individual or organisation to the case")
+        .contains("Add Organisation")
+        .contains("Add Individual")
+        .contains("govuk-checkboxes")
+        .contains(">Select</th>")
+        .contains("aria-label=\"Select Ms Jane Smith\"")
+        .contains("class=\"govuk-checkboxes__label\"")
+        .doesNotContain("Sheffield City Council")
+        .doesNotContain("aria-label=\"Select Acme & Co\"")
+        .contains("Already added")
+        .containsPattern(
+            "href=\"/case/outcome-and-awards/land/7/liable-parties\"[^>]*>Cancel and return to liable / interested parties</a>")
+        .contains("name=\"selectedPartyIds\"");
+  }
+
+  @Test
+  void errorSummaryLinkTargetsTheFirstSelectableCheckbox() throws Exception {
+    final String html =
+        mockMvc
+            .perform(
+                get("/test/party-list")
+                    .param("path", "land")
+                    .param("empty", "false")
+                    .param("error", "true"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    // Row 101 (Ms Jane Smith) is the first selectable row - the error link must target its
+    // checkbox (which has an associated label) rather than the non-focusable table, so the
+    // GOV.UK error-summary script can move keyboard focus to it.
+    assertThat(html)
+        .containsPattern("href=\"#selected-party-101\"[^>]*>[^<]*</a>")
+        .contains("id=\"selected-party-101\"");
+  }
+
+  @Test
+  void errorSummaryLinkFallsBackToAFocusableElementWhenNoPartiesAreSelectable() throws Exception {
+    final String html =
+        mockMvc
+            .perform(
+                get("/test/party-list")
+                    .param("path", "land")
+                    .param("empty", "true")
+                    .param("error", "true"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    assertThat(html)
+        .containsPattern("href=\"#addSelectedPartiesButton\"[^>]*>[^<]*</a>")
+        .contains("id=\"addSelectedPartiesButton\"");
+  }
+
   private void assertSingleAddPartyButtonAboveNavigation(String html) {
     assertThat(html.split(">Add Party</a>", -1)).hasSize(2);
     assertThat(html)
@@ -184,9 +255,10 @@ class LiablePartiesTemplateRenderTest {
                       "Owner",
                       "1 High Street AB1 2CD",
                       true,
+                      false,
                       false),
                   new LiablePartyDisplay(
-                      102, 12, "Acme & Co", "Organisation", "Owner", "", true, true),
+                      102, 12, "Acme & Co", "Organisation", "Owner", "", true, true, false),
                   new LiablePartyDisplay(
                       103,
                       13,
@@ -194,6 +266,7 @@ class LiablePartiesTemplateRenderTest {
                       "Individual",
                       "",
                       "<script>alert(1)</script>",
+                      false,
                       false,
                       false),
                   new LiablePartyDisplay(
@@ -211,6 +284,49 @@ class LiablePartiesTemplateRenderTest {
       model.addAttribute("awardId", 7);
       model.addAttribute("backUrl", backUrl);
       return "test/liable-parties-harness";
+    }
+
+    @GetMapping("/test/party-list")
+    String displayPartyList(
+        @RequestParam String path,
+        @RequestParam boolean empty,
+        @RequestParam(required = false) Boolean error,
+        @RequestParam(required = false) Boolean unresolvedError,
+        final Model model) {
+      final List<LiablePartyDisplay> parties =
+          empty
+              ? List.of()
+              : List.of(
+                  new LiablePartyDisplay(
+                      101,
+                      11,
+                      "Ms Jane Smith",
+                      "Individual",
+                      "Owner",
+                      "1 High Street AB1 2CD",
+                      true,
+                      false,
+                      false),
+                  new LiablePartyDisplay(
+                      102, 12, "Acme & Co", "Organisation", "Owner", "", true, true, true));
+      model.addAttribute("parties", parties);
+      model.addAttribute("awardPath", path);
+      model.addAttribute("awardId", 7);
+      model.addAttribute("user", java.util.Map.of("functions", java.util.List.of()));
+      model.addAttribute(
+          "firstSelectablePartyId",
+          parties.stream()
+              .filter(party -> !party.alreadyAdded())
+              .map(LiablePartyDisplay::id)
+              .findFirst()
+              .orElse(null));
+      if (Boolean.TRUE.equals(error)) {
+        model.addAttribute("partyListError", true);
+      }
+      if (Boolean.TRUE.equals(unresolvedError)) {
+        model.addAttribute("partyListUnresolvedError", true);
+      }
+      return "application/party-list-screen";
     }
   }
 }
