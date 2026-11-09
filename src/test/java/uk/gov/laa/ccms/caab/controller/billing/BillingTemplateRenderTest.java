@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeAll;
@@ -87,6 +88,48 @@ class BillingTemplateRenderTest {
     variables.put("user", new UserDetail().functions(List.of()));
 
     return engine.process(template, new WebContext(exchange, Locale.UK, variables));
+  }
+
+  @Test
+  void billingNavigationPreservesEffectiveSizeSortAndAnchor() {
+    final Map<String, Object> model = statementModel(true);
+    model.put(
+        "billsAndPoaPage",
+        new PageImpl<>(
+            List.of(uncopyableRejectedBill()),
+            org.springframework.data.domain.PageRequest.of(1, 25),
+            100));
+    model.put("paginationSize", 25);
+    model.put("sortField", "dateSubmitted");
+    model.put("sortDirection", "desc");
+    final String html = render("application/billing/case-statement-of-account", model);
+    assertThat(html)
+        .contains("page=0", "page=2", "size=25", "pageSort=dateSubmitted,desc", "#bills-and-poa");
+    final List<String> navigation =
+        elements(html, "nav").stream().filter(nav -> nav.contains("govuk-pagination")).toList();
+    assertThat(navigation).hasSize(1);
+    assertThat(
+            elements(navigation.getFirst(), "a").stream()
+                .filter(link -> !link.contains("href=\"#\""))
+                .toList())
+        .allSatisfy(link -> assertThat(link).contains("size=25", "pageSort=", "#bills-and-poa"));
+  }
+
+  @Test
+  void otherPaginationCallersDoNotGainSizeParameters() {
+    final String html =
+        render(
+            "partials/pagination",
+            Map.of(
+                "page",
+                    new PageImpl<>(
+                        List.of("row"), org.springframework.data.domain.PageRequest.of(1, 25), 100),
+                "currentUrl", "/other",
+                "sortField", "name",
+                "sortDirection", "asc"));
+    assertThat(elements(html, "nav").getFirst())
+        .contains("page=0", "page=2", "pageSort=name,asc")
+        .doesNotContain("size=");
   }
 
   @Test
@@ -238,6 +281,126 @@ class BillingTemplateRenderTest {
     return model;
   }
 
+  private List<String> elements(final String html, final String tag) {
+    return Pattern.compile("<" + tag + "\\b[^>]*>.*?</" + tag + ">", Pattern.DOTALL)
+        .matcher(html)
+        .results()
+        .map(MatchResult::group)
+        .toList();
+  }
+
+  private String text(final String html) {
+    return html.replaceAll("<[^>]*>", "").replaceAll("\\s+", " ").strip();
+  }
+
+  private String billsAndPoaTable(final Map<String, Object> model) {
+    final List<String> tables =
+        elements(render("application/billing/case-statement-of-account", model), "table").stream()
+            .filter(table -> table.contains("id=\"bills-and-poa-table\""))
+            .toList();
+    assertThat(tables).hasSize(1);
+    return tables.get(0);
+  }
+
+  @Test
+  @DisplayName("Bills and POA table has separate net and grand total column headers")
+  void statementShowsNetAndGrandTotalHeaders() {
+    final List<String> headers = elements(billsAndPoaTable(statementModel(true)), "th");
+
+    assertThat(headers)
+        .extracting(this::text)
+        .containsExactly(
+            "Type",
+            "Status",
+            "Date submitted",
+            "Date authorised",
+            "Net total",
+            "Grand total",
+            "Action");
+    assertThat(headers).allSatisfy(header -> assertThat(header).contains("scope=\"col\""));
+    assertThat(headers.subList(4, 6))
+        .allSatisfy(header -> assertThat(header).contains("govuk-table__header--numeric"));
+  }
+
+  @Test
+  @DisplayName("Empty bills and POA table spans all seven columns without financial values")
+  void statementEmptyStateSpansNetAndGrandTotalColumns() {
+    final Map<String, Object> model = statementModel(true);
+    model.put("billsAndPoaPage", new PageImpl<BillPoaRow>(List.of()));
+
+    final String table = billsAndPoaTable(model);
+    final List<String> body = elements(table, "tbody");
+    assertThat(body).hasSize(1);
+    assertThat(elements(body.get(0), "tr")).hasSize(1);
+    final List<String> cells = elements(body.get(0), "td");
+    assertThat(cells).hasSize(1);
+    assertThat(text(cells.get(0))).isEqualTo("None");
+    assertThat(cells.get(0)).contains("colspan=\"7\"");
+    assertThat(body.get(0)).doesNotContain("\u00a3");
+  }
+
+  @ParameterizedTest(name = "{0} draft leaves both totals blank")
+  @ValueSource(strings = {"Bill", "POA"})
+  @DisplayName("Draft bills and POAs leave both totals blank even with a stored amount")
+  void statementDraftLeavesNetAndGrandTotalsBlank(final String type) {
+    final Map<String, Object> model = statementModel(true);
+    model.put(
+        "billsAndPoaPage",
+        new PageImpl<>(
+            List.of(
+                new BillPoaRow(type, "Draft", null, null, new BigDecimal("123.45"), true)
+                    .withTotals(new BigDecimal("123.45"), new BigDecimal("148.14")))));
+
+    final List<String> body = elements(billsAndPoaTable(model), "tbody");
+    assertThat(body).hasSize(1);
+    final List<String> rows = elements(body.get(0), "tr");
+    assertThat(rows).hasSize(1);
+    final List<String> cells = elements(rows.get(0), "td");
+    assertThat(text(cells.get(0))).isEqualTo(type);
+    assertThat(text(cells.get(1))).isEqualTo("Draft");
+    final String editUrl = "/case/billing/" + type.toLowerCase(Locale.UK);
+    assertThat(cells.get(0)).contains("href=\"" + editUrl + "\"");
+    assertThat(rows.get(0)).contains("href=\"" + editUrl + "/remove\"");
+    assertThat(cells).hasSize(7);
+    assertThat(cells.subList(4, 6)).allSatisfy(cell -> assertThat(text(cell)).isEmpty());
+  }
+
+  @Test
+  @DisplayName("Retained totals render in their own rows with UK currency and independent blanks")
+  void statementRendersNetAndGrandTotalsWithoutMixingRows() {
+    final Map<String, Object> model = statementModel(true);
+    model.put(
+        "billsAndPoaPage",
+        new PageImpl<>(
+            List.of(
+                new BillPoaRow("Bill", "Submitted", null, null, new BigDecimal("718.00"), false)
+                    .withTotals(new BigDecimal("718.00"), new BigDecimal("825.70")),
+                new BillPoaRow(
+                        "Counsel POA", "Authorised", null, null, new BigDecimal("1200"), false)
+                    .withTotals(new BigDecimal("1200"), new BigDecimal("1440")),
+                new BillPoaRow("POA", "Rejected", null, null, BigDecimal.ZERO, false)
+                    .withTotals(BigDecimal.ZERO, BigDecimal.ZERO),
+                new BillPoaRow("Bill", "Rejected", null, null, BigDecimal.TEN, false),
+                new BillPoaRow("POA", "Submitted", null, null, null, false),
+                new BillPoaRow("Bill", "Authorised", null, null, null, false)
+                    .withTotals(null, BigDecimal.ONE))));
+
+    final List<String> rows = elements(elements(billsAndPoaTable(model), "tbody").get(0), "tr");
+    assertThat(rows).hasSize(6);
+    final List<List<String>> totals =
+        rows.stream()
+            .map(row -> elements(row, "td").subList(4, 6).stream().map(this::text).toList())
+            .toList();
+    assertThat(totals)
+        .containsExactly(
+            List.of("\u00a3718.00", "\u00a3825.70"),
+            List.of("\u00a31,200.00", "\u00a31,440.00"),
+            List.of("\u00a30.00", "\u00a30.00"),
+            List.of("\u00a310.00", ""),
+            List.of("", ""),
+            List.of("", "\u00a31.00"));
+  }
+
   @Test
   @DisplayName("Statement of account offers the copy action on a copyable rejected bill")
   void statementOffersCopy() {
@@ -299,7 +462,8 @@ class BillingTemplateRenderTest {
   void statementLinksSelectedInvoice(final String context, final String type, final String status) {
     final Map<String, Object> model = statementModel(true);
     final BillPoaRow selected =
-        new BillPoaRow(type, status, null, null, new BigDecimal("123.00"), false, 555L);
+        new BillPoaRow(type, status, null, null, new BigDecimal("999.00"), false, 555L)
+            .withTotals(new BigDecimal("123.00"), new BigDecimal("147.60"));
     model.put(
         "billsAndPoaPage",
         new PageImpl<>(
@@ -328,6 +492,7 @@ class BillingTemplateRenderTest {
         .contains("invoice 555, " + status)
         .contains(">" + status + "</td>")
         .doesNotContain("/remove", "/copy");
+    assertThat(visibleText(selectedRow)).contains("123.00", "147.60").doesNotContain("999.00");
     assertThat(html)
         .contains("href=\"/case/billing/bill\"", "href=\"/case/billing/poa\"")
         .contains("/case/billing/bill/remove", "/case/billing/poa/remove")

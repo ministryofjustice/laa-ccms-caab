@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
@@ -15,31 +16,51 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static uk.gov.laa.ccms.caab.testutil.RetainedInvoiceFixture.retained;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.LongStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.core.codec.DecodingException;
+import org.springframework.core.io.buffer.DataBufferLimitException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.thymeleaf.context.IContext;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
+import reactor.test.scheduler.VirtualTimeScheduler;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.SoaFigureColumn;
@@ -64,6 +85,9 @@ import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetail;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.data.model.BaseProvider;
 import uk.gov.laa.ccms.data.model.ClientDetail;
+import uk.gov.laa.ccms.data.model.InvoiceAssessmentAttribute;
+import uk.gov.laa.ccms.data.model.InvoiceAssessmentDetails;
+import uk.gov.laa.ccms.data.model.InvoiceAssessmentInstance;
 import uk.gov.laa.ccms.data.model.StatementOfAccountBills;
 import uk.gov.laa.ccms.data.model.StatementOfAccountDetail;
 import uk.gov.laa.ccms.data.model.StatementOfAccountDetails;
@@ -114,6 +138,509 @@ class BillingServiceTest {
         .thenReturn(Mono.just(new PaymentOnAccountDetails()));
     // Tax rates are only fetched when a draft POA exists; default to none.
     lenient().when(lookupService.getTaxRates()).thenReturn(Mono.just(new TaxRateLookupDetail()));
+  }
+
+  @Nested
+  @ExtendWith(OutputCaptureExtension.class)
+  class RetainedTotals {
+    @Test
+    void pageDeadlineKeepsOutOfOrderResultsCancelsWorkAndNeverStartsQueuedRows(
+        final CapturedOutput output) {
+      final List<BillPoaRow> rows =
+          LongStream.rangeClosed(1, 8).mapToObj(id -> row("Bill", id)).toList();
+      final AtomicInteger active = new AtomicInteger();
+      final AtomicInteger maximum = new AtomicInteger();
+      final List<Long> started = new ArrayList<>();
+      final List<Long> cancelled = new ArrayList<>();
+      when(ebsApiClient.getInvoiceAssessment(eq(CASE_REF), any()))
+          .thenAnswer(
+              invocation -> {
+                final Long id = invocation.getArgument(1);
+                return Mono.defer(
+                    () -> {
+                      started.add(id);
+                      maximum.accumulateAndGet(active.incrementAndGet(), Math::max);
+                      final Mono<InvoiceAssessmentDetails> result =
+                          id == 2L
+                              ? Mono.delay(Duration.ofSeconds(1))
+                                  .map(
+                                      ignored ->
+                                          assessment(CASE_REF, id, List.of(global("100", "20"))))
+                              : Mono.never();
+                      return result
+                          .doOnSuccess(ignored -> active.decrementAndGet())
+                          .doOnCancel(
+                              () -> {
+                                cancelled.add(id);
+                                active.decrementAndGet();
+                              });
+                    });
+              });
+
+      StepVerifier.withVirtualTime(() -> billingService.retainedTotalsForPage(CASE_REF, rows))
+          .then(() -> assertThat(started).containsExactly(1L, 2L, 3L, 4L))
+          .thenAwait(Duration.ofSeconds(1))
+          .then(() -> assertThat(started).containsExactly(1L, 2L, 3L, 4L, 5L))
+          .thenAwait(Duration.ofSeconds(4).minusNanos(1))
+          .then(() -> assertThat(cancelled).isEmpty())
+          .thenAwait(Duration.ofNanos(1))
+          .assertNext(
+              result -> {
+                assertThat(result).hasSize(8);
+                assertThat(result.get(1).grandTotal()).isEqualByComparingTo("120");
+                for (int i = 0; i < rows.size(); i++) {
+                  if (i != 1) {
+                    assertThat(result.get(i)).isSameAs(rows.get(i));
+                  }
+                }
+              })
+          .verifyComplete();
+      assertThat(maximum).hasValue(4);
+      assertThat(cancelled).containsExactlyInAnyOrder(1L, 3L, 4L, 5L);
+      assertThat(started).doesNotContain(6L, 7L, 8L);
+      assertThat(pageDiagnostics(output))
+          .singleElement()
+          .satisfies(
+              message ->
+                  assertThat(message)
+                      .contains(
+                          "WARN",
+                          "rows=8 eligible=8 attempted=5 completed=1 unavailable=0 unfinished=7",
+                          "elapsedMs=")
+                      .doesNotContain(CASE_REF, "billing incident", "responseValue"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"success", "missing", "partial", "failed"})
+    void pageDiagnosticsCountLookupOutcomesIndependentlyForEachSubscription(
+        final String scenario, final CapturedOutput output) {
+      final Mono<InvoiceAssessmentDetails> response =
+          switch (scenario) {
+            case "success" ->
+                Mono.just(assessment(CASE_REF, 555L, List.of(global("1234.56", "0"))));
+            case "partial" ->
+                Mono.just(assessment(CASE_REF, 555L, List.of(global("1234.56", null))));
+            case "missing" -> Mono.empty();
+            case "failed" ->
+                Mono.error(
+                    new EbsApiClientException("Unavailable", HttpStatus.SERVICE_UNAVAILABLE));
+            default -> throw new AssertionError(scenario);
+          };
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L)).thenReturn(response);
+      final List<BillPoaRow> rows =
+          List.of(
+              row("Bill", 555L),
+              new BillPoaRow("Bill", "Draft", null, null, BigDecimal.TEN, true),
+              row("Bill", null),
+              row("Bill", 0L));
+      final Mono<List<BillPoaRow>> result = billingService.retainedTotalsForPage(CASE_REF, rows);
+      for (int subscription = 0; subscription < 2; subscription++) {
+        StepVerifier.create(result)
+            .assertNext(page -> assertThat(page).hasSize(4))
+            .verifyComplete();
+      }
+
+      final boolean available = scenario.equals("success");
+      assertThat(pageDiagnostics(output))
+          .hasSize(2)
+          .allSatisfy(
+              message ->
+                  assertThat(message)
+                      .contains(
+                          available ? "INFO" : "WARN",
+                          "rows=4 eligible=1 attempted=1 completed=1 unavailable="
+                              + (available ? 0 : 1)
+                              + " unfinished=0",
+                          "elapsedMs=")
+                      .doesNotContain(CASE_REF, "1234.56", "billing incident", "responseValue"));
+    }
+
+    private List<String> pageDiagnostics(final CapturedOutput output) {
+      return output
+          .getOut()
+          .lines()
+          .filter(line -> line.contains("Retained totals page enrichment:"))
+          .toList();
+    }
+
+    @Test
+    void pageReconstructsDuplicateInvoiceIdsByPositionNotCompletionOrder() {
+      final BillPoaRow first = row("Bill", 555L);
+      final BillPoaRow second = row("POA", 555L);
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L))
+          .thenReturn(
+              Mono.delay(Duration.ofSeconds(2))
+                  .map(ignored -> assessment(CASE_REF, 555L, List.of(global("100", "20")))),
+              Mono.delay(Duration.ofSeconds(1))
+                  .map(ignored -> assessment(CASE_REF, 555L, List.of(global("200", "40")))));
+
+      StepVerifier.withVirtualTime(
+              () -> billingService.retainedTotalsForPage(CASE_REF, List.of(first, second)))
+          .thenAwait(Duration.ofSeconds(2))
+          .assertNext(
+              result -> {
+                assertThat(result.get(0).type()).isEqualTo(first.type());
+                assertThat(result.get(0).grandTotal()).isEqualByComparingTo("120");
+                assertThat(result.get(1).type()).isEqualTo(second.type());
+                assertThat(result.get(1).grandTotal()).isEqualByComparingTo("240");
+              })
+          .verifyComplete();
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {401, 403})
+    void pagePropagatesObservedClientErrorsAndCancelsOtherWork(final int status) {
+      final AtomicBoolean cancelled = new AtomicBoolean();
+      final EbsApiClientException failure =
+          new EbsApiClientException("Unavailable", HttpStatus.valueOf(status));
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 444L))
+          .thenReturn(Mono.<InvoiceAssessmentDetails>never().doOnCancel(() -> cancelled.set(true)));
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L))
+          .thenReturn(Mono.delay(Duration.ofSeconds(1)).then(Mono.error(failure)));
+      StepVerifier.withVirtualTime(
+              () ->
+                  billingService.retainedTotalsForPage(
+                      CASE_REF, List.of(row("Bill", 444L), row("Bill", 555L))))
+          .thenAwait(Duration.ofSeconds(1))
+          .expectErrorMatches(error -> error == failure)
+          .verify();
+      assertThat(cancelled).isTrue();
+    }
+
+    @Test
+    void pagePropagatesProgrammingErrors() {
+      final IllegalStateException failure = new IllegalStateException("broken invariant");
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L)).thenThrow(failure);
+      StepVerifier.create(
+              billingService.retainedTotalsForPage(CASE_REF, List.of(row("Bill", 555L))))
+          .expectErrorMatches(error -> error == failure)
+          .verify();
+    }
+
+    @Test
+    void pageDoesNotReadDraftsInvalidIdsOrEmptyPagesAndKeepsOriginalObjects() {
+      final List<BillPoaRow> rows =
+          List.of(
+              new BillPoaRow("Bill", "Draft", null, null, BigDecimal.TEN, true),
+              row("Bill", null),
+              row("Bill", 0L),
+              row("Bill", -1L));
+      StepVerifier.create(billingService.retainedTotalsForPage(CASE_REF, rows))
+          .assertNext(
+              result -> {
+                for (int i = 0; i < rows.size(); i++) {
+                  assertThat(result.get(i)).isSameAs(rows.get(i));
+                }
+              })
+          .verifyComplete();
+      StepVerifier.create(billingService.retainedTotalsForPage(CASE_REF, List.of()))
+          .assertNext(result -> assertThat(result).isEmpty())
+          .verifyComplete();
+      verifyNoInteractions(ebsApiClient);
+    }
+
+    @Test
+    void pageBoundaryPreservesMetadataAndReadsOnlyVisibleRows() {
+      final BillPoaRow original = row("Bill", 555L);
+      returns(global("100", "20"));
+      final Page<BillPoaRow> page = new PageImpl<>(List.of(original), PageRequest.of(2, 1), 20);
+      final Page<BillPoaRow> result = billingService.withRetainedTotals(CASE_REF, page);
+      assertThat(result.getPageable()).isEqualTo(page.getPageable());
+      assertThat(result.getTotalElements()).isEqualTo(20);
+      assertThat(result.getContent().getFirst().grandTotal()).isEqualByComparingTo("120");
+      verify(ebsApiClient).getInvoiceAssessment(CASE_REF, 555L);
+    }
+
+    private BillPoaRow row(final String type, final Long id) {
+      return new BillPoaRow(type, "Rejected", null, null, new BigDecimal("90"), false, id)
+          .withCopyable();
+    }
+
+    private InvoiceAssessmentInstance global(final String net, final String vat) {
+      return instance(
+          1001L,
+          "global",
+          List.of(
+              attribute(1L, "BILL_SUBMITTED_TOTAL_AMT", net),
+              attribute(2L, "BILL_SUBMITTED_TOTAL_VAT", vat)));
+    }
+
+    private InvoiceAssessmentAttribute attribute(
+        final Long id, final String name, final String value) {
+      return new InvoiceAssessmentAttribute().id(id).name(name).responseValue(value);
+    }
+
+    private InvoiceAssessmentInstance instance(
+        final Long id, final String name, final List<InvoiceAssessmentAttribute> attributes) {
+      return new InvoiceAssessmentInstance().id(id).entityName(name).attributes(attributes);
+    }
+
+    private InvoiceAssessmentDetails assessment(
+        final String caseReference,
+        final Long id,
+        final List<InvoiceAssessmentInstance> instances) {
+      return new InvoiceAssessmentDetails()
+          .caseReference(caseReference)
+          .billingIncidentId(id)
+          .assessmentId(501L)
+          .billingProviderId("20")
+          .instances(instances);
+    }
+
+    private BillPoaRow enrich(final String caseReference, final BillPoaRow row) {
+      return billingService
+          .withRetainedTotals(caseReference, new PageImpl<>(List.of(row)))
+          .getContent()
+          .getFirst();
+    }
+
+    private void returns(final InvoiceAssessmentInstance... instances) {
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L))
+          .thenReturn(Mono.just(assessment(CASE_REF, 555L, Arrays.asList(instances))));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"Bill", "POA", "Counsel Bill", "Counsel POA"})
+    void usesRetainedNetAndVatWithoutChangingIdentityOrActions(final String type) {
+      returns(global("718.00", "107.70"));
+      final BillPoaRow original = row(type, 555L);
+      final BillPoaRow result = enrich(CASE_REF, original);
+      assertThat(result.amount()).isEqualByComparingTo("718.00");
+      assertThat(result.grandTotal()).isEqualByComparingTo("825.70");
+      assertThat(result)
+          .isEqualTo(original.withTotals(new BigDecimal("718.00"), new BigDecimal("825.70")));
+      assertThat(result.withCopyable().grandTotal()).isEqualByComparingTo("825.70");
+      verifyNoInteractions(soaApiClient, assessmentService);
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        value = {
+          "0|0|0|0",
+          "100.25|0|100.25|100.25",
+          "100|NULL|100|NULL",
+          "1,200.00|240.00|1200.00|1440.00",
+          "1,234,567.89|1,000.11|1234567.89|1235568.00",
+          "12,00.00|20|90|NULL",
+          "1,,200.00|20|90|NULL",
+          "1234,567.00|20|90|NULL",
+          "100|2,0|100|NULL",
+          "NULL|20|90|NULL",
+          "invalid|20|90|NULL",
+          "100|invalid|100|NULL"
+        },
+        delimiter = '|',
+        nullValues = "NULL")
+    void preservesKnownValuesWithoutInventingMissingTotals(
+        final String net, final String vat, final String expectedNet, final String expectedGrand) {
+      returns(global(net, vat));
+      final BillPoaRow result = enrich(CASE_REF, row("Bill", 555L));
+      assertThat(result.amount()).isEqualByComparingTo(expectedNet);
+      if (expectedGrand == null) {
+        assertThat(result.grandTotal()).isNull();
+      } else {
+        assertThat(result.grandTotal()).isEqualByComparingTo(expectedGrand);
+      }
+    }
+
+    @Test
+    void doesNotReadDraftsOrMissingOrInvalidIds() {
+      final BillPoaRow draft =
+          new BillPoaRow("Bill", "Draft", null, null, BigDecimal.TEN, true, 555L);
+      assertThat(enrich(CASE_REF, draft)).isSameAs(draft);
+      enrich(CASE_REF, row("POA", null));
+      enrich(CASE_REF, row("POA", 0L));
+      verifyNoInteractions(ebsApiClient);
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+        strings = {"missing", "line-only", "duplicate-global", "duplicate-net", "null-instances"})
+    void refusesMissingOrAmbiguousGlobalNet(final String scenario) {
+      final InvoiceAssessmentInstance valid = global("100", "20");
+      switch (scenario) {
+        case "missing" -> returns();
+        case "line-only" -> returns(instance(2L, "DISB_BILL_LINE", valid.getAttributes()));
+        case "duplicate-global" -> returns(valid, valid);
+        case "duplicate-net" ->
+            returns(
+                instance(
+                    1L,
+                    "global",
+                    List.of(
+                        valid.getAttributes().get(0),
+                        valid.getAttributes().get(0),
+                        valid.getAttributes().get(1))));
+        case "null-instances" ->
+            when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L))
+                .thenReturn(Mono.just(assessment(CASE_REF, 555L, null)));
+        default -> throw new AssertionError(scenario);
+      }
+      assertThat(enrich(CASE_REF, row("Bill", 555L))).isEqualTo(row("Bill", 555L));
+    }
+
+    @Test
+    void ignoresLineTotalsAndNormalisesGlobalAttributeNames() {
+      final InvoiceAssessmentInstance values = global("100", "20");
+      returns(
+          instance(2L, "DISB_BILL_LINE", global("999", "999").getAttributes()),
+          instance(
+              1L,
+              " GLOBAL ",
+              List.of(
+                  attribute(1L, " bill_submitted_total_amt ", " 100 "),
+                  values.getAttributes().get(1))));
+      assertThat(enrich(CASE_REF, row("POA", 555L)).grandTotal()).isEqualByComparingTo("120");
+    }
+
+    @Test
+    void duplicateVatKeepsRetainedNetWithoutInventingGrandTotal() {
+      final InvoiceAssessmentInstance values = global("100", "20");
+      returns(
+          instance(
+              1L,
+              "global",
+              List.of(
+                  values.getAttributes().get(0),
+                  values.getAttributes().get(1),
+                  values.getAttributes().get(1))));
+      final BillPoaRow result = enrich(CASE_REF, row("Bill", 555L));
+      assertThat(result.amount()).isEqualByComparingTo("100");
+      assertThat(result.grandTotal()).isNull();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"case", "invoice"})
+    void rejectsMismatchedIdentity(final String mismatch) {
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L))
+          .thenReturn(
+              Mono.just(
+                  assessment(
+                      mismatch.equals("case") ? "other" : CASE_REF,
+                      mismatch.equals("invoice") ? 777L : 555L,
+                      List.of(global("100", "20")))));
+      assertThat(enrich(CASE_REF, row("Bill", 555L))).isEqualTo(row("Bill", 555L));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {400, 408, 409, 422, 429, 500, 503})
+    void missingOrFailedAssessmentDoesNotPreventTheNextRowFromLoading(final int status) {
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 444L)).thenReturn(Mono.empty());
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 333L))
+          .thenReturn(
+              Mono.error(new EbsApiClientException("Unavailable", HttpStatus.valueOf(status))));
+      returns(global("100", "20"));
+      assertThat(enrich(CASE_REF, row("Bill", 444L)).grandTotal()).isNull();
+      assertThat(enrich(CASE_REF, row("Bill", 333L)).grandTotal()).isNull();
+      assertThat(enrich(CASE_REF, row("Bill", 555L)).grandTotal()).isEqualByComparingTo("120");
+    }
+
+    @Test
+    void decodingFailureKeepsTheOriginalRowAndAllowsTheNextRowToLoad() {
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 444L))
+          .thenReturn(
+              Mono.error(
+                  new EbsApiClientException(
+                      "Invalid assessment", new DecodingException("Invalid JSON"))));
+      returns(global("100", "20"));
+      final BillPoaRow original = row("Bill", 444L);
+
+      assertThat(enrich(CASE_REF, original)).isSameAs(original);
+      assertThat(enrich(CASE_REF, row("POA", 555L)).grandTotal()).isEqualByComparingTo("120");
+      verifyNoInteractions(soaApiClient, assessmentService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"read", "limit"})
+    void readOrBufferFailureKeepsTheOriginalRowAndAllowsTheNextRowToLoad(final String failureType) {
+      final Throwable cause =
+          failureType.equals("read")
+              ? new IOException("Response body interrupted")
+              : new DataBufferLimitException("Response too large");
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 444L))
+          .thenReturn(Mono.error(new EbsApiClientException("Read failed", cause)));
+      returns(global("100", "20"));
+      final BillPoaRow original = row("Bill", 444L);
+
+      assertThat(enrich(CASE_REF, original)).isSameAs(original);
+      assertThat(enrich(CASE_REF, row("POA", 555L)).grandTotal()).isEqualByComparingTo("120");
+    }
+
+    @Test
+    void stalledAssessmentIsCancelledAndDoesNotPreventTheNextRowFromLoading() {
+      final VirtualTimeScheduler clock = VirtualTimeScheduler.getOrSet();
+      try {
+        final AtomicBoolean cancelled = new AtomicBoolean();
+        final AtomicBoolean cancelledBeforeDeadline = new AtomicBoolean();
+        final AtomicBoolean cancelledAtDeadline = new AtomicBoolean();
+        when(ebsApiClient.getInvoiceAssessment(CASE_REF, 444L))
+            .thenReturn(
+                Mono.create(
+                    sink -> {
+                      sink.onCancel(() -> cancelled.set(true));
+                      // The page deadline is subscribed before this source callback runs.
+                      clock.advanceTimeBy(Duration.ofSeconds(5).minusNanos(1));
+                      cancelledBeforeDeadline.set(cancelled.get());
+                      clock.advanceTimeBy(Duration.ofNanos(1));
+                      cancelledAtDeadline.set(cancelled.get());
+                    }));
+        returns(global("100", "20"));
+        final BillPoaRow original = row("Bill", 444L);
+
+        assertTimeoutPreemptively(
+            Duration.ofSeconds(10),
+            () -> {
+              assertThat(enrich(CASE_REF, original)).isSameAs(original);
+              assertThat(cancelledBeforeDeadline).isFalse();
+              assertThat(cancelledAtDeadline).isTrue();
+              assertThat(enrich(CASE_REF, row("POA", 555L)).grandTotal())
+                  .isEqualByComparingTo("120");
+            });
+        verifyNoInteractions(soaApiClient, assessmentService);
+      } finally {
+        VirtualTimeScheduler.reset();
+      }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {401, 403})
+    void propagatesClientErrors(final int status) {
+      for (final Throwable cause :
+          List.of(
+              new DecodingException("Invalid error response"),
+              new IOException("Response body interrupted"),
+              new DataBufferLimitException("Response too large"))) {
+        final EbsApiClientException failure =
+            new EbsApiClientException("Rejected", HttpStatus.valueOf(status));
+        failure.initCause(cause);
+        when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L)).thenReturn(Mono.error(failure));
+        assertThatThrownBy(() -> enrich(CASE_REF, row("Bill", 555L))).isSameAs(failure);
+      }
+    }
+
+    @Test
+    void transportFailuresKeepTheKnownNetButProgrammingErrorsPropagate() {
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L))
+          .thenReturn(
+              Mono.error(
+                  new EbsApiClientException(
+                      "Network failure",
+                      new WebClientRequestException(
+                          new IOException("connection closed"),
+                          HttpMethod.GET,
+                          URI.create("http://data.example"),
+                          HttpHeaders.EMPTY))));
+      final BillPoaRow original = row("Bill", 555L);
+      assertThat(enrich(CASE_REF, original)).isEqualTo(original);
+      final IllegalStateException failure = new IllegalStateException("Unexpected failure");
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L)).thenReturn(Mono.error(failure));
+      assertThatThrownBy(() -> enrich(CASE_REF, original)).isSameAs(failure);
+      final EbsApiClientException wrappedFailure =
+          new EbsApiClientException("Unexpected failure", failure);
+      when(ebsApiClient.getInvoiceAssessment(CASE_REF, 555L))
+          .thenReturn(Mono.error(wrappedFailure));
+      assertThatThrownBy(() -> enrich(CASE_REF, original)).isSameAs(wrappedFailure);
+    }
   }
 
   private StatementOfAccountDetail statement(

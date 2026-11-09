@@ -33,6 +33,7 @@ import org.springframework.core.io.buffer.DataBufferLimitException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.ui.ExtendedModelMap;
@@ -62,6 +63,7 @@ import uk.gov.laa.ccms.data.model.ClientInvolvementTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
 import uk.gov.laa.ccms.data.model.DeclarationLookupDetail;
 import uk.gov.laa.ccms.data.model.EvidenceDocumentTypeLookupDetail;
+import uk.gov.laa.ccms.data.model.InvoiceAssessmentDetails;
 import uk.gov.laa.ccms.data.model.LevelOfServiceLookupDetail;
 import uk.gov.laa.ccms.data.model.MatterTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.Notification;
@@ -102,6 +104,58 @@ public class EbsApiClientTest {
   @Nested
   @ExtendWith(OutputCaptureExtension.class)
   class SelectedInvoiceAssessment {
+    @ParameterizedTest
+    @ValueSource(strings = {"{broken", "{\"assessmentId\":\"retained-field-value\"}"})
+    void malformedJsonIsAnErrorWithoutLoggingRetainedData(
+        final String body, final CapturedOutput output) {
+      StepVerifier.create(client(HttpStatus.OK, body).getInvoiceAssessment("300000123", 555L))
+          .expectErrorSatisfies(
+              error ->
+                  logSanitizedError(error, org.springframework.core.codec.DecodingException.class))
+          .verify();
+      assertThat(output)
+          .contains("Exception caught by GlobalExceptionHandler")
+          .doesNotContain("retained-field-value", "300000123");
+    }
+
+    @Test
+    void preservesTransportFailuresWithoutLoggingRetainedData(final CapturedOutput output) {
+      final WebClientRequestException failure =
+          new WebClientRequestException(
+              new IOException("retained-field-value"),
+              HttpMethod.GET,
+              URI.create("http://data.example/cases/300000123/invoices/555/assessment"),
+              HttpHeaders.EMPTY);
+      final EbsApiClient client =
+          new EbsApiClient(
+              WebClient.builder()
+                  .baseUrl("http://data.example")
+                  .exchangeFunction(request -> Mono.error(failure))
+                  .build(),
+              new EbsApiClientErrorHandler());
+      StepVerifier.create(client.getInvoiceAssessment("300000123", 555L))
+          .expectErrorSatisfies(error -> logSanitizedError(error, WebClientRequestException.class))
+          .verify();
+      assertThat(output)
+          .contains("Exception caught by GlobalExceptionHandler")
+          .doesNotContain("retained-field-value", "300000123");
+    }
+
+    private void logSanitizedError(
+        final Throwable error, final Class<? extends Throwable> causeType) {
+      assertThat(error)
+          .isInstanceOfSatisfying(
+              EbsApiClientException.class,
+              failure -> {
+                assertThat(failure)
+                    .hasMessage("Failed to retrieve retained invoice assessment")
+                    .isInstanceOf(InvoiceAssessmentReadException.class)
+                    .hasCauseInstanceOf(causeType);
+                new GlobalExceptionHandler()
+                    .handleException(new ExtendedModelMap(), new MockHttpSession(), failure);
+              });
+    }
+
     @ParameterizedTest
     @CsvSource({"read", "limit", "unexpected"})
     void preservesSuccessfulResponseBodyFailures(final String failureType) {
@@ -160,7 +214,7 @@ public class EbsApiClientTest {
       assertTrue(cancelled.get());
     }
 
-    private EbsApiClient client(final HttpStatus status, final String body) {
+    private EbsApiClient client(final HttpStatusCode status, final String body) {
       return new EbsApiClient(
           WebClient.builder()
               .baseUrl("http://data.example")
@@ -176,6 +230,33 @@ public class EbsApiClientTest {
                   })
               .build(),
           new EbsApiClientErrorHandler());
+    }
+
+    @Test
+    void decodesRetainedIdentityAndRawValuesWhileIgnoringUnneededMetadata() {
+      final InvoiceAssessmentDetails response =
+          client(
+                  HttpStatus.OK,
+                  """
+                  {"caseReference":"300000123","billingIncidentId":555,"assessmentId":501,
+                   "billingProviderId":"20","instances":[
+                     {"id":1,"entityName":"global","label":"global","attributes":[
+                       {"id":2,"name":"BILL_SUBMITTED_TOTAL_AMT","responseValue":"718.00",
+                        "responseText":"not the raw value","extendedValue":"ignored","userEntered":false}
+                     ]},
+                     {"id":3,"entityName":null,"attributes":null}
+                   ]}
+                  """)
+              .getInvoiceAssessment("300000123", 555L)
+              .block();
+      assertEquals("300000123", response.getCaseReference());
+      assertEquals(555L, response.getBillingIncidentId());
+      assertEquals("20", response.getBillingProviderId().orElse(null));
+      assertEquals(
+          "718.00",
+          response.getInstances().get(0).getAttributes().get(0).getResponseValue().orElse(null));
+      assertEquals(null, response.getInstances().get(1).getEntityName().orElse(null));
+      assertEquals(null, response.getInstances().get(1).getAttributes());
     }
 
     @Test
@@ -246,55 +327,34 @@ public class EbsApiClientTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"{broken", "{\"assessmentId\":\"retained-field-value\"}"})
-    void malformedJsonIsAnErrorWithoutLoggingRetainedData(
-        final String body, final CapturedOutput output) {
-      StepVerifier.create(client(HttpStatus.OK, body).getInvoiceAssessment("300000123", 555L))
-          .expectErrorSatisfies(
+    @CsvSource({"520", "529"})
+    void classifiesUnknownServerStatusesAsUpstreamFailures(final int code) {
+      StepVerifier.create(
+              client(HttpStatusCode.valueOf(code), "not an assessment")
+                  .getInvoiceAssessment("300000123", 555L))
+          .expectErrorMatches(
               error ->
-                  logSanitizedError(error, org.springframework.core.codec.DecodingException.class))
+                  error instanceof EbsApiClientException apiError
+                      && apiError.hasHttpStatus(HttpStatus.BAD_GATEWAY))
           .verify();
-      assertThat(output)
-          .contains("Exception caught by GlobalExceptionHandler")
-          .doesNotContain("retained-field-value", "300000123");
     }
 
     @Test
-    void preservesTransportFailuresWithoutLoggingRetainedData(final CapturedOutput output) {
+    void preservesTransportFailuresForPerRowRecovery() {
       final WebClientRequestException failure =
           new WebClientRequestException(
-              new IOException("retained-field-value"),
+              new IOException("connection closed"),
               HttpMethod.GET,
-              URI.create("http://data.example/cases/300000123/invoices/555/assessment"),
+              URI.create("http://data.example"),
               HttpHeaders.EMPTY);
       final EbsApiClient client =
           new EbsApiClient(
-              WebClient.builder()
-                  .baseUrl("http://data.example")
-                  .exchangeFunction(request -> Mono.error(failure))
-                  .build(),
+              WebClient.builder().exchangeFunction(request -> Mono.error(failure)).build(),
               new EbsApiClientErrorHandler());
       StepVerifier.create(client.getInvoiceAssessment("300000123", 555L))
-          .expectErrorSatisfies(error -> logSanitizedError(error, WebClientRequestException.class))
+          .expectErrorMatches(
+              error -> error instanceof EbsApiClientException && error.getCause() == failure)
           .verify();
-      assertThat(output)
-          .contains("Exception caught by GlobalExceptionHandler")
-          .doesNotContain("retained-field-value", "300000123");
-    }
-
-    private void logSanitizedError(
-        final Throwable error, final Class<? extends Throwable> causeType) {
-      assertThat(error)
-          .isInstanceOfSatisfying(
-              EbsApiClientException.class,
-              failure -> {
-                assertThat(failure)
-                    .hasMessage("Failed to retrieve retained invoice assessment")
-                    .isInstanceOf(InvoiceAssessmentReadException.class)
-                    .hasCauseInstanceOf(causeType);
-                new GlobalExceptionHandler()
-                    .handleException(new ExtendedModelMap(), new MockHttpSession(), failure);
-              });
     }
   }
 
