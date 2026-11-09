@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.bean.billing;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import uk.gov.laa.ccms.caab.constants.BillingContext;
 
 /**
  * A single row in the "Bills and payment on account" table on the Case Statement of Account screen.
@@ -33,6 +34,8 @@ public record BillPoaRow(
     boolean copyable,
     Long billingIncidentId,
     BigDecimal grandTotal) {
+
+  public static final String INVOICE_STATUS_DRAFT = "Draft";
 
   /** Creates a row that carries no copy action, which is every row bar a rejected bill. */
   public BillPoaRow(
@@ -84,5 +87,13 @@ public record BillPoaRow(
         copyable,
         billingIncidentId,
         grand);
+  }
+
+  public BillingContext billingContext() {
+    return BillingContext.forInvoiceType(type);
+  }
+
+  public boolean hasBillingIncidentId() {
+    return billingIncidentId != null && billingIncidentId > 0;
   }
 }

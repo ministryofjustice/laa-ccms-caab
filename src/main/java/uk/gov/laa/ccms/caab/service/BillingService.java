@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.service;
 
+import static uk.gov.laa.ccms.caab.bean.billing.BillPoaRow.INVOICE_STATUS_DRAFT;
 import static uk.gov.laa.ccms.caab.client.EbsApiClientErrorHandler.isRecoverableInvoiceAssessmentFailure;
 
 import java.math.BigDecimal;
@@ -11,6 +12,8 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -29,7 +32,10 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuples;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentAttributeDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityDetail;
+import uk.gov.laa.ccms.caab.assessment.model.AssessmentEntityTypeDetail;
 import uk.gov.laa.ccms.caab.bean.billing.BillPoaRow;
 import uk.gov.laa.ccms.caab.bean.billing.SoaFigureColumn;
 import uk.gov.laa.ccms.caab.bean.billing.StatementOfAccountDisplay;
@@ -37,6 +43,7 @@ import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClient;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.client.SoaApiClient;
+import uk.gov.laa.ccms.caab.constants.BillingContext;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.SoaApplicationMapper;
@@ -86,7 +93,6 @@ public class BillingService {
   private static final String ENTITY_TYPE_PROVIDER = "PROVIDER";
   private static final String ENTITY_TYPE_COUNSEL = "COUNSEL";
   private static final String COST_CATEGORY_COUNSEL = "COUNSEL";
-  private static final String INVOICE_STATUS_DRAFT = "Draft";
   private static final String INVOICE_STATUS_REJECTED = "Rejected";
   private static final String INVOICE_TYPE_BILL = "Bill";
   // Entities a copied bill must not carry forward: they belong to the case as it stands now, and
@@ -115,6 +121,7 @@ public class BillingService {
   private final SoaApplicationMapper soaApplicationMapper;
   private final AssessmentService assessmentService;
   private final ClientService clientService;
+  private final HistoricalBillingAssessmentValidator historicalBillingAssessmentValidator;
 
   /** Enriches only visible rows, blocking once at the MVC boundary and retaining page metadata. */
   public Page<BillPoaRow> withRetainedTotals(
@@ -281,10 +288,6 @@ public class BillingService {
     return actual != null && expected.equalsIgnoreCase(actual.trim());
   }
 
-  private static <T> T nullableValue(final JsonNullable<T> value) {
-    return value == null ? null : value.orElse(null);
-  }
-
   /**
    * Retrieve and build the statement of account display for the supplied case.
    *
@@ -443,7 +446,90 @@ public class BillingService {
   }
 
   private boolean isBillInvoice(final String invoiceType) {
-    return invoiceType != null && !invoiceType.toUpperCase(Locale.UK).contains(INVOICE_TYPE_POA);
+    return BillingContext.forInvoiceType(invoiceType) == BillingContext.BILL;
+  }
+
+  /**
+   * Reads a historical invoice already authorized against the visible statement. The projection
+   * exists only for rendering; no stored assessment or draft is created or changed.
+   */
+  public Optional<AssessmentDetail> getSubmittedAssessment(
+      final String caseReference, final Long billingId) {
+    final InvoiceAssessmentDetails invoice =
+        ebsApiClient.getInvoiceAssessment(caseReference, billingId).block();
+    if (invoice == null) {
+      log.warn("Historical data not found for billing incident {}", billingId);
+      return Optional.empty();
+    }
+    if (!Objects.equals(caseReference, invoice.getCaseReference())
+        || !Objects.equals(billingId, invoice.getBillingIncidentId())) {
+      log.warn("Historical assessment identity mismatch for billing incident {}", billingId);
+      return Optional.empty();
+    }
+    final AssessmentDetail assessment = historicalAssessment(invoice);
+    if (!historicalBillingAssessmentValidator.prepareHistoricalSummary(assessment)) {
+      log.warn("Historical summary unavailable for billing incident {}", billingId);
+      return Optional.empty();
+    }
+    return Optional.of(assessment);
+  }
+
+  private AssessmentDetail historicalAssessment(final InvoiceAssessmentDetails invoice) {
+    if (invoice.getAssessmentId() == null || invoice.getInstances() == null) {
+      return null;
+    }
+    final AssessmentDetail assessment = new AssessmentDetail().entityTypes(new ArrayList<>());
+    final Map<String, AssessmentEntityTypeDetail> types = new LinkedHashMap<>();
+    final Set<Long> instanceIds = new HashSet<>();
+    final Set<Long> attributeIds = new HashSet<>();
+    for (final InvoiceAssessmentInstance instance : invoice.getInstances()) {
+      if (instance == null
+          || instance.getId() == null
+          || !instanceIds.add(instance.getId())
+          || nullableValue(instance.getEntityName()) == null
+          || instance.getAttributes() == null) {
+        return null;
+      }
+      final String name = nullableValue(instance.getEntityName()).trim().toUpperCase(Locale.UK);
+      final AssessmentEntityTypeDetail type =
+          types.computeIfAbsent(
+              name, key -> new AssessmentEntityTypeDetail().name(key).entities(new ArrayList<>()));
+      final AssessmentEntityDetail entity =
+          new AssessmentEntityDetail()
+              .name(nullableValue(instance.getLabel()))
+              .attributes(new ArrayList<>());
+      final Set<String> names = new HashSet<>();
+      for (final InvoiceAssessmentAttribute attribute : instance.getAttributes()) {
+        if (attribute == null
+            || attribute.getId() == null
+            || !attributeIds.add(attribute.getId())
+            || nullableValue(attribute.getName()) == null) {
+          return null;
+        }
+        final String attributeName =
+            nullableValue(attribute.getName()).trim().toUpperCase(Locale.UK);
+        if (!names.add(attributeName)) {
+          return null;
+        }
+        final String value = nullableValue(attribute.getResponseValue());
+        final String text = nullableValue(attribute.getResponseText());
+        entity.addAttributesItem(
+            new AssessmentAttributeDetail()
+                .name(attributeName)
+                .type(nullableValue(attribute.getResponseType()))
+                .value(
+                    value != null
+                        ? value
+                        : text != null ? text : nullableValue(attribute.getExtendedValue())));
+      }
+      type.addEntitiesItem(entity);
+    }
+    assessment.setEntityTypes(new ArrayList<>(types.values()));
+    return assessment;
+  }
+
+  private static <T> T nullableValue(final JsonNullable<T> value) {
+    return value == null ? null : value.orElse(null);
   }
 
   /**

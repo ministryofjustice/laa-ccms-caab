@@ -8,11 +8,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.MatchResult;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.data.domain.PageImpl;
@@ -163,7 +165,7 @@ class BillingTemplateRenderTest {
     final Map<String, Object> model = new HashMap<>();
     model.put("assessmentStatus", "Complete");
     model.put("assessmentComplete", true);
-    model.put("viewPoaSummary", true);
+    model.put("summaryAvailable", true);
 
     final String html = render("application/billing/poa-details", model);
     assertThat(html).contains("poa-summary-link").contains("submit-poa-button");
@@ -175,7 +177,7 @@ class BillingTemplateRenderTest {
     final Map<String, Object> model = new HashMap<>();
     model.put("assessmentStatus", "Complete");
     model.put("assessmentComplete", true);
-    model.put("printDraftBill", true);
+    model.put("summaryAvailable", true);
 
     final String html = render("application/billing/bill-details", model);
     assertThat(html)
@@ -211,7 +213,7 @@ class BillingTemplateRenderTest {
     final Map<String, Object> model = new HashMap<>();
     model.put("assessmentStatus", "In progress");
     model.put("assessmentComplete", false);
-    model.put("printDraftBill", false);
+    model.put("summaryAvailable", false);
     model.put("submissionError", "billing.bill.error.notComplete");
 
     final String html = render("application/billing/bill-details", model);
@@ -226,7 +228,7 @@ class BillingTemplateRenderTest {
     final Map<String, Object> model = new HashMap<>();
     model.put("assessmentStatus", "Not started");
     model.put("assessmentComplete", false);
-    model.put("printDraftBill", false);
+    model.put("summaryAvailable", false);
 
     final String html = render("application/billing/bill-details", model);
     assertThat(html).contains("bill-details-link").doesNotContain("bill-summary-link");
@@ -431,6 +433,170 @@ class BillingTemplateRenderTest {
     final String html =
         render("application/billing/case-statement-of-account", statementModel(false));
     assertThat(html).doesNotContain("/case/billing/bill/copy");
+  }
+
+  private Map<String, Object> submittedDetailsModel(final String status) {
+    final Map<String, Object> model = new HashMap<>();
+    model.put("readOnly", true);
+    model.put("billingId", "555");
+    model.put("detailsUnavailable", false);
+    model.put("assessmentStatus", status);
+    model.put("summaryAvailable", true);
+    return model;
+  }
+
+  private String visibleText(final String html) {
+    return html.replaceAll("<[^>]+>", " ").replaceAll("\\s+", " ");
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "bill, Bill, Submitted",
+    "bill, Counsel Bill, Authorised",
+    "bill, Bill, Rejected",
+    "poa, POA, Submitted",
+    "poa, Counsel POA, Authorised",
+    "poa, POA, Rejected"
+  })
+  @DisplayName("Submitted rows link to their own invoice without changing draft or copy actions")
+  void statementLinksSelectedInvoice(final String context, final String type, final String status) {
+    final Map<String, Object> model = statementModel(true);
+    final BillPoaRow selected =
+        new BillPoaRow(type, status, null, null, new BigDecimal("999.00"), false, 555L)
+            .withTotals(new BigDecimal("123.00"), new BigDecimal("147.60"));
+    model.put(
+        "billsAndPoaPage",
+        new PageImpl<>(
+            List.of(
+                new BillPoaRow("Bill", "Draft", null, null, BigDecimal.TEN, true),
+                new BillPoaRow("POA", "Draft", null, null, BigDecimal.TEN, true),
+                selected,
+                copyableRejectedBill())));
+
+    final String html = render("application/billing/case-statement-of-account", model);
+    final String table = html.substring(html.indexOf("id=\"bills-and-poa-table\""));
+    final Matcher rows = Pattern.compile("(?s)<tr\\b[^>]*>(.*?)</tr>").matcher(table);
+    String selectedRow = null;
+    while (rows.find()) {
+      if (rows.group(1).contains("123.00")) {
+        selectedRow = rows.group(1);
+        break;
+      }
+    }
+    assertThat(selectedRow)
+        .as("the selected invoice's own row")
+        .isNotNull()
+        .contains("/case/billing/" + context + "?billing-id=555")
+        .contains(">" + type + "</span>")
+        .contains("class=\"govuk-visually-hidden\"")
+        .contains("invoice 555, " + status)
+        .contains(">" + status + "</td>")
+        .doesNotContain("/remove", "/copy");
+    assertThat(visibleText(selectedRow)).contains("123.00", "147.60").doesNotContain("999.00");
+    assertThat(html)
+        .contains("href=\"/case/billing/bill\"", "href=\"/case/billing/poa\"")
+        .contains("/case/billing/bill/remove", "/case/billing/poa/remove")
+        .contains("/case/billing/bill/copy", "name=\"billing-id\" value=\"222\"");
+  }
+
+  @ParameterizedTest
+  @CsvSource({"bill, Bill", "poa, POA"})
+  @DisplayName("Submitted links require the matching maintain permission")
+  void submittedLinkRequiresMatchingPermission(final String context, final String type) {
+    final Map<String, Object> model = statementModel(true);
+    model.put(context.equals("bill") ? "canMaintainBill" : "canMaintainPoa", false);
+    model.put(
+        "billsAndPoaPage",
+        new PageImpl<>(
+            List.of(new BillPoaRow(type, "Submitted", null, null, BigDecimal.TEN, false, 555L))));
+
+    final String html = render("application/billing/case-statement-of-account", model);
+    assertThat(html).doesNotContain("/case/billing/" + context + "?billing-id=555");
+    assertThat(visibleText(html)).contains(type, "Submitted");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"Bill", "POA", "Counsel Bill", "Counsel POA"})
+  @DisplayName("An invoice without an ID retains its original type as plain text")
+  void submittedRowWithoutIdRetainsPlainTextType(final String type) {
+    final Map<String, Object> model = statementModel(true);
+    model.put(
+        "billsAndPoaPage",
+        new PageImpl<>(
+            List.of(
+                new BillPoaRow(type, "Submitted", null, null, new BigDecimal("123.00"), false))));
+    final String html = render("application/billing/case-statement-of-account", model);
+    final String table =
+        html.substring(html.indexOf("id=\"bills-and-poa-table\""), html.lastIndexOf("</table>"));
+    assertThat(visibleText(table)).contains(type, "Submitted", "123.00");
+    final Matcher firstCell = Pattern.compile("(?s)<td\\b[^>]*>(.*?)</td>").matcher(table);
+    assertThat(firstCell.find()).isTrue();
+    assertThat(visibleText(firstCell.group(1)).trim()).isEqualTo(type);
+    assertThat(table).doesNotContain("<a ", "billing-id=", "Details are unavailable");
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "bill, Submitted",
+    "bill, Authorised",
+    "bill, Rejected",
+    "poa, Submitted",
+    "poa, Authorised",
+    "poa, Rejected"
+  })
+  @DisplayName("Submitted details show invoice status and an invoice-specific inline summary")
+  void submittedDetailsShowSelectedSummary(final String context, final String status) {
+    final String html =
+        render("application/billing/" + context + "-details", submittedDetailsModel(status));
+    assertThat(html)
+        .contains("id=\"" + context + "-status\"")
+        .contains(">" + status + "</dd>")
+        .contains("/case/billing/" + context + "/summary?billing-id=555")
+        .contains("target=\"_blank\"")
+        .contains("href=\"/case/billing\"");
+    assertThat(visibleText(html)).contains("Cancel and return to case statement of account");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"bill", "poa"})
+  @DisplayName("Submitted details contain no OPA or Submit action")
+  void submittedDetailsAreReadOnly(final String context) {
+    final String html =
+        render("application/billing/" + context + "-details", submittedDetailsModel("Submitted"));
+    assertThat(html)
+        .doesNotContain("id=\"" + context + "-details-link\"")
+        .doesNotContain("/application/assessments")
+        .doesNotContain("id=\"submit-" + context + "-button\"")
+        .doesNotContain("action=\"/case/billing/" + context + "/submit\"");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"bill", "poa"})
+  @DisplayName("Submitted pages do not instruct users to create, enter or submit another claim")
+  void submittedDetailsWithholdDraftInstructions(final String context) {
+    final String html =
+        render("application/billing/" + context + "-details", submittedDetailsModel("Submitted"));
+    assertThat(visibleText(html))
+        .doesNotContain("Create a bill", "Create a POA")
+        .doesNotContain("to enter the line details", "select 'Submit'", "you have just entered");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"bill", "poa"})
+  @DisplayName("Unavailable historical details explain the problem without offering unsafe actions")
+  void unavailableSubmittedDetailsRender(final String context) {
+    final Map<String, Object> model = submittedDetailsModel("Authorised");
+    model.put("detailsUnavailable", true);
+    model.put("summaryAvailable", false);
+    final String html = render("application/billing/" + context + "-details", model);
+    assertThat(visibleText(html))
+        .contains("Authorised", "Cancel and return to case statement of account")
+        .containsPattern("(?i)(unavailable|not available)");
+    assertThat(html)
+        .contains("href=\"/case/billing\"")
+        .doesNotContain("/application/assessments")
+        .doesNotContain("id=\"" + context + "-summary-link\"")
+        .doesNotContain("id=\"submit-" + context + "-button\"");
   }
 
   @Test

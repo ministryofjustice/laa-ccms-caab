@@ -63,10 +63,10 @@
     <tr>
       <td class="tcell">Bill Type</td>
       <td class="value" th:text="${topSectionData.billType}"></td>
+      <td class="tcell">Bill Status</td>
+      <td class="value" th:text="${topSectionData.billStatus}"></td>
       <td class="tcell">Court Assessed Bill</td>
       <td class="value" th:text="${topSectionData.courtAssessedBill}"></td>
-      <td class="tcell"></td>
-      <td class="value"></td>
       <td class="tcell">Total Value of Claim (£)</td>
       <td class="value currency"
           th:text="${#numbers.formatDecimal(topSectionData.totalValueOfClaim,1,'COMMA',2,'POINT')}"></td>
