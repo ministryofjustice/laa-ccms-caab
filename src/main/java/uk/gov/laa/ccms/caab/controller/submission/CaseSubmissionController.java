@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
+import uk.gov.laa.ccms.caab.logging.ChangesData;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -60,6 +61,7 @@ public class CaseSubmissionController {
    * @return the view name or a redirect to the confirmed submission page if the case status is
    *     valid
    */
+  @ChangesData
   @GetMapping(
       value = {
         "/{caseContext}/submit-case",
