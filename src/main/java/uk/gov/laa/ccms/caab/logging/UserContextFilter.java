@@ -15,6 +15,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class UserContextFilter extends OncePerRequestFilter {
 
   @Override
+  protected boolean shouldNotFilterAsyncDispatch() {
+    return false;
+  }
+
+  @Override
   protected void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain chain)
       throws ServletException, IOException {

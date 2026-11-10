@@ -63,4 +63,25 @@ class UserContextFilterTest {
     assertEquals(UserIdentifier.pseudonymise("A@b.com"), UserIdentifier.pseudonymise(" a@b.com "));
     assertEquals("unknown", UserIdentifier.pseudonymise(null));
   }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.EnumSource(
+      value = jakarta.servlet.DispatcherType.class,
+      names = {"ASYNC", "ERROR"})
+  void setsTheUserOnAsyncAndErrorRedispatchesToo(jakarta.servlet.DispatcherType dispatch)
+      throws Exception {
+    SecurityContextHolder.getContext()
+        .setAuthentication(
+            UsernamePasswordAuthenticationToken.authenticated(
+                "jane.doe@example.com", "n/a", AuthorityUtils.NO_AUTHORITIES));
+    var request = new MockHttpServletRequest();
+    request.setDispatcherType(dispatch);
+    String[] seen = new String[1];
+
+    new UserContextFilter()
+        .doFilter(
+            request, new MockHttpServletResponse(), (req, res) -> seen[0] = MDC.get("user_id"));
+
+    assertEquals(UserIdentifier.pseudonymise("jane.doe@example.com"), seen[0]);
+  }
 }

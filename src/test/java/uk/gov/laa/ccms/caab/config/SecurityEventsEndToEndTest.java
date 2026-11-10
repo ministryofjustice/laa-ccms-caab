@@ -140,6 +140,32 @@ class SecurityEventsEndToEndTest {
     assertThat(detail).doesNotContain(payloadFragment);
   }
 
+  @Test
+  void aCsrfRejectionOfASignedInUserIsLoggedWithThatUser() throws Exception {
+    int status =
+        mockMvc
+            .perform(
+                post("/case/overview")
+                    .with(user("jane").authorities())
+                    .with(
+                        org.springframework.security.test.web.servlet.request
+                            .SecurityMockMvcRequestPostProcessors.csrf()
+                            .useInvalidToken()))
+            .andReturn()
+            .getResponse()
+            .getStatus();
+
+    assertThat(status).isEqualTo(403);
+    ILoggingEvent event =
+        appender.list.stream()
+            .filter(
+                e -> e.getKeyValuePairs().stream().anyMatch(kv -> kv.value.equals("CSRF_REJECTED")))
+            .findFirst()
+            .orElseThrow();
+    assertThat(event.getMDCPropertyMap().get("user_id"))
+        .isEqualTo(uk.gov.laa.ccms.caab.logging.UserIdentifier.pseudonymise("jane"));
+  }
+
   private String keyValue(String eventType, String key) {
     return appender.list.stream()
         .filter(
