@@ -188,3 +188,7 @@ logging:
         version: ${spring.application.version:default}
         environment: ${spring.profiles.active:default}
         node_name: ${HOSTNAME:unknown}
+    json:
+      customizer: uk.gov.laa.ccms.caab.logging.ErrorMessageRedactingJsonMembersCustomizer
+      stacktrace:
+        printer: uk.gov.laa.ccms.caab.logging.MessagelessStackTracePrinter
