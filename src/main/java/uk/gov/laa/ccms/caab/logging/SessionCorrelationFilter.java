@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -49,7 +50,7 @@ public class SessionCorrelationFilter extends OncePerRequestFilter {
       put(previous, REQUEST_ID, requestId);
       put(previous, SESSION_ID, id);
       put(previous, SOURCE_IP, request.getRemoteAddr());
-      put(previous, FORWARDED_IP, SourceAddress.forwardedIp(request.getHeader(FORWARDED_FOR)));
+      put(previous, FORWARDED_IP, SourceAddress.forwardedIp(forwardedFor(request)));
       chain.doFilter(request, response);
     } finally {
       previous.forEach(
@@ -61,6 +62,13 @@ public class SessionCorrelationFilter extends OncePerRequestFilter {
             }
           });
     }
+  }
+
+  private static String forwardedFor(HttpServletRequest request) {
+    var values = request.getHeaders(FORWARDED_FOR);
+    return values != null && values.hasMoreElements()
+        ? String.join(",", Collections.list(values))
+        : null;
   }
 
   private static void put(Map<String, String> previous, String key, String value) {

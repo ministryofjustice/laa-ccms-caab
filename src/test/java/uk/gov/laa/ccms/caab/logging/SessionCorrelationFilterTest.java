@@ -207,4 +207,40 @@ class SessionCorrelationFilterTest {
       MDC.remove("network.forwarded_ip");
     }
   }
+
+  @org.junit.jupiter.api.Test
+  void anErrorDispatchRestoresTheContextWithTheSameRequestId() throws Exception {
+    var request = new MockHttpServletRequest();
+    String[] first = new String[1];
+    String[] second = new String[1];
+    var filter = new SessionCorrelationFilter();
+
+    filter.doFilter(
+        request, new MockHttpServletResponse(), (req, res) -> first[0] = MDC.get("request_id"));
+    request.setDispatcherType(DispatcherType.ERROR);
+    request.setAttribute(
+        org.springframework.web.util.WebUtils.ERROR_REQUEST_URI_ATTRIBUTE, "/failing");
+    filter.doFilter(
+        request, new MockHttpServletResponse(), (req, res) -> second[0] = MDC.get("request_id"));
+
+    org.junit.jupiter.api.Assertions.assertNotNull(first[0]);
+    org.junit.jupiter.api.Assertions.assertEquals(first[0], second[0]);
+    org.junit.jupiter.api.Assertions.assertNull(MDC.get("request_id"));
+  }
+
+  @org.junit.jupiter.api.Test
+  void repeatedForwardedHeadersUseTheRightMostValue() throws Exception {
+    var request = new MockHttpServletRequest();
+    request.addHeader("X-Forwarded-For", "6.6.6.6");
+    request.addHeader("X-Forwarded-For", "203.0.113.9");
+    String[] seen = new String[1];
+
+    new SessionCorrelationFilter()
+        .doFilter(
+            request,
+            new MockHttpServletResponse(),
+            (req, res) -> seen[0] = MDC.get("network.forwarded_ip"));
+
+    org.junit.jupiter.api.Assertions.assertEquals("203.0.113.9", seen[0]);
+  }
 }
