@@ -240,7 +240,7 @@ public class SoaApiClient {
                 log.error(
                     "SOA updateCase failed with status {}. Response body: {}",
                     ex.getStatusCode(),
-                    LogMasker.mask(ex.getResponseBodyAsString())))
+                    LogMasker.errorSummary(ex.getResponseBodyAsString())))
         .onErrorResume(
             e ->
                 soaApiClientErrorHandler.handleApiUpdateError(

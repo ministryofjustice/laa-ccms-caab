@@ -35,4 +35,29 @@ class LogMaskerTest {
     assertThat(LogMasker.withoutQuery("https://x.test/a/b?ref=1&n=Jane"))
         .isEqualTo("https://x.test/a/b");
   }
+
+  @org.junit.jupiter.api.Test
+  void errorSummaryKeepsFieldsAndCodesButNeverMessagesOrValues() {
+    String body =
+        """
+        {"status":400,"error":"Bad Request","message":"Jane Doe at 10 High Street",
+         "errors":[{"field":"surname","code":"NotBlank","rejectedValue":"Doe",
+         "defaultMessage":"Doe is not allowed"}]}
+        """;
+
+    String summary = LogMasker.errorSummary(body);
+
+    org.assertj.core.api.Assertions.assertThat(summary)
+        .contains("status=400", "error=Bad Request", "field=surname", "code=NotBlank")
+        .doesNotContain("Jane", "High Street", "Doe");
+  }
+
+  @org.junit.jupiter.api.Test
+  void errorSummaryOmitsABodyThatIsNotJson() {
+    org.assertj.core.api.Assertions.assertThat(
+            LogMasker.errorSummary("<html>Jane Doe, 10 High Street</html>"))
+        .isEqualTo("[body omitted]");
+    org.assertj.core.api.Assertions.assertThat(LogMasker.errorSummary(" ")).isEmpty();
+    org.assertj.core.api.Assertions.assertThat(LogMasker.errorSummary(null)).isEmpty();
+  }
 }

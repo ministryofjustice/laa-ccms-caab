@@ -217,7 +217,7 @@ public abstract class AbstractApiClientErrorHandler {
     if (e instanceof WebClientResponseException webClientResponseException) {
       final String body = webClientResponseException.getResponseBodyAsString();
       if (!body.isBlank()) {
-        return " - the API responded: " + LogMasker.mask(body);
+        return " - the API responded: " + LogMasker.errorSummary(body);
       }
     }
     return "";
