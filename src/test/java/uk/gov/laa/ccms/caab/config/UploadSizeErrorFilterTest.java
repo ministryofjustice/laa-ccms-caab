@@ -254,4 +254,38 @@ class UploadSizeErrorFilterTest {
             eq("/civil/case-provider-requests/documents"),
             any(SizeLimitExceededException.class));
   }
+
+  @Test
+  void theRejectionIsLoggedInsideTheRequestCorrelation() throws Exception {
+    String[] requestId = new String[1];
+    org.mockito.Mockito.doAnswer(
+            invocation -> {
+              requestId[0] = org.slf4j.MDC.get("request_id");
+              return null;
+            })
+        .when(securityEventLogger)
+        .inputRejected(any(), any(), any());
+    int correlationOrder = org.springframework.core.Ordered.HIGHEST_PRECEDENCE + 1;
+    int uploadOrder =
+        org.springframework.core.annotation.AnnotationUtils.findAnnotation(
+                UploadSizeErrorFilter.class, org.springframework.core.annotation.Order.class)
+            .value();
+    org.junit.jupiter.api.Assertions.assertTrue(uploadOrder > correlationOrder);
+    var filters =
+        new jakarta.servlet.Filter[] {
+          new uk.gov.laa.ccms.caab.logging.SessionCorrelationFilter(), filter
+        };
+    jakarta.servlet.Servlet servlet = mock(jakarta.servlet.Servlet.class);
+    org.mockito.Mockito.doThrow(
+            new InvalidParameterException(
+                new SizeLimitExceededException("too large", 13_000_000, 12_582_912)))
+        .when(servlet)
+        .service(any(), any());
+
+    new org.springframework.mock.web.MockFilterChain(servlet, filters)
+        .doFilter(
+            request("/civil/case-provider-requests/documents"), new MockHttpServletResponse());
+
+    org.junit.jupiter.api.Assertions.assertNotNull(requestId[0]);
+  }
 }

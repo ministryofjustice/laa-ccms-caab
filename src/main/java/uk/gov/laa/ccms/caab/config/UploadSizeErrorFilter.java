@@ -23,7 +23,7 @@ import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 /** Returns multipart size failures raised during CSRF processing to the upload form. */
 @Component
 @RequiredArgsConstructor
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(Ordered.HIGHEST_PRECEDENCE + 2)
 public class UploadSizeErrorFilter extends OncePerRequestFilter {
 
   private final SecurityEventLogger securityEventLogger;
