@@ -102,15 +102,21 @@ public class LoggingInterceptor implements HandlerInterceptor {
         || !handlerMethod.getBeanType().isAnnotationPresent(Controller.class)) {
       return;
     }
-    HttpSession session = request.getSession(false);
-    if (session == null) {
+    String caseReference;
+    String clientReference;
+    try {
+      HttpSession session = request.getSession(false);
+      if (session == null) {
+        return;
+      }
+      caseReference = (String) session.getAttribute(SessionConstants.CASE_REFERENCE_NUMBER);
+      clientReference = (String) session.getAttribute(SessionConstants.CLIENT_REFERENCE);
+      if (session.getAttribute(SessionConstants.ACTIVE_CASE) instanceof ActiveCase activeCase) {
+        caseReference = activeCase.getCaseReferenceNumber();
+        clientReference = activeCase.getClientReferenceNumber();
+      }
+    } catch (IllegalStateException invalidated) {
       return;
-    }
-    String caseReference = (String) session.getAttribute(SessionConstants.CASE_REFERENCE_NUMBER);
-    String clientReference = (String) session.getAttribute(SessionConstants.CLIENT_REFERENCE);
-    if (session.getAttribute(SessionConstants.ACTIVE_CASE) instanceof ActiveCase activeCase) {
-      caseReference = activeCase.getCaseReferenceNumber();
-      clientReference = activeCase.getClientReferenceNumber();
     }
     if (caseReference == null && clientReference == null) {
       return;

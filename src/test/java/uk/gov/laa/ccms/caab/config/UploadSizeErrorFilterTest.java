@@ -329,4 +329,27 @@ class UploadSizeErrorFilterTest {
         userId[0]);
     assertNull(org.slf4j.MDC.get("user_id"));
   }
+
+  @Test
+  void aSessionInvalidatedByALogoutDoesNotBreakTheRecovery() throws Exception {
+    var session = org.mockito.Mockito.mock(jakarta.servlet.http.HttpSession.class);
+    org.mockito.Mockito.when(
+            session.getAttribute(
+                org.springframework.security.web.context.HttpSessionSecurityContextRepository
+                    .SPRING_SECURITY_CONTEXT_KEY))
+        .thenThrow(new IllegalStateException("session invalidated"));
+    MockHttpServletRequest request = request("/civil/case-provider-requests/documents");
+    request.setSession(session);
+    var response = new MockHttpServletResponse();
+    FilterChain chain =
+        (req, res) -> {
+          throw new InvalidParameterException(
+              new SizeLimitExceededException("too large", 13_000_000, 12_582_912));
+        };
+
+    filter.doFilter(request, response, chain);
+
+    verify(securityEventLogger).inputRejected(any(), any(), any(SizeLimitExceededException.class));
+    assertEquals(302, response.getStatus());
+  }
 }

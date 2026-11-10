@@ -249,4 +249,21 @@ public class LoggingInterceptorTest {
       return "test"; // Return the name of the view if it's relevant
     }
   }
+
+  @Test
+  public void aSessionInvalidatedByALogoutDoesNotBreakTheAfterCompletion() throws Exception {
+    var invalidated = mock(HttpSession.class);
+    when(invalidated.getAttribute(org.mockito.ArgumentMatchers.anyString()))
+        .thenThrow(new IllegalStateException("session invalidated"));
+    var req = new org.springframework.mock.web.MockHttpServletRequest("GET", "/case/overview");
+    req.setSession(invalidated);
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        null);
+
+    verifyNoInteractions(securityEventLogger);
+  }
 }
