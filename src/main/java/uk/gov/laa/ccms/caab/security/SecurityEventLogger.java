@@ -1,5 +1,6 @@
 package uk.gov.laa.ccms.caab.security;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -98,10 +99,13 @@ public class SecurityEventLogger {
 
   @EventListener
   void onAuthorizationDenied(AuthorizationDeniedEvent<?> event) {
-    String target = null;
-    if (event.getObject() instanceof RequestAuthorizationContext context) {
-      target = context.getRequest().getMethod() + " " + context.getRequest().getRequestURI();
-    }
+    HttpServletRequest request =
+        switch (event.getObject()) {
+          case HttpServletRequest servletRequest -> servletRequest;
+          case RequestAuthorizationContext context -> context.getRequest();
+          case null, default -> null;
+        };
+    String target = request == null ? null : request.getMethod() + " " + request.getRequestURI();
     log(
         EventType.AUTHORIZATION_DENIED,
         event.getAuthentication().get(),

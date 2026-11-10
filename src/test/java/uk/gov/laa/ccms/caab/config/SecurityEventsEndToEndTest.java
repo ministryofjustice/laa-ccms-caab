@@ -78,6 +78,7 @@ class SecurityEventsEndToEndTest {
 
     assertThat(status).isEqualTo(403);
     assertThat(eventTypes()).contains("AUTHORIZATION_DENIED");
+    assertThat(keyValue("AUTHORIZATION_DENIED", "event_detail")).isEqualTo("GET /case/overview");
     org.mockito.Mockito.verify(puiMetricService)
         .incrementSecurityEvents("AUTHORIZATION_DENIED", "DENIED");
   }
@@ -137,6 +138,19 @@ class SecurityEventsEndToEndTest {
     assertThat(detail).matches("[a-z_]+");
     assertThat(event.getFormattedMessage()).doesNotContain(payloadFragment);
     assertThat(detail).doesNotContain(payloadFragment);
+  }
+
+  private String keyValue(String eventType, String key) {
+    return appender.list.stream()
+        .filter(
+            e ->
+                e.getKeyValuePairs().stream()
+                    .anyMatch(kv -> kv.key.equals("event_type") && kv.value.equals(eventType)))
+        .flatMap(e -> e.getKeyValuePairs().stream())
+        .filter(kv -> kv.key.equals(key))
+        .map(kv -> String.valueOf(kv.value))
+        .findFirst()
+        .orElse(null);
   }
 
   private List<String> eventTypes() {
