@@ -148,6 +148,44 @@ public class LoggingInterceptorTest {
     verify(securityEventLogger).dataAccessed("VIEW", false, "300001", "CL1", "/case/overview");
   }
 
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "GET,VIEW",
+    "HEAD,VIEW",
+    "OPTIONS,VIEW",
+    "TRACE,VIEW",
+    "POST,CHANGE",
+    "PUT,CHANGE",
+    "PATCH,CHANGE",
+    "DELETE,CHANGE"
+  })
+  public void theHttpMethodDecidesWhetherARequestViewsOrChanges(String method, String action)
+      throws Exception {
+    var req = requestWithActiveCase(method, "/case/overview");
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        null);
+
+    verify(securityEventLogger).dataAccessed(action, true, "300001", "CL1", "/case/overview");
+  }
+
+  @Test
+  public void aMarkedHandlerIsAChangeEvenForAHeadRequest() throws Exception {
+    var req = requestWithActiveCase("HEAD", "/case/evidence/1/remove");
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testRemove"),
+        null);
+
+    verify(securityEventLogger)
+        .dataAccessed("CHANGE", true, "300001", "CL1", "/case/evidence/1/remove");
+  }
+
   private static org.springframework.mock.web.MockHttpServletRequest requestWithActiveCase(
       String method, String uri) {
     var mockSession = new org.springframework.mock.web.MockHttpSession();

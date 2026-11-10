@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.util.Enumeration;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -29,6 +30,8 @@ import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 @Component
 @RequiredArgsConstructor
 public class LoggingInterceptor implements HandlerInterceptor {
+
+  private static final Set<String> SAFE_METHODS = Set.of("GET", "HEAD", "OPTIONS", "TRACE");
 
   @Setter private Logger log = LoggerFactory.getLogger(LoggingInterceptor.class);
 
@@ -126,7 +129,8 @@ public class LoggingInterceptor implements HandlerInterceptor {
             && request.getAttribute(DispatcherServlet.EXCEPTION_ATTRIBUTE) == null
             && response.getStatus() < 400;
     boolean changes =
-        !"GET".equals(request.getMethod()) || handlerMethod.hasMethodAnnotation(ChangesData.class);
+        !SAFE_METHODS.contains(request.getMethod())
+            || handlerMethod.hasMethodAnnotation(ChangesData.class);
     securityEventLogger.dataAccessed(
         changes ? "CHANGE" : "VIEW",
         succeeded,
