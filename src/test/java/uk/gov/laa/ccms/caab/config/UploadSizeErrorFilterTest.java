@@ -294,4 +294,39 @@ class UploadSizeErrorFilterTest {
 
     org.junit.jupiter.api.Assertions.assertNotNull(requestId[0]);
   }
+
+  @Test
+  void theRejectionIsLoggedWithTheSignedInUserFromTheSession() throws Exception {
+    String[] userId = new String[1];
+    org.mockito.Mockito.doAnswer(
+            invocation -> {
+              userId[0] = org.slf4j.MDC.get("user_id");
+              return null;
+            })
+        .when(securityEventLogger)
+        .inputRejected(any(), any(), any());
+    MockHttpServletRequest request = request("/civil/case-provider-requests/documents");
+    var session = new org.springframework.mock.web.MockHttpSession();
+    var context =
+        new org.springframework.security.core.context.SecurityContextImpl(
+            org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+                .authenticated("jane.doe@example.com", "n/a", java.util.List.of()));
+    session.setAttribute(
+        org.springframework.security.web.context.HttpSessionSecurityContextRepository
+            .SPRING_SECURITY_CONTEXT_KEY,
+        context);
+    request.setSession(session);
+    FilterChain chain =
+        (req, res) -> {
+          throw new InvalidParameterException(
+              new SizeLimitExceededException("too large", 13_000_000, 12_582_912));
+        };
+
+    filter.doFilter(request, new MockHttpServletResponse(), chain);
+
+    assertEquals(
+        uk.gov.laa.ccms.caab.logging.UserIdentifier.pseudonymise("jane.doe@example.com"),
+        userId[0]);
+    assertNull(org.slf4j.MDC.get("user_id"));
+  }
 }
