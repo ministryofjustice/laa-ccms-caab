@@ -210,7 +210,9 @@ public class SecurityEventLogger {
   }
 
   /**
-   * Records which case and client a request touched, as identifiers only.
+   * Records which case and client a request touched, as identifiers only. Few requests carry a case
+   * or client reference, so these come from the user's session and can name the case they viewed
+   * before this request.
    *
    * @param action whether the request viewed or changed the data
    * @param succeeded whether the request completed without an error
@@ -227,8 +229,8 @@ public class SecurityEventLogger {
         .addKeyValue(EVENT_TYPE, EventType.DATA_ACCESS.name())
         .addKeyValue("action", action)
         .addKeyValue(OUTCOME, outcome.name())
-        .addKeyValue("case_reference", caseReference)
-        .addKeyValue("client_reference", clientReference)
+        .addKeyValue("session_case_reference", caseReference)
+        .addKeyValue("session_client_reference", clientReference)
         .addKeyValue("path", path)
         .log("Case or client data accessed");
   }
