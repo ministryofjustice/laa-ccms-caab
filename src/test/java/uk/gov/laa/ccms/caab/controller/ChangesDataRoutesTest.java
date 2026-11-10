@@ -9,6 +9,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import uk.gov.laa.ccms.caab.controller.application.AmendCaseController;
+import uk.gov.laa.ccms.caab.controller.application.section.EditProceedingsAndCostsSectionController;
 import uk.gov.laa.ccms.caab.controller.application.section.EvidenceSectionController;
 import uk.gov.laa.ccms.caab.controller.billing.BillingController;
 import uk.gov.laa.ccms.caab.controller.notifications.ActionsAndNotificationsController;
@@ -24,6 +25,7 @@ class ChangesDataRoutesTest {
         Arguments.of(AssessmentController.class, "assessmentGet"),
         Arguments.of(AmendCaseController.class, "startAmendment"),
         Arguments.of(EvidenceSectionController.class, "removeEvidenceDocument"),
+        Arguments.of(EditProceedingsAndCostsSectionController.class, "proceedingsMakeLead"),
         Arguments.of(BillingController.class, "createPoa"),
         Arguments.of(BillingController.class, "createBill"),
         Arguments.of(ActionsAndNotificationsController.class, "removeDraftNotificationAttachment"),
