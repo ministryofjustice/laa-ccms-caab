@@ -42,6 +42,10 @@ class InputRejectionLoggerTest {
   @MethodSource("rejections")
   void logsRejectionWithPathOnlyAndLeavesHandlingToOthers(Exception exception) {
     var request = new MockHttpServletRequest("POST", "/application/sections");
+
+    request.setAttribute(
+        org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE,
+        "/application/sections");
     request.setQueryString("ref=SENSITIVE");
 
     var result = resolver.resolveException(request, new MockHttpServletResponse(), null, exception);
@@ -91,7 +95,7 @@ class InputRejectionLoggerTest {
   }
 
   @org.junit.jupiter.api.Test
-  void logsARedactedPathWhenNoRouteMatched() {
+  void logsAFixedPathWhenNoRouteMatched() {
     var request = new org.springframework.mock.web.MockHttpServletRequest("TRACE", "/case/300001");
     var exception = new org.springframework.web.HttpRequestMethodNotSupportedException("TRACE");
 
@@ -101,7 +105,7 @@ class InputRejectionLoggerTest {
     org.mockito.Mockito.verify(securityEventLogger)
         .inputRejected(
             org.mockito.ArgumentMatchers.eq("TRACE"),
-            org.mockito.ArgumentMatchers.eq("/case/*"),
+            org.mockito.ArgumentMatchers.eq("[unmatched route]"),
             org.mockito.ArgumentMatchers.eq(exception));
   }
 }

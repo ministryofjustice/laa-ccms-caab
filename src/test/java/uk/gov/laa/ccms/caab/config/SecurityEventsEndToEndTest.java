@@ -57,6 +57,8 @@ class SecurityEventsEndToEndTest {
 
   @BeforeEach
   void setUp() {
+    uk.gov.laa.ccms.caab.logging.RequestRoute.registerKnownSegments(
+        java.util.Set.of("case", "overview"));
     appender.start();
     eventLogger.addAppender(appender);
     mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
@@ -64,6 +66,7 @@ class SecurityEventsEndToEndTest {
 
   @AfterEach
   void tearDown() {
+    uk.gov.laa.ccms.caab.logging.RequestRoute.clearKnownSegments();
     eventLogger.detachAppender(appender);
   }
 

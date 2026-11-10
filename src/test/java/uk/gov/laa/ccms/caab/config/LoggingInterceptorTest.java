@@ -85,7 +85,7 @@ public class LoggingInterceptorTest {
         null);
 
     verify(securityEventLogger)
-        .dataAccessed("CHANGE", true, "300001", "CL1", "/case/evidence/*/remove");
+        .dataAccessed("CHANGE", true, "300001", "CL1", "/case/evidence/1/remove");
   }
 
   @Test
@@ -144,6 +144,8 @@ public class LoggingInterceptorTest {
             .build());
     var req = new org.springframework.mock.web.MockHttpServletRequest(method, uri);
     req.setSession(mockSession);
+    req.setAttribute(
+        org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, uri);
     return req;
   }
 

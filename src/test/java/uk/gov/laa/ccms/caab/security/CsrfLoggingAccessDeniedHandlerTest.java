@@ -48,8 +48,15 @@ class CsrfLoggingAccessDeniedHandlerTest {
 
   private MockMvc mockMvc;
 
+  @org.junit.jupiter.api.AfterEach
+  void forgetRoutes() {
+    uk.gov.laa.ccms.caab.logging.RequestRoute.clearKnownSegments();
+  }
+
   @BeforeEach
   void setUp() {
+    uk.gov.laa.ccms.caab.logging.RequestRoute.registerKnownSegments(
+        java.util.Set.of("probe", "case", "users"));
     org.mockito.Mockito.reset(securityEventLogger);
     mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
   }

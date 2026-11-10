@@ -12,7 +12,7 @@ import org.springframework.web.servlet.HandlerMapping;
 public final class RequestRoute {
 
   private static final Pattern PATH_PARAMETERS = Pattern.compile(";[^/]*");
-  private static final Pattern IDENTIFYING_SEGMENT = Pattern.compile("[^/]*[\\d@%][^/]*");
+  private static final String UNMATCHED_ROUTE = "[unmatched route]";
   private static final int MAX_LENGTH = 200;
 
   private static volatile Set<String> knownSegments = Set.of();
@@ -30,7 +30,8 @@ public final class RequestRoute {
     knownSegments = Set.copyOf(merged);
   }
 
-  static synchronized void clearKnownSegments() {
+  /** Forgets the registered segments. Intended for tests. */
+  public static synchronized void clearKnownSegments() {
     knownSegments = Set.of();
   }
 
@@ -38,8 +39,7 @@ public final class RequestRoute {
    * Returns the matched route template, such as {@code /case/{id}/overview}. A request that no
    * handler has matched yet, such as one refused by a security filter, falls back to its path with
    * path parameters removed and every segment that is not a literal part of a route replaced by an
-   * asterisk. Until the routes are known, any segment holding a digit, an at sign or an escape is
-   * replaced instead.
+   * asterisk. Until the routes are known, only a fixed marker is returned.
    *
    * @param request the request
    * @return the route or redacted path
@@ -51,10 +51,10 @@ public final class RequestRoute {
     }
     String uri = PATH_PARAMETERS.matcher(request.getRequestURI()).replaceAll("");
     Set<String> known = knownSegments;
-    String redacted =
-        known.isEmpty()
-            ? IDENTIFYING_SEGMENT.matcher(uri).replaceAll("*")
-            : keepKnownSegments(uri, request.getContextPath(), known);
+    if (known.isEmpty()) {
+      return UNMATCHED_ROUTE;
+    }
+    String redacted = keepKnownSegments(uri, request.getContextPath(), known);
     return redacted.length() > MAX_LENGTH ? redacted.substring(0, MAX_LENGTH) : redacted;
   }
 

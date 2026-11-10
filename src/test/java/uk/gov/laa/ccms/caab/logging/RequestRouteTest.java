@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.logging;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -24,22 +25,29 @@ class RequestRouteTest {
   }
 
   @Test
-  void withoutARouteItRedactsIdentifyingSegmentsAndPathParameters() {
-    var request =
-        new MockHttpServletRequest(
-            "POST", "/case/300001/users/jane.doe%40example.com/AB123456C;jsessionid=abc123");
+  void withoutARouteOnlyLiteralRouteSegmentsAreKept() {
+    RequestRoute.registerKnownSegments(Set.of("application", "client", "confirm"));
 
-    assertThat(RequestRoute.of(request)).isEqualTo("/case/*/users/*/*");
+    assertThat(
+            RequestRoute.of(
+                new MockHttpServletRequest("POST", "/application/client/Jane-Smith/confirm")))
+        .isEqualTo("/application/client/*/confirm");
+    assertThat(
+            RequestRoute.of(
+                new MockHttpServletRequest(
+                    "POST", "/application/client/AB123456C;jsessionid=abc/confirm")))
+        .isEqualTo("/application/client/*/confirm");
   }
 
   @Test
-  void withoutARouteWordOnlySegmentsAreKept() {
-    assertThat(RequestRoute.of(new MockHttpServletRequest("GET", "/case/overview")))
-        .isEqualTo("/case/overview");
+  void beforeTheRoutesAreKnownOnlyAFixedMarkerIsReturned() {
+    assertThat(RequestRoute.of(new MockHttpServletRequest("GET", "/application/client/Jane-Smith")))
+        .isEqualTo("[unmatched route]");
   }
 
   @Test
   void aVeryLongPathIsCut() {
+    RequestRoute.registerKnownSegments(Set.of("a".repeat(500)));
     var request = new MockHttpServletRequest("GET", "/" + "a".repeat(500));
 
     assertThat(RequestRoute.of(request)).hasSize(200);

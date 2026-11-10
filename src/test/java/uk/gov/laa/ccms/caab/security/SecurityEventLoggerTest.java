@@ -71,6 +71,9 @@ class SecurityEventLoggerTest {
   void authorizationDeniedLogsMethodAndPathWithoutQueryString() {
     var request = new MockHttpServletRequest("GET", "/case/billing/poa");
     request.setQueryString("ref=SENSITIVE");
+    request.setAttribute(
+        org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE,
+        "/case/billing/poa");
     logger.onAuthorizationDenied(
         new AuthorizationDeniedEvent<>(
             () -> user,

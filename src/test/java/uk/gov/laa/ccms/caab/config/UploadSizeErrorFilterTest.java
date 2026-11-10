@@ -246,7 +246,13 @@ class UploadSizeErrorFilterTest {
               new SizeLimitExceededException("too large", 13_000_000, 12_582_912));
         };
 
-    filter.doFilter(request, new MockHttpServletResponse(), chain);
+    uk.gov.laa.ccms.caab.logging.RequestRoute.registerKnownSegments(
+        java.util.Set.of("case-provider-requests", "documents"));
+    try {
+      filter.doFilter(request, new MockHttpServletResponse(), chain);
+    } finally {
+      uk.gov.laa.ccms.caab.logging.RequestRoute.clearKnownSegments();
+    }
 
     verify(securityEventLogger)
         .inputRejected(

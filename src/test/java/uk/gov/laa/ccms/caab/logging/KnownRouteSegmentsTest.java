@@ -44,7 +44,15 @@ class KnownRouteSegmentsTest {
     assertThat(
             RequestRoute.of(
                 new MockHttpServletRequest("POST", "/client/alex.synthetic%40example.test")))
-        .isEqualTo("/*/*");
+        .isEqualTo("/client/*");
+  }
+
+  @Test
+  void anAlphabeticIdentifierIsNotKept() {
+    assertThat(
+            RequestRoute.of(
+                new MockHttpServletRequest("GET", "/application/client/Jane-Smith/confirm")))
+        .isEqualTo("/application/client/*/confirm");
   }
 
   @Test
@@ -72,6 +80,12 @@ class KnownRouteSegmentsTest {
 
   @Controller
   static class ProbeController {
+
+    @GetMapping("/application/client/{id}/confirm")
+    @ResponseBody
+    String confirm(@org.springframework.web.bind.annotation.PathVariable String id) {
+      return id;
+    }
 
     @GetMapping("/case/{reference}/overview")
     @ResponseBody
