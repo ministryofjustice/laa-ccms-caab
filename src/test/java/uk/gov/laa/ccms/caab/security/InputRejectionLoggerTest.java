@@ -110,4 +110,18 @@ class InputRejectionLoggerTest {
             org.mockito.ArgumentMatchers.eq("[unmatched route]"),
             org.mockito.ArgumentMatchers.eq(exception));
   }
+
+  @org.junit.jupiter.api.Test
+  void everyExceptionIsNotedOnTheRequestEvenWhenItIsNotAnInputRejection() {
+    var request = new org.springframework.mock.web.MockHttpServletRequest("GET", "/home");
+
+    resolver.resolveException(
+        request,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        null,
+        new IllegalStateException("boom"));
+
+    org.junit.jupiter.api.Assertions.assertTrue(
+        uk.gov.laa.ccms.caab.logging.HandledException.isMarked(request));
+  }
 }

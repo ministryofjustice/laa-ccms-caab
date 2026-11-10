@@ -14,10 +14,12 @@ import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.ModelAndView;
+import uk.gov.laa.ccms.caab.logging.HandledException;
 import uk.gov.laa.ccms.caab.logging.RequestRoute;
 
 /**
- * Logs requests rejected as malformed or not allowed, then leaves the exception to the existing
+ * Logs requests rejected as malformed or not allowed, and notes every exception on the request so
+ * the audit event can tell the request failed. It then leaves the exception to the existing
  * handlers by resolving nothing.
  */
 @Component
@@ -29,6 +31,7 @@ public class InputRejectionLogger implements HandlerExceptionResolver, Ordered {
   @Override
   public ModelAndView resolveException(
       HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+    HandledException.mark(request, ex);
     if (isInputRejection(ex)) {
       securityEventLogger.inputRejected(request.getMethod(), RequestRoute.of(request), ex);
     }
