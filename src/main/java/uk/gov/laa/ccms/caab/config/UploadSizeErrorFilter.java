@@ -18,6 +18,7 @@ import org.springframework.web.servlet.FlashMap;
 import org.springframework.web.servlet.FlashMapManager;
 import org.springframework.web.servlet.support.RequestContextUtils;
 import org.springframework.web.servlet.support.SessionFlashMapManager;
+import uk.gov.laa.ccms.caab.logging.RequestRoute;
 import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 
 /** Returns multipart size failures raised during CSRF processing to the upload form. */
@@ -47,7 +48,7 @@ public class UploadSizeErrorFilter extends OncePerRequestFilter {
         throw exception;
       }
 
-      securityEventLogger.inputRejected(request.getMethod(), request.getRequestURI(), sizeCause);
+      securityEventLogger.inputRejected(request.getMethod(), RequestRoute.of(request), sizeCause);
       redirectToUploadForm(request, response);
     }
   }

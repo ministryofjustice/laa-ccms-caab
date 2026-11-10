@@ -19,6 +19,7 @@ import org.springframework.security.web.access.intercept.RequestAuthorizationCon
 import org.springframework.stereotype.Component;
 import uk.gov.laa.ccms.caab.bean.metric.PuiMetricService;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
+import uk.gov.laa.ccms.caab.logging.RequestRoute;
 import uk.gov.laa.ccms.caab.logging.UserIdentifier;
 
 /** Writes authentication and authorisation outcomes as structured security events. */
@@ -111,7 +112,7 @@ public class SecurityEventLogger {
           case RequestAuthorizationContext context -> context.getRequest();
           case null, default -> null;
         };
-    String target = request == null ? null : request.getMethod() + " " + request.getRequestURI();
+    String target = request == null ? null : request.getMethod() + " " + RequestRoute.of(request);
     log(
         EventType.AUTHORIZATION_DENIED,
         event.getAuthentication().get(),

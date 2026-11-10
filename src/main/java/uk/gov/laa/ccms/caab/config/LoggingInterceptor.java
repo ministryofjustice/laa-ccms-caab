@@ -16,6 +16,7 @@ import org.springframework.web.servlet.ModelAndView;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.constants.SessionConstants;
 import uk.gov.laa.ccms.caab.logging.ChangesData;
+import uk.gov.laa.ccms.caab.logging.RequestRoute;
 import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 
 /**
@@ -121,7 +122,7 @@ public class LoggingInterceptor implements HandlerInterceptor {
         succeeded,
         caseReference,
         clientReference,
-        request.getRequestURI());
+        RequestRoute.of(request));
   }
 
   /**

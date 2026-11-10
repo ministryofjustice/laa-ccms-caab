@@ -13,6 +13,7 @@ import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.ModelAndView;
+import uk.gov.laa.ccms.caab.logging.RequestRoute;
 
 /**
  * Logs requests rejected as malformed or not allowed, then leaves the exception to the existing
@@ -28,7 +29,7 @@ public class InputRejectionLogger implements HandlerExceptionResolver, Ordered {
   public ModelAndView resolveException(
       HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
     if (isInputRejection(ex)) {
-      securityEventLogger.inputRejected(request.getMethod(), request.getRequestURI(), ex);
+      securityEventLogger.inputRejected(request.getMethod(), RequestRoute.of(request), ex);
     }
     return null;
   }

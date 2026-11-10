@@ -69,4 +69,39 @@ class InputRejectionLoggerTest {
     org.junit.jupiter.api.Assertions.assertEquals(
         org.springframework.core.Ordered.HIGHEST_PRECEDENCE, resolver.getOrder());
   }
+
+  @org.junit.jupiter.api.Test
+  void logsTheRouteTemplateNotTheIdentifiersInThePath() {
+    var request =
+        new org.springframework.mock.web.MockHttpServletRequest(
+            "GET", "/case/300001;jsessionid=abc");
+    request.setAttribute(
+        org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE,
+        "/case/{reference}");
+    var exception = new org.springframework.beans.TypeMismatchException("x", Integer.class);
+
+    resolver.resolveException(
+        request, new org.springframework.mock.web.MockHttpServletResponse(), null, exception);
+
+    org.mockito.Mockito.verify(securityEventLogger)
+        .inputRejected(
+            org.mockito.ArgumentMatchers.eq("GET"),
+            org.mockito.ArgumentMatchers.eq("/case/{reference}"),
+            org.mockito.ArgumentMatchers.eq(exception));
+  }
+
+  @org.junit.jupiter.api.Test
+  void logsARedactedPathWhenNoRouteMatched() {
+    var request = new org.springframework.mock.web.MockHttpServletRequest("TRACE", "/case/300001");
+    var exception = new org.springframework.web.HttpRequestMethodNotSupportedException("TRACE");
+
+    resolver.resolveException(
+        request, new org.springframework.mock.web.MockHttpServletResponse(), null, exception);
+
+    org.mockito.Mockito.verify(securityEventLogger)
+        .inputRejected(
+            org.mockito.ArgumentMatchers.eq("TRACE"),
+            org.mockito.ArgumentMatchers.eq("/case/*"),
+            org.mockito.ArgumentMatchers.eq(exception));
+  }
 }

@@ -8,6 +8,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.csrf.CsrfException;
+import uk.gov.laa.ccms.caab.logging.RequestRoute;
 
 /** Logs requests refused for a bad CSRF token, then responds exactly as Spring's default does. */
 @RequiredArgsConstructor
@@ -25,7 +26,7 @@ public class CsrfLoggingAccessDeniedHandler implements AccessDeniedHandler {
       throws IOException, jakarta.servlet.ServletException {
     if (accessDeniedException instanceof CsrfException) {
       securityEventLogger.csrfRejected(
-          request.getMethod(), request.getRequestURI(), accessDeniedException);
+          request.getMethod(), RequestRoute.of(request), accessDeniedException);
     }
     delegate.handle(request, response, accessDeniedException);
   }

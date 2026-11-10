@@ -55,6 +55,23 @@ class CsrfLoggingAccessDeniedHandlerTest {
   }
 
   @Test
+  void logsARedactedPathNotTheIdentifiersInIt() throws Exception {
+    var request = new MockHttpServletRequest("POST", "/case/300001/users/jane.doe%40example.com");
+
+    new CsrfLoggingAccessDeniedHandler(securityEventLogger)
+        .handle(
+            request,
+            new MockHttpServletResponse(),
+            new InvalidCsrfTokenException(new DefaultCsrfToken("X-CSRF", "_csrf", "a"), "b"));
+
+    verify(securityEventLogger)
+        .csrfRejected(
+            org.mockito.ArgumentMatchers.eq("POST"),
+            org.mockito.ArgumentMatchers.eq("/case/*/users/*"),
+            org.mockito.ArgumentMatchers.any());
+  }
+
+  @Test
   void aWrongTokenIsLoggedAndStillRefusedWithA403() throws Exception {
     var session = new MockHttpSession();
     session.setAttribute(

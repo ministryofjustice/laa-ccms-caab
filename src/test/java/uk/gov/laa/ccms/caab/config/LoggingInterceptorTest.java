@@ -85,7 +85,7 @@ public class LoggingInterceptorTest {
         null);
 
     verify(securityEventLogger)
-        .dataAccessed("CHANGE", true, "300001", "CL1", "/case/evidence/1/remove");
+        .dataAccessed("CHANGE", true, "300001", "CL1", "/case/evidence/*/remove");
   }
 
   @Test
@@ -113,6 +113,23 @@ public class LoggingInterceptorTest {
         null);
 
     verifyNoInteractions(securityEventLogger);
+  }
+
+  @Test
+  public void theDataAccessEventNamesTheRouteNotTheIdentifiersInThePath() throws Exception {
+    var req = requestWithActiveCase("GET", "/case/300001/overview");
+    req.setAttribute(
+        org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE,
+        "/case/{reference}/overview");
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        null);
+
+    verify(securityEventLogger)
+        .dataAccessed("VIEW", true, "300001", "CL1", "/case/{reference}/overview");
   }
 
   private static org.springframework.mock.web.MockHttpServletRequest requestWithActiveCase(
