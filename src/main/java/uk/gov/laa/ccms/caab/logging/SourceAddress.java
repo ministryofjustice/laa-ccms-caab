@@ -32,23 +32,36 @@ final class SourceAddress {
   }
 
   private static boolean isIpv6(String value) {
-    long colons = value.chars().filter(c -> c == ':').count();
-    if (value.length() > 45
-        || colons < 2
-        || colons > 7
-        || value.contains(":::")
-        || value.indexOf("::") != value.lastIndexOf("::")) {
+    if (value.length() > 45 || value.indexOf(':') < 0 || value.contains(":::")) {
       return false;
     }
-    String[] groups = value.split(":", -1);
+    int gap = value.indexOf("::");
+    if (gap != value.lastIndexOf("::")) {
+      return false;
+    }
+    if (gap < 0) {
+      return groupCount(value, true) == 8;
+    }
+    int head = groupCount(value.substring(0, gap), false);
+    int tail = groupCount(value.substring(gap + 2), true);
+    return head >= 0 && tail >= 0 && head + tail <= 7;
+  }
+
+  private static int groupCount(String part, boolean mayEndInIpv4) {
+    if (part.isEmpty()) {
+      return 0;
+    }
+    String[] groups = part.split(":", -1);
+    int count = 0;
     for (int i = 0; i < groups.length; i++) {
-      boolean lastGroup = i == groups.length - 1;
-      if (!groups[i].isEmpty()
-          && !HEX_GROUP.matcher(groups[i]).matches()
-          && !(lastGroup && IPV4.matcher(groups[i]).matches())) {
-        return false;
+      if (HEX_GROUP.matcher(groups[i]).matches()) {
+        count++;
+      } else if (mayEndInIpv4 && i == groups.length - 1 && IPV4.matcher(groups[i]).matches()) {
+        count += 2;
+      } else {
+        return -1;
       }
     }
-    return true;
+    return count;
   }
 }

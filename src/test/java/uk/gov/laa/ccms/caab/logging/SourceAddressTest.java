@@ -41,4 +41,38 @@ class SourceAddressTest {
   void anythingThatIsNotAnIpAddressGivesNull(String header) {
     assertNull(SourceAddress.forwardedIp(header));
   }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "::",
+        "::1",
+        "2001:db8::1",
+        "1:2:3:4:5:6:7:8",
+        "1:2:3:4:5:6:7::",
+        "::1:2:3:4:5:6:7",
+        "::ffff:192.0.2.1",
+        "1:2:3:4:5:6:192.0.2.1"
+      })
+  void acceptsEveryValidIpv6Form(String address) {
+    assertEquals(address, SourceAddress.forwardedIp(address));
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "1:2:3",
+        ":1:2",
+        "bad:bad:bad",
+        "1:2:3:4:5:6:7",
+        "1:2:3:4:5:6:7:8:9",
+        "1:2:3:4:5:6:7:",
+        "1:2:3:4:5:6:7:192.0.2.1",
+        "1:2:3:4:5:6:7::192.0.2.1",
+        "1::2::3",
+        "12345::1"
+      })
+  void rejectsMalformedIpv6(String address) {
+    assertNull(SourceAddress.forwardedIp(address));
+  }
 }
