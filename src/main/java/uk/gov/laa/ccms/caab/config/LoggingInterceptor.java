@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
@@ -114,7 +115,10 @@ public class LoggingInterceptor implements HandlerInterceptor {
     if (caseReference == null && clientReference == null) {
       return;
     }
-    boolean succeeded = ex == null && response.getStatus() < 400;
+    boolean succeeded =
+        ex == null
+            && request.getAttribute(DispatcherServlet.EXCEPTION_ATTRIBUTE) == null
+            && response.getStatus() < 400;
     boolean changes =
         !"GET".equals(request.getMethod()) || handlerMethod.hasMethodAnnotation(ChangesData.class);
     securityEventLogger.dataAccessed(

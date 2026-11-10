@@ -132,6 +132,22 @@ public class LoggingInterceptorTest {
         .dataAccessed("VIEW", true, "300001", "CL1", "/case/{reference}/overview");
   }
 
+  @Test
+  public void aFailureThatAnExceptionHandlerResolvedIsRecordedAsAFailure() throws Exception {
+    var req = requestWithActiveCase("GET", "/case/overview");
+    req.setAttribute(
+        org.springframework.web.servlet.DispatcherServlet.EXCEPTION_ATTRIBUTE,
+        new IllegalStateException("handled elsewhere"));
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        null);
+
+    verify(securityEventLogger).dataAccessed("VIEW", false, "300001", "CL1", "/case/overview");
+  }
+
   private static org.springframework.mock.web.MockHttpServletRequest requestWithActiveCase(
       String method, String uri) {
     var mockSession = new org.springframework.mock.web.MockHttpSession();
