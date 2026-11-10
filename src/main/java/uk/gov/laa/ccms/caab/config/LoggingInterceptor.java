@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.util.Enumeration;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +15,8 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.constants.SessionConstants;
+import uk.gov.laa.ccms.caab.logging.ChangesData;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 
 /**
  * Interceptor class responsible for logging incoming requests and redirects after POST requests.
@@ -22,11 +25,12 @@ import uk.gov.laa.ccms.caab.constants.SessionConstants;
  * processing.
  */
 @Component
+@RequiredArgsConstructor
 public class LoggingInterceptor implements HandlerInterceptor {
 
   @Setter private Logger log = LoggerFactory.getLogger(LoggingInterceptor.class);
 
-  @Setter private Logger auditLog = LoggerFactory.getLogger("uk.gov.laa.ccms.caab.audit");
+  private final SecurityEventLogger securityEventLogger;
 
   /**
    * Logs the request method and URI before the controller method is invoked.
@@ -110,15 +114,14 @@ public class LoggingInterceptor implements HandlerInterceptor {
       return;
     }
     boolean succeeded = ex == null && response.getStatus() < 400;
-    auditLog
-        .atInfo()
-        .addKeyValue("event_type", "DATA_ACCESS")
-        .addKeyValue("action", "GET".equals(request.getMethod()) ? "VIEW" : "CHANGE")
-        .addKeyValue("outcome", succeeded ? "SUCCESS" : "FAILURE")
-        .addKeyValue("case_reference", caseReference)
-        .addKeyValue("client_reference", clientReference)
-        .addKeyValue("path", request.getRequestURI())
-        .log("Case or client data accessed");
+    boolean changes =
+        !"GET".equals(request.getMethod()) || handlerMethod.hasMethodAnnotation(ChangesData.class);
+    securityEventLogger.dataAccessed(
+        changes ? "CHANGE" : "VIEW",
+        succeeded,
+        caseReference,
+        clientReference,
+        request.getRequestURI());
   }
 
   /**

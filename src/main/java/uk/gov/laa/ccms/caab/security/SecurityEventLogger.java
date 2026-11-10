@@ -42,7 +42,9 @@ public class SecurityEventLogger {
           new Series(EventType.FILE_SCAN, Outcome.FAILURE),
           new Series(EventType.FILE_REJECTED, Outcome.DENIED),
           new Series(EventType.INPUT_REJECTED, Outcome.DENIED),
-          new Series(EventType.CSRF_REJECTED, Outcome.DENIED));
+          new Series(EventType.CSRF_REJECTED, Outcome.DENIED),
+          new Series(EventType.DATA_ACCESS, Outcome.SUCCESS),
+          new Series(EventType.DATA_ACCESS, Outcome.FAILURE));
 
   private final PuiMetricService puiMetricService;
 
@@ -52,6 +54,9 @@ public class SecurityEventLogger {
         series ->
             puiMetricService.initSecurityEvents(series.type().name(), series.outcome().name()));
   }
+
+  private static final org.slf4j.Logger AUDIT_LOG =
+      org.slf4j.LoggerFactory.getLogger("uk.gov.laa.ccms.caab.audit");
 
   static final String EVENT_TYPE = "event_type";
   static final String OUTCOME = "outcome";
@@ -67,6 +72,7 @@ public class SecurityEventLogger {
     INPUT_REJECTED,
     FILE_REJECTED,
     CSRF_REJECTED,
+    DATA_ACCESS,
     LOGOUT
   }
 
@@ -201,6 +207,30 @@ public class SecurityEventLogger {
         .addKeyValue("http_method", method)
         .addKeyValue("path", path)
         .log("Request refused: CSRF token rejected");
+  }
+
+  /**
+   * Records which case and client a request touched, as identifiers only.
+   *
+   * @param action whether the request viewed or changed the data
+   * @param succeeded whether the request completed without an error
+   * @param caseReference the case reference, which may be null
+   * @param clientReference the client reference, which may be null
+   * @param path the request path, without its query string
+   */
+  public void dataAccessed(
+      String action, boolean succeeded, String caseReference, String clientReference, String path) {
+    Outcome outcome = succeeded ? Outcome.SUCCESS : Outcome.FAILURE;
+    count(EventType.DATA_ACCESS, outcome);
+    AUDIT_LOG
+        .atInfo()
+        .addKeyValue(EVENT_TYPE, EventType.DATA_ACCESS.name())
+        .addKeyValue("action", action)
+        .addKeyValue(OUTCOME, outcome.name())
+        .addKeyValue("case_reference", caseReference)
+        .addKeyValue("client_reference", clientReference)
+        .addKeyValue("path", path)
+        .log("Case or client data accessed");
   }
 
   /**

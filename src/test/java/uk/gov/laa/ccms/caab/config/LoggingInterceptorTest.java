@@ -1,7 +1,5 @@
 package uk.gov.laa.ccms.caab.config;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -24,7 +22,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.method.HandlerMethod;
@@ -33,6 +30,8 @@ import org.springframework.web.servlet.ModelAndView;
 public class LoggingInterceptorTest {
 
   private Logger loggerMock;
+  private final uk.gov.laa.ccms.caab.security.SecurityEventLogger securityEventLogger =
+      mock(uk.gov.laa.ccms.caab.security.SecurityEventLogger.class);
   private LoggingInterceptor loggingInterceptor;
   private HttpServletRequest request;
   private HttpServletResponse response;
@@ -41,7 +40,7 @@ public class LoggingInterceptorTest {
   @BeforeEach
   public void setUp() {
     loggerMock = mock(Logger.class); // Initialize the loggerMock
-    loggingInterceptor = new LoggingInterceptor();
+    loggingInterceptor = new LoggingInterceptor(securityEventLogger);
     loggingInterceptor.setLog(loggerMock);
 
     request = mock(HttpServletRequest.class);
@@ -50,26 +49,8 @@ public class LoggingInterceptorTest {
   }
 
   @Test
-  public void afterCompletionLogsDataAccessWithIdentifiersOnly() throws Exception {
-    var auditLogger = new ch.qos.logback.classic.Logger[1];
-    var appender =
-        new ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent>();
-    appender.start();
-    auditLogger[0] =
-        (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("uk.gov.laa.ccms.caab.audit.test");
-    auditLogger[0].addAppender(appender);
-    loggingInterceptor.setAuditLog(auditLogger[0]);
-
-    var mockSession = new org.springframework.mock.web.MockHttpSession();
-    mockSession.setAttribute(
-        "activeCase",
-        uk.gov.laa.ccms.caab.bean.ActiveCase.builder()
-            .caseReferenceNumber("300001")
-            .clientReferenceNumber("CL1")
-            .client("Jane Doe")
-            .build());
-    var req = new org.springframework.mock.web.MockHttpServletRequest("GET", "/case/overview");
-    req.setSession(mockSession);
+  public void afterCompletionReportsDataAccessWithIdentifiersOnly() throws Exception {
+    var req = requestWithActiveCase("GET", "/case/overview");
 
     loggingInterceptor.afterCompletion(
         req,
@@ -77,26 +58,51 @@ public class LoggingInterceptorTest {
         new HandlerMethod(new MyController(), "testGet"),
         null);
 
-    var event = appender.list.getFirst();
-    var pairs = new java.util.HashMap<String, Object>();
-    event.getKeyValuePairs().forEach(kv -> pairs.put(kv.key, kv.value));
-    assertEquals("DATA_ACCESS", pairs.get("event_type"));
-    assertEquals("VIEW", pairs.get("action"));
-    assertEquals("SUCCESS", pairs.get("outcome"));
-    assertEquals("300001", pairs.get("case_reference"));
-    assertEquals("CL1", pairs.get("client_reference"));
-    assertFalse(pairs.values().toString().contains("Jane"));
+    verify(securityEventLogger).dataAccessed("VIEW", true, "300001", "CL1", "/case/overview");
   }
 
   @Test
-  public void afterCompletionLogsNothingWithoutACaseOrClient() throws Exception {
-    var appender =
-        new ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent>();
-    appender.start();
-    var auditLogger =
-        (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("uk.gov.laa.ccms.caab.audit.test2");
-    auditLogger.addAppender(appender);
-    loggingInterceptor.setAuditLog(auditLogger);
+  public void aPostIsRecordedAsAChange() throws Exception {
+    var req = requestWithActiveCase("POST", "/case/overview");
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        null);
+
+    verify(securityEventLogger).dataAccessed("CHANGE", true, "300001", "CL1", "/case/overview");
+  }
+
+  @Test
+  public void aGetHandlerMarkedAsChangingDataIsRecordedAsAChange() throws Exception {
+    var req = requestWithActiveCase("GET", "/case/evidence/1/remove");
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testRemove"),
+        null);
+
+    verify(securityEventLogger)
+        .dataAccessed("CHANGE", true, "300001", "CL1", "/case/evidence/1/remove");
+  }
+
+  @Test
+  public void aFailedRequestIsRecordedAsAFailure() throws Exception {
+    var req = requestWithActiveCase("GET", "/case/overview");
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        new IllegalStateException("boom"));
+
+    verify(securityEventLogger).dataAccessed("VIEW", false, "300001", "CL1", "/case/overview");
+  }
+
+  @Test
+  public void afterCompletionReportsNothingWithoutACaseOrClient() throws Exception {
     var req = new org.springframework.mock.web.MockHttpServletRequest("GET", "/home");
     req.setSession(new org.springframework.mock.web.MockHttpSession());
 
@@ -106,7 +112,22 @@ public class LoggingInterceptorTest {
         new HandlerMethod(new MyController(), "testGet"),
         null);
 
-    assertTrue(appender.list.isEmpty());
+    verifyNoInteractions(securityEventLogger);
+  }
+
+  private static org.springframework.mock.web.MockHttpServletRequest requestWithActiveCase(
+      String method, String uri) {
+    var mockSession = new org.springframework.mock.web.MockHttpSession();
+    mockSession.setAttribute(
+        "activeCase",
+        uk.gov.laa.ccms.caab.bean.ActiveCase.builder()
+            .caseReferenceNumber("300001")
+            .clientReferenceNumber("CL1")
+            .client("Jane Doe")
+            .build());
+    var req = new org.springframework.mock.web.MockHttpServletRequest(method, uri);
+    req.setSession(mockSession);
+    return req;
   }
 
   @Test
@@ -172,6 +193,12 @@ public class LoggingInterceptorTest {
     public String testGet() {
       // Add some logic to the method if needed
       return "test"; // Return the name of the view if it's relevant
+    }
+
+    @GetMapping("/remove")
+    @uk.gov.laa.ccms.caab.logging.ChangesData
+    public String testRemove() {
+      return "redirect:/get";
     }
 
     @GetMapping("/post")

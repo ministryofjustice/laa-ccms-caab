@@ -307,6 +307,29 @@ class SecurityEventLoggerTest {
     verify(metrics).initSecurityEvents("AUTHENTICATION_FAILURE", "FAILURE");
     verify(metrics).initSecurityEvents("CSRF_REJECTED", "DENIED");
     verify(metrics).initSecurityEvents("PRIVILEGES_CHANGED", "SUCCESS");
+    verify(metrics).initSecurityEvents("DATA_ACCESS", "SUCCESS");
+    verify(metrics).initSecurityEvents("DATA_ACCESS", "FAILURE");
+  }
+
+  @Test
+  void dataAccessIsLoggedWithIdentifiersAndCounted() {
+    var auditAppender = new ListAppender<ILoggingEvent>();
+    auditAppender.start();
+    var auditLogger = (Logger) LoggerFactory.getLogger("uk.gov.laa.ccms.caab.audit");
+    auditLogger.addAppender(auditAppender);
+    try {
+      logger.dataAccessed("CHANGE", false, "300001", "CL1", "/case/overview");
+    } finally {
+      auditLogger.detachAppender(auditAppender);
+    }
+
+    ILoggingEvent event = auditAppender.list.getFirst();
+    assertEquals("DATA_ACCESS", keyValue(event, "event_type"));
+    assertEquals("FAILURE", keyValue(event, "outcome"));
+    assertEquals("CHANGE", keyValue(event, "action"));
+    assertEquals("300001", keyValue(event, "case_reference"));
+    assertEquals("CL1", keyValue(event, "client_reference"));
+    verify(metrics).incrementSecurityEvents("DATA_ACCESS", "FAILURE");
   }
 
   @Test
