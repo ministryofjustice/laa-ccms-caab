@@ -1,6 +1,6 @@
 package uk.gov.laa.ccms.caab.client;
 
-import java.util.stream.Collectors;
+import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.MultiValueMap;
@@ -8,6 +8,7 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.logging.LogMasker;
+import uk.gov.laa.ccms.caab.logging.UserIdentifier;
 
 /** Provides error-handling capabilities for the API client interactions. */
 @Slf4j
@@ -68,7 +69,8 @@ public abstract class AbstractApiClientErrorHandler {
       final String resourceIdType,
       final String resourceId) {
     final String message =
-        "Failed to delete %s with %s: %s".formatted(resourceType, resourceIdType, resourceId);
+        "Failed to delete %s with %s: %s"
+            .formatted(resourceType, resourceIdType, identifierForLog(resourceIdType, resourceId));
     log.error("{}{}", message, responseBody(e), e);
     return Mono.error(createException(message, e));
   }
@@ -109,7 +111,8 @@ public abstract class AbstractApiClientErrorHandler {
       final String resourceIdType,
       final String resourceId) {
     final String message =
-        "Failed to update %s with %s: %s".formatted(resourceType, resourceIdType, resourceId);
+        "Failed to update %s with %s: %s"
+            .formatted(resourceType, resourceIdType, identifierForLog(resourceIdType, resourceId));
     log.error("{}{}", message, responseBody(e), e);
     return Mono.error(createException(message, e));
   }
@@ -130,7 +133,8 @@ public abstract class AbstractApiClientErrorHandler {
       final String resourceIdType,
       final String resourceId) {
     final String message =
-        "Not found: %s with %s: %s".formatted(resourceType, resourceIdType, resourceId);
+        "Not found: %s with %s: %s"
+            .formatted(resourceType, resourceIdType, identifierForLog(resourceIdType, resourceId));
     log.error(message);
     return Mono.error(
         createException(message, HttpStatus.resolve(clientResponse.statusCode().value())));
@@ -155,7 +159,8 @@ public abstract class AbstractApiClientErrorHandler {
       return Mono.error(e);
     }
     final String message =
-        "Failed to retrieve %s with %s: %s".formatted(resourceType, resourceIdType, resourceId);
+        "Failed to retrieve %s with %s: %s"
+            .formatted(resourceType, resourceIdType, identifierForLog(resourceIdType, resourceId));
     log.error("{}{}", message, responseBody(e), e);
     return Mono.error(createException(message, e));
   }
@@ -190,18 +195,24 @@ public abstract class AbstractApiClientErrorHandler {
       final StringBuilder messageBuilder) {
 
     if (queryParams != null && !queryParams.isEmpty()) {
-      final String paramsString =
-          queryParams.entrySet().stream()
-              .flatMap(
-                  entry -> entry.getValue().stream().map(value -> entry.getKey() + "=" + value))
-              .collect(Collectors.joining(", "));
-      messageBuilder.append(" with parameters: ").append(paramsString);
+      messageBuilder.append(" with parameters: ").append(String.join(", ", queryParams.keySet()));
     }
 
     final String message = messageBuilder.toString();
     log.error("{}{}", message, responseBody(e), e);
 
     return Mono.error(createException(message, e));
+  }
+
+  /**
+   * Returns an identifier safe to put in a log line or exception message. A login id is an email
+   * style identifier, so it is pseudonymised the way user events are; other identifiers are opaque
+   * references that support staff need in order to find the record.
+   */
+  private static String identifierForLog(final String resourceIdType, final String resourceId) {
+    return resourceIdType != null && resourceIdType.toLowerCase(Locale.ROOT).contains("login")
+        ? UserIdentifier.pseudonymise(resourceId)
+        : resourceId;
   }
 
   /**
