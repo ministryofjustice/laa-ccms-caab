@@ -7,35 +7,27 @@ import java.util.regex.Pattern;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
-/**
- * Masks personal data patterns in free text, such as upstream error bodies, before it is logged.
- */
+/** Keeps personal data in upstream error bodies and URLs out of the logs. */
 public final class LogMasker {
 
-  static final int MAX_LENGTH = 500;
-
-  private static final String MASK = "***";
-
-  private static final Pattern NATIONAL_INSURANCE =
-      Pattern.compile("\\b[A-Za-z]{2}\\s?\\d{2}\\s?\\d{2}\\s?\\d{2}\\s?[A-Za-z]\\b");
-  private static final Pattern EMAIL = Pattern.compile("[\\w.+-]+@[\\w-]+(\\.[\\w-]+)+");
-  private static final Pattern DATE =
-      Pattern.compile("\\b(\\d{4}-\\d{2}-\\d{2}|\\d{1,2}[/-]\\d{1,2}[/-]\\d{4})\\b");
-  private static final Pattern LONG_DIGITS = Pattern.compile("\\b\\d[\\d\\s-]{8,}\\d\\b");
   private static final Pattern URL_QUERY = Pattern.compile("\\?[^\\s\"'<>]*");
 
   private static final JsonMapper MAPPER = JsonMapper.builder().build();
-  private static final Set<String> SAFE_KEYS =
-      Set.of("status", "error", "code", "field", "fieldName", "objectName", "type", "title");
+  private static final Set<String> IDENTIFIER_KEYS =
+      Set.of("code", "field", "fieldName", "objectName");
+  private static final Set<String> CONTAINER_KEYS = Set.of("errors", "fieldErrors", "violations");
+  private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z][A-Za-z0-9_.\\[\\]-]{0,59}");
+  private static final Pattern STATUS = Pattern.compile("\\d{3}");
   private static final int MAX_SUMMARY_ENTRIES = 20;
   private static final String OMITTED = "[body omitted]";
 
   private LogMasker() {}
 
   /**
-   * Summarises an upstream JSON error body as its status, error, code and field names only.
-   * Messages and rejected values are left out because they can echo personal data. A body that is
-   * not JSON, or has none of those keys, is reported as omitted.
+   * Summarises an upstream JSON error body as its numeric status plus the code and field name of
+   * each entry in its error list. Only single-token values are kept, and rejected values and
+   * messages are never read, because they can echo personal data. A body that is not JSON, or has
+   * nothing that qualifies, is reported as omitted.
    *
    * @param body the response body, which may be null
    * @return the summary, an omission marker, or an empty string for a missing body
@@ -58,37 +50,26 @@ public final class LogMasker {
       return;
     }
     if (node.isObject()) {
-      node.properties()
-          .forEach(
-              property -> {
-                if (SAFE_KEYS.contains(property.getKey()) && property.getValue().isValueNode()) {
-                  entries.add(property.getKey() + "=" + mask(property.getValue().asString()));
-                } else {
-                  collectSafeEntries(property.getValue(), entries);
-                }
-              });
+      addIfMatches(node, "status", STATUS, entries);
+      IDENTIFIER_KEYS.forEach(key -> addIfMatches(node, key, IDENTIFIER, entries));
+      CONTAINER_KEYS.forEach(
+          key -> {
+            JsonNode child = node.get(key);
+            if (child != null) {
+              collectSafeEntries(child, entries);
+            }
+          });
     } else if (node.isArray()) {
       node.forEach(child -> collectSafeEntries(child, entries));
     }
   }
 
-  /**
-   * Masks National Insurance numbers, email addresses, dates and long digit runs, and truncates.
-   *
-   * @param text the text to mask, which may be null
-   * @return the masked, length-limited text, or an empty string for null
-   */
-  public static String mask(String text) {
-    if (text == null) {
-      return "";
+  private static void addIfMatches(
+      JsonNode object, String key, Pattern allowed, List<String> entries) {
+    JsonNode value = object.get(key);
+    if (value != null && value.isValueNode() && allowed.matcher(value.asString()).matches()) {
+      entries.add(key + "=" + value.asString());
     }
-    String masked = EMAIL.matcher(text).replaceAll(MASK);
-    masked = NATIONAL_INSURANCE.matcher(masked).replaceAll(MASK);
-    masked = DATE.matcher(masked).replaceAll(MASK);
-    masked = LONG_DIGITS.matcher(masked).replaceAll(MASK);
-    return masked.length() > MAX_LENGTH
-        ? masked.substring(0, MAX_LENGTH) + "...[truncated]"
-        : masked;
   }
 
   /**
