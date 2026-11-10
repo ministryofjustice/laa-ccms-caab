@@ -57,10 +57,10 @@ class SessionCorrelationContextTest {
   }
 
   @Test
-  void carriesTheRequestIdAndAddressesToCallbackThreads() throws Exception {
+  void carriesTheRequestIdAddressesAndUserToCallbackThreads() throws Exception {
     var propagation = new SessionCorrelationContext();
     propagation.afterPropertiesSet();
-    String[] keys = {"request_id", "source.ip", "network.forwarded_ip"};
+    String[] keys = {"request_id", "source.ip", "network.forwarded_ip", "user_id"};
     try (var worker = Executors.newSingleThreadExecutor()) {
       for (String key : keys) {
         MDC.put(key, "value-of-" + key);

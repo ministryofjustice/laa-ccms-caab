@@ -13,7 +13,8 @@ public class SessionCorrelationContext implements InitializingBean, DisposableBe
 
   private static final String KEY_PREFIX = SessionCorrelationContext.class.getName() + ".";
   private static final List<String> FIELDS =
-      List.of("sessionID", "request_id", "source.ip", "network.forwarded_ip");
+      List.of(
+          "sessionID", "request_id", "source.ip", "network.forwarded_ip", UserIdentifier.MDC_KEY);
 
   @Override
   public void afterPropertiesSet() {
