@@ -180,4 +180,31 @@ class SessionCorrelationFilterTest {
 
     assertNull(seen[0]);
   }
+
+  @org.junit.jupiter.api.Test
+  void aMissingOrInvalidForwardedHeaderDoesNotInheritTheOuterAddress() throws Exception {
+    MDC.put("network.forwarded_ip", "198.51.100.7");
+    try {
+      String[] seen = new String[2];
+      var request = new org.springframework.mock.web.MockHttpServletRequest();
+      new SessionCorrelationFilter()
+          .doFilter(
+              request,
+              new org.springframework.mock.web.MockHttpServletResponse(),
+              (req, res) -> seen[0] = MDC.get("network.forwarded_ip"));
+      request.addHeader("X-Forwarded-For", "not-an-ip");
+      new SessionCorrelationFilter()
+          .doFilter(
+              request,
+              new org.springframework.mock.web.MockHttpServletResponse(),
+              (req, res) -> seen[1] = MDC.get("network.forwarded_ip"));
+
+      org.junit.jupiter.api.Assertions.assertNull(seen[0]);
+      org.junit.jupiter.api.Assertions.assertNull(seen[1]);
+      org.junit.jupiter.api.Assertions.assertEquals(
+          "198.51.100.7", MDC.get("network.forwarded_ip"));
+    } finally {
+      MDC.remove("network.forwarded_ip");
+    }
+  }
 }
