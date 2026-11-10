@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.Locale;
 import org.slf4j.MDC;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -35,7 +36,7 @@ public final class UserIdentifier {
     try {
       byte[] digest =
           MessageDigest.getInstance("SHA-256")
-              .digest(loginId.strip().toLowerCase().getBytes(StandardCharsets.UTF_8));
+              .digest(loginId.strip().toLowerCase(Locale.ROOT).getBytes(StandardCharsets.UTF_8));
       return HexFormat.of().formatHex(digest).substring(0, HEX_LENGTH);
     } catch (NoSuchAlgorithmException e) {
       throw new IllegalStateException(e);
@@ -69,16 +70,21 @@ public final class UserIdentifier {
   }
 
   private static String sessionUser(HttpServletRequest request) {
-    HttpSession session = request.getSession(false);
-    if (session != null
-        && session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY)
-            instanceof SecurityContext context) {
-      Authentication authentication = context.getAuthentication();
-      if (authentication != null
-          && authentication.isAuthenticated()
-          && !(authentication instanceof AnonymousAuthenticationToken)) {
-        return pseudonymise(authentication.getName());
+    try {
+      HttpSession session = request.getSession(false);
+      if (session != null
+          && session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY)
+              instanceof SecurityContext context) {
+        Authentication authentication = context.getAuthentication();
+        if (authentication != null
+            && authentication.isAuthenticated()
+            && !(authentication instanceof AnonymousAuthenticationToken)) {
+          return pseudonymise(authentication.getName());
+        }
       }
+    } catch (IllegalStateException invalidated) {
+      // Logout can invalidate the session between looking it up and reading it.
+      return null;
     }
     return null;
   }

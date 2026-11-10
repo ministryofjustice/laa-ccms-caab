@@ -88,4 +88,18 @@ class UserContextFilterTest {
 
     assertEquals(UserIdentifier.pseudonymise("jane.doe@example.com"), seen[0]);
   }
+
+  @Test
+  void pseudonymiseDoesNotDependOnTheDefaultLocale() {
+    java.util.Locale original = java.util.Locale.getDefault();
+    try {
+      java.util.Locale.setDefault(java.util.Locale.forLanguageTag("tr-TR"));
+
+      assertEquals(
+          UserIdentifier.pseudonymise("quincy.it@example.com"),
+          UserIdentifier.pseudonymise("QUINCY.IT@EXAMPLE.COM"));
+    } finally {
+      java.util.Locale.setDefault(original);
+    }
+  }
 }
