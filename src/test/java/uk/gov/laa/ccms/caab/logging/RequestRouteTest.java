@@ -2,11 +2,17 @@ package uk.gov.laa.ccms.caab.logging;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.servlet.HandlerMapping;
 
 class RequestRouteTest {
+
+  @AfterEach
+  void reset() {
+    RequestRoute.clearKnownSegments();
+  }
 
   @Test
   void usesTheMatchedRouteTemplateWhenThereIsOne() {
