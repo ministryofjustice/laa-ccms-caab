@@ -76,6 +76,10 @@ class UserContextFilterTest {
                 "jane.doe@example.com", "n/a", AuthorityUtils.NO_AUTHORITIES));
     var request = new MockHttpServletRequest();
     request.setDispatcherType(dispatch);
+    if (dispatch == jakarta.servlet.DispatcherType.ERROR) {
+      request.setAttribute(
+          org.springframework.web.util.WebUtils.ERROR_REQUEST_URI_ATTRIBUTE, "/case/overview");
+    }
     String[] seen = new String[1];
 
     new UserContextFilter()
