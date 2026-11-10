@@ -10,7 +10,7 @@ import tools.jackson.databind.json.JsonMapper;
 /** Keeps personal data in upstream error bodies and URLs out of the logs. */
 public final class LogMasker {
 
-  private static final Pattern URL_QUERY = Pattern.compile("\\?[^\\s\"'<>]*");
+  private static final Pattern URL_QUERY_AND_FRAGMENT = Pattern.compile("[?#].*", Pattern.DOTALL);
 
   private static final JsonMapper MAPPER = JsonMapper.builder().build();
   private static final Set<String> IDENTIFIER_KEYS =
@@ -73,12 +73,12 @@ public final class LogMasker {
   }
 
   /**
-   * Removes the query string from a URL, which can carry identifiers or tokens.
+   * Removes the query string and fragment from a URL, which can carry identifiers or tokens.
    *
    * @param url the URL, which may be null
-   * @return the URL without its query string, or an empty string for null
+   * @return the URL without its query string or fragment, or an empty string for null
    */
   public static String withoutQuery(String url) {
-    return url == null ? "" : URL_QUERY.matcher(url).replaceAll("");
+    return url == null ? "" : URL_QUERY_AND_FRAGMENT.matcher(url).replaceAll("");
   }
 }

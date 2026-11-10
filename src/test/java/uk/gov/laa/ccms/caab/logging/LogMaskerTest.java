@@ -64,4 +64,18 @@ class LogMaskerTest {
     org.assertj.core.api.Assertions.assertThat(LogMasker.errorSummary(" ")).isEmpty();
     org.assertj.core.api.Assertions.assertThat(LogMasker.errorSummary(null)).isEmpty();
   }
+
+  @Test
+  void withoutQueryDropsEverythingAfterTheFirstQuestionMark() {
+    assertThat(LogMasker.withoutQuery("https://x.test/a?name=O'Brien&ref=300001"))
+        .isEqualTo("https://x.test/a");
+    assertThat(LogMasker.withoutQuery("https://x.test/a?name=\"Jane Doe\"&n=<b>"))
+        .isEqualTo("https://x.test/a");
+  }
+
+  @Test
+  void withoutQueryAlsoDropsAFragment() {
+    assertThat(LogMasker.withoutQuery("https://x.test/a#access_token=abc"))
+        .isEqualTo("https://x.test/a");
+  }
 }
