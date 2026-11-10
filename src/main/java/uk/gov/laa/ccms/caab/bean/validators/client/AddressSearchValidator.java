@@ -5,6 +5,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
+import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
+import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 
 /** Validates the uprn details provided by client address search. */
 @Component
@@ -34,6 +36,27 @@ public class AddressSearchValidator implements Validator {
     AddressSearchFormData addressSearch = (AddressSearchFormData) target;
     if (!StringUtils.hasText(addressSearch.getUprn())) {
       errors.reject("required.uprn", "Please select an address");
+    }
+  }
+
+  /** Validates that the submitted address belongs to the current result set. */
+  public void validateSelection(
+      final AddressSearchFormData addressSearch,
+      final ResultsDisplay<AddressResultRowDisplay> searchResults,
+      final Errors errors) {
+    validate(addressSearch, errors);
+    if (errors.hasErrors()) {
+      return;
+    }
+
+    final boolean selectionExists =
+        searchResults != null
+            && searchResults.getContent() != null
+            && searchResults.getContent().stream()
+                .anyMatch(
+                    result -> result != null && addressSearch.getUprn().equals(result.getUprn()));
+    if (!selectionExists) {
+      errors.rejectValue("uprn", "invalid.uprn", "Please select an address from the results");
     }
   }
 }

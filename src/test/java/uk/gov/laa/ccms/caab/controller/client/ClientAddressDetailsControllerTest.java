@@ -1,6 +1,9 @@
 package uk.gov.laa.ccms.caab.controller.client;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -13,22 +16,26 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CREATE_CLIENT_ADDRESS_FLOW;
 
 import java.util.ArrayList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.bean.AddressLookupFlowData;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
+import uk.gov.laa.ccms.caab.mapper.ClientAddressResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.service.AddressService;
@@ -91,24 +98,25 @@ public class ClientAddressDetailsControllerTest {
 
   @Test
   void testClientDetailsAddressPostFindAddress_NoAddresses() throws Exception {
-    when(addressService.getAddresses(any()))
+    addressDetails.setPostcode("SW1A 1AA");
+    when(addressService.getAddresses(anyString()))
         .thenReturn(new ResultsDisplay<AddressResultRowDisplay>());
-
-    when(lookupService.getCountries()).thenReturn(Mono.just(countryLookupDetail));
 
     this.mockMvc
         .perform(
             post("/application/client/details/address")
                 .param("action", "find_address")
+                .param("postcode", "SW1A 1AA")
                 .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
                 .flashAttr("addressDetails", addressDetails))
         .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(view().name("application/client/address-client-details"));
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/details/address/search"));
   }
 
   @Test
   void testClientDetailsAddressPostFindAddress_WithAddresses() throws Exception {
+    addressDetails.setPostcode("SW1A 1AA");
     ResultsDisplay<AddressResultRowDisplay> addressResults = new ResultsDisplay<>();
     addressResults.setContent(new ArrayList<>());
     addressResults.getContent().add(new AddressResultRowDisplay());
@@ -131,16 +139,181 @@ public class ClientAddressDetailsControllerTest {
   @Test
   void testClientDetailsAddressPostNext() throws Exception {
     ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
+    AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow = newManualAddressFlow();
 
     this.mockMvc
         .perform(
             post("/application/client/details/address")
                 .param("action", "next")
                 .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                .sessionAttr(CREATE_CLIENT_ADDRESS_FLOW, addressFlow)
                 .flashAttr("addressDetails", addressDetails))
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/client/details/equal-opportunities-monitoring"));
+  }
+
+  @Test
+  void testClientDetailsAddressPostNextNormalizesManualUkPostcode() throws Exception {
+    ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
+    addressDetails.setCountry("GBR");
+    addressDetails.setPostcode("sa58ab");
+    addressDetails.setAddressLine1("Address line 1");
+    addressDetails.setCityTown("Town");
+    AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow = newManualAddressFlow();
+
+    this.mockMvc
+        .perform(
+            post("/application/client/details/address")
+                .param("action", "next")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                .sessionAttr(CREATE_CLIENT_ADDRESS_FLOW, addressFlow)
+                .flashAttr("addressDetails", addressDetails))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/details/equal-opportunities-monitoring"));
+
+    assertEquals("SA5 8AB", clientFlowFormData.getAddressDetails().getPostcode());
+  }
+
+  @Test
+  void testClientDetailsAddressPostNextPreservesSearchedPostcode() throws Exception {
+    ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
+    addressDetails.setCountry("TAMPERED");
+    addressDetails.setPostcode("TAMPERED");
+    addressDetails.setAddressLine1("Posted address");
+    addressDetails.setCityTown("Posted town");
+    AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+        new AddressLookupFlowData<>("create-client");
+    addressFlow.setSource(AddressLookupFlowData.Source.SEARCHED);
+    AddressResultRowDisplay selected = new AddressResultRowDisplay();
+    selected.setUprn("123");
+    selected.setPostcode("sa58ab");
+    selected.setCountry("GBR");
+    selected.setHouseNameNumber("10");
+    selected.setAddressLine1("Canonical line 1");
+    selected.setAddressLine2("Canonical line 2");
+    selected.setCityTown("Canonical town");
+    selected.setCounty("Canonical county");
+    addressFlow.setSelectedAddress(selected);
+    addressFlow.confirmSelectedAddress();
+    final ClientAddressResultDisplayMapper mapper =
+        Mappers.getMapper(ClientAddressResultDisplayMapper.class);
+    doAnswer(
+            invocation -> {
+              mapper.updateClientFormDataAddressDetails(
+                  invocation.getArgument(0), invocation.getArgument(1));
+              return null;
+            })
+        .when(addressService)
+        .updateClientFormDataAddressDetails(any(), any());
+
+    this.mockMvc
+        .perform(
+            post("/application/client/details/address")
+                .param("action", "next")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                .sessionAttr(CREATE_CLIENT_ADDRESS_FLOW, addressFlow)
+                .flashAttr("addressDetails", addressDetails))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/details/equal-opportunities-monitoring"));
+
+    assertEquals("GBR", clientFlowFormData.getAddressDetails().getCountry());
+    assertEquals("10", clientFlowFormData.getAddressDetails().getHouseNameNumber());
+    assertEquals("sa58ab", clientFlowFormData.getAddressDetails().getPostcode());
+    assertEquals("Canonical line 1", clientFlowFormData.getAddressDetails().getAddressLine1());
+    assertEquals("Canonical line 2", clientFlowFormData.getAddressDetails().getAddressLine2());
+    assertEquals("Canonical town", clientFlowFormData.getAddressDetails().getCityTown());
+    assertEquals("Canonical county", clientFlowFormData.getAddressDetails().getCounty());
+  }
+
+  @Test
+  void clientCannotSavePostedAddressFieldsWithoutEnteringManualMode() throws Exception {
+    ClientFormDataAddressDetails postedAddress = new ClientFormDataAddressDetails();
+    postedAddress.setCountry("GBR");
+    postedAddress.setPostcode("SA5 8AB");
+    postedAddress.setAddressLine1("Forged address");
+    postedAddress.setCityTown("Town");
+    when(lookupService.getCountries()).thenReturn(Mono.just(countryLookupDetail));
+
+    mockMvc
+        .perform(
+            post("/application/client/details/address")
+                .param("action", "next")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                .flashAttr("addressDetails", postedAddress))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/client/address-client-details"));
+
+    assertNull(clientFlowFormData.getAddressDetails());
+  }
+
+  @Test
+  void vulnerableClientCannotStartAddressLookup() throws Exception {
+    ClientFormDataBasicDetails trustedBasicDetails = new ClientFormDataBasicDetails();
+    trustedBasicDetails.setVulnerableClient(true);
+    clientFlowFormData.setBasicDetails(trustedBasicDetails);
+    ClientFormDataAddressDetails submittedAddress = new ClientFormDataAddressDetails();
+    submittedAddress.setPostcode("SA5 8AB");
+    submittedAddress.setAddressLine1("Do not accept");
+
+    mockMvc
+        .perform(
+            post("/application/client/details/address")
+                .param("action", "find_address")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                .flashAttr("addressDetails", submittedAddress))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/details/equal-opportunities-monitoring"));
+
+    assertNull(clientFlowFormData.getAddressDetails().getAddressLine1());
+    org.mockito.Mockito.verifyNoInteractions(addressService);
+  }
+
+  @Test
+  void clientNextCannotBypassTheResultsSubmission() throws Exception {
+    AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+        new AddressLookupFlowData<>("create-client");
+    AddressResultRowDisplay selectedAddress = new AddressResultRowDisplay();
+    selectedAddress.setUprn("123");
+    addressFlow.setSelectedAddress(selectedAddress);
+    when(lookupService.getCountries()).thenReturn(Mono.just(countryLookupDetail));
+
+    mockMvc
+        .perform(
+            post("/application/client/details/address")
+                .param("action", "next")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                .sessionAttr(CREATE_CLIENT_ADDRESS_FLOW, addressFlow)
+                .flashAttr("addressDetails", new ClientFormDataAddressDetails()))
+        .andExpect(status().isOk())
+        .andExpect(model().attributeHasErrors("addressDetails"))
+        .andExpect(view().name("application/client/address-client-details"));
+
+    assertNull(clientFlowFormData.getAddressDetails());
+  }
+
+  @Test
+  void clientConfirmationEndpointsAreRemoved() throws Exception {
+    mockMvc
+        .perform(get("/application/client/details/address/confirm"))
+        .andExpect(status().isNotFound());
+    mockMvc
+        .perform(post("/application/client/details/address/confirm"))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void clientAddressTransitionsRedirectWhenTheFlowHasExpired() throws Exception {
+    mockMvc
+        .perform(get("/application/client/details/address/search-again"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/details/address"));
+    mockMvc
+        .perform(
+            get("/application/client/details/address/manual")
+                .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/details/address"));
   }
 
   @Test
@@ -154,7 +327,7 @@ public class ClientAddressDetailsControllerTest {
               return null;
             })
         .when(clientAddressDetailsValidator)
-        .validate(any(), any());
+        .validateForAddressComponent(any(), any());
 
     when(lookupService.getCountries()).thenReturn(Mono.just(countryLookupDetail));
 
@@ -163,6 +336,7 @@ public class ClientAddressDetailsControllerTest {
             post("/application/client/details/address")
                 .param("action", "next")
                 .sessionAttr(CLIENT_FLOW_FORM_DATA, clientFlowFormData)
+                .sessionAttr(CREATE_CLIENT_ADDRESS_FLOW, newManualAddressFlow())
                 .flashAttr("addressDetails", addressDetails))
         .andDo(print())
         .andExpect(status().isOk())
@@ -195,5 +369,12 @@ public class ClientAddressDetailsControllerTest {
         .andExpect(status().isOk())
         .andExpect(view().name("application/client/address-client-details"))
         .andExpect(model().attributeExists("countries"));
+  }
+
+  private AddressLookupFlowData<ClientFormDataAddressDetails> newManualAddressFlow() {
+    AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+        new AddressLookupFlowData<>("create-client");
+    addressFlow.enterManualEntry(new ClientFormDataAddressDetails());
+    return addressFlow;
   }
 }

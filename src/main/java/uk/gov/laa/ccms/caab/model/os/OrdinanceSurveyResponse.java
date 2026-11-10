@@ -10,6 +10,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class OrdinanceSurveyResponse {
 
+  @JsonProperty("header")
+  private OrdinanceSurveyHeader header;
+
   @JsonProperty("results")
   private List<OrdinanceSurveyResult> results;
 }

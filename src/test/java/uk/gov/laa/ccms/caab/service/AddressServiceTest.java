@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
@@ -15,12 +17,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.client.OrdinanceSurveyApiClient;
+import uk.gov.laa.ccms.caab.client.OrdinanceSurveyResponseException;
 import uk.gov.laa.ccms.caab.mapper.ClientAddressResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
@@ -44,16 +49,20 @@ public class AddressServiceTest {
     String postcode = "SW1A1AA";
 
     OrdinanceSurveyResponse mockResponse = new OrdinanceSurveyResponse();
+    mockResponse.setResults(Collections.emptyList());
     Mono<OrdinanceSurveyResponse> mockResponseMono = Mono.just(mockResponse);
 
     ResultsDisplay<AddressResultRowDisplay> mockDisplay = new ResultsDisplay<>();
+    mockDisplay.setContent(Collections.emptyList());
 
-    when(ordinanceSurveyApiClient.getAddresses(postcode)).thenReturn(mockResponseMono);
+    when(ordinanceSurveyApiClient.getAddresses("SW1A 1AA")).thenReturn(mockResponseMono);
+    when(clientAddressResultDisplayMapper.toClientAddressResultsDisplay(mockResponse))
+        .thenReturn(mockDisplay);
 
     ResultsDisplay<AddressResultRowDisplay> result = addressService.getAddresses(postcode);
 
     assertNotNull(result);
-    assertNull(result.getContent());
+    assertEquals(Collections.emptyList(), result.getContent());
   }
 
   @Test
@@ -65,7 +74,7 @@ public class AddressServiceTest {
 
     ResultsDisplay<AddressResultRowDisplay> mockDisplay = buildClientAddressResultsDisplay();
 
-    when(ordinanceSurveyApiClient.getAddresses(postcode)).thenReturn(mockResponseMono);
+    when(ordinanceSurveyApiClient.getAddresses("SW1A 1AA")).thenReturn(mockResponseMono);
     when(clientAddressResultDisplayMapper.toClientAddressResultsDisplay(mockResponse))
         .thenReturn(mockDisplay);
 
@@ -93,7 +102,7 @@ public class AddressServiceTest {
   }
 
   @Test
-  void filterByHouseNumber_ReturnsOriginalResults_WhenNoAddressesMatchFilter() {
+  void filterByHouseNumber_ReturnsAllAddresses_WhenNoAddressesMatchFilter() {
     String houseNameNumber = "nonexistent";
     ResultsDisplay<AddressResultRowDisplay> initialResults = buildClientAddressResultsDisplay();
 
@@ -101,7 +110,120 @@ public class AddressServiceTest {
         addressService.filterByHouseNumber(houseNameNumber, initialResults);
 
     assertNotNull(filteredResults);
-    assertEquals(initialResults.getContent(), filteredResults.getContent());
+    assertSame(initialResults, filteredResults);
+    assertEquals(MAX_RESULTS, filteredResults.getContent().size());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"'', 10", "'   ', 10"})
+  void filterByHouseNumber_ReturnsAllAddresses_WhenFilterIsBlank(
+      final String houseNameNumber, final int expectedCount) {
+    ResultsDisplay<AddressResultRowDisplay> initialResults = buildClientAddressResultsDisplay();
+
+    ResultsDisplay<AddressResultRowDisplay> filteredResults =
+        addressService.filterByHouseNumber(houseNameNumber, initialResults);
+
+    assertNotNull(filteredResults);
+    assertEquals(expectedCount, filteredResults.getContent().size());
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+      delimiter = '|',
+      value = {
+        "10 | 10;10A;10 a;10B;10A,Downing House;10,Downing House",
+        "' 10 ' | 10;10A;10 a;10B;10A,Downing House;10,Downing House",
+        "10a | 10A;10 a;10A,Downing House",
+        "' 10 A ' | 10A;10 a;10A,Downing House",
+        "100 | 100",
+        "1 | 1",
+        "downing house | Downing House",
+        "' Downing House ' | Downing House"
+      })
+  void filterByHouseNumberMatchesSuffixesWithoutMatchingOtherNumbers(
+      final String searchTerm, final String expected) {
+    final List<AddressResultRowDisplay> rows = new ArrayList<>();
+    for (final String building :
+        List.of(
+            "10",
+            "10A",
+            "10 a",
+            "10B",
+            "100",
+            "101",
+            "110",
+            "1",
+            "10A,Downing House",
+            "10,Downing House",
+            "Downing House",
+            "Other Downing House",
+            "Flat 10",
+            "10-12")) {
+      final AddressResultRowDisplay row = new AddressResultRowDisplay();
+      row.setHouseNameNumber(building);
+      rows.add(row);
+    }
+    rows.add(new AddressResultRowDisplay());
+    rows.add(null);
+    final ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>(rows);
+
+    final ResultsDisplay<AddressResultRowDisplay> filtered =
+        addressService.filterByHouseNumber(searchTerm, results);
+
+    assertEquals(
+        List.of(expected.split(";")),
+        filtered.getContent().stream().map(AddressResultRowDisplay::getHouseNameNumber).toList());
+    assertSame(rows.getFirst(), results.getContent().getFirst());
+    assertEquals(16, results.getContent().size());
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = {"   ", "missing", "10.*"})
+  void filterByHouseNumberFallbackPreservesOriginalResultsAndMetadata(final String searchTerm) {
+    final ResultsDisplay<AddressResultRowDisplay> results = buildClientAddressResultsDisplay();
+    results.setTotalElements(MAX_RESULTS);
+    results.setTotalPages(1);
+    results.setNumber(0);
+    results.setSize(MAX_RESULTS);
+
+    assertSame(results, addressService.filterByHouseNumber(searchTerm, results));
+    assertEquals(MAX_RESULTS, results.getTotalElements());
+    assertEquals(1, results.getTotalPages());
+  }
+
+  @Test
+  void filterByHouseNumberHandlesMissingAndEmptyResults() {
+    assertNull(addressService.filterByHouseNumber("10", null));
+    final ResultsDisplay<AddressResultRowDisplay> missingContent = new ResultsDisplay<>();
+    assertSame(missingContent, addressService.filterByHouseNumber("10", missingContent));
+    final ResultsDisplay<AddressResultRowDisplay> empty = new ResultsDisplay<>(List.of());
+    assertSame(empty, addressService.filterByHouseNumber("10", empty));
+  }
+
+  @Test
+  void getAddresses_PropagatesLookupFailure() {
+    when(ordinanceSurveyApiClient.getAddresses("SW1A 1AA"))
+        .thenReturn(Mono.error(new IllegalStateException("lookup unavailable")));
+
+    assertThrows(IllegalStateException.class, () -> addressService.getAddresses("sw1a1aa"));
+  }
+
+  @Test
+  void getAddressesTreatsAnEmptyProviderBodyAsUnavailable() {
+    when(ordinanceSurveyApiClient.getAddresses("SW1A 1AA")).thenReturn(Mono.empty());
+
+    assertThrows(
+        AddressLookupUnavailableException.class, () -> addressService.getAddresses("sw1a1aa"));
+  }
+
+  @Test
+  void getAddressesConvertsIncompleteProviderPagesToUnavailable() {
+    when(ordinanceSurveyApiClient.getAddresses("SW1A 1AA"))
+        .thenReturn(Mono.error(new OrdinanceSurveyResponseException("incomplete page")));
+
+    assertThrows(
+        AddressLookupUnavailableException.class, () -> addressService.getAddresses("sw1a1aa"));
   }
 
   @Test

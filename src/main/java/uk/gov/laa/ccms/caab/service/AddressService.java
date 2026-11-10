@@ -1,25 +1,35 @@
 package uk.gov.laa.ccms.caab.service;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.codec.DecodingException;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.client.OrdinanceSurveyApiClient;
+import uk.gov.laa.ccms.caab.client.OrdinanceSurveyResponseException;
 import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ClientAddressResultDisplayMapper;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
 import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResponse;
+import uk.gov.laa.ccms.caab.util.UkPostcode;
 
 /** Service class to handle Addresses. */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AddressService {
+
+  private static final Pattern HOUSE_NUMBER = Pattern.compile("^(\\d+)\\s*([A-Za-z]?)$");
 
   private final OrdinanceSurveyApiClient ordinanceSurveyApiClient;
 
@@ -63,17 +73,23 @@ public class AddressService {
    *     postcode.Returns an empty ClientAddressResultsDisplay if no results are found.
    */
   public ResultsDisplay<AddressResultRowDisplay> getAddresses(final String postcode) {
+    final OrdinanceSurveyResponse response;
     try {
-      final OrdinanceSurveyResponse response =
-          ordinanceSurveyApiClient.getAddresses(postcode).block();
-
-      return response != null && response.getResults() != null
-          ? clientAddressResultDisplayMapper.toClientAddressResultsDisplay(response)
-          : new ResultsDisplay<AddressResultRowDisplay>();
-    } catch (final Exception e) {
-      log.error("Error fetching addresses from Ordinance Survey API: {}", e.getMessage());
-      return new ResultsDisplay<AddressResultRowDisplay>();
+      response = ordinanceSurveyApiClient.getAddresses(UkPostcode.normalize(postcode)).block();
+    } catch (WebClientRequestException
+        | WebClientResponseException
+        | DecodingException
+        | OrdinanceSurveyResponseException exception) {
+      log.warn("Address lookup failed with {}.", exception.getClass().getSimpleName());
+      throw new AddressLookupUnavailableException(exception);
     }
+
+    if (response == null || response.getResults() == null) {
+      log.warn("Address lookup returned no usable results payload.");
+      throw new AddressLookupUnavailableException(
+          new IllegalStateException("Address lookup response was empty or incomplete"));
+    }
+    return clientAddressResultDisplayMapper.toClientAddressResultsDisplay(response);
   }
 
   /**
@@ -81,21 +97,49 @@ public class AddressService {
    *
    * @param houseNameNumber The house name or number to filter by.
    * @param results The initial list of addresses to filter from.
-   * @return ClientAddressResultsDisplay containing a filtered list of addresses. Returns the
-   *     original list if no addresses match the filter.
+   * @return ClientAddressResultsDisplay containing matching addresses, or all addresses when the
+   *     filter is blank or no addresses match. Numeric filters also match letter suffixes.
    */
   public ResultsDisplay<AddressResultRowDisplay> filterByHouseNumber(
       final String houseNameNumber, final ResultsDisplay<AddressResultRowDisplay> results) {
 
+    if (results == null || results.getContent() == null || !StringUtils.hasText(houseNameNumber)) {
+      return results;
+    }
+
+    final String searchTerm = houseNameNumber.trim();
+    final Matcher houseNumber = HOUSE_NUMBER.matcher(searchTerm);
+    final Pattern numberPattern =
+        houseNumber.matches()
+            ? Pattern.compile(
+                "^"
+                    + Pattern.quote(houseNumber.group(1))
+                    + "\\s*"
+                    + (houseNumber.group(2).isEmpty()
+                        ? "[A-Za-z]?"
+                        : Pattern.quote(houseNumber.group(2)))
+                    + "(?:\\s*,.*)?$",
+                Pattern.CASE_INSENSITIVE)
+            : null;
     final List<AddressResultRowDisplay> filteredAddressList =
         results.getContent().stream()
-            .filter(address -> address.getHouseNameNumber().equalsIgnoreCase(houseNameNumber))
+            .filter(
+                address ->
+                    address != null
+                        && address.getHouseNameNumber() != null
+                        && (numberPattern != null
+                            ? numberPattern.matcher(address.getHouseNameNumber().trim()).matches()
+                            : address.getHouseNameNumber().trim().equalsIgnoreCase(searchTerm)))
             .collect(Collectors.toList());
+
+    if (filteredAddressList.isEmpty()) {
+      return results;
+    }
 
     final ResultsDisplay<AddressResultRowDisplay> filteredResults = new ResultsDisplay<>();
     filteredResults.setContent(filteredAddressList);
 
-    return filteredAddressList.isEmpty() ? results : filteredResults;
+    return filteredResults;
   }
 
   /**
@@ -135,7 +179,7 @@ public class AddressService {
   public AddressResultRowDisplay getSelectedAddress(
       final String uprn, final ResultsDisplay<AddressResultRowDisplay> results) {
 
-    return results != null
+    return results != null && results.getContent() != null
         ? results.getContent().stream()
             .filter(result -> uprn.equals(result.getUprn()))
             .findFirst()
