@@ -35,7 +35,9 @@ class InputRejectionLoggerTest {
         new TypeMismatchException("abc", Integer.class),
         new MissingServletRequestParameterException("id", "String"),
         new HttpMessageNotReadableException("bad", new MockHttpInputMessage(new byte[0])),
-        new HttpRequestMethodNotSupportedException("TRACE"));
+        new HttpRequestMethodNotSupportedException("TRACE"),
+        new org.springframework.web.HttpMediaTypeNotAcceptableException(
+            "no acceptable representation"));
   }
 
   @ParameterizedTest

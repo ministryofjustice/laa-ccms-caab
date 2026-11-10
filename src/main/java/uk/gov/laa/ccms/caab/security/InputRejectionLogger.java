@@ -7,6 +7,7 @@ import org.springframework.beans.TypeMismatchException;
 import org.springframework.core.Ordered;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Component;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.ServletRequestBindingException;
@@ -45,6 +46,7 @@ public class InputRejectionLogger implements HandlerExceptionResolver, Ordered {
         || ex instanceof ServletRequestBindingException
         || ex instanceof HttpMessageNotReadableException
         || ex instanceof HttpRequestMethodNotSupportedException
-        || ex instanceof HttpMediaTypeNotSupportedException;
+        || ex instanceof HttpMediaTypeNotSupportedException
+        || ex instanceof HttpMediaTypeNotAcceptableException;
   }
 }
