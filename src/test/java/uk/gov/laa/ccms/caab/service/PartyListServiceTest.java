@@ -85,6 +85,7 @@ class PartyListServiceTest {
         Arrays.asList(
             new OpponentDetail().id(1).ebsId("E1"),
             null,
+            new OpponentDetail().id(1).ebsId("E1"),
             new OpponentDetail().ebsId("E2"),
             new OpponentDetail().ebsId(" "),
             new OpponentDetail()));
@@ -108,6 +109,23 @@ class PartyListServiceTest {
     assertThat(candidates(null, Set.of("E3")))
         .extracting(PartyListCandidate::alreadyAdded)
         .containsExactly(true, true, true, false);
+  }
+
+  @Test
+  void missingIdentifiersDoNotMatchEachOther() {
+    ebsCase.setOpponents(
+        List.of(
+            new OpponentDetail().id(1),
+            new OpponentDetail().id(2).ebsId(" "),
+            new OpponentDetail().ebsId("E3")));
+    when(caseOutcomeService.getAwardLiableParties(CASE_REF, 123, "land", 7))
+        .thenReturn(
+            List.of(
+                new OpponentDetail().id(9), new OpponentDetail().ebsId(" "), new OpponentDetail()));
+
+    assertThat(candidates(null, Set.of("", " ")))
+        .extracting(PartyListCandidate::alreadyAdded)
+        .containsExactly(false, false, false);
   }
 
   @Test
@@ -187,6 +205,19 @@ class PartyListServiceTest {
             new PartyListRow(
                 "ebs-E1", "Acme Ltd", "Organisation", "Opponent", "1 High Street AB1 2CD", false),
             new PartyListRow("id-2", "Ms Jane Smith", "Individual", "RAW", "", true));
+  }
+
+  @Test
+  void namesUnnamedOrganisationsByTheirContact() {
+    when(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE)).thenReturn(Mono.empty());
+    when(lookupService.getOrganisationToCaseRelationships()).thenReturn(Mono.empty());
+    when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.empty());
+    final OpponentDetail organisation =
+        new OpponentDetail().type("Organisation").contactNameRole("Jo Bloggs, Manager");
+
+    assertThat(service.toRows(List.of(new PartyListCandidate("ebs-E1", organisation, false))))
+        .extracting(PartyListRow::name)
+        .containsExactly("Jo Bloggs, Manager");
   }
 
   @Test

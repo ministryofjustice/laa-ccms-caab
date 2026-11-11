@@ -29,6 +29,7 @@ import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.sections.PartyListRow;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
+import uk.gov.laa.ccms.data.model.CommonLookupValueDetail;
 import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 
 /** Builds the party list used to add existing case opponents to an award. */
@@ -78,7 +79,7 @@ public class PartyListService {
    * @param awardId the award parties are being added to
    * @param createdEbsIds EBS ids of opponents already created and linked to this award; needed
    *     because the CAAB API replaces a created opponent's EBS id with a synthetic one
-   * @return the candidates, in case opponent order
+   * @return the candidates, in case opponent order, without duplicates
    * @throws CaabApplicationException if a persisted draft cannot be reloaded
    */
   public List<PartyListCandidate> getCandidates(
@@ -88,14 +89,19 @@ public class PartyListService {
       final String awardPath,
       final Integer awardId,
       final Set<String> createdEbsIds) {
+    // Missing identifiers are excluded so that they cannot match each other.
     final Set<Integer> linkedIds = new HashSet<>();
-    final Set<String> linkedEbsIds = new HashSet<>(createdEbsIds);
+    final Set<String> linkedEbsIds =
+        createdEbsIds.stream().filter(StringUtils::hasText).collect(Collectors.toSet());
     for (final OpponentDetail linked :
         caseOutcomeService.getAwardLiableParties(
             ebsCase.getCaseReferenceNumber(), providerId, awardPath, awardId)) {
-      linkedIds.add(linked.getId());
-      linkedEbsIds.add(linked.getEbsId());
+      Optional.ofNullable(linked.getId()).ifPresent(linkedIds::add);
+      Optional.ofNullable(linked.getEbsId())
+          .filter(StringUtils::hasText)
+          .ifPresent(linkedEbsIds::add);
     }
+    final Set<String> keys = new HashSet<>();
     return caseOpponents(ebsCase, currentApplication).stream()
         .filter(Objects::nonNull)
         .flatMap(
@@ -106,8 +112,10 @@ public class PartyListService {
                             new PartyListCandidate(
                                 key,
                                 opponent,
-                                linkedIds.contains(opponent.getId())
-                                    || linkedEbsIds.contains(opponent.getEbsId()))))
+                                (opponent.getId() != null && linkedIds.contains(opponent.getId()))
+                                    || (StringUtils.hasText(opponent.getEbsId())
+                                        && linkedEbsIds.contains(opponent.getEbsId())))))
+        .filter(candidate -> keys.add(candidate.key()))
         .toList();
   }
 
@@ -142,7 +150,7 @@ public class PartyListService {
               final OpponentDetail opponent = candidate.opponent();
               return new PartyListRow(
                   candidate.key(),
-                  OpponentUtil.getPartyName(opponent, titles),
+                  partyName(opponent, titles),
                   opponent.getType(),
                   OpponentUtil.getRelationshipToCase(
                           opponent, organisationRelationships, personRelationships)
@@ -187,6 +195,15 @@ public class PartyListService {
                             "Failed to reload application " + currentApplication.getId()))
             : ebsCase;
     return Optional.ofNullable(source.getOpponents()).orElse(List.of());
+  }
+
+  /** Names a party as elsewhere in CAAB, falling back to the contact for unnamed organisations. */
+  private static String partyName(
+      final OpponentDetail opponent, final List<CommonLookupValueDetail> titles) {
+    final String name = OpponentUtil.getPartyName(opponent, titles);
+    return OpponentUtil.isOrganisation(opponent) && !StringUtils.hasText(name)
+        ? opponent.getContactNameRole()
+        : name;
   }
 
   /** Keys an opponent by its CAAB id, or by its EBS id when it has not been added to CAAB yet. */

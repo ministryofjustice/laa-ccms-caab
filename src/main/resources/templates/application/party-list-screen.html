@@ -21,7 +21,9 @@
       <div class="govuk-error-summary__body">
         <ul class="govuk-list govuk-error-summary__list">
           <li th:if="${partyListErrorMessage != null}">
-            <a th:href="${firstSelectablePartyKey != null} ? |#selected-party-${firstSelectablePartyKey}| : '#addSelectedPartiesButton'"
+            <span th:if="${partyListUnavailable}" th:text="#{${partyListErrorMessage}}"></span>
+            <a th:unless="${partyListUnavailable}"
+               th:href="${firstSelectablePartyKey != null} ? |#selected-party-${firstSelectablePartyKey}| : '#addSelectedPartiesButton'"
                th:text="#{${partyListErrorMessage}}"></a>
           </li>
           <th:block th:if="${invalidPartyKeys != null}">
@@ -34,7 +36,7 @@
       </div>
     </div>
 
-    <form method="post"
+    <form th:unless="${partyListUnavailable}" method="post"
           th:action="@{/case/outcome-and-awards/{path}/{id}/liable-parties/add(path=${awardPath},id=${awardId})}">
       <table class="govuk-table" id="party-list-table">
         <thead class="govuk-table__head">

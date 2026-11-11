@@ -845,7 +845,8 @@ public class AwardController {
           toCreate,
           user.getLoginId(),
           created -> createdEbsIds.add(created.getEbsId()));
-    } catch (final CaabApiClientException | IllegalStateException ex) {
+    } catch (final RuntimeException ex) {
+      // Any failure must release the claims of parties not created, or they stay hidden.
       log.warn("Failed to add liable parties to award {}", awardId, ex);
       releaseCreatedEbsIds(
           session,
@@ -853,11 +854,22 @@ public class AwardController {
           claimedEbsIds.stream().filter(ebsId -> !createdEbsIds.contains(ebsId)).toList());
       model.addAttribute(
           "partyListErrorMessage", "case.partyListScreen.unresolvedSelectionErrorMessage");
-      return renderPartyList(
-          getPartyListCandidates(ebsCase, currentApplication, user, awardPath, awardId, session),
-          awardPath,
-          awardId,
-          model);
+      try {
+        return renderPartyList(
+            getPartyListCandidates(ebsCase, currentApplication, user, awardPath, awardId, session),
+            awardPath,
+            awardId,
+            model);
+      } catch (final RuntimeException refreshFailure) {
+        // CAAB is probably unavailable, so show a non-selectable page without calling it again.
+        log.warn("Failed to refresh the party list for award {}", awardId, refreshFailure);
+        model.addAttribute("partyListErrorMessage", "case.partyListScreen.unavailableErrorMessage");
+        model.addAttribute("partyListUnavailable", true);
+        model.addAttribute("parties", List.of());
+        model.addAttribute("awardPath", awardPath);
+        model.addAttribute("awardId", awardId);
+        return PARTY_LIST_VIEW;
+      }
     }
     return "redirect:/case/outcome-and-awards/" + awardPath + "/" + awardId + "/liable-parties";
   }

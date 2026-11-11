@@ -65,6 +65,7 @@ import uk.gov.laa.ccms.caab.bean.validators.awards.OtherAssetAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.TimeRecoveryValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.LandAwardMapper;
@@ -438,7 +439,7 @@ class AwardControllerTest {
               invocation -> {
                 final Consumer<OpponentDetail> onCreated = invocation.getArgument(7);
                 onCreated.accept(newFirst.opponent());
-                throw new CaabApiClientException("failed");
+                throw new CaabApplicationException("failed");
               })
           .when(caseOutcomeService)
           .addLiableParties(any(), any(), any(), any(), any(), any(), any(), any());
@@ -450,6 +451,33 @@ class AwardControllerTest {
               "partyListErrorMessage", "case.partyListScreen.unresolvedSelectionErrorMessage");
 
       assertThat(createdEbsIds()).containsExactly("E1");
+    }
+
+    @Test
+    @DisplayName(
+        "Should show a non-selectable page when the list cannot be refreshed after a failure")
+    void showsUnavailablePartyListWhenRefreshFails() {
+      when(partyListService.getCandidates(any(), any(), any(), any(), any(), any()))
+          .thenReturn(List.of(newFirst, newSecond))
+          .thenThrow(new CaabApiClientException("unavailable"));
+      doAnswer(
+              invocation -> {
+                final Consumer<OpponentDetail> onCreated = invocation.getArgument(7);
+                onCreated.accept(newFirst.opponent());
+                throw new CaabApiClientException("failed");
+              })
+          .when(caseOutcomeService)
+          .addLiableParties(any(), any(), any(), any(), any(), any(), any(), any());
+
+      assertThat(mockMvc.perform(submit("ebs-E1", "ebs-E2")))
+          .hasViewName("application/party-list-screen")
+          .model()
+          .containsEntry("partyListErrorMessage", "case.partyListScreen.unavailableErrorMessage")
+          .containsEntry("partyListUnavailable", true)
+          .containsEntry("parties", List.of());
+
+      assertThat(createdEbsIds()).containsExactly("E1");
+      verify(partyListService, never()).toRows(any());
     }
   }
 

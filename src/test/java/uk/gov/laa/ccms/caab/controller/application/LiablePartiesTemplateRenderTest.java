@@ -177,6 +177,20 @@ class LiablePartiesTemplateRenderTest {
         .doesNotContain("Acme &amp; Co cannot be added");
   }
 
+  @Test
+  void unavailablePartyListHasNoSelectableRowsOrForm() throws Exception {
+    assertThat(
+            renderPartyList(
+                "empty",
+                "true",
+                "unavailable",
+                "true",
+                "error",
+                "case.partyListScreen.unavailableErrorMessage"))
+        .containsPattern("<span>We could not add all of the selected parties[^<]*</span>")
+        .doesNotContain("<form", "selectedPartyKeys", "addSelectedPartiesButton");
+  }
+
   private String renderPartyList(final String... params) throws Exception {
     final var request = get("/test/party-list").param("path", "land");
     for (int i = 0; i < params.length; i += 2) {
@@ -288,6 +302,7 @@ class LiablePartiesTemplateRenderTest {
         @RequestParam boolean empty,
         @RequestParam(required = false) String error,
         @RequestParam(required = false) Set<String> invalid,
+        @RequestParam(required = false) Boolean unavailable,
         final Model model) {
       final List<PartyListRow> parties =
           empty
@@ -308,6 +323,7 @@ class LiablePartiesTemplateRenderTest {
       model.addAttribute("firstSelectablePartyKey", empty ? null : "id-11");
       model.addAttribute("partyListErrorMessage", error);
       model.addAttribute("invalidPartyKeys", invalid);
+      model.addAttribute("partyListUnavailable", unavailable);
       return "application/party-list-screen";
     }
   }
