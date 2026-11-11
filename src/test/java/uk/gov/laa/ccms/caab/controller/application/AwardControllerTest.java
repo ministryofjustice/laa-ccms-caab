@@ -782,6 +782,50 @@ class AwardControllerTest {
     }
 
     @Test
+    void aBackendFailureAddingSelectedPartiesRedisplaysThePartyListInsteadOfAGenericErrorPage() {
+      // Every other award-mutation endpoint in this controller catches CaabApiClientException and
+      // redisplays its own form with a specific, actionable message rather than letting the
+      // exception propagate to the generic catch-all error page; addSelectedParties must behave
+      // the same way.
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setId(999);
+      activeApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(42)
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+      final org.springframework.mock.web.MockHttpSession httpSession =
+          new org.springframework.mock.web.MockHttpSession();
+      final String rowIdentityToken =
+          renderPartyListAndCaptureToken(httpSession, activeApplication);
+
+      doThrow(new CaabApiClientException("backend rejected the request"))
+          .when(caseOutcomeService)
+          .addLiableParties(any(), any(), any(), any(), any(), any(), any(), any(), any());
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .session(httpSession)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("rowIdentityToken", rowIdentityToken)
+                      .param("selectedPartyIds", "42")))
+          .hasStatusOk()
+          .hasViewName("application/party-list-screen")
+          .model()
+          .containsEntry("partyListError", true)
+          .containsEntry("partyListUnresolvedError", true);
+    }
+
+    @Test
     void unsupportedAwardHasNoRoute() {
       assertThat(mockMvc.perform(get("/case/outcome-and-awards/unknown/7/liable-parties")))
           .hasStatus(404);

@@ -883,33 +883,53 @@ public class AwardController {
               .map(CandidateOpponentRow::opponent)
               .toList();
 
-      caseOutcomeService.addLiableParties(
-          ebsCase.getCaseReferenceNumber(),
-          user.getProvider().getId().intValue(),
-          awardPath,
-          awardId,
-          existingOpponentIds,
-          newOpponents,
-          user.getLoginId(),
-          // The award's own liable parties are re-fetched fresh from the backend on every page
-          // load, but that read can lag behind the write that just linked the opponent. Recording
-          // the id here as soon as the link succeeds keeps the checkbox hidden for the rest of
-          // this session even if an immediate subsequent page load still reflects the pre-link
-          // state.
-          opponentId ->
-              recordAddedLiablePartyOpponentIds(
-                  session, ebsCase, awardPath, awardId, List.of(opponentId)),
-          // The backend's create-and-link endpoint assigns a synthetic ebsId to non-shared new
-          // opponents rather than preserving their real one (see
-          // AwardsService#createAwardLiableParty), so the real ebsId would no longer be recognised
-          // as already-added on a later page load. Remembering it here, against the original EBS
-          // opponent's real ebsId, keeps the checkbox hidden for the rest of this session even
-          // though the backend itself cannot confirm the match. Recording each creation as soon as
-          // it succeeds - rather than only after the whole batch completes - means an earlier
-          // opponent in this same selection is still correctly recognised as already-added even if
-          // creating a later one in the batch then fails.
-          created ->
-              recordCreatedLiableParties(session, ebsCase, awardPath, awardId, List.of(created)));
+      try {
+        caseOutcomeService.addLiableParties(
+            ebsCase.getCaseReferenceNumber(),
+            user.getProvider().getId().intValue(),
+            awardPath,
+            awardId,
+            existingOpponentIds,
+            newOpponents,
+            user.getLoginId(),
+            // The award's own liable parties are re-fetched fresh from the backend on every page
+            // load, but that read can lag behind the write that just linked the opponent. Recording
+            // the id here as soon as the link succeeds keeps the checkbox hidden for the rest of
+            // this session even if an immediate subsequent page load still reflects the pre-link
+            // state.
+            opponentId ->
+                recordAddedLiablePartyOpponentIds(
+                    session, ebsCase, awardPath, awardId, List.of(opponentId)),
+            // The backend's create-and-link endpoint assigns a synthetic ebsId to non-shared new
+            // opponents rather than preserving their real one (see
+            // AwardsService#createAwardLiableParty), so the real ebsId would no longer be
+            // recognised
+            // as already-added on a later page load. Remembering it here, against the original EBS
+            // opponent's real ebsId, keeps the checkbox hidden for the rest of this session even
+            // though the backend itself cannot confirm the match. Recording each creation as soon
+            // as
+            // it succeeds - rather than only after the whole batch completes - means an earlier
+            // opponent in this same selection is still correctly recognised as already-added even
+            // if
+            // creating a later one in the batch then fails.
+            created ->
+                recordCreatedLiableParties(session, ebsCase, awardPath, awardId, List.of(created)));
+      } catch (CaabApiClientException | IllegalStateException ex) {
+        // Partial successes within the batch are still recorded as already-added above (via the
+        // per-item callbacks, invoked as each one succeeds before the failure), so the user is not
+        // at risk of re-creating them by retrying; they are simply returned to the party list to
+        // retry whatever remains, rather than being sent to the generic, unrelated error page.
+        log.warn(
+            "Failed to add selected liable parties for case {} award {} {}",
+            ebsCase.getCaseReferenceNumber(),
+            awardPath,
+            awardId,
+            ex);
+        model.addAttribute("partyListError", true);
+        model.addAttribute("partyListUnresolvedError", true);
+        displayPartyList(ebsCase, currentApplication, user, awardPath, awardId, session, model);
+        return "application/party-list-screen";
+      }
 
       return "redirect:/case/outcome-and-awards/" + awardPath + "/" + awardId + "/liable-parties";
     }
