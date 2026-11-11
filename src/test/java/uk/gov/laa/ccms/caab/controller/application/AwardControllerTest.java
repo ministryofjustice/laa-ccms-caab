@@ -718,12 +718,8 @@ class AwardControllerTest {
       final org.springframework.mock.web.MockHttpSession httpSession =
           new org.springframework.mock.web.MockHttpSession();
 
-      mockMvc.perform(
-          get("/case/outcome-and-awards/land/7/liable-parties/add")
-              .session(httpSession)
-              .sessionAttr(CASE, ebsCase)
-              .sessionAttr(APPLICATION, activeApplication)
-              .sessionAttr(USER_DETAILS, user));
+      final String rowIdentityToken =
+          renderPartyListAndCaptureToken(httpSession, activeApplication);
 
       final OpponentDetail replacementOpponent =
           new OpponentDetail()
@@ -743,6 +739,7 @@ class AwardControllerTest {
                       .sessionAttr(CASE, ebsCase)
                       .sessionAttr(APPLICATION, activeApplication)
                       .sessionAttr(USER_DETAILS, user)
+                      .param("rowIdentityToken", rowIdentityToken)
                       .param("selectedPartyIds", "-1")))
           .hasStatusOk()
           .hasViewName("application/party-list-screen")
