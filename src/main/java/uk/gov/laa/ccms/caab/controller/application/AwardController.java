@@ -56,6 +56,7 @@ import uk.gov.laa.ccms.caab.bean.award.TimeRecoveryAward;
 import uk.gov.laa.ccms.caab.bean.award.TimeRecoveryFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.AbstractOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentOtherDetailsFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.OrganisationOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.CostAwardValidator;
@@ -63,6 +64,7 @@ import uk.gov.laa.ccms.caab.bean.validators.awards.FinancialAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.LandAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.OtherAssetAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.TimeRecoveryValidator;
+import uk.gov.laa.ccms.caab.bean.validators.opponent.IndividualOpponentOtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.opponent.IndividualOpponentValidator;
 import uk.gov.laa.ccms.caab.bean.validators.opponent.OrganisationOpponentValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
@@ -72,6 +74,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.LandAwardMapper;
+import uk.gov.laa.ccms.caab.mapper.OpponentMapper;
 import uk.gov.laa.ccms.caab.mapper.OtherAssetAwardMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostAwardDetail;
@@ -122,6 +125,8 @@ public class AwardController {
   private final TimeRecoveryValidator timeRecoveryValidator;
   private final IndividualOpponentValidator individualOpponentValidator;
   private final OrganisationOpponentValidator organisationOpponentValidator;
+  private final IndividualOpponentOtherDetailsValidator individualOpponentOtherDetailsValidator;
+  private final OpponentMapper opponentMapper;
   private final Validator beanValidator;
 
   /**
@@ -763,12 +768,17 @@ public class AwardController {
       if (activeApplication.isEmpty()) {
         return renderPartyListLoadError(model, awardPath, awardId);
       }
+      final Optional<List<RelationshipToCaseLookupValueDetail>> personRelationshipsResult =
+          loadPersonRelationshipsForValidation();
+      if (personRelationshipsResult.isEmpty()) {
+        return renderPartyListLoadError(model, awardPath, awardId);
+      }
       final var titleLookups =
           safeLookupValues(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE));
       final var organisationRelationships =
           safeRelationshipValues(lookupService.getOrganisationToCaseRelationships());
-      final var personRelationships =
-          safeRelationshipValues(lookupService.getPersonToCaseRelationships());
+      final List<RelationshipToCaseLookupValueDetail> personRelationships =
+          personRelationshipsResult.get();
       final Set<String> alreadyAddedEbsIds = new HashSet<>();
       final Set<Integer> alreadyAddedOpponentIds = new HashSet<>();
       collectAlreadyAddedIdentities(
@@ -868,8 +878,13 @@ public class AwardController {
       if (activeApplication.isEmpty()) {
         return renderPartyListLoadError(model, awardPath, awardId);
       }
+      final Optional<List<RelationshipToCaseLookupValueDetail>> personRelationshipsResult =
+          loadPersonRelationshipsForValidation();
+      if (personRelationshipsResult.isEmpty()) {
+        return renderPartyListLoadError(model, awardPath, awardId);
+      }
       final List<RelationshipToCaseLookupValueDetail> personRelationships =
-          safeRelationshipValues(lookupService.getPersonToCaseRelationships());
+          personRelationshipsResult.get();
       final Set<String> alreadyAddedEbsIds = new HashSet<>();
       final Set<Integer> alreadyAddedOpponentIds = new HashSet<>();
       collectAlreadyAddedIdentities(
@@ -1315,6 +1330,30 @@ public class AwardController {
             .orElse(List.of());
   }
 
+  /**
+   * Loads the person-to-case relationships used to derive each candidate's date-of-birth
+   * requirement, treating a missing response body or null content as the lookup being unavailable -
+   * exactly as {@link
+   * uk.gov.laa.ccms.caab.service.IndividualOpponentFormService#prepareForValidation} does when it
+   * rejects with a {@code CaabApplicationException} - rather than silently defaulting to an empty
+   * list. An empty list would make every candidate's date of birth appear optional (no relationship
+   * code would ever match), letting an individual whose relationship genuinely requires one - a
+   * child, for example - pass candidate validation and be submitted for creation regardless.
+   * Callers must treat an empty result as a hard failure to be surfaced to the user, not as "no
+   * relationships configured".
+   */
+  private Optional<List<RelationshipToCaseLookupValueDetail>>
+      loadPersonRelationshipsForValidation() {
+    final reactor.core.publisher.Mono<RelationshipToCaseLookupDetail> lookupMono =
+        lookupService.getPersonToCaseRelationships();
+    if (lookupMono == null) {
+      return Optional.empty();
+    }
+    // Optional#map already collapses a null getContent() to Optional.empty(), matching a missing
+    // response body (blockOptional() itself empty) in treating both as "unavailable".
+    return lookupMono.blockOptional().map(RelationshipToCaseLookupDetail::getContent);
+  }
+
   private LiablePartyDisplay toPartyDisplay(
       final OpponentDetail opponent,
       final Integer rowId,
@@ -1350,15 +1389,19 @@ public class AwardController {
   /**
    * Determines whether a case-level opponent is eligible to be offered - and, if selected, created
    * - as a liable/interested party, by applying the same validation an operator would have to
-   * satisfy on the dedicated individual/organisation add screens: both the Bean Validation
-   * constraints declared on the form (for example, field length limits on name, contact and address
-   * fields) that Spring applies automatically when the form is bound from a request but which do
-   * not run for a form built manually here, and the dedicated custom validator (see {@link
-   * IndividualOpponentValidator#validateLiableParty} and {@link OrganisationOpponentValidator}).
-   * Without both, a candidate that could never actually be created there - for example, a child
-   * whose relationship requires a date of birth but has none recorded, or an imported opponent with
-   * an overlength name - would still be listed here, accepted on submission, and sent to the
-   * backend's create-and-link endpoint regardless.
+   * satisfy on the dedicated individual/organisation add screens: the Bean Validation constraints
+   * declared on the form (for example, field length limits on name, contact and address fields)
+   * that Spring applies automatically when the form is bound from a request but which do not run
+   * for a form built manually here, the dedicated contact-details custom validator (see {@link
+   * IndividualOpponentValidator#validateLiableParty} and {@link OrganisationOpponentValidator}),
+   * and - for individuals - the other-details validator (see {@link
+   * IndividualOpponentOtherDetailsValidator}) covering the employment and means-assessment fields
+   * that are otherwise only checked on the dedicated other-details screen. Without all of these, a
+   * candidate that could never actually be created there - for example, a child whose relationship
+   * requires a date of birth but has none recorded, an imported opponent with an overlength name,
+   * or one with an overlength employer name or an assessed income above the permitted limit - would
+   * still be listed here, accepted on submission, and sent to the backend's create-and-link
+   * endpoint regardless.
    */
   private boolean isValidPartyListOpponent(
       final OpponentDetail opponent,
@@ -1380,7 +1423,20 @@ public class AwardController {
       final Errors errors = new BeanPropertyBindingResult(form, "liablePartyIndividual");
       beanValidator.validate(form, errors);
       individualOpponentValidator.validateLiableParty(form, errors);
-      return !errors.hasErrors();
+      if (errors.hasErrors()) {
+        return false;
+      }
+      // A candidate without a real CAAB id is sent to the backend's create-and-link endpoint as
+      // the entire original OpponentDetail - including its employment and means-assessment
+      // fields - not just the contact details checked above, so those fields must satisfy the
+      // same validation the dedicated other-details screen enforces too.
+      final IndividualOpponentOtherDetailsFormData otherDetailsForm =
+          opponentMapper.toIndividualOpponentOtherDetailsFormData(opponent);
+      final Errors otherDetailsErrors =
+          new BeanPropertyBindingResult(otherDetailsForm, "liablePartyIndividualOtherDetails");
+      beanValidator.validate(otherDetailsForm, otherDetailsErrors);
+      individualOpponentOtherDetailsValidator.validate(otherDetailsForm, otherDetailsErrors);
+      return !otherDetailsErrors.hasErrors();
     }
     return false;
   }

@@ -64,6 +64,7 @@ import uk.gov.laa.ccms.caab.bean.validators.awards.FinancialAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.LandAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.OtherAssetAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.TimeRecoveryValidator;
+import uk.gov.laa.ccms.caab.bean.validators.opponent.IndividualOpponentOtherDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.opponent.IndividualOpponentValidator;
 import uk.gov.laa.ccms.caab.bean.validators.opponent.OrganisationOpponentValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
@@ -71,6 +72,8 @@ import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.LandAwardMapper;
+import uk.gov.laa.ccms.caab.mapper.OpponentMapper;
+import uk.gov.laa.ccms.caab.mapper.OpponentMapperImpl;
 import uk.gov.laa.ccms.caab.mapper.OtherAssetAwardMapper;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
@@ -115,6 +118,17 @@ class AwardControllerTest {
   @Spy private TimeRecoveryValidator timeRecoveryValidator = new TimeRecoveryValidator();
   @Mock private IndividualOpponentValidator individualOpponentValidator;
   @Mock private OrganisationOpponentValidator organisationOpponentValidator;
+
+  // A real (spied) other-details validator - not a mock - so the employer-name / assessed-income
+  // length and limit checks it performs are genuinely exercised when a candidate is filtered.
+  @Spy
+  private IndividualOpponentOtherDetailsValidator individualOpponentOtherDetailsValidator =
+      new IndividualOpponentOtherDetailsValidator();
+
+  // A real (spied) mapper so toIndividualOpponentOtherDetailsFormData genuinely copies the
+  // opponent's employment/assessment fields onto the form under test, rather than returning an
+  // empty mock result that would hide genuine validation failures.
+  @Spy private OpponentMapper opponentMapper = new OpponentMapperImpl();
   // A real (spied) Bean Validation validator - rather than a mock that would silently skip
   // validation - so that the candidate opponent filtering under test genuinely exercises the
   // form's Bean Validation constraints (for example, field length limits) alongside the custom
@@ -176,6 +190,8 @@ class AwardControllerTest {
             timeRecoveryValidator,
             individualOpponentValidator,
             organisationOpponentValidator,
+            individualOpponentOtherDetailsValidator,
+            opponentMapper,
             beanValidator);
     mockMvc = MockMvcTester.create(MockMvcBuilders.standaloneSetup(controller).build());
     ebsCase = new ApplicationDetail().caseReferenceNumber("300000001");
@@ -194,6 +210,12 @@ class AwardControllerTest {
     lenient()
         .when(lookupService.getCommonValues(any()))
         .thenReturn(Mono.just(new CommonLookupDetail().content(Collections.emptyList())));
+    // Default: a present (if empty) relationships response, distinct from the lookup being
+    // unavailable (a missing response body or null content), so existing fixtures that don't
+    // themselves rely on a particular relationship continue to pass candidate validation.
+    lenient()
+        .when(lookupService.getPersonToCaseRelationships())
+        .thenReturn(Mono.just(new RelationshipToCaseLookupDetail().content(List.of())));
     // Default: no parties already added to the award, so party-list candidates are unaffected
     // unless a test overrides this to verify the already-added exclusion.
     lenient()
@@ -1114,6 +1136,80 @@ class AwardControllerTest {
     }
 
     @Test
+    void displayingThePartyListRejectsCandidatesWhenRelationshipMetadataIsUnavailableOnGet() {
+      // safeRelationshipValues-style handling would turn a missing response/null content into an
+      // empty list, making every candidate's date of birth appear optional - a child could then
+      // pass validation and be offered for creation without one. The lookup being unavailable
+      // must instead surface the load/retry error, exactly like a failed application reload.
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setId(999);
+      lenient()
+          .when(applicationService.getApplication("999"))
+          .thenReturn(Mono.just(activeApplication));
+      activeApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(401)
+                  .type("INDIVIDUAL")
+                  .title("MASTER")
+                  .firstName("No")
+                  .surname("Dob")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+      when(lookupService.getPersonToCaseRelationships()).thenReturn(Mono.empty());
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/party-list-screen")
+          .model()
+          .containsEntry("partyListError", true)
+          .containsEntry("partyListLoadError", true)
+          .hasEntrySatisfying("parties", parties -> assertThat((List<?>) parties).isEmpty());
+    }
+
+    @Test
+    void submittingSelectedPartiesRejectsCandidatesWhenRelationshipMetadataIsUnavailableOnPost() {
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setId(999);
+      lenient()
+          .when(applicationService.getApplication("999"))
+          .thenReturn(Mono.just(activeApplication));
+      activeApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(401)
+                  .type("INDIVIDUAL")
+                  .title("MASTER")
+                  .firstName("No")
+                  .surname("Dob")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+      when(lookupService.getPersonToCaseRelationships())
+          .thenReturn(Mono.just(new RelationshipToCaseLookupDetail().content(null)));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("selectedPartyIds", "401")))
+          .hasStatusOk()
+          .hasViewName("application/party-list-screen")
+          .model()
+          .containsEntry("partyListError", true)
+          .containsEntry("partyListLoadError", true);
+      verifyNoInteractions(caseOutcomeService);
+    }
+
+    @Test
     void candidateFilteringAppliesBeanValidationAlongsideTheCustomValidators() {
       // Only the dedicated custom validators run against a form built here - calling only
       // IndividualOpponentValidator/OrganisationOpponentValidator skips the Bean Validation
@@ -1175,6 +1271,71 @@ class AwardControllerTest {
                   assertThat((List<?>) parties)
                       .extracting("name")
                       .containsExactlyInAnyOrder("MR Valid Name", "Valid Org"));
+    }
+
+    @Test
+    void candidateFilteringValidatesEmploymentAndAssessmentOtherDetailsBeforeAcceptingACandidate() {
+      // A selected opponent without a real CAAB id is sent to the backend's create-and-link
+      // endpoint as the entire original OpponentDetail, including employment and
+      // means-assessment fields that candidate validation previously never looked at. Those
+      // fields must satisfy IndividualOpponentOtherDetailsValidator too, just as they would on
+      // the dedicated other-details screen, or an opponent that could never actually be created
+      // there would still be offered and submitted here regardless.
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setId(999);
+      lenient()
+          .when(applicationService.getApplication("999"))
+          .thenReturn(Mono.just(activeApplication));
+      activeApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(501)
+                  .type("INDIVIDUAL")
+                  .title("MR")
+                  .firstName("Valid")
+                  .surname("Employee")
+                  .relationshipToCase("OWNER")
+                  .relationshipToClient("CLIENT")
+                  .employerName("Acme Ltd"),
+              // An employer name over the 35 character limit fails
+              // IndividualOpponentOtherDetailsValidator even though the contact details alone are
+              // otherwise valid.
+              new OpponentDetail()
+                  .id(502)
+                  .type("INDIVIDUAL")
+                  .title("MR")
+                  .firstName("Overlength")
+                  .surname("Employer")
+                  .relationshipToCase("OWNER")
+                  .relationshipToClient("CLIENT")
+                  .employerName("E".repeat(36)),
+              // An assessed income above the permitted 100000000 limit likewise fails the
+              // other-details validator.
+              new OpponentDetail()
+                  .id(503)
+                  .type("INDIVIDUAL")
+                  .title("MR")
+                  .firstName("Excessive")
+                  .surname("Income")
+                  .relationshipToCase("OWNER")
+                  .relationshipToClient("CLIENT")
+                  .assessedIncome(new java.math.BigDecimal("100000001"))));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name")
+                      .containsExactly("MR Valid Employee"));
     }
 
     @Test
