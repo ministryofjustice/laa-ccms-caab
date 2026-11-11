@@ -462,13 +462,16 @@ class CaseOutcomeLiablePartiesTest {
 
     @Test
     void doesNothingWhenNoOpponentIdsSupplied() {
-      service.addLiableParties("300000001", 123, "land", 7, List.of(), List.of(), "login");
+      service.addLiableParties(
+          "300000001", 123, "land", 7, List.of(), List.of(), "login", id -> {}, opponent -> {});
       verifyNoInteractions(caabApiClient);
 
-      service.addLiableParties("300000001", 123, "land", 7, null, List.of(), "login");
+      service.addLiableParties(
+          "300000001", 123, "land", 7, null, List.of(), "login", id -> {}, opponent -> {});
       verifyNoInteractions(caabApiClient);
 
-      service.addLiableParties("300000001", 123, "land", 7, null, null, "login");
+      service.addLiableParties(
+          "300000001", 123, "land", 7, null, null, "login", id -> {}, opponent -> {});
       verifyNoInteractions(caabApiClient);
     }
 
@@ -476,13 +479,21 @@ class CaseOutcomeLiablePartiesTest {
     void createsAndLinksEachSuppliedNewOpponentViaTheCreateEndpoint() {
       stubOutcome(outcome());
       final OpponentDetail newOpponent = new OpponentDetail().ebsId("61700985").type("INDIVIDUAL");
-      when(caabApiClient.createAwardLiableParty(42, "LAND", 7, newOpponent, "login"))
+      when(caabApiClient.createAwardLiableParty(42, "LAND", 7, "login", newOpponent))
           .thenReturn(Mono.empty());
 
       service.addLiableParties(
-          "300000001", 123, "land", 7, List.of(), List.of(newOpponent), "login");
+          "300000001",
+          123,
+          "land",
+          7,
+          List.of(),
+          List.of(newOpponent),
+          "login",
+          id -> {},
+          opponent -> {});
 
-      verify(caabApiClient).createAwardLiableParty(42, "LAND", 7, newOpponent, "login");
+      verify(caabApiClient).createAwardLiableParty(42, "LAND", 7, "login", newOpponent);
       verifyNoMoreInteractions(caabApiClient);
     }
 
@@ -491,14 +502,27 @@ class CaseOutcomeLiablePartiesTest {
       stubOutcome(outcome());
       final OpponentDetail newOpponent = new OpponentDetail().ebsId("61700985").type("INDIVIDUAL");
       when(caabApiClient.addAwardLiableParty(42, "LAND", 7, 11, "login")).thenReturn(Mono.empty());
-      when(caabApiClient.createAwardLiableParty(42, "LAND", 7, newOpponent, "login"))
+      when(caabApiClient.createAwardLiableParty(42, "LAND", 7, "login", newOpponent))
           .thenReturn(Mono.empty());
 
-      service.addLiableParties(
-          "300000001", 123, "land", 7, List.of(11), List.of(newOpponent), "login");
+      final List<Integer> linked = new java.util.ArrayList<>();
+      final List<OpponentDetail> created = new java.util.ArrayList<>();
 
+      service.addLiableParties(
+          "300000001",
+          123,
+          "land",
+          7,
+          List.of(11),
+          List.of(newOpponent),
+          "login",
+          linked::add,
+          created::add);
+
+      assertThat(linked).containsExactly(11);
+      assertThat(created).containsExactly(newOpponent);
       verify(caabApiClient).addAwardLiableParty(42, "LAND", 7, 11, "login");
-      verify(caabApiClient).createAwardLiableParty(42, "LAND", 7, newOpponent, "login");
+      verify(caabApiClient).createAwardLiableParty(42, "LAND", 7, "login", newOpponent);
       verifyNoMoreInteractions(caabApiClient);
     }
 
@@ -507,13 +531,21 @@ class CaseOutcomeLiablePartiesTest {
       stubOutcome(outcome());
       final OpponentDetail newOpponent = new OpponentDetail().ebsId("61700985").type("INDIVIDUAL");
       final CaabApiClientException failure = new CaabApiClientException("502 Bad Gateway");
-      when(caabApiClient.createAwardLiableParty(42, "LAND", 7, newOpponent, "login"))
+      when(caabApiClient.createAwardLiableParty(42, "LAND", 7, "login", newOpponent))
           .thenReturn(Mono.error(failure));
 
       assertThatThrownBy(
               () ->
                   service.addLiableParties(
-                      "300000001", 123, "land", 7, List.of(), List.of(newOpponent), "login"))
+                      "300000001",
+                      123,
+                      "land",
+                      7,
+                      List.of(),
+                      List.of(newOpponent),
+                      "login",
+                      id -> {},
+                      opponent -> {}))
           .isSameAs(failure);
     }
 
@@ -523,7 +555,15 @@ class CaseOutcomeLiablePartiesTest {
       assertThatThrownBy(
               () ->
                   service.addLiableParties(
-                      "300000001", 123, "land", 7, List.of(11), List.of(), "login"))
+                      "300000001",
+                      123,
+                      "land",
+                      7,
+                      List.of(11),
+                      List.of(),
+                      "login",
+                      id -> {},
+                      opponent -> {}))
           .isInstanceOf(IllegalStateException.class)
           .hasMessageContaining("No case outcome exists");
       verifyNoInteractions(caabApiClient);
@@ -535,7 +575,15 @@ class CaseOutcomeLiablePartiesTest {
       assertThatThrownBy(
               () ->
                   service.addLiableParties(
-                      "300000001", 123, "unsupported", 7, List.of(11), List.of(), "login"))
+                      "300000001",
+                      123,
+                      "unsupported",
+                      7,
+                      List.of(11),
+                      List.of(),
+                      "login",
+                      id -> {},
+                      opponent -> {}))
           .isInstanceOf(CaabApplicationException.class)
           .hasMessageContaining("Unsupported award path");
       verifyNoInteractions(caabApiClient);
@@ -550,7 +598,15 @@ class CaseOutcomeLiablePartiesTest {
       // Opponent 11 is repeated in the request, alongside a new opponent 22, to prove
       // de-duplication of the ids sent to the API.
       service.addLiableParties(
-          "300000001", 123, "cost-award", 7, List.of(11, 11, 22), List.of(), "login");
+          "300000001",
+          123,
+          "cost-award",
+          7,
+          List.of(11, 11, 22),
+          List.of(),
+          "login",
+          id -> {},
+          opponent -> {});
 
       verify(caabApiClient).addAwardLiableParty(42, "COST", 7, 11, "login");
       verify(caabApiClient).addAwardLiableParty(42, "COST", 7, 22, "login");
@@ -566,7 +622,15 @@ class CaseOutcomeLiablePartiesTest {
       assertThatThrownBy(
               () ->
                   service.addLiableParties(
-                      "300000001", 123, "cost-award", 7, List.of(11), List.of(), "login"))
+                      "300000001",
+                      123,
+                      "cost-award",
+                      7,
+                      List.of(11),
+                      List.of(),
+                      "login",
+                      id -> {},
+                      opponent -> {}))
           .isSameAs(failure);
     }
 
@@ -577,7 +641,15 @@ class CaseOutcomeLiablePartiesTest {
           .thenReturn(Mono.empty());
 
       service.addLiableParties(
-          "300000001", 123, "financial-award", 7, List.of(11, 22), List.of(), "login");
+          "300000001",
+          123,
+          "financial-award",
+          7,
+          List.of(11, 22),
+          List.of(),
+          "login",
+          id -> {},
+          opponent -> {});
 
       verify(caabApiClient).addAwardLiableParty(42, "DAMAGE", 7, 11, "login");
       verify(caabApiClient).addAwardLiableParty(42, "DAMAGE", 7, 22, "login");
@@ -592,7 +664,15 @@ class CaseOutcomeLiablePartiesTest {
       assertThatThrownBy(
               () ->
                   service.addLiableParties(
-                      "300000001", 123, "financial-award", 7, List.of(11), List.of(), "login"))
+                      "300000001",
+                      123,
+                      "financial-award",
+                      7,
+                      List.of(11),
+                      List.of(),
+                      "login",
+                      id -> {},
+                      opponent -> {}))
           .isSameAs(failure);
     }
 
@@ -602,7 +682,16 @@ class CaseOutcomeLiablePartiesTest {
       when(caabApiClient.addAwardLiableParty(eq(42), eq("LAND"), eq(7), any(), eq("login")))
           .thenReturn(Mono.empty());
 
-      service.addLiableParties("300000001", 123, "land", 7, List.of(11, 22), List.of(), "login");
+      service.addLiableParties(
+          "300000001",
+          123,
+          "land",
+          7,
+          List.of(11, 22),
+          List.of(),
+          "login",
+          id -> {},
+          opponent -> {});
 
       verify(caabApiClient).addAwardLiableParty(42, "LAND", 7, 11, "login");
       verify(caabApiClient).addAwardLiableParty(42, "LAND", 7, 22, "login");
@@ -617,7 +706,15 @@ class CaseOutcomeLiablePartiesTest {
       assertThatThrownBy(
               () ->
                   service.addLiableParties(
-                      "300000001", 123, "land", 7, List.of(11), List.of(), "login"))
+                      "300000001",
+                      123,
+                      "land",
+                      7,
+                      List.of(11),
+                      List.of(),
+                      "login",
+                      id -> {},
+                      opponent -> {}))
           .isSameAs(failure);
     }
 
@@ -627,7 +724,16 @@ class CaseOutcomeLiablePartiesTest {
       when(caabApiClient.addAwardLiableParty(eq(42), eq("ASSET"), eq(7), any(), eq("login")))
           .thenReturn(Mono.empty());
 
-      service.addLiableParties("300000001", 123, "asset", 7, List.of(11, 22), List.of(), "login");
+      service.addLiableParties(
+          "300000001",
+          123,
+          "asset",
+          7,
+          List.of(11, 22),
+          List.of(),
+          "login",
+          id -> {},
+          opponent -> {});
 
       verify(caabApiClient).addAwardLiableParty(42, "ASSET", 7, 11, "login");
       verify(caabApiClient).addAwardLiableParty(42, "ASSET", 7, 22, "login");
@@ -642,7 +748,15 @@ class CaseOutcomeLiablePartiesTest {
       assertThatThrownBy(
               () ->
                   service.addLiableParties(
-                      "300000001", 123, "asset", 7, List.of(11), List.of(), "login"))
+                      "300000001",
+                      123,
+                      "asset",
+                      7,
+                      List.of(11),
+                      List.of(),
+                      "login",
+                      id -> {},
+                      opponent -> {}))
           .isSameAs(failure);
     }
   }

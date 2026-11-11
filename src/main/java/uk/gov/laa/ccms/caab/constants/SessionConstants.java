@@ -291,34 +291,22 @@ public class SessionConstants {
   public static final String APPLICATION_SECTIONS_BACK_URL = "applicationSectionsBackUrl";
 
   /**
-   * Session attribute tracking the EBS ids of case opponents that have been created and linked to
-   * an award via the party list screen, keyed by case reference number, award path and award id.
-   * The create-and-link endpoint assigns non-shared opponents a synthetic ebsId rather than
-   * preserving their real one, so the real EBS id returned by the award's own liable parties would
-   * otherwise no longer match on a later page load, leaving the checkbox wrongly visible for an
-   * opponent that has already been added.
+   * Session attribute holding, per case and award, the real EBS ids of opponents created and linked
+   * via the party list. The backend gives such opponents a synthetic EBS id, so these are needed to
+   * recognise them as already added.
    */
   public static final String CREATED_LIABLE_PARTY_EBS_IDS = "createdLiablePartyEbsIds";
 
   /**
-   * Session attribute tracking the real CAAB opponent ids that have been linked to an award via the
-   * party list screen, keyed by case reference number, award path and award id. The award's own
-   * liable parties are re-fetched from the backend on every page load, but if that read lags behind
-   * the write that just linked the opponent (for example, due to eventual consistency), the
-   * opponent would otherwise still appear unchecked - and selectable again - on an immediate
-   * subsequent page load, risking a duplicate link. Recording it here as soon as the link succeeds
-   * keeps the checkbox hidden for the rest of this session regardless of backend read timing.
+   * Session attribute holding, per case and award, the CAAB opponent ids linked via the party list,
+   * so they stay recognised as already added even if a backend read lags behind the write.
    */
   public static final String ADDED_LIABLE_PARTY_OPPONENT_IDS = "addedLiablePartyOpponentIds";
 
   /**
-   * Session attribute recording, per case/award, which stable opponent identity each party list row
-   * id was rendered against. Row ids for opponents without a real CAAB id are only a position in
-   * the opponents list at render time, so if that list changes between rendering the party list in
-   * one tab and submitting a selection from it (for example because it was edited concurrently in
-   * another tab), the same row id could now resolve to a different opponent. Selections are checked
-   * against this map and rejected if the row id no longer maps to the same identity it did when
-   * rendered.
+   * Session attribute holding, per case and award, snapshots of the opponent identity each party
+   * list row id was rendered against, keyed by a per-render token. Used to reject selections whose
+   * row id no longer resolves to the same opponent.
    */
   public static final String PARTY_LIST_ROW_IDENTITIES = "partyListRowIdentities";
 }

@@ -104,6 +104,8 @@ class LiablePartiesTemplateRenderTest {
         .contains("href=\"/case/outcome-and-awards/land/7/liable-parties/102/remove\"")
         .contains("<span>Imported party</span>")
         .contains("<span>Shared individual</span>")
+        .contains("<span>Party details unavailable</span>")
+        .contains("<span class=\"govuk-visually-hidden\"> Party details unavailable</span>")
         .contains("&lt;script&gt;alert(1)&lt;/script&gt;")
         .doesNotContain("<script>alert(1)</script>", "/individual/13/edit", "/individual/14/edit");
   }
@@ -271,7 +273,8 @@ class LiablePartiesTemplateRenderTest {
                       false,
                       false),
                   new LiablePartyDisplay(
-                      104, 14, "Shared individual", "Individual", "", "", false, false, false));
+                      104, 14, "Shared individual", "Individual", "", "", false, false, false),
+                  new LiablePartyDisplay(105, 15, null, null, null, "", false, false, false));
       model.addAttribute(
           "award",
           new LiablePartiesDisplay(

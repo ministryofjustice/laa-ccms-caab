@@ -49,7 +49,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
-import org.springframework.validation.Validator;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.AwardTypeForm;
@@ -72,6 +71,8 @@ import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.LandAwardMapper;
+import uk.gov.laa.ccms.caab.mapper.LiablePartiesDisplayMapper;
+import uk.gov.laa.ccms.caab.mapper.LiablePartiesDisplayMapperImpl;
 import uk.gov.laa.ccms.caab.mapper.OpponentMapper;
 import uk.gov.laa.ccms.caab.mapper.OpponentMapperImpl;
 import uk.gov.laa.ccms.caab.mapper.OtherAssetAwardMapper;
@@ -129,11 +130,16 @@ class AwardControllerTest {
   // opponent's employment/assessment fields onto the form under test, rather than returning an
   // empty mock result that would hide genuine validation failures.
   @Spy private OpponentMapper opponentMapper = new OpponentMapperImpl();
+
+  @Spy
+  private LiablePartiesDisplayMapper liablePartiesDisplayMapper =
+      new LiablePartiesDisplayMapperImpl();
+
   // A real (spied) Bean Validation validator - rather than a mock that would silently skip
   // validation - so that the candidate opponent filtering under test genuinely exercises the
   // form's Bean Validation constraints (for example, field length limits) alongside the custom
   // validators, matching what the dedicated add/edit screens enforce.
-  @Spy private Validator beanValidator = newInitialisedBeanValidator();
+  @Spy private jakarta.validation.Validator beanValidator = newInitialisedBeanValidator();
 
   // Constructed explicitly in setUp() rather than via Mockito's @InjectMocks reflection: several
   // constructor parameters (the custom award/opponent validators and the generic Bean Validation
@@ -147,7 +153,7 @@ class AwardControllerTest {
   private UserDetail user;
   private CaseOutcomeDetail caseOutcome;
 
-  private static Validator newInitialisedBeanValidator() {
+  private static jakarta.validation.Validator newInitialisedBeanValidator() {
     final LocalValidatorFactoryBean factory = new LocalValidatorFactoryBean();
     factory.afterPropertiesSet();
     return factory;
@@ -192,6 +198,7 @@ class AwardControllerTest {
             organisationOpponentValidator,
             individualOpponentOtherDetailsValidator,
             opponentMapper,
+            liablePartiesDisplayMapper,
             beanValidator);
     mockMvc = MockMvcTester.create(MockMvcBuilders.standaloneSetup(controller).build());
     ebsCase = new ApplicationDetail().caseReferenceNumber("300000001");
@@ -215,6 +222,9 @@ class AwardControllerTest {
     // themselves rely on a particular relationship continue to pass candidate validation.
     lenient()
         .when(lookupService.getPersonToCaseRelationships())
+        .thenReturn(Mono.just(new RelationshipToCaseLookupDetail().content(List.of())));
+    lenient()
+        .when(lookupService.getOrganisationToCaseRelationships())
         .thenReturn(Mono.just(new RelationshipToCaseLookupDetail().content(List.of())));
     // Default: no parties already added to the award, so party-list candidates are unaffected
     // unless a test overrides this to verify the already-added exclusion.
@@ -566,8 +576,6 @@ class AwardControllerTest {
           .containsEntry("partyListUnresolvedError", true);
 
       verify(caseOutcomeService, never())
-          .addLiableParties(any(), any(), any(), any(), any(), any(), any());
-      verify(caseOutcomeService, never())
           .addLiableParties(any(), any(), any(), any(), any(), any(), any(), any(), any());
     }
 
@@ -742,8 +750,6 @@ class AwardControllerTest {
           .containsEntry("partyListError", true)
           .containsEntry("partyListUnresolvedError", true);
 
-      verify(caseOutcomeService, never())
-          .addLiableParties(any(), any(), any(), any(), any(), any(), any());
       verify(caseOutcomeService, never())
           .addLiableParties(any(), any(), any(), any(), any(), any(), any(), any(), any());
     }
@@ -1584,9 +1590,49 @@ class AwardControllerTest {
           .containsEntry("partyListError", true);
 
       verify(caseOutcomeService, never())
-          .addLiableParties(any(), any(), any(), any(), any(), any(), any());
+          .addLiableParties(any(), any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void malformedSelectedPartyIdIsRejectedAsUnresolved() {
+      ebsCase.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(42)
+                  .type("INDIVIDUAL")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("selectedPartyIds", "not-a-number")))
+          .hasStatusOk()
+          .hasViewName("application/party-list-screen")
+          .model()
+          .containsEntry("partyListUnresolvedError", true);
+
       verify(caseOutcomeService, never())
           .addLiableParties(any(), any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void readOnlyCaseCannotDisplayThePartyList() {
+      ebsCase.setAvailableFunctions(List.of());
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+
+      verifyNoInteractions(applicationService);
+      verify(caseOutcomeService, never()).getAwardLiableParties(any(), any(), any(), any());
     }
   }
 

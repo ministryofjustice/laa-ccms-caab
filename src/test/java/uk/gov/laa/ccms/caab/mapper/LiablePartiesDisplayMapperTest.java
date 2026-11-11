@@ -373,7 +373,7 @@ class LiablePartiesDisplayMapperTest {
               party -> {
                 assertThat(party.id()).isEqualTo(101);
                 assertThat(party.opponentId()).isEqualTo(11);
-                assertThat(party.name()).isEqualTo("Party details unavailable");
+                assertThat(party.name()).isNull();
                 assertThat(party.editable()).isFalse();
               });
     }
