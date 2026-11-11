@@ -84,8 +84,8 @@ import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.model.sections.LiablePartyDisplay;
+import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
-import uk.gov.laa.ccms.caab.service.IndividualOpponentFormService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
@@ -108,6 +108,7 @@ public class AwardController {
 
   private final LookupService lookupService;
   private final CaseOutcomeService caseOutcomeService;
+  private final ApplicationService applicationService;
   private final AwardTypeValidator awardTypeValidator;
   private final CostAwardValidator costAwardValidator;
   private final FinancialAwardValidator financialAwardValidator;
@@ -118,7 +119,6 @@ public class AwardController {
   private final LandAwardValidator landAwardValidator;
   private final LandAwardMapper landAwardMapper;
   private final TimeRecoveryValidator timeRecoveryValidator;
-  private final IndividualOpponentFormService individualOpponentFormService;
   private final IndividualOpponentValidator individualOpponentValidator;
   private final OrganisationOpponentValidator organisationOpponentValidator;
 
@@ -771,7 +771,7 @@ public class AwardController {
 
       final List<CandidateOpponentRow> rows =
           buildCandidateOpponentRows(
-              activeApplication, alreadyAddedOpponentIds, alreadyAddedEbsIds);
+              activeApplication, alreadyAddedOpponentIds, alreadyAddedEbsIds, personRelationships);
       final String rowIdentityToken =
           recordPartyListRowIdentities(session, ebsCase, awardPath, awardId, rows);
 
@@ -836,13 +836,19 @@ public class AwardController {
       final List<Integer> selectedRowIds = normalizeSelectedPartyIds(selectedPartyIds);
       final ApplicationDetail activeApplication =
           resolveActiveApplication(ebsCase, currentApplication);
+      final List<RelationshipToCaseLookupValueDetail> personRelationships =
+          safeRelationshipValues(lookupService.getPersonToCaseRelationships());
       final Set<String> alreadyAddedEbsIds = new HashSet<>();
       final Set<Integer> alreadyAddedOpponentIds = new HashSet<>();
       collectAlreadyAddedIdentities(
           ebsCase, user, awardPath, awardId, session, alreadyAddedOpponentIds, alreadyAddedEbsIds);
 
       final List<CandidateOpponentRow> selectedRows =
-          buildCandidateOpponentRows(activeApplication, alreadyAddedOpponentIds, alreadyAddedEbsIds)
+          buildCandidateOpponentRows(
+                  activeApplication,
+                  alreadyAddedOpponentIds,
+                  alreadyAddedEbsIds,
+                  personRelationships)
               .stream()
               .filter(row -> selectedRowIds.contains(row.rowId()))
               .filter(row -> !row.alreadyAdded())
@@ -910,18 +916,39 @@ public class AwardController {
   }
 
   /**
-   * Resolves the application whose opponents should be used to build the party-selection list. The
-   * in-session "current application" is only used when it genuinely relates to the case being
-   * viewed; otherwise it is a stale application left over from a previous screen, and falling back
-   * to it would expose (or try to resolve selections against) the wrong person's opponents.
+   * Resolves the application whose opponents should be used to build the party-selection list, and
+   * reloads its opponents fresh from the backend rather than trusting the in-session snapshot. The
+   * opponent add/edit/remove journeys (see {@code OpponentsSectionController}) persist their
+   * changes straight to the backend without refreshing the in-session application, so a same-case
+   * session object can still be stale - omitting an opponent just added elsewhere, or still listing
+   * one that has since been removed. When there is no persisted draft for this case at all (no
+   * in-session application, or one left over from a different case), the case's own opponents are
+   * used instead, since there is nothing to reload.
    */
   private ApplicationDetail resolveActiveApplication(
       final ApplicationDetail ebsCase, final ApplicationDetail currentApplication) {
-    return currentApplication != null
+    final boolean hasPersistedDraftForThisCase =
+        currentApplication != null
+            && currentApplication.getId() != null
             && Objects.equals(
-                currentApplication.getCaseReferenceNumber(), ebsCase.getCaseReferenceNumber())
-        ? currentApplication
-        : ebsCase;
+                currentApplication.getCaseReferenceNumber(), ebsCase.getCaseReferenceNumber());
+    if (!hasPersistedDraftForThisCase) {
+      return ebsCase;
+    }
+    try {
+      final ApplicationDetail reloaded =
+          applicationService.getApplication(String.valueOf(currentApplication.getId())).block();
+      if (reloaded != null) {
+        return reloaded;
+      }
+    } catch (CaabApiClientException | IllegalStateException ex) {
+      log.warn(
+          "Failed to reload persisted opponents for application {}; falling back to the "
+              + "in-session snapshot",
+          currentApplication.getId(),
+          ex);
+    }
+    return currentApplication;
   }
 
   /**
@@ -1158,13 +1185,16 @@ public class AwardController {
   private List<CandidateOpponentRow> buildCandidateOpponentRows(
       final ApplicationDetail activeApplication,
       final Set<Integer> alreadyAddedOpponentIds,
-      final Set<String> alreadyAddedEbsIds) {
+      final Set<String> alreadyAddedEbsIds,
+      final List<RelationshipToCaseLookupValueDetail> personRelationships) {
     final List<OpponentDetail> opponents =
         Optional.ofNullable(activeApplication.getOpponents()).orElse(List.of());
     final List<CandidateOpponentRow> rows = new ArrayList<>();
     for (int i = 0; i < opponents.size(); i++) {
       final OpponentDetail opponent = opponents.get(i);
-      if (opponent == null || opponent.getType() == null || !isValidPartyListOpponent(opponent)) {
+      if (opponent == null
+          || opponent.getType() == null
+          || !isValidPartyListOpponent(opponent, personRelationships)) {
         continue;
       }
       final Integer existingOpponentId = opponent.getId();
@@ -1265,7 +1295,9 @@ public class AwardController {
    * whose relationship requires a date of birth but has none recorded - would still be listed here,
    * accepted on submission, and sent to the backend's create-and-link endpoint regardless.
    */
-  private boolean isValidPartyListOpponent(final OpponentDetail opponent) {
+  private boolean isValidPartyListOpponent(
+      final OpponentDetail opponent,
+      final List<RelationshipToCaseLookupValueDetail> personRelationships) {
     if (opponent == null || opponent.getType() == null) {
       return false;
     }
@@ -1278,12 +1310,37 @@ public class AwardController {
     if (OpponentUtil.INDIVIDUAL_OPPONENT.equalsIgnoreCase(opponent.getType())
         || "INDIVIDUAL".equalsIgnoreCase(opponent.getType())) {
       final IndividualOpponentFormData form = toIndividualOpponentFormData(opponent);
-      individualOpponentFormService.prepareForValidation(form);
+      prepareIndividualFormForValidation(form, personRelationships);
       final Errors errors = new BeanPropertyBindingResult(form, "liablePartyIndividual");
       individualOpponentValidator.validateLiableParty(form, errors);
       return !errors.hasErrors();
     }
     return false;
+  }
+
+  /**
+   * Mirrors {@link IndividualOpponentFormService#prepareForValidation} - deriving the date-of-birth
+   * requirement from the individual's case relationship, and normalising their date of birth - but
+   * looks the relationship up in a list already fetched once up front for this request, rather than
+   * making its own blocking remote call per individual. Both GET and POST here build the candidate
+   * list afresh from every case opponent, so without this, validating N individual candidates would
+   * make N sequential remote calls while holding the session mutex, blocking any other request in
+   * the same session for longer the more opponents the case has.
+   */
+  private void prepareIndividualFormForValidation(
+      final IndividualOpponentFormData individual,
+      final List<RelationshipToCaseLookupValueDetail> personRelationships) {
+    final boolean dateOfBirthMandatory =
+        StringUtils.hasText(individual.getRelationshipToCase())
+            && personRelationships.stream()
+                .filter(
+                    relationship ->
+                        individual.getRelationshipToCase().equals(relationship.getCode()))
+                .findFirst()
+                .map(relationship -> Boolean.TRUE.equals(relationship.getDateOfBirthMandatory()))
+                .orElse(false);
+    individual.setDateOfBirthMandatory(dateOfBirthMandatory);
+    individual.setDateOfBirth(DateUtils.normaliseComponentDateIfValid(individual.getDateOfBirth()));
   }
 
   /**

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -55,6 +56,7 @@ import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.FinancialAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.LandAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.OtherAssetAwardFormData;
+import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.CostAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.FinancialAwardValidator;
@@ -83,8 +85,8 @@ import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.model.sections.LiablePartiesDisplay;
+import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
-import uk.gov.laa.ccms.caab.service.IndividualOpponentFormService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
@@ -99,6 +101,7 @@ class AwardControllerTest {
 
   @Mock private LookupService lookupService;
   @Mock private CaseOutcomeService caseOutcomeService;
+  @Mock private ApplicationService applicationService;
   @Mock private AwardTypeValidator awardTypeValidator;
   @Mock private CostAwardValidator costAwardValidator;
   @Mock private FinancialAwardValidator financialAwardValidator;
@@ -109,7 +112,6 @@ class AwardControllerTest {
   @Mock private LandAwardValidator landAwardValidator;
   @Mock private LandAwardMapper landAwardMapper;
   @Spy private TimeRecoveryValidator timeRecoveryValidator = new TimeRecoveryValidator();
-  @Mock private IndividualOpponentFormService individualOpponentFormService;
   @Mock private IndividualOpponentValidator individualOpponentValidator;
   @Mock private OrganisationOpponentValidator organisationOpponentValidator;
 
@@ -165,6 +167,10 @@ class AwardControllerTest {
     lenient()
         .when(caseOutcomeService.getAwardLiableParties(any(), any(), any(), any()))
         .thenReturn(List.of());
+    // Default: the in-session application is treated as the persisted draft's own up-to-date
+    // snapshot unless a test stubs a genuinely different reload result, so existing fixtures that
+    // build their opponents directly onto the in-session application continue to work unchanged.
+    lenient().when(applicationService.getApplication(any())).thenReturn(Mono.empty());
     // Default: simulate the real service's behaviour of invoking the per-opponent callbacks as
     // soon as each existing opponent is "linked" and each new opponent is "created", so tests
     // exercising the checkbox-hidden / already-added tracking behaviour don't each need to restub
@@ -230,6 +236,7 @@ class AwardControllerTest {
     void selectingKnownOpponentsPersistsThemAndRedirectsToTheSummary() {
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setId(999);
       activeApplication.setOpponents(
           List.of(
               new OpponentDetail()
@@ -281,6 +288,49 @@ class AwardControllerTest {
     }
 
     @Test
+    void partyListReloadsPersistedOpponentsRatherThanTrustingTheStaleInSessionSnapshot() {
+      // The opponent add/edit/remove journeys (see OpponentsSectionController) persist their
+      // changes straight to the backend without refreshing the in-session application, so a
+      // same-case session object can still be stale - for example, omitting an opponent that was
+      // just added via the opponents section. The persisted draft's opponents must always be
+      // reloaded fresh from the backend rather than trusted from the session.
+      final ApplicationDetail staleSessionApplication = new ApplicationDetail();
+      staleSessionApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      staleSessionApplication.setId(999);
+      staleSessionApplication.setOpponents(List.of());
+
+      final ApplicationDetail persistedApplication = new ApplicationDetail();
+      persistedApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      persistedApplication.setId(999);
+      persistedApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(77)
+                  .type("INDIVIDUAL")
+                  .title("MR")
+                  .firstName("Newly")
+                  .surname("Added")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+      when(applicationService.getApplication("999")).thenReturn(Mono.just(persistedApplication));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, staleSessionApplication)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name")
+                      .containsExactly("MR Newly Added"));
+    }
+
+    @Test
     void
         knownOpponentStaysMarkedAsAlreadyAddedEvenWhenTheBackendsLiablePartiesReadHasNotYetCaughtUp() {
       // The backend's own read of the award's liable parties (getAwardLiableParties) is re-fetched
@@ -290,6 +340,7 @@ class AwardControllerTest {
       // subsequent page load and risk the same opponent being linked again.
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setId(999);
       activeApplication.setOpponents(
           List.of(
               new OpponentDetail()
@@ -340,6 +391,7 @@ class AwardControllerTest {
     void selectingRowsWithoutAResolvableOpponentIdShowsAnError() {
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setId(999);
       activeApplication.setOpponents(
           List.of(
               new OpponentDetail()
@@ -385,6 +437,7 @@ class AwardControllerTest {
     void selectingAnImportedOpponentWithNoExistingIdCreatesAndLinksANewOpponent() {
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setId(999);
       final OpponentDetail importedOpponent =
           new OpponentDetail()
               .ebsId("61700985")
@@ -440,6 +493,7 @@ class AwardControllerTest {
       // a later page load. The checkbox must still be hidden for the rest of this session.
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setId(999);
       final OpponentDetail importedOpponent =
           new OpponentDetail()
               .ebsId("61700985")
@@ -495,6 +549,7 @@ class AwardControllerTest {
       // be rejected rather than silently linking the new occupant of that position.
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setId(999);
       final OpponentDetail renderedOpponent =
           new OpponentDetail()
               .ebsId("61700985")
@@ -553,6 +608,7 @@ class AwardControllerTest {
       // happens to be set on the candidate row, or it would be offered for selection again.
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setId(999);
       activeApplication.setOpponents(
           List.of(
               new OpponentDetail()
@@ -597,6 +653,7 @@ class AwardControllerTest {
       // within a single session, which are always tracked by their real id/EBS id.
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setId(999);
       activeApplication.setOpponents(
           List.of(
               new OpponentDetail()
@@ -644,6 +701,7 @@ class AwardControllerTest {
       // them a second time.
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setId(999);
       final OpponentDetail firstOpponent =
           new OpponentDetail()
               .ebsId("61700985")
@@ -734,6 +792,7 @@ class AwardControllerTest {
     void partyListIncludesOnlyValidOpponentsIncludingDeletableOnes() {
       final ApplicationDetail amendmentApplication = new ApplicationDetail();
       amendmentApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      amendmentApplication.setId(999);
       amendmentApplication.setOpponents(
           List.of(
               new OpponentDetail()
@@ -790,6 +849,81 @@ class AwardControllerTest {
                   assertThat((List<?>) parties)
                       .extracting("name")
                       .containsExactlyInAnyOrder("Ms Jane Smith", "Acme & Co", "Mr New Opponent"));
+    }
+
+    @Test
+    void candidateValidationReusesTheAlreadyFetchedRelationshipsInsteadOfFetchingPerOpponent() {
+      // IndividualOpponentFormService#prepareForValidation ordinarily makes its own per-opponent,
+      // blocking remote call to look up a single relationship by code. GET already fetches every
+      // person relationship once up front to build the display, so validating candidates here
+      // must reuse that same list instead of repeating the per-code lookup for every individual
+      // candidate - otherwise N candidates would mean N sequential remote calls, all made while
+      // holding the session mutex.
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setId(999);
+      activeApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(201)
+                  .type("INDIVIDUAL")
+                  .title("MISS")
+                  .firstName("Jane")
+                  .surname("Smith")
+                  .relationshipToCase("OWNER")
+                  .relationshipToClient("CLIENT"),
+              // A child's relationship requires a date of birth, which this opponent does not
+              // have, so shared validation must reject it - but using the pre-fetched
+              // relationship list rather than its own per-opponent remote call.
+              new OpponentDetail()
+                  .id(202)
+                  .type("INDIVIDUAL")
+                  .title("MASTER")
+                  .firstName("No")
+                  .surname("Dob")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+      when(lookupService.getPersonToCaseRelationships())
+          .thenReturn(
+              Mono.just(
+                  new RelationshipToCaseLookupDetail()
+                      .content(
+                          List.of(
+                              new RelationshipToCaseLookupValueDetail()
+                                  .code("CHILD")
+                                  .description("Child")
+                                  .dateOfBirthMandatory(true)))));
+      doAnswer(
+              invocation -> {
+                final IndividualOpponentFormData form = invocation.getArgument(0);
+                final Errors errors = invocation.getArgument(1);
+                if (form.isDateOfBirthMandatory() && !StringUtils.hasText(form.getDateOfBirth())) {
+                  errors.reject("dateOfBirth.required");
+                }
+                return null;
+              })
+          .when(individualOpponentValidator)
+          .validateLiableParty(any(), any());
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name")
+                      .containsExactly("MISS Jane Smith"));
+
+      // The per-code relationship lookup used by IndividualOpponentFormService#prepareForValidation
+      // must never be called - the pre-fetched list is reused for every candidate instead.
+      verify(lookupService, never()).getPersonToCaseRelationship(any());
+      verify(lookupService, times(1)).getPersonToCaseRelationships();
     }
 
     @Test
@@ -1008,6 +1142,7 @@ class AwardControllerTest {
     void reselectingAnAlreadyAddedOpponentIsRejected() {
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setId(999);
       activeApplication.setOpponents(
           List.of(
               new OpponentDetail()
