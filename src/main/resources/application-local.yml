@@ -107,7 +107,7 @@ laa:
     entra:
       # Local dev resolves users through the EBS XXCCMS_ENTRA_ID_USERS mapping table, as an
       # internal user would. For the external SiLAS path set silas-enabled to true and name the
-      # claim carrying the CCMS username - https://justice.org.uk/claims/CCMS_USERNAME in Dev External.
+      # claim carrying the CCMS username, unnamespaced - LAA_CCMS_USERNAME in Dev External.
       silas-enabled: false
       custom-user-id-claim: ""
     # Bare hostname: the url below prepends the scheme. Only used as the fallback when the

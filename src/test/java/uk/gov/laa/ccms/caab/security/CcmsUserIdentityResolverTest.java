@@ -33,7 +33,7 @@ class CcmsUserIdentityResolverTest {
 
   private static final String ENTRA_EMAIL = "a.user@justice.gov.uk";
   private static final String CCMS_LOGIN_ID = "CCMSUSER";
-  private static final String SILAS_CLAIM = "CCMS_USERNAME";
+  private static final String SILAS_CLAIM = "LAA_CCMS_USERNAME";
 
   @Mock private UserService userService;
 

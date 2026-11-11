@@ -110,7 +110,7 @@ laa:
       # External (provider) users reach the service through SiLAS, which supplies the CCMS
       # username in a custom claim; internal (caseworker) users are resolved through the EBS
       # XXCCMS_ENTRA_ID_USERS mapping table.
-      # In the Dev External tenant the claim is https://justice.org.uk/claims/CCMS_USERNAME.
+      # SiLAS emits claims unnamespaced, so this is a bare name: LAA_CCMS_USERNAME.
       silas-enabled: ${IS_SILAS_ENABLED:false}
       custom-user-id-claim: ${ENTRA_CUSTOM_USER_ID_CLAIM:}
     # The fallback for a tenant whose claim supplies an identifier rather than a username.
