@@ -38,6 +38,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
+import org.springframework.validation.Validator;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -121,6 +122,7 @@ public class AwardController {
   private final TimeRecoveryValidator timeRecoveryValidator;
   private final IndividualOpponentValidator individualOpponentValidator;
   private final OrganisationOpponentValidator organisationOpponentValidator;
+  private final Validator beanValidator;
 
   /**
    * Displays the Select Award Type screen.
@@ -756,8 +758,11 @@ public class AwardController {
       final HttpSession session,
       final Model model) {
     synchronized (WebUtils.getSessionMutex(session)) {
-      final ApplicationDetail activeApplication =
+      final Optional<ApplicationDetail> activeApplication =
           resolveActiveApplication(ebsCase, currentApplication);
+      if (activeApplication.isEmpty()) {
+        return renderPartyListLoadError(model, awardPath, awardId);
+      }
       final var titleLookups =
           safeLookupValues(lookupService.getCommonValues(COMMON_VALUE_CONTACT_TITLE));
       final var organisationRelationships =
@@ -771,7 +776,10 @@ public class AwardController {
 
       final List<CandidateOpponentRow> rows =
           buildCandidateOpponentRows(
-              activeApplication, alreadyAddedOpponentIds, alreadyAddedEbsIds, personRelationships);
+              activeApplication.get(),
+              alreadyAddedOpponentIds,
+              alreadyAddedEbsIds,
+              personRelationships);
       final String rowIdentityToken =
           recordPartyListRowIdentities(session, ebsCase, awardPath, awardId, rows);
 
@@ -804,6 +812,27 @@ public class AwardController {
     }
   }
 
+  /**
+   * Renders the party list in its error state when a persisted draft's opponents could not be
+   * freshly reloaded from the backend (see {@link #resolveActiveApplication}). The stale in-session
+   * snapshot is deliberately not shown instead: the opponent add/edit/remove journeys never refresh
+   * it, so it could still list an opponent that has since been removed - or omit one that has since
+   * been added - as if nothing were wrong, letting a stale candidate be validated, selected and
+   * linked (or recreated) despite the reload failure. The list is left empty and the selection form
+   * disabled by omission until the user retries and the reload succeeds.
+   */
+  private String renderPartyListLoadError(
+      final Model model, final String awardPath, final Integer awardId) {
+    model.addAttribute("awardPath", awardPath);
+    model.addAttribute("awardId", awardId);
+    model.addAttribute("parties", List.of());
+    model.addAttribute("firstSelectablePartyId", null);
+    model.addAttribute("rowIdentityToken", (String) null);
+    model.addAttribute("partyListError", true);
+    model.addAttribute("partyListLoadError", true);
+    return "application/party-list-screen";
+  }
+
   /** Persists the selected parties against the award before redirecting to the summary. */
   @PostMapping(
       "/case/outcome-and-awards/{awardPath:cost-award|financial-award|land|asset}/{awardId}/liable-parties/add")
@@ -834,8 +863,11 @@ public class AwardController {
       }
 
       final List<Integer> selectedRowIds = normalizeSelectedPartyIds(selectedPartyIds);
-      final ApplicationDetail activeApplication =
+      final Optional<ApplicationDetail> activeApplication =
           resolveActiveApplication(ebsCase, currentApplication);
+      if (activeApplication.isEmpty()) {
+        return renderPartyListLoadError(model, awardPath, awardId);
+      }
       final List<RelationshipToCaseLookupValueDetail> personRelationships =
           safeRelationshipValues(lookupService.getPersonToCaseRelationships());
       final Set<String> alreadyAddedEbsIds = new HashSet<>();
@@ -845,7 +877,7 @@ public class AwardController {
 
       final List<CandidateOpponentRow> selectedRows =
           buildCandidateOpponentRows(
-                  activeApplication,
+                  activeApplication.get(),
                   alreadyAddedOpponentIds,
                   alreadyAddedEbsIds,
                   personRelationships)
@@ -944,8 +976,15 @@ public class AwardController {
    * one that has since been removed. When there is no persisted draft for this case at all (no
    * in-session application, or one left over from a different case), the case's own opponents are
    * used instead, since there is nothing to reload.
+   *
+   * <p>When a persisted draft does exist but the reload fails or returns no body, the empty
+   * in-session snapshot must not be used as a silent fallback: the opponent journeys above never
+   * refresh it, so it can still list an opponent that has since been removed (or omit one that has
+   * since been added) as if the reload had succeeded, letting a stale candidate be validated,
+   * selected and linked - or recreated - anyway. Callers must treat an empty result as a hard
+   * failure to be surfaced to the user, not as "no persisted draft".
    */
-  private ApplicationDetail resolveActiveApplication(
+  private Optional<ApplicationDetail> resolveActiveApplication(
       final ApplicationDetail ebsCase, final ApplicationDetail currentApplication) {
     final boolean hasPersistedDraftForThisCase =
         currentApplication != null
@@ -953,22 +992,24 @@ public class AwardController {
             && Objects.equals(
                 currentApplication.getCaseReferenceNumber(), ebsCase.getCaseReferenceNumber());
     if (!hasPersistedDraftForThisCase) {
-      return ebsCase;
+      return Optional.of(ebsCase);
     }
     try {
       final ApplicationDetail reloaded =
           applicationService.getApplication(String.valueOf(currentApplication.getId())).block();
       if (reloaded != null) {
-        return reloaded;
+        return Optional.of(reloaded);
       }
+      log.warn(
+          "Reloading persisted opponents for application {} returned no data",
+          currentApplication.getId());
     } catch (CaabApiClientException | IllegalStateException ex) {
       log.warn(
-          "Failed to reload persisted opponents for application {}; falling back to the "
-              + "in-session snapshot",
+          "Failed to reload persisted opponents for application {}",
           currentApplication.getId(),
           ex);
     }
-    return currentApplication;
+    return Optional.empty();
   }
 
   /**
@@ -1309,11 +1350,15 @@ public class AwardController {
   /**
    * Determines whether a case-level opponent is eligible to be offered - and, if selected, created
    * - as a liable/interested party, by applying the same validation an operator would have to
-   * satisfy on the dedicated individual/organisation add screens (see {@link
+   * satisfy on the dedicated individual/organisation add screens: both the Bean Validation
+   * constraints declared on the form (for example, field length limits on name, contact and address
+   * fields) that Spring applies automatically when the form is bound from a request but which do
+   * not run for a form built manually here, and the dedicated custom validator (see {@link
    * IndividualOpponentValidator#validateLiableParty} and {@link OrganisationOpponentValidator}).
-   * Without this, a candidate that could never actually be created there - for example, a child
-   * whose relationship requires a date of birth but has none recorded - would still be listed here,
-   * accepted on submission, and sent to the backend's create-and-link endpoint regardless.
+   * Without both, a candidate that could never actually be created there - for example, a child
+   * whose relationship requires a date of birth but has none recorded, or an imported opponent with
+   * an overlength name - would still be listed here, accepted on submission, and sent to the
+   * backend's create-and-link endpoint regardless.
    */
   private boolean isValidPartyListOpponent(
       final OpponentDetail opponent,
@@ -1324,6 +1369,7 @@ public class AwardController {
     if (OpponentUtil.isOrganisation(opponent)) {
       final OrganisationOpponentFormData form = toOrganisationOpponentFormData(opponent);
       final Errors errors = new BeanPropertyBindingResult(form, "organisationOpponent");
+      beanValidator.validate(form, errors);
       organisationOpponentValidator.validate(form, errors);
       return !errors.hasErrors();
     }
@@ -1332,6 +1378,7 @@ public class AwardController {
       final IndividualOpponentFormData form = toIndividualOpponentFormData(opponent);
       prepareIndividualFormForValidation(form, personRelationships);
       final Errors errors = new BeanPropertyBindingResult(form, "liablePartyIndividual");
+      beanValidator.validate(form, errors);
       individualOpponentValidator.validateLiableParty(form, errors);
       return !errors.hasErrors();
     }

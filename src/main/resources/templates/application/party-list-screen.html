@@ -22,7 +22,7 @@
         <ul class="govuk-list govuk-error-summary__list">
           <li>
             <a th:href="${firstSelectablePartyId != null} ? @{|#selected-party-${firstSelectablePartyId}|} : '#addSelectedPartiesButton'"
-               th:text="${partyListUnresolvedError} ? #{case.partyListScreen.unresolvedSelectionErrorMessage} : #{case.partyListScreen.selectionErrorMessage}"></a>
+               th:text="${partyListLoadError} ? #{case.partyListScreen.errorMessage} : (${partyListUnresolvedError} ? #{case.partyListScreen.unresolvedSelectionErrorMessage} : #{case.partyListScreen.selectionErrorMessage})"></a>
           </li>
         </ul>
       </div>

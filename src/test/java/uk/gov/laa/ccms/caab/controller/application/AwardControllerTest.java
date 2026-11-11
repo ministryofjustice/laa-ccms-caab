@@ -40,7 +40,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -50,6 +49,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
+import org.springframework.validation.Validator;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.AwardTypeForm;
 import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
@@ -114,13 +115,29 @@ class AwardControllerTest {
   @Spy private TimeRecoveryValidator timeRecoveryValidator = new TimeRecoveryValidator();
   @Mock private IndividualOpponentValidator individualOpponentValidator;
   @Mock private OrganisationOpponentValidator organisationOpponentValidator;
+  // A real (spied) Bean Validation validator - rather than a mock that would silently skip
+  // validation - so that the candidate opponent filtering under test genuinely exercises the
+  // form's Bean Validation constraints (for example, field length limits) alongside the custom
+  // validators, matching what the dedicated add/edit screens enforce.
+  @Spy private Validator beanValidator = newInitialisedBeanValidator();
 
-  @InjectMocks private AwardController controller;
+  // Constructed explicitly in setUp() rather than via Mockito's @InjectMocks reflection: several
+  // constructor parameters (the custom award/opponent validators and the generic Bean Validation
+  // beanValidator) all implement the same org.springframework.validation.Validator interface, and
+  // @InjectMocks cannot reliably match an ambiguous mock to the correct constructor slot once
+  // there is more than one candidate of a compatible type.
+  private AwardController controller;
 
   private MockMvcTester mockMvc;
   private ApplicationDetail ebsCase;
   private UserDetail user;
   private CaseOutcomeDetail caseOutcome;
+
+  private static Validator newInitialisedBeanValidator() {
+    final LocalValidatorFactoryBean factory = new LocalValidatorFactoryBean();
+    factory.afterPropertiesSet();
+    return factory;
+  }
 
   /**
    * Renders the party list page (GET) within the given session and returns the per-render {@code
@@ -142,6 +159,24 @@ class AwardControllerTest {
 
   @BeforeEach
   void setUp() {
+    controller =
+        new AwardController(
+            lookupService,
+            caseOutcomeService,
+            applicationService,
+            awardTypeValidator,
+            costAwardValidator,
+            financialAwardValidator,
+            costAwardMapper,
+            financialAwardMapper,
+            otherAssetAwardValidator,
+            otherAssetAwardMapper,
+            landAwardValidator,
+            landAwardMapper,
+            timeRecoveryValidator,
+            individualOpponentValidator,
+            organisationOpponentValidator,
+            beanValidator);
     mockMvc = MockMvcTester.create(MockMvcBuilders.standaloneSetup(controller).build());
     ebsCase = new ApplicationDetail().caseReferenceNumber("300000001");
     ebsCase.setAvailableFunctions(List.of(FunctionConstants.OUTCOME_WITH_DISCHARGE));
@@ -237,6 +272,9 @@ class AwardControllerTest {
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
       activeApplication.setId(999);
+      lenient()
+          .when(applicationService.getApplication("999"))
+          .thenReturn(Mono.just(activeApplication));
       activeApplication.setOpponents(
           List.of(
               new OpponentDetail()
@@ -331,6 +369,78 @@ class AwardControllerTest {
     }
 
     @Test
+    void displayingThePartyListRejectsAStaleSessionSnapshotWhenTheFreshDraftCannotBeReloaded() {
+      // If the reload fails (or the backend returns no body) for a persisted draft, the stale
+      // in-session snapshot must not be used as a silent fallback: the opponent journeys never
+      // refresh it, so it could still list a since-removed opponent, or omit a since-added one, as
+      // if the reload had succeeded. The user must see a load/retry error with no selectable
+      // candidates instead.
+      final ApplicationDetail staleSessionApplication = new ApplicationDetail();
+      staleSessionApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      staleSessionApplication.setId(999);
+      staleSessionApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(77)
+                  .type("INDIVIDUAL")
+                  .title("MR")
+                  .firstName("Stale")
+                  .surname("Snapshot")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+      when(applicationService.getApplication("999"))
+          .thenReturn(Mono.error(new CaabApiClientException("backend unavailable")));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, staleSessionApplication)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/party-list-screen")
+          .model()
+          .containsEntry("partyListError", true)
+          .containsEntry("partyListLoadError", true)
+          .hasEntrySatisfying("parties", parties -> assertThat((List<?>) parties).isEmpty());
+    }
+
+    @Test
+    void submittingSelectedPartiesRejectsAStaleSessionSnapshotWhenTheFreshDraftCannotBeReloaded() {
+      // The same reload-failure protection must apply on submission: validating and saving against
+      // a stale snapshot could link, or recreate, an opponent that has since been removed from the
+      // persisted draft.
+      final ApplicationDetail staleSessionApplication = new ApplicationDetail();
+      staleSessionApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      staleSessionApplication.setId(999);
+      staleSessionApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(77)
+                  .type("INDIVIDUAL")
+                  .title("MR")
+                  .firstName("Stale")
+                  .surname("Snapshot")
+                  .relationshipToCase("CHILD")
+                  .relationshipToClient("CLIENT")));
+      when(applicationService.getApplication("999")).thenReturn(Mono.empty());
+
+      assertThat(
+              mockMvc.perform(
+                  post("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, staleSessionApplication)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("selectedPartyIds", "77")))
+          .hasStatusOk()
+          .hasViewName("application/party-list-screen")
+          .model()
+          .containsEntry("partyListError", true)
+          .containsEntry("partyListLoadError", true);
+      verifyNoInteractions(caseOutcomeService);
+    }
+
+    @Test
     void
         knownOpponentStaysMarkedAsAlreadyAddedEvenWhenTheBackendsLiablePartiesReadHasNotYetCaughtUp() {
       // The backend's own read of the award's liable parties (getAwardLiableParties) is re-fetched
@@ -341,6 +451,9 @@ class AwardControllerTest {
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
       activeApplication.setId(999);
+      lenient()
+          .when(applicationService.getApplication("999"))
+          .thenReturn(Mono.just(activeApplication));
       activeApplication.setOpponents(
           List.of(
               new OpponentDetail()
@@ -392,6 +505,9 @@ class AwardControllerTest {
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
       activeApplication.setId(999);
+      lenient()
+          .when(applicationService.getApplication("999"))
+          .thenReturn(Mono.just(activeApplication));
       activeApplication.setOpponents(
           List.of(
               new OpponentDetail()
@@ -438,6 +554,9 @@ class AwardControllerTest {
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
       activeApplication.setId(999);
+      lenient()
+          .when(applicationService.getApplication("999"))
+          .thenReturn(Mono.just(activeApplication));
       final OpponentDetail importedOpponent =
           new OpponentDetail()
               .ebsId("61700985")
@@ -494,6 +613,9 @@ class AwardControllerTest {
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
       activeApplication.setId(999);
+      lenient()
+          .when(applicationService.getApplication("999"))
+          .thenReturn(Mono.just(activeApplication));
       final OpponentDetail importedOpponent =
           new OpponentDetail()
               .ebsId("61700985")
@@ -550,6 +672,9 @@ class AwardControllerTest {
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
       activeApplication.setId(999);
+      lenient()
+          .when(applicationService.getApplication("999"))
+          .thenReturn(Mono.just(activeApplication));
       final OpponentDetail renderedOpponent =
           new OpponentDetail()
               .ebsId("61700985")
@@ -609,6 +734,9 @@ class AwardControllerTest {
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
       activeApplication.setId(999);
+      lenient()
+          .when(applicationService.getApplication("999"))
+          .thenReturn(Mono.just(activeApplication));
       activeApplication.setOpponents(
           List.of(
               new OpponentDetail()
@@ -654,6 +782,9 @@ class AwardControllerTest {
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
       activeApplication.setId(999);
+      lenient()
+          .when(applicationService.getApplication("999"))
+          .thenReturn(Mono.just(activeApplication));
       activeApplication.setOpponents(
           List.of(
               new OpponentDetail()
@@ -702,6 +833,9 @@ class AwardControllerTest {
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
       activeApplication.setId(999);
+      lenient()
+          .when(applicationService.getApplication("999"))
+          .thenReturn(Mono.just(activeApplication));
       final OpponentDetail firstOpponent =
           new OpponentDetail()
               .ebsId("61700985")
@@ -790,6 +924,9 @@ class AwardControllerTest {
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
       activeApplication.setId(999);
+      lenient()
+          .when(applicationService.getApplication("999"))
+          .thenReturn(Mono.just(activeApplication));
       activeApplication.setOpponents(
           List.of(
               new OpponentDetail()
@@ -837,6 +974,9 @@ class AwardControllerTest {
       final ApplicationDetail amendmentApplication = new ApplicationDetail();
       amendmentApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
       amendmentApplication.setId(999);
+      lenient()
+          .when(applicationService.getApplication("999"))
+          .thenReturn(Mono.just(amendmentApplication));
       amendmentApplication.setOpponents(
           List.of(
               new OpponentDetail()
@@ -906,6 +1046,9 @@ class AwardControllerTest {
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
       activeApplication.setId(999);
+      lenient()
+          .when(applicationService.getApplication("999"))
+          .thenReturn(Mono.just(activeApplication));
       activeApplication.setOpponents(
           List.of(
               new OpponentDetail()
@@ -968,6 +1111,70 @@ class AwardControllerTest {
       // must never be called - the pre-fetched list is reused for every candidate instead.
       verify(lookupService, never()).getPersonToCaseRelationship(any());
       verify(lookupService, times(1)).getPersonToCaseRelationships();
+    }
+
+    @Test
+    void candidateFilteringAppliesBeanValidationAlongsideTheCustomValidators() {
+      // Only the dedicated custom validators run against a form built here - calling only
+      // IndividualOpponentValidator/OrganisationOpponentValidator skips the Bean Validation
+      // constraints declared on the form itself (for example, @Size field length limits), so an
+      // imported party with an overlength name could remain selectable and be submitted despite
+      // failing the dedicated add screens, which do enforce Bean Validation via @Validated.
+      final String overlengthName = "N".repeat(36); // DEFAULT_CHARACTER_SIZE is 35
+      final String overlengthOrganisationName = "O".repeat(361); // ORGANISATION_NAME_CHARACTER_SIZE
+      final ApplicationDetail activeApplication = new ApplicationDetail();
+      activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
+      activeApplication.setId(999);
+      lenient()
+          .when(applicationService.getApplication("999"))
+          .thenReturn(Mono.just(activeApplication));
+      activeApplication.setOpponents(
+          List.of(
+              new OpponentDetail()
+                  .id(301)
+                  .type("INDIVIDUAL")
+                  .title("MR")
+                  .firstName("Valid")
+                  .surname("Name")
+                  .relationshipToCase("OWNER")
+                  .relationshipToClient("CLIENT"),
+              new OpponentDetail()
+                  .id(302)
+                  .type("INDIVIDUAL")
+                  .title("MR")
+                  .firstName("Valid")
+                  .surname(overlengthName)
+                  .relationshipToCase("OWNER")
+                  .relationshipToClient("CLIENT"),
+              new OpponentDetail()
+                  .id(303)
+                  .type("ORGANISATION")
+                  .organisationName("Valid Org")
+                  .organisationType("COMPANY")
+                  .relationshipToCase("OWNER")
+                  .relationshipToClient("CLIENT"),
+              new OpponentDetail()
+                  .id(304)
+                  .type("ORGANISATION")
+                  .organisationName(overlengthOrganisationName)
+                  .organisationType("COMPANY")
+                  .relationshipToCase("OWNER")
+                  .relationshipToClient("CLIENT")));
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(APPLICATION, activeApplication)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .hasEntrySatisfying(
+              "parties",
+              parties ->
+                  assertThat((List<?>) parties)
+                      .extracting("name")
+                      .containsExactlyInAnyOrder("MR Valid Name", "Valid Org"));
     }
 
     @Test
@@ -1187,6 +1394,9 @@ class AwardControllerTest {
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
       activeApplication.setId(999);
+      lenient()
+          .when(applicationService.getApplication("999"))
+          .thenReturn(Mono.just(activeApplication));
       activeApplication.setOpponents(
           List.of(
               new OpponentDetail()
