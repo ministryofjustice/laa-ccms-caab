@@ -10,9 +10,12 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationEventPublisher;
+import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -24,12 +27,16 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
+import uk.gov.laa.ccms.caab.logging.UserContextFilter;
 import uk.gov.laa.ccms.caab.security.AbsoluteSessionTimeoutFilter;
 import uk.gov.laa.ccms.caab.security.CcmsOidcUser;
 import uk.gov.laa.ccms.caab.security.CcmsUserIdentityResolver;
 import uk.gov.laa.ccms.caab.security.CcmsUserResolutionException;
 import uk.gov.laa.ccms.caab.security.CspNonceFilter;
+import uk.gov.laa.ccms.caab.security.CsrfLoggingAccessDeniedHandler;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -63,6 +70,9 @@ public class SecurityConfiguration {
   private final UserService userService;
 
   private final CcmsUserIdentityResolver ccmsUserIdentityResolver;
+  private final SecurityEventLogger securityEventLogger;
+
+  private final ApplicationEventPublisher eventPublisher;
 
   /**
    * Configures Spring Security filters and settings, along with endpoint restrictions based on
@@ -85,12 +95,7 @@ public class SecurityConfiguration {
                         "/favicon.ico",
                         AUTHENTICATION_ERROR_PATH)
                     .permitAll()
-                    .requestMatchers(
-                        HttpMethod.GET,
-                        "/actuator/prometheus",
-                        "/actuator/health/**",
-                        "/actuator/info",
-                        "/actuator/metrics")
+                    .requestMatchers(HttpMethod.GET, "/actuator/prometheus", "/actuator/health/**")
                     .permitAll() // Ensure Actuator endpoints are excluded
                     .requestMatchers(HttpMethod.POST, "/csp/report")
                     .permitAll()
@@ -163,6 +168,10 @@ public class SecurityConfiguration {
                     .anyRequest()
                     .authenticated())
         .csrf(csrf -> csrf.ignoringRequestMatchers("/csp/report"))
+        .exceptionHandling(
+            exceptions ->
+                exceptions.accessDeniedHandler(
+                    new CsrfLoggingAccessDeniedHandler(securityEventLogger)))
         .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))
         .addFilterBefore(
             new CspNonceFilter(cspReportEnabled, cspReportOnly, cspUpgradeInsecureRequests, owdUrl),
@@ -170,6 +179,7 @@ public class SecurityConfiguration {
         .addFilterBefore(
             new AbsoluteSessionTimeoutFilter(absoluteSessionTimeout, "/home"),
             AuthorizationFilter.class)
+        .addFilterAfter(new UserContextFilter(), SecurityContextHolderFilter.class)
         .sessionManagement(
             sessionManagement ->
                 sessionManagement.invalidSessionStrategy(
@@ -178,6 +188,7 @@ public class SecurityConfiguration {
             logout ->
                 logout.addLogoutHandler(
                     (req, res, auth) -> {
+                      securityEventLogger.logout(auth);
                       try {
                         res.sendRedirect(logoutUrl);
                       } catch (IOException e) {
@@ -219,10 +230,22 @@ public class SecurityConfiguration {
         authorities.addAll(oidcUser.getAuthorities());
       }
 
-      authorities.addAll(getUserFunctions(ccmsLoginId));
+      Collection<? extends GrantedAuthority> userFunctions = getUserFunctions(ccmsLoginId);
+      authorities.addAll(userFunctions);
+      securityEventLogger.permissionsLoaded(
+          ccmsLoginId, userFunctions.stream().map(GrantedAuthority::getAuthority).toList());
 
       return new CcmsOidcUser(oidcUser, ccmsLoginId, authorities);
     };
+  }
+
+  /**
+   * Publishes Spring Security's authentication events so {@link SecurityEventLogger} can record
+   * them. Without this the success and failure listeners never fire.
+   */
+  @Bean
+  AuthenticationEventPublisher authenticationEventPublisher() {
+    return new DefaultAuthenticationEventPublisher(eventPublisher);
   }
 
   /**
@@ -235,6 +258,7 @@ public class SecurityConfiguration {
   AuthenticationFailureHandler authenticationFailureHandler() {
     return (request, response, exception) -> {
       log.error("EntraID authentication failed: {}", exception.getMessage(), exception);
+      securityEventLogger.authenticationFailed(exception);
       response.sendRedirect(request.getContextPath() + AUTHENTICATION_ERROR_PATH);
     };
   }

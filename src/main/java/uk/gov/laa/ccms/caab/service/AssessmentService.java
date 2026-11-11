@@ -2098,7 +2098,7 @@ public class AssessmentService {
               .providerId(providerId)
               .name(assessmentName)
               .status(INCOMPLETE.getStatus());
-      log.debug("Created Assessment {} ", assessment.toString());
+      log.debug("Created assessment {}", assessment.getName());
       return assessment;
     }
   }

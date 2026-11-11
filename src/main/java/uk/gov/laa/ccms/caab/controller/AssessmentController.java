@@ -37,6 +37,7 @@ import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.logging.ChangesData;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.model.assessment.AssessmentSummaryEntityDisplay;
@@ -171,6 +172,7 @@ public class AssessmentController {
    * @param session the session in which the request is being made.
    * @return the view that displays the OPA assessment.
    */
+  @ChangesData
   @GetMapping("/{caseContext}/assessments")
   public String assessmentGet(
       @PathVariable("caseContext") final CaseContext caseContext,

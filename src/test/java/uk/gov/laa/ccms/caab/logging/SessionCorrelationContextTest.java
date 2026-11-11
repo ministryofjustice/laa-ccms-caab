@@ -55,4 +55,35 @@ class SessionCorrelationContextTest {
       propagation.destroy();
     }
   }
+
+  @Test
+  void carriesTheRequestIdAddressesAndUserToCallbackThreads() throws Exception {
+    var propagation = new SessionCorrelationContext();
+    propagation.afterPropertiesSet();
+    String[] keys = {"request_id", "source.ip", "network.forwarded_ip", "user_id"};
+    try (var worker = Executors.newSingleThreadExecutor()) {
+      for (String key : keys) {
+        MDC.put(key, "value-of-" + key);
+      }
+      var snapshot = ContextSnapshotFactory.builder().build().captureAll();
+      for (String key : keys) {
+        MDC.remove(key);
+      }
+      worker
+          .submit(
+              () -> {
+                try (var scope = snapshot.setThreadLocals()) {
+                  for (String key : keys) {
+                    assertEquals("value-of-" + key, MDC.get(key));
+                  }
+                }
+                for (String key : keys) {
+                  assertNull(MDC.get(key));
+                }
+              })
+          .get();
+    } finally {
+      propagation.destroy();
+    }
+  }
 }

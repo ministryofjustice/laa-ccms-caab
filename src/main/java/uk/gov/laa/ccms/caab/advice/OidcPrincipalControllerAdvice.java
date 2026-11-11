@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerMapping;
 import uk.gov.laa.ccms.caab.controller.HomeController;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -23,6 +24,8 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class OidcPrincipalControllerAdvice {
 
   private final UserService userService;
+
+  private final SecurityEventLogger securityEventLogger;
 
   /**
    * Adds the OIDC authenticated principal and user details to the model.
@@ -44,6 +47,7 @@ public class OidcPrincipalControllerAdvice {
 
       UserDetail user = new UserDetail();
       user.setLoginId(loginId);
+      UserDetail previous = (UserDetail) session.getAttribute("user");
 
       // When the home page is requested, user details must be retrieved from the database to
       // ensure the correct provider is displayed, as it can be updated outside the control of
@@ -58,6 +62,9 @@ public class OidcPrincipalControllerAdvice {
 
       } else {
         user = userService.getUserByLoginId(loginId).block();
+        if (previous != null && user != null) {
+          securityEventLogger.privilegesReloaded(previous.getFunctions(), user.getFunctions());
+        }
       }
 
       model.addAttribute("user", user);

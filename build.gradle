@@ -1,6 +1,6 @@
 plugins {
     id 'uk.gov.justice.service.laa.laa-spring-boot-gradle-plugin' version '3.1.4'
-    id 'com.diffplug.spotless' version '8.10.4'
+    id 'com.diffplug.spotless' version '8.11.0'
 }
 
 configurations {
@@ -80,6 +80,7 @@ configurations.configureEach {
             details.useVersion '9.1.5.Final'
             details.because 'Remediate Expression Language Injection (SNYK-JAVA-ORGHIBERNATEVALIDATOR-20877468)'
         }
+        // Logback classic pulled in by Spring Boot starter logging
         if (details.requested.group == 'ch.qos.logback'
                 && details.requested.name in ['logback-classic', 'logback-core']) {
             details.useVersion '1.6.5'
@@ -122,7 +123,7 @@ dependencies {
     implementation 'org.xhtmlrenderer:flying-saucer-pdf-openpdf:9.4.0'
 
     implementation 'uk.gov.laa.ccms.data:data-api:0.5.1'
-    implementation 'org.openapitools:jackson-databind-nullable:0.2.12'
+    implementation 'org.openapitools:jackson-databind-nullable:0.2.13'
 
     // 0.1.3 carries GetInvoiceData, needed to copy a rejected bill.
     implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.1.3'

@@ -4,6 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import jakarta.servlet.FilterChain;
 import java.net.URI;
@@ -16,10 +20,13 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.servlet.support.SessionFlashMapManager;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 
 class UploadSizeErrorFilterTest {
 
-  private final UploadSizeErrorFilter filter = new UploadSizeErrorFilter();
+  private final SecurityEventLogger securityEventLogger = mock(SecurityEventLogger.class);
+
+  private final UploadSizeErrorFilter filter = new UploadSizeErrorFilter(securityEventLogger);
 
   @Test
   void redirectsOversizedMultipartRequestToItsForm() throws Exception {
@@ -227,5 +234,122 @@ class UploadSizeErrorFilterTest {
     request.setQueryString(redirect.getRawQuery());
     request.setSession(original.getSession());
     return request;
+  }
+
+  @Test
+  void logsTheSizeFailureWithoutTheQueryString() throws Exception {
+    MockHttpServletRequest request = request("/civil/case-provider-requests/documents");
+    request.setQueryString("caseReferenceNumber=123");
+    FilterChain chain =
+        (req, res) -> {
+          throw new InvalidParameterException(
+              new SizeLimitExceededException("too large", 13_000_000, 12_582_912));
+        };
+
+    uk.gov.laa.ccms.caab.logging.RequestRoute.registerKnownSegments(
+        java.util.Set.of("case-provider-requests", "documents"));
+    try {
+      filter.doFilter(request, new MockHttpServletResponse(), chain);
+    } finally {
+      uk.gov.laa.ccms.caab.logging.RequestRoute.clearKnownSegments();
+    }
+
+    verify(securityEventLogger)
+        .inputRejected(
+            eq("POST"),
+            eq("/civil/case-provider-requests/documents"),
+            any(SizeLimitExceededException.class));
+  }
+
+  @Test
+  void theRejectionIsLoggedInsideTheRequestCorrelation() throws Exception {
+    String[] requestId = new String[1];
+    org.mockito.Mockito.doAnswer(
+            invocation -> {
+              requestId[0] = org.slf4j.MDC.get("request_id");
+              return null;
+            })
+        .when(securityEventLogger)
+        .inputRejected(any(), any(), any());
+    int correlationOrder = org.springframework.core.Ordered.HIGHEST_PRECEDENCE + 1;
+    int uploadOrder =
+        org.springframework.core.annotation.AnnotationUtils.findAnnotation(
+                UploadSizeErrorFilter.class, org.springframework.core.annotation.Order.class)
+            .value();
+    org.junit.jupiter.api.Assertions.assertTrue(uploadOrder > correlationOrder);
+    var filters =
+        new jakarta.servlet.Filter[] {
+          new uk.gov.laa.ccms.caab.logging.SessionCorrelationFilter(true), filter
+        };
+    jakarta.servlet.Servlet servlet = mock(jakarta.servlet.Servlet.class);
+    org.mockito.Mockito.doThrow(
+            new InvalidParameterException(
+                new SizeLimitExceededException("too large", 13_000_000, 12_582_912)))
+        .when(servlet)
+        .service(any(), any());
+
+    new org.springframework.mock.web.MockFilterChain(servlet, filters)
+        .doFilter(
+            request("/civil/case-provider-requests/documents"), new MockHttpServletResponse());
+
+    org.junit.jupiter.api.Assertions.assertNotNull(requestId[0]);
+  }
+
+  @Test
+  void theRejectionIsLoggedWithTheSignedInUserFromTheSession() throws Exception {
+    String[] userId = new String[1];
+    org.mockito.Mockito.doAnswer(
+            invocation -> {
+              userId[0] = org.slf4j.MDC.get("user_id");
+              return null;
+            })
+        .when(securityEventLogger)
+        .inputRejected(any(), any(), any());
+    MockHttpServletRequest request = request("/civil/case-provider-requests/documents");
+    var session = new org.springframework.mock.web.MockHttpSession();
+    var context =
+        new org.springframework.security.core.context.SecurityContextImpl(
+            org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+                .authenticated("jane.doe@example.com", "n/a", java.util.List.of()));
+    session.setAttribute(
+        org.springframework.security.web.context.HttpSessionSecurityContextRepository
+            .SPRING_SECURITY_CONTEXT_KEY,
+        context);
+    request.setSession(session);
+    FilterChain chain =
+        (req, res) -> {
+          throw new InvalidParameterException(
+              new SizeLimitExceededException("too large", 13_000_000, 12_582_912));
+        };
+
+    filter.doFilter(request, new MockHttpServletResponse(), chain);
+
+    assertEquals(
+        uk.gov.laa.ccms.caab.logging.UserIdentifier.pseudonymise("jane.doe@example.com"),
+        userId[0]);
+    assertNull(org.slf4j.MDC.get("user_id"));
+  }
+
+  @Test
+  void aSessionInvalidatedByALogoutDoesNotBreakTheRecovery() throws Exception {
+    var session = org.mockito.Mockito.mock(jakarta.servlet.http.HttpSession.class);
+    org.mockito.Mockito.when(
+            session.getAttribute(
+                org.springframework.security.web.context.HttpSessionSecurityContextRepository
+                    .SPRING_SECURITY_CONTEXT_KEY))
+        .thenThrow(new IllegalStateException("session invalidated"));
+    MockHttpServletRequest request = request("/civil/case-provider-requests/documents");
+    request.setSession(session);
+    var response = new MockHttpServletResponse();
+    FilterChain chain =
+        (req, res) -> {
+          throw new InvalidParameterException(
+              new SizeLimitExceededException("too large", 13_000_000, 12_582_912));
+        };
+
+    filter.doFilter(request, response, chain);
+
+    verify(securityEventLogger).inputRejected(any(), any(), any(SizeLimitExceededException.class));
+    assertEquals(302, response.getStatus());
   }
 }

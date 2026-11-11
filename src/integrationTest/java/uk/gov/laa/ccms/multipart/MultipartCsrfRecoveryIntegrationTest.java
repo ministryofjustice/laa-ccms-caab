@@ -39,6 +39,7 @@ import uk.gov.laa.ccms.caab.bean.evidence.EvidenceUploadFormData;
 import uk.gov.laa.ccms.caab.bean.validators.request.ProviderRequestDocumentUploadValidator;
 import uk.gov.laa.ccms.caab.config.UploadSizeErrorFilter;
 import uk.gov.laa.ccms.caab.config.UploadSizeErrorInterceptor;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 
 @SpringBootTest(
     classes = MultipartCsrfRecoveryIntegrationTest.TestApplication.class,
@@ -133,6 +134,11 @@ class MultipartCsrfRecoveryIntegrationTest {
   @EnableWebSecurity
   @Import({UploadSizeErrorFilter.class, UploadController.class})
   static class TestApplication {
+    @Bean
+    SecurityEventLogger securityEventLogger() {
+      return org.mockito.Mockito.mock(SecurityEventLogger.class);
+    }
+
     @Bean
     SecurityFilterChain security(HttpSecurity http) throws Exception {
       return http.authorizeHttpRequests(requests -> requests.anyRequest().permitAll())

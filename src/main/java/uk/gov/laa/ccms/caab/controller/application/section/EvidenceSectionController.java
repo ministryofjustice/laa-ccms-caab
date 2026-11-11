@@ -41,6 +41,7 @@ import uk.gov.laa.ccms.caab.bean.validators.evidence.EvidenceUploadValidator;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.logging.ChangesData;
 import uk.gov.laa.ccms.caab.mapper.EvidenceMapper;
 import uk.gov.laa.ccms.caab.model.BaseEvidenceDocumentDetail;
 import uk.gov.laa.ccms.caab.model.EvidenceDocumentDetail;
@@ -253,6 +254,7 @@ public class EvidenceSectionController {
    * @param userDetail The user details.
    * @return Redirect to the evidence summary view.
    */
+  @ChangesData
   @GetMapping("/{caseContext}/evidence/{evidence-document-id}/remove")
   public String removeEvidenceDocument(
       @PathVariable("evidence-document-id") final Integer evidenceDocumentId,

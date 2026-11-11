@@ -58,6 +58,7 @@ import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
+import uk.gov.laa.ccms.caab.logging.ChangesData;
 import uk.gov.laa.ccms.caab.mapper.SubmissionSummaryDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
@@ -80,6 +81,7 @@ public class BillingController {
       "https://assets.publishing.service.gov.uk/media/6a4756b1d200ca05e289e412/The_Statutory_Charge_Manual_July_2026.pdf";
 
   private final BillingService billingService;
+  private static final int MAX_BILLING_PAGE_SIZE = 50;
   private final AmendmentService amendmentService;
   private final AssessmentService assessmentService;
   private final LookupService lookupService;
@@ -143,9 +145,14 @@ public class BillingController {
 
     model.addAttribute("caseReferenceNumber", ebsCase.getCaseReferenceNumber());
     model.addAttribute("statementOfAccount", statementOfAccount);
+    final int effectiveSize = Math.clamp(size, 1, MAX_BILLING_PAGE_SIZE);
     model.addAttribute(
         "billsAndPoaPage",
-        PaginationUtil.paginateList(Pageable.ofSize(size).withPage(page), billsAndPoa));
+        billingService.withRetainedTotals(
+            ebsCase.getCaseReferenceNumber(),
+            PaginationUtil.paginateList(
+                Pageable.ofSize(effectiveSize).withPage(page), billsAndPoa)));
+    model.addAttribute("paginationSize", effectiveSize);
     model.addAttribute("currentUrl", request.getRequestURL().toString());
     // Return the user to the bills/POA table (below the statement) after paging, rather than the
     // top of the page. The shared pagination fragment appends this as the link's anchor.
@@ -279,6 +286,7 @@ public class BillingController {
    * @param model the model used to pass data to the view.
    * @return the POA details view.
    */
+  @ChangesData
   @GetMapping(value = "/case/billing/poa", params = "!billing-id")
   public String createPoa(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
@@ -319,6 +327,7 @@ public class BillingController {
    * @param model the model used to pass data to the view.
    * @return the bill details view.
    */
+  @ChangesData
   @GetMapping(value = "/case/billing/bill", params = "!billing-id")
   public String createBill(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
