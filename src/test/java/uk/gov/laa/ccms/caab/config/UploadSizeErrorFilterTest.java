@@ -279,7 +279,7 @@ class UploadSizeErrorFilterTest {
     org.junit.jupiter.api.Assertions.assertTrue(uploadOrder > correlationOrder);
     var filters =
         new jakarta.servlet.Filter[] {
-          new uk.gov.laa.ccms.caab.logging.SessionCorrelationFilter(), filter
+          new uk.gov.laa.ccms.caab.logging.SessionCorrelationFilter(true), filter
         };
     jakarta.servlet.Servlet servlet = mock(jakarta.servlet.Servlet.class);
     org.mockito.Mockito.doThrow(
