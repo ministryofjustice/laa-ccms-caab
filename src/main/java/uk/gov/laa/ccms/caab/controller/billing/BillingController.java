@@ -58,6 +58,7 @@ import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentEntityType;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentStatus;
+import uk.gov.laa.ccms.caab.logging.ChangesData;
 import uk.gov.laa.ccms.caab.mapper.SubmissionSummaryDisplayMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.service.AmendmentService;
@@ -285,6 +286,7 @@ public class BillingController {
    * @param model the model used to pass data to the view.
    * @return the POA details view.
    */
+  @ChangesData
   @GetMapping(value = "/case/billing/poa", params = "!billing-id")
   public String createPoa(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,
@@ -325,6 +327,7 @@ public class BillingController {
    * @param model the model used to pass data to the view.
    * @return the bill details view.
    */
+  @ChangesData
   @GetMapping(value = "/case/billing/bill", params = "!billing-id")
   public String createBill(
       @SessionAttribute(CASE) final ApplicationDetail ebsCase,

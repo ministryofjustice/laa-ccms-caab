@@ -521,8 +521,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   @Test
   public void testGetUsers_notFound() {
     final Integer providerId = 123;
-    final String expectedMessage =
-        "Failed to retrieve Users with parameters: size=1000, provider-id=123";
+    final String expectedMessage = "Failed to retrieve Users with parameters: size, provider-id";
     wiremock.stubFor(
         get("/users?size=1000&provider-id=%s".formatted(providerId)).willReturn(notFound()));
     final Mono<UserDetails> userDetailsMono = ebsApiClient.getUsers(providerId);

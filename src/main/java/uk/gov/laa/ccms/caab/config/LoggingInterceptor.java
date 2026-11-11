@@ -4,14 +4,23 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.util.Enumeration;
+import java.util.Set;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
+import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.constants.SessionConstants;
+import uk.gov.laa.ccms.caab.logging.ChangesData;
+import uk.gov.laa.ccms.caab.logging.HandledException;
+import uk.gov.laa.ccms.caab.logging.RequestRoute;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 
 /**
  * Interceptor class responsible for logging incoming requests and redirects after POST requests.
@@ -20,9 +29,14 @@ import org.springframework.web.servlet.ModelAndView;
  * processing.
  */
 @Component
+@RequiredArgsConstructor
 public class LoggingInterceptor implements HandlerInterceptor {
 
+  private static final Set<String> SAFE_METHODS = Set.of("GET", "HEAD", "OPTIONS", "TRACE");
+
   @Setter private Logger log = LoggerFactory.getLogger(LoggingInterceptor.class);
+
+  private final SecurityEventLogger securityEventLogger;
 
   /**
    * Logs the request method and URI before the controller method is invoked.
@@ -75,6 +89,56 @@ public class LoggingInterceptor implements HandlerInterceptor {
         log.debug("[DISPLAY] {}", modelAndView.getViewName());
       }
     }
+  }
+
+  /**
+   * Logs which client and case a controller request touched, as identifiers only.
+   *
+   * @param request The incoming HTTP request.
+   * @param response The outgoing HTTP response.
+   * @param handler The object that handled the request.
+   * @param ex Any exception thrown by the handler, or null.
+   */
+  @Override
+  public void afterCompletion(
+      HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+    if (!(handler instanceof HandlerMethod handlerMethod)
+        || !handlerMethod.getBeanType().isAnnotationPresent(Controller.class)) {
+      return;
+    }
+    String caseReference;
+    String clientReference;
+    try {
+      HttpSession session = request.getSession(false);
+      if (session == null) {
+        return;
+      }
+      caseReference = (String) session.getAttribute(SessionConstants.CASE_REFERENCE_NUMBER);
+      clientReference = (String) session.getAttribute(SessionConstants.CLIENT_REFERENCE);
+      if (session.getAttribute(SessionConstants.ACTIVE_CASE) instanceof ActiveCase activeCase) {
+        caseReference = activeCase.getCaseReferenceNumber();
+        clientReference = activeCase.getClientReferenceNumber();
+      }
+    } catch (IllegalStateException invalidated) {
+      return;
+    }
+    if (caseReference == null && clientReference == null) {
+      return;
+    }
+    boolean succeeded =
+        ex == null
+            && !HandledException.isMarked(request)
+            && request.getAttribute(DispatcherServlet.EXCEPTION_ATTRIBUTE) == null
+            && response.getStatus() < 400;
+    boolean changes =
+        !SAFE_METHODS.contains(request.getMethod())
+            || handlerMethod.hasMethodAnnotation(ChangesData.class);
+    securityEventLogger.dataAccessed(
+        changes ? "CHANGE" : "VIEW",
+        succeeded,
+        caseReference,
+        clientReference,
+        RequestRoute.of(request));
   }
 
   /**
