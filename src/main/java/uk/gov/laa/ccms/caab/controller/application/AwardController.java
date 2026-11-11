@@ -67,6 +67,7 @@ import uk.gov.laa.ccms.caab.bean.validators.opponent.IndividualOpponentOtherDeta
 import uk.gov.laa.ccms.caab.bean.validators.opponent.IndividualOpponentValidator;
 import uk.gov.laa.ccms.caab.bean.validators.opponent.OrganisationOpponentValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
+import uk.gov.laa.ccms.caab.client.EbsApiClientException;
 import uk.gov.laa.ccms.caab.constants.CommonValueConstants;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -1000,11 +1001,17 @@ public class AwardController {
     }
     // A missing body or null content must not be treated as "no relationships": that would make
     // every date of birth optional and let an invalid individual through candidate validation.
-    final Optional<RelationshipToCaseLookupDetail> personRelationships =
-        lookupService
-            .getPersonToCaseRelationships()
-            .blockOptional()
-            .filter(lookup -> lookup.getContent() != null);
+    final Optional<RelationshipToCaseLookupDetail> personRelationships;
+    try {
+      personRelationships =
+          lookupService
+              .getPersonToCaseRelationships()
+              .blockOptional()
+              .filter(lookup -> lookup.getContent() != null);
+    } catch (EbsApiClientException ex) {
+      log.error("Error loading person-to-case relationships", ex);
+      return Optional.empty();
+    }
     if (personRelationships.isEmpty()) {
       return Optional.empty();
     }

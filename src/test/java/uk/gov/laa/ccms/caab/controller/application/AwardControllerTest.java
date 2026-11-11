@@ -43,6 +43,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -1574,12 +1575,18 @@ class AwardControllerTest {
       when(caseOutcomeService.getAwardLiableParties("300000001", 123, "land", 7))
           .thenReturn(List.of(new OpponentDetail().id(42)));
 
+      final MockHttpSession mockHttpSession = new MockHttpSession();
+      final String rowIdentityToken =
+          renderPartyListAndCaptureToken(mockHttpSession, activeApplication);
+
       assertThat(
               mockMvc.perform(
                   post("/case/outcome-and-awards/land/7/liable-parties/add")
+                      .session(mockHttpSession)
                       .sessionAttr(CASE, ebsCase)
                       .sessionAttr(APPLICATION, activeApplication)
                       .sessionAttr(USER_DETAILS, user)
+                      .sessionAttr("rowIdentityToken", rowIdentityToken)
                       .param("selectedPartyIds", "42")))
           .hasStatusOk()
           .hasViewName("application/party-list-screen")
