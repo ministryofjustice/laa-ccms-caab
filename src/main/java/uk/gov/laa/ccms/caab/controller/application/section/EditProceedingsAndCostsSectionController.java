@@ -62,6 +62,7 @@ import uk.gov.laa.ccms.caab.builders.DropdownBuilder;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.PriorAuthorityGroup;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.logging.ChangesData;
 import uk.gov.laa.ccms.caab.mapper.ProceedingAndCostsMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
@@ -224,6 +225,7 @@ public class EditProceedingsAndCostsSectionController {
    * @param user The UserDetail object representing the current user, obtained from the session.
    * @return A redirect instruction to the proceedings and costs view.
    */
+  @ChangesData
   @GetMapping("/{caseContext}/proceedings/{proceeding-id}/make-lead")
   public String proceedingsMakeLead(
       @PathVariable("caseContext") final CaseContext caseContext,

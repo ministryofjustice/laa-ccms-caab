@@ -33,6 +33,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -122,11 +125,123 @@ class BillingControllerTest {
     lenient()
         .when(billingService.getStatementOfAccountDisplay(any(), any(), any()))
         .thenReturn(new StatementOfAccountDisplay());
+    lenient()
+        .when(billingService.withRetainedTotals(any(), any(Page.class)))
+        .thenAnswer(invocation -> invocation.getArgument(1));
   }
 
   @Nested
   @DisplayName("GET: /case/billing")
   class CaseStatementOfAccount {
+
+    @ParameterizedTest
+    @CsvSource({"1,0,1", "25,1,26", "50,2,101"})
+    void preservesPositiveNonDefaultSizes(final int size, final int number, final long firstId) {
+      final ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("300000123");
+      final StatementOfAccountDisplay display = new StatementOfAccountDisplay();
+      display.setBillsAndPoa(
+          java.util.stream.LongStream.rangeClosed(1, 150)
+              .mapToObj(
+                  id -> new BillPoaRow("POA", "Authorised", null, null, BigDecimal.ONE, false, id))
+              .toList());
+      when(billingService.getStatementOfAccountDisplay(eq("300000123"), any(), any()))
+          .thenReturn(display);
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing")
+                      .param("page", Integer.toString(number))
+                      .param("size", Integer.toString(size))
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .containsEntry("paginationSize", size)
+          .extractingByKey("billsAndPoaPage")
+          .isInstanceOfSatisfying(
+              Page.class,
+              result -> {
+                assertThat(result.getSize()).isEqualTo(size);
+                assertThat(result.getNumber()).isEqualTo(number);
+                assertThat(result.getTotalElements()).isEqualTo(150);
+                assertThat(((BillPoaRow) result.getContent().getFirst()).billingIncidentId())
+                    .isEqualTo(firstId);
+              });
+    }
+
+    @ParameterizedTest
+    @CsvSource({"10,-1", "10,100"})
+    void invalidPaginationRetainsExistingErrorHandling(final int size, final int number) {
+      final ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("300000123");
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing")
+                      .param("page", Integer.toString(number))
+                      .param("size", Integer.toString(size))
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasViewName("error");
+      verify(billingService, never()).withRetainedTotals(any(), any(Page.class));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1, Integer.MIN_VALUE})
+    void clampsNonPositivePageSizes(final int size) {
+      final ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("300000123");
+      final StatementOfAccountDisplay display = new StatementOfAccountDisplay();
+      display.setBillsAndPoa(
+          List.of(new BillPoaRow("Bill", "Submitted", null, null, BigDecimal.TEN, false, 555L)));
+      when(billingService.getStatementOfAccountDisplay(eq("300000123"), any(), any()))
+          .thenReturn(display);
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing")
+                      .param("size", Integer.toString(size))
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .containsEntry("paginationSize", 1)
+          .extractingByKey("billsAndPoaPage")
+          .isInstanceOfSatisfying(
+              Page.class,
+              result -> {
+                assertThat(result.getSize()).isEqualTo(1);
+                assertThat(result.getContent()).hasSize(1);
+              });
+    }
+
+    @Test
+    void capsRequestedPageSizeBeforeSelectingVisibleRows() {
+      final ApplicationDetail ebsCase = new ApplicationDetail().caseReferenceNumber("300000123");
+      final StatementOfAccountDisplay display = new StatementOfAccountDisplay();
+      display.setBillsAndPoa(
+          java.util.stream.LongStream.rangeClosed(1, 120)
+              .mapToObj(
+                  id -> new BillPoaRow("POA", "Authorised", null, null, BigDecimal.ONE, false, id))
+              .toList());
+      when(billingService.getStatementOfAccountDisplay(eq("300000123"), any(), any()))
+          .thenReturn(display);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing")
+                      .param("page", "0")
+                      .param("size", "500")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .model()
+          .extractingByKey("billsAndPoaPage")
+          .isInstanceOfSatisfying(
+              Page.class,
+              result -> {
+                assertThat(result.getSize()).isEqualTo(50);
+                assertThat(result.getTotalElements()).isEqualTo(120);
+                assertThat(result.getContent()).hasSize(50);
+                assertThat(((BillPoaRow) result.getContent().get(0)).billingIncidentId())
+                    .isEqualTo(1L);
+              });
+    }
 
     @Test
     @DisplayName("Returns the statement of account view with the case reference number and figures")
@@ -155,11 +270,22 @@ class BillingControllerTest {
       StatementOfAccountDisplay display = new StatementOfAccountDisplay();
       List<BillPoaRow> rows = new ArrayList<>();
       for (int i = 0; i < 25; i++) {
-        rows.add(new BillPoaRow("POA", "Authorised", null, null, new BigDecimal("1.00"), false));
+        rows.add(
+            new BillPoaRow(
+                "POA", "Authorised", null, null, new BigDecimal("1.00"), false, (long) i + 1));
       }
       display.setBillsAndPoa(rows);
       when(billingService.getStatementOfAccountDisplay(eq("300000123"), any(), any()))
           .thenReturn(display);
+
+      final BillPoaRow enriched =
+          rows.get(10).withTotals(new BigDecimal("100"), new BigDecimal("120"));
+      when(billingService.withRetainedTotals(eq("300000123"), any(Page.class)))
+          .thenAnswer(
+              invocation -> {
+                final Page<BillPoaRow> visible = invocation.getArgument(1);
+                return visible.map(row -> row == rows.get(10) ? enriched : row);
+              });
 
       assertThat(
               mockMvc.perform(
@@ -178,7 +304,13 @@ class BillingControllerTest {
                 assertThat(page.getTotalPages()).isEqualTo(3);
                 assertThat(page.getNumber()).isEqualTo(1);
                 assertThat(page.getContent()).hasSize(10);
+                assertThat(page.getContent().get(0)).isEqualTo(enriched);
               });
+      verify(billingService)
+          .withRetainedTotals(
+              eq("300000123"),
+              argThat(
+                  (Page<BillPoaRow> visible) -> visible.getContent().equals(rows.subList(10, 20))));
     }
 
     @Test
@@ -514,7 +646,7 @@ class BillingControllerTest {
           // Nothing started yet, so no summary link is offered.
           .containsEntry("assessmentStatus", "Not started")
           .containsEntry("assessmentComplete", false)
-          .containsEntry("viewPoaSummary", false);
+          .containsEntry("summaryAvailable", false);
 
       verify(billingService).createDraftPaymentOnAccountIfAbsent("300000123", "10", user);
     }
@@ -539,7 +671,7 @@ class BillingControllerTest {
           .hasStatusOk()
           .model()
           .containsEntry("assessmentComplete", true)
-          .containsEntry("viewPoaSummary", true);
+          .containsEntry("summaryAvailable", true);
     }
 
     @Test
@@ -589,7 +721,7 @@ class BillingControllerTest {
           // Nothing started yet, so no bill summary link is offered.
           .containsEntry("assessmentStatus", "Not started")
           .containsEntry("assessmentComplete", false)
-          .containsEntry("printDraftBill", false);
+          .containsEntry("summaryAvailable", false);
 
       verify(billingService).createDraftBillIfAbsent("300000123", "10", user);
     }
@@ -614,7 +746,7 @@ class BillingControllerTest {
           .hasStatusOk()
           .model()
           .containsEntry("assessmentComplete", true)
-          .containsEntry("printDraftBill", true);
+          .containsEntry("summaryAvailable", true);
     }
 
     @Test
@@ -654,6 +786,157 @@ class BillingControllerTest {
   }
 
   @Nested
+  @DisplayName("Selected submitted Bill/POA details")
+  class SubmittedDetails {
+
+    private ApplicationDetail caseWithFunctions() {
+      return new ApplicationDetail()
+          .caseReferenceNumber("300000123")
+          .availableFunctions(
+              List.of(FunctionConstants.ADD_UPDATE_BILL, FunctionConstants.ADD_UPDATE_POA));
+    }
+
+    private void assessmentsAbsent() {
+      lenient()
+          .when(assessmentService.getAssessments(any(), any(), any()))
+          .thenReturn(Mono.just(new AssessmentDetails()));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+      "bill, Bill, Submitted",
+      "bill, Counsel Bill, Authorised",
+      "bill, Bill, Rejected",
+      "poa, POA, Submitted",
+      "poa, Counsel POA, Authorised",
+      "poa, POA, Rejected"
+    })
+    @DisplayName("An explicit invoice ID selects a read-only page with invoice status")
+    void selectedInvoiceIsReadOnly(final String context, final String type, final String status) {
+      assessmentsAbsent();
+      final StatementOfAccountDisplay statement = new StatementOfAccountDisplay();
+      statement.setBillsAndPoa(
+          List.of(new BillPoaRow(type, status, null, null, BigDecimal.TEN, false, 555L)));
+      when(billingService.getStatementOfAccountDisplay(any(), any(), any())).thenReturn(statement);
+
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/" + context)
+                      .param("billing-id", "555")
+                      .sessionAttr(CASE, caseWithFunctions())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/billing/" + context + "-details")
+          .model()
+          .containsEntry("readOnly", true)
+          .containsEntry("billingId", "555")
+          .containsEntry("assessmentStatus", status);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"bill", "poa"})
+    @DisplayName("Viewing a submitted invoice never creates a replacement draft")
+    void selectedInvoiceDoesNotCreateDraft(final String context) {
+      assessmentsAbsent();
+      mockMvc.perform(
+          get("/case/billing/" + context)
+              .param("billing-id", "555")
+              .sessionAttr(CASE, caseWithFunctions())
+              .sessionAttr(USER_DETAILS, user));
+
+      verify(billingService, never()).createDraftBillIfAbsent(any(), any(), any());
+      verify(billingService, never()).createDraftPaymentOnAccountIfAbsent(any(), any(), any());
+      verify(assessmentService, never()).deleteAssessments(any(), any(), any(), any());
+      verify(assessmentService, never()).saveAssessment(any(), any());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"bill, poa", "poa, bill"})
+    @DisplayName("The other maintain function does not grant access to a selected invoice")
+    void selectedInvoiceRequiresMatchingPermission(final String context, final String other) {
+      final ApplicationDetail ebsCase =
+          new ApplicationDetail()
+              .caseReferenceNumber("300000123")
+              .availableFunctions(
+                  List.of(
+                      other.equals("bill")
+                          ? FunctionConstants.ADD_UPDATE_BILL
+                          : FunctionConstants.ADD_UPDATE_POA));
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/" + context)
+                      .param("billing-id", "555")
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatus3xxRedirection()
+          .hasRedirectedUrl("/case/billing");
+      verifyNoInteractions(billingService, assessmentService, billingSummaryPdfService);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+      "bill, '', ''",
+      "bill, '', /summary",
+      "bill, ' ', ''",
+      "bill, ' ', /summary",
+      "bill, invalid, ''",
+      "bill, invalid, /summary",
+      "bill, 0, ''",
+      "bill, 0, /summary",
+      "bill, -1, ''",
+      "bill, -1, /summary",
+      "bill, 99999999999999999999999, ''",
+      "bill, 99999999999999999999999, /summary",
+      "poa, '', ''",
+      "poa, '', /summary",
+      "poa, ' ', ''",
+      "poa, ' ', /summary",
+      "poa, invalid, ''",
+      "poa, invalid, /summary",
+      "poa, 0, ''",
+      "poa, 0, /summary",
+      "poa, -1, ''",
+      "poa, -1, /summary",
+      "poa, 99999999999999999999999, ''",
+      "poa, 99999999999999999999999, /summary"
+    })
+    @DisplayName("An invalid explicit ID is unavailable, never an implicit draft request")
+    void invalidSelectedIdIsUnavailable(
+        final String context, final String billingId, final String suffix) {
+      assessmentsAbsent();
+      if (!suffix.isEmpty()) {
+        assertThat(
+                mockMvc.perform(
+                    get("/case/billing/" + context + suffix)
+                        .param("billing-id", billingId)
+                        .sessionAttr(CASE, caseWithFunctions())
+                        .sessionAttr(USER_DETAILS, user)))
+            .hasStatus3xxRedirection()
+            .hasRedirectedUrl(
+                org.springframework.web.util.UriComponentsBuilder.fromPath(
+                        "/case/billing/" + context)
+                    .queryParam("billing-id", billingId)
+                    .build()
+                    .encode()
+                    .toUriString());
+      }
+      assertThat(
+              mockMvc.perform(
+                  get("/case/billing/" + context)
+                      .param("billing-id", billingId)
+                      .sessionAttr(CASE, caseWithFunctions())
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/billing/" + context + "-details")
+          .model()
+          .containsEntry("readOnly", true)
+          .containsEntry("detailsUnavailable", true);
+      verify(billingService, never()).createDraftBillIfAbsent(any(), any(), any());
+      verify(billingService, never()).createDraftPaymentOnAccountIfAbsent(any(), any(), any());
+    }
+  }
+
+  @Nested
   @DisplayName("GET: /case/billing/bill/copy")
   class CopyBill {
 
@@ -667,8 +950,8 @@ class BillingControllerTest {
       final StatementOfAccountDisplay display = new StatementOfAccountDisplay();
       display.setBillsAndPoa(
           List.of(
-              new BillPoaRow("Bill", "Rejected", null, null, null, false, true, 555L),
-              new BillPoaRow("Bill", "Rejected", null, null, null, false, true, 999L)));
+              new BillPoaRow("Bill", "Rejected", null, null, null, false, true, 555L, null),
+              new BillPoaRow("Bill", "Rejected", null, null, null, false, true, 999L, null)));
       return display;
     }
 
@@ -954,6 +1237,7 @@ class BillingControllerTest {
           // The legacy PUI returns the user to the bill details screen carrying the reason.
           .hasViewName("application/billing/bill-details")
           .model()
+          .containsEntry("summaryAvailable", false)
           .containsEntry("submissionError", "billing.bill.error.notComplete");
     }
 
@@ -972,6 +1256,7 @@ class BillingControllerTest {
           .hasStatusOk()
           .hasViewName("application/billing/bill-details")
           .model()
+          .containsEntry("summaryAvailable", true)
           .containsEntry("submissionError", "billing.bill.error.notAssessed");
     }
 
@@ -1558,7 +1843,8 @@ class BillingControllerTest {
                               .status(AssessmentStatus.COMPLETE.getStatus())
                               .entityTypes(new ArrayList<>()))));
       when(billingService.getAllocatedCostLimit(any(), any())).thenReturn(new BigDecimal("100.00"));
-      when(billingSummaryPdfService.generatePoaSummary(any(), any(), any(), any(), any()))
+      when(billingSummaryPdfService.generatePoaSummary(
+              any(), any(), any(), any(), any(), eq("Draft")))
           .thenReturn("%PDF-1.4 stub".getBytes());
 
       assertThat(
@@ -1569,7 +1855,8 @@ class BillingControllerTest {
           .hasStatusOk()
           .hasContentType(MediaType.APPLICATION_PDF);
 
-      verify(billingSummaryPdfService).generatePoaSummary(any(), any(), any(), any(), any());
+      verify(billingSummaryPdfService)
+          .generatePoaSummary(any(), any(), any(), any(), any(), eq("Draft"));
     }
 
     @Test
@@ -1613,7 +1900,8 @@ class BillingControllerTest {
                               .status(AssessmentStatus.COMPLETE.getStatus())
                               .entityTypes(new ArrayList<>()))));
       when(billingService.getAllocatedCostLimit(any(), any())).thenReturn(new BigDecimal("100.00"));
-      when(billingSummaryPdfService.generateBillSummary(any(), any(), any(), any(), any()))
+      when(billingSummaryPdfService.generateBillSummary(
+              any(), any(), any(), any(), any(), eq("Draft")))
           .thenReturn("%PDF-1.4 stub".getBytes());
 
       assertThat(
@@ -1624,7 +1912,8 @@ class BillingControllerTest {
           .hasStatusOk()
           .hasContentType(MediaType.APPLICATION_PDF);
 
-      verify(billingSummaryPdfService).generateBillSummary(any(), any(), any(), any(), any());
+      verify(billingSummaryPdfService)
+          .generateBillSummary(any(), any(), any(), any(), any(), eq("Draft"));
     }
 
     @Test

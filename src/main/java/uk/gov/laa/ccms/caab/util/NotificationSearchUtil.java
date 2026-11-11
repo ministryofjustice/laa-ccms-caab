@@ -86,7 +86,7 @@ public final class NotificationSearchUtil {
     } catch (Exception e) {
       // Don't rethrow. Rather if reaching this point, don't modify copyCriteria. Realistically,
       //  any date error would have been caught and throw prior to this method being called.
-      log.error("Could not read date inputs: {}", e.getMessage());
+      log.error("Could not read date inputs: {}", e.getClass().getSimpleName());
     }
 
     return copyCriteria;

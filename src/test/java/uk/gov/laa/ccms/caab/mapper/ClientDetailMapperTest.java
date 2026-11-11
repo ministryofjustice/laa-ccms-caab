@@ -19,6 +19,7 @@ import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataContactDetails;
+import uk.gov.laa.ccms.caab.bean.ClientFormDataDeceasedDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataMonitoringDetails;
 import uk.gov.laa.ccms.soa.gateway.model.AddressDetail;
 import uk.gov.laa.ccms.soa.gateway.model.ClientDetail;
@@ -172,6 +173,37 @@ class ClientDetailMapperTest {
     ClientDetailDetails clientDetailDetails =
         clientDetailMapper.toClientDetailDetails(clientFlowFormData);
     assertThat(clientDetailDetails).isEqualTo(expectedClientDetailDetails);
+  }
+
+  @Test
+  void toClientDetailDetails_includesDateOfDeath() {
+    ClientFormDataDeceasedDetails deceasedDetails = new ClientFormDataDeceasedDetails();
+    deceasedDetails.setDateOfDeath("15/07/2024");
+    ClientFlowFormData clientFlowFormData = buildClientFlowFormData();
+    clientFlowFormData.setDeceasedDetails(deceasedDetails);
+
+    ClientDetailDetails clientDetailDetails =
+        clientDetailMapper.toClientDetailDetails(clientFlowFormData);
+
+    Date expected =
+        Date.from(LocalDate.of(2024, 7, 15).atStartOfDay(ZoneId.systemDefault()).toInstant());
+    assertThat(clientDetailDetails.getPersonalInformation().getDateOfDeath()).isEqualTo(expected);
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+      value = {"NULL", "''", "'  '"},
+      nullValues = "NULL")
+  void toClientDetailDetails_blankDateOfDeath_leavesItUnset(String dateOfDeath) {
+    ClientFormDataDeceasedDetails deceasedDetails = new ClientFormDataDeceasedDetails();
+    deceasedDetails.setDateOfDeath(dateOfDeath);
+    ClientFlowFormData clientFlowFormData = buildClientFlowFormData();
+    clientFlowFormData.setDeceasedDetails(deceasedDetails);
+
+    ClientDetailDetails clientDetailDetails =
+        clientDetailMapper.toClientDetailDetails(clientFlowFormData);
+
+    assertNull(clientDetailDetails.getPersonalInformation().getDateOfDeath());
   }
 
   @Test
