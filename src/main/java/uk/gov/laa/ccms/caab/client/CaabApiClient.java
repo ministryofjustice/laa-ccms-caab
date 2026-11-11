@@ -830,11 +830,6 @@ public class CaabApiClient {
         .retrieve()
         .bodyToMono(new ParameterizedTypeReference<List<OpponentDetail>>() {})
         .onErrorResume(
-            WebClientResponseException.NotFound.class,
-            // Some award records do not yet expose a liable-parties endpoint; treat this as an
-            // empty collection rather than a fatal API error.
-            e -> Mono.just(List.of()))
-        .onErrorResume(
             e ->
                 caabApiClientErrorHandler.handleApiRetrieveError(
                     e, RESOURCE_TYPE_OPPONENTS, "award id", String.valueOf(awardId)));

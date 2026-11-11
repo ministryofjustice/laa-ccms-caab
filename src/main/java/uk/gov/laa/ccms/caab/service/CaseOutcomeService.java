@@ -338,8 +338,8 @@ public class CaseOutcomeService {
   /**
    * Links opponents to an award as liable or interested parties, one at a time. Existing opponents
    * are linked by id, which the API treats as a no-op if already linked; opponents without a CAAB
-   * id are created and linked in one step. Each callback is invoked as soon as its link succeeds,
-   * so earlier successes are still reported if a later link fails.
+   * id are created and linked in one step. The callback is invoked as soon as each creation
+   * succeeds, so earlier creations are still reported if a later link fails.
    *
    * @param caseReferenceNumber the case reference number
    * @param providerId the provider id
@@ -348,7 +348,6 @@ public class CaseOutcomeService {
    * @param existingOpponentIds the ids of existing opponents to link
    * @param newOpponents the opponents without a CAAB id to create and link
    * @param loginId the login id of the user performing the update
-   * @param onExistingOpponentLinked invoked with each existing opponent id once linked
    * @param onNewOpponentCreated invoked with each new opponent once created and linked
    */
   public void addLiableParties(
@@ -359,7 +358,6 @@ public class CaseOutcomeService {
       final List<Integer> existingOpponentIds,
       final List<OpponentDetail> newOpponents,
       final String loginId,
-      final Consumer<Integer> onExistingOpponentLinked,
       final Consumer<OpponentDetail> onNewOpponentCreated) {
     final List<Integer> opponentIds =
         Optional.ofNullable(existingOpponentIds).orElse(List.of()).stream()
@@ -381,7 +379,6 @@ public class CaseOutcomeService {
       caabApiClient
           .addAwardLiableParty(caseOutcomeId, awardType, awardId, opponentId, loginId)
           .block();
-      onExistingOpponentLinked.accept(opponentId);
     }
     for (final OpponentDetail opponent : opponents) {
       caabApiClient

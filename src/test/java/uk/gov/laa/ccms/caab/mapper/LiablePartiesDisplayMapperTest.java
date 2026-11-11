@@ -94,31 +94,12 @@ class LiablePartiesDisplayMapperTest {
     assertThat(individual.address()).isEqualTo("1 High Street AB1 2CD");
     assertThat(individual.editable()).isTrue();
     final var org = result.parties().getLast();
-    assertThat(org.name()).isEqualTo("Acme Ltd");
+    assertThat(org.name()).isEqualTo("Organisation contact");
     assertThat(org.relationshipToCase()).isEqualTo("Organisation owner");
     assertThat(org.organisation()).isTrue();
     assertThat(org.editable()).isFalse();
     assertThat(org.address()).isEmpty();
     assertThat(person.getConfirmed()).isFalse();
-  }
-
-  @Test
-  void usesRawValuesWhenLookupContextIsMissing() {
-    final var award =
-        new FinancialAwardDetail()
-            .awardType("DAMAGE")
-            .description("Award")
-            .awardAmount(new BigDecimal("10.00"))
-            .liableParties(List.of(new LiablePartyDetail().id(101).opponentId(11)));
-    final var opponent =
-        person().id(11).title("MS").relationshipToCase("OWNER").address(new AddressDetail());
-
-    final var result = mapper.toLiablePartiesDisplay(award, List.of(opponent), null);
-
-    assertThat(result.parties()).hasSize(1);
-    assertThat(result.parties().getFirst().name()).isEqualTo("MS Jane Smith");
-    assertThat(result.parties().getFirst().relationshipToCase()).isEqualTo("OWNER");
-    assertThat(result.parties().getFirst().address()).isEmpty();
   }
 
   @Test
@@ -170,8 +151,7 @@ class LiablePartiesDisplayMapperTest {
   @ParameterizedTest
   @NullAndEmptySource
   @ValueSource(strings = {"123", "AWAR", "directory123"})
-  void organisationsAlwaysPreferOrganisationNameOverContactNameRegardlessOfEditability(
-      String ebsId) {
+  void nonEditableOrganisationsUseContactNameInsteadOfOrganisationName(String ebsId) {
     final var organisation =
         person()
             .type("Organisation")
@@ -182,7 +162,7 @@ class LiablePartiesDisplayMapperTest {
     final var result =
         mapper.toLiablePartiesDisplay(linkedAward(), List.of(organisation), context());
 
-    assertThat(result.parties().getFirst().name()).isEqualTo("Acme Ltd");
+    assertThat(result.parties().getFirst().name()).isEqualTo("Organisation contact");
     assertThat(result.parties().getFirst().editable()).isFalse();
   }
 
@@ -198,51 +178,6 @@ class LiablePartiesDisplayMapperTest {
 
     assertThat(result.parties().getFirst().name()).isEqualTo("Acme Ltd");
     assertThat(result.parties().getFirst().editable()).isFalse();
-  }
-
-  @ParameterizedTest
-  @NullAndEmptySource
-  @ValueSource(strings = {"   "})
-  void organisationsWithNoOrganisationNameOrContactNameDisplayUndefined(String organisationName) {
-    final var nonEditableOrganisation =
-        person()
-            .type("Organisation")
-            .ebsId("directory123")
-            .organisationName(organisationName)
-            .contactNameRole(null);
-    final var editableOrganisation =
-        person()
-            .type("Organisation")
-            .ebsId("aWaRd123")
-            .organisationName(organisationName)
-            .contactNameRole(null);
-
-    assertThat(mapper.partyName(nonEditableOrganisation, context())).isEqualTo("undefined");
-    assertThat(mapper.partyName(editableOrganisation, context())).isEqualTo("undefined");
-  }
-
-  @Test
-  void editableOrganisationWithNoOrganisationNameFallsBackToContactName() {
-    final var organisation =
-        person()
-            .type("Organisation")
-            .ebsId("aWaRd123")
-            .organisationName(null)
-            .contactNameRole("Organisation contact");
-
-    assertThat(mapper.partyName(organisation, context())).isEqualTo("Organisation contact");
-  }
-
-  @Test
-  void nonEditableOrganisationWithNoOrganisationNameFallsBackToContactName() {
-    final var organisation =
-        person()
-            .type("Organisation")
-            .ebsId("directory123")
-            .organisationName(null)
-            .contactNameRole("Organisation contact");
-
-    assertThat(mapper.partyName(organisation, context())).isEqualTo("Organisation contact");
   }
 
   @ParameterizedTest

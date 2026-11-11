@@ -30,8 +30,6 @@ import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.sections.LiablePartiesDisplay;
 import uk.gov.laa.ccms.caab.model.sections.LiablePartyDisplay;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
-import uk.gov.laa.ccms.data.model.CommonLookupDetail;
-import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupDetail;
 
 /** Maps award associations and outcome opponents to the party summary. */
 @Mapper(componentModel = "spring", imports = OpponentUtil.class)
@@ -112,7 +110,6 @@ public interface LiablePartiesDisplayMapper {
   @Mapping(target = "address", source = "opponent.address", qualifiedByName = "compactAddress")
   @Mapping(target = "editable", source = "opponent", qualifiedByName = "awardPartyEditable")
   @Mapping(target = "organisation", expression = "java(OpponentUtil.isOrganisation(opponent))")
-  @Mapping(target = "alreadyAdded", constant = "false")
   LiablePartyDisplay toLiablePartyDisplay(
       LiablePartyDetail party,
       OpponentDetail opponent,
@@ -127,70 +124,33 @@ public interface LiablePartiesDisplayMapper {
    */
   default LiablePartyDisplay unresolvedLiablePartyDisplay(final LiablePartyDetail party) {
     return new LiablePartyDisplay(
-        party.getId(), party.getOpponentId(), null, null, null, "", false, false, false);
-  }
-
-  /**
-   * Builds a party list row for a case opponent that may be added to an award.
-   *
-   * @param rowId the id submitted when the row is selected
-   * @param opponent the case opponent
-   * @param alreadyAdded whether the opponent is already linked to the award
-   * @param context the lookup data used to describe the party
-   * @return the party list row
-   */
-  default LiablePartyDisplay toPartyListDisplay(
-      final Integer rowId,
-      final OpponentDetail opponent,
-      final boolean alreadyAdded,
-      final LiablePartiesMappingContext context) {
-    return new LiablePartyDisplay(
-        rowId,
-        opponent.getId(),
-        partyName(opponent, context),
-        opponent.getType(),
-        relationshipToCase(opponent, context),
-        compactAddress(opponent.getAddress()),
-        awardPartyEditable(opponent),
-        OpponentUtil.isOrganisation(opponent),
-        alreadyAdded);
+        party.getId(), party.getOpponentId(), null, null, null, "", false, false);
   }
 
   @Named("partyName")
   default String partyName(
       final OpponentDetail opponent, @Context final LiablePartiesMappingContext context) {
     if (OpponentUtil.isOrganisation(opponent)) {
-      // Contact name is only a fallback; some imported records have neither name.
-      return Stream.of(opponent.getOrganisationName(), opponent.getContactNameRole())
-          .filter(StringUtils::hasText)
-          .findFirst()
-          .orElse("undefined");
+      if (awardPartyEditable(opponent)) {
+        return opponent.getOrganisationName();
+      }
+      return StringUtils.hasText(opponent.getContactNameRole())
+          ? opponent.getContactNameRole()
+          : opponent.getOrganisationName();
     }
     if (!OpponentUtil.INDIVIDUAL_OPPONENT.equalsIgnoreCase(opponent.getType())) {
       return "undefined";
     }
-    return OpponentUtil.getPartyName(
-        opponent,
-        Optional.ofNullable(context)
-            .map(LiablePartiesMappingContext::getContactTitle)
-            .map(CommonLookupDetail::getContent)
-            .orElse(List.of()));
+    return OpponentUtil.getPartyName(opponent, context.getContactTitle().getContent());
   }
 
   @Named("relationshipToCase")
   default String relationshipToCase(
       final OpponentDetail opponent, @Context final LiablePartiesMappingContext context) {
-    final Optional<LiablePartiesMappingContext> lookups = Optional.ofNullable(context);
     return OpponentUtil.getRelationshipToCase(
             opponent,
-            lookups
-                .map(LiablePartiesMappingContext::getOrganisationRelationshipsToCase)
-                .map(RelationshipToCaseLookupDetail::getContent)
-                .orElse(List.of()),
-            lookups
-                .map(LiablePartiesMappingContext::getIndividualRelationshipsToCase)
-                .map(RelationshipToCaseLookupDetail::getContent)
-                .orElse(List.of()))
+            context.getOrganisationRelationshipsToCase().getContent(),
+            context.getIndividualRelationshipsToCase().getContent())
         .getDescription();
   }
 

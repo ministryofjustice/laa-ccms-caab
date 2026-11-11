@@ -1421,25 +1421,11 @@ class CaabApiClientTest {
   }
 
   @Test
-  void getAwardLiableParties_notFoundReturnsEmptyList() {
+  void getAwardLiableParties_apiFailure() {
     final WebClient client =
         WebClient.builder()
             .exchangeFunction(
                 request -> Mono.just(ClientResponse.create(HttpStatus.NOT_FOUND).build()))
-            .build();
-    final CaabApiClient api = new CaabApiClient(client, new CaabApiClientErrorHandler());
-
-    StepVerifier.create(api.getAwardLiableParties(42, "LAND", 7))
-        .expectNext(List.of())
-        .verifyComplete();
-  }
-
-  @Test
-  void getAwardLiableParties_otherApiFailure() {
-    final WebClient client =
-        WebClient.builder()
-            .exchangeFunction(
-                request -> Mono.just(ClientResponse.create(HttpStatus.BAD_GATEWAY).build()))
             .build();
     final CaabApiClient api = new CaabApiClient(client, new CaabApiClientErrorHandler());
 

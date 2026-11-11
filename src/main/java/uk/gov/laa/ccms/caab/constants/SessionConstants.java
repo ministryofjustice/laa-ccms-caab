@@ -292,21 +292,8 @@ public class SessionConstants {
 
   /**
    * Session attribute holding, per case and award, the real EBS ids of opponents created and linked
-   * via the party list. The backend gives such opponents a synthetic EBS id, so these are needed to
-   * recognise them as already added.
+   * via the party list. The CAAB API gives such opponents a synthetic EBS id, so these are needed
+   * to recognise them as already added.
    */
   public static final String CREATED_LIABLE_PARTY_EBS_IDS = "createdLiablePartyEbsIds";
-
-  /**
-   * Session attribute holding, per case and award, the CAAB opponent ids linked via the party list,
-   * so they stay recognised as already added even if a backend read lags behind the write.
-   */
-  public static final String ADDED_LIABLE_PARTY_OPPONENT_IDS = "addedLiablePartyOpponentIds";
-
-  /**
-   * Session attribute holding, per case and award, snapshots of the opponent identity each party
-   * list row id was rendered against, keyed by a per-render token. Used to reject selections whose
-   * row id no longer resolves to the same opponent.
-   */
-  public static final String PARTY_LIST_ROW_IDENTITIES = "partyListRowIdentities";
 }

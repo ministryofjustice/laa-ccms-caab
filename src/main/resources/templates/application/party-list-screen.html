@@ -16,21 +16,26 @@
     <h1 class="govuk-heading-l" th:text="#{case.partyListScreen.title}"></h1>
     <p class="govuk-body" th:text="#{case.partyListScreen.text}"></p>
 
-    <div th:if="${partyListError}" class="govuk-error-summary" aria-labelledby="error-summary-title" role="alert" tabindex="-1" data-module="govuk-error-summary">
+    <div th:if="${partyListErrorMessage != null or invalidPartyKeys != null}" class="govuk-error-summary" aria-labelledby="error-summary-title" role="alert" tabindex="-1" data-module="govuk-error-summary">
       <h2 class="govuk-error-summary__title" id="error-summary-title" th:text="#{case.partyListScreen.errorHeading}"></h2>
       <div class="govuk-error-summary__body">
         <ul class="govuk-list govuk-error-summary__list">
-          <li>
-            <a th:href="${firstSelectablePartyId != null} ? @{|#selected-party-${firstSelectablePartyId}|} : '#addSelectedPartiesButton'"
-               th:text="${partyListLoadError} ? #{case.partyListScreen.errorMessage} : (${partyListUnresolvedError} ? #{case.partyListScreen.unresolvedSelectionErrorMessage} : #{case.partyListScreen.selectionErrorMessage})"></a>
+          <li th:if="${partyListErrorMessage != null}">
+            <a th:href="${firstSelectablePartyKey != null} ? |#selected-party-${firstSelectablePartyKey}| : '#addSelectedPartiesButton'"
+               th:text="#{${partyListErrorMessage}}"></a>
           </li>
+          <th:block th:if="${invalidPartyKeys != null}">
+            <li th:each="party : ${parties}" th:if="${invalidPartyKeys.contains(party.key)}">
+              <a th:href="|#selected-party-${party.key}|"
+                 th:text="#{case.partyListScreen.invalidPartyErrorMessage(${party.name})}"></a>
+            </li>
+          </th:block>
         </ul>
       </div>
     </div>
 
     <form method="post"
           th:action="@{/case/outcome-and-awards/{path}/{id}/liable-parties/add(path=${awardPath},id=${awardId})}">
-      <input type="hidden" name="rowIdentityToken" th:value="${rowIdentityToken}" />
       <table class="govuk-table" id="party-list-table">
         <thead class="govuk-table__head">
         <tr class="govuk-table__row">
@@ -50,16 +55,16 @@
             <div th:if="${!party.alreadyAdded}" class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
               <div class="govuk-checkboxes__item">
                 <input class="govuk-checkboxes__input"
-                       th:id="|selected-party-${party.id}|"
+                       th:id="|selected-party-${party.key}|"
                        type="checkbox"
-                       name="selectedPartyIds"
-                       th:value="${party.id}"
-                       th:attr="aria-label=|Select ${party.name}|" />
+                       name="selectedPartyKeys"
+                       th:value="${party.key}"
+                       th:attr="aria-label=|#{case.partyListScreen.select} ${party.name}|" />
                 <label class="govuk-checkboxes__label"
-                       th:for="|selected-party-${party.id}|"></label>
+                       th:for="|selected-party-${party.key}|"></label>
               </div>
             </div>
-            <span th:if="${party.alreadyAdded}" class="govuk-visually-hidden" th:text="#{case.partyListScreen.alreadyAdded}"></span>
+            <strong th:if="${party.alreadyAdded}" class="govuk-tag govuk-tag--grey" th:text="#{case.partyListScreen.alreadyAdded}"></strong>
           </td>
           <td class="govuk-table__cell" th:text="${party.name}"></td>
           <td class="govuk-table__cell" th:text="${party.partyType}"></td>
@@ -78,7 +83,7 @@
     <div class="govuk-!-margin-top-6">
       <h2 class="govuk-heading-m" th:text="#{case.partyListScreen.detailsSummary}"></h2>
       <p class="govuk-body" th:text="#{case.partyListScreen.detailsText}"></p>
-      <!--
+      <!--/*
         TODO (CCMSPUI-1489 follow-up): The "add organisation" button is intentionally not
         wired up yet. The existing opponent creation flow (OpponentsSectionController)
         requires an APPLICATION_ID session attribute that is only populated during an
@@ -87,7 +92,7 @@
         (or session change) so a party created here can be linked back to this award.
         "Add individual" is already wired to LiablePartyController's dedicated flow, which
         has no such dependency.
-      -->
+      */-->
       <div class="govuk-button-group">
         <button class="govuk-button govuk-button--secondary" data-module="govuk-button" type="button"
                 disabled="disabled"
