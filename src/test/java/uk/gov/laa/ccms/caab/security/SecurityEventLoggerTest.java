@@ -22,6 +22,7 @@ import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.event.AuthorizationDeniedEvent;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import uk.gov.laa.ccms.caab.bean.metric.PuiMetricService;
+import uk.gov.laa.ccms.caab.logging.SearchCriteriaFields;
 import uk.gov.laa.ccms.caab.logging.UserIdentifier;
 
 class SecurityEventLoggerTest {
@@ -342,6 +343,89 @@ class SecurityEventLoggerTest {
     verify(metrics, org.mockito.Mockito.never())
         .incrementSecurityEvents(
             org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
+  }
+
+  private ILoggingEvent auditEventFrom(Runnable logging) {
+    var auditAppender = new ListAppender<ILoggingEvent>();
+    auditAppender.start();
+    var auditLogger = (Logger) LoggerFactory.getLogger("uk.gov.laa.ccms.caab.audit");
+    auditLogger.addAppender(auditAppender);
+    try {
+      logging.run();
+    } finally {
+      auditLogger.detachAppender(auditAppender);
+    }
+    return auditAppender.list.getFirst();
+  }
+
+  @Test
+  void aSearchIsLoggedWithTheCriteriaNamesAndTheResultCountButNoValues() {
+    var criteria = new uk.gov.laa.ccms.caab.bean.CaseSearchCriteria();
+    criteria.setClientSurname("Smith");
+    criteria.setCaseReference("300001");
+
+    ILoggingEvent event =
+        auditEventFrom(
+            () ->
+                logger.searched(
+                    "CASE", SearchCriteriaFields.populated(criteria), 3, 0, true, null));
+
+    assertEquals("DATA_ACCESS", keyValue(event, "event_type"));
+    assertEquals("SEARCH", keyValue(event, "action"));
+    assertEquals("CASE", keyValue(event, "search_type"));
+    assertEquals("caseReference,clientSurname", keyValue(event, "criteria_fields"));
+    assertEquals(3, keyValue(event, "result_count"));
+    assertEquals(0, keyValue(event, "page"));
+    assertEquals("SUCCESS", keyValue(event, "outcome"));
+    assertFalse(event.getKeyValuePairs().toString().contains("Smith"));
+    assertFalse(event.getKeyValuePairs().toString().contains("300001"));
+    verify(metrics).incrementSecurityEvents("DATA_ACCESS", "SUCCESS");
+  }
+
+  @Test
+  void aSearchWithTooManyResultsIsLoggedWithoutACountAndWithAnExplanation() {
+    var criteria = new uk.gov.laa.ccms.caab.bean.CaseSearchCriteria();
+    criteria.setClientSurname("Smith");
+
+    ILoggingEvent event =
+        auditEventFrom(
+            () ->
+                logger.searched(
+                    "CASE",
+                    SearchCriteriaFields.populated(criteria),
+                    null,
+                    null,
+                    true,
+                    "TOO_MANY_RESULTS"));
+
+    assertEquals("TOO_MANY_RESULTS", keyValue(event, "event_detail"));
+    assertFalse(event.getKeyValuePairs().stream().anyMatch(kv -> kv.key.equals("result_count")));
+  }
+
+  @Test
+  void aFailedSearchIsCountedAsAFailure() {
+    auditEventFrom(
+        () -> logger.searched("CLIENT", java.util.List.of(), null, 0, false, "ApiClientException"));
+
+    verify(metrics).incrementSecurityEvents("DATA_ACCESS", "FAILURE");
+  }
+
+  @Test
+  void dataAccessLogsTheResourceIdentifiersItWasGiven() {
+    ILoggingEvent event =
+        auditEventFrom(
+            () ->
+                logger.dataAccessed(
+                    "VIEW",
+                    true,
+                    null,
+                    null,
+                    java.util.Map.of("notification_id", "98765", "attachment_id", "12"),
+                    "/notifications/{notification_id}/attachments/{attachment_id}/retrieve"));
+
+    assertEquals("98765", keyValue(event, "notification_id"));
+    assertEquals("12", keyValue(event, "attachment_id"));
+    assertFalse(event.getKeyValuePairs().stream().anyMatch(kv -> kv.key.startsWith("session_")));
   }
 
   private static Object keyValue(ILoggingEvent event, String key) {
