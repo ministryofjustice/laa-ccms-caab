@@ -443,6 +443,51 @@ class AwardControllerTest {
     }
 
     @ParameterizedTest
+    @CsvSource({
+      "cost-award,calculate", "cost-award,next",
+      "financial-award,calculate", "financial-award,next"
+    })
+    void rejectsOverlengthWhitespaceOnlyOfferWithoutSaving(String path, String action)
+        throws Exception {
+      stubAward(path, null);
+      final String offer = " ".repeat(951);
+      final var result =
+          mvc.perform(
+                  post(url(path))
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("action", action)
+                      .param("offerDetails", offer))
+              .andExpect(view().name("application/recovery"))
+              .andExpect(model().attributeHasFieldErrors("recovery", "offerDetails"))
+              .andReturn();
+      final var form = (RecoveryFormData) result.getModelAndView().getModel().get("recovery");
+      assertThat(form.getOfferDetails()).isEqualTo(offer);
+      verify(caseOutcomeService, never()).upsertRecovery(any(), any(), any(), any(), any(), any());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+      "cost-award,COST,space", "cost-award,COST,tab",
+      "financial-award,DAMAGE,space", "financial-award,DAMAGE,tab"
+    })
+    void savesWhitespaceOnlyOfferUnchangedAsInLegacy(String path, String type, String whitespace)
+        throws Exception {
+      stubAward(path, null);
+      final String offer = "space".equals(whitespace) ? " ".repeat(950) : "\t";
+      mvc.perform(
+              post(url(path))
+                  .sessionAttr(CASE, ebsCase)
+                  .sessionAttr(USER_DETAILS, user)
+                  .param("offerDetails", offer))
+          .andExpect(redirectedUrl("/case/outcome-and-awards"));
+      final var captor = ArgumentCaptor.forClass(RecoveryRequestData.class);
+      verify(caseOutcomeService)
+          .upsertRecovery(eq("300000001"), eq(123), eq(type), eq(7), captor.capture(), any());
+      assertThat(captor.getValue().getOfferDetails()).isEqualTo(offer);
+    }
+
+    @ParameterizedTest
     @CsvSource({"948,false", "949,true"})
     void validatesOfferLengthAfterLegacyLineEndingNormalisation(int letters, boolean invalid)
         throws Exception {

@@ -47,9 +47,12 @@ public class RecoveryValidator extends AbstractValidator {
     validateDate("courtRecoveryDate", form.getCourtRecoveryDate(), "Court Date Received", errors);
     validateDate(
         "clientRecoveryDate", form.getClientRecoveryDate(), "Client Date Received", errors);
-    if (StringUtils.hasText(form.getOfferDetails())) {
+    if (form.getOfferDetails() != null) {
       validateFieldMaxLength(
           "offerDetails", form.getOfferDetails(), 950, "Details of debtor offer", errors);
+    }
+    // Legacy character validation skips whitespace-only text, but the length limit still applies.
+    if (StringUtils.hasText(form.getOfferDetails())) {
       validateFieldFormat(
           "offerDetails",
           form.getOfferDetails(),

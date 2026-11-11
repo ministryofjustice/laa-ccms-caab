@@ -111,6 +111,28 @@ class RecoveryValidatorTest {
     assertThat(validate(form).hasErrors()).isFalse();
   }
 
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = {" ", "\t", "\r\n", " \t\r\n "})
+  void preservesLegacyAcceptanceOfOptionalWhitespaceOnlyOffers(String offer) {
+    final var form = new RecoveryFormData();
+    form.setOfferDetails(offer);
+    assertThat(validate(form).hasErrors()).isFalse();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {" ", "\t", "\n"})
+  void enforcesOfferLengthEvenWhenItContainsOnlyWhitespace(String whitespace) {
+    final var form = new RecoveryFormData();
+    form.setOfferDetails(whitespace.repeat(950));
+    assertThat(validate(form).hasErrors()).isFalse();
+    form.setOfferDetails(whitespace.repeat(951));
+    final var errors = validate(form);
+    assertThat(errors.getFieldErrors("offerDetails"))
+        .extracting(error -> error.getCode())
+        .containsExactly("length.exceeds.max");
+  }
+
   @Test
   void doesNotInventCrossFieldDependencies() {
     final var form = new RecoveryFormData();
