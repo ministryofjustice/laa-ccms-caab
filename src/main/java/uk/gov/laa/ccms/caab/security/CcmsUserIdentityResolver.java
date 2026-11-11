@@ -93,28 +93,26 @@ public class CcmsUserIdentityResolver {
   }
 
   /**
-   * Resolves an external user from the SiLAS claim, falling back to the User Details API.
+   * Resolves an external user by exchanging the SiLAS identifier on the token for a CCMS username.
    *
-   * <p>Which of the two applies depends on the tenant: the claim may carry the CCMS username
-   * outright, or an identifier that has to be exchanged for one.
+   * <p>The claim carries a SiLAS uuid, not a username, so the User Details API is always called.
+   * Without the claim there is nothing to exchange: the authenticated email address is not a SiLAS
+   * identifier and the API has no way to match it.
    */
   private String externalLoginId(final OidcUser oidcUser) {
     final String claimName = entraProperties.customUserIdClaim();
 
-    if (claimName != null && !claimName.isBlank()) {
-      final Optional<String> claimed = claimValue(oidcUser, claimName);
-      if (claimed.isPresent()) {
-        // The claim carries the CCMS username itself, so there is nothing to exchange.
-        log.info("Resolved CCMS user [{}] from the EntraID claim [{}]", claimed.get(), claimName);
-        return claimed.get();
-      }
-      log.warn(
-          "EntraID custom user id claim [{}] is absent from the token, falling back to the "
-              + "User Details API",
-          claimName);
-    }
+    final String silasId =
+        Optional.ofNullable(claimName)
+            .filter(name -> !name.isBlank())
+            .flatMap(name -> claimValue(oidcUser, name))
+            .orElseThrow(
+                () ->
+                    new CcmsUserResolutionException(
+                        ("EntraID issued no SiLAS identifier in claim [%s] for [%s] - access denied")
+                            .formatted(claimName, entraIdentity(oidcUser))));
 
-    return userDetailsApiLoginId(entraIdentity(oidcUser));
+    return userDetailsApiLoginId(silasId);
   }
 
   /** Exchanges a SiLAS identifier for a CCMS username through the User Details API. */
