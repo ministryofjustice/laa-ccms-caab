@@ -20,6 +20,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
+import uk.gov.laa.ccms.caab.bean.award.RecoveryRequestData;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
@@ -1148,6 +1149,31 @@ public class CaabApiClient {
             e ->
                 caabApiClientErrorHandler.handleApiUpdateError(
                     e, RESOURCE_TYPE_LAND_AWARD, "id", String.valueOf(landAwardId)));
+  }
+
+  /** Creates or updates the selected cost or financial award's recovery. */
+  public Mono<Void> upsertRecovery(
+      final Integer caseOutcomeId,
+      final String awardType,
+      final Integer awardId,
+      final String loginId,
+      final RecoveryRequestData recovery) {
+    return caabApiWebClient
+        .put()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/recovery",
+            caseOutcomeId,
+            awardType,
+            awardId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(recovery)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiUpdateError(
+                    e, "recovery", "id", String.valueOf(awardId)));
   }
 
   /** Creates or updates a time-related recovery on a land or other-asset award. */

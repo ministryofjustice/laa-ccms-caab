@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
+import uk.gov.laa.ccms.caab.bean.award.RecoveryRequestData;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualLiablePartyFlow;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentFormData;
 import uk.gov.laa.ccms.caab.bean.opponent.IndividualOpponentOtherDetailsFormData;
@@ -579,6 +580,26 @@ public class CaseOutcomeService {
                     "Land award %s does not belong to case reference number: %s"
                         .formatted(landAwardId, caseReferenceNumber)));
     caabApiClient.updateLandAward(caseOutcome.getId(), landAwardId, loginId, landAward).block();
+  }
+
+  /** Saves only the selected cost or financial award's recovery in its owning case outcome. */
+  public void upsertRecovery(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final String awardType,
+      final Integer awardId,
+      final RecoveryRequestData recovery,
+      final String loginId) {
+    final CaseOutcomeDetail outcome = requireCaseOutcome(caseReferenceNumber, providerId);
+    requireAward(outcome, awardType, awardId);
+    caabApiClient
+        .upsertRecovery(
+            requireCaseOutcomeId(outcome, caseReferenceNumber),
+            awardType,
+            awardId,
+            loginId,
+            recovery)
+        .block();
   }
 
   /**

@@ -31,6 +31,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
+import uk.gov.laa.ccms.caab.bean.award.RecoveryRequestData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -692,6 +693,34 @@ class CaseOutcomeServiceTest {
     caseOutcomeService.upsertTimeRecovery("300000001", 123, awardType, 7, request, "user1");
 
     verify(caabApiClient).upsertTimeRecovery(42, awardType, 7, "user1", request);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"COST", "DAMAGE"})
+  void upsertRecoveryUsesProviderOutcomeAndVerifiesAwardOwnership(String type) {
+    final var outcome =
+        new CaseOutcomeDetail()
+            .id(42)
+            .costAwards(List.of(new CostAwardDetail().id(7).awardType("COST")))
+            .financialAwards(List.of(new FinancialAwardDetail().id(7).awardType("DAMAGE")));
+    doReturn(Optional.of(outcome)).when(caseOutcomeService).getCaseOutcome("300000001", 123);
+    final var request = new RecoveryRequestData();
+    when(caabApiClient.upsertRecovery(42, type, 7, "user1", request)).thenReturn(Mono.empty());
+    caseOutcomeService.upsertRecovery("300000001", 123, type, 7, request, "user1");
+    verify(caabApiClient).upsertRecovery(42, type, 7, "user1", request);
+  }
+
+  @Test
+  void upsertRecoveryRejectsAwardOutsideTheProviderOutcome() {
+    doReturn(Optional.of(new CaseOutcomeDetail().id(42).costAwards(List.of())))
+        .when(caseOutcomeService)
+        .getCaseOutcome("300000001", 123);
+    assertThrows(
+        CaabApplicationException.class,
+        () ->
+            caseOutcomeService.upsertRecovery(
+                "300000001", 123, "COST", 7, new RecoveryRequestData(), "user1"));
+    verify(caabApiClient, never()).upsertRecovery(any(), any(), any(), any(), any());
   }
 
   @ParameterizedTest

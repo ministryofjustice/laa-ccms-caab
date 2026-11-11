@@ -33,6 +33,8 @@ import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.FinancialAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.LandAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.OtherAssetAwardFormData;
+import uk.gov.laa.ccms.caab.bean.award.RecoveryFormData;
+import uk.gov.laa.ccms.caab.bean.award.RecoveryRequestData;
 import uk.gov.laa.ccms.caab.bean.award.TimeRecoveryAward;
 import uk.gov.laa.ccms.caab.bean.award.TimeRecoveryFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
@@ -40,6 +42,7 @@ import uk.gov.laa.ccms.caab.bean.validators.awards.CostAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.FinancialAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.LandAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.OtherAssetAwardValidator;
+import uk.gov.laa.ccms.caab.bean.validators.awards.RecoveryValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.TimeRecoveryValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.CommonValueConstants;
@@ -48,8 +51,11 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.LandAwardMapper;
+import uk.gov.laa.ccms.caab.mapper.LiablePartiesDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.OtherAssetAwardMapper;
+import uk.gov.laa.ccms.caab.mapper.RecoveryMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
+import uk.gov.laa.ccms.caab.model.BaseAwardDetail;
 import uk.gov.laa.ccms.caab.model.CostAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
@@ -57,6 +63,7 @@ import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.LandAwardRequest;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
+import uk.gov.laa.ccms.caab.model.RecoveryDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
@@ -89,6 +96,9 @@ public class AwardController {
   private final LandAwardValidator landAwardValidator;
   private final LandAwardMapper landAwardMapper;
   private final TimeRecoveryValidator timeRecoveryValidator;
+  private final RecoveryValidator recoveryValidator;
+  private final RecoveryMapper recoveryMapper;
+  private final LiablePartiesDisplayMapper awardDisplayMapper;
 
   /**
    * Displays the Select Award Type screen.
@@ -582,6 +592,121 @@ public class AwardController {
       populateOtherAssetAwardDropdowns(model);
       return "application/other-asset-award";
     }
+  }
+
+  /** Displays recovery after liable parties for cost and financial awards (legacy AW04). */
+  @GetMapping("/case/outcome-and-awards/{awardPath:cost-award|financial-award}/{awardId}/recovery")
+  public String displayRecovery(
+      @SessionAttribute(value = CASE, required = false) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @PathVariable final String awardPath,
+      @PathVariable final Integer awardId,
+      final Model model) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn("Rejecting recovery form for a read-only or missing case");
+      return "redirect:/case/outcome-and-awards";
+    }
+    final BaseAwardDetail award = loadRecoveryAward(ebsCase, user, awardPath, awardId);
+    final RecoveryFormData form = savedRecoveryForm(award);
+    model.addAttribute("recovery", form);
+    populateRecoveryModel(model, award, awardPath, awardId, recoveryMapper.toRequest(form));
+    return "application/recovery";
+  }
+
+  /** Calculates or saves recovery; Back and Cancel navigate through links without submitting. */
+  @PostMapping("/case/outcome-and-awards/{awardPath:cost-award|financial-award}/{awardId}/recovery")
+  public String submitRecovery(
+      @SessionAttribute(value = CASE, required = false) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @PathVariable final String awardPath,
+      @PathVariable final Integer awardId,
+      @RequestParam(defaultValue = "next") final String action,
+      @ModelAttribute("recovery") final RecoveryFormData form,
+      final BindingResult errors,
+      final Model model) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn("Rejecting recovery submission for a read-only or missing case");
+      return "redirect:/case/outcome-and-awards";
+    }
+    final BaseAwardDetail award = loadRecoveryAward(ebsCase, user, awardPath, awardId);
+    if (!"next".equals(action) && !"calculate".equals(action)) {
+      log.warn("Rejecting unsupported recovery action {}", action);
+      errors.reject("recovery.action.invalid", "The recovery action is not supported.");
+    }
+    form.normaliseLegacyFields();
+    recoveryValidator.validate(form, errors);
+    if (errors.hasErrors()) {
+      populateRecoveryModel(
+          model, award, awardPath, awardId, recoveryMapper.toRequest(savedRecoveryForm(award)));
+      return "application/recovery";
+    }
+    final RecoveryRequestData request = recoveryMapper.toRequest(form);
+    populateRecoveryModel(model, award, awardPath, awardId, request);
+    if ("calculate".equals(action)) {
+      return "application/recovery";
+    }
+    try {
+      caseOutcomeService.upsertRecovery(
+          ebsCase.getCaseReferenceNumber(),
+          user.getProvider().getId().intValue(),
+          award.getAwardType(),
+          awardId,
+          request,
+          user.getLoginId());
+    } catch (CaabApiClientException | IllegalStateException ex) {
+      log.warn("Failed to save recovery for {} award {}", awardPath, awardId, ex);
+      errors.reject("recovery.save.failed", "We could not save the recovery. Please try again.");
+      return "application/recovery";
+    }
+    return "redirect:/case/outcome-and-awards";
+  }
+
+  private BaseAwardDetail loadRecoveryAward(
+      final ApplicationDetail ebsCase,
+      final UserDetail user,
+      final String awardPath,
+      final Integer awardId) {
+    final String reference = ebsCase.getCaseReferenceNumber();
+    final Integer providerId = user.getProvider().getId().intValue();
+    final Optional<? extends BaseAwardDetail> award =
+        "cost-award".equals(awardPath)
+            ? caseOutcomeService.getCostAward(reference, providerId, awardId)
+            : caseOutcomeService.getFinancialAward(reference, providerId, awardId);
+    return award.orElseThrow(
+        () -> new CaabApplicationException("Could not find recovery award with id: " + awardId));
+  }
+
+  private RecoveryFormData savedRecoveryForm(final BaseAwardDetail award) {
+    final RecoveryDetail recovery =
+        switch (award) {
+          case CostAwardDetail cost -> cost.getRecovery();
+          case FinancialAwardDetail financial -> financial.getRecovery();
+          default -> throw new CaabApplicationException("Unsupported recovery award");
+        };
+    return recovery == null ? new RecoveryFormData() : recoveryMapper.toForm(recovery);
+  }
+
+  private void populateRecoveryModel(
+      final Model model,
+      final BaseAwardDetail award,
+      final String path,
+      final Integer id,
+      final RecoveryRequestData request) {
+    final BigDecimal amount =
+        Optional.ofNullable(awardDisplayMapper.awardAmount(award))
+            .orElse(BigDecimal.ZERO)
+            .setScale(2);
+    final BigDecimal recovered =
+        request
+            .getSolicitorRecoveryAmount()
+            .add(request.getCourtRecoveryAmount())
+            .add(request.getClientRecoveryAmount());
+    model.addAttribute("award", award);
+    model.addAttribute("awardAmount", amount);
+    model.addAttribute("awardPath", path);
+    model.addAttribute("awardId", id);
+    model.addAttribute("recoveredAmount", recovered);
+    model.addAttribute("unrecoveredAmount", amount.subtract(recovered));
   }
 
   /** Displays the saved or new time-related recovery for a land or other asset award. */
