@@ -23,6 +23,8 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.logging.SearchCriteriaFields;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.service.NotificationService;
 import uk.gov.laa.ccms.caab.util.PaginationRequest;
 import uk.gov.laa.ccms.caab.util.PaginationRequestUtil;
@@ -41,6 +43,8 @@ public class NotificationsSearchResultsController {
   private static final String DEFAULT_SORT = "dateAssigned,asc";
 
   private final NotificationService notificationService;
+
+  private final SecurityEventLogger securityEventLogger;
 
   /**
    * Provides an instance of {@link NotificationSearchCriteria} for use in the model.
@@ -82,6 +86,7 @@ public class NotificationsSearchResultsController {
       Model model) {
 
     // Use local variables to store original criteria state before any updates
+    final List<String> criteriaFields = SearchCriteriaFields.populated(criteria);
     Integer originalPage = criteria.getPage();
     Integer originalSize = criteria.getSize();
     String originalSort = criteria.getSort();
@@ -132,10 +137,23 @@ public class NotificationsSearchResultsController {
       criteria.setSort(finalPageSort);
       criteria.setPage(finalPage);
       criteria.setSize(finalSize);
-      notificationsResponse =
-          notificationService
-              .getNotifications(criteria, user.getProvider().getId(), finalPage, finalSize)
-              .block();
+      try {
+        notificationsResponse =
+            notificationService
+                .getNotifications(criteria, user.getProvider().getId(), finalPage, finalSize)
+                .block();
+      } catch (RuntimeException e) {
+        securityEventLogger.searched(
+            "NOTIFICATION", criteriaFields, null, finalPage, false, e.getClass().getSimpleName());
+        throw e;
+      }
+      securityEventLogger.searched(
+          "NOTIFICATION",
+          criteriaFields,
+          resultCount(notificationsResponse),
+          finalPage,
+          true,
+          null);
     }
 
     List<NotificationInfo> notifications =
@@ -153,5 +171,15 @@ public class NotificationsSearchResultsController {
     model.addAttribute(SORT_DIRECTION, sortCriteria[1]);
     model.addAttribute(NOTIFICATIONS_SEARCH_RESULTS, notificationsResponse);
     return "notifications/actions-and-notifications";
+  }
+
+  private static int resultCount(Notifications notifications) {
+    if (notifications == null) {
+      return 0;
+    }
+    if (notifications.getTotalElements() != null) {
+      return notifications.getTotalElements();
+    }
+    return notifications.getContent() == null ? 0 : notifications.getContent().size();
   }
 }
