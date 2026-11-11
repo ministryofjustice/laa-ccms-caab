@@ -78,20 +78,23 @@
       <h2 class="govuk-heading-m" th:text="#{case.partyListScreen.detailsSummary}"></h2>
       <p class="govuk-body" th:text="#{case.partyListScreen.detailsText}"></p>
       <!--
-        TODO (CCMSPUI-1489 follow-up): These buttons are intentionally not wired up yet.
-        The existing opponent creation flow (OpponentsSectionController) requires an
-        APPLICATION_ID session attribute that is only populated during an in-progress
-        application/amendment session, which is not guaranteed to exist on the
-        outcome-and-awards flow. Wiring these buttons needs a dedicated creation flow
+        TODO (CCMSPUI-1489 follow-up): The "add organisation" button is intentionally not
+        wired up yet. The existing opponent creation flow (OpponentsSectionController)
+        requires an APPLICATION_ID session attribute that is only populated during an
+        in-progress application/amendment session, which is not guaranteed to exist on the
+        outcome-and-awards flow. Wiring this button needs a dedicated creation flow
         (or session change) so a party created here can be linked back to this award.
+        "Add individual" is already wired to LiablePartyController's dedicated flow, which
+        has no such dependency.
       -->
       <div class="govuk-button-group">
         <button class="govuk-button govuk-button--secondary" data-module="govuk-button" type="button"
                 disabled="disabled"
                 th:text="#{case.partyListScreen.addOrganisation}"></button>
-        <button class="govuk-button govuk-button--secondary" data-module="govuk-button" type="button"
-                disabled="disabled"
-                th:text="#{case.partyListScreen.addIndividual}"></button>
+        <a class="govuk-button govuk-button--secondary" data-module="govuk-button" role="button"
+           id="addIndividualButton"
+           th:href="@{/case/outcome-and-awards/{path}/{id}/liable-parties/individual/add(path=${awardPath},id=${awardId})}"
+           th:text="#{case.partyListScreen.addIndividual}"></a>
       </div>
     </div>
   </div>
