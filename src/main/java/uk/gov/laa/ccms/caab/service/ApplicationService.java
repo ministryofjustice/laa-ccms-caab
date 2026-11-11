@@ -60,6 +60,7 @@ import uk.gov.laa.ccms.caab.constants.SearchConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentRulebase;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
+import uk.gov.laa.ccms.caab.logging.SearchCriteriaFields;
 import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ApplicationFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.CopyApplicationMapper;
@@ -92,6 +93,7 @@ import uk.gov.laa.ccms.caab.model.StringDisplayValue;
 import uk.gov.laa.ccms.caab.model.sections.ApplicationSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.IndividualDetailsSectionDisplay;
 import uk.gov.laa.ccms.caab.model.sections.OrganisationDetailsSectionDisplay;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.util.AmendmentUtil;
 import uk.gov.laa.ccms.caab.util.OpponentUtil;
 import uk.gov.laa.ccms.caab.util.ReflectionUtils;
@@ -132,6 +134,8 @@ public class ApplicationService {
   private final AssessmentService assessmentService;
 
   private final PuiMetricService puiMetricService;
+
+  private final SecurityEventLogger securityEventLogger;
 
   private final ProviderService providerService;
 
@@ -176,8 +180,25 @@ public class ApplicationService {
   public List<BaseApplicationDetail> getCases(
       final CaseSearchCriteria caseSearchCriteria, final UserDetail user)
       throws TooManyResultsException {
-
     ReflectionUtils.nullifyStrings(caseSearchCriteria);
+    final List<String> criteriaFields = SearchCriteriaFields.populated(caseSearchCriteria);
+    try {
+      final List<BaseApplicationDetail> results = findCases(caseSearchCriteria, user);
+      securityEventLogger.searched("CASE", criteriaFields, results.size(), null, true, null);
+      return results;
+    } catch (final TooManyResultsException e) {
+      securityEventLogger.searched("CASE", criteriaFields, null, null, true, "TOO_MANY_RESULTS");
+      throw e;
+    } catch (final RuntimeException e) {
+      securityEventLogger.searched(
+          "CASE", criteriaFields, null, null, false, e.getClass().getSimpleName());
+      throw e;
+    }
+  }
+
+  private List<BaseApplicationDetail> findCases(
+      final CaseSearchCriteria caseSearchCriteria, final UserDetail user)
+      throws TooManyResultsException {
 
     final List<BaseApplicationDetail> searchResults = new ArrayList<>();
 

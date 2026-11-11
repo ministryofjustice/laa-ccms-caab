@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.client;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -36,6 +37,8 @@ public class ClientSearchResultsControllerTest {
   @Mock private ResultDisplayMapper resultDisplayMapper;
 
   @Mock private SearchConstants searchConstants;
+
+  @Mock private uk.gov.laa.ccms.caab.security.SecurityEventLogger securityEventLogger;
 
   @InjectMocks private ClientSearchResultsController clientSearchResultsController;
 
@@ -99,6 +102,59 @@ public class ClientSearchResultsControllerTest {
                 .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
         .andExpect(status().isOk())
         .andExpect(view().name("application/application-client-search-results"));
+  }
+
+  @Test
+  public void aClientSearchIsAuditedWithTheCriteriaNamesAndTheTotal() throws Exception {
+    ClientDetails clientDetails = new ClientDetails();
+    clientDetails.setContent(new ArrayList<>());
+    clientDetails.setTotalElements(100);
+    when(clientService.getClients(any(), any(), any())).thenReturn(Mono.just(clientDetails));
+    when(searchConstants.getMaxSearchResultsClients()).thenReturn(200);
+    var criteria = new ClientSearchCriteria();
+    criteria.setSurname("Smith");
+    criteria.setDateOfBirth("1980-02-03");
+
+    this.mockMvc
+        .perform(
+            get("/application/client/results")
+                .sessionAttr("user", user)
+                .sessionAttr("clientSearchCriteria", criteria))
+        .andExpect(status().isOk());
+
+    verify(securityEventLogger)
+        .searched("CLIENT", java.util.List.of("dateOfBirth", "surname"), 100, 0, true, null);
+  }
+
+  @Test
+  public void aClientSearchWithNoResponseIsAuditedAsZeroResults() throws Exception {
+    when(clientService.getClients(any(), any(), any())).thenReturn(Mono.empty());
+
+    this.mockMvc
+        .perform(
+            get("/application/client/results")
+                .sessionAttr("user", user)
+                .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
+        .andExpect(status().isOk());
+
+    verify(securityEventLogger).searched("CLIENT", java.util.List.of(), 0, 0, true, null);
+  }
+
+  @Test
+  public void aFailedClientSearchIsAuditedAsAFailureAndStillFails() {
+    when(clientService.getClients(any(), any(), any()))
+        .thenReturn(Mono.error(new IllegalStateException("boom")));
+
+    org.junit.jupiter.api.Assertions.assertThrows(
+        Exception.class,
+        () ->
+            this.mockMvc.perform(
+                get("/application/client/results")
+                    .sessionAttr("user", user)
+                    .sessionAttr("clientSearchCriteria", new ClientSearchCriteria())));
+
+    verify(securityEventLogger)
+        .searched("CLIENT", java.util.List.of(), null, 0, false, "IllegalStateException");
   }
 
   @Test

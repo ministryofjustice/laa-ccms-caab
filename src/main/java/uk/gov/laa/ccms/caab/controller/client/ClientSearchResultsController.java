@@ -8,6 +8,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_RESU
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -22,7 +23,9 @@ import uk.gov.laa.ccms.caab.bean.ApplicationFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.constants.SearchConstants;
+import uk.gov.laa.ccms.caab.logging.SearchCriteriaFields;
 import uk.gov.laa.ccms.caab.mapper.ResultDisplayMapper;
+import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.ClientDetails;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -41,6 +44,8 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class ClientSearchResultsController {
 
   private final ClientService clientService;
+
+  private final SecurityEventLogger securityEventLogger;
 
   private final ResultDisplayMapper resultDisplayMapper;
 
@@ -65,8 +70,22 @@ public class ClientSearchResultsController {
       @SessionAttribute(USER_DETAILS) UserDetail user,
       HttpServletRequest request,
       Model model) {
-    ClientDetails clientSearchResults =
-        clientService.getClients(clientSearchCriteria, page, size).block();
+    final List<String> criteriaFields = SearchCriteriaFields.populated(clientSearchCriteria);
+    ClientDetails clientSearchResults;
+    try {
+      clientSearchResults = clientService.getClients(clientSearchCriteria, page, size).block();
+    } catch (RuntimeException e) {
+      securityEventLogger.searched(
+          "CLIENT", criteriaFields, null, page, false, e.getClass().getSimpleName());
+      throw e;
+    }
+    securityEventLogger.searched(
+        "CLIENT",
+        criteriaFields,
+        clientSearchResults == null ? 0 : clientSearchResults.getTotalElements(),
+        page,
+        true,
+        null);
 
     if (clientSearchResults != null
         && clientSearchResults.getContent() != null
