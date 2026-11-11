@@ -30,6 +30,7 @@
 
     <form method="post"
           th:action="@{/case/outcome-and-awards/{path}/{id}/liable-parties/add(path=${awardPath},id=${awardId})}">
+      <input type="hidden" name="rowIdentityToken" th:value="${rowIdentityToken}" />
       <table class="govuk-table" id="party-list-table">
         <thead class="govuk-table__head">
         <tr class="govuk-table__row">

@@ -98,7 +98,10 @@ class TimeRecoveryTemplateRenderTest {
                     null,
                     null,
                     null,
-                    new TimeRecoveryValidator()))
+                    new TimeRecoveryValidator(),
+                    null,
+                    null,
+                    null))
             .setViewResolvers(viewResolver)
             .build();
   }

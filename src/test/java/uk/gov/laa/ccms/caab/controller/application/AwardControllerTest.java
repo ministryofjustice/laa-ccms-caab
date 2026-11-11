@@ -61,6 +61,8 @@ import uk.gov.laa.ccms.caab.bean.validators.awards.FinancialAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.LandAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.OtherAssetAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.TimeRecoveryValidator;
+import uk.gov.laa.ccms.caab.bean.validators.opponent.IndividualOpponentValidator;
+import uk.gov.laa.ccms.caab.bean.validators.opponent.OrganisationOpponentValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
@@ -82,6 +84,7 @@ import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.model.sections.LiablePartiesDisplay;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
+import uk.gov.laa.ccms.caab.service.IndividualOpponentFormService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
@@ -106,6 +109,9 @@ class AwardControllerTest {
   @Mock private LandAwardValidator landAwardValidator;
   @Mock private LandAwardMapper landAwardMapper;
   @Spy private TimeRecoveryValidator timeRecoveryValidator = new TimeRecoveryValidator();
+  @Mock private IndividualOpponentFormService individualOpponentFormService;
+  @Mock private IndividualOpponentValidator individualOpponentValidator;
+  @Mock private OrganisationOpponentValidator organisationOpponentValidator;
 
   @InjectMocks private AwardController controller;
 
@@ -113,6 +119,24 @@ class AwardControllerTest {
   private ApplicationDetail ebsCase;
   private UserDetail user;
   private CaseOutcomeDetail caseOutcome;
+
+  /**
+   * Renders the party list page (GET) within the given session and returns the per-render {@code
+   * rowIdentityToken} it produced, so a following POST can submit it back and have its selection
+   * validated against this render's row identity snapshot.
+   */
+  private String renderPartyListAndCaptureToken(
+      final org.springframework.mock.web.MockHttpSession httpSession,
+      final ApplicationDetail activeApplication) {
+    final var result =
+        mockMvc.perform(
+            get("/case/outcome-and-awards/land/7/liable-parties/add")
+                .session(httpSession)
+                .sessionAttr(CASE, ebsCase)
+                .sessionAttr(APPLICATION, activeApplication)
+                .sessionAttr(USER_DETAILS, user));
+    return (String) result.getMvcResult().getModelAndView().getModel().get("rowIdentityToken");
+  }
 
   @BeforeEach
   void setUp() {
@@ -228,12 +252,8 @@ class AwardControllerTest {
 
       // The party list must be rendered (GET) before a selection from it is submitted (POST), so
       // that the rows' identities are recorded in-session and can be confirmed stable at POST time.
-      mockMvc.perform(
-          get("/case/outcome-and-awards/land/7/liable-parties/add")
-              .session(httpSession)
-              .sessionAttr(CASE, ebsCase)
-              .sessionAttr(APPLICATION, activeApplication)
-              .sessionAttr(USER_DETAILS, user));
+      final String rowIdentityToken =
+          renderPartyListAndCaptureToken(httpSession, activeApplication);
 
       assertThat(
               mockMvc.perform(
@@ -242,6 +262,7 @@ class AwardControllerTest {
                       .sessionAttr(CASE, ebsCase)
                       .sessionAttr(APPLICATION, activeApplication)
                       .sessionAttr(USER_DETAILS, user)
+                      .param("rowIdentityToken", rowIdentityToken)
                       .param("selectedPartyIds", "42", "43")))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/case/outcome-and-awards/land/7/liable-parties");
@@ -282,12 +303,8 @@ class AwardControllerTest {
       final org.springframework.mock.web.MockHttpSession httpSession =
           new org.springframework.mock.web.MockHttpSession();
 
-      mockMvc.perform(
-          get("/case/outcome-and-awards/land/7/liable-parties/add")
-              .session(httpSession)
-              .sessionAttr(CASE, ebsCase)
-              .sessionAttr(APPLICATION, activeApplication)
-              .sessionAttr(USER_DETAILS, user));
+      final String rowIdentityToken =
+          renderPartyListAndCaptureToken(httpSession, activeApplication);
 
       assertThat(
               mockMvc.perform(
@@ -296,6 +313,7 @@ class AwardControllerTest {
                       .sessionAttr(CASE, ebsCase)
                       .sessionAttr(APPLICATION, activeApplication)
                       .sessionAttr(USER_DETAILS, user)
+                      .param("rowIdentityToken", rowIdentityToken)
                       .param("selectedPartyIds", "42")))
           .hasStatus3xxRedirection();
 
@@ -382,12 +400,8 @@ class AwardControllerTest {
 
       // The party list must be rendered (GET) before a selection from it is submitted (POST), so
       // that the rows' identities are recorded in-session and can be confirmed stable at POST time.
-      mockMvc.perform(
-          get("/case/outcome-and-awards/land/7/liable-parties/add")
-              .session(httpSession)
-              .sessionAttr(CASE, ebsCase)
-              .sessionAttr(APPLICATION, activeApplication)
-              .sessionAttr(USER_DETAILS, user));
+      final String rowIdentityToken =
+          renderPartyListAndCaptureToken(httpSession, activeApplication);
 
       // The opponent above has a real ebsId but no CAAB id, so it cannot be linked by id; it is
       // the first (and only) entry in the opponents list, so it is assigned the synthetic row id
@@ -400,6 +414,7 @@ class AwardControllerTest {
                       .sessionAttr(CASE, ebsCase)
                       .sessionAttr(APPLICATION, activeApplication)
                       .sessionAttr(USER_DETAILS, user)
+                      .param("rowIdentityToken", rowIdentityToken)
                       .param("selectedPartyIds", "-1")))
           .hasStatus3xxRedirection()
           .hasRedirectedUrl("/case/outcome-and-awards/land/7/liable-parties");
@@ -440,12 +455,8 @@ class AwardControllerTest {
 
       // The party list must be rendered (GET) before a selection from it is submitted (POST), so
       // that the rows' identities are recorded in-session and can be confirmed stable at POST time.
-      mockMvc.perform(
-          get("/case/outcome-and-awards/land/7/liable-parties/add")
-              .session(httpSession)
-              .sessionAttr(CASE, ebsCase)
-              .sessionAttr(APPLICATION, activeApplication)
-              .sessionAttr(USER_DETAILS, user));
+      final String rowIdentityToken =
+          renderPartyListAndCaptureToken(httpSession, activeApplication);
 
       assertThat(
               mockMvc.perform(
@@ -454,6 +465,7 @@ class AwardControllerTest {
                       .sessionAttr(CASE, ebsCase)
                       .sessionAttr(APPLICATION, activeApplication)
                       .sessionAttr(USER_DETAILS, user)
+                      .param("rowIdentityToken", rowIdentityToken)
                       .param("selectedPartyIds", "-1")))
           .hasStatus3xxRedirection();
 
@@ -572,14 +584,17 @@ class AwardControllerTest {
     }
 
     @Test
-    void alreadyAddedIsDetectedByPersonalDetailsWhenNeitherIdNorEbsIdMatchInABrandNewSession() {
+    void aLegacyOpponentLinkedInAnEarlierSessionIsNotRecognisedAsAlreadyAddedWithoutAStableId() {
       // A legacy case opponent with no real CAAB id was linked to this award in an earlier,
       // separate session (so there is no in-session record of it), and the backend's
       // create-and-link endpoint assigned it a brand new, synthetic EBS id rather than
       // preserving the original one - so neither id nor EBS id can match it back to the
-      // already-linked opponent returned by getAwardLiableParties on this fresh page load. The
-      // personal-details fallback must still recognise it as already-added so its checkbox stays
-      // hidden and it cannot be linked to the award a second time.
+      // already-linked opponent returned by getAwardLiableParties on this fresh page load.
+      // Personal details (name/DOB/relationship) are deliberately NOT used as a fallback here,
+      // since two distinct opponents can share the same personal details, which would wrongly
+      // hide one of them. This is a known, accepted gap for legacy opponents with no stable
+      // backend-persisted identity, tracked separately; it does not affect opponents added
+      // within a single session, which are always tracked by their real id/EBS id.
       final ApplicationDetail activeApplication = new ApplicationDetail();
       activeApplication.setCaseReferenceNumber(ebsCase.getCaseReferenceNumber());
       activeApplication.setOpponents(
@@ -618,7 +633,7 @@ class AwardControllerTest {
               parties ->
                   assertThat((List<?>) parties)
                       .extracting("name", "alreadyAdded")
-                      .containsExactly(tuple("MISS Jane Smith", true)));
+                      .containsExactly(tuple("MISS Jane Smith", false)));
     }
 
     @Test
@@ -654,12 +669,8 @@ class AwardControllerTest {
       // The party list must be rendered (GET) before a selection from it is submitted (POST), so
       // that the rows' identities are recorded in-session and can be confirmed stable at POST
       // time.
-      mockMvc.perform(
-          get("/case/outcome-and-awards/land/7/liable-parties/add")
-              .session(httpSession)
-              .sessionAttr(CASE, ebsCase)
-              .sessionAttr(APPLICATION, activeApplication)
-              .sessionAttr(USER_DETAILS, user));
+      final String rowIdentityToken =
+          renderPartyListAndCaptureToken(httpSession, activeApplication);
 
       // Simulate the backend creating the first opponent successfully (invoking the callback for
       // it), then failing on the second.
@@ -679,6 +690,7 @@ class AwardControllerTest {
                       .sessionAttr(CASE, ebsCase)
                       .sessionAttr(APPLICATION, activeApplication)
                       .sessionAttr(USER_DETAILS, user)
+                      .param("rowIdentityToken", rowIdentityToken)
                       .param("selectedPartyIds", "-1", "-2")))
           .failure()
           .isNotNull();
