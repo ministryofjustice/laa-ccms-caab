@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.SubmissionConstants;
+import uk.gov.laa.ccms.caab.logging.ChangesData;
 import uk.gov.laa.ccms.caab.model.BaseClientDetail;
 import uk.gov.laa.ccms.caab.service.ClientService;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
@@ -89,6 +90,7 @@ public class ClientSubmissionsInProgressController {
    *
    * @return The view name for the submission in progress.
    */
+  @ChangesData
   @GetMapping("/{caseContext}/client-update")
   public String clientUpdateSubmission(
       @PathVariable("caseContext") final CaseContext caseContext,

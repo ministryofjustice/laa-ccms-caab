@@ -256,7 +256,7 @@ class LoggingAcceptanceTest {
   static class ProbeConfiguration {
     @Bean
     SessionCorrelationFilter sessionCorrelationFilter() {
-      return new SessionCorrelationFilter();
+      return new SessionCorrelationFilter(true);
     }
 
     @Bean
