@@ -175,6 +175,7 @@ class SecurityEventsEndToEndTest {
   @Import({
     SecurityConfiguration.class,
     AuthorizationEventsConfiguration.class,
+    AuthenticationEventsConfiguration.class,
     SecurityEventLogger.class
   })
   static class Config {

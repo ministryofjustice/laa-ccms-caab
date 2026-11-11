@@ -10,12 +10,9 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AuthenticationEventPublisher;
-import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -71,8 +68,6 @@ public class SecurityConfiguration {
 
   private final CcmsUserIdentityResolver ccmsUserIdentityResolver;
   private final SecurityEventLogger securityEventLogger;
-
-  private final ApplicationEventPublisher eventPublisher;
 
   /**
    * Configures Spring Security filters and settings, along with endpoint restrictions based on
@@ -237,15 +232,6 @@ public class SecurityConfiguration {
 
       return new CcmsOidcUser(oidcUser, ccmsLoginId, authorities);
     };
-  }
-
-  /**
-   * Publishes Spring Security's authentication events so {@link SecurityEventLogger} can record
-   * them. Without this the success and failure listeners never fire.
-   */
-  @Bean
-  AuthenticationEventPublisher authenticationEventPublisher() {
-    return new DefaultAuthenticationEventPublisher(eventPublisher);
   }
 
   /**
