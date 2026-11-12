@@ -29,6 +29,7 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 import org.springframework.security.web.session.SimpleRedirectInvalidSessionStrategy;
 import uk.gov.laa.ccms.caab.logging.UserContextFilter;
 import uk.gov.laa.ccms.caab.security.CspNonceFilter;
@@ -161,7 +162,18 @@ public class SecurityConfiguration {
             exceptions ->
                 exceptions.accessDeniedHandler(
                     new CsrfLoggingAccessDeniedHandler(securityEventLogger)))
-        .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))
+        .headers(
+            headers ->
+                headers
+                    .frameOptions(frameOptions -> frameOptions.sameOrigin())
+                    .httpStrictTransportSecurity(
+                        hsts -> hsts.maxAgeInSeconds(31536000).includeSubDomains(true))
+                    .referrerPolicy(
+                        referrer -> referrer.policy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                    .permissionsPolicyHeader(
+                        permissions ->
+                            permissions.policy(
+                                "camera=(), microphone=(), geolocation=(), payment=(), usb=()")))
         .addFilterBefore(
             new CspNonceFilter(cspReportEnabled, cspReportOnly, cspUpgradeInsecureRequests, owdUrl),
             BasicAuthenticationFilter.class)
