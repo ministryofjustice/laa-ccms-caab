@@ -76,11 +76,15 @@ The mock registers a single redirect URI,
   last segment of the redirect URI. **The redirect URI registered in EntraID has to use the same
   segment.**
 
-`portal.logoutUrl` points at the mock's own logout, so signing out ends the session at the IdP too
-and the next sign-in prompts again rather than silently reusing it.
+`portal.logoutUrl` points at the mock's own logout. Note that the mock answers `/logout` with a
+confirmation form rather than clearing its session, so the next sign-in may not prompt; its OIDC
+end-session endpoint is `/connect/logout`.
 
-To run against a real EntraID tenant instead, override `OIDC_ISSUER_URI`, `AZURE_CLIENT_ID` and
-`AZURE_CLIENT_SECRET`.
+To run against a real EntraID tenant instead, override `OIDC_ISSUER_URI`, `OIDC_CLIENT_ID`,
+`OIDC_CLIENT_SECRET` and `PORTAL_LOGOUTURL`. The browser registration reads the `OIDC_*`
+credentials, defaulting to the mock's, so setting `AZURE_CLIENT_ID` alone sends the mock's client
+to the real tenant and sign-in fails. Without `PORTAL_LOGOUTURL` you are signed out against the
+mock and the EntraID session stays open.
 
 ## Configuration
 
@@ -92,6 +96,7 @@ To run against a real EntraID tenant instead, override `OIDC_ISSUER_URI`, `AZURE
 | `OIDC_CLIENT_ID` | no (defaults to `AZURE_CLIENT_ID`) | The client the browser sign-in presents. Set it only where `OIDC_ISSUER_URI` points at a mock, which knows its own client and not ours. |
 | `OIDC_CLIENT_SECRET` | no (defaults to `AZURE_CLIENT_SECRET`) | That client's secret. |
 | `POST_LOGOUT_REDIRECT_URI` | yes | Where EntraID returns the user after signing out. |
+| `PORTAL_LOGOUTURL` | no (defaults per profile) | Where the user is sent to sign out. Deployed it is the tenant's logout endpoint; the mock-backed environments and the local profile point it at the mock. Follows whoever signed the user in. |
 | `IS_SILAS_ENABLED` | no (default `false`) | `true` for external/SiLAS tenants, `false` for internal. |
 | `ENTRA_CUSTOM_USER_ID_CLAIM` | when SiLAS is enabled | Name of the claim SiLAS supplies the user's uuid in - `LAA_CCMS_USERNAME`, a bare name rather than a URI. Unset, or absent from the token, the sign-in is refused: the authenticated email address is not a SiLAS identifier, so there is nothing to exchange. |
 | `USER_DETAILS_API_HOSTNAME` | when SiLAS is enabled | Base URL of the User Details API, **including the scheme** - the `url` is the hostname unchanged, deployed and under the local profile alike, so one value works in both. `application-secret.yml` is the exception: it builds the `url` itself from a bare hostname and port, so a value with a scheme there yields `http://https://host:443`, which fails on the first call rather than at startup. |
