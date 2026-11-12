@@ -9,9 +9,12 @@ search:
 #    organisations: 500
 
 portal:
-  # Signs you out of the mock IdP as well as this application, so the next sign-in prompts again
-  # rather than silently reusing the mock's session.
-  logoutUrl: http://localhost:9000/logout
+  # Where the user is sent after signing out. The default is the mock; point PORTAL_LOGOUTURL at
+  # the tenant's logout endpoint when OIDC_ISSUER_URI points at a real tenant, or the EntraID
+  # session is left open and this URL is unreachable.
+  # The mock answers /logout with a confirmation form rather than clearing its session, so the
+  # next sign-in may not prompt.
+  logoutUrl: ${PORTAL_LOGOUTURL:http://localhost:9000/logout}
 
 spring:
   devtools:

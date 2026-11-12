@@ -103,4 +103,19 @@ class LocalProfileSwitchesTest {
               + registration.get("client-secret"));
     }
   }
+
+  @Test
+  @DisplayName("Signing out follows whoever signed the user in")
+  void theLogoutUrlIsEnvironmentBacked() throws Exception {
+    YamlMapFactoryBean factory = new YamlMapFactoryBean();
+    factory.setResources(new FileSystemResource("src/main/resources/application-local.yml"));
+    factory.afterPropertiesSet();
+    Object logoutUrl = ((Map<?, ?>) factory.getObject().get("portal")).get("logoutUrl");
+
+    // Hardcoded, a developer pointed at a real tenant is signed out against the mock: the EntraID
+    // session stays open and the URL is unreachable.
+    assertTrue(
+        logoutUrl.toString().contains("PORTAL_LOGOUTURL"),
+        "logoutUrl must honour PORTAL_LOGOUTURL, was " + logoutUrl);
+  }
 }

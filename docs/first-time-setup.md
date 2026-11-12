@@ -87,7 +87,7 @@ does - a wrong default is wrong on your machine too, rather than only in a clust
 | To run against | Set |
 |---|---|
 | The mock, signing in as a provider | nothing - the defaults are the mock's client and `http://localhost:9000` |
-| A real EntraID tenant for sign-in | `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `OIDC_ISSUER_URI` |
+| A real EntraID tenant for sign-in | `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `OIDC_ISSUER_URI`, and `PORTAL_LOGOUTURL` - without the last one you are signed out against the mock and the EntraID session stays open |
 | Bearer tokens to the four APIs | add `api-oauth2` to `SPRING_PROFILES_ACTIVE`, plus `AZURE_TENANT_ID` and `EBS_API_SCOPE`, `SOA_API_SCOPE`, `CAAB_API_SCOPE`, `ASSESSMENT_API_SCOPE` |
 | An external (SiLAS) identity rather than the internal mapping table | `IS_SILAS_ENABLED=true`, `ENTRA_CUSTOM_USER_ID_CLAIM=LAA_CCMS_USERNAME`, `USER_DETAILS_API_HOSTNAME`, `USER_DETAILS_API_ACCESS_TOKEN` |
 
