@@ -128,7 +128,12 @@ it uses **OIDC, not SAML**.
 - **Redirect URI**: `https://<host>/civil/login/oauth2/code/silas-identity` for each environment.
   The `/civil` comes from `server.servlet.context-path`; the final segment is the spring client
   registration id and must not be changed independently of `application.yml`.
-- **Front-channel logout URL**: the value of `POST_LOGOUT_REDIRECT_URI`.
+- **Post-logout redirect URI**: the value of `POST_LOGOUT_REDIRECT_URI`. This is where EntraID
+  returns the browser after signing the user out, which the application reaches through
+  `portal.logoutUrl`. It is not a front-channel logout endpoint: none is implemented, so do not
+  register one. EntraID would call it with a GET in an iframe, and the only logout this
+  application exposes is Spring's CSRF-protected POST, so such a call would not end the CCMS
+  session.
 - **Scopes**: `openid`, `profile`, `email`.
 - **Optional claim**: add `email` to the ID token, so the internal mapping table lookup has an
   address to work with. Without it the application falls back to `preferred_username`.

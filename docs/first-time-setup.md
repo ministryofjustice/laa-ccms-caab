@@ -15,19 +15,32 @@ Clone this repository, along with the following repositories into the same direc
 
 Follow the steps [here](https://ministryofjustice.github.io/laa-java-community-technical-guidance/java-setup.html#get-started-with-java-versions-and-intellij) (SDKMAN! recommended).
 
-## 3. Build and run dependency images
+## 3. Build the OIDC mock jar
+
+docker-compose builds the mock's image from the clone alongside this repository, and its
+`Dockerfile` copies in a jar rather than building one, so the jar has to exist first. `assemble`
+rather than `build`: that repository's `checkstyleMain` task currently fails on a missing config
+file. See [authentication](./authentication.md) for what the mock is for.
+
+```shell
+cd ../laa-oidc-mock-server
+./gradlew clean assemble
+cd -
+```
+
+## 4. Build and run dependency images
 
 ```shell
 docker-compose --compatibility -p laa-ccms-caab-development up -d --build
 ```
 
-## 4. Complete AWS SSO setup
+## 5. Complete AWS SSO setup
 
 Follow [AWS SSO Setup](https://dsdmoj.atlassian.net/wiki/spaces/CCMS/pages/6045630839/PUI+Developer+Onboarding).
 
 This is required to connect to the development EBS database and SOA instances.
 
-## 5. Run the APIs
+## 6. Run the APIs
 
 Follow the README for the following APIs to get them running locally
 
@@ -47,15 +60,11 @@ Authentication is via OIDC. Locally this runs against the
 SAML mock used before the migration to EntraID. docker-compose builds its image from the clone
 alongside this repository and serves it on port 9000.
 
-Its `Dockerfile` copies in a jar rather than building one, so the jar has to be built first - this
-is the OIDC equivalent of the `mvn package` step the SAML mock needed. Use `assemble` rather than
-`build`: the repository's `checkstyleMain` task currently fails on a missing config file.
+Step 3 builds its jar, which its `Dockerfile` copies in rather than building. To rebuild just the
+mock afterwards:
 
 ```shell
-cd ../laa-oidc-mock-server
-./gradlew clean assemble
-cd -
-
+cd ../laa-oidc-mock-server && ./gradlew clean assemble && cd -
 docker-compose --compatibility -p laa-ccms-caab-development up -d --build laa-ccms-caab-oidc-mock
 ```
 
