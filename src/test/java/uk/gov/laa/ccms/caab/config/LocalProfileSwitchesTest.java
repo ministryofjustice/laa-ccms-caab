@@ -64,4 +64,43 @@ class LocalProfileSwitchesTest {
         api.get("access-token").toString().contains("USER_DETAILS_API_ACCESS_TOKEN"),
         "the token must honour USER_DETAILS_API_ACCESS_TOKEN, was " + api.get("access-token"));
   }
+
+  @SuppressWarnings("unchecked")
+  private Map<String, Object> browserRegistration(final String file) throws Exception {
+    YamlMapFactoryBean factory = new YamlMapFactoryBean();
+    factory.setResources(new FileSystemResource("src/main/resources/" + file));
+    factory.afterPropertiesSet();
+    Map<String, Object> client =
+        (Map<String, Object>)
+            ((Map<String, Object>)
+                    ((Map<String, Object>)
+                            ((Map<String, Object>) factory.getObject().get("spring"))
+                                .get("security"))
+                        .get("oauth2"))
+                .get("client");
+    return (Map<String, Object>)
+        ((Map<String, Object>) client.get("registration")).get("silas-identity");
+  }
+
+  @Test
+  @DisplayName("Who signs the user in is a separate credential from this application's own")
+  void theBrowserLoginHasItsOwnCredentials() throws Exception {
+    // Where OIDC_ISSUER_URI points at a mock, the mock knows its own client and not ours, so the
+    // browser registration cannot be tied to AZURE_CLIENT_ID.
+    for (String file : new String[] {"application.yml", "application-local.yml"}) {
+      Map<String, Object> registration = browserRegistration(file);
+      assertTrue(
+          registration.get("client-id").toString().contains("OIDC_CLIENT_ID"),
+          "client-id must honour OIDC_CLIENT_ID in "
+              + file
+              + ", was "
+              + registration.get("client-id"));
+      assertTrue(
+          registration.get("client-secret").toString().contains("OIDC_CLIENT_SECRET"),
+          "client-secret must honour OIDC_CLIENT_SECRET in "
+              + file
+              + ", was "
+              + registration.get("client-secret"));
+    }
+  }
 }

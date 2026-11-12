@@ -34,8 +34,11 @@ spring:
           # registered against the EntraID app registration, and the one the local OIDC mock
           # server registers for its client.
           silas-identity:
-            client-id: ${AZURE_CLIENT_ID}
-            client-secret: ${AZURE_CLIENT_SECRET}
+            # OIDC_* is whoever signs the user in, AZURE_* is this application's own identity.
+            # They are the same in a tenant-backed environment, and must differ where
+            # OIDC_ISSUER_URI points at a mock, which knows its own client and not ours.
+            client-id: ${OIDC_CLIENT_ID:${AZURE_CLIENT_ID}}
+            client-secret: ${OIDC_CLIENT_SECRET:${AZURE_CLIENT_SECRET}}
             scope: openid,profile,email
             authorization-grant-type: authorization_code
         provider:

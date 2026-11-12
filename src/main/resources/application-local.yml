@@ -35,8 +35,8 @@ spring:
       client:
         registration:
           silas-identity:
-            client-id: ${AZURE_CLIENT_ID:bulk-claim-client}
-            client-secret: ${AZURE_CLIENT_SECRET:secret}
+            client-id: ${OIDC_CLIENT_ID:bulk-claim-client}
+            client-secret: ${OIDC_CLIENT_SECRET:secret}
             scope: openid,profile,email
             authorization-grant-type: authorization_code
         provider:
