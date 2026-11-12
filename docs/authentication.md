@@ -103,6 +103,12 @@ The four backend APIs each authenticate with a static access token by default. T
 only when a registration matching its id exists. So the profile is the whole switch - adding it to
 `SPRING_PROFILES_ACTIVE` moves all four at once, and leaving it off keeps the static tokens.
 
+These registrations use their own provider, `entra-api`, rather than the `silas-identity` one the
+browser login uses. Development, test and feature point `silas-identity` at the OIDC mock, and a
+token from there is rejected by the APIs, which validate against the real tenant. `entra-api`
+names the tenant's token endpoint directly, so a service token comes from EntraID whoever signed
+the user in. `OIDC_ISSUER_URI` deliberately does not affect it.
+
 Each registration needs the API's own `<audience>/.default` scope, because EntraID issues an app
 role only against the scope of the API that exposes it:
 
