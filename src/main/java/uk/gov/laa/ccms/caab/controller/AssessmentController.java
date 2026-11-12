@@ -32,6 +32,7 @@ import reactor.util.function.Tuple3;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
 import uk.gov.laa.ccms.caab.constants.assessment.AssessmentName;
@@ -195,7 +196,7 @@ public class AssessmentController {
     // submit), so use the session application when there is no persisted id.
     final ApplicationDetail application =
         assessmentRulebase.isFinancialAssessment()
-            ? resolveBillingCase(session, assessmentRulebase)
+            ? resolveBillingCase(session, assessmentRulebase, user)
             : resolveAssessmentApplication(session);
 
     // The TDS draft application does not carry a computed default cost limitation, which the OPA
@@ -424,7 +425,9 @@ public class AssessmentController {
    * @return the case to prepopulate the assessment from
    */
   private ApplicationDetail resolveBillingCase(
-      final HttpSession session, final AssessmentRulebase assessmentRulebase) {
+      final HttpSession session,
+      final AssessmentRulebase assessmentRulebase,
+      final UserDetail user) {
     final ApplicationDetail ebsCase =
         Optional.ofNullable((ApplicationDetail) session.getAttribute(CASE))
             .orElseThrow(() -> new CaabApplicationException("Failed to retrieve case"));
@@ -441,6 +444,21 @@ public class AssessmentController {
         || !ebsCase.getAvailableFunctions().contains(requiredFunction)) {
       throw new CaabApplicationException(
           "User is not authorised to run the %s assessment for this case"
+              .formatted(assessmentRulebase.getType()));
+    }
+
+    // The case supporting the action says nothing about whether this user holds it: available
+    // functions are a property of the case, as BillingController reads them to decide whether
+    // billing is offered at all. This interview sits under /application, which carries no
+    // user-function rule, so the functions /case/billing/** requires are checked here too.
+    final List<String> userFunctions = Optional.ofNullable(user.getFunctions()).orElseGet(List::of);
+    if (!userFunctions.containsAll(
+        List.of(
+            UserRole.VIEW_CASE_DETAILS.getCode(),
+            UserRole.VIEW_CASE_BILL.getCode(),
+            requiredFunction))) {
+      throw new CaabApplicationException(
+          "User does not hold the functions needed to run the %s assessment"
               .formatted(assessmentRulebase.getType()));
     }
 
