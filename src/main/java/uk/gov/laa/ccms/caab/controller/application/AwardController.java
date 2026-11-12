@@ -800,6 +800,7 @@ public class AwardController {
         Optional.ofNullable(selectedPartyKeys).orElse(List.of()).stream()
             .filter(StringUtils::hasText)
             .collect(Collectors.toSet());
+    model.addAttribute("selectedPartyKeys", keys);
     if (keys.isEmpty()) {
       model.addAttribute("partyListErrorMessage", "case.partyListScreen.selectionErrorMessage");
       return renderPartyList(candidates, awardPath, awardId, model);

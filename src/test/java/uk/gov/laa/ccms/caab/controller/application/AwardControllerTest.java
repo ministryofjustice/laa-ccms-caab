@@ -384,7 +384,8 @@ class AwardControllerTest {
       assertThat(mockMvc.perform(submit("id-1", "ebs-E1")))
           .hasViewName("application/party-list-screen")
           .model()
-          .containsEntry("invalidPartyKeys", Set.of("ebs-E1"));
+          .containsEntry("invalidPartyKeys", Set.of("ebs-E1"))
+          .containsEntry("selectedPartyKeys", Set.of("id-1", "ebs-E1"));
 
       verifyNoInteractions(caseOutcomeService);
       assertThat(session.getAttribute(CREATED_LIABLE_PARTY_EBS_IDS)).isNull();

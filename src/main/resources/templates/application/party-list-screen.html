@@ -61,6 +61,7 @@
                        type="checkbox"
                        name="selectedPartyKeys"
                        th:value="${party.key}"
+                       th:checked="${selectedPartyKeys != null and selectedPartyKeys.contains(party.key)}"
                        th:attr="aria-label=|#{case.partyListScreen.select} ${party.name}|" />
                 <label class="govuk-checkboxes__label"
                        th:for="|selected-party-${party.key}|"></label>

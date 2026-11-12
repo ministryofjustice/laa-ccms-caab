@@ -178,6 +178,13 @@ class LiablePartiesTemplateRenderTest {
   }
 
   @Test
+  void reticksSubmittedSelections() throws Exception {
+    assertThat(renderPartyList("empty", "false", "selected", "id-11"))
+        .containsPattern("value=\"id-11\"[^>]*checked=\"checked\"");
+    assertThat(renderPartyList("empty", "false")).doesNotContain("checked=\"checked\"");
+  }
+
+  @Test
   void unavailablePartyListHasNoSelectableRowsOrForm() throws Exception {
     assertThat(
             renderPartyList(
@@ -303,6 +310,7 @@ class LiablePartiesTemplateRenderTest {
         @RequestParam(required = false) String error,
         @RequestParam(required = false) Set<String> invalid,
         @RequestParam(required = false) Boolean unavailable,
+        @RequestParam(required = false) Set<String> selected,
         final Model model) {
       final List<PartyListRow> parties =
           empty
@@ -324,6 +332,7 @@ class LiablePartiesTemplateRenderTest {
       model.addAttribute("partyListErrorMessage", error);
       model.addAttribute("invalidPartyKeys", invalid);
       model.addAttribute("partyListUnavailable", unavailable);
+      model.addAttribute("selectedPartyKeys", selected);
       return "application/party-list-screen";
     }
   }
