@@ -148,3 +148,4 @@ server:
     session:
       cookie:
         name: CAAB_JSESSIONID
+        secure: false
