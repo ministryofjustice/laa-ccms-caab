@@ -58,6 +58,8 @@ public class AbsoluteSessionTimeoutFilter extends OncePerRequestFilter {
     final Object authenticatedAt = session.getAttribute(AUTHENTICATED_AT);
 
     if (authenticatedAt == null) {
+      // SessionStartRecordingSuccessHandler stamps this at sign-in. Stamping here as well covers
+      // a session authenticated by some other path, rather than failing it closed for no gain.
       session.setAttribute(AUTHENTICATED_AT, Instant.now());
       filterChain.doFilter(request, response);
       return;

@@ -34,6 +34,7 @@ import uk.gov.laa.ccms.caab.security.CcmsUserResolutionException;
 import uk.gov.laa.ccms.caab.security.CspNonceFilter;
 import uk.gov.laa.ccms.caab.security.CsrfLoggingAccessDeniedHandler;
 import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
+import uk.gov.laa.ccms.caab.security.SessionStartRecordingSuccessHandler;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -194,6 +195,7 @@ public class SecurityConfiguration {
             oauth2 ->
                 oauth2
                     .userInfoEndpoint(userInfo -> userInfo.oidcUserService(oidcUserService()))
+                    .successHandler(new SessionStartRecordingSuccessHandler())
                     .failureHandler(authenticationFailureHandler()))
         .build();
   }
