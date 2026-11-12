@@ -74,6 +74,8 @@ public class EditClientDeceasedDetailsController {
       Model model) {
 
     clientDeceasedDetailsValidator.validate(deceasedDetails, bindingResult);
+    clientDeceasedDetailsValidator.validateNotBeforeDateOfBirth(
+        deceasedDetails, clientFlowFormData.getBasicDetails(), bindingResult);
 
     if (bindingResult.hasErrors()) {
       return "application/sections/client-deceased-details";

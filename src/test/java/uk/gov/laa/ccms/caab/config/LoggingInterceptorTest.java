@@ -30,6 +30,8 @@ import org.springframework.web.servlet.ModelAndView;
 public class LoggingInterceptorTest {
 
   private Logger loggerMock;
+  private final uk.gov.laa.ccms.caab.security.SecurityEventLogger securityEventLogger =
+      mock(uk.gov.laa.ccms.caab.security.SecurityEventLogger.class);
   private LoggingInterceptor loggingInterceptor;
   private HttpServletRequest request;
   private HttpServletResponse response;
@@ -38,12 +40,167 @@ public class LoggingInterceptorTest {
   @BeforeEach
   public void setUp() {
     loggerMock = mock(Logger.class); // Initialize the loggerMock
-    loggingInterceptor = new LoggingInterceptor();
+    loggingInterceptor = new LoggingInterceptor(securityEventLogger);
     loggingInterceptor.setLog(loggerMock);
 
     request = mock(HttpServletRequest.class);
     response = mock(HttpServletResponse.class);
     session = mock(HttpSession.class);
+  }
+
+  @Test
+  public void afterCompletionReportsDataAccessWithIdentifiersOnly() throws Exception {
+    var req = requestWithActiveCase("GET", "/case/overview");
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        null);
+
+    verify(securityEventLogger).dataAccessed("VIEW", true, "300001", "CL1", "/case/overview");
+  }
+
+  @Test
+  public void aPostIsRecordedAsAChange() throws Exception {
+    var req = requestWithActiveCase("POST", "/case/overview");
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        null);
+
+    verify(securityEventLogger).dataAccessed("CHANGE", true, "300001", "CL1", "/case/overview");
+  }
+
+  @Test
+  public void aGetHandlerMarkedAsChangingDataIsRecordedAsAChange() throws Exception {
+    var req = requestWithActiveCase("GET", "/case/evidence/1/remove");
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testRemove"),
+        null);
+
+    verify(securityEventLogger)
+        .dataAccessed("CHANGE", true, "300001", "CL1", "/case/evidence/1/remove");
+  }
+
+  @Test
+  public void aFailedRequestIsRecordedAsAFailure() throws Exception {
+    var req = requestWithActiveCase("GET", "/case/overview");
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        new IllegalStateException("boom"));
+
+    verify(securityEventLogger).dataAccessed("VIEW", false, "300001", "CL1", "/case/overview");
+  }
+
+  @Test
+  public void afterCompletionReportsNothingWithoutACaseOrClient() throws Exception {
+    var req = new org.springframework.mock.web.MockHttpServletRequest("GET", "/home");
+    req.setSession(new org.springframework.mock.web.MockHttpSession());
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        null);
+
+    verifyNoInteractions(securityEventLogger);
+  }
+
+  @Test
+  public void theDataAccessEventNamesTheRouteNotTheIdentifiersInThePath() throws Exception {
+    var req = requestWithActiveCase("GET", "/case/300001/overview");
+    req.setAttribute(
+        org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE,
+        "/case/{reference}/overview");
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        null);
+
+    verify(securityEventLogger)
+        .dataAccessed("VIEW", true, "300001", "CL1", "/case/{reference}/overview");
+  }
+
+  @Test
+  public void aFailureThatAnExceptionHandlerResolvedIsRecordedAsAFailure() throws Exception {
+    var req = requestWithActiveCase("GET", "/case/overview");
+    req.setAttribute(
+        org.springframework.web.servlet.DispatcherServlet.EXCEPTION_ATTRIBUTE,
+        new IllegalStateException("handled elsewhere"));
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        null);
+
+    verify(securityEventLogger).dataAccessed("VIEW", false, "300001", "CL1", "/case/overview");
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "GET,VIEW",
+    "HEAD,VIEW",
+    "OPTIONS,VIEW",
+    "TRACE,VIEW",
+    "POST,CHANGE",
+    "PUT,CHANGE",
+    "PATCH,CHANGE",
+    "DELETE,CHANGE"
+  })
+  public void theHttpMethodDecidesWhetherARequestViewsOrChanges(String method, String action)
+      throws Exception {
+    var req = requestWithActiveCase(method, "/case/overview");
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        null);
+
+    verify(securityEventLogger).dataAccessed(action, true, "300001", "CL1", "/case/overview");
+  }
+
+  @Test
+  public void aMarkedHandlerIsAChangeEvenForAHeadRequest() throws Exception {
+    var req = requestWithActiveCase("HEAD", "/case/evidence/1/remove");
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testRemove"),
+        null);
+
+    verify(securityEventLogger)
+        .dataAccessed("CHANGE", true, "300001", "CL1", "/case/evidence/1/remove");
+  }
+
+  private static org.springframework.mock.web.MockHttpServletRequest requestWithActiveCase(
+      String method, String uri) {
+    var mockSession = new org.springframework.mock.web.MockHttpSession();
+    mockSession.setAttribute(
+        "activeCase",
+        uk.gov.laa.ccms.caab.bean.ActiveCase.builder()
+            .caseReferenceNumber("300001")
+            .clientReferenceNumber("CL1")
+            .client("Jane Doe")
+            .build());
+    var req = new org.springframework.mock.web.MockHttpServletRequest(method, uri);
+    req.setSession(mockSession);
+    req.setAttribute(
+        org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, uri);
+    return req;
   }
 
   @Test
@@ -111,6 +268,12 @@ public class LoggingInterceptorTest {
       return "test"; // Return the name of the view if it's relevant
     }
 
+    @GetMapping("/remove")
+    @uk.gov.laa.ccms.caab.logging.ChangesData
+    public String testRemove() {
+      return "redirect:/get";
+    }
+
     @GetMapping("/post")
     public String testPost() {
       // Add some logic to the method if needed
@@ -123,5 +286,22 @@ public class LoggingInterceptorTest {
       // Add some logic to the method if needed
       return "test"; // Return the name of the view if it's relevant
     }
+  }
+
+  @Test
+  public void aSessionInvalidatedByALogoutDoesNotBreakTheAfterCompletion() throws Exception {
+    var invalidated = mock(HttpSession.class);
+    when(invalidated.getAttribute(org.mockito.ArgumentMatchers.anyString()))
+        .thenThrow(new IllegalStateException("session invalidated"));
+    var req = new org.springframework.mock.web.MockHttpServletRequest("GET", "/case/overview");
+    req.setSession(invalidated);
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        null);
+
+    verifyNoInteractions(securityEventLogger);
   }
 }

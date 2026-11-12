@@ -88,7 +88,7 @@ public interface LiablePartiesDisplayMapper {
       source = "opponent",
       qualifiedByName = "relationshipToCase")
   @Mapping(target = "address", source = "opponent.address", qualifiedByName = "compactAddress")
-  @Mapping(target = "editable", source = "opponent.ebsId", qualifiedByName = "awardPartyEditable")
+  @Mapping(target = "editable", source = "opponent", qualifiedByName = "awardPartyEditable")
   @Mapping(target = "organisation", expression = "java(OpponentUtil.isOrganisation(opponent))")
   LiablePartyDisplay toLiablePartyDisplay(
       LiablePartyDetail party,
@@ -99,7 +99,7 @@ public interface LiablePartiesDisplayMapper {
   default String partyName(
       final OpponentDetail opponent, @Context final LiablePartiesMappingContext context) {
     if (OpponentUtil.isOrganisation(opponent)) {
-      if (awardPartyEditable(opponent.getEbsId())) {
+      if (awardPartyEditable(opponent)) {
         return opponent.getOrganisationName();
       }
       return StringUtils.hasText(opponent.getContactNameRole())
@@ -122,9 +122,18 @@ public interface LiablePartiesDisplayMapper {
         .getDescription();
   }
 
+  /**
+   * Checks whether a party is award-created and, for individuals, not shared.
+   *
+   * @param opponent the party whose edit link is being determined
+   * @return true for award-created organisations and non-shared award-created individuals
+   */
   @Named("awardPartyEditable")
-  default boolean awardPartyEditable(final String ebsId) {
-    return ebsId != null && ebsId.toUpperCase(Locale.ROOT).startsWith("AWARD");
+  default boolean awardPartyEditable(final OpponentDetail opponent) {
+    final String ebsId = opponent.getEbsId();
+    return ebsId != null
+        && ebsId.toUpperCase(Locale.ROOT).startsWith("AWARD")
+        && (OpponentUtil.isOrganisation(opponent) || !Boolean.TRUE.equals(opponent.getSharedInd()));
   }
 
   @Named("compactAddress")

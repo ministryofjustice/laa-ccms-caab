@@ -4,7 +4,7 @@
             <h2 class="govuk-summary-card__title" th:text="${title}"/>
         </div>
         <div class="govuk-summary-card__content">
-            <div class="govuk-summary-list">
+            <dl class="govuk-summary-list">
                 <th:block th:each="item : ${items}">
                     <div class="govuk-summary-list__row">
 
@@ -21,7 +21,7 @@
                         </dd>
                     </div>
                 </th:block>
-            </div>
+            </dl>
         </div>
     </div>
 </th:block>

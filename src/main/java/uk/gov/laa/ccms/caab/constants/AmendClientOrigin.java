@@ -10,7 +10,7 @@ import lombok.Getter;
  */
 @Getter
 public enum AmendClientOrigin {
-  CASE_OVERVIEW("/case/overview", "site.cancelAndReturnToCaseOverview"),
+  CASE_OVERVIEW("/case/overview", "site.returnToCaseOverview"),
   VIEW_CASE_DETAILS("/case/details", "site.cancelAndReturnToCaseDetails"),
   AMEND_CASE("/amendments/summary", "site.cancelAndReturnToAmendmentsSummary");
 

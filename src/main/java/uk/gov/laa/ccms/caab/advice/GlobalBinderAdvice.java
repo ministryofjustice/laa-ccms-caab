@@ -38,6 +38,7 @@ public class GlobalBinderAdvice {
    */
   @InitBinder
   public void initBinder(final WebDataBinder binder) {
+    binder.setBindingErrorProcessor(new SafeBindingErrorProcessor());
     binder.registerCustomEditor(String.class, new ControlCharacterStrippingEditor());
 
     // Registered unconditionally and deliberately: Spring creates the binder with a null target and
@@ -46,8 +47,9 @@ public class GlobalBinderAdvice {
     // BaselineTextValidator.supports accepts any type.
     binder.addValidators(baselineTextValidator);
 
-    // Descriptions come from the EBS API, never from the request; a leading wildcard also covers
-    // the nested path under a client flow bean.
-    binder.setDisallowedFields("*countryOfOriginDescription");
+    // These come from the EBS API or a validated form, never from the request; a leading wildcard
+    // also covers the nested path under a client flow bean.
+    binder.setDisallowedFields(
+        "*countryOfOriginDescription", "*deceasedDetails.dateOfDeath", "*deceasedFlag");
   }
 }

@@ -30,6 +30,7 @@ import uk.gov.laa.ccms.caab.bean.validators.application.ApplicationSectionValida
 import uk.gov.laa.ccms.caab.constants.AmendClientOrigin;
 import uk.gov.laa.ccms.caab.constants.CcmsModule;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
+import uk.gov.laa.ccms.caab.logging.ChangesData;
 import uk.gov.laa.ccms.caab.mapper.EvidenceMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.BaseApplicationDetail;
@@ -72,6 +73,7 @@ public class AmendCaseController {
    * @param httpSession The current HTTP session to manage and store session attributes.
    * @return A string representing the redirect URL to the amendments summary page.
    */
+  @ChangesData
   @GetMapping("/amendments/create")
   public String startAmendment(
       @SessionAttribute(CASE) final ApplicationDetail detail,

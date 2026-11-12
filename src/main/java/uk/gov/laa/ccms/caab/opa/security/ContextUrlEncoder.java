@@ -50,8 +50,6 @@ public class ContextUrlEncoder {
   private static String deflate(final String inputValue) {
     final String outputValue =
         StringUtils.replaceEach(inputValue, new String[] {"%"}, new String[] {"*"});
-    log.debug("deflate() input ...[" + inputValue + "]");
-    log.debug("deflate() output ..[" + outputValue + "]");
     return outputValue;
   }
 
@@ -64,8 +62,6 @@ public class ContextUrlEncoder {
   private static String inflate(final String inputValue) {
     final String outputValue =
         StringUtils.replaceEach(inputValue, new String[] {"*"}, new String[] {"%"});
-    log.debug("inflate() input ...[" + inputValue + "]");
-    log.debug("inflate() output ..[" + outputValue + "]");
     return outputValue;
   }
 }

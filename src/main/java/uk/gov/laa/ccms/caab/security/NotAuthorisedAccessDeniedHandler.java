@@ -23,7 +23,7 @@ import org.springframework.security.web.csrf.CsrfException;
  * <p>That page is the recorded page matching the referring one, if it was shown by a plain page
  * load, so loading it again is safe; otherwise the last page that was; otherwise the home page. The
  * redirect always uses the recorded page, never the Referer header itself. CSRF failures and
- * background requests get the default 403.
+ * background requests are passed to the delegate, which answers 403.
  */
 public class NotAuthorisedAccessDeniedHandler implements AccessDeniedHandler {
 
@@ -32,7 +32,19 @@ public class NotAuthorisedAccessDeniedHandler implements AccessDeniedHandler {
 
   private static final String HOME_PATH = "/home";
 
-  private final AccessDeniedHandler forbiddenHandler = new AccessDeniedHandlerImpl();
+  private final AccessDeniedHandler forbiddenHandler;
+
+  public NotAuthorisedAccessDeniedHandler() {
+    this(new AccessDeniedHandlerImpl());
+  }
+
+  /**
+   * @param forbiddenHandler answers the refusals this one does not redirect, so that a CSRF failure
+   *     is still logged where that is what the delegate does.
+   */
+  public NotAuthorisedAccessDeniedHandler(AccessDeniedHandler forbiddenHandler) {
+    this.forbiddenHandler = forbiddenHandler;
+  }
 
   @Override
   public void handle(

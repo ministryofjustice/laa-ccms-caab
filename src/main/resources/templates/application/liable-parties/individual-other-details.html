@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="|#{service.name} - Opponents and Other Parties - Individual Other Details|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a class="govuk-back-link"
+       th:href="@{${individualFormUrl + '/cancel'}(journeyToken=${journeyToken})}"
+       th:text="${awardPath == 'land' or awardPath == 'asset'} ? #{site.cancelAndReturnToInterestedParties} : #{site.cancelAndReturnToLiableParties}"></a>
+  </div>
+  <div id="main-content" th:fragment="content">
+    <form th:action="@{${individualFormUrl + '/other-details'}}"
+          th:object="${liablePartyOtherDetails}" method="post">
+      <input type="hidden" name="journeyToken" th:value="${journeyToken}">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <h1 class="govuk-heading-l">Opponents and other parties</h1>
+      <p class="govuk-body-l" th:text="#{application.opponents.leadParagraph}"></p>
+      <h2 class="govuk-heading-m">Individual other details</h2>
+      <div th:replace="~{application/partials/opponent-fragments :: individualOtherDetails}"></div>
+      <div class="govuk-button-group">
+        <button type="submit" class="govuk-button" data-module="govuk-button"
+                name="action" value="confirm" th:text="#{site.confirm}"></button>
+        <button type="submit" class="govuk-button govuk-button--secondary" data-module="govuk-button"
+                name="action" value="back" formnovalidate th:text="#{site.back}"></button>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

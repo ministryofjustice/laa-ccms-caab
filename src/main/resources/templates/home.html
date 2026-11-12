@@ -30,34 +30,28 @@
                     You currently have:
                 </div>
                 <ul class="govuk-list">
-                   <div th:if="${noActions}">
-                        <li>
-                            <div th:text="${actionsMsg}"> </div>
-                        </li>
-                    </div>
-                    <div th:unless="${noActions}">
-                        <li>
-                            <a class="govuk-link"
-                               sec:authorize="hasAuthority(@roles.viewNotifications)"
-                               th:text="${actionsMsg}"
-                               th:href="@{/notifications/search?notification_type=A}"></a>
-                            <span sec:authorize="!hasAuthority(@roles.viewNotifications)" th:text="${actionsMsg}"></span>
-                        </li>
-                    </div>
-                    <div th:if="${noNotifications}">
-                        <li>
-                            <div th:text="${notificationsMsg}"></div>
-                        </li>
-                    </div>
-                    <div th:unless="${noNotifications}">
-                        <li>
-                            <a class="govuk-link"
-                               sec:authorize="hasAuthority(@roles.viewNotifications)"
-                               th:text="${notificationsMsg}"
-                               th:href="@{/notifications/search?notification_type=N}"></a>
-                            <span sec:authorize="!hasAuthority(@roles.viewNotifications)" th:text="${notificationsMsg}"></span>
-                        </li>
-                    </div>
+                    <li th:if="${noActions}">
+                        <div th:text="${actionsMsg}"> </div>
+                    </li>
+                    <li th:unless="${noActions}">
+                        <a class="govuk-link"
+                           sec:authorize="hasAuthority(@roles.viewNotifications)"
+                           th:text="${actionsMsg}"
+                           th:href="@{/notifications/search?notification_type=A}"></a>
+                        <span sec:authorize="!hasAuthority(@roles.viewNotifications)"
+                              th:text="${actionsMsg}"></span>
+                    </li>
+                    <li th:if="${noNotifications}">
+                        <div th:text="${notificationsMsg}"></div>
+                    </li>
+                    <li th:unless="${noNotifications}">
+                        <a class="govuk-link"
+                           sec:authorize="hasAuthority(@roles.viewNotifications)"
+                           th:text="${notificationsMsg}"
+                           th:href="@{/notifications/search?notification_type=N}"></a>
+                        <span sec:authorize="!hasAuthority(@roles.viewNotifications)"
+                              th:text="${notificationsMsg}"></span>
+                    </li>
                 </ul>
             </div>
 

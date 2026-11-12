@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<!--
+  Minimal harness that renders the client summary fragment without pulling in layout.html.
+  Used by ClientSummaryRenderTest.
+-->
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:object="${clientFlowFormData}">
+  <div th:replace="~{application/partials/client-fragments :: clientSummaryFragment}"></div>
+</div>
+</body>
+</html>

@@ -1,6 +1,6 @@
 plugins {
-    id 'uk.gov.justice.service.laa.laa-spring-boot-gradle-plugin' version '3.1.3'
-    id 'com.diffplug.spotless' version '8.10.4'
+    id 'uk.gov.justice.service.laa.laa-spring-boot-gradle-plugin' version '3.1.4'
+    id 'com.diffplug.spotless' version '8.11.0'
 }
 
 configurations {
@@ -32,7 +32,13 @@ repositories {
     }
 
     // Configure repositories using the defined GitHub config
-    githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-data-api')
+    def dataApiRepository = githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-data-api')
+    exclusiveContent {
+        forRepositories(dataApiRepository)
+        filter {
+            includeModule('uk.gov.laa.ccms.data', 'data-api')
+        }
+    }
     githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-caab-api')
     githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-soa-gateway-api')
     githubRepoConfig('https://maven.pkg.github.com/ministryofjustice/laa-ccms-caab-assessment-api')
@@ -76,12 +82,12 @@ configurations.configureEach {
             details.useVersion '1.86'
             details.because 'Override to remediate vulnerability; not covered by the Spring Boot dependency BOM'
         }
-        // Logback classic pulled in by Spring Boot starter logging
         if (details.requested.group == 'org.hibernate.validator'
                 && details.requested.name == 'hibernate-validator') {
             details.useVersion '9.1.5.Final'
             details.because 'Remediate Expression Language Injection (SNYK-JAVA-ORGHIBERNATEVALIDATOR-20877468)'
         }
+        // Logback classic pulled in by Spring Boot starter logging
         if (details.requested.group == 'ch.qos.logback'
                 && details.requested.name in ['logback-classic', 'logback-core']) {
             details.useVersion '1.6.5'
@@ -117,7 +123,8 @@ dependencies {
     // converted to PDF, the same pairing the legacy PUI uses for its financial summaries.
     implementation 'org.xhtmlrenderer:flying-saucer-pdf-openpdf:9.4.0'
 
-    implementation 'uk.gov.laa.ccms.data:data-api:0.3.0'
+    implementation 'uk.gov.laa.ccms.data:data-api:0.5.1'
+    implementation 'org.openapitools:jackson-databind-nullable:0.2.13'
 
     // 0.1.3 carries GetInvoiceData, needed to copy a rejected bill.
     implementation 'uk.gov.laa.ccms.soa.gateway:soa-gateway-api:0.1.3'
@@ -132,7 +139,7 @@ dependencies {
     implementation 'org.mapstruct:mapstruct:1.6.3'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 
-    implementation 'org.apache.tika:tika-core:4.1.0'
+    implementation 'org.apache.tika:tika-core:4.2.0'
 
     // Starters
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
@@ -144,7 +151,7 @@ dependencies {
     implementation 'org.springframework.data:spring-data-commons'
 
 	// AWS S3 Integration
-	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.2.0')
+	implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.2.1')
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter'
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
 	implementation 'software.amazon.awssdk:sts'
@@ -153,7 +160,7 @@ dependencies {
 
     implementation 'org.json:json:20260814'
 
-    implementation 'io.swagger.core.v3:swagger-annotations:2.2.55'
+    implementation 'io.swagger.core.v3:swagger-annotations:3.0.0'
 
     //SAML security
     implementation 'org.springframework.boot:spring-boot-starter-security-saml2'
@@ -178,7 +185,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-    testImplementation 'io.projectreactor:reactor-test:3.8.7'
+    testImplementation 'io.projectreactor:reactor-test:3.8.8'
 
     integrationTestImplementation 'org.wiremock:wiremock-standalone:3.13.2'
 
