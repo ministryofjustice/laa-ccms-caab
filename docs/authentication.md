@@ -91,9 +91,9 @@ To run against a real EntraID tenant instead, override `OIDC_ISSUER_URI`, `AZURE
 | `AZURE_CLIENT_SECRET` | yes | App registration client secret. Hold in a secret, never in values. |
 | `POST_LOGOUT_REDIRECT_URI` | yes | Where EntraID returns the user after signing out. |
 | `IS_SILAS_ENABLED` | no (default `false`) | `true` for external/SiLAS tenants, `false` for internal. |
-| `ENTRA_CUSTOM_USER_ID_CLAIM` | when SiLAS is enabled | Name of the claim SiLAS supplies the user's uuid in - `LAA_CCMS_USERNAME`, a bare name rather than a URI. Required for external users; without it there is nothing to exchange. When unset or absent from the token, the authenticated identity is exchanged through the User Details API instead. |
-| `USER_DETAILS_API_HOSTNAME` | fallback only | Base URL of the User Details API, **including the scheme** - the deployed `url` is the hostname unchanged. In `application-local.yml` and `application-secret.yml` the opposite holds: the `url` there prepends `https://`, so the hostname must be bare. Getting this wrong yields `http://https://host:443`, which fails on the first call rather than at startup. |
-| `USER_DETAILS_API_ACCESS_TOKEN` | fallback only | Sent as `X-Authorization`. Confirmed against the dev API: `Authorization` returns `401 No API access token provided`, and an invalid value returns `401 Invalid API access token provided`. |
+| `ENTRA_CUSTOM_USER_ID_CLAIM` | when SiLAS is enabled | Name of the claim SiLAS supplies the user's uuid in - `LAA_CCMS_USERNAME`, a bare name rather than a URI. Unset, or absent from the token, the sign-in is refused: the authenticated email address is not a SiLAS identifier, so there is nothing to exchange. |
+| `USER_DETAILS_API_HOSTNAME` | when SiLAS is enabled | Base URL of the User Details API, **including the scheme** - the deployed `url` is the hostname unchanged. In `application-local.yml` and `application-secret.yml` the opposite holds: the `url` there prepends `https://`, so the hostname must be bare. Getting this wrong yields `http://https://host:443`, which fails on the first call rather than at startup. |
+| `USER_DETAILS_API_ACCESS_TOKEN` | when SiLAS is enabled | Sent as `X-Authorization`. Confirmed against the dev API: `Authorization` returns `401 No API access token provided`, and an invalid value returns `401 Invalid API access token provided`. |
 
 ## Calling the backend APIs
 

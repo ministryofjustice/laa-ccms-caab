@@ -110,8 +110,8 @@ laa:
       # claim carrying the CCMS username, unnamespaced - LAA_CCMS_USERNAME in Dev External.
       silas-enabled: false
       custom-user-id-claim: ""
-    # Bare hostname: the url below prepends the scheme. Only used as the fallback when the
-    # claim is absent.
+    # Bare hostname: the url below prepends the scheme. Used for every external sign-in, so it
+    # only matters with silas-enabled true.
     user-details-api:
       hostname: localhost
       port: 8090

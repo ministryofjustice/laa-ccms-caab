@@ -113,8 +113,8 @@ laa:
       # SiLAS emits claims unnamespaced, so this is a bare name: LAA_CCMS_USERNAME.
       silas-enabled: ${IS_SILAS_ENABLED:false}
       custom-user-id-claim: ${ENTRA_CUSTOM_USER_ID_CLAIM:}
-    # The fallback for a tenant whose claim supplies an identifier rather than a username.
-    # USER_DETAILS_API_HOSTNAME carries the scheme, as the other hostnames here do.
+    # Every external sign-in is exchanged here, because the claim carries a SiLAS uuid rather
+    # than a username. USER_DETAILS_API_HOSTNAME carries the scheme, as the others here do.
     # The token is sent as X-Authorization, not Authorization.
     user-details-api:
       hostname: ${USER_DETAILS_API_HOSTNAME:}
