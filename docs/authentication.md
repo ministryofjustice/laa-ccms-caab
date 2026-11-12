@@ -86,9 +86,11 @@ To run against a real EntraID tenant instead, override `OIDC_ISSUER_URI`, `AZURE
 
 | Variable | Required | Description |
 |---|---|---|
-| `AZURE_TENANT_ID` | yes | EntraID tenant, used to build the issuer and logout URLs. |
-| `AZURE_CLIENT_ID` | yes | App registration client id. |
-| `AZURE_CLIENT_SECRET` | yes | App registration client secret. Hold in a secret, never in values. |
+| `AZURE_TENANT_ID` | yes | EntraID tenant. Builds the issuer, the logout URL and the `entra-api` token endpoint. |
+| `AZURE_CLIENT_ID` | yes | This application's own client id, used by the four API registrations. |
+| `AZURE_CLIENT_SECRET` | yes | That client's secret. Hold in a secret, never in values. |
+| `OIDC_CLIENT_ID` | no (defaults to `AZURE_CLIENT_ID`) | The client the browser sign-in presents. Set it only where `OIDC_ISSUER_URI` points at a mock, which knows its own client and not ours. |
+| `OIDC_CLIENT_SECRET` | no (defaults to `AZURE_CLIENT_SECRET`) | That client's secret. |
 | `POST_LOGOUT_REDIRECT_URI` | yes | Where EntraID returns the user after signing out. |
 | `IS_SILAS_ENABLED` | no (default `false`) | `true` for external/SiLAS tenants, `false` for internal. |
 | `ENTRA_CUSTOM_USER_ID_CLAIM` | when SiLAS is enabled | Name of the claim SiLAS supplies the user's uuid in - `LAA_CCMS_USERNAME`, a bare name rather than a URI. Unset, or absent from the token, the sign-in is refused: the authenticated email address is not a SiLAS identifier, so there is nothing to exchange. |
