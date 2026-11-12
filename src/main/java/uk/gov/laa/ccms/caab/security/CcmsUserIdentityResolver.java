@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Component;
 import uk.gov.laa.ccms.caab.config.EntraProperties;
+import uk.gov.laa.ccms.caab.logging.UserIdentifier;
 import uk.gov.laa.ccms.caab.model.user.CcmsUserDetails;
 import uk.gov.laa.ccms.caab.model.user.EntraUserMapping;
 import uk.gov.laa.ccms.caab.model.user.UserViewModel;
@@ -88,7 +89,9 @@ public class CcmsUserIdentityResolver {
                                 + "XXCCMS_ENTRA_ID_USERS mapping table - access denied")
                             .formatted(entraEmail)));
 
-    log.info("Resolved EntraID identity to CCMS user [{}] from the EBS mapping table", loginId);
+    log.info(
+        "Resolved EntraID identity to CCMS user [{}] from the EBS mapping table",
+        UserIdentifier.pseudonymise(loginId));
     return loginId;
   }
 
@@ -129,7 +132,9 @@ public class CcmsUserIdentityResolver {
                                 + "User Details API - access denied")
                             .formatted(silasId)));
 
-    log.info("Resolved SiLAS identity to CCMS user [{}] from the User Details API", loginId);
+    log.info(
+        "Resolved SiLAS identity to CCMS user [{}] from the User Details API",
+        UserIdentifier.pseudonymise(loginId));
     return loginId;
   }
 

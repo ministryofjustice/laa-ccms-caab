@@ -243,7 +243,7 @@ public class SecurityConfiguration {
   @Bean
   AuthenticationFailureHandler authenticationFailureHandler() {
     return (request, response, exception) -> {
-      log.error("EntraID authentication failed: {}", exception.getMessage(), exception);
+      log.error("EntraID authentication failed: {}", exception.getClass().getSimpleName());
       securityEventLogger.authenticationFailed(exception);
       response.sendRedirect(request.getContextPath() + AUTHENTICATION_ERROR_PATH);
     };
