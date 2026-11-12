@@ -74,6 +74,8 @@ import uk.gov.laa.ccms.data.model.UserDetails;
 @Slf4j
 public class EbsApiClient extends BaseApiClient {
 
+  private static final String ENTRA_MAPPING_URI = "/users/entra-mapping?entra-email={entraEmail}";
+
   private final EbsApiClientErrorHandler ebsApiClientErrorHandler;
   private final WebClient ebsApiWebClient;
 
@@ -133,18 +135,15 @@ public class EbsApiClient extends BaseApiClient {
   public Mono<EntraUserMapping> getEntraUserMapping(final String entraEmail) {
     return webClient
         .get()
-        .uri(
-            uriBuilder ->
-                uriBuilder
-                    .path("/users/entra-mapping")
-                    .queryParam("entra-email", entraEmail)
-                    .build())
+        // A template variable, so the address is encoded as a value: a '+' in it is legal in a
+        // query and would otherwise reach the API as a space, looking up a different identity.
+        .uri(ENTRA_MAPPING_URI, entraEmail)
         .retrieve()
-        // An unmapped address is an expected outcome, not a call failure.
-        .onStatus(
-            status -> status.value() == HttpStatus.NOT_FOUND.value(),
-            clientResponse -> Mono.empty())
         .bodyToMono(EntraUserMapping.class)
+        // An unmapped address is an expected outcome, not a call failure. Recovered from the
+        // error rather than handled by status, so the 404 body is never decoded - one carrying
+        // JSON would otherwise become a mapping with null fields, and HTML a decoding failure.
+        .onErrorResume(WebClientResponseException.NotFound.class, notFound -> Mono.empty())
         .onErrorResume(
             e ->
                 ebsApiClientErrorHandler.handleApiRetrieveError(

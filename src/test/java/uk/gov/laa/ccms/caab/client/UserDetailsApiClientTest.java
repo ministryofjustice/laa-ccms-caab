@@ -1,22 +1,18 @@
 package uk.gov.laa.ccms.caab.client;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.util.function.Predicate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
@@ -53,7 +49,6 @@ class UserDetailsApiClientTest {
     when(webClientMock.get()).thenReturn(requestHeadersUriMock);
     when(requestHeadersUriMock.uri(EXPECTED_URI, silasId)).thenReturn(requestHeadersMock);
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.onStatus(any(), any())).thenReturn(responseMock);
     when(responseMock.bodyToMono(UserViewModel.class)).thenReturn(Mono.just(expected));
 
     StepVerifier.create(userDetailsApiClient.getUserBySilasId(silasId))
@@ -69,19 +64,16 @@ class UserDetailsApiClientTest {
     when(webClientMock.get()).thenReturn(requestHeadersUriMock);
     when(requestHeadersUriMock.uri(EXPECTED_URI, silasId)).thenReturn(requestHeadersMock);
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.onStatus(any(), any())).thenReturn(responseMock);
-    when(responseMock.bodyToMono(UserViewModel.class)).thenReturn(Mono.empty());
+    when(responseMock.bodyToMono(UserViewModel.class))
+        .thenReturn(
+            Mono.error(
+                WebClientResponseException.create(
+                    HttpStatus.NOT_FOUND.value(), "Not Found", null, null, null)));
 
     StepVerifier.create(userDetailsApiClient.getUserBySilasId(silasId)).verifyComplete();
 
-    final ArgumentCaptor<Predicate<HttpStatusCode>> statusCaptor =
-        ArgumentCaptor.forClass(Predicate.class);
-    verify(responseMock).onStatus(statusCaptor.capture(), any());
-
-    // Only a 404 is swallowed - anything else still has to surface as a failure.
-    assertTrue(statusCaptor.getValue().test(HttpStatus.NOT_FOUND));
-    assertFalse(statusCaptor.getValue().test(HttpStatus.INTERNAL_SERVER_ERROR));
-    assertFalse(statusCaptor.getValue().test(HttpStatus.UNAUTHORIZED));
+    // Only a 404 is swallowed; getUserBySilasId_handlesError covers a 500 still surfacing.
+    verifyNoInteractions(apiClientErrorHandler);
   }
 
   @Test
@@ -92,7 +84,6 @@ class UserDetailsApiClientTest {
     when(webClientMock.get()).thenReturn(requestHeadersUriMock);
     when(requestHeadersUriMock.uri(EXPECTED_URI, silasId)).thenReturn(requestHeadersMock);
     when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-    when(responseMock.onStatus(any(), any())).thenReturn(responseMock);
     when(responseMock.bodyToMono(UserViewModel.class))
         .thenReturn(
             Mono.error(

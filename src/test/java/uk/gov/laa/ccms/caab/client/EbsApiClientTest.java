@@ -2,12 +2,13 @@ package uk.gov.laa.ccms.caab.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -16,7 +17,6 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -2275,54 +2275,46 @@ public class EbsApiClientTest {
     @Test
     @DisplayName("Should return the mapped CCMS user")
     void getEntraUserMapping_returnsData() {
-      final String expectedUri = "/users/entra-mapping?entra-email=" + ENTRA_EMAIL;
-      final ArgumentCaptor<Function<UriBuilder, URI>> uriCaptor =
-          ArgumentCaptor.forClass(Function.class);
-
       final EntraUserMapping mapping = new EntraUserMapping();
       mapping.setCcmsLoginId("CCMSUSER");
 
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-      when(requestHeadersUriMock.uri(uriCaptor.capture())).thenReturn(requestHeadersMock);
+      when(requestHeadersUriMock.uri("/users/entra-mapping?entra-email={entraEmail}", ENTRA_EMAIL))
+          .thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.onStatus(any(), any())).thenReturn(responseMock);
       when(responseMock.bodyToMono(EntraUserMapping.class)).thenReturn(Mono.just(mapping));
 
       StepVerifier.create(ebsApiClient.getEntraUserMapping(ENTRA_EMAIL))
           .expectNextMatches(result -> result == mapping)
           .verifyComplete();
-
-      final URI actualUri = uriCaptor.getValue().apply(UriComponentsBuilder.newInstance());
-      assertEquals(expectedUri, actualUri.toString());
     }
 
     @Test
     @DisplayName("Should treat an unmapped email address as an empty result rather than an error")
     void getEntraUserMapping_treatsNotFoundAsEmpty() {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-      when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+      when(requestHeadersUriMock.uri(anyString(), any(Object[].class)))
+          .thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.onStatus(any(), any())).thenReturn(responseMock);
-      when(responseMock.bodyToMono(EntraUserMapping.class)).thenReturn(Mono.empty());
+      when(responseMock.bodyToMono(EntraUserMapping.class))
+          .thenReturn(
+              Mono.error(
+                  WebClientResponseException.create(
+                      HttpStatus.NOT_FOUND.value(), "Not Found", null, null, null)));
 
       StepVerifier.create(ebsApiClient.getEntraUserMapping(ENTRA_EMAIL)).verifyComplete();
 
-      final ArgumentCaptor<Predicate<HttpStatusCode>> statusCaptor =
-          ArgumentCaptor.forClass(Predicate.class);
-      verify(responseMock).onStatus(statusCaptor.capture(), any());
-
-      // Only a 404 is swallowed - anything else still has to surface as a failure.
-      assertTrue(statusCaptor.getValue().test(HttpStatus.NOT_FOUND));
-      assertFalse(statusCaptor.getValue().test(HttpStatus.INTERNAL_SERVER_ERROR));
+      // Only a 404 is swallowed; getEntraUserMapping_handlesError covers a 500 still surfacing.
+      verifyNoMoreInteractions(apiClientErrorHandler);
     }
 
     @Test
     @DisplayName("Should handle error")
     void getEntraUserMapping_handlesError() {
       when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-      when(requestHeadersUriMock.uri(any(Function.class))).thenReturn(requestHeadersMock);
+      when(requestHeadersUriMock.uri(anyString(), any(Object[].class)))
+          .thenReturn(requestHeadersMock);
       when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-      when(responseMock.onStatus(any(), any())).thenReturn(responseMock);
       when(responseMock.bodyToMono(EntraUserMapping.class))
           .thenReturn(
               Mono.error(

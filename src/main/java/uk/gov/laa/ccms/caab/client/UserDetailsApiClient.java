@@ -2,9 +2,9 @@ package uk.gov.laa.ccms.caab.client;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.model.user.UserViewModel;
 
@@ -42,11 +42,11 @@ public class UserDetailsApiClient extends BaseApiClient {
         .get()
         .uri(SILAS_USER_URI, silasId)
         .retrieve()
-        // An unknown identity is an expected outcome, not a call failure.
-        .onStatus(
-            status -> status.value() == HttpStatus.NOT_FOUND.value(),
-            clientResponse -> Mono.empty())
         .bodyToMono(UserViewModel.class)
+        // An unknown identity is an expected outcome, not a call failure. Recovered from the
+        // error rather than handled by status, so the 404 body is never decoded - one carrying
+        // JSON would otherwise become a user with no details, and HTML a decoding failure.
+        .onErrorResume(WebClientResponseException.NotFound.class, notFound -> Mono.empty())
         .onErrorResume(
             e ->
                 userDetailsApiClientErrorHandler.handleApiRetrieveError(
