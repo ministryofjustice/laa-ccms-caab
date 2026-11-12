@@ -92,7 +92,7 @@ To run against a real EntraID tenant instead, override `OIDC_ISSUER_URI`, `AZURE
 | `POST_LOGOUT_REDIRECT_URI` | yes | Where EntraID returns the user after signing out. |
 | `IS_SILAS_ENABLED` | no (default `false`) | `true` for external/SiLAS tenants, `false` for internal. |
 | `ENTRA_CUSTOM_USER_ID_CLAIM` | when SiLAS is enabled | Name of the claim SiLAS supplies the user's uuid in - `LAA_CCMS_USERNAME`, a bare name rather than a URI. Unset, or absent from the token, the sign-in is refused: the authenticated email address is not a SiLAS identifier, so there is nothing to exchange. |
-| `USER_DETAILS_API_HOSTNAME` | when SiLAS is enabled | Base URL of the User Details API, **including the scheme** - the deployed `url` is the hostname unchanged. In `application-local.yml` and `application-secret.yml` the opposite holds: the `url` there prepends `https://`, so the hostname must be bare. Getting this wrong yields `http://https://host:443`, which fails on the first call rather than at startup. |
+| `USER_DETAILS_API_HOSTNAME` | when SiLAS is enabled | Base URL of the User Details API, **including the scheme** - the `url` is the hostname unchanged, deployed and under the local profile alike, so one value works in both. `application-secret.yml` is the exception: it builds the `url` itself from a bare hostname and port, so a value with a scheme there yields `http://https://host:443`, which fails on the first call rather than at startup. |
 | `USER_DETAILS_API_ACCESS_TOKEN` | when SiLAS is enabled | Sent as `X-Authorization`. Confirmed against the dev API: `Authorization` returns `401 No API access token provided`, and an invalid value returns `401 Invalid API access token provided`. |
 
 ## Calling the backend APIs

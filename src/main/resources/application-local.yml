@@ -105,18 +105,17 @@ laa:
           name: laa-ccms-documents
           url-duration: 20
     entra:
-      # Local dev resolves users through the EBS XXCCMS_ENTRA_ID_USERS mapping table, as an
-      # internal user would. For the external SiLAS path set silas-enabled to true and name the
-      # claim carrying the CCMS username, unnamespaced - LAA_CCMS_USERNAME in Dev External.
-      silas-enabled: false
-      custom-user-id-claim: ""
-    # Bare hostname: the url below prepends the scheme. Used for every external sign-in, so it
-    # only matters with silas-enabled true.
+      # Internal resolution by default, through the EBS XXCCMS_ENTRA_ID_USERS table. The external
+      # SiLAS path is a variable away rather than an edit: IS_SILAS_ENABLED=true with the claim
+      # name, unnamespaced - LAA_CCMS_USERNAME in Dev External.
+      silas-enabled: ${IS_SILAS_ENABLED:false}
+      custom-user-id-claim: ${ENTRA_CUSTOM_USER_ID_CLAIM:}
+    # The hostname carries the scheme, as it does deployed, so the same value works in both and
+    # there is one convention rather than two. Only used once SiLAS is enabled.
     user-details-api:
-      hostname: localhost
-      port: 8090
-      url: http://${laa.ccms.user-details-api.hostname}:${laa.ccms.user-details-api.port}
-      access-token: local-user-details-api-token
+      hostname: ${USER_DETAILS_API_HOSTNAME:http://localhost:8090}
+      url: ${laa.ccms.user-details-api.hostname}
+      access-token: ${USER_DETAILS_API_ACCESS_TOKEN:local-user-details-api-token}
     ebs-api:
       hostname: localhost
       port: 8009
