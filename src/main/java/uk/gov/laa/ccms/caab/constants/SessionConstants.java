@@ -289,4 +289,11 @@ public class SessionConstants {
 
   /** Search results URL for the application sections back link; absent means home. */
   public static final String APPLICATION_SECTIONS_BACK_URL = "applicationSectionsBackUrl";
+
+  /**
+   * Session attribute holding, per case and award, the real EBS ids of opponents created and linked
+   * via the party list. The CAAB API gives such opponents a synthetic EBS id, so these are needed
+   * to recognise them as already added.
+   */
+  public static final String CREATED_LIABLE_PARTY_EBS_IDS = "createdLiablePartyEbsIds";
 }

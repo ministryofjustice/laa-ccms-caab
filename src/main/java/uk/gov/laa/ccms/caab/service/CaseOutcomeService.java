@@ -8,7 +8,9 @@ import static uk.gov.laa.ccms.caab.constants.ApplicationConstants.AWARD_TYPE_OTH
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -305,6 +307,85 @@ public class CaseOutcomeService {
         .blockOptional()
         .orElseThrow(
             () -> new CaabApplicationException("Failed to retrieve award parties or lookup data"));
+  }
+
+  /**
+   * Loads the opponents linked as liable or interested parties to one award, for identity matching
+   * rather than display.
+   *
+   * @param caseReferenceNumber the case reference number
+   * @param providerId the provider id
+   * @param awardPath the award type's URL path segment
+   * @param awardId the award whose linked opponents are loaded
+   * @return the opponents linked to the award, or an empty list if none are linked
+   */
+  public List<OpponentDetail> getAwardLiableParties(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final String awardPath,
+      final Integer awardId) {
+    final CaseOutcomeDetail outcome = requireCaseOutcome(caseReferenceNumber, providerId);
+    final BaseAwardDetail award = requireAward(outcome, awardTypeForPath(awardPath), awardId);
+    if (award.getLiableParties() == null || award.getLiableParties().isEmpty()) {
+      return List.of();
+    }
+    return caabApiClient
+        .getAwardLiableParties(outcome.getId(), award.getAwardType(), awardId)
+        .blockOptional()
+        .orElse(List.of());
+  }
+
+  /**
+   * Links opponents to an award as liable or interested parties, one at a time. Existing opponents
+   * are linked by id, which the API treats as a no-op if already linked; opponents without a CAAB
+   * id are created and linked in one step. The callback is invoked as soon as each creation
+   * succeeds, so earlier creations are still reported if a later link fails.
+   *
+   * @param caseReferenceNumber the case reference number
+   * @param providerId the provider id
+   * @param awardPath the award type's URL path segment
+   * @param awardId the award to link the parties to
+   * @param existingOpponentIds the ids of existing opponents to link
+   * @param newOpponents the opponents without a CAAB id to create and link
+   * @param loginId the login id of the user performing the update
+   * @param onNewOpponentCreated invoked with each new opponent once created and linked
+   */
+  public void addLiableParties(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final String awardPath,
+      final Integer awardId,
+      final List<Integer> existingOpponentIds,
+      final List<OpponentDetail> newOpponents,
+      final String loginId,
+      final Consumer<OpponentDetail> onNewOpponentCreated) {
+    final List<Integer> opponentIds =
+        Optional.ofNullable(existingOpponentIds).orElse(List.of()).stream()
+            .filter(Objects::nonNull)
+            .distinct()
+            .toList();
+    final List<OpponentDetail> opponents =
+        Optional.ofNullable(newOpponents).orElse(List.of()).stream()
+            .filter(Objects::nonNull)
+            .toList();
+    if (opponentIds.isEmpty() && opponents.isEmpty()) {
+      return;
+    }
+    final Integer caseOutcomeId =
+        requireCaseOutcomeId(
+            requireCaseOutcome(caseReferenceNumber, providerId), caseReferenceNumber);
+    final String awardType = awardTypeForPath(awardPath);
+    for (final Integer opponentId : opponentIds) {
+      caabApiClient
+          .addAwardLiableParty(caseOutcomeId, awardType, awardId, opponentId, loginId)
+          .block();
+    }
+    for (final OpponentDetail opponent : opponents) {
+      caabApiClient
+          .createAwardLiableParty(caseOutcomeId, awardType, awardId, loginId, opponent)
+          .block();
+      onNewOpponentCreated.accept(opponent);
+    }
   }
 
   /**

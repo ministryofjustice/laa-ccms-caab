@@ -17,6 +17,7 @@ import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_A
 import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_VALUATION_BASIS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.AWARD_TYPE_FORM;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CASE;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CREATED_LIABLE_PARTY_EBS_IDS;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
 import java.math.BigDecimal;
@@ -24,8 +25,13 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -38,6 +44,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -58,6 +65,7 @@ import uk.gov.laa.ccms.caab.bean.validators.awards.OtherAssetAwardValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.TimeRecoveryValidator;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.constants.FunctionConstants;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.LandAwardMapper;
@@ -69,13 +77,17 @@ import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.LandAwardRequest;
+import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.model.sections.LiablePartiesDisplay;
+import uk.gov.laa.ccms.caab.model.sections.PartyListRow;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
+import uk.gov.laa.ccms.caab.service.PartyListService;
+import uk.gov.laa.ccms.caab.service.PartyListService.PartyListCandidate;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -96,6 +108,7 @@ class AwardControllerTest {
   @Mock private LandAwardValidator landAwardValidator;
   @Mock private LandAwardMapper landAwardMapper;
   @Spy private TimeRecoveryValidator timeRecoveryValidator = new TimeRecoveryValidator();
+  @Mock private PartyListService partyListService;
 
   @InjectMocks private AwardController controller;
 
@@ -256,6 +269,216 @@ class AwardControllerTest {
           .hasFailed()
           .failure()
           .hasCauseInstanceOf(IllegalStateException.class);
+    }
+  }
+
+  @Nested
+  @DisplayName("Party list: add existing case parties to an award")
+  class PartyListTests {
+
+    private static final String PARTY_LIST_URL =
+        "/case/outcome-and-awards/land/7/liable-parties/add";
+    private static final String AWARD_KEY = "300000001:land:7";
+
+    private final PartyListCandidate existing =
+        new PartyListCandidate("id-1", new OpponentDetail().id(1), false);
+    private final PartyListCandidate newFirst =
+        new PartyListCandidate("ebs-E1", new OpponentDetail().ebsId("E1"), false);
+    private final PartyListCandidate newSecond =
+        new PartyListCandidate("ebs-E2", new OpponentDetail().ebsId("E2"), false);
+    private final PartyListCandidate added =
+        new PartyListCandidate("id-3", new OpponentDetail().id(3), true);
+
+    private final MockHttpSession session = new MockHttpSession();
+
+    @BeforeEach
+    void stubCandidates() {
+      lenient()
+          .when(partyListService.getCandidates(any(), any(), any(), any(), any(), any()))
+          .thenReturn(List.of(added, existing, newFirst, newSecond));
+      lenient()
+          .when(partyListService.toRows(any()))
+          .thenReturn(
+              List.of(
+                  new PartyListRow("id-3", "Added", "Individual", null, "", true),
+                  new PartyListRow("id-1", "Existing", "Individual", null, "", false)));
+      lenient().when(partyListService.findInvalid(any())).thenReturn(Set.of());
+    }
+
+    private MockHttpServletRequestBuilder submit(final String... keys) {
+      return post(PARTY_LIST_URL)
+          .session(session)
+          .sessionAttr(CASE, ebsCase)
+          .sessionAttr(USER_DETAILS, user)
+          .param("selectedPartyKeys", keys);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<String> createdEbsIds() {
+      return ((Map<String, Set<String>>) session.getAttribute(CREATED_LIABLE_PARTY_EBS_IDS))
+          .get(AWARD_KEY);
+    }
+
+    @Test
+    @DisplayName("Should display the rows and focus errors on the first selectable party")
+    void displaysRows() {
+      assertThat(
+              mockMvc.perform(
+                  get(PARTY_LIST_URL)
+                      .session(session)
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)))
+          .hasStatusOk()
+          .hasViewName("application/party-list-screen")
+          .model()
+          .containsEntry("firstSelectablePartyKey", "id-1")
+          .containsEntry("awardPath", "land")
+          .containsEntry("awardId", 7);
+
+      verify(partyListService).getCandidates(ebsCase, null, 123, "land", 7, Set.of());
+    }
+
+    @Test
+    @DisplayName("Should redirect read-only cases away from the party list")
+    void redirectsReadOnlyCase() {
+      ebsCase.setAvailableFunctions(List.of(FunctionConstants.VIEW_CASE_OUTCOME));
+
+      assertThat(
+              mockMvc.perform(
+                  get(PARTY_LIST_URL).sessionAttr(CASE, ebsCase).sessionAttr(USER_DETAILS, user)))
+          .hasRedirectedUrl("/case/outcome-and-awards");
+      assertThat(mockMvc.perform(submit("id-1"))).hasRedirectedUrl("/case/outcome-and-awards");
+
+      verifyNoInteractions(partyListService, caseOutcomeService);
+    }
+
+    @Test
+    @DisplayName("Should show the selection error when nothing is selected")
+    void rejectsEmptySelection() {
+      assertThat(mockMvc.perform(submit("")))
+          .hasViewName("application/party-list-screen")
+          .model()
+          .containsEntry("partyListErrorMessage", "case.partyListScreen.selectionErrorMessage");
+
+      verifyNoInteractions(caseOutcomeService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"id-3", "ebs-UNKNOWN"})
+    @DisplayName("Should reject already added or unknown parties")
+    void rejectsUnresolvedSelection(final String key) {
+      assertThat(mockMvc.perform(submit("id-1", key)))
+          .hasViewName("application/party-list-screen")
+          .model()
+          .containsEntry(
+              "partyListErrorMessage", "case.partyListScreen.unresolvedSelectionErrorMessage");
+
+      verifyNoInteractions(caseOutcomeService);
+    }
+
+    @Test
+    @DisplayName("Should name the parties that fail validation and add none")
+    void rejectsInvalidParties() {
+      when(partyListService.findInvalid(List.of(existing, newFirst))).thenReturn(Set.of("ebs-E1"));
+
+      assertThat(mockMvc.perform(submit("id-1", "ebs-E1")))
+          .hasViewName("application/party-list-screen")
+          .model()
+          .containsEntry("invalidPartyKeys", Set.of("ebs-E1"))
+          .containsEntry("selectedPartyKeys", Set.of("id-1", "ebs-E1"));
+
+      verifyNoInteractions(caseOutcomeService);
+      assertThat(session.getAttribute(CREATED_LIABLE_PARTY_EBS_IDS)).isNull();
+    }
+
+    @Test
+    @DisplayName("Should link existing parties, create new ones and remember their EBS ids")
+    void addsSelectedParties() {
+      assertThat(mockMvc.perform(submit("id-1", "ebs-E1")))
+          .hasRedirectedUrl("/case/outcome-and-awards/land/7/liable-parties");
+
+      verify(caseOutcomeService)
+          .addLiableParties(
+              eq("300000001"),
+              eq(123),
+              eq("land"),
+              eq(7),
+              eq(List.of(1)),
+              eq(List.of(newFirst.opponent())),
+              eq(user.getLoginId()),
+              any());
+      assertThat(createdEbsIds()).containsExactly("E1");
+
+      mockMvc.perform(
+          get(PARTY_LIST_URL)
+              .session(session)
+              .sessionAttr(CASE, ebsCase)
+              .sessionAttr(USER_DETAILS, user));
+      verify(partyListService).getCandidates(ebsCase, null, 123, "land", 7, Set.of("E1"));
+    }
+
+    @Test
+    @DisplayName("Should not create a party whose EBS id another submission has claimed")
+    void rejectsAlreadyClaimedParty() {
+      session.setAttribute(
+          CREATED_LIABLE_PARTY_EBS_IDS,
+          new HashMap<>(Map.of(AWARD_KEY, new HashSet<>(Set.of("E1")))));
+
+      assertThat(mockMvc.perform(submit("ebs-E1")))
+          .hasViewName("application/party-list-screen")
+          .model()
+          .containsEntry(
+              "partyListErrorMessage", "case.partyListScreen.unresolvedSelectionErrorMessage");
+
+      verifyNoInteractions(caseOutcomeService);
+    }
+
+    @Test
+    @DisplayName("Should release the claims of parties not created when adding fails")
+    void releasesUncreatedClaimsOnFailure() {
+      doAnswer(
+              invocation -> {
+                final Consumer<OpponentDetail> onCreated = invocation.getArgument(7);
+                onCreated.accept(newFirst.opponent());
+                throw new CaabApplicationException("failed");
+              })
+          .when(caseOutcomeService)
+          .addLiableParties(any(), any(), any(), any(), any(), any(), any(), any());
+
+      assertThat(mockMvc.perform(submit("ebs-E1", "ebs-E2")))
+          .hasViewName("application/party-list-screen")
+          .model()
+          .containsEntry(
+              "partyListErrorMessage", "case.partyListScreen.unresolvedSelectionErrorMessage");
+
+      assertThat(createdEbsIds()).containsExactly("E1");
+    }
+
+    @Test
+    @DisplayName(
+        "Should show a non-selectable page when the list cannot be refreshed after a failure")
+    void showsUnavailablePartyListWhenRefreshFails() {
+      when(partyListService.getCandidates(any(), any(), any(), any(), any(), any()))
+          .thenReturn(List.of(newFirst, newSecond))
+          .thenThrow(new CaabApiClientException("unavailable"));
+      doAnswer(
+              invocation -> {
+                final Consumer<OpponentDetail> onCreated = invocation.getArgument(7);
+                onCreated.accept(newFirst.opponent());
+                throw new CaabApiClientException("failed");
+              })
+          .when(caseOutcomeService)
+          .addLiableParties(any(), any(), any(), any(), any(), any(), any(), any());
+
+      assertThat(mockMvc.perform(submit("ebs-E1", "ebs-E2")))
+          .hasViewName("application/party-list-screen")
+          .model()
+          .containsEntry("partyListErrorMessage", "case.partyListScreen.unavailableErrorMessage")
+          .containsEntry("partyListUnavailable", true)
+          .containsEntry("parties", List.of());
+
+      assertThat(createdEbsIds()).containsExactly("E1");
+      verify(partyListService, never()).toRows(any());
     }
   }
 

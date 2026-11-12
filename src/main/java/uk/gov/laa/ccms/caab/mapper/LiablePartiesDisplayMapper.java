@@ -16,9 +16,9 @@ import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.context.LiablePartiesMappingContext;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.BaseAwardDetail;
@@ -35,6 +35,14 @@ import uk.gov.laa.ccms.caab.util.OpponentUtil;
 @Mapper(componentModel = "spring", imports = OpponentUtil.class)
 public interface LiablePartiesDisplayMapper {
 
+  /**
+   * Builds the liable or interested party summary for an award.
+   *
+   * @param award the award whose liable party links are displayed
+   * @param opponents the opponents linked to the award
+   * @param context the lookup data used to describe each party
+   * @return the party summary
+   */
   default LiablePartiesDisplay toLiablePartiesDisplay(
       final BaseAwardDetail award,
       final List<OpponentDetail> opponents,
@@ -44,8 +52,7 @@ public interface LiablePartiesDisplayMapper {
             .filter(
                 opponent -> {
                   if (opponent == null || opponent.getId() == null) {
-                    LoggerFactory.getLogger(LiablePartiesDisplayMapper.class)
-                        .warn("Ignoring liable party opponent with no id");
+                    log().warn("Ignoring liable party opponent with no id");
                     return false;
                   }
                   return true;
@@ -54,15 +61,28 @@ public interface LiablePartiesDisplayMapper {
                 Collectors.toMap(OpponentDetail::getId, Function.identity(), (first, _) -> first));
     final List<LiablePartyDisplay> parties =
         Optional.ofNullable(award.getLiableParties()).orElse(List.of()).stream()
-            .map(
+            .filter(
                 link -> {
-                  final OpponentDetail opponent = opponentIndex.get(link.getOpponentId());
-                  if (opponent == null) {
-                    throw new CaabApplicationException(
-                        "Could not resolve opponent for liable party: " + link.getId());
+                  if (link == null || link.getOpponentId() == null) {
+                    log().warn("Ignoring liable party link with no opponent id");
+                    return false;
                   }
-                  return toLiablePartyDisplay(link, opponent, context);
+                  return true;
                 })
+            .map(
+                link ->
+                    Optional.ofNullable(opponentIndex.get(link.getOpponentId()))
+                        .map(opponent -> toLiablePartyDisplay(link, opponent, context))
+                        // The link still exists, so show it rather than hide a real liability.
+                        .orElseGet(
+                            () -> {
+                              log()
+                                  .warn(
+                                      "Liable party {} has unresolved opponent id {}",
+                                      link.getId(),
+                                      link.getOpponentId());
+                              return unresolvedLiablePartyDisplay(link);
+                            }))
             .toList();
     return new LiablePartiesDisplay(
         award.getAwardType(),
@@ -94,6 +114,18 @@ public interface LiablePartiesDisplayMapper {
       LiablePartyDetail party,
       OpponentDetail opponent,
       @Context LiablePartiesMappingContext context);
+
+  /**
+   * Builds a non-editable placeholder row for a liable party link whose opponent could not be
+   * loaded. The name is left {@code null} so the view shows the localised placeholder text.
+   *
+   * @param party the liable party link
+   * @return the placeholder row
+   */
+  default LiablePartyDisplay unresolvedLiablePartyDisplay(final LiablePartyDetail party) {
+    return new LiablePartyDisplay(
+        party.getId(), party.getOpponentId(), null, null, null, "", false, false);
+  }
 
   @Named("partyName")
   default String partyName(
@@ -160,5 +192,9 @@ public interface LiablePartiesDisplayMapper {
       return asset.getValuationAmount();
     }
     return award.getAwardAmount();
+  }
+
+  private static Logger log() {
+    return LoggerFactory.getLogger(LiablePartiesDisplayMapper.class);
   }
 }
