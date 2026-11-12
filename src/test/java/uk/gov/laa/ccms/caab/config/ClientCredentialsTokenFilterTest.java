@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -63,6 +65,44 @@ class ClientCredentialsTokenFilterTest {
             Instant.now().plusSeconds(300));
     when(authorizedClientManager.authorize(any()))
         .thenReturn(new OAuth2AuthorizedClient(registration, REGISTRATION_ID, token));
+  }
+
+  @Test
+  @DisplayName("Fetches the token off the thread that subscribed, which may be an event loop")
+  void doesNotFetchTheTokenOnTheSubscribingThread() {
+    authorizedWithToken("an-access-token");
+    AtomicReference<String> authorizedOn = new AtomicReference<>();
+    when(authorizedClientManager.authorize(any()))
+        .thenAnswer(
+            invocation -> {
+              authorizedOn.set(Thread.currentThread().getName());
+              ClientRegistration registration =
+                  ClientRegistration.withRegistrationId(REGISTRATION_ID)
+                      .clientId("a-client")
+                      .clientSecret("a-secret")
+                      .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                      .tokenUri("http://an-idp/oauth2/token")
+                      .build();
+              return new OAuth2AuthorizedClient(
+                  registration,
+                  REGISTRATION_ID,
+                  new OAuth2AccessToken(
+                      OAuth2AccessToken.TokenType.BEARER,
+                      "an-access-token",
+                      Instant.now(),
+                      Instant.now().plusSeconds(300)));
+            });
+
+    new ClientCredentialsTokenFilter(authorizedClientManager, REGISTRATION_ID)
+        .filter(request(), next)
+        .block();
+
+    // The call blocks, so it must not run where the exchange was subscribed - a request made
+    // inside another response's flatMap subscribes on a Netty event-loop thread.
+    assertNotEquals(Thread.currentThread().getName(), authorizedOn.get());
+    assertTrue(
+        authorizedOn.get().startsWith("boundedElastic"),
+        "expected a boundedElastic thread but was " + authorizedOn.get());
   }
 
   @Test
