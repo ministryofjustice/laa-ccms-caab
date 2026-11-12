@@ -177,12 +177,14 @@ failure.
 
 - Create the app registration manually in **Dev External**, then via terraform for NLE External
   Test, Preprod and Prod.
-- Update [laa-ccms-caab-helm-charts](https://github.com/ministryofjustice/laa-ccms-caab-helm-charts).
-  It still sets `SPRING_SECURITY_SAML2_*` and `SAML_PRIVATE_KEY` / `SAML_CERTIFICATE`, and sets
-  none of the variables in the table above, so no deployed environment can authenticate until it
-  is changed.
-- Enable the `api-oauth2` profile per environment, once each API exposes an app role and this
-  application has been assigned it. Nothing uses OAuth2 for the backend APIs until then.
+- Deploy
+  [laa-ccms-caab-helm-charts#303](https://github.com/ministryofjustice/laa-ccms-caab-helm-charts/pull/303),
+  which supplies the variables in the table above and sets `SPRING_PROFILES_ACTIVE=api-oauth2`.
+  Until it is deployed no environment can authenticate.
+- Grant the app role to this application in each environment's tenant, and add the six scope and
+  User Details API keys to that environment's UI secret. The profile is set for every environment
+  rather than enabled one at a time, because the four APIs accept nothing but a bearer token - so
+  an environment missing the role or the scopes does not fall back, it fails every API call.
 - The EBS `/users/entra-mapping` endpoint has to be released in
   [laa-ccms-data-api](https://github.com/ministryofjustice/laa-ccms-data-api) before the internal
   path works.
