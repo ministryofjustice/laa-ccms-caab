@@ -1,10 +1,10 @@
 #!/bin/sh
 # scripts/pre-commit
 
-# Gradle needs JDK 17+. If the shell's JAVA_HOME points at something older the wrapper
-# refuses to run, and because this hook used to ignore exit codes the commit went through
-# anyway with the formatting step never having happened. Resolve a usable JDK first, and
-# fail loudly rather than skipping silently.
+# laa-spring-boot-gradle-plugin refuses to resolve on anything older, and the wrapper then
+# fails with a plugin resolution error rather than anything mentioning Java. Resolve a usable
+# JDK first, and fail loudly rather than letting unformatted code through.
+required_major=25
 
 java_major() {
   if [ -n "$1" ] && [ -x "$1/bin/java" ]; then
@@ -16,9 +16,9 @@ java_major() {
 }
 
 current_major=$(java_major "$JAVA_HOME" 2>/dev/null)
-if [ -z "$current_major" ] || [ "$current_major" -lt 17 ] 2>/dev/null; then
+if [ -z "$current_major" ] || [ "$current_major" -lt "$required_major" ] 2>/dev/null; then
   if [ -x /usr/libexec/java_home ]; then
-    resolved=$(/usr/libexec/java_home -v 17+ 2>/dev/null) || resolved=""
+    resolved=$(/usr/libexec/java_home -v "${required_major}+" 2>/dev/null) || resolved=""
     if [ -n "$resolved" ]; then
       JAVA_HOME="$resolved"
       export JAVA_HOME
@@ -27,9 +27,9 @@ if [ -z "$current_major" ] || [ "$current_major" -lt 17 ] 2>/dev/null; then
   fi
 fi
 
-if [ -z "$current_major" ] || [ "$current_major" -lt 17 ] 2>/dev/null; then
-  echo "pre-commit: no JDK 17+ found, so Spotless cannot run."
-  echo "            Set JAVA_HOME to a JDK 17 or newer and commit again."
+if [ -z "$current_major" ] || [ "$current_major" -lt "$required_major" ] 2>/dev/null; then
+  echo "pre-commit: no JDK $required_major+ found, so Spotless cannot run."
+  echo "            Set JAVA_HOME to a JDK $required_major or newer and commit again."
   echo "            Skipping would let unformatted code through, so this commit is blocked."
   exit 1
 fi
