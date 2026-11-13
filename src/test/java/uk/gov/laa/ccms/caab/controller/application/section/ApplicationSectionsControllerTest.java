@@ -1,5 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.application.section;
 
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -23,6 +25,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -161,5 +165,28 @@ class ApplicationSectionsControllerTest {
         .andDo(print())
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/application/validate"));
+  }
+
+  @ParameterizedTest
+  @CsvSource({"false,true", "true,false"})
+  @DisplayName("Only an application that is not an amendment is marked as a draft")
+  void marksOnlyNonAmendmentsAsDrafts(final boolean amendment, final boolean draftApplication)
+      throws Exception {
+    final ApplicationDetail application = buildApplicationDetail(1, true, new Date());
+    application.setAmendment(amendment);
+
+    when(applicationService.getApplication(anyString())).thenReturn(Mono.just(application));
+    when(applicationService.getApplicationSections(
+            any(ApplicationDetail.class), any(UserDetail.class)))
+        .thenReturn(ApplicationSectionDisplay.builder().build());
+
+    this.mockMvc
+        .perform(
+            get("/application/sections")
+                .sessionAttr("applicationId", "123")
+                .sessionAttr("user", new UserDetail()))
+        .andExpect(status().isOk())
+        .andExpect(
+            model().attribute("activeCase", hasProperty("draftApplication", is(draftApplication))));
   }
 }

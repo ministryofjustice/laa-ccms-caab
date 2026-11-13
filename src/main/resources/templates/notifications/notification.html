@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs},userRoles=${user.functions},pageRoles='ATT,EVID,SUBNOT,VC')}"
+<html lang="en" th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'actions'},breadcrumbs=~{::#breadcrumbs},pageRoles='VIEW_NOTIFICATION_ATTACHMENT,UPLOAD_EVIDENCE,SUBMIT_NOTIFICATION,VIEW_CASE_DETAILS')}"
       xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" xmlns:govuk="http://www.thymeleaf.org">
 <head>
   <title th:text="|#{service.name} - ${notification.subject}|"/>

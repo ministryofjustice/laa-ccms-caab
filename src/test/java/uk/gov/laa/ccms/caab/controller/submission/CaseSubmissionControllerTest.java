@@ -1,6 +1,7 @@
 package uk.gov.laa.ccms.caab.controller.submission;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -160,6 +161,27 @@ class CaseSubmissionControllerTest {
     // The confirmed application's spent TDS draft must be removed, otherwise it is left behind in
     // XXCCMS_APPLICATION (mirrors old PUI's ClearSubmittedData).
     verify(applicationService, times(1)).removeSubmittedApplication("ref123", userDetail);
+  }
+
+  @Test
+  @DisplayName("A confirmed application's active case is no longer marked as a draft")
+  void confirmedApplicationIsNoLongerADraft() throws Exception {
+    final TransactionStatus mockStatus = new TransactionStatus();
+    mockStatus.setSubmissionStatus("SUCCESS");
+    mockStatus.setReferenceNumber("ref123");
+    when(applicationService.getCaseStatus(anyString())).thenReturn(Mono.just(mockStatus));
+    final ActiveCase draft =
+        ActiveCase.builder().caseReferenceNumber("ref123").draftApplication(true).build();
+
+    mockMvc
+        .perform(
+            get("/application/submit-case")
+                .sessionAttr(SUBMISSION_TRANSACTION_ID, "transaction123")
+                .sessionAttr(USER_DETAILS, userDetail)
+                .sessionAttr(ACTIVE_CASE, draft))
+        .andExpect(status().is3xxRedirection());
+
+    assertFalse(draft.isDraftApplication());
   }
 
   @Test

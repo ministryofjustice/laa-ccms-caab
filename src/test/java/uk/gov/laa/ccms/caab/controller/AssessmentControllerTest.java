@@ -119,6 +119,14 @@ public class AssessmentControllerTest {
 
   private static final UserDetail userDetails = buildUserDetail();
 
+  /** Holds what /case/billing/bill requires, so the bill interview is reachable. */
+  private static final UserDetail billUser =
+      buildUserDetail().functions(List.of("VC", "CB", FunctionConstants.ADD_UPDATE_BILL));
+
+  /** Holds what /case/billing/poa requires. */
+  private static final UserDetail poaUser =
+      buildUserDetail().functions(List.of("VC", "CB", FunctionConstants.ADD_UPDATE_POA));
+
   private static final ActiveCase activeCase =
       ActiveCase.builder().caseReferenceNumber("testCaseReferenceNumber").build();
 
@@ -372,7 +380,7 @@ public class AssessmentControllerTest {
             get("/application/assessments")
                 .param("assessment", "billing")
                 .param("invoked-from", "CCMS_CB03")
-                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(USER_DETAILS, billUser)
                 .sessionAttr(CASE, ebsCase)
                 .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk())
@@ -432,7 +440,7 @@ public class AssessmentControllerTest {
             get("/application/assessments")
                 .param("assessment", "poa")
                 .param("invoked-from", "CCMS_POA01")
-                .sessionAttr(USER_DETAILS, userDetails)
+                .sessionAttr(USER_DETAILS, poaUser)
                 .sessionAttr(CASE, ebsCase)
                 .sessionAttr(ACTIVE_CASE, activeCase))
         .andExpect(status().isOk())
@@ -475,6 +483,57 @@ public class AssessmentControllerTest {
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
     assertEquals(
         "User is not authorised to run the POA assessment for this case",
+        exception.getCause().getMessage());
+  }
+
+  @Test
+  public void assessmentGet_billing_rejectedWhenTheUserDoesNotHoldTheBillFunction() {
+    // The case supports billing, but this user does not hold it. The interview sits under
+    // /application, which carries no user-function rule, so without this check a user with only
+    // VC could start it.
+    final ApplicationDetail ebsCase =
+        buildApplicationDetail(1, true, new Date())
+            .caseReferenceNumber("CASE123")
+            .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_BILL));
+
+    final MockHttpServletRequestBuilder request =
+        get("/application/assessments")
+            .param("assessment", "billing")
+            .param("invoked-from", "CCMS_CB03")
+            .sessionAttr(USER_DETAILS, buildUserDetail().functions(List.of("VC")))
+            .sessionAttr(CASE, ebsCase)
+            .sessionAttr(ACTIVE_CASE, activeCase);
+
+    final Exception exception = assertThrows(Exception.class, () -> this.mockMvc.perform(request));
+
+    assertInstanceOf(CaabApplicationException.class, exception.getCause());
+    assertEquals(
+        "User does not hold the functions needed to run the BILLING assessment",
+        exception.getCause().getMessage());
+  }
+
+  @Test
+  public void assessmentGet_poa_rejectedWhenTheUserDoesNotHoldCaseBills() {
+    final ApplicationDetail ebsCase =
+        buildApplicationDetail(1, true, new Date())
+            .caseReferenceNumber("CASE123")
+            .availableFunctions(List.of(FunctionConstants.ADD_UPDATE_POA));
+
+    final MockHttpServletRequestBuilder request =
+        get("/application/assessments")
+            .param("assessment", "poa")
+            .param("invoked-from", "CCMS_POA01")
+            .sessionAttr(
+                USER_DETAILS,
+                buildUserDetail().functions(List.of("VC", FunctionConstants.ADD_UPDATE_POA)))
+            .sessionAttr(CASE, ebsCase)
+            .sessionAttr(ACTIVE_CASE, activeCase);
+
+    final Exception exception = assertThrows(Exception.class, () -> this.mockMvc.perform(request));
+
+    assertInstanceOf(CaabApplicationException.class, exception.getCause());
+    assertEquals(
+        "User does not hold the functions needed to run the POA assessment",
         exception.getCause().getMessage());
   }
 

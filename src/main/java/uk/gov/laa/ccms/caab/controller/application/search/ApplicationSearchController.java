@@ -43,6 +43,7 @@ import reactor.util.function.Tuple2;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.validators.application.CaseSearchCriteriaValidator;
 import uk.gov.laa.ccms.caab.client.EbsApiClientException;
+import uk.gov.laa.ccms.caab.config.UserRole;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.exception.TooManyResultsException;
 import uk.gov.laa.ccms.caab.feature.Feature;
@@ -55,6 +56,7 @@ import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.LookupService;
 import uk.gov.laa.ccms.caab.service.ProviderService;
 import uk.gov.laa.ccms.caab.util.PaginationUtil;
+import uk.gov.laa.ccms.caab.util.UserRoleUtil;
 import uk.gov.laa.ccms.data.model.CaseStatusLookupDetail;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -249,6 +251,12 @@ public class ApplicationSearchController {
           APPLICATION_SECTIONS_BACK_URL, fromSearch ? session.getAttribute(SEARCH_URL) : null);
 
       return "redirect:/application/sections";
+    }
+
+    // Without VC the case overview refuses the user, so the case must not reach the session
+    // first, where the case's other pages would find it.
+    if (!UserRoleUtil.hasRole(userDetails, UserRole.VIEW_CASE_DETAILS)) {
+      return "redirect:/case/overview";
     }
 
     session.setAttribute(CASE, ebsCase);

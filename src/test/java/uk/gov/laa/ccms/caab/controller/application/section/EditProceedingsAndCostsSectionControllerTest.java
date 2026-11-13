@@ -2520,4 +2520,16 @@ class EditProceedingsAndCostsSectionControllerTest {
           exception.getCause().getMessage());
     }
   }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"application", "amendments"})
+  @DisplayName("A proceeding action other than add or edit is not mapped")
+  void unsupportedProceedingActionIsNotMapped(final String caseContext) throws Exception {
+    mockMvc
+        .perform(post("/{caseContext}/proceedings/other/confirm", caseContext))
+        .andExpect(status().isNotFound());
+    mockMvc
+        .perform(get("/{caseContext}/proceedings/other/matter-type", caseContext))
+        .andExpect(status().isNotFound());
+  }
 }

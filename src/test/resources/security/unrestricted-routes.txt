@@ -1,0 +1,115 @@
+# Routes deliberately reachable by any logged-in user, whatever their functions.
+# UnrestrictedRoutesTest fails if a route is reachable without a function and is not
+# listed here, or is listed here but now needs a function. Before adding a route,
+# check whether the legacy PUI checks a user function for the action; if it does,
+# add a rule to SecurityConfiguration.authorizeUserFunctions instead.
+
+# Home, provider switch and shared pages
+GET /
+POST /csp/report
+GET /home
+GET /provider-switch
+POST /provider-switch
+GET /submissions/alreadySubmitted
+
+# Court and counsel pickers used inside other flows
+GET /application/counsel/confirm
+POST /application/counsel/confirm
+GET /counsel/results
+GET /counsel/search
+POST /counsel/search
+GET /counsel/select
+GET /court/results
+GET /court/search
+POST /court/search
+GET /court/select
+
+# Submission progress, confirmation and failure pages
+GET /application/submit-case
+POST /application/submit-case/confirmed
+GET /application/submit-case/undertaking
+GET /application/submit-case/undertaking/confirmed
+POST /application/submit-case/undertaking/confirmed
+GET /application/submit-case/undertaking/failed
+POST /application/submit-case/undertaking/failed
+GET /application/{submissionType}/confirmed
+GET /application/{submissionType}/failed
+POST /application/{submissionType}/failed
+
+# Sections of an application, which the legacy PUI does not check against user functions
+GET /application/abandon
+POST /application/abandon/confirmed
+GET /application/assessments
+GET /application/assessments/confirm
+GET /application/assessments/confirm/caseSummary.do
+GET /application/assessments/{assessment}/remove
+POST /application/assessments/{assessment}/remove
+GET /application/case-costs
+POST /application/case-costs
+GET /application/client-update
+POST /application/client-update/confirmed
+GET /application/evidence/add
+POST /application/evidence/add
+GET /application/evidence/{evidence-document-id}/remove
+GET /application/evidence/{evidence-document-id}/view
+GET /application/prior-authorities/add/details
+POST /application/prior-authorities/add/details
+GET /application/prior-authorities/add/type
+POST /application/prior-authorities/add/type
+GET /application/prior-authorities/edit/details
+POST /application/prior-authorities/edit/details
+POST /application/prior-authorities/edit/type
+GET /application/prior-authorities/{prior-authority-id}/confirm
+GET /application/prior-authorities/{prior-authority-id}/remove
+POST /application/prior-authorities/{prior-authority-id}/remove
+GET /application/proceedings-and-costs
+GET /application/proceedings/{proceeding-id}/make-lead
+GET /application/sections
+GET /application/sections/application-type
+POST /application/sections/application-type
+GET /application/sections/client/details/address
+POST /application/sections/client/details/address
+GET /application/sections/client/details/address/search
+POST /application/sections/client/details/address/search
+GET /application/sections/client/details/basic
+POST /application/sections/client/details/basic
+GET /application/sections/client/details/contact
+POST /application/sections/client/details/contact
+GET /application/sections/client/details/deceased
+POST /application/sections/client/details/deceased
+GET /application/sections/client/details/equal-opportunities-monitoring
+POST /application/sections/client/details/equal-opportunities-monitoring
+GET /application/sections/client/details/summary
+GET /application/sections/correspondence-address
+POST /application/sections/correspondence-address
+GET /application/sections/correspondence-address/search
+POST /application/sections/correspondence-address/search
+GET /application/sections/evidence
+GET /application/sections/linked-cases
+POST /application/sections/linked-cases/add
+GET /application/sections/linked-cases/search
+POST /application/sections/linked-cases/search
+GET /application/sections/linked-cases/search/results
+GET /application/sections/linked-cases/{case-reference-id}/add
+GET /application/sections/linked-cases/{linked-case-id}/confirm
+POST /application/sections/linked-cases/{linked-case-id}/confirm
+GET /application/sections/linked-cases/{linked-case-id}/remove
+POST /application/sections/linked-cases/{linked-case-id}/remove
+GET /application/sections/opponents
+GET /application/sections/opponents/individual/create
+POST /application/sections/opponents/individual/create
+GET /application/sections/opponents/organisation/create
+POST /application/sections/opponents/organisation/create
+GET /application/sections/opponents/organisation/search
+POST /application/sections/opponents/organisation/search
+GET /application/sections/opponents/organisation/search/results
+POST /application/sections/opponents/organisation/shared/create
+GET /application/sections/opponents/organisation/{id}/select
+GET /application/sections/opponents/{opponent-id}/edit
+POST /application/sections/opponents/{opponent-id}/edit
+GET /application/sections/opponents/{opponent-id}/remove
+POST /application/sections/opponents/{opponent-id}/remove
+GET /application/sections/provider-details
+POST /application/sections/provider-details
+GET /application/sections/summary
+GET /application/summary/print

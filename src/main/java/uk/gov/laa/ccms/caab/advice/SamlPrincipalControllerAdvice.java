@@ -2,16 +2,22 @@ package uk.gov.laa.ccms.caab.advice;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.saml2.provider.service.authentication.Saml2AssertionAuthentication;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerMapping;
 import uk.gov.laa.ccms.caab.controller.HomeController;
+import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
+import uk.gov.laa.ccms.caab.security.UserFunctionAuthorities;
 import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -21,6 +27,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
  */
 @ControllerAdvice
 @RequiredArgsConstructor
+@Slf4j
 public class SamlPrincipalControllerAdvice {
 
   private final UserService userService;
@@ -56,14 +63,21 @@ public class SamlPrincipalControllerAdvice {
         user = (UserDetail) session.getAttribute("user");
 
         if (!user.getLoginId().equals(loginId)) {
-          user = userService.getUser(user.getUserId()).block();
+          final Integer userId = user.getUserId();
+          user = loadUser(() -> userService.getUser(userId).block(), loginId);
         }
 
       } else {
-        user = userService.getUserByLoginId(loginId).block();
+        user = loadUser(() -> userService.getUserByLoginId(loginId).block(), loginId);
         if (previous != null && user != null) {
+          UserFunctionAuthorities.replace(saml2Authentication, previous, user, session);
           securityEventLogger.privilegesReloaded(previous.getFunctions(), user.getFunctions());
         }
+      }
+
+      if (user == null) {
+        endLogin(session);
+        throw new CaabApplicationException("Unable to retrieve user details for " + loginId);
       }
 
       model.addAttribute("user", user);
@@ -71,6 +85,26 @@ public class SamlPrincipalControllerAdvice {
 
       session.setAttribute("user", user);
     }
+  }
+
+  /** Loads the user, treating a failed load like a missing user so that it fails closed. */
+  private static UserDetail loadUser(Supplier<UserDetail> load, String loginId) {
+    try {
+      return load.get();
+    } catch (RuntimeException e) {
+      log.error("Unable to load user {}", loginId, e);
+      return null;
+    }
+  }
+
+  /**
+   * Drops the logged-in authentication, so its functions cannot be used without a user to check
+   * them against, and the next request logs the user in again.
+   */
+  private static void endLogin(HttpSession session) {
+    SecurityContextHolder.clearContext();
+    session.removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+    session.removeAttribute("user");
   }
 
   /**

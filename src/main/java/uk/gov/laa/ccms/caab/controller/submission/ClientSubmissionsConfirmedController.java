@@ -40,9 +40,8 @@ public class ClientSubmissionsConfirmedController {
    * @param session The http session for the view.
    * @return The view name for a client creation submission page.
    */
-  @PostMapping("/{caseContext}/client-create/confirmed")
+  @PostMapping("/application/client-create/confirmed")
   public String clientCreateSubmitted(
-      @PathVariable("caseContext") final CaseContext caseContext,
       @SessionAttribute(APPLICATION_FORM_DATA) final ApplicationFormData applicationFormData,
       @SessionAttribute(USER_DETAILS) final UserDetail user,
       @SessionAttribute(CLIENT_REFERENCE) final String clientReference,

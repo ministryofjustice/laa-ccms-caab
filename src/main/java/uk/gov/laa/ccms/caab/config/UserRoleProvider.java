@@ -65,12 +65,12 @@ public class UserRoleProvider {
     return UserRole.REQUEST_CASE_DISCHARGE.getCode();
   }
 
-  public String getCreateCaseRequest() {
-    return UserRole.CREATE_CASE_REQUEST.getCode();
+  public String getSubmitCaseQuery() {
+    return UserRole.SUBMIT_CASE_QUERY.getCode();
   }
 
-  public String getCreateProviderRequest() {
-    return UserRole.CREATE_PROVIDER_REQUEST.getCode();
+  public String getCreateGeneralRequest() {
+    return UserRole.CREATE_GENERAL_REQUEST.getCode();
   }
 
   public String getSubmitAmendment() {

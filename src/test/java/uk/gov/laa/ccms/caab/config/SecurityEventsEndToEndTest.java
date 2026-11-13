@@ -72,14 +72,13 @@ class SecurityEventsEndToEndTest {
 
   @Test
   void aRouteTheUserLacksTheFunctionForIsRefusedAndLoggedAsADenial() throws Exception {
-    int status =
-        mockMvc
-            .perform(get("/case/overview").with(user("jane").authorities()))
-            .andReturn()
-            .getResponse()
-            .getStatus();
+    // A refused page load is returned to a page the user may see, as the legacy PUI does, so the
+    // refusal shows as a redirect rather than a 403.
+    MvcResult refused =
+        mockMvc.perform(get("/case/overview").with(user("jane").authorities())).andReturn();
 
-    assertThat(status).isEqualTo(403);
+    assertThat(refused.getResponse().getStatus()).isEqualTo(302);
+    assertThat(refused.getResponse().getRedirectedUrl()).isEqualTo("/home");
     assertThat(eventTypes()).contains("AUTHORIZATION_DENIED");
     assertThat(keyValue("AUTHORIZATION_DENIED", "event_detail")).isEqualTo("GET /case/overview");
     org.mockito.Mockito.verify(puiMetricService)
