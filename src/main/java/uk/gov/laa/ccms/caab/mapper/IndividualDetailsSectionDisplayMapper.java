@@ -32,7 +32,7 @@ import uk.gov.laa.ccms.data.model.RelationshipToCaseLookupValueDetail;
 @Mapper(
     componentModel = "spring",
     uses = {LookupService.class})
-public abstract class IndividualDetailsSectionDisplayMapper {
+public abstract class IndividualDetailsSectionDisplayMapper implements NullableBooleanMapper {
 
   @Autowired protected LookupService lookupService;
 

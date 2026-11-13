@@ -61,6 +61,7 @@ import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetail;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.RecoveryRequest;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.util.DateUtils;
@@ -1205,6 +1206,24 @@ class CaabApiClientTest {
 
     StepVerifier.create(caabApiClient.upsertTimeRecovery(42, "LAND", 7, "user789", recovery))
         .verifyComplete();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"COST", "DAMAGE"})
+  void upsertRecoveryUsesAwardScopeAndUserHeader(String type) {
+    final var recovery = new RecoveryRequest();
+    recovery.setOfferDetails("Terms");
+    final String uri = "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/recovery";
+    when(caabApiWebClient.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(uri, 42, type, 7)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", "user1")).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(recovery)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+    StepVerifier.create(caabApiClient.upsertRecovery(42, type, 7, "user1", recovery))
+        .verifyComplete();
+    verify(requestBodyMock).bodyValue(recovery);
   }
 
   @Test

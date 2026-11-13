@@ -40,6 +40,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -69,6 +70,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.LandAwardMapper;
+import uk.gov.laa.ccms.caab.mapper.LiablePartiesDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.OtherAssetAwardMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CaseOutcomeDetail;
@@ -108,6 +110,11 @@ class AwardControllerTest {
   @Mock private LandAwardValidator landAwardValidator;
   @Mock private LandAwardMapper landAwardMapper;
   @Spy private TimeRecoveryValidator timeRecoveryValidator = new TimeRecoveryValidator();
+
+  @Spy
+  private LiablePartiesDisplayMapper awardDisplayMapper =
+      Mappers.getMapper(LiablePartiesDisplayMapper.class);
+
   @Mock private PartyListService partyListService;
 
   @InjectMocks private AwardController controller;

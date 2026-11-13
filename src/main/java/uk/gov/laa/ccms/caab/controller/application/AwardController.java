@@ -56,6 +56,7 @@ import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.CostAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.FinancialAwardMapper;
 import uk.gov.laa.ccms.caab.mapper.LandAwardMapper;
+import uk.gov.laa.ccms.caab.mapper.LiablePartiesDisplayMapper;
 import uk.gov.laa.ccms.caab.mapper.OtherAssetAwardMapper;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.CostAwardDetail;
@@ -105,6 +106,7 @@ public class AwardController {
   private final LandAwardValidator landAwardValidator;
   private final LandAwardMapper landAwardMapper;
   private final TimeRecoveryValidator timeRecoveryValidator;
+  private final LiablePartiesDisplayMapper awardDisplayMapper;
   private final PartyListService partyListService;
 
   /**
