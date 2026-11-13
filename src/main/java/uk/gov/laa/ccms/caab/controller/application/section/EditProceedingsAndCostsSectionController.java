@@ -497,10 +497,7 @@ public class EditProceedingsAndCostsSectionController {
       final Model model) {
 
     populateProceedingTypeDropdown(
-        model,
-        application,
-        proceedingFlow.getMatterTypeDetails().getMatterType(),
-        proceedingFlow.isLeadProceeding());
+        model, application, proceedingFlow.getMatterTypeDetails().getMatterType());
 
     model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
     model.addAttribute("proceedingTypeDetails", proceedingFlow.getProceedingDetails());
@@ -537,10 +534,7 @@ public class EditProceedingsAndCostsSectionController {
 
     if (bindingResult.hasErrors()) {
       populateProceedingTypeDropdown(
-          model,
-          application,
-          proceedingFlow.getMatterTypeDetails().getMatterType(),
-          proceedingFlow.isLeadProceeding());
+          model, application, proceedingFlow.getMatterTypeDetails().getMatterType());
 
       model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
 
@@ -577,36 +571,23 @@ public class EditProceedingsAndCostsSectionController {
    * @param model The Model object to add attributes to for the view.
    * @param application The application details.
    * @param matterType The type of the matter.
-   * @param isLead A boolean indicating if the proceeding is a lead proceeding.
    */
   private void populateProceedingTypeDropdown(
-      final Model model,
-      final ApplicationDetail application,
-      final String matterType,
-      final boolean isLead) {
-
-    uk.gov.laa.ccms.data.model.ProceedingDetail searchCriteria =
-        new uk.gov.laa.ccms.data.model.ProceedingDetail()
-            .matterType(matterType)
-            .categoryOfLawCode(application.getCategoryOfLaw().getId())
-            .enabled(Boolean.TRUE);
-
-    if (application.getAmendment() == null || Boolean.FALSE.equals(application.getAmendment())) {
-      searchCriteria.amendmentOnly(Boolean.FALSE);
-    }
-
-    Boolean larScopeFlag = null;
-    String applicationType = null;
-
-    if (isLead) {
-      larScopeFlag = application.getLarScopeFlag();
-      applicationType = application.getApplicationType().getId();
-    }
+      final Model model, final ApplicationDetail application, final String matterType) {
 
     final List<uk.gov.laa.ccms.data.model.ProceedingDetail> proceedingDetails =
         Optional.ofNullable(
                 lookupService
-                    .getProceedings(searchCriteria, larScopeFlag, applicationType, isLead)
+                    .getAvailableProceedings(
+                        Optional.ofNullable(application.getCategoryOfLaw())
+                            .map(StringDisplayValue::getId)
+                            .orElse(null),
+                        matterType,
+                        application.getAmendment(),
+                        application.getLarScopeFlag(),
+                        Optional.ofNullable(application.getApplicationType())
+                            .map(applicationType -> applicationType.getId())
+                            .orElse(null))
                     .block())
             .map(ProceedingDetails::getContent)
             .orElse(Collections.emptyList());
