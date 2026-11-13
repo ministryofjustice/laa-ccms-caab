@@ -66,7 +66,12 @@
       <div th:replace="~{partials/forms :: percentageInput('awardedPercentage', #{case.landAward.awardedPercentage}, '5', 11)}"></div>
       <div th:replace="~{partials/forms :: currencyInput('mortgageAmountDue', #{case.landAward.mortgageAmountDue}, '10')}"></div>
 
-      <div th:replace="~{partials/forms :: readOnlyCurrencyInput('equity', #{case.landAward.equity}, '10')}"></div>
+      <dl id="equity-display" class="govuk-form-group">
+        <dt class="govuk-label" th:text="#{case.landAward.equity}"></dt>
+        <dd id="equity" class="govuk-body govuk-!-margin-left-0"
+            th:text="${landAward.equity == null ? '' : '£' + landAward.equity}"></dd>
+      </dl>
+      <input type="hidden" id="equity-value" th:field="*{equity}">
 
       <th:block th:replace="~{partials/forms :: autocompleteSelect(field='awardedBy', label=#{case.landAward.awardedBy},
                                                                    items=${awardedByOptions}, itemValue='code',

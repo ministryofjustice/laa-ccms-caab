@@ -1244,21 +1244,24 @@ class AwardControllerTest {
       }
 
       @Test
-      void invalidPostRedisplaysLandAwardPage() {
+      void invalidPostRedisplaysLandAwardPageWithSubmittedEquity() {
         doAnswer(
                 invocation -> {
                   invocation
                       .getArgument(1, Errors.class)
-                      .rejectValue("valuationAmount", "invalid.currency", "Invalid amount");
+                      .rejectValue("description", "required", "Enter a description");
                   return null;
                 })
             .when(landAwardValidator)
             .validate(any(), any());
 
-        assertThat(mockMvc.perform(validLandPost()))
+        assertThat(mockMvc.perform(validLandPost().param("equity", "150000.00")))
             .hasViewName("application/land-property")
             .model()
-            .hasErrors();
+            .hasErrors()
+            .hasEntrySatisfying(
+                "landAward",
+                value -> assertThat(value).extracting("equity").isEqualTo("150000.00"));
       }
 
       @Test
