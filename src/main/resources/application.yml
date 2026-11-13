@@ -70,12 +70,16 @@ spring:
       enabled: true
 
 server:
+  forward-headers-strategy: native
   tomcat:
-    max-swallow-size: -1
+    max-swallow-size: 50MB
     max-http-form-post-size: -1
   servlet:
     session:
       timeout: 60m
+      cookie:
+        secure: true
+        http-only: true
     # required to be on civil in order for OPA integration with OWD,
     # otherwise issues occur with the JSESSIONID cookie
     context-path: /civil
