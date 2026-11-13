@@ -17,7 +17,7 @@ import uk.gov.laa.ccms.soa.gateway.model.OrganisationDetail;
 
 /** Mapper class to convert Opponents between various formats. */
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public interface OpponentMapper {
+public interface OpponentMapper extends NullableBooleanMapper {
 
   @Mapping(target = ".", source = "organisation")
   @Mapping(target = "houseNameOrNumber", source = "organisation.address.house")

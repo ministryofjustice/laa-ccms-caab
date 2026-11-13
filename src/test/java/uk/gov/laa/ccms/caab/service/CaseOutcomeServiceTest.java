@@ -31,7 +31,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.award.CostAwardFormData;
-import uk.gov.laa.ccms.caab.bean.award.RecoveryRequestData;
 import uk.gov.laa.ccms.caab.client.CaabApiClient;
 import uk.gov.laa.ccms.caab.client.CaabApiClientException;
 import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
@@ -45,6 +44,7 @@ import uk.gov.laa.ccms.caab.model.LandAwardRequest;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.RecoveryRequest;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 
 @ExtendWith(MockitoExtension.class)
@@ -706,7 +706,7 @@ class CaseOutcomeServiceTest {
             .costAwards(List.of(new CostAwardDetail().id(7).awardType("COST")))
             .financialAwards(List.of(new FinancialAwardDetail().id(7).awardType("DAMAGE")));
     doReturn(Optional.of(outcome)).when(caseOutcomeService).getCaseOutcome("300000001", 123);
-    final var request = new RecoveryRequestData();
+    final var request = new RecoveryRequest();
     when(caabApiClient.upsertRecovery(42, type, 7, "user1", request)).thenReturn(Mono.empty());
     caseOutcomeService.upsertRecovery("300000001", 123, type, 7, request, "user1");
     verify(caabApiClient).upsertRecovery(42, type, 7, "user1", request);
@@ -721,7 +721,7 @@ class CaseOutcomeServiceTest {
         CaabApplicationException.class,
         () ->
             caseOutcomeService.upsertRecovery(
-                "300000001", 123, "COST", 7, new RecoveryRequestData(), "user1"));
+                "300000001", 123, "COST", 7, new RecoveryRequest(), "user1"));
     verify(caabApiClient, never()).upsertRecovery(any(), any(), any(), any(), any());
   }
 

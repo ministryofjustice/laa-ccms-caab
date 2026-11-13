@@ -15,6 +15,7 @@ import uk.gov.laa.ccms.caab.bean.validators.AbstractValidator;
 @Component
 public class RecoveryValidator extends AbstractValidator {
   private static final BigDecimal AMOUNT_LIMIT = new BigDecimal("100000000");
+  private static final BigDecimal MAX_TOTAL = new BigDecimal("99999999.99");
   private static final String MONEY_PATTERN = "(?:[0-9]+(?:\\.[0-9]{0,2})?|\\.[0-9]{1,2})";
 
   @Override
@@ -81,6 +82,34 @@ public class RecoveryValidator extends AbstractValidator {
     final Date date = validateValidDateField(value, field, label, COMPONENT_DATE_PATTERN, errors);
     if (date != null) {
       validateDateInPast(date, field, label, errors);
+    }
+  }
+
+  /** Checks persistence limits without restricting the legacy Calculate action. */
+  public void validateTotals(
+      final BigDecimal awardAmount,
+      final BigDecimal recoveredAmount,
+      final BigDecimal unrecoveredAmount,
+      final Errors errors) {
+    if (awardAmount.abs().compareTo(MAX_TOTAL) > 0) {
+      errors.reject(
+          "recovery.awardAmount.exceedsMax",
+          "The award amount must be between -99,999,999.99 and 99,999,999.99."
+              + " Return to the award to amend it before saving recovery details.");
+    }
+    if (recoveredAmount.abs().compareTo(MAX_TOTAL) > 0) {
+      errors.rejectValue(
+          "solicitorRecoveryAmount",
+          "recovery.recoveredAmount.exceedsMax",
+          "Total recovered must not exceed 99,999,999.99."
+              + " Amend the solicitor, court or client amounts.");
+    }
+    if (unrecoveredAmount.abs().compareTo(MAX_TOTAL) > 0) {
+      errors.rejectValue(
+          "clientRecoveryAmount",
+          "recovery.unrecoveredAmount.exceedsMax",
+          "Amount unrecovered must be between -99,999,999.99 and 99,999,999.99."
+              + " Check the award amount and the solicitor, court and client amounts.");
     }
   }
 }

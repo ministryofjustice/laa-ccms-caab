@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.bean.validators.awards;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -142,6 +143,44 @@ class RecoveryValidatorTest {
     form.setCourtAmountPaidToLsc("100");
     form.setClientRecoveryDate("14/12/1901");
     assertThat(validate(form).hasErrors()).isFalse();
+  }
+
+  @Test
+  void reportsTheSharedLowerBoundForEveryReceiptDate() {
+    final var form = new RecoveryFormData();
+    for (String field : DATES) {
+      new BeanWrapperImpl(form).setPropertyValue(field, "13/12/1901");
+    }
+    final var errors = validate(form);
+    for (String field : DATES) {
+      assertThat(errors.getFieldError(field).getCode()).isEqualTo("invalid.input");
+      assertThat(errors.getFieldError(field).getDefaultMessage())
+          .contains("date after 13 December 1901");
+    }
+  }
+
+  @Test
+  void acceptsMaximumTotalsAndNegativeUnrecoveredBalance() {
+    final var errors = new BeanPropertyBindingResult(new RecoveryFormData(), "recovery");
+    validator.validateTotals(
+        BigDecimal.ZERO, new BigDecimal("99999999.99"), new BigDecimal("-99999999.99"), errors);
+    assertThat(errors.hasErrors()).isFalse();
+  }
+
+  @Test
+  void rejectsEveryTotalOutsideTheApiRange() {
+    final var errors = new BeanPropertyBindingResult(new RecoveryFormData(), "recovery");
+    validator.validateTotals(
+        new BigDecimal("100000000.00"),
+        new BigDecimal("100000000.00"),
+        new BigDecimal("-100000000.00"),
+        errors);
+    assertThat(errors.getAllErrors())
+        .extracting(error -> error.getCode())
+        .containsExactly(
+            "recovery.awardAmount.exceedsMax",
+            "recovery.recoveredAmount.exceedsMax",
+            "recovery.unrecoveredAmount.exceedsMax");
   }
 
   private BeanPropertyBindingResult validate(RecoveryFormData form) {

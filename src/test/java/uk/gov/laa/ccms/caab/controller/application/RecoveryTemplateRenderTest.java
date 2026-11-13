@@ -127,6 +127,51 @@ class RecoveryTemplateRenderTest {
                             + "\")(?=[^>]*value=\"31/02/2026\")[^>]*>.*")));
   }
 
+  @Test
+  void formatsAllSummaryAmountsWithGroupingAndTwoDecimalPlaces() throws Exception {
+    mvc.perform(
+            post("/case/outcome-and-awards/financial-award/7/recovery")
+                .sessionAttr(CASE, ebsCase)
+                .sessionAttr(USER_DETAILS, ApplicationTestUtils.buildUser())
+                .flashAttr("user", new UserDetail().functions(List.of()))
+                .param("action", "calculate")
+                .param("solicitorRecoveryAmount", "12345.67"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString(">£1,000.00</dd>")))
+        .andExpect(
+            content()
+                .string(
+                    containsString(
+                        "id=\"recoveredAmount\" class=\"govuk-summary-list__value\">£12,345.67</dd>")))
+        .andExpect(
+            content()
+                .string(
+                    containsString(
+                        "id=\"unrecoveredAmount\" class=\"govuk-summary-list__value\">£-11,345.67</dd>")));
+  }
+
+  @Test
+  void rendersTotalErrorsWithLinksToEditableAmounts() throws Exception {
+    mvc.perform(
+            post("/case/outcome-and-awards/financial-award/7/recovery")
+                .sessionAttr(CASE, ebsCase)
+                .sessionAttr(USER_DETAILS, ApplicationTestUtils.buildUser())
+                .flashAttr("user", new UserDetail().functions(List.of()))
+                .param("solicitorRecoveryAmount", "99999999.99")
+                .param("courtRecoveryAmount", "1000.02"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString("href=\"#solicitorRecoveryAmount\"")))
+        .andExpect(
+            content().string(containsString("Total recovered must not exceed 99,999,999.99")))
+        .andExpect(content().string(containsString("href=\"#clientRecoveryAmount\"")))
+        .andExpect(
+            content()
+                .string(
+                    containsString(
+                        "Amount unrecovered must be between -99,999,999.99 and 99,999,999.99")))
+        .andExpect(content().string(containsString("value=\"1000.02\"")));
+  }
+
   @ParameterizedTest
   @ValueSource(
       strings = {
@@ -231,7 +276,7 @@ class RecoveryTemplateRenderTest {
                 .string(not(matchesPattern("(?s).*<h[12][^>]*>Outcome and [Aa]wards</h[12]>.*"))))
         .andExpect(content().string(containsString("name=\"" + field + "\"")))
         .andExpect(content().string(containsString("Financial award")))
-        .andExpect(content().string(containsString("£1000.00")))
+        .andExpect(content().string(containsString("£1,000.00")))
         .andExpect(
             content()
                 .string(

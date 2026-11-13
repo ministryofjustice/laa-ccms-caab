@@ -50,8 +50,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -68,7 +68,6 @@ import uk.gov.laa.ccms.caab.bean.award.FinancialAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.LandAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.OtherAssetAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.RecoveryFormData;
-import uk.gov.laa.ccms.caab.bean.award.RecoveryRequestData;
 import uk.gov.laa.ccms.caab.bean.validators.BaselineTextValidator;
 import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
 import uk.gov.laa.ccms.caab.bean.validators.awards.CostAwardValidator;
@@ -97,15 +96,16 @@ import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.RecoveryDetail;
+import uk.gov.laa.ccms.caab.model.RecoveryRequest;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.model.sections.LiablePartiesDisplay;
 import uk.gov.laa.ccms.caab.model.sections.PartyListRow;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
-import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.caab.service.PartyListService;
 import uk.gov.laa.ccms.caab.service.PartyListService.PartyListCandidate;
+import uk.gov.laa.ccms.caab.util.DateUtils;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupValueDetail;
 import uk.gov.laa.ccms.data.model.CommonLookupDetail;
@@ -132,6 +132,7 @@ class AwardControllerTest {
   @Spy
   private LiablePartiesDisplayMapper awardDisplayMapper =
       Mappers.getMapper(LiablePartiesDisplayMapper.class);
+
   @Mock private PartyListService partyListService;
 
   @InjectMocks private AwardController controller;
@@ -298,6 +299,118 @@ class AwardControllerTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {"cost-award", "financial-award"})
+    void preservesLegacyCalculationAboveThePersistenceLimit(String path) throws Exception {
+      stubAward(path, null);
+      mvc.perform(
+              post(url(path))
+                  .sessionAttr(CASE, ebsCase)
+                  .sessionAttr(USER_DETAILS, user)
+                  .param("action", "calculate")
+                  .param("solicitorRecoveryAmount", "99999999.99")
+                  .param("courtRecoveryAmount", "1000.02"))
+          .andExpect(view().name("application/recovery"))
+          .andExpect(model().hasNoErrors())
+          .andExpect(model().attribute("recoveredAmount", new BigDecimal("100001000.01")))
+          .andExpect(model().attribute("unrecoveredAmount", new BigDecimal("-100000000.01")));
+      verify(caseOutcomeService, never()).upsertRecovery(any(), any(), any(), any(), any(), any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"cost-award", "financial-award"})
+    void rejectsUnsaveableTotalsWithSpecificErrorsAndPreservesInputs(String path) throws Exception {
+      stubAward(path, null);
+      final var result =
+          mvc.perform(
+                  post(url(path))
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user)
+                      .param("solicitorRecoveryAmount", "99999999.99")
+                      .param("courtRecoveryAmount", "1000.02")
+                      .param("offerDetails", "Keep these terms"))
+              .andExpect(view().name("application/recovery"))
+              .andExpect(
+                  model()
+                      .attributeHasFieldErrorCode(
+                          "recovery",
+                          "solicitorRecoveryAmount",
+                          "recovery.recoveredAmount.exceedsMax"))
+              .andExpect(
+                  model()
+                      .attributeHasFieldErrorCode(
+                          "recovery",
+                          "clientRecoveryAmount",
+                          "recovery.unrecoveredAmount.exceedsMax"))
+              .andExpect(model().attribute("recoveredAmount", new BigDecimal("100001000.01")))
+              .andReturn();
+      final var form = (RecoveryFormData) result.getModelAndView().getModel().get("recovery");
+      assertThat(form.getSolicitorRecoveryAmount()).isEqualTo("99999999.99");
+      assertThat(form.getCourtRecoveryAmount()).isEqualTo("1000.02");
+      assertThat(form.getOfferDetails()).isEqualTo("Keep these terms");
+      verify(caseOutcomeService, never()).upsertRecovery(any(), any(), any(), any(), any(), any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"cost-award", "financial-award"})
+    void savesMaximumTotalAndNegativeBalanceAsInLegacy(String path) throws Exception {
+      stubAward(path, null);
+      mvc.perform(
+              post(url(path))
+                  .sessionAttr(CASE, ebsCase)
+                  .sessionAttr(USER_DETAILS, user)
+                  .param("solicitorRecoveryAmount", "99999999.99"))
+          .andExpect(redirectedUrl("/case/outcome-and-awards"));
+      verify(caseOutcomeService).upsertRecovery(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void rejectsAwardAmountOutsideThePersistenceLimitBeforeSaving() throws Exception {
+      when(caseOutcomeService.getCostAward("300000001", 123, 7))
+          .thenReturn(
+              Optional.of(
+                  new CostAwardDetail()
+                      .id(7)
+                      .awardType("COST")
+                      .preCertificateLscCost(new BigDecimal("99999999.99"))
+                      .preCertificateOtherCost(new BigDecimal("0.01"))));
+      final var result =
+          mvc.perform(
+                  post(url("cost-award"))
+                      .sessionAttr(CASE, ebsCase)
+                      .sessionAttr(USER_DETAILS, user))
+              .andExpect(view().name("application/recovery"))
+              .andExpect(model().attributeHasErrors("recovery"))
+              .andReturn();
+      final var errors =
+          (BindingResult)
+              result.getModelAndView().getModel().get(BindingResult.MODEL_KEY_PREFIX + "recovery");
+      assertThat(errors.getGlobalError().getCode()).isEqualTo("recovery.awardAmount.exceedsMax");
+      verify(caseOutcomeService, never()).upsertRecovery(any(), any(), any(), any(), any(), any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"cost-award", "financial-award"})
+    void rejectsReceiptDatesAtOrBeforeTheSharedLowerBound(String path) throws Exception {
+      stubAward(path, null);
+      mvc.perform(
+              post(url(path))
+                  .sessionAttr(CASE, ebsCase)
+                  .sessionAttr(USER_DETAILS, user)
+                  .param("solicitorRecoveryDate", "01/01/1900")
+                  .param("courtRecoveryDate", "12/12/1901")
+                  .param("clientRecoveryDate", "13/12/1901"))
+          .andExpect(view().name("application/recovery"))
+          .andExpect(
+              model()
+                  .attributeHasFieldErrors(
+                      "recovery",
+                      "solicitorRecoveryDate",
+                      "courtRecoveryDate",
+                      "clientRecoveryDate"));
+      verify(caseOutcomeService, never()).upsertRecovery(any(), any(), any(), any(), any(), any());
+    }
+
+    @ParameterizedTest
     @CsvSource({"cost-award,COST", "financial-award,DAMAGE"})
     void savesOnlyEditableRecoveryInputsOnNext(String path, String type) throws Exception {
       stubAward(path, null);
@@ -320,7 +433,7 @@ class AwardControllerTest {
                   .param("id", "500")
                   .param("recoveredAmount", "9999"))
           .andExpect(redirectedUrl("/case/outcome-and-awards"));
-      final var captor = ArgumentCaptor.forClass(RecoveryRequestData.class);
+      final var captor = ArgumentCaptor.forClass(RecoveryRequest.class);
       verify(caseOutcomeService)
           .upsertRecovery(eq("300000001"), eq(123), eq(type), eq(7), captor.capture(), any());
       final var request = captor.getValue();
@@ -373,7 +486,7 @@ class AwardControllerTest {
                   .param("clientRecoveryDate", " \t ")
                   .param("offerDetails", " Term\u0000s\r\n  Second\rThird\n "))
           .andExpect(redirectedUrl("/case/outcome-and-awards"));
-      final var captor = ArgumentCaptor.forClass(RecoveryRequestData.class);
+      final var captor = ArgumentCaptor.forClass(RecoveryRequest.class);
       verify(caseOutcomeService)
           .upsertRecovery(eq("300000001"), eq(123), eq(type), eq(7), captor.capture(), any());
       final var request = captor.getValue();
@@ -494,7 +607,7 @@ class AwardControllerTest {
                   .sessionAttr(USER_DETAILS, user)
                   .param("offerDetails", offer))
           .andExpect(redirectedUrl("/case/outcome-and-awards"));
-      final var captor = ArgumentCaptor.forClass(RecoveryRequestData.class);
+      final var captor = ArgumentCaptor.forClass(RecoveryRequest.class);
       verify(caseOutcomeService)
           .upsertRecovery(eq("300000001"), eq(123), eq(type), eq(7), captor.capture(), any());
       assertThat(captor.getValue().getOfferDetails()).isEqualTo(offer);

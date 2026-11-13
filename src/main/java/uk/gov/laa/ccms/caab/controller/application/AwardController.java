@@ -42,7 +42,6 @@ import uk.gov.laa.ccms.caab.bean.award.FinancialAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.LandAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.OtherAssetAwardFormData;
 import uk.gov.laa.ccms.caab.bean.award.RecoveryFormData;
-import uk.gov.laa.ccms.caab.bean.award.RecoveryRequestData;
 import uk.gov.laa.ccms.caab.bean.award.TimeRecoveryAward;
 import uk.gov.laa.ccms.caab.bean.award.TimeRecoveryFormData;
 import uk.gov.laa.ccms.caab.bean.validators.application.AwardTypeValidator;
@@ -73,6 +72,7 @@ import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.RecoveryDetail;
+import uk.gov.laa.ccms.caab.model.RecoveryRequest;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.model.sections.PartyListRow;
@@ -657,9 +657,14 @@ public class AwardController {
           model, award, awardPath, awardId, recoveryMapper.toRequest(savedRecoveryForm(award)));
       return "application/recovery";
     }
-    final RecoveryRequestData request = recoveryMapper.toRequest(form);
-    populateRecoveryModel(model, award, awardPath, awardId, request);
+    final RecoveryRequest request = recoveryMapper.toRequest(form);
+    final RecoveryTotals totals = populateRecoveryModel(model, award, awardPath, awardId, request);
     if ("calculate".equals(action)) {
+      return "application/recovery";
+    }
+    recoveryValidator.validateTotals(
+        totals.awardAmount(), totals.recoveredAmount(), totals.unrecoveredAmount(), errors);
+    if (errors.hasErrors()) {
       return "application/recovery";
     }
     try {
@@ -703,12 +708,15 @@ public class AwardController {
     return recovery == null ? new RecoveryFormData() : recoveryMapper.toForm(recovery);
   }
 
-  private void populateRecoveryModel(
+  private record RecoveryTotals(
+      BigDecimal awardAmount, BigDecimal recoveredAmount, BigDecimal unrecoveredAmount) {}
+
+  private RecoveryTotals populateRecoveryModel(
       final Model model,
       final BaseAwardDetail award,
       final String path,
       final Integer id,
-      final RecoveryRequestData request) {
+      final RecoveryRequest request) {
     final BigDecimal amount =
         Optional.ofNullable(awardDisplayMapper.awardAmount(award))
             .orElse(BigDecimal.ZERO)
@@ -724,6 +732,7 @@ public class AwardController {
     model.addAttribute("awardId", id);
     model.addAttribute("recoveredAmount", recovered);
     model.addAttribute("unrecoveredAmount", amount.subtract(recovered));
+    return new RecoveryTotals(amount, recovered, amount.subtract(recovered));
   }
 
   /** Displays the saved or new time-related recovery for a land or other asset award. */

@@ -33,7 +33,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
-import uk.gov.laa.ccms.caab.bean.award.RecoveryRequestData;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationDetails;
@@ -62,6 +61,7 @@ import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetail;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.RecoveryRequest;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.util.DateUtils;
@@ -1211,7 +1211,7 @@ class CaabApiClientTest {
   @ParameterizedTest
   @ValueSource(strings = {"COST", "DAMAGE"})
   void upsertRecoveryUsesAwardScopeAndUserHeader(String type) {
-    final var recovery = new RecoveryRequestData();
+    final var recovery = new RecoveryRequest();
     recovery.setOfferDetails("Terms");
     final String uri = "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/recovery";
     when(caabApiWebClient.put()).thenReturn(requestBodyUriMock);

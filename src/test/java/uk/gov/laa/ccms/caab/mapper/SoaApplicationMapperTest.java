@@ -660,10 +660,10 @@ class SoaApplicationMapperTest {
     assertEquals(soaOtherParty.getOtherPartyId(), result.getEbsId());
     assertEquals(
         soaOtherParty.getPerson().isCourtOrderedMeansAssessment(),
-        result.getCourtOrderedMeansAssessment());
+        result.getCourtOrderedMeansAssessment().get());
     assertEquals(soaOtherParty.getPerson().getOrganizationAddress(), result.getEmployerAddress());
     assertEquals(soaOtherParty.getPerson().getOrganizationName(), result.getEmployerName());
-    assertEquals(soaOtherParty.getPerson().isPartyLegalAidedInd(), result.getLegalAided());
+    assertEquals(soaOtherParty.getPerson().isPartyLegalAidedInd(), result.getLegalAided().get());
     assertEquals(soaOtherParty.getPerson().getNiNumber(), result.getNationalInsuranceNumber());
     assertEquals(soaOtherParty.getPerson().getRelationToCase(), result.getRelationshipToCase());
     assertEquals(soaOtherParty.getPerson().getRelationToClient(), result.getRelationshipToClient());
@@ -1776,7 +1776,7 @@ class SoaApplicationMapperTest {
     opponentDetail.setRelationshipToClient("ClientRelInd");
     opponentDetail.setRelationshipToCase("CaseRelInd");
     opponentDetail.setNationalInsuranceNumber("NI12345");
-    opponentDetail.setLegalAided(true);
+    opponentDetail.legalAided(true);
 
     final OtherParty result = applicationMapper.toSoaOtherParty(opponentDetail);
 
@@ -1861,8 +1861,8 @@ class SoaApplicationMapperTest {
     opponentDetail.setRelationshipToClient(relationToClient);
     opponentDetail.setRelationshipToCase(relationToCase);
     opponentDetail.setNationalInsuranceNumber(niNumber);
-    opponentDetail.setLegalAided(legalAided);
-    opponentDetail.setCourtOrderedMeansAssessment(courtOrderedMeansAssesment);
+    opponentDetail.legalAided(legalAided);
+    opponentDetail.courtOrderedMeansAssessment(courtOrderedMeansAssesment);
     opponentDetail.setContactNameRole(contactName);
     opponentDetail.setEmployerName(employerName);
     opponentDetail.setEmployerAddress(employerAddress);

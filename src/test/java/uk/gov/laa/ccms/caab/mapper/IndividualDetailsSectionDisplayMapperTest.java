@@ -178,8 +178,8 @@ class IndividualDetailsSectionDisplayMapperTest {
     individualDetails.setAssessedIncomeFrequency("Frequency");
     individualDetails.setAssessmentDate(
         Date.from(LocalDate.of(2010, 5, 1).atStartOfDay().toInstant(ZoneOffset.UTC)));
-    individualDetails.setCourtOrderedMeansAssessment(true);
-    individualDetails.setLegalAided(true);
+    individualDetails.courtOrderedMeansAssessment(true);
+    individualDetails.legalAided(true);
     individualDetails.setAssessedIncome(BigDecimal.valueOf(123.45));
     individualDetails.setAssessedAssets(BigDecimal.valueOf(678.90));
     individualDetails.setOtherInformation("Other info");

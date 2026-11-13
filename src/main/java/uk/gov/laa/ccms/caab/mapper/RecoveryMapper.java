@@ -5,14 +5,14 @@ import java.util.Date;
 import org.mapstruct.Mapper;
 import org.springframework.util.StringUtils;
 import uk.gov.laa.ccms.caab.bean.award.RecoveryFormData;
-import uk.gov.laa.ccms.caab.bean.award.RecoveryRequestData;
 import uk.gov.laa.ccms.caab.model.RecoveryDetail;
+import uk.gov.laa.ccms.caab.model.RecoveryRequest;
 import uk.gov.laa.ccms.caab.util.DateUtils;
 
 /** Maps validated recovery inputs, retaining the API's historical LSC field names. */
 @Mapper(componentModel = "spring")
 public interface RecoveryMapper {
-  RecoveryRequestData toRequest(RecoveryFormData form);
+  RecoveryRequest toRequest(RecoveryFormData form);
 
   RecoveryFormData toForm(RecoveryDetail recovery);
 

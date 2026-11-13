@@ -111,7 +111,7 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 
 /** Mapper class to convert a EbsApi Case into a CAAB ApplicationDetail. */
 @Mapper(componentModel = "spring")
-public interface EbsApplicationMapper {
+public interface EbsApplicationMapper extends NullableBooleanMapper {
 
   ApplicationDetails toApplicationDetails(Page<BaseApplicationDetail> applicationPage);
 
