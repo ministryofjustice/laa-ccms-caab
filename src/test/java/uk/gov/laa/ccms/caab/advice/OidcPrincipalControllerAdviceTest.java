@@ -19,8 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.saml2.provider.service.authentication.Saml2AssertionAuthentication;
-import org.springframework.security.saml2.provider.service.authentication.Saml2ResponseAssertionAccessor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.ui.Model;
@@ -33,8 +33,8 @@ import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(classes = {SamlPrincipalControllerAdvice.class})
-class SamlPrincipalControllerAdviceTest {
+@SpringBootTest(classes = {OidcPrincipalControllerAdvice.class})
+class OidcPrincipalControllerAdviceTest {
 
   @MockitoBean private UserService userService;
   @MockitoBean private SecurityEventLogger securityEventLogger;
@@ -45,41 +45,40 @@ class SamlPrincipalControllerAdviceTest {
 
   @MockitoBean private HttpServletRequest request;
 
-  @Autowired private SamlPrincipalControllerAdvice advice;
+  @Autowired private OidcPrincipalControllerAdvice advice;
 
-  @MockitoBean private Saml2AssertionAuthentication authentication;
+  @MockitoBean private Authentication authentication;
 
-  @MockitoBean private Saml2ResponseAssertionAccessor accessor;
+  @MockitoBean private OidcUser oidcUser;
 
   private UserDetail userDetails;
 
-  private final Map<String, List<Object>> attributes =
-      Map.of("groups", List.of("attribute1", "attribute2"));
+  private final Map<String, Object> claims = Map.of("groups", List.of("attribute1", "attribute2"));
 
   @BeforeEach
   public void setUp() {
     userDetails = new UserDetail();
     userDetails.setLoginId("test");
-    when(authentication.getCredentials()).thenReturn(accessor);
-    when(accessor.getAttributes()).thenReturn(attributes);
+    when(authentication.getPrincipal()).thenReturn(oidcUser);
+    when(oidcUser.getClaims()).thenReturn(claims);
     when(userService.getUser(any())).thenReturn(Mono.just(userDetails));
     when(userService.getUserByLoginId(any())).thenReturn(Mono.just(userDetails));
     when(authentication.getName()).thenReturn("test");
   }
 
   @Nested
-  class AddSamlPrincipalToModelTests {
+  class AddOidcPrincipalToModelTests {
 
     @Test
     @DisplayName("User details are added to model from session when matching user in session")
     public void whenPrincipalNotNullAndSessionContainsUser() {
       when(session.getAttribute("user")).thenReturn(userDetails);
 
-      advice.addSamlPrincipalToModel(authentication, model, session, request);
+      advice.addOidcPrincipalToModel(authentication, model, session, request);
 
       verifyNoInteractions(userService);
       verify(model).addAttribute("user", userDetails);
-      verify(model).addAttribute("userAttributes", attributes);
+      verify(model).addAttribute("userAttributes", claims);
       verify(session).setAttribute("user", userDetails);
       verifyNoMoreInteractions(model);
     }
@@ -93,11 +92,11 @@ class SamlPrincipalControllerAdviceTest {
       sessionUser.setLoginId("different");
       when(session.getAttribute("user")).thenReturn(sessionUser);
 
-      advice.addSamlPrincipalToModel(authentication, model, session, request);
+      advice.addOidcPrincipalToModel(authentication, model, session, request);
 
       verify(userService).getUser(any());
       verify(model).addAttribute("user", userDetails);
-      verify(model).addAttribute("userAttributes", attributes);
+      verify(model).addAttribute("userAttributes", claims);
       verify(session).setAttribute("user", userDetails);
       verifyNoMoreInteractions(model);
     }
@@ -108,11 +107,11 @@ class SamlPrincipalControllerAdviceTest {
     public void userDetailsRetrievedAndAddedWhenPrincipalNotNullAndSessionDoesNotContainUser() {
       when(session.getAttribute("user")).thenReturn(null);
 
-      advice.addSamlPrincipalToModel(authentication, model, session, request);
+      advice.addOidcPrincipalToModel(authentication, model, session, request);
 
       verify(userService).getUserByLoginId(any());
       verify(model).addAttribute("user", userDetails);
-      verify(model).addAttribute("userAttributes", attributes);
+      verify(model).addAttribute("userAttributes", claims);
       verify(session).setAttribute("user", userDetails);
       verifyNoMoreInteractions(model);
     }
@@ -120,7 +119,20 @@ class SamlPrincipalControllerAdviceTest {
     @Test
     @DisplayName("User details are not retrieved or added to model when authentication is missing")
     public void userDetailsNotRetrievedOrAddedWhenPrincipalIsNull() {
-      advice.addSamlPrincipalToModel(null, model, session, request);
+      advice.addOidcPrincipalToModel(null, model, session, request);
+
+      verifyNoInteractions(userService);
+      verifyNoInteractions(model);
+      verifyNoInteractions(session);
+    }
+
+    @Test
+    @DisplayName(
+        "User details are not retrieved or added to model when principal is not an OidcUser")
+    public void userDetailsNotRetrievedOrAddedWhenPrincipalIsNotOidcUser() {
+      when(authentication.getPrincipal()).thenReturn("not-an-oidc-user");
+
+      advice.addOidcPrincipalToModel(authentication, model, session, request);
 
       verifyNoInteractions(userService);
       verifyNoInteractions(model);
@@ -139,11 +151,11 @@ class SamlPrincipalControllerAdviceTest {
           .thenReturn(handler);
       doReturn(HomeController.class).when(handler).getBeanType();
 
-      advice.addSamlPrincipalToModel(authentication, model, session, request);
+      advice.addOidcPrincipalToModel(authentication, model, session, request);
 
       verify(userService).getUserByLoginId(any());
       verify(model).addAttribute("user", userDetails);
-      verify(model).addAttribute("userAttributes", attributes);
+      verify(model).addAttribute("userAttributes", claims);
       verify(session).setAttribute("user", userDetails);
       verifyNoMoreInteractions(model);
     }
@@ -161,7 +173,7 @@ class SamlPrincipalControllerAdviceTest {
           .thenReturn(handler);
       doReturn(HomeController.class).when(handler).getBeanType();
 
-      advice.addSamlPrincipalToModel(authentication, model, session, request);
+      advice.addOidcPrincipalToModel(authentication, model, session, request);
 
       verify(securityEventLogger).privilegesReloaded(List.of("VIEW"), List.of("VIEW", "DELETE"));
     }
@@ -171,7 +183,7 @@ class SamlPrincipalControllerAdviceTest {
     public void privilegesNotComparedWhenUserComesFromTheSession() {
       when(session.getAttribute("user")).thenReturn(userDetails);
 
-      advice.addSamlPrincipalToModel(authentication, model, session, request);
+      advice.addOidcPrincipalToModel(authentication, model, session, request);
 
       verifyNoInteractions(securityEventLogger);
     }
@@ -181,7 +193,7 @@ class SamlPrincipalControllerAdviceTest {
     public void privilegesNotComparedOnTheFirstLoad() {
       when(session.getAttribute("user")).thenReturn(null);
 
-      advice.addSamlPrincipalToModel(authentication, model, session, request);
+      advice.addOidcPrincipalToModel(authentication, model, session, request);
 
       verifyNoInteractions(securityEventLogger);
     }

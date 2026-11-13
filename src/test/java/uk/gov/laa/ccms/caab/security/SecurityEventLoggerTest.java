@@ -236,12 +236,12 @@ class SecurityEventLoggerTest {
   }
 
   @Test
-  void aSamlFailureIsLoggedByItsErrorCodeNotItsMessage() {
+  void anOauth2FailureIsLoggedByItsErrorCodeNotItsMessage() {
     logger.authenticationFailed(
-        new org.springframework.security.saml2.provider.service.authentication
-            .Saml2AuthenticationException(
-            new org.springframework.security.saml2.core.Saml2Error(
-                "invalid_signature", "bad signature for jane.doe@example.com")));
+        new org.springframework.security.oauth2.core.OAuth2AuthenticationException(
+            new org.springframework.security.oauth2.core.OAuth2Error(
+                "invalid_signature", "bad signature for jane.doe@example.com", null),
+            "bad signature for jane.doe@example.com"));
 
     ILoggingEvent event = appender.list.getFirst();
     assertEquals("AUTHENTICATION_FAILURE", keyValue(event, "event_type"));

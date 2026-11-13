@@ -14,7 +14,7 @@ import org.springframework.security.authentication.event.AuthenticationSuccessEv
 import org.springframework.security.authorization.event.AuthorizationDeniedEvent;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.saml2.provider.service.authentication.Saml2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.stereotype.Component;
 import uk.gov.laa.ccms.caab.bean.metric.PuiMetricService;
@@ -237,16 +237,16 @@ public class SecurityEventLogger {
   }
 
   /**
-   * Records a failed sign-in that Spring Security does not publish an event for, such as a SAML
-   * response that cannot be read or verified. Only an error code or the exception class is logged,
-   * as the exception message can carry the user's details.
+   * Records a failed sign-in that Spring Security does not publish an event for, such as a callback
+   * that cannot be matched to an authorization request. Only an error code or the exception class
+   * is logged, as the exception message can carry the user's details.
    *
    * @param exception the authentication failure
    */
   public void authenticationFailed(AuthenticationException exception) {
     String detail =
-        exception instanceof Saml2AuthenticationException saml2Exception
-            ? saml2Exception.getSaml2Error().getErrorCode()
+        exception instanceof OAuth2AuthenticationException oauth2Exception
+            ? oauth2Exception.getError().getErrorCode()
             : exception.getClass().getSimpleName();
     log(EventType.AUTHENTICATION_FAILURE, null, Outcome.FAILURE, "Authentication failed", detail);
   }

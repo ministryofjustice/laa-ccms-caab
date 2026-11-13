@@ -5,8 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -49,6 +51,7 @@ import reactor.test.StepVerifier;
 import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
+import uk.gov.laa.ccms.caab.model.user.EntraUserMapping;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -2261,5 +2264,71 @@ public class EbsApiClientTest {
     assertEquals(
         "/cases/assessments?case-reference-number=300001513022&assessment-type=MEANS",
         actualUri.toString());
+  }
+
+  @Nested
+  @DisplayName("getEntraUserMapping() Tests")
+  class GetEntraUserMappingTests {
+
+    private static final String ENTRA_EMAIL = "a.user@justice.gov.uk";
+
+    @Test
+    @DisplayName("Should return the mapped CCMS user")
+    void getEntraUserMapping_returnsData() {
+      final EntraUserMapping mapping = new EntraUserMapping();
+      mapping.setCcmsLoginId("CCMSUSER");
+
+      when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.uri("/users/entra-mapping?entra-email={entraEmail}", ENTRA_EMAIL))
+          .thenReturn(requestHeadersMock);
+      when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.bodyToMono(EntraUserMapping.class)).thenReturn(Mono.just(mapping));
+
+      StepVerifier.create(ebsApiClient.getEntraUserMapping(ENTRA_EMAIL))
+          .expectNextMatches(result -> result == mapping)
+          .verifyComplete();
+    }
+
+    @Test
+    @DisplayName("Should treat an unmapped email address as an empty result rather than an error")
+    void getEntraUserMapping_treatsNotFoundAsEmpty() {
+      when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.uri(anyString(), any(Object[].class)))
+          .thenReturn(requestHeadersMock);
+      when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.bodyToMono(EntraUserMapping.class))
+          .thenReturn(
+              Mono.error(
+                  WebClientResponseException.create(
+                      HttpStatus.NOT_FOUND.value(), "Not Found", null, null, null)));
+
+      StepVerifier.create(ebsApiClient.getEntraUserMapping(ENTRA_EMAIL)).verifyComplete();
+
+      // Only a 404 is swallowed; getEntraUserMapping_handlesError covers a 500 still surfacing.
+      verifyNoMoreInteractions(apiClientErrorHandler);
+    }
+
+    @Test
+    @DisplayName("Should handle error")
+    void getEntraUserMapping_handlesError() {
+      when(webClientMock.get()).thenReturn(requestHeadersUriMock);
+      when(requestHeadersUriMock.uri(anyString(), any(Object[].class)))
+          .thenReturn(requestHeadersMock);
+      when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+      when(responseMock.bodyToMono(EntraUserMapping.class))
+          .thenReturn(
+              Mono.error(
+                  new WebClientResponseException(
+                      HttpStatus.INTERNAL_SERVER_ERROR.value(), "", null, null, null)));
+      when(apiClientErrorHandler.handleApiRetrieveError(
+              any(), eq("Entra user mapping"), eq("entra email"), eq(ENTRA_EMAIL)))
+          .thenReturn(Mono.empty());
+
+      StepVerifier.create(ebsApiClient.getEntraUserMapping(ENTRA_EMAIL)).verifyComplete();
+
+      verify(apiClientErrorHandler)
+          .handleApiRetrieveError(
+              any(), eq("Entra user mapping"), eq("entra email"), eq(ENTRA_EMAIL));
+    }
   }
 }

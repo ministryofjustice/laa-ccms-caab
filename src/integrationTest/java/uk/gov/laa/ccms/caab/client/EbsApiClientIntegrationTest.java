@@ -300,6 +300,51 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
   }
 
   @Test
+  @DisplayName("An email address with a plus is sent as the address, not as a space")
+  public void entraMappingEncodesAPlusInTheAddress() {
+    final String address = "a.user+tag@justice.gov.uk";
+    wiremock.stubFor(
+        get(urlPathEqualTo("/users/entra-mapping"))
+            .willReturn(okJson("{\"ccms_login_id\":\"A-USER\"}")));
+
+    StepVerifier.create(ebsApiClient.getEntraUserMapping(address))
+        .expectNextMatches(mapping -> "A-USER".equals(mapping.getCcmsLoginId()))
+        .verifyComplete();
+
+    wiremock.verify(
+        getRequestedFor(urlPathEqualTo("/users/entra-mapping"))
+            .withQueryParam("entra-email", equalTo(address)));
+  }
+
+  @Test
+  @DisplayName("An unmapped address is empty even when the 404 carries a body")
+  public void entraMappingIsEmptyForANotFoundWithABody() {
+    wiremock.stubFor(
+        get(urlPathEqualTo("/users/entra-mapping"))
+            .willReturn(
+                aResponse()
+                    .withStatus(404)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"error\":\"no mapping\"}")));
+
+    StepVerifier.create(ebsApiClient.getEntraUserMapping("nobody@justice.gov.uk")).verifyComplete();
+  }
+
+  @Test
+  @DisplayName("An unmapped address is empty even when the 404 body is not JSON")
+  public void entraMappingIsEmptyForANotFoundWithAnHtmlBody() {
+    wiremock.stubFor(
+        get(urlPathEqualTo("/users/entra-mapping"))
+            .willReturn(
+                aResponse()
+                    .withStatus(404)
+                    .withHeader("Content-Type", "text/html")
+                    .withBody("<html><body>Not found</body></html>")));
+
+    StepVerifier.create(ebsApiClient.getEntraUserMapping("nobody@justice.gov.uk")).verifyComplete();
+  }
+
+  @Test
   public void testGetUser_notFound() {
     final Integer userId = 1;
     final String expectedMessage = USER_ERROR_MESSAGE.formatted(userId);

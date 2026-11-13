@@ -1,10 +1,15 @@
 services:
-  laa-ccms-caab-saml-mock:
-    container_name: laa-ccms-caab-saml-mock
+  laa-ccms-caab-oidc-mock:
+    container_name: laa-ccms-caab-oidc-mock
     build:
-      context: ../laa-ccms-caab-saml-mock
+      context: ../laa-oidc-mock-server
     ports:
-      - "8081:8080"
+      - "9000:9000"
+    environment:
+      # The mock registers a single redirect URI, http://<REDIRECT_BASE_URI>/login/oauth2/code/silas-identity,
+      # so this has to carry the application's context path as well as its host and port. The
+      # "silas-identity" segment is the spring client registration id and is fixed by the mock.
+      REDIRECT_BASE_URI: localhost:8010/civil
 
   laa-ccms-mock-contracts:
     container_name: laa-ccms-caab-mock-contracts

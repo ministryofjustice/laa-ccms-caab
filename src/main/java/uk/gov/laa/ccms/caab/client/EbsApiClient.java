@@ -27,6 +27,7 @@ import uk.gov.laa.ccms.caab.bean.CaseSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.ClientSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.CounselSearchCriteria;
 import uk.gov.laa.ccms.caab.bean.NotificationSearchCriteria;
+import uk.gov.laa.ccms.caab.model.user.EntraUserMapping;
 import uk.gov.laa.ccms.data.model.AmendmentTypeLookupDetail;
 import uk.gov.laa.ccms.data.model.AssessmentSummaryEntityLookupDetail;
 import uk.gov.laa.ccms.data.model.AwardTypeLookupDetail;
@@ -73,6 +74,8 @@ import uk.gov.laa.ccms.data.model.UserDetails;
 @Slf4j
 public class EbsApiClient extends BaseApiClient {
 
+  private static final String ENTRA_MAPPING_URI = "/users/entra-mapping?entra-email={entraEmail}";
+
   private final EbsApiClientErrorHandler ebsApiClientErrorHandler;
   private final WebClient ebsApiWebClient;
 
@@ -115,6 +118,36 @@ public class EbsApiClient extends BaseApiClient {
         .bodyToMono(UserDetail.class)
         .onErrorResume(
             e -> ebsApiClientErrorHandler.handleApiRetrieveError(e, "User", "login id", loginId));
+  }
+
+  /**
+   * Retrieves the CCMS user mapped to an EntraID email address.
+   *
+   * <p>Internal users authenticate as themselves in EntraID, so the identity on the token is an
+   * organisational email address rather than a CCMS username. EBS holds the correspondence between
+   * the two in its {@code XXCCMS_ENTRA_ID_USERS} table, which is what this reads. The legacy PUI
+   * resolves an internal user the same way.
+   *
+   * @param entraEmail the email address of the authenticated EntraID user.
+   * @return a Mono containing the EntraUserMapping, empty if the email address has no mapping, or
+   *     an error handler if an error occurs.
+   */
+  public Mono<EntraUserMapping> getEntraUserMapping(final String entraEmail) {
+    return webClient
+        .get()
+        // A template variable, so the address is encoded as a value: a '+' in it is legal in a
+        // query and would otherwise reach the API as a space, looking up a different identity.
+        .uri(ENTRA_MAPPING_URI, entraEmail)
+        .retrieve()
+        .bodyToMono(EntraUserMapping.class)
+        // An unmapped address is an expected outcome, not a call failure. Recovered from the
+        // error rather than handled by status, so the 404 body is never decoded - one carrying
+        // JSON would otherwise become a mapping with null fields, and HTML a decoding failure.
+        .onErrorResume(WebClientResponseException.NotFound.class, notFound -> Mono.empty())
+        .onErrorResume(
+            e ->
+                ebsApiClientErrorHandler.handleApiRetrieveError(
+                    e, "Entra user mapping", "entra email", entraEmail));
   }
 
   /**

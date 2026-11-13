@@ -210,7 +210,11 @@ public abstract class AbstractApiClientErrorHandler {
    * references that support staff need in order to find the record.
    */
   private static String identifierForLog(final String resourceIdType, final String resourceId) {
-    return resourceIdType != null && resourceIdType.toLowerCase(Locale.ROOT).contains("login")
+    if (resourceIdType == null) {
+      return resourceId;
+    }
+    final String type = resourceIdType.toLowerCase(Locale.ROOT);
+    return type.contains("login") || type.contains("email")
         ? UserIdentifier.pseudonymise(resourceId)
         : resourceId;
   }
