@@ -97,7 +97,8 @@ class RecoveryTemplateRenderTest {
                     null,
                     new RecoveryValidator(),
                     Mappers.getMapper(RecoveryMapper.class),
-                    Mappers.getMapper(LiablePartiesDisplayMapper.class)))
+                    Mappers.getMapper(LiablePartiesDisplayMapper.class),
+                    null))
             .setViewResolvers(views)
             .build();
   }
