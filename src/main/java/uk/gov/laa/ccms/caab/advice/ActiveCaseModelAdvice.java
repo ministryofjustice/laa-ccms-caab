@@ -16,6 +16,7 @@ import uk.gov.laa.ccms.caab.controller.application.AwardController;
 import uk.gov.laa.ccms.caab.controller.application.CaseController;
 import uk.gov.laa.ccms.caab.controller.application.LiablePartyController;
 import uk.gov.laa.ccms.caab.controller.application.MeansReassessmentController;
+import uk.gov.laa.ccms.caab.controller.application.RecoveryController;
 import uk.gov.laa.ccms.caab.controller.application.search.CounselSearchController;
 import uk.gov.laa.ccms.caab.controller.application.search.CourtSearchController;
 import uk.gov.laa.ccms.caab.controller.application.section.ApplicationSectionsController;
@@ -71,6 +72,7 @@ import uk.gov.laa.ccms.caab.model.IntDisplayValue;
       CaseSubmissionController.class,
       CaseController.class,
       AwardController.class,
+      RecoveryController.class,
       LiablePartyController.class,
       BillingController.class,
       MeansReassessmentController.class,

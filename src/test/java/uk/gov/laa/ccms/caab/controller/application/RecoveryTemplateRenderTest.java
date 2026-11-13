@@ -82,23 +82,11 @@ class RecoveryTemplateRenderTest {
                     .awardAmount(new BigDecimal("1000.00"))));
     mvc =
         MockMvcBuilders.standaloneSetup(
-                new AwardController(
-                    null,
+                new RecoveryController(
                     service,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
                     new RecoveryValidator(),
                     Mappers.getMapper(RecoveryMapper.class),
-                    Mappers.getMapper(LiablePartiesDisplayMapper.class),
-                    null))
+                    Mappers.getMapper(LiablePartiesDisplayMapper.class)))
             .setViewResolvers(views)
             .build();
   }
