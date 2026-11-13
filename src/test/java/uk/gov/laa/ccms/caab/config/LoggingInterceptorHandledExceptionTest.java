@@ -58,7 +58,8 @@ class LoggingInterceptorHandledExceptionTest {
         .perform(get("/case/overview").sessionAttr("activeCase", activeCase))
         .andExpect(status().isOk());
 
-    verify(securityEventLogger).dataAccessed(eq("VIEW"), eq(false), eq("300001"), eq("CL1"), any());
+    verify(securityEventLogger)
+        .dataAccessed(eq("VIEW"), eq(false), eq("300001"), eq("CL1"), any(), any());
   }
 
   @Test
@@ -70,7 +71,22 @@ class LoggingInterceptorHandledExceptionTest {
         .perform(get("/case/fine").sessionAttr("activeCase", activeCase))
         .andExpect(status().isOk());
 
-    verify(securityEventLogger).dataAccessed(eq("VIEW"), eq(true), eq("300001"), eq("CL1"), any());
+    verify(securityEventLogger)
+        .dataAccessed(eq("VIEW"), eq(true), eq("300001"), eq("CL1"), any(), any());
+  }
+
+  @Test
+  void aNotificationViewIsAuditedByItsIdWithoutAnyCaseInTheSession() throws Exception {
+    mockMvc.perform(get("/notifications/98765")).andExpect(status().isOk());
+
+    verify(securityEventLogger)
+        .dataAccessed(
+            eq("VIEW"),
+            eq(true),
+            org.mockito.ArgumentMatchers.isNull(),
+            org.mockito.ArgumentMatchers.isNull(),
+            eq(java.util.Map.of("notification_id", "98765")),
+            eq("/notifications/{notification_id}"));
   }
 
   @Configuration
@@ -117,6 +133,12 @@ class LoggingInterceptorHandledExceptionTest {
 
     @GetMapping("/case/fine")
     String fine() {
+      return "overview";
+    }
+
+    @GetMapping("/notifications/{notification_id}")
+    String notification(
+        @org.springframework.web.bind.annotation.PathVariable("notification_id") String id) {
       return "overview";
     }
   }

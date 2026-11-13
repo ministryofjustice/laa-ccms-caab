@@ -54,6 +54,7 @@ class NotificationsSearchResultsControllerTest {
 
   @InjectMocks NotificationsSearchResultsController notificationsSearchResultsController;
   @Mock private NotificationService notificationService;
+  @Mock private uk.gov.laa.ccms.caab.security.SecurityEventLogger securityEventLogger;
 
   @Autowired private WebApplicationContext webApplicationContext;
   private MockMvc mockMvc;
@@ -61,6 +62,75 @@ class NotificationsSearchResultsControllerTest {
   @BeforeEach
   void setUp() {
     mockMvc = standaloneSetup(notificationsSearchResultsController).build();
+  }
+
+  @Test
+  void aNotificationSearchIsAuditedWithTheCriteriaNamesNotTheirValues() throws Exception {
+    when(notificationService.getNotifications(any(), anyInt(), any(), any()))
+        .thenReturn(Mono.just(getNotificationsMock()));
+
+    this.mockMvc
+        .perform(
+            get("/notifications/search-results")
+                .sessionAttr("user", userDetails)
+                .queryParam("page", "0")
+                .queryParam("size", "10")
+                .queryParam("pageSort", "dateAssigned,asc")
+                .sessionAttr("notificationSearchCriteria", buildNotificationSearchCriteria()))
+        .andExpect(status().isOk());
+
+    verify(securityEventLogger)
+        .searched(
+            eq("NOTIFICATION"),
+            eq(java.util.List.of("notificationToDate")),
+            eq(1),
+            eq(0),
+            eq(true),
+            org.mockito.ArgumentMatchers.isNull());
+  }
+
+  @Test
+  void aFailedNotificationSearchIsAuditedAsAFailureAndStillFails() {
+    when(notificationService.getNotifications(any(), anyInt(), any(), any()))
+        .thenReturn(Mono.error(new IllegalStateException("boom")));
+
+    org.junit.jupiter.api.Assertions.assertThrows(
+        Exception.class,
+        () ->
+            this.mockMvc.perform(
+                get("/notifications/search-results")
+                    .sessionAttr("user", userDetails)
+                    .queryParam("page", "0")
+                    .queryParam("size", "10")
+                    .queryParam("pageSort", "dateAssigned,asc")
+                    .sessionAttr("notificationSearchCriteria", buildNotificationSearchCriteria())));
+
+    verify(securityEventLogger)
+        .searched(
+            eq("NOTIFICATION"),
+            eq(java.util.List.of("notificationToDate")),
+            org.mockito.ArgumentMatchers.isNull(),
+            eq(0),
+            eq(false),
+            eq("IllegalStateException"));
+  }
+
+  @Test
+  void resultsServedFromTheCacheAreNotAuditedAsASearch() throws Exception {
+    NotificationSearchCriteria criteria = buildNotificationSearchCriteria();
+    criteria.setPage(2);
+    criteria.setSize(10);
+    criteria.setSort("dateAssigned,asc");
+
+    this.mockMvc
+        .perform(
+            get("/notifications/search-results")
+                .sessionAttr("user", userDetails)
+                .sessionAttr("notificationSearchCriteria", criteria)
+                .sessionAttr("notificationsSearchResults", getNotificationsMock()))
+        .andExpect(status().is3xxRedirection());
+
+    org.mockito.Mockito.verifyNoInteractions(securityEventLogger);
   }
 
   @Test

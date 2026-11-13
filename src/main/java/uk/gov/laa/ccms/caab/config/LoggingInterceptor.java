@@ -4,7 +4,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.util.Enumeration;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -14,6 +17,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.ModelAndView;
 import uk.gov.laa.ccms.caab.bean.ActiveCase;
 import uk.gov.laa.ccms.caab.constants.SessionConstants;
@@ -33,6 +37,18 @@ import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 public class LoggingInterceptor implements HandlerInterceptor {
 
   private static final Set<String> SAFE_METHODS = Set.of("GET", "HEAD", "OPTIONS", "TRACE");
+
+  private static final Map<String, String> RESOURCE_VARIABLES =
+      Map.of(
+          "notification_id", "notification_id",
+          "attachment_id", "attachment_id",
+          "evidence-document-id", "document_id",
+          "document-id", "document_id",
+          "case-reference-number", "requested_case_reference",
+          "case-reference-id", "requested_case_reference",
+          "client-reference-number", "requested_client_reference");
+
+  private static final Pattern SAFE_IDENTIFIER = Pattern.compile("[A-Za-z0-9/_.-]{1,40}");
 
   @Setter private Logger log = LoggerFactory.getLogger(LoggingInterceptor.class);
 
@@ -106,23 +122,23 @@ public class LoggingInterceptor implements HandlerInterceptor {
         || !handlerMethod.getBeanType().isAnnotationPresent(Controller.class)) {
       return;
     }
-    String caseReference;
-    String clientReference;
+    String caseReference = null;
+    String clientReference = null;
     try {
       HttpSession session = request.getSession(false);
-      if (session == null) {
-        return;
-      }
-      caseReference = (String) session.getAttribute(SessionConstants.CASE_REFERENCE_NUMBER);
-      clientReference = (String) session.getAttribute(SessionConstants.CLIENT_REFERENCE);
-      if (session.getAttribute(SessionConstants.ACTIVE_CASE) instanceof ActiveCase activeCase) {
-        caseReference = activeCase.getCaseReferenceNumber();
-        clientReference = activeCase.getClientReferenceNumber();
+      if (session != null) {
+        caseReference = (String) session.getAttribute(SessionConstants.CASE_REFERENCE_NUMBER);
+        clientReference = (String) session.getAttribute(SessionConstants.CLIENT_REFERENCE);
+        if (session.getAttribute(SessionConstants.ACTIVE_CASE) instanceof ActiveCase activeCase) {
+          caseReference = activeCase.getCaseReferenceNumber();
+          clientReference = activeCase.getClientReferenceNumber();
+        }
       }
     } catch (IllegalStateException invalidated) {
-      return;
+      // Logout can invalidate the session between looking it up and reading it.
     }
-    if (caseReference == null && clientReference == null) {
+    Map<String, String> resources = pathResources(request);
+    if (caseReference == null && clientReference == null && resources.isEmpty()) {
       return;
     }
     boolean succeeded =
@@ -138,7 +154,24 @@ public class LoggingInterceptor implements HandlerInterceptor {
         succeeded,
         caseReference,
         clientReference,
+        resources,
         RequestRoute.of(request));
+  }
+
+  private static Map<String, String> pathResources(HttpServletRequest request) {
+    if (!(request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE)
+        instanceof Map<?, ?> variables)) {
+      return Map.of();
+    }
+    Map<String, String> resources = new LinkedHashMap<>();
+    RESOURCE_VARIABLES.forEach(
+        (variable, field) -> {
+          if (variables.get(variable) instanceof String value
+              && SAFE_IDENTIFIER.matcher(value).matches()) {
+            resources.put(field, value);
+          }
+        });
+    return resources;
   }
 
   /**

@@ -58,7 +58,8 @@ public class LoggingInterceptorTest {
         new HandlerMethod(new MyController(), "testGet"),
         null);
 
-    verify(securityEventLogger).dataAccessed("VIEW", true, "300001", "CL1", "/case/overview");
+    verify(securityEventLogger)
+        .dataAccessed("VIEW", true, "300001", "CL1", java.util.Map.of(), "/case/overview");
   }
 
   @Test
@@ -71,7 +72,8 @@ public class LoggingInterceptorTest {
         new HandlerMethod(new MyController(), "testGet"),
         null);
 
-    verify(securityEventLogger).dataAccessed("CHANGE", true, "300001", "CL1", "/case/overview");
+    verify(securityEventLogger)
+        .dataAccessed("CHANGE", true, "300001", "CL1", java.util.Map.of(), "/case/overview");
   }
 
   @Test
@@ -85,7 +87,8 @@ public class LoggingInterceptorTest {
         null);
 
     verify(securityEventLogger)
-        .dataAccessed("CHANGE", true, "300001", "CL1", "/case/evidence/1/remove");
+        .dataAccessed(
+            "CHANGE", true, "300001", "CL1", java.util.Map.of(), "/case/evidence/1/remove");
   }
 
   @Test
@@ -98,7 +101,8 @@ public class LoggingInterceptorTest {
         new HandlerMethod(new MyController(), "testGet"),
         new IllegalStateException("boom"));
 
-    verify(securityEventLogger).dataAccessed("VIEW", false, "300001", "CL1", "/case/overview");
+    verify(securityEventLogger)
+        .dataAccessed("VIEW", false, "300001", "CL1", java.util.Map.of(), "/case/overview");
   }
 
   @Test
@@ -129,7 +133,8 @@ public class LoggingInterceptorTest {
         null);
 
     verify(securityEventLogger)
-        .dataAccessed("VIEW", true, "300001", "CL1", "/case/{reference}/overview");
+        .dataAccessed(
+            "VIEW", true, "300001", "CL1", java.util.Map.of(), "/case/{reference}/overview");
   }
 
   @Test
@@ -145,7 +150,8 @@ public class LoggingInterceptorTest {
         new HandlerMethod(new MyController(), "testGet"),
         null);
 
-    verify(securityEventLogger).dataAccessed("VIEW", false, "300001", "CL1", "/case/overview");
+    verify(securityEventLogger)
+        .dataAccessed("VIEW", false, "300001", "CL1", java.util.Map.of(), "/case/overview");
   }
 
   @org.junit.jupiter.params.ParameterizedTest
@@ -169,7 +175,8 @@ public class LoggingInterceptorTest {
         new HandlerMethod(new MyController(), "testGet"),
         null);
 
-    verify(securityEventLogger).dataAccessed(action, true, "300001", "CL1", "/case/overview");
+    verify(securityEventLogger)
+        .dataAccessed(action, true, "300001", "CL1", java.util.Map.of(), "/case/overview");
   }
 
   @Test
@@ -183,7 +190,124 @@ public class LoggingInterceptorTest {
         null);
 
     verify(securityEventLogger)
-        .dataAccessed("CHANGE", true, "300001", "CL1", "/case/evidence/1/remove");
+        .dataAccessed(
+            "CHANGE", true, "300001", "CL1", java.util.Map.of(), "/case/evidence/1/remove");
+  }
+
+  @Test
+  public void allowlistedPathIdentifiersAreLoggedEvenWithoutACaseInTheSession() throws Exception {
+    var req =
+        new org.springframework.mock.web.MockHttpServletRequest("GET", "/notifications/98765");
+    req.setSession(new org.springframework.mock.web.MockHttpSession());
+    req.setAttribute(
+        org.springframework.web.servlet.HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE,
+        java.util.Map.of("notification_id", "98765", "attachment_id", "12", "other", "ignored"));
+    req.setAttribute(
+        org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE,
+        "/notifications/{notification_id}");
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        null);
+
+    verify(securityEventLogger)
+        .dataAccessed(
+            "VIEW",
+            true,
+            null,
+            null,
+            java.util.Map.of("notification_id", "98765", "attachment_id", "12"),
+            "/notifications/{notification_id}");
+  }
+
+  @Test
+  public void theRequestedCaseReferenceFromThePathIsLoggedBesideTheSessionOne() throws Exception {
+    var req = requestWithActiveCase("GET", "/application/300002/view");
+    req.setAttribute(
+        org.springframework.web.servlet.HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE,
+        java.util.Map.of("case-reference-number", "300002"));
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        null);
+
+    verify(securityEventLogger)
+        .dataAccessed(
+            "VIEW",
+            true,
+            "300001",
+            "CL1",
+            java.util.Map.of("requested_case_reference", "300002"),
+            "/application/300002/view");
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "notification_id,notification_id",
+    "attachment_id,attachment_id",
+    "evidence-document-id,document_id",
+    "document-id,document_id",
+    "case-reference-number,requested_case_reference",
+    "case-reference-id,requested_case_reference",
+    "client-reference-number,requested_client_reference"
+  })
+  public void eachAllowlistedPathVariableIsLoggedUnderItsOwnFieldName(String variable, String field)
+      throws Exception {
+    var req = new org.springframework.mock.web.MockHttpServletRequest("GET", "/some/route");
+    req.setSession(new org.springframework.mock.web.MockHttpSession());
+    req.setAttribute(
+        org.springframework.web.servlet.HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE,
+        java.util.Map.of(variable, "300001"));
+    req.setAttribute(
+        org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE,
+        "/some/route");
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        null);
+
+    verify(securityEventLogger)
+        .dataAccessed("VIEW", true, null, null, java.util.Map.of(field, "300001"), "/some/route");
+  }
+
+  @Test
+  public void aPathVariableThatIsNotOnTheAllowlistIsNeverLogged() throws Exception {
+    var req = new org.springframework.mock.web.MockHttpServletRequest("GET", "/x/Smith");
+    req.setSession(new org.springframework.mock.web.MockHttpSession());
+    req.setAttribute(
+        org.springframework.web.servlet.HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE,
+        java.util.Map.of("surname", "Smith"));
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        null);
+
+    verifyNoInteractions(securityEventLogger);
+  }
+
+  @Test
+  public void aPathValueThatIsNotAPlainIdentifierIsNeverLogged() throws Exception {
+    var req = new org.springframework.mock.web.MockHttpServletRequest("GET", "/notifications/x");
+    req.setSession(new org.springframework.mock.web.MockHttpSession());
+    req.setAttribute(
+        org.springframework.web.servlet.HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE,
+        java.util.Map.of("notification_id", "1\nINFO forged event_type=LOGOUT"));
+
+    loggingInterceptor.afterCompletion(
+        req,
+        new org.springframework.mock.web.MockHttpServletResponse(),
+        new HandlerMethod(new MyController(), "testGet"),
+        null);
+
+    verifyNoInteractions(securityEventLogger);
   }
 
   private static org.springframework.mock.web.MockHttpServletRequest requestWithActiveCase(

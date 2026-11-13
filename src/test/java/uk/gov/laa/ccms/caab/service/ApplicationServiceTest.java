@@ -162,6 +162,7 @@ class ApplicationServiceTest {
   @Mock private AssessmentService assessmentService;
 
   @Mock private PuiMetricService puiMetricService;
+  @Mock private uk.gov.laa.ccms.caab.security.SecurityEventLogger securityEventLogger;
 
   @Mock EvidenceService evidenceService;
   @Mock private ProviderService providerService;
@@ -227,6 +228,77 @@ class ApplicationServiceTest {
     final BaseApplicationDetail tdsApplication = new BaseApplicationDetail();
 
     assertFalse(applicationService.isAmendment(ebsCase, tdsApplication));
+  }
+
+  @Test
+  void getCases_IsAuditedWithTheCriteriaNamesAndTheResultCount() {
+    final CaseSearchCriteria criteria = new CaseSearchCriteria();
+    criteria.setClientSurname("asurname");
+    criteria.setCaseReference("123");
+    criteria.setStatus(STATUS_UNSUBMITTED_ACTUAL_VALUE);
+    final UserDetail userDetail = buildUserDetail();
+    when(caabApiClient.getApplications(criteria, userDetail.getProvider().getId(), 0, 10))
+        .thenReturn(
+            Mono.just(new ApplicationDetails().addContentItem(new BaseApplicationDetail())));
+    when(searchConstants.getMaxSearchResultsCases()).thenReturn(10);
+
+    applicationService.getCases(criteria, userDetail);
+
+    verify(securityEventLogger)
+        .searched(
+            "CASE",
+            java.util.List.of("caseReference", "clientSurname", "status"),
+            1,
+            null,
+            true,
+            null);
+  }
+
+  @Test
+  void getCases_TooManyResultsIsAuditedWithoutACountAndStillThrown() {
+    final CaseSearchCriteria criteria = new CaseSearchCriteria();
+    criteria.setClientSurname("asurname");
+    criteria.setStatus(STATUS_DRAFT);
+    final UserDetail userDetail = buildUserDetail();
+    when(ebsApiClient.getCases(criteria, userDetail.getProvider().getId(), 0, 10))
+        .thenReturn(Mono.just(new CaseDetails().totalElements(11)));
+    when(searchConstants.getMaxSearchResultsCases()).thenReturn(10);
+
+    assertThrows(
+        uk.gov.laa.ccms.caab.exception.TooManyResultsException.class,
+        () -> applicationService.getCases(criteria, userDetail));
+
+    verify(securityEventLogger)
+        .searched(
+            "CASE",
+            java.util.List.of("clientSurname", "status"),
+            null,
+            null,
+            true,
+            "TOO_MANY_RESULTS");
+  }
+
+  @Test
+  void getCases_AFailureIsAuditedAsAFailureAndStillThrown() {
+    final CaseSearchCriteria criteria = new CaseSearchCriteria();
+    criteria.setClientSurname("asurname");
+    criteria.setStatus(STATUS_DRAFT);
+    final UserDetail userDetail = buildUserDetail();
+    when(ebsApiClient.getCases(criteria, userDetail.getProvider().getId(), 0, 10))
+        .thenReturn(Mono.error(new IllegalStateException("boom")));
+    when(searchConstants.getMaxSearchResultsCases()).thenReturn(10);
+
+    assertThrows(
+        IllegalStateException.class, () -> applicationService.getCases(criteria, userDetail));
+
+    verify(securityEventLogger)
+        .searched(
+            "CASE",
+            java.util.List.of("clientSurname", "status"),
+            null,
+            null,
+            false,
+            "IllegalStateException");
   }
 
   @Test
