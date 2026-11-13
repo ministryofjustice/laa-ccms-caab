@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -33,6 +34,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -111,6 +113,61 @@ public class LookupServiceTest {
     StepVerifier.create(result).expectNext(mockProceedingDetails).verifyComplete();
 
     verify(ebsApiClient).getProceedings(searchCriteria, larScopeFlag, applicationType, isLead);
+  }
+
+  @Test
+  @DisplayName("getAvailableProceedings applies legacy non-amendment scope criteria")
+  void getAvailableProceedings_nonAmendment() {
+    final ProceedingDetails expected = new ProceedingDetails();
+    when(ebsApiClient.getProceedings(any(), eq(Boolean.TRUE), eq("SUB"), eq(Boolean.TRUE)))
+        .thenReturn(Mono.just(expected));
+
+    StepVerifier.create(
+            lookupService.getAvailableProceedings("CON", "NCONT", false, Boolean.TRUE, "SUB"))
+        .expectNext(expected)
+        .verifyComplete();
+
+    final ArgumentCaptor<ProceedingDetail> criteria =
+        ArgumentCaptor.forClass(ProceedingDetail.class);
+    verify(ebsApiClient)
+        .getProceedings(criteria.capture(), eq(Boolean.TRUE), eq("SUB"), eq(Boolean.TRUE));
+    assertEquals("CON", criteria.getValue().getCategoryOfLawCode());
+    assertEquals("NCONT", criteria.getValue().getMatterType());
+    assertEquals(Boolean.TRUE, criteria.getValue().getEnabled());
+    assertEquals(Boolean.FALSE, criteria.getValue().getAmendmentOnly());
+  }
+
+  @Test
+  @DisplayName("getAvailableProceedings preserves pre-LAR false and omits amendment filter")
+  void getAvailableProceedings_amendmentWithPreLarScope() {
+    final ProceedingDetails expected = new ProceedingDetails();
+    when(ebsApiClient.getProceedings(any(), eq(Boolean.FALSE), eq("ECF"), eq(Boolean.TRUE)))
+        .thenReturn(Mono.just(expected));
+
+    StepVerifier.create(
+            lookupService.getAvailableProceedings("CON", "NIGDS", true, Boolean.FALSE, "ECF"))
+        .expectNext(expected)
+        .verifyComplete();
+
+    final ArgumentCaptor<ProceedingDetail> criteria =
+        ArgumentCaptor.forClass(ProceedingDetail.class);
+    verify(ebsApiClient)
+        .getProceedings(criteria.capture(), eq(Boolean.FALSE), eq("ECF"), eq(Boolean.TRUE));
+    assertEquals("CON", criteria.getValue().getCategoryOfLawCode());
+    assertEquals("NIGDS", criteria.getValue().getMatterType());
+    assertEquals(Boolean.TRUE, criteria.getValue().getEnabled());
+    assertNull(criteria.getValue().getAmendmentOnly());
+  }
+
+  @Test
+  @DisplayName("getAvailableProceedings does not issue a wildcard request for missing context")
+  void getAvailableProceedings_missingRequiredContext() {
+    StepVerifier.create(lookupService.getAvailableProceedings("CON", "NCONT", false, null, "SUB"))
+        .expectNextMatches(
+            details -> details.getContent() != null && details.getContent().isEmpty())
+        .verifyComplete();
+
+    verifyNoInteractions(ebsApiClient);
   }
 
   @Test

@@ -150,6 +150,45 @@ public class LookupService {
   }
 
   /**
+   * Get proceedings available for selection using the application's legacy scope-control context.
+   *
+   * @param categoryOfLaw The application's category of law.
+   * @param matterType The selected matter type.
+   * @param amendment Whether the application is an amendment.
+   * @param larScopeFlag The application's Legal Aid Representation scope flag.
+   * @param applicationType The application's type.
+   * @return Eligible proceeding options, or an empty result when required context is unavailable.
+   */
+  public Mono<ProceedingDetails> getAvailableProceedings(
+      final String categoryOfLaw,
+      final String matterType,
+      final Boolean amendment,
+      final Boolean larScopeFlag,
+      final String applicationType) {
+
+    if (!StringUtils.hasText(categoryOfLaw)
+        || !StringUtils.hasText(matterType)
+        || larScopeFlag == null
+        || !StringUtils.hasText(applicationType)) {
+      log.warn(
+          "Cannot retrieve available proceedings because required application selection context is incomplete");
+      return Mono.just(new ProceedingDetails().content(Collections.emptyList()));
+    }
+
+    final ProceedingDetail searchCriteria =
+        new ProceedingDetail()
+            .categoryOfLawCode(categoryOfLaw)
+            .matterType(matterType)
+            .enabled(Boolean.TRUE);
+
+    if (!Boolean.TRUE.equals(amendment)) {
+      searchCriteria.amendmentOnly(Boolean.FALSE);
+    }
+
+    return ebsApiClient.getProceedings(searchCriteria, larScopeFlag, applicationType, Boolean.TRUE);
+  }
+
+  /**
    * Retrieves Client involvement types with detailed parameters.
    *
    * @param proceedingCode The proceeding code.

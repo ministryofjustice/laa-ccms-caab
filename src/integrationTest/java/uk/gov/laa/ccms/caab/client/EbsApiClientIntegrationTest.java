@@ -74,6 +74,8 @@ import uk.gov.laa.ccms.data.model.NotificationInfo;
 import uk.gov.laa.ccms.data.model.NotificationSummary;
 import uk.gov.laa.ccms.data.model.Notifications;
 import uk.gov.laa.ccms.data.model.OfficeDetail;
+import uk.gov.laa.ccms.data.model.ProceedingDetail;
+import uk.gov.laa.ccms.data.model.ProceedingDetails;
 import uk.gov.laa.ccms.data.model.ProviderDetail;
 import uk.gov.laa.ccms.data.model.TransactionStatus;
 import uk.gov.laa.ccms.data.model.UserDetail;
@@ -374,6 +376,39 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
 
     assertNotNull(result);
     assertEquals(providerJson, objectMapper.writeValueAsString(result));
+  }
+
+  @Test
+  void proceedingSelectionSendsScopeContextAndUsesTheScopedQuery() {
+    final ProceedingDetail criteria =
+        new ProceedingDetail()
+            .categoryOfLawCode("CON")
+            .matterType("NIGDS")
+            .amendmentOnly(Boolean.FALSE)
+            .enabled(Boolean.TRUE);
+
+    wiremock.stubFor(
+        get(urlPathEqualTo("/proceedings"))
+            .withQueryParam("category-of-law", equalTo("CON"))
+            .withQueryParam("matter-type", equalTo("NIGDS"))
+            .withQueryParam("amendment-only", equalTo("false"))
+            .withQueryParam("enabled", equalTo("true"))
+            .withQueryParam("lar-scope-flag", equalTo("false"))
+            .withQueryParam("application-type", equalTo("ECF"))
+            .withQueryParam("lead", equalTo("true"))
+            .willReturn(okJson("{\"content\":[]}")));
+
+    final ProceedingDetails result =
+        ebsApiClient.getProceedings(criteria, Boolean.FALSE, "ECF", Boolean.TRUE).block();
+
+    assertNotNull(result);
+    assertThat(result.getContent()).isEmpty();
+    wiremock.verify(
+        1,
+        getRequestedFor(urlPathEqualTo("/proceedings"))
+            .withQueryParam("lar-scope-flag", equalTo("false"))
+            .withQueryParam("application-type", equalTo("ECF"))
+            .withQueryParam("lead", equalTo("true")));
   }
 
   @Test
