@@ -71,6 +71,7 @@
         <dd id="equity" class="govuk-body govuk-!-margin-left-0"
             th:text="${landAward.equity == null ? '' : '£' + landAward.equity}"></dd>
       </dl>
+      <input type="hidden" id="equity-value" th:field="*{equity}">
 
       <th:block th:replace="~{partials/forms :: autocompleteSelect(field='awardedBy', label=#{case.landAward.awardedBy},
                                                                    items=${awardedByOptions}, itemValue='code',
