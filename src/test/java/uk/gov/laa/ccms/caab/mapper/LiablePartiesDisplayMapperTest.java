@@ -1,7 +1,6 @@
 package uk.gov.laa.ccms.caab.mapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -12,7 +11,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mapstruct.factory.Mappers;
-import uk.gov.laa.ccms.caab.exception.CaabApplicationException;
 import uk.gov.laa.ccms.caab.mapper.context.LiablePartiesMappingContext;
 import uk.gov.laa.ccms.caab.model.AddressDetail;
 import uk.gov.laa.ccms.caab.model.BaseAwardDetail;
@@ -289,24 +287,31 @@ class LiablePartiesDisplayMapperTest {
   }
 
   @Test
-  void nullOpponentIdCannotResolveALinkWithANullOpponentId() {
+  void nullOpponentIdLinkIsIgnored() {
     final var award = linkedAward();
     award.getLiableParties().getFirst().setOpponentId(null);
 
-    assertThatThrownBy(
-            () -> mapper.toLiablePartiesDisplay(award, List.of(person().id(null)), context()))
-        .isInstanceOf(CaabApplicationException.class)
-        .hasMessageContaining("liable party: 101");
+    assertThat(
+            mapper.toLiablePartiesDisplay(award, List.of(person().id(null)), context()).parties())
+        .isEmpty();
   }
 
   @Test
-  void missingLinkedOpponentIsNotSilentlyHidden() {
-    assertThatThrownBy(() -> mapper.toLiablePartiesDisplay(linkedAward(), List.of(), context()))
-        .isInstanceOf(CaabApplicationException.class)
-        .hasMessageContaining("liable party: 101");
-    assertThatThrownBy(() -> mapper.toLiablePartiesDisplay(linkedAward(), null, context()))
-        .isInstanceOf(CaabApplicationException.class)
-        .hasMessageContaining("liable party: 101");
+  void missingLinkedOpponentProducesAVisiblePlaceholder() {
+    final var emptyOpponents = mapper.toLiablePartiesDisplay(linkedAward(), List.of(), context());
+    final var nullOpponents = mapper.toLiablePartiesDisplay(linkedAward(), null, context());
+
+    for (final var result : List.of(emptyOpponents, nullOpponents)) {
+      assertThat(result.parties())
+          .singleElement()
+          .satisfies(
+              party -> {
+                assertThat(party.id()).isEqualTo(101);
+                assertThat(party.opponentId()).isEqualTo(11);
+                assertThat(party.name()).isNull();
+                assertThat(party.editable()).isFalse();
+              });
+    }
   }
 
   @Test

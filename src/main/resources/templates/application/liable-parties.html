@@ -46,14 +46,15 @@
       </tr>
       </thead>
       <tbody class="govuk-table__body">
-      <tr class="govuk-table__row" th:each="party : ${award.parties}">
+      <tr class="govuk-table__row" th:each="party : ${award.parties}"
+          th:with="partyName=${party.name} ?: #{case.liableParties.partyDetailsUnavailable}">
         <td class="govuk-table__cell">
           <a th:if="${party.editable}" class="govuk-link"
              th:href="${party.organisation}
                ? @{/case/outcome-and-awards/{path}/{id}/liable-parties/{opponentId}/organisation(path=${awardPath},id=${awardId},opponentId=${party.opponentId})}
                : @{/case/outcome-and-awards/{path}/{id}/liable-parties/individual/{opponentId}/edit(path=${awardPath},id=${awardId},opponentId=${party.opponentId})}"
-             th:text="${party.name}"></a>
-          <span th:unless="${party.editable}" th:text="${party.name}"></span>
+             th:text="${partyName}"></a>
+          <span th:unless="${party.editable}" th:text="${partyName}"></span>
         </td>
         <td class="govuk-table__cell" th:text="${party.partyType}"></td>
         <td class="govuk-table__cell" th:text="${party.relationshipToCase}"></td>
@@ -62,7 +63,7 @@
           <a class="govuk-link"
              th:href="@{/case/outcome-and-awards/{path}/{id}/liable-parties/{partyId}/remove(path=${awardPath},id=${awardId},partyId=${party.id})}">
             <span th:text="#{case.liableParties.remove}"></span>
-            <span class="govuk-visually-hidden" th:text="${' ' + party.name}"></span>
+            <span class="govuk-visually-hidden" th:text="${' ' + partyName}"></span>
           </a>
         </td>
       </tr>
@@ -71,7 +72,7 @@
     <div class="govuk-button-group govuk-!-margin-top-3">
       <a class="govuk-button govuk-button--secondary" data-module="govuk-button" role="button"
          id="addPartyButton"
-         th:href="@{/case/outcome-and-awards/{path}/{id}/liable-parties/individual/add(path=${awardPath},id=${awardId})}"
+         th:href="@{/case/outcome-and-awards/{path}/{id}/liable-parties/add(path=${awardPath},id=${awardId})}"
          th:text="#{case.liableParties.addParty}"></a>
     </div>
     <div class="govuk-button-group govuk-!-margin-top-6">
