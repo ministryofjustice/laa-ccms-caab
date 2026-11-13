@@ -40,6 +40,7 @@ import uk.gov.laa.ccms.caab.model.OpponentDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
+import uk.gov.laa.ccms.caab.model.RecoveryRequest;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.model.sections.LiablePartiesDisplay;
 
@@ -660,6 +661,26 @@ public class CaseOutcomeService {
                     "Land award %s does not belong to case reference number: %s"
                         .formatted(landAwardId, caseReferenceNumber)));
     caabApiClient.updateLandAward(caseOutcome.getId(), landAwardId, loginId, landAward).block();
+  }
+
+  /** Saves only the selected cost or financial award's recovery in its owning case outcome. */
+  public void upsertRecovery(
+      final String caseReferenceNumber,
+      final Integer providerId,
+      final String awardType,
+      final Integer awardId,
+      final RecoveryRequest recovery,
+      final String loginId) {
+    final CaseOutcomeDetail outcome = requireCaseOutcome(caseReferenceNumber, providerId);
+    requireAward(outcome, awardType, awardId);
+    caabApiClient
+        .upsertRecovery(
+            requireCaseOutcomeId(outcome, caseReferenceNumber),
+            awardType,
+            awardId,
+            loginId,
+            recovery)
+        .block();
   }
 
   /**

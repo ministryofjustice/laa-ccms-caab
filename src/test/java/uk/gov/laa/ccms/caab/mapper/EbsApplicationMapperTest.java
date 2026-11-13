@@ -639,10 +639,10 @@ class EbsApplicationMapperTest {
     assertEquals(ebsOtherParty.getOtherPartyId(), result.getEbsId());
     assertEquals(
         ebsOtherParty.getPerson().getCourtOrderedMeansAssessment(),
-        result.getCourtOrderedMeansAssessment());
+        result.getCourtOrderedMeansAssessment().get());
     assertEquals(ebsOtherParty.getPerson().getOrganisationAddress(), result.getEmployerAddress());
     assertEquals(ebsOtherParty.getPerson().getOrganisationName(), result.getEmployerName());
-    assertEquals(ebsOtherParty.getPerson().getPartyLegalAidedInd(), result.getLegalAided());
+    assertEquals(ebsOtherParty.getPerson().getPartyLegalAidedInd(), result.getLegalAided().get());
     assertEquals(ebsOtherParty.getPerson().getNiNumber(), result.getNationalInsuranceNumber());
     assertEquals(ebsOtherParty.getPerson().getRelationToCase(), result.getRelationshipToCase());
     assertEquals(ebsOtherParty.getPerson().getRelationToClient(), result.getRelationshipToClient());
@@ -1634,7 +1634,7 @@ class EbsApplicationMapperTest {
     opponentDetail.setRelationshipToClient("ClientRelInd");
     opponentDetail.setRelationshipToCase("CaseRelInd");
     opponentDetail.setNationalInsuranceNumber("NI12345");
-    opponentDetail.setLegalAided(true);
+    opponentDetail.legalAided(true);
 
     final OtherParty result = applicationMapper.toEbsOtherParty(opponentDetail);
 
@@ -1719,8 +1719,8 @@ class EbsApplicationMapperTest {
     opponentDetail.setRelationshipToClient(relationToClient);
     opponentDetail.setRelationshipToCase(relationToCase);
     opponentDetail.setNationalInsuranceNumber(niNumber);
-    opponentDetail.setLegalAided(legalAided);
-    opponentDetail.setCourtOrderedMeansAssessment(courtOrderedMeansAssesment);
+    opponentDetail.legalAided(legalAided);
+    opponentDetail.courtOrderedMeansAssessment(courtOrderedMeansAssesment);
     opponentDetail.setContactNameRole(contactName);
     opponentDetail.setEmployerName(employerName);
     opponentDetail.setEmployerAddress(employerAddress);

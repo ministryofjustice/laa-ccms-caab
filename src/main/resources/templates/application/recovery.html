@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en"
+      th:replace="~{layout :: layout(title=~{::title},mainContent=~{::#main-content},pageCategory=${'cases'},breadcrumbs=~{::#breadcrumbs})}"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:moj="http://www.thymeleaf.org">
+<head>
+  <title th:text="|#{service.name} - #{case.recovery.title}|"></title>
+</head>
+<body>
+<div class="govuk-width-container">
+  <div id="breadcrumbs">
+    <a class="govuk-back-link" th:href="@{/case/outcome-and-awards}"
+       th:text="#{site.cancelAndReturnToOutcomeAndAwards}"></a>
+  </div>
+  <div id="main-content">
+    <form th:action="@{/case/outcome-and-awards/{path}/{id}/recovery(path=${awardPath},id=${awardId})}"
+          th:object="${recovery}" method="post">
+      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <h1 class="govuk-heading-l" th:text="#{case.recovery.title}"></h1>
+      <p class="govuk-body" th:text="#{case.recovery.information}"></p>
+      <dl class="govuk-summary-list">
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key" th:text="#{case.recovery.awardType}"></dt>
+          <dd class="govuk-summary-list__value" th:text="${award.awardType}"></dd>
+        </div>
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key" th:text="#{case.recovery.description}"></dt>
+          <dd class="govuk-summary-list__value" th:text="${award.description}"></dd>
+        </div>
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key" th:text="#{case.recovery.awardAmount}"></dt>
+          <dd class="govuk-summary-list__value" th:text="|£${#numbers.formatDecimal(awardAmount, 1, 'COMMA', 2, 'POINT')}|"></dd>
+        </div>
+      </dl>
+
+      <div class="recovery-recipients">
+        <div class="recovery-recipients__labels" aria-hidden="true">
+          <p class="govuk-body recovery-recipients__amount-label" th:text="#{case.recovery.amount}"></p>
+          <p class="govuk-body recovery-recipients__date-label">
+            <span th:text="#{case.recovery.dateReceived}"></span>
+            <span class="govuk-hint govuk-!-margin-bottom-0" th:text="#{site.dateHint}"></span>
+          </p>
+          <p class="govuk-body recovery-recipients__paid-label" th:text="#{case.recovery.paidToLaa}"></p>
+        </div>
+        <div class="recovery-recipients__recipient" role="group" aria-labelledby="solicitor-heading">
+          <h2 id="solicitor-heading" class="govuk-heading-m" th:text="#{case.recovery.solicitor}"></h2>
+          <div th:replace="~{partials/forms :: currencyInput('solicitorRecoveryAmount', #{case.recovery.solicitorAmount}, '10')}"></div>
+          <moj:datepicker id="solicitorRecoveryDate" name="solicitorRecoveryDate"
+                          th:label="#{case.recovery.solicitorDate}"
+                          th:hint="#{site.dateHint}" th:attr="value=*{solicitorRecoveryDate}"
+                          th:errorMessage="${#fields.hasErrors('solicitorRecoveryDate') ? #fields.errors('solicitorRecoveryDate').getFirst() : ''}"></moj:datepicker>
+          <div th:replace="~{partials/forms :: currencyInput('solicitorAmountPaidToLsc', #{case.recovery.solicitorPaid}, '10')}"></div>
+        </div>
+        <div class="recovery-recipients__recipient" role="group" aria-labelledby="court-heading">
+          <h2 id="court-heading" class="govuk-heading-m" th:text="#{case.recovery.court}"></h2>
+          <div th:replace="~{partials/forms :: currencyInput('courtRecoveryAmount', #{case.recovery.courtAmount}, '10')}"></div>
+          <moj:datepicker id="courtRecoveryDate" name="courtRecoveryDate"
+                          th:label="#{case.recovery.courtDate}"
+                          th:hint="#{site.dateHint}" th:attr="value=*{courtRecoveryDate}"
+                          th:errorMessage="${#fields.hasErrors('courtRecoveryDate') ? #fields.errors('courtRecoveryDate').getFirst() : ''}"></moj:datepicker>
+          <div th:replace="~{partials/forms :: currencyInput('courtAmountPaidToLsc', #{case.recovery.courtPaid}, '10')}"></div>
+        </div>
+        <div class="recovery-recipients__recipient" role="group" aria-labelledby="client-heading">
+          <h2 id="client-heading" class="govuk-heading-m" th:text="#{case.recovery.client}"></h2>
+          <div th:replace="~{partials/forms :: currencyInput('clientRecoveryAmount', #{case.recovery.clientAmount}, '10')}"></div>
+          <moj:datepicker id="clientRecoveryDate" name="clientRecoveryDate"
+                          th:label="#{case.recovery.clientDate}"
+                          th:hint="#{site.dateHint}" th:attr="value=*{clientRecoveryDate}"
+                          th:errorMessage="${#fields.hasErrors('clientRecoveryDate') ? #fields.errors('clientRecoveryDate').getFirst() : ''}"></moj:datepicker>
+          <div th:replace="~{partials/forms :: currencyInput('clientAmountPaidToLsc', #{case.recovery.clientPaid}, '10')}"></div>
+        </div>
+      </div>
+
+      <p class="govuk-body" th:text="#{case.recovery.calculateHint}"></p>
+      <dl class="govuk-summary-list" aria-live="polite">
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key" th:text="#{case.recovery.totalRecovered}"></dt>
+          <dd id="recoveredAmount" class="govuk-summary-list__value" th:text="${recoveredAmount != null} ? |£${#numbers.formatDecimal(recoveredAmount, 1, 'COMMA', 2, 'POINT')}| : #{case.recovery.uncalculated}"></dd>
+        </div>
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key" th:text="#{case.recovery.unrecoveredAmount}"></dt>
+          <dd id="unrecoveredAmount" class="govuk-summary-list__value" th:text="${unrecoveredAmount != null} ? |£${#numbers.formatDecimal(unrecoveredAmount, 1, 'COMMA', 2, 'POINT')}| : #{case.recovery.uncalculated}"></dd>
+        </div>
+      </dl>
+      <div class="govuk-form-group"
+           th:classappend="${#fields.hasErrors('leaveOfCourtRequiredInd')} ? 'govuk-form-group--error'">
+        <label class="govuk-label" for="leaveOfCourtRequiredInd" th:text="#{case.recovery.leaveOfCourt}"></label>
+        <span class="govuk-error-message" th:if="${#fields.hasErrors('leaveOfCourtRequiredInd')}"
+              th:errors="*{leaveOfCourtRequiredInd}"></span>
+        <select class="govuk-select" th:field="*{leaveOfCourtRequiredInd}" th:errorclass="govuk-select--error">
+          <option value="" th:text="#{site.select}"></option>
+          <option value="true" th:text="#{site.yes}"></option>
+          <option value="false" th:text="#{site.no}"></option>
+        </select>
+      </div>
+      <div th:replace="~{partials/forms :: currencyInput('offeredAmount', #{case.recovery.offeredAmount}, '10')}"></div>
+      <div th:replace="~{partials/forms :: largeTextInput('offerDetails', #{case.recovery.offerDetails}, 950)}"></div>
+
+      <div class="govuk-button-group govuk-!-margin-top-6">
+        <button class="govuk-button govuk-button--secondary" data-module="govuk-button"
+                type="submit" name="action" value="calculate" th:text="#{case.recovery.calculate}"></button>
+        <button class="govuk-button" data-module="govuk-button" type="submit" name="action" value="next"
+                th:text="#{site.next}"></button>
+        <a class="govuk-link"
+           th:href="@{/case/outcome-and-awards/{path}/{id}/liable-parties(path=${awardPath},id=${awardId})}"
+           th:text="#{site.back}"></a>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

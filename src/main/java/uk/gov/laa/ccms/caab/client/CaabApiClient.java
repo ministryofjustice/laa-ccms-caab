@@ -49,6 +49,7 @@ import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetail;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.RecoveryRequest;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 
@@ -1182,6 +1183,31 @@ public class CaabApiClient {
             e ->
                 caabApiClientErrorHandler.handleApiUpdateError(
                     e, RESOURCE_TYPE_LAND_AWARD, "id", String.valueOf(landAwardId)));
+  }
+
+  /** Creates or updates the selected cost or financial award's recovery. */
+  public Mono<Void> upsertRecovery(
+      final Integer caseOutcomeId,
+      final String awardType,
+      final Integer awardId,
+      final String loginId,
+      final RecoveryRequest recovery) {
+    return caabApiWebClient
+        .put()
+        .uri(
+            "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/recovery",
+            caseOutcomeId,
+            awardType,
+            awardId)
+        .header("Caab-User-Login-Id", loginId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(recovery)
+        .retrieve()
+        .bodyToMono(Void.class)
+        .onErrorResume(
+            e ->
+                caabApiClientErrorHandler.handleApiUpdateError(
+                    e, "recovery", "id", String.valueOf(awardId)));
   }
 
   /** Creates or updates a time-related recovery on a land or other-asset award. */

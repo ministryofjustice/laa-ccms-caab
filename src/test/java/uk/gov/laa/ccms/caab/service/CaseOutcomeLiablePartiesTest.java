@@ -211,12 +211,12 @@ class CaseOutcomeLiablePartiesTest {
     assertThat(payload.getSurname()).isEqualTo("Smith");
     assertThat(payload.getType()).isEqualTo("Individual");
     assertThat(payload.getAddress().getAddressLine1()).isEqualTo("High Street");
-    assertThat(payload.getLegalAided()).isTrue();
+    assertThat(payload.getLegalAided().get()).isTrue();
     assertThat(payload.getCertificateNumber()).isEqualTo("CERT/123");
     assertThat(payload.getEmploymentStatus()).isEqualTo("EMPLOYED");
     assertThat(payload.getEmployerName()).isEqualTo("Acme");
     assertThat(payload.getEmployerAddress()).isEqualTo("Employer address");
-    assertThat(payload.getCourtOrderedMeansAssessment()).isFalse();
+    assertThat(payload.getCourtOrderedMeansAssessment().get()).isFalse();
     assertThat(payload.getAssessedIncome()).isEqualByComparingTo("123.45");
     assertThat(payload.getAssessedIncomeFrequency()).isEqualTo("MONTHLY");
     assertThat(payload.getAssessedAssets()).isEqualByComparingTo("2000");
