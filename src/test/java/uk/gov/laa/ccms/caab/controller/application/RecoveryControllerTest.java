@@ -187,6 +187,97 @@ class RecoveryControllerTest {
   }
 
   @ParameterizedTest
+  @CsvSource({
+    "cost-award,calculate,false",
+    "cost-award,next,false",
+    "financial-award,calculate,false",
+    "financial-award,next,false",
+    "cost-award,calculate,true",
+    "cost-award,next,true",
+    "financial-award,calculate,true",
+    "financial-award,next,true"
+  })
+  void usesSubmittedAmountsForTotalsWhenReceiptDatesAreInvalid(
+      String path, String action, boolean existingRecovery) throws Exception {
+    stubAward(
+        path,
+        existingRecovery
+            ? new RecoveryDetail().solicitorRecoveryAmount(new BigDecimal("300.00"))
+            : null);
+    final var result =
+        mvc.perform(
+                post(url(path))
+                    .sessionAttr(CASE, ebsCase)
+                    .sessionAttr(USER_DETAILS, user)
+                    .param("action", action)
+                    .param("solicitorRecoveryAmount", "100")
+                    .param("courtRecoveryAmount", "")
+                    .param("clientRecoveryAmount", " ")
+                    .param("courtRecoveryDate", "31/02/2026"))
+            .andExpect(view().name("application/recovery"))
+            .andExpect(model().attributeHasFieldErrors("recovery", "courtRecoveryDate"))
+            .andExpect(model().attribute("awardAmount", new BigDecimal("1000.00")))
+            .andExpect(model().attribute("recoveredAmount", new BigDecimal("100.00")))
+            .andExpect(model().attribute("unrecoveredAmount", new BigDecimal("900.00")))
+            .andReturn();
+    final var form = (RecoveryFormData) result.getModelAndView().getModel().get("recovery");
+    assertThat(form.getSolicitorRecoveryAmount()).isEqualTo("100");
+    assertThat(form.getCourtRecoveryDate()).isEqualTo("31/02/2026");
+    verify(caseOutcomeService, never()).upsertRecovery(any(), any(), any(), any(), any(), any());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "solicitorAmountPaidToLsc,invalid",
+    "courtAmountPaidToLsc,invalid",
+    "clientAmountPaidToLsc,invalid",
+    "offeredAmount,invalid",
+    "offerDetails,<script>",
+    "leaveOfCourtRequiredInd,invalid"
+  })
+  void calculatesTotalsIndependentlyOfOtherInvalidInputs(String field, String value)
+      throws Exception {
+    stubAward("financial-award", null);
+    mvc.perform(
+            post(url("financial-award"))
+                .sessionAttr(CASE, ebsCase)
+                .sessionAttr(USER_DETAILS, user)
+                .param("solicitorRecoveryAmount", "100")
+                .param("courtRecoveryAmount", "20")
+                .param("clientRecoveryAmount", ".50")
+                .param(field, value))
+        .andExpect(view().name("application/recovery"))
+        .andExpect(model().attributeHasFieldErrors("recovery", field))
+        .andExpect(model().attribute("recoveredAmount", new BigDecimal("120.50")))
+        .andExpect(model().attribute("unrecoveredAmount", new BigDecimal("879.50")));
+    verify(caseOutcomeService, never()).upsertRecovery(any(), any(), any(), any(), any(), any());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "solicitorRecoveryAmount,invalid",
+    "courtRecoveryAmount,invalid",
+    "clientRecoveryAmount,invalid",
+    "solicitorRecoveryAmount,1.234",
+    "courtRecoveryAmount,100000000",
+    "clientRecoveryAmount,-1"
+  })
+  void suppressesTotalsWhenASubmittedRecoveryAmountIsInvalid(String field, String value)
+      throws Exception {
+    stubAward("cost-award", new RecoveryDetail().solicitorRecoveryAmount(new BigDecimal("300.00")));
+    mvc.perform(
+            post(url("cost-award"))
+                .sessionAttr(CASE, ebsCase)
+                .sessionAttr(USER_DETAILS, user)
+                .param(field, value))
+        .andExpect(view().name("application/recovery"))
+        .andExpect(model().attributeHasFieldErrors("recovery", field))
+        .andExpect(model().attribute("awardAmount", new BigDecimal("1000.00")))
+        .andExpect(model().attributeDoesNotExist("recoveredAmount", "unrecoveredAmount"));
+    verify(caseOutcomeService, never()).upsertRecovery(any(), any(), any(), any(), any(), any());
+  }
+
+  @ParameterizedTest
   @ValueSource(strings = {"cost-award", "financial-award"})
   void calculatesNegativeBalanceWithoutSaving(String path) throws Exception {
     stubAward(path, null);

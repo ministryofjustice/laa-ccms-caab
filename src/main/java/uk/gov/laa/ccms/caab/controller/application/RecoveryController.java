@@ -57,7 +57,8 @@ public class RecoveryController {
     final BaseAwardDetail award = loadRecoveryAward(ebsCase, user, awardPath, awardId);
     final RecoveryFormData form = savedRecoveryForm(award);
     model.addAttribute("recovery", form);
-    populateRecoveryModel(model, award, awardPath, awardId, recoveryMapper.toRequest(form));
+    final BigDecimal amount = populateRecoveryModel(model, award, awardPath, awardId);
+    populateRecoveryTotals(model, amount, form);
     return "application/recovery";
   }
 
@@ -83,13 +84,17 @@ public class RecoveryController {
     }
     form.normaliseLegacyFields();
     recoveryValidator.validate(form, errors);
+    final BigDecimal amount = populateRecoveryModel(model, award, awardPath, awardId);
+    if (errors.hasFieldErrors("solicitorRecoveryAmount")
+        || errors.hasFieldErrors("courtRecoveryAmount")
+        || errors.hasFieldErrors("clientRecoveryAmount")) {
+      return "application/recovery";
+    }
+    final RecoveryTotals totals = populateRecoveryTotals(model, amount, form);
     if (errors.hasErrors()) {
-      populateRecoveryModel(
-          model, award, awardPath, awardId, recoveryMapper.toRequest(savedRecoveryForm(award)));
       return "application/recovery";
     }
     final RecoveryRequest request = recoveryMapper.toRequest(form);
-    final RecoveryTotals totals = populateRecoveryModel(model, award, awardPath, awardId, request);
     if ("calculate".equals(action)) {
       return "application/recovery";
     }
@@ -142,25 +147,26 @@ public class RecoveryController {
   private record RecoveryTotals(
       BigDecimal awardAmount, BigDecimal recoveredAmount, BigDecimal unrecoveredAmount) {}
 
-  private RecoveryTotals populateRecoveryModel(
-      final Model model,
-      final BaseAwardDetail award,
-      final String path,
-      final Integer id,
-      final RecoveryRequest request) {
+  private BigDecimal populateRecoveryModel(
+      final Model model, final BaseAwardDetail award, final String path, final Integer id) {
     final BigDecimal amount =
         Optional.ofNullable(awardDisplayMapper.awardAmount(award))
             .orElse(BigDecimal.ZERO)
             .setScale(2);
-    final BigDecimal recovered =
-        request
-            .getSolicitorRecoveryAmount()
-            .add(request.getCourtRecoveryAmount())
-            .add(request.getClientRecoveryAmount());
     model.addAttribute("award", award);
     model.addAttribute("awardAmount", amount);
     model.addAttribute("awardPath", path);
     model.addAttribute("awardId", id);
+    return amount;
+  }
+
+  private RecoveryTotals populateRecoveryTotals(
+      final Model model, final BigDecimal amount, final RecoveryFormData form) {
+    final BigDecimal recovered =
+        recoveryMapper
+            .toAmount(form.getSolicitorRecoveryAmount())
+            .add(recoveryMapper.toAmount(form.getCourtRecoveryAmount()))
+            .add(recoveryMapper.toAmount(form.getClientRecoveryAmount()));
     model.addAttribute("recoveredAmount", recovered);
     model.addAttribute("unrecoveredAmount", amount.subtract(recovered));
     return new RecoveryTotals(amount, recovered, amount.subtract(recovered));

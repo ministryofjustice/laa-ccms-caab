@@ -100,9 +100,20 @@ class RecoveryTemplateRenderTest {
                 .sessionAttr(USER_DETAILS, ApplicationTestUtils.buildUser())
                 .flashAttr("user", new UserDetail().functions(List.of()))
                 .param("action", "calculate")
+                .param("solicitorRecoveryAmount", "100")
                 .param(field, "31/02/2026"))
         .andExpect(status().isOk())
         .andExpect(content().string(containsString("href=\"#" + field + "\"")))
+        .andExpect(
+            content()
+                .string(
+                    containsString(
+                        "id=\"recoveredAmount\" class=\"govuk-summary-list__value\">£100.00</dd>")))
+        .andExpect(
+            content()
+                .string(
+                    containsString(
+                        "id=\"unrecoveredAmount\" class=\"govuk-summary-list__value\">£900.00</dd>")))
         .andExpect(
             content()
                 .string(
@@ -113,6 +124,32 @@ class RecoveryTemplateRenderTest {
                             + "(?=[^>]*name=\""
                             + field
                             + "\")(?=[^>]*value=\"31/02/2026\")[^>]*>.*")));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"solicitorRecoveryAmount", "courtRecoveryAmount", "clientRecoveryAmount"})
+  void showsUncalculatedTotalsWhilePreservingInvalidAmountsAndErrors(String field)
+      throws Exception {
+    mvc.perform(
+            post("/case/outcome-and-awards/financial-award/7/recovery")
+                .sessionAttr(CASE, ebsCase)
+                .sessionAttr(USER_DETAILS, ApplicationTestUtils.buildUser())
+                .flashAttr("user", new UserDetail().functions(List.of()))
+                .param(field, "invalid"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString("href=\"#" + field + "\"")))
+        .andExpect(content().string(containsString("value=\"invalid\"")))
+        .andExpect(content().string(containsString(">£1,000.00</dd>")))
+        .andExpect(
+            content()
+                .string(
+                    containsString(
+                        "id=\"recoveredAmount\" class=\"govuk-summary-list__value\">Uncalculated</dd>")))
+        .andExpect(
+            content()
+                .string(
+                    containsString(
+                        "id=\"unrecoveredAmount\" class=\"govuk-summary-list__value\">Uncalculated</dd>")));
   }
 
   @Test

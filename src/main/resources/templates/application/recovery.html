@@ -75,11 +75,11 @@
       <dl class="govuk-summary-list" aria-live="polite">
         <div class="govuk-summary-list__row">
           <dt class="govuk-summary-list__key" th:text="#{case.recovery.totalRecovered}"></dt>
-          <dd id="recoveredAmount" class="govuk-summary-list__value" th:text="|£${#numbers.formatDecimal(recoveredAmount, 1, 'COMMA', 2, 'POINT')}|"></dd>
+          <dd id="recoveredAmount" class="govuk-summary-list__value" th:text="${recoveredAmount != null} ? |£${#numbers.formatDecimal(recoveredAmount, 1, 'COMMA', 2, 'POINT')}| : #{case.recovery.uncalculated}"></dd>
         </div>
         <div class="govuk-summary-list__row">
           <dt class="govuk-summary-list__key" th:text="#{case.recovery.unrecoveredAmount}"></dt>
-          <dd id="unrecoveredAmount" class="govuk-summary-list__value" th:text="|£${#numbers.formatDecimal(unrecoveredAmount, 1, 'COMMA', 2, 'POINT')}|"></dd>
+          <dd id="unrecoveredAmount" class="govuk-summary-list__value" th:text="${unrecoveredAmount != null} ? |£${#numbers.formatDecimal(unrecoveredAmount, 1, 'COMMA', 2, 'POINT')}| : #{case.recovery.uncalculated}"></dd>
         </div>
       </dl>
       <div class="govuk-form-group"
