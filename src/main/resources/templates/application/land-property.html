@@ -69,7 +69,7 @@
       <dl id="equity-display" class="govuk-form-group">
         <dt class="govuk-label" th:text="#{case.landAward.equity}"></dt>
         <dd id="equity" class="govuk-body govuk-!-margin-left-0"
-            th:text="|£${landAward.equity}|"></dd>
+            th:text="${landAward.equity == null ? '' : '£' + landAward.equity}"></dd>
       </dl>
 
       <th:block th:replace="~{partials/forms :: autocompleteSelect(field='awardedBy', label=#{case.landAward.awardedBy},
