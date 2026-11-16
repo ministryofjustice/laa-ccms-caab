@@ -26,8 +26,11 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.Nullable;
@@ -377,11 +380,10 @@ public class EditProceedingsAndCostsSectionController {
       final Model model,
       final HttpSession session) {
 
-    populateMatterTypeDropdown(model, application.getCategoryOfLaw().getId());
-
     if (ACTION_ADD.equals(action)) {
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
 
+      populateMatterTypeDropdown(model, application, proceedingFlow.isLeadProceeding());
       model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
       model.addAttribute("matterTypeDetails", proceedingFlow.getMatterTypeDetails());
 
@@ -392,6 +394,8 @@ public class EditProceedingsAndCostsSectionController {
 
       final ProceedingFlowFormData proceedingFlow =
           proceedingAndCostsMapper.toProceedingFlow(proceeding, null);
+
+      populateMatterTypeDropdown(model, application, proceedingFlow.isLeadProceeding());
 
       // set orderTypeRequired flag if typeOfOrder is not null
       Optional.ofNullable(proceeding.getTypeOfOrder().getId())
@@ -435,7 +439,7 @@ public class EditProceedingsAndCostsSectionController {
 
     if (bindingResult.hasErrors()) {
       model.addAttribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow);
-      populateMatterTypeDropdown(model, application.getCategoryOfLaw().getId());
+      populateMatterTypeDropdown(model, application, proceedingFlow.isLeadProceeding());
       return "application/proceedings-matter-type";
     }
 
@@ -468,16 +472,29 @@ public class EditProceedingsAndCostsSectionController {
    * Populates the matter type dropdown for the proceedings form.
    *
    * @param model The Model object to add attributes to for the view.
-   * @param categoryOfLaw The category of law to fetch the matter types for.
+   * @param application The application details.
+   * @param isLead A flag indicating whether the proceeding is a lead proceeding.
    */
-  private void populateMatterTypeDropdown(final Model model, final String categoryOfLaw) {
+  private void populateMatterTypeDropdown(
+      final Model model, final ApplicationDetail application, final boolean isLead) {
 
     final List<MatterTypeLookupValueDetail> matterTypes =
-        Optional.ofNullable(lookupService.getMatterTypes(categoryOfLaw).block())
+        Optional.ofNullable(
+                lookupService.getMatterTypes(application.getCategoryOfLaw().getId()).block())
             .map(MatterTypeLookupDetail::getContent)
             .orElse(Collections.emptyList());
 
-    model.addAttribute("matterTypes", matterTypes);
+    final Set<String> matterTypesWithProceedings =
+        getProceedingTypes(application, null, isLead).stream()
+            .map(uk.gov.laa.ccms.data.model.ProceedingDetail::getMatterType)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+
+    model.addAttribute(
+        "matterTypes",
+        matterTypes.stream()
+            .filter(matterType -> matterTypesWithProceedings.contains(matterType.getMatterType()))
+            .toList());
   }
 
   /**
@@ -585,11 +602,28 @@ public class EditProceedingsAndCostsSectionController {
       final String matterType,
       final boolean isLead) {
 
+    model.addAttribute("proceedingTypes", getProceedingTypes(application, matterType, isLead));
+  }
+
+  /**
+   * Retrieves the proceeding types available for an application and matter type.
+   *
+   * @param application The application details.
+   * @param matterType The type of the matter, or null to retrieve all matter types.
+   * @param isLead A boolean indicating if the proceeding is a lead proceeding.
+   * @return The available proceeding types.
+   */
+  private List<uk.gov.laa.ccms.data.model.ProceedingDetail> getProceedingTypes(
+      final ApplicationDetail application,
+      @Nullable final String matterType,
+      final boolean isLead) {
+
     uk.gov.laa.ccms.data.model.ProceedingDetail searchCriteria =
         new uk.gov.laa.ccms.data.model.ProceedingDetail()
-            .matterType(matterType)
             .categoryOfLawCode(application.getCategoryOfLaw().getId())
             .enabled(Boolean.TRUE);
+
+    Optional.ofNullable(matterType).ifPresent(searchCriteria::matterType);
 
     if (application.getAmendment() == null || Boolean.FALSE.equals(application.getAmendment())) {
       searchCriteria.amendmentOnly(Boolean.FALSE);
@@ -611,7 +645,7 @@ public class EditProceedingsAndCostsSectionController {
             .map(ProceedingDetails::getContent)
             .orElse(Collections.emptyList());
 
-    model.addAttribute("proceedingTypes", proceedingDetails);
+    return proceedingDetails;
   }
 
   /**
