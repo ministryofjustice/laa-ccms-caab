@@ -96,26 +96,6 @@ public class LookupServiceTest {
   }
 
   @Test
-  @DisplayName("getProceedings returns data successfully")
-  void getProceedings_success() {
-    final ProceedingDetail searchCriteria = new ProceedingDetail(); // Populate as needed
-    final Boolean larScopeFlag = true;
-    final String applicationType = "APP_TYPE";
-    final Boolean isLead = true;
-    final ProceedingDetails mockProceedingDetails = new ProceedingDetails(); // Populate as needed
-
-    when(ebsApiClient.getProceedings(searchCriteria, larScopeFlag, applicationType, isLead))
-        .thenReturn(Mono.just(mockProceedingDetails));
-
-    final Mono<ProceedingDetails> result =
-        lookupService.getProceedings(searchCriteria, larScopeFlag, applicationType, isLead);
-
-    StepVerifier.create(result).expectNext(mockProceedingDetails).verifyComplete();
-
-    verify(ebsApiClient).getProceedings(searchCriteria, larScopeFlag, applicationType, isLead);
-  }
-
-  @Test
   @DisplayName("getAvailableProceedings applies legacy non-amendment scope criteria")
   void getAvailableProceedings_nonAmendment() {
     final ProceedingDetails expected = new ProceedingDetails();

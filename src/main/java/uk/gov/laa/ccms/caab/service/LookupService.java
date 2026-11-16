@@ -132,24 +132,6 @@ public class LookupService {
   }
 
   /**
-   * Get a list of proceeding types for proceedings.
-   *
-   * @param searchCriteria The criteria to search for proceedings.
-   * @param larScopeFlag The flag to indicate if the scope is for Legal Aid Representation.
-   * @param applicationType The type of the application.
-   * @param isLead A flag to indicate if the proceeding is lead.
-   * @return CommonLookupDetail containing the common lookup values.
-   */
-  public Mono<ProceedingDetails> getProceedings(
-      final ProceedingDetail searchCriteria,
-      final Boolean larScopeFlag,
-      final String applicationType,
-      final Boolean isLead) {
-
-    return ebsApiClient.getProceedings(searchCriteria, larScopeFlag, applicationType, isLead);
-  }
-
-  /**
    * Get proceedings available for selection using the application's legacy scope-control context.
    *
    * @param categoryOfLaw The application's category of law.
@@ -185,6 +167,7 @@ public class LookupService {
       searchCriteria.amendmentOnly(Boolean.FALSE);
     }
 
+    // The Data API's lead flag selects the scoped query; it does not set proceeding lead status.
     return ebsApiClient.getProceedings(searchCriteria, larScopeFlag, applicationType, Boolean.TRUE);
   }
 
