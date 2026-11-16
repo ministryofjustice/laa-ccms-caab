@@ -12,9 +12,10 @@ portal:
   # Where the user is sent after signing out. The default is the mock; point PORTAL_LOGOUTURL at
   # the tenant's logout endpoint when OIDC_ISSUER_URI points at a real tenant, or the EntraID
   # session is left open and this URL is unreachable.
-  # The mock answers /logout with a confirmation form rather than clearing its session, so the
-  # next sign-in may not prompt.
-  logoutUrl: ${PORTAL_LOGOUTURL:http://localhost:9000/logout}
+  # /connect/logout is the OIDC end-session endpoint; /logout only renders a confirmation form.
+  # The handler adds id_token_hint, which is what lets the mock end the session and accept this
+  # return destination.
+  logoutUrl: ${PORTAL_LOGOUTURL:http://localhost:9000/connect/logout?post_logout_redirect_uri=http://localhost:8010/civil}
 
 spring:
   devtools:

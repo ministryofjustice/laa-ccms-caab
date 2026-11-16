@@ -10,6 +10,11 @@ services:
       # so this has to carry the application's context path as well as its host and port. The
       # "silas-identity" segment is the spring client registration id and is fixed by the mock.
       REDIRECT_BASE_URI: localhost:8010/civil
+      # The mock's default post-logout URI is <base>/logged-out, which this application does not
+      # serve, so register the page it returns to. The chart does the same for deployed mocks.
+      SPRING_APPLICATION_JSON: >-
+        {"spring":{"security":{"oauth2":{"authorizationserver":{"client":{"bulk-claim-client":
+        {"registration":{"post-logout-redirect-uris":["http://localhost:8010/civil"]}}}}}}}
 
   laa-ccms-mock-contracts:
     container_name: laa-ccms-caab-mock-contracts

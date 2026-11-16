@@ -1,6 +1,5 @@
 package uk.gov.laa.ccms.caab.config;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.HashSet;
@@ -33,6 +32,7 @@ import uk.gov.laa.ccms.caab.security.CcmsUserIdentityResolver;
 import uk.gov.laa.ccms.caab.security.CcmsUserResolutionException;
 import uk.gov.laa.ccms.caab.security.CspNonceFilter;
 import uk.gov.laa.ccms.caab.security.CsrfLoggingAccessDeniedHandler;
+import uk.gov.laa.ccms.caab.security.IdentityProviderLogoutHandler;
 import uk.gov.laa.ccms.caab.security.SecurityEventLogger;
 import uk.gov.laa.ccms.caab.security.SessionStartRecordingSuccessHandler;
 import uk.gov.laa.ccms.caab.service.UserService;
@@ -183,14 +183,7 @@ public class SecurityConfiguration {
         .logout(
             logout ->
                 logout.addLogoutHandler(
-                    (req, res, auth) -> {
-                      securityEventLogger.logout(auth);
-                      try {
-                        res.sendRedirect(logoutUrl);
-                      } catch (IOException e) {
-                        throw new RuntimeException("Failed to redirect to Identity Provider.", e);
-                      }
-                    }))
+                    new IdentityProviderLogoutHandler(logoutUrl, securityEventLogger)))
         .oauth2Login(
             oauth2 ->
                 oauth2
