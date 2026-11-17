@@ -117,6 +117,8 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class EditProceedingsAndCostsSectionController {
 
   public static final String IS_SUBSTANTIVE_DEVOLVED_POWERS_APP = "isSubstantiveDevolvedPowersApp";
+  private static final int MATTER_TYPE_LOOKUP_CONCURRENCY = 8;
+
   // services
   private final ApplicationService applicationService;
   private final LookupService lookupService;
@@ -477,38 +479,54 @@ public class EditProceedingsAndCostsSectionController {
    */
   private void populateMatterTypeDropdown(final Model model, final ApplicationDetail application) {
 
+    model.addAttribute("matterTypes", Collections.emptyList());
+    model.addAttribute("matterTypeOptionsAvailable", false);
+    model.addAttribute("matterTypeContextMissing", false);
+
+    final String categoryOfLaw = getCategoryOfLawCode(application);
+    final String applicationType = getApplicationTypeId(application);
+    if (!lookupService.hasRequiredAvailableProceedingsContext(
+        categoryOfLaw, application.getLarScopeFlag(), applicationType)) {
+      log.warn(
+          "Cannot display matter types because required application selection context is incomplete");
+      model.addAttribute("matterTypeContextMissing", true);
+      return;
+    }
+
     final List<MatterTypeLookupValueDetail> matterTypes =
-        Optional.ofNullable(
-                lookupService.getMatterTypes(application.getCategoryOfLaw().getId()).block())
+        Optional.ofNullable(lookupService.getMatterTypes(categoryOfLaw).block())
             .map(MatterTypeLookupDetail::getContent)
             .orElse(Collections.emptyList());
+    final List<MatterTypeLookupValueDetail> candidateMatterTypes =
+        matterTypes.stream()
+            .filter(Objects::nonNull)
+            .filter(matterType -> matterType.getMatterType() != null)
+            .filter(matterType -> !matterType.getMatterType().isBlank())
+            .toList();
 
     final Set<String> matterTypesWithProceedings =
-        Flux.fromIterable(matterTypes)
-            .filter(
-                matterType ->
-                    matterType != null
-                        && matterType.getMatterType() != null
-                        && !matterType.getMatterType().isBlank())
+        Flux.fromIterable(candidateMatterTypes)
             .flatMap(
                 matterType ->
-                    findAvailableProceedings(application, matterType.getMatterType())
-                        .flatMapMany(
-                            proceedingDetails ->
-                                Flux.fromIterable(
-                                    Optional.ofNullable(proceedingDetails.getContent())
-                                        .orElse(Collections.emptyList()))),
-                8)
-            .map(uk.gov.laa.ccms.data.model.ProceedingDetail::getMatterType)
-            .filter(Objects::nonNull)
+                    lookupService
+                        .hasAvailableProceedings(
+                            categoryOfLaw,
+                            matterType.getMatterType(),
+                            application.getAmendment(),
+                            application.getLarScopeFlag(),
+                            applicationType)
+                        .filter(Boolean.TRUE::equals)
+                        .map(available -> matterType.getMatterType()),
+                MATTER_TYPE_LOOKUP_CONCURRENCY)
             .collect(Collectors.toSet())
             .block();
 
-    model.addAttribute(
-        "matterTypes",
-        matterTypes.stream()
+    final List<MatterTypeLookupValueDetail> availableMatterTypes =
+        candidateMatterTypes.stream()
             .filter(matterType -> matterTypesWithProceedings.contains(matterType.getMatterType()))
-            .toList());
+            .toList();
+    model.addAttribute("matterTypes", availableMatterTypes);
+    model.addAttribute("matterTypeOptionsAvailable", !availableMatterTypes.isEmpty());
   }
 
   /**
@@ -615,15 +633,23 @@ public class EditProceedingsAndCostsSectionController {
   private Mono<ProceedingDetails> findAvailableProceedings(
       final ApplicationDetail application, final String matterType) {
     return lookupService.getAvailableProceedings(
-        Optional.ofNullable(application.getCategoryOfLaw())
-            .map(StringDisplayValue::getId)
-            .orElse(null),
+        getCategoryOfLawCode(application),
         matterType,
         application.getAmendment(),
         application.getLarScopeFlag(),
-        Optional.ofNullable(application.getApplicationType())
-            .map(applicationType -> applicationType.getId())
-            .orElse(null));
+        getApplicationTypeId(application));
+  }
+
+  private String getCategoryOfLawCode(final ApplicationDetail application) {
+    return Optional.ofNullable(application.getCategoryOfLaw())
+        .map(StringDisplayValue::getId)
+        .orElse(null);
+  }
+
+  private String getApplicationTypeId(final ApplicationDetail application) {
+    return Optional.ofNullable(application.getApplicationType())
+        .map(applicationType -> applicationType.getId())
+        .orElse(null);
   }
 
   /**

@@ -15,19 +15,30 @@
   <div id="main-content">
     <form action="#" th:action="@{/{caseContext}/proceedings/{action}/matter-type(action=${proceedingFlow.action},caseContext=${caseContext.pathValue})}"
           th:object="${matterTypeDetails}" method="post">
-      <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      <th:block th:if="${matterTypeOptionsAvailable}">
+        <div th:replace="~{partials/error-summary :: error-summary}"></div>
+      </th:block>
       <span class="govuk-caption-l" th:text="#{proceedings.addEdit.caption}"/>
       <h1 class="govuk-heading-l"
         th:text="#{proceedings.proceedingDetails.step1.heading}"/>
       <p class="govuk-body-l"
         th:text="#{proceedings.proceedingDetails.leadParagraph}"/>
 
-      <th:block th:replace="~{partials/forms :: autocompleteSelect(field='matterType',
-                                                                   label=#{proceedings.proceedingDetails.matterType},
-                                                                   items=${matterTypes}, itemValue='matterType',
-                                                                   itemLabel='description', withDisplayValue=true)}"/>
+      <th:block th:if="${matterTypeOptionsAvailable}">
+        <th:block th:replace="~{partials/forms :: autocompleteSelect(field='matterType',
+                                                                       label=#{proceedings.proceedingDetails.matterType},
+                                                                       items=${matterTypes}, itemValue='matterType',
+                                                                       itemLabel='description', withDisplayValue=true)}"/>
+      </th:block>
+      <p class="govuk-inset-text"
+         th:if="${matterTypeContextMissing}"
+         th:text="#{proceedings.matterType.contextMissing}"/>
+      <p class="govuk-inset-text"
+         th:if="${!matterTypeOptionsAvailable and !matterTypeContextMissing}"
+         th:text="#{proceedings.matterType.noAvailableProceedings}"/>
       <div class="govuk-button-group">
-        <govuk:button type="submit" th:text="#{site.next}"/>
+        <govuk:button th:if="${matterTypeOptionsAvailable}"
+                      type="submit" th:text="#{site.next}"/>
         <a th:href="@{/{caseContext}/proceedings-and-costs(caseContext=${caseContext.pathValue})}"
            class="govuk-link" th:text="#{site.back}"></a>
       </div>

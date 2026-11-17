@@ -435,8 +435,28 @@ public class EbsApiClient extends BaseApiClient {
       final Boolean larScopeFlag,
       final String applicationType,
       final Boolean isLead) {
+    return getProceedings(searchCriteria, larScopeFlag, applicationType, isLead, null);
+  }
+
+  /**
+   * Retrieves proceeding details with an optional page size.
+   *
+   * @param searchCriteria The proceeding search criteria.
+   * @param larScopeFlag The Legal Aid Representation scope flag.
+   * @param applicationType The application type.
+   * @param isLead Whether to use the scoped proceeding query.
+   * @param pageSize The requested result page size, or null to use the default.
+   * @return A Mono containing the proceeding details.
+   */
+  public Mono<ProceedingDetails> getProceedings(
+      final ProceedingDetail searchCriteria,
+      final Boolean larScopeFlag,
+      final String applicationType,
+      final Boolean isLead,
+      final Integer pageSize) {
 
     final MultiValueMap<String, String> queryParams = createDefaultQueryParams();
+    Optional.ofNullable(pageSize).ifPresent(size -> addQueryParam(queryParams, "size", size));
     Optional.ofNullable(searchCriteria.getCategoryOfLawCode())
         .ifPresent(code -> queryParams.add("category-of-law", code));
     Optional.ofNullable(searchCriteria.getMatterType())
