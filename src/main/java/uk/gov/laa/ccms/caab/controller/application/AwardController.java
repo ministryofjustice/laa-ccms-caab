@@ -756,8 +756,8 @@ public class AwardController {
         "partyName",
         award.parties().stream()
             .filter(p -> p.id().equals(partyId))
-            .map(LiablePartyDisplay::name)
             .findFirst()
+            .map(LiablePartyDisplay::name)
             .orElse("Unknown Party"));
 
     return "application/remove-party-confirmation-screen";
