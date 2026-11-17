@@ -12,7 +12,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
@@ -361,6 +360,8 @@ class EditProceedingsAndCostsSectionControllerTest {
     void shouldReturnExpectedResult_Add(String caseContext) throws Exception {
       final ApplicationDetail application = new ApplicationDetail();
       application.setCategoryOfLaw(new StringDisplayValue().id("categoryOfLawId"));
+      application.setLarScopeFlag(false);
+      application.setApplicationType(new ApplicationType().id("applicationTypeId"));
       final List<MatterTypeLookupValueDetail> matterTypes =
           List.of(
               new MatterTypeLookupValueDetail().matterType("availableMatterType"),
@@ -372,12 +373,12 @@ class EditProceedingsAndCostsSectionControllerTest {
       // Mock the lookupService to return matter types
       when(lookupService.getMatterTypes(anyString()))
           .thenReturn(Mono.just(new MatterTypeLookupDetail().content(matterTypes)));
-      when(lookupService.getProceedings(
-              any(uk.gov.laa.ccms.data.model.ProceedingDetail.class),
-              eq(null),
-              eq(null),
-              eq(false)))
+      when(lookupService.getAvailableProceedings(
+              "categoryOfLawId", "availableMatterType", null, false, "applicationTypeId"))
           .thenReturn(Mono.just(new ProceedingDetails().content(proceedingTypes)));
+      when(lookupService.getAvailableProceedings(
+              "categoryOfLawId", "unavailableMatterType", null, false, "applicationTypeId"))
+          .thenReturn(Mono.just(new ProceedingDetails().content(Collections.emptyList())));
 
       mockMvc
           .perform(
@@ -390,16 +391,11 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       verify(lookupService, times(1)).getMatterTypes(application.getCategoryOfLaw().getId());
       verify(lookupService)
-          .getProceedings(
-              argThat(
-                  criteria ->
-                      "categoryOfLawId".equals(criteria.getCategoryOfLawCode())
-                          && criteria.getMatterType() == null
-                          && Boolean.FALSE.equals(criteria.getAmendmentOnly())
-                          && Boolean.TRUE.equals(criteria.getEnabled())),
-              eq(null),
-              eq(null),
-              eq(false));
+          .getAvailableProceedings(
+              "categoryOfLawId", "availableMatterType", null, false, "applicationTypeId");
+      verify(lookupService)
+          .getAvailableProceedings(
+              "categoryOfLawId", "unavailableMatterType", null, false, "applicationTypeId");
     }
 
     @ParameterizedTest
@@ -427,12 +423,12 @@ class EditProceedingsAndCostsSectionControllerTest {
       when(lookupService.getMatterTypes(anyString()))
           .thenReturn(Mono.just(new MatterTypeLookupDetail().content(matterTypes)));
       when(proceedingAndCostsMapper.toProceedingFlow(any(), any())).thenReturn(proceedingFlow);
-      when(lookupService.getProceedings(
-              any(uk.gov.laa.ccms.data.model.ProceedingDetail.class),
-              eq(true),
-              eq("applicationTypeId"),
-              eq(true)))
+      when(lookupService.getAvailableProceedings(
+              "categoryOfLawId", "availableMatterType", null, true, "applicationTypeId"))
           .thenReturn(Mono.just(new ProceedingDetails().content(proceedingTypes)));
+      when(lookupService.getAvailableProceedings(
+              "categoryOfLawId", "unavailableMatterType", null, true, "applicationTypeId"))
+          .thenReturn(Mono.just(new ProceedingDetails().content(Collections.emptyList())));
 
       mockMvc
           .perform(
@@ -447,16 +443,11 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       verify(lookupService, times(1)).getMatterTypes(application.getCategoryOfLaw().getId());
       verify(lookupService)
-          .getProceedings(
-              argThat(
-                  criteria ->
-                      "categoryOfLawId".equals(criteria.getCategoryOfLawCode())
-                          && criteria.getMatterType() == null
-                          && Boolean.FALSE.equals(criteria.getAmendmentOnly())
-                          && Boolean.TRUE.equals(criteria.getEnabled())),
-              eq(true),
-              eq("applicationTypeId"),
-              eq(true));
+          .getAvailableProceedings(
+              "categoryOfLawId", "availableMatterType", null, true, "applicationTypeId");
+      verify(lookupService)
+          .getAvailableProceedings(
+              "categoryOfLawId", "unavailableMatterType", null, true, "applicationTypeId");
     }
   }
 
@@ -544,12 +535,6 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       when(lookupService.getMatterTypes(anyString()))
           .thenReturn(Mono.just(new MatterTypeLookupDetail().content(matterTypes)));
-      when(lookupService.getProceedings(
-              any(uk.gov.laa.ccms.data.model.ProceedingDetail.class),
-              eq(null),
-              eq(null),
-              eq(false)))
-          .thenReturn(Mono.just(new ProceedingDetails().content(Collections.emptyList())));
 
       mockMvc
           .perform(
@@ -571,18 +556,28 @@ class EditProceedingsAndCostsSectionControllerTest {
   class GetProceedingTypeTests {
 
     @ParameterizedTest
-    @DisplayName("Should return expected result")
-    @ValueSource(strings = {"application", "amendments"})
-    void shouldReturnExpectedResult(String caseContext) throws Exception {
-      final String action = "add";
+    @DisplayName("Should return expected result regardless of persisted lead state")
+    @CsvSource({
+      "false, application, add",
+      "true, application, add",
+      "false, amendments, add",
+      "true, amendments, add",
+      "false, application, edit",
+      "true, application, edit",
+      "false, amendments, edit",
+      "true, amendments, edit"
+    })
+    void shouldReturnExpectedResult(boolean persistedLead, String caseContext, String action)
+        throws Exception {
       final ApplicationDetail application =
           new ApplicationDetail()
               .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
-              .applicationType(new ApplicationType().id("applicationTypeId"));
+              .applicationType(new ApplicationType().id("applicationTypeId"))
+              .larScopeFlag(Boolean.TRUE);
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
       proceedingFlow.setMatterTypeDetails(new ProceedingFormDataMatterTypeDetails());
       proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
-      proceedingFlow.setLeadProceeding(true);
+      proceedingFlow.setLeadProceeding(persistedLead);
       final ProceedingFormDataProceedingDetails proceedingTypeDetails =
           new ProceedingFormDataProceedingDetails();
       proceedingFlow.setProceedingDetails(proceedingTypeDetails);
@@ -591,11 +586,8 @@ class EditProceedingsAndCostsSectionControllerTest {
           Arrays.asList(
               new uk.gov.laa.ccms.data.model.ProceedingDetail().code("1").description("Type 1"),
               new uk.gov.laa.ccms.data.model.ProceedingDetail().code("2").description("Type 2"));
-      when(lookupService.getProceedings(
-              any(uk.gov.laa.ccms.data.model.ProceedingDetail.class),
-              eq(null),
-              eq("applicationTypeId"),
-              eq(true)))
+      when(lookupService.getAvailableProceedings(
+              "categoryOfLawId", "matterType", null, Boolean.TRUE, "applicationTypeId"))
           .thenReturn(Mono.just(new ProceedingDetails().content(proceedingDetails)));
 
       mockMvc
@@ -608,6 +600,10 @@ class EditProceedingsAndCostsSectionControllerTest {
           .andExpect(model().attribute("proceedingTypes", proceedingDetails))
           .andExpect(model().attribute(PROCEEDING_FLOW_FORM_DATA, proceedingFlow))
           .andExpect(model().attribute("proceedingTypeDetails", proceedingTypeDetails));
+
+      verify(lookupService)
+          .getAvailableProceedings(
+              "categoryOfLawId", "matterType", null, Boolean.TRUE, "applicationTypeId");
     }
   }
 
@@ -677,17 +673,19 @@ class EditProceedingsAndCostsSectionControllerTest {
           "ProceedingDetail flow should be marked as amended when proceeding type is changed.");
     }
 
-    @Test
+    @ParameterizedTest
     @DisplayName("Should have validation errors")
-    void shouldHaveValidationErrors() throws Exception {
-      final String action = "add";
+    @CsvSource({"application, add", "application, edit", "amendments, add", "amendments, edit"})
+    void shouldHaveValidationErrors(String caseContext, String action) throws Exception {
       final ApplicationDetail application =
           new ApplicationDetail()
               .categoryOfLaw(new StringDisplayValue().id("categoryOfLawId"))
-              .applicationType(new ApplicationType().id("applicationTypeId"));
+              .applicationType(new ApplicationType().id("applicationTypeId"))
+              .larScopeFlag(Boolean.TRUE);
       final ProceedingFlowFormData proceedingFlow = new ProceedingFlowFormData(action);
       proceedingFlow.setMatterTypeDetails(new ProceedingFormDataMatterTypeDetails());
       proceedingFlow.getMatterTypeDetails().setMatterType("matterType");
+      proceedingFlow.setLeadProceeding("edit".equals(action));
       final ProceedingFormDataProceedingDetails proceedingTypeDetails =
           new ProceedingFormDataProceedingDetails();
       final List<uk.gov.laa.ccms.data.model.ProceedingDetail> proceedingDetails =
@@ -695,11 +693,8 @@ class EditProceedingsAndCostsSectionControllerTest {
               new uk.gov.laa.ccms.data.model.ProceedingDetail().code("1").description("Type 1"),
               new uk.gov.laa.ccms.data.model.ProceedingDetail().code("2").description("Type 2"));
 
-      when(lookupService.getProceedings(
-              any(uk.gov.laa.ccms.data.model.ProceedingDetail.class),
-              eq(null),
-              eq(null),
-              eq(false)))
+      when(lookupService.getAvailableProceedings(
+              "categoryOfLawId", "matterType", null, Boolean.TRUE, "applicationTypeId"))
           .thenReturn(Mono.just(new ProceedingDetails().content(proceedingDetails)));
 
       doAnswer(
@@ -711,8 +706,6 @@ class EditProceedingsAndCostsSectionControllerTest {
               })
           .when(proceedingTypeValidator)
           .validate(any(), any(BindingResult.class));
-
-      String caseContext = "application";
 
       mockMvc
           .perform(
@@ -726,6 +719,9 @@ class EditProceedingsAndCostsSectionControllerTest {
 
       verify(proceedingTypeValidator, times(1))
           .validate(eq(proceedingTypeDetails), any(BindingResult.class));
+      verify(lookupService)
+          .getAvailableProceedings(
+              "categoryOfLawId", "matterType", null, Boolean.TRUE, "applicationTypeId");
     }
   }
 
