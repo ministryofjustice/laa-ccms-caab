@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.controller.client;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -17,6 +18,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_LANGUAGE;
+import static uk.gov.laa.ccms.caab.constants.CommonValueConstants.COMMON_VALUE_CORRESPONDENCE_METHOD;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CREATE_CLIENT_ADDRESS_FLOW;
 
@@ -26,6 +29,7 @@ import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
@@ -50,12 +54,14 @@ import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
 import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.ClientAddressDetailsValidator;
+import uk.gov.laa.ccms.caab.bean.validators.client.ClientContactDetailsValidator;
 import uk.gov.laa.ccms.caab.bean.validators.client.FindAddressValidator;
 import uk.gov.laa.ccms.caab.client.OrdinanceSurveyApiClient;
 import uk.gov.laa.ccms.caab.config.CreateClientRegistrationInterceptor;
 import uk.gov.laa.ccms.caab.config.SessionStateLockFilter;
 import uk.gov.laa.ccms.caab.mapper.AddressFormDataMapper;
 import uk.gov.laa.ccms.caab.mapper.ClientAddressResultDisplayMapper;
+import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.os.DeliveryPointAddress;
 import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResponse;
 import uk.gov.laa.ccms.caab.model.os.OrdinanceSurveyResult;
@@ -79,6 +85,7 @@ class ClientAddressJourneyTest {
   private MockMvc mockMvc;
   private MockHttpSession session;
   private ClientFlowFormData clientFlowFormData;
+  private boolean supplyDefaultIdentity = true;
 
   @BeforeEach
   void setup() {
@@ -95,13 +102,18 @@ class ClientAddressJourneyTest {
                     new ClientAddressDetailsValidator(),
                     new FindAddressValidator()),
                 new ClientAddressDetailsSearchController(
-                    addressService, new AddressSearchValidator()))
+                    addressService, new AddressSearchValidator()),
+                new ClientContactDetailsController(
+                    lookupService, new ClientContactDetailsValidator()))
             .addInterceptors(new CreateClientRegistrationInterceptor())
             .addFilters(new SessionStateLockFilter())
             .defaultRequest(
                 get("/")
                     .with(
                         request -> {
+                          if (!supplyDefaultIdentity) {
+                            return request;
+                          }
                           if (request.getParameterValues("registrationId") == null) {
                             request.addParameter(
                                 "registrationId", clientFlowFormData.getRegistrationId());
@@ -377,6 +389,364 @@ class ClientAddressJourneyTest {
     assertEquals(confirmedAddress, clientFlowFormData.getAddressDetails());
     assertSame(clientFlowFormData.getAddressDetails(), addressFlow.getAddressDetails());
     verify(ordinanceSurveyApiClient).getAddresses("SA5 8AB");
+  }
+
+  @ParameterizedTest
+  @CsvSource({"'', true", "'/civil', true", "'', false", "'/civil', false"})
+  void cancelFromResultsRestoresSearchAndManualLink(
+      final String contextPath, final boolean hasResults) throws Exception {
+    final MvcResult resultsPage = searchForNavigation(contextPath, hasResults);
+    final AddressLookupFlowData<?> flow =
+        (AddressLookupFlowData<?>) session.getAttribute(CREATE_CLIENT_ADDRESS_FLOW);
+    assertNotNull(flow);
+    final Object draft = flow.getAddressDetails();
+    final long revision = flow.getRevision();
+    final String cancelUrl = link(resultsPage, "Cancel and return to address details");
+    final var cancelIdentity = UriComponentsBuilder.fromUriString(cancelUrl).build();
+    assertEquals(contextPath + ADDRESS_PATH, cancelIdentity.getPath());
+    assertEquals(
+        clientFlowFormData.getRegistrationId(),
+        cancelIdentity.getQueryParams().getFirst("registrationId"));
+    assertEquals(flow.getFlowId(), cancelIdentity.getQueryParams().getFirst("flowId"));
+
+    final MvcResult addressPage =
+        mockMvc
+            .perform(get(cancelUrl).contextPath(contextPath).session(session))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    assertSearchComponent(addressPage);
+    assertEquals(AddressLookupFlowData.Step.SEARCH, flow.getStep());
+    assertSame(draft, flow.getAddressDetails());
+    assertEquals("sa58ab", flow.getOriginalPostcode());
+    assertEquals("10", flow.getOriginalBuildingSearch());
+    assertEquals("SA5 8AB", flow.getNormalizedPostcode());
+    assertNull(flow.getSearchResults());
+    assertNull(flow.getSelectedAddress());
+    assertTrue(flow.getRevision() > revision);
+    assertEquals(Long.toString(flow.getRevision()), hidden(addressPage, "revision"));
+  }
+
+  @ParameterizedTest
+  @CsvSource({"'', true", "'/civil', true", "'', false", "'/civil', false"})
+  void backToContactThenNextRestoresAddressSearch(
+      final String contextPath, final boolean hasResults) throws Exception {
+    final MvcResult resultsPage = searchForNavigation(contextPath, hasResults);
+    final MvcResult addressPage =
+        mockMvc
+            .perform(
+                get(link(resultsPage, "Cancel and return to address details"))
+                    .contextPath(contextPath)
+                    .session(session))
+            .andExpect(status().isOk())
+            .andReturn();
+    when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_METHOD))
+        .thenReturn(Mono.just(new CommonLookupDetail()));
+    when(lookupService.getCommonValues(COMMON_VALUE_CORRESPONDENCE_LANGUAGE))
+        .thenReturn(Mono.just(new CommonLookupDetail()));
+    final String contactUrl = link(addressPage, "Back");
+    assertEquals(
+        contextPath + "/application/client/details/contact",
+        UriComponentsBuilder.fromUriString(contactUrl).build().getPath());
+    final MvcResult contactPage =
+        mockMvc
+            .perform(get(contactUrl).contextPath(contextPath).session(session))
+            .andExpect(status().isOk())
+            .andReturn();
+    final var form =
+        Pattern.compile("<form[^>]*action=\"([^\"]+)\"")
+            .matcher(contactPage.getResponse().getContentAsString());
+    assertTrue(form.find(), "Contact page must render its Next form");
+    final MvcResult next =
+        mockMvc
+            .perform(
+                post(HtmlUtils.htmlUnescape(form.group(1)))
+                    .contextPath(contextPath)
+                    .session(session)
+                    .param("registrationId", hidden(contactPage, "registrationId"))
+                    .param("telephoneHomePresent", "true")
+                    .param("telephoneHome", "01234567890")
+                    .param("correspondenceMethod", "E-mail")
+                    .param("emailAddress", "client@example.com")
+                    .param("password", "example-password")
+                    .param("passwordReminder", "example-reminder"))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectTo(contextPath + ADDRESS_PATH))
+            .andReturn();
+    final String nextUrl = next.getResponse().getRedirectedUrl();
+    assertNotNull(nextUrl);
+    final MvcResult returnedAddress =
+        mockMvc
+            .perform(get(nextUrl).contextPath(contextPath).session(session))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertSearchComponent(returnedAddress);
+    assertEquals("01234567890", clientFlowFormData.getContactDetails().getTelephoneHome());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "'', SEARCH", "'/civil', SEARCH",
+    "'', MANUAL_ENTRY", "'/civil', MANUAL_ENTRY",
+    "'', CONFIRMED_ADDRESS", "'/civil', CONFIRMED_ADDRESS",
+    "'', LOOKUP_UNAVAILABLE", "'/civil', LOOKUP_UNAVAILABLE"
+  })
+  void addressGetPreservesSupportedStatesAndRevision(
+      final String contextPath, final AddressLookupFlowData.Step step) throws Exception {
+    supplyDefaultIdentity = false;
+    final ClientFormDataAddressDetails draft = new ClientFormDataAddressDetails();
+    draft.setPostcode("sa58ab");
+    draft.setHouseNameNumber("10");
+    draft.setAddressLine1("Draft address line");
+    draft.setCityTown("Swansea");
+    draft.setCountry("GBR");
+    final AddressLookupFlowData<ClientFormDataAddressDetails> flow =
+        new AddressLookupFlowData<>(CreateClientRegistrationInterceptor.owner(clientFlowFormData));
+    flow.beginSearch("sa58ab", "10");
+    flow.setAddressDetails(draft);
+    switch (step) {
+      case MANUAL_ENTRY -> flow.enterManualEntry(draft);
+      case CONFIRMED_ADDRESS -> {
+        final AddressResultRowDisplay selected = new AddressResultRowDisplay();
+        selected.setUprn("1001");
+        flow.setSelectedAddress(selected);
+        flow.confirmSelectedAddress();
+      }
+      case LOOKUP_UNAVAILABLE -> flow.markLookupUnavailable();
+      default -> assertEquals(AddressLookupFlowData.Step.SEARCH, step);
+    }
+    session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, flow);
+    final long revision = flow.getRevision();
+    final var source = flow.getSource();
+    final var selected = flow.getSelectedAddress();
+
+    for (int visit = 0; visit < 2; visit++) {
+      final MvcResult page =
+          mockMvc
+              .perform(
+                  get(contextPath + ADDRESS_PATH)
+                      .contextPath(contextPath)
+                      .session(session)
+                      .param("registrationId", clientFlowFormData.getRegistrationId())
+                      .param("flowId", flow.getFlowId()))
+              .andExpect(status().isOk())
+              .andExpect(model().attribute("addressDetails", draft))
+              .andReturn();
+      assertSame(flow, session.getAttribute(CREATE_CLIENT_ADDRESS_FLOW));
+      assertEquals(step, flow.getStep());
+      assertEquals(source, flow.getSource());
+      assertEquals(revision, flow.getRevision());
+      assertEquals(Long.toString(revision), hidden(page, "revision"));
+      assertSame(draft, flow.getAddressDetails());
+      assertSame(selected, flow.getSelectedAddress());
+      assertEquals("sa58ab", flow.getOriginalPostcode());
+      assertEquals("10", flow.getOriginalBuildingSearch());
+      assertEquals("SA5 8AB", flow.getNormalizedPostcode());
+      if (step == AddressLookupFlowData.Step.MANUAL_ENTRY
+          || step == AddressLookupFlowData.Step.CONFIRMED_ADDRESS) {
+        final String html = page.getResponse().getContentAsString();
+        assertThat(html, containsString("value=\"Draft address line\""));
+        assertThat(html, not(containsString("value=\"find_address\"")));
+        assertThat(
+            html,
+            step == AddressLookupFlowData.Step.CONFIRMED_ADDRESS
+                ? matchesPattern("(?s).*<fieldset[^>]*\\bdisabled\\b[^>]*>.*</fieldset>.*")
+                : not(matchesPattern("(?s).*<fieldset[^>]*\\bdisabled\\b[^>]*>.*</fieldset>.*")));
+      } else {
+        assertSearchComponent(page);
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @CsvSource({"true, true", "true, false", "false, true", "false, false"})
+  void returningFromResultsRetainsExemptClientVisibility(
+      final boolean vulnerable, final boolean hasResults) throws Exception {
+    final MvcResult resultsPage = searchForNavigation("/civil", hasResults);
+    final AddressLookupFlowData<?> flow =
+        (AddressLookupFlowData<?>) session.getAttribute(CREATE_CLIENT_ADDRESS_FLOW);
+    assertNotNull(flow);
+    final ClientFormDataAddressDetails draft =
+        (ClientFormDataAddressDetails) flow.getAddressDetails();
+    assertNotNull(draft);
+    clientFlowFormData.getBasicDetails().setVulnerableClient(vulnerable);
+    draft.setNoFixedAbode(!vulnerable);
+
+    mockMvc
+        .perform(
+            get(link(resultsPage, "Cancel and return to address details"))
+                .contextPath("/civil")
+                .session(session))
+        .andExpect(status().isOk())
+        .andExpect(content().string(not(containsString("name=\"postcode\""))))
+        .andExpect(content().string(not(containsString("name=\"addressLine1\""))))
+        .andExpect(content().string(not(containsString("Enter address manually"))));
+    assertEquals(AddressLookupFlowData.Step.SEARCH, flow.getStep());
+    assertEquals(vulnerable, draft.getVulnerableClient());
+    assertEquals(!vulnerable, draft.getNoFixedAbode());
+    assertSame(draft, flow.getAddressDetails());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"'', true", "'/civil', true", "'', false", "'/civil', false"})
+  void cancelInvalidatesOldResultsRevisionButFreshManualNavigationWorks(
+      final String contextPath, final boolean hasResults) throws Exception {
+    final MvcResult resultsPage = searchForNavigation(contextPath, hasResults);
+    final String registrationId = hidden(resultsPage, "registrationId");
+    final String flowId = hidden(resultsPage, "flowId");
+    final String revision = hidden(resultsPage, "revision");
+    final MvcResult addressPage =
+        mockMvc
+            .perform(
+                get(link(resultsPage, "Cancel and return to address details"))
+                    .contextPath(contextPath)
+                    .session(session))
+            .andExpect(status().isOk())
+            .andReturn();
+    final AddressLookupFlowData<?> flow =
+        (AddressLookupFlowData<?>) session.getAttribute(CREATE_CLIENT_ADDRESS_FLOW);
+    assertNotNull(flow);
+    final long currentRevision = flow.getRevision();
+
+    mockMvc
+        .perform(
+            get(contextPath + ADDRESS_PATH + "/search")
+                .contextPath(contextPath)
+                .session(session)
+                .param("registrationId", registrationId)
+                .param("flowId", flowId)
+                .param("revision", revision))
+        .andExpect(status().isConflict());
+    mockMvc
+        .perform(
+            post(contextPath + ADDRESS_PATH + "/search")
+                .contextPath(contextPath)
+                .session(session)
+                .param("registrationId", registrationId)
+                .param("flowId", flowId)
+                .param("revision", revision)
+                .param("uprn", "1001"))
+        .andExpect(status().isConflict());
+    assertEquals(currentRevision, flow.getRevision());
+    assertEquals(AddressLookupFlowData.Step.SEARCH, flow.getStep());
+    assertNull(flow.getSelectedAddress());
+    assertNull(clientFlowFormData.getAddressDetails());
+    mockMvc
+        .perform(
+            get(link(addressPage, "Enter address manually"))
+                .contextPath(contextPath)
+                .session(session))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectTo(contextPath + ADDRESS_PATH));
+    assertEquals(AddressLookupFlowData.Step.MANUAL_ENTRY, flow.getStep());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"registrationId", "flowId", "owner"})
+  void invalidIdentityCannotNormalizeAnotherFlow(final String invalidIdentity) throws Exception {
+    searchForNavigation("/civil", true);
+    final AddressLookupFlowData<?> flow =
+        (AddressLookupFlowData<?>) session.getAttribute(CREATE_CLIENT_ADDRESS_FLOW);
+    assertNotNull(flow);
+    final long revision = flow.getRevision();
+    final var candidates = flow.getSearchResults();
+    if ("owner".equals(invalidIdentity)) {
+      clientFlowFormData = new ClientFlowFormData(ACTION_CREATE);
+      session.setAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
+    }
+    mockMvc
+        .perform(
+            get("/civil" + ADDRESS_PATH)
+                .contextPath("/civil")
+                .session(session)
+                .param(
+                    "registrationId",
+                    "registrationId".equals(invalidIdentity)
+                        ? "another-registration"
+                        : clientFlowFormData.getRegistrationId())
+                .param(
+                    "flowId", "flowId".equals(invalidIdentity) ? "another-flow" : flow.getFlowId()))
+        .andExpect(status().isConflict());
+    assertEquals(revision, flow.getRevision());
+    assertEquals(AddressLookupFlowData.Step.RESULTS, flow.getStep());
+    assertSame(candidates, flow.getSearchResults());
+    assertSame(flow, session.getAttribute(CREATE_CLIENT_ADDRESS_FLOW));
+  }
+
+  private MvcResult searchForNavigation(final String contextPath, final boolean hasResults)
+      throws Exception {
+    supplyDefaultIdentity = false;
+    final String addressUrl = contextPath + ADDRESS_PATH;
+    final MvcResult initialPage =
+        mockMvc
+            .perform(
+                get(addressUrl)
+                    .contextPath(contextPath)
+                    .session(session)
+                    .param("registrationId", clientFlowFormData.getRegistrationId()))
+            .andExpect(status().isOk())
+            .andReturn();
+    final DeliveryPointAddress address = new DeliveryPointAddress();
+    address.setUprn("1001");
+    address.setBuildingNumber("10");
+    address.setThoroughfareName("Example Street");
+    address.setPostTown("Swansea");
+    address.setPostcode("SA5 8AB");
+    address.setAddress("10 Example Street, Swansea, SA5 8AB");
+    final OrdinanceSurveyResult result = new OrdinanceSurveyResult();
+    result.setDeliveryPointAddress(address);
+    final OrdinanceSurveyResponse response = new OrdinanceSurveyResponse();
+    response.setResults(hasResults ? List.of(result) : List.of());
+    when(ordinanceSurveyApiClient.getAddresses("SA5 8AB")).thenReturn(Mono.just(response));
+    final MvcResult search =
+        mockMvc
+            .perform(
+                post(addressUrl)
+                    .contextPath(contextPath)
+                    .session(session)
+                    .param("registrationId", hidden(initialPage, "registrationId"))
+                    .param("flowId", hidden(initialPage, "flowId"))
+                    .param("revision", hidden(initialPage, "revision"))
+                    .param("action", "find_address")
+                    .param("postcode", "sa58ab")
+                    .param("houseNameNumber", "10")
+                    .param("noFixedAbode", "false"))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectTo(addressUrl + "/search"))
+            .andReturn();
+    final String resultsUrl = search.getResponse().getRedirectedUrl();
+    assertNotNull(resultsUrl);
+    return mockMvc
+        .perform(get(resultsUrl).contextPath(contextPath).session(session))
+        .andExpect(status().isOk())
+        .andExpect(
+            content().string(containsString(hasResults ? "Select an address" : "No address found")))
+        .andReturn();
+  }
+
+  private void assertSearchComponent(final MvcResult page) throws Exception {
+    final String html = page.getResponse().getContentAsString();
+    assertThat(html, containsString("Find an address"));
+    assertThat(html, containsString("name=\"postcode\""));
+    assertThat(html, containsString("value=\"sa58ab\""));
+    assertThat(html, containsString("value=\"10\""));
+    assertThat(link(page, "Enter address manually"), containsString(ADDRESS_PATH + "/manual?"));
+  }
+
+  private String link(final MvcResult page, final String label) throws Exception {
+    final var matcher =
+        Pattern.compile("<a[^>]*href=\"([^\"]+)\"[^>]*>" + Pattern.quote(label) + "</a>")
+            .matcher(page.getResponse().getContentAsString());
+    assertTrue(matcher.find(), "Missing link: " + label);
+    return HtmlUtils.htmlUnescape(matcher.group(1));
+  }
+
+  private String hidden(final MvcResult page, final String name) throws Exception {
+    final var matcher =
+        Pattern.compile("<input(?=[^>]*name=\"" + name + "\")[^>]*value=\"([^\"]*)\"")
+            .matcher(page.getResponse().getContentAsString());
+    assertTrue(matcher.find(), "Missing hidden field: " + name);
+    return HtmlUtils.htmlUnescape(matcher.group(1));
   }
 
   private ResultMatcher redirectTo(String path) {

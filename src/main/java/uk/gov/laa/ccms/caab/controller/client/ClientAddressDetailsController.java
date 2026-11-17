@@ -75,6 +75,11 @@ public class ClientAddressDetailsController {
 
     final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
         getOrCreateCreateClientAddressFlow(session, clientFlowFormData);
+    // Results belong on the selection page; returning to details restores the search component.
+    if (addressFlow.getStep() == AddressLookupFlowData.Step.RESULTS
+        || addressFlow.getStep() == AddressLookupFlowData.Step.NO_RESULTS) {
+      addressFlow.searchAgain();
+    }
     session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
     final ClientFormDataAddressDetails currentAddressDetails =
         addressFlow.getAddressDetails() != null
