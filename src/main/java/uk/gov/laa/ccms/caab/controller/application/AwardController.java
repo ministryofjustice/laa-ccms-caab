@@ -741,6 +741,10 @@ public class AwardController {
       @PathVariable final Integer awardId,
       @PathVariable final Integer partyId,
       final Model model) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn("Rejecting party removal confirmation for a read-only case");
+      return "redirect:/case/outcome-and-awards";
+    }
     final var award =
         caseOutcomeService.getLiablePartiesDisplay(
             ebsCase.getCaseReferenceNumber(),
