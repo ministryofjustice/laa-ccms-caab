@@ -157,17 +157,27 @@ public class CcmsUserIdentityResolver {
    * Reads a claim as a single string.
    *
    * <p>A claim can arrive as a scalar or as a single-valued array depending on how the tenant
-   * issues it, so both are accepted.
+   * issues it, so both are accepted. Several values are ambiguous rather than empty: choosing one
+   * could resolve to the wrong CCMS user, so access is denied instead.
    */
   private Optional<String> claimValue(final OidcUser oidcUser, final String claimName) {
     final Object claim = oidcUser.getClaims().get(claimName);
 
-    final Object value =
-        claim instanceof Collection<?> values ? values.stream().findFirst().orElse(null) : claim;
+    final Object value = claim instanceof Collection<?> values ? single(values, claimName) : claim;
 
     return Optional.ofNullable(value)
         .map(String::valueOf)
         .map(String::trim)
         .filter(trimmed -> !trimmed.isEmpty());
+  }
+
+  private Object single(final Collection<?> values, final String claimName) {
+    if (values.size() > 1) {
+      throw new CcmsUserResolutionException(
+          ("EntraID issued %d values in claim [%s] - exactly one identifier is required, "
+                  + "access denied")
+              .formatted(values.size(), claimName));
+    }
+    return values.stream().findFirst().orElse(null);
   }
 }

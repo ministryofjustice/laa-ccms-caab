@@ -164,6 +164,21 @@ class CcmsUserIdentityResolverTest {
     }
 
     @Test
+    @DisplayName("Denies access when the claim carries more than one identifier")
+    void failsWhenClaimAmbiguous() {
+      when(oidcUser.getClaims())
+          .thenReturn(Map.of(SILAS_CLAIM, List.of(SILAS_UUID, "a-second-identifier")));
+
+      final CcmsUserResolutionException exception =
+          assertThrows(
+              CcmsUserResolutionException.class,
+              () -> resolver(true, SILAS_CLAIM).resolveCcmsLoginId(oidcUser));
+
+      assertTrue(exception.getMessage().contains("exactly one identifier is required"));
+      verifyNoInteractions(userService);
+    }
+
+    @Test
     @DisplayName("Does not need an email address, since the claim carries the identifier")
     void doesNotNeedEmail() {
       when(oidcUser.getClaims()).thenReturn(Map.of(SILAS_CLAIM, SILAS_UUID));
