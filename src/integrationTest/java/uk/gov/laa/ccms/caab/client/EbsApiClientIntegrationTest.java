@@ -396,6 +396,7 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
             .withQueryParam("lar-scope-flag", equalTo("false"))
             .withQueryParam("application-type", equalTo("ECF"))
             .withQueryParam("lead", equalTo("true"))
+            .withQueryParam("size", equalTo("1000"))
             .willReturn(okJson("{\"content\":[]}")));
 
     final ProceedingDetails result =
@@ -408,7 +409,47 @@ public class EbsApiClientIntegrationTest extends AbstractIntegrationTest {
         getRequestedFor(urlPathEqualTo("/proceedings"))
             .withQueryParam("lar-scope-flag", equalTo("false"))
             .withQueryParam("application-type", equalTo("ECF"))
-            .withQueryParam("lead", equalTo("true")));
+            .withQueryParam("lead", equalTo("true"))
+            .withQueryParam("size", equalTo("1000")));
+  }
+
+  @Test
+  void matterTypeAvailabilityRequestsOneScopedProceeding() {
+    final ProceedingDetail criteria =
+        new ProceedingDetail()
+            .categoryOfLawCode("CON")
+            .matterType("NIGDS")
+            .amendmentOnly(Boolean.FALSE)
+            .enabled(Boolean.TRUE);
+
+    wiremock.stubFor(
+        get(urlPathEqualTo("/proceedings"))
+            .withQueryParam("category-of-law", equalTo("CON"))
+            .withQueryParam("matter-type", equalTo("NIGDS"))
+            .withQueryParam("amendment-only", equalTo("false"))
+            .withQueryParam("enabled", equalTo("true"))
+            .withQueryParam("lar-scope-flag", equalTo("false"))
+            .withQueryParam("application-type", equalTo("ECF"))
+            .withQueryParam("lead", equalTo("true"))
+            .withQueryParam("size", equalTo("1"))
+            .willReturn(okJson("{\"content\":[]}")));
+
+    final ProceedingDetails result =
+        ebsApiClient.getProceedings(criteria, Boolean.FALSE, "ECF", Boolean.TRUE, 1).block();
+
+    assertNotNull(result);
+    assertThat(result.getContent()).isEmpty();
+    wiremock.verify(
+        1,
+        getRequestedFor(urlPathEqualTo("/proceedings"))
+            .withQueryParam("category-of-law", equalTo("CON"))
+            .withQueryParam("matter-type", equalTo("NIGDS"))
+            .withQueryParam("amendment-only", equalTo("false"))
+            .withQueryParam("enabled", equalTo("true"))
+            .withQueryParam("lar-scope-flag", equalTo("false"))
+            .withQueryParam("application-type", equalTo("ECF"))
+            .withQueryParam("lead", equalTo("true"))
+            .withQueryParam("size", equalTo("1")));
   }
 
   @Test
