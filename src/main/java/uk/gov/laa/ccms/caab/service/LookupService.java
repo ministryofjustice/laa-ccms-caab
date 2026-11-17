@@ -132,21 +132,43 @@ public class LookupService {
   }
 
   /**
-   * Get a list of proceeding types for proceedings.
+   * Get proceedings available for selection using the application's legacy scope-control context.
    *
-   * @param searchCriteria The criteria to search for proceedings.
-   * @param larScopeFlag The flag to indicate if the scope is for Legal Aid Representation.
-   * @param applicationType The type of the application.
-   * @param isLead A flag to indicate if the proceeding is lead.
-   * @return CommonLookupDetail containing the common lookup values.
+   * @param categoryOfLaw The application's category of law.
+   * @param matterType The selected matter type.
+   * @param amendment Whether the application is an amendment.
+   * @param larScopeFlag The application's Legal Aid Representation scope flag.
+   * @param applicationType The application's type.
+   * @return Eligible proceeding options, or an empty result when required context is unavailable.
    */
-  public Mono<ProceedingDetails> getProceedings(
-      final ProceedingDetail searchCriteria,
+  public Mono<ProceedingDetails> getAvailableProceedings(
+      final String categoryOfLaw,
+      final String matterType,
+      final Boolean amendment,
       final Boolean larScopeFlag,
-      final String applicationType,
-      final Boolean isLead) {
+      final String applicationType) {
 
-    return ebsApiClient.getProceedings(searchCriteria, larScopeFlag, applicationType, isLead);
+    if (!StringUtils.hasText(categoryOfLaw)
+        || !StringUtils.hasText(matterType)
+        || larScopeFlag == null
+        || !StringUtils.hasText(applicationType)) {
+      log.warn(
+          "Cannot retrieve available proceedings because required application selection context is incomplete");
+      return Mono.just(new ProceedingDetails().content(Collections.emptyList()));
+    }
+
+    final ProceedingDetail searchCriteria =
+        new ProceedingDetail()
+            .categoryOfLawCode(categoryOfLaw)
+            .matterType(matterType)
+            .enabled(Boolean.TRUE);
+
+    if (!Boolean.TRUE.equals(amendment)) {
+      searchCriteria.amendmentOnly(Boolean.FALSE);
+    }
+
+    // The Data API's lead flag selects the scoped query; it does not set proceeding lead status.
+    return ebsApiClient.getProceedings(searchCriteria, larScopeFlag, applicationType, Boolean.TRUE);
   }
 
   /**
