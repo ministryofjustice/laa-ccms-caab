@@ -771,6 +771,10 @@ public class AwardController {
       @PathVariable final String awardPath,
       @PathVariable final Integer awardId,
       @PathVariable final Integer partyId) {
+    if (!hasOutcomeEditPermission(ebsCase)) {
+      log.warn("Rejecting party removal for a read-only case");
+      return "redirect:/case/outcome-and-awards";
+    }
     caseOutcomeService.removePartyFromAward(
         ebsCase.getCaseReferenceNumber(),
         user.getProvider().getId().intValue(),
