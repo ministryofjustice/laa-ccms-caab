@@ -69,6 +69,7 @@ import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
+import uk.gov.laa.ccms.caab.model.sections.LiablePartyDisplay;
 import uk.gov.laa.ccms.caab.model.sections.PartyListRow;
 import uk.gov.laa.ccms.caab.service.CaseOutcomeService;
 import uk.gov.laa.ccms.caab.service.LookupService;
@@ -728,6 +729,57 @@ public class AwardController {
                 + "/"
                 + awardId);
     return "application/liable-parties";
+  }
+
+  /** Displays the confirmation screen for removing a party from an award. */
+  @GetMapping(
+      "/case/outcome-and-awards/{awardPath:cost-award|financial-award|land|asset}/{awardId}/liable-parties/{partyId}/remove")
+  public String removeParty(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @PathVariable final String awardPath,
+      @PathVariable final Integer awardId,
+      @PathVariable final Integer partyId,
+      final Model model) {
+    final var award =
+        caseOutcomeService.getLiablePartiesDisplay(
+            ebsCase.getCaseReferenceNumber(),
+            user.getProvider().getId().intValue(),
+            awardPath,
+            awardId);
+
+    model.addAttribute("award", award);
+    model.addAttribute("awardPath", awardPath);
+    model.addAttribute("awardId", awardId);
+    model.addAttribute("partyId", partyId);
+    model.addAttribute(
+        "partyName",
+        award.parties().stream()
+            .filter(p -> p.id().equals(partyId))
+            .map(LiablePartyDisplay::name)
+            .findFirst()
+            .orElse("Unknown Party"));
+
+    return "application/remove-party-confirmation-screen";
+  }
+
+  @PostMapping(
+      "/case/outcome-and-awards/{awardPath:cost-award|financial-award|land|asset}/{awardId}/liable-parties/{partyId}/remove")
+  public String confirmRemoveParty(
+      @SessionAttribute(CASE) final ApplicationDetail ebsCase,
+      @SessionAttribute(USER_DETAILS) final UserDetail user,
+      @PathVariable final String awardPath,
+      @PathVariable final Integer awardId,
+      @PathVariable final Integer partyId) {
+    caseOutcomeService.removePartyFromAward(
+        ebsCase.getCaseReferenceNumber(),
+        user.getProvider().getId().intValue(),
+        awardPath,
+        awardId,
+        partyId,
+        user.getLoginId());
+
+    return "redirect:/case/outcome-and-awards/" + awardPath + "/" + awardId + "/liable-parties";
   }
 
   /**

@@ -151,6 +151,22 @@ class LiablePartiesTemplateRenderTest {
   }
 
   @Test
+  void rendersPartyRemovalFormWithPartyId() throws Exception {
+    final String html =
+        mockMvc
+            .perform(get("/test/remove-party"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    assertThat(html)
+        .contains(
+            "action=\"/case/outcome-and-awards/land/7/liable-parties/101/remove\"",
+            "href=\"/case/outcome-and-awards/land/7/liable-parties\"");
+  }
+
+  @Test
   void errorSummaryLinkTargetsTheFirstSelectableCheckbox() throws Exception {
     assertThat(
             renderPartyList(
@@ -247,6 +263,16 @@ class LiablePartiesTemplateRenderTest {
 
   @Controller
   static class HarnessController {
+    @GetMapping("/test/remove-party")
+    String displayRemoveParty(final Model model) {
+      model.addAttribute("awardPath", "land");
+      model.addAttribute("awardId", 7);
+      model.addAttribute("partyId", 101);
+      model.addAttribute("partyName", "Jane Smith");
+      model.addAttribute("user", Map.of("functions", List.of()));
+      return "application/remove-party-confirmation-screen";
+    }
+
     @GetMapping("/test/liable-parties")
     String display(
         @RequestParam String path,

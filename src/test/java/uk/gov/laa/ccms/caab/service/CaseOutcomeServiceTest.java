@@ -41,6 +41,7 @@ import uk.gov.laa.ccms.caab.model.FinancialAwardDetail;
 import uk.gov.laa.ccms.caab.model.FinancialAwardRequest;
 import uk.gov.laa.ccms.caab.model.LandAwardDetail;
 import uk.gov.laa.ccms.caab.model.LandAwardRequest;
+import uk.gov.laa.ccms.caab.model.LiablePartyDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardDetail;
 import uk.gov.laa.ccms.caab.model.OtherAssetAwardRequest;
 import uk.gov.laa.ccms.caab.model.ProceedingOutcomeDetail;
@@ -117,6 +118,42 @@ class CaseOutcomeServiceTest {
     assertThrows(
         IllegalStateException.class,
         () -> caseOutcomeService.deleteAward("caseRef", 123, "COST", 7, "user1"));
+  }
+
+  @Test
+  void removePartyResolvesLinkIdAndDeletesOpponentFromSelectedAward() {
+    final var award =
+        new CostAwardDetail()
+            .id(7)
+            .awardType("COST")
+            .liableParties(List.of(new LiablePartyDetail().id(101).opponentId(11)));
+    doReturn(Optional.of(new CaseOutcomeDetail().id(42).costAwards(List.of(award))))
+        .when(caseOutcomeService)
+        .getCaseOutcome("caseRef", 123);
+    when(caabApiClient.removeAwardParty(42, "COST", 7, 11, "user1")).thenReturn(Mono.empty());
+
+    caseOutcomeService.removePartyFromAward("caseRef", 123, "cost-award", 7, 101, "user1");
+
+    verify(caabApiClient).removeAwardParty(42, "COST", 7, 11, "user1");
+    verifyNoMoreInteractions(caabApiClient);
+  }
+
+  @Test
+  void removePartyDoesNotDeleteWhenLinkIsNotOnSelectedAward() {
+    final var award =
+        new CostAwardDetail()
+            .id(7)
+            .awardType("COST")
+            .liableParties(List.of(new LiablePartyDetail().id(101).opponentId(11)));
+    doReturn(Optional.of(new CaseOutcomeDetail().id(42).costAwards(List.of(award))))
+        .when(caseOutcomeService)
+        .getCaseOutcome("caseRef", 123);
+
+    assertThrows(
+        CaabApplicationException.class,
+        () ->
+            caseOutcomeService.removePartyFromAward("caseRef", 123, "cost-award", 7, 999, "user1"));
+    verifyNoMoreInteractions(caabApiClient);
   }
 
   private CaseOutcomeDetail deletionOutcome() {
