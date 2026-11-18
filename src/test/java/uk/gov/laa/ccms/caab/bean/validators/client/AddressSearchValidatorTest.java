@@ -8,6 +8,9 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -43,12 +46,15 @@ class AddressSearchValidatorTest {
     assertFalse(addressSearchValidator.supports(Object.class));
   }
 
-  @Test
-  public void validate_errors() {
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = {" ", "\t\n"})
+  void validate_rejectsMissingUprnAsFieldError(final String uprn) {
+    addressSearch.setUprn(uprn);
+
     addressSearchValidator.validate(addressSearch, errors);
-    assertTrue(errors.hasErrors());
-    assertEquals(1, errors.getErrorCount());
-    assertEquals("required.uprn", errors.getAllErrors().getFirst().getCode());
+
+    assertRequiredUprnFieldError();
   }
 
   @Test
@@ -56,6 +62,17 @@ class AddressSearchValidatorTest {
     addressSearch.setUprn("12345");
     addressSearchValidator.validate(addressSearch, errors);
     assertFalse(errors.hasErrors());
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = {" ", "\t\n"})
+  void validateSelection_rejectsMissingUprnAsFieldError(final String uprn) {
+    addressSearch.setUprn(uprn);
+
+    addressSearchValidator.validateSelection(addressSearch, resultsWithUprn("12345"), errors);
+
+    assertRequiredUprnFieldError();
   }
 
   @Test
@@ -77,6 +94,14 @@ class AddressSearchValidatorTest {
 
     assertTrue(errors.hasFieldErrors("uprn"));
     assertEquals("invalid.uprn", errors.getFieldError("uprn").getCode());
+  }
+
+  private void assertRequiredUprnFieldError() {
+    assertEquals(1, errors.getErrorCount());
+    assertFalse(errors.hasGlobalErrors());
+    assertTrue(errors.hasFieldErrors("uprn"));
+    assertEquals("required.uprn", errors.getFieldError("uprn").getCode());
+    assertEquals("Please select an address", errors.getFieldError("uprn").getDefaultMessage());
   }
 
   private ResultsDisplay<AddressResultRowDisplay> resultsWithUprn(final String uprn) {
