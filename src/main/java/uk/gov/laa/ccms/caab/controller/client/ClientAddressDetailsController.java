@@ -109,6 +109,10 @@ public class ClientAddressDetailsController {
     if (addressFlow == null) {
       return "redirect:" + ADDRESS_URL;
     }
+    final ClientFormDataAddressDetails searchDetails = new ClientFormDataAddressDetails();
+    searchDetails.setPostcode(addressFlow.getOriginalPostcode());
+    searchDetails.setHouseNameNumber(addressFlow.getOriginalBuildingSearch());
+    addressFlow.setAddressDetails(searchDetails);
     addressFlow.searchAgain();
     return "redirect:" + ADDRESS_URL;
   }

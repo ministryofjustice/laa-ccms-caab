@@ -1,10 +1,14 @@
 package uk.gov.laa.ccms.caab.controller.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -19,17 +23,23 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_D
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CREATE_CLIENT_ADDRESS_FLOW;
 
 import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.Errors;
 import reactor.core.publisher.Mono;
 import uk.gov.laa.ccms.caab.bean.AddressLookupFlowData;
+import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFlowFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataBasicDetails;
@@ -301,6 +311,179 @@ public class ClientAddressDetailsControllerTest {
     mockMvc
         .perform(post("/application/client/details/address/confirm"))
         .andExpect(status().isNotFound());
+  }
+
+  @ParameterizedTest
+  @EnumSource(
+      value = AddressLookupFlowData.Step.class,
+      names = {"SELECTED_ADDRESS", "CONFIRMED_ADDRESS", "MANUAL_ENTRY"})
+  void searchAgainRestoresOriginalTermsInAFreshForm(AddressLookupFlowData.Step initialStep)
+      throws Exception {
+    AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+        new AddressLookupFlowData<>(CreateClientRegistrationInterceptor.owner(clientFlowFormData));
+    addressFlow.beginSearch("sw1a1aa", " 12 ");
+    addressDetails.setPostcode("SA5 8AB");
+    addressDetails.setHouseNameNumber("12 Example House");
+    addressDetails.setCountry("GBR");
+    addressDetails.setAddressLine1("Example Street");
+    addressDetails.setAddressLine2("Example District");
+    addressDetails.setCityTown("Example Town");
+    addressDetails.setCounty("Example County");
+    addressDetails.setAddressSearch(new AddressSearchFormData());
+    clientFlowFormData.setAddressDetails(addressDetails);
+    clientFlowFormData.getBasicDetails().setVulnerableClient(false);
+    addressFlow.setAddressDetails(addressDetails);
+    AddressResultRowDisplay selectedAddress = new AddressResultRowDisplay();
+    selectedAddress.setUprn("123");
+    ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
+    results.setContent(List.of(selectedAddress));
+    addressFlow.setSearchResults(results);
+    if (initialStep == AddressLookupFlowData.Step.MANUAL_ENTRY) {
+      addressFlow.enterManualEntry(addressDetails);
+    } else {
+      addressFlow.setSelectedAddress(selectedAddress);
+      if (initialStep == AddressLookupFlowData.Step.CONFIRMED_ADDRESS) {
+        addressFlow.confirmSelectedAddress();
+      }
+    }
+    MockHttpSession session = new MockHttpSession();
+    session.setAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
+    session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
+    when(lookupService.getCountries()).thenReturn(Mono.just(countryLookupDetail));
+
+    mockMvc
+        .perform(get("/application/client/details/address/search-again").session(session))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/details/address"));
+
+    ClientFormDataAddressDetails searchDetails = addressFlow.getAddressDetails();
+    assertNotSame(addressDetails, searchDetails);
+    assertEquals("sw1a1aa", searchDetails.getPostcode());
+    assertEquals(" 12 ", searchDetails.getHouseNameNumber());
+    assertNull(searchDetails.getCountry());
+    assertNull(searchDetails.getAddressLine1());
+    assertNull(searchDetails.getAddressLine2());
+    assertNull(searchDetails.getCityTown());
+    assertNull(searchDetails.getCounty());
+    assertNull(searchDetails.getAddressSearch());
+    assertEquals(AddressLookupFlowData.Step.SEARCH, addressFlow.getStep());
+    assertEquals(AddressLookupFlowData.Source.UNKNOWN, addressFlow.getSource());
+    assertNull(addressFlow.getSearchResults());
+    assertNull(addressFlow.getSelectedAddress());
+    assertEquals("sw1a1aa", addressFlow.getOriginalPostcode());
+    assertEquals(" 12 ", addressFlow.getOriginalBuildingSearch());
+
+    mockMvc
+        .perform(get("/application/client/details/address").session(session))
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/client/address-client-details"))
+        .andExpect(model().attribute("addressDetails", searchDetails));
+
+    assertEquals(false, searchDetails.getVulnerableClient());
+    assertEquals(ACTION_CREATE, searchDetails.getClientFlowFormAction());
+    assertSame(addressDetails, clientFlowFormData.getAddressDetails());
+    assertEquals("SA5 8AB", addressDetails.getPostcode());
+    assertEquals("12 Example House", addressDetails.getHouseNameNumber());
+    assertEquals("Example Street", addressDetails.getAddressLine1());
+    verifyNoInteractions(addressService);
+  }
+
+  @Test
+  void searchAgainWithoutAPreviousQueryStartsWithBlankSearchFields() throws Exception {
+    AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+        new AddressLookupFlowData<>(CreateClientRegistrationInterceptor.owner(clientFlowFormData));
+    addressDetails.setPostcode("SA5 8AB");
+    addressDetails.setHouseNameNumber("12 Example House");
+    addressFlow.enterManualEntry(addressDetails);
+    MockHttpSession session = new MockHttpSession();
+    session.setAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
+    session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
+    when(lookupService.getCountries()).thenReturn(Mono.just(countryLookupDetail));
+
+    mockMvc
+        .perform(get("/application/client/details/address/search-again").session(session))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/details/address"));
+
+    ClientFormDataAddressDetails searchDetails = addressFlow.getAddressDetails();
+    assertNotSame(addressDetails, searchDetails);
+    assertNull(searchDetails.getPostcode());
+    assertNull(searchDetails.getHouseNameNumber());
+    mockMvc
+        .perform(get("/application/client/details/address").session(session))
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("addressDetails", searchDetails));
+    verifyNoInteractions(addressService);
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  void searchAgainPreservesAnOmittedBuildingTerm(String buildingSearch) throws Exception {
+    AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+        new AddressLookupFlowData<>(CreateClientRegistrationInterceptor.owner(clientFlowFormData));
+    addressFlow.beginSearch("SW1A 1AA", buildingSearch);
+    addressDetails.setHouseNameNumber("12 Example House");
+    addressFlow.enterManualEntry(addressDetails);
+
+    mockMvc
+        .perform(
+            get("/application/client/details/address/search-again")
+                .sessionAttr(CREATE_CLIENT_ADDRESS_FLOW, addressFlow))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/details/address"));
+
+    assertEquals("SW1A 1AA", addressFlow.getAddressDetails().getPostcode());
+    assertEquals(buildingSearch, addressFlow.getAddressDetails().getHouseNameNumber());
+    verifyNoInteractions(addressService);
+  }
+
+  @Test
+  void revisedSearchTermsAreUsedForTheNextLookupAndReturnToSearch() throws Exception {
+    AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
+        new AddressLookupFlowData<>(CreateClientRegistrationInterceptor.owner(clientFlowFormData));
+    addressFlow.beginSearch("SW1A 1AA", "10");
+    addressFlow.setAddressDetails(addressDetails);
+    MockHttpSession session = new MockHttpSession();
+    session.setAttribute(CLIENT_FLOW_FORM_DATA, clientFlowFormData);
+    session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
+    ResultsDisplay<AddressResultRowDisplay> results = new ResultsDisplay<>();
+    results.setContent(List.of(new AddressResultRowDisplay()));
+    ResultsDisplay<AddressResultRowDisplay> filteredResults = new ResultsDisplay<>();
+    when(addressService.getAddresses("sa58ab")).thenReturn(results);
+    when(addressService.filterByHouseNumber("15", results)).thenReturn(filteredResults);
+    when(lookupService.getCountries()).thenReturn(Mono.just(countryLookupDetail));
+
+    mockMvc
+        .perform(get("/application/client/details/address/search-again").session(session))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/details/address"));
+    mockMvc
+        .perform(
+            post("/application/client/details/address")
+                .session(session)
+                .param("action", "find_address")
+                .param("postcode", "sa58ab")
+                .param("houseNameNumber", "15"))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/details/address/search"));
+
+    verify(addressService).getAddresses("sa58ab");
+    verify(addressService).filterByHouseNumber("15", results);
+    assertEquals("sa58ab", addressFlow.getOriginalPostcode());
+    assertEquals("15", addressFlow.getOriginalBuildingSearch());
+    assertSame(filteredResults, addressFlow.getSearchResults());
+
+    mockMvc
+        .perform(get("/application/client/details/address/search-again").session(session))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/application/client/details/address"));
+    ClientFormDataAddressDetails searchDetails = addressFlow.getAddressDetails();
+    assertEquals("sa58ab", searchDetails.getPostcode());
+    assertEquals("15", searchDetails.getHouseNameNumber());
+    mockMvc
+        .perform(get("/application/client/details/address").session(session))
+        .andExpect(status().isOk())
+        .andExpect(model().attribute("addressDetails", searchDetails));
   }
 
   @Test
