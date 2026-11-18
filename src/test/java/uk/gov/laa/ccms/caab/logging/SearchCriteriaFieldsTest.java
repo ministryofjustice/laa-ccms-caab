@@ -54,4 +54,15 @@ class SearchCriteriaFieldsTest {
 
     assertThat(SearchCriteriaFields.populated(criteria)).containsExactly("surname");
   }
+
+  @Test
+  void namedFieldsCanBeLeftOutAsNotUserEntered() {
+    var criteria = new NotificationSearchCriteria();
+    criteria.setNotificationType("OPEN");
+    criteria.setLoginId("jane.doe");
+    criteria.setUserType("EXTERNAL");
+
+    assertThat(SearchCriteriaFields.populated(criteria, java.util.Set.of("loginId", "userType")))
+        .containsExactly("notificationType");
+  }
 }

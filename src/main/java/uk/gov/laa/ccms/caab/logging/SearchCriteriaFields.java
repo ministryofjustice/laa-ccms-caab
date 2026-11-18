@@ -23,6 +23,17 @@ public final class SearchCriteriaFields {
    * @return the names of the populated fields
    */
   public static List<String> populated(Object criteria) {
+    return populated(criteria, Set.of());
+  }
+
+  /**
+   * Returns the names of the populated fields, leaving out fields the application fills in itself.
+   *
+   * @param criteria the criteria bean, which may be null
+   * @param notUserEntered fields to leave out because the application, not the user, sets them
+   * @return the names of the populated fields
+   */
+  public static List<String> populated(Object criteria, Set<String> notUserEntered) {
     if (criteria == null) {
       return List.of();
     }
@@ -31,7 +42,9 @@ public final class SearchCriteriaFields {
         type != null && type != Object.class;
         type = type.getSuperclass()) {
       for (Field field : type.getDeclaredFields()) {
-        if (isCriteriaField(field) && isPopulated(valueOf(field, criteria))) {
+        if (isCriteriaField(field)
+            && !notUserEntered.contains(field.getName())
+            && isPopulated(valueOf(field, criteria))) {
           names.add(field.getName());
         }
       }

@@ -9,6 +9,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -41,6 +42,9 @@ import uk.gov.laa.ccms.data.model.UserDetail;
 public class NotificationsSearchResultsController {
 
   private static final String DEFAULT_SORT = "dateAssigned,asc";
+
+  private static final Set<String> FILLED_IN_BY_THE_APPLICATION =
+      Set.of("loginId", "userType", "primaryContactName", "originatesFromCase");
 
   private final NotificationService notificationService;
 
@@ -86,7 +90,8 @@ public class NotificationsSearchResultsController {
       Model model) {
 
     // Use local variables to store original criteria state before any updates
-    final List<String> criteriaFields = SearchCriteriaFields.populated(criteria);
+    final List<String> criteriaFields =
+        SearchCriteriaFields.populated(criteria, FILLED_IN_BY_THE_APPLICATION);
     Integer originalPage = criteria.getPage();
     Integer originalSize = criteria.getSize();
     String originalSort = criteria.getSort();
@@ -142,6 +147,9 @@ public class NotificationsSearchResultsController {
             notificationService
                 .getNotifications(criteria, user.getProvider().getId(), finalPage, finalSize)
                 .block();
+        if (notificationsResponse == null || notificationsResponse.getContent() == null) {
+          throw new CaabApplicationException("Error retrieving notifications");
+        }
       } catch (RuntimeException e) {
         securityEventLogger.searched(
             "NOTIFICATION", criteriaFields, null, finalPage, false, e.getClass().getSimpleName());
