@@ -36,6 +36,7 @@ import uk.gov.laa.ccms.caab.bean.AddressFormData;
 import uk.gov.laa.ccms.caab.bean.AddressLookupFlowData;
 import uk.gov.laa.ccms.caab.bean.AddressSearchFormData;
 import uk.gov.laa.ccms.caab.bean.ClientFormDataAddressDetails;
+import uk.gov.laa.ccms.caab.bean.validators.client.AddressSearchValidator;
 import uk.gov.laa.ccms.caab.constants.CaseContext;
 import uk.gov.laa.ccms.caab.model.AddressResultRowDisplay;
 import uk.gov.laa.ccms.caab.model.ResultsDisplay;
@@ -94,6 +95,32 @@ class AddressFragmentsRenderTest {
         .andExpect(content().string(containsString("href=\"/test/search\"")))
         .andExpect(content().string(containsString("href=\"/test/manual\"")))
         .andExpect(content().string(not(containsString("Next page"))));
+  }
+
+  @Test
+  void missingSelectionRendersSummaryAndLinkedRadioGroupError() throws Exception {
+    mockMvc
+        .perform(get("/test/address-client-page/results-required-error"))
+        .andExpect(status().isOk())
+        .andExpect(
+            content()
+                .string(
+                    matchesPattern(
+                        "(?s).*<ul[^>]*id=\"error-summary-list\"[^>]*>.*?<li[^>]*>\\s*"
+                            + "<a[^>]*>Please select an address</a>\\s*</li>\\s*</ul>.*")))
+        .andExpect(
+            content()
+                .string(
+                    matchesPattern(
+                        "(?s).*<span[^>]*id=\"uprn-error\"[^>]*>"
+                            + "Please select an address</span>.*")))
+        .andExpect(content().string(containsString("govuk-form-group--error")))
+        .andExpect(
+            content()
+                .string(
+                    matchesPattern(
+                        "(?s).*<fieldset[^>]*"
+                            + "aria-describedby=\"address-results-hint uprn-error\"[^>]*>.*")));
   }
 
   @Test
@@ -232,6 +259,10 @@ class AddressFragmentsRenderTest {
             .andExpect(status().isOk())
             .andExpect(content().string(containsString("10 Example Street")))
             .andExpect(content().string(containsString("Use this address")))
+            .andExpect(
+                content().string(containsString("aria-describedby=\"address-results-hint\"")))
+            .andExpect(content().string(not(containsString("id=\"uprn-error\""))))
+            .andExpect(content().string(not(containsString("govuk-form-group--error"))))
             .andReturn();
     assertEquals(1, formCount(resultsPage));
   }
@@ -531,14 +562,21 @@ class AddressFragmentsRenderTest {
 
     @GetMapping("/test/address-client-page/{state}")
     public String renderClientAddressPage(@PathVariable final String state, final Model model) {
-      if ("results".equals(state)) {
+      if (List.of("results", "results-required-error").contains(state)) {
         final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
             new AddressLookupFlowData<>("create-client");
         final AddressResultRowDisplay result = new AddressResultRowDisplay();
         result.setUprn("1001");
         result.setFullAddress("10 Example Street");
         addressFlow.setSearchResults(new ResultsDisplay<>(List.of(result)));
-        model.addAttribute("addressSearch", new AddressSearchFormData());
+        final AddressSearchFormData addressSearch = new AddressSearchFormData();
+        final BindingResult bindingResult =
+            new BeanPropertyBindingResult(addressSearch, "addressSearch");
+        if ("results-required-error".equals(state)) {
+          new AddressSearchValidator()
+              .validateSelection(addressSearch, addressFlow.getSearchResults(), bindingResult);
+        }
+        model.addAttribute("addressSearch", addressSearch);
         model.addAttribute("addressSearchResults", addressFlow.getSearchResults());
         model.addAttribute("addressFlow", addressFlow);
         model.addAttribute("originalPostcode", "SA5 8AB");
@@ -546,9 +584,7 @@ class AddressFragmentsRenderTest {
         model.addAttribute("searchAgainUrl", "/application/client/details/address/search-again");
         model.addAttribute("manualEntryUrl", "/application/client/details/address/manual");
         addLayoutAttributes(model);
-        model.addAttribute(
-            BindingResult.MODEL_KEY_PREFIX + "addressSearch",
-            new BeanPropertyBindingResult(new AddressSearchFormData(), "addressSearch"));
+        model.addAttribute(BindingResult.MODEL_KEY_PREFIX + "addressSearch", bindingResult);
         return "application/client/address-client-search-results";
       }
 

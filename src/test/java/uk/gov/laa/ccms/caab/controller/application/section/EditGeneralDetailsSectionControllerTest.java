@@ -1064,7 +1064,7 @@ class EditGeneralDetailsSectionControllerTest {
       doAnswer(
               invocation -> {
                 final Errors errors = (Errors) invocation.getArguments()[2];
-                errors.reject("required.uprn", "Please select an address");
+                errors.rejectValue("uprn", "required.uprn", "Please select an address");
                 return null;
               })
           .when(addressSearchValidator)
@@ -1079,6 +1079,7 @@ class EditGeneralDetailsSectionControllerTest {
           .andDo(print())
           .andExpect(status().isOk())
           .andExpect(view().name("application/sections/address-search-results"))
+          .andExpect(model().attributeHasFieldErrorCode("addressSearch", "uprn", "required.uprn"))
           .andExpect(
               model()
                   .attribute(
