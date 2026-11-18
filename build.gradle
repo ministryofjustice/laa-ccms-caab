@@ -107,6 +107,11 @@ configurations.configureEach {
     }
 }
 
+// The Dockerfile copies the boot jar from build/libs, so do not build a plain jar alongside it.
+tasks.named('jar') {
+    enabled = false
+}
+
 // Replaces application.yml @version@ with the project version
 processResources {
     inputs.property('applicationVersion', project.version.toString())
