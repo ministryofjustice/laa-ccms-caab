@@ -77,8 +77,7 @@ class SecurityEventsEndToEndTest {
             .perform(get("/home").secure(true).with(user("jane").authorities()))
             .andReturn()
             .getResponse();
-    assertThat(secure.getHeader("Strict-Transport-Security"))
-        .isEqualTo("max-age=31536000 ; includeSubDomains");
+    assertThat(secure.getHeader("Strict-Transport-Security")).isEqualTo("max-age=300");
     assertThat(secure.getHeader("Referrer-Policy")).isEqualTo("strict-origin-when-cross-origin");
     assertThat(secure.getHeader("Permissions-Policy"))
         .isEqualTo("camera=(), microphone=(), geolocation=(), payment=(), usb=()");

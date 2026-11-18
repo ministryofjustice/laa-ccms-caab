@@ -167,7 +167,7 @@ public class SecurityConfiguration {
                 headers
                     .frameOptions(frameOptions -> frameOptions.sameOrigin())
                     .httpStrictTransportSecurity(
-                        hsts -> hsts.maxAgeInSeconds(31536000).includeSubDomains(true))
+                        hsts -> hsts.maxAgeInSeconds(300).includeSubDomains(false))
                     .referrerPolicy(
                         referrer -> referrer.policy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
                     .permissionsPolicyHeader(
