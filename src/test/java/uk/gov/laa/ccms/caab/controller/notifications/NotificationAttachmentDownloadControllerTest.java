@@ -8,7 +8,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
 import java.util.List;
@@ -22,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.config.LoggingInterceptor;
 import uk.gov.laa.ccms.caab.model.BaseNotificationAttachmentDetail;
 import uk.gov.laa.ccms.caab.model.NotificationAttachmentDetails;
@@ -50,6 +53,7 @@ class NotificationAttachmentDownloadControllerTest {
   void setUp() {
     mockMvc =
         standaloneSetup(controller)
+            .setControllerAdvice(new GlobalExceptionHandler())
             .addInterceptors(new LoggingInterceptor(securityEventLogger))
             .build();
   }
@@ -94,7 +98,9 @@ class NotificationAttachmentDownloadControllerTest {
 
     mockMvc
         .perform(get("/notifications/234/attachments/999/download").sessionAttr("user", USER))
-        .andExpect(status().isNotFound());
+        .andExpect(status().isNotFound())
+        .andExpect(view().name("error"))
+        .andExpect(model().attribute("error", "Not Found"));
 
     verify(notificationService, never()).getDocumentLink(any());
     verify(securityEventLogger).dataAccessed(eq("VIEW"), eq(false), any(), any(), any(), any());

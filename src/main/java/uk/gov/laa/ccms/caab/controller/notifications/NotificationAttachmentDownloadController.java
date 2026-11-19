@@ -2,6 +2,8 @@ package uk.gov.laa.ccms.caab.controller.notifications;
 
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.USER_DETAILS;
 
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
@@ -12,6 +14,8 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.SessionAttribute;
@@ -90,6 +94,30 @@ public class NotificationAttachmentDownloadController {
       throw notFound();
     }
     return redirectTo(notificationService.getDraftDocumentLink(String.valueOf(attachmentId)));
+  }
+
+  /**
+   * Renders the error page with the exception's own status, which the global handler would
+   * otherwise replace with a 200.
+   *
+   * @param exception the status exception thrown by a download route.
+   * @param session the session, for the signed-in user shown on the error page.
+   * @param response the response to set the status on.
+   * @param model the model for the error page.
+   * @return the error view.
+   */
+  @ExceptionHandler(ResponseStatusException.class)
+  public String handleStatus(
+      ResponseStatusException exception,
+      HttpSession session,
+      HttpServletResponse response,
+      Model model) {
+    response.setStatus(exception.getStatusCode().value());
+    model.addAttribute(USER_DETAILS, session.getAttribute(USER_DETAILS));
+    model.addAttribute(
+        "error", HttpStatus.valueOf(exception.getStatusCode().value()).getReasonPhrase());
+    model.addAttribute("errorTime", System.currentTimeMillis());
+    return "error";
   }
 
   private static ResponseEntity<Void> redirectTo(Optional<String> signedUrl) {
