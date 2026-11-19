@@ -73,7 +73,7 @@ server:
   forward-headers-strategy: native
   tomcat:
     max-swallow-size: 50MB
-    max-http-form-post-size: -1
+    max-http-form-post-size: 2MB
   servlet:
     session:
       timeout: 60m
