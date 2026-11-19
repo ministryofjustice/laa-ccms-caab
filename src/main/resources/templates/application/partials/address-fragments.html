@@ -56,6 +56,8 @@
             id="uprn-error"
             class="govuk-error-message"></span>
       <fieldset class="govuk-fieldset"
+                id="uprn"
+                tabindex="-1"
                 th:attr="aria-describedby=${#fields.hasErrors('uprn')
                     ? 'address-results-hint uprn-error' : 'address-results-hint'}">
         <legend class="govuk-fieldset__legend govuk-fieldset__legend--m"
