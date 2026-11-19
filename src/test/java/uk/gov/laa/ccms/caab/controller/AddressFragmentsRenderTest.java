@@ -124,6 +124,19 @@ class AddressFragmentsRenderTest {
   }
 
   @Test
+  void correspondenceAddressErrorSummaryTargetsFocusableRadioGroup() throws Exception {
+    mockMvc
+        .perform(get("/test/correspondence-results/application/results-required-error"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(containsString("href=\"#uprn\"")))
+        .andExpect(content().string(containsString("id=\"uprn\"")))
+        .andExpect(content().string(containsString("tabindex=\"-1\"")))
+        .andExpect(
+            content()
+                .string(containsString("aria-describedby=\"address-results-hint uprn-error\"")));
+  }
+
+  @Test
   void searchFieldsUsePostcodeAndAddressAutocompleteTokens() throws Exception {
     mockMvc
         .perform(get("/test/address-fragments/search"))
@@ -697,6 +710,11 @@ class AddressFragmentsRenderTest {
             new ResultsDisplay<>("no-results".equals(state) ? List.of() : List.of(result)));
       }
       final AddressSearchFormData addressSearch = new AddressSearchFormData();
+      final BindingResult bindingResult =
+          new BeanPropertyBindingResult(addressSearch, "addressSearch");
+      if ("results-required-error".equals(state)) {
+        bindingResult.rejectValue("uprn", "required.uprn", "Please select an address");
+      }
 
       model.addAttribute("caseContext", CaseContext.fromPathValue(caseContext));
       model.addAttribute("addressFlow", addressFlow);
@@ -712,9 +730,7 @@ class AddressFragmentsRenderTest {
       model.addAttribute(
           "manualEntryUrl", "/%s/sections/correspondence-address/manual".formatted(caseContext));
       addLayoutAttributes(model);
-      model.addAttribute(
-          BindingResult.MODEL_KEY_PREFIX + "addressSearch",
-          new BeanPropertyBindingResult(addressSearch, "addressSearch"));
+      model.addAttribute(BindingResult.MODEL_KEY_PREFIX + "addressSearch", bindingResult);
       return "application/sections/address-search-results";
     }
 
