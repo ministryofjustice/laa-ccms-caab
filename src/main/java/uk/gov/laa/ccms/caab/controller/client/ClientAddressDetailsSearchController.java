@@ -7,6 +7,7 @@ import static uk.gov.laa.ccms.caab.constants.SessionConstants.CREATE_CLIENT_ADDR
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -49,12 +50,22 @@ public class ClientAddressDetailsSearchController {
    */
   @GetMapping("/application/client/details/address/search")
   public String clientDetailsAddressSearch(
-      @SessionAttribute(CREATE_CLIENT_ADDRESS_FLOW)
+      @SessionAttribute(name = CREATE_CLIENT_ADDRESS_FLOW, required = false) @Nullable
           final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow,
       @ModelAttribute("addressSearch") final AddressSearchFormData addressSearch,
       final Model model) {
 
+    if (addressFlow == null
+        || (addressFlow.getSearchResults() == null
+            && addressFlow.getStep() != AddressLookupFlowData.Step.LOOKUP_UNAVAILABLE)
+        || (addressFlow.getStep() != AddressLookupFlowData.Step.RESULTS
+            && addressFlow.getStep() != AddressLookupFlowData.Step.NO_RESULTS
+            && addressFlow.getStep() != AddressLookupFlowData.Step.LOOKUP_UNAVAILABLE)) {
+      return "redirect:/application/client/details/address";
+    }
     model.addAttribute(ADDRESS_SEARCH_RESULTS, addressFlow.getSearchResults());
+    model.addAttribute("addressFlow", addressFlow);
+    addSearchTermsToModel(addressFlow, model);
 
     return "application/client/address-client-search-results";
   }
@@ -68,34 +79,70 @@ public class ClientAddressDetailsSearchController {
    * @param model The model for the view.
    * @param bindingResult Validation result.
    * @param session The session data for the endpoint.
-   * @return A redirect string to the agreement page.
+   * @return A redirect string to the populated client address details page.
    */
   @PostMapping("/application/client/details/address/search")
   public String clientDetailsAddressSearch(
-      @SessionAttribute(CREATE_CLIENT_ADDRESS_FLOW)
+      @SessionAttribute(name = CREATE_CLIENT_ADDRESS_FLOW, required = false) @Nullable
           AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow,
-      @SessionAttribute(CLIENT_FLOW_FORM_DATA) ClientFlowFormData clientFlowFormData,
+      @SessionAttribute(name = CLIENT_FLOW_FORM_DATA, required = false) @Nullable
+          ClientFlowFormData clientFlowFormData,
       @ModelAttribute("addressSearch") AddressSearchFormData addressSearch,
-      Model model,
       BindingResult bindingResult,
+      Model model,
       HttpSession session) {
 
+    if (addressFlow == null
+        || clientFlowFormData == null
+        || addressFlow.getStep() != AddressLookupFlowData.Step.RESULTS
+        || addressFlow.getSearchResults() == null) {
+      return "redirect:/application/client/details/address";
+    }
+
     // validate if an address is selected
-    addressSearchValidator.validate(addressSearch, bindingResult);
+    addressSearchValidator.validateSelection(
+        addressSearch, addressFlow.getSearchResults(), bindingResult);
     if (bindingResult.hasErrors()) {
       model.addAttribute(ADDRESS_SEARCH_RESULTS, addressFlow.getSearchResults());
+      model.addAttribute("addressFlow", addressFlow);
+      addSearchTermsToModel(addressFlow, model);
       return "application/client/address-client-search-results";
     }
 
     // Add the address to the client session flow data
     final AddressResultRowDisplay selectedAddress =
         addressService.getSelectedAddress(addressSearch.getUprn(), addressFlow.getSearchResults());
+    if (selectedAddress == null) {
+      bindingResult.rejectValue("uprn", "invalid.selection", "Select an address from the results");
+      model.addAttribute(ADDRESS_SEARCH_RESULTS, addressFlow.getSearchResults());
+      model.addAttribute("addressFlow", addressFlow);
+      addSearchTermsToModel(addressFlow, model);
+      return "application/client/address-client-search-results";
+    }
+    final ClientFormDataAddressDetails addressDetails =
+        addressFlow.getAddressDetails() != null
+            ? addressFlow.getAddressDetails()
+            : clientFlowFormData.getAddressDetails() != null
+                ? clientFlowFormData.getAddressDetails()
+                : new ClientFormDataAddressDetails();
+    addressService.updateClientFormDataAddressDetails(addressDetails, selectedAddress);
+    addressDetails.setVulnerableClient(clientFlowFormData.getBasicDetails().getVulnerableClient());
+    addressDetails.setClientFlowFormAction(clientFlowFormData.getAction());
+    addressFlow.setAddressDetails(addressDetails);
+    clientFlowFormData.setAddressDetails(addressDetails);
     addressFlow.setSelectedAddress(selectedAddress);
+    addressFlow.confirmSelectedAddress();
 
-    // Cleanup
-    addressFlow.setSearchResults(null);
     session.setAttribute(CREATE_CLIENT_ADDRESS_FLOW, addressFlow);
 
     return "redirect:/application/client/details/address";
+  }
+
+  private void addSearchTermsToModel(
+      final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow, final Model model) {
+    model.addAttribute("originalPostcode", addressFlow.getOriginalPostcode());
+    model.addAttribute("originalBuildingSearch", addressFlow.getOriginalBuildingSearch());
+    model.addAttribute("searchAgainUrl", "/application/client/details/address/search-again");
+    model.addAttribute("manualEntryUrl", "/application/client/details/address/manual");
   }
 }

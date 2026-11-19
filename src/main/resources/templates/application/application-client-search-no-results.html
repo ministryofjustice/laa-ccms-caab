@@ -14,6 +14,7 @@
         <h1 class="govuk-heading-l" th:text="#{site.noResults(#{client.search})}"></h1>
         <p class="govuk-body-l" th:text="#{client.search.results.noResults.leadParagraph}"></p>
         <form action="#" th:action="@{/application/client/results}" method="post">
+            <input type="hidden" name="registrationId" th:value="${registrationId}">
             <govuk:button type="submit" th:text="#{client.register}"/>
         </form>
     </div>

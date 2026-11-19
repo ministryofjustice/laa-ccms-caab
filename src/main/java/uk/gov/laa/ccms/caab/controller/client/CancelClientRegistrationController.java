@@ -3,7 +3,9 @@ package uk.gov.laa.ccms.caab.controller.client;
 import static uk.gov.laa.ccms.caab.constants.ClientActionConstants.ACTION_CREATE;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_FLOW_FORM_DATA;
 import static uk.gov.laa.ccms.caab.constants.SessionConstants.CLIENT_SEARCH_CRITERIA;
+import static uk.gov.laa.ccms.caab.constants.SessionConstants.CREATE_CLIENT_ADDRESS_FLOW;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -41,8 +43,9 @@ public class CancelClientRegistrationController {
    * @return A redirect string to the agreement page.
    */
   @PostMapping("/application/client/details/cancel")
-  public String postClientDetailsCancel(Model model) {
+  public String postClientDetailsCancel(Model model, HttpSession session) {
 
+    session.removeAttribute(CREATE_CLIENT_ADDRESS_FLOW);
     model.addAttribute(CLIENT_SEARCH_CRITERIA, new ClientSearchCriteria());
     model.addAttribute(CLIENT_FLOW_FORM_DATA, new ClientFlowFormData(ACTION_CREATE));
 

@@ -40,6 +40,7 @@
         </table>
         <nav th:replace="~{partials/pagination :: pagination(page=${clientSearchResults})}"></nav>
         <form action="#" th:action="@{/application/client/results}" method="post">
+            <input type="hidden" name="registrationId" th:value="${registrationId}">
             <h2 class="govuk-heading-m" th:text="#{client.register}"></h2>
             <p class="govuk-body" th:text="#{client.register.paragraph}"></p>
             <govuk:button type="submit" th:text="#{client.register}"/>
