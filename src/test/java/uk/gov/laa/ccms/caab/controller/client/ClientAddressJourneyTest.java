@@ -486,15 +486,25 @@ class ClientAddressJourneyTest {
 
   @ParameterizedTest
   @CsvSource({
-    "'', SEARCH", "'/civil', SEARCH",
-    "'', MANUAL_ENTRY", "'/civil', MANUAL_ENTRY",
-    "'', CONFIRMED_ADDRESS", "'/civil', CONFIRMED_ADDRESS",
-    "'', LOOKUP_UNAVAILABLE", "'/civil', LOOKUP_UNAVAILABLE"
+    "'', SEARCH, false",
+    "'/civil', SEARCH, false",
+    "'', MANUAL_ENTRY, false",
+    "'/civil', MANUAL_ENTRY, false",
+    "'', CONFIRMED_ADDRESS, false",
+    "'/civil', CONFIRMED_ADDRESS, false",
+    "'', LOOKUP_UNAVAILABLE, false",
+    "'/civil', LOOKUP_UNAVAILABLE, false",
+    "'', SEARCH, true",
+    "'', MANUAL_ENTRY, true",
+    "'', CONFIRMED_ADDRESS, true",
+    "'', LOOKUP_UNAVAILABLE, true"
   })
   void addressGetPreservesSupportedStatesAndRevision(
-      final String contextPath, final AddressLookupFlowData.Step step) throws Exception {
+      final String contextPath, final AddressLookupFlowData.Step step, final boolean noFixedAbode)
+      throws Exception {
     supplyDefaultIdentity = false;
     final ClientFormDataAddressDetails draft = new ClientFormDataAddressDetails();
+    draft.setNoFixedAbode(noFixedAbode);
     draft.setPostcode("sa58ab");
     draft.setHouseNameNumber("10");
     draft.setAddressLine1("Draft address line");
@@ -559,9 +569,15 @@ class ClientAddressJourneyTest {
   }
 
   @ParameterizedTest
-  @CsvSource({"true, true", "true, false", "false, true", "false, false"})
-  void returningFromResultsRetainsExemptClientVisibility(
-      final boolean vulnerable, final boolean hasResults) throws Exception {
+  @CsvSource({
+    "true, true, true", "true, true, false",
+    "true, false, true", "true, false, false",
+    "false, true, true", "false, true, false",
+    "false, false, true", "false, false, false"
+  })
+  void returningFromResultsKeepsControlsAvailableForNonVulnerableClients(
+      final boolean vulnerable, final boolean noFixedAbode, final boolean hasResults)
+      throws Exception {
     final MvcResult resultsPage = searchForNavigation("/civil", hasResults);
     final AddressLookupFlowData<?> flow =
         (AddressLookupFlowData<?>) session.getAttribute(CREATE_CLIENT_ADDRESS_FLOW);
@@ -570,20 +586,27 @@ class ClientAddressJourneyTest {
         (ClientFormDataAddressDetails) flow.getAddressDetails();
     assertNotNull(draft);
     clientFlowFormData.getBasicDetails().setVulnerableClient(vulnerable);
-    draft.setNoFixedAbode(!vulnerable);
+    draft.setNoFixedAbode(noFixedAbode);
 
-    mockMvc
-        .perform(
-            get(link(resultsPage, "Cancel and return to address details"))
-                .contextPath("/civil")
-                .session(session))
-        .andExpect(status().isOk())
-        .andExpect(content().string(not(containsString("name=\"postcode\""))))
-        .andExpect(content().string(not(containsString("name=\"addressLine1\""))))
-        .andExpect(content().string(not(containsString("Enter address manually"))));
+    final MvcResult addressPage =
+        mockMvc
+            .perform(
+                get(link(resultsPage, "Cancel and return to address details"))
+                    .contextPath("/civil")
+                    .session(session))
+            .andExpect(status().isOk())
+            .andReturn();
+    if (vulnerable) {
+      final String html = addressPage.getResponse().getContentAsString();
+      assertThat(html, not(containsString("name=\"postcode\"")));
+      assertThat(html, not(containsString("name=\"addressLine1\"")));
+      assertThat(html, not(containsString("Enter address manually")));
+    } else {
+      assertSearchComponent(addressPage);
+    }
     assertEquals(AddressLookupFlowData.Step.SEARCH, flow.getStep());
     assertEquals(vulnerable, draft.getVulnerableClient());
-    assertEquals(!vulnerable, draft.getNoFixedAbode());
+    assertEquals(noFixedAbode, draft.getNoFixedAbode());
     assertSame(draft, flow.getAddressDetails());
   }
 
