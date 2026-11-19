@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -13,6 +14,7 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -207,6 +209,17 @@ public class AddressServiceTest {
         .thenReturn(Mono.error(new IllegalStateException("lookup unavailable")));
 
     assertThrows(IllegalStateException.class, () -> addressService.getAddresses("sw1a1aa"));
+  }
+
+  @Test
+  void getAddressesTimesOutStalledLookup() {
+    when(ordinanceSurveyApiClient.getAddresses("SW1A 1AA")).thenReturn(Mono.never());
+
+    AddressLookupUnavailableException exception =
+        assertThrows(
+            AddressLookupUnavailableException.class, () -> addressService.getAddresses("sw1a1aa"));
+
+    assertInstanceOf(TimeoutException.class, exception.getCause());
   }
 
   @Test

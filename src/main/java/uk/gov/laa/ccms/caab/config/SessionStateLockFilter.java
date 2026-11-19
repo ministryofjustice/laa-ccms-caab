@@ -29,6 +29,16 @@ public class SessionStateLockFilter extends OncePerRequestFilter {
   private static final String PERMIT_ATTRIBUTE = SessionStateLockFilter.class.getName() + ".permit";
 
   @Override
+  protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
+    String path = request.getServletPath();
+    return path != null
+        && (path.equals("/favicon.ico")
+            || path.startsWith("/assets/")
+            || path.startsWith("/ccms/")
+            || path.startsWith("/govuk-dialect/"));
+  }
+
+  @Override
   protected void doFilterInternal(
       @NonNull HttpServletRequest request,
       @NonNull HttpServletResponse response,
