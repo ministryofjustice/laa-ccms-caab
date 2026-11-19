@@ -1,6 +1,8 @@
 package uk.gov.laa.ccms.caab.service;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -30,6 +32,8 @@ import uk.gov.laa.ccms.caab.util.UkPostcode;
 public class AddressService {
 
   private static final Pattern HOUSE_NUMBER = Pattern.compile("^(\\d+)\\s*([A-Za-z]?)$");
+  // Leave headroom before the session filter's 30-second permit wait expires.
+  private static final Duration ADDRESS_LOOKUP_TIMEOUT = Duration.ofSeconds(10);
 
   private final OrdinanceSurveyApiClient ordinanceSurveyApiClient;
 
@@ -75,7 +79,19 @@ public class AddressService {
   public ResultsDisplay<AddressResultRowDisplay> getAddresses(final String postcode) {
     final OrdinanceSurveyResponse response;
     try {
-      response = ordinanceSurveyApiClient.getAddresses(UkPostcode.normalize(postcode)).block();
+      response =
+          ordinanceSurveyApiClient
+              .getAddresses(UkPostcode.normalize(postcode))
+              .timeout(ADDRESS_LOOKUP_TIMEOUT)
+              .onErrorMap(
+                  TimeoutException.class,
+                  exception -> {
+                    log.warn(
+                        "Address lookup timed out after {} seconds.",
+                        ADDRESS_LOOKUP_TIMEOUT.toSeconds());
+                    return new AddressLookupUnavailableException(exception);
+                  })
+              .block();
     } catch (WebClientRequestException
         | WebClientResponseException
         | DecodingException
