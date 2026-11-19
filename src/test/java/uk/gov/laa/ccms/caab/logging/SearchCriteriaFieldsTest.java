@@ -28,17 +28,25 @@ class SearchCriteriaFieldsTest {
   }
 
   @Test
-  void aFalseFlagAndPagingAreNotCountedAsCriteria() {
+  void aFlagIsListedWithItsValueAndPagingIsNotCounted() {
     var criteria = new NotificationSearchCriteria();
-    criteria.setIncludeClosed(false);
     criteria.setPage(0);
     criteria.setSize(10);
     criteria.setSort("date,desc");
     criteria.setNotificationType("OPEN");
     criteria.setIncludeClosed(true);
 
-    assertThat(SearchCriteriaFields.populated(criteria))
-        .containsExactly("includeClosed", "notificationType");
+    assertThat(SearchCriteriaFields.populated(criteria, java.util.Set.of("originatesFromCase")))
+        .containsExactly("includeClosed=true", "notificationType");
+  }
+
+  @Test
+  void aDefaultFalseFlagIsStillAnAppliedFilter() {
+    var criteria = new NotificationSearchCriteria();
+    criteria.setIncludeClosed(false);
+
+    assertThat(SearchCriteriaFields.populated(criteria, java.util.Set.of("originatesFromCase")))
+        .containsExactly("includeClosed=false");
   }
 
   @Test
@@ -62,7 +70,9 @@ class SearchCriteriaFieldsTest {
     criteria.setLoginId("jane.doe");
     criteria.setUserType("EXTERNAL");
 
-    assertThat(SearchCriteriaFields.populated(criteria, java.util.Set.of("loginId", "userType")))
-        .containsExactly("notificationType");
+    assertThat(
+            SearchCriteriaFields.populated(
+                criteria, java.util.Set.of("loginId", "userType", "originatesFromCase")))
+        .containsExactly("includeClosed=false", "notificationType");
   }
 }

@@ -79,13 +79,12 @@ public class ClientSearchResultsController {
           "CLIENT", criteriaFields, null, page, false, e.getClass().getSimpleName());
       throw e;
     }
-    securityEventLogger.searched(
-        "CLIENT",
-        criteriaFields,
-        clientSearchResults == null ? 0 : clientSearchResults.getTotalElements(),
-        page,
-        true,
-        null);
+    if (clientSearchResults == null) {
+      securityEventLogger.searched("CLIENT", criteriaFields, null, page, false, "EmptyResponse");
+    } else {
+      securityEventLogger.searched(
+          "CLIENT", criteriaFields, clientSearchResults.getTotalElements(), page, true, null);
+    }
 
     if (clientSearchResults != null
         && clientSearchResults.getContent() != null

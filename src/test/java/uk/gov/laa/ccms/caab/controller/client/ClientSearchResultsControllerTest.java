@@ -127,7 +127,8 @@ public class ClientSearchResultsControllerTest {
   }
 
   @Test
-  public void aClientSearchWithNoResponseIsAuditedAsZeroResults() throws Exception {
+  public void aClientSearchWithAnEmptyResponseIsAuditedAsAFailureButStillShowsNoResults()
+      throws Exception {
     when(clientService.getClients(any(), any(), any())).thenReturn(Mono.empty());
 
     this.mockMvc
@@ -135,9 +136,11 @@ public class ClientSearchResultsControllerTest {
             get("/application/client/results")
                 .sessionAttr("user", user)
                 .sessionAttr("clientSearchCriteria", new ClientSearchCriteria()))
-        .andExpect(status().isOk());
+        .andExpect(status().isOk())
+        .andExpect(view().name("application/application-client-search-no-results"));
 
-    verify(securityEventLogger).searched("CLIENT", java.util.List.of(), 0, 0, true, null);
+    verify(securityEventLogger)
+        .searched("CLIENT", java.util.List.of(), null, 0, false, "EmptyResponse");
   }
 
   @Test

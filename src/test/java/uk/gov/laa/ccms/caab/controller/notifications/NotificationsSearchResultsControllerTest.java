@@ -82,7 +82,7 @@ class NotificationsSearchResultsControllerTest {
     verify(securityEventLogger)
         .searched(
             eq("NOTIFICATION"),
-            eq(java.util.List.of("notificationToDate")),
+            eq(java.util.List.of("includeClosed=false", "notificationToDate")),
             eq(1),
             eq(0),
             eq(true),
@@ -108,7 +108,7 @@ class NotificationsSearchResultsControllerTest {
     verify(securityEventLogger)
         .searched(
             eq("NOTIFICATION"),
-            eq(java.util.List.of("notificationToDate")),
+            eq(java.util.List.of("includeClosed=false", "notificationToDate")),
             org.mockito.ArgumentMatchers.isNull(),
             eq(0),
             eq(false),
@@ -156,7 +156,7 @@ class NotificationsSearchResultsControllerTest {
     verify(securityEventLogger)
         .searched(
             eq("NOTIFICATION"),
-            eq(java.util.List.of("notificationToDate")),
+            eq(java.util.List.of("includeClosed=false", "notificationToDate")),
             eq(1),
             eq(0),
             eq(true),

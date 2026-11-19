@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-/** Names the search criteria a user filled in, never their values. */
+/** Names the search criteria a user filled in, never their text values. */
 public final class SearchCriteriaFields {
 
   private static final Set<String> NOT_CRITERIA = Set.of("page", "size", "sort");
@@ -16,8 +16,10 @@ public final class SearchCriteriaFields {
 
   /**
    * Returns the names of the populated fields of a search criteria bean, in alphabetical order.
-   * Blank text, false flags, empty collections and paging fields are not counted. Only declared
-   * fields are read, never getters, because a derived getter can throw or have side effects.
+   * Blank text, empty collections and paging fields are not counted. A yes/no flag is listed with
+   * its value, such as {@code includeClosed=false}, because a flag is not personal data and a
+   * default-valued filter is still an applied filter. Only declared fields are read, never getters,
+   * because a derived getter can throw or have side effects.
    *
    * @param criteria the criteria bean, which may be null
    * @return the names of the populated fields
@@ -42,9 +44,13 @@ public final class SearchCriteriaFields {
         type != null && type != Object.class;
         type = type.getSuperclass()) {
       for (Field field : type.getDeclaredFields()) {
-        if (isCriteriaField(field)
-            && !notUserEntered.contains(field.getName())
-            && isPopulated(valueOf(field, criteria))) {
+        if (!isCriteriaField(field) || notUserEntered.contains(field.getName())) {
+          continue;
+        }
+        Object value = valueOf(field, criteria);
+        if (value instanceof Boolean flag) {
+          names.add(field.getName() + "=" + flag);
+        } else if (isPopulated(value)) {
           names.add(field.getName());
         }
       }
@@ -73,9 +79,6 @@ public final class SearchCriteriaFields {
     }
     if (value instanceof CharSequence text) {
       return !text.toString().isBlank();
-    }
-    if (value instanceof Boolean flag) {
-      return flag;
     }
     return !(value instanceof Collection<?> collection) || !collection.isEmpty();
   }
