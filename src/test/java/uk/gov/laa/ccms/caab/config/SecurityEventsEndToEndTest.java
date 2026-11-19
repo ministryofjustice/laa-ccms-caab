@@ -121,6 +121,26 @@ class SecurityEventsEndToEndTest {
     }
   }
 
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(
+      strings = {
+        "/notifications/234/attachments/567/download",
+        "/notifications/234/attachments/31/downloadDraft"
+      })
+  void aHeadRequestToTheDownloadRoutesIsRefusedLikeAGetWithoutTheFunction(String path)
+      throws Exception {
+    int status =
+        mockMvc
+            .perform(
+                org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head(path)
+                    .with(user("jane").authorities()))
+            .andReturn()
+            .getResponse()
+            .getStatus();
+
+    assertThat(status).isEqualTo(403);
+  }
+
   @Test
   void aSamlResponseThatCannotBeReadIsLoggedAsAFailedSignIn() throws Exception {
     MvcResult result =
