@@ -105,8 +105,13 @@
                      th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/remove(notification_id=${notification.getNotificationId},attachment_id=${attachment.getId})}"
                      class="govuk-link"
                      th:text="#{site.remove}"/>
-                  <a th:if="${documentLinks.get(attachment.getId?.toString())} != null"
-                     th:href="${documentLinks.get(attachment.getId.toString())}"
+                  <a th:if="${documentLinks.get(attachment.getId?.toString())} != null and ${attachment.status} == 'Submitted'"
+                     th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/download(notification_id=${notification.getNotificationId},attachment_id=${attachment.getId})}"
+                     th:target="_blank" class="govuk-link"
+                     th:text="${attachment.sendBy} == 'P' ? #{notifications.documents.downloadCoverSheet} : #{site.download}">
+                  </a>
+                  <a th:if="${documentLinks.get(attachment.getId?.toString())} != null and ${attachment.status} != 'Submitted'"
+                     th:href="@{/notifications/{notification_id}/attachments/{attachment_id}/downloadDraft(notification_id=${notification.getNotificationId},attachment_id=${attachment.getId})}"
                      th:target="_blank" class="govuk-link"
                      th:text="${attachment.sendBy} == 'P' ? #{notifications.documents.downloadCoverSheet} : #{site.download}">
                   </a>
