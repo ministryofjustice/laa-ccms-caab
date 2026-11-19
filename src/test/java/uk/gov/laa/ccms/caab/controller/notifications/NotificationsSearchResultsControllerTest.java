@@ -126,11 +126,15 @@ class NotificationsSearchResultsControllerTest {
         .perform(
             get("/notifications/search-results")
                 .sessionAttr("user", userDetails)
+                .queryParam("page", "2")
+                .queryParam("size", "10")
+                .queryParam("pageSort", "dateAssigned,asc")
                 .sessionAttr("notificationSearchCriteria", criteria)
                 .sessionAttr("notificationsSearchResults", getNotificationsMock()))
-        .andExpect(status().is3xxRedirection());
+        .andExpect(status().isOk());
 
     org.mockito.Mockito.verifyNoInteractions(securityEventLogger);
+    org.mockito.Mockito.verifyNoInteractions(notificationService);
   }
 
   @Test
