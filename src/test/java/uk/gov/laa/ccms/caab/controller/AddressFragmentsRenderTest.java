@@ -231,6 +231,7 @@ class AddressFragmentsRenderTest {
         .andExpect(status().isOk())
         .andExpect(content().string(containsString("name=\"postcode\"")))
         .andExpect(content().string(containsString("name=\"addressLine1\"")))
+        .andExpect(content().string(containsString("id=\"find-address-button\"")))
         .andExpect(content().string(not(containsString("id=\"postcode-hint\""))));
   }
 
@@ -541,7 +542,7 @@ class AddressFragmentsRenderTest {
         @PathVariable final String state, final Model model) {
       final ClientFormDataAddressDetails addressDetails = new ClientFormDataAddressDetails();
       addressDetails.setVulnerableClient(false);
-      addressDetails.setNoFixedAbode(false);
+      addressDetails.setNoFixedAbode("legacy".equals(state));
       final AddressLookupFlowData<ClientFormDataAddressDetails> addressFlow =
           new AddressLookupFlowData<>("create-client");
       final AddressResultRowDisplay selectedAddress = new AddressResultRowDisplay();
