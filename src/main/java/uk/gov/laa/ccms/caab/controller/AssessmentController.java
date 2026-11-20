@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -457,7 +458,7 @@ public class AssessmentController {
             UserRole.VIEW_CASE_DETAILS.getCode(),
             UserRole.VIEW_CASE_BILL.getCode(),
             requiredFunction))) {
-      throw new CaabApplicationException(
+      throw new AccessDeniedException(
           "User does not hold the functions needed to run the %s assessment"
               .formatted(assessmentRulebase.getType()));
     }

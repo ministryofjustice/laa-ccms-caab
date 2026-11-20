@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -51,9 +52,11 @@ import org.springframework.context.MessageSource;
 import org.springframework.format.support.FormattingConversionService;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.web.context.WebApplicationContext;
 import reactor.core.publisher.Mono;
+import uk.gov.laa.ccms.caab.advice.GlobalExceptionHandler;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentCheckpointDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetail;
 import uk.gov.laa.ccms.caab.assessment.model.AssessmentDetails;
@@ -67,6 +70,7 @@ import uk.gov.laa.ccms.caab.model.ApplicationDetail;
 import uk.gov.laa.ccms.caab.model.ApplicationType;
 import uk.gov.laa.ccms.caab.opa.context.ContextToken;
 import uk.gov.laa.ccms.caab.opa.util.SecurityUtils;
+import uk.gov.laa.ccms.caab.security.RefusedActionSession;
 import uk.gov.laa.ccms.caab.service.ApplicationService;
 import uk.gov.laa.ccms.caab.service.AssessmentService;
 import uk.gov.laa.ccms.caab.service.BillingService;
@@ -487,7 +491,8 @@ public class AssessmentControllerTest {
   }
 
   @Test
-  public void assessmentGet_billing_rejectedWhenTheUserDoesNotHoldTheBillFunction() {
+  public void assessmentGet_billing_rejectedWhenTheUserDoesNotHoldTheBillFunction()
+      throws Exception {
     // The case supports billing, but this user does not hold it. The interview sits under
     // /application, which carries no user-function rule, so without this check a user with only
     // VC could start it.
@@ -504,16 +509,11 @@ public class AssessmentControllerTest {
             .sessionAttr(CASE, ebsCase)
             .sessionAttr(ACTIVE_CASE, activeCase);
 
-    final Exception exception = assertThrows(Exception.class, () -> this.mockMvc.perform(request));
-
-    assertInstanceOf(CaabApplicationException.class, exception.getCause());
-    assertEquals(
-        "User does not hold the functions needed to run the BILLING assessment",
-        exception.getCause().getMessage());
+    assertRefusedLikeTheRouteRules(request);
   }
 
   @Test
-  public void assessmentGet_poa_rejectedWhenTheUserDoesNotHoldCaseBills() {
+  public void assessmentGet_poa_rejectedWhenTheUserDoesNotHoldCaseBills() throws Exception {
     final ApplicationDetail ebsCase =
         buildApplicationDetail(1, true, new Date())
             .caseReferenceNumber("CASE123")
@@ -529,12 +529,7 @@ public class AssessmentControllerTest {
             .sessionAttr(CASE, ebsCase)
             .sessionAttr(ACTIVE_CASE, activeCase);
 
-    final Exception exception = assertThrows(Exception.class, () -> this.mockMvc.perform(request));
-
-    assertInstanceOf(CaabApplicationException.class, exception.getCause());
-    assertEquals(
-        "User does not hold the functions needed to run the POA assessment",
-        exception.getCause().getMessage());
+    assertRefusedLikeTheRouteRules(request);
   }
 
   @Test
@@ -980,5 +975,22 @@ public class AssessmentControllerTest {
 
     assertInstanceOf(CaabApplicationException.class, exception.getCause());
     assertEquals("Failed to retrieve assessment details", exception.getCause().getMessage());
+  }
+
+  /** The refusal is handled as the route rules handle one: back to a page, with the message. */
+  private void assertRefusedLikeTheRouteRules(final MockHttpServletRequestBuilder request)
+      throws Exception {
+    final FormattingConversionService conversionService = new FormattingConversionService();
+    conversionService.addConverter(String.class, CaseContext.class, CaseContext::fromPathValue);
+    final MockMvc withExceptionAdvice =
+        standaloneSetup(assessmentController)
+            .setConversionService(conversionService)
+            .setControllerAdvice(new GlobalExceptionHandler())
+            .build();
+
+    final MvcResult result = withExceptionAdvice.perform(request).andReturn();
+
+    assertEquals("/home", result.getResponse().getRedirectedUrl());
+    assertTrue(RefusedActionSession.consumeNotAuthorised(result.getRequest().getSession()));
   }
 }
