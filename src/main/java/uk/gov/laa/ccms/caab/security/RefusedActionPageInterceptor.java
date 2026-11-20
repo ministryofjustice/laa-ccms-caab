@@ -3,6 +3,7 @@ package uk.gov.laa.ccms.caab.security;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import java.util.Set;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.SmartView;
@@ -13,6 +14,17 @@ import org.springframework.web.servlet.SmartView;
  * redirect.
  */
 public class RefusedActionPageInterceptor implements HandlerInterceptor {
+
+  /**
+   * Pages rendered without the layout, which is where the refusal message is shown. They are
+   * neither returned to after a refusal nor allowed to use up its message.
+   */
+  static final Set<String> VIEWS_WITHOUT_LAYOUT =
+      Set.of(
+          "submissions/submissionInProgress",
+          "application/assessments/assessment-get",
+          "application/privacy-notice-agreement-printable",
+          "application/sections/application-summary-complete-printable");
 
   @Override
   public void postHandle(
@@ -25,7 +37,8 @@ public class RefusedActionPageInterceptor implements HandlerInterceptor {
         || modelAndView == null
         || isRedirectOrForward(modelAndView)
         || response.getStatus() >= 300
-        || !RefusedActionSession.isPageNavigation(request)) {
+        || !RefusedActionSession.isPageNavigation(request)
+        || VIEWS_WITHOUT_LAYOUT.contains(modelAndView.getViewName())) {
       return;
     }
 

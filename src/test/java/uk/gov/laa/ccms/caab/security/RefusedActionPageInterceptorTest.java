@@ -2,6 +2,12 @@ package uk.gov.laa.ccms.caab.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -142,5 +148,49 @@ class RefusedActionPageInterceptorTest {
     assertThat(RefusedActionSession.findRenderedPage(session, "/civil/page/5")).isEmpty();
     assertThat(RefusedActionSession.findRenderedPage(session, "/civil/page/59")).isPresent();
     assertThat(RefusedActionSession.lastRenderedPage(session)).contains("/civil/page/20");
+  }
+
+  @Test
+  @DisplayName("A page without the layout neither records itself nor uses up the message")
+  void pageWithoutLayoutKeepsMessageWaiting() {
+    RefusedActionSession.markNotAuthorised(session);
+
+    ModelAndView polling =
+        render(
+            request("GET", "/civil/application/submit-case", null),
+            new ModelAndView("submissions/submissionInProgress"));
+
+    assertThat(polling.getModel())
+        .doesNotContainKey(NotAuthorisedAccessDeniedHandler.NOT_AUTHORISED_ATTRIBUTE);
+    assertThat(RefusedActionSession.lastRenderedPage(session)).isEmpty();
+    assertThat(RefusedActionSession.consumeNotAuthorised(session)).isTrue();
+  }
+
+  @Test
+  @DisplayName("Every full page rendered without the layout is listed")
+  void everyPageWithoutLayoutIsListed() throws IOException {
+    Path templates = Path.of("src/main/resources/templates");
+    try (Stream<Path> files = Files.walk(templates)) {
+      List<String> pagesWithoutLayout =
+          files
+              .filter(file -> file.toString().endsWith(".html"))
+              .filter(file -> isPageWithoutLayout(file))
+              .map(file -> templates.relativize(file).toString().replace(".html", ""))
+              .filter(view -> !view.equals("layout") && !view.startsWith("pdf/"))
+              .filter(view -> !view.contains("/partials/"))
+              .toList();
+
+      assertThat(RefusedActionPageInterceptor.VIEWS_WITHOUT_LAYOUT)
+          .containsExactlyInAnyOrderElementsOf(pagesWithoutLayout);
+    }
+  }
+
+  private static boolean isPageWithoutLayout(Path file) {
+    try {
+      String template = Files.readString(file);
+      return template.contains("<html") && !template.contains("layout ::");
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 }
