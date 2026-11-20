@@ -34,19 +34,24 @@ class SessionCookieIntegrationTest {
 
   @Test
   void secureHttpOnlyCookieAndForwardedHttps() throws Exception {
-    var plain = request(port, contextPath, false);
+    var plain = request(port, contextPath + "/session", false);
     String cookie = plain.headers().firstValue("set-cookie").orElseThrow();
     assertThat(cookie).contains("Secure", "HttpOnly", "SameSite=Lax");
     assertThat(plain.headers().firstValue("strict-transport-security")).isEmpty();
-    var forwarded = request(port, contextPath, true);
+    var forwarded = request(port, contextPath + "/session", true);
     assertThat(forwarded.headers().firstValue("strict-transport-security")).isPresent();
   }
 
-  static HttpResponse<String> request(int port, String contextPath, boolean forwarded)
-      throws Exception {
-    var builder =
-        HttpRequest.newBuilder(URI.create("http://localhost:" + port + contextPath + "/session"))
-            .GET();
+  @Test
+  void forwardedHttpsReachesContextRootWithoutHttpRedirect() throws Exception {
+    var response = request(port, contextPath, true);
+    assertThat(response.statusCode()).isEqualTo(200);
+    assertThat(response.body()).isEqualTo("ok");
+    assertThat(response.headers().firstValue("strict-transport-security")).isPresent();
+  }
+
+  static HttpResponse<String> request(int port, String path, boolean forwarded) throws Exception {
+    var builder = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path)).GET();
     if (forwarded) builder.header("X-Forwarded-Proto", "https");
     try (HttpClient client = HttpClient.newHttpClient()) {
       return client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
@@ -65,7 +70,7 @@ class SessionCookieIntegrationTest {
 
   @RestController
   static class SessionEndpoint {
-    @GetMapping("/session")
+    @GetMapping({"/session", "/", ""})
     String session(HttpServletRequest request) {
       request.getSession();
       return "ok";
@@ -88,7 +93,7 @@ class LocalSessionCookieIntegrationTest {
   @Test
   void localCookieWorksOverHttp() throws Exception {
     String cookie =
-        SessionCookieIntegrationTest.request(port, contextPath, false)
+        SessionCookieIntegrationTest.request(port, contextPath + "/session", false)
             .headers()
             .firstValue("set-cookie")
             .orElseThrow();
