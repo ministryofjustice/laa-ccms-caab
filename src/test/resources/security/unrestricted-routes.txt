@@ -8,6 +8,7 @@
 GET /
 POST /csp/report
 GET /home
+GET /authentication-error
 GET /provider-switch
 POST /provider-switch
 GET /submissions/alreadySubmitted

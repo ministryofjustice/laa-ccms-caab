@@ -2,6 +2,7 @@ package uk.gov.laa.ccms.caab.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.List;
@@ -13,8 +14,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.saml2.provider.service.authentication.Saml2AssertionAuthentication;
-import org.springframework.security.saml2.provider.service.authentication.Saml2ResponseAssertionAccessor;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
@@ -26,12 +27,11 @@ class UserFunctionAuthoritiesTest {
     SecurityContextHolder.clearContext();
   }
 
-  private static Saml2AssertionAuthentication authentication(String... authorities) {
-    return new Saml2AssertionAuthentication(
-        "user",
-        mock(Saml2ResponseAssertionAccessor.class),
-        Arrays.stream(authorities).map(SimpleGrantedAuthority::new).toList(),
-        "idp");
+  private static OAuth2AuthenticationToken authentication(String... authorities) {
+    OidcUser user = mock(OidcUser.class);
+    when(user.getName()).thenReturn("user");
+    return new OAuth2AuthenticationToken(
+        user, Arrays.stream(authorities).map(SimpleGrantedAuthority::new).toList(), "idp");
   }
 
   private static List<String> currentAuthorities() {
@@ -41,7 +41,7 @@ class UserFunctionAuthoritiesTest {
   }
 
   @Test
-  @DisplayName("The reloaded functions replace the previous ones, keeping the SAML groups")
+  @DisplayName("The reloaded functions replace the previous ones, keeping the OIDC groups")
   void replacesFunctionsAndKeepsGroups() {
     MockHttpSession session = new MockHttpSession();
 
@@ -52,6 +52,13 @@ class UserFunctionAuthoritiesTest {
         session);
 
     assertThat(currentAuthorities()).containsExactlyInAnyOrder("group1", "NOT", "VC");
+    OAuth2AuthenticationToken refreshed =
+        (OAuth2AuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+    assertThat(refreshed.getName()).isEqualTo("user");
+    assertThat(refreshed.getAuthorizedClientRegistrationId()).isEqualTo("idp");
+    assertThat(refreshed.getPrincipal().getAuthorities())
+        .extracting(GrantedAuthority::getAuthority)
+        .containsExactlyInAnyOrder("group1", "NOT", "VC");
     assertThat(
             (SecurityContext)
                 session.getAttribute(
@@ -72,7 +79,7 @@ class UserFunctionAuthoritiesTest {
   }
 
   @Test
-  @DisplayName("A login that is not SAML is left alone")
+  @DisplayName("A login that is not OIDC is left alone")
   void ignoresOtherAuthentication() {
     UserFunctionAuthorities.replace(
         null, new UserDetail(), new UserDetail().functions(List.of("CA")), new MockHttpSession());

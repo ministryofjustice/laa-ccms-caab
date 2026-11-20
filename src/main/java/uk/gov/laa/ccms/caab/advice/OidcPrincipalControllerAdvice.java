@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.saml2.provider.service.authentication.Saml2AssertionAuthentication;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -22,34 +22,35 @@ import uk.gov.laa.ccms.caab.service.UserService;
 import uk.gov.laa.ccms.data.model.UserDetail;
 
 /**
- * Controller advice class responsible for adding the SAML authenticated principal and user details
+ * Controller advice class responsible for adding the OIDC authenticated principal and user details
  * to the model.
  */
 @ControllerAdvice
 @RequiredArgsConstructor
 @Slf4j
-public class SamlPrincipalControllerAdvice {
+public class OidcPrincipalControllerAdvice {
 
   private final UserService userService;
 
   private final SecurityEventLogger securityEventLogger;
 
   /**
-   * Adds the SAML authenticated principal and user details to the model.
+   * Adds the OIDC authenticated principal and user details to the model.
    *
    * @param authentication The authenticated principal representing the authenticated user.
    * @param model The Model object to which attributes will be added.
    * @param session The HttpSession to store and retrieve user details.
    */
   @ModelAttribute
-  public void addSamlPrincipalToModel(
+  public void addOidcPrincipalToModel(
       Authentication authentication, Model model, HttpSession session, HttpServletRequest request) {
 
-    if (authentication instanceof Saml2AssertionAuthentication saml2Authentication
+    if (authentication != null
+        && authentication.getPrincipal() instanceof OidcUser oidcUser
         && !requestIsForController(
             request, uk.gov.laa.ccms.caab.controller.CspReportController.class)) {
 
-      String loginId = saml2Authentication.getName();
+      String loginId = authentication.getName();
 
       UserDetail user = new UserDetail();
       user.setLoginId(loginId);
@@ -70,7 +71,7 @@ public class SamlPrincipalControllerAdvice {
       } else {
         user = loadUser(() -> userService.getUserByLoginId(loginId).block(), loginId);
         if (previous != null && user != null) {
-          UserFunctionAuthorities.replace(saml2Authentication, previous, user, session);
+          UserFunctionAuthorities.replace(authentication, previous, user, session);
           securityEventLogger.privilegesReloaded(previous.getFunctions(), user.getFunctions());
         }
       }
@@ -81,7 +82,7 @@ public class SamlPrincipalControllerAdvice {
       }
 
       model.addAttribute("user", user);
-      model.addAttribute("userAttributes", saml2Authentication.getCredentials().getAttributes());
+      model.addAttribute("userAttributes", oidcUser.getClaims());
 
       session.setAttribute("user", user);
     }

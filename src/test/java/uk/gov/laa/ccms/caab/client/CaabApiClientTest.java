@@ -61,6 +61,7 @@ import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetail;
 import uk.gov.laa.ccms.caab.model.PaymentOnAccountDetails;
 import uk.gov.laa.ccms.caab.model.PriorAuthorityDetail;
 import uk.gov.laa.ccms.caab.model.ProceedingDetail;
+import uk.gov.laa.ccms.caab.model.RecoveryRequest;
 import uk.gov.laa.ccms.caab.model.ScopeLimitationDetail;
 import uk.gov.laa.ccms.caab.model.TimeRecoveryRequest;
 import uk.gov.laa.ccms.caab.util.DateUtils;
@@ -1207,6 +1208,24 @@ class CaabApiClientTest {
         .verifyComplete();
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"COST", "DAMAGE"})
+  void upsertRecoveryUsesAwardScopeAndUserHeader(String type) {
+    final var recovery = new RecoveryRequest();
+    recovery.setOfferDetails("Terms");
+    final String uri = "/case-outcomes/{case-outcome-id}/awards/{award-type}/{award-id}/recovery";
+    when(caabApiWebClient.put()).thenReturn(requestBodyUriMock);
+    when(requestBodyUriMock.uri(uri, 42, type, 7)).thenReturn(requestBodyMock);
+    when(requestBodyMock.header("Caab-User-Login-Id", "user1")).thenReturn(requestBodyMock);
+    when(requestBodyMock.contentType(MediaType.APPLICATION_JSON)).thenReturn(requestBodyMock);
+    when(requestBodyMock.bodyValue(recovery)).thenReturn(requestHeadersMock);
+    when(requestHeadersMock.retrieve()).thenReturn(responseMock);
+    when(responseMock.bodyToMono(Void.class)).thenReturn(Mono.empty());
+    StepVerifier.create(caabApiClient.upsertRecovery(42, type, 7, "user1", recovery))
+        .verifyComplete();
+    verify(requestBodyMock).bodyValue(recovery);
+  }
+
   @Test
   void updateCostAward_success() {
     final CostAwardDetail costAward = new CostAwardDetail();
@@ -1430,6 +1449,54 @@ class CaabApiClientTest {
     final CaabApiClient api = new CaabApiClient(client, new CaabApiClientErrorHandler());
 
     StepVerifier.create(api.getAwardLiableParties(42, "LAND", 7))
+        .expectError(CaabApiClientException.class)
+        .verify();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"COST", "DAMAGE", "LAND", "ASSET"})
+  void addAwardLiableParty_linksExistingOpponentAndDeserializesResponse(String awardType) {
+    final WebClient client =
+        WebClient.builder()
+            .exchangeFunction(
+                request -> {
+                  assertEquals(
+                      "/case-outcomes/42/awards/" + awardType + "/7/liable-parties/11",
+                      request.url().toString());
+                  assertEquals("login", request.headers().getFirst("Caab-User-Login-Id"));
+                  return Mono.just(
+                      ClientResponse.create(HttpStatus.CREATED)
+                          .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                          .body(
+                              """
+                          {"id":72,"opponent_id":11,"award_type":"%s"}
+                          """
+                                  .formatted(awardType))
+                          .build());
+                })
+            .build();
+    final CaabApiClient api = new CaabApiClient(client, new CaabApiClientErrorHandler());
+
+    StepVerifier.create(api.addAwardLiableParty(42, awardType, 7, 11, "login"))
+        .assertNext(
+            liableParty -> {
+              assertEquals(72, liableParty.getId());
+              assertEquals(11, liableParty.getOpponentId());
+              assertEquals(awardType, liableParty.getAwardType());
+            })
+        .verifyComplete();
+  }
+
+  @Test
+  void addAwardLiableParty_otherApiFailure() {
+    final WebClient client =
+        WebClient.builder()
+            .exchangeFunction(
+                request -> Mono.just(ClientResponse.create(HttpStatus.BAD_GATEWAY).build()))
+            .build();
+    final CaabApiClient api = new CaabApiClient(client, new CaabApiClientErrorHandler());
+
+    StepVerifier.create(api.addAwardLiableParty(42, "LAND", 7, 11, "login"))
         .expectError(CaabApiClientException.class)
         .verify();
   }

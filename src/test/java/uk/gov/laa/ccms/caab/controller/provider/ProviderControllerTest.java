@@ -30,8 +30,8 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.saml2.provider.service.authentication.Saml2AssertionAuthentication;
-import org.springframework.security.saml2.provider.service.authentication.Saml2ResponseAssertionAccessor;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -178,10 +178,11 @@ public class ProviderControllerTest {
             .functions(List.of("CA", "NOT"));
     ProviderFirmFormData providerFirmFormData = new ProviderFirmFormData();
     providerFirmFormData.setProviderFirmId(67890);
-    Saml2AssertionAuthentication authentication =
-        new Saml2AssertionAuthentication(
-            loginId,
-            mock(Saml2ResponseAssertionAccessor.class),
+    OidcUser principal = mock(OidcUser.class);
+    when(principal.getName()).thenReturn(loginId);
+    OAuth2AuthenticationToken authentication =
+        new OAuth2AuthenticationToken(
+            principal,
             List.of(
                 new SimpleGrantedAuthority("group1"),
                 new SimpleGrantedAuthority("CA"),

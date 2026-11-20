@@ -1,0 +1,78 @@
+@use "govuk/helpers" as govuk;
+
+.recovery-recipients__labels {
+  display: none;
+}
+
+.recovery-recipients__recipient {
+  margin-bottom: 30px;
+  min-width: 0;
+}
+
+@include govuk.govuk-media-query($from: desktop) {
+  @supports (grid-template-columns: subgrid) {
+    .recovery-recipients {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) repeat(3, minmax(0, 1.2fr));
+      column-gap: 20px;
+      padding-top: 20px;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+
+    .recovery-recipients__labels,
+    .recovery-recipients__recipient {
+      display: grid;
+      grid-column: 1 / -1;
+      grid-template-columns: subgrid;
+      border-bottom: 1px solid #b1b4b6;
+      padding-bottom: 20px;
+      margin-bottom: 20px;
+    }
+
+    .recovery-recipients__amount-label {
+      grid-column: 2;
+    }
+
+    .recovery-recipients__date-label {
+      grid-column: 3;
+    }
+
+    .recovery-recipients__paid-label {
+      grid-column: 4;
+    }
+
+    .recovery-recipients__recipient .govuk-label,
+    .recovery-recipients__recipient .moj-datepicker .govuk-hint {
+      @include govuk.govuk-visually-hidden;
+    }
+
+    .recovery-recipients__recipient .govuk-label-wrapper {
+      margin: 0;
+    }
+
+    .recovery-recipients__recipient > .govuk-form-group,
+    .recovery-recipients__recipient > .moj-datepicker,
+    .recovery-recipients__recipient > .govuk-heading-m,
+    .recovery-recipients__labels > p {
+      margin-bottom: 0;
+    }
+
+    .recovery-recipients__labels > p {
+      font-weight: 700;
+    }
+
+    .recovery-recipients__recipient > .moj-datepicker > .govuk-form-group {
+      margin-bottom: 0;
+    }
+
+    .recovery-recipients__recipient .govuk-input__wrapper {
+      max-width: 100%;
+    }
+
+    .recovery-recipients__recipient .govuk-input {
+      min-width: 0;
+      max-width: 100%;
+    }
+  }
+}

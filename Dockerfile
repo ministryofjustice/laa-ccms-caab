@@ -1,13 +1,11 @@
-FROM eclipse-temurin:21
-VOLUME /tmp
-COPY laa-ccms-caab-0.0.1-SNAPSHOT.jar laa-ccms-caab.jar
-EXPOSE 8080
-RUN groupadd --system --gid 800 customgroup \
-    && useradd --system --uid 800 --gid customgroup --shell /bin/sh customuser
-RUN chown customuser:customgroup laa-ccms-caab.jar
-USER 800
+FROM ghcr.io/ministryofjustice/laa-base-container-images/java:25-corretto-alpine
 
-RUN ls -l laa-ccms-caab.jar
-ENV TZ=Europe/London
-ENV JAVA_TOOL_OPTIONS="-XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=80.0"
-CMD java -jar laa-ccms-caab.jar
+# PDF rendering uses AWT font support, which needs fontconfig and FreeType on Alpine.
+USER root
+RUN apk add --no-cache fontconfig ttf-dejavu
+USER 1001:1001
+
+COPY build/libs/laa-ccms-caab-*.jar /app/laa-ccms-caab.jar
+
+EXPOSE 8080
+CMD ["java", "-jar", "/app/laa-ccms-caab.jar"]
